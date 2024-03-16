@@ -1,19 +1,10 @@
 import os
+import importlib
 
-api = os.environ.get('platform')
+platform = os.environ.get('platform')
 
-if api == "openai":
-    from openai import openai
-    api = openai
-elif api == "claude":
-    from claude import claude
-    api = claude
-elif api == "qwen":
-    from qwen import qwen
-    api = qwen
-elif api == "qianfan":
-    from qianfan import qianfan
-    api = qianfan
+api_module = importlib.import_module(f"llm_api.{platform}")
+api = getattr(api_module, platform)
 
 def request_model(msg):
     return api.request_model(msg)

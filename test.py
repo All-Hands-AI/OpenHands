@@ -1,3 +1,5 @@
+import config   # import config.py to init env vars
+
 from llm_api.llm_api import request_model, request_submodel, request_embed_model
 
 print(
