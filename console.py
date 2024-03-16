@@ -79,8 +79,8 @@ if __name__ == '__main__':
     # drwxr-xr-x   6 zibo  staff   192 Mar 17 01:55 OpenDevin
     # ...
 
-    empty = terminal.run_command("cd -")
-    # print(empty)
+    pwd = terminal.run_command("cd -")
+    # print(pwd)
     # /Users/zibo/fun/OpenDevin
 
     git_status = terminal.run_command("git status")
