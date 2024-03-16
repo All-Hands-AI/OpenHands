@@ -1,9 +1,9 @@
 import openai as OpenAI
 import os, json
 
-OpenAI.api_key = os.environ.get('access_key')
-
 class openai:
+
+    OpenAI.api_key = os.environ.get('access_key')
 
     @staticmethod
     def request_model(msg):

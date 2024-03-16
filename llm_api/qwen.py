@@ -3,6 +3,8 @@ import os
 
 class qwen:
 
+    dashscope.api_key = os.environ.get('access_key')
+
     @staticmethod
     def request_model(msg):
         response = dashscope.Generation.call(

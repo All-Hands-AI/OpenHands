@@ -1,7 +1,5 @@
-import claude
+import claude as Claude
 import os
-
-client = claude.Client(os.environ.get('access_key'))
 
 
 # https://github.com/jtsang4/claude-to-chatgpt/blob/main/claude_to_chatgpt/adapter.py
@@ -17,12 +15,14 @@ def convert_messages_to_prompt(messages):
 
 class claude:
 
+    client = Claude.Client(os.environ.get('access_key'))
+
     @staticmethod
     def request_model(msg):
 
         prompt = convert_messages_to_prompt(msg)
 
-        response = client.create(
+        response = claude.client.create(
             prompt = prompt,
             model = os.environ.get('model')
         )
@@ -35,7 +35,7 @@ class claude:
 
         prompt = convert_messages_to_prompt(msg)
 
-        response = client.create(
+        response = claude.client.create(
             prompt = prompt,
             model = os.environ.get('submodel')
         )
@@ -45,7 +45,7 @@ class claude:
 
     @staticmethod
     def request_embed_model(text: str):
-        vector = client.embed(
+        vector = claude.client.embed(
             input = text,
             model=os.environ.get('embed_model'),
         )
