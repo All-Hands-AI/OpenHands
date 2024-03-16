@@ -1,0 +1,43 @@
+/* App.css */
+.app {
+  display: flex;
+  height: 100vh;
+  background-color: #1e1e1e;
+  color: #fff;
+}
+
+.padded-app {
+  padding: 2px;
+}
+
+.left-pane {
+  flex: 1;
+  background-color: #252526;
+}
+
+.right-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-container {
+  display: flex;
+  background-color: #333333;
+}
+
+.tab {
+  padding: 10px 20px;
+  cursor: pointer;
+  color: #fff;
+}
+
+.tab.active {
+  background-color: #1e1e1e;
+  font-weight: bold;
+}
+
+.tab-content {
+  flex: 1;
+  background-color: #1e1e1e;
+}
