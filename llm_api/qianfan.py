@@ -1,8 +1,3 @@
-
-
-#sorry for not having an openai account... let me do the api for another platform as an example
-
-
 import json
 import requests
 import os
@@ -17,28 +12,35 @@ def get_access_token():
     access_token_cache = str(requests.post(url, params=params).json().get("access_token"))
     return access_token_cache
 
+# https://github.com/jtsang4/claude-to-chatgpt/blob/main/claude_to_chatgpt/adapter.py
+def convert_messages_to_prompt(messages, qianfan_role):
+    prompt = ""
+    for message in messages:
+        role = message["role"]
+        content = message["content"]
+        prompt += f"\n\n{role}: {content}"
+    prompt += f"\n\n{qianfan_role}: "
+    return prompt
 
+
+# DO NOT INVOKE DIRECTLY
 class qianfan:
 
     @staticmethod
-    def request_model(msg):
-        payload = json.dumps({"messages": msg})
+    def request_model(msg, role, temperature, top_p, penalty_score):
+
+        prompt = convert_messages_to_prompt(msg, role)
+        msg = [{"role":"user", "content":prompt}]
+
+        payload = json.dumps({
+            "messages": msg,
+            temperature:temperature,
+            top_p:top_p,
+            penalty_score:penalty_score
+        })
         headers = {
             'Content-Type': 'application/json'
         }
-        # structure of msg:
-        # [
-        #    {
-        #        "role": "user",
-        #        "content": "hello"
-        #    },
-        #    {
-        #        "role": "assistant",
-        #        "content": "hello, how can i assist you today?"
-        #    },
-        #
-        #    ...
-        # ]
 
         model = os.environ.get('model')
         url = f"https://aip.baidubce.com/rpc/2.0/ai_custom/v1/wenxinworkshop/chat/{model}"
@@ -53,8 +55,17 @@ class qianfan:
 
 
     @staticmethod
-    def request_submodel(msg):
-        payload = json.dumps({"messages": msg})
+    def request_submodel(msg, role, temperature, top_p, penalty_score):
+
+        prompt = convert_messages_to_prompt(msg, role)
+        msg = [{"role":"user", "content":prompt}]
+
+        payload = json.dumps({
+            "messages": msg,
+            temperature:temperature,
+            top_p:top_p,
+            penalty_score:penalty_score
+        })
         headers = {
             'Content-Type': 'application/json'
         }

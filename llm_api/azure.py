@@ -8,23 +8,30 @@ os.environ["AZURE_API_BASE"] = ak_sak_rn[1]
 os.environ["AZURE_API_VERSION"] = "2023-05-15"
 
 
+# DO NOT INVOKE DIRECTLY
 class azure:
 
     @staticmethod
-    def request_model(msg):
+    def request_model(msg, role, temperature, top_p, penalty_score):
         response = completion(
             model=os.environ.get('model'),
-            messages=msg
+            messages=msg,
+            temperature=temperature,
+            top_p=top_p,
+            penalty_score=penalty_score
         )
         answer = response.choices[0].message.content
         return answer
 
     
     @staticmethod
-    def request_submodel(msg):
+    def request_submodel(msg, role, temperature, top_p, penalty_score):
         response = completion(
             model=os.environ.get('submodel'),
-            messages=msg
+            messages=msg,
+            temperature=temperature,
+            top_p=top_p,
+            penalty_score=penalty_score
         )
         answer = response.choices[0].message.content
         return answer
