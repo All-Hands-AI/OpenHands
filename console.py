@@ -17,7 +17,7 @@ class BashTerminalEmulator:
         self._history = []
         os.close(self.slave_fd)
         # clear the initial output
-        # TODO not too sure why there's `b'bash: no job control in this shell\r\n'` during init
+        # get rid of `b'bash: no job control in this shell\r\n'` and initial shell prompt
         self._read_output()
 
     @property
