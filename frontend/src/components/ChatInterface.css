@@ -1,62 +1,117 @@
+/* Chat Interface Styles */
 .chat-interface {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    padding: 0px;
-    background-color: #252526;
-  }
-  
-  .message-list {
-    flex: 1;
-    overflow-y: auto;
-    margin-bottom: 20px;
-  }
-  
-  .message {
-    display: flex;
-    margin-bottom: 10px;
-  }
-  
-  .avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    margin-right: 10px;
-  }
-  
-  .message-content {
-    background-color: #333333;
-    color: #fff;
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  }
-  
-  .input-container {
-    display: flex;
-    align-items: center;
-    margin-top: auto;
-  }
-  
-  .input-container input {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    border-radius: 5px;
-    margin-right: 10px;
-    background-color: #3c3c3c;
-    color: #fff;
-  }
-  
-  .input-container button {
-    padding: 10px 20px;
-    background-color: #007acc;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  
-  .button-text {
-    font-size: 16px;
-  }
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+  background-color: #252526; /* Dark theme background */
+}
+
+.message-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.message {
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 15px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 12px;
+}
+
+.message-content {
+  background-color: #333333;
+  color: #fff;
+  padding: 12px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  max-width: 80%;
+}
+
+.input-container {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background-color: #1e1e1e;
+  border-top: 1px solid #3c3c3c;
+}
+
+.input-container input {
+  flex-grow: 1;
+  padding: 10px 15px;
+  border: 1px solid #555;
+  border-radius: 8px;
+  margin: 0 10px;
+  background-color: #3c3c3c;
+  color: #ddd;
+  transition: border-color 0.3s;
+}
+
+.input-container input:focus {
+  border-color: #007acc;
+}
+
+.input-container button, .attach-button {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  color: #ddd; /* Adjust color to match your theme */
+}
+
+.input-container .button-text, .attach-button svg {
+  transition: color 0.3s ease;
+}
+
+.input-container button:hover .button-text, .attach-button:hover svg {
+  color: #fff;
+}
+
+.attach-button {
+  padding: 0 10px 0 0;
+  display: flex;
+  align-items: center;
+}
+
+.attach-button svg {
+  fill: #ccc; /* Icon color */
+  width: 24px; /* Icon size */
+  height: 24px; /* Icon size */
+}
+
+.input-container button {
+  padding: 10px 20px;
+  background-color: #007acc;
+  border-radius: 8px;
+  transition: background-color 0.3s;
+}
+
+.input-container button:hover {
+  background-color: #005fa3;
+}
+
+.button-text {
+  font-size: 16px;
+  color: white; /* Ensure text color is always white for visibility */
+}
+
+/* Scrollbar customization for message list */
+.message-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.message-list::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border-radius: 3px;
+}
+
+.message-list::-webkit-scrollbar-track {
+  background-color: #252526;
+}
