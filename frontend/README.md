@@ -13,7 +13,7 @@
 
 ### Development Server
 
-Run `npm start` to start the development server. Open `http://localhost:5173` to view the application in the browser.
+Run `npm run start` to start the development server. Open `http://localhost:5173` to view the application in the browser.
 
 ### Building for Production
 
@@ -21,7 +21,7 @@ Run `npm run build` to build the frontend for production. The built files will b
 
 ### Linting
 
-Run `npm run` to execute the frontend tests.
+Run `npm run lint` to execute the frontend linting.
 
 ### Code Structure
 
