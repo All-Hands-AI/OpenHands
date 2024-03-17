@@ -1,8 +1,8 @@
-import React from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import React from "react";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
-const Terminal: React.FC = () => {
+function Terminal(): JSX.Element {
   const terminalOutput = `> chatbot-ui@2.0.0 prepare
 > husky install
 
@@ -25,6 +25,6 @@ npm notice New minor version of npm available! 10.7.3 -> 10.9.0
       </SyntaxHighlighter>
     </div>
   );
-};
+}
 
 export default Terminal;

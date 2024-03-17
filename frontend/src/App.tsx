@@ -5,7 +5,7 @@ import ChatInterface from "./components/ChatInterface";
 import Terminal from "./components/Terminal";
 import Planner from "./components/Planner";
 
-function App(): React.FC {
+function App(): JSX.Element {
   const [activeTab, setActiveTab] = useState<"terminal" | "planner">(
     "terminal",
   );

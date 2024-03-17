@@ -1,13 +1,17 @@
-import React from 'react';
+import React from "react";
 
-const Planner: React.FC = () => {
+function Planner(): JSX.Element {
   return (
     <div className="planner">
-      <h3>Current Focus: Set up the development environment according to the project's instructions.</h3>
+      <h3>
+        Current Focus: Set up the development environment according to the
+        project&apos;s instructions.
+      </h3>
       <ul>
         <li>
           <input type="checkbox" checked readOnly />
-          Clone the repository and review the README for project setup instructions.
+          Clone the repository and review the README for project setup
+          instructions.
         </li>
         <li>
           <input type="checkbox" checked readOnly />
@@ -15,12 +19,13 @@ const Planner: React.FC = () => {
         </li>
         <li>
           <input type="checkbox" />
-          Set up the development environment according to the project's instructions.
+          Set up the development environment according to the project&apos;s
+          instructions.
         </li>
         {/* Add more tasks */}
       </ul>
     </div>
   );
-};
+}
 
 export default Planner;
