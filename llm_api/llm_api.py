@@ -166,6 +166,6 @@ def request_embed_model(
                             logger_fn=logger_fn,
                         )
 
-        llm_statistics.use_embed_token(response[0])
+        llm_statistics.use_embed_token(response)
 
         return response

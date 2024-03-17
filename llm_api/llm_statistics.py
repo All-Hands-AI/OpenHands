@@ -32,15 +32,8 @@ class llm_statistics:
                 llm_statistics.total_subtokens += usage.completion_tokens
 
     @staticmethod
-    def use_embed_token(response: ModelResponse):
-        usage = response.usage
-        if usage.total_tokens:
-            llm_statistics.total_embed_tokens += usage.total_tokens
-        else:
-            if usage.prompt_tokens:
-                llm_statistics.total_embed_tokens += usage.prompt_tokens
-            if usage.completion_tokens:
-                llm_statistics.total_embed_tokens += usage.completion_tokens
+    def use_embed_token(response):
+        llm_statistics.total_embed_tokens += response["usage"]["total_tokens"]
 
     @staticmethod
     def get_price(currency="USD"):
@@ -52,7 +45,7 @@ class llm_statistics:
         rate = CurrencyExchange.get_rate(os.environ.get('subcost_currency'), currency)
         total += llm_statistics.total_subtokens * float(os.environ.get('subcost')) * rate
 
-        rate = CurrencyExchange.get_rate(os.environ.get('cost_embed_currency'), currency)
+        rate = CurrencyExchange.get_rate(os.environ.get('embed_cost_currency'), currency)
         total += llm_statistics.total_embed_tokens * float(os.environ.get('embed_cost')) * rate
 
         return total
