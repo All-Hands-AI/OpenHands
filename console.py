@@ -16,8 +16,7 @@ class BashTerminalEmulator:
         )
         self._history = []
         os.close(self.slave_fd)
-        # clear the initial output
-        # get rid of `b'bash: no job control in this shell\r\n'` and initial shell prompt
+        # flush the output buffer to clear any initial messages
         self._read_output()
 
     @property
@@ -38,16 +37,15 @@ class BashTerminalEmulator:
             if r:
                 chunk = os.read(self.master_fd, 1024)
                 # HACK naively assuming the prompt ends with '$'
-                # we don't return this chunk because it's the `user@host` line
                 if b'$ ' in chunk:
                     self.userhost = chunk.decode()
                     break
                 output += chunk
             else:
                 break
-        # strip off the input command from the output
         output_lines = output.decode().splitlines()
         if output_lines:
+            # strip off the input command from the output
             return '\n'.join(output_lines[1:])
         return ''
 
