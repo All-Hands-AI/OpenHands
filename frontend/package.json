@@ -11,6 +11,7 @@
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@types/react-syntax-highlighter": "^15.5.11",
+    "eslint-config-airbnb-typescript": "^18.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
@@ -32,7 +33,7 @@
     }
   },
   "lint-staged": {
-    "*.ts": [
+    "src/**/*.ts*": [
       "eslint --fix",
       "prettier --write"
     ]
