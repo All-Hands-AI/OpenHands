@@ -24,7 +24,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "lint": "eslint 'src/**/*.ts*' && prettier --check 'src/**/*.ts*'",
+    "lint": "eslint src/**/*.ts* && prettier --check src/**/*.ts*",
     "prepare": "cd .. && husky install frontend/.husky"
   },
   "husky": {
