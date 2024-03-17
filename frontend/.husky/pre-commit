@@ -1,2 +1,2 @@
-npm test
-npm lint
+cd frontend
+npx lint-staged
