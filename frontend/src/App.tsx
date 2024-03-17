@@ -1,8 +1,8 @@
 import { useState } from "react";
 import "./App.css";
-import ChatInterface from "./Components/ChatInterface";
-import Terminal from "./Components/Terminal";
-import Planner from "./Components/Planner";
+import ChatInterface from "./components/ChatInterface";
+import Terminal from "./components/Terminal";
+import Planner from "./components/Planner";
 
 function App() {
   const [activeTab, setActiveTab] = useState<"terminal" | "planner">("terminal");

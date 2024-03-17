@@ -2,8 +2,8 @@
 
 ### Prerequisites
 
-- Node.js (version ^20.11.1)
-- npm (version ^10.2.4)
+- requires Node.js version 20+. 
+- requires atleast npm 8+.
 
 ### Setup
 
@@ -18,10 +18,6 @@ Run `npm run start` to start the development server. Open `http://localhost:5173
 ### Building for Production
 
 Run `npm run build` to build the frontend for production. The built files will be generated in the `dist/` directory.
-
-### Linting
-
-Run `npm run lint` to execute the frontend linting.
 
 ### Code Structure
 
