@@ -46,14 +46,14 @@ INITIAL_THOUGHTS = [
 "Very cool. Now to accomplish my task.",
 "I'll need a strategy. And as I make progress, I'll need to keep refining that strategy. I'll need to set goals, and break them into sub-goals.",
 "In between actions, I must always take some time to think, strategize, and set new goals. I should never take two actions in a row.",
-"OK so my task is to $TASK",
+"OK so my task is to $TASK. I haven't made any progress yet. Where should I start?",
 ]
 
 def main():
     print("Working in directory:", sys.argv[1])
     os.chdir(working_directory)
 
-    agent = Agent()
+    agent = Agent(task)
     next_is_output = False
     for thought in INITIAL_THOUGHTS:
         thought = thought.replace("$TASK", task)

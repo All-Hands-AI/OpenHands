@@ -7,7 +7,8 @@ MAX_OUTPUT_LENGTH = 5000
 MAX_MONOLOGUE_LENGTH = 20000
 
 class Agent:
-    def __init__(self):
+    def __init__(self, task):
+        self.task = task
         self.monologue = Monologue()
         self.memory = LongTermMemory()
 
@@ -18,7 +19,7 @@ class Agent:
             self.monologue.condense()
 
     def get_next_action(self):
-        action_dict = llm.request_action(self.monologue.get_thoughts())
+        action_dict = llm.request_action(self.task, self.monologue.get_thoughts())
         event = Event(action_dict['action'], action_dict['args'])
         self.latest_action = event
         self.add_event(event)

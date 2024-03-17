@@ -15,7 +15,10 @@ from langchain_core.output_parsers import JsonOutputParser
 from langchain_openai import ChatOpenAI
 
 ACTION_PROMPT = """
-You're a thoughtful robot. This is your internal monologue, in JSON format:
+You're a thoughtful robot. Your main task is to {task}.
+Don't expand the scope of your task--just complete it as written.
+
+This is your internal monologue, in JSON format:
 ```json
 {monologue}
 ```
@@ -40,7 +43,8 @@ Here are the possible actions:
   * `query` - the query to search for
 * `think` - make a plan, set a goal, or record your thoughts. Arguments:
   * `thought` - the thought to record
-* `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working. Don't over achieve--complete the requested task and then finish.
+* `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
+
 
 You MUST take time to think in between read, write, run, browse, and recall actions.
 You should never act twice in a row without thinking. But if your last several
@@ -50,6 +54,7 @@ Notes:
 * your environment is Debian Linux. You can install software with `apt`
 * you can use `git commit` to stash your work, but you don't have access to a remote repository
 * your working directory will not change, even if you run `cd`. All commands will be run in the `/workspace` directory.
+* don't run interactive commands, or commands that don't return (e.g. `node server.js`). You may run commands in the background (e.g. `node server.js &`)
 
 What is your next thought or action? Again, you must reply with JSON, and only with JSON.
 
@@ -102,20 +107,24 @@ def summarize_monologue(thoughts):
     parsed = parser.parse(resp['text'])
     return parsed['new_monologue']
 
-def request_action(thoughts):
+def request_action(task, thoughts):
     llm_chain = get_chain(ACTION_PROMPT)
     parser = JsonOutputParser(pydantic_object=Action)
     hint = ''
     if len(thoughts) > 0:
         latest_thought = thoughts[-1]
         if latest_thought.action == 'think':
-            hint = "You've been thinking a lot lately. Maybe it's time to take action?"
+            if latest_thought.args['thought'].startswith("OK so my task is"):
+                hint = "You're just getting started! What should you do first?"
+            else:
+                hint = "You've been thinking a lot lately. Maybe it's time to take action?"
         elif latest_thought.action == 'error':
             hint = "Looks like that last command failed. Maybe you need to fix it, or try something else."
     latest_thought = thoughts[-1]
     resp = llm_chain.invoke({
         "monologue": json.dumps(thoughts),
         "hint": hint,
+        "task": task,
     })
     if os.getenv("DEBUG"):
         print("resp", resp)
