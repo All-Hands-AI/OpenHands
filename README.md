@@ -18,7 +18,7 @@ Devin represents a cutting-edge autonomous agent designed to navigate the comple
 
 The OpenDevin project is born out of a desire to replicate, enhance, and innovate beyond the original Devin model. By engaging the open-source community, we aim to tackle the challenges faced by Code LLMs in practical scenarios, producing works that significantly contribute to the community and pave the way for future advancements.
 
-## ⭐️ Initial Steps
+## ⭐️ Research Strategy
 
 Achieving full replication of production-grade applications with LLMs is a complex endeavor. Our strategy involves:
 
