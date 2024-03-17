@@ -12,7 +12,7 @@ jobs:
           node-version: 20
       - run: |
           cd frontend
-          npm ci
+          npm ci --legacy-peer-deps
       - run: |
           cd frontend
           npm run lint
