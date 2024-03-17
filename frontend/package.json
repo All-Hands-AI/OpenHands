@@ -32,7 +32,7 @@
     }
   },
   "lint-staged": {
-    "src/**/*.ts": [
+    "frontend/src/**/*.ts": [
       "eslint --fix",
       "prettier --write"
     ]
