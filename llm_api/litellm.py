@@ -1,23 +1,20 @@
-import os
-from llm_api.litellm import litellm
+from litellm import completion, embedding
 from typing import Union
 from typing import List, Optional, Union
 from litellm.utils import CustomStreamWrapper,ModelResponse
 import os
-from llm_api.llm_statistics import llm_statistics
 
 
-######################
-# MODEL AND SUBMODEL #
-######################
+# DO NOT INVOKE DIRECTLY
+class litellm:
 
-if os.environ.get('platform') in ["openai", "azure", "sagemaker", "bedrock", "vertex_ai", "palm", "gemini", "mistral", "cloudflare", "cohere", "anthropic", "huggingface", 
-                                  "replicate", "together_ai", "openrouter", "ai21", "baseten", "vllm", "nlp_cloud", "aleph_alpha", "petals", "ollama", "deepinfra", 
-                                  "perplexity", "groq", "anyscale", "voyage", "xinference"]:
-    api = litellm()
+    def __init__(self):
+        self.platform = os.environ.get('platform')
+        self.model = os.environ.get('model')
+        self.submodel = os.environ.get('submodel')
+        self.embed_model = os.environ.get('embed_model')
 
-
-def request_model(
+    def request_model(self, 
         # Optional OpenAI params: see https://platform.openai.com/docs/api-reference/chat/create
         messages: List = [],
         timeout: Optional[Union[float, int]] = None,
@@ -45,8 +42,14 @@ def request_model(
         function_call: Optional[str] = None,
     ) -> Union[ModelResponse, CustomStreamWrapper]:
 
-        response = api.request_model(
-                            messages=messages,
+        if self.platform in ["openai", "cohere", "anthropic", "ai21", "nlp_cloud", "aleph_alpha"]:
+            model = self.model
+        else:
+            model=f"{self.platform}/{self.model}"
+
+        api_base = os.environ.get('API_BASE')
+            
+        return completion(model=model, messages=messages,
                             timeout = timeout,
                             temperature = temperature,
                             top_p = top_p,
@@ -68,14 +71,10 @@ def request_model(
                             extra_headers = extra_headers,
                             functions = functions,
                             function_call = function_call,
+                            api_base = api_base
                         )
 
-        llm_statistics.use_token(response[0])
-
-        return response
-
-
-def request_submodel(
+    def request_submodel(self, 
         # Optional OpenAI params: see https://platform.openai.com/docs/api-reference/chat/create
         messages: List = [],
         timeout: Optional[Union[float, int]] = None,
@@ -103,8 +102,14 @@ def request_submodel(
         function_call: Optional[str] = None,
     ) -> Union[ModelResponse, CustomStreamWrapper]:
 
-        response = api.request_submodel(
-                            messages=messages,
+        if self.platform in ["openai", "cohere", "anthropic", "ai21", "nlp_cloud", "aleph_alpha"]:
+            model = self.submodel
+        else:
+            model=f"{self.platform}/{self.submodel}"
+
+        api_base = os.environ.get('API_BASE')
+
+        return completion(model=model, messages=messages,
                             timeout = timeout,
                             temperature = temperature,
                             top_p = top_p,
@@ -126,24 +131,10 @@ def request_submodel(
                             extra_headers = extra_headers,
                             functions = functions,
                             function_call = function_call,
+                            api_base = api_base
                         )
 
-        llm_statistics.use_subtoken(response[0])
-
-        return response
-
-
-
-###################
-# EMBEDDING MODEL #
-###################
-
-if os.environ.get('embed_platform') in ["openai", "azure", "sagemaker", "bedrock", "vertex_ai", "palm", "gemini", "mistral", "cloudflare", "cohere", "anthropic", "huggingface", 
-                                        "replicate", "together_ai", "openrouter", "ai21", "baseten", "vllm", "nlp_cloud", "aleph_alpha", "petals", "ollama", "deepinfra", 
-                                        "perplexity", "groq", "anyscale", "voyage", "xinference"]:
-    embed_api = litellm()
-
-def request_embed_model(
+    def request_embed_model(self,
         input=[],
         # Optional params
         dimensions: Optional[int] = None,
@@ -154,9 +145,13 @@ def request_embed_model(
         litellm_logging_obj=None,
         logger_fn=None,
     ):
-    
-        response = embed_api.request_embed_model(
-                            input=input,
+        
+        if self.platform in ["openai", "cohere", "anthropic", "ai21", "nlp_cloud", "aleph_alpha"]:
+            model = self.embed_model
+        else:
+            model=f"{self.platform}/{self.embed_model}"
+
+        return embedding(model=model, input=input,
                             dimensions = dimensions,
                             timeout=timeout, 
                             caching = caching,
@@ -165,7 +160,3 @@ def request_embed_model(
                             litellm_logging_obj=litellm_logging_obj,
                             logger_fn=logger_fn,
                         )
-
-        llm_statistics.use_embed_token(response[0])
-
-        return response
