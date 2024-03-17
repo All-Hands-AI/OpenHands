@@ -40,7 +40,7 @@ Here are the possible actions:
   * `query` - the query to search for
 * `think` - make a plan, set a goal, or record your thoughts. Arguments:
   * `thought` - the thought to record
-* `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
+* `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working. Don't over achieve--complete the requested task and then finish.
 
 You MUST take time to think in between read, write, run, browse, and recall actions.
 You should never act twice in a row without thinking. But if your last several
