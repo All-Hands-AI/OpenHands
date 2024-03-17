@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import "./ChatInterface.css";
-import userAvatar from "../assets/user-avatar.png";
-import assistantAvatar from "../assets/assistant-avatar.png";
+
 interface Message {
   content: string;
   sender: "user" | "assistant";
