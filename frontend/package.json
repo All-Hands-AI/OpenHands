@@ -23,7 +23,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "lint": "eslint 'src/**/*.ts' && prettier --check 'src/**/*.ts'",
+    "lint:frontend": "cd frontend && npm run lint",
     "prepare": "husky"
   },
   "husky": {
@@ -33,8 +33,8 @@
   },
   "lint-staged": {
     "src/**/*.ts": [
-      "eslint --fix",
-      "prettier --write"
+      "cd frontend && eslint --fix",
+      "cd frontend && prettier --write"
     ]
   },
   "eslintConfig": {
