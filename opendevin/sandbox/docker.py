@@ -93,7 +93,11 @@ if __name__ == "__main__":
     sys.stdout.flush()
     try:
         while True:
-            user_input = input()
+            try:
+                user_input = input()
+            except EOFError:
+                print("\nExiting...")
+                break
             if user_input.lower() == "exit":
                 print(f"Exiting...")
                 break
