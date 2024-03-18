@@ -80,5 +80,6 @@ class Agent:
                 event = Event('output', {'output': 'Background command %d exited with code %d' % (idx, exit_code)})
                 all_events.append(event)
                 self.add_event(event)
-                self.background_commands.pop(idx)
+
+        self.background_commands = [cmd for cmd in self.background_commands if cmd.poll() is None]
         return all_events
