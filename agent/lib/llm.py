@@ -37,7 +37,7 @@ Here are the possible actions:
   * `contents` - the contents to write to the file
 * `run` - runs a command. Arguments:
   * `command` - the command to run
-  * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs.
+  * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.
 * `kill` - kills a background command
   * `id` - the ID of the background command to kill
 * `browse` - opens a web page. Arguments:
@@ -48,6 +48,7 @@ Here are the possible actions:
   * `thought` - the thought to record
 * `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
+{background_commands}
 
 You MUST take time to think in between read, write, run, browse, and recall actions.
 You should never act twice in a row without thinking. But if your last several
@@ -68,7 +69,6 @@ MONOLOGUE_SUMMARY_PROMPT = """
 Below is the internal monologue of an automated LLM agent. Each
 thought is an item in a JSON array. The thoughts may be memories,
 actions taken by the agent, or outputs from those actions.
-
 Please return a new, smaller JSON array, which summarizes the
 internal monologue. You can summarize individual thoughts, and
 you can condense related thoughts together with a description
@@ -110,7 +110,7 @@ def summarize_monologue(thoughts):
     parsed = parser.parse(resp['text'])
     return parsed['new_monologue']
 
-def request_action(task, thoughts):
+def request_action(task, thoughts, background_commands=[]):
     llm_chain = get_chain(ACTION_PROMPT)
     parser = JsonOutputParser(pydantic_object=Action)
     hint = ''
@@ -123,11 +123,20 @@ def request_action(task, thoughts):
                 hint = "You've been thinking a lot lately. Maybe it's time to take action?"
         elif latest_thought.action == 'error':
             hint = "Looks like that last command failed. Maybe you need to fix it, or try something else."
+
+    bg_commands_message = ""
+    if len(background_commands) > 0:
+        bg_commands_message = "The following commands are running in the background:"
+        for idx, command in enumerate(background_commands):
+            bg_commands_message += f"\n* {idx}: {command}"
+        bg_commands_message += "\nYou can end any process by sending a `kill` action with the numerical `id` above."
+
     latest_thought = thoughts[-1]
     resp = llm_chain.invoke({
         "monologue": json.dumps(thoughts),
         "hint": hint,
         "task": task,
+        "background_commands": bg_commands_message,
     })
     if os.getenv("DEBUG"):
         print("resp", resp)
