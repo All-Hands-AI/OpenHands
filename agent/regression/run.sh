@@ -20,4 +20,5 @@ for case in $(ls $CASES_DIR); do
     mkdir $case_dir/workspace
   fi
   docker run -e DEBUG=$DEBUG -e OPENAI_API_KEY=$OPENAI_API_KEY -v $case_dir/workspace:/workspace control-loop python /app/main.py /workspace "${task}" | tee $case_dir/logs.txt
+  rm -rf $case_dir/workspace/.git
 done
