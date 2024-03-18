@@ -11,13 +11,16 @@
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@types/react-syntax-highlighter": "^15.5.11",
+    "@xterm/xterm": "^5.4.0",
     "eslint-config-airbnb-typescript": "^18.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
     "react-syntax-highlighter": "^15.5.0",
     "typescript": "^4.9.5",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "xterm-addon-attach": "^0.9.0",
+    "xterm-addon-fit": "^0.8.0"
   },
   "scripts": {
     "start": "react-scripts start",
