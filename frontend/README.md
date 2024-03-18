@@ -42,3 +42,30 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+## Terminal
+
+The OpenDevin terminal is powered by [Xterm.js](https://github.com/xtermjs/xterm.js).
+
+The terminal listens for events over a WebSocket connection. The WebSocket URL is specified by the environment variable `REACT_APP_TERMINAL_WS_URL` (prepending `REACT_APP_` to environment variable names is necessary to expose them).
+
+Since the backend WebSocket server is not yet implemented, an echo server is provided below for testing:
+
+```js
+const WebSocket = require("ws");
+
+const wss = new WebSocket.Server({ port: 8080 });
+
+wss.on("connection", (ws) => {
+  ws.on("message", (message) => {
+    ws.send(message);
+  });
+});
+```
+
+To reproduce,
+
+1. Save the above code snippet in the file `echo.js`
+2. Install `ws` (`npm install ws`)
+3. Run `node echo.js`
+4. Run the frontend and type characters. You should see them being echoed end-to-end.
