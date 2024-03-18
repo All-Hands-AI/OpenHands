@@ -42,3 +42,11 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+## Terminal
+
+The OpenDevin terminal is powered by [Xterm.js](https://github.com/xtermjs/xterm.js).
+
+The terminal listens for events over a WebSocket connection. The WebSocket URL is specified by the environment variable `REACT_APP_TERMINAL_WS_URL` (prepending `REACT_APP_` to environment variable names is necessary to expose them).
+
+A simple websocket server can be found in the `/server` directory.
