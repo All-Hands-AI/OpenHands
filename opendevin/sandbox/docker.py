@@ -14,7 +14,7 @@ OutputType = namedtuple("OutputDtype", ["content"])
 
 
 class DockerInteractive:
-    CONTAINER_IMAGE = "ubuntu:20.04"
+    CONTAINER_IMAGE = "opendevin-sandbox:latest"
 
     def __init__(self, container_image: str = None, timeout: int = 5):
         self.instance_id: str = uuid.uuid4()
