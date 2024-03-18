@@ -1,7 +1,8 @@
 {
-  "name": "react-frontend",
-  "version": "1.0.0",
+  "name": "client",
+  "version": "0.1.0",
   "private": true,
+  "proxy": "http://localhost:3000",
   "dependencies": {
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
@@ -13,7 +14,12 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
-  "proxy": "http://localhost:3001",
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
   "browserslist": {
     "production": [
       ">0.2%",
