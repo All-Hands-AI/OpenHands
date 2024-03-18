@@ -2,11 +2,11 @@
   "name": "opendevin-frontend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
-    "@types/jest": "^27.5.2",
     "@types/node": "^18.0.0 ",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
@@ -25,9 +25,10 @@
     "xterm-addon-fit": "^0.8.0"
   },
   "scripts": {
-    "start": "vite", 
-    "build": "tsc && vite build", 
-    "preview": "vite preview" ,
+    "start": "vite",
+    "build": "tsc && vite build",
+    "test": "jest",
+    "preview": "vite preview",
     "lint": "eslint src/**/*.ts* && prettier --check src/**/*.ts*",
     "prepare": "cd .. && husky install frontend/.husky"
   },
@@ -48,19 +49,15 @@
       "react-app/jest"
     ]
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
+  "jest": {
+    "preset": "ts-jest/presets/js-with-ts",
+    "testEnvironment": "jest-environment-jsdom",
+    "modulePaths": [
+      "<rootDir>/src"
     ]
   },
   "devDependencies": {
+    "@types/jest": "^29.5.12",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.57.0",
     "eslint-config-airbnb": "^19.0.4",
@@ -71,7 +68,10 @@
     "eslint-plugin-react": "^7.34.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "husky": "^8.0.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
     "lint-staged": "^15.2.2",
-    "prettier": "^3.2.5"
+    "prettier": "^3.2.5",
+    "ts-jest": "^29.1.2"
   }
 }
