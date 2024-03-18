@@ -37,6 +37,9 @@ Here are the possible actions:
   * `contents` - the contents to write to the file
 * `run` - runs a command. Arguments:
   * `command` - the command to run
+  * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs.
+* `kill` - kills a background command
+  * `id` - the ID of the background command to kill
 * `browse` - opens a web page. Arguments:
   * `url` - the URL to open
 * `recall` - recalls a past memory. Arguments:

@@ -17,12 +17,18 @@ class Event:
         }
 
     def is_runnable(self):
-        return self.action in ['run', 'browse', 'read', 'write', 'recall']
+        return self.action in ['run', 'kill', 'browse', 'read', 'write', 'recall']
 
     def run(self, memory):
         if self.action == 'run':
             cmd = self.args['command']
-            return actions.run(cmd)
+            background = False
+            if 'background' in self.args:
+                background = self.args['background']
+            return actions.run(cmd, background)
+        if self.action == 'kill':
+            id = self.args['id']
+            return actions.kill(pid)
         elif self.action == 'browse':
             url = self.args['url']
             return actions.browse(url)
