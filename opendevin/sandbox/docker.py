@@ -16,9 +16,18 @@ OutputType = namedtuple("OutputDtype", ["content"])
 class DockerInteractive:
     CONTAINER_IMAGE = "ubuntu:20.04"
 
-    def __init__(self):
+    def __init__(self, container_image: str = None, timeout: int = 5):
         self.instance_id: str = uuid.uuid4()
-        cmd = f"docker run -it --rm --name sandbox-{self.instance_id} {self.CONTAINER_IMAGE} /bin/bash"
+        
+        # TODO: this timeout is actually essential - need a better way to set it
+        # if it is too short, the container may still waiting for previous
+        # command to finish (e.g. apt-get update)
+        # if it is too long, the user may have to wait for a unnecessary long time
+        self.timeout: int = timeout
+
+        if container_image is None:
+            container_image = self.CONTAINER_IMAGE
+        cmd = f"docker run -it --rm --name sandbox-{self.instance_id} {container_image} /bin/bash"
         self.master_fd, self.slave_fd = pty.openpty()
         self.container = subprocess.Popen(
             shlex.split(cmd),
@@ -37,7 +46,7 @@ class DockerInteractive:
     def _wait_and_read_output(self, user_input: str = None) -> str:
         output_str = ""
         while True:
-            readable, _, _ = select.select([self.master_fd], [], [], 0.1)
+            readable, _, _ = select.select([self.master_fd], [], [], self.timeout)
             if readable:
                 output = os.read(self.master_fd, 1024).decode()
                 if not output:
@@ -67,6 +76,8 @@ class DockerInteractive:
             self.container.kill()
             print("Container killed.")
 
+    def __del__(self):
+        self.close()
 
 if __name__ == "__main__":
     docker_interactive = DockerInteractive()
