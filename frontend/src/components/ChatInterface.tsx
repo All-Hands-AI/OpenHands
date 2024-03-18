@@ -8,7 +8,7 @@ interface Message {
   sender: "user" | "assistant";
 }
 
-const ChatInterface: React.FC = () => {
+function ChatInterface(): JSX.Element {
   const [messages, setMessages] = useState<Message[]>([
     {
       content:
@@ -78,12 +78,12 @@ const ChatInterface: React.FC = () => {
           onChange={(e) => setInputMessage(e.target.value)}
           placeholder="Send a message (won't interrupt the Assistant)"
         />
-        <button onClick={handleSendMessage}>
+        <button type="button" onClick={handleSendMessage}>
           <span className="button-text">Send</span>
         </button>
       </div>
     </div>
   );
-};
+}
 
 export default ChatInterface;
