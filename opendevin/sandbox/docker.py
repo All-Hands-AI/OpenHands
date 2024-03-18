@@ -67,14 +67,19 @@ class DockerInteractive:
         return output
 
     def close(self):
-        os.close(self.master_fd)
-        self.container.terminate()
-        try:
-            self.container.wait(timeout=5)
-            print("Container stopped.")
-        except subprocess.TimeoutExpired:
-            self.container.kill()
-            print("Container killed.")
+        if self.master_fd is not None:
+            os.close(self.master_fd)
+            self.master_fd = None
+        
+        if self.container is not None:
+            self.container.terminate()
+            try:
+                self.container.wait(timeout=5)
+                print("Container stopped.")
+            except subprocess.TimeoutExpired:
+                self.container.kill()
+                print("Container killed.")
+            self.container = None
 
     def __del__(self):
         self.close()
