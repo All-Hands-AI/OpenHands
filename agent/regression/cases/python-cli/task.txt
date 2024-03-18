@@ -1,0 +1,1 @@
+Write a python CLI for string manipulation. The CLI should accept a command, and a string. The commands should include `reverse`, `uppercase`, `lowercase`, `spongebob`, `length`, and `scramble`. The logic for each command should live in its own file.
