@@ -43,7 +43,7 @@
     padding: 10px;
     border: none;
     border-radius: 5px;
-    margin-right: 10px;
+    margin: 0 10px;
     background-color: #3c3c3c;
     color: #fff;
   }
@@ -59,4 +59,8 @@
   
   .button-text {
     font-size: 16px;
+  }
+
+  .input-container svg {
+    height: 16px;
   }
