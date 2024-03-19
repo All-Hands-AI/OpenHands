@@ -6,7 +6,7 @@ import "@xterm/xterm/css/xterm.css";
 
 function Terminal(): JSX.Element {
   const terminalRef = useRef<HTMLDivElement>(null);
-
+  const WS_URL = import.meta.env.VITE_TERMINAL_WS_URL;
   useEffect(() => {
     const terminal = new XtermTerminal({
       fontFamily: "Menlo, Monaco, 'Courier New', monospace",
@@ -24,14 +24,12 @@ function Terminal(): JSX.Element {
       fitAddon.fit();
     }, 1);
 
-    if (!process.env.REACT_APP_TERMINAL_WS_URL) {
+    if (!WS_URL) {
       throw new Error(
         "The environment variable REACT_APP_TERMINAL_WS_URL is not set. Please set it to the WebSocket URL of the terminal server.",
       );
     }
-    const attachAddon = new AttachAddon(
-      new WebSocket(process.env.REACT_APP_TERMINAL_WS_URL as string),
-    );
+    const attachAddon = new AttachAddon(new WebSocket(WS_URL as string));
     terminal.loadAddon(attachAddon);
 
     return () => {
