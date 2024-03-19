@@ -45,13 +45,17 @@ function ChatInterface(): JSX.Element {
     <div className="chat-interface">
       <div className="message-list">
         {messages.map((msg, index) => (
-          <div key={index} className="message">
-            <img
-              src={msg.sender === "user" ? userAvatar : assistantAvatar}
-              alt={`${msg.sender} avatar`}
-              className="avatar"
-            />
-            <div className="message-content">{msg.content}</div>
+          <div key={index} className="message-layout">
+            <div
+              className={`${msg.sender === "user" ? "user-message" : "message"}`}
+            >
+              <img
+                src={msg.sender === "user" ? userAvatar : assistantAvatar}
+                alt={`${msg.sender} avatar`}
+                className="avatar"
+              />
+              <div className="message-content">{msg.content}</div>
+            </div>
           </div>
         ))}
       </div>
@@ -77,6 +81,11 @@ function ChatInterface(): JSX.Element {
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
           placeholder="Send a message (won't interrupt the Assistant)"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleSendMessage();
+            }
+          }}
         />
         <button type="button" onClick={handleSendMessage}>
           <span className="button-text">Send</span>
