@@ -5,24 +5,10 @@ import ChatInterface from "./components/ChatInterface";
 import Terminal from "./components/Terminal";
 import Planner from "./components/Planner";
 import CodeEditor from "./components/CodeEditor";
+import Browser from "./components/Browser";
 
-const TAB_OPTIONS = ["terminal", "planner", "code"] as const;
+const TAB_OPTIONS = ["terminal", "planner", "code", "browser"] as const;
 type TabOption = (typeof TAB_OPTIONS)[number];
-
-const tabData = {
-  terminal: {
-    name: "Terminal",
-    component: <Terminal />,
-  },
-  planner: {
-    name: "Planner",
-    component: <Planner />,
-  },
-  code: {
-    name: "Code Editor",
-    component: <CodeEditor />,
-  },
-};
 
 type TabProps = {
   name: string;
@@ -39,6 +25,29 @@ function Tab({ name, active, onClick }: TabProps): JSX.Element {
 
 function App(): JSX.Element {
   const [activeTab, setActiveTab] = useState<TabOption>("terminal");
+  const [url] = useState("https://github.com/OpenDevin/OpenDevin");
+  const [screenshotSrc] = useState(
+    "data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN0uGvyHwAFCAJS091fQwAAAABJRU5ErkJggg==",
+  );
+
+  const tabData = {
+    terminal: {
+      name: "Terminal",
+      component: <Terminal />,
+    },
+    planner: {
+      name: "Planner",
+      component: <Planner />,
+    },
+    code: {
+      name: "Code Editor",
+      component: <CodeEditor />,
+    },
+    browser: {
+      name: "Browser",
+      component: <Browser url={url} screenshotSrc={screenshotSrc} />,
+    },
+  };
 
   return (
     <div className="app">
