@@ -9,6 +9,7 @@ function CodeEditor(): JSX.Element {
   return (
     <Editor
       height="100%"
+      theme="vs-dark"
       defaultLanguage="javascript"
       defaultValue="// Welcome to OpenDevin!"
       onChange={handleEditorChange}
