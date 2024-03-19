@@ -1,2 +1,4 @@
 fastapi
 uvicorn
+uvicorn[standard]
+docker
