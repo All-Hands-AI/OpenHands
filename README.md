@@ -1,10 +1,22 @@
+
+```markdown
+# OpenDevin: Code Less, Make More
+
 <p align="center">
   <img alt="OpenDevin Logo" src="./OpenDevinLogo.jpg" width="100" />
 </p>
 
-# OpenDevin: Code Less, Make More
-
 ![License](https://img.shields.io/badge/license-MIT-green)
+
+## Table of Contents
+- [Mission](#mission-)
+- [What is Devin?](#-what-is-devin)
+- [Why OpenDevin?](#-why-opendevin)
+- [Research Strategy](#-research-strategy)
+- [Technology Stack](#-technology-stack)
+- [Next Steps](#-next-steps)
+- [How to Contribute](#how-to-contribute)
+- [Join Us](#join-us)
 
 ## Mission 🎯
 Welcome to OpenDevin, an open-source project aiming to replicate [Devin](https://www.cognition-labs.com/introducing-devin), an autonomous AI software engineer who is capable of executing complex engineering tasks and collaborating actively with users on software development projects. This project aspires to replicate, enhance, and innovate upon Devin through the power of the open-source community.
@@ -52,3 +64,5 @@ We use Slack to discuss. Feel free to fill in the [form](https://forms.gle/758d5
 Stay updated on OpenDevin's progress, share your ideas, and collaborate with fellow enthusiasts and experts. Together, we can make significant strides towards simplifying software engineering tasks and creating more efficient, powerful tools for developers everywhere.
 
 🐚 **Code less, make more with OpenDevin.**
+```
+
