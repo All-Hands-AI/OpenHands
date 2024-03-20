@@ -1,5 +1,5 @@
 import os
-import lib.json as json
+from . import json
 
 import chromadb
 
