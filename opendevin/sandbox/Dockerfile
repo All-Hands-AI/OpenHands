@@ -16,4 +16,5 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# docker build -f opendevin/sandbox/Dockerfile -t opendevin-sandbox .
+# docker build -f opendevin/sandbox/Dockerfile -t opendevin/sandbox:v0.1 .
+# docker push opendevin/sandbox:v0.1
