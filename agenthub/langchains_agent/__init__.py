@@ -81,9 +81,9 @@ class LangchainsAgent(Agent):
     def add_event(self, event: Event) -> None:
         self.agent.add_event(event)
 
-    def step(self) -> Event:
+    def step(self, cmd_mgr) -> Event:
         self._initialize()
-        return self.agent.get_next_action()
+        return self.agent.get_next_action(cmd_mgr)
 
     def search_memory(self, query: str) -> List[str]:
         return self.agent.memory.search(query)

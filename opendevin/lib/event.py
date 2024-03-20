@@ -24,16 +24,16 @@ class Event:
     def is_runnable(self):
         return self.action in RUNNABLE_ACTIONS
 
-    def run(self, agent):
+    def run(self, agent_controller):
         if self.action == 'run':
             cmd = self.args['command']
             background = False
             if 'background' in self.args and self.args['background']:
                 background = True
-            return actions.run(cmd, background)
+            return actions.run(cmd, agent_controller, background)
         if self.action == 'kill':
             id = self.args['id']
-            return actions.kill(id)
+            return actions.kill(id, agent_controller)
         elif self.action == 'browse':
             url = self.args['url']
             return actions.browse(url)
@@ -45,6 +45,6 @@ class Event:
             contents = self.args['contents']
             return actions.write(path, contents)
         elif self.action == 'recall':
-            return agent.search_memory(self.args['query'])
+            return agent_controller.agent.search_memory(self.args['query'])
         else:
             raise ValueError('Invalid action type')

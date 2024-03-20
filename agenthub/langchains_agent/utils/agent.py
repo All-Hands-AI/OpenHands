@@ -13,7 +13,6 @@ class Agent:
         self.task = task
         self.monologue = Monologue()
         self.memory = LongTermMemory()
-        self.background_commands = []
 
     def add_event(self, event):
         self.monologue.add_event(event)
@@ -21,50 +20,11 @@ class Agent:
         if self.monologue.get_total_length() > MAX_MONOLOGUE_LENGTH:
             self.monologue.condense()
 
-    def get_next_action(self):
-        bg_commands = [cmd.args for cmd in self.background_commands]
+    def get_next_action(self, cmd_mgr):
+        bg_commands = [cmd.args for cmd in cmd_mgr.background_commands]
         action_dict = llm.request_action(self.task, self.monologue.get_thoughts(), bg_commands)
         event = Event(action_dict['action'], action_dict['args'])
         self.latest_action = event
         self.add_event(event)
         return event
 
-    def get_background_log(self, idx, cmd, stream, name):
-        logs = ""
-        while True:
-            readable, _, _ = select.select([stream], [], [], .1)
-            if not readable:
-                break
-            next = stream.readline()
-            if next == '':
-                break
-            logs += next
-        if logs == "": return
-
-        event = Event('output', {
-            'output': logs,
-            'stream':name,
-            'id': idx,
-            'command': cmd.args,
-        })
-        self.add_event(event)
-        return event
-
-    def get_background_logs(self):
-        all_events = []
-        for idx, cmd in enumerate(self.background_commands):
-            stdout_event = self.get_background_log(idx, cmd, cmd.stdout, 'stdout')
-            if stdout_event:
-                all_events.append(stdout_event)
-            stderr_event = self.get_background_log(idx, cmd, cmd.stderr, 'stderr')
-            if stderr_event:
-                all_events.append(stderr_event)
-
-            exit_code = cmd.poll()
-            if exit_code is not None:
-                event = Event('output', {'output': 'Background command %d exited with code %d' % (idx, exit_code)})
-                all_events.append(event)
-                self.add_event(event)
-
-        self.background_commands = [cmd for cmd in self.background_commands if cmd.poll() is None]
-        return all_events
