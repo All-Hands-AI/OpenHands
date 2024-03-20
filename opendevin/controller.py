@@ -1,3 +1,5 @@
+import select
+
 from opendevin.lib.event import Event
 
 MAX_OUTPUT_LENGTH = 5000
@@ -68,7 +70,6 @@ class AgentController:
             'id': idx,
             'command': cmd.args,
         })
-        self.add_event(event)
         return event
 
     def get_background_logs(self):
@@ -83,9 +84,12 @@ class AgentController:
 
             exit_code = cmd.poll()
             if exit_code is not None:
-                event = Event('output', {'output': 'Background command %d exited with code %d' % (idx, exit_code)})
+                event = Event('output', {
+                    'output': 'Background command %d exited with code %d' % (idx, exit_code),
+                    'id': idx,
+                    'command': cmd.args,
+                })
                 all_events.append(event)
-                self.add_event(event)
 
         self.background_commands = [cmd for cmd in self.background_commands if cmd.poll() is None]
         return all_events
