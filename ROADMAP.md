@@ -1,4 +1,11 @@
 
+## Goals
+
+- Short-term Goals: Focus on GPT-4 / Claude-3 or API-based projects.
+- Demo Goal: Aim to replicate existing demos.
+- Accuracy Goal: Work on the evaluation of the SWE-Bench (aiming for a 15% accuracy improvement) and Dev-Bench.
+- Long-term Goal: Explore the potential for automatic coding/software engineering advancements.
+
 ## Milestones
 
 - TODO
