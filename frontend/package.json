@@ -22,7 +22,6 @@
     "vite": "^5.1.6",
     "vite-tsconfig-paths": "^4.3.2",
     "web-vitals": "^2.1.4",
-    "xterm-addon-attach": "^0.9.0",
     "xterm-addon-fit": "^0.8.0"
   },
   "scripts": {
