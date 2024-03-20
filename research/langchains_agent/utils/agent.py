@@ -1,9 +1,9 @@
 import select
 
-from lib.monologue import Monologue
-from lib.memory import LongTermMemory
-from lib.event import Event
-import lib.llm as llm
+from research.langchains_agent.utils.monologue import Monologue
+from research.langchains_agent.utils.memory import LongTermMemory
+from research.langchains_agent.utils.event import Event
+import research.langchains_agent.utils.llm as llm
 
 MAX_OUTPUT_LENGTH = 5000
 MAX_MONOLOGUE_LENGTH = 20000

@@ -1,9 +1,9 @@
 import os
 import argparse
 
-from lib.agent import Agent
-from lib.event import Event
-from lib.controlloop import run_loop
+from research.langchains_agent.utils.agent import Agent
+from research.langchains_agent.utils.event import Event
+from research.langchains_agent.utils.controlloop import run_loop
 
 INITIAL_THOUGHTS = [
 "I exist!",
