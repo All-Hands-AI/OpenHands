@@ -1,16 +1,9 @@
-import sys
 import os
+import argparse
 
 from lib.agent import Agent
 from lib.event import Event
 from lib.controlloop import run_loop
-
-if len(sys.argv) < 3:
-    print("Usage: python main.py <working_directory> <task>")
-    sys.exit(1)
-
-working_directory = sys.argv[1]
-task = sys.argv[2]
 
 INITIAL_THOUGHTS = [
 "I exist!",
@@ -51,13 +44,18 @@ INITIAL_THOUGHTS = [
 ]
 
 def main():
-    print("Working in directory:", sys.argv[1])
-    os.chdir(working_directory)
+    parser = argparse.ArgumentParser(description="Run an agent with a specific task")
+    parser.add_argument("-d", "--directory", required=True, type=str, help="The working directory for the agent")
+    parser.add_argument("-t", "--task", required=True, type=str, help="The task for the agent to perform")
+    args = parser.parse_args()
 
-    agent = Agent(task)
+    print("Working in directory:", args.directory)
+    os.chdir(args.directory)
+
+    agent = Agent(args.task)
     next_is_output = False
     for thought in INITIAL_THOUGHTS:
-        thought = thought.replace("$TASK", task)
+        thought = thought.replace("$TASK", args.task)
         if next_is_output:
             event = Event('output', {'output': thought})
             next_is_output = False
