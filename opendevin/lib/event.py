@@ -1,9 +1,14 @@
 import os
 import json
-import agenthub.langchains_agent.utils.actions as actions
+import opendevin.lib.actions as actions
+
+ACTION_TYPES = ['run', 'kill', 'browse', 'read', 'write', 'recall', 'output', 'finish']
+RUNNABLE_ACTIONS = ['run', 'kill', 'browse', 'read', 'write', 'recall']
 
 class Event:
     def __init__(self, action, args):
+        if action not in ACTION_TYPES:
+            raise ValueError('Invalid action type: ' + action)
         self.action = action
         self.args = args
 
@@ -17,7 +22,7 @@ class Event:
         }
 
     def is_runnable(self):
-        return self.action in ['run', 'kill', 'browse', 'read', 'write', 'recall']
+        return self.action in RUNNABLE_ACTIONS
 
     def run(self, agent):
         if self.action == 'run':

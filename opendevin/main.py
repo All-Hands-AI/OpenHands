@@ -15,4 +15,5 @@ if __name__ == "__main__":
     os.chdir(args.directory)
 
     agent = Agent.create_instance(args.agent_cls, args.task)
+
     agent.run()
