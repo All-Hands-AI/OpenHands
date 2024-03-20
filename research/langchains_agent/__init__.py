@@ -47,7 +47,7 @@ INITIAL_THOUGHTS = [
 
 class LangchainsAgent(Agent):
 
-    def _run_loop(agent: LangchainsAgentImpl, max_iterations=100):
+    def _run_loop(self, agent: LangchainsAgentImpl, max_iterations=100):
         # TODO: make it add a Message to the history for each turn / event
         for i in range(max_iterations):
             print("STEP", i, flush=True)
