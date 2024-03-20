@@ -54,8 +54,7 @@ def parse_response(response) -> str:
     return action
 
 
-# docker build -f opendevin/sandbox/Dockerfile -t opendevin-sandbox .
-env = DockerInteractive("opendevin-sandbox:latest")
+env = DockerInteractive("opendevin/sandbox:latest")
 
 messages = [{"role": "system", "content": SYSTEM_MESSAGE}]
 user_input = "Please write a flask app that returns 'Hello, World!' at the root URL, then start the app on port 5000. `python3` has already been installed for you."
