@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Dict, Type
 from dataclasses import dataclass
 from enum import Enum
-
+from .lib.event import Event
 
 class Role(Enum):
     USER = "user"  # the user
@@ -63,10 +63,22 @@ class Agent(ABC):
         return self._history
 
     @abstractmethod
-    def run(self) -> None:
+    def step(self, previous_output: Event) -> Event:
         """
         Starts the execution of the assigned instruction. This method should
         be implemented by subclasses to define the specific execution logic.
+        """
+        pass
+
+    def search_memory(self, query: str) -> List[str]:
+        """
+        Searches the agent's memory for information relevant to the given query.
+
+        Parameters:
+        - query (str): The query to search for in the agent's memory.
+
+        Returns:
+        - response (str): The response to the query.
         """
         pass
 

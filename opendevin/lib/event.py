@@ -2,7 +2,7 @@ import os
 import json
 import opendevin.lib.actions as actions
 
-ACTION_TYPES = ['run', 'kill', 'browse', 'read', 'write', 'recall', 'output', 'finish']
+ACTION_TYPES = ['run', 'kill', 'browse', 'read', 'write', 'recall', 'think', 'output', 'error', 'finish']
 RUNNABLE_ACTIONS = ['run', 'kill', 'browse', 'read', 'write', 'recall']
 
 class Event:
@@ -30,10 +30,10 @@ class Event:
             background = False
             if 'background' in self.args and self.args['background']:
                 background = True
-            return actions.run(cmd, agent, background)
+            return actions.run(cmd, background)
         if self.action == 'kill':
             id = self.args['id']
-            return actions.kill(id, agent)
+            return actions.kill(id)
         elif self.action == 'browse':
             url = self.args['url']
             return actions.browse(url)
@@ -45,6 +45,6 @@ class Event:
             contents = self.args['contents']
             return actions.write(path, contents)
         elif self.action == 'recall':
-            return agent.memory.search(self.args['query'])
+            return agent.search_memory(self.args['query'])
         else:
             raise ValueError('Invalid action type')

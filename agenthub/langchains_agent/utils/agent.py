@@ -2,7 +2,7 @@ import select
 
 from agenthub.langchains_agent.utils.monologue import Monologue
 from agenthub.langchains_agent.utils.memory import LongTermMemory
-from agenthub.langchains_agent.utils.event import Event
+from opendevin.lib.event import Event
 import agenthub.langchains_agent.utils.llm as llm
 
 MAX_OUTPUT_LENGTH = 5000
@@ -28,21 +28,6 @@ class Agent:
         self.latest_action = event
         self.add_event(event)
         return event
-
-    def maybe_perform_latest_action(self):
-        if not (self.latest_action and self.latest_action.is_runnable()):
-            return
-        action = 'output'
-        try:
-            output = self.latest_action.run(self)
-        except Exception as e:
-            output = 'Error: ' + str(e)
-            action = 'error'
-        if len(output) > MAX_OUTPUT_LENGTH:
-            output = output[:MAX_OUTPUT_LENGTH] + '...'
-        out_event = Event(action, {'output': output})
-        self.add_event(out_event)
-        return out_event
 
     def get_background_log(self, idx, cmd, stream, name):
         logs = ""

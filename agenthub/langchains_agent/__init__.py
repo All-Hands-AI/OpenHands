@@ -1,10 +1,11 @@
 import os
 import argparse
+from typing import List, Dict, Type
 
 from opendevin.agent import Agent, Message
 
 from agenthub.langchains_agent.utils.agent import Agent as LangchainsAgentImpl
-from agenthub.langchains_agent.utils.event import Event
+from opendevin.lib.event import Event
 
 INITIAL_THOUGHTS = [
     "I exist!",
@@ -46,30 +47,12 @@ INITIAL_THOUGHTS = [
 
 
 class LangchainsAgent(Agent):
+    _initialized = False
 
-    def _run_loop(self, agent: LangchainsAgentImpl, max_iterations=100):
-        # TODO: make it add a Message to the history for each turn / event
-        for i in range(max_iterations):
-            print("STEP", i, flush=True)
-            log_events = agent.get_background_logs()
-            for event in log_events:
-                print(event, flush=True)
-            action = agent.get_next_action()
-            if action.action == "finish":
-                print("Done!", flush=True)
-                break
-            print(action, flush=True)
-            print("---", flush=True)
-            out = agent.maybe_perform_latest_action()
-            print(out, flush=True)
-            print("==============", flush=True)
-
-    def run(self) -> None:
-        """
-        Starts the execution of the assigned instruction. This method should
-        be implemented by subclasses to define the specific execution logic.
-        """
-        agent = LangchainsAgentImpl(self.instruction)
+    def _initialize(self):
+        if self._initialized:
+            return
+        self.agent = LangchainsAgentImpl(self.instruction)
         next_is_output = False
         for thought in INITIAL_THOUGHTS:
             thought = thought.replace("$TASK", self.instruction)
@@ -92,11 +75,18 @@ class LangchainsAgent(Agent):
                 else:
                     event = Event("think", {"thought": thought})
 
-            agent.add_event(event)
-        self._run_loop(agent, self.max_steps)
+            self.agent.add_event(event)
+        self._initialized = True
 
-        # Set the agent's completion status to True
-        self._complete = True
+    def add_event(self, event: Event) -> None:
+        self.agent.add_event(event)
+
+    def step(self) -> Event:
+        self._initialize()
+        return self.agent.get_next_action()
+
+    def search_memory(self, query: str) -> List[str]:
+        return self.agent.memory.search(query)
 
     def chat(self, message: str) -> None:
         """
