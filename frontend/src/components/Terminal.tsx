@@ -9,6 +9,12 @@ function Terminal(): JSX.Element {
   const WS_URL = import.meta.env.VITE_TERMINAL_WS_URL;
   useEffect(() => {
     const terminal = new XtermTerminal({
+      // This value is set to the appropriate value by the
+      // `fitAddon.fit()` call below.
+      // If not set here, the terminal does not respect the width
+      // of its parent element. This causes a bug where the terminal
+      // is too large and switching tabs causes a layout shift.
+      cols: 0,
       fontFamily: "Menlo, Monaco, 'Courier New', monospace",
       fontSize: 14,
     });
