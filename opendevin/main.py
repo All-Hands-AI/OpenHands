@@ -1,7 +1,7 @@
 import os
 import argparse
 
-import research  # for the agent registry
+import agenthub  # for the agent registry
 from opendevin.agent import Agent
 
 if __name__ == "__main__":

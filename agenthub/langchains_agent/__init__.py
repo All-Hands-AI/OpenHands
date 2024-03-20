@@ -3,8 +3,8 @@ import argparse
 
 from opendevin.agent import Agent, Message
 
-from research.langchains_agent.utils.agent import Agent as LangchainsAgentImpl
-from research.langchains_agent.utils.event import Event
+from agenthub.langchains_agent.utils.agent import Agent as LangchainsAgentImpl
+from agenthub.langchains_agent.utils.event import Event
 
 INITIAL_THOUGHTS = [
     "I exist!",

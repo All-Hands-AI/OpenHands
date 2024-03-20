@@ -4,7 +4,7 @@ set -eo pipefail
 rm -rf `pwd`/workspace
 mkdir -p `pwd`/workspace
 
-pushd research/langchains_agent
+pushd agenthub/langchains_agent
 docker build -t control-loop .
 popd
 docker run \
