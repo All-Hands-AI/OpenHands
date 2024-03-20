@@ -1,4 +1,3 @@
-import sys
 import os
 import argparse
 
@@ -49,6 +48,7 @@ def main():
     parser.add_argument("-d", "--directory", required=True, type=str, help="The working directory for the agent")
     parser.add_argument("-t", "--task", required=True, type=str, help="The task for the agent to perform")
     args = parser.parse_args()
+    print(args)
 
     print("Working in directory:", args.directory)
     os.chdir(args.directory)
