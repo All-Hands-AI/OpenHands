@@ -1,6 +1,6 @@
 import os
 import json
-import lib.actions as actions
+import agenthub.langchains_agent.utils.actions as actions
 
 class Event:
     def __init__(self, action, args):

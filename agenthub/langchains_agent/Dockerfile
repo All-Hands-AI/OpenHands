@@ -14,10 +14,7 @@ WORKDIR /app
 COPY requirements.txt ./requirements.txt
 RUN python -m pip install -r requirements.txt
 
-COPY lib ./lib
-COPY main.py ./main.py
-
 WORKDIR /workspace
 
-CMD ["python", "/app/main.py", "/workspace"]
+CMD ["python", "/app/opendevin/main.py", "/workspace"]
 

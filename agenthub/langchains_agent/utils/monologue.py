@@ -1,7 +1,7 @@
-import lib.json as json
-from lib.event import Event
+import agenthub.langchains_agent.utils.json as json
+from agenthub.langchains_agent.utils.event import Event
 
-import lib.llm as llm
+import agenthub.langchains_agent.utils.llm as llm
 
 class Monologue:
     def __init__(self):

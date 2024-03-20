@@ -1,6 +1,6 @@
 import os
 
-import lib.json as json
+from . import json
 
 if os.getenv("DEBUG"):
     from langchain.globals import set_debug
