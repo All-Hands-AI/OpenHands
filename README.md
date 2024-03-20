@@ -1,10 +1,8 @@
-
-```markdown
-# OpenDevin: Code Less, Make More
-
 <p align="center">
   <img alt="OpenDevin Logo" src="./OpenDevinLogo.jpg" width="100" />
 </p>
+
+# OpenDevin: Code Less, Make More
 
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -64,5 +62,3 @@ We use Slack to discuss. Feel free to fill in the [form](https://forms.gle/758d5
 Stay updated on OpenDevin's progress, share your ideas, and collaborate with fellow enthusiasts and experts. Together, we can make significant strides towards simplifying software engineering tasks and creating more efficient, powerful tools for developers everywhere.
 
 🐚 **Code less, make more with OpenDevin.**
-```
-
