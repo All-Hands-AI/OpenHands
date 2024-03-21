@@ -69,6 +69,9 @@ class LangchainsAgent(Agent):
         Starts the execution of the assigned instruction. This method should
         be implemented by subclasses to define the specific execution logic.
         """
+        print("Working in directory:", self.workspace_dir)
+        os.chdir(self.workspace_dir)
+
         agent = LangchainsAgentImpl(self.instruction)
         next_is_output = False
         for thought in INITIAL_THOUGHTS:

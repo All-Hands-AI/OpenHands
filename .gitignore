@@ -187,4 +187,4 @@ yarn-error.log*
 
 # agent
 .envrc
-agent/workspace
+/workspace
