@@ -7,8 +7,11 @@ This is a Python package that contains all the shared abstraction (e.g., Agent) 
 Run the docker-based sandbox interactive:
 
 ```bash
-python3 sandbox/docker.py
+mkdir workspace
+python3 opendevin/sandbox/docker.py -d workspace
 ```
+
+It will map `./workspace` into the docker container with the folder permission correctly adjusted for current user.
 
 Example screenshot:
 

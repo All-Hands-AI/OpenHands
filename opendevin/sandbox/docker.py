@@ -16,8 +16,20 @@ OutputType = namedtuple("OutputDtype", ["content"])
 class DockerInteractive:
     CONTAINER_IMAGE = "opendevin/sandbox:latest"
 
-    def __init__(self, container_image: str = None, timeout: int = 5):
+    def __init__(
+        self,
+        workspace_dir: str = None,
+        container_image: str = None,
+        timeout: int = 5
+    ):
         self.instance_id: str = uuid.uuid4()
+        if workspace_dir is not None:
+            assert os.path.exists(workspace_dir), f"Directory {workspace_dir} does not exist."
+            # expand to absolute path
+            workspace_dir = os.path.abspath(workspace_dir)
+        else:
+            workspace_dir = os.getcwd()
+            print(f"workspace unspecified, using current directory: {workspace_dir}")
         
         # TODO: this timeout is actually essential - need a better way to set it
         # if it is too short, the container may still waiting for previous
@@ -27,7 +39,16 @@ class DockerInteractive:
 
         if container_image is None:
             container_image = self.CONTAINER_IMAGE
-        cmd = f"docker run -it --rm --name sandbox-{self.instance_id} {container_image} /bin/bash"
+
+        uid = os.getuid()
+        cmd = (
+            f"docker run -it --rm --name sandbox-{self.instance_id} "
+            f"-v {workspace_dir}:/workspace "
+            f"-w /workspace "
+            f"{container_image} "
+            f"/bin/bash -c 'useradd --shell /bin/bash -u {uid} -o -c \"\" -m devin && su devin'"
+        )
+        # print(f"Starting Docker container with command: {cmd}")
         self.master_fd, self.slave_fd = pty.openpty()
         self.container = subprocess.Popen(
             shlex.split(cmd),
@@ -85,7 +106,21 @@ class DockerInteractive:
         self.close()
 
 if __name__ == "__main__":
-    docker_interactive = DockerInteractive()
+    import argparse
+    parser = argparse.ArgumentParser(description="Interactive Docker container")
+    parser.add_argument(
+        "-d",
+        "--directory",
+        type=str,
+        default=None,
+        help="The directory to mount as the workspace in the Docker container.",
+    )
+    args = parser.parse_args()
+
+    docker_interactive = DockerInteractive(
+        workspace_dir=args.directory,
+        container_image="opendevin/sandbox:latest",
+    )
     print("Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
 
     for item in docker_interactive.history:
