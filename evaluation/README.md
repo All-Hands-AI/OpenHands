@@ -14,4 +14,5 @@ all the preprocessing/evaluation/analysis scripts.
 - notebooks
   - `devin_eval_analysis.ipynb`: notebook analyzing devin's outputs
 - src
-  - `prepare_devin_outputs_for_evaluation.py`: script fetching and converting devin's output into the desired json file for evaluation
+  - `prepare_devin_outputs_for_evaluation.py`: script fetching and converting devin's output into the desired json file for evaluation.
+    - outputs: two json files under `evaluation/SWE-bench/data/` that can be directly used for evaluation
