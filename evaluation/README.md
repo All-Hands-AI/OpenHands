@@ -11,5 +11,7 @@ all the preprocessing/evaluation/analysis scripts.
 
 ## Tasks
 ### SWE-bench
-- analysis
-  - devin_eval_analysis.ipynb: notebook analyzing devin's outputs
+- notebooks
+  - `devin_eval_analysis.ipynb`: notebook analyzing devin's outputs
+- src
+  - `prepare_devin_outputs_for_evaluation.py`: script fetching and converting devin's output into the desired json file for evaluation
