@@ -9,24 +9,19 @@ function UrlBar({ url }: UrlBarProps): JSX.Element {
   return <div className="url">{url}</div>;
 }
 
-type ScreenshotProps = {
-  src: string;
-};
-
-function Screenshot({ src }: ScreenshotProps): JSX.Element {
-  return <img className="screenshot" src={src} alt="screenshot" />;
-}
-
 type BrowserProps = {
   url: string;
-  screenshotSrc: string;
 };
 
-function Browser({ url, screenshotSrc }: BrowserProps): JSX.Element {
+function Browser({ url }: BrowserProps): JSX.Element {
   return (
     <div className="browser">
       <UrlBar url={url} />
-      <Screenshot src={screenshotSrc} />
+      <iframe
+        className="browser-content"
+        src="https://en.wikipedia.org/wiki/Main_Page"
+        title="Browser"
+      />
     </div>
   );
 }
