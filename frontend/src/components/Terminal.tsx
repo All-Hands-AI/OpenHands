@@ -1,8 +1,38 @@
 import React, { useEffect, useRef } from "react";
-import { Terminal as XtermTerminal } from "@xterm/xterm";
-import { AttachAddon } from "xterm-addon-attach";
+import { IDisposable, Terminal as XtermTerminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
+
+class JsonWebsocketAddon {
+  _socket: WebSocket;
+
+  _disposables: IDisposable[];
+
+  constructor(socket: WebSocket) {
+    this._socket = socket;
+    this._disposables = [];
+  }
+
+  activate(terminal: XtermTerminal) {
+    this._disposables.push(
+      terminal.onData((data) => {
+        const payload = JSON.stringify({ action: "terminal", data });
+        this._socket.send(payload);
+      }),
+    );
+    this._socket.addEventListener("message", (event) => {
+      const { message } = JSON.parse(event.data);
+      if (message.action === "terminal") {
+        terminal.write(message.data);
+      }
+    });
+  }
+
+  dispose() {
+    this._disposables.forEach((d) => d.dispose());
+    this._socket.removeEventListener("message", () => {});
+  }
+}
 
 function Terminal(): JSX.Element {
   const terminalRef = useRef<HTMLDivElement>(null);
@@ -32,11 +62,12 @@ function Terminal(): JSX.Element {
 
     if (!WS_URL) {
       throw new Error(
-        "The environment variable REACT_APP_TERMINAL_WS_URL is not set. Please set it to the WebSocket URL of the terminal server.",
+        "The environment variable VITE_TERMINAL_WS_URL is not set. Please set it to the WebSocket URL of the terminal server.",
       );
     }
-    const attachAddon = new AttachAddon(new WebSocket(WS_URL as string));
-    terminal.loadAddon(attachAddon);
+    const socket = new WebSocket(WS_URL as string);
+    const jsonWebsocketAddon = new JsonWebsocketAddon(socket);
+    terminal.loadAddon(jsonWebsocketAddon);
 
     return () => {
       terminal.dispose();

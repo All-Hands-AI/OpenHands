@@ -3,5 +3,6 @@ This is currently a standalone utility. It will need to be integrated into OpenD
 
 ## Usage
 ```bash
-./build-and-run.sh "write a bash script that prints 'hello world'"
+# Run this in project root
+./agenthub/langchains_agent/build-and-run.sh "write a bash script that prints 'hello world'"
 ```

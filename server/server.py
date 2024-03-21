@@ -57,6 +57,12 @@ async def websocket_endpoint(websocket: WebSocket):
                     continue
 
                 agent_listener = asyncio.create_task(listen_for_agent_messages())
+            if action == "terminal":
+                msg = {
+                    "action": "terminal",
+                    "data": data["data"]
+                }
+                await send_message_to_client(get_message_payload(msg))
             else:
                 if agent_websocket is None:
                     await send_message_to_client(get_error_payload("Agent not connected"))
