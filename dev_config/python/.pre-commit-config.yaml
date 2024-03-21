@@ -3,8 +3,7 @@ repos:
     rev: v0.3.3
     hooks:
       - id: ruff
-        entry: ruff opendevin/ server/ agenthub/
-        files: opendevin/|server/|agenthub/
+        entry: ruff --config dev_config/python/ruff.toml opendevin/ server/ agenthub/
         always_run: true
 
 
@@ -13,5 +12,5 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies: [types-requests, types-setuptools]
-        entry: mypy opendevin/ server/ agenthub/ --strict-equality
+        entry: mypy --config-file dev_config/python/mypy.ini --strict-equality opendevin/ server/ agenthub/
         always_run: true
