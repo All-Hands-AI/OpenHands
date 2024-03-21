@@ -7,3 +7,10 @@
       args: [ --fix ]
     # Run the formatter.
     - id: ruff-format
+    - id: mypy
+      name: mypy
+      entry: mypy
+      language: system
+      pass_filenames: false
+      types: [python]
+      args: [--strict-optional]
