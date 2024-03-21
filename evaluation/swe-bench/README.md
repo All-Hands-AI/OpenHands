@@ -42,7 +42,7 @@ mkdir -p $LOG_DIR
 mkdir -p $TESTBED_DIR
 
 python harness/run_evaluation.py \
-    --predictions_path data/predictions/scikit-learn-133282.jsonl \
+    --predictions_path data/predictions/matplotlib__matplotlib-24362.jsonl \
     --swe_bench_tasks data/processed/swe-bench-test.json \
     --log_dir $LOG_DIR \
     --testbed $TESTBED_DIR \
