@@ -22,6 +22,5 @@ class Agent:
         action_dict = llm.request_action(self.task, self.monologue.get_thoughts(), cmd_mgr.background_commands)
         event = Event(action_dict['action'], action_dict['args'])
         self.latest_action = event
-        self.add_event(event)
         return event
 
