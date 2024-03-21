@@ -2,7 +2,9 @@ from abc import ABC, abstractmethod
 from typing import List, Dict, Type
 from dataclasses import dataclass
 from enum import Enum
+
 from .lib.event import Event
+from .lib.command_manager import CommandManager
 from .controller import AgentController
 
 class Role(Enum):
@@ -64,13 +66,24 @@ class Agent(ABC):
         return self._history
 
     @abstractmethod
-    def step(self, cmd_mgr: AgentController) -> Event:
+    def add_event(self, event: Event) -> None:
+        """
+        Adds an event to the agent's history.
+
+        Parameters:
+        - event (Event): The event to add to the history.
+        """
+        pass
+
+    @abstractmethod
+    def step(self, cmd_mgr: CommandManager) -> Event:
         """
         Starts the execution of the assigned instruction. This method should
         be implemented by subclasses to define the specific execution logic.
         """
         pass
 
+    @abstractmethod
     def search_memory(self, query: str) -> List[str]:
         """
         Searches the agent's memory for information relevant to the given query.

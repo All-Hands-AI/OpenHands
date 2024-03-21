@@ -30,10 +30,10 @@ class Event:
             background = False
             if 'background' in self.args and self.args['background']:
                 background = True
-            return actions.run(cmd, agent_controller, background)
+            return agent_controller.command_manager.run_command(cmd, background)
         if self.action == 'kill':
             id = self.args['id']
-            return actions.kill(id, agent_controller)
+            return agent_controller.command_manager.kill_command(id)
         elif self.action == 'browse':
             url = self.args['url']
             return actions.browse(url)

@@ -19,8 +19,7 @@ class Agent:
             self.monologue.condense()
 
     def get_next_action(self, cmd_mgr):
-        bg_commands = [cmd.args for cmd in cmd_mgr.background_commands]
-        action_dict = llm.request_action(self.task, self.monologue.get_thoughts(), bg_commands)
+        action_dict = llm.request_action(self.task, self.monologue.get_thoughts(), cmd_mgr.background_commands)
         event = Event(action_dict['action'], action_dict['args'])
         self.latest_action = event
         self.add_event(event)

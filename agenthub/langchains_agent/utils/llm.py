@@ -127,9 +127,8 @@ def request_action(task, thoughts, background_commands=[]):
     bg_commands_message = ""
     if len(background_commands) > 0:
         bg_commands_message = "The following commands are running in the background:"
-        for idx, command in enumerate(background_commands):
-            # TODO: make command IDs long-lived, instead of the index
-            bg_commands_message += f"\n* {idx}: {command}"
+        for id, command in background_commands.items():
+            bg_commands_message += f"\n`{id}`: {command.command}"
         bg_commands_message += "\nYou can end any process by sending a `kill` action with the numerical `id` above."
 
     latest_thought = thoughts[-1]
