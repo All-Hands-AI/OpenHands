@@ -20,6 +20,8 @@ class Agent:
 
     def get_next_action(self, cmd_mgr):
         action_dict = llm.request_action(self.task, self.monologue.get_thoughts(), cmd_mgr.background_commands)
+        if action_dict is None:
+            return Event('think', {'thought': '...'})
         event = Event(action_dict['action'], action_dict['args'])
         self.latest_action = event
         return event
