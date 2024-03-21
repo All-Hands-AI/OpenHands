@@ -32,6 +32,8 @@ RUN conda env create -f environment.yml
 # Some missing packages
 RUN pip install datasets python-dotenv gitpython
 
+RUN conda init bash
+
 CMD ["/bin/bash"]
 # docker build -t opendevin/eval-swe-bench:v0.1 -f evaluation/swe-bench/Dockerfile evaluation/swe-bench/
 # docker push opendevin/eval-swe-bench:v0.1
