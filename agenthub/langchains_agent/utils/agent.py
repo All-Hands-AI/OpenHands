@@ -13,6 +13,8 @@ class Agent:
         self.memory = LongTermMemory()
 
     def add_event(self, event):
+        if 'output' in event.args:
+            event.args['output'] = event.args['output'][:MAX_OUTPUT_LENGTH] + "..."
         self.monologue.add_event(event)
         self.memory.add_event(event)
         if self.monologue.get_total_length() > MAX_MONOLOGUE_LENGTH:
