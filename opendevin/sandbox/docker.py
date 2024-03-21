@@ -67,7 +67,7 @@ class DockerInteractive:
 
     def execute_in_background(self, cmd: str) -> None:
         self.log_time = time.time()
-        self.container.exec_run(cmd, detach=True, workdir="/workspace")
+        exit_code, logs = self.container.exec_run(cmd, detach=True, workdir="/workspace")
         self.logs = self.container.logs(stream=True)
 
     def close(self):

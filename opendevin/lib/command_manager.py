@@ -10,6 +10,7 @@ class BackgroundCommand:
         self.command = command
         self.id = id
         self.shell = DockerInteractive(id=str(id), workspace_dir=dir)
+        self.shell.execute_in_background(command)
 
     def get_logs(self):
         # TODO: get an exit code if process is exited
