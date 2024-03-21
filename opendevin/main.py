@@ -20,5 +20,5 @@ if __name__ == "__main__":
         model_name=args.model_name
     )
 
-    controller = AgentController(agent)
+    controller = AgentController(agent, args.directory)
     controller.start_loop()
