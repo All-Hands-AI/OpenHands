@@ -5,10 +5,10 @@ from enum import Enum
 
 
 class Role(Enum):
+    SYSTEM = "system"  # system message for LLM
     USER = "user"  # the user
     ASSISTANT = "assistant"  # the agent
     ENVIRONMENT = "environment"  # the environment (e.g., bash shell, web browser, etc.)
-
 
 @dataclass
 class Message:
@@ -19,6 +19,20 @@ class Message:
     role: Role
     content: str
     # TODO: add more fields as needed
+
+    def to_dict(self) -> Dict:
+        """
+        Converts the message to a dictionary (OpenAI chat-completion format).
+
+        Returns:
+        - message (Dict): A dictionary representation of the message.
+        """
+        role = self.role.value
+        content = self.content
+        if self.role == Role.ENVIRONMENT:
+            content = f"Environment Observation:\n{content}"
+            role = "user"  # treat environment messages as user messages
+        return {"role": role, "content": content}
 
 
 class Agent(ABC):
