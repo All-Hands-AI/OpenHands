@@ -25,7 +25,7 @@ jobs:
       - name: Set up python
         uses: actions/setup-python@v2
         with:
-          python-version: 'e.x'
+          python-version: 3.9
       - name: Install dependencies
         run: pip install ruff mypy types-requests
       - name: Run ruff
