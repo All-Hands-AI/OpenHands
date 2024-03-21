@@ -96,17 +96,6 @@ class Agent(ABC):
         """
         pass
 
-    @abstractmethod
-    def chat(self, message: str) -> None:
-        """
-        Optional method for interactive communication with the agent during its execution. Implementations
-        can use this method to modify the agent's behavior or state based on chat inputs.
-
-        Parameters:
-        - message (str): The chat message or command.
-        """
-        pass
-
     def reset(self) -> None:
         """
         Resets the agent's execution status and clears the history. This method can be used
