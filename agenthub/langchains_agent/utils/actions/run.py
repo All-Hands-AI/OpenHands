@@ -1,5 +1,4 @@
 import subprocess
-import os
 
 def run(cmd, agent, background=False):
     if background:

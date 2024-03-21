@@ -1,0 +1,17 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.3
+    hooks:
+      - id: ruff
+        files: opendevin/|server/|agenthub/
+        always_run: true
+
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.9.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-requests, types-setuptools]
+        args: [--strict-equality]
+        files: opendevin/|server/|agenthub/
+        always_run: true

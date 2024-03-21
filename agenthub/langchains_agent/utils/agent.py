@@ -54,7 +54,8 @@ class Agent:
             if next == '':
                 break
             logs += next
-        if logs == "": return
+        if logs == "":
+            return
 
         event = Event('output', {
             'output': logs,

@@ -7,7 +7,7 @@ if os.getenv("DEBUG"):
     set_debug(True)
 
 from typing import List
-from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.pydantic_v1 import BaseModel
 
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
