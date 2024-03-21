@@ -45,6 +45,7 @@ class DockerInteractive:
             f"docker run -it --rm --name sandbox-{self.instance_id} "
             f"-v {workspace_dir}:/workspace "
             f"-w /workspace "
+            f"--network=host "
             f"{container_image} "
             f"/bin/bash -c 'useradd --shell /bin/bash -u {uid} -o -c \"\" -m devin && su devin'"
         )
