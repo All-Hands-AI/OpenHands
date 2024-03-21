@@ -1,7 +1,6 @@
 from typing import Type
 import argparse
 
-# import agenthub  # for the agent registry
 from opendevin.agent import Agent
 from opendevin.controller import AgentController
 
