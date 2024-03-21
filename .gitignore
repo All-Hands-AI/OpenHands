@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+./lib/
 lib64/
 parts/
 sdist/
@@ -190,4 +190,4 @@ yarn-error.log*
 
 # agent
 .envrc
-agent/workspace
+/workspace
