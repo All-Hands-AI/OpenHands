@@ -53,21 +53,28 @@ class LangchainsAgent(Agent):
         if self._initialized:
             return
         self.agent = LangchainsAgentImpl(self.instruction)
-        # TODO: make it add a Message to the history for each turn / event
-        for i in range(max_iterations):
-            print("STEP", i, flush=True)
-            log_events = agent.get_background_logs()
-            for event in log_events:
-                print(event, flush=True)
-            action = agent.get_next_action()
-            if action.action == "finish":
-                print("Done!", flush=True)
-                break
-            print(action, flush=True)
-            print("---", flush=True)
-            out = agent.maybe_perform_latest_action()
-            print(out, flush=True)
-            print("==============", flush=True)
+        next_is_output = False
+        for thought in INITIAL_THOUGHTS:
+            thought = thought.replace("$TASK", self.instruction)
+            if next_is_output:
+                event = Event("output", {"output": thought})
+                next_is_output = False
+            else:
+                if thought.startswith("RUN"):
+                    command = thought.split("RUN ")[1]
+                    event = Event("run", {"command": command})
+                    next_is_output = True
+                elif thought.startswith("RECALL"):
+                    query = thought.split("RECALL ")[1]
+                    event = Event("recall", {"query": query})
+                    next_is_output = True
+                elif thought.startswith("BROWSE"):
+                    url = thought.split("BROWSE ")[1]
+                    event = Event("browse", {"url": url})
+                    next_is_output = True
+                else:
+                    event = Event("think", {"thought": thought})
+            agent.add_event(event)
 
     def add_event(self, event: Event) -> None:
         self.agent.add_event(event)
