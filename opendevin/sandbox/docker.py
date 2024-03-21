@@ -57,18 +57,18 @@ class DockerInteractive:
     def read_logs(self) -> str:
         if not hasattr(self, "logs"):
             return ""
-        logs = self.logs.read(since=self.log_time).decode("utf-8")
+        logs = self.container.logs(since=self.log_time).decode("utf-8")
         self.log_time = time.time()
         return logs
 
     def execute(self, cmd: str) -> (int, str):
-        exit_code, logs = self.container.exec_run(cmd, workdir="/workspace")
+        print("execute command: ", cmd)
+        exit_code, logs = self.container.exec_run(['/bin/bash', '-c', cmd], workdir="/workspace")
         return exit_code, logs.decode('utf-8')
 
     def execute_in_background(self, cmd: str) -> None:
         self.log_time = time.time()
-        exit_code, logs = self.container.exec_run(cmd, detach=True, workdir="/workspace")
-        self.logs = self.container.logs(stream=True)
+        exit_code, logs = self.container.exec_run(['/bin/bash', '-c', cmd], detach=True, workdir="/workspace")
 
     def close(self):
         self.stop_docker_container()
