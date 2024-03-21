@@ -5,8 +5,10 @@ This folder implements the [CodeAct idea](https://arxiv.org/abs/2402.13463) that
 A minimalistic exmaple can be found at [research/codeact/examples/run_flask_server_with_bash.py](./examples/run_flask_server_with_bash.py):
 
 ```bash
-python3 examples/run_flask_server_with_bash.py
+mkdir workspace
+PYTHONPATH=`pwd`:$PYTHONPATH python3 opendevin/main.py -d ./workspace -c CodeActAgent -t "Please write a flask app that returns 'Hello, World\!' at the root URL, then start the app on port 5000. python3 has already been installed for you."
 ```
+
 
 Example: prompts `gpt-3.5-turbo-0125` to write a flask server, install `flask` library, and start the server.
 

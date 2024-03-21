@@ -41,6 +41,11 @@ class Agent(ABC):
     executing a specific instruction and allowing human interaction with the
     agent during execution.
     It tracks the execution status and maintains a history of interactions.
+
+    :param instruction: The instruction for the agent to execute.
+    :param workspace_dir: The working directory for the agent.
+    :param model_name: The litellm name of the model to use for the agent.
+    :param max_steps: The maximum number of steps to run the agent.
     """
 
     _registry: Dict[str, Type['Agent']] = {}
@@ -48,9 +53,13 @@ class Agent(ABC):
     def __init__(
         self,
         instruction: str,
+        workspace_dir: str,
+        model_name: str,
         max_steps: int = 100
     ):
         self.instruction = instruction
+        self.workspace_dir = workspace_dir
+        self.model_name = model_name
         self.max_steps = max_steps
 
         self._complete = False
@@ -119,18 +128,16 @@ class Agent(ABC):
         cls._registry[name] = agent_cls
 
     @classmethod
-    def create_instance(cls, name: str, instruction: str) -> 'Agent':
+    def get_cls(cls, name: str) -> Type['Agent']:
         """
-        Creates an instance of a registered agent class based on the given name.
+        Retrieves an agent class from the registry.
 
         Parameters:
-        - name (str): The name of the agent class to instantiate.
-        - instruction (str): The instruction for the new agent instance.
+        - name (str): The name of the class to retrieve
 
         Returns:
-        - An instance of the specified agent class.
+        - agent_cls (Type['Agent']): The class registered under the specified name.
         """
         if name not in cls._registry:
             raise ValueError(f"No agent class registered under '{name}'.")
-        agent_cls = cls._registry[name]
-        return agent_cls(instruction)
+        return cls._registry[name]

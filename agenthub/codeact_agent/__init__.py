@@ -5,7 +5,7 @@ from litellm import completion
 from termcolor import colored
 from typing import List, Dict
 
-from opendevin.agent import Agent, Message
+from opendevin.agent import Agent, Message, Role
 from opendevin.sandbox.docker import DockerInteractive
 
 assert (
@@ -50,7 +50,13 @@ def parse_response(response) -> str:
 
 
 class CodeActAgent(Agent):
-    def __init__(self, instruction: str, max_steps: int = 100) -> None:
+    def __init__(
+        self,
+        instruction: str,
+        workspace_dir: str,
+        model_name: str,
+        max_steps: int = 100
+    ) -> None:
         """
         Initializes a new instance of the CodeActAgent class.
 
@@ -58,12 +64,11 @@ class CodeActAgent(Agent):
         - instruction (str): The instruction for the agent to execute.
         - max_steps (int): The maximum number of steps to run the agent.
         """
-        super().__init__(instruction, max_steps)
-        self._history = [Message(Agent.SYSTEM, SYSTEM_MESSAGE)]
-        self._history.append(Message(Agent.USER, instruction))
-        self.env = DockerInteractive("opendevin/sandbox:latest")
-
-        self.model_name = "gpt-3.5-turbo-0125"  # TODO: hard-coded here, will need to accept this as an argument in future PR
+        super().__init__(instruction, workspace_dir, model_name, max_steps)
+        self._history = [Message(Role.SYSTEM, SYSTEM_MESSAGE)]
+        self._history.append(Message(Role.USER, instruction))
+        self.env = DockerInteractive(workspace_dir=workspace_dir)
+        print(colored("===USER:===\n" + instruction, "green"))
 
     def _history_to_messages(self) -> List[Dict]:
         return [message.to_dict() for message in self._history]
@@ -73,7 +78,7 @@ class CodeActAgent(Agent):
         Starts the execution of the assigned instruction. This method should
         be implemented by subclasses to define the specific execution logic.
         """
-        for _ in range(self.max_turns):
+        for _ in range(self.max_steps):
             response = completion(
                 messages=self._history_to_messages(),
                 model=self.model_name,
@@ -82,7 +87,7 @@ class CodeActAgent(Agent):
                 seed=42,
             )
             action = parse_response(response)
-            self._history.append(Message(Agent.ASSISTANT, action))
+            self._history.append(Message(Role.ASSISTANT, action))
             print(colored("===ASSISTANT:===\n" + action, "yellow"))
 
             command = re.search(r"<execute>(.*)</execute>", action, re.DOTALL)
@@ -94,13 +99,13 @@ class CodeActAgent(Agent):
                     break
                 # execute the code
                 observation = self.env.execute(command)
-                self._history.append(Message(Agent.ASSISTANT, observation))
+                self._history.append(Message(Role.ASSISTANT, observation))
                 print(colored("===ENV OBSERVATION:===\n" + observation, "blue"))
             else:
                 # we could provide a error message for the model to continue similar to
                 # https://github.com/xingyaoww/mint-bench/blob/main/mint/envs/general_env.py#L18-L23
                 observation = INVALID_INPUT_MESSAGE
-                self._history.append(Message(Agent.ASSISTANT, observation))
+                self._history.append(Message(Role.ASSISTANT, observation))
                 print(colored("===ENV OBSERVATION:===\n" + observation, "blue"))
 
         self.env.close()
