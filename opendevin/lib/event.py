@@ -1,9 +1,14 @@
 import os
 import json
-import agenthub.langchains_agent.utils.actions as actions
+import opendevin.lib.actions as actions
+
+ACTION_TYPES = ['run', 'kill', 'browse', 'read', 'write', 'recall', 'think', 'output', 'error', 'finish']
+RUNNABLE_ACTIONS = ['run', 'kill', 'browse', 'read', 'write', 'recall']
 
 class Event:
     def __init__(self, action, args):
+        if action not in ACTION_TYPES:
+            raise ValueError('Invalid action type: ' + action)
         self.action = action
         self.args = args
 
@@ -17,18 +22,18 @@ class Event:
         }
 
     def is_runnable(self):
-        return self.action in ['run', 'kill', 'browse', 'read', 'write', 'recall']
+        return self.action in RUNNABLE_ACTIONS
 
-    def run(self, agent):
+    def run(self, agent_controller):
         if self.action == 'run':
             cmd = self.args['command']
             background = False
             if 'background' in self.args and self.args['background']:
                 background = True
-            return actions.run(cmd, agent, background)
+            return agent_controller.command_manager.run_command(cmd, background)
         if self.action == 'kill':
             id = self.args['id']
-            return actions.kill(id, agent)
+            return agent_controller.command_manager.kill_command(id)
         elif self.action == 'browse':
             url = self.args['url']
             return actions.browse(url)
@@ -40,6 +45,6 @@ class Event:
             contents = self.args['contents']
             return actions.write(path, contents)
         elif self.action == 'recall':
-            return agent.memory.search(self.args['query'])
+            return agent_controller.agent.search_memory(self.args['query'])
         else:
             raise ValueError('Invalid action type')
