@@ -5,6 +5,8 @@ from termcolor import colored
 from typing import List, Dict
 
 from opendevin.agent import Agent, Message, Role
+from opendevin.lib.command_manager import CommandManager
+from opendevin.lib.event import Event
 from opendevin.sandbox.docker import DockerInteractive
 
 assert (
@@ -118,6 +120,16 @@ class CodeActAgent(Agent):
         - message (str): The chat message or command.
         """
         raise NotImplementedError
+
+    # TODO: implement these abstract methods
+    def add_event(self, event: Event) -> None:
+        raise NotImplementedError("Implement this abstract method")
+
+    def step(self, cmd_mgr: CommandManager) -> Event:
+        raise NotImplementedError("Implement this abstract method")
+
+    def search_memory(self, query: str) -> List[str]:
+        raise NotImplementedError("Implement this abstract method")
 
 
 Agent.register("CodeActAgent", CodeActAgent)
