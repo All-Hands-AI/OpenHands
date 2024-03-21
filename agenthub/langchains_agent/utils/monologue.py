@@ -1,5 +1,5 @@
 import agenthub.langchains_agent.utils.json as json
-from agenthub.langchains_agent.utils.event import Event
+from opendevin.lib.event import Event
 
 import agenthub.langchains_agent.utils.llm as llm
 

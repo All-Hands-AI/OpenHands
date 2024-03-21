@@ -3,6 +3,7 @@ import argparse
 
 import agenthub  # for the agent registry
 from opendevin.agent import Agent
+from opendevin.controller import AgentController
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run an agent with a specific task")
@@ -18,4 +19,6 @@ if __name__ == "__main__":
         workspace_dir=args.directory,
         model_name=args.model_name
     )
-    agent.run()
+
+    controller = AgentController(agent)
+    controller.start_loop()
