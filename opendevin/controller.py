@@ -27,8 +27,6 @@ class AgentController:
         return out_event
 
     def start_loop(self):
-        # TODO: unused variable
-        # output = None
         for i in range(self.max_iterations):
             print("STEP", i, flush=True)
             log_events = self.command_manager.get_background_events()

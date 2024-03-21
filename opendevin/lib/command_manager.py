@@ -79,13 +79,13 @@ class CommandManager:
                     'id': id,
                     'command': cmd.command,
                 }))
-            # TODO: undefined name 'idx'
-            # if exit_code is not None:
-            #     events.append(Event('output', {
-            #         'exit_code': exit_code,
-            #         'output': 'Background command %d exited with code %d' % (idx, exit_code),
-            #         'id': id,
-            #         'command': cmd.command,
-            #     }))
-            #     del self.background_commands[id]
+            if exit_code is not None:
+                events.append(Event('output', {
+                    'exit_code': exit_code,
+                    # TODO: undefined name 'idx'
+                    # 'output': 'Background command %d exited with code %d' % (idx, exit_code),
+                    'id': id,
+                    'command': cmd.command,
+                }))
+                del self.background_commands[id]
         return events
