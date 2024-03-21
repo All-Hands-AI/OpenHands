@@ -55,22 +55,30 @@ class DockerInteractive:
         self.execute('useradd --shell /bin/bash -u {uid} -o -c \"\" -m devin && su devin')
 
     def read_logs(self) -> str:
-        exit_code, logs = self.execute("cat /tmp/logbuffer.txt && echo '' > /tmp/logbuffer.txt")
-        if exit_code != 0:
-            print("failed to read logs", exit_code, logs)
-            raise Exception(f"Failed to read logs")
+        if not hasattr(self, "log_generator"):
+            return ""
+        logs = ""
+        while True:
+            ready_to_read, _, _ = select.select([self.log_generator], [], [], .1)
+            if ready_to_read:
+                data = self.log_generator.read(4096)
+                if not data:
+                    break
+                chunk = data.decode('utf-8')
+                logs += chunk
+            else:
+                break
         return logs
 
-
     def execute(self, cmd: str) -> (int, str):
-        print("execute command: ", cmd)
         exit_code, logs = self.container.exec_run(['/bin/bash', '-c', cmd], workdir="/workspace")
         return exit_code, logs.decode('utf-8')
 
     def execute_in_background(self, cmd: str) -> None:
         self.log_time = time.time()
-        self.execute("touch /tmp/logbuffer.txt")
-        exit_code, logs = self.container.exec_run(['/bin/bash', '-c', cmd, '&>>', '/tmp/logbuffer.txt'], detach=True, workdir="/workspace")
+        result = self.container.exec_run(['/bin/bash', '-c', cmd], socket=True, workdir="/workspace")
+        self.log_generator = result.output # socket.SocketIO
+        self.log_generator._sock.setblocking(0)
 
     def close(self):
         self.stop_docker_container()
@@ -141,12 +149,14 @@ if __name__ == "__main__":
 
     docker_interactive = DockerInteractive(
         workspace_dir=args.directory,
-        container_image="opendevin/sandbox:latest",
     )
     print("Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
 
-    for item in docker_interactive.history:
-        print(item.content, end="")
+    bg = DockerInteractive(
+        workspace_dir=args.directory,
+    )
+    bg.execute_in_background("while true; do echo 'dot ' && sleep 1; done")
+
     sys.stdout.flush()
     try:
         while True:
@@ -158,8 +168,11 @@ if __name__ == "__main__":
             if user_input.lower() == "exit":
                 print(f"Exiting...")
                 break
-            output = docker_interactive.execute(user_input)
-            print(output, end="")
+            exit_code, output = docker_interactive.execute(user_input)
+            print("exit code:", exit_code)
+            print(output + "\n", end="")
+            logs = bg.read_logs()
+            print("background logs:", logs, "\n")
             sys.stdout.flush()
     except KeyboardInterrupt:
         print("\nExiting...")
