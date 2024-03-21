@@ -11,5 +11,12 @@ all the preprocessing/evaluation/analysis scripts.
 
 ## Tasks
 ### SWE-bench
-- analysis
-  - devin_eval_analysis.ipynb: notebook analyzing devin's outputs
+- notebooks
+  - `devin_eval_analysis.ipynb`: notebook analyzing devin's outputs
+- scripts
+  - `prepare_devin_outputs_for_evaluation.py`: script fetching and converting [devin's output](https://github.com/CognitionAI/devin-swebench-results/tree/main) into the desired json file for evaluation.
+    - usage: `python prepare_devin_outputs_for_evaluation.py <setting>` where setting can be `passed`, `failed` or `all`
+- resources
+  - Devin's outputs processed for evaluations is available on [Huggingface](https://huggingface.co/datasets/OpenDevin/Devin-SWE-bench-output)
+    - get predictions that passed the test: `wget https://huggingface.co/datasets/OpenDevin/Devin-SWE-bench-output/raw/main/devin_swe_passed.json`
+    - get all predictions`wget https://huggingface.co/datasets/OpenDevin/Devin-SWE-bench-output/raw/main/devin_swe_outputs.json`
