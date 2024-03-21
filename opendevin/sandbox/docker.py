@@ -55,11 +55,12 @@ class DockerInteractive:
         self.execute('useradd --shell /bin/bash -u {uid} -o -c \"\" -m devin && su devin')
 
     def read_logs(self) -> str:
-        if not hasattr(self, "logs"):
-            return ""
-        logs = self.container.logs(since=self.log_time).decode("utf-8")
-        self.log_time = time.time()
+        exit_code, logs = self.execute("cat /tmp/logbuffer.txt && echo '' > /tmp/logbuffer.txt")
+        if exit_code != 0:
+            print("failed to read logs", exit_code, logs)
+            raise Exception(f"Failed to read logs")
         return logs
+
 
     def execute(self, cmd: str) -> (int, str):
         print("execute command: ", cmd)
@@ -68,7 +69,8 @@ class DockerInteractive:
 
     def execute_in_background(self, cmd: str) -> None:
         self.log_time = time.time()
-        exit_code, logs = self.container.exec_run(['/bin/bash', '-c', cmd], detach=True, workdir="/workspace")
+        self.execute("touch /tmp/logbuffer.txt")
+        exit_code, logs = self.container.exec_run(['/bin/bash', '-c', cmd, '&>>', '/tmp/logbuffer.txt'], detach=True, workdir="/workspace")
 
     def close(self):
         self.stop_docker_container()
