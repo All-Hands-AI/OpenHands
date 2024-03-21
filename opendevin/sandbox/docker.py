@@ -89,11 +89,11 @@ class DockerInteractive:
         return output
 
     def close(self):
-        if self.master_fd is not None:
+        if hasattr(self, "master_fd") and self.master_fd is not None:
             os.close(self.master_fd)
             self.master_fd = None
         
-        if self.container is not None:
+        if hasattr(self, "container") and self.container is not None:
             self.container.terminate()
             try:
                 self.container.wait(timeout=5)
