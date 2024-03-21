@@ -22,5 +22,8 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm ci
+      working-directory: frontend
     - run: npm run build --if-present
+      working-directory: frontend
     - run: npm test
+      working-directory: frontend
