@@ -9,3 +9,8 @@
 .screenshot {
     width: 100%;
 }
+.browser-content{
+    width: 100% !important;
+    height: 88vh;
+    border: none;
+}

@@ -25,12 +25,12 @@ function Tab({ name, active, onClick }: TabProps): JSX.Element {
 
 function App(): JSX.Element {
   const [activeTab, setActiveTab] = useState<TabOption>("terminal");
-  // URL of browser window (placeholder for now, will be replaced with the actual URL later)
-  const [url] = useState("https://github.com/OpenDevin/OpenDevin");
-  // Base64-encoded screenshot of browser window (placeholder for now, will be replaced with the actual screenshot later)
-  const [screenshotSrc] = useState(
-    "data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN0uGvyHwAFCAJS091fQwAAAABJRU5ErkJggg==",
-  );
+  // // URL of browser window (placeholder for now, will be replaced with the actual URL later)
+  // const [url] = useState("https://github.com/OpenDevin/OpenDevin");
+  // // Base64-encoded screenshot of browser window (placeholder for now, will be replaced with the actual screenshot later)
+  // const [screenshotSrc] = useState(
+  //   "data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN0uGvyHwAFCAJS091fQwAAAABJRU5ErkJggg==",
+  // );
 
   const tabData = {
     terminal: {
@@ -47,7 +47,7 @@ function App(): JSX.Element {
     },
     browser: {
       name: "Browser",
-      component: <Browser url={url} screenshotSrc={screenshotSrc} />,
+      component: <Browser url="https://en.wikipedia.org/wiki/Main_Page" />,
     },
   };
 
