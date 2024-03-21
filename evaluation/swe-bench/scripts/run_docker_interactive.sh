@@ -6,8 +6,9 @@ WORK_DIR=`pwd`
 docker run \
     -it \
     --rm \
-    --user $(id -u):$(id -g) \
+    --user root \
     --ipc=host --ulimit memlock=-1 --ulimit stack=67108864 \
     -v $WORK_DIR:/swe-bench \
+    -w /swe-bench \
     $DOCKER_IMAGE \
-    bash -c "cd /swe-bench && bash"
+    /bin/bash -c "usermod -u $(id -u) swe-bench && su swe-bench"
