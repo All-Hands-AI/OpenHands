@@ -74,7 +74,8 @@ class LangchainsAgent(Agent):
                     next_is_output = True
                 else:
                     event = Event("think", {"thought": thought})
-            agent.add_event(event)
+            self.agent.add_event(event)
+        self._initialized = True
 
     def add_event(self, event: Event) -> None:
         self.agent.add_event(event)

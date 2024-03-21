@@ -1,8 +1,6 @@
 from opendevin.lib.command_manager import CommandManager
 from opendevin.lib.event import Event
 
-MAX_OUTPUT_LENGTH = 5000
-
 def print_callback(event):
     print(event, flush=True)
 
@@ -25,8 +23,6 @@ class AgentController:
         except Exception as e:
             output = 'Error: ' + str(e)
             action = 'error'
-        if len(output) > MAX_OUTPUT_LENGTH:
-            output = output[:MAX_OUTPUT_LENGTH] + '...'
         out_event = Event(action, {'output': output})
         return out_event
 
