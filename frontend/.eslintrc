@@ -18,10 +18,18 @@
     {
       "files": ["*.ts", "*.tsx"],
       "rules": {
+        // Allow state modification in Redux reducers
+        "no-param-reassign": ["error", {
+          "props": true,
+          "ignorePropertyModificationsFor": [
+            "state"
+          ]
+        }],
         "no-underscore-dangle": "off",
         "jsx-a11y/no-static-element-interactions": "off",
         "jsx-a11y/click-events-have-key-events": "off",
-        "react/no-array-index-key": "off"
+        "react/no-array-index-key": "off",
+        
       },"parserOptions": {
         "project": ["**/tsconfig.json"]
       }
