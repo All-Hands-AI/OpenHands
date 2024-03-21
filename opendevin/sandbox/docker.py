@@ -6,7 +6,7 @@ import time
 import shlex
 import select
 import subprocess
-from typing import List, Optional
+from typing import List
 from collections import namedtuple
 
 InputType = namedtuple("InputType", ["content"])
@@ -18,8 +18,8 @@ class DockerInteractive:
 
     def __init__(
         self,
-        workspace_dir: Optional[str] = None,
-        container_image: Optional[str] = None,
+        workspace_dir: str | None = None,
+        container_image: str | None = None,
         timeout: int = 5
     ):
         self.instance_id: str = str(uuid.uuid4())
@@ -65,7 +65,7 @@ class DockerInteractive:
             OutputType(self._wait_and_read_output())
         ]
 
-    def _wait_and_read_output(self, user_input: Optional[str] = None) -> str:
+    def _wait_and_read_output(self, user_input: str | None = None) -> str:
         output_str = ""
         while True:
             readable, _, _ = select.select([self.master_fd], [], [], self.timeout)
