@@ -23,6 +23,7 @@ class Agent:
     def get_next_action(self, cmd_mgr):
         action_dict = llm.request_action(self.task, self.monologue.get_thoughts(), cmd_mgr.background_commands)
         if action_dict is None:
+            # TODO: this seems to happen if the LLM response isn't valid JSON. Maybe it should be an `error` instead? How should we handle this case?
             return Event('think', {'thought': '...'})
         event = Event(action_dict['action'], action_dict['args'])
         self.latest_action = event
