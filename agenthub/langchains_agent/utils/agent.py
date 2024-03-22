@@ -7,9 +7,10 @@ MAX_OUTPUT_LENGTH = 5000
 MAX_MONOLOGUE_LENGTH = 20000
 
 class Agent:
-    def __init__(self, task):
+    def __init__(self, task, model_name):
         self.task = task
-        self.monologue = Monologue()
+        self.model_name = model_name
+        self.monologue = Monologue(model_name)
         self.memory = LongTermMemory()
 
     def add_event(self, event):
@@ -21,7 +22,12 @@ class Agent:
             self.monologue.condense()
 
     def get_next_action(self, cmd_mgr):
-        action_dict = llm.request_action(self.task, self.monologue.get_thoughts(), cmd_mgr.background_commands)
+        action_dict = llm.request_action(
+            self.task,
+            self.monologue.get_thoughts(),
+            self.model_name,
+            cmd_mgr.background_commands
+        )
         if action_dict is None:
             # TODO: this seems to happen if the LLM response isn't valid JSON. Maybe it should be an `error` instead? How should we handle this case?
             return Event('think', {'thought': '...'})
