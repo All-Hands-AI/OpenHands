@@ -18,7 +18,7 @@ if [ -z "${OPENAI_API_KEY}" ]; then
     read -sp "Enter value for OPENAI_API_KEY: " openai_key
     echo
     export OPENAI_API_KEY="${openai_key}"
-
+fi
 # Get the  MODEL variable
 read -sp "Enter value for model running agents: " model
 echo
@@ -38,7 +38,7 @@ declare -A directory_class_pairs=(
 
 # for each agent 
 for agent_dir in $(find . -type d -name '*agent'); do
-  agent_agent=$(basename "$agent_dir")
+  agent=$(basename "$agent_dir")
   # iterate over cases dir
   for case in $(ls $CASES_DIR); do
     # run the case
@@ -61,7 +61,7 @@ for agent_dir in $(find . -type d -name '*agent'); do
     else
       mkdir $agent_dir/workspace
     fi
-    python3 /app/main.py -d /workspace -c ${directory_class_pairs[$agent]} -t "${task}" -m $MODEL  | tee $agent_dir/logs.txt
+    python3 $SCRIPT_DIR/../../opendevin/main.py -d $agent_dir/workspace -c ${directory_class_pairs[$agent]} -t "${task}" -m $MODEL  | tee $agent_dir/logs.txt
     rm -rf $agent_dir/workspace/.git
   done
 done
