@@ -1,6 +1,6 @@
 import opendevin.lib.actions as actions
 
-ACTION_TYPES = ['start', 'run', 'kill', 'browse', 'read', 'write', 'recall', 'think', 'summarize', 'output', 'error', 'finish']
+ACTION_TYPES = ['initialize', 'start', 'run', 'kill', 'browse', 'read', 'write', 'recall', 'think', 'summarize', 'output', 'error', 'finish']
 RUNNABLE_ACTIONS = ['run', 'kill', 'browse', 'read', 'write', 'recall']
 
 class Event:
@@ -46,7 +46,7 @@ class Event:
         elif self.action == 'output':
             return "Got output."
         elif self.action == 'error':
-            return "Got an error: " + self.args['message']
+            return "Got an error: " + self.args['output']
         elif self.action == 'finish':
             return "Finished!"
         else:

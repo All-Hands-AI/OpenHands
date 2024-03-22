@@ -46,10 +46,13 @@ INITIAL_THOUGHTS = [
 
 class LangchainsAgent(Agent):
     _initialized = False
+    agent = None
 
     def _initialize(self):
         if self._initialized:
             return
+        if self.instruction is None or self.instruction == "":
+            raise ValueError("Instruction must be provided")
         self.agent = LangchainsAgentImpl(self.instruction, self.model_name)
         next_is_output = False
         for thought in INITIAL_THOUGHTS:
@@ -76,7 +79,8 @@ class LangchainsAgent(Agent):
         self._initialized = True
 
     def add_event(self, event: Event) -> None:
-        self.agent.add_event(event)
+        if self.agent:
+            self.agent.add_event(event)
 
     def step(self, cmd_mgr) -> Event:
         self._initialize()

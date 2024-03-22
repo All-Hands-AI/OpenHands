@@ -19,7 +19,8 @@ class AgentController:
     async def add_user_event(self, event: Event):
         await self.handle_action(event)
 
-    async def start_loop(self):
+    async def start_loop(self, task):
+        self.agent.instruction = task
         for i in range(self.max_iterations):
             await asyncio.sleep(0.001) # Give back control for a tick, so we can await in callbacks
             print("STEP", i, flush=True)

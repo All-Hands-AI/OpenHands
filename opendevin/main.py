@@ -16,10 +16,10 @@ if __name__ == "__main__":
 
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(
-        instruction=args.task,
         workspace_dir=args.directory,
         model_name=args.model_name
     )
+    agent.instruction = task
 
     controller = AgentController(agent, args.directory)
     await controller.start_loop()
