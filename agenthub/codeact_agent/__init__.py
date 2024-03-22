@@ -8,10 +8,6 @@ from typing import List, Dict
 from opendevin.agent import Agent, Message, Role
 from opendevin.sandbox.sandbox import DockerInteractive
 
-assert (
-    "OPENAI_API_KEY" in os.environ
-), "Please set the OPENAI_API_KEY environment variable."
-
 
 
 SYSTEM_MESSAGE = """You are a helpful assistant. You will be provided access (as root) to a bash shell to complete user-provided tasks.
@@ -64,6 +60,10 @@ class CodeActAgent(Agent):
         - instruction (str): The instruction for the agent to execute.
         - max_steps (int): The maximum number of steps to run the agent.
         """
+        assert (
+            "OPENAI_API_KEY" in os.environ
+        ), "Please set the OPENAI_API_KEY environment variable."
+
         super().__init__(instruction, workspace_dir, model_name, max_steps)
         self._history = [Message(Role.SYSTEM, SYSTEM_MESSAGE)]
         self._history.append(Message(Role.USER, instruction))
