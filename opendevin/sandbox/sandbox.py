@@ -64,6 +64,7 @@ class DockerInteractive:
                 data = self.log_generator.read(4096)
                 if not data:
                     break
+                # FIXME: we're seeing some escape characters like `\x02` and `\x00` in the logs...
                 chunk = data.decode('utf-8')
                 logs += chunk
             else:
