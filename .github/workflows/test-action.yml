@@ -11,4 +11,5 @@ jobs:
     - uses: actions/checkout@v2
     - name: Run main.py with fake model
       run: |
+        export SANDBOX_CONTAINER_IMAGE="ubuntu:24.04"
         PYTHONPATH=`pwd` python ./opendevin/main.py -d ./ -t "write a hello world script" --model-name=fake
