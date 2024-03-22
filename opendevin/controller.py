@@ -5,11 +5,11 @@ def print_callback(event):
     print(event, flush=True)
 
 class AgentController:
-    def __init__(self, agent, max_iterations=100, callbacks=[]):
+    def __init__(self, agent, workdir, max_iterations=100, callbacks=[]):
         self.agent = agent
         self.max_iterations = max_iterations
         self.background_commands = []
-        self.command_manager = CommandManager()
+        self.command_manager = CommandManager(workdir)
         self.callbacks = callbacks
         self.callbacks.append(self.agent.add_event)
         self.callbacks.append(print_callback)

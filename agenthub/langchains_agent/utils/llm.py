@@ -95,14 +95,15 @@ class Action(BaseModel):
 class NewMonologue(BaseModel):
     new_monologue: List[Action]
 
-def get_chain(template):
-    llm = ChatOpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"), model_name=os.getenv("OPENAI_MODEL"))
+def get_chain(template, model_name):
+    assert "OPENAI_API_KEY" in os.environ, "Please set the OPENAI_API_KEY environment variable to use langchains_agent."
+    llm = ChatOpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"), model_name=model_name)
     prompt = PromptTemplate.from_template(template)
     llm_chain = LLMChain(prompt=prompt, llm=llm)
     return llm_chain
 
-def summarize_monologue(thoughts):
-    llm_chain = get_chain(MONOLOGUE_SUMMARY_PROMPT)
+def summarize_monologue(thoughts, model_name):
+    llm_chain = get_chain(MONOLOGUE_SUMMARY_PROMPT, model_name)
     parser = JsonOutputParser(pydantic_object=NewMonologue)
     resp = llm_chain.invoke({'monologue': json.dumps({'old_monologue': thoughts})})
     if os.getenv("DEBUG"):
@@ -110,8 +111,8 @@ def summarize_monologue(thoughts):
     parsed = parser.parse(resp['text'])
     return parsed['new_monologue']
 
-def request_action(task, thoughts, background_commands=[]):
-    llm_chain = get_chain(ACTION_PROMPT)
+def request_action(task, thoughts, model_name, background_commands=[]):
+    llm_chain = get_chain(ACTION_PROMPT, model_name)
     parser = JsonOutputParser(pydantic_object=Action)
     hint = ''
     if len(thoughts) > 0:
