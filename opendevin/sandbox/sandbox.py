@@ -8,7 +8,7 @@ import select
 import subprocess
 import docker
 import time
-from typing import List
+from typing import List, Tuple
 from collections import namedtuple
 
 InputType = namedtuple("InputDtype", ["content"])
@@ -71,7 +71,7 @@ class DockerInteractive:
                 break
         return logs
 
-    def execute(self, cmd: str) -> (int, str):
+    def execute(self, cmd: str) -> Tuple[int, str]:
         exit_code, logs = self.container.exec_run(['/bin/bash', '-c', cmd], workdir="/workspace")
         return exit_code, logs.decode('utf-8')
 
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     try:
         while True:
             try:
-                user_input = input()
+                user_input = input(">>> ")
             except EOFError:
                 print("\nExiting...")
                 break
