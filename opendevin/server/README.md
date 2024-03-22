@@ -13,6 +13,6 @@ You can use `websocat` to test the server: https://github.com/vi/websocat
 
 ```
 websocat ws://127.0.0.1:3000/ws
-{"action": "start", "task": "write a bash script that prints hello"}
+{"action": "start", "args": {"task": "write a bash script that prints hello"}}
 ```
 

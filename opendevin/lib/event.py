@@ -56,6 +56,18 @@ class Event:
         return self.action in RUNNABLE_ACTIONS
 
     def run(self, agent_controller):
+        if not self.is_runnable():
+            return None
+        action = 'output'
+        try:
+            output = self._run_and_get_output(agent_controller)
+        except Exception as e:
+            output = 'Error: ' + str(e)
+            action = 'error'
+        out_event = Event(action, {'output': output})
+        return out_event
+
+    def _run_and_get_output(self, agent_controller) -> str:
         if self.action == 'run':
             cmd = self.args['command']
             background = False
