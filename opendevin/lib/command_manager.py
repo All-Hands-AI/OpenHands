@@ -3,36 +3,25 @@ import select
 from typing import List
 
 from opendevin.lib.event import Event
+from opendevin.sandbox.sandbox import DockerInteractive
 
 class BackgroundCommand:
-    def __init__(self, id: int, command: str, process: subprocess.Popen):
+    def __init__(self, id: int, command: str, dir: str):
         self.command = command
         self.id = id
-        self.process = process
-
-    def _get_log_from_stream(self, stream):
-        logs = ""
-        while True:
-            readable, _, _ = select.select([stream], [], [], .1)
-            if not readable:
-                break
-            next = stream.readline()
-            if next == '':
-                break
-            logs += next
-        if logs == "": return
-        return logs
+        self.shell = DockerInteractive(id=str(id), workspace_dir=dir)
+        self.shell.execute_in_background(command)
 
     def get_logs(self):
-        stdout = self._get_log_from_stream(self.process.stdout)
-        stderr = self._get_log_from_stream(self.process.stderr)
-        exit_code = self.process.poll()
-        return stdout, stderr, exit_code
+        # TODO: get an exit code if process is exited
+        return self.shell.read_logs()
 
 class CommandManager:
-    def __init__(self):
+    def __init__(self, dir):
         self.cur_id = 0
+        self.directory = dir
         self.background_commands = {}
+        self.shell = DockerInteractive(id="default", workspace_dir=dir)
 
     def run_command(self, command: str, background=False) -> str:
         if background:
@@ -41,49 +30,29 @@ class CommandManager:
             return self.run_immediately(command)
 
     def run_immediately(self, command: str) -> str:
-        result = subprocess.run(["/bin/bash", "-c", command], capture_output=True, text=True)
-        output = result.stdout + result.stderr
-        exit_code = result.returncode
+        exit_code, output = self.shell.execute(command)
         if exit_code != 0:
             raise ValueError('Command failed with exit code ' + str(exit_code) + ': ' + output)
         return output
 
     def run_background(self, command: str) -> str:
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
-        bg_cmd = BackgroundCommand(self.cur_id, command, process)
+        bg_cmd = BackgroundCommand(self.cur_id, command, self.directory)
         self.cur_id += 1
         self.background_commands[bg_cmd.id] = bg_cmd
         return "Background command started. To stop it, send a `kill` action with id " + str(bg_cmd.id)
 
     def kill_command(self, id: int) -> str:
         # TODO: get log events before killing
-        self.background_commands[id].processs.kill()
+        self.background_commands[id].shell.close()
         del self.background_commands[id]
 
     def get_background_events(self) -> List[Event]:
         events = []
         for id, cmd in self.background_commands.items():
-            stdout, stderr, exit_code = cmd.get_logs()
-            if stdout is not None:
-                events.append(Event('output', {
-                    'output': stdout,
-                    'stream': 'stdout',
-                    'id': id,
-                    'command': cmd.command,
-                }))
-            if stderr is not None:
-                events.append(Event('output', {
-                    'output': stderr,
-                    'stream': 'stderr',
-                    'id': id,
-                    'command': cmd.command,
-                }))
-            if exit_code is not None:
-                events.append(Event('output', {
-                    'exit_code': exit_code,
-                    'output': 'Background command %d exited with code %d' % (idx, exit_code),
-                    'id': id,
-                    'command': cmd.command,
-                }))
-                del self.background_commands[id]
+            output = cmd.get_logs()
+            events.append(Event('output', {
+                'output': output,
+                'id': id,
+                'command': cmd.command,
+            }))
         return events

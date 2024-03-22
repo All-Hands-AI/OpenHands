@@ -52,7 +52,7 @@ class LangchainsAgent(Agent):
     def _initialize(self):
         if self._initialized:
             return
-        self.agent = LangchainsAgentImpl(self.instruction)
+        self.agent = LangchainsAgentImpl(self.instruction, self.model_name)
         next_is_output = False
         for thought in INITIAL_THOUGHTS:
             thought = thought.replace("$TASK", self.instruction)

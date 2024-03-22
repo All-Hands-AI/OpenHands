@@ -39,11 +39,11 @@ class Event:
             return actions.browse(url)
         elif self.action == 'read':
             path = self.args['path']
-            return actions.read(path)
+            return actions.read(agent_controller.command_manager.directory, path)
         elif self.action == 'write':
             path = self.args['path']
             contents = self.args['contents']
-            return actions.write(path, contents)
+            return actions.write(agent_controller.command_manager.directory, path, contents)
         elif self.action == 'recall':
             return agent_controller.agent.search_memory(self.args['query'])
         else:
