@@ -3,7 +3,7 @@ import select
 from typing import List
 
 from opendevin.lib.event import Event
-from opendevin.sandbox.docker import DockerInteractive
+from opendevin.sandbox.sandbox import DockerInteractive
 
 class BackgroundCommand:
     def __init__(self, id: int, command: str, dir: str):

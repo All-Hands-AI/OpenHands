@@ -6,7 +6,7 @@ from termcolor import colored
 from typing import List, Dict
 
 from opendevin.agent import Agent, Message, Role
-from opendevin.sandbox.docker import DockerInteractive
+from opendevin.sandbox.sandbox import DockerInteractive
 
 assert (
     "OPENAI_API_KEY" in os.environ
