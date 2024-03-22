@@ -16,3 +16,14 @@ echo "write a hello world script" >> ./agent/regression/cases/$name/task.txt
 # Single out your test case using the TEST_CASE environment variable
 TEST_CASE=$name ./agent/regression/run.sh
 ```
+
+To add agent to regreesion test:
+```bash
+add agent pair to directory_class_pairs variable in run.sh 
+key is the directory name in /agenthub and value is the class name 
+```
+
+To run regresion test:
+```bash
+./run.sh and enter DEBUG, OPENAI_API_KEY and Model name in the prompt.
+``` 

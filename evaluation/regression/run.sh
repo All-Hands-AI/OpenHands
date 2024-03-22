@@ -29,6 +29,11 @@ else
     MODEL="$model"
 fi
 
+echo "Running with model: $MODEL" 
+
+# add python path
+export PYTHONPATH="$PYTHONPATH:$SCRIPT_DIR/../../" 
+
 # hardcode pairs for directory to python class mapping 
 declare -A directory_class_pairs=(
     [langchains_agent]="LangchainsAgent"
