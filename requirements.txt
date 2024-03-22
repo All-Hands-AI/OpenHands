@@ -2,3 +2,4 @@ datasets
 pandas
 litellm
 termcolor
+seaborn
