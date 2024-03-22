@@ -11,7 +11,7 @@ jobs:
         image: docker:19.03.12
         options: --privileged
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Run main.py with fake model
       run: |
         export SANDBOX_CONTAINER_IMAGE="ubuntu:24.04"
