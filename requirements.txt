@@ -3,3 +3,14 @@ pandas
 litellm
 termcolor
 seaborn
+docker
+fastapi
+uvicorn[standard]
+
+# for agenthub/lanchangs_agent
+langchain
+langchain-openai
+langchain-community
+llama-index
+llama-index-vector-stores-chroma
+chromadb

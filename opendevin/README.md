@@ -8,7 +8,7 @@ Run the docker-based sandbox interactive:
 
 ```bash
 mkdir workspace
-python3 opendevin/sandbox/docker.py -d workspace
+python3 opendevin/sandbox/sandbox.py -d workspace
 ```
 
 It will map `./workspace` into the docker container with the folder permission correctly adjusted for current user.
