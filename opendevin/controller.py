@@ -1,3 +1,5 @@
+import asyncio
+
 from opendevin.lib.command_manager import CommandManager
 from opendevin.lib.event import Event
 
@@ -28,6 +30,7 @@ class AgentController:
 
     async def start_loop(self):
         for i in range(self.max_iterations):
+            await asyncio.sleep(0.001) # Give back control for a tick, so we can await in callbacks
             print("STEP", i, flush=True)
             done = await self.step()
             if done:

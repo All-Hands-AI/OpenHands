@@ -66,7 +66,6 @@ class Session:
         await self.send_error("Not implemented yet")
 
     def on_agent_event(self, event):
-        # FIXME: messages aren't sent until the loop finishes...
         evt = {
             "action": event.action,
             "message": event.get_message(),
