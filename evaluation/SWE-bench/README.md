@@ -34,7 +34,7 @@ mkdir -p data/logs
 mkdir -p data/testbeds
 
 python SWE-bench/harness/run_evaluation.py \
-    --predictions_path evaluation/SWE-bench/data/predictions/devin_swe_outputs.json \
+    --predictions_path data/predictions/devin_swe_outputs.json \
     --swe_bench_tasks data/processed/swe-bench-test.json \
     --log_dir data/logs \
     --testbed data/testbeds \
