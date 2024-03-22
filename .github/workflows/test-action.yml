@@ -15,4 +15,5 @@ jobs:
     - name: Run main.py with fake model
       run: |
         export SANDBOX_CONTAINER_IMAGE="ubuntu:24.04"
+        python -m pip install -r requirements.txt
         PYTHONPATH=`pwd` python ./opendevin/main.py -d ./ -t "write a hello world script" --model-name=fake
