@@ -61,7 +61,7 @@ for agent_dir in $(find . -type d -name '*agent'); do
     else
       mkdir $agent_dir/workspace
     fi
-    python /app/main.py -d /workspace -c ${directory_class_pairs[$agent]} -t "${task}" -m $MODEL  | tee $agent_dir/logs.txt
+    python3 /app/main.py -d /workspace -c ${directory_class_pairs[$agent]} -t "${task}" -m $MODEL  | tee $agent_dir/logs.txt
     rm -rf $agent_dir/workspace/.git
   done
 done
