@@ -15,6 +15,12 @@ class Event:
     def __str__(self):
         return self.action + " " + str(self.args)
 
+    def str_truncated(self, max_len=1000):
+        s = str(self)
+        if len(s) > max_len:
+            s = s[:max_len] + '...'
+        return s
+
     def to_dict(self):
         return {
             'action': self.action,
