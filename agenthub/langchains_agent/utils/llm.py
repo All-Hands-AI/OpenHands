@@ -96,7 +96,8 @@ class NewMonologue(BaseModel):
     new_monologue: List[Action]
 
 def get_chain(template, model_name):
-    assert "OPENAI_API_KEY" in os.environ, "Please set the OPENAI_API_KEY environment variable to use langchains_agent."
+    if model_name != "fake":
+        assert "OPENAI_API_KEY" in os.environ, "Please set the OPENAI_API_KEY environment variable to use langchains_agent."
     llm = ChatOpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"), model_name=model_name)
     prompt = PromptTemplate.from_template(template)
     llm_chain = LLMChain(prompt=prompt, llm=llm)
