@@ -160,6 +160,9 @@ cython_debug/
 .idea/
 .vscode/
 
+# evaluation
+evaluation/SWE-bench/data
+
 # frontend
 
 # dependencies
