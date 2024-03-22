@@ -64,7 +64,7 @@ class DockerInteractive:
                 data = self.log_generator.read(4096)
                 if not data:
                     break
-                # FIXME: we're seeing some escape characters like `\x02` and `\x00` in the logs...
+                # FIXME: we're occasionally seeing some escape characters like `\x02` and `\x00` in the logs...
                 chunk = data.decode('utf-8')
                 logs += chunk
             else:
@@ -134,7 +134,9 @@ class DockerInteractive:
 
 
     def __del__(self):
-        self.close()
+        # FIXME: this fails because python is already shutting down. How can we clean up?
+        # self.container.remove(force=True)
+        pass
 
 if __name__ == "__main__":
     import argparse
