@@ -1,4 +1,6 @@
 import os
+import asyncio
+
 from fastapi import WebSocketDisconnect
 
 import agenthub  # for the agent registry
@@ -16,12 +18,9 @@ class Session:
         await self.websocket.send_json({"message": message})
 
     async def start_listening(self):
-        print("start listen")
         try:
             while True:
-                print("loop")
                 data = await self.websocket.receive_json()
-                print("data", data)
                 if "action" not in data:
                     await self.send_error("No action specified")
                     continue
@@ -60,8 +59,17 @@ class Session:
             workspace_dir=directory,
             model_name=model,
         )
-        self.controller = AgentController(self.agent, directory)
-        self.controller.start_loop()
+        self.controller = AgentController(self.agent, directory, callbacks=[self.on_agent_event])
+        self.agent_task = asyncio.create_task(self.controller.start_loop())
 
     async def terminal_data(self, data):
         await self.send_error("Not implemented yet")
+
+    def on_agent_event(self, event):
+        # FIXME: messages aren't sent until the loop finishes...
+        evt = {
+            "action": event.action,
+            "message": event.get_message(),
+            "args": event.args,
+        }
+        asyncio.create_task(self.websocket.send_json(evt))

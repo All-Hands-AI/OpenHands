@@ -22,4 +22,4 @@ if __name__ == "__main__":
     )
 
     controller = AgentController(agent, args.directory)
-    controller.start_loop()
+    await controller.start_loop()
