@@ -30,7 +30,7 @@ git remote -v
 You should see both `origin` and `upstream` in the output.
 
 ### 3. Synchronize with Official Repository
-Sync latest commit with offical repository before coding.
+Synchronize latest commit with offical repository before coding.
 
 ```shell
 git fetch upstream
@@ -40,7 +40,7 @@ git push origin main
 ```
 
 ### 4. Create a New Branch And Open a Pull Request
-After you finish your implementation, open your own forked repository. The source branch is your new branch, and the target branch is `OpenDevin/OpenDevin` `main` branch. Then PR should appears in [OpenDevin PRs](https://github.com/OpenDevin/OpenDevin/pulls).
+After you finish implementation, open forked repository. The source branch is your new branch, and the target branch is `OpenDevin/OpenDevin` `main` branch. Then PR should appears in [OpenDevin PRs](https://github.com/OpenDevin/OpenDevin/pulls).
 
 Then OpenDevin team will review your code.
 
@@ -62,6 +62,7 @@ As described in [here](https://github.com/commitizen/conventional-commit-types/b
 - `revert`: Reverts a previous commit
 
 For example, a PR title could be:
+- `refactor: modify package path`
 - `feat(frontend): xxxx`, where `(frontend)` means that this PR mainly focuses on the frontend component.
 
 You may also check out previous PRs in the [PR list](https://github.com/OpenDevin/OpenDevin/pulls).
