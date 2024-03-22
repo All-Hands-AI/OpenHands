@@ -9,6 +9,14 @@ all the preprocessing/evaluation/analysis scripts.
   - Raw data and experimental records should not be stored within this repo (e.g. Google Drive or Hugging Face Datasets).
   - Important data files of manageable size and analysis scripts (e.g., jupyter notebooks) can be directly uploaded to this repo.
 
+## Roadmap
+
+- Sanity check. Reproduce Devin's scores on SWE-bench using the released outputs to make sure that our harness pipeline works.
+- Open source model support.
+  - Contributors are encouraged to submit their commits to our [forked SEW-bench repo](https://github.com/OpenDevin/SWE-bench).
+  - Ensure compatibility with OpenAI interface for inference.
+  - Serve open source models, prioritizing high concurrency and throughput.
+
 ## Tasks
 ### SWE-bench
 - notebooks
