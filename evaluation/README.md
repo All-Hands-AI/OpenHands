@@ -20,3 +20,5 @@ all the preprocessing/evaluation/analysis scripts.
   - Devin's outputs processed for evaluations is available on [Huggingface](https://huggingface.co/datasets/OpenDevin/Devin-SWE-bench-output)
     - get predictions that passed the test: `wget https://huggingface.co/datasets/OpenDevin/Devin-SWE-bench-output/raw/main/devin_swe_passed.json`
     - get all predictions `wget https://huggingface.co/datasets/OpenDevin/Devin-SWE-bench-output/raw/main/devin_swe_outputs.json`
+
+See [`SWE-bench/README.md`](./SWE-bench/README.md) for more details on how to run SWE-Bench for evaluation.
