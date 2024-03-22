@@ -2,6 +2,7 @@ datasets
 pandas
 litellm
 termcolor
+seaborn
 docker
 fastapi
 uvicorn[standard]
