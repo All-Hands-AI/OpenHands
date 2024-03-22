@@ -15,14 +15,8 @@ Currently, the docker container should be able to for running SWE-Bench. It was 
 ### Setup example data
 
 ```bash
-cd evaluation/swe-bench
-mkdir -p data/processed
-python3 scripts/download_test_data.py
-
-# Download an example output file (FROM claude-2)
-# https://gist.github.com/sorendunn/9f1f1fade59f986b4925b6633f9ff165
-mkdir -p data/predictions
-curl -o data/predictions/matplotlib__matplotlib-24362.jsonl "https://gist.githubusercontent.com/sorendunn/3218ac73166c6ae0caf2eafd23918971/raw/de02f3ea30a43dbab3245eb7b1b23510fad96847/matplotlib__matplotlib-24362.jsonl"
+cd evaluation/SWE-bench
+./scripts/prepare_devin_swe_bench_data.sh
 
 # Clone the repo
 # This is a fork that fixes some issues that stops matplotlib from running (see https://github.com/princeton-nlp/SWE-bench/pull/56)
@@ -36,22 +30,20 @@ git clone https://github.com/xingyaoww/SWE-bench.git
 
 ```bash
 #!/bin/bash
-LOG_DIR=data/logs
-TESTBED_DIR=data/testbeds
-mkdir -p $LOG_DIR
-mkdir -p $TESTBED_DIR
+mkdir -p data/logs
+mkdir -p data/testbeds
 
 python harness/run_evaluation.py \
-    --predictions_path data/predictions/matplotlib__matplotlib-24362.jsonl \
+    --predictions_path evaluation/SWE-bench/data/predictions/devin_swe_outputs.json \
     --swe_bench_tasks data/processed/swe-bench-test.json \
-    --log_dir $LOG_DIR \
-    --testbed $TESTBED_DIR \
+    --log_dir data/logs \
+    --testbed data/testbeds \
     --skip_existing \
     --timeout 900 \
     --verbose
 ```
 
-You will see the following command line outputs:
+You will see the command line outputs similar to this (if success):
 
 ```log
 swe-bench@2f3a6b9fcab2:/swe-bench$ ./harness/run_evaluation.sh
