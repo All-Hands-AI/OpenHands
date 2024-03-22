@@ -18,7 +18,17 @@ if [ -z "${OPENAI_API_KEY}" ]; then
     read -sp "Enter value for OPENAI_API_KEY: " openai_key
     echo
     export OPENAI_API_KEY="${openai_key}"
- 
+
+# Get the  MODEL variable
+read -sp "Enter value for model running agents: " model
+echo
+
+if [ -z "$model" ]; then
+    MODEL="gpt-4-0125-preview"
+else
+    MODEL="$model"
+fi
+
 # hardcode pairs for directory to python class mapping 
 declare -A directory_class_pairs=(
     [langchains_agent]="LangchainsAgent"
@@ -51,7 +61,7 @@ for agent_dir in $(find . -type d -name '*agent'); do
     else
       mkdir $agent_dir/workspace
     fi
-    python /app/main.py -d /workspace -c ${directory_class_pairs[$agent]} -t "${task}" | tee $agent_dir/logs.txt
+    python /app/main.py -d /workspace -c ${directory_class_pairs[$agent]} -t "${task}" -m $MODEL  | tee $agent_dir/logs.txt
     rm -rf $agent_dir/workspace/.git
   done
 done
