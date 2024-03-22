@@ -11,7 +11,7 @@ class Agent:
         self.task = task
         self.model_name = model_name
         self.monologue = Monologue(model_name)
-        self.memory = LongTermMemory()
+        self.memory = LongTermMemory(local_embeddings=(model_name == 'fake'))
 
     def add_event(self, event):
         self.monologue.add_event(event)

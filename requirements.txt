@@ -13,4 +13,5 @@ langchain-openai
 langchain-community
 llama-index
 llama-index-vector-stores-chroma
+llama-index-embeddings-huggingface
 chromadb
