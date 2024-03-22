@@ -1,4 +1,4 @@
-name: Test Action
+name: Test main.py
 on:
   push:
   pull_request:
