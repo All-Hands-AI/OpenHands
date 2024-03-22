@@ -1,4 +1,5 @@
 from typing import Type
+import asyncio
 import argparse
 
 from opendevin.agent import Agent
@@ -19,7 +20,5 @@ if __name__ == "__main__":
         workspace_dir=args.directory,
         model_name=args.model_name
     )
-    agent.instruction = task
-
     controller = AgentController(agent, args.directory)
-    await controller.start_loop()
+    asyncio.run(controller.start_loop(args.task))
