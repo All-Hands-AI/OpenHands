@@ -22,3 +22,14 @@ all the preprocessing/evaluation/analysis scripts.
     - get all predictions `wget https://huggingface.co/datasets/OpenDevin/Devin-SWE-bench-output/raw/main/devin_swe_outputs.json`
 
 See [`SWE-bench/README.md`](./SWE-bench/README.md) for more details on how to run SWE-Bench for evaluation.
+
+### Open Source Model Inference on SWE Bench Lite
+
+- Oracle Retrieval
+  - `cd Oracle'
+  - `python inferOSS.py --dataset_path "princeton-nlp/SWE-bench_Lite_oracle" --model_path "codellama/CodeLlama-7b-hf" --output_file "generated_code.json"`
+  - Update the import statements in the `inferOSS.py` file for managing correct dependencies
+
+  
+
+- BM25
