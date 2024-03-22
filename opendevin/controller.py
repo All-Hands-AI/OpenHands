@@ -29,20 +29,26 @@ class AgentController:
     async def start_loop(self):
         for i in range(self.max_iterations):
             print("STEP", i, flush=True)
-            log_events = self.command_manager.get_background_events()
-            for event in log_events:
-                for callback in self.callbacks:
-                    callback(event)
-
-            action_event = self.agent.step(self.command_manager)
-            for callback in self.callbacks:
-                callback(action_event)
-            if action_event.action == 'finish':
+            done = await self.step()
+            if done:
                 break
-            print("---", flush=True)
 
-            output_event = self.maybe_perform_action(action_event)
-            if output_event is not None:
-                for callback in self.callbacks:
-                    callback(output_event)
-            print("==============", flush=True)
+    async def step(self) -> bool:
+        log_events = self.command_manager.get_background_events()
+        for event in log_events:
+            for callback in self.callbacks:
+                callback(event)
+
+        action_event = self.agent.step(self.command_manager)
+        for callback in self.callbacks:
+            callback(action_event)
+        if action_event.action == 'finish':
+            return True
+        print("---", flush=True)
+
+        output_event = self.maybe_perform_action(action_event)
+        if output_event is not None:
+            for callback in self.callbacks:
+                callback(output_event)
+        print("==============", flush=True)
+        return False
