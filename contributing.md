@@ -6,49 +6,37 @@ Welcome to the OpenDevin community! We appreciate your interest in contributing 
 
 OpenDevin is committed to providing a welcoming and inclusive environment for all contributors. By participating, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md).
 
-## Getting Started
-
-Before you start contributing, it's important to:
-
-1. **Understand the Project:** Familiarize yourself with OpenDevin's mission, technology stack, and current progress.
-2. **Join Our Slack Community:** Connect with other contributors, discuss ideas, and stay updated on the project's development.
-
 ## Contribution Areas
 
-### Core Technical Research
+### Core Communications
 
-- **Lead:** [Lead Name]
-- **Discussion Channel:** #core-technical-research
-- **Focus:** Improving the technical aspects of code generation and handling.
+- **Lead:** Junyang Lin, Binyuan Hui
+- **Discussion Channel:** #general, #help-wanted
+- **Focus:** Introduction of new members, updates regarding group meetings or significant progress by the Open Devin Team.
 
 ### Specialist Abilities
 
-- **Lead:** [Lead Name]
-- **Discussion Channel:** #specialist-abilities
+- **Lead:** [TBD]
+- **Discussion Channel:** #specialist-capabilities
 - **Focus:** Enhancing core components through data curation, training methods, and more.
 
-### Task Planning
+### Foundation Models
 
-- **Lead:** [Lead Name]
-- **Discussion Channel:** #task-planning
-- **Focus:** Developing capabilities for bug detection, codebase management, and optimization.
+- **Lead:** Junyang Lin, Binyuan Hui
+- **Discussion Channel:** #foundation-models
+- **Focus:** Developing core LLMs, pretraining, finetuning
 
 ### Evaluation
 
-- **Lead:** [Lead Name]
+- **Lead:** Bowen Li, Xingyao Wang
 - **Discussion Channel:** #evaluation
-- **Focus:** Establishing evaluation metrics to understand and improve our models.
+- **Focus:** Establishing evaluation pipelines with SWE-Bench for model inference and evalauation
 
-### Frontend Interface
-
-- **Lead:** [Lead Name]
-- **Discussion Channel:** #frontend-interface
-- **Focus:** Developing user-friendly interfaces for interacting with Devin.
 
 ### Sandboxing Environment
 
-- **Lead:** [Lead Name]
-- **Discussion Channel:** #sandboxing-environment
+- **Lead:** [TBD]
+- **Discussion Channel:** #architecture
 - **Focus:** Ensuring safe execution of code using technologies like Docker and Kubernetes.
 
 ## How to Contribute
@@ -73,4 +61,4 @@ If you're interested in taking on a lead role or joining the core team, please r
 
 ## Questions?
 
-For any questions or assistance, feel free to ask in the appropriate Slack channel or open an issue in the repository.
+For any questions or assistance, feel free to ask in the #help-wanted channel or open an issue in the repository.
