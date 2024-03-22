@@ -1,3 +1,5 @@
+datasets
+pandas
 litellm
 termcolor
 docker
