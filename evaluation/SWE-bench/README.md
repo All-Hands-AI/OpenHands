@@ -20,7 +20,7 @@ cd evaluation/SWE-bench
 
 # Clone the repo
 # This is a fork that fixes some issues that stops matplotlib from running (see https://github.com/princeton-nlp/SWE-bench/pull/56)
-git clone https://github.com/xingyaoww/SWE-bench.git
+git clone https://github.com/OpenDevin/SWE-bench.git
 
 # Enter the docker container
 ./scripts/run_docker_interactive.sh
@@ -30,6 +30,7 @@ git clone https://github.com/xingyaoww/SWE-bench.git
 
 ```bash
 #!/bin/bash
+rm -rf data/logs/ data/testbeds/ # (Optional) remove previous outputs
 mkdir -p data/logs
 mkdir -p data/testbeds
 
