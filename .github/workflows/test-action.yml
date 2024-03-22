@@ -1,0 +1,14 @@
+name: Test Action
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:19.03.12
+        options: --privileged
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run main.py with fake model
+      run: |
+        PYTHONPATH=`pwd` python ./opendevin/main.py -d ./ -t "write a hello world script" --model-name=fake

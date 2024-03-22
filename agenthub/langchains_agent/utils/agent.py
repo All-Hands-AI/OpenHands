@@ -20,6 +20,8 @@ class Agent:
             self.monologue.condense()
 
     def get_next_action(self, cmd_mgr):
+        if self.model_name == 'fake':
+            return Event('finish', {})
         action_dict = llm.request_action(
             self.task,
             self.monologue.get_thoughts(),
