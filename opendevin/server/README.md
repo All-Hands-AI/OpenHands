@@ -13,14 +13,6 @@ You can use `websocat` to test the server: https://github.com/vi/websocat
 
 ```
 websocat ws://127.0.0.1:3000/ws
-{"source":"client","action":"start"}
+{"action": "start", "task": "write a bash script that prints hello"}
 ```
 
-### Test cases
-We should be robust to these cases:
-* Client connects, sends start command, agent starts up, client disconnects
-* Client connects, sends start command, disconnects before agent starts
-* Client connects, sends start command, agent disconnects (i.e. docker container is killed)
-* Client connects, sends start command, agent starts up, client sends second start command
-
-In each case, the client should be able to reconnect and send a start command
