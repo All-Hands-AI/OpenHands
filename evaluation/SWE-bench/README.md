@@ -33,7 +33,7 @@ git clone https://github.com/xingyaoww/SWE-bench.git
 mkdir -p data/logs
 mkdir -p data/testbeds
 
-python harness/run_evaluation.py \
+python SWE-bench/harness/run_evaluation.py \
     --predictions_path evaluation/SWE-bench/data/predictions/devin_swe_outputs.json \
     --swe_bench_tasks data/processed/swe-bench-test.json \
     --log_dir data/logs \
