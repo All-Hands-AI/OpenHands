@@ -4,9 +4,8 @@ forwards messages between the client and the docker container.
 
 ## Start the Server
 ```
-cd server
 python -m pip install -r requirements.txt
-uvicorn server:app --reload --port 3000
+uvicorn opendevin.server.listen:app --reload --port 3000
 ```
 
 ## Test the Server
