@@ -80,6 +80,7 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
     "finish": AgentFinishAction,
 }
 
+CLASS_TO_ACTION_TYPE: Dict[Type[Action], str] = {v: k for k, v in ACTION_TYPE_TO_CLASS.items()}
 
 class LangchainsAgent(Agent):
     _initialized = False
@@ -89,9 +90,9 @@ class LangchainsAgent(Agent):
         self.monologue = Monologue(self.model_name)
         self.memory = LongTermMemory()
 
-    def _update_memory(self, info: Action | Observation):
-        self.monologue.add_event(info)
-        self.memory.add_event(info)
+    def _add_event(self, event: dict):
+        self.monologue.add_event(event)
+        self.memory.add_event(event)
         if self.monologue.get_total_length() > MAX_MONOLOGUE_LENGTH:
             self.monologue.condense()
 
@@ -99,47 +100,67 @@ class LangchainsAgent(Agent):
         if self._initialized:
             return
         next_is_output = False
-        next_output_type = None
         for thought in INITIAL_THOUGHTS:
             thought = thought.replace("$TASK", self.instruction)
             if next_is_output:
-                d = next_output_type(contnet=thought)
-
+                d = {"action": "output", "args": {"output": thought}}
                 next_is_output = False
-                next_output_type = None
             else:
                 if thought.startswith("RUN"):
                     command = thought.split("RUN ")[1]
+                    d = {"action": "run", "args": {"command": command}}
                     d = CmdRunAction(command=command)
-
                     next_is_output = True
-                    next_output_type = CmdOutputObservation
 
                 elif thought.startswith("RECALL"):
                     query = thought.split("RECALL ")[1]
+                    d = {"action": "recall", "args": {"query": query}}
                     d = AgentRecallAction(query=query)
                     next_is_output = True
-                    next_output_type = AgentMessageObservation
 
                 elif thought.startswith("BROWSE"):
                     url = thought.split("BROWSE ")[1]
+                    d = {"action": "browse", "args": {"url": url}}
                     d = BrowseURLAction(url=url)
                     next_is_output = True
-                    next_output_type = BrowserOutputObservation
                 else:
-                    d = AgentThinkAction(thought=thought)
+                    d = {"action": "think", "args": {"thought": thought}}
 
-        self._update_memory(d)
+        self._add_event(d)
         self._initialized = True
 
     def step(self, state: State) -> Action:
         self._initialize()
+        # TODO: make langchains agent use Action & Observation
+        # completly from ground up
+
+        # Translate state to action_dict
+        for info in state.updated_info:
+            if isinstance(info, Observation):
+                if isinstance(info, CmdOutputObservation):
+                    d = {"action": "output", "args": {"output": info.output}}
+                # elif isinstance(info, UserMessageObservation):
+                #     d = {"action": "output", "args": {"output": info.message}}
+                # elif isinstance(info, AgentMessageObservation):
+                #     d = {"action": "output", "args": {"output": info.message}}
+                elif isinstance(info, BrowserOutputObservation):
+                    d = {"action": "output", "args": {"output": info.output}}
+                else:
+                    raise NotImplementedError(f"Unknown observation type: {info}")
+                self._add_event(d)
+            else:
+                raise NotImplementedError(f"Unknown info type: {info}")
+
+        state.updated_info = []
+            
         action_dict = llm.request_action(
             self.instruction,
             self.monologue.get_thoughts(),
             self.model_name,
             state.background_commands,
         )
+
+        # Translate action_dict to Action
         action = ACTION_TYPE_TO_CLASS[action_dict["action"]](**action_dict["args"])
         self.latest_action = action
         return action

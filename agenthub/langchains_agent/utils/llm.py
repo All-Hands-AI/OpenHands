@@ -4,10 +4,21 @@ from . import json
 
 if os.getenv("DEBUG"):
     from langchain.globals import set_debug
+
     set_debug(True)
 
-from typing import List
+from typing import List, Mapping
 from langchain_core.pydantic_v1 import BaseModel, Field
+
+from opendevin.action import (
+    Action,
+    AgentThinkAction,
+)
+from opendevin.observation import (
+    Observation,
+    CmdOutputObservation,
+)
+
 
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
@@ -88,36 +99,49 @@ The action key may be `summarize`, and `args.summary` should contain the summary
 You can also use the same action and args from the source monologue.
 """
 
-class Action(BaseModel):
+
+class _ActionDict(BaseModel):
     action: str
     args: dict
 
+
 class NewMonologue(BaseModel):
-    new_monologue: List[Action]
+    new_monologue: List[_ActionDict]
+
 
 def get_chain(template, model_name):
-    assert "OPENAI_API_KEY" in os.environ, "Please set the OPENAI_API_KEY environment variable to use langchains_agent."
+    assert (
+        "OPENAI_API_KEY" in os.environ
+    ), "Please set the OPENAI_API_KEY environment variable to use langchains_agent."
     llm = ChatOpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"), model_name=model_name)
     prompt = PromptTemplate.from_template(template)
     llm_chain = LLMChain(prompt=prompt, llm=llm)
     return llm_chain
 
-def summarize_monologue(thoughts, model_name):
+
+def summarize_monologue(thoughts: List[dict], model_name):
     llm_chain = get_chain(MONOLOGUE_SUMMARY_PROMPT, model_name)
     parser = JsonOutputParser(pydantic_object=NewMonologue)
-    resp = llm_chain.invoke({'monologue': json.dumps({'old_monologue': thoughts})})
+    resp = llm_chain.invoke({"monologue": json.dumps({"old_monologue": thoughts})})
+
     if os.getenv("DEBUG"):
         print("resp", resp)
-    parsed = parser.parse(resp['text'])
-    return parsed['new_monologue']
+    parsed = parser.parse(resp["text"])
+    return parsed["new_monologue"]
 
-def request_action(task, thoughts, model_name, background_commands=[]):
+
+def request_action(
+    task,
+    thoughts: List[dict],
+    model_name: str,
+    background_commands_obs: Mapping[int, CmdOutputObservation] = [],
+):
     llm_chain = get_chain(ACTION_PROMPT, model_name)
-    parser = JsonOutputParser(pydantic_object=Action)
-    hint = ''
+    parser = JsonOutputParser(pydantic_object=_ActionDict)
+    hint = ""
     if len(thoughts) > 0:
         latest_thought = thoughts[-1]
-        if latest_thought.action == 'think':
+        if latest_thought["action"] == 'think':
             if latest_thought.args['thought'].startswith("OK so my task is"):
                 hint = "You're just getting started! What should you do first?"
             else:
@@ -126,22 +150,22 @@ def request_action(task, thoughts, model_name, background_commands=[]):
             hint = "Looks like that last command failed. Maybe you need to fix it, or try something else."
 
     bg_commands_message = ""
-    if len(background_commands) > 0:
+    if len(background_commands_obs) > 0:
         bg_commands_message = "The following commands are running in the background:"
-        for id, command in background_commands.items():
-            bg_commands_message += f"\n`{id}`: {command.command}"
+        for id, command_obs in background_commands_obs.items():
+            bg_commands_message += f"\n`{id}`: {command_obs.command}"
         bg_commands_message += "\nYou can end any process by sending a `kill` action with the numerical `id` above."
 
     latest_thought = thoughts[-1]
-    resp = llm_chain.invoke({
-        "monologue": json.dumps(thoughts),
-        "hint": hint,
-        "task": task,
-        "background_commands": bg_commands_message,
-    })
+    resp = llm_chain.invoke(
+        {
+            "monologue": json.dumps(thoughts),
+            "hint": hint,
+            "task": task,
+            "background_commands": bg_commands_message,
+        }
+    )
     if os.getenv("DEBUG"):
         print("resp", resp)
-    parsed = parser.parse(resp['text'])
+    parsed = parser.parse(resp["text"])
     return parsed
-
-
