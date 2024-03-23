@@ -35,8 +35,15 @@ Achieving full replication of production-grade applications with LLMs is a compl
 
 ## 🚀 Next Steps
 
-- **Literature Review:** Conduct a thorough review of existing literature (1-2 weeks).
-- **Community Engagement:** Release the plan to the community, form research groups, and begin collaborative work.
+An MVP demo is urgent for us. Here are the most important things to do:
+
+- UI: a chat interface, a shell demonstrating commands, a browser, etc.
+- Architecture: an agent framework with a stable backend, which can read, write and run simple commands
+- Agent: capable of generating bash scripts, running tests, etc.
+- Evaluation: a minimal evaluation pipeline that is consistent with Devin's evaluation.
+
+After finishing building the MVP, we will move towards research in different topics, including foundation models, specialist capabilities, evaluation, agent studies, etc.
+
 
 ## How to Contribute
 
@@ -45,6 +52,8 @@ OpenDevin is a community-driven project, and we welcome contributions from every
 - **Code Contributions:** Help us develop the core functionalities, frontend interface, or sandboxing solutions.
 - **Research and Evaluation:** Contribute to our understanding of LLMs in software engineering, participate in evaluating the models, or suggest improvements.
 - **Feedback and Testing:** Use the OpenDevin toolset, report bugs, suggest features, or provide feedback on usability.
+
+For details, please check [this document](./CONTRIBUTING.md).
 
 ## Join Us
 We use Slack to discuss. Feel free to fill in the [form](https://forms.gle/758d5p6Ve8r2nxxq6) if you would like to join the Slack organization of OpenDevin. We will reach out shortly if we feel you are a good fit to the current team! 
