@@ -38,5 +38,5 @@ If you still meet problem like `ModuleNotFoundError: No module named 'agenthub'`
 
 4. Run following cmd to start.
 ```bash
-PYTHONPATH=pwd python ./opendevin/main.py -d ./workspace -t "write a bash script that prints hello world"
+PYTHONPATH=`pwd` python ./opendevin/main.py -d ./workspace -t "write a bash script that prints hello world"
 ```
