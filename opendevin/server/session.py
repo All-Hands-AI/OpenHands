@@ -3,7 +3,6 @@ import asyncio
 
 from fastapi import WebSocketDisconnect
 
-import agenthub  # for the agent registry
 from opendevin.agent import Agent
 from opendevin.controller import AgentController
 from opendevin.lib.event import Event
