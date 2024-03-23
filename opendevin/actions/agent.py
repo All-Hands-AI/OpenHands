@@ -5,7 +5,7 @@ from ...controller import AgentController
 
 
 @dataclass
-class AgentRecall(Action):
+class AgentRecallAction(Action):
     pass
 
     def run(self, controller: AgentController) -> str:
