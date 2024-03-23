@@ -1,9 +1,15 @@
 from typing import List, Callable
 
-from opendevin.lib.event import Event
 from opendevin.state import State
 from opendevin.agent import Agent
-from opendevin.action import Action
+from opendevin.action import (
+    Action,
+    AgentFinishAction,
+)
+from opendevin.observation import (
+    Observation,
+)
+
 
 from .command_manager import CommandManager
 
@@ -18,60 +24,32 @@ class AgentController:
         agent: Agent,
         workdir: str,
         max_iterations: int = 100,
-        callbacks: List[Callable] = [],
     ):
         self.agent = agent
         self.max_iterations = max_iterations
-        self.background_commands = []
         self.command_manager = CommandManager(workdir)
+        self.state_updated_info: List[Action | Observation] = []
 
-        self.callbacks = callbacks
-        self.callbacks.append(self.agent.add_event)
-        self.callbacks.append(print_callback)
-
-    def maybe_perform_action(self, event):
-        if not (event and event.is_runnable()):
-            return
-        action = "output"
-        try:
-            output = event.run(self)
-        except Exception as e:
-            output = "Error: " + str(e)
-            action = "error"
-        out_event = Event(action, {"output": output})
-        return out_event
-
-    @property
-    def state(self) -> State:
-        return State(
-            background_commands=self.command_manager.background_commands,
-            background_events=self.command_manager.get_background_events(),
+    def get_current_state(self) -> State:
+        state = State(
+            background_commands_obs=self.command_manager.get_background_obs(),
         )
+        # update observations & actions
+        state.updated_info = self.state_updated_info
+        self.state_updated_info = []
+        return state
 
     def start_loop(self):
         for i in range(self.max_iterations):
             print("STEP", i, flush=True)
 
-            # NOTE: Backgorund events are now part of the State
-            # log_events = self.command_manager.get_background_events()
-            # for event in log_events:
-            #     for callback in self.callbacks:
-            #         callback(event)
+            state: State = self.get_current_state()
+            action: Action = self.agent.step(state)
 
-            # TODO: Make all these Log Events into State so that we can get rid of the Event all together
-
-            action: Action = self.agent.step(self.state)
-            observation: str = action.run(self)
-            # TODO: ADD maintain observation to the state (instead of add them to the Agent one-by-one)?
-
-            # for callback in self.callbacks:
-            #     callback(action_event)
-            # if action_event.action == "finish":
-            #     break
-            # print("---", flush=True)
-
-            # output_event = self.maybe_perform_action(action_event)
-            # if output_event is not None:
-            #     for callback in self.callbacks:
-            #         callback(output_event)
+            if isinstance(action, AgentFinishAction):
+                break
+            print("---", flush=True)
+            observation: Observation = action.run(self)
+            self.state_updated_info.append(observation)
+            print(observation, flush=True)
             print("==============", flush=True)
