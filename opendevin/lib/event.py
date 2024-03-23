@@ -1,5 +1,3 @@
-import os
-import json
 import opendevin.lib.actions as actions
 
 ACTION_TYPES = ['run', 'kill', 'browse', 'read', 'write', 'recall', 'think', 'summarize', 'output', 'error', 'finish']

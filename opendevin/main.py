@@ -1,6 +1,6 @@
+from typing import Type
 import argparse
 
-import agenthub  # for the agent registry
 from opendevin.agent import Agent
 from opendevin.controller import AgentController
 
@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     print(f"Running agent {args.agent_cls} (model: {args.model_name}, directory: {args.directory}) with task: \"{args.task}\"")
 
-    AgentCls: Agent = Agent.get_cls(args.agent_cls)
+    AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(
         instruction=args.task,
         workspace_dir=args.directory,

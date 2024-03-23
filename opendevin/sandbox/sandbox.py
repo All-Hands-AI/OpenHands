@@ -1,19 +1,15 @@
 import os
-import pty
 import sys
 import uuid
 import time
-import shlex
 import select
-import subprocess
 import docker
-import time
-from typing import List, Tuple
+from typing import Tuple
 from collections import namedtuple
 import atexit
 
-InputType = namedtuple("InputDtype", ["content"])
-OutputType = namedtuple("OutputDtype", ["content"])
+InputType = namedtuple("InputType", ["content"])
+OutputType = namedtuple("OutputType", ["content"])
 
 CONTAINER_IMAGE = os.getenv("SANDBOX_CONTAINER_IMAGE", "opendevin/sandbox:latest")
 
@@ -21,15 +17,15 @@ class DockerInteractive:
 
     def __init__(
         self,
-        workspace_dir: str = None,
-        container_image: str = None,
+        workspace_dir: str | None = None,
+        container_image: str | None = None,
         timeout: int = 120,
-        id: str = None
+        id: str | None = None
     ):
         if id is not None:
-            self.instance_id: str = id
+            self.instance_id = id
         else:
-            self.instance_id: str = uuid.uuid4()
+            self.instance_id = str(uuid.uuid4())
         if workspace_dir is not None:
             assert os.path.exists(workspace_dir), f"Directory {workspace_dir} does not exist."
             # expand to absolute path
@@ -52,7 +48,6 @@ class DockerInteractive:
         self.container_name = f"sandbox-{self.instance_id}"
 
         self.restart_docker_container()
-        uid = os.getuid()
         self.execute('useradd --shell /bin/bash -u {uid} -o -c \"\" -m devin && su devin')
         # regester container cleanup function
         atexit.register(self.cleanup)
@@ -62,9 +57,9 @@ class DockerInteractive:
             return ""
         logs = ""
         while True:
-            ready_to_read, _, _ = select.select([self.log_generator], [], [], .1)
+            ready_to_read, _, _ = select.select([self.log_generator], [], [], .1) # type: ignore[has-type]
             if ready_to_read:
-                data = self.log_generator.read(4096)
+                data = self.log_generator.read(4096) # type: ignore[has-type]
                 if not data:
                     break
                 # FIXME: we're occasionally seeing some escape characters like `\x02` and `\x00` in the logs...
@@ -171,7 +166,7 @@ if __name__ == "__main__":
                 print("\nExiting...")
                 break
             if user_input.lower() == "exit":
-                print(f"Exiting...")
+                print("Exiting...")
                 break
             exit_code, output = docker_interactive.execute(user_input)
             print("exit code:", exit_code)

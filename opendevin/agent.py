@@ -5,7 +5,6 @@ from enum import Enum
 
 from .lib.event import Event
 from .lib.command_manager import CommandManager
-from .controller import AgentController
 
 class Role(Enum):
     SYSTEM = "system"  # system message for LLM
@@ -79,7 +78,7 @@ class Agent(ABC):
         return self._complete
 
     @property
-    def history(self) -> List[str]:
+    def history(self) -> List[Message]:
         """
         Provides the history of interactions or state changes since the instruction was initiated.
 
@@ -125,7 +124,7 @@ class Agent(ABC):
         to prepare the agent for restarting the instruction or cleaning up before destruction.
 
         """
-        self.instruction = None
+        self.instruction = ''
         self._complete = False
         self._history = []
 
