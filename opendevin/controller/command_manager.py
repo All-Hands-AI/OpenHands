@@ -25,17 +25,17 @@ class CommandManager:
 
     def run_command(self, command: str, background=False) -> str:
         if background:
-            return self.run_background(command)
+            return self._run_background(command)
         else:
-            return self.run_immediately(command)
+            return self._run_immediately(command)
 
-    def run_immediately(self, command: str) -> str:
+    def _run_immediately(self, command: str) -> str:
         exit_code, output = self.shell.execute(command)
         if exit_code != 0:
             raise ValueError('Command failed with exit code ' + str(exit_code) + ': ' + output)
         return output
 
-    def run_background(self, command: str) -> str:
+    def _run_background(self, command: str) -> str:
         bg_cmd = BackgroundCommand(self.cur_id, command, self.directory)
         self.cur_id += 1
         self.background_commands[bg_cmd.id] = bg_cmd
