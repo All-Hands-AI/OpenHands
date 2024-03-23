@@ -4,6 +4,40 @@ from typing import List, Dict, Type, TYPE_CHECKING
 if TYPE_CHECKING:
     from opendevin.action import Action
     from opendevin.state import State
+from opendevin.lib.event import Event
+from opendevin.lib.command_manager import CommandManager
+from opendevin.controller import AgentController
+from opendevin.llm.llm import LLM
+
+class Role(Enum):
+    SYSTEM = "system"  # system message for LLM
+    USER = "user"  # the user
+    ASSISTANT = "assistant"  # the agent
+    ENVIRONMENT = "environment"  # the environment (e.g., bash shell, web browser, etc.)
+
+@dataclass
+class Message:
+    """
+    This data class represents a message sent by an agent to another agent or user.
+    """
+
+    role: Role
+    content: str
+    # TODO: add more fields as needed
+
+    def to_dict(self) -> Dict:
+        """
+        Converts the message to a dictionary (OpenAI chat-completion format).
+
+        Returns:
+        - message (Dict): A dictionary representation of the message.
+        """
+        role = self.role.value
+        content = self.content
+        if self.role == Role.ENVIRONMENT:
+            content = f"Environment Observation:\n{content}"
+            role = "user"  # treat environment messages as user messages
+        return {"role": role, "content": content}
 
 
 class Agent(ABC):
@@ -19,9 +53,12 @@ class Agent(ABC):
 
     _registry: Dict[str, Type["Agent"]] = {}
 
-    def __init__(self, model_name: str):
-        self.model_name = model_name
-        self.instruction: str = ""  # need to be set before step
+    def __init__(
+        self,
+        llm: LLM,
+    ):
+        self.instruction = ""
+        self.llm = llm
         self._complete = False
 
     @property

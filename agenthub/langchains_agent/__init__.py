@@ -1,7 +1,7 @@
 from typing import List, Dict, Type
 
 import agenthub.langchains_agent.utils.llm as llm
-from opendevin.agent import Agent
+from opendevin.agent import Agent, Message
 from opendevin.action import (
     Action,
     CmdRunAction,
@@ -23,6 +23,7 @@ from opendevin.state import State
 from agenthub.langchains_agent.utils.monologue import Monologue
 from agenthub.langchains_agent.utils.memory import LongTermMemory
 
+MAX_MONOLOGUE_LENGTH = 20000
 
 INITIAL_THOUGHTS = [
     "I exist!",
@@ -103,6 +104,8 @@ class LangchainsAgent(Agent):
 
         if self.instruction is None or self.instruction == "":
             raise ValueError("Instruction must be provided")
+        self.monologue = Monologue()
+        self.memory = LongTermMemory()
 
         next_is_output = False
         for thought in INITIAL_THOUGHTS:
@@ -128,7 +131,7 @@ class LangchainsAgent(Agent):
                 else:
                     d = {"action": "think", "args": {"thought": thought}}
 
-        self._add_event(d)
+            self._add_event(d)
         self._initialized = True
 
     def step(self, state: State) -> Action:
@@ -175,7 +178,7 @@ class LangchainsAgent(Agent):
             self._add_event(d)
 
         state.updated_info = []
-            
+
         action_dict = llm.request_action(
             self.instruction,
             self.monologue.get_thoughts(),
@@ -189,6 +192,22 @@ class LangchainsAgent(Agent):
         action = ACTION_TYPE_TO_CLASS[action_dict["action"]](**action_dict["args"])
         self.latest_action = action
         return action
+
+    def add_event(self, event: Event) -> None:
+        self.monologue.add_event(event)
+        self.memory.add_event(event)
+        if self.monologue.get_total_length() > MAX_MONOLOGUE_LENGTH:
+            self.monologue.condense(self.llm)
+
+    def step(self, cmd_mgr) -> Event:
+        self._initialize()
+        prompt = prompts.get_request_action_prompt(
+            self.instruction,
+            self.monologue.get_thoughts(),
+            cmd_mgr.background_commands
+        )
+        resp = self.llm.prompt(prompt)
+        return prompts.parse_action_response(resp)
 
     def search_memory(self, query: str) -> List[str]:
         return self.memory.search(query)
