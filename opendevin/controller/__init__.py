@@ -43,25 +43,35 @@ class AgentController:
 
     @property
     def state(self) -> State:
-        return State(background_commands=self.command_manager.background_commands)
+        return State(
+            background_commands=self.command_manager.background_commands,
+            background_events=self.command_manager.get_background_events(),
+        )
 
     def start_loop(self):
         for i in range(self.max_iterations):
             print("STEP", i, flush=True)
-            log_events = self.command_manager.get_background_events()
-            for event in log_events:
-                for callback in self.callbacks:
-                    callback(event)
+
+            # NOTE: Backgorund events are now part of the State
+            # log_events = self.command_manager.get_background_events()
+            # for event in log_events:
+            #     for callback in self.callbacks:
+            #         callback(event)
+
+            # TODO: Make all these Log Events into State so that we can get rid of the Event all together
 
             action: Action = self.agent.step(self.state)
-            for callback in self.callbacks:
-                callback(action_event)
-            if action_event.action == "finish":
-                break
-            print("---", flush=True)
+            observation: str = action.run(self)
+            # TODO: ADD maintain observation to the state (instead of add them to the Agent one-by-one)?
 
-            output_event = self.maybe_perform_action(action_event)
-            if output_event is not None:
-                for callback in self.callbacks:
-                    callback(output_event)
+            # for callback in self.callbacks:
+            #     callback(action_event)
+            # if action_event.action == "finish":
+            #     break
+            # print("---", flush=True)
+
+            # output_event = self.maybe_perform_action(action_event)
+            # if output_event is not None:
+            #     for callback in self.callbacks:
+            #         callback(output_event)
             print("==============", flush=True)
