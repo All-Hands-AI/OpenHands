@@ -36,7 +36,11 @@ class Session:
     async def start_listening(self):
         try:
             while True:
-                data = await self.websocket.receive_json()
+                try:
+                    data = await self.websocket.receive_json()
+                except ValueError:
+                    await self.send_error("Invalid JSON")
+                    continue
 
                 event = parse_event(data)
                 if event is None:
