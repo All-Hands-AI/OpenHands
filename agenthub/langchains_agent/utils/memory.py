@@ -25,7 +25,7 @@ class LongTermMemory:
             text=json.dumps(event),
             doc_id=self.thought_idx,
             extra_info={
-                "type": event.action,
+                "type": event["action"],
                 "idx": self.thought_idx,
             },
         )

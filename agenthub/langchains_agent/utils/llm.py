@@ -10,10 +10,6 @@ if os.getenv("DEBUG"):
 from typing import List, Mapping
 from langchain_core.pydantic_v1 import BaseModel, Field
 
-from opendevin.action import (
-    Action,
-    AgentThinkAction,
-)
 from opendevin.observation import (
     Observation,
     CmdOutputObservation,

@@ -138,7 +138,10 @@ class LangchainsAgent(Agent):
         for info in state.updated_info:
             if isinstance(info, Observation):
                 if isinstance(info, CmdOutputObservation):
-                    d = {"action": "output", "args": {"output": info.output}}
+                    if info.error:
+                        d = {"action": "error", "args": {"output": info.content}}
+                    else:
+                        d = {"action": "output", "args": {"output": info.output}}
                 # elif isinstance(info, UserMessageObservation):
                 #     d = {"action": "output", "args": {"output": info.message}}
                 # elif isinstance(info, AgentMessageObservation):
@@ -157,7 +160,7 @@ class LangchainsAgent(Agent):
             self.instruction,
             self.monologue.get_thoughts(),
             self.model_name,
-            state.background_commands,
+            state.background_commands_obs,
         )
 
         # Translate action_dict to Action
