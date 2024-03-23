@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from .base import Action
-from ...controller import AgentController
+from ..controller import AgentController
 
 
 @dataclass

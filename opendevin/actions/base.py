@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ...controller import AgentController
+from ..controller import AgentController
 
 @dataclass
 class Action:
