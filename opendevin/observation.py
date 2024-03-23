@@ -12,7 +12,10 @@ class Observation:
 
     def to_dict(self) -> dict:
         """Converts the observation to a dictionary."""
-        return self.__dict__
+        return {
+            "observation_type": self.__class__.__name__,
+            "args": self.__dict__
+        }
 
 @dataclass
 class CmdOutputObservation(Observation):
@@ -21,7 +24,7 @@ class CmdOutputObservation(Observation):
     """
     command_id: int
     command: str
-
+    error: bool = False
 
 @dataclass
 class BrowserOutputObservation(Observation):
