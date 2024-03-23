@@ -46,9 +46,7 @@ class Agent(ABC):
     It tracks the execution status and maintains a history of interactions.
 
     :param instruction: The instruction for the agent to execute.
-    :param workspace_dir: The working directory for the agent.
     :param model_name: The litellm name of the model to use for the agent.
-    :param max_steps: The maximum number of steps to run the agent.
     """
 
     _registry: Dict[str, Type['Agent']] = {}
@@ -56,14 +54,10 @@ class Agent(ABC):
     def __init__(
         self,
         instruction: str,
-        workspace_dir: str,
-        model_name: str,
-        max_steps: int = 100
+        model_name: str
     ):
         self.instruction = instruction
-        self.workspace_dir = workspace_dir
         self.model_name = model_name
-        self.max_steps = max_steps
 
         self._complete = False
         self._history: List[Message] = [Message(Role.USER, instruction)]
