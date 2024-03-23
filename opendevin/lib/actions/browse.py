@@ -1,6 +1,13 @@
+from dataclasses import dataclass
 import requests
 
-def browse(url):
-    response = requests.get(url)
-    return response.text
+from .base import Action
 
+
+@dataclass
+class BrowseURLAction(Action):
+    url: str
+
+    def run(self, *args, **kwargs) -> str:
+        response = requests.get(self.url)
+        return response.text
