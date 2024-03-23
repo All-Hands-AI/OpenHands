@@ -10,6 +10,7 @@ import docker
 import time
 from typing import List, Tuple
 from collections import namedtuple
+import atexit
 
 InputType = namedtuple("InputDtype", ["content"])
 OutputType = namedtuple("OutputDtype", ["content"])
@@ -53,6 +54,8 @@ class DockerInteractive:
         self.restart_docker_container()
         uid = os.getuid()
         self.execute('useradd --shell /bin/bash -u {uid} -o -c \"\" -m devin && su devin')
+        # regester container cleanup function
+        atexit.register(self.cleanup)
 
     def read_logs(self) -> str:
         if not hasattr(self, "log_generator"):
@@ -132,11 +135,10 @@ class DockerInteractive:
         if self.container.status != "running":
             raise Exception("Failed to start container")
 
-
-    def __del__(self):
-        # FIXME: this fails because python is already shutting down. How can we clean up?
-        # self.container.remove(force=True)
-        pass
+    # clean up the container, cannot do it in __del__ because the python interpreter is already shutting down
+    def cleanup(self):
+        self.container.remove(force=True)
+        print("Finish cleaning up Docker container")
 
 if __name__ == "__main__":
     import argparse
