@@ -1,6 +1,6 @@
 import opendevin.lib.actions as actions
 
-ACTION_TYPES = ['initialize', 'start', 'run', 'kill', 'browse', 'read', 'write', 'recall', 'think', 'summarize', 'output', 'error', 'finish']
+ACTION_TYPES = ['initialize', 'start', 'summarize', 'run', 'kill', 'browse', 'read', 'write', 'recall', 'think', 'output', 'error', 'finish']
 RUNNABLE_ACTIONS = ['run', 'kill', 'browse', 'read', 'write', 'recall']
 
 class Event:

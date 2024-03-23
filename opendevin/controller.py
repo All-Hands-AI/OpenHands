@@ -22,7 +22,6 @@ class AgentController:
     async def start_loop(self, task):
         self.agent.instruction = task
         for i in range(self.max_iterations):
-            await asyncio.sleep(0.001) # Give back control for a tick, so we can await in callbacks
             print("STEP", i, flush=True)
             done = await self.step()
             if done:
@@ -32,24 +31,33 @@ class AgentController:
     async def step(self) -> bool:
         log_events = self.command_manager.get_background_events()
         for event in log_events:
-            self.run_callbacks(event)
+            await self.run_callbacks(event)
 
-        action_event = self.agent.step(self.command_manager)
+        try:
+            action_event = self.agent.step(self.command_manager)
+        except Exception as e:
+            action_event = Event('error', {'error': str(e)})
         if action_event is None:
-            raise Exception("Agent did not return an action event")
+            action_event = Event('error', {'error': "Agent did not return an event"})
 
         await self.handle_action(action_event)
         return action_event.action == 'finish'
 
     async def handle_action(self, event: Event):
         print("=== HANDLING EVENT ===", flush=True)
-        self.run_callbacks(event)
+        await self.run_callbacks(event)
         print("---  EVENT OUTPUT  ---", flush=True)
         output_event = event.run(self)
-        self.run_callbacks(output_event)
+        await self.run_callbacks(output_event)
 
-    def run_callbacks(self, event):
+    async def run_callbacks(self, event):
         if event is None:
             return
         for callback in self.callbacks:
-            callback(event)
+            idx = self.callbacks.index(callback)
+            try:
+                callback(event)
+            except Exception as e:
+                print("Callback error:" + str(idx), e, flush=True)
+                pass
+        await asyncio.sleep(0.001) # Give back control for a tick, so we can await in callbacks
