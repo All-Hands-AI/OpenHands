@@ -4,7 +4,7 @@ from opendevin.lib.event import Event
 import agenthub.langchains_agent.utils.llm as llm
 
 MAX_OUTPUT_LENGTH = 5000
-MAX_MONOLOGUE_LENGTH = 2000
+MAX_MONOLOGUE_LENGTH = 20000
 
 class Agent:
     def __init__(self, task, model_name):
