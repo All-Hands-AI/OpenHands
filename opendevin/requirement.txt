@@ -1,0 +1,9 @@
+docker
+langchain
+langchain-core
+langchain-openai
+llama-index
+llama-index-vector-stores-chroma
+llama-index-vector-stores-postgres
+litellm
+termcolor
