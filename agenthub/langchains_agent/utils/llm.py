@@ -138,11 +138,11 @@ def request_action(
     if len(thoughts) > 0:
         latest_thought = thoughts[-1]
         if latest_thought["action"] == 'think':
-            if latest_thought.args['thought'].startswith("OK so my task is"):
+            if latest_thought["args"]['thought'].startswith("OK so my task is"):
                 hint = "You're just getting started! What should you do first?"
             else:
                 hint = "You've been thinking a lot lately. Maybe it's time to take action?"
-        elif latest_thought.action == 'error':
+        elif latest_thought["action"] == 'error':
             hint = "Looks like that last command failed. Maybe you need to fix it, or try something else."
 
     bg_commands_message = ""
