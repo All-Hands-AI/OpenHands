@@ -1,11 +1,30 @@
-import os
-import argparse
 from typing import List, Dict, Type
 
-from opendevin.agent import Agent, Message
+import agenthub.langchains_agent.utils.llm as llm
+from opendevin.agent import Agent
+from opendevin.action import (
+    Action,
+    CmdRunAction,
+    CmdKillAction,
+    BrowseURLAction,
+    FileReadAction,
+    FileWriteAction,
+    AgentRecallAction,
+    AgentThinkAction,
+    AgentFinishAction,
+)
+from opendevin.observation import (
+    Observation,
+    CmdOutputObservation,
+    UserMessageObservation,
+    AgentMessageObservation,
+    BrowserOutputObservation,
+)
+from opendevin.state import State
 
-from agenthub.langchains_agent.utils.agent import Agent as LangchainsAgentImpl
-from opendevin.lib.event import Event
+from agenthub.langchains_agent.utils.monologue import Monologue
+from agenthub.langchains_agent.utils.memory import LongTermMemory
+
 
 INITIAL_THOUGHTS = [
     "I exist!",
@@ -46,55 +65,87 @@ INITIAL_THOUGHTS = [
 ]
 
 
+MAX_OUTPUT_LENGTH = 5000
+MAX_MONOLOGUE_LENGTH = 20000
+
+
+ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
+    "run": CmdRunAction,
+    "kill": CmdKillAction,
+    "browse": BrowseURLAction,
+    "read": FileReadAction,
+    "write": FileWriteAction,
+    "recall": AgentRecallAction,
+    "think": AgentThinkAction,
+    "finish": AgentFinishAction,
+}
+
+
 class LangchainsAgent(Agent):
     _initialized = False
+
+    def __init__(self, instruction: str, model_name: str):
+        super().__init__(instruction, model_name)
+        self.monologue = Monologue(self.model_name)
+        self.memory = LongTermMemory()
+
+    def _update_memory(self, info: Action | Observation):
+        self.monologue.add_event(info)
+        self.memory.add_event(info)
+        if self.monologue.get_total_length() > MAX_MONOLOGUE_LENGTH:
+            self.monologue.condense()
 
     def _initialize(self):
         if self._initialized:
             return
-        self.agent = LangchainsAgentImpl(self.instruction, self.model_name)
         next_is_output = False
+        next_output_type = None
         for thought in INITIAL_THOUGHTS:
             thought = thought.replace("$TASK", self.instruction)
             if next_is_output:
-                event = Event("output", {"output": thought})
+                d = next_output_type(contnet=thought)
+
                 next_is_output = False
+                next_output_type = None
             else:
                 if thought.startswith("RUN"):
                     command = thought.split("RUN ")[1]
-                    event = Event("run", {"command": command})
+                    d = CmdRunAction(command=command)
+
                     next_is_output = True
+                    next_output_type = CmdOutputObservation
+
                 elif thought.startswith("RECALL"):
                     query = thought.split("RECALL ")[1]
-                    event = Event("recall", {"query": query})
+                    d = AgentRecallAction(query=query)
                     next_is_output = True
+                    next_output_type = AgentMessageObservation
+
                 elif thought.startswith("BROWSE"):
                     url = thought.split("BROWSE ")[1]
-                    event = Event("browse", {"url": url})
+                    d = BrowseURLAction(url=url)
                     next_is_output = True
+                    next_output_type = BrowserOutputObservation
                 else:
-                    event = Event("think", {"thought": thought})
-            self.agent.add_event(event)
+                    d = AgentThinkAction(thought=thought)
+
+        self._update_memory(d)
         self._initialized = True
 
-    def add_event(self, event: Event) -> None:
-        self.agent.add_event(event)
-
-    def step(self, cmd_mgr) -> Event:
+    def step(self, state: State) -> Action:
         self._initialize()
-        return self.agent.get_next_action(cmd_mgr)
+        action_dict = llm.request_action(
+            self.instruction,
+            self.monologue.get_thoughts(),
+            self.model_name,
+            state.background_commands,
+        )
+        action = ACTION_TYPE_TO_CLASS[action_dict["action"]](**action_dict["args"])
+        self.latest_action = action
+        return action
 
     def search_memory(self, query: str) -> List[str]:
-        return self.agent.memory.search(query)
+        return self.memory.search(query)
 
-    def chat(self, message: str) -> None:
-        """
-        Optional method for interactive communication with the agent during its execution. Implementations
-        can use this method to modify the agent's behavior or state based on chat inputs.
-
-        Parameters:
-        - message (str): The chat message or command.
-        """
-        raise NotImplementedError
 
 Agent.register("LangchainsAgent", LangchainsAgent)
