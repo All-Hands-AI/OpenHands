@@ -2,7 +2,7 @@ from opendevin.lib.command_manager import CommandManager
 from opendevin.lib.event import Event
 
 def print_callback(event):
-    print(event, flush=True)
+    print(event.str_truncated(), flush=True)
 
 class AgentController:
     def __init__(self, agent, workdir, max_iterations=100, callbacks=[]):

@@ -14,6 +14,8 @@ class Agent:
         self.memory = LongTermMemory()
 
     def add_event(self, event):
+        if 'output' in event.args:
+            event.args['output'] = event.args['output'][:MAX_OUTPUT_LENGTH] + "..."
         self.monologue.add_event(event)
         self.memory.add_event(event)
         if self.monologue.get_total_length() > MAX_MONOLOGUE_LENGTH:
@@ -26,6 +28,9 @@ class Agent:
             self.model_name,
             cmd_mgr.background_commands
         )
+        if action_dict is None:
+            # TODO: this seems to happen if the LLM response isn't valid JSON. Maybe it should be an `error` instead? How should we handle this case?
+            return Event('think', {'thought': '...'})
         event = Event(action_dict['action'], action_dict['args'])
         self.latest_action = event
         return event
