@@ -1,12 +1,15 @@
 from dataclasses import dataclass
 
-from ..controller import AgentController
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from opendevin.controller import AgentController
 
 @dataclass
 class Action:
     pass
 
-    def run(self, controller: AgentController) -> str:
+    def run(self, controller: "AgentController") -> str:
         raise NotImplementedError
 
     def to_dict(self):

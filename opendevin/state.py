@@ -24,4 +24,4 @@ from opendevin.observation import (
 @dataclass
 class State:
     background_commands_obs: Mapping[int, CmdOutputObservation]
-    updated_info: List[Action, Observation]
+    updated_info: List[Action | Observation]

@@ -1,14 +1,16 @@
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from .base import Action
-from ..controller import AgentController
+if TYPE_CHECKING:
+    from opendevin.controller import AgentController
 
 
 @dataclass
 class AgentRecallAction(Action):
     query: str
 
-    def run(self, controller: AgentController) -> str:
+    def run(self, controller: "AgentController") -> str:
         return controller.agent.search_memory(self.query)
 
 
@@ -16,12 +18,12 @@ class AgentRecallAction(Action):
 class AgentThinkAction(Action):
     thought: str
 
-    def run(self, controller: AgentController) -> str:
+    def run(self, controller: "AgentController") -> str:
         return self.thought
 
 
 @dataclass
 class AgentFinishAction(Action):
 
-    def run(self, controller: AgentController) -> str:
+    def run(self, controller: "AgentController") -> str:
         return "finish"

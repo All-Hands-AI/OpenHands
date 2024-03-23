@@ -1,10 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Type
+from typing import List, Dict, Type, TYPE_CHECKING
 from dataclasses import dataclass
 from enum import Enum
 
-from .action import Action
-from .state import State
+if TYPE_CHECKING:
+    from opendevin.action import Action
+    from opendevin.state import State
 
 class Role(Enum):
     SYSTEM = "system"  # system message for LLM
@@ -82,7 +83,7 @@ class Agent(ABC):
         return self._history
 
     @abstractmethod
-    def step(self, state: State) -> Action:
+    def step(self, state: "State") -> "Action":
         """
         Starts the execution of the assigned instruction. This method should
         be implemented by subclasses to define the specific execution logic.
