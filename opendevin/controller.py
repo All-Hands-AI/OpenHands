@@ -20,13 +20,18 @@ class AgentController:
         await self.handle_action(event)
 
     async def start_loop(self, task):
-        self.agent.instruction = task
-        for i in range(self.max_iterations):
-            print("STEP", i, flush=True)
-            done = await self.step()
-            if done:
-                print("FINISHED", flush=True)
-                break
+        try:
+            self.agent.instruction = task
+            for i in range(self.max_iterations):
+                print("STEP", i, flush=True)
+                done = await self.step()
+                if done:
+                    print("FINISHED", flush=True)
+                    break
+        except Exception as e:
+            print("Error in loop", e, flush=True)
+            pass
+
 
     async def step(self) -> bool:
         log_events = self.command_manager.get_background_events()

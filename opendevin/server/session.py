@@ -25,13 +25,22 @@ class Session:
         self.websocket = websocket
         self.controller = None
         self.agent = None
-        asyncio.create_task(self.create_controller()) # FIXME: starting the docker container synchronously causes a websocket error...
+        self.agent_task = None
+        asyncio.create_task(self.create_controller(), name="create controller") # FIXME: starting the docker container synchronously causes a websocket error...
 
     async def send_error(self, message):
-        await self.websocket.send_json({"error": True, "message": message})
+        await self.send({"error": True, "message": message})
 
     async def send_message(self, message):
-        await self.websocket.send_json({"message": message})
+        await self.send({"message": message})
+
+    async def send(self, data):
+        if self.websocket is None:
+            return
+        try:
+            await self.websocket.send_json(data)
+        except Exception as e:
+            print("Error sending data to client", e)
 
     async def start_listening(self):
         try:
@@ -57,6 +66,9 @@ class Session:
                         await self.controller.add_user_event(event)
 
         except WebSocketDisconnect as e:
+            self.websocket = None
+            if self.agent_task:
+                self.agent_task.cancel()
             print("Client websocket disconnected", e)
 
     async def create_controller(self, start_event=None):
@@ -84,7 +96,7 @@ class Session:
             return
         await self.send_message("Starting new task...")
         task = start_event.args["task"]
-        self.agent_task = asyncio.create_task(self.controller.start_loop(task))
+        self.agent_task = asyncio.create_task(self.controller.start_loop(task), name="agent loop")
 
     def on_agent_event(self, event):
         evt = {
@@ -92,4 +104,4 @@ class Session:
             "message": event.get_message(),
             "args": event.args,
         }
-        asyncio.create_task(self.websocket.send_json(evt))
+        asyncio.create_task(self.send(evt), name="send event in callback")
