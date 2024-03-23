@@ -7,6 +7,8 @@ from typing import List, Dict
 
 from opendevin.agent import Agent, Message, Role
 from opendevin.sandbox.sandbox import DockerInteractive
+from opendevin.lib.event import Event
+from opendevin.lib.command_manager import CommandManager
 
 assert (
     "OPENAI_API_KEY" in os.environ
@@ -73,12 +75,7 @@ class CodeActAgent(Agent):
     def _history_to_messages(self) -> List[Dict]:
         return [message.to_dict() for message in self._history]
 
-    def run(self) -> None:
-        """
-        Starts the execution of the assigned instruction. This method should
-        be implemented by subclasses to define the specific execution logic.
-        """
-        for _ in range(self.max_steps):
+    def step(self, cmd_mgr: CommandManager) -> Event:
             response = completion(
                 messages=self._history_to_messages(),
                 model=self.model_name,
@@ -96,19 +93,26 @@ class CodeActAgent(Agent):
                 command = command.group(1)
                 if command.strip() == "exit":
                     print(colored("Exit received. Exiting...", "red"))
-                    break
+                    return Event('finish', {})
                 # execute the code
-                observation = self.env.execute(command)
+                exit_code, observation = self.env.execute(command)
                 self._history.append(Message(Role.ASSISTANT, observation))
                 print(colored("===ENV OBSERVATION:===\n" + observation, "blue"))
+                return Event('output', {'output': observation})
             else:
                 # we could provide a error message for the model to continue similar to
                 # https://github.com/xingyaoww/mint-bench/blob/main/mint/envs/general_env.py#L18-L23
                 observation = INVALID_INPUT_MESSAGE
                 self._history.append(Message(Role.ASSISTANT, observation))
                 print(colored("===ENV OBSERVATION:===\n" + observation, "blue"))
+                # FIXME: handle this better
+                return Event('finish', {"error": True, "reason": observation})
 
-        self.env.close()
+    def add_event(self, event: Event) -> None:
+        pass
+
+    def search_memory(self, query: str) -> List[str]:
+        return []
 
     def chat(self, message: str) -> None:
         """

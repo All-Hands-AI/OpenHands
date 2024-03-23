@@ -2,7 +2,7 @@ import os
 import json
 import opendevin.lib.actions as actions
 
-ACTION_TYPES = ['run', 'kill', 'browse', 'read', 'write', 'recall', 'think', 'output', 'error', 'finish']
+ACTION_TYPES = ['run', 'kill', 'summarize', 'browse', 'read', 'write', 'recall', 'think', 'output', 'error', 'finish']
 RUNNABLE_ACTIONS = ['run', 'kill', 'browse', 'read', 'write', 'recall']
 
 class Event:

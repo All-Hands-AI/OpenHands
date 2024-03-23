@@ -10,6 +10,8 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--task", required=True, type=str, help="The task for the agent to perform")
     parser.add_argument("-c", "--agent-cls", default="LangchainsAgent", type=str, help="The agent class to use")
     parser.add_argument("-m", "--model-name", default="gpt-4-0125-preview", type=str, help="The (litellm) model name to use")
+    parser.add_argument("-i", "--max-iterations", default=100, type=int, help="The maximum number of iterations to run the agent for")
+
     args = parser.parse_args()
 
     print(f"Running agent {args.agent_cls} (model: {args.model_name}, directory: {args.directory}) with task: \"{args.task}\"")
@@ -21,5 +23,5 @@ if __name__ == "__main__":
         model_name=args.model_name
     )
 
-    controller = AgentController(agent, args.directory)
+    controller = AgentController(agent, args.directory, max_iterations=args.max_iterations)
     controller.start_loop()

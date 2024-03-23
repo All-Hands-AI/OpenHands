@@ -2,7 +2,8 @@ import os
 
 from . import json
 
-if os.getenv("DEBUG"):
+DEBUG = os.getenv("DEBUG") == "true" or os.getenv("DEBUG") == "1"
+if DEBUG:
     from langchain.globals import set_debug
     set_debug(True)
 
@@ -106,7 +107,7 @@ def summarize_monologue(thoughts, model_name):
     llm_chain = get_chain(MONOLOGUE_SUMMARY_PROMPT, model_name)
     parser = JsonOutputParser(pydantic_object=NewMonologue)
     resp = llm_chain.invoke({'monologue': json.dumps({'old_monologue': thoughts})})
-    if os.getenv("DEBUG"):
+    if DEBUG:
         print("resp", resp)
     parsed = parser.parse(resp['text'])
     return parsed['new_monologue']
@@ -139,7 +140,7 @@ def request_action(task, thoughts, model_name, background_commands=[]):
         "task": task,
         "background_commands": bg_commands_message,
     })
-    if os.getenv("DEBUG"):
+    if DEBUG:
         print("resp", resp)
     parsed = parser.parse(resp['text'])
     return parsed

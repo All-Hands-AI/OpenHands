@@ -34,16 +34,11 @@ echo "Running with model: $MODEL"
 # add python path
 export PYTHONPATH="$PYTHONPATH:$SCRIPT_DIR/../../" 
 
-# hardcode pairs for directory to python class mapping 
-declare -A directory_class_pairs=(
-    [langchains_agent]="LangchainsAgent"
-    [codeact_agent]="CodeActAgent"
-)
+agents=("CodeActAgent" "LangchainsAgent")
 
-
-# for each agent 
-for agent_dir in $(find . -type d -name '*agent'); do
-  agent=$(basename "$agent_dir")
+# for each agent
+for agent in ${agents[@]}; do
+  echo "agent: $agent"
   # iterate over cases dir
   for case in $(ls $CASES_DIR); do
     # run the case
@@ -55,10 +50,10 @@ for agent_dir in $(find . -type d -name '*agent'); do
     task=$(cat $case_dir/task.txt)
     outputs_dir=$case_dir/outputs
     agent_dir=$outputs_dir/$agent
-    echo "agent: $agent_dir"
-    # create agent dir if not exist 
+    echo "agent output dir: $agent_dir"
+    # create agent dir if not exist
     if [ ! -d "$agent_dir" ]; then
-       mkdir -p $agent_dir 
+       mkdir -p $agent_dir
     fi
     rm -rf $agent_dir/workspace
     if [[ -d $case_dir/start ]]; then
@@ -66,7 +61,8 @@ for agent_dir in $(find . -type d -name '*agent'); do
     else
       mkdir $agent_dir/workspace
     fi
-    python3 $SCRIPT_DIR/../../opendevin/main.py -d $agent_dir/workspace -c ${directory_class_pairs[$agent]} -t "${task}" -m $MODEL  | tee $agent_dir/logs.txt
+    echo "running agent: $agent"
+    python3 $SCRIPT_DIR/../../opendevin/main.py -d $agent_dir/workspace -c $agent -t "${task}" -m $MODEL -i 10 | tee $agent_dir/logs.txt
     rm -rf $agent_dir/workspace/.git
   done
 done
