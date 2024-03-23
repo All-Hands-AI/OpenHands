@@ -138,7 +138,7 @@ class DockerInteractive:
     # clean up the container, cannot do it in __del__ because the python interpreter is already shutting down
     def cleanup(self):
         self.container.remove(force=True)
-        print("Finish Cleaning up Docker container")
+        print("Finish cleaning up Docker container")
 
 if __name__ == "__main__":
     import argparse
