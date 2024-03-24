@@ -1,9 +1,6 @@
-import os
-import argparse
-from typing import List, Dict, Type
+from typing import List, Any
 
-from opendevin.agent import Agent, Message
-
+from opendevin.agent import Agent
 from agenthub.langchains_agent.utils.agent import Agent as LangchainsAgentImpl
 from opendevin.lib.event import Event
 
@@ -48,10 +45,13 @@ INITIAL_THOUGHTS = [
 
 class LangchainsAgent(Agent):
     _initialized = False
+    agent: Any = None
 
     def _initialize(self):
         if self._initialized:
             return
+        if self.instruction is None or self.instruction == "":
+            raise ValueError("Instruction must be provided")
         self.agent = LangchainsAgentImpl(self.instruction, self.model_name)
         next_is_output = False
         for thought in INITIAL_THOUGHTS:
@@ -78,7 +78,8 @@ class LangchainsAgent(Agent):
         self._initialized = True
 
     def add_event(self, event: Event) -> None:
-        self.agent.add_event(event)
+        if self.agent:
+            self.agent.add_event(event)
 
     def step(self, cmd_mgr) -> Event:
         self._initialize()

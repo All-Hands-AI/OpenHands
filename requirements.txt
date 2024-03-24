@@ -9,6 +9,7 @@ uvicorn[standard]
 
 # for agenthub/lanchangs_agent
 langchain
+langchain-core
 langchain-openai
 langchain-community
 llama-index

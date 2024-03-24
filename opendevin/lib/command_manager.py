@@ -1,5 +1,3 @@
-import subprocess
-import select
 from typing import List
 
 from opendevin.lib.event import Event
@@ -41,7 +39,7 @@ class CommandManager:
         self.background_commands[bg_cmd.id] = bg_cmd
         return "Background command started. To stop it, send a `kill` action with id " + str(bg_cmd.id)
 
-    def kill_command(self, id: int) -> str:
+    def kill_command(self, id: int):
         # TODO: get log events before killing
         self.background_commands[id].shell.close()
         del self.background_commands[id]

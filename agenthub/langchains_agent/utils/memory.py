@@ -1,20 +1,16 @@
-import os
 from . import json
 
 import chromadb
 
 from llama_index.core import Document
 from llama_index.core.retrievers import VectorIndexRetriever
-from llama_index.core import VectorStoreIndex, StorageContext, load_index_from_storage
-from llama_index.core.storage.docstore import SimpleDocumentStore
-from llama_index.core.vector_stores import SimpleVectorStore
-
+from llama_index.core import VectorStoreIndex
 from llama_index.vector_stores.chroma import ChromaVectorStore
 
 class LongTermMemory:
     def __init__(self, local_embeddings=False):
         db = chromadb.Client()
-        self.collection = db.create_collection(name="memories")
+        self.collection = db.get_or_create_collection(name="memories")
         vector_store = ChromaVectorStore(chroma_collection=self.collection)
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
         if local_embeddings:

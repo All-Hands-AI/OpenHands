@@ -2,14 +2,15 @@ import React, { useEffect, useRef } from "react";
 import { IDisposable, Terminal as XtermTerminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
+import socket from "../state/socket";
 
 class JsonWebsocketAddon {
   _socket: WebSocket;
 
   _disposables: IDisposable[];
 
-  constructor(socket: WebSocket) {
-    this._socket = socket;
+  constructor(_socket: WebSocket) {
+    this._socket = _socket;
     this._disposables = [];
   }
 
@@ -36,7 +37,7 @@ class JsonWebsocketAddon {
 
 function Terminal(): JSX.Element {
   const terminalRef = useRef<HTMLDivElement>(null);
-  const WS_URL = import.meta.env.VITE_TERMINAL_WS_URL;
+
   useEffect(() => {
     const terminal = new XtermTerminal({
       // This value is set to the appropriate value by the
@@ -60,12 +61,6 @@ function Terminal(): JSX.Element {
       fitAddon.fit();
     }, 1);
 
-    if (!WS_URL) {
-      throw new Error(
-        "The environment variable VITE_TERMINAL_WS_URL is not set. Please set it to the WebSocket URL of the terminal server.",
-      );
-    }
-    const socket = new WebSocket(WS_URL as string);
     const jsonWebsocketAddon = new JsonWebsocketAddon(socket);
     terminal.loadAddon(jsonWebsocketAddon);
 
