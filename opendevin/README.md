@@ -21,8 +21,12 @@ Example screenshot:
 ## How to run
 
 1. Build the sandbox image local. If you want to use specific image tags, please also fix the variable in code, in code default image tag is `latest`.
-```bash 
-docker build -f opendevin/sandbox/Dockerfile -t opendevin/sandbox:v0.1 .
+```bash
+cd sandbox
+# for local build testing or development
+make build
+# cross platform build
+make all
 ```
 
 2. Set the `OPENAI_API_KEY`, please find more details [here](https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety). Also, choose the model you want. Default is `gpt-4-0125-preview`

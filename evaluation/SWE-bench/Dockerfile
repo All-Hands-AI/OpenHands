@@ -19,7 +19,7 @@ WORKDIR /home/swe-bench
 # Setup Conda
 ENV PATH="/home/swe-bench/miniconda3/bin:${PATH}"
 ARG PATH="/home/swe-bench/miniconda3/bin:${PATH}"
-RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh \
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-`uname -m`.sh -O miniconda.sh \
     && mkdir ~/.conda \
     && bash miniconda.sh -b \
     && rm -f miniconda.sh
