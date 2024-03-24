@@ -1,5 +1,5 @@
 
-from typing import List
+from typing import List, Callable
 
 from opendevin.state import State
 from opendevin.agent import Agent
@@ -27,12 +27,14 @@ class AgentController:
         agent: Agent,
         workdir: str,
         max_iterations: int = 100,
+        callbacks: List[Callable] = [],
     ):
         self.agent = agent
         self.max_iterations = max_iterations
         self.workdir = workdir
         self.command_manager = CommandManager(workdir)
         self.state_updated_info: List[Action | Observation] = []
+        self.callbacks = callbacks
 
     def get_current_state(self) -> State:
         # update observations & actions
@@ -58,6 +60,8 @@ class AgentController:
                 action: Action = self.agent.step(state)
                 self.state_updated_info.append(action)
                 print("ACTION", action, flush=True)
+                for _callback_fn in self.callbacks:
+                    _callback_fn(action)
                 
                 if isinstance(action, AgentFinishAction):
                     print("FINISHED", flush=True)
@@ -75,6 +79,8 @@ class AgentController:
                     observation: Observation = action.run(self)
                     self.state_updated_info.append(observation)
                     print(observation, flush=True)
+                    for _callback_fn in self.callbacks:
+                        _callback_fn(action)
                 else:
                     print("ACTION NOT EXECUTABLE", flush=True)
 
