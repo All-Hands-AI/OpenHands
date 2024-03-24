@@ -1,4 +1,3 @@
-import os
 from .util import resolve_path
 
 def write(base_path, path, contents):

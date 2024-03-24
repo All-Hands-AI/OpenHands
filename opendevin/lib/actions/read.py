@@ -1,4 +1,3 @@
-import os
 from .util import resolve_path
 
 def read(base_path, file_path):
