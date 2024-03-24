@@ -17,6 +17,5 @@ class Monologue:
     def condense(self, llm):
         prompt = prompts.get_summarize_monologue_prompt(self.thoughts)
         response = llm.prompt(prompt)
-        new_thoughts = prompts.parse_summary_response(response)
-        self.thoughts = [Event(t['action'], t['args']) for t in new_thoughts]
+        self.thoughts = prompts.parse_summary_response(response)
 

@@ -147,7 +147,8 @@ def parse_action_response(response: str) -> Event:
     event = Event(action_dict['action'], action_dict['args'])
     return event
 
-def parse_summary_response(response: str) -> Event:
+def parse_summary_response(response: str) -> List[Event]:
     parser = JsonOutputParser(pydantic_object=NewMonologue)
     parsed = parser.parse(response)
-    return parsed['new_monologue']
+    thoughts = [Event(t['action'], t['args']) for t in parsed['new_monologue']]
+    return thoughts
