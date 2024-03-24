@@ -32,7 +32,7 @@ export OPENAI_API_KEY=xxxxxxx
 
 3. Install the requirement package.
 ```bash
-pip install -r requirement.txt                                                                 
+pip install -r requirements.txt                                                                 
 ```
 If you still meet problem like `ModuleNotFoundError: No module named 'agenthub'`, try to add the `opendevin` root path into `PATH` env.
 
