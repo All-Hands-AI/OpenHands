@@ -23,27 +23,34 @@ class CommandManager:
         self.background_commands = {}
         self.shell = DockerInteractive(id="default", workspace_dir=dir)
 
-    def run_command(self, command: str, background=False) -> str:
+    def run_command(self, command: str, background=False) -> CmdOutputObservation:
         if background:
             return self._run_background(command)
         else:
             return self._run_immediately(command)
 
-    def _run_immediately(self, command: str) -> str:
+    def _run_immediately(self, command: str) -> CmdOutputObservation:
         exit_code, output = self.shell.execute(command)
         if exit_code != 0:
             raise ValueError(
                 "Command failed with exit code " + str(exit_code) + ": " + output
             )
-        return output
+        return CmdOutputObservation(
+            content=output,
+            command_id=self.cur_id,
+            command=command,
+            exit_code=exit_code
+        )
 
-    def _run_background(self, command: str) -> str:
+    def _run_background(self, command: str) -> CmdOutputObservation:
         bg_cmd = BackgroundCommand(self.cur_id, command, self.directory)
         self.cur_id += 1
         self.background_commands[bg_cmd.id] = bg_cmd
-        return (
-            "Background command started. To stop it, send a `kill` action with id "
-            + str(bg_cmd.id)
+        return CmdOutputObservation(
+            content=f"Background command started.  To stop it, send a `kill` action with id {bg_cmd.id}",
+            command_id=bg_cmd.id,
+            command=command,
+            exit_code=0
         )
 
     def kill_command(self, id: int):
