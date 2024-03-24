@@ -48,9 +48,9 @@ class AgentController:
         self.state_updated_info.append(action)
 
 
-    async def start_loop(self, task_instrction: str):
+    async def start_loop(self, task_instruction: str):
         try:
-            self.agent.instruction = task_instrction
+            self.agent.instruction = task_instruction
             for i in range(self.max_iterations):
                 print("STEP", i, flush=True)
 
