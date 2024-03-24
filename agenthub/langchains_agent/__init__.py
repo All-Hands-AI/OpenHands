@@ -91,6 +91,9 @@ class LangchainsAgent(Agent):
         self.memory = LongTermMemory()
 
     def _add_event(self, event: dict):
+        if 'output' in event['args']:
+            event['args']['output'] = event['args']['output'][:MAX_OUTPUT_LENGTH] + "..."
+
         self.monologue.add_event(event)
         self.memory.add_event(event)
         if self.monologue.get_total_length() > MAX_MONOLOGUE_LENGTH:
@@ -162,6 +165,8 @@ class LangchainsAgent(Agent):
             self.model_name,
             state.background_commands_obs,
         )
+        if action_dict is None:
+            action_dict = {"action": "think", "args": {"thought": "..."}}
 
         # Translate action_dict to Action
         action = ACTION_TYPE_TO_CLASS[action_dict["action"]](**action_dict["args"])

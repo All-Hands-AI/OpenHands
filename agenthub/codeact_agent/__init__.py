@@ -1,11 +1,12 @@
 import os
 import re
-import argparse
 from litellm import completion
 from termcolor import colored
 from typing import List, Dict
 
 from opendevin.agent import Agent, Message, Role
+from opendevin.lib.event import Event
+from opendevin.lib.command_manager import CommandManager
 from opendevin.sandbox.sandbox import DockerInteractive
 
 assert (
@@ -93,12 +94,13 @@ class CodeActAgent(Agent):
             command = re.search(r"<execute>(.*)</execute>", action, re.DOTALL)
             if command is not None:
                 # a command was found
-                command = command.group(1)
-                if command.strip() == "exit":
+                command_group = command.group(1)
+                if command_group.strip() == "exit":
                     print(colored("Exit received. Exiting...", "red"))
                     break
                 # execute the code
-                observation = self.env.execute(command)
+                # TODO: does exit_code get loaded into Message?
+                exit_code, observation = self.env.execute(command_group)
                 self._history.append(Message(Role.ASSISTANT, observation))
                 print(colored("===ENV OBSERVATION:===\n" + observation, "blue"))
             else:
@@ -119,6 +121,16 @@ class CodeActAgent(Agent):
         - message (str): The chat message or command.
         """
         raise NotImplementedError
+
+    # TODO: implement these abstract methods
+    def add_event(self, event: Event) -> None:
+        raise NotImplementedError("Implement this abstract method")
+
+    def step(self, cmd_mgr: CommandManager) -> Event:
+        raise NotImplementedError("Implement this abstract method")
+
+    def search_memory(self, query: str) -> List[str]:
+        raise NotImplementedError("Implement this abstract method")
 
 
 Agent.register("CodeActAgent", CodeActAgent)

@@ -1,4 +1,3 @@
-import asyncio
 import json
 import os
 from time import sleep
@@ -56,7 +55,6 @@ async def websocket_endpoint(websocket: WebSocket):
                     await send_message_to_client(get_error_payload("Failed to start container: " + str(e)))
                     continue
 
-                agent_listener = asyncio.create_task(listen_for_agent_messages())
             if action == "terminal":
                 msg = {
                     "action": "terminal",
@@ -67,7 +65,6 @@ async def websocket_endpoint(websocket: WebSocket):
                 if agent_websocket is None:
                     await send_message_to_client(get_error_payload("Agent not connected"))
                     continue
-                await send_message_to_agent(data)
 
     except WebSocketDisconnect:
         print("Client websocket disconnected")
