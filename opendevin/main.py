@@ -1,6 +1,8 @@
 import argparse
 
 from typing import Type
+
+import agenthub  # noqa
 from opendevin.agent import Agent
 from opendevin.controller import AgentController
 

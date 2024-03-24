@@ -7,7 +7,7 @@ if os.getenv("DEBUG"):
 
     set_debug(True)
 
-from typing import List, Mapping
+from typing import List
 from langchain_core.pydantic_v1 import BaseModel
 
 from opendevin.observation import (
