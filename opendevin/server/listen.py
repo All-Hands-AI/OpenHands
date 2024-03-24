@@ -1,5 +1,6 @@
 from opendevin.server.session import Session
 from fastapi import FastAPI, WebSocket
+import agenthub # noqa F401 (we import this to get the agents registered)
 
 app = FastAPI()
 
