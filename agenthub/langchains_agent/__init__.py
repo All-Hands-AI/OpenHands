@@ -82,10 +82,9 @@ CLASS_TO_ACTION_TYPE: Dict[Type[Action], str] = {v: k for k, v in ACTION_TYPE_TO
 
 class LangchainsAgent(Agent):
     _initialized = False
-    agent: Any = None
 
-    def __init__(self, instruction: str, model_name: str):
-        super().__init__(instruction, model_name)
+    def __init__(self, model_name: str):
+        super().__init__(model_name)
         self.monologue = Monologue(self.model_name)
         self.memory = LongTermMemory()
 

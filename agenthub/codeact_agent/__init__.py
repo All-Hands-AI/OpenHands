@@ -2,7 +2,7 @@ import os
 import re
 from litellm import completion
 from termcolor import colored
-from typing import List
+from typing import List, Mapping
 
 from opendevin.agent import Agent
 from opendevin.state import State
@@ -62,7 +62,6 @@ def parse_response(response) -> str:
 class CodeActAgent(Agent):
     def __init__(
         self,
-        instruction: str,
         model_name: str
     ) -> None:
         """
@@ -72,14 +71,19 @@ class CodeActAgent(Agent):
         - instruction (str): The instruction for the agent to execute.
         - max_steps (int): The maximum number of steps to run the agent.
         """
-        super().__init__(instruction, model_name)
-        self.messages = [
-            {"role": "system", "content": SYSTEM_MESSAGE},
-            {"role": "user", "content": instruction},
-        ]
-        print(colored("===USER:===\n" + instruction, "green"))
+        super().__init__(model_name)
+        self.messages: List[Mapping[str, str]] = []
+        self.instruction: str = ""
 
     def step(self, state: State) -> Action:
+        if len(self.messages) == 0:
+            assert self.instruction, "Expecting instruction to be set"
+            self.messages = [
+                {"role": "system", "content": SYSTEM_MESSAGE},
+                {"role": "user", "content": self.instruction},
+            ]
+            print(colored("===USER:===\n" + self.instruction, "green"))
+
         updated_info = state.updated_info
 
         if updated_info:
