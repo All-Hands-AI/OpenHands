@@ -154,8 +154,26 @@ class LangchainsAgent(Agent):
                 else:
                     raise NotImplementedError(f"Unknown observation type: {info}")
                 self._add_event(d)
-            else:
-                raise NotImplementedError(f"Unknown info type: {info}")
+            elif isinstance(info, Action):
+                if isinstance(info, CmdRunAction):
+                    d = {"action": "run", "args": {"command": info.command}}
+                elif isinstance(info, CmdKillAction):
+                    d = {"action": "kill", "args": {"id": info.id}}
+                elif isinstance(info, BrowseURLAction):
+                    d = {"action": "browse", "args": {"url": info.url}}
+                elif isinstance(info, FileReadAction):
+                    d = {"action": "read", "args": {"file": info.path}}
+                elif isinstance(info, FileWriteAction):
+                    d = {"action": "write", "args": {"file": info.path, "content": info.contents}}
+                elif isinstance(info, AgentRecallAction):
+                    d = {"action": "recall", "args": {"query": info.query}}
+                elif isinstance(info, AgentThinkAction):
+                    d = {"action": "think", "args": {"thought": info.thought}}
+                elif isinstance(info, AgentFinishAction):
+                    d = {"action": "finish"}
+                else:
+                    raise NotImplementedError(f"Unknown action type: {info}")
+                self._add_event(d)
 
         state.updated_info = []
             
