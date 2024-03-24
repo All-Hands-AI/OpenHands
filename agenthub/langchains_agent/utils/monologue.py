@@ -17,7 +17,6 @@ class Monologue:
 
     def condense(self):
         new_thoughts = llm.summarize_monologue(self.thoughts, self.model_name)
-        print("new thoughts", new_thoughts)
         # self.thoughts = [Event(t['action'], t['args']) for t in new_thoughts]
         self.thoughts = new_thoughts
 

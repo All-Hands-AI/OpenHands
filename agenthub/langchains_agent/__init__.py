@@ -82,6 +82,7 @@ CLASS_TO_ACTION_TYPE: Dict[Type[Action], str] = {v: k for k, v in ACTION_TYPE_TO
 
 class LangchainsAgent(Agent):
     _initialized = False
+    agent: Any = None
 
     def __init__(self, instruction: str, model_name: str):
         super().__init__(instruction, model_name)
@@ -100,6 +101,10 @@ class LangchainsAgent(Agent):
     def _initialize(self):
         if self._initialized:
             return
+
+        if self.instruction is None or self.instruction == "":
+            raise ValueError("Instruction must be provided")
+
         next_is_output = False
         for thought in INITIAL_THOUGHTS:
             thought = thought.replace("$TASK", self.instruction)

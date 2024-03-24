@@ -10,7 +10,7 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 class LongTermMemory:
     def __init__(self):
         db = chromadb.Client()
-        self.collection = db.create_collection(name="memories")
+        self.collection = db.get_or_create_collection(name="memories")
         vector_store = ChromaVectorStore(chroma_collection=self.collection)
         self.index = VectorStoreIndex.from_vector_store(vector_store)
         self.thought_idx = 0

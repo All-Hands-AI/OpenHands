@@ -1,3 +1,4 @@
+import asyncio
 import argparse
 
 from typing import Type
@@ -48,9 +49,6 @@ if __name__ == "__main__":
     print(f"Running agent {args.agent_cls} (model: {args.model_name}, directory: {args.directory}) with task: \"{args.task}\"")
 
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
-    agent = AgentCls(instruction=args.task, model_name=args.model_name)
-
-    controller = AgentController(
-        agent, workdir=args.directory, max_iterations=args.max_iterations
-    )
-    controller.start_loop()
+    agent = AgentCls(model_name=args.model_name)
+    controller = AgentController(agent, workdir=args.directory, max_iterations=args.max_iterations)
+    asyncio.run(controller.start_loop(args.task))

@@ -19,8 +19,7 @@ class Agent(ABC):
 
     _registry: Dict[str, Type["Agent"]] = {}
 
-    def __init__(self, instruction: str, model_name: str):
-        self.instruction = instruction
+    def __init__(self, model_name: str):
         self.model_name = model_name
         self._complete = False
 

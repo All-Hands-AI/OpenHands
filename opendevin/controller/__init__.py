@@ -1,3 +1,4 @@
+
 from typing import List
 
 from opendevin.state import State
@@ -42,31 +43,42 @@ class AgentController:
         self.state_updated_info = []
         return state
 
-    def start_loop(self):
-        for i in range(self.max_iterations):
-            print("STEP", i, flush=True)
-
-            state: State = self.get_current_state()
-            action: Action = self.agent.step(state)
-            self.state_updated_info.append(action)
-            print("ACTION", action, flush=True)
-            
-            if isinstance(action, AgentFinishAction):
-                break
-            if isinstance(action, (FileReadAction, FileWriteAction)):
-                action_cls = action.__class__
-                _kwargs = action.__dict__
-                _kwargs["workspace_dir"] = self.workdir
-                action = action_cls(**_kwargs)
-                print(action, flush=True)
-            print("---", flush=True)
+    async def add_user_action(self, action: Action):
+        # await self.handle_action(event)
+        self.state_updated_info.append(action)
 
 
-            if action.executable:
-                observation: Observation = action.run(self)
-                self.state_updated_info.append(observation)
-                print(observation, flush=True)
-            else:
-                print("ACTION NOT EXECUTABLE", flush=True)
+    async def start_loop(self, task_instrction: str):
+        try:
+            self.agent.instruction = task_instrction
+            for i in range(self.max_iterations):
+                print("STEP", i, flush=True)
 
-            print("==============", flush=True)
+                state: State = self.get_current_state()
+                action: Action = self.agent.step(state)
+                self.state_updated_info.append(action)
+                print("ACTION", action, flush=True)
+                
+                if isinstance(action, AgentFinishAction):
+                    print("FINISHED", flush=True)
+                    break
+                if isinstance(action, (FileReadAction, FileWriteAction)):
+                    action_cls = action.__class__
+                    _kwargs = action.__dict__
+                    _kwargs["workspace_dir"] = self.workdir
+                    action = action_cls(**_kwargs)
+                    print(action, flush=True)
+                print("---", flush=True)
+
+
+                if action.executable:
+                    observation: Observation = action.run(self)
+                    self.state_updated_info.append(observation)
+                    print(observation, flush=True)
+                else:
+                    print("ACTION NOT EXECUTABLE", flush=True)
+
+                print("==============", flush=True)
+        except Exception as e:
+            print("Error in loop", e, flush=True)
+            pass
