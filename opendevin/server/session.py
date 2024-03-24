@@ -20,10 +20,6 @@ from opendevin.action import (
 )
 from opendevin.observation import (
     Observation,
-    CmdOutputObservation,
-    UserMessageObservation,
-    AgentMessageObservation,
-    BrowserOutputObservation,
 )
 
 # NOTE: this is a temporary solution - but hopefully we can use Action/Observation throughout the codebase

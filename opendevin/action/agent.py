@@ -55,4 +55,4 @@ class AgentFinishAction(NotExecutableAction):
 
     @property
     def message(self) -> str:
-        return f"Finished!"
+        return "Finished!"
