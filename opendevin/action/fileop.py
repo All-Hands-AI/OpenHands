@@ -1,11 +1,11 @@
 import os
 from dataclasses import dataclass
 
-from .base import Action
+from .base import Action, Executable
 
 
 @dataclass
-class FileReadAction(Action):
+class FileReadAction(Action, Executable):
     base_path: str
     file_path: str
 
@@ -15,7 +15,7 @@ class FileReadAction(Action):
             return file.read()
 
 @dataclass
-class FileWriteAction(Action):
+class FileWriteAction(Action, Executable):
     base_path: str
     file_path: str
     contents: str

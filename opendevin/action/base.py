@@ -7,8 +7,6 @@ if TYPE_CHECKING:
 
 @dataclass
 class Action:
-    runnable: bool = True
-
     def run(self, controller: "AgentController") -> str:
         raise NotImplementedError
 
@@ -17,3 +15,14 @@ class Action:
             "action_type": self.__class__.__name__,
             "args": self.__dict__
         }
+
+class Executable:
+    @property
+    def executable(self) -> bool:
+        return True
+
+
+class NotExecutable:
+    @property
+    def executable(self) -> bool:
+        return False
