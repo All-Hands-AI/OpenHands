@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
-
+    from opendevin.observation import Observation
 
 @dataclass
 class Action:
-    def run(self, controller: "AgentController") -> str:
+    def run(self, controller: "AgentController") -> "Observation":
         raise NotImplementedError
 
     def to_dict(self):
