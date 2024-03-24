@@ -7,36 +7,6 @@ if TYPE_CHECKING:
     from opendevin.action import Action
     from opendevin.state import State
 
-class Role(Enum):
-    SYSTEM = "system"  # system message for LLM
-    USER = "user"  # the user
-    ASSISTANT = "assistant"  # the agent
-    ENVIRONMENT = "environment"  # the environment (e.g., bash shell, web browser, etc.)
-
-@dataclass
-class Message:
-    """
-    This data class represents a message sent by an agent to another agent or user.
-    """
-
-    role: Role
-    content: str
-    # TODO: add more fields as needed
-
-    def to_dict(self) -> Dict:
-        """
-        Converts the message to a dictionary (OpenAI chat-completion format).
-
-        Returns:
-        - message (Dict): A dictionary representation of the message.
-        """
-        role = self.role.value
-        content = self.content
-        if self.role == Role.ENVIRONMENT:
-            content = f"Environment Observation:\n{content}"
-            role = "user"  # treat environment messages as user messages
-        return {"role": role, "content": content}
-
 
 class Agent(ABC):
     """
@@ -49,18 +19,12 @@ class Agent(ABC):
     :param model_name: The litellm name of the model to use for the agent.
     """
 
-    _registry: Dict[str, Type['Agent']] = {}
+    _registry: Dict[str, Type["Agent"]] = {}
 
-    def __init__(
-        self,
-        instruction: str,
-        model_name: str
-    ):
+    def __init__(self, instruction: str, model_name: str):
         self.instruction = instruction
         self.model_name = model_name
-
         self._complete = False
-        self._history: List[Message] = [Message(Role.USER, instruction)]
 
     @property
     def complete(self) -> bool:
@@ -71,16 +35,6 @@ class Agent(ABC):
         - complete (bool): True if execution is complete; False otherwise.
         """
         return self._complete
-
-    @property
-    def history(self) -> List[Message]:
-        """
-        Provides the history of interactions or state changes since the instruction was initiated.
-
-        Returns:
-        - history (List[str]): A list of strings representing the history.
-        """
-        return self._history
 
     @abstractmethod
     def step(self, state: "State") -> "Action":
@@ -109,12 +63,12 @@ class Agent(ABC):
         to prepare the agent for restarting the instruction or cleaning up before destruction.
 
         """
-        self.instruction = ''
+        self.instruction = ""
         self._complete = False
         self._history = []
 
     @classmethod
-    def register(cls, name: str, agent_cls: Type['Agent']):
+    def register(cls, name: str, agent_cls: Type["Agent"]):
         """
         Registers an agent class in the registry.
 
@@ -127,7 +81,7 @@ class Agent(ABC):
         cls._registry[name] = agent_cls
 
     @classmethod
-    def get_cls(cls, name: str) -> Type['Agent']:
+    def get_cls(cls, name: str) -> Type["Agent"]:
         """
         Retrieves an agent class from the registry.
 
