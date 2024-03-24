@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class Action:
-    pass
+    runnable: bool = True
 
     def run(self, controller: "AgentController") -> str:
         raise NotImplementedError

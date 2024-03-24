@@ -17,13 +17,15 @@ class AgentRecallAction(Action):
 @dataclass
 class AgentThinkAction(Action):
     thought: str
+    runnable: bool = False
 
     def run(self, controller: "AgentController") -> str:
-        return self.thought
+        raise NotImplementedError
 
 
 @dataclass
 class AgentFinishAction(Action):
+    runnable: bool = False
 
     def run(self, controller: "AgentController") -> str:
-        return "finish"
+        raise NotImplementedError

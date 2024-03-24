@@ -45,11 +45,15 @@ class AgentController:
 
             state: State = self.get_current_state()
             action: Action = self.agent.step(state)
+            self.state_updated_info.append(action)
 
             if isinstance(action, AgentFinishAction):
                 break
             print("---", flush=True)
-            observation: Observation = action.run(self)
-            self.state_updated_info.append(observation)
-            print(observation, flush=True)
+
+            if action.runnable:
+                observation: Observation = action.run(self)
+                self.state_updated_info.append(observation)
+                print(observation, flush=True)
+            
             print("==============", flush=True)
