@@ -1,7 +1,6 @@
-from typing import List
+from typing import List, Any
 
 from opendevin.agent import Agent
-
 from agenthub.langchains_agent.utils.agent import Agent as LangchainsAgentImpl
 from opendevin.lib.event import Event
 
@@ -46,7 +45,7 @@ INITIAL_THOUGHTS = [
 
 class LangchainsAgent(Agent):
     _initialized = False
-    agent: LangchainsAgentImpl = None
+    agent: Any = None
 
     def _initialize(self):
         if self._initialized:

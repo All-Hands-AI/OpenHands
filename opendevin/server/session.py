@@ -1,5 +1,6 @@
 import os
 import asyncio
+from typing import Optional
 
 from fastapi import WebSocketDisconnect
 
@@ -22,8 +23,8 @@ def parse_event(data):
 class Session:
     def __init__(self, websocket):
         self.websocket = websocket
-        self.controller = None
-        self.agent = None
+        self.controller: Optional[AgentController] = None
+        self.agent: Optional[Agent] = None
         self.agent_task = None
         asyncio.create_task(self.create_controller(), name="create controller") # FIXME: starting the docker container synchronously causes a websocket error...
 
@@ -95,6 +96,9 @@ class Session:
             return
         await self.send_message("Starting new task...")
         task = start_event.args["task"]
+        if self.controller is None:
+            await self.send_error("No agent started. Please wait a second...")
+            return
         self.agent_task = asyncio.create_task(self.controller.start_loop(task), name="agent loop")
 
     def on_agent_event(self, event):
