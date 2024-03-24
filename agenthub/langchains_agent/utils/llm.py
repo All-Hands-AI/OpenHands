@@ -7,14 +7,13 @@ if os.getenv("DEBUG"):
 
     set_debug(True)
 
-from typing import List
+from typing import List, Mapping
 from langchain_core.pydantic_v1 import BaseModel
 
 from opendevin.observation import (
     Observation,
     CmdOutputObservation,
 )
-
 
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
