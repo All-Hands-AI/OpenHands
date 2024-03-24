@@ -1,14 +1,14 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from .base import Action, Executable
+from .base import ExecutableAction
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
 
 
 @dataclass
-class CmdRunAction(Action, Executable):
+class CmdRunAction(ExecutableAction):
     command: str
     background: bool = False
 
@@ -17,7 +17,7 @@ class CmdRunAction(Action, Executable):
 
 
 @dataclass
-class CmdKillAction(Action, Executable):
+class CmdKillAction(ExecutableAction):
     id: int
 
     def run(self, controller: "AgentController") -> str:

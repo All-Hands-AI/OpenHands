@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 import requests
 
-from .base import Action, Executable
+from .base import ExecutableAction
 
 
 @dataclass
-class BrowseURLAction(Action, Executable):
+class BrowseURLAction(ExecutableAction):
     url: str
 
     def run(self, *args, **kwargs) -> str:

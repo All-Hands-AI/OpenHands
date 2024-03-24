@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from .base import Action, Executable, NotExecutable
+from .base import NotExecutableAction
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
 
 
 @dataclass
-class AgentRecallAction(Action, Executable):
+class AgentRecallAction(NotExecutableAction):
     query: str
 
     def run(self, controller: "AgentController") -> str:
@@ -15,7 +15,7 @@ class AgentRecallAction(Action, Executable):
 
 
 @dataclass
-class AgentThinkAction(Action, Executable):
+class AgentThinkAction(NotExecutableAction):
     thought: str
     runnable: bool = False
 
@@ -24,7 +24,7 @@ class AgentThinkAction(Action, Executable):
 
 
 @dataclass
-class AgentFinishAction(Action, Executable):
+class AgentFinishAction(NotExecutableAction):
     runnable: bool = False
 
     def run(self, controller: "AgentController") -> str:
