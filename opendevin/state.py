@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Mapping, List
+from typing import List
 
 from opendevin.action import (
     Action,
@@ -12,5 +12,5 @@ from opendevin.observation import (
 
 @dataclass
 class State:
-    background_commands_obs: Mapping[int, CmdOutputObservation]
+    background_commands_obs: List[CmdOutputObservation]
     updated_info: List[Action | Observation]

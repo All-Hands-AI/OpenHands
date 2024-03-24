@@ -63,7 +63,6 @@ class Agent(ABC):
         """
         self.instruction = ""
         self._complete = False
-        self._history = []
 
     @classmethod
     def register(cls, name: str, agent_cls: Type["Agent"]):

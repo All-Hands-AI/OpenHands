@@ -79,7 +79,7 @@ class CodeActAgent(Agent):
         ]
         print(colored("===USER:===\n" + instruction, "green"))
 
-    def step(self, state: State) -> None:
+    def step(self, state: State) -> Action:
         updated_info = state.updated_info
 
         if updated_info:

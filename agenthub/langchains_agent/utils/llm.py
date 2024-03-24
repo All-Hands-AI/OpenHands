@@ -107,7 +107,7 @@ def get_chain(template, model_name):
     assert (
         "OPENAI_API_KEY" in os.environ
     ), "Please set the OPENAI_API_KEY environment variable to use langchains_agent."
-    llm = ChatOpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"), model_name=model_name)
+    llm = ChatOpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"), model_name=model_name)  # type: ignore
     prompt = PromptTemplate.from_template(template)
     llm_chain = LLMChain(prompt=prompt, llm=llm)
     return llm_chain
@@ -128,7 +128,7 @@ def request_action(
     task,
     thoughts: List[dict],
     model_name: str,
-    background_commands_obs: Mapping[int, CmdOutputObservation] = [],
+    background_commands_obs: List[CmdOutputObservation] = [],
 ):
     llm_chain = get_chain(ACTION_PROMPT, model_name)
     parser = JsonOutputParser(pydantic_object=_ActionDict)
@@ -146,8 +146,8 @@ def request_action(
     bg_commands_message = ""
     if len(background_commands_obs) > 0:
         bg_commands_message = "The following commands are running in the background:"
-        for id, command_obs in background_commands_obs.items():
-            bg_commands_message += f"\n`{id}`: {command_obs.command}"
+        for command_obs in background_commands_obs:
+            bg_commands_message += f"\n`{command_obs.command_id}`: {command_obs.command}"
         bg_commands_message += "\nYou can end any process by sending a `kill` action with the numerical `id` above."
 
     latest_thought = thoughts[-1]

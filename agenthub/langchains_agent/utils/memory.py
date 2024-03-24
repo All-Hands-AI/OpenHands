@@ -18,7 +18,7 @@ class LongTermMemory:
     def add_event(self, event):
         doc = Document(
             text=json.dumps(event),
-            doc_id=self.thought_idx,
+            doc_id=str(self.thought_idx),
             extra_info={
                 "type": event["action"],
                 "idx": self.thought_idx,

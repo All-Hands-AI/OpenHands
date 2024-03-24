@@ -1,3 +1,4 @@
+from typing import List
 from dataclasses import dataclass
 
 @dataclass
@@ -50,3 +51,12 @@ class AgentMessageObservation(Observation):
     This data class represents a message sent by the agent.
     """
     role: str = "assistant"
+
+@dataclass
+class AgentRecallObservation(Observation):
+    """
+    This data class represents a list of memories recalled by the agent.
+    """
+    memories: List[str]
+    role: str = "assistant"
+    

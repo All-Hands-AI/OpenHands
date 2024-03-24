@@ -110,19 +110,16 @@ class LangchainsAgent(Agent):
                 if thought.startswith("RUN"):
                     command = thought.split("RUN ")[1]
                     d = {"action": "run", "args": {"command": command}}
-                    d = CmdRunAction(command=command)
                     next_is_output = True
 
                 elif thought.startswith("RECALL"):
                     query = thought.split("RECALL ")[1]
                     d = {"action": "recall", "args": {"query": query}}
-                    d = AgentRecallAction(query=query)
                     next_is_output = True
 
                 elif thought.startswith("BROWSE"):
                     url = thought.split("BROWSE ")[1]
                     d = {"action": "browse", "args": {"url": url}}
-                    d = BrowseURLAction(url=url)
                     next_is_output = True
                 else:
                     d = {"action": "think", "args": {"thought": thought}}
@@ -142,13 +139,13 @@ class LangchainsAgent(Agent):
                     if info.error:
                         d = {"action": "error", "args": {"output": info.content}}
                     else:
-                        d = {"action": "output", "args": {"output": info.output}}
+                        d = {"action": "output", "args": {"output": info.content}}
                 # elif isinstance(info, UserMessageObservation):
                 #     d = {"action": "output", "args": {"output": info.message}}
                 # elif isinstance(info, AgentMessageObservation):
                 #     d = {"action": "output", "args": {"output": info.message}}
                 elif isinstance(info, BrowserOutputObservation):
-                    d = {"action": "output", "args": {"output": info.output}}
+                    d = {"action": "output", "args": {"output": info.content}}
                 else:
                     raise NotImplementedError(f"Unknown observation type: {info}")
                 self._add_event(d)
