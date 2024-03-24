@@ -2,29 +2,19 @@ import os
 import re
 from litellm import completion
 from termcolor import colored
-from typing import List, Dict
+from typing import List
 
 from opendevin.agent import Agent
-from opendevin.sandbox.sandbox import DockerInteractive
 from opendevin.state import State
 from opendevin.action import (
     Action,
     CmdRunAction,
-    CmdKillAction,
-    BrowseURLAction,
-    FileReadAction,
-    FileWriteAction,
-    AgentRecallAction,
-    AgentThinkAction,
     AgentEchoAction,
     AgentFinishAction,
 )
 from opendevin.observation import (
-    Observation,
     CmdOutputObservation,
-    UserMessageObservation,
     AgentMessageObservation,
-    BrowserOutputObservation,
 )
 
 

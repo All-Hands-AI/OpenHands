@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 import requests
-from typing import TYPE_CHECKING
 from opendevin.observation import BrowserOutputObservation
 
 from .base import ExecutableAction

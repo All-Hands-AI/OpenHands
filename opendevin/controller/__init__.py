@@ -1,4 +1,4 @@
-from typing import List, Callable
+from typing import List
 
 from opendevin.state import State
 from opendevin.agent import Agent

@@ -16,8 +16,6 @@ from opendevin.action import (
 from opendevin.observation import (
     Observation,
     CmdOutputObservation,
-    UserMessageObservation,
-    AgentMessageObservation,
     BrowserOutputObservation,
 )
 from opendevin.state import State
