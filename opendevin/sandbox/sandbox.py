@@ -48,7 +48,13 @@ class DockerInteractive:
         self.container_name = f"sandbox-{self.instance_id}"
 
         self.restart_docker_container()
-        self.execute('useradd --shell /bin/bash -u {uid} -o -c \"\" -m devin && su devin')
+        uid = os.getuid()
+        exit_code, logs = self.container.exec_run([
+            '/bin/bash', '-c',
+            f'useradd --shell /bin/bash -u {uid} -o -c \"\" -m devin'
+            ],
+            workdir="/workspace"
+        )
         # regester container cleanup function
         atexit.register(self.cleanup)
 
@@ -70,12 +76,13 @@ class DockerInteractive:
         return logs
 
     def execute(self, cmd: str) -> Tuple[int, str]:
-        exit_code, logs = self.container.exec_run(['/bin/bash', '-c', cmd], workdir="/workspace")
+        # TODO: each execute is not stateful! We need to keep track of the current working directory
+        exit_code, logs = self.container.exec_run(['su', 'devin', '-c', cmd], workdir="/workspace")
         return exit_code, logs.decode('utf-8')
 
     def execute_in_background(self, cmd: str) -> None:
         self.log_time = time.time()
-        result = self.container.exec_run(['/bin/bash', '-c', cmd], socket=True, workdir="/workspace")
+        result = self.container.exec_run(['su', 'devin', '-c', cmd], socket=True, workdir="/workspace")
         self.log_generator = result.output # socket.SocketIO
         self.log_generator._sock.setblocking(0)
 
