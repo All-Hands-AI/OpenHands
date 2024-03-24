@@ -24,7 +24,11 @@ class CmdOutputObservation(Observation):
     """
     command_id: int
     command: str
-    error: bool = False
+    exit_code: int = 0
+    
+    @property
+    def error(self) -> bool:
+        return self.exit_code != 0
 
 @dataclass
 class BrowserOutputObservation(Observation):
