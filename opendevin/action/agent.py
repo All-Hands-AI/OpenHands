@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from opendevin.observation import AgentMessageObservation, Observation
-from .base import NotExecutableAction
+from .base import ExecutableAction, NotExecutableAction
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
 
