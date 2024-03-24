@@ -15,6 +15,11 @@ class FileReadAction(ExecutableAction):
         with open(path, 'r') as file:
             return Observation(file.read())
 
+    @property
+    def message(self) -> str:
+        return f"Reading file: {self.path}"
+
+
 @dataclass
 class FileWriteAction(ExecutableAction):
     path: str
@@ -26,3 +31,8 @@ class FileWriteAction(ExecutableAction):
         with open(path, 'w') as file:
             file.write(self.contents)
         return Observation(f"File written to {path}")
+
+    @property
+    def message(self) -> str:
+        return f"Writing file: {self.path}"
+

@@ -18,6 +18,10 @@ class Action:
     def executable(self) -> bool:
         raise NotImplementedError
 
+    @property
+    def message(self) -> str:
+        raise NotImplementedError
+
 
 
 class ExecutableAction(Action):

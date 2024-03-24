@@ -15,3 +15,7 @@ class BrowseURLAction(ExecutableAction):
             content=response.text,
             url=self.url
         )
+
+    @property
+    def message(self) -> str:
+        return f"Browsing URL: {self.url}"

@@ -16,6 +16,9 @@ class CmdRunAction(ExecutableAction):
     def run(self, controller: "AgentController") -> "CmdOutputObservation":
         return controller.command_manager.run_command(self.command, self.background)
 
+    @property
+    def message(self) -> str:
+        return f"Running command: {self.command}"
 
 @dataclass
 class CmdKillAction(ExecutableAction):
@@ -23,3 +26,7 @@ class CmdKillAction(ExecutableAction):
 
     def run(self, controller: "AgentController") -> "CmdOutputObservation":
         return controller.command_manager.kill_command(self.id)
+
+    @property
+    def message(self) -> str:
+        return f"Killing command: {self.id}"

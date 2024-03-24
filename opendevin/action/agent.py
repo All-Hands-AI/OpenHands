@@ -17,6 +17,10 @@ class AgentRecallAction(ExecutableAction):
             memories=controller.agent.search_memory(self.query)
         )
 
+    @property
+    def message(self) -> str:
+        return f"Recalling memories with query: {self.query}"
+
 
 @dataclass
 class AgentThinkAction(NotExecutableAction):
@@ -26,6 +30,10 @@ class AgentThinkAction(NotExecutableAction):
     def run(self, controller: "AgentController") -> "Observation":
         raise NotImplementedError
 
+    @property
+    def message(self) -> str:
+        return f"Thinking: {self.thought}"
+
 @dataclass
 class AgentEchoAction(ExecutableAction):
     content: str
@@ -34,6 +42,9 @@ class AgentEchoAction(ExecutableAction):
     def run(self, controller: "AgentController") -> "Observation":
         return AgentMessageObservation(self.content)
 
+    @property
+    def message(self) -> str:
+        return f"Echoing: {self.content}"
 
 @dataclass
 class AgentFinishAction(NotExecutableAction):
@@ -41,3 +52,7 @@ class AgentFinishAction(NotExecutableAction):
 
     def run(self, controller: "AgentController") -> "Observation":
         raise NotImplementedError
+
+    @property
+    def message(self) -> str:
+        return f"Finished!"
