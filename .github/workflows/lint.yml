@@ -29,6 +29,6 @@ jobs:
       - name: Install dependencies
         run: pip install ruff mypy types-requests
       - name: Run ruff
-        run: ruff check --config dev_config/python/ruff.toml opendevin/ server/ agenthub/
+        run: ruff check --config dev_config/python/ruff.toml opendevin/ agenthub/
       - name: Run mypy
-        run: mypy --config-file dev_config/python/mypy.ini opendevin/ server/ agenthub/
+        run: mypy --config-file dev_config/python/mypy.ini opendevin/ agenthub/

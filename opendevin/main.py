@@ -1,4 +1,5 @@
 from typing import Type
+import asyncio
 import argparse
 
 from opendevin.agent import Agent
@@ -16,10 +17,8 @@ if __name__ == "__main__":
 
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(
-        instruction=args.task,
         workspace_dir=args.directory,
         model_name=args.model_name
     )
-
     controller = AgentController(agent, args.directory)
-    controller.start_loop()
+    asyncio.run(controller.start_loop(args.task))

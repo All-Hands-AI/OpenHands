@@ -1,3 +1,5 @@
+import asyncio
+
 from opendevin.lib.command_manager import CommandManager
 from opendevin.lib.event import Event
 
@@ -14,35 +16,53 @@ class AgentController:
         self.callbacks.append(self.agent.add_event)
         self.callbacks.append(print_callback)
 
-    def maybe_perform_action(self, event):
-        if not (event and event.is_runnable()):
-            return
-        action = 'output'
+    async def add_user_event(self, event: Event):
+        await self.handle_action(event)
+
+    async def start_loop(self, task):
         try:
-            output = event.run(self)
+            self.agent.instruction = task
+            for i in range(self.max_iterations):
+                print("STEP", i, flush=True)
+                done = await self.step()
+                if done:
+                    print("FINISHED", flush=True)
+                    break
         except Exception as e:
-            output = 'Error: ' + str(e)
-            action = 'error'
-        out_event = Event(action, {'output': output})
-        return out_event
+            print("Error in loop", e, flush=True)
+            pass
 
-    def start_loop(self):
-        for i in range(self.max_iterations):
-            print("STEP", i, flush=True)
-            log_events = self.command_manager.get_background_events()
-            for event in log_events:
-                for callback in self.callbacks:
-                    callback(event)
 
+    async def step(self) -> bool:
+        log_events = self.command_manager.get_background_events()
+        for event in log_events:
+            await self.run_callbacks(event)
+
+        try:
             action_event = self.agent.step(self.command_manager)
-            for callback in self.callbacks:
-                callback(action_event)
-            if action_event.action == 'finish':
-                break
-            print("---", flush=True)
+        except Exception as e:
+            action_event = Event('error', {'error': str(e)})
+        if action_event is None:
+            action_event = Event('error', {'error': "Agent did not return an event"})
 
-            output_event = self.maybe_perform_action(action_event)
-            if output_event is not None:
-                for callback in self.callbacks:
-                    callback(output_event)
-            print("==============", flush=True)
+        await self.handle_action(action_event)
+        return action_event.action == 'finish'
+
+    async def handle_action(self, event: Event):
+        print("=== HANDLING EVENT ===", flush=True)
+        await self.run_callbacks(event)
+        print("---  EVENT OUTPUT  ---", flush=True)
+        output_event = event.run(self)
+        await self.run_callbacks(output_event)
+
+    async def run_callbacks(self, event):
+        if event is None:
+            return
+        for callback in self.callbacks:
+            idx = self.callbacks.index(callback)
+            try:
+                callback(event)
+            except Exception as e:
+                print("Callback error:" + str(idx), e, flush=True)
+                pass
+        await asyncio.sleep(0.001) # Give back control for a tick, so we can await in callbacks
