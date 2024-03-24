@@ -46,7 +46,7 @@ INITIAL_THOUGHTS = [
 
 class LangchainsAgent(Agent):
     _initialized = False
-    agent = None
+    agent: LangchainsAgentImpl = None
 
     def _initialize(self):
         if self._initialized:

@@ -81,7 +81,7 @@ class Session:
         if start_event and "model" in start_event.args:
             model = start_event.args["model"]
 
-        AgentCls: Agent = Agent.get_cls(agent_cls)
+        AgentCls = Agent.get_cls(agent_cls)
         self.agent = AgentCls(
             workspace_dir=directory,
             model_name=model,

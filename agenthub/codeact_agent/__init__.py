@@ -55,7 +55,6 @@ class CodeActAgent(Agent):
         self,
         instruction: str,
         workspace_dir: str,
-        model_name: str,
         max_steps: int = 100
     ) -> None:
         """
@@ -65,7 +64,7 @@ class CodeActAgent(Agent):
         - instruction (str): The instruction for the agent to execute.
         - max_steps (int): The maximum number of steps to run the agent.
         """
-        super().__init__(instruction, workspace_dir, model_name, max_steps)
+        super().__init__(instruction, workspace_dir, max_steps)
         self._history = [Message(Role.SYSTEM, SYSTEM_MESSAGE)]
         self._history.append(Message(Role.USER, instruction))
         self.env = DockerInteractive(workspace_dir=workspace_dir)
