@@ -17,7 +17,6 @@ from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
-from langchain_openai import ChatOpenAI
 
 from opendevin.lib.event import Event
 
@@ -152,4 +151,3 @@ def parse_summary_response(response: str) -> Event:
     parser = JsonOutputParser(pydantic_object=NewMonologue)
     parsed = parser.parse(response)
     return parsed['new_monologue']
->>>>>>> c5b8179 ( add generic llm client):agenthub/langchains_agent/utils/prompts.py

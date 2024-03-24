@@ -6,7 +6,6 @@ if TYPE_CHECKING:
     from opendevin.state import State
 from opendevin.lib.event import Event
 from opendevin.lib.command_manager import CommandManager
-from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
 
 class Role(Enum):

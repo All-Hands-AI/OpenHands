@@ -1,7 +1,7 @@
 from typing import List, Dict, Type
 
-import agenthub.langchains_agent.utils.llm as llm
-from opendevin.agent import Agent, Message
+import agenthub.langchains_agent.utils.prompts as prompts
+from opendevin.agent import Agent
 from opendevin.action import (
     Action,
     CmdRunAction,
