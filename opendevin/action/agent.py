@@ -23,6 +23,14 @@ class AgentThinkAction(NotExecutableAction):
     def run(self, controller: "AgentController") -> "Observation":
         raise NotImplementedError
 
+@dataclass
+class AgentEchoAction(ExecutableAction):
+    content: str
+    runnable: bool = True
+
+    def run(self, controller: "AgentController") -> "Observation":
+        return AgentMessageObservation(self.content)
+
 
 @dataclass
 class AgentFinishAction(NotExecutableAction):
