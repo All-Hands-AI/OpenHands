@@ -88,7 +88,7 @@ class Session:
             model_name=model,
         )
         self.controller = AgentController(self.agent, directory, callbacks=[self.on_agent_event])
-        await self.send_message("Control loop started")
+        await self.send({"action": "initialize", "message": "Control loop started."})
 
     async def start_task(self, start_event):
         if "task" not in start_event.args:

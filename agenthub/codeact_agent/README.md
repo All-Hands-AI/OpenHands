@@ -10,7 +10,7 @@ PYTHONPATH=`pwd`:$PYTHONPATH python3 opendevin/main.py -d ./workspace -c CodeAct
 ```
 
 
-Example: prompts `gpt-3.5-turbo-0125` to write a flask server, install `flask` library, and start the server.
+Example: prompts `gpt-4-0125-preview` to write a flask server, install `flask` library, and start the server.
 
 <img width="951" alt="image" src="https://github.com/OpenDevin/OpenDevin/assets/38853559/325c3115-a343-4cc5-a92b-f1e5d552a077">
 
