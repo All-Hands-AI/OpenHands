@@ -89,7 +89,6 @@ class CodeActAgent(Agent):
         if updated_info:
             for prev_action, obs in updated_info:
                 assert isinstance(prev_action, (CmdRunAction, AgentEchoAction)), "Expecting CmdRunAction or AgentEchoAction for Action"
-
                 if isinstance(obs, AgentMessageObservation):  # warning message from itself
                     self.messages.append({"role": "user", "content": obs.content})
                     print(colored("===USER:===\n" + obs.content, "green"))
@@ -100,7 +99,6 @@ class CodeActAgent(Agent):
                     print(colored("===ENV OBSERVATION:===\n" + content, "blue"))
                 else:
                     raise NotImplementedError(f"Unknown observation type: {obs.__class__}")
-
         response = completion(
             messages=self.messages,
             model=self.model_name,
