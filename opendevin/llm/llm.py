@@ -1,20 +1,21 @@
-from litellm import completion
+from litellm import completion as litellm_completion
+from functools import partial
 import os
 
 DEFAULT_MODEL = os.getenv("LLM_MODEL", "gpt-4-0125-preview")
+DEFAULT_API_KEY = os.getenv("LLM_API_KEY")
 
 class LLM:
-    def __init__(self, model=DEFAULT_MODEL):
-        self.model = model
-        if self.model == "" or self.model is None:
-            self.model = DEFAULT_MODEL
+    def __init__(self, model=DEFAULT_MODEL, api_key=DEFAULT_API_KEY):
+        self.model = model if model else DEFAULT_MODEL
+        self.api_key = api_key if api_key else DEFAULT_API_KEY
 
-    def prompt_with_messages(self, messages, args: dict={}):
-        if self.model == 'fake':
-            return "This is a fake response"
-        resp = completion(model=self.model, messages=messages, **args)
-        return resp['choices'][0]['message']['content']
+        self._completion = partial(litellm_completion, model=self.model, api_key=self.api_key)
 
-    def prompt(self, prompt: str, args: dict={}):
-        message = [{ "content": prompt,"role": "user"}]
-        return self.prompt_with_messages(message, args)
+
+    @property
+    def completion(self):
+        """
+        Decorator for the litellm completion function.
+        """
+        return self._completion
