@@ -12,7 +12,7 @@ class Action:
         raise NotImplementedError
 
     def to_dict(self):
-        return {"action_type": self.__class__.__name__, "args": self.__dict__}
+        return {"action": self.__class__.__name__, "args": self.__dict__, "message": self.message}
 
     @property
     def executable(self) -> bool:

@@ -1,11 +1,14 @@
+import copy
 from typing import List
 from dataclasses import dataclass
+
 
 @dataclass
 class Observation:
     """
     This data class represents an observation of the environment.
     """
+
     content: str
 
     def __str__(self) -> str:
@@ -13,50 +16,84 @@ class Observation:
 
     def to_dict(self) -> dict:
         """Converts the observation to a dictionary."""
+        extras = copy.deepcopy(self.__dict__)
+        extras.pop("content", None)
         return {
-            "observation_type": self.__class__.__name__,
-            "args": self.__dict__
+            "observation": self.__class__.__name__,
+            "content": self.content,
+            "extras": extras,
+            "message": self.message,
         }
+
+    @property
+    def message(self) -> str:
+        """Returns a message describing the observation."""
+        return f"The agent made an observation."
+
 
 @dataclass
 class CmdOutputObservation(Observation):
     """
     This data class represents the output of a command.
     """
+
     command_id: int
     command: str
     exit_code: int = 0
-    
+
     @property
     def error(self) -> bool:
         return self.exit_code != 0
+
+    @property
+    def message(self) -> str:
+        return 'The agent observed command "{self.command}" executed with exit code {self.exit_code}.'
+
 
 @dataclass
 class BrowserOutputObservation(Observation):
     """
     This data class represents the output of a browser.
     """
+
     url: str
+
+    @property
+    def message(self) -> str:
+        return "The agent observed the browser output at URL."
+
 
 @dataclass
 class UserMessageObservation(Observation):
     """
     This data class represents a message sent by the user.
     """
+
     role: str = "user"
+
+    @property
+    def message(self) -> str:
+        return "The agent received a message from the user."
+
 
 @dataclass
 class AgentMessageObservation(Observation):
     """
     This data class represents a message sent by the agent.
     """
+
     role: str = "assistant"
+
+    @property
+    def message(self) -> str:
+        return "The agent received a message from itself."
+
 
 @dataclass
 class AgentRecallObservation(Observation):
     """
     This data class represents a list of memories recalled by the agent.
     """
+
     memories: List[str]
     role: str = "assistant"
-    
