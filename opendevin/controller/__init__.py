@@ -81,7 +81,7 @@ class AgentController:
                 
                 print(observation, flush=True)
                 for _callback_fn in self.callbacks:
-                    _callback_fn(action)
+                    _callback_fn(observation)
 
                 print("==============", flush=True)
         except Exception as e:
