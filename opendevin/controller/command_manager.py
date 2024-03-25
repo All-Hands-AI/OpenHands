@@ -31,10 +31,6 @@ class CommandManager:
 
     def _run_immediately(self, command: str) -> CmdOutputObservation:
         exit_code, output = self.shell.execute(command)
-        if exit_code != 0:
-            raise ValueError(
-                "Command failed with exit code " + str(exit_code) + ": " + output
-            )
         return CmdOutputObservation(
             content=output,
             command_id=self.cur_id,
