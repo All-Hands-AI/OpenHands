@@ -97,3 +97,7 @@ class AgentRecallObservation(Observation):
 
     memories: List[str]
     role: str = "assistant"
+
+    @property
+    def message(self) -> str:
+        return "The agent recalled memories."
