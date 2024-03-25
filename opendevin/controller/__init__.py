@@ -5,6 +5,7 @@ from opendevin.state import State
 from opendevin.agent import Agent
 from opendevin.action import (
     Action,
+    NullAction,
     FileReadAction,
     FileWriteAction,
     AgentFinishAction,
@@ -16,10 +17,6 @@ from opendevin.observation import (
 
 
 from .command_manager import CommandManager
-
-
-def print_callback(event):
-    print(event, flush=True)
 
 
 class AgentController:
@@ -34,8 +31,8 @@ class AgentController:
         self.max_iterations = max_iterations
         self.workdir = workdir
         self.command_manager = CommandManager(workdir)
-        self.state_updated_info: List[Tuple[Action, Observation]] = []
         self.callbacks = callbacks
+        self.state_updated_info: List[Tuple[Action, Observation]] = []
 
     def get_current_state(self) -> State:
         # update observations & actions
@@ -45,6 +42,9 @@ class AgentController:
         )
         self.state_updated_info = []
         return state
+
+    def add_observation(self, observation: Observation):
+        self.state_updated_info.append((NullAction(), observation))
 
     async def start_loop(self, task_instruction: str):
         try:

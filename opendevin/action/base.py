@@ -34,3 +34,12 @@ class NotExecutableAction(Action):
     @property
     def executable(self) -> bool:
         return False
+
+class NullAction(NotExecutableAction):
+    """An action that does nothing.
+    This is used when the agent need to receive user follow-up messages from the frontend.
+    """
+
+    @property
+    def message(self) -> str:
+        return "No action"

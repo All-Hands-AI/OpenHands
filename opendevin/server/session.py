@@ -20,6 +20,7 @@ from opendevin.action import (
 )
 from opendevin.observation import (
     Observation,
+    UserMessageObservation
 )
 
 # NOTE: this is a temporary solution - but hopefully we can use Action/Observation throughout the codebase
@@ -95,6 +96,9 @@ class Session:
                 else:
                     if self.controller is None:
                         await self.send_error("No agent started. Please wait a second...")
+
+                    elif event["action"] == "chat":
+                        self.controller.add_observation(UserMessageObservation(event["message"]))
                     else:
                         # TODO: we only need to implement user message for now
                         # since even Devin does not support having the user taking other
