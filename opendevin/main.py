@@ -41,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-i",
         "--max-iterations",
-        default=10,
+        default=100,
         type=int,
         help="The maximum number of iterations to run the agent",
     )
