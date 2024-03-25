@@ -14,6 +14,7 @@ from opendevin.action import (
     AgentFinishAction,
 )
 from opendevin.observation import (
+    Observation,
     CmdOutputObservation,
     BrowserOutputObservation,
 )
@@ -146,10 +147,10 @@ class LangchainsAgent(Agent):
             #     d = {"action": "output", "args": {"output": obs.message}}
             # elif isinstance(obs, AgentMessageObservation):
             #     d = {"action": "output", "args": {"output": obs.message}}
-            elif isinstance(obs, BrowserOutputObservation):
+            elif isinstance(obs, (BrowserOutputObservation, Observation)):
                 d = {"action": "output", "args": {"output": obs.content}}
             else:
-                raise NotImplementedError(f"Unknown observation type: {obs.__class__}")
+                raise NotImplementedError(f"Unknown observation type: {obs}")
             self._add_event(d)
 
 

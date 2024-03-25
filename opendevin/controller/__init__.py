@@ -65,7 +65,7 @@ class AgentController:
                 if isinstance(action, (FileReadAction, FileWriteAction)):
                     action_cls = action.__class__
                     _kwargs = action.__dict__
-                    _kwargs["workspace_dir"] = self.workdir
+                    _kwargs["base_path"] = self.workdir
                     action = action_cls(**_kwargs)
                     print(action, flush=True)
                 print("---", flush=True)
@@ -76,7 +76,7 @@ class AgentController:
                 else:
                     print("ACTION NOT EXECUTABLE", flush=True)
                     observation = NullObservation("")
-                
+                print("OBSERVATION", observation, flush=True)
                 self.state_updated_info.append((action, observation))
                 
                 print(observation, flush=True)
