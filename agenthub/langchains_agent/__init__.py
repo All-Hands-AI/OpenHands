@@ -8,6 +8,24 @@ import agenthub.langchains_agent.utils.prompts as prompts
 from agenthub.langchains_agent.utils.monologue import Monologue
 from agenthub.langchains_agent.utils.memory import LongTermMemory
 
+from opendevin.action import (
+    Action,
+    CmdRunAction,
+    CmdKillAction,
+    BrowseURLAction,
+    FileReadAction,
+    FileWriteAction,
+    AgentRecallAction,
+    AgentThinkAction,
+    AgentFinishAction,
+)
+from opendevin.observation import (
+    Observation,
+    CmdOutputObservation,
+    BrowserOutputObservation,
+)
+
+
 MAX_MONOLOGUE_LENGTH = 20000
 MAX_OUTPUT_LENGTH = 5000
 
@@ -151,98 +169,17 @@ class LangchainsAgent(Agent):
 
         state.updated_info = []
 
-        action_dict = llm.request_action(
-            self.instruction,
-            self.monologue.get_thoughts(),
-            self.model_name,
-            state.background_commands_obs,
-        )
-        if action_dict is None:
-            action_dict = {"action": "think", "args": {"thought": "..."}}
-
-        # Translate action_dict to Action
-        action = ACTION_TYPE_TO_CLASS[action_dict["action"]](**action_dict["args"])
-        self.latest_action = action
-        return action
-
-    def step(self, state: State) -> Action:
-        self._initialize()
-        # TODO: make langchains agent use Action & Observation
-        # completly from ground up
-
-        # Translate state to action_dict
-        for prev_action, obs in state.updated_info:
-            if isinstance(obs, CmdOutputObservation):
-                if obs.error:
-                    d = {"action": "error", "args": {"output": obs.content}}
-                else:
-                    d = {"action": "output", "args": {"output": obs.content}}
-            # elif isinstance(obs, UserMessageObservation):
-            #     d = {"action": "output", "args": {"output": obs.message}}
-            # elif isinstance(obs, AgentMessageObservation):
-            #     d = {"action": "output", "args": {"output": obs.message}}
-            elif isinstance(obs, (BrowserOutputObservation, Observation)):
-                d = {"action": "output", "args": {"output": obs.content}}
-            else:
-                raise NotImplementedError(f"Unknown observation type: {obs}")
-            self._add_event(d)
-
-
-            if isinstance(prev_action, CmdRunAction):
-                d = {"action": "run", "args": {"command": prev_action.command}}
-            elif isinstance(prev_action, CmdKillAction):
-                d = {"action": "kill", "args": {"id": prev_action.id}}
-            elif isinstance(prev_action, BrowseURLAction):
-                d = {"action": "browse", "args": {"url": prev_action.url}}
-            elif isinstance(prev_action, FileReadAction):
-                d = {"action": "read", "args": {"file": prev_action.path}}
-            elif isinstance(prev_action, FileWriteAction):
-                d = {"action": "write", "args": {"file": prev_action.path, "content": prev_action.contents}}
-            elif isinstance(prev_action, AgentRecallAction):
-                d = {"action": "recall", "args": {"query": prev_action.query}}
-            elif isinstance(prev_action, AgentThinkAction):
-                d = {"action": "think", "args": {"thought": prev_action.thought}}
-            elif isinstance(prev_action, AgentFinishAction):
-                d = {"action": "finish"}
-            else:
-                raise NotImplementedError(f"Unknown action type: {prev_action}")
-            self._add_event(d)
-
-        state.updated_info = []
-
-        action_dict = llm.request_action(
-            self.instruction,
-            self.monologue.get_thoughts(),
-            self.model_name,
-            state.background_commands_obs,
-        )
-        if action_dict is None:
-            action_dict = {"action": "think", "args": {"thought": "..."}}
-
         prompt = prompts.get_request_action_prompt(
             self.instruction,
             self.monologue.get_thoughts(),
-            cmd_mgr.background_commands
+            state.background_commands_obs,
         )
-        messages = [{ "content": prompt,"role": "user"}]
+        messages = [{"content": prompt,"role": "user"}]
         resp = self.llm.completion(messages=messages)
         action_resp = resp['choices'][0]['message']['content']
-        action_dict = prompts.parse_action_response(action_resp)
-        action = ACTION_TYPE_TO_CLASS[action_dict["action"]](**action_dict["args"])
+        action = prompts.parse_action_response(action_resp)
         self.latest_action = action
         return action
-
-    def step(self, cmd_mgr) -> Action:
-        self._initialize()
-        prompt = prompts.get_request_action_prompt(
-            self.instruction,
-            self.monologue.get_thoughts(),
-            cmd_mgr.background_commands
-        )
-        messages = [{ "content": prompt,"role": "user"}]
-        resp = self.llm.completion(messages=messages)
-        action_resp = resp['choices'][0]['message']['content']
-        return prompts.parse_action_response(action_resp)
 
     def search_memory(self, query: str) -> List[str]:
         return self.memory.search(query)

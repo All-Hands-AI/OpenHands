@@ -132,7 +132,11 @@ def get_summarize_monologue_prompt(thoughts):
     prompt = PromptTemplate.from_template(MONOLOGUE_SUMMARY_PROMPT)
     return prompt.format(monologue=json.dumps({'old_monologue': thoughts}))
 
-def get_request_action_prompt(task, thoughts, background_commands=[]):
+def get_request_action_prompt(
+        task: str,
+        thoughts: List[dict],
+        background_commands_obs: List[CmdOutputObservation] = [],
+):
     hint = ''
     if len(thoughts) > 0:
         latest_thought = thoughts[-1]
@@ -150,25 +154,19 @@ def get_request_action_prompt(task, thoughts, background_commands=[]):
         for command_obs in background_commands_obs:
             bg_commands_message += f"\n`{command_obs.command_id}`: {command_obs.command}"
         bg_commands_message += "\nYou can end any process by sending a `kill` action with the numerical `id` above."
-
     latest_thought = thoughts[-1]
-    resp = llm_chain.invoke(
-        {
-            "monologue": json.dumps(thoughts),
-            "hint": hint,
-            "task": task,
-            "background_commands": bg_commands_message,
-        }
+
+    prompt = PromptTemplate.from_template(ACTION_PROMPT)
+    return prompt.format(
+        task=task,
+        monologue=json.dumps(thoughts),
+        background_commands=bg_commands_message,
+        hint=hint,
     )
-    if os.getenv("DEBUG"):
-        print("resp", resp)
-    parsed = parser.parse(resp["text"])
-    return parsed
 
 def parse_action_response(response: str) -> Action:
     parser = JsonOutputParser(pydantic_object=_ActionDict)
     action_dict = parser.parse(response)
-    event = Event(action_dict['action'], action_dict['args'])
     action = ACTION_TYPE_TO_CLASS[action_dict["action"]](**action_dict["args"])
     return action
 
