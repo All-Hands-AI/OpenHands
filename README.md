@@ -14,7 +14,7 @@ Welcome to OpenDevin, an open-source project aiming to replicate [Devin](https:/
 OpenDevin is still a work in progress. But you can run the current app to see things working end-to-end:
 
 ```bash
-export OPENAI_API_TOKEN="..."
+export OPENAI_API_KEY="..."
 export WORKSPACE_DIR="/path/to/your/project"
 python -m pip install -r requirements.txt
 uvicorn opendevin.server.listen:app --port 3000
