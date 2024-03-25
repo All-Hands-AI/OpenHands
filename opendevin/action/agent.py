@@ -46,7 +46,7 @@ class AgentEchoAction(ExecutableAction):
 
     @property
     def message(self) -> str:
-        return f"You said '{self.content}', right? Let me reflect that back to you. Here it is!"
+        return self.content
 
 
 @dataclass
