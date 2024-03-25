@@ -75,7 +75,7 @@ class AgentController:
                     observation: Observation = action.run(self)
                 else:
                     print("ACTION NOT EXECUTABLE", flush=True)
-                    observation: Observation = NullObservation("")
+                    observation = NullObservation("")
                 
                 self.state_updated_info.append((action, observation))
                 

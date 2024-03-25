@@ -87,23 +87,19 @@ class CodeActAgent(Agent):
         updated_info = state.updated_info
 
         if updated_info:
+            for prev_action, obs in updated_info:
+                assert isinstance(prev_action, (CmdRunAction, AgentEchoAction)), "Expecting CmdRunAction or AgentEchoAction for Action"
 
-            for item in updated_info:
-                if isinstance(item, Action):
-                    assert isinstance(item, (CmdRunAction, AgentEchoAction)), "Expecting CmdRunAction or AgentEchoAction for Action"
-
-                elif isinstance(item, AgentMessageObservation):  # warning message from itself
-                    self.messages.append({"role": "user", "content": item.content})
-                    print(colored("===USER:===\n" + item.content, "green"))
-
-                elif isinstance(item, CmdOutputObservation):
-                    content = "OBSERVATION:\n" + item.content
-                    content += f"\n[Command {item.command_id} finished with exit code {item.exit_code}]]"
+                if isinstance(obs, AgentMessageObservation):  # warning message from itself
+                    self.messages.append({"role": "user", "content": obs.content})
+                    print(colored("===USER:===\n" + obs.content, "green"))
+                elif isinstance(obs, CmdOutputObservation):
+                    content = "OBSERVATION:\n" + obs.content
+                    content += f"\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]"
                     self.messages.append({"role": "user", "content": content})
                     print(colored("===ENV OBSERVATION:===\n" + content, "blue"))
-
                 else:
-                    raise NotImplementedError(f"Unknown observation type: {item}")
+                    raise NotImplementedError(f"Unknown observation type: {obs.__class__}")
 
         response = completion(
             messages=self.messages,
@@ -112,11 +108,11 @@ class CodeActAgent(Agent):
             temperature=0.0,
             seed=42,
         )
-        action = parse_response(response)
-        self.messages.append({"role": "assistant", "content": action})
-        print(colored("===ASSISTANT:===\n" + action, "yellow"))
+        action_str: str = parse_response(response)
+        self.messages.append({"role": "assistant", "content": action_str})
+        print(colored("===ASSISTANT:===\n" + action_str, "yellow"))
 
-        command = re.search(r"<execute>(.*)</execute>", action, re.DOTALL)
+        command = re.search(r"<execute>(.*)</execute>", action_str, re.DOTALL)
         if command is not None:
             # a command was found
             command_group = command.group(1)

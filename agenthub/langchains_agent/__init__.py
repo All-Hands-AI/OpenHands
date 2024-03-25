@@ -137,42 +137,42 @@ class LangchainsAgent(Agent):
         # completly from ground up
 
         # Translate state to action_dict
-        for info in state.updated_info:
-            if isinstance(info, Observation):
-                if isinstance(info, CmdOutputObservation):
-                    if info.error:
-                        d = {"action": "error", "args": {"output": info.content}}
-                    else:
-                        d = {"action": "output", "args": {"output": info.content}}
-                # elif isinstance(info, UserMessageObservation):
-                #     d = {"action": "output", "args": {"output": info.message}}
-                # elif isinstance(info, AgentMessageObservation):
-                #     d = {"action": "output", "args": {"output": info.message}}
-                elif isinstance(info, BrowserOutputObservation):
-                    d = {"action": "output", "args": {"output": info.content}}
+        for prev_action, obs in state.updated_info:
+            if isinstance(obs, CmdOutputObservation):
+                if obs.error:
+                    d = {"action": "error", "args": {"output": obs.content}}
                 else:
-                    raise NotImplementedError(f"Unknown observation type: {info}")
-                self._add_event(d)
-            elif isinstance(info, Action):
-                if isinstance(info, CmdRunAction):
-                    d = {"action": "run", "args": {"command": info.command}}
-                elif isinstance(info, CmdKillAction):
-                    d = {"action": "kill", "args": {"id": info.id}}
-                elif isinstance(info, BrowseURLAction):
-                    d = {"action": "browse", "args": {"url": info.url}}
-                elif isinstance(info, FileReadAction):
-                    d = {"action": "read", "args": {"file": info.path}}
-                elif isinstance(info, FileWriteAction):
-                    d = {"action": "write", "args": {"file": info.path, "content": info.contents}}
-                elif isinstance(info, AgentRecallAction):
-                    d = {"action": "recall", "args": {"query": info.query}}
-                elif isinstance(info, AgentThinkAction):
-                    d = {"action": "think", "args": {"thought": info.thought}}
-                elif isinstance(info, AgentFinishAction):
-                    d = {"action": "finish"}
-                else:
-                    raise NotImplementedError(f"Unknown action type: {info}")
-                self._add_event(d)
+                    d = {"action": "output", "args": {"output": obs.content}}
+            # elif isinstance(obs, UserMessageObservation):
+            #     d = {"action": "output", "args": {"output": obs.message}}
+            # elif isinstance(obs, AgentMessageObservation):
+            #     d = {"action": "output", "args": {"output": obs.message}}
+            elif isinstance(obs, BrowserOutputObservation):
+                d = {"action": "output", "args": {"output": obs.content}}
+            else:
+                raise NotImplementedError(f"Unknown observation type: {obs.__class__}")
+            self._add_event(d)
+
+
+            if isinstance(prev_action, CmdRunAction):
+                d = {"action": "run", "args": {"command": prev_action.command}}
+            elif isinstance(prev_action, CmdKillAction):
+                d = {"action": "kill", "args": {"id": prev_action.id}}
+            elif isinstance(prev_action, BrowseURLAction):
+                d = {"action": "browse", "args": {"url": prev_action.url}}
+            elif isinstance(prev_action, FileReadAction):
+                d = {"action": "read", "args": {"file": prev_action.path}}
+            elif isinstance(prev_action, FileWriteAction):
+                d = {"action": "write", "args": {"file": prev_action.path, "content": prev_action.contents}}
+            elif isinstance(prev_action, AgentRecallAction):
+                d = {"action": "recall", "args": {"query": prev_action.query}}
+            elif isinstance(prev_action, AgentThinkAction):
+                d = {"action": "think", "args": {"thought": prev_action.thought}}
+            elif isinstance(prev_action, AgentFinishAction):
+                d = {"action": "finish"}
+            else:
+                raise NotImplementedError(f"Unknown action type: {prev_action}")
+            self._add_event(d)
 
         state.updated_info = []
             
