@@ -206,7 +206,8 @@ class LangchainsAgent(Agent):
             self.monologue.get_thoughts(),
             cmd_mgr.background_commands
         )
-        resp = self.llm.prompt(prompt)
+        messages = [{ "content": prompt,"role": "user"}]
+        resp = self.llm.completion(messages=messages)
         return prompts.parse_action_response(resp)
 
     def search_memory(self, query: str) -> List[str]:
