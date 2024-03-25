@@ -49,47 +49,49 @@ class AgentController:
     async def start_loop(self, task_instruction: str):
         finished = False
         self.agent.instruction = task_instruction
-        try:
-            for i in range(self.max_iterations):
-                print("STEP", i, flush=True)
-
-                state: State = self.get_current_state()
-                action: Action = self.agent.step(state)
-
-                print("ACTION", action, flush=True)
-                for _callback_fn in self.callbacks:
-                    _callback_fn(action)
-
-                if isinstance(action, AgentFinishAction):
-                    finished = True
-                    print("FINISHED", flush=True)
-                    break
-                if isinstance(action, (FileReadAction, FileWriteAction)):
-                    action_cls = action.__class__
-                    _kwargs = action.__dict__
-                    _kwargs["base_path"] = self.workdir
-                    action = action_cls(**_kwargs)
-                    print(action, flush=True)
-                print("---", flush=True)
-
-
-                if action.executable:
-                    observation: Observation = action.run(self)
-                else:
-                    print("ACTION NOT EXECUTABLE", flush=True)
-                    observation = NullObservation("")
-                print("OBSERVATION", observation, flush=True)
-                self.state_updated_info.append((action, observation))
-
-                print(observation, flush=True)
-                for _callback_fn in self.callbacks:
-                    _callback_fn(observation)
-
-                print("==============", flush=True)
-
-                await asyncio.sleep(0.001)
-        except Exception as e:
-            print("Error in loop", e, flush=True)
-            pass
+        for i in range(self.max_iterations):
+            try:
+                finished = await self.step(i)
+            except Exception as e:
+                print("Error in loop", e, flush=True)
+                break
+            if finished:
+                break
         if not finished:
             print("Exited before finishing", flush=True)
+
+    async def step(self, i: int):
+        print("STEP", i, flush=True)
+
+        state: State = self.get_current_state()
+        action: Action = self.agent.step(state)
+
+        print("ACTION", action, flush=True)
+        await self.run_callbacks(action)
+
+        if isinstance(action, AgentFinishAction):
+            print("FINISHED", flush=True)
+            return True
+        if isinstance(action, (FileReadAction, FileWriteAction)):
+            action_cls = action.__class__
+            _kwargs = action.__dict__
+            _kwargs["base_path"] = self.workdir
+            action = action_cls(**_kwargs)
+            print(action, flush=True)
+        print("---", flush=True)
+        if action.executable:
+            observation: Observation = action.run(self)
+        else:
+            observation = NullObservation("")
+        print("OBSERVATION", observation, flush=True)
+        self.state_updated_info.append((action, observation))
+
+        print(observation, flush=True)
+        await self.run_callbacks(observation)
+
+        print("==============", flush=True)
+
+    async def run_callbacks(self, evt):
+        for _callback_fn in self.callbacks:
+            _callback_fn(evt)
+        await asyncio.sleep(0.001)
