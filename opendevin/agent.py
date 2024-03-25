@@ -1,43 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Type, TYPE_CHECKING
-from enum import Enum
-from dataclasses import dataclass
 
 if TYPE_CHECKING:
     from opendevin.action import Action
     from opendevin.state import State
 from opendevin.llm.llm import LLM
-
-class Role(Enum):
-    SYSTEM = "system"  # system message for LLM
-    USER = "user"  # the user
-    ASSISTANT = "assistant"  # the agent
-    ENVIRONMENT = "environment"  # the environment (e.g., bash shell, web browser, etc.)
-
-@dataclass
-class Message:
-    """
-    This data class represents a message sent by an agent to another agent or user.
-    """
-
-    role: Role
-    content: str
-    # TODO: add more fields as needed
-
-    def to_dict(self) -> Dict:
-        """
-        Converts the message to a dictionary (OpenAI chat-completion format).
-
-        Returns:
-        - message (Dict): A dictionary representation of the message.
-        """
-        role = self.role.value
-        content = self.content
-        if self.role == Role.ENVIRONMENT:
-            content = f"Environment Observation:\n{content}"
-            role = "user"  # treat environment messages as user messages
-        return {"role": role, "content": content}
-
 
 class Agent(ABC):
     """
