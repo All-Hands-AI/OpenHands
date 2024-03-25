@@ -34,7 +34,7 @@ class DockerInteractive:
         else:
             self.workspace_dir = os.getcwd()
             print(f"workspace unspecified, using current directory: {workspace_dir}")
-        if DIRECTORY_REWRITE != "" and DIRECTORY_REWRITE is not None:
+        if DIRECTORY_REWRITE != "":
             parts = DIRECTORY_REWRITE.split(":")
             self.workspace_dir = self.workspace_dir.replace(parts[0], parts[1])
             print("Rewriting workspace directory to:", self.workspace_dir)
