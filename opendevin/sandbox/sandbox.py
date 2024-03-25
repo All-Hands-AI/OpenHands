@@ -11,6 +11,7 @@ import atexit
 InputType = namedtuple("InputType", ["content"])
 OutputType = namedtuple("OutputType", ["content"])
 
+DIRECTORY_REWRITE = os.getenv("DIRECTORY_REWRITE", "") # helpful for docker-in-docker scenarios
 CONTAINER_IMAGE = os.getenv("SANDBOX_CONTAINER_IMAGE", "opendevin/sandbox:latest")
 
 class DockerInteractive:
@@ -33,6 +34,10 @@ class DockerInteractive:
         else:
             self.workspace_dir = os.getcwd()
             print(f"workspace unspecified, using current directory: {workspace_dir}")
+        if DIRECTORY_REWRITE != "" and DIRECTORY_REWRITE is not None:
+            parts = DIRECTORY_REWRITE.split(":")
+            self.workspace_dir = self.workspace_dir.replace(parts[0], parts[1])
+            print("Rewriting workspace directory to:", self.workspace_dir)
 
         # TODO: this timeout is actually essential - need a better way to set it
         # if it is too short, the container may still waiting for previous
