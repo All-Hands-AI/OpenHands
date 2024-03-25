@@ -125,6 +125,7 @@ class Session:
         if not os.path.exists(directory):
             print(f"Workspace directory {directory} does not exist. Creating it...")
             os.makedirs(directory)
+        directory = os.path.relpath(directory, os.getcwd())
         
         AgentCls = Agent.get_cls(agent_cls)
         self.agent = AgentCls(model_name=model)
@@ -143,4 +144,5 @@ class Session:
         self.agent_task = asyncio.create_task(self.controller.start_loop(task), name="agent loop")
 
     def on_agent_event(self, event: Observation | Action):
-        asyncio.create_task(self.send(event.to_dict()), name="send event in callback")
+        event_dict = event.to_dict()
+        asyncio.create_task(self.send(event_dict), name="send event in callback")
