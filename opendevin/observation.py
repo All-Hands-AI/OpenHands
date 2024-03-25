@@ -47,7 +47,7 @@ class CmdOutputObservation(Observation):
 
     @property
     def message(self) -> str:
-        return 'The agent observed command "{self.command}" executed with exit code {self.exit_code}.'
+        return f'The agent observed command "{self.command}" executed with exit code {self.exit_code}.'
 
 
 @dataclass
