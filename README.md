@@ -9,6 +9,24 @@
 ## Mission 🎯
 Welcome to OpenDevin, an open-source project aiming to replicate [Devin](https://www.cognition-labs.com/introducing-devin), an autonomous AI software engineer who is capable of executing complex engineering tasks and collaborating actively with users on software development projects. This project aspires to replicate, enhance, and innovate upon Devin through the power of the open-source community.
 
+## Work in Progress
+
+OpenDevin is still a work in progress. But you can run the current app to see things working end-to-end:
+
+```bash
+export OPENAI_API_KEY="..."
+export WORKSPACE_DIR="/path/to/your/project"
+python -m pip install -r requirements.txt
+uvicorn opendevin.server.listen:app --port 3000
+```
+Then in a second terminal:
+```bash
+cd frontend
+npm install
+npm run start -- --port 3001
+```
+
+You'll see OpenDevin running at localhost:3001
 
 ## 🤔 What is [Devin](https://www.cognition-labs.com/introducing-devin)?
 

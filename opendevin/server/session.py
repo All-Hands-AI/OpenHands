@@ -8,6 +8,8 @@ from opendevin.agent import Agent
 from opendevin.controller import AgentController
 from opendevin.lib.event import Event
 
+DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.getcwd())
+
 def parse_event(data):
     if "action" not in data:
         return None
@@ -72,7 +74,7 @@ class Session:
             print("Client websocket disconnected", e)
 
     async def create_controller(self, start_event=None):
-        directory = os.getcwd()
+        directory = DEFAULT_WORKSPACE_DIR
         if start_event and "directory" in start_event.args:
             directory = start_event.args["directory"]
         agent_cls = "LangchainsAgent"
