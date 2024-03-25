@@ -14,7 +14,6 @@ from opendevin.action import (
     AgentFinishAction,
 )
 from opendevin.observation import (
-    Observation,
     CmdOutputObservation,
     BrowserOutputObservation,
 )
