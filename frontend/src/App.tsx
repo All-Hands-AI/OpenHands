@@ -6,6 +6,7 @@ import Terminal from "./components/Terminal";
 import Planner from "./components/Planner";
 import CodeEditor from "./components/CodeEditor";
 import Browser from "./components/Browser";
+import Errors from "./components/Errors";
 
 const TAB_OPTIONS = ["terminal", "planner", "code", "browser"] as const;
 type TabOption = (typeof TAB_OPTIONS)[number];
@@ -26,19 +27,19 @@ function Tab({ name, active, onClick }: TabProps): JSX.Element {
 const tabData = {
   terminal: {
     name: "Terminal",
-    component: <Terminal />,
+    component: null,
   },
   planner: {
     name: "Planner",
-    component: <Planner />,
+    component: <Planner key="planner" />,
   },
   code: {
     name: "Code Editor",
-    component: <CodeEditor />,
+    component: <CodeEditor key="code" />,
   },
   browser: {
     name: "Browser",
-    component: <Browser />,
+    component: <Browser key="browser" />,
   },
 };
 
@@ -47,6 +48,7 @@ function App(): JSX.Element {
 
   return (
     <div className="app">
+      <Errors />
       <div className="left-pane">
         <ChatInterface />
       </div>
@@ -61,6 +63,8 @@ function App(): JSX.Element {
             />
           ))}
         </div>
+        {/* Keep terminal permanently open - see component for more details */}
+        <Terminal key="terminal" hidden={activeTab !== "terminal"} />
         <div className="tab-content">{tabData[activeTab].component}</div>
       </div>
     </div>
