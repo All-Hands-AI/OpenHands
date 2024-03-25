@@ -14,8 +14,14 @@ Welcome to OpenDevin, an open-source project aiming to replicate [Devin](https:/
 
 ## Work in Progress
 
-OpenDevin is still a work in progress. But you can run the current app to see things working end-to-end:
+OpenDevin is still a work in progress. But you can run the current app to see things working end-to-end.
 
+### Requirements
+* [Docker](https://docs.docker.com/engine/install/)
+* [Python](https://www.python.org/downloads/)
+* [NPM](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
+
+### Installation
 ```bash
 export OPENAI_API_KEY="..."
 export WORKSPACE_DIR="/path/to/your/project"
