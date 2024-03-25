@@ -1,4 +1,4 @@
-from typing import List, Dict, Type
+from typing import List
 
 from opendevin.llm.llm import LLM
 from opendevin.agent import Agent
@@ -9,7 +9,6 @@ from agenthub.langchains_agent.utils.monologue import Monologue
 from agenthub.langchains_agent.utils.memory import LongTermMemory
 
 from opendevin.action import (
-    Action,
     CmdRunAction,
     CmdKillAction,
     BrowseURLAction,

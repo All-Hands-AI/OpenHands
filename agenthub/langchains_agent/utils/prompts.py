@@ -9,7 +9,6 @@ if os.getenv("DEBUG"):
 
     set_debug(True)
 
-from opendevin.action import Action
 from opendevin.action import (
     Action,
     CmdRunAction,
@@ -22,9 +21,7 @@ from opendevin.action import (
     AgentFinishAction,
 )
 from opendevin.observation import (
-    Observation,
     CmdOutputObservation,
-    BrowserOutputObservation,
 )
 
 ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {

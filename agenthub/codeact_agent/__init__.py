@@ -16,9 +16,7 @@ from opendevin.observation import (
     AgentMessageObservation,
 )
 
-from opendevin.controller.command_manager import CommandManager
 from opendevin.llm.llm import LLM
-from opendevin.sandbox.sandbox import DockerInteractive
 
 assert (
     "OPENAI_API_KEY" in os.environ
@@ -99,7 +97,7 @@ class CodeActAgent(Agent):
                     print(colored("===ENV OBSERVATION:===\n" + content, "blue"))
                 else:
                     raise NotImplementedError(f"Unknown observation type: {obs.__class__}")
-        response = llm.completion(
+        response = self.llm.completion(
             messages=self.messages,
             model=self.model_name,
             stop=["</execute>"],
