@@ -47,21 +47,19 @@ class AgentController:
         self.state_updated_info.append((NullAction(), observation))
 
     async def start_loop(self, task_instruction: str):
-        finished = False
-        self.agent.instruction = task_instruction
         try:
+            self.agent.instruction = task_instruction
             for i in range(self.max_iterations):
                 print("STEP", i, flush=True)
 
                 state: State = self.get_current_state()
                 action: Action = self.agent.step(state)
-
+                
                 print("ACTION", action, flush=True)
                 for _callback_fn in self.callbacks:
                     _callback_fn(action)
-
+                
                 if isinstance(action, AgentFinishAction):
-                    finished = True
                     print("FINISHED", flush=True)
                     break
                 if isinstance(action, (FileReadAction, FileWriteAction)):
@@ -80,7 +78,7 @@ class AgentController:
                     observation = NullObservation("")
                 print("OBSERVATION", observation, flush=True)
                 self.state_updated_info.append((action, observation))
-
+                
                 print(observation, flush=True)
                 for _callback_fn in self.callbacks:
                     _callback_fn(observation)
@@ -91,5 +89,3 @@ class AgentController:
         except Exception as e:
             print("Error in loop", e, flush=True)
             pass
-        if not finished:
-            print("Exited before finishing", flush=True)

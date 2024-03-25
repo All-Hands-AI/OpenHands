@@ -4,21 +4,16 @@ import uuid
 import time
 import select
 import docker
-from typing import Tuple, List
+from typing import Tuple
 from collections import namedtuple
 import atexit
 
 InputType = namedtuple("InputType", ["content"])
 OutputType = namedtuple("OutputType", ["content"])
 
-
 CONTAINER_IMAGE = os.getenv("SANDBOX_CONTAINER_IMAGE", "opendevin/sandbox:v0.1")
-# FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
-# How do we make this more flexible?
-RUN_AS_DEVIN = os.getenv("RUN_AS_DEVIN", "true").lower() != "false"
 
 class DockerInteractive:
-    closed = False
 
     def __init__(
         self,
@@ -53,11 +48,6 @@ class DockerInteractive:
         self.container_name = f"sandbox-{self.instance_id}"
 
         self.restart_docker_container()
-        if RUN_AS_DEVIN:
-            self.setup_devin_user()
-        atexit.register(self.cleanup)
-
-    def setup_devin_user(self):
         uid = os.getuid()
         exit_code, logs = self.container.exec_run([
             '/bin/bash', '-c',
@@ -65,12 +55,8 @@ class DockerInteractive:
             ],
             workdir="/workspace"
         )
-
-    def get_exec_cmd(self, cmd: str) -> List[str]:
-        if RUN_AS_DEVIN:
-            return ['su', 'devin', '-c', cmd]
-        else:
-            return ['/bin/bash', '-c', cmd]
+        # regester container cleanup function
+        atexit.register(self.cleanup)
 
     def read_logs(self) -> str:
         if not hasattr(self, "log_generator"):
@@ -91,18 +77,17 @@ class DockerInteractive:
 
     def execute(self, cmd: str) -> Tuple[int, str]:
         # TODO: each execute is not stateful! We need to keep track of the current working directory
-        exit_code, logs = self.container.exec_run(self.get_exec_cmd(cmd), workdir="/workspace")
+        exit_code, logs = self.container.exec_run(['su', 'devin', '-c', cmd], workdir="/workspace")
         return exit_code, logs.decode('utf-8')
 
     def execute_in_background(self, cmd: str) -> None:
         self.log_time = time.time()
-        result = self.container.exec_run(self.get_exec_cmd(cmd), socket=True, workdir="/workspace")
+        result = self.container.exec_run(['su', 'devin', '-c', cmd], socket=True, workdir="/workspace")
         self.log_generator = result.output # socket.SocketIO
         self.log_generator._sock.setblocking(0)
 
     def close(self):
         self.stop_docker_container()
-        self.closed = True
 
     def stop_docker_container(self):
         docker_client = docker.from_env()
@@ -154,9 +139,8 @@ class DockerInteractive:
 
     # clean up the container, cannot do it in __del__ because the python interpreter is already shutting down
     def cleanup(self):
-        if self.closed:
-            return
         self.container.remove(force=True)
+        print("Finish cleaning up Docker container")
 
 if __name__ == "__main__":
     import argparse
