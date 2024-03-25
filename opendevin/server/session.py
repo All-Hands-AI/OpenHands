@@ -1,27 +1,15 @@
-import os
 import asyncio
-from typing import Optional, Dict, Type
+import os
+from typing import Dict, Optional, Type
 
 from fastapi import WebSocketDisconnect
 
+from opendevin.action import (Action, AgentFinishAction, AgentRecallAction,
+                              AgentThinkAction, BrowseURLAction, CmdKillAction,
+                              CmdRunAction, FileReadAction, FileWriteAction)
 from opendevin.agent import Agent
 from opendevin.controller import AgentController
-
-from opendevin.action import (
-    Action,
-    CmdRunAction,
-    CmdKillAction,
-    BrowseURLAction,
-    FileReadAction,
-    FileWriteAction,
-    AgentRecallAction,
-    AgentThinkAction,
-    AgentFinishAction,
-)
-from opendevin.observation import (
-    Observation,
-    UserMessageObservation
-)
+from opendevin.observation import Observation, UserMessageObservation
 
 # NOTE: this is a temporary solution - but hopefully we can use Action/Observation throughout the codebase
 ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {

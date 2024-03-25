@@ -1,8 +1,11 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from opendevin.observation import AgentRecallObservation, AgentMessageObservation, Observation
+from opendevin.observation import (AgentMessageObservation,
+                                   AgentRecallObservation, Observation)
+
 from .base import ExecutableAction, NotExecutableAction
+
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
 

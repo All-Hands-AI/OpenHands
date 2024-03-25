@@ -1,9 +1,8 @@
-import asyncio
 import argparse
-
+import asyncio
 from typing import Type
 
-import agenthub # noqa F401 (we import this to get the agents registered)
+import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.agent import Agent
 from opendevin.controller import AgentController
 

@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 
 from opendevin.observation import Observation
+
 from .base import ExecutableAction
 
 # This is the path where the workspace is mounted in the container

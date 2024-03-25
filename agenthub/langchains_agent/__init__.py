@@ -1,28 +1,15 @@
-from typing import List, Dict, Type
+from typing import Dict, List, Type
 
 import agenthub.langchains_agent.utils.llm as llm
-from opendevin.agent import Agent
-from opendevin.action import (
-    Action,
-    CmdRunAction,
-    CmdKillAction,
-    BrowseURLAction,
-    FileReadAction,
-    FileWriteAction,
-    AgentRecallAction,
-    AgentThinkAction,
-    AgentFinishAction,
-)
-from opendevin.observation import (
-    Observation,
-    CmdOutputObservation,
-    BrowserOutputObservation,
-)
-from opendevin.state import State
-
-from agenthub.langchains_agent.utils.monologue import Monologue
 from agenthub.langchains_agent.utils.memory import LongTermMemory
-
+from agenthub.langchains_agent.utils.monologue import Monologue
+from opendevin.action import (Action, AgentFinishAction, AgentRecallAction,
+                              AgentThinkAction, BrowseURLAction, CmdKillAction,
+                              CmdRunAction, FileReadAction, FileWriteAction)
+from opendevin.agent import Agent
+from opendevin.observation import (BrowserOutputObservation,
+                                   CmdOutputObservation, Observation)
+from opendevin.state import State
 
 INITIAL_THOUGHTS = [
     "I exist!",

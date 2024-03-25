@@ -1,12 +1,13 @@
-import os
-import sys
-import uuid
-import time
-import select
-import docker
-from typing import Tuple
-from collections import namedtuple
 import atexit
+import os
+import select
+import sys
+import time
+import uuid
+from collections import namedtuple
+from typing import Tuple
+
+import docker
 
 InputType = namedtuple("InputType", ["content"])
 OutputType = namedtuple("OutputType", ["content"])

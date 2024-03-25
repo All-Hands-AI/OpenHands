@@ -1,20 +1,11 @@
 import asyncio
-from typing import List, Callable, Tuple
+from typing import Callable, List, Tuple
 
-from opendevin.state import State
+from opendevin.action import (Action, AgentFinishAction, FileReadAction,
+                              FileWriteAction, NullAction)
 from opendevin.agent import Agent
-from opendevin.action import (
-    Action,
-    NullAction,
-    FileReadAction,
-    FileWriteAction,
-    AgentFinishAction,
-)
-from opendevin.observation import (
-    Observation,
-    NullObservation
-)
-
+from opendevin.observation import NullObservation, Observation
+from opendevin.state import State
 
 from .command_manager import CommandManager
 

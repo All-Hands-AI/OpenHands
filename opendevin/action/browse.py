@@ -1,6 +1,7 @@
+from dataclasses import dataclass
+
 import requests
 
-from dataclasses import dataclass
 from opendevin.observation import BrowserOutputObservation
 
 from .base import ExecutableAction

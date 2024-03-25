@@ -10,10 +10,11 @@ Outputs:
 
 '''
 
+import json
 # fetch devin's outputs into a json file for evaluation
 import os
 import sys
-import json
+
 import requests
 from tqdm import tqdm
 

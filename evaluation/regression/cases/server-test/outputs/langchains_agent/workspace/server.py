@@ -1,5 +1,5 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
 import os
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
 class HelloWorldHandler(BaseHTTPRequestHandler):

@@ -8,16 +8,14 @@ if os.getenv("DEBUG"):
     set_debug(True)
 
 from typing import List
-from langchain_core.pydantic_v1 import BaseModel
-
-from opendevin.observation import (
-    CmdOutputObservation,
-)
 
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.pydantic_v1 import BaseModel
 from langchain_openai import ChatOpenAI
+
+from opendevin.observation import CmdOutputObservation
 
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is to {task}.

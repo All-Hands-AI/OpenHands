@@ -1,22 +1,15 @@
 import os
 import re
-from litellm import completion
-from termcolor import colored
 from typing import List, Mapping
 
-from opendevin.agent import Agent
-from opendevin.state import State
-from opendevin.action import (
-    Action,
-    CmdRunAction,
-    AgentEchoAction,
-    AgentFinishAction,
-)
-from opendevin.observation import (
-    CmdOutputObservation,
-    AgentMessageObservation,
-)
+from litellm import completion
+from termcolor import colored
 
+from opendevin.action import (Action, AgentEchoAction, AgentFinishAction,
+                              CmdRunAction)
+from opendevin.agent import Agent
+from opendevin.observation import AgentMessageObservation, CmdOutputObservation
+from opendevin.state import State
 
 assert (
     "OPENAI_API_KEY" in os.environ
