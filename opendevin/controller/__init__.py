@@ -92,4 +92,4 @@ class AgentController:
             print("Error in loop", e, flush=True)
             pass
         if not finished:
-            print("Exited before finishing" % (self.max_iterations), flush=True)
+            print("Exited before finishing", flush=True)
