@@ -3,12 +3,23 @@ from typing import Dict, List, Type
 import agenthub.langchains_agent.utils.llm as llm
 from agenthub.langchains_agent.utils.memory import LongTermMemory
 from agenthub.langchains_agent.utils.monologue import Monologue
-from opendevin.action import (Action, AgentFinishAction, AgentRecallAction,
-                              AgentThinkAction, BrowseURLAction, CmdKillAction,
-                              CmdRunAction, FileReadAction, FileWriteAction)
+from opendevin.action import (
+    Action,
+    AgentFinishAction,
+    AgentRecallAction,
+    AgentThinkAction,
+    BrowseURLAction,
+    CmdKillAction,
+    CmdRunAction,
+    FileReadAction,
+    FileWriteAction,
+)
 from opendevin.agent import Agent
-from opendevin.observation import (BrowserOutputObservation,
-                                   CmdOutputObservation, Observation)
+from opendevin.observation import (
+    BrowserOutputObservation,
+    CmdOutputObservation,
+    Observation,
+)
 from opendevin.state import State
 
 INITIAL_THOUGHTS = [
@@ -65,7 +76,9 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
     "finish": AgentFinishAction,
 }
 
-CLASS_TO_ACTION_TYPE: Dict[Type[Action], str] = {v: k for k, v in ACTION_TYPE_TO_CLASS.items()}
+CLASS_TO_ACTION_TYPE: Dict[Type[Action], str] = {
+    v: k for k, v in ACTION_TYPE_TO_CLASS.items()
+}
 
 
 class LangchainsAgent(Agent):
@@ -77,8 +90,13 @@ class LangchainsAgent(Agent):
         self.memory = LongTermMemory()
 
     def _add_event(self, event: dict):
-        if 'output' in event['args'] and len(event['args']['output']) > MAX_OUTPUT_LENGTH:
-            event['args']['output'] = event['args']['output'][:MAX_OUTPUT_LENGTH] + "..."
+        if (
+            "output" in event["args"]
+            and len(event["args"]["output"]) > MAX_OUTPUT_LENGTH
+        ):
+            event["args"]["output"] = (
+                event["args"]["output"][:MAX_OUTPUT_LENGTH] + "..."
+            )
 
         self.monologue.add_event(event)
         self.memory.add_event(event)
@@ -150,7 +168,10 @@ class LangchainsAgent(Agent):
             elif isinstance(prev_action, FileReadAction):
                 d = {"action": "read", "args": {"file": prev_action.path}}
             elif isinstance(prev_action, FileWriteAction):
-                d = {"action": "write", "args": {"file": prev_action.path, "content": prev_action.contents}}
+                d = {
+                    "action": "write",
+                    "args": {"file": prev_action.path, "content": prev_action.contents},
+                }
             elif isinstance(prev_action, AgentRecallAction):
                 d = {"action": "recall", "args": {"query": prev_action.query}}
             elif isinstance(prev_action, AgentThinkAction):

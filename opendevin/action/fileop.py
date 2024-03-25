@@ -12,7 +12,7 @@ PATH_PREFIX = "/workspace/"
 
 def resolve_path(base_path, file_path):
     if file_path.startswith(PATH_PREFIX):
-        file_path = file_path[len(PATH_PREFIX):]
+        file_path = file_path[len(PATH_PREFIX) :]
     return os.path.join(base_path, file_path)
 
 
@@ -23,7 +23,7 @@ class FileReadAction(ExecutableAction):
 
     def run(self, *args, **kwargs) -> Observation:
         path = resolve_path(self.base_path, self.path)
-        with open(path, 'r') as file:
+        with open(path, "r") as file:
             return Observation(file.read())
 
     @property
@@ -39,7 +39,7 @@ class FileWriteAction(ExecutableAction):
 
     def run(self, *args, **kwargs) -> Observation:
         path = resolve_path(self.base_path, self.path)
-        with open(path, 'w') as file:
+        with open(path, "w") as file:
             file.write(self.contents)
         return Observation(f"File written to {path}")
 

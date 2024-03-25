@@ -4,9 +4,17 @@ from typing import Dict, Optional, Type
 
 from fastapi import WebSocketDisconnect
 
-from opendevin.action import (Action, AgentFinishAction, AgentRecallAction,
-                              AgentThinkAction, BrowseURLAction, CmdKillAction,
-                              CmdRunAction, FileReadAction, FileWriteAction)
+from opendevin.action import (
+    Action,
+    AgentFinishAction,
+    AgentRecallAction,
+    AgentThinkAction,
+    BrowseURLAction,
+    CmdKillAction,
+    CmdRunAction,
+    FileReadAction,
+    FileWriteAction,
+)
 from opendevin.agent import Agent
 from opendevin.controller import AgentController
 from opendevin.observation import Observation, UserMessageObservation
@@ -24,7 +32,9 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
 }
 
 
-DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
+DEFAULT_WORKSPACE_DIR = os.getenv(
+    "WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace")
+)
 
 
 def parse_event(data):
@@ -50,7 +60,9 @@ class Session:
         self.controller: Optional[AgentController] = None
         self.agent: Optional[Agent] = None
         self.agent_task = None
-        asyncio.create_task(self.create_controller(), name="create controller")  # FIXME: starting the docker container synchronously causes a websocket error...
+        asyncio.create_task(
+            self.create_controller(), name="create controller"
+        )  # FIXME: starting the docker container synchronously causes a websocket error...
 
     async def send_error(self, message):
         await self.send({"error": True, "message": message})
@@ -85,10 +97,14 @@ class Session:
                     await self.start_task(event)
                 else:
                     if self.controller is None:
-                        await self.send_error("No agent started. Please wait a second...")
+                        await self.send_error(
+                            "No agent started. Please wait a second..."
+                        )
 
                     elif event["action"] == "chat":
-                        self.controller.add_observation(UserMessageObservation(event["message"]))
+                        self.controller.add_observation(
+                            UserMessageObservation(event["message"])
+                        )
                     else:
                         # TODO: we only need to implement user message for now
                         # since even Devin does not support having the user taking other
@@ -119,7 +135,9 @@ class Session:
 
         AgentCls = Agent.get_cls(agent_cls)
         self.agent = AgentCls(model_name=model)
-        self.controller = AgentController(self.agent, directory, callbacks=[self.on_agent_event])
+        self.controller = AgentController(
+            self.agent, directory, callbacks=[self.on_agent_event]
+        )
         await self.send({"action": "initialize", "message": "Control loop started."})
 
     async def start_task(self, start_event):
@@ -131,7 +149,9 @@ class Session:
         if self.controller is None:
             await self.send_error("No agent started. Please wait a second...")
             return
-        self.agent_task = asyncio.create_task(self.controller.start_loop(task), name="agent loop")
+        self.agent_task = asyncio.create_task(
+            self.controller.start_loop(task), name="agent loop"
+        )
 
     def on_agent_event(self, event: Observation | Action):
         event_dict = event.to_dict()

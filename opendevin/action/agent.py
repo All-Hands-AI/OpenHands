@@ -1,8 +1,11 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from opendevin.observation import (AgentMessageObservation,
-                                   AgentRecallObservation, Observation)
+from opendevin.observation import (
+    AgentMessageObservation,
+    AgentRecallObservation,
+    Observation,
+)
 
 from .base import ExecutableAction, NotExecutableAction
 
@@ -17,7 +20,7 @@ class AgentRecallAction(ExecutableAction):
     def run(self, controller: "AgentController") -> AgentRecallObservation:
         return AgentRecallObservation(
             content="Recalling memories...",
-            memories=controller.agent.search_memory(self.query)
+            memories=controller.agent.search_memory(self.query),
         )
 
     @property

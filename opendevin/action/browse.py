@@ -13,10 +13,7 @@ class BrowseURLAction(ExecutableAction):
 
     def run(self, *args, **kwargs) -> BrowserOutputObservation:
         response = requests.get(self.url)
-        return BrowserOutputObservation(
-            content=response.text,
-            url=self.url
-        )
+        return BrowserOutputObservation(content=response.text, url=self.url)
 
     @property
     def message(self) -> str:
