@@ -2,12 +2,15 @@ import os
 
 from typing import List, Dict, Type
 
-from . import json
+from langchain_core.pydantic_v1 import BaseModel
+from langchain.prompts import PromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
 
 if os.getenv("DEBUG"):
     from langchain.globals import set_debug
-
     set_debug(True)
+
+from . import json
 
 from opendevin.action import (
     Action,
@@ -24,6 +27,7 @@ from opendevin.observation import (
     CmdOutputObservation,
 )
 
+
 ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
     "run": CmdRunAction,
     "kill": CmdKillAction,
@@ -35,11 +39,6 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
     "finish": AgentFinishAction,
 }
 CLASS_TO_ACTION_TYPE: Dict[Type[Action], str] = {v: k for k, v in ACTION_TYPE_TO_CLASS.items()}
-
-from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
-from langchain_core.output_parsers import JsonOutputParser
 
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is to {task}.
