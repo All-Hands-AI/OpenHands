@@ -15,6 +15,7 @@ OpenDevin is still a work in progress. But you can run the current app to see th
 
 ```bash
 export OPENAI_API_TOKEN="..."
+export WORKSPACE_DIR="/path/to/your/project"
 python -m pip install -r requirements.txt
 uvicorn opendevin.server.listen:app --port 3000
 ```
