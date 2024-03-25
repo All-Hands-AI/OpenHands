@@ -49,10 +49,16 @@ class CommandManager:
             exit_code=0
         )
 
-    def kill_command(self, id: int):
+    def kill_command(self, id: int) -> CmdOutputObservation:
         # TODO: get log events before killing
-        self.background_commands[id].shell.close()
+        cmd = self.background_commands[id]
+        cmd.shell.close()
         del self.background_commands[id]
+        return CmdOutputObservation(
+            content=f"Background command with id {id} killed",
+            command=cmd.command,
+            command_id=id,
+        )
 
     def get_background_obs(self) -> List[CmdOutputObservation]:
         obs = []
