@@ -99,7 +99,6 @@ class CodeActAgent(Agent):
                     raise NotImplementedError(f"Unknown observation type: {obs.__class__}")
         response = self.llm.completion(
             messages=self.messages,
-            model=self.model_name,
             stop=["</execute>"],
             temperature=0.0,
             seed=42,

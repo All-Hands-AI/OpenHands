@@ -85,7 +85,7 @@ class LangchainsAgent(Agent):
         self.monologue.add_event(event)
         self.memory.add_event(event)
         if self.monologue.get_total_length() > MAX_MONOLOGUE_LENGTH:
-            self.monologue.condense()
+            self.monologue.condense(self.llm)
 
     def _initialize(self):
         if self._initialized:
