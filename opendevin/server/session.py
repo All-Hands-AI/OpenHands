@@ -9,7 +9,6 @@ from opendevin.controller import AgentController
 from opendevin.lib.event import Event
 
 DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.getcwd())
-print("workspace dir", DEFAULT_WORKSPACE_DIR)
 
 def parse_event(data):
     if "action" not in data:
