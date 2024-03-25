@@ -14,6 +14,7 @@ class BrowseURLAction(ExecutableAction):
             response = requests.get(self.url)
             return BrowserOutputObservation(
                 content=response.text,
+                status_code=response.status_code,
                 url=self.url
             )
         except requests.exceptions.RequestException as e:
