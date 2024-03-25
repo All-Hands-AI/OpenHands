@@ -19,3 +19,6 @@ class BrowseURLAction(ExecutableAction):
     @property
     def message(self) -> str:
         return f"Browsing URL: {self.url}"
+
+    def to_dict(self):
+        return {"action": "browse", "args": {"url": self.url}}

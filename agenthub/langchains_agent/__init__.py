@@ -111,24 +111,10 @@ class LangchainsAgent(Agent):
                 d = {"action": "output", "args": {"output": thought}}
                 next_is_output = False
             else:
-                if thought.startswith("RUN"):
-                    command = thought.split("RUN ")[1]
-                    d = {"action": "run", "args": {"command": command}}
-                    next_is_output = True
+                action, _, argument = thought.partition(" ")[0], thought.partition(" ")[1], thought.partition(" ")[2]
+                d = ACTION_TYPE_TO_CLASS[action.lower()](argument)
 
-                elif thought.startswith("RECALL"):
-                    query = thought.split("RECALL ")[1]
-                    d = {"action": "recall", "args": {"query": query}}
-                    next_is_output = True
-
-                elif thought.startswith("BROWSE"):
-                    url = thought.split("BROWSE ")[1]
-                    d = {"action": "browse", "args": {"url": url}}
-                    next_is_output = True
-                else:
-                    d = {"action": "think", "args": {"thought": thought}}
-
-        self._add_event(d)
+        self._add_event(d.to_dict())
         self._initialized = True
 
     def step(self, state: State) -> Action:
@@ -138,44 +124,11 @@ class LangchainsAgent(Agent):
 
         # Translate state to action_dict
         for prev_action, obs in state.updated_info:
-            if isinstance(obs, CmdOutputObservation):
-                if obs.error:
-                    d = {"action": "error", "args": {"output": obs.content}}
-                else:
-                    d = {"action": "output", "args": {"output": obs.content}}
-            # elif isinstance(obs, UserMessageObservation):
-            #     d = {"action": "output", "args": {"output": obs.message}}
-            # elif isinstance(obs, AgentMessageObservation):
-            #     d = {"action": "output", "args": {"output": obs.message}}
-            elif isinstance(obs, (BrowserOutputObservation, Observation)):
-                d = {"action": "output", "args": {"output": obs.content}}
-            else:
-                raise NotImplementedError(f"Unknown observation type: {obs}")
-            self._add_event(d)
-
-
-            if isinstance(prev_action, CmdRunAction):
-                d = {"action": "run", "args": {"command": prev_action.command}}
-            elif isinstance(prev_action, CmdKillAction):
-                d = {"action": "kill", "args": {"id": prev_action.id}}
-            elif isinstance(prev_action, BrowseURLAction):
-                d = {"action": "browse", "args": {"url": prev_action.url}}
-            elif isinstance(prev_action, FileReadAction):
-                d = {"action": "read", "args": {"file": prev_action.path}}
-            elif isinstance(prev_action, FileWriteAction):
-                d = {"action": "write", "args": {"file": prev_action.path, "content": prev_action.contents}}
-            elif isinstance(prev_action, AgentRecallAction):
-                d = {"action": "recall", "args": {"query": prev_action.query}}
-            elif isinstance(prev_action, AgentThinkAction):
-                d = {"action": "think", "args": {"thought": prev_action.thought}}
-            elif isinstance(prev_action, AgentFinishAction):
-                d = {"action": "finish"}
-            else:
-                raise NotImplementedError(f"Unknown action type: {prev_action}")
-            self._add_event(d)
+            self._add_event(obs.to_dict())
+            self._add_event(prev_action.to_dict())
 
         state.updated_info = []
-            
+
         action_dict = llm.request_action(
             self.instruction,
             self.monologue.get_thoughts(),

@@ -54,19 +54,17 @@ class AgentController:
 
                 state: State = self.get_current_state()
                 action: Action = self.agent.step(state)
-                
+
                 print("ACTION", action, flush=True)
                 for _callback_fn in self.callbacks:
                     _callback_fn(action)
-                
+
+
                 if isinstance(action, AgentFinishAction):
                     print("FINISHED", flush=True)
                     break
                 if isinstance(action, (FileReadAction, FileWriteAction)):
-                    action_cls = action.__class__
-                    _kwargs = action.__dict__
-                    _kwargs["base_path"] = self.workdir
-                    action = action_cls(**_kwargs)
+                    setattr(action, "base_path", self.workdir)
                     print(action, flush=True)
                 print("---", flush=True)
 
@@ -78,7 +76,7 @@ class AgentController:
                     observation = NullObservation("")
                 print("OBSERVATION", observation, flush=True)
                 self.state_updated_info.append((action, observation))
-                
+
                 print(observation, flush=True)
                 for _callback_fn in self.callbacks:
                     _callback_fn(observation)

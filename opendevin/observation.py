@@ -16,14 +16,16 @@ class Observation:
 
     def to_dict(self) -> dict:
         """Converts the observation to a dictionary."""
-        extras = copy.deepcopy(self.__dict__)
-        extras.pop("content", None)
-        return {
-            "observation": self.__class__.__name__,
-            "content": self.content,
-            "extras": extras,
-            "message": self.message,
-        }
+        return {"action": "output", "args": {"output": self.content}}
+        # TODO: where is this original implementation used?
+        # extras = copy.deepcopy(self.__dict__)
+        # extras.pop("content", None)
+        # return {
+        #     "observation": self.__class__.__name__,
+        #     "content": self.content,
+        #     "extras": extras,
+        #     "message": self.message,
+        # }
 
     @property
     def message(self) -> str:
@@ -49,6 +51,9 @@ class CmdOutputObservation(Observation):
     def message(self) -> str:
         return f'The agent observed command "{self.command}" executed with exit code {self.exit_code}.'
 
+    def to_dict(self) -> dict:
+        return {"action": "error" if self.error else "output", "args": {"output": self.content}}
+
 
 @dataclass
 class BrowserOutputObservation(Observation):
@@ -61,6 +66,9 @@ class BrowserOutputObservation(Observation):
     @property
     def message(self) -> str:
         return "The agent observed the browser output at URL."
+
+    def to_dict(self) -> dict:
+        raise NotImplementedError
 
 
 @dataclass
@@ -75,6 +83,8 @@ class UserMessageObservation(Observation):
     def message(self) -> str:
         return "The agent received a message from the user."
 
+    def to_dict(self) -> dict:
+        raise NotImplementedError
 
 @dataclass
 class AgentMessageObservation(Observation):
@@ -88,6 +98,8 @@ class AgentMessageObservation(Observation):
     def message(self) -> str:
         return "The agent received a message from itself."
 
+    def to_dict(self) -> dict:
+        raise NotImplementedError
 
 @dataclass
 class AgentRecallObservation(Observation):
@@ -102,6 +114,8 @@ class AgentRecallObservation(Observation):
     def message(self) -> str:
         return "The agent recalled memories."
 
+    def to_dict(self) -> dict:
+        raise NotImplementedError
 
 @dataclass
 class NullObservation(Observation):
@@ -113,3 +127,6 @@ class NullObservation(Observation):
     @property
     def message(self) -> str:
         return ""
+
+    def to_dict(self) -> dict:
+        raise NotImplementedError

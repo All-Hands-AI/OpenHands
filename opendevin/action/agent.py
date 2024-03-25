@@ -21,6 +21,9 @@ class AgentRecallAction(ExecutableAction):
     def message(self) -> str:
         return f"Recalling memories with query: {self.query}"
 
+    def to_dict(self):
+        {"action": "recall", "args": {"query": self.query}}
+
 
 @dataclass
 class AgentThinkAction(NotExecutableAction):
@@ -34,6 +37,9 @@ class AgentThinkAction(NotExecutableAction):
     def message(self) -> str:
         return f"Thinking: {self.thought}"
 
+    def to_dict(self):
+        return {"action": "think", "args": {"thought": self.thought}}
+
 @dataclass
 class AgentEchoAction(ExecutableAction):
     content: str
@@ -46,6 +52,9 @@ class AgentEchoAction(ExecutableAction):
     def message(self) -> str:
         return f"Echoing: {self.content}"
 
+    def to_dict(self):
+        raise NotImplementedError("need to implement")
+
 @dataclass
 class AgentFinishAction(NotExecutableAction):
     runnable: bool = False
@@ -56,3 +65,6 @@ class AgentFinishAction(NotExecutableAction):
     @property
     def message(self) -> str:
         return "Finished!"
+
+    def to_dict(self):
+        return {"action": "finish"}

@@ -38,22 +38,6 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
 
 DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
 
-def parse_event(data):
-    if "action" not in data:
-        return None
-    action = data["action"]
-    args = {}
-    if "args" in data:
-        args = data["args"]
-    message = None
-    if "message" in data:
-        message = data["message"]
-    return {
-        "action": action,
-        "args": args,
-        "message": message,
-    }
-
 class Session:
     def __init__(self, websocket):
         self.websocket = websocket
@@ -85,25 +69,22 @@ class Session:
                     await self.send_error("Invalid JSON")
                     continue
 
-                event = parse_event(data)
-                if event is None:
+                # TODO: we only need to implement user message for now
+                # since even Devin does not support having the user taking other
+                # actions (e.g., edit files) while the agent is running
+                action = data.get("action", None)
+                if action is None:
                     await self.send_error("Invalid event")
-                    continue
-                if event["action"] == "initialize":
-                    await self.create_controller(event)
-                elif event["action"] == "start":
-                    await self.start_task(event)
+                elif self.controller is None:
+                    await self.send_error("No agent started. Please wait a second...")
+                elif action == "initialize":
+                    await self.create_controller(data)
+                elif action == "start":
+                    await self.start_task(data)
+                elif action == "chat":
+                    self.controller.add_observation(UserMessageObservation(data["message"]))
                 else:
-                    if self.controller is None:
-                        await self.send_error("No agent started. Please wait a second...")
-
-                    elif event["action"] == "chat":
-                        self.controller.add_observation(UserMessageObservation(event["message"]))
-                    else:
-                        # TODO: we only need to implement user message for now
-                        # since even Devin does not support having the user taking other
-                        # actions (e.g., edit files) while the agent is running
-                        raise NotImplementedError
+                    raise NotImplementedError("action not implemented")
 
         except WebSocketDisconnect as e:
             self.websocket = None
@@ -121,12 +102,12 @@ class Session:
         model = "gpt-4-0125-preview"
         if start_event and "model" in start_event.args:
             model = start_event.args["model"]
-        
+
         if not os.path.exists(directory):
             print(f"Workspace directory {directory} does not exist. Creating it...")
             os.makedirs(directory)
         directory = os.path.relpath(directory, os.getcwd())
-        
+
         AgentCls = Agent.get_cls(agent_cls)
         self.agent = AgentCls(model_name=model)
         self.controller = AgentController(self.agent, directory, callbacks=[self.on_agent_event])

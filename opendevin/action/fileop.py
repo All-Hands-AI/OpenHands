@@ -28,6 +28,9 @@ class FileReadAction(ExecutableAction):
     def message(self) -> str:
         return f"Reading file: {self.path}"
 
+    def to_dict(self):
+        return {"action": "read", "args": {"file": self.path}}
+
 
 @dataclass
 class FileWriteAction(ExecutableAction):
@@ -45,3 +48,5 @@ class FileWriteAction(ExecutableAction):
     def message(self) -> str:
         return f"Writing file: {self.path}"
 
+    def to_dict(self):
+        return {"action": "write", "args": {"file": self.path, "content": self.contents}}

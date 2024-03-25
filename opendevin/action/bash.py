@@ -20,6 +20,9 @@ class CmdRunAction(ExecutableAction):
     def message(self) -> str:
         return f"Running command: {self.command}"
 
+    def to_dict(self):
+        return {"action": "run", "args": {"command": self.command}}
+
 @dataclass
 class CmdKillAction(ExecutableAction):
     id: int
@@ -30,3 +33,6 @@ class CmdKillAction(ExecutableAction):
     @property
     def message(self) -> str:
         return f"Killing command: {self.id}"
+
+    def to_dict(self):
+        return {"action": "kill", "args": {"id": self.id}}
