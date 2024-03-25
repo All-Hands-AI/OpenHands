@@ -208,7 +208,8 @@ class LangchainsAgent(Agent):
         )
         messages = [{ "content": prompt,"role": "user"}]
         resp = self.llm.completion(messages=messages)
-        return prompts.parse_action_response(resp)
+        action_resp = resp['choices'][0]['message']['content']
+        return prompts.parse_action_response(action_resp)
 
     def search_memory(self, query: str) -> List[str]:
         return self.memory.search(query)
