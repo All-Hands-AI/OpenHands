@@ -67,7 +67,7 @@ class AgentController:
         action: Action = self.agent.step(state)
 
         print("ACTION", action, flush=True)
-        await self.run_callbacks(action)
+        await self._run_callbacks(action)
 
         if isinstance(action, AgentFinishAction):
             print("FINISHED", flush=True)
@@ -87,11 +87,18 @@ class AgentController:
         self.state_updated_info.append((action, observation))
 
         print(observation, flush=True)
-        await self.run_callbacks(observation)
+        await self._run_callbacks(observation)
 
         print("==============", flush=True)
 
-    async def run_callbacks(self, evt):
-        for _callback_fn in self.callbacks:
-            _callback_fn(evt)
-        await asyncio.sleep(0.001)
+    async def _run_callbacks(self, event):
+        if event is None:
+            return
+        for callback in self.callbacks:
+            idx = self.callbacks.index(callback)
+            try:
+                callback(event)
+            except Exception as e:
+                print("Callback error:" + str(idx), e, flush=True)
+                pass
+        await asyncio.sleep(0.001) # Give back control for a tick, so we can await in callbacks
