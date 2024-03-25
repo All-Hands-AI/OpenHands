@@ -24,6 +24,7 @@ from agenthub.langchains_agent.utils.monologue import Monologue
 from agenthub.langchains_agent.utils.memory import LongTermMemory
 
 MAX_MONOLOGUE_LENGTH = 20000
+MAX_OUTPUT_LENGTH = 5000
 
 INITIAL_THOUGHTS = [
     "I exist!",
@@ -194,8 +195,11 @@ class LangchainsAgent(Agent):
         return action
 
     def add_event(self, event: Event) -> None:
-        self.monologue.add_event(event)
         self.memory.add_event(event)
+        evt_copy = Event(event.action, event.args.copy())
+        if 'output' in event.args and len(event.args['output']) > MAX_OUTPUT_LENGTH:
+            evt_copy.args['output'] = evt_copy.args['output'][:MAX_OUTPUT_LENGTH] + "..."
+        self.monologue.add_evt_copy(evt_copy)
         if self.monologue.get_total_length() > MAX_MONOLOGUE_LENGTH:
             self.monologue.condense(self.llm)
 
