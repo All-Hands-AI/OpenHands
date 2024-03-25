@@ -13,11 +13,6 @@ from opendevin.action import (
     AgentThinkAction,
     AgentFinishAction,
 )
-from opendevin.observation import (
-    Observation,
-    CmdOutputObservation,
-    BrowserOutputObservation,
-)
 from opendevin.state import State
 
 from agenthub.langchains_agent.utils.monologue import Monologue
