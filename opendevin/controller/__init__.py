@@ -62,6 +62,11 @@ class AgentController:
 
     async def step(self, i: int):
         print("STEP", i, flush=True)
+        log_obs = self.command_manager.get_background_obs()
+        for obs in log_obs:
+            self.add_observation(obs)
+            await self._run_callbacks(obs)
+            print("BACKGROUND LOG", obs, flush=True)
 
         state: State = self.get_current_state()
         action: Action = self.agent.step(state)

@@ -4,6 +4,7 @@ import agenthub.langchains_agent.utils.llm as llm
 from opendevin.agent import Agent
 from opendevin.action import (
     Action,
+    NullAction,
     CmdRunAction,
     CmdKillAction,
     BrowseURLAction,
@@ -138,6 +139,7 @@ class LangchainsAgent(Agent):
 
         # Translate state to action_dict
         for prev_action, obs in state.updated_info:
+            d = None
             if isinstance(obs, CmdOutputObservation):
                 if obs.error:
                     d = {"action": "error", "args": {"output": obs.content}}
@@ -150,10 +152,11 @@ class LangchainsAgent(Agent):
             elif isinstance(obs, (BrowserOutputObservation, Observation)):
                 d = {"action": "output", "args": {"output": obs.content}}
             else:
-                raise NotImplementedError(f"Unknown observation type: {obs}")
-            self._add_event(d)
+                raise ValueError(f"Unknown observation type: {obs}")
+            if d is not None:
+                self._add_event(d)
 
-
+            d = None
             if isinstance(prev_action, CmdRunAction):
                 d = {"action": "run", "args": {"command": prev_action.command}}
             elif isinstance(prev_action, CmdKillAction):
@@ -170,9 +173,12 @@ class LangchainsAgent(Agent):
                 d = {"action": "think", "args": {"thought": prev_action.thought}}
             elif isinstance(prev_action, AgentFinishAction):
                 d = {"action": "finish"}
+            elif isinstance(prev_action, NullAction):
+                d = None
             else:
-                raise NotImplementedError(f"Unknown action type: {prev_action}")
-            self._add_event(d)
+                raise ValueError(f"Unknown action type: {prev_action}")
+            if d is not None:
+                self._add_event(d)
 
         state.updated_info = []
             

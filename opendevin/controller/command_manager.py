@@ -64,9 +64,10 @@ class CommandManager:
         obs = []
         for _id, cmd in self.background_commands.items():
             output = cmd.get_logs()
-            obs.append(
-                CmdOutputObservation(
-                    content=output, command_id=_id, command=cmd.command
+            if output is not None and output != "":
+                obs.append(
+                    CmdOutputObservation(
+                        content=output, command_id=_id, command=cmd.command
+                    )
                 )
-            )
         return obs
