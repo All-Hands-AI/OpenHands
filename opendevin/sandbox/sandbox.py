@@ -4,7 +4,8 @@ import uuid
 import time
 import select
 import docker
-from typing import Tuple
+import socket
+from typing import Tuple, Dict
 from collections import namedtuple
 import atexit
 
@@ -13,7 +14,34 @@ OutputType = namedtuple("OutputType", ["content"])
 
 CONTAINER_IMAGE = os.getenv("SANDBOX_CONTAINER_IMAGE", "opendevin/sandbox:latest")
 
+class BackgroundCommand:
+    def __init__(self, id: int, command: str, socket):
+        self.id = id
+        self.command = command
+        self.socket = socket
+
+    def read_logs(self) -> str:
+        # TODO: get an exit code if process is exited
+        logs = ""
+        while True:
+            ready_to_read, _, _ = select.select([self.socket.output], [], [], .1) # type: ignore[has-type]
+            if ready_to_read:
+                data = self.socket.output.read(4096) # type: ignore[has-type]
+                if not data:
+                    break
+                # FIXME: we're occasionally seeing some escape characters like `\x02` and `\x00` in the logs...
+                chunk = data.decode('utf-8')
+                logs += chunk
+            else:
+                break
+        return logs
+
+    def kill(self):
+        self.socket.close()
+
 class DockerInteractive:
+    cur_background_id = 0
+    background_commands : Dict[int, BackgroundCommand] = {}
 
     def __init__(
         self,
@@ -58,22 +86,11 @@ class DockerInteractive:
         # regester container cleanup function
         atexit.register(self.cleanup)
 
-    def read_logs(self) -> str:
-        if not hasattr(self, "log_generator"):
-            return ""
-        logs = ""
-        while True:
-            ready_to_read, _, _ = select.select([self.log_generator], [], [], .1) # type: ignore[has-type]
-            if ready_to_read:
-                data = self.log_generator.read(4096) # type: ignore[has-type]
-                if not data:
-                    break
-                # FIXME: we're occasionally seeing some escape characters like `\x02` and `\x00` in the logs...
-                chunk = data.decode('utf-8')
-                logs += chunk
-            else:
-                break
-        return logs
+    def read_logs(self, id) -> str:
+        if id >= len(self.background_commands) or id < 0:
+            raise ValueError("Invalid background command id")
+        bg_cmd = self.background_commands[id]
+        return bg_cmd.read_logs()
 
     def execute(self, cmd: str) -> Tuple[int, str]:
         # TODO: each execute is not stateful! We need to keep track of the current working directory
@@ -81,10 +98,20 @@ class DockerInteractive:
         return exit_code, logs.decode('utf-8')
 
     def execute_in_background(self, cmd: str) -> None:
-        self.log_time = time.time()
-        result = self.container.exec_run(['su', 'devin', '-c', cmd], socket=True, workdir="/workspace")
-        self.log_generator = result.output # socket.SocketIO
-        self.log_generator._sock.setblocking(0)
+        socket = self.container.exec_run(['su', 'devin', '-c', cmd], socket=True, workdir="/workspace")
+        socket.output._sock.setblocking(0)
+        bg_cmd = BackgroundCommand(self.cur_background_id, cmd, socket)
+        self.background_commands[bg_cmd.id] = bg_cmd
+        self.cur_background_id += 1
+        return bg_cmd.id
+
+    def kill_background(self, id: int) -> None:
+        if id >= len(self.background_commands) or id < 0:
+            raise ValueError("Invalid background command id")
+        bg_cmd = self.background_commands[id]
+        bg_cmd.kill()
+        self.background_commands.pop(id)
+        return bg_cmd
 
     def close(self):
         self.stop_docker_container()
