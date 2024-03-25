@@ -49,7 +49,6 @@ if __name__ == "__main__":
 
     print(f"Running agent {args.agent_cls} (model: {args.model_name}, directory: {args.directory}) with task: \"{args.task}\"")
     llm = LLM(args.model_name)
-
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
     controller = AgentController(agent, workdir=args.directory, max_iterations=args.max_iterations)
