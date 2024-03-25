@@ -9,10 +9,8 @@ class Monologue:
         self.model_name = model_name
 
     def add_event(self, t: dict):
-        # Validate that the event is a dictionary
         if not isinstance(t, dict):
             raise ValueError("Event must be a dictionary")
-        # Directly add the event without adding a timestamp
         self.thoughts.append(t)
 
     def get_thoughts(self):
@@ -30,6 +28,11 @@ class Monologue:
     def condense(self):
         try:
             new_thoughts = llm.summarize_monologue(self.thoughts, self.model_name)
+            # Ensure new_thoughts is not empty or significantly malformed before assigning
+            if not new_thoughts or len(new_thoughts) > len(self.thoughts):
+                raise ValueError("Condensing resulted in invalid state.")
             self.thoughts = new_thoughts
         except Exception as e:
-            print(f"Error condensing thoughts: {e}")
+            # Consider logging the error here instead of or in addition to raising an exception
+            raise RuntimeError(f"Error condensing thoughts: {e}")
+
