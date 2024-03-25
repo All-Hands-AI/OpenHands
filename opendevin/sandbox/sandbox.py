@@ -14,6 +14,7 @@ OutputType = namedtuple("OutputType", ["content"])
 CONTAINER_IMAGE = os.getenv("SANDBOX_CONTAINER_IMAGE", "opendevin/sandbox:latest")
 
 class DockerInteractive:
+    closed = False
 
     def __init__(
         self,
@@ -81,6 +82,7 @@ class DockerInteractive:
 
     def close(self):
         self.stop_docker_container()
+        self.closed = True
 
     def stop_docker_container(self):
         docker_client = docker.from_env()
@@ -132,8 +134,9 @@ class DockerInteractive:
 
     # clean up the container, cannot do it in __del__ because the python interpreter is already shutting down
     def cleanup(self):
+        if self.closed:
+            return
         self.container.remove(force=True)
-        print("Finish cleaning up Docker container")
 
 if __name__ == "__main__":
     import argparse
