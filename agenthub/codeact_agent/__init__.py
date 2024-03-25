@@ -1,8 +1,9 @@
 import os
 import re
+from typing import List, Dict
+
 from litellm import completion
 from termcolor import colored
-from typing import List, Dict
 
 from opendevin.agent import Agent, Message, Role
 from opendevin.lib.event import Event

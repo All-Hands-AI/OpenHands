@@ -9,6 +9,7 @@ from opendevin.controller import AgentController
 from opendevin.lib.event import Event
 
 DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.getcwd())
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4-0125-preview")
 
 def parse_event(data):
     if "action" not in data:
@@ -80,7 +81,7 @@ class Session:
         agent_cls = "LangchainsAgent"
         if start_event and "agent_cls" in start_event.args:
             agent_cls = start_event.args["agent_cls"]
-        model = "gpt-4-0125-preview"
+        model = MODEL_NAME
         if start_event and "model" in start_event.args:
             model = start_event.args["model"]
 
