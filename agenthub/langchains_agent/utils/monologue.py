@@ -23,7 +23,7 @@ class Monologue:
                 print(f"Error serializing thought: {e}")
         return total_length
 
-    def condense(self):
+    def condense(self, llm):
         try:
             prompt = prompts.get_summarize_monologue_prompt(self.thoughts)
             response = llm.prompt(prompt)
