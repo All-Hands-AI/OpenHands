@@ -28,7 +28,7 @@ class Observation:
     @property
     def message(self) -> str:
         """Returns a message describing the observation."""
-        return f"The agent made an observation."
+        return "The agent made an observation."
 
 
 @dataclass
