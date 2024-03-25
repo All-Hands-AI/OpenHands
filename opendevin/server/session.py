@@ -36,7 +36,7 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
 }
 
 
-DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.getcwd())
+DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
 
 def parse_event(data):
     if "action" not in data:
@@ -121,7 +121,11 @@ class Session:
         model = "gpt-4-0125-preview"
         if start_event and "model" in start_event.args:
             model = start_event.args["model"]
-
+        
+        if not os.path.exists(directory):
+            print(f"Workspace directory {directory} does not exist. Creating it...")
+            os.makedirs(directory)
+        
         AgentCls = Agent.get_cls(agent_cls)
         self.agent = AgentCls(model_name=model)
         self.controller = AgentController(self.agent, directory, callbacks=[self.on_agent_event])
