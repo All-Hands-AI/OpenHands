@@ -128,11 +128,11 @@ class Session:
         await self.send({"action": "initialize", "message": "Control loop started."})
 
     async def start_task(self, start_event):
-        if "task" not in start_event.args:
+        if "task" not in start_event["args"]:
             await self.send_error("No task specified")
             return
         await self.send_message("Starting new task...")
-        task = start_event.args["task"]
+        task = start_event["args"]["task"]
         if self.controller is None:
             await self.send_error("No agent started. Please wait a second...")
             return
