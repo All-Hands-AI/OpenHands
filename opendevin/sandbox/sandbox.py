@@ -13,6 +13,7 @@ OutputType = namedtuple("OutputType", ["content"])
 
 CONTAINER_IMAGE = os.getenv("SANDBOX_CONTAINER_IMAGE", "opendevin/sandbox:latest")
 
+
 class DockerInteractive:
 
     def __init__(
@@ -63,9 +64,9 @@ class DockerInteractive:
             return ""
         logs = ""
         while True:
-            ready_to_read, _, _ = select.select([self.log_generator], [], [], .1) # type: ignore[has-type]
+            ready_to_read, _, _ = select.select([self.log_generator], [], [], .1)  # type: ignore[has-type]
             if ready_to_read:
-                data = self.log_generator.read(4096) # type: ignore[has-type]
+                data = self.log_generator.read(4096)  # type: ignore[has-type]
                 if not data:
                     break
                 # FIXME: we're occasionally seeing some escape characters like `\x02` and `\x00` in the logs...
@@ -83,7 +84,7 @@ class DockerInteractive:
     def execute_in_background(self, cmd: str) -> None:
         self.log_time = time.time()
         result = self.container.exec_run(['su', 'devin', '-c', cmd], socket=True, workdir="/workspace")
-        self.log_generator = result.output # socket.SocketIO
+        self.log_generator = result.output  # socket.SocketIO
         self.log_generator._sock.setblocking(0)
 
     def close(self):
@@ -141,6 +142,7 @@ class DockerInteractive:
     def cleanup(self):
         self.container.remove(force=True)
         print("Finish cleaning up Docker container")
+
 
 if __name__ == "__main__":
     import argparse

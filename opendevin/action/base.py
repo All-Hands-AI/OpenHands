@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from opendevin.controller import AgentController
     from opendevin.observation import Observation
 
+
 @dataclass
 class Action:
     def run(self, controller: "AgentController") -> "Observation":
@@ -23,7 +24,6 @@ class Action:
         raise NotImplementedError
 
 
-
 class ExecutableAction(Action):
     @property
     def executable(self) -> bool:
@@ -34,6 +34,7 @@ class NotExecutableAction(Action):
     @property
     def executable(self) -> bool:
         return False
+
 
 class NullAction(NotExecutableAction):
     """An action that does nothing.

@@ -4,6 +4,7 @@ import agenthub # noqa F401 (we import this to get the agents registered)
 
 app = FastAPI()
 
+
 # This endpoint recieves events from the client (i.e. the browser)
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -11,4 +12,3 @@ async def websocket_endpoint(websocket: WebSocket):
     session = Session(websocket)
     # TODO: should this use asyncio instead of await?
     await session.start_listening()
-

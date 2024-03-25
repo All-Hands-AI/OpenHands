@@ -38,6 +38,7 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
 
 DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
 
+
 def parse_event(data):
     if "action" not in data:
         return None
@@ -54,13 +55,14 @@ def parse_event(data):
         "message": message,
     }
 
+
 class Session:
     def __init__(self, websocket):
         self.websocket = websocket
         self.controller: Optional[AgentController] = None
         self.agent: Optional[Agent] = None
         self.agent_task = None
-        asyncio.create_task(self.create_controller(), name="create controller") # FIXME: starting the docker container synchronously causes a websocket error...
+        asyncio.create_task(self.create_controller(), name="create controller")  # FIXME: starting the docker container synchronously causes a websocket error...
 
     async def send_error(self, message):
         await self.send({"error": True, "message": message})
@@ -121,12 +123,12 @@ class Session:
         model = "gpt-4-0125-preview"
         if start_event and "model" in start_event.args:
             model = start_event.args["model"]
-        
+
         if not os.path.exists(directory):
             print(f"Workspace directory {directory} does not exist. Creating it...")
             os.makedirs(directory)
         directory = os.path.relpath(directory, os.getcwd())
-        
+
         AgentCls = Agent.get_cls(agent_cls)
         self.agent = AgentCls(model_name=model)
         self.controller = AgentController(self.agent, directory, callbacks=[self.on_agent_event])

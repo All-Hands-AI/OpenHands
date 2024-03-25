@@ -34,6 +34,7 @@ class AgentThinkAction(NotExecutableAction):
     def message(self) -> str:
         return f"Thinking: {self.thought}"
 
+
 @dataclass
 class AgentEchoAction(ExecutableAction):
     content: str
@@ -45,6 +46,7 @@ class AgentEchoAction(ExecutableAction):
     @property
     def message(self) -> str:
         return f"Echoing: {self.content}"
+
 
 @dataclass
 class AgentFinishAction(NotExecutableAction):

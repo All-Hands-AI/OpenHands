@@ -8,6 +8,7 @@ from .base import ExecutableAction
 # The LLM sometimes returns paths with this prefix, so we need to remove it
 PATH_PREFIX = "/workspace/"
 
+
 def resolve_path(base_path, file_path):
     if file_path.startswith(PATH_PREFIX):
         file_path = file_path[len(PATH_PREFIX):]
@@ -44,4 +45,3 @@ class FileWriteAction(ExecutableAction):
     @property
     def message(self) -> str:
         return f"Writing file: {self.path}"
-

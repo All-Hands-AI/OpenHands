@@ -1,6 +1,7 @@
 import sys
 import commands
 
+
 def print_help():
     help_text = '''
 Usage: python string_cli.py <command> <string>
@@ -14,6 +15,7 @@ Commands:
     scramble - Randomly scrambles the characters in the input string.
 '''
     print(help_text)
+
 
 if __name__ == '__main__':
     if len(sys.argv) == 2 and sys.argv[1] == '--help':

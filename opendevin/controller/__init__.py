@@ -54,11 +54,11 @@ class AgentController:
 
                 state: State = self.get_current_state()
                 action: Action = self.agent.step(state)
-                
+
                 print("ACTION", action, flush=True)
                 for _callback_fn in self.callbacks:
                     _callback_fn(action)
-                
+
                 if isinstance(action, AgentFinishAction):
                     print("FINISHED", flush=True)
                     break
@@ -70,7 +70,6 @@ class AgentController:
                     print(action, flush=True)
                 print("---", flush=True)
 
-
                 if action.executable:
                     observation: Observation = action.run(self)
                 else:
@@ -78,7 +77,7 @@ class AgentController:
                     observation = NullObservation("")
                 print("OBSERVATION", observation, flush=True)
                 self.state_updated_info.append((action, observation))
-                
+
                 print(observation, flush=True)
                 for _callback_fn in self.callbacks:
                     _callback_fn(observation)

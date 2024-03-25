@@ -80,6 +80,7 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
 
 CLASS_TO_ACTION_TYPE: Dict[Type[Action], str] = {v: k for k, v in ACTION_TYPE_TO_CLASS.items()}
 
+
 class LangchainsAgent(Agent):
     _initialized = False
 
@@ -153,7 +154,6 @@ class LangchainsAgent(Agent):
                 raise NotImplementedError(f"Unknown observation type: {obs}")
             self._add_event(d)
 
-
             if isinstance(prev_action, CmdRunAction):
                 d = {"action": "run", "args": {"command": prev_action.command}}
             elif isinstance(prev_action, CmdKillAction):
@@ -175,7 +175,7 @@ class LangchainsAgent(Agent):
             self._add_event(d)
 
         state.updated_info = []
-            
+
         action_dict = llm.request_action(
             self.instruction,
             self.monologue.get_thoughts(),

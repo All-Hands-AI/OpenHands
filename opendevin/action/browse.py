@@ -5,6 +5,7 @@ from opendevin.observation import BrowserOutputObservation
 
 from .base import ExecutableAction
 
+
 @dataclass
 class BrowseURLAction(ExecutableAction):
     url: str
