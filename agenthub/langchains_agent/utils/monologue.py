@@ -12,10 +12,8 @@ class Monologue:
         # Validate that the event is a dictionary
         if not isinstance(t, dict):
             raise ValueError("Event must be a dictionary")
-        # Add a timestamp to each event for metadata
-        event_with_metadata = t.copy()
-        event_with_metadata["timestamp"] = datetime.datetime.now().isoformat()
-        self.thoughts.append(event_with_metadata)
+        # Directly add the event without adding a timestamp
+        self.thoughts.append(t)
 
     def get_thoughts(self):
         return self.thoughts
