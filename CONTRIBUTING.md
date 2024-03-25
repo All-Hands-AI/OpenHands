@@ -30,7 +30,7 @@ git remote -v
 You should see both `origin` and `upstream` in the output.
 
 ### 3. Synchronize with Official Repository
-Synchronize latest commit with offical repository before coding.
+Synchronize latest commit with official repository before coding.
 
 ```shell
 git fetch upstream
