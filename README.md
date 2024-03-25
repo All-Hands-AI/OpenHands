@@ -6,7 +6,8 @@
 
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-[Screencast from 03-24-2024 08:39:30 PM.webm](https://github.com/OpenDevin/OpenDevin/assets/46636043/b1081b0e-773a-4568-a47d-fd75b67e7c3e)
+[demo-video.webm](https://github.com/OpenDevin/OpenDevin/assets/38853559/5b1092cc-3554-4357-a279-c2a2e9b352ad)
+
 
 ## Mission 🎯
 Welcome to OpenDevin, an open-source project aiming to replicate [Devin](https://www.cognition-labs.com/introducing-devin), an autonomous AI software engineer who is capable of executing complex engineering tasks and collaborating actively with users on software development projects. This project aspires to replicate, enhance, and innovate upon Devin through the power of the open-source community.
