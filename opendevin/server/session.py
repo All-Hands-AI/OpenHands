@@ -96,9 +96,10 @@ class Session:
                     if self.controller is None:
                         await self.send_error("No agent started. Please wait a second...")
                     else:
-                        action_cls = ACTION_TYPE_TO_CLASS[event["action"]]
-                        action = action_cls(**event["args"])
-                        await self.controller.add_user_action(action)
+                        # TODO: we only need to implement user message for now
+                        # since even Devin does not support having the user taking other
+                        # actions (e.g., edit files) while the agent is running
+                        raise NotImplementedError
 
         except WebSocketDisconnect as e:
             self.websocket = None
@@ -134,19 +135,4 @@ class Session:
         self.agent_task = asyncio.create_task(self.controller.start_loop(task), name="agent loop")
 
     def on_agent_event(self, event: Observation | Action):
-
-        # TODO: trying to find a potentially better solution here
-        # but not sure what "message" is for
-        if isinstance(event, Observation):
-            evt = {
-                "action": event.__class__.__name__,
-                "message": event.content,
-                "args": event.__dict__,
-            }
-        else:
-            evt = {
-                "action": event.__class__.__name__,
-                "args": event.__dict__,
-                "message": event.message,
-            }
-        asyncio.create_task(self.send(evt), name="send event in callback")
+        asyncio.create_task(self.send(event.to_dict()), name="send event in callback")

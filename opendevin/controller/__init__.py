@@ -1,5 +1,5 @@
 
-from typing import List, Callable
+from typing import List, Callable, Tuple
 
 from opendevin.state import State
 from opendevin.agent import Agent
@@ -11,6 +11,7 @@ from opendevin.action import (
 )
 from opendevin.observation import (
     Observation,
+    NullObservation
 )
 
 
@@ -33,7 +34,7 @@ class AgentController:
         self.max_iterations = max_iterations
         self.workdir = workdir
         self.command_manager = CommandManager(workdir)
-        self.state_updated_info: List[Action | Observation] = []
+        self.state_updated_info: List[Tuple[Action, Observation]] = []
         self.callbacks = callbacks
 
     def get_current_state(self) -> State:
@@ -45,11 +46,6 @@ class AgentController:
         self.state_updated_info = []
         return state
 
-    async def add_user_action(self, action: Action):
-        # await self.handle_action(event)
-        self.state_updated_info.append(action)
-
-
     async def start_loop(self, task_instruction: str):
         try:
             self.agent.instruction = task_instruction
@@ -58,7 +54,7 @@ class AgentController:
 
                 state: State = self.get_current_state()
                 action: Action = self.agent.step(state)
-                self.state_updated_info.append(action)
+                
                 print("ACTION", action, flush=True)
                 for _callback_fn in self.callbacks:
                     _callback_fn(action)
@@ -77,12 +73,15 @@ class AgentController:
 
                 if action.executable:
                     observation: Observation = action.run(self)
-                    self.state_updated_info.append(observation)
-                    print(observation, flush=True)
-                    for _callback_fn in self.callbacks:
-                        _callback_fn(action)
                 else:
                     print("ACTION NOT EXECUTABLE", flush=True)
+                    observation: Observation = NullObservation("")
+                
+                self.state_updated_info.append((action, observation))
+                
+                print(observation, flush=True)
+                for _callback_fn in self.callbacks:
+                    _callback_fn(action)
 
                 print("==============", flush=True)
         except Exception as e:
