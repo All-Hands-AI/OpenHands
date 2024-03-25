@@ -18,6 +18,8 @@ from opendevin.observation import (
 
 from .command_manager import CommandManager
 
+def print_with_indent(text: str):
+    print("\t"+text.replace("\n","\n\t"), flush=True)
 
 class AgentController:
     def __init__(
@@ -61,21 +63,22 @@ class AgentController:
             print("Exited before finishing", flush=True)
 
     async def step(self, i: int):
+        print("\n\n==============", flush=True)
         print("STEP", i, flush=True)
         log_obs = self.command_manager.get_background_obs()
         for obs in log_obs:
             self.add_observation(obs)
             await self._run_callbacks(obs)
-            print("BACKGROUND LOG", obs, flush=True)
+            print_with_indent("\nBACKGROUND LOG:\n%s" % obs)
 
         state: State = self.get_current_state()
         action: Action = self.agent.step(state)
 
-        print("ACTION", action, flush=True)
+        print_with_indent("\nACTION:\n%s" % action)
         await self._run_callbacks(action)
 
         if isinstance(action, AgentFinishAction):
-            print("FINISHED", flush=True)
+            print_with_indent("\nFINISHED")
             return True
         if isinstance(action, (FileReadAction, FileWriteAction)):
             action_cls = action.__class__
@@ -83,18 +86,14 @@ class AgentController:
             _kwargs["base_path"] = self.workdir
             action = action_cls(**_kwargs)
             print(action, flush=True)
-        print("---", flush=True)
         if action.executable:
             observation: Observation = action.run(self)
         else:
             observation = NullObservation("")
-        print("OBSERVATION", observation, flush=True)
+        print_with_indent("\nOBSERVATION:\n%s" % observation)
         self.state_updated_info.append((action, observation))
-
-        print(observation, flush=True)
         await self._run_callbacks(observation)
 
-        print("==============", flush=True)
 
     async def _run_callbacks(self, event):
         if event is None:
