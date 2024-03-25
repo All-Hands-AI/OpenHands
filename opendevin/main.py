@@ -2,7 +2,6 @@ import asyncio
 import argparse
 
 from typing import Type
-from dataclasses import dataclass
 
 import agenthub # noqa F401 (we import this to get the agents registered)
 from opendevin.agent import Agent
@@ -52,8 +51,6 @@ if __name__ == "__main__":
     llm = LLM(args.model_name)
 
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
-    agent = AgentCls(
-        llm=llm,
-    )
+    agent = AgentCls(llm=llm)
     controller = AgentController(agent, workdir=args.directory, max_iterations=args.max_iterations)
     asyncio.run(controller.start_loop(args.task))
