@@ -101,3 +101,15 @@ class AgentRecallObservation(Observation):
     @property
     def message(self) -> str:
         return "The agent recalled memories."
+
+
+@dataclass
+class NullObservation(Observation):
+    """
+    This data class represents a null observation.
+    This is used when the produced action is NOT executable.
+    """
+
+    @property
+    def message(self) -> str:
+        return ""

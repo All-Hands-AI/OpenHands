@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Tuple
 
 from opendevin.action import (
     Action,
@@ -13,4 +13,4 @@ from opendevin.observation import (
 @dataclass
 class State:
     background_commands_obs: List[CmdOutputObservation]
-    updated_info: List[Action | Observation]
+    updated_info: List[Tuple[Action, Observation]]
