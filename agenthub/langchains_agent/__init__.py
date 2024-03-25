@@ -62,7 +62,7 @@ MAX_OUTPUT_LENGTH = 5000
 MAX_MONOLOGUE_LENGTH = 20000
 
 
-ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
+ACTION_TYPE_TO_CLASS = {
     "run": CmdRunAction,
     "kill": CmdKillAction,
     "browse": BrowseURLAction,
@@ -103,9 +103,8 @@ class LangchainsAgent(Agent):
         for thought in INITIAL_THOUGHTS:
             thought = thought.replace("$TASK", self.instruction)
             if next_is_output:
-                d = {"action": "output", "args": {"output": thought}}
+                self._add_event({"action": "output", "args": {"output": thought}})
                 next_is_output = False
-                self._add_event(d.to_dict())
             else:
                 action, _, argument = thought.partition(" ")
                 if action in {"RUN", "RECALL", "BROWSE"}:

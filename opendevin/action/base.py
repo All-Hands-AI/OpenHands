@@ -8,6 +8,8 @@ if TYPE_CHECKING:
 
 @dataclass
 class Action:
+    def __init__(self, *args, **kwargs):
+        ...
     def run(self, controller: "AgentController") -> "Observation":
         raise NotImplementedError
 
