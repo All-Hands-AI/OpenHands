@@ -199,7 +199,7 @@ class LangchainsAgent(Agent):
         evt_copy = Event(event.action, event.args.copy())
         if 'output' in event.args and len(event.args['output']) > MAX_OUTPUT_LENGTH:
             evt_copy.args['output'] = evt_copy.args['output'][:MAX_OUTPUT_LENGTH] + "..."
-        self.monologue.add_evt_copy(evt_copy)
+        self.monologue.add_event(evt_copy)
         if self.monologue.get_total_length() > MAX_MONOLOGUE_LENGTH:
             self.monologue.condense(self.llm)
 
