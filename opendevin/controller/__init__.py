@@ -1,4 +1,4 @@
-
+import asyncio
 from typing import List, Callable, Tuple
 
 from opendevin.state import State
@@ -84,6 +84,8 @@ class AgentController:
                     _callback_fn(observation)
 
                 print("==============", flush=True)
+
+                await asyncio.sleep(0.001)
         except Exception as e:
             print("Error in loop", e, flush=True)
             pass
