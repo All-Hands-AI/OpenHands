@@ -22,9 +22,15 @@ class JsonWebsocketAddon {
       }),
     );
     this._socket.addEventListener("message", (event) => {
-      const { message } = JSON.parse(event.data);
-      if (message.action === "terminal") {
-        terminal.write(message.data);
+      const { action, args } = JSON.parse(event.data);
+      if (action === "run") {
+        terminal.writeln(args.command);
+      }
+      if (action === "output") {
+        args.output.split("\n").forEach((line: string) => {
+          terminal.writeln(line);
+        });
+        terminal.write("\n$ ");
       }
     });
   }
@@ -35,7 +41,16 @@ class JsonWebsocketAddon {
   }
 }
 
-function Terminal(): JSX.Element {
+type TerminalProps = {
+  hidden: boolean;
+};
+
+/**
+ * The terminal's content is set by write messages. To avoid complicated state logic,
+ * we keep the terminal persistently open as a child of <App /> and hidden when not in use.
+ */
+
+function Terminal({ hidden }: TerminalProps): JSX.Element {
   const terminalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,6 +64,7 @@ function Terminal(): JSX.Element {
       fontFamily: "Menlo, Monaco, 'Courier New', monospace",
       fontSize: 14,
     });
+    terminal.write("$ ");
 
     const fitAddon = new FitAddon();
     terminal.loadAddon(fitAddon);
@@ -69,7 +85,16 @@ function Terminal(): JSX.Element {
     };
   }, []);
 
-  return <div ref={terminalRef} style={{ width: "100%", height: "100%" }} />;
+  return (
+    <div
+      ref={terminalRef}
+      style={{
+        width: "100%",
+        height: "100%",
+        display: hidden ? "none" : "block",
+      }}
+    />
+  );
 }
 
 export default Terminal;
