@@ -19,7 +19,8 @@ class AgentRecallAction(ExecutableAction):
 
     @property
     def message(self) -> str:
-        return f"Recalling memories with query: {self.query}"
+        return f"Let me dive into my memories to find what you're looking for! Searching for: '{self.query}'. This might take a moment."
+
 
 
 @dataclass
@@ -32,7 +33,8 @@ class AgentThinkAction(NotExecutableAction):
 
     @property
     def message(self) -> str:
-        return f"Thinking: {self.thought}"
+        return f"I'm pondering over the idea: '{self.thought}'. Give me a second to process this."
+
 
 @dataclass
 class AgentEchoAction(ExecutableAction):
@@ -44,7 +46,8 @@ class AgentEchoAction(ExecutableAction):
 
     @property
     def message(self) -> str:
-        return f"Echoing: {self.content}"
+        return f"You said '{self.content}', right? Let me reflect that back to you. Here it is!"
+
 
 @dataclass
 class AgentFinishAction(NotExecutableAction):
@@ -55,4 +58,5 @@ class AgentFinishAction(NotExecutableAction):
 
     @property
     def message(self) -> str:
-        return "Finished!"
+        return "All done! What's next on the agenda?"
+
