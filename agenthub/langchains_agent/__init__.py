@@ -105,11 +105,14 @@ class LangchainsAgent(Agent):
             if next_is_output:
                 d = {"action": "output", "args": {"output": thought}}
                 next_is_output = False
+                self._add_event(d.to_dict())
             else:
-                action, _, argument = thought.partition(" ")[0], thought.partition(" ")[1], thought.partition(" ")[2]
-                d = ACTION_TYPE_TO_CLASS[action.lower()](argument)
-
-        self._add_event(d.to_dict())
+                action, _, argument = thought.partition(" ")
+                if action in {"RUN", "RECALL", "BROWSE"}:
+                    d = ACTION_TYPE_TO_CLASS[action.lower()](argument)
+                else:
+                    d = AgentThinkAction(argument)
+                self._add_event(d.to_dict())
         self._initialized = True
 
     def step(self, state: State) -> Action:
