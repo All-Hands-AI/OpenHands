@@ -24,10 +24,10 @@ class CommandManager:
         )
 
     def _run_background(self, command: str) -> CmdOutputObservation:
-        id = self.shell.execute_in_background(command)
+        bg_cmd = self.shell.execute_in_background(command)
         return CmdOutputObservation(
-            content=f"Background command started. To stop it, send a `kill` action with id {id}",
-            command_id=id,
+            content=f"Background command started. To stop it, send a `kill` action with id {bg_cmd.id}",
+            command_id=bg_cmd.id,
             command=command,
             exit_code=0
         )

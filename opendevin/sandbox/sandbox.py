@@ -110,15 +110,15 @@ class DockerInteractive:
         exit_code, logs = self.container.exec_run(self.get_exec_cmd(cmd), workdir="/workspace")
         return exit_code, logs.decode('utf-8')
 
-    def execute_in_background(self, cmd: str) -> None:
+    def execute_in_background(self, cmd: str) -> BackgroundCommand:
         result = self.container.exec_run(self.get_exec_cmd(cmd), socket=True, workdir="/workspace")
         result.output._sock.setblocking(0)
         bg_cmd = BackgroundCommand(self.cur_background_id, cmd, result)
         self.background_commands[bg_cmd.id] = bg_cmd
         self.cur_background_id += 1
-        return bg_cmd.id
+        return bg_cmd
 
-    def kill_background(self, id: int) -> None:
+    def kill_background(self, id: int) -> BackgroundCommand:
         if id not in self.background_commands:
             raise ValueError("Invalid background command id")
         bg_cmd = self.background_commands[id]
@@ -201,7 +201,7 @@ if __name__ == "__main__":
     )
     print("Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
 
-    bg_id = docker_interactive.execute_in_background("while true; do echo 'dot ' && sleep 1; done")
+    bg_cmd = docker_interactive.execute_in_background("while true; do echo 'dot ' && sleep 1; done")
 
     sys.stdout.flush()
     try:
@@ -215,14 +215,14 @@ if __name__ == "__main__":
                 print("Exiting...")
                 break
             if user_input.lower() == "kill":
-                docker_interactive.kill_background(bg_id)
+                docker_interactive.kill_background(bg_cmd.id)
                 print("Background process killed")
                 continue
             exit_code, output = docker_interactive.execute(user_input)
             print("exit code:", exit_code)
             print(output + "\n", end="")
-            if bg_id in docker_interactive.background_commands:
-                logs = docker_interactive.read_logs(bg_id)
+            if bg_cmd.id in docker_interactive.background_commands:
+                logs = docker_interactive.read_logs(bg_cmd.id)
                 print("background logs:", logs, "\n")
             sys.stdout.flush()
     except KeyboardInterrupt:
