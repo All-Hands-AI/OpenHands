@@ -99,7 +99,7 @@ class CodeActAgent(Agent):
                     print(colored("===ENV OBSERVATION:===\n" + content, "blue"))
                 else:
                     raise NotImplementedError(f"Unknown observation type: {obs.__class__}")
-        response = completion(
+        response = llm.completion(
             messages=self.messages,
             model=self.model_name,
             stop=["</execute>"],
