@@ -1,20 +1,15 @@
-from dataclasses import dataclass
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
     from opendevin.observation import Observation
 
-@dataclass
 class Action:
-    def __init__(self, *args, **kwargs):
-        ...
     def run(self, controller: "AgentController") -> "Observation":
         raise NotImplementedError
 
     def to_dict(self):
-        return {"action": self.__class__.__name__, "args": self.__dict__, "message": self.message}
+        raise NotImplementedError
 
     @property
     def executable(self) -> bool:

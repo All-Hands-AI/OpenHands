@@ -112,6 +112,7 @@ class LangchainsAgent(Agent):
                 else:
                     d = AgentThinkAction(argument)
                 self._add_event(d.to_dict())
+                next_is_output = True
         self._initialized = True
 
     def step(self, state: State) -> Action:
