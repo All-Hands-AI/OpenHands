@@ -17,18 +17,18 @@ CONTAINER_IMAGE = os.getenv("SANDBOX_CONTAINER_IMAGE", "opendevin/sandbox:latest
 RUN_AS_DEVIN = os.getenv("RUN_AS_DEVIN", "true").lower() != "false"
 
 class BackgroundCommand:
-    def __init__(self, id: int, command: str, socket):
+    def __init__(self, id: int, command: str, result):
         self.id = id
         self.command = command
-        self.socket = socket
+        self.result = result
 
     def read_logs(self) -> str:
         # TODO: get an exit code if process is exited
         logs = ""
         while True:
-            ready_to_read, _, _ = select.select([self.socket.output], [], [], .1) # type: ignore[has-type]
+            ready_to_read, _, _ = select.select([self.result.output], [], [], .1) # type: ignore[has-type]
             if ready_to_read:
-                data = self.socket.output.read(4096) # type: ignore[has-type]
+                data = self.result.output.read(4096) # type: ignore[has-type]
                 if not data:
                     break
                 # FIXME: we're occasionally seeing some escape characters like `\x02` and `\x00` in the logs...
@@ -39,7 +39,7 @@ class BackgroundCommand:
         return logs
 
     def kill(self):
-        self.socket.output.close()
+        self.result.output.close()
 
 class DockerInteractive:
     closed = False
@@ -110,9 +110,9 @@ class DockerInteractive:
         return exit_code, logs.decode('utf-8')
 
     def execute_in_background(self, cmd: str) -> None:
-        socket = self.container.exec_run(self.get_exec_cmd(cmd), socket=True, workdir="/workspace")
-        socket.output._sock.setblocking(0)
-        bg_cmd = BackgroundCommand(self.cur_background_id, cmd, socket)
+        result = self.container.exec_run(self.get_exec_cmd(cmd), socket=True, workdir="/workspace")
+        result.output._sock.setblocking(0)
+        bg_cmd = BackgroundCommand(self.cur_background_id, cmd, result)
         self.background_commands[bg_cmd.id] = bg_cmd
         self.cur_background_id += 1
         return bg_cmd.id
