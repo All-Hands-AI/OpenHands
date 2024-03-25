@@ -3,7 +3,7 @@ import argparse
 
 from typing import Type
 
-import agenthub  # noqa
+import agenthub # noqa F401 (we import this to get the agents registered)
 from opendevin.agent import Agent
 from opendevin.controller import AgentController
 

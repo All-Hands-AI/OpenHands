@@ -89,7 +89,7 @@ class LangchainsAgent(Agent):
         self.memory = LongTermMemory()
 
     def _add_event(self, event: dict):
-        if 'output' in event['args']:
+        if 'output' in event['args'] and len(event['args']['output']) > MAX_OUTPUT_LENGTH:
             event['args']['output'] = event['args']['output'][:MAX_OUTPUT_LENGTH] + "..."
 
         self.monologue.add_event(event)

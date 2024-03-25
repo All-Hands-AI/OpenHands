@@ -1,41 +1,57 @@
 import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import "./ChatInterface.css";
 import userAvatar from "../assets/user-avatar.png";
 import assistantAvatar from "../assets/assistant-avatar.png";
-import { sendMessage } from "../state/chatSlice";
 import { RootState } from "../store";
+import { sendChatMessage } from "../services/chatService";
+
+function MessageList(): JSX.Element {
+  const { messages } = useSelector((state: RootState) => state.chat);
+
+  return (
+    <div className="message-list">
+      {messages.map((msg, index) => (
+        <div key={index} className="message-layout">
+          <div
+            className={`${msg.sender === "user" ? "user-message" : "message"}`}
+          >
+            <img
+              src={msg.sender === "user" ? userAvatar : assistantAvatar}
+              alt={`${msg.sender} avatar`}
+              className="avatar"
+            />
+            <div className="message-content">{msg.content}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function InitializingStatus(): JSX.Element {
+  return (
+    <div className="initializing-status">
+      <img src={assistantAvatar} alt="assistant avatar" className="avatar" />
+      <div>Initializing agent (may take up to 10 seconds)...</div>
+    </div>
+  );
+}
 
 function ChatInterface(): JSX.Element {
-  const messages = useSelector((state: RootState) => state.chat.messages);
+  const { initialized } = useSelector((state: RootState) => state.task);
   const [inputMessage, setInputMessage] = useState("");
-  const dispatch = useDispatch();
 
   const handleSendMessage = () => {
     if (inputMessage.trim() !== "") {
-      dispatch(sendMessage(inputMessage));
+      sendChatMessage(inputMessage);
       setInputMessage("");
     }
   };
 
   return (
     <div className="chat-interface">
-      <div className="message-list">
-        {messages.map((msg, index) => (
-          <div key={index} className="message-layout">
-            <div
-              className={`${msg.sender === "user" ? "user-message" : "message"}`}
-            >
-              <img
-                src={msg.sender === "user" ? userAvatar : assistantAvatar}
-                alt={`${msg.sender} avatar`}
-                className="avatar"
-              />
-              <div className="message-content">{msg.content}</div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {initialized ? <MessageList /> : <InitializingStatus />}
       <div className="input-container">
         <button className="attach-button" type="button" aria-label="file">
           <svg
@@ -63,6 +79,7 @@ function ChatInterface(): JSX.Element {
               handleSendMessage();
             }
           }}
+          disabled={!initialized}
         />
         <button type="button" onClick={handleSendMessage}>
           <span className="button-text">Send</span>

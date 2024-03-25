@@ -35,6 +35,8 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
 }
 
 
+DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.getcwd())
+
 def parse_event(data):
     if "action" not in data:
         return None
@@ -105,7 +107,7 @@ class Session:
             print("Client websocket disconnected", e)
 
     async def create_controller(self, start_event=None):
-        directory = os.getcwd()
+        directory = DEFAULT_WORKSPACE_DIR
         if start_event and "directory" in start_event.args:
             directory = start_event.args["directory"]
         agent_cls = "LangchainsAgent"
@@ -118,7 +120,7 @@ class Session:
         AgentCls = Agent.get_cls(agent_cls)
         self.agent = AgentCls(model_name=model)
         self.controller = AgentController(self.agent, directory, callbacks=[self.on_agent_event])
-        await self.send_message("Control loop started")
+        await self.send({"action": "initialize", "message": "Control loop started."})
 
     async def start_task(self, start_event):
         if "task" not in start_event.args:

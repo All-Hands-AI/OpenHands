@@ -1,80 +1,91 @@
 .chat-interface {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    padding: 0px;
-    background-color: #252526;
-  }
-  
-  .message-list {
-    flex: 1;
-    overflow-y: auto;
-    margin-bottom: 20px;
-  }
-  
-  .message-layout {
-    display: flex;
-    margin-bottom: 10px;
-  }
-  .message{
-    display: flex;
-  }
-  .user-message{
-    display: flex;
-    flex-direction: row-reverse;
-    margin:10px 10px 0 auto
-  }
- .user-message .message-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0px;
+  background-color: #252526;
+}
+
+.initializing-status {
+  display: flex;
+  align-items: center;
+  margin: auto;
+  height: 100%;
+}
+
+.message-list {
+  flex: 1;
+  overflow-y: auto;
+  padding-top: 1rem;
+}
+
+.message-layout {
+  display: flex;
+  margin-bottom: 10px;
+}
+.message{
+  display: flex;
+}
+
+.user-message{
+  display: flex;
+  flex-direction: row-reverse;
+  margin:10px 10px 0 auto
+}
+
+.user-message .message-content {
   background-color: #007acc ;
 }
 
-  .avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    margin:0 10px;
-  }
-  
-  .message-content {
-    background-color: #333333;
-    color: #fff;
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  }
-  
-  
-  .input-container {
-    display: flex;
-    align-items: center;
-    margin-top: auto;
-  }
-  
-  .input-container input {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    border-radius: 5px;
-    margin: 0 10px;
-    background-color: #3c3c3c;
-    color: #fff;
-  }
-  
-  .input-container button {
-    padding: 10px 20px;
-    background-color: #007acc;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  
-  .button-text {
-    font-size: 16px;
-  }
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin:0 10px;
+}
+
+.message-content {
+  background-color: #333333;
+  color: #fff;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
 
 
-  .input-container svg {
-    height: 16px;
-  }
+.input-container {
+  display: flex;
+  align-items: center;
+  margin-top: auto;
+  margin: 0.5rem;
+}
+
+.input-container input {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  margin: 0 10px;
+  background-color: #3c3c3c;
+  color: #fff;
+  font-size: 16px;
+}
+
+.input-container button {
+  padding: 10px 20px;
+  background-color: #007acc;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.button-text {
+  font-size: 16px;
+}
+
+
+.input-container svg {
+  height: 16px;
+}
 

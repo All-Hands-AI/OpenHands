@@ -4,14 +4,23 @@ from dataclasses import dataclass
 from opendevin.observation import Observation
 from .base import ExecutableAction
 
+# This is the path where the workspace is mounted in the container
+# The LLM sometimes returns paths with this prefix, so we need to remove it
+PATH_PREFIX = "/workspace/"
+
+def resolve_path(base_path, file_path):
+    if file_path.startswith(PATH_PREFIX):
+        file_path = file_path[len(PATH_PREFIX):]
+    return os.path.join(base_path, file_path)
+
+
 @dataclass
 class FileReadAction(ExecutableAction):
     path: str
-    workspace_dir: str = ""  # TODO: maybe handle this in a more elegant way
+    base_path: str = ""
 
     def run(self, *args, **kwargs) -> Observation:
-        # remove the leading /workspace/ from the path (inside container)
-        path = os.path.join(self.workspace_dir, self.path.lstrip("/workspace/"))
+        path = resolve_path(self.base_path, self.path)
         with open(path, 'r') as file:
             return Observation(file.read())
 
@@ -24,10 +33,10 @@ class FileReadAction(ExecutableAction):
 class FileWriteAction(ExecutableAction):
     path: str
     contents: str
-    workspace_dir: str = ""
+    base_path: str = ""
 
     def run(self, *args, **kwargs) -> Observation:
-        path = os.path.join(self.workspace_dir, self.path.lstrip("/workspace/"))
+        path = resolve_path(self.base_path, self.path)
         with open(path, 'w') as file:
             file.write(self.contents)
         return Observation(f"File written to {path}")
