@@ -4,7 +4,6 @@ import uuid
 import time
 import select
 import docker
-import socket
 from typing import Tuple, Dict, List
 from collections import namedtuple
 import atexit
@@ -40,7 +39,7 @@ class BackgroundCommand:
         return logs
 
     def kill(self):
-        self.socket.close()
+        self.socket.output.close()
 
 class DockerInteractive:
     closed = False
@@ -111,7 +110,7 @@ class DockerInteractive:
         return exit_code, logs.decode('utf-8')
 
     def execute_in_background(self, cmd: str) -> None:
-        result = self.container.exec_run(self.get_exec_cmd(cmd), socket=True, workdir="/workspace")
+        socket = self.container.exec_run(self.get_exec_cmd(cmd), socket=True, workdir="/workspace")
         socket.output._sock.setblocking(0)
         bg_cmd = BackgroundCommand(self.cur_background_id, cmd, socket)
         self.background_commands[bg_cmd.id] = bg_cmd
