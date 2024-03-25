@@ -33,7 +33,7 @@ class AgentThinkAction(NotExecutableAction):
 
     @property
     def message(self) -> str:
-        return f"I'm pondering over the idea: '{self.thought}'. Give me a second to process this."
+        return self.thought
 
 
 @dataclass
