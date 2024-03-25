@@ -135,14 +135,8 @@ class LangchainsAgent(Agent):
                     d = {"action": "error", "args": {"output": obs.content}}
                 else:
                     d = {"action": "output", "args": {"output": obs.content}}
-            # elif isinstance(obs, UserMessageObservation):
-            #     d = {"action": "output", "args": {"output": obs.message}}
-            # elif isinstance(obs, AgentMessageObservation):
-            #     d = {"action": "output", "args": {"output": obs.message}}
-            elif isinstance(obs, (BrowserOutputObservation, Observation)):
-                d = {"action": "output", "args": {"output": obs.content}}
             else:
-                raise NotImplementedError(f"Unknown observation type: {obs}")
+                d = {"action": "output", "args": {"output": obs.content}}
             self._add_event(d)
 
 
