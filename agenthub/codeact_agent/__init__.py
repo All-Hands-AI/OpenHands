@@ -16,7 +16,7 @@ from opendevin.observation import (
     AgentMessageObservation,
 )
 
-from opendevin.lib.command_manager import CommandManager
+from opendevin.controller.command_manager import CommandManager
 from opendevin.llm.llm import LLM
 from opendevin.sandbox.sandbox import DockerInteractive
 

@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Type, TYPE_CHECKING
+from enum import Enum
+from dataclasses import dataclass
 
 if TYPE_CHECKING:
     from opendevin.action import Action
     from opendevin.state import State
-from opendevin.lib.event import Event
-from opendevin.lib.command_manager import CommandManager
 from opendevin.llm.llm import LLM
 
 class Role(Enum):

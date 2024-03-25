@@ -2,6 +2,7 @@ import asyncio
 import argparse
 
 from typing import Type
+from dataclasses import dataclass
 
 import agenthub # noqa F401 (we import this to get the agents registered)
 from opendevin.agent import Agent

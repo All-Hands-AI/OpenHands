@@ -1,5 +1,7 @@
 import os
 
+from typing import List, Dict, Type
+
 from . import json
 
 if os.getenv("DEBUG"):
@@ -7,18 +9,40 @@ if os.getenv("DEBUG"):
 
     set_debug(True)
 
-from typing import List
-
-from opendevin.observation import (
-    CmdOutputObservation,
+from opendevin.action import Action
+from opendevin.action import (
+    Action,
+    CmdRunAction,
+    CmdKillAction,
+    BrowseURLAction,
+    FileReadAction,
+    FileWriteAction,
+    AgentRecallAction,
+    AgentThinkAction,
+    AgentFinishAction,
 )
+from opendevin.observation import (
+    Observation,
+    CmdOutputObservation,
+    BrowserOutputObservation,
+)
+
+ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
+    "run": CmdRunAction,
+    "kill": CmdKillAction,
+    "browse": BrowseURLAction,
+    "read": FileReadAction,
+    "write": FileWriteAction,
+    "recall": AgentRecallAction,
+    "think": AgentThinkAction,
+    "finish": AgentFinishAction,
+}
+CLASS_TO_ACTION_TYPE: Dict[Type[Action], str] = {v: k for k, v in ACTION_TYPE_TO_CLASS.items()}
 
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
-
-from opendevin.lib.event import Event
 
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is to {task}.
@@ -141,14 +165,15 @@ def get_request_action_prompt(task, thoughts, background_commands=[]):
     parsed = parser.parse(resp["text"])
     return parsed
 
-def parse_action_response(response: str) -> Event:
+def parse_action_response(response: str) -> Action:
     parser = JsonOutputParser(pydantic_object=_ActionDict)
     action_dict = parser.parse(response)
     event = Event(action_dict['action'], action_dict['args'])
-    return event
+    action = ACTION_TYPE_TO_CLASS[action_dict["action"]](**action_dict["args"])
+    return action
 
-def parse_summary_response(response: str) -> List[Event]:
+def parse_summary_response(response: str) -> List[Action]:
     parser = JsonOutputParser(pydantic_object=NewMonologue)
     parsed = parser.parse(response)
-    thoughts = [Event(t['action'], t['args']) for t in parsed['new_monologue']]
+    thoughts = [ACTION_TYPE_TO_CLASS[t['action']](**t['args']) for t in parsed['new_monologue']]
     return thoughts
