@@ -70,7 +70,6 @@ class AgentController:
                     print(action, flush=True)
                 print("---", flush=True)
 
-
                 if action.executable:
                     observation: Observation = action.run(self)
                 else:

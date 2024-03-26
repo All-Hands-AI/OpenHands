@@ -20,6 +20,7 @@ if os.getenv("SANDBOX_USER_ID") is not None:
 elif hasattr(os, "getuid"):
     USER_ID = os.getuid()
 
+
 class DockerInteractive:
 
     def __init__(
@@ -115,6 +116,13 @@ class DockerInteractive:
         self.stop_docker_container()
         docker_client = docker.from_env()
         try:
+            try:
+                _ = docker_client.images.get(self.container_image)
+            except docker.errors.ImageNotFound:
+                print(f"Pulling image {self.container_image}")
+                docker_client.images.pull(self.container_image)
+
+            print(f"Try to starting Docker container {self.container_name} from image {self.container_image}")
             self.container = docker_client.containers.run(
                     self.container_image,
                     command="tail -f /dev/null",
@@ -127,6 +135,7 @@ class DockerInteractive:
             print(f"Failed to start container: {e}")
             raise e
 
+        print(f"Waiting for container {self.container_name} to be ready")
         # wait for container to be ready
         elapsed = 0
         while self.container.status != "running":
@@ -142,11 +151,13 @@ class DockerInteractive:
                 break
         if self.container.status != "running":
             raise Exception("Failed to start container")
+        print(f"Container {self.container_name} is ready")
 
     # clean up the container, cannot do it in __del__ because the python interpreter is already shutting down
     def cleanup(self):
         self.container.remove(force=True)
         print("Finish cleaning up Docker container")
+
 
 if __name__ == "__main__":
     import argparse

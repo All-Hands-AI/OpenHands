@@ -22,6 +22,7 @@ from opendevin.observation import (
     Observation,
     UserMessageObservation
 )
+from opendevin.server.dto.action import EventAction
 
 # NOTE: this is a temporary solution - but hopefully we can use Action/Observation throughout the codebase
 ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
@@ -38,6 +39,7 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
 
 DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
 
+
 def parse_event(data):
     if "action" not in data:
         return None
@@ -53,6 +55,7 @@ def parse_event(data):
         "args": args,
         "message": message,
     }
+
 
 class Session:
     def __init__(self, websocket):
@@ -89,22 +92,21 @@ class Session:
                 if event is None:
                     await self.send_error("Invalid event")
                     continue
-                if event["action"] == "initialize":
-                    await self.create_controller(event)
-                elif event["action"] == "start":
-                    await self.start_task(event)
-                else:
-                    if self.controller is None:
-                        await self.send_error("No agent started. Please wait a second...")
-
-                    elif event["action"] == "chat":
+                match event["action"]:
+                    case EventAction.INIT:
+                        await self.create_controller(event)
+                    case EventAction.START:
+                        await self.start_task(event)
+                    case EventAction.CHAT:
+                        if self.controller is None:
+                            await self.send_error("No agent started. Please wait a second...")
+                            return
                         self.controller.add_observation(UserMessageObservation(event["message"]))
-                    else:
+                    case _:
                         # TODO: we only need to implement user message for now
                         # since even Devin does not support having the user taking other
                         # actions (e.g., edit files) while the agent is running
                         raise NotImplementedError
-
         except WebSocketDisconnect as e:
             self.websocket = None
             if self.agent_task:

@@ -23,7 +23,6 @@ assert (
 ), "Please set the OPENAI_API_KEY environment variable."
 
 
-
 SYSTEM_MESSAGE = """You are a helpful assistant. You will be provided access (as root) to a bash shell to complete user-provided tasks.
 You will be able to execute commands in the bash shell, interact with the file system, install packages, and receive the output of your commands.
 
@@ -132,7 +131,6 @@ class CodeActAgent(Agent):
             # self._history.append(Message(Role.ASSISTANT, observation))
             # print(colored("===ENV OBSERVATION:===\n" + observation, "blue"))
             return AgentEchoAction(content=INVALID_INPUT_MESSAGE)  # warning message to itself
-
 
     def search_memory(self, query: str) -> List[str]:
         raise NotImplementedError("Implement this abstract method")

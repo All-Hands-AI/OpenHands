@@ -22,12 +22,13 @@ class JsonWebsocketAddon {
       }),
     );
     this._socket.addEventListener("message", (event) => {
-      const { action, args } = JSON.parse(event.data);
-      if (action === "run") {
+      // TODO: temporary fix for the issue, need to confirm the format of the message and then refactor
+      const { action, observation, args, content } = JSON.parse(event.data);
+      if (action === "CmdRunAction") {
         terminal.writeln(args.command);
       }
-      if (action === "output") {
-        args.output.split("\n").forEach((line: string) => {
+      if (observation === "CmdOutputObservation") {
+        content.split("\n").forEach((line: string) => {
           terminal.writeln(line);
         });
         terminal.write("\n$ ");

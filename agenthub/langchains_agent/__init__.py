@@ -80,6 +80,7 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
 
 CLASS_TO_ACTION_TYPE: Dict[Type[Action], str] = {v: k for k, v in ACTION_TYPE_TO_CLASS.items()}
 
+
 class LangchainsAgent(Agent):
     _initialized = False
 
