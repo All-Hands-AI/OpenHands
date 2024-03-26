@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 
-from opendevin.observation import Observation
+from opendevin.observation import Observation, FileReadObservation
 from .base import ExecutableAction
 
 # This is the path where the workspace is mounted in the container
@@ -19,10 +19,12 @@ class FileReadAction(ExecutableAction):
     path: str
     base_path: str = ""
 
-    def run(self, *args, **kwargs) -> Observation:
+    def run(self, *args, **kwargs) -> FileReadObservation:
         path = resolve_path(self.base_path, self.path)
         with open(path, 'r', encoding='utf-8') as file:
-            return Observation(file.read())
+            return FileReadObservation(
+                path=path,
+                content=file.read())
 
     @property
     def message(self) -> str:

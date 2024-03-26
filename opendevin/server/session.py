@@ -145,5 +145,33 @@ class Session:
         self.agent_task = asyncio.create_task(self.controller.start_loop(task), name="agent loop")
 
     def on_agent_event(self, event: Observation | Action):
+        # FIXME: we need better serialization
         event_dict = event.to_dict()
+        if "action" in event_dict:
+            if event_dict["action"] == "CmdRunAction":
+                event_dict["action"] = "run"
+            elif event_dict["action"] == "CmdKillAction":
+                event_dict["action"] = "kill"
+            elif event_dict["action"] == "BrowseURLAction":
+                event_dict["action"] = "browse"
+            elif event_dict["action"] == "FileReadAction":
+                event_dict["action"] = "read"
+            elif event_dict["action"] == "FileWriteAction":
+                event_dict["action"] = "write"
+            elif event_dict["action"] == "AgentFinishAction":
+                event_dict["action"] = "finish"
+            elif event_dict["action"] == "AgentRecallAction":
+                event_dict["action"] = "recall"
+            elif event_dict["action"] == "AgentThinkAction":
+                event_dict["action"] = "think"
+        if "observation" in event_dict:
+            if event_dict["observation"] == "UserMessageObservation":
+                event_dict["observation"] = "chat"
+            elif event_dict["observation"] == "AgentMessageObservation":
+                event_dict["observation"] = "chat"
+            elif event_dict["observation"] == "CmdOutputObservation":
+                event_dict["observation"] = "run"
+            elif event_dict["observation"] == "FileReadObservation":
+                event_dict["observation"] = "read"
+
         asyncio.create_task(self.send(event_dict), name="send event in callback")
