@@ -37,6 +37,8 @@
   padding: 0 1rem;
   display: flex;
   justify-content: space-between;
+  font-size: 20px;
+  font-weight: bolder;
 }
 
 .tab-container {
@@ -46,18 +48,21 @@
 .tab {
   padding: 10px 20px;
   cursor: pointer;
-  color: #ffffff24;
-  font-weight: normal;
+  color: #ffffffb3;
+  font-weight: light;
   position: relative;
 }
 
 .tab.active {
   color: #fff;
-  font-weight: bold;
+  font-weight: bolder;
 }
 
 .tab-content {
   flex: 1;
   height: 95%;
   border-radius: 0 0 0.5rem 0.5rem;
+}
+.xterm-screen {
+  padding: 10px 0 0 10px;
 }
