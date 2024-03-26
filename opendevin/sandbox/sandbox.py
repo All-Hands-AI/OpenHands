@@ -11,10 +11,16 @@ import atexit
 InputType = namedtuple("InputType", ["content"])
 OutputType = namedtuple("OutputType", ["content"])
 
+DIRECTORY_REWRITE = os.getenv("DIRECTORY_REWRITE", "") # helpful for docker-in-docker scenarios
 CONTAINER_IMAGE = os.getenv("SANDBOX_CONTAINER_IMAGE", "opendevin/sandbox:v0.1")
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
 RUN_AS_DEVIN = os.getenv("RUN_AS_DEVIN", "true").lower() != "false"
+USER_ID = 1000
+if os.getenv("SANDBOX_USER_ID") is not None:
+    USER_ID = int(os.getenv("SANDBOX_USER_ID", ""))
+elif hasattr(os, "getuid"):
+    USER_ID = os.getuid()
 
 class BackgroundCommand:
     def __init__(self, id: int, command: str, result):
@@ -42,13 +48,6 @@ class BackgroundCommand:
         # FIXME: this doesn't actually kill the process!
         self.result.output.close()
 
-
-USER_ID = 1000
-if os.getenv("SANDBOX_USER_ID") is not None:
-    USER_ID = int(os.getenv("SANDBOX_USER_ID", ""))
-elif hasattr(os, "getuid"):
-    USER_ID = os.getuid()
-
 class DockerInteractive:
     closed = False
     cur_background_id = 0
@@ -72,6 +71,10 @@ class DockerInteractive:
         else:
             self.workspace_dir = os.getcwd()
             print(f"workspace unspecified, using current directory: {workspace_dir}")
+        if DIRECTORY_REWRITE != "":
+            parts = DIRECTORY_REWRITE.split(":")
+            self.workspace_dir = self.workspace_dir.replace(parts[0], parts[1])
+            print("Rewriting workspace directory to:", self.workspace_dir)
 
         # TODO: this timeout is actually essential - need a better way to set it
         # if it is too short, the container may still waiting for previous
@@ -92,10 +95,9 @@ class DockerInteractive:
         atexit.register(self.cleanup)
 
     def setup_devin_user(self):
-        uid = os.getuid()
         exit_code, logs = self.container.exec_run([
             '/bin/bash', '-c',
-            f'useradd --shell /bin/bash -u {uid} -o -c \"\" -m devin'
+            f'useradd --shell /bin/bash -u {USER_ID} -o -c \"\" -m devin'
             ],
             workdir="/workspace"
         )
