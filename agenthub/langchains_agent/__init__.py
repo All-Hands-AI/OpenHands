@@ -66,9 +66,6 @@ INITIAL_THOUGHTS = [
 ]
 
 
-MAX_OUTPUT_LENGTH = 5000
-MAX_MONOLOGUE_LENGTH = 20000
-
 class LangchainsAgent(Agent):
     _initialized = False
 
