@@ -162,6 +162,8 @@ class Session:
                 event_dict["action"] = "finish"
             elif event_dict["action"] == "AgentRecallAction":
                 event_dict["action"] = "recall"
+            elif event_dict["action"] == "AgentThinkAction":
+                event_dict["action"] = "think"
         if "observation" in event_dict:
             if event_dict["observation"] == "UserMessageObservation":
                 event_dict["observation"] = "chat"
