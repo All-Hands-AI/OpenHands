@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Type, Optional, TYPE_CHECKING
+from typing import List, Dict, Type, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from opendevin.action import Action
