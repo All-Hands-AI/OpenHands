@@ -6,7 +6,6 @@ from fastapi import WebSocketDisconnect
 
 from opendevin.action import (
     Action,
-    NullAction,
     CmdRunAction,
     CmdKillAction,
     BrowseURLAction,
@@ -100,7 +99,7 @@ class Session:
                         await self.send_error("No agent started. Please wait a second...")
 
                     elif event["action"] == "chat":
-                        self.controller.add_history(NullAction(), UserMessageObservation(event["message"]))
+                        self.controller.add_observation(UserMessageObservation(event["message"]))
                     else:
                         # TODO: we only need to implement user message for now
                         # since even Devin does not support having the user taking other
