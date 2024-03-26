@@ -1,23 +1,44 @@
 import os
 
-from . import json
+from typing import List, Dict, Type
+
+from langchain_core.pydantic_v1 import BaseModel
+from langchain.prompts import PromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
 
 if os.getenv("DEBUG"):
     from langchain.globals import set_debug
-
     set_debug(True)
 
-from typing import List
-from langchain_core.pydantic_v1 import BaseModel
+from . import json
 
+from opendevin.action import (
+    Action,
+    CmdRunAction,
+    CmdKillAction,
+    BrowseURLAction,
+    FileReadAction,
+    FileWriteAction,
+    AgentRecallAction,
+    AgentThinkAction,
+    AgentFinishAction,
+)
 from opendevin.observation import (
     CmdOutputObservation,
 )
 
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
-from langchain_core.output_parsers import JsonOutputParser
-from langchain_openai import ChatOpenAI
+
+ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
+    "run": CmdRunAction,
+    "kill": CmdKillAction,
+    "browse": BrowseURLAction,
+    "read": FileReadAction,
+    "write": FileWriteAction,
+    "recall": AgentRecallAction,
+    "think": AgentThinkAction,
+    "finish": AgentFinishAction,
+}
+CLASS_TO_ACTION_TYPE: Dict[Type[Action], str] = {v: k for k, v in ACTION_TYPE_TO_CLASS.items()}
 
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is to {task}.
@@ -103,36 +124,16 @@ class NewMonologue(BaseModel):
     new_monologue: List[_ActionDict]
 
 
-def get_chain(template, model_name):
-    assert (
-        "OPENAI_API_KEY" in os.environ
-    ), "Please set the OPENAI_API_KEY environment variable to use langchains_agent."
-    llm = ChatOpenAI(openai_api_key=os.getenv("OPENAI_API_KEY"), model_name=model_name)  # type: ignore
-    prompt = PromptTemplate.from_template(template)
-    llm_chain = LLMChain(prompt=prompt, llm=llm)
-    return llm_chain
+def get_summarize_monologue_prompt(thoughts):
+    prompt = PromptTemplate.from_template(MONOLOGUE_SUMMARY_PROMPT)
+    return prompt.format(monologue=json.dumps({'old_monologue': thoughts}))
 
-
-def summarize_monologue(thoughts: List[dict], model_name):
-    llm_chain = get_chain(MONOLOGUE_SUMMARY_PROMPT, model_name)
-    parser = JsonOutputParser(pydantic_object=NewMonologue)
-    resp = llm_chain.invoke({"monologue": json.dumps({"old_monologue": thoughts})})
-
-    if os.getenv("DEBUG"):
-        print("resp", resp)
-    parsed = parser.parse(resp["text"])
-    return parsed["new_monologue"]
-
-
-def request_action(
-    task,
-    thoughts: List[dict],
-    model_name: str,
-    background_commands_obs: List[CmdOutputObservation] = [],
+def get_request_action_prompt(
+        task: str,
+        thoughts: List[dict],
+        background_commands_obs: List[CmdOutputObservation] = [],
 ):
-    llm_chain = get_chain(ACTION_PROMPT, model_name)
-    parser = JsonOutputParser(pydantic_object=_ActionDict)
-    hint = ""
+    hint = ''
     if len(thoughts) > 0:
         latest_thought = thoughts[-1]
         if latest_thought["action"] == 'think':
@@ -149,17 +150,24 @@ def request_action(
         for command_obs in background_commands_obs:
             bg_commands_message += f"\n`{command_obs.command_id}`: {command_obs.command}"
         bg_commands_message += "\nYou can end any process by sending a `kill` action with the numerical `id` above."
-
     latest_thought = thoughts[-1]
-    resp = llm_chain.invoke(
-        {
-            "monologue": json.dumps(thoughts),
-            "hint": hint,
-            "task": task,
-            "background_commands": bg_commands_message,
-        }
+
+    prompt = PromptTemplate.from_template(ACTION_PROMPT)
+    return prompt.format(
+        task=task,
+        monologue=json.dumps(thoughts),
+        background_commands=bg_commands_message,
+        hint=hint,
     )
-    if os.getenv("DEBUG"):
-        print("resp", resp)
-    parsed = parser.parse(resp["text"])
-    return parsed
+
+def parse_action_response(response: str) -> Action:
+    parser = JsonOutputParser(pydantic_object=_ActionDict)
+    action_dict = parser.parse(response)
+    action = ACTION_TYPE_TO_CLASS[action_dict["action"]](**action_dict["args"])
+    return action
+
+def parse_summary_response(response: str) -> List[Action]:
+    parser = JsonOutputParser(pydantic_object=NewMonologue)
+    parsed = parser.parse(response)
+    thoughts = [ACTION_TYPE_TO_CLASS[t['action']](**t['args']) for t in parsed['new_monologue']]
+    return thoughts
