@@ -23,10 +23,11 @@ elif hasattr(os, "getuid"):
     USER_ID = os.getuid()
 
 class BackgroundCommand:
-    def __init__(self, id: int, command: str, result):
-        self.id = id
+    def __init__(self, pid: int, command: str, result, parent_container):
+        self.pid = pid
         self.command = command
         self.result = result
+        self.parent_container = parent_container
 
     def read_logs(self) -> str:
         # TODO: get an exit code if process is exited
@@ -45,12 +46,11 @@ class BackgroundCommand:
         return logs
 
     def kill(self):
-        # FIXME: this doesn't actually kill the process!
+        self.parent_container.exec_run(f"kill {self.pid}")
         self.result.output.close()
 
 class DockerInteractive:
     closed = False
-    cur_background_id = 0
     background_commands : Dict[int, BackgroundCommand] = {}
 
     def __init__(
@@ -108,10 +108,10 @@ class DockerInteractive:
         else:
             return ['/bin/bash', '-c', cmd]
 
-    def read_logs(self, id) -> str:
-        if id not in self.background_commands:
+    def read_logs(self, pid) -> str:
+        if pid not in self.background_commands:
             raise ValueError("Invalid background command id")
-        bg_cmd = self.background_commands[id]
+        bg_cmd = self.background_commands[pid]
         return bg_cmd.read_logs()
 
     def execute(self, cmd: str) -> Tuple[int, str]:
@@ -120,19 +120,20 @@ class DockerInteractive:
         return exit_code, logs.decode('utf-8')
 
     def execute_in_background(self, cmd: str) -> BackgroundCommand:
-        result = self.container.exec_run(self.get_exec_cmd(cmd), socket=True, workdir="/workspace")
+        echo_pid_cmd = f"""echo $$; exec "{cmd}" """
+        result = self.container.exec_run(self.get_exec_cmd(echo_pid_cmd), socket=True, workdir="/workspace")
+        pid = result.output.readline().decode().strip()
         result.output._sock.setblocking(0)
-        bg_cmd = BackgroundCommand(self.cur_background_id, cmd, result)
-        self.background_commands[bg_cmd.id] = bg_cmd
-        self.cur_background_id += 1
+        bg_cmd = BackgroundCommand(pid, cmd, result, self.container)
+        self.background_commands[bg_cmd.pid] = bg_cmd
         return bg_cmd
 
-    def kill_background(self, id: int) -> BackgroundCommand:
-        if id not in self.background_commands:
+    def kill_background(self, pid: int) -> BackgroundCommand:
+        if pid not in self.background_commands:
             raise ValueError("Invalid background command id")
-        bg_cmd = self.background_commands[id]
+        bg_cmd = self.background_commands[pid]
         bg_cmd.kill()
-        self.background_commands.pop(id)
+        self.background_commands.pop(pid)
         return bg_cmd
 
     def close(self):
@@ -224,14 +225,14 @@ if __name__ == "__main__":
                 print("Exiting...")
                 break
             if user_input.lower() == "kill":
-                docker_interactive.kill_background(bg_cmd.id)
+                docker_interactive.kill_background(bg_cmd.pid)
                 print("Background process killed")
                 continue
             exit_code, output = docker_interactive.execute(user_input)
             print("exit code:", exit_code)
             print(output + "\n", end="")
-            if bg_cmd.id in docker_interactive.background_commands:
-                logs = docker_interactive.read_logs(bg_cmd.id)
+            if bg_cmd.pid in docker_interactive.background_commands:
+                logs = docker_interactive.read_logs(bg_cmd.pid)
                 print("background logs:", logs, "\n")
             sys.stdout.flush()
     except KeyboardInterrupt:

@@ -26,29 +26,29 @@ class CommandManager:
     def _run_background(self, command: str) -> CmdOutputObservation:
         bg_cmd = self.shell.execute_in_background(command)
         return CmdOutputObservation(
-            content=f"Background command started. To stop it, send a `kill` action with id {bg_cmd.id}",
-            command_id=bg_cmd.id,
+            content=f"Background command started. To stop it, send a `kill` action with id {bg_cmd.pid}",
+            command_id=bg_cmd.pid,
             command=command,
             exit_code=0
         )
 
-    def kill_command(self, id: int) -> CmdOutputObservation:
-        cmd = self.shell.kill_background(id)
+    def kill_command(self, pid: int) -> CmdOutputObservation:
+        cmd = self.shell.kill_background(pid)
         return CmdOutputObservation(
-            content=f"Background command with id {id} has been killed.",
-            command_id=id,
+            content=f"Background command with pid {pid} has been killed.",
+            command_id=pid,
             command=cmd.command,
             exit_code=0
         )
 
     def get_background_obs(self) -> List[CmdOutputObservation]:
         obs = []
-        for _id, cmd in self.shell.background_commands.items():
+        for _pid, cmd in self.shell.background_commands.items():
             output = cmd.read_logs()
             if output is not None and output != "":
                 obs.append(
                     CmdOutputObservation(
-                        content=output, command_id=_id, command=cmd.command
+                        content=output, command_id=_pid, command=cmd.command
                     )
                 )
         return obs
