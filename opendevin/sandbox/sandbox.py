@@ -42,6 +42,13 @@ class BackgroundCommand:
         # FIXME: this doesn't actually kill the process!
         self.result.output.close()
 
+
+USER_ID = 1000
+if os.getenv("SANDBOX_USER_ID") is not None:
+    USER_ID = int(os.getenv("SANDBOX_USER_ID", ""))
+elif hasattr(os, "getuid"):
+    USER_ID = os.getuid()
+
 class DockerInteractive:
     closed = False
     cur_background_id = 0

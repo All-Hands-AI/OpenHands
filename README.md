@@ -18,7 +18,7 @@ OpenDevin is still a work in progress. But you can run the current app to see th
 
 ### Requirements
 * [Docker](https://docs.docker.com/engine/install/)
-* [Python](https://www.python.org/downloads/)
+* [Python](https://www.python.org/downloads/) >= 3.10
 * [NPM](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
 
 ### Installation

@@ -1,11 +1,10 @@
 
 import agenthub.langchains_agent.utils.json as json
-import agenthub.langchains_agent.utils.llm as llm
+import agenthub.langchains_agent.utils.prompts as prompts
 
 class Monologue:
-    def __init__(self, model_name):
+    def __init__(self):
         self.thoughts = []
-        self.model_name = model_name
 
     def add_event(self, t: dict):
         if not isinstance(t, dict):
@@ -24,13 +23,11 @@ class Monologue:
                 print(f"Error serializing thought: {e}")
         return total_length
 
-    def condense(self):
+    def condense(self, llm):
         try:
-            new_thoughts = llm.summarize_monologue(self.thoughts, self.model_name)
-            # Ensure new_thoughts is not empty or significantly malformed before assigning
-            if not new_thoughts or len(new_thoughts) > len(self.thoughts):
-                raise ValueError("Condensing resulted in invalid state.")
-            self.thoughts = new_thoughts
+            prompt = prompts.get_summarize_monologue_prompt(self.thoughts)
+            response = llm.prompt(prompt)
+            self.thoughts = prompts.parse_summary_response(response)
         except Exception as e:
             # Consider logging the error here instead of or in addition to raising an exception
             raise RuntimeError(f"Error condensing thoughts: {e}")
