@@ -95,10 +95,9 @@ class DockerInteractive:
         atexit.register(self.cleanup)
 
     def setup_devin_user(self):
-        uid = os.getuid()
         exit_code, logs = self.container.exec_run([
             '/bin/bash', '-c',
-            f'useradd --shell /bin/bash -u {uid} -o -c \"\" -m devin'
+            f'useradd --shell /bin/bash -u {USER_ID} -o -c \"\" -m devin'
             ],
             workdir="/workspace"
         )
