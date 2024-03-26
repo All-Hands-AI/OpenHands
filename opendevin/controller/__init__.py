@@ -1,5 +1,6 @@
 import asyncio
 from typing import List, Callable, Tuple
+import traceback
 
 from opendevin.state import State
 from opendevin.agent import Agent
@@ -45,8 +46,12 @@ class AgentController:
         self.state_updated_info = []
         return state
 
-    def add_observation(self, observation: Observation):
-        self.state_updated_info.append((NullAction(), observation))
+    def add_history(self, action: Action, observation: Observation):
+        if not isinstance(action, Action):
+            raise ValueError("action must be an instance of Action")
+        if not isinstance(observation, Observation):
+            raise ValueError("observation must be an instance of Observation")
+        self.state_updated_info.append((action, observation))
 
     async def start_loop(self, task_instruction: str):
         finished = False
@@ -56,6 +61,7 @@ class AgentController:
                 finished = await self.step(i)
             except Exception as e:
                 print("Error in loop", e, flush=True)
+                traceback.print_exc()
                 break
             if finished:
                 break
@@ -67,7 +73,7 @@ class AgentController:
         print("STEP", i, flush=True)
         log_obs = self.command_manager.get_background_obs()
         for obs in log_obs:
-            self.add_observation(obs)
+            self.add_history(NullAction(), obs)
             await self._run_callbacks(obs)
             print_with_indent("\nBACKGROUND LOG:\n%s" % obs)
 
@@ -91,7 +97,7 @@ class AgentController:
         else:
             observation = NullObservation("")
         print_with_indent("\nOBSERVATION:\n%s" % observation)
-        self.state_updated_info.append((action, observation))
+        self.add_history(action, observation)
         await self._run_callbacks(observation)
 
 

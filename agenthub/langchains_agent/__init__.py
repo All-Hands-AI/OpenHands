@@ -136,7 +136,7 @@ class LangchainsAgent(Agent):
                 else:
                     d = {"action": "output", "args": {"output": obs.content}}
             else:
-                raise ValueError(f"Unknown observation type: {obs}")
+                d = {"action": "output", "args": {"output": obs.content}}
             if d is not None:
                 self._add_event(d)
 
