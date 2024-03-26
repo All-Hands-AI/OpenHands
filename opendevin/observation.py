@@ -106,6 +106,16 @@ class AgentRecallObservation(Observation):
 
 
 @dataclass
+class AgentErrorObservation(Observation):
+    """
+    This data class represents an error encountered by the agent.
+    """
+
+    @property
+    def message(self) -> str:
+        return "Oops. Something went wrong: " + self.content
+
+@dataclass
 class NullObservation(Observation):
     """
     This data class represents a null observation.
