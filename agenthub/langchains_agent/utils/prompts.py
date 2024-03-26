@@ -165,6 +165,10 @@ def get_request_action_prompt(
 def parse_action_response(response: str) -> Action:
     parser = JsonOutputParser(pydantic_object=_ActionDict)
     action_dict = parser.parse(response)
+    if 'content' in action_dict:
+        # The LLM gets confused here. Might as well be robust
+        action_dict['contents'] = action_dict.pop('content')
+
     action = ACTION_TYPE_TO_CLASS[action_dict["action"]](**action_dict["args"])
     return action
 
