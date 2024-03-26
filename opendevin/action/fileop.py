@@ -41,7 +41,7 @@ class FileWriteAction(ExecutableAction):
         path = resolve_path(self.base_path, self.path)
         with open(path, 'w', encoding='utf-8') as file:
             file.write(self.contents)
-        return FileWriteObservation(path=self.path)
+        return FileWriteObservation(content="", path=self.path)
 
     @property
     def message(self) -> str:
