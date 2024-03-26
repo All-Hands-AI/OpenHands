@@ -17,7 +17,7 @@ function UrlBar({ url }: UrlBarProps): JSX.Element {
       </div>
       <div className="url">
         {url}
-        <div classNames="lock-icon" />
+        <div className="lock-icon" />
       </div>
     </div>
   );
