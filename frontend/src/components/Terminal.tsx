@@ -22,12 +22,12 @@ class JsonWebsocketAddon {
       }),
     );
     this._socket.addEventListener("message", (event) => {
-      const { action, args } = JSON.parse(event.data);
+      const { action, args, observation, content } = JSON.parse(event.data);
       if (action === "run") {
         terminal.writeln(args.command);
       }
-      if (action === "output") {
-        args.output.split("\n").forEach((line: string) => {
+      if (observation === "run") {
+        content.split("\n").forEach((line: string) => {
           terminal.writeln(line);
         });
         terminal.write("\n$ ");

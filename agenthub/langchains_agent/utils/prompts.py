@@ -22,6 +22,7 @@ from opendevin.action import (
     AgentRecallAction,
     AgentThinkAction,
     AgentFinishAction,
+    AgentSummarizeAction,
 )
 from opendevin.observation import (
     CmdOutputObservation,
@@ -36,6 +37,7 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
     "write": FileWriteAction,
     "recall": AgentRecallAction,
     "think": AgentThinkAction,
+    "summarize": AgentSummarizeAction,
     "finish": AgentFinishAction,
 }
 CLASS_TO_ACTION_TYPE: Dict[Type[Action], str] = {v: k for k, v in ACTION_TYPE_TO_CLASS.items()}

@@ -54,6 +54,13 @@ class AgentEchoAction(ExecutableAction):
     def message(self) -> str:
         return self.content
 
+@dataclass
+class AgentSummarizeAction(NotExecutableAction):
+    summary: str
+
+    @property
+    def message(self) -> str:
+        return self.summary
 
     def to_dict(self):
         raise NotImplementedError("need to implement")
