@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Type, TYPE_CHECKING
+from typing import List, Dict, Type, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from opendevin.action import Action
@@ -74,11 +74,8 @@ class Agent(ABC):
         """
         Resets the agent's execution status and clears the history.
         """
-        try:
-            self.instruction = ""
-            self._complete = False
-        except Exception as e:
-            print(f"Failed to reset agent: {e}")
+        self.instruction = ""
+        self._complete = False
 
     @classmethod
     def register(cls, name: str, agent_cls: Type["Agent"]) -> None:
@@ -92,15 +89,12 @@ class Agent(ABC):
         Raises:
             ValueError: If a class is already registered under the given name.
         """
-        try:
-            if name in cls._registry:
-                raise ValueError(f"Agent class already registered under '{name}'.")
-            cls._registry[name] = agent_cls
-        except ValueError as e:
-            print(f"Error registering agent class: {e}")
+        if name in cls._registry:
+            raise ValueError(f"Agent class already registered under '{name}'.")
+        cls._registry[name] = agent_cls
 
     @classmethod
-    def get_cls(cls, name: str) -> Type["Agent"]:
+    def get_cls(cls, name: str) -> Optional[Type["Agent"]]:
         """
         Retrieves an agent class from the registry by name.
 
@@ -108,15 +102,6 @@ class Agent(ABC):
             name (str): The name of the class to retrieve.
 
         Returns:
-            Type[Agent]: The class registered under the specified name.
-
-        Raises:
-            ValueError: If no class is registered under the given name.
+            Optional[Type[Agent]]: The class registered under the specified name or None if not found.
         """
-        try:
-            if name not in cls._registry:
-                raise ValueError(f"No agent class registered under '{name}'.")
-            return cls._registry[name]
-        except ValueError as e:
-            print(f"Error retrieving agent class: {e}")
-            return None
+        return cls._registry.get(name, None)
