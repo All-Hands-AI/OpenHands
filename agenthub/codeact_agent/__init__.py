@@ -1,6 +1,6 @@
 import os
 import re
-from typing import List, Dict, Mapping
+from typing import List, Mapping
 
 from litellm import completion
 from termcolor import colored
