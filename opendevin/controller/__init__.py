@@ -13,6 +13,7 @@ from opendevin.action import (
 )
 from opendevin.observation import (
     Observation,
+    AgentErrorObservation,
     NullObservation
 )
 
@@ -78,9 +79,16 @@ class AgentController:
             print_with_indent("\nBACKGROUND LOG:\n%s" % obs)
 
         state: State = self.get_current_state()
-        action: Action = self.agent.step(state)
+        action: Action = NullAction()
+        observation: Observation = NullObservation("")
+        try:
+            action = self.agent.step(state)
+            print_with_indent("\nACTION:\n%s" % action)
+        except Exception as e:
+            observation = AgentErrorObservation(str(e))
+            print_with_indent("\nAGENT ERROR:\n%s" % observation)
+            traceback.print_exc()
 
-        print_with_indent("\nACTION:\n%s" % action)
         await self._run_callbacks(action)
 
         if isinstance(action, AgentFinishAction):
@@ -93,13 +101,13 @@ class AgentController:
             action = action_cls(**_kwargs)
             print(action, flush=True)
         if action.executable:
-            observation: Observation = action.run(self)
-        else:
-            observation = NullObservation("")
-        print_with_indent("\nOBSERVATION:\n%s" % observation)
+            observation = action.run(self)
+
+        if not isinstance(observation, NullObservation):
+            print_with_indent("\nOBSERVATION:\n%s" % observation)
+
         self.add_history(action, observation)
         await self._run_callbacks(observation)
-
 
     async def _run_callbacks(self, event):
         if event is None:
