@@ -4,10 +4,6 @@ from typing import Optional, Dict, Type
 
 from fastapi import WebSocketDisconnect
 
-from opendevin.agent import Agent
-from opendevin.controller import AgentController
-from opendevin.llm.llm import LLM
-
 from opendevin.action import (
     Action,
     CmdRunAction,
@@ -19,6 +15,9 @@ from opendevin.action import (
     AgentThinkAction,
     AgentFinishAction,
 )
+from opendevin.agent import Agent
+from opendevin.controller import AgentController
+from opendevin.llm.llm import LLM
 from opendevin.observation import (
     Observation,
     UserMessageObservation
@@ -38,6 +37,7 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
 
 
 DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4-0125-preview")
 
 def parse_event(data):
     if "action" not in data:
@@ -119,7 +119,7 @@ class Session:
         agent_cls = "LangchainsAgent"
         if start_event and "agent_cls" in start_event.args:
             agent_cls = start_event.args["agent_cls"]
-        model = "gpt-4-0125-preview"
+        model = MODEL_NAME
         if start_event and "model" in start_event.args:
             model = start_event.args["model"]
         if not os.path.exists(directory):
