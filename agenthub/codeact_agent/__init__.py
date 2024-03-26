@@ -1,6 +1,5 @@
 import os
 import re
-from litellm import completion
 from termcolor import colored
 from typing import List, Mapping
 
@@ -17,6 +16,7 @@ from opendevin.observation import (
     AgentMessageObservation,
 )
 
+from opendevin.llm.llm import LLM
 
 assert (
     "OPENAI_API_KEY" in os.environ
@@ -62,7 +62,7 @@ def parse_response(response) -> str:
 class CodeActAgent(Agent):
     def __init__(
         self,
-        model_name: str
+        llm: LLM,
     ) -> None:
         """
         Initializes a new instance of the CodeActAgent class.
@@ -71,7 +71,7 @@ class CodeActAgent(Agent):
         - instruction (str): The instruction for the agent to execute.
         - max_steps (int): The maximum number of steps to run the agent.
         """
-        super().__init__(model_name)
+        super().__init__(llm)
         self.messages: List[Mapping[str, str]] = []
         self.instruction: str = ""
 
@@ -83,13 +83,10 @@ class CodeActAgent(Agent):
                 {"role": "user", "content": self.instruction},
             ]
             print(colored("===USER:===\n" + self.instruction, "green"))
-
         updated_info = state.updated_info
-
         if updated_info:
             for prev_action, obs in updated_info:
                 assert isinstance(prev_action, (CmdRunAction, AgentEchoAction)), "Expecting CmdRunAction or AgentEchoAction for Action"
-
                 if isinstance(obs, AgentMessageObservation):  # warning message from itself
                     self.messages.append({"role": "user", "content": obs.content})
                     print(colored("===USER:===\n" + obs.content, "green"))
@@ -100,10 +97,8 @@ class CodeActAgent(Agent):
                     print(colored("===ENV OBSERVATION:===\n" + content, "blue"))
                 else:
                     raise NotImplementedError(f"Unknown observation type: {obs.__class__}")
-
-        response = completion(
+        response = self.llm.completion(
             messages=self.messages,
-            model=self.model_name,
             stop=["</execute>"],
             temperature=0.0,
             seed=42,
