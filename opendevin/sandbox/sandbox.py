@@ -16,7 +16,7 @@ CONTAINER_IMAGE = os.getenv("SANDBOX_CONTAINER_IMAGE", "opendevin/sandbox:v0.1")
 
 USER_ID = 1000
 if os.getenv("SANDBOX_USER_ID") is not None:
-    USER_ID = int(os.getenv("SANDBOX_USER_ID"))
+    USER_ID = int(os.getenv("SANDBOX_USER_ID", ""))
 elif hasattr(os, "getuid"):
     USER_ID = os.getuid()
 
