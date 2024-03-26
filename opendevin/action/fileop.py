@@ -21,7 +21,7 @@ class FileReadAction(ExecutableAction):
 
     def run(self, *args, **kwargs) -> Observation:
         path = resolve_path(self.base_path, self.path)
-        with open(path, 'r') as file:
+        with open(path, 'r', encoding='utf-8') as file:
             return Observation(file.read())
 
     @property
@@ -37,7 +37,7 @@ class FileWriteAction(ExecutableAction):
 
     def run(self, *args, **kwargs) -> Observation:
         path = resolve_path(self.base_path, self.path)
-        with open(path, 'w') as file:
+        with open(path, 'w', encoding='utf-8') as file:
             file.write(self.contents)
         return Observation(f"File written to {path}")
 
