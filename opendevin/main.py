@@ -6,6 +6,7 @@ from typing import Type
 import agenthub # noqa F401 (we import this to get the agents registered)
 from opendevin.agent import Agent
 from opendevin.controller import AgentController
+from opendevin.llm.llm import LLM
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run an agent with a specific task")
@@ -40,15 +41,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "-i",
         "--max-iterations",
-        default=10,
+        default=100,
         type=int,
         help="The maximum number of iterations to run the agent",
     )
     args = parser.parse_args()
 
     print(f"Running agent {args.agent_cls} (model: {args.model_name}, directory: {args.directory}) with task: \"{args.task}\"")
-
+    llm = LLM(args.model_name)
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
-    agent = AgentCls(model_name=args.model_name)
+    agent = AgentCls(llm=llm)
     controller = AgentController(agent, workdir=args.directory, max_iterations=args.max_iterations)
     asyncio.run(controller.start_loop(args.task))

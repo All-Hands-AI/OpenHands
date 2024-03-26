@@ -13,6 +13,13 @@ OutputType = namedtuple("OutputType", ["content"])
 
 CONTAINER_IMAGE = os.getenv("SANDBOX_CONTAINER_IMAGE", "opendevin/sandbox:v0.1")
 
+
+USER_ID = 1000
+if os.getenv("SANDBOX_USER_ID") is not None:
+    USER_ID = int(os.getenv("SANDBOX_USER_ID", ""))
+elif hasattr(os, "getuid"):
+    USER_ID = os.getuid()
+
 class DockerInteractive:
 
     def __init__(
@@ -48,10 +55,9 @@ class DockerInteractive:
         self.container_name = f"sandbox-{self.instance_id}"
 
         self.restart_docker_container()
-        uid = os.getuid()
         exit_code, logs = self.container.exec_run([
             '/bin/bash', '-c',
-            f'useradd --shell /bin/bash -u {uid} -o -c \"\" -m devin'
+            f'useradd --shell /bin/bash -u {USER_ID} -o -c \"\" -m devin'
             ],
             workdir="/workspace"
         )
