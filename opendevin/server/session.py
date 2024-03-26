@@ -6,6 +6,7 @@ from fastapi import WebSocketDisconnect
 
 from opendevin.action import (
     Action,
+    NullAction,
     CmdRunAction,
     CmdKillAction,
     BrowseURLAction,
@@ -83,7 +84,7 @@ class Session:
                 elif action == "start":
                     await self.start_task(data)
                 elif action == "chat":
-                    self.controller.add_observation(UserMessageObservation(data["message"]))
+                    self.controller.add_history(NullAction(), UserMessageObservation(data["message"]))
                 else:
                     raise NotImplementedError("action not implemented")
 

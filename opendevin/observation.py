@@ -61,6 +61,8 @@ class BrowserOutputObservation(Observation):
     """
 
     url: str
+    status_code: int = 200
+    error: bool = False
 
     @property
     def message(self) -> str:

@@ -14,7 +14,7 @@ Welcome to OpenDevin, an open-source project aiming to replicate [Devin](https:/
 
 ## Work in Progress
 
-OpenDevin is still a work in progress. But you can run the current app to see things working end-to-end.
+OpenDevin is still a work in progress. But you can run the alpha version to see things working end-to-end.
 
 ### Requirements
 * [Docker](https://docs.docker.com/engine/install/)
@@ -36,6 +36,19 @@ npm run start -- --port 3001
 ```
 
 You'll see OpenDevin running at localhost:3001
+
+### Picking a Model
+We use LiteLLM, so you can run OpenDevin with any foundation model, including OpenAI, Claude, and Gemini.
+LiteLLM has a [full list of providers](https://docs.litellm.ai/docs/providers).
+
+To change the model, set the `MODEL_NAME` environment variable, as well as the appropriate
+API key based on LiteLLM's [provider documentation](https://docs.litellm.ai/docs/providers).
+
+For example, to run Claude:
+```bash
+export ANTHROPIC_API_KEY="your-api-key"
+export MODEL_NAME="claude-3-opus-20240229"
+```
 
 ## 🤔 What is [Devin](https://www.cognition-labs.com/introducing-devin)?
 
