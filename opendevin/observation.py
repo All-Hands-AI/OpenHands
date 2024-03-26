@@ -59,7 +59,7 @@ class FileReadObservation(Observation):
 
     @property
     def message(self) -> str:
-        return f"I read the file {self.file_path}."
+        return f"I read the file {self.path}."
 
 
 @dataclass
