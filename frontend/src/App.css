@@ -13,31 +13,51 @@
 .left-pane {
   flex: 1;
   background-color: #252526;
+  margin: 1rem;
+  overflow: hidden;
+  border-radius: 1rem;
 }
 
 .right-pane {
   flex: 1;
   display: flex;
   flex-direction: column;
+  border-radius: 1rem;
+  margin: 1rem;
+  background-color: #ffffff24;
+  overflow: hidden;
+}
+
+.workspace-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.workspace-heading {
+  padding: 0 1rem;
+  display: flex;
+  justify-content: space-between;
 }
 
 .tab-container {
   display: flex;
   background-color: #333333;
 }
-
 .tab {
   padding: 10px 20px;
   cursor: pointer;
-  color: #fff;
+  color: #ffffff24;
+  font-weight: normal;
+  position: relative;
 }
 
 .tab.active {
-  background-color: #1e1e1e;
+  color: #fff;
   font-weight: bold;
 }
 
 .tab-content {
   flex: 1;
-  background-color: #1e1e1e;
+  height: 95%;
+  border-radius: 0 0 0.5rem 0.5rem;
 }

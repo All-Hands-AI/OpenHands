@@ -53,19 +53,24 @@ function App(): JSX.Element {
         <ChatInterface />
       </div>
       <div className="right-pane">
-        <div className="tab-container">
-          {TAB_OPTIONS.map((tab) => (
-            <Tab
-              key={tab}
-              name={tabData[tab].name}
-              active={activeTab === tab}
-              onClick={() => setActiveTab(tab)}
-            />
-          ))}
+        <div className="workspace-content">
+          <div className="workspace-heading">
+            <p>OpenDevin's Workspace</p>
+          </div>
+          <div className="tab-container">
+            {TAB_OPTIONS.map((tab) => (
+              <Tab
+                key={tab}
+                name={tabData[tab].name}
+                active={activeTab === tab}
+                onClick={() => setActiveTab(tab)}
+              />
+            ))}
+          </div>
+          {/* Keep terminal permanently open - see component for more details */}
+          <Terminal key="terminal" hidden={activeTab !== "terminal"} />
+          <div className="tab-content">{tabData[activeTab].component}</div>
         </div>
-        {/* Keep terminal permanently open - see component for more details */}
-        <Terminal key="terminal" hidden={activeTab !== "terminal"} />
-        <div className="tab-content">{tabData[activeTab].component}</div>
       </div>
     </div>
   );
