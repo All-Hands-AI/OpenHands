@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import "./ChatInterface.css";
 import userAvatar from "../assets/user-avatar.png";
@@ -41,6 +41,13 @@ function InitializingStatus(): JSX.Element {
 function ChatInterface(): JSX.Element {
   const { initialized } = useSelector((state: RootState) => state.task);
   const [inputMessage, setInputMessage] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(()=>{
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [])
 
   const handleSendMessage = () => {
     if (inputMessage.trim() !== "") {
@@ -59,13 +66,13 @@ function ChatInterface(): JSX.Element {
           onChange={(e) => setInputMessage(e.target.value)}
           placeholder="Send a message (won't interrupt the Assistant)"
           onKeyDown={(e) => {
-            if (e.key === "Enter") {
+            if (e.key === "Enter" && initialized) {
               handleSendMessage();
             }
           }}
-          disabled={!initialized}
+          ref={inputRef}
         />
-        <button type="button" onClick={handleSendMessage}>
+        <button type="button" onClick={handleSendMessage} disabled={!initialized}>
           <span className="button-text">Send</span>
         </button>
       </div>
