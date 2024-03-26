@@ -1,4 +1,5 @@
 import sys
+import commands
 
 def print_help():
     help_text = '''

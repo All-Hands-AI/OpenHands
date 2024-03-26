@@ -1,4 +1,4 @@
-from typing import List, Dict, Type
+from typing import List
 
 from opendevin.llm.llm import LLM
 from opendevin.agent import Agent
@@ -9,15 +9,16 @@ from agenthub.langchains_agent.utils.monologue import Monologue
 from agenthub.langchains_agent.utils.memory import LongTermMemory
 
 from opendevin.action import (
+    ACTION_TYPE_TO_CLASS,
     # NullAction,
-    CmdRunAction,
-    CmdKillAction,
-    BrowseURLAction,
-    FileReadAction,
-    FileWriteAction,
-    AgentRecallAction,
-    AgentThinkAction,
-    AgentFinishAction,
+    # CmdRunAction,
+    # CmdKillAction,
+    # BrowseURLAction,
+    # FileReadAction,
+    # FileWriteAction,
+    # AgentRecallAction,
+    # AgentThinkAction,
+    # AgentFinishAction,
 )
 
 # from opendevin.observation import (
@@ -70,19 +71,11 @@ INITIAL_THOUGHTS = [
 MAX_OUTPUT_LENGTH = 5000
 MAX_MONOLOGUE_LENGTH = 20000
 
-
-ACTION_TYPE_TO_CLASS = {
-    "run": CmdRunAction,
-    "kill": CmdKillAction,
-    "browse": BrowseURLAction,
-    "read": FileReadAction,
-    "write": FileWriteAction,
-    "recall": AgentRecallAction,
-    "think": AgentThinkAction,
-    "finish": AgentFinishAction,
-}
-
-CLASS_TO_ACTION_TYPE: Dict[Type[Action], str] = {v: k for k, v in ACTION_TYPE_TO_CLASS.items()}
+def action_class_dispatch_initializer(action: str, *arguments: str) -> Action:
+    action_class = ACTION_TYPE_TO_CLASS.get(action)
+    if action_class is None:
+        raise KeyError(f"'{action=}' is not defined. Available actions: {ACTION_TYPE_TO_CLASS.keys()}")
+    return action_class(*arguments)
 
 class LangchainsAgent(Agent):
     _initialized = False
@@ -118,10 +111,7 @@ class LangchainsAgent(Agent):
                 next_is_output = False
             else:
                 action, _, argument = thought.partition(" ")
-                if action in {"RUN", "RECALL", "BROWSE"}:
-                    d = ACTION_TYPE_TO_CLASS[action.lower()](argument)
-                else:
-                    d = AgentThinkAction(argument)
+                d = action_class_dispatch_initializer(action, argument)
                 self._add_event(d.to_dict())
                 next_is_output = True
         self._initialized = True

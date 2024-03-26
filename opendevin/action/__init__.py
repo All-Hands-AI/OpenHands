@@ -17,3 +17,14 @@ __all__ = [
     "AgentFinishAction",
     "AgentEchoAction",
 ]
+
+ACTION_TYPE_TO_CLASS = {
+    "run": CmdRunAction,
+    "kill": CmdKillAction,
+    "browse": BrowseURLAction,
+    "read": FileReadAction,
+    "write": FileWriteAction,
+    "recall": AgentRecallAction,
+    "think": AgentThinkAction,
+    "finish": AgentFinishAction,
+}
