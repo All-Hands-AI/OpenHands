@@ -1,6 +1,6 @@
 import asyncio
 import traceback
-from typing import List, Callable, Tuple, Any
+from typing import List, Callable, Tuple, Any, Literal, Mapping
 from termcolor import colored
 
 from opendevin.state import State
@@ -16,15 +16,16 @@ from opendevin.observation import Observation, NullObservation
 
 from .command_manager import CommandManager
 
+ColorType = Literal['red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'light_grey', 'dark_grey', 'light_red', 'light_green', 'light_yellow', 'light_blue', 'light_magenta', 'light_cyan', 'white']
 
 def print_with_color(text: Any, print_type: str = "INFO"):
-    TYPE_TO_COLOR = {
+    TYPE_TO_COLOR: Mapping[str, ColorType] = {
         "BACKGROUND LOG": "blue",
         "ACTION": "green",
         "OBSERVATION": "yellow",
         "INFO": "cyan",
     }
-    color = TYPE_TO_COLOR.get(print_type.upper())
+    color = TYPE_TO_COLOR.get(print_type.upper(), TYPE_TO_COLOR["INFO"])
     print(
         colored(f"\n{print_type.upper()}:\n", color, attrs=["bold"])
         + colored(str(text), color),
