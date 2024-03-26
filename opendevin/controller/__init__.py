@@ -101,7 +101,12 @@ class AgentController:
             action = action_cls(**_kwargs)
             print(action, flush=True)
         if action.executable:
-            observation = action.run(self)
+            try:
+                observation = action.run(self)
+            except Exception as e:
+                observation = AgentErrorObservation(str(e))
+                print_with_indent("\nACTION RUN ERROR:\n%s" % observation)
+                traceback.print_exc()
 
         if not isinstance(observation, NullObservation):
             print_with_indent("\nOBSERVATION:\n%s" % observation)
