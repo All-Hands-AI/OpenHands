@@ -48,6 +48,13 @@ class AgentEchoAction(ExecutableAction):
     def message(self) -> str:
         return self.content
 
+@dataclass
+class AgentSummarizeAction(NotExecutableAction):
+    summary: str
+
+    @property
+    def message(self) -> str:
+        return self.summary
 
 @dataclass
 class AgentFinishAction(NotExecutableAction):
@@ -59,3 +66,4 @@ class AgentFinishAction(NotExecutableAction):
     @property
     def message(self) -> str:
         return "All done! What's next on the agenda?"
+

@@ -6,48 +6,31 @@ For example, `agenthub/langchain_agent`, `agenthub/metagpt_agent`, `agenthub/cod
 Contributors from different backgrounds and interests can choose to contribute to any (or all!) of these directions.
 
 ## Constructing an Agent
+
+The abstraction for an agent can be found [here](../opendevin/agent.py).
+
+On a high-level, at each step, an agent takes in a [State](../opendevin/state.py) object and outputs an [Action](../opendevin/action).
+
 Your agent must implement the following methods:
 
 ### `step`
 ```
-def step(self, cmd_mgr: CommandManager) -> Event:
+def step(self, state: "State") -> "Action"
 ```
 `step` moves the agent forward one step towards its goal. This probably means
-sending a prompt to the LLM, then parsing the response into an action `Event`.
+sending a prompt to the LLM, then parsing the response into an `Action`.
 
-Each Event has an `action` and a dict of `args`. Supported Events include:
-* `read` - reads the contents of a file. Arguments:
-  * `path` - the path of the file to read
-* `write` - writes the contents to a file. Arguments:
-  * `path` - the path of the file to write
-  * `contents` - the contents to write to the file
-* `run` - runs a command. Arguments:
-  * `command` - the command to run
-  * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.
-* `kill` - kills a background command
-  * `id` - the ID of the background command to kill
-* `browse` - opens a web page. Arguments:
-  * `url` - the URL to open
-* `recall` - recalls a past memory. Arguments:
-  * `query` - the query to search for
-* `think` - make a plan, set a goal, or record your thoughts. Arguments:
-  * `thought` - the thought to record
-* `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
+We now have [two main categories of actions](../opendevin/action/base.py):
+- `ExecutableAction`: will produces a corresponding `Observation` (source [here](../opendevin/observation.py)) for the agent to take the next `Action`.
+- `NotExecutableAction`: will produces a `NullObservation` by the [controller](../opendevin/controller/__init__.py), which could means telling the agent to ignore this action.
 
-For Events like `read` and `run`, a follow-up event will be added via `add_event` with the output.
-
-### `add_event`
-```
-def add_event(self, event: Event) -> None:
-```
-`add_event` adds an event to the agent's history. This could be a user message,
-an action taken by the agent, log output, file contents, or anything else.
-
-You'll probably want to keep a history of events, and use them in your prompts
-so that the agent knows what it did recently. You may also want to keep events
-in a vector database so the agent can refer back to them.
-
-The output of `step` will automatically be passed to this method.
+For `ExecutableAction`, we currently have:
+- `CmdRunAction` and `CmdKillAction` for bash command (see source [here](../opendevin/action/bash.py)).
+- `FileReadAction` and `FileWriteAction` for file operations (see source [here](../opendevin/action/fileop.py)).
+- `BrowseURLAction` to open a web page (see source [here](../opendevin/action/browse.py)).
+- `AgentThinkAction`, `AgentFinishAction`: these are non-executable actions for agent to update its status to the user. For example, agent could use `AgentThink` to explain its though process to the user (see source [here](../opendevin/action/agent.py)).
+- `AgentEchoAction`: the agent can produce some messages as its own Observation in the next `.step`, this will produces a `AgentMessageObservation` (see source [here](../opendevin/action/agent.py)).
+- `AgentRecallAction`: recalls a past memory (see source [here](../opendevin/action/agent.py)).
 
 ### `search_memory`
 ```

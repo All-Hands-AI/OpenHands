@@ -4,7 +4,7 @@ from typing import List, Dict, Type, TYPE_CHECKING
 if TYPE_CHECKING:
     from opendevin.action import Action
     from opendevin.state import State
-
+from opendevin.llm.llm import LLM
 
 class Agent(ABC):
     """
@@ -19,9 +19,12 @@ class Agent(ABC):
 
     _registry: Dict[str, Type["Agent"]] = {}
 
-    def __init__(self, model_name: str):
-        self.model_name = model_name
-        self.instruction: str = ""  # need to be set before step
+    def __init__(
+        self,
+        llm: LLM,
+    ):
+        self.instruction = ""
+        self.llm = llm
         self._complete = False
 
     @property
