@@ -2,8 +2,6 @@ import os
 import re
 from typing import List, Mapping
 
-from termcolor import colored
-
 from opendevin.agent import Agent
 from opendevin.state import State
 from opendevin.action import (
