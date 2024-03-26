@@ -171,5 +171,5 @@ def parse_action_response(response: str) -> Action:
 def parse_summary_response(response: str) -> List[Action]:
     parser = JsonOutputParser(pydantic_object=NewMonologue)
     parsed = parser.parse(response)
-    thoughts = [ACTION_TYPE_TO_CLASS[t['action']](**t['args']) for t in parsed['new_monologue']]
-    return thoughts
+    #thoughts = [ACTION_TYPE_TO_CLASS[t['action']](**t['args']) for t in parsed['new_monologue']]
+    return parsed['new_monologue']
