@@ -6,4 +6,4 @@ from . import langchains_agent # noqa: E402
 from . import codeact_agent # noqa: E402
 from . import planner_agent # noqa: E402
 
-__all__ = ['langchains_agent', 'codeact_agent']
+__all__ = ['langchains_agent', 'codeact_agent', 'planner_agent']

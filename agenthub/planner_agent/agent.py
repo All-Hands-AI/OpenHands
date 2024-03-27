@@ -11,7 +11,7 @@ class PlannerAgent(Agent):
         super().__init__(llm)
 
     def step(self, state: State) -> Action:
-        prompt = get_prompt(self.instruction, state.plan, state.history)
+        prompt = get_prompt(state.plan, state.history)
         return None
 
     def search_memory(self, query: str) -> List[str]:

@@ -14,13 +14,13 @@ class Task:
         self.completed = completed
         self.subtasks = subtasks
 
-    def __to_dict__(self):
+    def to_dict(self):
         return {
             'id': self.id,
             'goal': self.goal,
             'closed': self.closed,
             'completed': self.completed,
-            'subtasks': [t.__to_dict__() for t in self.subtasks]
+            'subtasks': [t.to_dict() for t in self.subtasks]
         }
 
     def close(self, completed=True):
@@ -28,9 +28,11 @@ class Task:
         self.completed = completed
 
 class Plan:
+    main_goal: str
     task: Task
 
     def __init__(self, task: str):
+        self.main_goal = task
         self.task = Task(id='0', goal=task, completed=False, subtasks=[])
 
     def get_task_by_id(self, id: str) -> Task:

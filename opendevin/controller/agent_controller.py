@@ -1,4 +1,5 @@
-from typing import List, Callable, Tuple
+import asyncio
+from typing import List, Callable
 import traceback
 
 from opendevin.plan import Plan
@@ -14,7 +15,6 @@ from opendevin.observation import (
     AgentErrorObservation,
     NullObservation
 )
-
 
 from .command_manager import CommandManager
 
@@ -50,10 +50,10 @@ class AgentController:
         self.state.history.append((action, observation))
         self.state.updated_info.append((action, observation))
 
-
     async def start_loop(self, task: str):
         finished = False
-        self.state = State(task)
+        plan = Plan(task)
+        self.state = State(plan)
         for i in range(self.max_iterations):
             try:
                 finished = await self.step(i)

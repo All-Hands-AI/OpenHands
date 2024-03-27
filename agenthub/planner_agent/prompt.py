@@ -66,7 +66,7 @@ What is your next thought or action? Again, you must reply with JSON, and only w
 %(hint)s
 """
 
-def get_prompt(task: str, plan: Plan, history: List[Tuple[Action, Observation]]):
+def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
     hint = ""
     plan_str = json.dumps(plan.task.to_dict(), indent=2)
     sub_history = history[-HISTORY_SIZE:]
@@ -75,8 +75,8 @@ def get_prompt(task: str, plan: Plan, history: List[Tuple[Action, Observation]])
         'observation': observation.to_dict()
     } for action, observation in sub_history], indent=2)
     return prompt % {
-        'task': task,
-        'plan': plan,
-        'history': history,
+        'task': plan.main_goal,
+        'plan': plan_str,
+        'history': history_str,
         'hint': hint,
     }
