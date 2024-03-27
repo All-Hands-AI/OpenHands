@@ -8,16 +8,21 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 
 from . import json
 
-embedding_model = os.getenv("LLM_EMBEDDING_MODEL", "openai")
+embedding_strategy = os.getenv("LLM_EMBEDDING_MODEL", "openai")
 
 # TODO: More embeddings: https://docs.llamaindex.ai/en/stable/examples/embeddings/OpenAI/
 # There's probably a more programmatic way to do this.
-if embedding_model == "llama2":
+if embedding_strategy == "llama2":
     from llama_index.embeddings.ollama import OllamaEmbedding
     embed_model = OllamaEmbedding(
-        model_name=embedding_model,
+        model_name="llama2",
         base_url=os.getenv("LLM_EMBEDDING_MODEL_BASE_URL", "http://localhost:8000"),
         ollama_additional_kwargs={"mirostat": 0},
+    )
+elif embedding_strategy == "local":
+    from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+    embed_model = HuggingFaceEmbedding(
+        model_name="BAAI/bge-small-en-v1.5"
     )
 else:
     from llama_index.embeddings.openai import OpenAIEmbedding
