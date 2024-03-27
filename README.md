@@ -41,12 +41,12 @@ You'll see OpenDevin running at localhost:3001
 We use LiteLLM, so you can run OpenDevin with any foundation model, including OpenAI, Claude, and Gemini.
 LiteLLM has a [full list of providers](https://docs.litellm.ai/docs/providers).
 
-To change the model, set the `LLM_MODEL` and `LLM_API_KEY` environment variables.
+To change the model, set the `MODEL_NAME` and `LLM_API_KEY` environment variables.
 
 For example, to run Claude:
 ```bash
 export LLM_API_KEY="your-api-key"
-export LLM_MODEL="claude-3-opus-20240229"
+export MODEL_NAME="claude-3-opus-20240229"
 ```
 
 ## 🤔 What is [Devin](https://www.cognition-labs.com/introducing-devin)?
