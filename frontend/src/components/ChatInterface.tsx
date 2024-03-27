@@ -8,7 +8,7 @@ import "./ChatInterface.css";
 
 function MessageList(): JSX.Element {
   const { messages } = useSelector((state: RootState) => state.chat);
-  
+
   return (
     <div className="message-list">
       {messages.map((msg, index) => (
