@@ -24,6 +24,15 @@ elif embedding_strategy == "local":
     embed_model = HuggingFaceEmbedding(
         model_name="BAAI/bge-small-en-v1.5"
     )
+elif embedding_strategy == "azureopenai":
+    from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding  # Need to instruct to set these env variables in documentation
+    embed_model = AzureOpenAIEmbedding(
+        model="text-embedding-ada-002",
+        deployment_name=os.getenv("LLM_DEPLOYMENT_NAME"),
+        api_key=os.getenv("LLM_API_KEY"),
+        azure_endpoint=os.getenv("LLM_BASE_URL"),
+        api_version=os.getenv("LLM_API_VERSION"),                 
+    )
 else:
     from llama_index.embeddings.openai import OpenAIEmbedding
     embed_model = OpenAIEmbedding(
