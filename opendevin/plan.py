@@ -55,7 +55,7 @@ class Plan:
         id = parent.id + '.' + str(len(parent.subtasks))
         parent.subtasks.append(Task(id=id, goal=goal))
 
-    def close_task(self, id: str, completed: bool = True):
+    def close_subtask(self, id: str, completed: bool = True):
         task = self.get_task_by_id(id)
         task.close(completed)
 
