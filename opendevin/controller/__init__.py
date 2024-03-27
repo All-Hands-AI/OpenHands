@@ -1,5 +1,5 @@
 import asyncio
-from typing import List, Callable, Tuple
+from typing import List, Callable
 import traceback
 
 from opendevin.state import State
