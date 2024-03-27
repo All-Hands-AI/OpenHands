@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import "./ChatInterface.css";
 import userAvatar from "../assets/user-avatar.png";
@@ -7,7 +7,12 @@ import { RootState } from "../store";
 import { sendChatMessage } from "../services/chatService";
 
 function MessageList(): JSX.Element {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { messages } = useSelector((state: RootState) => state.chat);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   return (
     <div className="message-list">
@@ -25,6 +30,7 @@ function MessageList(): JSX.Element {
           </div>
         </div>
       ))}
+      <div ref={messagesEndRef} />
     </div>
   );
 }
