@@ -11,6 +11,7 @@ from opendevin.observation import (
 
 @dataclass
 class State:
+    task: str
     iteration: int = 0
     background_commands_obs: List[CmdOutputObservation] = field(default_factory=list)
     history: List[Tuple[Action, Observation]] = field(default_factory=list)

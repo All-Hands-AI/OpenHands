@@ -36,7 +36,6 @@ class AgentController:
         self.workdir = workdir
         self.command_manager = CommandManager(workdir)
         self.callbacks = callbacks
-        self.state = State()
 
     def update_state_for_step(self, i):
         self.state.iteration = i
@@ -54,9 +53,9 @@ class AgentController:
         self.state.updated_info.append((action, observation))
 
 
-    async def start_loop(self, task_instruction: str):
+    async def start_loop(self, task: str):
         finished = False
-        self.agent.instruction = task_instruction
+        self.state = State(task)
         for i in range(self.max_iterations):
             try:
                 finished = await self.step(i)
