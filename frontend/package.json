@@ -65,6 +65,8 @@
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@typescript-eslint/parser": "^7.0.0",
+    "autoprefixer": "^10.4.19",
+    "daisyui": "^4.9.0",
     "eslint": "^8.57.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-prettier": "^9.1.0",
@@ -77,7 +79,9 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "lint-staged": "^15.2.2",
+    "postcss": "^8.4.38",
     "prettier": "^3.2.5",
+    "tailwindcss": "^3.4.2",
     "ts-jest": "^29.1.2"
   }
 }

@@ -1,4 +1,8 @@
 /* App.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 .app {
   display: flex;
   height: 100vh;
