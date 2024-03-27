@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import "./ChatInterface.css";
 import userAvatar from "../assets/user-avatar.png";
@@ -7,7 +7,12 @@ import { RootState } from "../store";
 import { sendChatMessage } from "../services/chatService";
 
 function MessageList(): JSX.Element {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { messages } = useSelector((state: RootState) => state.chat);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   return (
     <div className="message-list">
@@ -25,6 +30,7 @@ function MessageList(): JSX.Element {
           </div>
         </div>
       ))}
+      <div ref={messagesEndRef} />
     </div>
   );
 }
@@ -53,21 +59,26 @@ function ChatInterface(): JSX.Element {
     <div className="chat-interface">
       {initialized ? <MessageList /> : <InitializingStatus />}
       <div className="input-container">
-        <input
-          type="text"
-          value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
-          placeholder="Send a message (won't interrupt the Assistant)"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              handleSendMessage();
-            }
-          }}
-          disabled={!initialized}
-        />
-        <button type="button" onClick={handleSendMessage}>
-          <span className="button-text">Send</span>
-        </button>
+        <div className="input-box">
+          <input
+            type="text"
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            placeholder="Send a message (won't interrupt the Assistant)"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleSendMessage();
+              }
+            }}
+          />
+          <button
+            type="button"
+            onClick={handleSendMessage}
+            disabled={!initialized}
+          >
+            <span className="button-text">Send</span>
+          </button>
+        </div>
       </div>
     </div>
   );
