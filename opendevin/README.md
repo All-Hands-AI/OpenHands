@@ -25,6 +25,11 @@ Example screenshot:
 docker build -f opendevin/sandbox/Dockerfile -t opendevin/sandbox:v0.1 .
 ```
 
+Or you can pull the latest image [here](https://hub.docker.com/r/opendevin/sandbox/tags):
+```bash
+docker pull opendevin/sandbox:v0.1
+```
+
 2. Set the `OPENAI_API_KEY`, please find more details [here](https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety). Also, choose the model you want. Default is `gpt-4-0125-preview`
 ```bash
 export OPENAI_API_KEY=xxxxxxx

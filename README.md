@@ -26,6 +26,11 @@ First, make sure Docker is running:
 ```bash
 docker ps # this should exit successfully
 ```
+Then pull our latest image [here](https://hub.docker.com/r/opendevin/sandbox/tags)
+```bash
+docker pull opendevin/sandbox:v0.1
+```
+
 Then start the backend:
 ```bash
 export OPENAI_API_KEY="..."
