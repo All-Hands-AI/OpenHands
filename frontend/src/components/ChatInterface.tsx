@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
-import "./ChatInterface.css";
-import userAvatar from "../assets/user-avatar.png";
 import assistantAvatar from "../assets/assistant-avatar.png";
-import { RootState } from "../store";
+import userAvatar from "../assets/user-avatar.png";
 import { sendChatMessage } from "../services/chatService";
+import { RootState } from "../store";
+import "./ChatInterface.css";
 
 function MessageList(): JSX.Element {
   const { messages } = useSelector((state: RootState) => state.chat);
@@ -44,6 +44,7 @@ function ChatInterface(): JSX.Element {
 
   const handleSendMessage = () => {
     if (inputMessage.trim() !== "") {
+      console.log(inputMessage);
       sendChatMessage(inputMessage);
       setInputMessage("");
     }
@@ -55,7 +56,6 @@ function ChatInterface(): JSX.Element {
       <div className="input-container">
         <input
           type="text"
-          value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
           placeholder="Send a message (won't interrupt the Assistant)"
           onKeyDown={(e) => {
@@ -63,9 +63,12 @@ function ChatInterface(): JSX.Element {
               handleSendMessage();
             }
           }}
-          disabled={!initialized}
         />
-        <button type="button" onClick={handleSendMessage}>
+        <button
+          type="button"
+          onClick={handleSendMessage}
+          disabled={!initialized}
+        >
           <span className="button-text">Send</span>
         </button>
       </div>
