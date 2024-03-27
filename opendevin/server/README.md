@@ -76,7 +76,7 @@ This list may grow over time.
   * `query` - the query to search for
 * `think` - Allows the agent to make a plan, set a goal, or record thoughts
   * `thought` - the thought to record
-* `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
+* `finish` - agent signals that the task is completed
 
 ### Observations
 An observation has four parts:
