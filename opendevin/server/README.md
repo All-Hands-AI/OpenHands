@@ -37,6 +37,6 @@ websocat ws://127.0.0.1:3000/ws
 
 ```sh
 OPENAI_API_KEY=sk-... # Your OpenAI API Key
-MODEL_NAME=gpt-4-0125-preview # Default model for the agent to use
+LLM_MODEL=gpt-4-0125-preview # Default model for the agent to use
 WORKSPACE_DIR=/path/to/your/workspace # Default path to model's workspace
 ```

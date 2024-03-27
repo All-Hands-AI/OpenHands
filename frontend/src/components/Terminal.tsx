@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { IDisposable, Terminal as XtermTerminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import socket from "../state/socket";
+import socket from "../socket/socket";
 
 class JsonWebsocketAddon {
   _socket: WebSocket;

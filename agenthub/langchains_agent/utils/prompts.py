@@ -106,7 +106,7 @@ class NewMonologue(BaseModel):
 
 def get_summarize_monologue_prompt(thoughts):
     prompt = PromptTemplate.from_template(MONOLOGUE_SUMMARY_PROMPT)
-    return prompt.format(monologue=json.dumps({'old_monologue': thoughts}))
+    return prompt.format(monologue=json.dumps({'old_monologue': thoughts}, indent=2))
 
 def get_request_action_prompt(
         task: str,
@@ -135,7 +135,7 @@ def get_request_action_prompt(
     prompt = PromptTemplate.from_template(ACTION_PROMPT)
     return prompt.format(
         task=task,
-        monologue=json.dumps(thoughts),
+        monologue=json.dumps(thoughts, indent=2),
         background_commands=bg_commands_message,
         hint=hint,
     )

@@ -1,5 +1,5 @@
 import { appendUserMessage } from "../state/chatSlice";
-import socket from "../state/socket";
+import socket from "../socket/socket";
 import store from "../store";
 
 export function sendChatMessage(message: string): void {

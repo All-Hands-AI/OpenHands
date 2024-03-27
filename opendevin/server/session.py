@@ -17,7 +17,7 @@ from opendevin.observation import (
 )
 
 DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
-MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4-0125-preview")
+LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4-0125-preview")
 
 class Session:
     def __init__(self, websocket):
@@ -80,7 +80,7 @@ class Session:
         agent_cls = "LangchainsAgent"
         if start_event and "agent_cls" in start_event.args:
             agent_cls = start_event.args["agent_cls"]
-        model = MODEL_NAME
+        model = LLM_MODEL
         if start_event and "model" in start_event.args:
             model = start_event.args["model"]
         if not os.path.exists(directory):
