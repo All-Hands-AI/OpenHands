@@ -4,7 +4,7 @@ import agenthub # noqa F401 (we import this to get the agents registered)
 
 app = FastAPI()
 
-# This endpoint recieves events from the client (i.e. the browser)
+# This endpoint receives events from the client (i.e. the browser)
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
