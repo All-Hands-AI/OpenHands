@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines" : {
-    "node" : ">=14.8.0"
+  "engines": {
+    "node": ">=14.8.0"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
@@ -16,6 +16,7 @@
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@types/react-syntax-highlighter": "^15.5.11",
+    "@typescript-eslint/eslint-plugin": "^7.4.0",
     "@vitejs/plugin-react": "^4.2.1",
     "@xterm/xterm": "^5.4.0",
     "eslint-config-airbnb-typescript": "^18.0.0",
