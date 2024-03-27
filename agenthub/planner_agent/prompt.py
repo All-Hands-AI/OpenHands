@@ -53,6 +53,10 @@ track of your progress. Here's a JSON representation of your plan:
 %(plan)s
 ```
 
+When you add to your plan, be sure to create tasks that are specific, measurable,
+achievable, relevant, and time-bound. You can later add subtasks to break down
+your work into smaller, more manageable pieces.
+
 ## History
 Here is a recent history of actions you've taken in service of this plan,
 as well as observations you've made.
@@ -93,7 +97,10 @@ It must be an object, and it must contain two fields:
 
 You MUST take time to think in between read, write, run, browse, and recall actions.
 You should never act twice in a row without thinking. But if your last several
-actions are all "think" actions, you should consider taking a different action.
+actions are all `think` actions, you should consider taking a different action.
+
+Based on the history above, if ANY of your open subtasks have been completed,
+you MUST close them with the `close_subtask` action.
 
 What is your next thought or action? Again, you must reply with JSON, and only with JSON.
 
@@ -105,6 +112,7 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
     plan_str = json.dumps(plan.task.to_dict(), indent=2)
     sub_history = history[-HISTORY_SIZE:]
     history_dicts = []
+    latest_action = ""
     for action, observation in sub_history:
         if not isinstance(action, NullAction):
             action_dict = action.to_dict()
@@ -112,6 +120,7 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
             if 'base_dir' in action_dict:
                 action_dict.pop('base_dir')
             history_dicts.append(action_dict)
+            latest_action = action_dict["action"]
         if not isinstance(observation, NullObservation):
             observation_dict = observation.to_dict()
             observation_dict["observation"] = convert_observation(observation_dict["observation"])
@@ -119,6 +128,30 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
                 observation_dict.pop('base_dir')
             history_dicts.append(observation_dict)
     history_str = json.dumps(history_dicts, indent=2)
+    if latest_action == "":
+        hint = "You haven't taken any actions yet. Maybe start by using `ls` to check out what files you're working with?"
+    elif latest_action == "run":
+        hint = "Maybe you should think about the command you just ran, and what output it gave. Maybe it's time to mark a subtask as complete."
+    elif latest_action == "read":
+        hint = "Maybe you should think about the file you just read, and what you learned from it."
+    elif latest_action == "write":
+        hint = "You just changed a file. You should probably run a command to check if your changes were successful, and have the intended behavior. Or maybe you should mark a subtask as complete."
+    elif latest_action == "browse":
+        hint = "Maybe you should think about the page you just visited, and what you learned from it."
+    elif latest_action == "think":
+        hint = "Maybe you should take some action, or adjust your plan."
+    elif latest_action == "recall":
+        hint = "Maybe you should think about the information you just recalled, and how it fits into your plan."
+    elif latest_action == "add_subtask":
+        hint = "Maybe you should take some action, or think about your next step."
+    elif latest_action == "close_subtask":
+        hint = "Maybe you should take some action, or think about your next step."
+    elif latest_action == "summarize":
+        hint = ""
+    elif latest_action == "finish":
+        hint = ""
+
+
     return prompt % {
         'task': plan.main_goal,
         'plan': plan_str,
