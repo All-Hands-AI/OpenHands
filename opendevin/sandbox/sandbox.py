@@ -31,7 +31,7 @@ class BackgroundCommand:
         self.command = command
         self.result = result
 
-    def parse_docker_exec_output(self, logs: bytes) -> (str, str):
+    def parse_docker_exec_output(self, logs: bytes) -> (bytes, bytes):
         res = b""
         tail = b""
         i = 0
