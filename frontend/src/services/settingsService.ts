@@ -1,4 +1,6 @@
 import socket from "../socket/socket";
+import { setInitialized } from "../state/taskSlice";
+import store from "../store";
 
 export const MODELS = [
   "gpt-3.5-turbo-1106",
@@ -18,6 +20,7 @@ function changeSetting(setting: string, value: string): void {
   const event = { action: "initialize", args: { [setting]: value } };
   const eventString = JSON.stringify(event);
   socket.send(eventString);
+  store.dispatch(setInitialized(false));
 }
 
 export function changeModel(model: Model): void {
