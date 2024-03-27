@@ -19,3 +19,5 @@ chromadb
 llama-index-embeddings-huggingface
 llama-index-embeddings-azure-openai
 llama-index-embeddings-ollama
+
+Hoa texto
