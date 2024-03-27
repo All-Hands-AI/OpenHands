@@ -36,23 +36,23 @@ class AgentController:
         self.workdir = workdir
         self.command_manager = CommandManager(workdir)
         self.callbacks = callbacks
-        self.state_updated_info: List[Tuple[Action, Observation]] = []
+        self.state = State()
 
-    def get_current_state(self) -> State:
-        # update observations & actions
-        state = State(
-            background_commands_obs=self.command_manager.get_background_obs(),
-            updated_info=self.state_updated_info,
-        )
-        self.state_updated_info = []
-        return state
+    def update_state_for_step(self, i):
+        self.state.iteration = i
+        self.state.background_commands_obs = self.command_manager.get_background_obs()
+
+    def update_state_after_step(self):
+        self.state.updated_info = []
 
     def add_history(self, action: Action, observation: Observation):
         if not isinstance(action, Action):
             raise ValueError("action must be an instance of Action")
         if not isinstance(observation, Observation):
             raise ValueError("observation must be an instance of Observation")
-        self.state_updated_info.append((action, observation))
+        self.state.history.append((action, observation))
+        self.state.updated_info.append((action, observation))
+
 
     async def start_loop(self, task_instruction: str):
         finished = False
@@ -78,16 +78,19 @@ class AgentController:
             await self._run_callbacks(obs)
             print_with_indent("\nBACKGROUND LOG:\n%s" % obs)
 
-        state: State = self.get_current_state()
+        self.update_state_for_step(i)
         action: Action = NullAction()
         observation: Observation = NullObservation("")
         try:
-            action = self.agent.step(state)
+            action = self.agent.step(self.state)
+            if action is None:
+                raise ValueError("Agent must return an action")
             print_with_indent("\nACTION:\n%s" % action)
         except Exception as e:
             observation = AgentErrorObservation(str(e))
             print_with_indent("\nAGENT ERROR:\n%s" % observation)
             traceback.print_exc()
+        self.update_state_after_step()
 
         await self._run_callbacks(action)
 
