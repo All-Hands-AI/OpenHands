@@ -5,6 +5,29 @@ from opendevin.plan import Plan
 from opendevin.action import Action
 from opendevin.observation import Observation
 
+from opendevin.action import (
+    CmdRunAction,
+    CmdKillAction,
+    BrowseURLAction,
+    FileReadAction,
+    FileWriteAction,
+    AgentRecallAction,
+    AgentThinkAction,
+    AgentFinishAction,
+    AgentSummarizeAction,
+)
+ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
+    "run": CmdRunAction,
+    "kill": CmdKillAction,
+    "browse": BrowseURLAction,
+    "read": FileReadAction,
+    "write": FileWriteAction,
+    "recall": AgentRecallAction,
+    "think": AgentThinkAction,
+    "summarize": AgentSummarizeAction,
+    "finish": AgentFinishAction,
+}
+
 HISTORY_SIZE = 10
 
 prompt = """
@@ -80,3 +103,13 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
         'history': history_str,
         'hint': hint,
     }
+
+def parse_action_response(response: str) -> Action:
+    parser = JsonOutputParser(pydantic_object=_ActionDict)
+    action_dict = parser.parse(response)
+    if 'content' in action_dict:
+        # The LLM gets confused here. Might as well be robust
+        action_dict['contents'] = action_dict.pop('content')
+
+    action = ACTION_TYPE_TO_CLASS[action_dict["action"]](**action_dict["args"])
+    return action

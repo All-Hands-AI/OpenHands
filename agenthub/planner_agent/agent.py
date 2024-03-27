@@ -1,5 +1,5 @@
 from typing import List
-from .prompt import get_prompt
+from .prompt import get_prompt, parse_response
 
 from opendevin.agent import Agent
 from opendevin.llm.llm import LLM
@@ -12,7 +12,11 @@ class PlannerAgent(Agent):
 
     def step(self, state: State) -> Action:
         prompt = get_prompt(state.plan, state.history)
-        return None
+        messages = [{"content": prompt, "role": "user"}]
+        resp = self.llm.completion(messages=messages)
+        action_resp = resp['choices'][0]['message']['content']
+        action = prompts.parse_action_response(action_resp)
+        return action
 
     def search_memory(self, query: str) -> List[str]:
         return []
