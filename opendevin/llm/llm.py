@@ -29,7 +29,7 @@ class LLM:
                 message_back = resp['choices'][0]['message']['content']
                 self.write_debug(messages, message_back)
                 return resp
-            self._completion = wrapper
+            self._completion = wrapper # type: ignore
 
     @property
     def completion(self):
