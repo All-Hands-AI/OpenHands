@@ -26,6 +26,11 @@ First, make sure Docker is running:
 ```bash
 docker ps # this should exit successfully
 ```
+Then pull our latest image [here](https://hub.docker.com/r/opendevin/sandbox/tags)
+```bash
+docker pull opendevin/sandbox:v0.1
+```
+
 Then start the backend:
 ```bash
 export OPENAI_API_KEY="..."
@@ -54,9 +59,19 @@ export LLM_API_KEY="your-api-key"
 export LLM_MODEL="claude-3-opus-20240229"
 ```
 
-### Running on the Command Line
-You can also run OpenDevin from your command line:
+You can also set the base URL for local/custom models:
+```bash
+export LLM_BASE_URL="https://localhost:3000"
 ```
+
+And you can customize which embeddings are used for the vector database storage:
+```bash
+export LLM_EMBEDDING_MODEL="llama2" # can be "llama2", "openai", "azureopenai", or "local"
+```
+
+### Running on the Command Line
+You can run OpenDevin from your command line:
+```bash
 PYTHONPATH=`pwd` python opendevin/main.py -d ./workspace/ -i 100 -t "Write a bash script that prints 'hello world'"
 ```
 

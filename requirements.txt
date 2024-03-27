@@ -16,3 +16,6 @@ langchain-community
 llama-index
 llama-index-vector-stores-chroma
 chromadb
+llama-index-embeddings-huggingface
+llama-index-embeddings-azure-openai
+llama-index-embeddings-ollama
