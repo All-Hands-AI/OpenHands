@@ -181,10 +181,9 @@ class DockerInteractive:
         bg_cmd = self.background_commands[id]
         pid = self.get_pid(bg_cmd)
         if pid is not None:
-            exec_result = self.container.exec_run(
+            self.container.exec_run(
                 f"kill -9 {pid}", workdir="/workspace"
             )
-            print(exec_result.output.decode('utf-8'))
         bg_cmd.kill()
         self.background_commands.pop(id)
         return bg_cmd
