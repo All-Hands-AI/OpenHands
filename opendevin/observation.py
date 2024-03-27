@@ -61,6 +61,17 @@ class FileReadObservation(Observation):
     def message(self) -> str:
         return f"I read the file {self.path}."
 
+@dataclass
+class FileWriteObservation(Observation):
+    """
+    This data class represents a file write operation
+    """
+
+    path: str
+
+    @property
+    def message(self) -> str:
+        return f"I wrote to the file {self.path}."
 
 @dataclass
 class BrowserOutputObservation(Observation):

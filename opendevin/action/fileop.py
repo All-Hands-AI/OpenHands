@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 
-from opendevin.observation import Observation, FileReadObservation
+from opendevin.observation import FileReadObservation, FileWriteObservation
 from .base import ExecutableAction
 
 # This is the path where the workspace is mounted in the container
@@ -37,11 +37,11 @@ class FileWriteAction(ExecutableAction):
     contents: str
     base_path: str = ""
 
-    def run(self, *args, **kwargs) -> Observation:
+    def run(self, *args, **kwargs) -> FileWriteObservation:
         path = resolve_path(self.base_path, self.path)
         with open(path, 'w', encoding='utf-8') as file:
             file.write(self.contents)
-        return Observation(f"File written to {path}")
+        return FileWriteObservation(content="", path=self.path)
 
     @property
     def message(self) -> str:
