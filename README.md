@@ -1,5 +1,5 @@
 <p align="center">
-  <img alt="OpenDevin Logo" src="./OpenDevinLogo.jpg" width="100" />
+  <img alt="OpenDevin Logo" src="./logo.png" width="150" />
 </p>
 
 # OpenDevin: Code Less, Make More
@@ -22,6 +22,11 @@ OpenDevin is still a work in progress. But you can run the alpha version to see 
 * [NodeJS](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) >= 14.8
 
 ### Installation
+First, make sure Docker is running:
+```bash
+docker ps # this should exit successfully
+```
+Then start the backend:
 ```bash
 export OPENAI_API_KEY="..."
 export WORKSPACE_DIR="/path/to/your/project"
@@ -47,6 +52,12 @@ For example, to run Claude:
 ```bash
 export LLM_API_KEY="your-api-key"
 export LLM_MODEL="claude-3-opus-20240229"
+```
+
+### Running on the Command Line
+You can also run OpenDevin from your command line:
+```
+python opendevin/main.py -d ./workspace/ -i 100 -t "Write a bash script that prints 'hello world'"
 ```
 
 ## 🤔 What is [Devin](https://www.cognition-labs.com/introducing-devin)?
@@ -100,3 +111,5 @@ We use Slack to discuss. Feel free to fill in the [form](https://forms.gle/758d5
 Stay updated on OpenDevin's progress, share your ideas, and collaborate with fellow enthusiasts and experts. Together, we can make significant strides towards simplifying software engineering tasks and creating more efficient, powerful tools for developers everywhere.
 
 🐚 **Code less, make more with OpenDevin.**
+
+[![Star History Chart](https://api.star-history.com/svg?repos=OpenDevin/OpenDevin&type=Date)](https://star-history.com/#OpenDevin/OpenDevin&Date)
