@@ -58,7 +58,8 @@ class DockerInteractive:
         workspace_dir: str | None = None,
         container_image: str | None = None,
         timeout: int = 120,
-        id: str | None = None
+        id: str | None = None,
+        image: str = CONTAINER_IMAGE,
     ):
         if id is not None:
             self.instance_id = id
@@ -83,7 +84,7 @@ class DockerInteractive:
         self.timeout: int = timeout
 
         if container_image is None:
-            self.container_image = CONTAINER_IMAGE
+            self.container_image = image
         else:
             self.container_image = container_image
 
