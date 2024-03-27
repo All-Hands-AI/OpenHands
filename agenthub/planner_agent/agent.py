@@ -15,7 +15,7 @@ class PlannerAgent(Agent):
         messages = [{"content": prompt, "role": "user"}]
         resp = self.llm.completion(messages=messages)
         action_resp = resp['choices'][0]['message']['content']
-        action = prompts.parse_action_response(action_resp)
+        action = parse_response(action_resp)
         return action
 
     def search_memory(self, query: str) -> List[str]:

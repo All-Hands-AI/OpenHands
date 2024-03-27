@@ -1,5 +1,5 @@
 import json
-from typing import List, Tuple
+from typing import List, Tuple, Dict, Type
 
 from opendevin.plan import Plan
 from opendevin.action import Action
@@ -15,6 +15,8 @@ from opendevin.action import (
     AgentThinkAction,
     AgentFinishAction,
     AgentSummarizeAction,
+    AddSubtaskAction,
+    CloseSubtaskAction,
 )
 ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
     "run": CmdRunAction,
@@ -26,6 +28,8 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
     "think": AgentThinkAction,
     "summarize": AgentSummarizeAction,
     "finish": AgentFinishAction,
+    "add_subtask": AddSubtaskAction,
+    "close_subtask": CloseSubtaskAction,
 }
 
 HISTORY_SIZE = 10
@@ -78,6 +82,7 @@ It must be an object, and it must contain two fields:
   * `goal` - the goal of the subtask
 * `close_subtask` - close a subtask. Arguments:
   * `id` - the ID of the subtask to close
+  * `completed` - set to true if the subtask is completed, false if it was abandoned
 * `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
 You MUST take time to think in between read, write, run, browse, and recall actions.
@@ -104,9 +109,8 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
         'hint': hint,
     }
 
-def parse_action_response(response: str) -> Action:
-    parser = JsonOutputParser(pydantic_object=_ActionDict)
-    action_dict = parser.parse(response)
+def parse_response(response: str) -> Action:
+    action_dict = json.loads(response)
     if 'content' in action_dict:
         # The LLM gets confused here. Might as well be robust
         action_dict['contents'] = action_dict.pop('content')
