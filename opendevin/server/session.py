@@ -38,7 +38,7 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
 
 
 DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
-MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4-0125-preview")
+LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4-0125-preview")
 
 def parse_event(data):
     if "action" not in data:
@@ -120,7 +120,7 @@ class Session:
         agent_cls = "LangchainsAgent"
         if start_event and "agent_cls" in start_event.args:
             agent_cls = start_event.args["agent_cls"]
-        model = MODEL_NAME
+        model = LLM_MODEL
         if start_event and "model" in start_event.args:
             model = start_event.args["model"]
         if not os.path.exists(directory):
