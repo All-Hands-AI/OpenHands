@@ -1,5 +1,5 @@
 <p align="center">
-  <img alt="OpenDevin Logo" src="./OpenDevinLogo.jpg" width="100" />
+  <img alt="OpenDevin Logo" src="./logo.png" width="150" />
 </p>
 
 # OpenDevin: Code Less, Make More
