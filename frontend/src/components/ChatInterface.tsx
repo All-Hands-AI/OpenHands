@@ -44,7 +44,6 @@ function ChatInterface(): JSX.Element {
 
   const handleSendMessage = () => {
     if (inputMessage.trim() !== "") {
-      console.log(inputMessage);
       sendChatMessage(inputMessage);
       setInputMessage("");
     }
