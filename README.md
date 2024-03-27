@@ -67,7 +67,7 @@ export LLM_EMBEDDING_MODEL="llama2" # can be "llama2", "openai", "azureopenai", 
 ### Running on the Command Line
 You can run OpenDevin from your command line:
 ```bash
-python opendevin/main.py -d ./workspace/ -i 100 -t "Write a bash script that prints 'hello world'"
+PYTHONPATH=`pwd` python opendevin/main.py -d ./workspace/ -i 100 -t "Write a bash script that prints 'hello world'"
 ```
 
 ## 🤔 What is [Devin](https://www.cognition-labs.com/introducing-devin)?

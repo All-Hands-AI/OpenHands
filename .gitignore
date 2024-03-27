@@ -191,3 +191,4 @@ yarn-error.log*
 # agent
 .envrc
 /workspace
+/debug
