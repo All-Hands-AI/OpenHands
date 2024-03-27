@@ -8,7 +8,16 @@ type UrlBarProps = {
 };
 
 function UrlBar({ url }: UrlBarProps): JSX.Element {
-  return <div className="url">{url}</div>;
+  return (
+    <div className="mac-url-bar">
+      <div className="left-icons">
+        <div className="icon icon-red" />
+        <div className="icon icon-yellow" />
+        <div className="icon icon-green" />
+      </div>
+      <div className="url">{url}</div>
+    </div>
+  );
 }
 
 type ScreenshotProps = {

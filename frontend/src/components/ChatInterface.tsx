@@ -59,21 +59,26 @@ function ChatInterface(): JSX.Element {
     <div className="chat-interface">
       {initialized ? <MessageList /> : <InitializingStatus />}
       <div className="input-container">
-        <input
-          type="text"
-          value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
-          placeholder="Send a message (won't interrupt the Assistant)"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              handleSendMessage();
-            }
-          }}
-          disabled={!initialized}
-        />
-        <button type="button" onClick={handleSendMessage}>
-          <span className="button-text">Send</span>
-        </button>
+        <div className="input-box">
+          <input
+            type="text"
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            placeholder="Send a message (won't interrupt the Assistant)"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleSendMessage();
+              }
+            }}
+          />
+          <button
+            type="button"
+            onClick={handleSendMessage}
+            disabled={!initialized}
+          >
+            <span className="button-text">Send</span>
+          </button>
+        </div>
       </div>
     </div>
   );

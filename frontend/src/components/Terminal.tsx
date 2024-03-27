@@ -92,6 +92,7 @@ function Terminal({ hidden }: TerminalProps): JSX.Element {
         width: "100%",
         height: "100%",
         display: hidden ? "none" : "block",
+        padding: "1rem",
       }}
     />
   );
