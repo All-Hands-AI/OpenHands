@@ -1,4 +1,5 @@
 from typing import List
+from .prompt import get_prompt
 
 from opendevin.agent import Agent
 from opendevin.llm.llm import LLM
@@ -10,9 +11,10 @@ class PlannerAgent(Agent):
         super().__init__(llm)
 
     def step(self, state: State) -> Action:
+        prompt = get_prompt(state)
         pass
 
     def search_memory(self, query: str) -> List[str]:
-        pass
+        return []
 
 Agent.register("PlannerAgent", PlannerAgent)
