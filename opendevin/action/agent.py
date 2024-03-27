@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 @dataclass
 class AgentRecallAction(ExecutableAction):
     query: str
+    action: str = "recall"
 
     def run(self, controller: "AgentController") -> AgentRecallObservation:
         return AgentRecallObservation(
@@ -21,15 +22,11 @@ class AgentRecallAction(ExecutableAction):
     def message(self) -> str:
         return f"Let me dive into my memories to find what you're looking for! Searching for: '{self.query}'. This might take a moment."
 
-
-    def to_dict(self):
-        {"action": "recall", "args": {"query": self.query}}
-
-
 @dataclass
 class AgentThinkAction(NotExecutableAction):
     thought: str
     runnable: bool = False
+    action: str = "think"
 
     def run(self, controller: "AgentController") -> "Observation":
         raise NotImplementedError
@@ -38,14 +35,11 @@ class AgentThinkAction(NotExecutableAction):
     def message(self) -> str:
         return self.thought
 
-
-    def to_dict(self):
-        return {"action": "think", "args": {"thought": self.thought}}
-
 @dataclass
 class AgentEchoAction(ExecutableAction):
     content: str
     runnable: bool = True
+    action: str = "echo"
 
     def run(self, controller: "AgentController") -> "Observation":
         return AgentMessageObservation(self.content)
@@ -58,16 +52,16 @@ class AgentEchoAction(ExecutableAction):
 class AgentSummarizeAction(NotExecutableAction):
     summary: str
 
+    action: str = "summarize"
+
     @property
     def message(self) -> str:
         return self.summary
 
-    def to_dict(self):
-        raise NotImplementedError("need to implement")
-
 @dataclass
 class AgentFinishAction(NotExecutableAction):
     runnable: bool = False
+    action: str = "finish"
 
     def run(self, controller: "AgentController") -> "Observation":
         raise NotImplementedError
@@ -75,6 +69,3 @@ class AgentFinishAction(NotExecutableAction):
     @property
     def message(self) -> str:
         return "All done! What's next on the agenda?"
-
-    def to_dict(self):
-        return {"action": "finish"}

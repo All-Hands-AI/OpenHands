@@ -18,6 +18,7 @@ def resolve_path(base_path, file_path):
 class FileReadAction(ExecutableAction):
     path: str
     base_path: str = ""
+    action: str = "read"
 
     def run(self, *args, **kwargs) -> FileReadObservation:
         path = resolve_path(self.base_path, self.path)
@@ -30,15 +31,12 @@ class FileReadAction(ExecutableAction):
     def message(self) -> str:
         return f"Reading file: {self.path}"
 
-    def to_dict(self):
-        return {"action": "read", "args": {"file": self.path}}
-
-
 @dataclass
 class FileWriteAction(ExecutableAction):
     path: str
     contents: str
     base_path: str = ""
+    action: str = "write"
 
     def run(self, *args, **kwargs) -> Observation:
         path = resolve_path(self.base_path, self.path)
@@ -49,6 +47,3 @@ class FileWriteAction(ExecutableAction):
     @property
     def message(self) -> str:
         return f"Writing file: {self.path}"
-
-    def to_dict(self):
-        return {"action": "write", "args": {"file": self.path, "content": self.contents}}

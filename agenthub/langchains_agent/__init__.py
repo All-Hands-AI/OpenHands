@@ -3,23 +3,11 @@ from typing import List
 from opendevin.llm.llm import LLM
 from opendevin.agent import Agent
 from opendevin.state import State
-from opendevin.action import Action
 import agenthub.langchains_agent.utils.prompts as prompts
 from agenthub.langchains_agent.utils.monologue import Monologue
 from agenthub.langchains_agent.utils.memory import LongTermMemory
 
-from opendevin.action import (
-    ACTION_TYPE_TO_CLASS,
-    # NullAction,
-    # CmdRunAction,
-    # CmdKillAction,
-    # BrowseURLAction,
-    # FileReadAction,
-    # FileWriteAction,
-    # AgentRecallAction,
-    # AgentThinkAction,
-    # AgentFinishAction,
-)
+from opendevin.action import action_class_initialize_dispatcher, Action, ACTION_TYPE_TO_CLASS, AgentThinkAction
 
 # from opendevin.observation import (
 #     CmdOutputObservation,
@@ -71,12 +59,6 @@ INITIAL_THOUGHTS = [
 MAX_OUTPUT_LENGTH = 5000
 MAX_MONOLOGUE_LENGTH = 20000
 
-def action_class_dispatch_initializer(action: str, *arguments: str) -> Action:
-    action_class = ACTION_TYPE_TO_CLASS.get(action)
-    if action_class is None:
-        raise KeyError(f"'{action=}' is not defined. Available actions: {ACTION_TYPE_TO_CLASS.keys()}")
-    return action_class(*arguments)
-
 class LangchainsAgent(Agent):
     _initialized = False
 
@@ -110,8 +92,13 @@ class LangchainsAgent(Agent):
                 self._add_event({"action": "output", "args": {"output": thought}})
                 next_is_output = False
             else:
+                # TODO this is not really robust
+                # TODO this also doesn't handle multiple arguments
                 action, _, argument = thought.partition(" ")
-                d = action_class_dispatch_initializer(action, argument)
+                if (action := action.lower()) in ACTION_TYPE_TO_CLASS:
+                    d = action_class_initialize_dispatcher(action, argument)
+                else:
+                    d = AgentThinkAction(thought)
                 self._add_event(d.to_dict())
                 next_is_output = True
         self._initialized = True
