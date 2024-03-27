@@ -26,9 +26,9 @@ First, make sure Docker is running:
 ```bash
 docker ps # this should exit successfully
 ```
-Then pull our latest image [here](https://hub.docker.com/r/opendevin/sandbox/tags)
+Then pull our latest image [here](https://github.com/opendevin/OpenDevin/pkgs/container/sandbox)
 ```bash
-docker pull opendevin/sandbox:v0.1
+docker pull ghcr.io/opendevin/sandbox:v0.1
 ```
 
 Then start the backend:
