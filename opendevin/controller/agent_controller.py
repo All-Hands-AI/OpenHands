@@ -9,6 +9,8 @@ from opendevin.action import (
     Action,
     NullAction,
     AgentFinishAction,
+    AddSubtaskAction,
+    CloseSubtaskAction
 )
 from opendevin.observation import (
     Observation,
@@ -94,6 +96,11 @@ class AgentController:
         if isinstance(action, AgentFinishAction):
             print_with_indent("\nFINISHED")
             return True
+
+        if isinstance(action, AddSubtaskAction):
+            self.state.plan.add_subtask(action.parent, action.goal)
+        elif isinstance(action, CloseSubtaskAction):
+            self.state.plan.close_subtask(action.id)
 
         if action.executable:
             try:

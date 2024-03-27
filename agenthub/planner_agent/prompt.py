@@ -109,10 +109,14 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
         if not isinstance(action, NullAction):
             action_dict = action.to_dict()
             action_dict["action"] = convert_action(action_dict["action"])
+            if 'base_dir' in action_dict:
+                action_dict.pop('base_dir')
             history_dicts.append(action_dict)
         if not isinstance(observation, NullObservation):
             observation_dict = observation.to_dict()
             observation_dict["observation"] = convert_observation(observation_dict["observation"])
+            if 'base_dir' in observation_dict:
+                observation_dict.pop('base_dir')
             history_dicts.append(observation_dict)
     history_str = json.dumps(history_dicts, indent=2)
     return prompt % {
