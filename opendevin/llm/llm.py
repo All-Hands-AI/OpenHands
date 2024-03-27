@@ -15,20 +15,21 @@ class LLM:
         self._debug_dir = debug_dir
         self._debug_idx = 0
         self._debug_id = uuid.uuid4().hex
+        self._completion = partial(litellm_completion, model=self.model, api_key=self.api_key)
+
         if self._debug_dir:
             print(f"Logging prompts to {self._debug_dir}/{self._debug_id}")
-        self._completion_unwrapped = partial(litellm_completion, model=self.model, api_key=self.api_key)
-        def wrapper(*args, **kwargs):
-            if "messages" in kwargs:
-                messages = kwargs["messages"]
-            else:
-                messages = args[1]
-            resp = self._completion_unwrapped(*args, **kwargs)
-            message_back = resp['choices'][0]['message']['content']
-            self.write_debug(messages, message_back)
-            return resp
-        self._completion = wrapper
-
+            completion_unwrapped = self._completion
+            def wrapper(*args, **kwargs):
+                if "messages" in kwargs:
+                    messages = kwargs["messages"]
+                else:
+                    messages = args[1]
+                resp = completion_unwrapped(*args, **kwargs)
+                message_back = resp['choices'][0]['message']['content']
+                self.write_debug(messages, message_back)
+                return resp
+            self._completion = wrapper
 
     @property
     def completion(self):
