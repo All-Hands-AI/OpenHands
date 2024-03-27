@@ -1,0 +1,45 @@
+name: Build and publish multi-arch container images
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Why manual trigger?'
+        required: false
+        default: ''
+
+jobs:
+  ghcr_build_and_push:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log-in to ghcr.io
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and push multi-arch container images
+        run: |
+          # set env for fork repo
+          DOCKER_BUILD_ORG=$(echo "${{ github.repository }}" | tr '[A-Z]' '[a-z]' | cut -d '/' -f 1)
+          # Find directories containing Dockerfile but not containing .dockerfileignore
+          while IFS= read -r dockerfile_dir; do
+            # Check if .dockerfileignore exists in the directory
+            if [ ! -f "$dockerfile_dir/.dockerfileignore" ]; then
+              # Change directory and execute 'make all'
+              pushd "$dockerfile_dir" > /dev/null
+              make all DOCKER_BUILD_ORG=$DOCKER_BUILD_ORG
+              popd > /dev/null
+            fi
+          done < <(find . -type f -name Dockerfile -exec dirname {} \; | sort -u)
