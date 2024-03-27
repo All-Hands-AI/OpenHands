@@ -114,6 +114,9 @@ class Session:
             print("Client websocket disconnected", e)
 
     async def create_controller(self, start_event=None):
+        image = CONTAINER_IMAGE  # Default image
+        if start_event and "image" in start_event["args"]:
+            image = start_event["args"]["image"]
         directory = DEFAULT_WORKSPACE_DIR
         if start_event and "directory" in start_event.args:
             directory = start_event.args["directory"]
@@ -130,7 +133,7 @@ class Session:
         llm = LLM(model)
         AgentCls = Agent.get_cls(agent_cls)
         self.agent = AgentCls(llm)
-        self.controller = AgentController(self.agent, workdir=directory, callbacks=[self.on_agent_event])
+        self.controller = AgentController(self.agent, workdir=directory, image=image,callbacks=[self.on_agent_event])
         await self.send({"action": "initialize", "message": "Control loop started."})
 
     async def start_task(self, start_event):
