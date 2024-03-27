@@ -36,7 +36,7 @@ elif embedding_strategy == "azureopenai":
 else:
     from llama_index.embeddings.openai import OpenAIEmbedding
     embed_model = OpenAIEmbedding(
-        base_url=os.getenv("LLM_EMBEDDING_MODEL_BASE_URL"),
+        base_url=os.getenv("LLM_BASE_URL"),
     )
 
 
