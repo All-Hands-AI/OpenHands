@@ -1,7 +1,7 @@
-import asyncio
-from typing import List, Callable
+from typing import List, Callable, Tuple
 import traceback
 
+from opendevin.plan import Plan
 from opendevin.state import State
 from opendevin.agent import Agent
 from opendevin.action import (
@@ -17,7 +17,6 @@ from opendevin.observation import (
 
 
 from .command_manager import CommandManager
-
 
 def print_with_indent(text: str):
     print("\t"+text.replace("\n","\n\t"), flush=True)
@@ -35,26 +34,29 @@ class AgentController:
         self.workdir = workdir
         self.command_manager = CommandManager(workdir)
         self.callbacks = callbacks
+        self.state_updated_info: List[Tuple[Action, Observation]] = []
 
-    def update_state_for_step(self, i):
-        self.state.iteration = i
-        self.state.background_commands_obs = self.command_manager.get_background_obs()
-
-    def update_state_after_step(self):
-        self.state.updated_info = []
+    def get_current_state(self) -> State:
+        # update observations & actions
+        state = State(
+            background_commands_obs=self.command_manager.get_background_obs(),
+            updated_info=self.state_updated_info,
+            plan=self.plan,
+        )
+        self.state_updated_info = []
+        return state
 
     def add_history(self, action: Action, observation: Observation):
         if not isinstance(action, Action):
             raise ValueError("action must be an instance of Action")
         if not isinstance(observation, Observation):
             raise ValueError("observation must be an instance of Observation")
-        self.state.history.append((action, observation))
-        self.state.updated_info.append((action, observation))
+        self.state_updated_info.append((action, observation))
 
-
-    async def start_loop(self, task: str):
+    async def start_loop(self, task_instruction: str):
+        self.plan = Plan(task_instruction)
         finished = False
-        self.state = State(task)
+        self.agent.instruction = task_instruction
         for i in range(self.max_iterations):
             try:
                 finished = await self.step(i)
@@ -76,19 +78,16 @@ class AgentController:
             await self._run_callbacks(obs)
             print_with_indent("\nBACKGROUND LOG:\n%s" % obs)
 
-        self.update_state_for_step(i)
+        state: State = self.get_current_state()
         action: Action = NullAction()
         observation: Observation = NullObservation("")
         try:
-            action = self.agent.step(self.state)
-            if action is None:
-                raise ValueError("Agent must return an action")
+            action = self.agent.step(state)
             print_with_indent("\nACTION:\n%s" % action)
         except Exception as e:
             observation = AgentErrorObservation(str(e))
             print_with_indent("\nAGENT ERROR:\n%s" % observation)
             traceback.print_exc()
-        self.update_state_after_step()
 
         await self._run_callbacks(action)
 

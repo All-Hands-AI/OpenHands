@@ -48,8 +48,8 @@ class Plan:
             task = task.subtasks[part]
         return task
 
-    def add_subtask(self, parent: str, goal: str):
-        parent = self.get_task_by_id(parent)
+    def add_subtask(self, parent_id: str, goal: str):
+        parent = self.get_task_by_id(parent_id)
         id = parent.id + '.' + str(len(parent.subtasks))
         parent.subtasks.append(Task(id=id, goal=goal))
 

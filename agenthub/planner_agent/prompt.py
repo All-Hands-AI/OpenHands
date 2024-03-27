@@ -2,6 +2,8 @@ import json
 from typing import List, Tuple
 
 from opendevin.plan import Plan
+from opendevin.action import Action
+from opendevin.observation import Observation
 
 HISTORY_SIZE = 10
 
@@ -66,11 +68,11 @@ What is your next thought or action? Again, you must reply with JSON, and only w
 
 def get_prompt(task: str, plan: Plan, history: List[Tuple[Action, Observation]]):
     hint = ""
-    plan_str = json.dumps(plan.task.__to_dict__(), indent=2)
+    plan_str = json.dumps(plan.task.to_dict(), indent=2)
     sub_history = history[-HISTORY_SIZE:]
     history_str = json.dumps([{
-        'action': action.__to_dict__(),
-        'observation': observation.__to_dict__()
+        'action': action.to_dict(),
+        'observation': observation.to_dict()
     } for action, observation in sub_history], indent=2)
     return prompt % {
         'task': task,
