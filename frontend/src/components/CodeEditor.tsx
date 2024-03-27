@@ -16,7 +16,7 @@ function CodeEditor(): JSX.Element {
       }}
     >
       <Editor
-        height="95%"
+        height="100%"
         theme="vs-dark"
         defaultLanguage="python"
         defaultValue="# Welcome to OpenDevin!"
