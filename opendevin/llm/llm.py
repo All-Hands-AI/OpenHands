@@ -14,6 +14,9 @@ class LLM:
         self.model = model if model else DEFAULT_MODEL
         self.api_key = api_key if api_key else DEFAULT_API_KEY
         self.base_url = base_url if base_url else DEFAULT_BASE_URL
+        self._debug_dir = debug_dir
+        self._debug_idx = 0
+        self._debug_id = uuid.uuid4().hex
 
         self._completion = partial(litellm_completion, model=self.model, api_key=self.api_key, base_url=self.base_url)
 
