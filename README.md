@@ -22,6 +22,11 @@ OpenDevin is still a work in progress. But you can run the alpha version to see 
 * [NodeJS](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) >= 14.8
 
 ### Installation
+First, make sure Docker is running:
+```bash
+docker ps # this should exit successfully
+```
+Then start the backend:
 ```bash
 export OPENAI_API_KEY="..."
 export WORKSPACE_DIR="/path/to/your/project"
@@ -57,6 +62,12 @@ export LLM_BASE_URL="https://localhost:3000"
 And you can customize which embeddings are used for the vector database storage:
 ```bash
 export LLM_EMBEDDING_MODEL="llama2" # can be "llama2", "openai", "azureopenai", or "local"
+```
+
+### Running on the Command Line
+You can run OpenDevin from your command line:
+```bash
+python opendevin/main.py -d ./workspace/ -i 100 -t "Write a bash script that prints 'hello world'"
 ```
 
 ## 🤔 What is [Devin](https://www.cognition-labs.com/introducing-devin)?
