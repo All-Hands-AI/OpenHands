@@ -16,7 +16,7 @@ if embedding_strategy == "llama2":
     from llama_index.embeddings.ollama import OllamaEmbedding
     embed_model = OllamaEmbedding(
         model_name="llama2",
-        base_url=os.getenv("LLM_EMBEDDING_MODEL_BASE_URL", "http://localhost:8000"),
+        base_url=os.getenv("LLM_BASE_URL", "http://localhost:8000"),
         ollama_additional_kwargs={"mirostat": 0},
     )
 elif embedding_strategy == "local":
