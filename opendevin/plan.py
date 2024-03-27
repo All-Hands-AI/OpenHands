@@ -5,7 +5,7 @@ class Task:
     goal: str
     closed: bool
     completed: bool
-    subtasks: List[Task]
+    subtasks: List["Task"]
 
     def __init__(self, id: str, goal: str, completed: bool = False, subtasks: List = []):
         self.id = id

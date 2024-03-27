@@ -6,6 +6,7 @@ from opendevin.action import Action
 from opendevin.observation import Observation
 
 from opendevin.action import (
+    NullAction,
     CmdRunAction,
     CmdKillAction,
     BrowseURLAction,
@@ -18,6 +19,11 @@ from opendevin.action import (
     AddSubtaskAction,
     CloseSubtaskAction,
 )
+
+from opendevin.observation import (
+    NullObservation,
+)
+
 ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
     "run": CmdRunAction,
     "kill": CmdKillAction,
@@ -98,10 +104,17 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
     hint = ""
     plan_str = json.dumps(plan.task.to_dict(), indent=2)
     sub_history = history[-HISTORY_SIZE:]
-    history_str = json.dumps([{
-        'action': action.to_dict(),
-        'observation': observation.to_dict()
-    } for action, observation in sub_history], indent=2)
+    history_dicts = []
+    for action, observation in sub_history:
+        if not isinstance(action, NullAction):
+            action_dict = action.to_dict()
+            action_dict["action"] = convert_action(action_dict["action"])
+            history_dicts.append(action_dict)
+        if not isinstance(observation, NullObservation):
+            observation_dict = observation.to_dict()
+            observation_dict["observation"] = convert_observation(observation_dict["observation"])
+            history_dicts.append(observation_dict)
+    history_str = json.dumps(history_dicts, indent=2)
     return prompt % {
         'task': plan.main_goal,
         'plan': plan_str,
@@ -110,6 +123,9 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
     }
 
 def parse_response(response: str) -> Action:
+    json_start = response.find("{")
+    json_end = response.rfind("}") + 1
+    response = response[json_start:json_end]
     action_dict = json.loads(response)
     if 'content' in action_dict:
         # The LLM gets confused here. Might as well be robust
@@ -117,3 +133,39 @@ def parse_response(response: str) -> Action:
 
     action = ACTION_TYPE_TO_CLASS[action_dict["action"]](**action_dict["args"])
     return action
+
+def convert_action(action):
+    if action == "CmdRunAction":
+        action = "run"
+    elif action == "CmdKillAction":
+        action = "kill"
+    elif action == "BrowseURLAction":
+        action = "browse"
+    elif action == "FileReadAction":
+        action = "read"
+    elif action == "FileWriteAction":
+        action = "write"
+    elif action == "AgentFinishAction":
+        action = "finish"
+    elif action == "AgentRecallAction":
+        action = "recall"
+    elif action == "AgentThinkAction":
+        action = "think"
+    elif action == "AgentSummarizeAction":
+        action = "summarize"
+    elif action == "AddSubtaskAction":
+        action = "add_subtask"
+    elif action == "CloseSubtaskAction":
+        action = "close_subtask"
+    return action
+
+def convert_observation(observation):
+    if observation == "UserMessageObservation":
+        observation = "chat"
+    elif observation == "AgentMessageObservation":
+        observation = "chat"
+    elif observation == "CmdOutputObservation":
+        observation = "run"
+    elif observation == "FileReadObservation":
+        observation = "read"
+    return observation
