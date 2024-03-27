@@ -8,7 +8,7 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 
 from . import json
 
-embedding_strategy = os.getenv("LLM_EMBEDDING_MODEL", "openai")
+embedding_strategy = os.getenv("LLM_EMBEDDING_MODEL", "local")
 
 # TODO: More embeddings: https://docs.llamaindex.ai/en/stable/examples/embeddings/OpenAI/
 # There's probably a more programmatic way to do this.
@@ -19,10 +19,10 @@ if embedding_strategy == "llama2":
         base_url=os.getenv("LLM_BASE_URL", "http://localhost:8000"),
         ollama_additional_kwargs={"mirostat": 0},
     )
-elif embedding_strategy == "local":
-    from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-    embed_model = HuggingFaceEmbedding(
-        model_name="BAAI/bge-small-en-v1.5"
+elif embedding_strategy == "openai":
+    from llama_index.embeddings.openai import OpenAIEmbedding
+    embed_model = OpenAIEmbedding(
+        base_url=os.getenv("LLM_BASE_URL"),
     )
 elif embedding_strategy == "azureopenai":
     from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding  # Need to instruct to set these env variables in documentation
@@ -34,9 +34,9 @@ elif embedding_strategy == "azureopenai":
         api_version=os.getenv("LLM_API_VERSION"),
     )
 else:
-    from llama_index.embeddings.openai import OpenAIEmbedding
-    embed_model = OpenAIEmbedding(
-        base_url=os.getenv("LLM_BASE_URL"),
+    from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+    embed_model = HuggingFaceEmbedding(
+        model_name="BAAI/bge-small-en-v1.5"
     )
 
 
