@@ -57,7 +57,7 @@ export LLM_MODEL="claude-3-opus-20240229"
 ### Running on the Command Line
 You can also run OpenDevin from your command line:
 ```
-python opendevin/main.py -d ./workspace/ -i 100 -t "Write a bash script that prints 'hello world'"
+PYTHONPATH=`pwd` python opendevin/main.py -d ./workspace/ -i 100 -t "Write a bash script that prints 'hello world'"
 ```
 
 ## 🤔 What is [Devin](https://www.cognition-labs.com/introducing-devin)?
