@@ -8,7 +8,7 @@ import "./ChatInterface.css";
 
 function MessageList(): JSX.Element {
   const { messages } = useSelector((state: RootState) => state.chat);
-
+  
   return (
     <div className="message-list">
       {messages.map((msg, index) => (
@@ -55,6 +55,7 @@ function ChatInterface(): JSX.Element {
       <div className="input-container">
         <input
           type="text"
+          value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
           placeholder="Send a message (won't interrupt the Assistant)"
           onKeyDown={(e) => {
