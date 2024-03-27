@@ -31,7 +31,7 @@ elif embedding_strategy == "azureopenai":
         deployment_name=os.getenv("LLM_DEPLOYMENT_NAME"),
         api_key=os.getenv("LLM_API_KEY"),
         azure_endpoint=os.getenv("LLM_BASE_URL"),
-        api_version=os.getenv("LLM_API_VERSION"),                 
+        api_version=os.getenv("LLM_API_VERSION"),
     )
 else:
     from llama_index.embeddings.openai import OpenAIEmbedding

@@ -49,6 +49,16 @@ export LLM_API_KEY="your-api-key"
 export LLM_MODEL="claude-3-opus-20240229"
 ```
 
+You can also set the base URL for local/custom models:
+```bash
+export LLM_BASE_URL="https://localhost:3000"
+```
+
+And you can customize which embeddings are used for the vector database storage:
+```bash
+export LLM_EMBEDDING_MODEL="llama2" # can be "llama2", "openai", "azureopenai", or "local"
+```
+
 ## 🤔 What is [Devin](https://www.cognition-labs.com/introducing-devin)?
 
 Devin represents a cutting-edge autonomous agent designed to navigate the complexities of software engineering. It leverages a combination of tools such as a shell, code editor, and web browser, showcasing the untapped potential of LLMs in software development. Our goal is to explore and expand upon Devin's capabilities, identifying both its strengths and areas for improvement, to guide the progress of open code models.
