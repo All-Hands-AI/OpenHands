@@ -39,23 +39,25 @@ class Plan:
         try:
             parts = [int(p) for p in id.split('.')]
         except ValueError:
-            raise ValueError('Invalid task id:' + id)
+            raise ValueError('Invalid task id, non-integer:' + id)
         if parts[0] != 0:
-            raise ValueError('Invalid task id:' + id)
+            raise ValueError('Invalid task id, must start with 0:' + id)
         parts = parts[1:]
         task = self.task
         for part in parts:
             if part >= len(task.subtasks):
-                raise ValueError('Invalid task id:' + id)
+                raise ValueError('Invalid task id, too large:' + id)
             task = task.subtasks[part]
         return task
 
     def add_subtask(self, parent_id: str, goal: str):
         parent = self.get_task_by_id(parent_id)
         id = parent.id + '.' + str(len(parent.subtasks))
-        parent.subtasks.append(Task(id=id, goal=goal))
+        child = Task(id=id, goal=goal, subtasks=[])
+        parent.subtasks.append(child)
 
     def close_subtask(self, id: str, completed: bool = True):
         task = self.get_task_by_id(id)
         task.close(completed)
+
 
