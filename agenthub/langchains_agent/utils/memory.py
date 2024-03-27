@@ -10,6 +10,8 @@ from . import json
 
 embedding_model = os.getenv("LLM_EMBEDDING_MODEL", "openai")
 
+# TODO: More embeddings: https://docs.llamaindex.ai/en/stable/examples/embeddings/OpenAI/
+# There's probably a more programmatic way to do this.
 if embedding_model == "llama2":
     from llama_index.embeddings.ollama import OllamaEmbedding
     embed_model = OllamaEmbedding(
