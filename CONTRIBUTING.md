@@ -67,7 +67,7 @@ For example, a PR title could be:
 
 You may also check out previous PRs in the [PR list](https://github.com/OpenDevin/OpenDevin/pulls).
 
-As described in [here](https://github.com/OpenDevin/OpenDevin/labels), we create several labels. Every PR should better tag with corresponding labels.
+As described in [here](https://github.com/OpenDevin/OpenDevin/labels), we create several labels. Every PR should be tagged with the corresponding labels.
 
 ### 2. Pull Request description
 

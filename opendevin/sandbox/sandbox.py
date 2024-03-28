@@ -1,12 +1,13 @@
-import os
-import sys
-import uuid
-import time
-import select
-import docker
-from typing import Tuple, Dict, List
-from collections import namedtuple
 import atexit
+import os
+import select
+import sys
+import time
+import uuid
+from collections import namedtuple
+from typing import Dict, List, Tuple
+
+import docker
 
 InputType = namedtuple("InputType", ["content"])
 OutputType = namedtuple("OutputType", ["content"])
@@ -26,10 +27,11 @@ elif hasattr(os, "getuid"):
 
 
 class BackgroundCommand:
-    def __init__(self, id: int, command: str, result):
+    def __init__(self, id: int, command: str, result, pid: int):
         self.id = id
         self.command = command
         self.result = result
+        self.pid = pid
 
     def parse_docker_exec_output(self, logs: bytes) -> Tuple[bytes, bytes]:
         res = b""
@@ -72,10 +74,6 @@ class BackgroundCommand:
             else:
                 break
         return (logs + last_remains).decode("utf-8")
-
-    def kill(self):
-        # FIXME: this doesn't actually kill the process!
-        self.result.output.close()
 
 
 class DockerInteractive:
@@ -160,16 +158,32 @@ class DockerInteractive:
             self.get_exec_cmd(cmd), socket=True, workdir="/workspace"
         )
         result.output._sock.setblocking(0)
-        bg_cmd = BackgroundCommand(self.cur_background_id, cmd, result)
+        pid = self.get_pid(cmd)
+        bg_cmd = BackgroundCommand(self.cur_background_id, cmd, result, pid)
         self.background_commands[bg_cmd.id] = bg_cmd
         self.cur_background_id += 1
         return bg_cmd
+
+    def get_pid(self, cmd):
+        exec_result = self.container.exec_run("ps aux")
+        processes = exec_result.output.decode('utf-8').splitlines()
+        cmd = " ".join(self.get_exec_cmd(cmd))
+
+        for process in processes:
+            if cmd in process:
+                pid = process.split()[1] # second column is the pid
+                return pid
+        return None
 
     def kill_background(self, id: int) -> BackgroundCommand:
         if id not in self.background_commands:
             raise ValueError("Invalid background command id")
         bg_cmd = self.background_commands[id]
-        bg_cmd.kill()
+        if bg_cmd.pid is not None:
+            self.container.exec_run(
+                f"kill -9 {bg_cmd.pid}", workdir="/workspace"
+            )
+        bg_cmd.result.output.close()
         self.background_commands.pop(id)
         return bg_cmd
 
@@ -178,7 +192,15 @@ class DockerInteractive:
         self.closed = True
 
     def stop_docker_container(self):
-        docker_client = docker.from_env()
+
+        # Initialize docker client. Throws an exception if Docker is not reachable.
+        try:
+            docker_client = docker.from_env()
+        except docker.errors.DockerException as e:
+            print('Please check Docker is running using `docker ps`.')
+            print(f"Error! {e}", flush=True)
+            raise e
+
         try:
             container = docker_client.containers.get(self.container_name)
             container.stop()
@@ -194,9 +216,17 @@ class DockerInteractive:
             pass
 
     def restart_docker_container(self):
-        self.stop_docker_container()
-        docker_client = docker.from_env()
         try:
+            self.stop_docker_container()
+        except docker.errors.DockerException as e:
+            print(f"Failed to stop container: {e}")
+            raise e 
+
+        try:
+            # Initialize docker client. Throws an exception if Docker is not reachable.
+            docker_client = docker.from_env()
+
+            # start the container
             self.container = docker_client.containers.run(
                 self.container_image,
                 command="tail -f /dev/null",
@@ -246,9 +276,14 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    docker_interactive = DockerInteractive(
-        workspace_dir=args.directory,
-    )
+    try:
+        docker_interactive = DockerInteractive(
+            workspace_dir=args.directory,
+        )
+    except Exception as e:
+        print(f"Failed to start Docker container: {e}")
+        sys.exit(1)
+
     print("Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
 
     bg_cmd = docker_interactive.execute_in_background(
