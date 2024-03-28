@@ -28,7 +28,7 @@ docker ps # this should exit successfully
 ```
 Then pull our latest image [here](https://github.com/opendevin/OpenDevin/pkgs/container/sandbox)
 ```bash
-docker pull ghcr.io/opendevin/sandbox:v0.1
+docker pull ghcr.io/opendevin/sandbox
 ```
 
 Then start the backend:
