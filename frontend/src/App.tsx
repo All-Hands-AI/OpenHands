@@ -7,6 +7,7 @@ import Planner from "./components/Planner";
 import CodeEditor from "./components/CodeEditor";
 import Browser from "./components/Browser";
 import Errors from "./components/Errors";
+import BannerSettings from "./components/BannerSettings";
 
 const TAB_OPTIONS = ["terminal", "planner", "code", "browser"] as const;
 type TabOption = (typeof TAB_OPTIONS)[number];
@@ -55,7 +56,8 @@ function App(): JSX.Element {
       <div className="right-pane">
         <div className="workspace-content">
           <div className="workspace-heading">
-            <p>OpenDevin's Workspace</p>
+            <p>OpenDevin&apos;s Workspace</p>
+            <BannerSettings />
           </div>
           <div className="tab-container">
             {TAB_OPTIONS.map((tab) => (
