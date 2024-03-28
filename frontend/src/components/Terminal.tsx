@@ -18,7 +18,7 @@ class JsonWebsocketAddon {
       terminal.onData((data) => {
         const payload = JSON.stringify({ action: "terminal", data });
         this._socket.send(payload);
-      }),
+      })
     );
 
     this._socket.addEventListener("message", (event) => {
@@ -82,9 +82,7 @@ function Terminal({ hidden }: TerminalProps): JSX.Element {
     };
   }, []);
 
-  return (
-    <div ref={terminalRef} style={{ display: hidden ? "none" : "block" }} />
-  );
+  return <div ref={terminalRef} style={{ display: hidden ? "none" : "block" }} />;
 }
 
 export default Terminal;
