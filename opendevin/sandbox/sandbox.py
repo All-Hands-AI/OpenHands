@@ -180,9 +180,12 @@ class DockerInteractive:
 
     def stop_docker_container(self):
 
+        # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
             docker_client = docker.from_env()
         except docker.errors.DockerException as e:
+            print('Please check Docker is running using `docker ps`.')
+            print(f"Error! {e}", flush=True)
             raise e
 
         try:
@@ -206,8 +209,11 @@ class DockerInteractive:
             print(f"Failed to stop container: {e}")
             raise e 
 
-        docker_client = docker.from_env()
         try:
+            # Initialize docker client. Throws an exception if Docker is not reachable.
+            docker_client = docker.from_env()
+
+            # start the container
             self.container = docker_client.containers.run(
                 self.container_image,
                 command="tail -f /dev/null",
