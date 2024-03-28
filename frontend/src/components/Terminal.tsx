@@ -6,6 +6,7 @@ import socket from "../socket/socket";
 
 class JsonWebsocketAddon {
   _socket: WebSocket;
+  
   _disposables: IDisposable[];
 
   constructor(_socket: WebSocket) {
