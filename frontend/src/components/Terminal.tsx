@@ -29,7 +29,7 @@ class JsonWebsocketAddon {
           terminal.writeln(args.command);
         };
 
-        // Add delay before printing the command
+        // Adjust delay before printing the command
         setTimeout(printCommand, 50);
       }
 
