@@ -55,9 +55,7 @@ function ChatInterface(): JSX.Element {
       setInputMessage("");
     }
   };
-  const handleDirectorySelected = (
-    event: ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleDirectorySelected = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
       const directory = files[0].webkitRelativePath.split("/")[0];
@@ -73,7 +71,11 @@ function ChatInterface(): JSX.Element {
   };
   return (
     <div className="chat-interface">
-      <label htmlFor="directoryInput" className="custom-file-input" style={{ display: selectedDirectory ? 'none' : 'block' }}>
+      <label
+        htmlFor="directoryInput"
+        className="custom-file-input"
+        style={{ display: selectedDirectory ? "none" : "block" }}
+      >
         Choose Directory
         <input
           id="directoryInput"
@@ -83,7 +85,7 @@ function ChatInterface(): JSX.Element {
           webkitdirectory=""
           onChange={handleDirectorySelected}
           ref={fileInputRef}
-          style={{ display: 'none' }}
+          style={{ display: "none" }}
         />
       </label>
       {selectedDirectory && (
