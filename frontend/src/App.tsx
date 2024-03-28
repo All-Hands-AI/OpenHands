@@ -6,6 +6,7 @@ import Planner from "./components/Planner";
 import CodeEditor from "./components/CodeEditor";
 import Browser from "./components/Browser";
 import Errors from "./components/Errors";
+import BannerSettings from "./components/BannerSettings";
 
 const TAB_OPTIONS = ["terminal", "planner", "code", "browser"] as const;
 type TabOption = (typeof TAB_OPTIONS)[number];

@@ -115,14 +115,14 @@ class Session:
 
     async def create_controller(self, start_event=None):
         directory = DEFAULT_WORKSPACE_DIR
-        if start_event and "directory" in start_event.args:
-            directory = start_event.args["directory"]
+        if start_event and "directory" in start_event["args"]:
+            directory = start_event["args"]["directory"]
         agent_cls = "LangchainsAgent"
-        if start_event and "agent_cls" in start_event.args:
-            agent_cls = start_event.args["agent_cls"]
+        if start_event and "agent_cls" in start_event["args"]:
+            agent_cls = start_event["args"]["agent_cls"]
         model = LLM_MODEL
-        if start_event and "model" in start_event.args:
-            model = start_event.args["model"]
+        if start_event and "model" in start_event["args"]:
+            model = start_event["args"]["model"]
         if not os.path.exists(directory):
             print(f"Workspace directory {directory} does not exist. Creating it...")
             os.makedirs(directory)
