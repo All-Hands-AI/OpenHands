@@ -137,8 +137,11 @@ class DockerInteractive:
         )
 
     def get_exec_cmd(self, cmd: str) -> List[str]:
-            
-        if RUN_AS_DEVIN and not cmd.startswith("sudo "):
+        requiresRoot = False
+        if(cmd.startswith("sudo ")):
+            cmd = cmd[5:]
+            requiresRoot = True
+        if RUN_AS_DEVIN and not requiresRoot:
             return ["su", "devin", "-c", cmd]
         else:
             return ["/bin/bash", "-c", cmd]
