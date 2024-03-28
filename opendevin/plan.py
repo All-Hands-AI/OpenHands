@@ -22,6 +22,21 @@ class Task:
         self.subtasks = subtasks
         self.state = OPEN_STATE
 
+    def to_string(self, indent=""):
+        emoji = ''
+        if self.state == CLOSED_STATE:
+            emoji = '✅'
+        elif self.state == ABANDONED_STATE:
+            emoji = '❌'
+        elif self.state == IN_PROGRESS_STATE:
+            emoji = '💪'
+        elif self.state == OPEN_STATE:
+            emoji = '🔵'
+        result = indent + emoji + ' ' + self.goal + '\n'
+        for subtask in self.subtasks:
+            result += subtask.to_string(indent + '    ')
+        return result
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -56,6 +71,9 @@ class Plan:
     def __init__(self, task: str):
         self.main_goal = task
         self.task = Task(parent=None, goal=task, subtasks=[])
+
+    def __str__(self):
+        return self.task.to_string()
 
     def get_task_by_id(self, id: str) -> Task:
         try:

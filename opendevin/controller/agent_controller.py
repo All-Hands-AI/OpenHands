@@ -74,7 +74,8 @@ class AgentController:
         print("STEP", i, flush=True)
         current_task = self.state.plan.get_current_task()
         if current_task is not None:
-            print_with_indent("\nCURRENT TASK:" + current_task.goal)
+            print_with_indent("\nPLAN:\n")
+            print(self.state.plan)
         log_obs = self.command_manager.get_background_obs()
         for obs in log_obs:
             self.add_history(NullAction(), obs)
@@ -106,14 +107,14 @@ class AgentController:
                 self.state.plan.add_subtask(action.parent, action.goal)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
-                print_with_indent("\ADD TASK ERROR:\n%s" % observation)
+                print_with_indent("\nADD TASK ERROR:\n%s" % observation)
                 traceback.print_exc()
         elif isinstance(action, ModifySubtaskAction):
             try:
-                self.state.plan.modify_subtask(action.id, action.goal)
+                self.state.plan.set_subtask_state(action.id, action.state)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
-                print_with_indent("\MODIFY TASK ERROR:\n%s" % observation)
+                print_with_indent("\nMODIFY TASK ERROR:\n%s" % observation)
                 traceback.print_exc()
 
 
