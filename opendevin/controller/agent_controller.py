@@ -72,6 +72,9 @@ class AgentController:
     async def step(self, i: int):
         print("\n\n==============", flush=True)
         print("STEP", i, flush=True)
+        current_task = self.state.plan.get_current_task()
+        if current_task is not None:
+            print_with_indent("\nCURRENT TASK:", current_task.goal, flush=True)
         log_obs = self.command_manager.get_background_obs()
         for obs in log_obs:
             self.add_history(NullAction(), obs)
