@@ -13,7 +13,7 @@ function ModelSelect(): JSX.Element {
       onChange={(e: ChangeEvent<HTMLSelectElement>) =>
         changeModel(e.target.value)
       }
-      className="model-select"
+      className="select w-full max-w-xs bg-base-300"
     >
       {MODELS.map((model) => (
         <option>{model}</option>
@@ -28,7 +28,7 @@ function AgentSelect(): JSX.Element {
       onChange={(e: ChangeEvent<HTMLSelectElement>) =>
         changeAgent(e.target.value)
       }
-      className="agent-select"
+      className="select w-full max-w-xs bg-base-300"
     >
       {AGENTS.map((agent) => (
         <option>{agent}</option>
