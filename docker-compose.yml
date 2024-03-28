@@ -1,0 +1,48 @@
+version: "3.4"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+      - "5678:5678" 
+    volumes:
+      - .:/app
+    environment:
+      env_file: .env
+      # command: uvicorn opendevin.server.listen:app --port 3000
+      # make this python container allow to debug from vscode with command
+    # command: "uvicorn opendevin.server.listen:app --host 0.0.0.0 --port 5678" # replace the command with uvicorn
+    command: ["sh", "-c", "pip install debugpy -t /tmp && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 -m uvicorn opendevin.server.listen:app --host 0.0.0.0 --port 3000"]
+    # ws://localhost:3000/ws this need to support websocket
+      # command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload 
+      
+    networks: 
+      - opendevin-network 
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+      - "5173:5173" # for debugpy
+    volumes:
+      - ./frontend:/app
+    command: npm run dev
+    # make this nodejs container allow to debug from vscode
+    networks: 
+      - opendevin-network 
+
+networks: 
+  opendevin-network: 
+    driver: bridge 
+    
+
+
+
+
+
+
