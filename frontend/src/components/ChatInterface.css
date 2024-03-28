@@ -23,25 +23,25 @@
   display: flex;
   margin-bottom: 10px;
 }
-.message{
+.message {
   display: flex;
 }
 
-.user-message{
+.user-message {
   display: flex;
   flex-direction: row-reverse;
-  margin:10px 10px 0 auto
+  margin: 10px 10px 0 auto;
 }
 
 .user-message .message-content {
-  background-color: #007acc ;
+  background-color: #007acc;
 }
 
 .avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  margin:0 10px;
+  margin: 0 10px;
 }
 
 .message-content {
@@ -52,15 +52,28 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-
 .input-container {
+  width: 98%;
   display: flex;
   align-items: center;
-  margin-top: auto;
-  margin: 0.5rem;
+  background-color: #3e3e3e;
+  padding: 10px;
+  border-radius: 0 0rem 1rem 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: #fff;
 }
 
-.input-container input {
+.button-text {
+  font-size: 16px;
+}
+
+.input-box {
+  border-radius: 1rem;
+  background-color: #333333;
+  width: 100%;
+  display: flex;
+}
+.input-box input {
   flex: 1;
   padding: 10px;
   border: none;
@@ -68,24 +81,17 @@
   margin: 0 10px;
   background-color: #3c3c3c;
   color: #fff;
-  font-size: 16px;
+  background-color: transparent;
+  outline: transparent;
 }
-
-.input-container button {
+.input-box button {
+  background-color: transparent;
   padding: 10px 20px;
-  background-color: #007acc;
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
 }
-
-.button-text {
-  font-size: 16px;
+.input-box button:hover {
+  background-color: transparent;
 }
-
-
-.input-container svg {
-  height: 16px;
-}
-

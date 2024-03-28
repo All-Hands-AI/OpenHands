@@ -6,16 +6,19 @@ from functools import partial
 
 DEFAULT_MODEL = os.getenv("LLM_MODEL", "gpt-4-0125-preview")
 DEFAULT_API_KEY = os.getenv("LLM_API_KEY")
+DEFAULT_BASE_URL = os.getenv("LLM_BASE_URL")
 PROMPT_DEBUG_DIR = os.getenv("PROMPT_DEBUG_DIR", "")
 
 class LLM:
-    def __init__(self, model=DEFAULT_MODEL, api_key=DEFAULT_API_KEY, debug_dir=PROMPT_DEBUG_DIR):
+    def __init__(self, model=DEFAULT_MODEL, api_key=DEFAULT_API_KEY, base_url=DEFAULT_BASE_URL, debug_dir=PROMPT_DEBUG_DIR):
         self.model = model if model else DEFAULT_MODEL
         self.api_key = api_key if api_key else DEFAULT_API_KEY
-        self._debug_dir = debug_dir
+        self.base_url = base_url if base_url else DEFAULT_BASE_URL
+        self._debug_dir = debug_dir if debug_dir else PROMPT_DEBUG_DIR
         self._debug_idx = 0
         self._debug_id = uuid.uuid4().hex
-        self._completion = partial(litellm_completion, model=self.model, api_key=self.api_key)
+
+        self._completion = partial(litellm_completion, model=self.model, api_key=self.api_key, base_url=self.base_url)
 
         if self._debug_dir:
             print(f"Logging prompts to {self._debug_dir}/{self._debug_id}")

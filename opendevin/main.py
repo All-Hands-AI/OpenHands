@@ -1,3 +1,4 @@
+import os
 import asyncio
 import argparse
 
@@ -34,7 +35,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-m",
         "--model-name",
-        default="gpt-4-0125-preview",
+        default=os.getenv("LLM_MODEL") or "gpt-4-0125-preview",
         type=str,
         help="The (litellm) model name to use",
     )

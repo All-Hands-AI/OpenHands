@@ -2,7 +2,16 @@ import React from "react";
 
 function Planner(): JSX.Element {
   return (
-    <div className="planner">
+    <div
+      className="planner"
+      style={{
+        background: "black",
+        padding: "1rem",
+        height: "90%",
+        margin: "1rem",
+        borderRadius: "1rem",
+      }}
+    >
       <h3>
         Current Focus: Set up the development environment according to the
         project&apos;s instructions.
