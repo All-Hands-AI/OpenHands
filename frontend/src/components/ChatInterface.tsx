@@ -49,14 +49,16 @@ function ChatInterface(): JSX.Element {
   const [inputMessage, setInputMessage] = useState("");
   const [selectedDirectory, setSelectedDirectory] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
   const handleSendMessage = () => {
     if (inputMessage.trim() !== "") {
       sendChatMessage(inputMessage);
       setInputMessage("");
     }
   };
+
   const handleDirectorySelected = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
+    const { files } = event.target;
     if (files && files.length > 0) {
       const directory = files[0].webkitRelativePath.split("/")[0];
       setSelectedDirectory(directory);
@@ -69,6 +71,7 @@ function ChatInterface(): JSX.Element {
       fileInputRef.current.click(); // Trigger the file picker dialog
     }
   };
+
   return (
     <div className="chat-interface">
       <label
@@ -80,7 +83,6 @@ function ChatInterface(): JSX.Element {
         <input
           id="directoryInput"
           type="file"
-          // @ts-ignore
           capture="directory"
           webkitdirectory=""
           onChange={handleDirectorySelected}
@@ -91,7 +93,7 @@ function ChatInterface(): JSX.Element {
       {selectedDirectory && (
         <div className="selected-directory">
           Selected Directory: {selectedDirectory}
-          <button onClick={handleEditDirectory}>Edit</button>
+          <button type="button" onClick={handleEditDirectory}>Edit</button>
         </div>
       )}
       {initialized ? <MessageList /> : <InitializingStatus />}
