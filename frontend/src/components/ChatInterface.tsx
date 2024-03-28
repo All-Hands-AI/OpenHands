@@ -118,7 +118,6 @@ function ChatInterface(): JSX.Element {
             disabled={!initialized}
           >
             <span className="button-text">Send</span>
-            
           </button>
         </div>
       </div>
