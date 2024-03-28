@@ -18,8 +18,11 @@ class Observation:
         """Converts the observation to a dictionary."""
         extras = copy.deepcopy(self.__dict__)
         extras.pop("content", None)
+        observation = "observation"
+        if hasattr(self, "observation"):
+            observation = self.observation
         return {
-            "observation": self.__class__.__name__,
+            "observation": observation,
             "content": self.content,
             "extras": extras,
             "message": self.message,

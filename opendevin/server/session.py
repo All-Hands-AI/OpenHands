@@ -8,6 +8,7 @@ from opendevin.action import (
     Action,
     NullAction,
 )
+from opendevin.observation import NullObservation
 from opendevin.agent import Agent
 from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
@@ -110,5 +111,9 @@ class Session:
         self.agent_task = asyncio.create_task(self.controller.start_loop(task), name="agent loop")
 
     def on_agent_event(self, event: Observation | Action):
+        if isinstance(event, NullAction):
+            return
+        if isinstance(event, NullObservation):
+            return
         event_dict = event.to_dict()
         asyncio.create_task(self.send(event_dict), name="send event in callback")
