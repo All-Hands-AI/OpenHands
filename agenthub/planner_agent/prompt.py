@@ -129,23 +129,23 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
             history_dicts.append(observation_dict)
     history_str = json.dumps(history_dicts, indent=2)
     if latest_action == "":
-        hint = "You haven't taken any actions yet. Maybe start by using `ls` to check out what files you're working with?"
+        hint = "You haven't taken any actions yet. Start by using `ls` to check out what files you're working with."
     elif latest_action == "run":
-        hint = "Maybe you should think about the command you just ran, and what output it gave. Maybe it's time to mark a subtask as complete."
+        hint = "You should think about the command you just ran, and what output it gave. Maybe it's time to mark a subtask as complete."
     elif latest_action == "read":
-        hint = "Maybe you should think about the file you just read, and what you learned from it."
+        hint = "You should think about the file you just read, and what you learned from it."
     elif latest_action == "write":
         hint = "You just changed a file. You should probably run a command to check if your changes were successful, and have the intended behavior. Or maybe you should mark a subtask as complete."
     elif latest_action == "browse":
-        hint = "Maybe you should think about the page you just visited, and what you learned from it."
+        hint = "You should think about the page you just visited, and what you learned from it."
     elif latest_action == "think":
-        hint = "Maybe you should take some action, or adjust your plan."
+        hint = "You should take some action, or adjust your plan."
     elif latest_action == "recall":
-        hint = "Maybe you should think about the information you just recalled, and how it fits into your plan."
+        hint = "You should think about the information you just recalled, and how it fits into your plan."
     elif latest_action == "add_subtask":
-        hint = "Maybe you should take some action, or think about your next step."
+        hint = "You should take some action, or think about your next step."
     elif latest_action == "close_subtask":
-        hint = "Maybe you should take some action, or think about your next step."
+        hint = "You should take some action, or think about your next step."
     elif latest_action == "summarize":
         hint = ""
     elif latest_action == "finish":
