@@ -52,12 +52,18 @@ class JsonWebsocketAddon {
 type TerminalProps = {
   hidden: boolean;
 };
-
+// * The terminal's content is set by write messages. To avoid complicated state logic,
+// * we keep the terminal persistently open as a child of <App /> and hidden when not in use.
 function Terminal({ hidden }: TerminalProps): JSX.Element {
   const terminalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const terminal = new XtermTerminal({
+      // This value is set to the appropriate value by the
+      // `fitAddon.fit()` call below.
+      // If not set here, the terminal does not respect the width
+      // of its parent element. This causes a bug where the terminal
+      // is too large and switching tabs causes a layout shift.
       cols: 0,
       fontFamily: "Menlo, Monaco, 'Courier New', monospace",
       fontSize: 14,
@@ -70,7 +76,8 @@ function Terminal({ hidden }: TerminalProps): JSX.Element {
     if (terminalRef.current) {
       terminal.open(terminalRef.current);
     }
-
+// Without this timeout, `fitAddon.fit()` throws the error
+    // "this._renderer.value is undefined"
     setTimeout(() => {
       fitAddon.fit();
     }, 1);
