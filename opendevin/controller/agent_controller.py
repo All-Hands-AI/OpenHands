@@ -117,7 +117,6 @@ class AgentController:
                 print_with_indent("\nMODIFY TASK ERROR:\n%s" % observation)
                 traceback.print_exc()
 
-
         if action.executable:
             try:
                 observation = action.run(self)
