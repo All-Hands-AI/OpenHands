@@ -40,6 +40,7 @@ class CmdOutputObservation(Observation):
     command_id: int
     command: str
     exit_code: int = 0
+    observation : str = "run"
 
     @property
     def error(self) -> bool:
@@ -56,6 +57,7 @@ class FileReadObservation(Observation):
     """
 
     path: str
+    observation : str = "read"
 
     @property
     def message(self) -> str:
@@ -68,6 +70,7 @@ class FileWriteObservation(Observation):
     """
 
     path: str
+    observation : str = "write"
 
     @property
     def message(self) -> str:
@@ -82,6 +85,7 @@ class BrowserOutputObservation(Observation):
     url: str
     status_code: int = 200
     error: bool = False
+    observation : str = "browse"
 
     @property
     def message(self) -> str:
@@ -95,6 +99,7 @@ class UserMessageObservation(Observation):
     """
 
     role: str = "user"
+    observation : str = "message"
 
     @property
     def message(self) -> str:
@@ -108,6 +113,7 @@ class AgentMessageObservation(Observation):
     """
 
     role: str = "assistant"
+    observation : str = "message"
 
     @property
     def message(self) -> str:
@@ -122,6 +128,7 @@ class AgentRecallObservation(Observation):
 
     memories: List[str]
     role: str = "assistant"
+    observation : str = "recall"
 
     @property
     def message(self) -> str:
@@ -133,6 +140,7 @@ class AgentErrorObservation(Observation):
     """
     This data class represents an error encountered by the agent.
     """
+    observation : str = "error"
 
     @property
     def message(self) -> str:
@@ -144,6 +152,7 @@ class NullObservation(Observation):
     This data class represents a null observation.
     This is used when the produced action is NOT executable.
     """
+    observation : str = "null"
 
     @property
     def message(self) -> str:
