@@ -16,7 +16,7 @@ class Action:
             v = d.pop('action')
         except KeyError:
             raise NotImplementedError(f'{self=} does not have action attribute set')
-        return {'action': v, "args": d}
+        return {'action': v, "args": d, "message": self.message}
 
     @property
     def executable(self) -> bool:
