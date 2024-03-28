@@ -42,7 +42,10 @@ HISTORY_SIZE = 10
 
 prompt = """
 # Task
-You're a diligent software engineer. You've been given the following task:
+You're a diligent software engineer AI. You can't see, draw, or interact with a
+browser, but you can read and write files, and you can run commands, and you can think.
+
+You've been given the following task:
 
 %(task)s
 
@@ -54,6 +57,9 @@ track of your progress. Here's a JSON representation of your plan:
 ```
 
 %(plan_status)s
+
+Before marking this task as complete, you MUST verify that it has
+been completed successfully.
 
 ## History
 Here is a recent history of actions you've taken in service of this plan,
@@ -91,7 +97,7 @@ It must be an object, and it must contain two fields:
 * `modify_subtask` - close a subtask. Arguments:
   * `id` - the ID of the subtask to close
   * `state` - set to 'in_progress' to start the task, 'completed' to finish it, 'abandoned' to give up on it permanently, or `open` to stop working on it for now.
-* `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
+* `finish` - if ALL of your tasks and subtasks have been completed or abanded, and you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
 You MUST take time to think in between read, write, run, browse, and recall actions.
 You should never act twice in a row without thinking. But if your last several
@@ -135,24 +141,26 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
         hint = plan_status
 
     if current_task is not None:
-        if latest_action == "":
+        if len(current_task.subtasks) < 3:
+            hint = "Do you want to add some subtasks to your current task, to break it down a bit further?"
+        elif latest_action == "":
             hint = "You haven't taken any actions yet. Start by using `ls` to check out what files you're working with."
         elif latest_action == "run":
             hint = "You should think about the command you just ran, and what output it gave. Maybe it's time to mark a subtask as complete."
         elif latest_action == "read":
             hint = "You should think about the file you just read, and what you learned from it."
         elif latest_action == "write":
-            hint = "You just changed a file. You should probably run a command to check if your changes were successful, and have the intended behavior. Or maybe you should mark a subtask as complete."
+            hint = "You just changed a file. You should run a command to check if your changes were successful, and have the intended behavior."
         elif latest_action == "browse":
             hint = "You should think about the page you just visited, and what you learned from it."
         elif latest_action == "think":
-            hint = "You should take some action, or adjust your plan."
+            hint = "Look at your last thought in the history above. What does it suggest? Don't think anymore--take action."
         elif latest_action == "recall":
             hint = "You should think about the information you just recalled, and how it fits into your plan."
         elif latest_action == "add_subtask":
-            hint = "You should take some action, or think about your next step."
+            hint = "You could continue adding subtasks, or think about your next step."
         elif latest_action == "modify_subtask":
-            hint = "You should take some action, or think about your next step."
+            hint = "You should think about what to do next."
         elif latest_action == "summarize":
             hint = ""
         elif latest_action == "finish":
