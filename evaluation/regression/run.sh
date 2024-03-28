@@ -1,8 +1,15 @@
 #!/bin/bash
 
+# ANSI color codes
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
+
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 CASES_DIR=$SCRIPT_DIR/cases
 AGENTHUB_DIR=$SCRIPT_DIR/../../agenthub
+
 # Check if DEBUG variable is already set
 if [ -z "${DEBUG}" ]; then
     read -p "Enter value for DEBUG (leave blank for default): " debug_value
@@ -12,13 +19,15 @@ if [ -z "${DEBUG}" ]; then
         export DEBUG="0"
     fi
 fi
+
 # Check if OPENAI_API_KEY variable is already set
 if [ -z "${OPENAI_API_KEY}" ]; then
     read -sp "Enter value for OPENAI_API_KEY: " openai_key
     echo
     export OPENAI_API_KEY="${openai_key}"
 fi
-# Get the  MODEL variable
+
+# Get the MODEL variable
 read -sp "Enter value for model running agents: " model
 echo
 
@@ -28,12 +37,12 @@ else
     MODEL="$model"
 fi
 
-echo "Running with model: $MODEL" 
+echo "Running with model: $MODEL"
 
-# add python path
-export PYTHONPATH="$PYTHONPATH:$SCRIPT_DIR/../../" 
+# Add python path
+export PYTHONPATH="$PYTHONPATH:$SCRIPT_DIR/../../"
 
-# hardcode pairs for directory to python class mapping 
+# Hardcode pairs for directory to python class mapping
 declare -A directory_class_pairs=(
     [langchains_agent]="LangchainsAgent"
     [codeact_agent]="CodeActAgent"
@@ -43,7 +52,7 @@ declare -A directory_class_pairs=(
 success_count=0
 fail_count=0
 
-# for each agent directory
+# For each agent directory
 for agent_dir in $(find "$AGENTHUB_DIR" -type d -name '*agent'); do
     agent=$(basename "$agent_dir")
 
@@ -51,10 +60,11 @@ for agent_dir in $(find "$AGENTHUB_DIR" -type d -name '*agent'); do
     for case_dir in $CASES_DIR/*; do
         case=$(basename "$case_dir")
 
-        echo "Running case: $case"
+        echo -e "${YELLOW}Running case: $case${NC}"
         task=$(<"$case_dir/task.txt")
         outputs_dir="$case_dir/outputs/$agent"
-        echo "agent: $outputs_dir"
+        echo -e "${YELLOW}Agent: $agent"
+        echo -e "${YELLOW}Output Directory: $outputs_dir${NC}"
 
         # Create agent directory if it does not exist
         mkdir -p "$outputs_dir"
@@ -69,21 +79,32 @@ for agent_dir in $(find "$AGENTHUB_DIR" -type d -name '*agent'); do
         fi
 
         if [ -f "$case_dir/test.sh" ]; then
-            # Run main.py and capture output
-            if python3 "$SCRIPT_DIR/../../opendevin/main.py" -d "$outputs_dir/workspace" -c "${directory_class_pairs[$agent]}" -t "$task" -m "$MODEL" | tee "$outputs_dir/logs.txt"; then
+            # Run main.py and capture output in the background
+            python3 "$SCRIPT_DIR/../../opendevin/main.py" -d "$outputs_dir/workspace" -c "${directory_class_pairs[$agent]}" -t "$task" -m "$MODEL" > "$outputs_dir/logs.txt" 2>&1 &
+            main_pid=$!
+
+            # Wait for main.py to finish
+            wait $main_pid
+
+            # Check the exit status of main.py
+            if [ $? -eq 0 ]; then
                 # If main.py succeeds, run test.sh
                 if bash "$case_dir/test.sh" "$outputs_dir/workspace"; then
                     ((success_count++))
+                    echo -e "${GREEN}Test case passed: $case${NC}"
                 else
                     ((fail_count++))
+                    echo -e "${RED}Test case failed: $case${NC}"
                 fi
             else
                 # If main.py fails, increment the fail count
                 ((fail_count++))
+                echo -e "${RED}Test case failed: $case${NC}"
             fi
         else
             # If main.py fails, increment the fail count
             ((fail_count++))
+            echo -e "${RED}Test case failed: $case${NC}"
         fi
         # Remove .git directory from workspace
         rm -rf "$outputs_dir/workspace/.git"
@@ -91,5 +112,5 @@ for agent_dir in $(find "$AGENTHUB_DIR" -type d -name '*agent'); do
 done
 
 # Display test results
-echo "Successful test cases: $success_count"
-echo "Failed test cases: $fail_count"
+echo -e "\n${GREEN}Successful test cases: $success_count${NC}"
+echo -e "${RED}Failed test cases: $fail_count${NC}"
