@@ -117,7 +117,7 @@ class AgentMessageObservation(Observation):
 @dataclass
 class AgentRecallObservation(Observation):
     """
-    This data class represents a list of memories recalled by the agent.
+    This data class represents a list of memories which is recalled by the agent.
     """
 
     memories: List[str]
