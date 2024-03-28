@@ -94,7 +94,7 @@ function ChatInterface(): JSX.Element {
         <div className="selected-directory">
           Selected Directory: {selectedDirectory}
           <button type="button" onClick={handleEditDirectory}>
-            ⏎············Edit⏎··········
+            
           </button>
         </div>
       )}
@@ -117,7 +117,8 @@ function ChatInterface(): JSX.Element {
             onClick={handleSendMessage}
             disabled={!initialized}
           >
-            <span className="button-text">Send</span>⏎
+            <span className="button-text">Send</span>
+            
           </button>
         </div>
       </div>
