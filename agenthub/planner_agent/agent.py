@@ -21,4 +21,3 @@ class PlannerAgent(Agent):
     def search_memory(self, query: str) -> List[str]:
         return []
 
-Agent.register("PlannerAgent", PlannerAgent)

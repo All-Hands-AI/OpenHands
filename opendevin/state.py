@@ -13,7 +13,6 @@ from opendevin.observation import (
 
 @dataclass
 class State:
-    task: str
     plan: Plan
     iteration: int = 0
     background_commands_obs: List[CmdOutputObservation] = field(default_factory=list)
