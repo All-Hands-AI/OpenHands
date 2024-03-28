@@ -131,7 +131,7 @@ class Session:
             self.controller = AgentController(self.agent, workdir=directory, callbacks=[self.on_agent_event])
         except Exception:
             print("Error creating controller.")
-            await self.send_error("Error creating controller. ")
+            await self.send_error("Error creating controller. Please check Docker is running using `docker ps`.")
             return
         await self.send({"action": "initialize", "message": "Control loop started."})
 
