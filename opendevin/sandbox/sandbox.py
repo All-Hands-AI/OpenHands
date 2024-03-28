@@ -1,12 +1,13 @@
-import os
-import sys
-import uuid
-import time
-import select
-import docker
-from typing import Tuple, Dict, List
-from collections import namedtuple
 import atexit
+import os
+import select
+import sys
+import time
+import uuid
+from collections import namedtuple
+from typing import Dict, List, Tuple
+
+import docker
 
 InputType = namedtuple("InputType", ["content"])
 OutputType = namedtuple("OutputType", ["content"])
@@ -178,7 +179,12 @@ class DockerInteractive:
         self.closed = True
 
     def stop_docker_container(self):
-        docker_client = docker.from_env()
+
+        try:
+            docker_client = docker.from_env()
+        except docker.errors.DockerException as e:
+            raise e
+
         try:
             container = docker_client.containers.get(self.container_name)
             container.stop()
@@ -194,7 +200,12 @@ class DockerInteractive:
             pass
 
     def restart_docker_container(self):
-        self.stop_docker_container()
+        try:
+            self.stop_docker_container()
+        except docker.errors.DockerException as e:
+            print(f"Failed to stop container: {e}")
+            raise e 
+
         docker_client = docker.from_env()
         try:
             self.container = docker_client.containers.run(
@@ -246,9 +257,14 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    docker_interactive = DockerInteractive(
-        workspace_dir=args.directory,
-    )
+    try:
+        docker_interactive = DockerInteractive(
+            workspace_dir=args.directory,
+        )
+    except Exception as e:
+        print(f"Failed to start Docker container: {e}")
+        sys.exit(1)
+
     print("Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
 
     bg_cmd = docker_interactive.execute_in_background(
