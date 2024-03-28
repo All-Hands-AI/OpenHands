@@ -94,9 +94,7 @@ class DockerInteractive:
         else:
             self.instance_id = str(uuid.uuid4())
         if workspace_dir is not None:
-            assert os.path.exists(
-                workspace_dir
-            ), f"Directory {workspace_dir} does not exist."
+            os.makedirs(workspace_dir, exist_ok=True)
             # expand to absolute path
             self.workspace_dir = os.path.abspath(workspace_dir)
         else:
