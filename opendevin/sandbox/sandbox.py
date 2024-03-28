@@ -26,10 +26,11 @@ elif hasattr(os, "getuid"):
 
 
 class BackgroundCommand:
-    def __init__(self, id: int, command: str, result):
+    def __init__(self, id: int, command: str, result, pid: int):
         self.id = id
         self.command = command
         self.result = result
+        self.pid = pid
 
     def parse_docker_exec_output(self, logs: bytes) -> Tuple[bytes, bytes]:
         res = b""
@@ -72,9 +73,6 @@ class BackgroundCommand:
             else:
                 break
         return (logs + last_remains).decode("utf-8")
-
-    def kill(self):
-        self.result.output.close()
 
 
 class DockerInteractive:
@@ -159,15 +157,16 @@ class DockerInteractive:
             self.get_exec_cmd(cmd), socket=True, workdir="/workspace"
         )
         result.output._sock.setblocking(0)
-        bg_cmd = BackgroundCommand(self.cur_background_id, cmd, result)
+        pid = self.get_pid(cmd)
+        bg_cmd = BackgroundCommand(self.cur_background_id, cmd, result, pid)
         self.background_commands[bg_cmd.id] = bg_cmd
         self.cur_background_id += 1
         return bg_cmd
 
-    def get_pid(self, bg_cmd):
+    def get_pid(self, cmd):
         exec_result = self.container.exec_run("ps aux")
         processes = exec_result.output.decode('utf-8').splitlines()
-        cmd = " ".join(self.get_exec_cmd(bg_cmd.command))
+        cmd = " ".join(self.get_exec_cmd(cmd))
 
         for process in processes:
             if cmd in process:
@@ -179,12 +178,11 @@ class DockerInteractive:
         if id not in self.background_commands:
             raise ValueError("Invalid background command id")
         bg_cmd = self.background_commands[id]
-        pid = self.get_pid(bg_cmd)
-        if pid is not None:
+        if bg_cmd.pid is not None:
             self.container.exec_run(
-                f"kill -9 {pid}", workdir="/workspace"
+                f"kill -9 {bg_cmd.pid}", workdir="/workspace"
             )
-        bg_cmd.kill()
+        bg_cmd.result.output.close()
         self.background_commands.pop(id)
         return bg_cmd
 
