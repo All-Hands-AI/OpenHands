@@ -94,7 +94,7 @@ function ChatInterface(): JSX.Element {
         <div className="selected-directory">
           Selected Directory: {selectedDirectory}
           <button type="button" onClick={handleEditDirectory}>
-            
+            Edit
           </button>
         </div>
       )}
