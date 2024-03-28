@@ -115,6 +115,7 @@ Thanks goes to these wonderful contributors ([emoji key](https://allcontributors
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
+
 <table>
   <tbody>
     <tr>
@@ -170,7 +171,7 @@ Thanks goes to these wonderful contributors ([emoji key](https://allcontributors
       <a href="https://github.com/OpenDevin/OpenDevin/commits?author=zch-cc" title="Code">💻</a>
       <a href="#test-zch-cc" title="Tests">⚠️</a>
       <a href="#doc-zch-cc" title="Documentation">📖</a></td>
-    </tr> 
+    </tr>
     <tr>
       <td align="center"><a href="https://github.com/powerzbt"><img src="https://avatars.githubusercontent.com/powerzbt?v=4&s=100" width="100px;" alt="powerzbt"/><br /><sub><b>powerzbt</b></sub></a><br />
       <a href="#code-powerzbt" title="Code">💻</a>
