@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import Dict, Optional, Type
+from typing import Optional
 
 from fastapi import WebSocketDisconnect
 
