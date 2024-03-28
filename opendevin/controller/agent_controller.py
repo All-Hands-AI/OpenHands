@@ -102,9 +102,21 @@ class AgentController:
             return True
 
         if isinstance(action, AddSubtaskAction):
-            self.state.plan.add_subtask(action.parent, action.goal)
+            try:
+                self.state.plan.add_subtask(action.parent, action.goal)
+            except Exception as e:
+                observation = AgentErrorObservation(str(e))
+                print_with_indent("\ADD TASK ERROR:\n%s" % observation)
+                traceback.print_exc()
         elif isinstance(action, ModifySubtaskAction):
-            self.state.plan.set_subtask_state(action.id, action.state)
+            try:
+                self.state.plan.modify_subtask(action.id, action.goal)
+            except Exception as e:
+                observation = AgentErrorObservation(str(e))
+                print_with_indent("\MODIFY TASK ERROR:\n%s" % observation)
+                traceback.print_exc()
+
+
         if action.executable:
             try:
                 observation = action.run(self)
