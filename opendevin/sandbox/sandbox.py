@@ -4,10 +4,14 @@ import select
 import sys
 import time
 import uuid
+import select
+import docker
+from typing import Tuple, Dict, List, Optional
 from collections import namedtuple
 from typing import Dict, List, Tuple
 
 import docker
+
 
 InputType = namedtuple("InputType", ["content"])
 OutputType = namedtuple("OutputType", ["content"])
@@ -86,10 +90,10 @@ class DockerInteractive:
 
     def __init__(
         self,
-        workspace_dir: str | None = None,
-        container_image: str | None = None,
+        workspace_dir: Optional[str] = None,
+        container_image: Optional[str] = None,
         timeout: int = 120,
-        id: str | None = None,
+        id: Optional[str] = None,
     ):
         if id is not None:
             self.instance_id = id

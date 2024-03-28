@@ -1,11 +1,12 @@
 from opendevin.server.session import Session
 from fastapi import FastAPI, WebSocket
-import agenthub # noqa F401 (we import this to get the agents registered)
+# import agenthub # noqa F401 (we import this to get the agents registered)
 
 app = FastAPI()
 
 # This endpoint receives events from the client (i.e. the browser)
-@app.websocket("/ws")
+# @app.websocket("/ws")
+@app.websocket("/")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     session = Session(websocket)

@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import Dict, Optional, Type
+from typing import Optional, Dict, Type, Union
 
 from fastapi import WebSocketDisconnect
 
@@ -146,7 +146,7 @@ class Session:
             return
         self.agent_task = asyncio.create_task(self.controller.start_loop(task), name="agent loop")
 
-    def on_agent_event(self, event: Observation | Action):
+    def on_agent_event(self, event: Union[Observation, Action]):
         # FIXME: we need better serialization
         event_dict = event.to_dict()
         if "action" in event_dict:
