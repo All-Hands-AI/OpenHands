@@ -53,9 +53,6 @@ type TerminalProps = {
   hidden: boolean;
 };
 
-// * The terminal's content is set by write messages. To avoid complicated state logic,
-// * we keep the terminal persistently open as a child of <App /> and hidden when not in use.
-
 function Terminal({ hidden }: TerminalProps): JSX.Element {
   const terminalRef = useRef<HTMLDivElement>(null);
 
