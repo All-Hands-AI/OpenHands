@@ -1,7 +1,10 @@
+import re
 from typing import List, Mapping
+
+from termcolor import colored
+
 from opendevin.agent import Agent
 from opendevin.state import State
-from opendevin.llm.llm import LLM
 from opendevin.action import (
     Action,
     CmdRunAction,
@@ -57,6 +60,10 @@ class CodeActAgent(Agent):
     ) -> None:
         """
         Initializes a new instance of the CodeActAgent class.
+
+        Parameters:
+        - instruction (str): The instruction for the agent to execute.
+        - max_steps (int): The maximum number of steps to run the agent.
         """
         super().__init__(llm)
         self.messages: List[Mapping[str, str]] = []
