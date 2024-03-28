@@ -1,4 +1,3 @@
-// App.tsx
 import React, { useState } from "react";
 import "./App.css";
 import ChatInterface from "./components/ChatInterface";
@@ -19,8 +18,11 @@ type TabProps = {
 };
 function Tab({ name, active, onClick }: TabProps): JSX.Element {
   return (
-    <div className={`tab ${active ? "active" : ""}`} onClick={() => onClick()}>
-      {name}
+    <div
+      className={`tab ${active ? "tab-active" : ""}`}
+      onClick={() => onClick()}
+    >
+      <p className="font-bold">{name}</p>
     </div>
   );
 }
@@ -48,31 +50,28 @@ function App(): JSX.Element {
   const [activeTab, setActiveTab] = useState<TabOption>("terminal");
 
   return (
-    <div className="app">
+    <div className="app flex">
       <Errors />
       <div className="left-pane">
         <ChatInterface />
       </div>
       <div className="right-pane">
-        <div className="workspace-content">
-          <div className="workspace-heading">
-            <p>OpenDevin&apos;s Workspace</p>
-            <BannerSettings />
-          </div>
-          <div className="tab-container">
-            {TAB_OPTIONS.map((tab) => (
-              <Tab
-                key={tab}
-                name={tabData[tab].name}
-                active={activeTab === tab}
-                onClick={() => setActiveTab(tab)}
-              />
-            ))}
-          </div>
-          {/* Keep terminal permanently open - see component for more details */}
-          <Terminal key="terminal" hidden={activeTab !== "terminal"} />
-          <div className="tab-content">{tabData[activeTab].component}</div>
+        <div className="workspace-heading">
+          <p>OpenDevin Workspace</p>
         </div>
+        <div role="tablist" className="tabs tabs-bordered tabs-lg">
+          {TAB_OPTIONS.map((tab) => (
+            <Tab
+              key={tab}
+              name={tabData[tab].name}
+              active={activeTab === tab}
+              onClick={() => setActiveTab(tab)}
+            />
+          ))}
+        </div>
+        {/* Keep terminal permanently open - see component for more details */}
+        <Terminal key="terminal" hidden={activeTab !== "terminal"} />
+        {tabData[activeTab].component}
       </div>
     </div>
   );

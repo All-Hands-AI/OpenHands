@@ -1,6 +1,9 @@
 /* App.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 .app {
-  display: flex;
   height: 100vh;
   background-color: #1e1e1e;
   color: #fff;
@@ -36,8 +39,9 @@
 .workspace-heading {
   padding: 0 1rem;
   display: flex;
+  margin: 1rem 0;
   justify-content: space-between;
-  font-size: 20px;
+  font-size: 30px;
   font-weight: bolder;
 }
 

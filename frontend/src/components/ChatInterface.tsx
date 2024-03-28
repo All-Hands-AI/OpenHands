@@ -26,7 +26,7 @@ function MessageList(): JSX.Element {
               alt={`${msg.sender} avatar`}
               className="avatar"
             />
-            <div className="message-content">{msg.content}</div>
+            <div className="chat chat-bubble">{msg.content}</div>
           </div>
         </div>
       ))}
