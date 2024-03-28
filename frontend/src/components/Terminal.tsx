@@ -6,7 +6,6 @@ import socket from "../socket/socket";
 
 class JsonWebsocketAddon {
   _socket: WebSocket;
-
   _disposables: IDisposable[];
 
   constructor(_socket: WebSocket) {
@@ -19,13 +18,21 @@ class JsonWebsocketAddon {
       terminal.onData((data) => {
         const payload = JSON.stringify({ action: "terminal", data });
         this._socket.send(payload);
-      }),
+      })
     );
+
     this._socket.addEventListener("message", (event) => {
       const { action, args, observation, content } = JSON.parse(event.data);
+
       if (action === "run") {
-        terminal.writeln(args.command);
+        const printCommand = () => {
+          terminal.writeln(args.command);
+        };
+
+        // Add delay before printing the command
+        setTimeout(printCommand, 50);
       }
+
       if (observation === "run") {
         content.split("\n").forEach((line: string) => {
           terminal.writeln(line);
@@ -45,34 +52,24 @@ type TerminalProps = {
   hidden: boolean;
 };
 
-/**
- * The terminal's content is set by write messages. To avoid complicated state logic,
- * we keep the terminal persistently open as a child of <App /> and hidden when not in use.
- */
-
 function Terminal({ hidden }: TerminalProps): JSX.Element {
   const terminalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const terminal = new XtermTerminal({
-      // This value is set to the appropriate value by the
-      // `fitAddon.fit()` call below.
-      // If not set here, the terminal does not respect the width
-      // of its parent element. This causes a bug where the terminal
-      // is too large and switching tabs causes a layout shift.
       cols: 0,
       fontFamily: "Menlo, Monaco, 'Courier New', monospace",
       fontSize: 14,
     });
+
     terminal.write("$ ");
 
     const fitAddon = new FitAddon();
     terminal.loadAddon(fitAddon);
+    if (terminalRef.current) {
+      terminal.open(terminalRef.current);
+    }
 
-    terminal.open(terminalRef.current as HTMLDivElement);
-
-    // Without this timeout, `fitAddon.fit()` throws the error
-    // "this._renderer.value is undefined"
     setTimeout(() => {
       fitAddon.fit();
     }, 1);
@@ -85,17 +82,7 @@ function Terminal({ hidden }: TerminalProps): JSX.Element {
     };
   }, []);
 
-  return (
-    <div
-      ref={terminalRef}
-      style={{
-        width: "100%",
-        height: "100%",
-        display: hidden ? "none" : "block",
-        padding: "1rem",
-      }}
-    />
-  );
+  return <div ref={terminalRef} style={{ display: hidden ? "none" : "block" }} />;
 }
 
 export default Terminal;
