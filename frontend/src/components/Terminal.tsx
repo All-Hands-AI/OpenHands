@@ -6,6 +6,7 @@ import socket from "../socket/socket";
 
 class JsonWebsocketAddon {
   _socket: WebSocket;
+
   _disposables: IDisposable[];
 
   constructor(_socket: WebSocket) {
@@ -18,7 +19,7 @@ class JsonWebsocketAddon {
       terminal.onData((data) => {
         const payload = JSON.stringify({ action: "terminal", data });
         this._socket.send(payload);
-      })
+      }),
     );
 
     this._socket.addEventListener("message", (event) => {
@@ -29,7 +30,7 @@ class JsonWebsocketAddon {
           terminal.writeln(args.command);
         };
 
-        // Add delay before printing the command
+        // Adjust delay before printing the command
         setTimeout(printCommand, 50);
       }
 
@@ -82,7 +83,9 @@ function Terminal({ hidden }: TerminalProps): JSX.Element {
     };
   }, []);
 
-  return <div ref={terminalRef} style={{ display: hidden ? "none" : "block" }} />;
+  return (
+    <div ref={terminalRef} style={{ display: hidden ? "none" : "block" }} />
+  );
 }
 
 export default Terminal;
