@@ -8,6 +8,7 @@ from collections import namedtuple
 from typing import Dict, List, Tuple
 
 import docker
+import concurrent.futures
 
 InputType = namedtuple("InputType", ["content"])
 OutputType = namedtuple("OutputType", ["content"])
@@ -148,9 +149,21 @@ class DockerInteractive:
 
     def execute(self, cmd: str) -> Tuple[int, str]:
         # TODO: each execute is not stateful! We need to keep track of the current working directory
-        exit_code, logs = self.container.exec_run(
-            self.get_exec_cmd(cmd), workdir="/workspace"
-        )
+        def run_command(container, command):
+            return container.exec_run(command,workdir="/workspace")
+        # Use ThreadPoolExecutor to control command and set timeout
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(run_command, self.container, self.get_exec_cmd(cmd))
+            try:
+                exit_code, logs = future.result(timeout=self.timeout)
+            except concurrent.futures.TimeoutError:
+                print("Command timed out, killing process...")
+                pid = self.get_pid(cmd)
+                if pid is not None:
+                    self.container.exec_run(
+                        f"kill -9 {pid}", workdir="/workspace"
+                    )
+                return -1, f"Command: \"{cmd}\" timed out"
         return exit_code, logs.decode("utf-8")
 
     def execute_in_background(self, cmd: str) -> BackgroundCommand:
