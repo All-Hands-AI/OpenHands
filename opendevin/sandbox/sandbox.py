@@ -81,7 +81,6 @@ class DockerInteractive:
     closed = False
     cur_background_id = 0
     background_commands: Dict[int, BackgroundCommand] = {}
-    timeout=120
 
     def __init__(
         self,
@@ -156,7 +155,7 @@ class DockerInteractive:
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(run_command, self.container, self.get_exec_cmd(cmd))
             try:
-                exit_code, logs = future.result(timeout=3)
+                exit_code, logs = future.result(timeout=self.timeout)
             except concurrent.futures.TimeoutError:
                 print("Command timed out, killing process...")
                 pid = self.get_pid(cmd)
