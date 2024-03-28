@@ -12,11 +12,11 @@ class AddSubtaskAction(NotExecutableAction):
         return f"Added subtask: {self.goal}"
 
 @dataclass
-class CloseSubtaskAction(NotExecutableAction):
+class ModifySubtaskAction(NotExecutableAction):
     id: str
-    completed: bool
+    state: str
 
     @property
     def message(self) -> str:
-        return f"Closed subtask {self.id}"
+        return f"Set subtask {self.id} to {self.state}"
 

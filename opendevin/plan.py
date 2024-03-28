@@ -1,31 +1,53 @@
 from typing import List
 
+OPEN_STATE = 'open'
+CLOSED_STATE = 'completed'
+ABANDONED_STATE = 'abandoned'
+IN_PROGRESS_STATE = 'in_progress'
+STATES = [OPEN_STATE, CLOSED_STATE, ABANDONED_STATE, IN_PROGRESS_STATE]
+
 class Task:
     id: str
     goal: str
-    closed: bool
-    completed: bool
+    parent: "Task | None"
     subtasks: List["Task"]
 
-    def __init__(self, id: str, goal: str, completed: bool = False, subtasks: List = []):
-        self.id = id
+    def __init__(self, parent: "Task | None", goal: str, state: str=OPEN_STATE, subtasks: List = []):
+        if parent is None:
+            self.id = '0'
+        else:
+            self.id = parent.id + '.' + str(len(parent.subtasks))
+        self.parent = parent
         self.goal = goal
-        self.closed = False
-        self.completed = completed
         self.subtasks = subtasks
+        self.state = OPEN_STATE
 
     def to_dict(self):
         return {
             'id': self.id,
             'goal': self.goal,
-            'closed': self.closed,
-            'completed': self.completed,
+            'state': self.state,
             'subtasks': [t.to_dict() for t in self.subtasks]
         }
 
-    def close(self, completed=True):
-        self.closed = True
-        self.completed = completed
+    def set_state(self, state):
+        if state not in STATES:
+            raise ValueError('Invalid state:' + state)
+        self.state = state
+        if state == CLOSED_STATE or state == ABANDONED_STATE:
+            for subtask in self.subtasks:
+                subtask.set_state(CLOSED_STATE)
+        elif state == IN_PROGRESS_STATE:
+            if self.parent is not None:
+                self.parent.set_state(state)
+
+    def get_current_task(self) -> "Task | None":
+        for subtask in self.subtasks:
+            if subtask.state == IN_PROGRESS_STATE:
+                return subtask.get_current_task()
+        if self.state == IN_PROGRESS_STATE:
+            return self
+        return None
 
 class Plan:
     main_goal: str
@@ -33,7 +55,7 @@ class Plan:
 
     def __init__(self, task: str):
         self.main_goal = task
-        self.task = Task(id='0', goal=task, completed=False, subtasks=[])
+        self.task = Task(parent=None, goal=task, subtasks=[])
 
     def get_task_by_id(self, id: str) -> Task:
         try:
@@ -46,18 +68,20 @@ class Plan:
         task = self.task
         for part in parts:
             if part >= len(task.subtasks):
-                raise ValueError('Invalid task id, too large:' + id)
+                raise ValueError('Task does not exist:' + id)
             task = task.subtasks[part]
         return task
 
     def add_subtask(self, parent_id: str, goal: str):
         parent = self.get_task_by_id(parent_id)
         id = parent.id + '.' + str(len(parent.subtasks))
-        child = Task(id=id, goal=goal, subtasks=[])
+        child = Task(parent=parent, goal=goal, subtasks=[])
         parent.subtasks.append(child)
 
-    def close_subtask(self, id: str, completed: bool = True):
+    def set_subtask_state(self, id: str, state: str):
         task = self.get_task_by_id(id)
-        task.close(completed)
+        task.set_state(state)
 
+    def get_current_task(self):
+        return self.task.get_current_task()
 
