@@ -1,8 +1,3 @@
-
-https://jbt.github.io/markdown-editor/
-
-
-
 # OpenDevin on Fresh Debian 12 VirtualMachine
 
 The below instructions are specific to the version that matches these `lsb_release -a` details:
