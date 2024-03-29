@@ -59,6 +59,7 @@ class Session:
         self.controller: Optional[AgentController] = None
         self.agent: Optional[Agent] = None
         self.agent_task = None
+        self.current_input = ""
         asyncio.create_task(self.create_controller(), name="create controller") # FIXME: starting the docker container synchronously causes a websocket error...
 
     async def send_error(self, message):
@@ -98,6 +99,15 @@ class Session:
 
                     elif event["action"] == "chat":
                         self.controller.add_history(NullAction(), UserMessageObservation(event["message"]))
+                    elif event["action"] == "terminal":
+                        if event["message"] == "\r":
+                            print(self.current_input)
+                            self.current_input = ""
+                        elif event["message"] == "\x7f":
+                            if self.current_input.length > 0:
+                                self.current_input = self.current_input[:-1]
+                        else:
+                            self.current_input += event["message"]
                     else:
                         # TODO: we only need to implement user message for now
                         # since even Devin does not support having the user taking other

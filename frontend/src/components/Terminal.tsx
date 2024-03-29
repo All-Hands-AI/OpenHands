@@ -17,7 +17,7 @@ class JsonWebsocketAddon {
   activate(terminal: XtermTerminal) {
     this._disposables.push(
       terminal.onData((data) => {
-        const payload = JSON.stringify({ action: "terminal", data });
+        const payload = JSON.stringify({ action: "terminal", message: data });
         this._socket.send(payload);
       }),
     );
@@ -52,6 +52,7 @@ type TerminalProps = {
 
 function Terminal({ hidden }: TerminalProps): JSX.Element {
   const terminalRef = useRef<HTMLDivElement>(null);
+  const inputLengthRef = useRef<number>(0);
 
   useEffect(() => {
     const terminal = new XtermTerminal({
@@ -70,6 +71,26 @@ function Terminal({ hidden }: TerminalProps): JSX.Element {
     terminal.loadAddon(fitAddon);
 
     terminal.open(terminalRef.current as HTMLDivElement);
+
+    terminal.onKey((e) => {
+      const printable =
+        !e.domEvent.altKey && !e.domEvent.ctrlKey && !e.domEvent.metaKey;
+
+      if (printable) {
+        if (e.key === "\r") {
+          terminal.write("\r\n$ ");
+          inputLengthRef.current = 0;
+        } else if (e.key === "\u007F") {
+          if (inputLengthRef.current > 0) {
+            terminal.write("\b \b");
+            inputLengthRef.current -= 1;
+          }
+        } else {
+          terminal.write(e.key);
+          inputLengthRef.current += 1;
+        }
+      }
+    });
 
     // Without this timeout, `fitAddon.fit()` throws the error
     // "this._renderer.value is undefined"
