@@ -34,8 +34,8 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
     "think": AgentThinkAction,
     "summarize": AgentSummarizeAction,
     "finish": AgentFinishAction,
-    "add_subtask": AddSubtaskAction,
-    "modify_subtask": ModifySubtaskAction,
+    "add_task": AddSubtaskAction,
+    "modify_task": ModifySubtaskAction,
 }
 
 HISTORY_SIZE = 10
@@ -91,11 +91,11 @@ It must be an object, and it must contain two fields:
   * `url` - the URL to open
 * `think` - make a plan, set a goal, or record your thoughts. Arguments:
   * `thought` - the thought to record
-* `add_subtask` - add a task to your plan. Arguments:
+* `add_task` - add a task to your plan. Arguments:
   * `parent` - the ID of the parent task
-  * `goal` - the goal of the subtask
-* `modify_subtask` - close a subtask. Arguments:
-  * `id` - the ID of the subtask to close
+  * `goal` - the goal of the task
+* `modify_task` - close a task. Arguments:
+  * `id` - the ID of the task to close
   * `state` - set to 'in_progress' to start the task, 'completed' to finish it, 'abandoned' to give up on it permanently, or `open` to stop working on it for now.
 * `finish` - if ALL of your tasks and subtasks have been completed or abanded, and you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
@@ -103,8 +103,8 @@ You MUST take time to think in between read, write, run, browse, and recall acti
 You should never act twice in a row without thinking. But if your last several
 actions are all `think` actions, you should consider taking a different action.
 
-Based on the history above, if ANY of your open subtasks have been completed,
-you MUST close them with the `modify_subtask` action.
+Based on the history above, if ANY of your open tasks have been completed,
+you MUST close them with the `modify_task` action.
 
 What is your next thought or action? Again, you must reply with JSON, and only with JSON.
 
@@ -135,18 +135,18 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
     hint = ""
     current_task = plan.get_current_task()
     if current_task is not None:
-        plan_status = f"You're currently working on this subtask: {current_task.goal}."
+        plan_status = f"You're currently working on this task: {current_task.goal}."
     else:
-        plan_status = "You're not currently working on any subtasks. Your next action MUST be to mark a subtask as in_progress."
+        plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
         hint = plan_status
 
     if current_task is not None:
         if len(current_task.subtasks) < 3:
-            hint = "Do you want to add some subtasks to your current task, to break it down a bit further?"
+            hint = "Do you want to add some tasks to your current task, to break it down a bit further?"
         elif latest_action == "":
             hint = "You haven't taken any actions yet. Start by using `ls` to check out what files you're working with."
         elif latest_action == "run":
-            hint = "You should think about the command you just ran, and what output it gave. Maybe it's time to mark a subtask as complete."
+            hint = "You should think about the command you just ran, and what output it gave. Maybe it's time to mark a task as complete."
         elif latest_action == "read":
             hint = "You should think about the file you just read, and what you learned from it."
         elif latest_action == "write":
@@ -157,9 +157,9 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
             hint = "Look at your last thought in the history above. What does it suggest? Don't think anymore--take action."
         elif latest_action == "recall":
             hint = "You should think about the information you just recalled, and how it fits into your plan."
-        elif latest_action == "add_subtask":
-            hint = "You could continue adding subtasks, or think about your next step."
-        elif latest_action == "modify_subtask":
+        elif latest_action == "add_task":
+            hint = "You could continue adding tasks, or think about your next step."
+        elif latest_action == "modify_task":
             hint = "You should think about what to do next."
         elif latest_action == "summarize":
             hint = ""
@@ -206,9 +206,9 @@ def convert_action(action):
     elif action == "AgentSummarizeAction":
         action = "summarize"
     elif action == "AddSubtaskAction":
-        action = "add_subtask"
+        action = "add_task"
     elif action == "ModifySubtaskAction":
-        action = "modify_subtask"
+        action = "modify_task"
     return action
 
 def convert_observation(observation):
