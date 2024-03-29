@@ -18,7 +18,9 @@ OutputType = namedtuple("OutputType", ["content"])
 DIRECTORY_REWRITE = config.get_or_default(
     "DIRECTORY_REWRITE", ""
 )  # helpful for docker-in-docker scenarios
-CONTAINER_IMAGE = config.get_or_default("SANDBOX_CONTAINER_IMAGE", "ghcr.io/opendevin/sandbox:v0.1")
+
+CONTAINER_IMAGE = config.get_or_default("SANDBOX_CONTAINER_IMAGE", "ghcr.io/opendevin/sandbox")
+
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
 RUN_AS_DEVIN = config.get_or_default("RUN_AS_DEVIN", "true").lower() != "false"
