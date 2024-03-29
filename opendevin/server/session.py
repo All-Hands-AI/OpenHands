@@ -4,6 +4,7 @@ from typing import Dict, Optional, Type
 
 from fastapi import WebSocketDisconnect
 
+from opendevin import config
 from opendevin.action import (
     Action,
     AgentFinishAction,
@@ -34,8 +35,8 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
 }
 
 
-DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4-0125-preview")
+DEFAULT_WORKSPACE_DIR = config.get_or_default("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
+LLM_MODEL = config.get_or_default("LLM_MODEL", "gpt-4-0125-preview")
 
 def parse_event(data):
     if "action" not in data:
