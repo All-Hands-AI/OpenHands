@@ -21,29 +21,77 @@ OpenDevin is still a work in progress. But you can run the alpha version to see 
 * [Python](https://www.python.org/downloads/) >= 3.10
 * [NodeJS](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) >= 14.8
 
-### Installation
-First, make sure Docker is running:
-```bash
-docker ps # this should exit successfully
-```
-Then pull our latest image [here](https://github.com/opendevin/OpenDevin/pkgs/container/sandbox)
-```bash
-docker pull ghcr.io/opendevin/sandbox:v0.1
-```
+* Windows Subsystem for Linux (WSL) – **for Windows 11 users only**
 
-Then start the backend:
+## Installation
+
+**A. Enable WSL (for Windows 11)**
+
+1. Open the Command Prompt as Administrator
+2. Run the command: `dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart`
+3. Restart your computer
+
+**B. Install Ubuntu in WSL**
+
+1. Open the Microsoft Store
+2. Search for "Ubuntu"
+3. Click "Install"
+
+**C. Install Docker Desktop**
+
+1. Visit https://www.docker.com/products/docker-desktop
+2. Download the latest version for Windows
+3. Install using the default settings
+
+**D. Set up Ubuntu instance**
+
+1. Start the Ubuntu instance in WSL
+2. Update and upgrade: `sudo apt update && sudo apt upgrade`
+3. Install Python3 and pip3: `sudo apt install python3 python3-pip`
+4. Install Docker Engine:
+   - `sudo apt-get update`
+   - `sudo apt-get install docker.io`
+   - `sudo systemctl start docker`
+   - `sudo systemctl enable docker`
+   - `sudo usermod -aG docker $USER`
+5. Start a new terminal session for changes to take effect
+6. Verify Docker installation: `docker ps`
+
+**E. Clone the OpenDevin repository**
+
+1. Open a new Ubuntu terminal
+2. Navigate to your desired directory (replace "pierr" with your username): `cd /mnt/c/Users/pierr` 
+3. Clone the repo: `git clone https://github.com/OpenDevin/OpenDevin.git`
+
+**F. Navigate to the OpenDevin directory**
+
+1. `cd /mnt/c/Users/pierr/OpenDevin`
+
+**G. Set up OpenDevin**
+
+1. Set your OpenAI API key: `export OPENAI_API_KEY="your-api-key"`
+2. Set your workspace directory: `export WORKSPACE_DIR="/mnt/c/Users/pierr/OpenDevin"`
+3. Install dependencies: `python3 -m pip install -r requirements.txt`
+
+**H. Start OpenDevin**
+
+1. Start the backend: `uvicorn opendevin.server.listen:app --port 3000`
+2. In a new terminal: 
+   - `cd /mnt/c/Users/pierr/OpenDevin/frontend` 
+   -  `npm install`
+   - `npm run start -- --port 3001`
+3. Open `localhost:3001` in your browser
+
+## Picking a Model
+We use LiteLLM, so you can run OpenDevin with any foundation model, including OpenAI, Claude, and Gemini.
+LiteLLM has a [full list of providers](https://docs.litellm.ai/docs/providers).
+
+To change the model, set the `LLM_MODEL` and `LLM_API_KEY` environment variables.
+
+For example, to run Claude:
 ```bash
-export OPENAI_API_KEY="..."
-export WORKSPACE_DIR="/path/to/your/project"
-python -m pip install -r requirements.txt
-uvicorn opendevin.server.listen:app --port 3000
-```
-Then in a second terminal:
-```bash
-cd frontend
-npm install
-npm run start -- --port 3001
-```
+export LLM_API_KEY="your-api-key"
+export LLM_MODEL="claude-3-opus-20240229"
 
 You'll see OpenDevin running at localhost:3001
 
