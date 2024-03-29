@@ -27,6 +27,7 @@ class JsonWebsocketAddon {
         terminal.writeln(args.command);
       }
       if (observation === "run") {
+        console.log(content);
         content.split("\n").forEach((line: string) => {
           terminal.writeln(line);
         });
@@ -76,9 +77,14 @@ function Terminal({ hidden }: TerminalProps): JSX.Element {
       const printable =
         !e.domEvent.altKey && !e.domEvent.ctrlKey && !e.domEvent.metaKey;
 
+      if (e.domEvent.ctrlKey && e.domEvent.key === "c") {
+        inputLengthRef.current = 0;
+        terminal.write("\n$");
+      }
+
       if (printable) {
         if (e.key === "\r") {
-          terminal.write("\r\n$ ");
+          terminal.write("\n");
           inputLengthRef.current = 0;
         } else if (e.key === "\u007F") {
           if (inputLengthRef.current > 0) {

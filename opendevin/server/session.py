@@ -101,10 +101,16 @@ class Session:
                         self.controller.add_history(NullAction(), UserMessageObservation(event["message"]))
                     elif event["action"] == "terminal":
                         if event["message"] == "\r":
-                            print(self.current_input)
+                            if self.controller:
+                                # TODO run in shella nd return output
+                                output = self.controller.run_command(self.current_input)
+                                await self.send({"observation": "run", "content": output.content})
+                            else:
+                                # TODO raise ControllerNotImplementedError
+                                pass
                             self.current_input = ""
                         elif event["message"] == "\x7f":
-                            if self.current_input.length > 0:
+                            if len(self.current_input) > 0:
                                 self.current_input = self.current_input[:-1]
                         else:
                             self.current_input += event["message"]

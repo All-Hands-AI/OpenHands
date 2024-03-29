@@ -14,7 +14,7 @@ from opendevin.observation import (
     AgentErrorObservation,
     NullObservation
 )
-
+from opendevin.observation import CmdOutputObservation
 
 from .command_manager import CommandManager
 
@@ -121,3 +121,7 @@ class AgentController:
                 print("Callback error:" + str(idx), e, flush=True)
                 pass
         await asyncio.sleep(0.001) # Give back control for a tick, so we can await in callbacks
+    
+    def run_command(self, command: str, background=False) -> CmdOutputObservation:
+        # TODO should we run this in background?
+        return self.command_manager.run_command(command, background)
