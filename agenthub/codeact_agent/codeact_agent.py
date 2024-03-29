@@ -70,12 +70,12 @@ class CodeActAgent(Agent):
 
     def step(self, state: State) -> Action:
         if len(self.messages) == 0:
-            assert state.task, "Expecting instruction to be set"
+            assert state.plan.main_goal, "Expecting instruction to be set"
             self.messages = [
                 {"role": "system", "content": SYSTEM_MESSAGE},
-                {"role": "user", "content": state.task},
+                {"role": "user", "content": state.plan.main_goal},
             ]
-            print(colored("===USER:===\n" + state.task, "green"))
+            print(colored("===USER:===\n" + state.plan.main_goal, "green"))
         updated_info = state.updated_info
         if updated_info:
             for prev_action, obs in updated_info:
