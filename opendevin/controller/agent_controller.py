@@ -104,7 +104,7 @@ class AgentController:
 
         if isinstance(action, AddSubtaskAction):
             try:
-                self.state.plan.add_subtask(action.parent, action.goal, action.verify, action.subtasks)
+                self.state.plan.add_subtask(action.parent, action.goal, action.subtasks)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
                 print_with_indent("\nADD TASK ERROR:\n%s" % observation)

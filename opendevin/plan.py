@@ -10,18 +10,16 @@ STATES = [OPEN_STATE, COMPLETED_STATE, ABANDONED_STATE, IN_PROGRESS_STATE, VERIF
 class Task:
     id: str
     goal: str
-    verify: str
     parent: "Task | None"
     subtasks: List["Task"]
 
-    def __init__(self, parent: "Task | None", goal: str, verify: str, state: str=OPEN_STATE, subtasks: List = []):
+    def __init__(self, parent: "Task | None", goal: str, state: str=OPEN_STATE, subtasks: List = []):
         if parent is None:
             self.id = '0'
         else:
             self.id = parent.id + '.' + str(len(parent.subtasks))
         self.parent = parent
         self.goal = goal
-        self.verify = verify
         if subtasks is None:
             subtasks = []
         self.subtasks = []
@@ -30,10 +28,9 @@ class Task:
                 self.subtasks.append(subtask)
             else:
                 goal = subtask.get('goal')
-                verify = subtask.get('verify')
                 state = subtask.get('state')
                 subtasks = subtask.get('subtasks')
-                self.subtasks.append(Task(self, goal, verify, state, subtasks))
+                self.subtasks.append(Task(self, goal, state, subtasks))
 
         self.state = OPEN_STATE
 
@@ -50,7 +47,6 @@ class Task:
         elif self.state == OPEN_STATE:
             emoji = '🔵'
         result = indent + emoji + ' ' + self.id + ' ' + self.goal + '\n'
-        # result += indent + '  👀' + ' ' + self.verify + '\n'
         for subtask in self.subtasks:
             result += subtask.to_string(indent + '    ')
         return result
@@ -89,7 +85,7 @@ class Plan:
 
     def __init__(self, task: str):
         self.main_goal = task
-        self.task = Task(parent=None, goal=task, verify='', subtasks=[])
+        self.task = Task(parent=None, goal=task, subtasks=[])
 
     def __str__(self):
         return self.task.to_string()
@@ -109,9 +105,9 @@ class Plan:
             task = task.subtasks[part]
         return task
 
-    def add_subtask(self, parent_id: str, goal: str, verify: str, subtasks: List = []):
+    def add_subtask(self, parent_id: str, goal: str, subtasks: List = []):
         parent = self.get_task_by_id(parent_id)
-        child = Task(parent=parent, goal=goal, verify=verify, subtasks=subtasks)
+        child = Task(parent=parent, goal=goal, subtasks=subtasks)
         parent.subtasks.append(child)
 
     def set_subtask_state(self, id: str, state: str):

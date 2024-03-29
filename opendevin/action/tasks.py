@@ -6,7 +6,6 @@ from .base import NotExecutableAction
 class AddSubtaskAction(NotExecutableAction):
     parent: str
     goal: str
-    verify: str = ''
     subtasks: list = field(default_factory=list)
 
     @property
