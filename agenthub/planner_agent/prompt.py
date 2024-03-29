@@ -136,11 +136,9 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
     latest_action: Action = NullAction()
     for action, observation in sub_history:
         if not isinstance(action, NullAction):
-            action_dict = action.to_dict()
             history_dicts.append(action.to_dict())
             latest_action = action
         if not isinstance(observation, NullObservation):
-            observation_dict = observation.to_dict()
             history_dicts.append(observation.to_dict())
     history_str = json.dumps(history_dicts, indent=2)
 

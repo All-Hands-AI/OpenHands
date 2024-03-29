@@ -1,5 +1,4 @@
-import os
-from typing import List, Dict, Type
+from typing import List
 
 from langchain.prompts import PromptTemplate
 
@@ -14,15 +13,6 @@ from . import json
 from opendevin.action import (
     action_from_dict,
     Action,
-    CmdRunAction,
-    CmdKillAction,
-    BrowseURLAction,
-    FileReadAction,
-    FileWriteAction,
-    AgentRecallAction,
-    AgentThinkAction,
-    AgentFinishAction,
-    AgentSummarizeAction,
 )
 from opendevin.observation import (
     CmdOutputObservation,
