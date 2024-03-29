@@ -8,6 +8,5 @@ def dumps(obj, **kwargs):
     return json.dumps(obj, default=my_encoder, **kwargs)
 
 def loads(s, **kwargs):
-    print("loads", s)
     return json.loads(s, **kwargs)
 

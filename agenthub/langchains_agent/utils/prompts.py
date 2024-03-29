@@ -130,6 +130,9 @@ def get_request_action_prompt(
     )
 
 def parse_action_response(response: str) -> Action:
+    json_start = response.find("{")
+    json_end = response.rfind("}") + 1
+    response = response[json_start:json_end]
     action_dict = json.loads(response)
     if 'content' in action_dict:
         # The LLM gets confused here. Might as well be robust
