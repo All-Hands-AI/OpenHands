@@ -41,7 +41,7 @@ async def main():
     if not task:
         raise ValueError("No task provided. Please specify a task through -t, -f, or pipe it into stdin.")
 
-    print(f"Running agent {args.agent_cls} (model: {args.model_name}, directory: {args.directory}) with task: \"{task}\"")
+    print(f"Running agent {args.agent_cls} (model: {args.model_name}, directory: {args.directory}) with task:\n{task}")
     llm = LLM(args.model_name)
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
