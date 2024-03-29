@@ -5,6 +5,7 @@ import userAvatar from "../assets/user-avatar.png";
 import { sendChatMessage } from "../services/chatService";
 import { RootState } from "../store";
 import "./ChatInterface.css";
+import { changeDirectory as sendChangeDirectorySocketMessage } from "../services/settingsService";
 
 function MessageList(): JSX.Element {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -44,11 +45,46 @@ function InitializingStatus(): JSX.Element {
   );
 }
 
+function DirectoryInput(): JSX.Element {
+  const [editing, setEditing] = useState(false);
+  const [directory, setDirectory] = useState("Default");
+
+  function save() {
+    setEditing(false);
+    sendChangeDirectorySocketMessage(directory);
+  }
+
+  function onDirectoryInputChange(e: ChangeEvent<HTMLInputElement>) {
+    setEditing(true);
+    setDirectory(e.target.value);
+  }
+
+  return (
+    <div className="flex p-2 justify-center gap-2 bg-neutral-700">
+      <label htmlFor="directory-input" className="label">
+        Directory
+      </label>
+      <input
+        type="text"
+        className="input"
+        id="directory-input"
+        placeholder="Default"
+        onChange={onDirectoryInputChange}
+      />
+      <button
+        type="button"
+        className={`btn ${editing ? "" : "hidden"}`}
+        onClick={save}
+      >
+        Save
+      </button>
+    </div>
+  );
+}
+
 function ChatInterface(): JSX.Element {
   const { initialized } = useSelector((state: RootState) => state.task);
   const [inputMessage, setInputMessage] = useState("");
-  const [selectedDirectory, setSelectedDirectory] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSendMessage = () => {
     if (inputMessage.trim() !== "") {
@@ -57,47 +93,9 @@ function ChatInterface(): JSX.Element {
     }
   };
 
-  const handleDirectorySelected = (event: ChangeEvent<HTMLInputElement>) => {
-    const { files } = event.target;
-    if (files && files.length > 0) {
-      const directory = files[0].webkitRelativePath.split("/")[0];
-      setSelectedDirectory(directory);
-    }
-  };
-
-  const handleEditDirectory = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""; // Clear the file input value
-      fileInputRef.current.click(); // Trigger the file picker dialog
-    }
-  };
-
   return (
     <div className="chat-interface">
-      <label
-        htmlFor="directoryInput"
-        className="custom-file-input"
-        style={{ display: selectedDirectory ? "none" : "block" }}
-      >
-        Choose Directory
-        <input
-          id="directoryInput"
-          type="file"
-          capture="directory"
-          webkitdirectory=""
-          onChange={handleDirectorySelected}
-          ref={fileInputRef}
-          style={{ display: "none" }}
-        />
-      </label>
-      {selectedDirectory && (
-        <div className="selected-directory">
-          Selected Directory: {selectedDirectory}
-          <button type="button" onClick={handleEditDirectory}>
-            Edit
-          </button>
-        </div>
-      )}
+      <DirectoryInput />
       {initialized ? <MessageList /> : <InitializingStatus />}
       <div className="input-container">
         <div className="input-box">
