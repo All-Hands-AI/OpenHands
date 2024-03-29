@@ -17,8 +17,8 @@ from opendevin.action import (
     AgentThinkAction,
     AgentFinishAction,
     AgentSummarizeAction,
-    AddSubtaskAction,
-    ModifySubtaskAction,
+    AddTaskAction,
+    ModifyTaskAction,
 )
 
 from opendevin.observation import (
@@ -35,8 +35,8 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
     "think": AgentThinkAction,
     "summarize": AgentSummarizeAction,
     "finish": AgentFinishAction,
-    "add_task": AddSubtaskAction,
-    "modify_task": ModifySubtaskAction,
+    "add_task": AddTaskAction,
+    "modify_task": ModifyTaskAction,
 }
 
 HISTORY_SIZE = 10
@@ -136,7 +136,7 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
     latest_action: Action = NullAction()
     for action, observation in sub_history:
         if not isinstance(action, NullAction):
-            #if not isinstance(action, ModifySubtaskAction) and not isinstance(action, AddSubtaskAction):
+            #if not isinstance(action, ModifyTaskAction) and not isinstance(action, AddTaskAction):
             action_dict = action.to_dict()
             action_dict["action"] = convert_action(action_dict["action"])
             history_dicts.append(action_dict)
@@ -224,9 +224,9 @@ def convert_action(action):
         action = "think"
     elif action == "AgentSummarizeAction":
         action = "summarize"
-    elif action == "AddSubtaskAction":
+    elif action == "AddTaskAction":
         action = "add_task"
-    elif action == "ModifySubtaskAction":
+    elif action == "ModifyTaskAction":
         action = "modify_task"
     return action
 

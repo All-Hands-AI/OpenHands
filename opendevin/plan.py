@@ -21,7 +21,7 @@ class Task:
         self.parent = parent
         self.goal = goal
         self.subtasks = []
-        for subtask in subtasks:
+        for subtask in (subtasks or []):
             if isinstance(subtask, Task):
                 self.subtasks.append(subtask)
             else:

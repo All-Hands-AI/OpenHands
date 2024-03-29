@@ -10,8 +10,8 @@ from opendevin.action import (
     Action,
     NullAction,
     AgentFinishAction,
-    AddSubtaskAction,
-    ModifySubtaskAction
+    AddTaskAction,
+    ModifyTaskAction
 )
 from opendevin.observation import (
     Observation,
@@ -73,7 +73,7 @@ class AgentController:
         print("\n\n==============", flush=True)
         print("STEP", i, flush=True)
         print_with_indent("\nPLAN:\n")
-        print(self.state.plan)
+        print_with_indent(self.state.plan.__str__())
 
         log_obs = self.command_manager.get_background_obs()
         for obs in log_obs:
@@ -102,14 +102,14 @@ class AgentController:
             print_with_indent("\nFINISHED")
             return True
 
-        if isinstance(action, AddSubtaskAction):
+        if isinstance(action, AddTaskAction):
             try:
                 self.state.plan.add_subtask(action.parent, action.goal, action.subtasks)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
                 print_with_indent("\nADD TASK ERROR:\n%s" % observation)
                 traceback.print_exc()
-        elif isinstance(action, ModifySubtaskAction):
+        elif isinstance(action, ModifyTaskAction):
             try:
                 self.state.plan.set_subtask_state(action.id, action.state)
             except Exception as e:

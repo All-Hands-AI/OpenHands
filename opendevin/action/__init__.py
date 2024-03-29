@@ -3,7 +3,7 @@ from .bash import CmdRunAction, CmdKillAction
 from .browse import BrowseURLAction
 from .fileop import FileReadAction, FileWriteAction
 from .agent import AgentRecallAction, AgentThinkAction, AgentFinishAction, AgentEchoAction, AgentSummarizeAction
-from .tasks import AddSubtaskAction, ModifySubtaskAction
+from .tasks import AddTaskAction, ModifyTaskAction
 
 actions = (
     CmdKillAction,
@@ -39,6 +39,6 @@ __all__ = [
     "AgentFinishAction",
     "AgentEchoAction",
     "AgentSummarizeAction",
-    "AddSubtaskAction",
-    "ModifySubtaskAction"
+    "AddTaskAction",
+    "ModifyTaskAction"
 ]
