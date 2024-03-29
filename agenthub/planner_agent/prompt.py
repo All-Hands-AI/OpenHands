@@ -133,7 +133,7 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
     plan_str = json.dumps(plan.task.to_dict(), indent=2)
     sub_history = history[-HISTORY_SIZE:]
     history_dicts = []
-    latest_action = NullAction()
+    latest_action: Action = NullAction()
     for action, observation in sub_history:
         if not isinstance(action, NullAction):
             #if not isinstance(action, ModifySubtaskAction) and not isinstance(action, AddSubtaskAction):

@@ -20,8 +20,6 @@ class Task:
             self.id = parent.id + '.' + str(len(parent.subtasks))
         self.parent = parent
         self.goal = goal
-        if subtasks is None:
-            subtasks = []
         self.subtasks = []
         for subtask in subtasks:
             if isinstance(subtask, Task):
