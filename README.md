@@ -1,5 +1,8 @@
+Here's the full README with the updated step to pull the OpenDevin Docker image:
+
+```markdown
 <p align="center">
-  <img alt="OpenDevin Logo" src="./logo.png" width="150" />
+  <img width="150" src="./logo.png" alt="OpenDevin Logo">
 </p>
 
 # OpenDevin: Code Less, Make More
@@ -18,8 +21,8 @@ OpenDevin is still a work in progress. But you can run the alpha version to see 
 
 ### Requirements
 * [Docker](https://docs.docker.com/engine/install/)
-* [Python](https://www.python.org/downloads/) >= 3.10
-* [NodeJS](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) >= 14.8
+* [Python](https://www.python.org/downloads/) &gt;= 3.10
+* [NodeJS](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) &gt;= 14.8
 
 * Windows Subsystem for Linux (WSL) – **for Windows 11 users only**
 
@@ -46,7 +49,7 @@ OpenDevin is still a work in progress. But you can run the alpha version to see 
 **D. Set up Ubuntu instance**
 
 1. Start the Ubuntu instance in WSL
-2. Update and upgrade: `sudo apt update && sudo apt upgrade`
+2. Update and upgrade: `sudo apt update &amp;&amp; sudo apt upgrade`
 3. Install Python3 and pip3: `sudo apt install python3 python3-pip`
 4. Install Docker Engine:
    - `sudo apt-get update`
@@ -56,6 +59,7 @@ OpenDevin is still a work in progress. But you can run the alpha version to see 
    - `sudo usermod -aG docker $USER`
 5. Start a new terminal session for changes to take effect
 6. Verify Docker installation: `docker ps`
+7. Pull the OpenDevin Docker image: `docker pull ghcr.io/opendevin/sandbox:v0.1`
 
 **E. Clone the OpenDevin repository**
 
@@ -83,19 +87,6 @@ OpenDevin is still a work in progress. But you can run the alpha version to see 
 3. Open `localhost:3001` in your browser
 
 ## Picking a Model
-We use LiteLLM, so you can run OpenDevin with any foundation model, including OpenAI, Claude, and Gemini.
-LiteLLM has a [full list of providers](https://docs.litellm.ai/docs/providers).
-
-To change the model, set the `LLM_MODEL` and `LLM_API_KEY` environment variables.
-
-For example, to run Claude:
-```bash
-export LLM_API_KEY="your-api-key"
-export LLM_MODEL="claude-3-opus-20240229"
-
-You'll see OpenDevin running at localhost:3001
-
-### Picking a Model
 We use LiteLLM, so you can run OpenDevin with any foundation model, including OpenAI, Claude, and Gemini.
 LiteLLM has a [full list of providers](https://docs.litellm.ai/docs/providers).
 
@@ -175,4 +166,5 @@ Stay updated on OpenDevin's progress, share your ideas, and collaborate with fel
 
 🐚 **Code less, make more with OpenDevin.**
 
-[![Star History Chart](https://api.star-history.com/svg?repos=OpenDevin/OpenDevin&type=Date)](https://star-history.com/#OpenDevin/OpenDevin&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=OpenDevin/OpenDevin&amp;type=Date)](https://star-history.com/#OpenDevin/OpenDevin&amp;Date)
+```
