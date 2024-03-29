@@ -152,7 +152,7 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
     if current_task is not None:
         plan_status = f"You're currently working on this task:\n{current_task.goal}."
         if len(current_task.subtasks) == 0:
-            plan__status += f"\nIf it's not achievable AND verifiable with a SINGLE action, you MUST break it down into subtasks NOW."
+            plan_status += "\nIf it's not achievable AND verifiable with a SINGLE action, you MUST break it down into subtasks NOW."
     else:
         plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
         hint = plan_status
