@@ -67,16 +67,15 @@ class CodeActAgent(Agent):
         """
         super().__init__(llm)
         self.messages: List[Mapping[str, str]] = []
-        self.instruction: str = ""
 
     def step(self, state: State) -> Action:
         if len(self.messages) == 0:
-            assert self.instruction, "Expecting instruction to be set"
+            assert state.task, "Expecting instruction to be set"
             self.messages = [
                 {"role": "system", "content": SYSTEM_MESSAGE},
-                {"role": "user", "content": self.instruction},
+                {"role": "user", "content": state.task},
             ]
-            print(colored("===USER:===\n" + self.instruction, "green"))
+            print(colored("===USER:===\n" + state.task, "green"))
         updated_info = state.updated_info
         if updated_info:
             for prev_action, obs in updated_info:
