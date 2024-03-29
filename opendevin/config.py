@@ -1,12 +1,16 @@
 import os
-import tomllib
+import toml
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
-with open("config.toml", "rb") as f:
-    config = tomllib.load(f)
+config_str = ""
+if os.path.exists("config.toml"):
+    with open("config.toml", "rb") as f:
+        config_str = f.read().decode("utf-8")
+
+config = toml.loads(config_str)
 
 def _get(key: str, default):
     value = config.get(key, default)

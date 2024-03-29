@@ -24,6 +24,7 @@ llama-index-embeddings-huggingface = "*"
 llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 google-generativeai = "*"
+toml = "*"
 
 [dev-packages]
 
