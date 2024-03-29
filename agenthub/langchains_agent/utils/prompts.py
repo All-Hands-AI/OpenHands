@@ -1,12 +1,12 @@
-import os
-
 from typing import List, Dict, Type
 
 from langchain_core.pydantic_v1 import BaseModel
 from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
 
-if os.getenv("DEBUG"):
+from opendevin import config
+
+if config.get_or_default("DEBUG", False):
     from langchain.globals import set_debug
     set_debug(True)
 

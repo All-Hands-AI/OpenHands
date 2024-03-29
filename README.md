@@ -26,51 +26,58 @@ First, make sure Docker is running:
 ```bash
 docker ps # this should exit successfully
 ```
+
 Then pull our latest image [here](https://github.com/opendevin/OpenDevin/pkgs/container/sandbox)
 ```bash
 docker pull ghcr.io/opendevin/sandbox:v0.1
 ```
+
+Then copy `config.toml.template` to `config.toml`. Add an API key to `config.toml`.
+(See below for how to use different models.)
+```toml
+OPENAI_API_KEY="..."
+WORKSPACE_DIR="..."
+```
+
+Next, start the backend.
 We manage python packages and the virtual environment with `pipenv`.
-Make sure python >= 3.10.
+Make sure you have python >= 3.10.
 ```bash
 python -m pip install pipenv
 pipenv install -v
 pipenv shell
 
-export OPENAI_API_KEY="..."
-export WORKSPACE_DIR="/path/to/your/project"
 python -m pip install -r requirements.txt
 uvicorn opendevin.server.listen:app --port 3000
 ```
 
-Then in a second terminal:
+Then, in a second terminal, start the frontend:
 ```bash
 cd frontend
 npm install
 npm start
 ```
-The virtual environment is now activated and you should see `(OpenDevin)` in front of your cmdline prompt.
 
 ### Picking a Model
 We use LiteLLM, so you can run OpenDevin with any foundation model, including OpenAI, Claude, and Gemini.
 LiteLLM has a [full list of providers](https://docs.litellm.ai/docs/providers).
 
-To change the model, set the `LLM_MODEL` and `LLM_API_KEY` environment variables.
+To change the model, set the `LLM_MODEL` and `LLM_API_KEY` in `config.toml`.
 
 For example, to run Claude:
-```bash
-export LLM_API_KEY="your-api-key"
-export LLM_MODEL="claude-3-opus-20240229"
+```toml
+LLM_API_KEY="your-api-key"
+LLM_MODEL="claude-3-opus-20240229"
 ```
 
 You can also set the base URL for local/custom models:
-```bash
-export LLM_BASE_URL="https://localhost:3000"
+```toml
+LLM_BASE_URL="https://localhost:3000"
 ```
 
 And you can customize which embeddings are used for the vector database storage:
-```bash
-export LLM_EMBEDDING_MODEL="llama2" # can be "llama2", "openai", "azureopenai", or "local"
+```toml
+LLM_EMBEDDING_MODEL="llama2" # can be "llama2", "openai", "azureopenai", or "local"
 ```
 
 ### Running the app
