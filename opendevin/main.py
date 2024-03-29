@@ -24,7 +24,7 @@ async def main():
     parser = argparse.ArgumentParser(description="Run an agent with a specific task")
     parser.add_argument("-d", "--directory", required=True, type=str, help="The working directory for the agent")
     parser.add_argument("-t", "--task", type=str, default="", help="The task for the agent to perform")
-    parser.add_argument("-f", "--file", type=str, help="Path to a file containing the task. Overrides -t if both are provided.")
+    parser.add_argument("-f", "--task-file", type=str, help="Path to a file containing the task. Overrides -t if both are provided.")
     parser.add_argument("-c", "--agent-cls", default="LangchainsAgent", type=str, help="The agent class to use")
     parser.add_argument("-m", "--model-name", default=config.get_or_default("LLM_MODEL", "gpt-4-0125-preview"), type=str, help="The (litellm) model name to use")
     parser.add_argument("-i", "--max-iterations", default=100, type=int, help="The maximum number of iterations to run the agent")
@@ -39,7 +39,7 @@ async def main():
         task = args.task
 
     if not task:
-        raise ValueError("No task provided. Please specify a task through -t, -f, or pipe it into stdin.")
+        raise ValueError("No task provided. Please specify a task through -t, -f")
 
     print(f"Running agent {args.agent_cls} (model: {args.model_name}, directory: {args.directory}) with task: \"{task}\"")
     llm = LLM(args.model_name)
