@@ -4,6 +4,7 @@ from typing import Optional
 
 from fastapi import WebSocketDisconnect
 
+from opendevin import config
 from opendevin.action import (
     Action,
     NullAction,
@@ -14,10 +15,10 @@ from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
 from opendevin.observation import Observation, UserMessageObservation
 
-DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4-0125-preview")
-DEFAULT_API_KEY = os.getenv("LLM_API_KEY")
-DEFAULT_BASE_URL = os.getenv("LLM_BASE_URL")
+DEFAULT_API_KEY = config.get_or_none("LLM_API_KEY")
+DEFAULT_BASE_URL = config.get_or_none("LLM_BASE_URL")
+DEFAULT_WORKSPACE_DIR = config.get_or_default("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
+LLM_MODEL = config.get_or_default("LLM_MODEL", "gpt-4-0125-preview")
 
 class Session:
     def __init__(self, websocket):

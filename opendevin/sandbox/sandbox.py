@@ -10,19 +10,21 @@ from typing import Dict, List, Tuple
 import docker
 import concurrent.futures
 
+from opendevin import config
+
 InputType = namedtuple("InputType", ["content"])
 OutputType = namedtuple("OutputType", ["content"])
 
-DIRECTORY_REWRITE = os.getenv(
+DIRECTORY_REWRITE = config.get_or_default(
     "DIRECTORY_REWRITE", ""
 )  # helpful for docker-in-docker scenarios
-CONTAINER_IMAGE = os.getenv("SANDBOX_CONTAINER_IMAGE", "ghcr.io/opendevin/sandbox:v0.1")
+CONTAINER_IMAGE = config.get_or_default("SANDBOX_CONTAINER_IMAGE", "ghcr.io/opendevin/sandbox:v0.1")
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
-RUN_AS_DEVIN = os.getenv("RUN_AS_DEVIN", "true").lower() != "false"
+RUN_AS_DEVIN = config.get_or_default("RUN_AS_DEVIN", "true").lower() != "false"
 USER_ID = 1000
-if os.getenv("SANDBOX_USER_ID") is not None:
-    USER_ID = int(os.getenv("SANDBOX_USER_ID", ""))
+if config.get_or_none("SANDBOX_USER_ID") is not None:
+    USER_ID = int(config.get_or_default("SANDBOX_USER_ID", ""))
 elif hasattr(os, "getuid"):
     USER_ID = os.getuid()
 
