@@ -31,7 +31,7 @@ Then pull our latest image [here](https://github.com/opendevin/OpenDevin/pkgs/co
 docker pull ghcr.io/opendevin/sandbox:v0.1
 ```
 We manage python packages and the virtual environment with `pipenv`.
-Make sure your python >= 3.10.
+Make sure python >= 3.10.
 ```bash
 python -m pip install pipenv
 pipenv install -v
