@@ -30,6 +30,6 @@ To learn React, check out the [React documentation](https://reactjs.org/).
 
 The OpenDevin terminal is powered by [Xterm.js](https://github.com/xtermjs/xterm.js).
 
-The terminal listens for events over a WebSocket connection. The WebSocket URL is specified by the environment variable `REACT_APP_TERMINAL_WS_URL` (prepending `REACT_APP_` to environment variable names is necessary to expose them).
+The terminal listens for events over a WebSocket connection. The WebSocket URL is specified by the environment variable `VITE_TERMINAL_WS_URL` (prepending `VITE_` to environment variable names is necessary to expose them).
 
 A simple websocket server can be found in the `/server` directory.
