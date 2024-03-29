@@ -64,10 +64,10 @@ class Session:
                     if self.controller is None:
                         await self.send_error("No agent started. Please wait a second...")
 
-                    elif event["action"] == "chat":
-                        self.controller.add_history(NullAction(), UserMessageObservation(event["message"]))
-                    elif event["action"] == "terminal":
-                        if event["message"] == "\r":
+                    elif action == "chat":
+                        self.controller.add_history(NullAction(), UserMessageObservation(data["message"]))
+                    elif action == "terminal":
+                        if data["message"] == "\r":
                             if self.controller:
                                 output = self.controller.run_command(self.current_input)
                                 await self.send({"observation": "run", "content": output.content})
@@ -75,11 +75,11 @@ class Session:
                                 # TODO raise ControllerNotImplementedError
                                 pass
                             self.current_input = ""
-                        elif event["message"] == "\x7f":
+                        elif data["message"] == "\x7f":
                             if len(self.current_input) > 0:
                                 self.current_input = self.current_input[:-1]
                         else:
-                            self.current_input += event["message"]
+                            self.current_input += data["message"]
                     elif action == "chat":
                         self.controller.add_history(NullAction(), UserMessageObservation(data["message"]))
                     else:
