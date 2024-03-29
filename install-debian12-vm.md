@@ -1,4 +1,4 @@
-# OpenDevin on Fresh Debian 12 VirtualMachine
+# OpenDevin on Fresh Debian 12 Virtual Machine
 
 The below instructions are specific to the version that matches these `lsb_release -a` details:
 
