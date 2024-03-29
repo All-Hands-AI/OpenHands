@@ -1,4 +1,5 @@
 import socket from "../socket/socket";
+import { appendAssistantMessage } from "../state/chatSlice";
 import { setInitialized } from "../state/taskSlice";
 import store from "../store";
 
@@ -6,8 +7,8 @@ export const MODELS = [
   "gpt-3.5-turbo-1106",
   "gpt-4-0125-preview",
   "claude-3-haiku-20240307",
+  "claude-3-opus-20240229",
   "claude-3-sonnet-20240229",
-  "claude-3-sonnet-20240307",
 ];
 
 export type Model = (typeof MODELS)[number];
@@ -21,6 +22,7 @@ function changeSetting(setting: string, value: string): void {
   const eventString = JSON.stringify(event);
   socket.send(eventString);
   store.dispatch(setInitialized(false));
+  store.dispatch(appendAssistantMessage(`Changed ${setting} to "${value}"`));
 }
 
 export function changeModel(model: Model): void {
@@ -28,7 +30,7 @@ export function changeModel(model: Model): void {
 }
 
 export function changeAgent(agent: Agent): void {
-  changeSetting("agent", agent);
+  changeSetting("agent_cls", agent);
 }
 
 export function changeDirectory(directory: string): void {

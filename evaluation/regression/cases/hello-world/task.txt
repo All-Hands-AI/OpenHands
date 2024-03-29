@@ -1,1 +1,1 @@
-Write a bash script that prints "hello world"
+Write a bash script named "hello_world.sh" that prints "Hello, World!"

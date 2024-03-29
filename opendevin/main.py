@@ -1,10 +1,10 @@
-import os
 import asyncio
 import argparse
 
 from typing import Type
 
 import agenthub # noqa F401 (we import this to get the agents registered)
+from opendevin import config
 from opendevin.agent import Agent
 from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-m",
         "--model-name",
-        default=os.getenv("LLM_MODEL") or "gpt-4-0125-preview",
+        default=config.get_or_default("LLM_MODEL", "gpt-4-0125-preview"),
         type=str,
         help="The (litellm) model name to use",
     )

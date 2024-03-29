@@ -1,0 +1,31 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+datasets = "*"
+pandas = "*"
+litellm = "*"
+termcolor = "*"
+seaborn = "*"
+docker = "*"
+fastapi = "*"
+uvicorn = {extras = ["standard"], version = "*"}
+ruff = "*"
+mypy = "*"
+langchain = "*"
+langchain-core = "*"
+langchain-community = "*"
+llama-index = "*"
+llama-index-vector-stores-chroma = "*"
+chromadb = "*"
+llama-index-embeddings-huggingface = "*"
+llama-index-embeddings-azure-openai = "*"
+llama-index-embeddings-ollama = "*"
+google-generativeai = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.10"
