@@ -14,6 +14,7 @@ def test_hello_world(task_file, run_test_case, agent):
     assert os.path.exists(workspace_dir)
     assert os.path.isfile(os.path.join(workspace_dir, 'hello_world.sh'))
 
-    with open(os.path.join(workspace_dir, 'hello_world.sh'), 'r') as file:
-        content = file.read().strip()
-        assert content == '#!/bin/bash\necho "Hello, World!"'
+   # Execute the hello_world.sh script
+    os.chdir(workspace_dir)
+    output = os.popen('bash hello_world.sh').read()
+    assert output == 'Hello, World!\n'
