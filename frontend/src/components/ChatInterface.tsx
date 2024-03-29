@@ -9,7 +9,6 @@ import { changeDirectory as sendChangeDirectorySocketMessage } from "../services
 import { useTypingEffect } from "../hooks/useTypingEffect";
 import { Message } from "../state/chatSlice";
 
-
 interface ITypingChatProps {
   msg: Message;
 }
@@ -23,17 +22,16 @@ interface ITypingChatProps {
  * makes uses of useTypingEffect hook
  *
  */
-function TypingChat({ msg }: ITypingChatProps): JSX.Element {
+function TypingChat({ msg }: ITypingChatProps) {
   return (
-    <>
-      {msg?.content && (
-        <div className="chat chat-bubble">
-          {useTypingEffect([msg?.content], { loop: false })}
-        </div>
-      )}
-    </>
+    msg?.content && (
+      <div className="chat chat-bubble">
+        {useTypingEffect([msg?.content], { loop: false })}
+      </div>
+    )
   );
 }
+
 function MessageList(): JSX.Element {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { messages } = useSelector((state: RootState) => state.chat);
