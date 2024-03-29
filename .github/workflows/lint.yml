@@ -27,7 +27,9 @@ jobs:
         with:
           python-version: 3.11
       - name: Install dependencies
-        run: pip install ruff mypy types-requests
+        run: pip install ruff mypy
+      - name: Install types
+        run: mypy --install-types
       - name: Run ruff
         run: ruff check --config dev_config/python/ruff.toml opendevin/ agenthub/
       - name: Run mypy
