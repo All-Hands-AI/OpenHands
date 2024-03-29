@@ -1,3 +1,4 @@
+import os
 from typing import List, Dict, Type
 
 from langchain.prompts import PromptTemplate
@@ -113,13 +114,14 @@ def get_request_action_prompt(
     hint = ''
     if len(thoughts) > 0:
         latest_thought = thoughts[-1]
-        if latest_thought["action"] == 'think':
-            if latest_thought["args"]['thought'].startswith("OK so my task is"):
-                hint = "You're just getting started! What should you do first?"
-            else:
-                hint = "You've been thinking a lot lately. Maybe it's time to take action?"
-        elif latest_thought["action"] == 'error':
-            hint = "Looks like that last command failed. Maybe you need to fix it, or try something else."
+        if "action" in latest_thought:
+            if latest_thought["action"] == 'think':
+                if latest_thought["args"]['thought'].startswith("OK so my task is"):
+                    hint = "You're just getting started! What should you do first?"
+                else:
+                    hint = "You've been thinking a lot lately. Maybe it's time to take action?"
+            elif latest_thought["action"] == 'error':
+                hint = "Looks like that last command failed. Maybe you need to fix it, or try something else."
 
     bg_commands_message = ""
     if len(background_commands_obs) > 0:
