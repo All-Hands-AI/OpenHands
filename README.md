@@ -21,9 +21,7 @@ OpenDevin is still a work in progress. But you can run the alpha version to see 
 * [Python](https://www.python.org/downloads/) >= 3.10
 * [NodeJS](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) >= 14.8
 
-### Installation
-Using Debian in a VM? Try [The Guide](/install-debian12-vm.md)
-
+### Installation - Local Machine
 First, make sure Docker is running:
 ```bash
 docker ps # this should exit successfully
@@ -48,6 +46,9 @@ npm run start -- --port 3001
 ```
 
 You'll see OpenDevin running at localhost:3001
+
+### Installation - Virtual Machine
+If you would prefer to use a virtual machine and access it via the network you can try the [Debian 12 Guide](/install-debian12-vm.md). This includes a launch script where you can specify the VM's IP.
 
 ### Picking a Model
 We use LiteLLM, so you can run OpenDevin with any foundation model, including OpenAI, Claude, and Gemini.
