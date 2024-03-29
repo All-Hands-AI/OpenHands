@@ -119,7 +119,7 @@ class LangchainsAgent(Agent):
         self._initialized = True
 
     def step(self, state: State) -> Action:
-        self._initialize(state.task)
+        self._initialize(state.plan.main_goal)
         # TODO: make langchains agent use Action & Observation
         # completly from ground up
 
@@ -163,7 +163,7 @@ class LangchainsAgent(Agent):
         state.updated_info = []
 
         prompt = prompts.get_request_action_prompt(
-            state.task,
+            state.plan.main_goal,
             self.monologue.get_thoughts(),
             state.background_commands_obs,
         )
