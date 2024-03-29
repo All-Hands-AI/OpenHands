@@ -36,6 +36,18 @@ Make sure python >= 3.10.
 python -m pip install pipenv
 pipenv install -v
 pipenv shell
+
+export OPENAI_API_KEY="..."
+export WORKSPACE_DIR="/path/to/your/project"
+python -m pip install -r requirements.txt
+uvicorn opendevin.server.listen:app --port 3000
+```
+
+Then in a second terminal:
+```bash
+cd frontend
+npm install
+npm start
 ```
 The virtual environment is now activated and you should see `(OpenDevin)` in front of your cmdline prompt.
 
