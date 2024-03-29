@@ -31,7 +31,7 @@
     "xterm-addon-fit": "^0.8.0"
   },
   "scripts": {
-    "start": "vite --port 3001",
+    "start": "vite",
     "build": "tsc && vite build",
     "test": "jest",
     "preview": "vite preview",
