@@ -58,7 +58,7 @@ LiteLLM has a [full list of providers](https://docs.litellm.ai/docs/providers).
 To change the model, set the `LLM_MODEL` and `LLM_API_KEY` in `config.toml`.
 
 For example, to run Claude:
-```bash
+```toml
 LLM_API_KEY="your-api-key"
 LLM_MODEL="claude-3-opus-20240229"
 ```
