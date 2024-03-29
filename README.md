@@ -69,7 +69,7 @@ LLM_BASE_URL="https://localhost:3000"
 ```
 
 And you can customize which embeddings are used for the vector database storage:
-```bash
+```toml
 LLM_EMBEDDING_MODEL="llama2" # can be "llama2", "openai", "azureopenai", or "local"
 ```
 
