@@ -31,4 +31,4 @@ jobs:
       - name: Run ruff
         run: ruff check --config dev_config/python/ruff.toml opendevin/ agenthub/
       - name: Run mypy
-        run: mypy --install-types --config-file dev_config/python/mypy.ini opendevin/ agenthub/
+        run: mypy --install-types --non-interactive --config-file dev_config/python/mypy.ini opendevin/ agenthub/
