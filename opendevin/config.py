@@ -10,7 +10,6 @@ if os.path.exists("config.toml"):
     with open("config.toml", "rb") as f:
         config_str = f.read().decode("utf-8")
 
-print("cstr", config_str)
 config = toml.loads(config_str)
 
 def _get(key: str, default):
