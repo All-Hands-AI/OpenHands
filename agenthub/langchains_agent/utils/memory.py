@@ -1,14 +1,13 @@
-import os
-
 import chromadb
 from llama_index.core import Document
 from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.core import VectorStoreIndex
 from llama_index.vector_stores.chroma import ChromaVectorStore
 
+from opendevin import config
 from . import json
 
-embedding_strategy = os.getenv("LLM_EMBEDDING_MODEL", "local")
+embedding_strategy = config.get_or_default("LLM_EMBEDDING_MODEL", "local")
 
 # TODO: More embeddings: https://docs.llamaindex.ai/en/stable/examples/embeddings/OpenAI/
 # There's probably a more programmatic way to do this.
@@ -16,22 +15,22 @@ if embedding_strategy == "llama2":
     from llama_index.embeddings.ollama import OllamaEmbedding
     embed_model = OllamaEmbedding(
         model_name="llama2",
-        base_url=os.getenv("LLM_BASE_URL", "http://localhost:8000"),
+        base_url=config.get_or_default("LLM_BASE_URL", "http://localhost:8000"),
         ollama_additional_kwargs={"mirostat": 0},
     )
 elif embedding_strategy == "openai":
     from llama_index.embeddings.openai import OpenAIEmbedding
     embed_model = OpenAIEmbedding(
-        base_url=os.getenv("LLM_BASE_URL"),
+        base_url=config.get_or_error("LLM_BASE_URL"),
     )
 elif embedding_strategy == "azureopenai":
     from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding  # Need to instruct to set these env variables in documentation
     embed_model = AzureOpenAIEmbedding(
         model="text-embedding-ada-002",
-        deployment_name=os.getenv("LLM_DEPLOYMENT_NAME"),
-        api_key=os.getenv("LLM_API_KEY"),
-        azure_endpoint=os.getenv("LLM_BASE_URL"),
-        api_version=os.getenv("LLM_API_VERSION"),
+        deployment_name=config.get_or_error("LLM_DEPLOYMENT_NAME"),
+        api_key=config.get_or_error("LLM_API_KEY"),
+        azure_endpoint=config.get_or_error("LLM_BASE_URL"),
+        api_version=config.get_or_error("LLM_API_VERSION"),
     )
 else:
     from llama_index.embeddings.huggingface import HuggingFaceEmbedding

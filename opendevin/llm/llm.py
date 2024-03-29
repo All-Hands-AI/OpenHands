@@ -4,10 +4,12 @@ import uuid
 from litellm import completion as litellm_completion
 from functools import partial
 
-DEFAULT_MODEL = os.getenv("LLM_MODEL", "gpt-4-0125-preview")
-DEFAULT_API_KEY = os.getenv("LLM_API_KEY")
-DEFAULT_BASE_URL = os.getenv("LLM_BASE_URL")
-PROMPT_DEBUG_DIR = os.getenv("PROMPT_DEBUG_DIR", "")
+from opendevin import config
+
+DEFAULT_MODEL = config.get_or_default("LLM_MODEL", "gpt-4-0125-preview")
+DEFAULT_API_KEY = config.get_or_none("LLM_API_KEY")
+DEFAULT_BASE_URL = config.get_or_none("LLM_BASE_URL")
+PROMPT_DEBUG_DIR = config.get_or_default("PROMPT_DEBUG_DIR", "")
 
 class LLM:
     def __init__(self, model=DEFAULT_MODEL, api_key=DEFAULT_API_KEY, base_url=DEFAULT_BASE_URL, debug_dir=PROMPT_DEBUG_DIR):
