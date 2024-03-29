@@ -1,5 +1,3 @@
-import os
-
 import chromadb
 from llama_index.core import Document
 from llama_index.core.retrievers import VectorIndexRetriever
