@@ -31,7 +31,7 @@ Then pull our latest image [here](https://github.com/opendevin/OpenDevin/pkgs/co
 docker pull ghcr.io/opendevin/sandbox:v0.1
 ```
 
-Then add an API key to `config.toml`
+Then copy `config.toml.template` to `config.toml`. Add an API key to `config.toml`
 ```toml
 OPENAI_API_KEY="..."
 WORKSPACE_DIR="..."
