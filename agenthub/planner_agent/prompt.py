@@ -154,7 +154,7 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
         plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
         hint = plan_status
 
-    latest_action_id = latest_action.action
+    latest_action_id = latest_action.to_dict()['action']
 
     if current_task is not None:
         if latest_action_id == "":

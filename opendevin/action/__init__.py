@@ -19,7 +19,6 @@ actions = (
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action:action_class for action_class in actions} # type: ignore[attr-defined]
-CLASS_TO_ACTION_TYPE = {v: k for k, v in ACTION_TYPE_TO_CLASS.items()}
 
 def action_from_dict(action: dict) -> Action:
     if "action" not in action:
