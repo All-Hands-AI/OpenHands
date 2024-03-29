@@ -70,3 +70,9 @@
 .xterm-screen {
   padding: 10px 0 0 10px;
 }
+
+@media screen and (max-width: 1000px) {
+  .app {
+    flex-direction: column;
+  }
+}

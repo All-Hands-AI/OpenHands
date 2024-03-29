@@ -16,7 +16,7 @@
 .message-list {
   flex: 1;
   overflow-y: auto;
-  padding-top: 1rem;
+  padding: 1rem;
 }
 
 .message-layout {
