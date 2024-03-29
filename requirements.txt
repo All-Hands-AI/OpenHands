@@ -8,6 +8,7 @@ fastapi
 uvicorn[standard]
 ruff
 mypy
+pytest
 
 # for agenthub/lanchangs_agent
 langchain

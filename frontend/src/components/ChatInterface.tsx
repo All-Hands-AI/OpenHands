@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { ChangeEvent, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import "./ChatInterface.css";
-import userAvatar from "../assets/user-avatar.png";
 import assistantAvatar from "../assets/assistant-avatar.png";
-import { RootState } from "../store";
+import userAvatar from "../assets/user-avatar.png";
 import { sendChatMessage } from "../services/chatService";
+import { RootState } from "../store";
+import "./ChatInterface.css";
+import { changeDirectory as sendChangeDirectorySocketMessage } from "../services/settingsService";
 
 function MessageList(): JSX.Element {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -44,6 +45,43 @@ function InitializingStatus(): JSX.Element {
   );
 }
 
+function DirectoryInput(): JSX.Element {
+  const [editing, setEditing] = useState(false);
+  const [directory, setDirectory] = useState("Default");
+
+  function save() {
+    setEditing(false);
+    sendChangeDirectorySocketMessage(directory);
+  }
+
+  function onDirectoryInputChange(e: ChangeEvent<HTMLInputElement>) {
+    setEditing(true);
+    setDirectory(e.target.value);
+  }
+
+  return (
+    <div className="flex p-2 justify-center gap-2 bg-neutral-700">
+      <label htmlFor="directory-input" className="label">
+        Directory
+      </label>
+      <input
+        type="text"
+        className="input"
+        id="directory-input"
+        placeholder="Default"
+        onChange={onDirectoryInputChange}
+      />
+      <button
+        type="button"
+        className={`btn ${editing ? "" : "hidden"}`}
+        onClick={save}
+      >
+        Save
+      </button>
+    </div>
+  );
+}
+
 function ChatInterface(): JSX.Element {
   const { initialized } = useSelector((state: RootState) => state.task);
   const [inputMessage, setInputMessage] = useState("");
@@ -57,6 +95,7 @@ function ChatInterface(): JSX.Element {
 
   return (
     <div className="chat-interface">
+      <DirectoryInput />
       {initialized ? <MessageList /> : <InitializingStatus />}
       <div className="input-container">
         <div className="input-box">

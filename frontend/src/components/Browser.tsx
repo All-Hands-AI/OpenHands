@@ -5,7 +5,6 @@ import { RootState } from "../store";
 
 function Browser(): JSX.Element {
   const url = useSelector((state: RootState) => state.browser.url);
-
   return (
     <div className="mockup-browser">
       <div className="mockup-browser-toolbar">
