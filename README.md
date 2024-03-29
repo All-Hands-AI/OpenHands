@@ -42,7 +42,7 @@ Then in a second terminal:
 ```bash
 cd frontend
 npm install
-npm run start -- --port 3001
+npm start
 ```
 
 You'll see OpenDevin running at localhost:3001
