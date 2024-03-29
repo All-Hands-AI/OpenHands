@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .base import NotExecutableAction
 
@@ -6,6 +6,8 @@ from .base import NotExecutableAction
 class AddSubtaskAction(NotExecutableAction):
     parent: str
     goal: str
+    verify: str = ''
+    subtasks: list = field(default_factory=list)
 
     @property
     def message(self) -> str:

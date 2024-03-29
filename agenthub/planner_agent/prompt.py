@@ -1,6 +1,7 @@
 import json
 from typing import List, Tuple, Dict, Type
 
+from opendevin.controller.agent_controller import print_with_indent
 from opendevin.plan import Plan
 from opendevin.action import Action
 from opendevin.observation import Observation
@@ -61,20 +62,28 @@ track of your progress. Here's a JSON representation of your plan:
 You're responsible for managing this plan and the status of tasks in
 it, by using the `add_task` and `modify_task` actions described below.
 
+If the History below contradicts the state of any of these tasks, you
+MUST modify the task using the `modify_task` action described below.
+
+Be sure NOT to duplicate any tasks. Do NOT use the `add_task` action for
+a task that's already represented. Every task must be represented only once.
+
 Tasks that are sequential MUST be siblings. They must be added in order
 to their parent task.
 
-If a task has any subtasks, it MUST have at least two subtasks: an action that will
-complete the task, and a way to verify that the action was successful.
-If that's not the case for any task above, you MUST add subtasks to it now.
+If you mark a task as 'completed', 'verified', or 'abandoned',
+all non-abandoned subtasks will be marked the same way.
+So before closing a task this way, you MUST not only be sure that it has
+been completed successfully--you must ALSO be sure that all its subtasks
+are ready to be marked the same way.
 
-Before marking this task as complete, you MUST be sure that it has
-been completed successfully. You must ALSO be sure that all its subtasks
-have been completed or abandoned.
+If, and only if, ALL tasks have already been marked verified,
+you MUST respond with the `finish` action.
 
 ## History
 Here is a recent history of actions you've taken in service of this plan,
-as well as observations you've made.
+as well as observations you've made. This only includes the MOST RECENT
+ten actions--more happened before that.
 ```json
 %(history)s
 ```
@@ -105,19 +114,15 @@ It must be an object, and it must contain two fields:
 * `add_task` - add a task to your plan. Arguments:
   * `parent` - the ID of the parent task
   * `goal` - the goal of the task
+  * `subtasks` - a list of subtasks, each of which is a map with a `goal` key.
 * `modify_task` - close a task. Arguments:
   * `id` - the ID of the task to close
-  * `state` - set to 'in_progress' to start the task, 'completed' to finish it, 'abandoned' to give up on it permanently, or `open` to stop working on it for now.
-* `finish` - if ALL of your tasks and subtasks have been completed or abanded, and you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
+  * `state` - set to 'in_progress' to start the task, 'completed' to finish it, 'verified' to assert that it was successful, 'abandoned' to give up on it permanently, or `open` to stop working on it for now.
+* `finish` - if ALL of your tasks and subtasks have been verified or abanded, and you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
 You MUST take time to think in between read, write, run, browse, and recall actions.
 You should never act twice in a row without thinking. But if your last several
 actions are all `think` actions, you should consider taking a different action.
-
-Based on the history above, if ANY of your open tasks have been completed,
-including ALL of its subtasks,
-you MUST close it with the `modify_task` action. Do NOT do this
-unless ALL subtasks have been completed
 
 What is your next thought or action? Again, you must reply with JSON, and only with JSON.
 
@@ -128,59 +133,57 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
     plan_str = json.dumps(plan.task.to_dict(), indent=2)
     sub_history = history[-HISTORY_SIZE:]
     history_dicts = []
-    latest_action = ""
+    latest_action = NullAction()
     for action, observation in sub_history:
         if not isinstance(action, NullAction):
+            #if not isinstance(action, ModifySubtaskAction) and not isinstance(action, AddSubtaskAction):
             action_dict = action.to_dict()
             action_dict["action"] = convert_action(action_dict["action"])
-            if 'base_dir' in action_dict:
-                action_dict.pop('base_dir')
             history_dicts.append(action_dict)
-            latest_action = action_dict["action"]
+            latest_action = action
         if not isinstance(observation, NullObservation):
             observation_dict = observation.to_dict()
             observation_dict["observation"] = convert_observation(observation_dict["observation"])
-            if 'base_dir' in observation_dict:
-                observation_dict.pop('base_dir')
             history_dicts.append(observation_dict)
     history_str = json.dumps(history_dicts, indent=2)
 
     hint = ""
     current_task = plan.get_current_task()
     if current_task is not None:
-        plan_status = f"You're currently working on this task: {current_task.goal}."
+        plan_status = f"You're currently working on this task:\n{current_task.goal}."
+        if len(current_task.subtasks) == 0:
+            plan__status += f"\nIf it's not achievable AND verifiable with a SINGLE action, you MUST break it down into subtasks NOW."
     else:
         plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
         hint = plan_status
 
+    latest_action_id = convert_action(latest_action.to_dict()["action"])
+
     if current_task is not None:
-        if len(current_task.subtasks) == 0:
-            hint = f"This is your current task: {current_task.goal}.\nIf it's not both (a) achievable and (b) verifiable with a SINGLE action, you MUST break it down into subtasks NOW."
-        elif len(current_task.subtasks) < 3:
-            hint = "Do you want to add some tasks to your current task, to break it down a bit further?"
-        elif latest_action == "":
+        if latest_action_id == "":
             hint = "You haven't taken any actions yet. Start by using `ls` to check out what files you're working with."
-        elif latest_action == "run":
-            hint = "You should think about the command you just ran, and what output it gave. Maybe it's time to mark a task as complete."
-        elif latest_action == "read":
-            hint = "You should think about the file you just read, and what you learned from it."
-        elif latest_action == "write":
-            hint = "You just changed a file. You should run a command to check if your changes were successful, and have the intended behavior."
-        elif latest_action == "browse":
+        elif latest_action_id == "run":
+            hint = "You should think about the command you just ran, what output it gave, and how that affects your plan."
+        elif latest_action_id == "read":
+            hint = "You should think about the file you just read, what you learned from it, and how that affects your plan."
+        elif latest_action_id == "write":
+            hint = "You just changed a file. You should think about how it affects your plan."
+        elif latest_action_id == "browse":
             hint = "You should think about the page you just visited, and what you learned from it."
-        elif latest_action == "think":
+        elif latest_action_id == "think":
             hint = "Look at your last thought in the history above. What does it suggest? Don't think anymore--take action."
-        elif latest_action == "recall":
-            hint = "You should think about the information you just recalled, and how it fits into your plan."
-        elif latest_action == "add_task":
-            hint = "You could continue adding tasks, or think about your next step."
-        elif latest_action == "modify_task":
-            hint = "You should think about what to do next."
-        elif latest_action == "summarize":
+        elif latest_action_id == "recall":
+            hint = "You should think about the information you just recalled, and how it should affect your plan."
+        elif latest_action_id == "add_task":
+            hint = "You should think about the next action to take."
+        elif latest_action_id == "modify_task":
+            hint = "You should think about the next action to take."
+        elif latest_action_id == "summarize":
             hint = ""
-        elif latest_action == "finish":
+        elif latest_action_id == "finish":
             hint = ""
 
+    print_with_indent("HINT:\n" + hint)
     return prompt % {
         'task': plan.main_goal,
         'plan': plan_str,

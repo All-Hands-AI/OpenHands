@@ -2,6 +2,7 @@ from typing import List
 from .prompt import get_prompt, parse_response
 
 from opendevin.agent import Agent
+from opendevin.action import AgentFinishAction
 from opendevin.llm.llm import LLM
 from opendevin.state import State
 from opendevin.action import Action
@@ -11,6 +12,8 @@ class PlannerAgent(Agent):
         super().__init__(llm)
 
     def step(self, state: State) -> Action:
+        if state.plan.task.state in ['completed', 'verified', 'abandoned']:
+            return AgentFinishAction()
         prompt = get_prompt(state.plan, state.history)
         messages = [{"content": prompt, "role": "user"}]
         resp = self.llm.completion(messages=messages)

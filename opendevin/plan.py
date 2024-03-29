@@ -1,31 +1,48 @@
 from typing import List
 
 OPEN_STATE = 'open'
-CLOSED_STATE = 'completed'
+COMPLETED_STATE = 'completed'
 ABANDONED_STATE = 'abandoned'
 IN_PROGRESS_STATE = 'in_progress'
-STATES = [OPEN_STATE, CLOSED_STATE, ABANDONED_STATE, IN_PROGRESS_STATE]
+VERIFIED_STATE = 'verified'
+STATES = [OPEN_STATE, COMPLETED_STATE, ABANDONED_STATE, IN_PROGRESS_STATE, VERIFIED_STATE]
 
 class Task:
     id: str
     goal: str
+    verify: str
     parent: "Task | None"
     subtasks: List["Task"]
 
-    def __init__(self, parent: "Task | None", goal: str, state: str=OPEN_STATE, subtasks: List = []):
+    def __init__(self, parent: "Task | None", goal: str, verify: str, state: str=OPEN_STATE, subtasks: List = []):
         if parent is None:
             self.id = '0'
         else:
             self.id = parent.id + '.' + str(len(parent.subtasks))
         self.parent = parent
         self.goal = goal
-        self.subtasks = subtasks
+        self.verify = verify
+        if subtasks is None:
+            subtasks = []
+        self.subtasks = []
+        for subtask in subtasks:
+            if isinstance(subtask, Task):
+                self.subtasks.append(subtask)
+            else:
+                goal = subtask.get('goal')
+                verify = subtask.get('verify')
+                state = subtask.get('state')
+                subtasks = subtask.get('subtasks')
+                self.subtasks.append(Task(self, goal, verify, state, subtasks))
+
         self.state = OPEN_STATE
 
     def to_string(self, indent=""):
         emoji = ''
-        if self.state == CLOSED_STATE:
+        if self.state == VERIFIED_STATE:
             emoji = '✅'
+        elif self.state == COMPLETED_STATE:
+            emoji = '🟢'
         elif self.state == ABANDONED_STATE:
             emoji = '❌'
         elif self.state == IN_PROGRESS_STATE:
@@ -33,6 +50,7 @@ class Task:
         elif self.state == OPEN_STATE:
             emoji = '🔵'
         result = indent + emoji + ' ' + self.id + ' ' + self.goal + '\n'
+        # result += indent + '  👀' + ' ' + self.verify + '\n'
         for subtask in self.subtasks:
             result += subtask.to_string(indent + '    ')
         return result
@@ -49,9 +67,10 @@ class Task:
         if state not in STATES:
             raise ValueError('Invalid state:' + state)
         self.state = state
-        if state == CLOSED_STATE or state == ABANDONED_STATE:
+        if state == COMPLETED_STATE or state == ABANDONED_STATE or state == VERIFIED_STATE:
             for subtask in self.subtasks:
-                subtask.set_state(CLOSED_STATE)
+                if subtask.state != ABANDONED_STATE:
+                    subtask.set_state(state)
         elif state == IN_PROGRESS_STATE:
             if self.parent is not None:
                 self.parent.set_state(state)
@@ -70,7 +89,7 @@ class Plan:
 
     def __init__(self, task: str):
         self.main_goal = task
-        self.task = Task(parent=None, goal=task, subtasks=[])
+        self.task = Task(parent=None, goal=task, verify='', subtasks=[])
 
     def __str__(self):
         return self.task.to_string()
@@ -90,9 +109,9 @@ class Plan:
             task = task.subtasks[part]
         return task
 
-    def add_subtask(self, parent_id: str, goal: str):
+    def add_subtask(self, parent_id: str, goal: str, verify: str, subtasks: List = []):
         parent = self.get_task_by_id(parent_id)
-        child = Task(parent=parent, goal=goal, subtasks=[])
+        child = Task(parent=parent, goal=goal, verify=verify, subtasks=subtasks)
         parent.subtasks.append(child)
 
     def set_subtask_state(self, id: str, state: str):

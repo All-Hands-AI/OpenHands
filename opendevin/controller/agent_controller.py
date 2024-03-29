@@ -97,13 +97,14 @@ class AgentController:
 
         await self._run_callbacks(action)
 
-        if isinstance(action, AgentFinishAction):
+        finished = isinstance(action, AgentFinishAction)
+        if finished:
             print_with_indent("\nFINISHED")
             return True
 
         if isinstance(action, AddSubtaskAction):
             try:
-                self.state.plan.add_subtask(action.parent, action.goal)
+                self.state.plan.add_subtask(action.parent, action.goal, action.verify, action.subtasks)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
                 print_with_indent("\nADD TASK ERROR:\n%s" % observation)
