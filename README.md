@@ -30,22 +30,26 @@ Then pull our latest image [here](https://github.com/opendevin/OpenDevin/pkgs/co
 ```bash
 docker pull ghcr.io/opendevin/sandbox:v0.1
 ```
-
-Then start the backend:
+We manage python packages and the virtual environment with `pipenv`.
+Make sure python >= 3.10.
 ```bash
+python -m pip install pipenv
+pipenv install -v
+pipenv shell
+
 export OPENAI_API_KEY="..."
 export WORKSPACE_DIR="/path/to/your/project"
 python -m pip install -r requirements.txt
 uvicorn opendevin.server.listen:app --port 3000
 ```
+
 Then in a second terminal:
 ```bash
 cd frontend
 npm install
 npm start
 ```
-
-You'll see OpenDevin running at localhost:3001
+The virtual environment is now activated and you should see `(OpenDevin)` in front of your cmdline prompt.
 
 ### Picking a Model
 We use LiteLLM, so you can run OpenDevin with any foundation model, including OpenAI, Claude, and Gemini.
@@ -68,6 +72,20 @@ And you can customize which embeddings are used for the vector database storage:
 ```bash
 export LLM_EMBEDDING_MODEL="llama2" # can be "llama2", "openai", "azureopenai", or "local"
 ```
+
+### Running the app
+You should be able to run the backend now
+```bash
+uvicorn opendevin.server.listen:app --port 3000
+```
+Then in a second terminal:
+```bash
+cd frontend
+npm install
+npm run start -- --port 3001
+```
+
+You'll see OpenDevin running at localhost:3001
 
 ### Running on the Command Line
 You can run OpenDevin from your command line:
