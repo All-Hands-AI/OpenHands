@@ -33,35 +33,19 @@ Then pull our latest image [here](https://github.com/opendevin/OpenDevin/pkgs/co
 docker pull ghcr.io/opendevin/sandbox
 ```
 
-Then copy `config.toml.template` to `config.toml`. Add an API key to `config.toml`.
-(See below for how to use different models.)
-```toml
-OPENAI_API_KEY="..."
-WORKSPACE_DIR="..."
-```
-
-Next, start the backend.
-We manage python packages and the virtual environment with `pipenv`.
-Make sure you have python >= 3.10.
+Setup the environment using pipenv. Make sure you have python >= 3.10.
 ```bash
 python -m pip install pipenv
 pipenv install -v
 pipenv shell
-uvicorn opendevin.server.listen:app --port 3000
 ```
-
-Then, in a second terminal, start the frontend:
-```bash
-cd frontend
-npm install
-npm start
-```
+The environment is now activated and you should see `(OpenDevin)` next to your cmdline prompt.
 
 ### Picking a Model
 We use LiteLLM, so you can run OpenDevin with any foundation model, including OpenAI, Claude, and Gemini.
 LiteLLM has a [full list of providers](https://docs.litellm.ai/docs/providers).
 
-To change the model, set the `LLM_MODEL` and `LLM_API_KEY` in `config.toml`.
+To configure the model to be used copy `config.toml.template` to `config.toml` and set the `LLM_MODEL` and `LLM_API_KEY` in `config.toml`.
 
 For example, to run Claude:
 ```toml
@@ -69,9 +53,9 @@ LLM_API_KEY="your-api-key"
 LLM_MODEL="claude-3-opus-20240229"
 ```
 
-You can also set the base URL for local/custom models:
+You can also set the base URL for local/custom models.  For example to set it for ollama:
 ```toml
-LLM_BASE_URL="https://localhost:3000"
+LLM_BASE_URL="http://localhost:11434"
 ```
 
 And you can customize which embeddings are used for the vector database storage:
