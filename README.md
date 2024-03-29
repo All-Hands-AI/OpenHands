@@ -22,6 +22,8 @@ OpenDevin is still a work in progress. But you can run the alpha version to see 
 * [NodeJS](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) >= 14.8
 
 ### Installation
+Using Debian in a VM? Try [The Guide](/install-debian12-vm.md)
+
 First, make sure Docker is running:
 ```bash
 docker ps # this should exit successfully
