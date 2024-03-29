@@ -6,7 +6,34 @@ import { sendChatMessage } from "../services/chatService";
 import { RootState } from "../store";
 import "./ChatInterface.css";
 import { changeDirectory as sendChangeDirectorySocketMessage } from "../services/settingsService";
+import { useTypingEffect } from "../hooks/useTypingEffect";
+import { Message } from "../state/chatSlice";
 
+
+interface ITypingChatProps {
+  msg: Message;
+}
+
+/**
+ *@param msg
+ * @returns jsx
+ *
+ * compoent used for typing effect when assitant replies
+ *
+ * makes uses of useTypingEffect hook
+ *
+ */
+function TypingChat({ msg }: ITypingChatProps): JSX.Element {
+  return (
+    <>
+      {msg?.content && (
+        <div className="chat chat-bubble">
+          {useTypingEffect([msg?.content], { loop: false })}
+        </div>
+      )}
+    </>
+  );
+}
 function MessageList(): JSX.Element {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { messages } = useSelector((state: RootState) => state.chat);
@@ -27,7 +54,11 @@ function MessageList(): JSX.Element {
               alt={`${msg.sender} avatar`}
               className="avatar"
             />
-            <div className="chat chat-bubble">{msg.content}</div>
+            {msg.sender !== "user" ? (
+              <TypingChat msg={msg} />
+            ) : (
+              <div className="chat chat-bubble">{msg.content}</div>
+            )}
           </div>
         </div>
       ))}
