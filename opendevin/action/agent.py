@@ -25,7 +25,6 @@ class AgentRecallAction(ExecutableAction):
 @dataclass
 class AgentThinkAction(NotExecutableAction):
     thought: str
-    runnable: bool = False
     action: str = "think"
 
     def run(self, controller: "AgentController") -> "Observation":
@@ -38,7 +37,6 @@ class AgentThinkAction(NotExecutableAction):
 @dataclass
 class AgentEchoAction(ExecutableAction):
     content: str
-    runnable: bool = True
     action: str = "echo"
 
     def run(self, controller: "AgentController") -> "Observation":
@@ -60,7 +58,6 @@ class AgentSummarizeAction(NotExecutableAction):
 
 @dataclass
 class AgentFinishAction(NotExecutableAction):
-    runnable: bool = False
     action: str = "finish"
 
     def run(self, controller: "AgentController") -> "Observation":

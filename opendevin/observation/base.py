@@ -16,13 +16,11 @@ class Observation:
     def to_dict(self) -> dict:
         """Converts the observation to a dictionary."""
         extras = copy.deepcopy(self.__dict__)
-        extras.pop("content", None)
-        observation = "observation"
-        if hasattr(self, "observation"):
-            observation = self.observation
+        content = extras.pop("content", "")
+        observation = extras.pop("observation", "")
         return {
             "observation": observation,
-            "content": self.content,
+            "content": content,
             "extras": extras,
             "message": self.message,
         }

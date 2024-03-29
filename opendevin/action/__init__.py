@@ -21,6 +21,7 @@ actions = (
 ACTION_TYPE_TO_CLASS = {action_class.action:action_class for action_class in actions} # type: ignore[attr-defined]
 
 def action_from_dict(action: dict) -> Action:
+    action = action.copy()
     if "action" not in action:
         raise KeyError(f"'action' key is not found in {action=}")
     action_class = ACTION_TYPE_TO_CLASS.get(action["action"])
