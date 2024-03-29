@@ -58,8 +58,19 @@ track of your progress. Here's a JSON representation of your plan:
 
 %(plan_status)s
 
-Before marking this task as complete, you MUST verify that it has
-been completed successfully.
+You're responsible for managing this plan and the status of tasks in
+it, by using the `add_task` and `modify_task` actions described below.
+
+Tasks that are sequential MUST be siblings. They must be added in order
+to their parent task.
+
+If a task has any subtasks, it MUST have at least two subtasks: an action that will
+complete the task, and a way to verify that the action was successful.
+If that's not the case for any task above, you MUST add subtasks to it now.
+
+Before marking this task as complete, you MUST be sure that it has
+been completed successfully. You must ALSO be sure that all its subtasks
+have been completed or abandoned.
 
 ## History
 Here is a recent history of actions you've taken in service of this plan,
@@ -104,7 +115,9 @@ You should never act twice in a row without thinking. But if your last several
 actions are all `think` actions, you should consider taking a different action.
 
 Based on the history above, if ANY of your open tasks have been completed,
-you MUST close them with the `modify_task` action.
+including ALL of its subtasks,
+you MUST close it with the `modify_task` action. Do NOT do this
+unless ALL subtasks have been completed
 
 What is your next thought or action? Again, you must reply with JSON, and only with JSON.
 
@@ -141,7 +154,9 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
         hint = plan_status
 
     if current_task is not None:
-        if len(current_task.subtasks) < 3:
+        if len(current_task.subtasks) == 0:
+            hint = f"This is your current task: {current_task.goal}.\nIf it's not both (a) achievable and (b) verifiable with a SINGLE action, you MUST break it down into subtasks NOW."
+        elif len(current_task.subtasks) < 3:
             hint = "Do you want to add some tasks to your current task, to break it down a bit further?"
         elif latest_action == "":
             hint = "You haven't taken any actions yet. Start by using `ls` to check out what files you're working with."
@@ -183,7 +198,8 @@ def parse_response(response: str) -> Action:
         # The LLM gets confused here. Might as well be robust
         action_dict['contents'] = action_dict.pop('content')
 
-    action = ACTION_TYPE_TO_CLASS[action_dict["action"]](**action_dict["args"])
+    args_dict = action_dict.get("args", {})
+    action = ACTION_TYPE_TO_CLASS[action_dict["action"]](**args_dict)
     return action
 
 def convert_action(action):

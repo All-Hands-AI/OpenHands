@@ -32,7 +32,7 @@ class Task:
             emoji = '💪'
         elif self.state == OPEN_STATE:
             emoji = '🔵'
-        result = indent + emoji + ' ' + self.goal + '\n'
+        result = indent + emoji + ' ' + self.id + ' ' + self.goal + '\n'
         for subtask in self.subtasks:
             result += subtask.to_string(indent + '    ')
         return result
