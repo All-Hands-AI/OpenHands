@@ -10,11 +10,7 @@ function Browser(): JSX.Element {
       <div className="mockup-browser-toolbar">
         <div className="input">{url}</div>
       </div>
-      <iframe
-        width="100%"
-        height="100%"
-        src = {url}
-      ></iframe>
+      <iframe width="100%" height="100%" src={url}></iframe>
     </div>
   );
 }
