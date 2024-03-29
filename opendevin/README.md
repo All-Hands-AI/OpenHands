@@ -30,14 +30,14 @@ Or you can pull the latest image [here](https://github.com/opendevin/OpenDevin/p
 docker pull ghcr.io/opendevin/sandbox
 ```
 
-2. Set the `OPENAI_API_KEY`, please find more details [here](https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety). Also, choose the model you want. Default is `gpt-4-0125-preview`
+2. Set the `LLM_API_KEY`, please find more details [here](https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety). Also, choose the model you want. Default is `gpt-4-0125-preview`
 ```bash
-export OPENAI_API_KEY=xxxxxxx
+export LLM_API_KEY=xxxxxxx
 ```
 
 3. Install the requirement package.
 ```bash
-pip install -r requirements.txt                                                                 
+pip install -r requirements.txt
 ```
 If you still meet problem like `ModuleNotFoundError: No module named 'agenthub'`, try to add the `opendevin` root path into `PATH` env.
 
