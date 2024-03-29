@@ -16,6 +16,8 @@ from opendevin.observation import Observation, UserMessageObservation
 
 DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
 LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4-0125-preview")
+DEFAULT_API_KEY = os.getenv("LLM_API_KEY")
+DEFAULT_BASE_URL = os.getenv("LLM_BASE_URL")
 
 class Session:
     def __init__(self, websocket):
@@ -84,11 +86,17 @@ class Session:
         model = LLM_MODEL
         if start_event and "model" in start_event["args"]:
             model = start_event["args"]["model"]
+        api_key = DEFAULT_API_KEY
+        if start_event and "api_key" in start_event["args"]:
+            api_key = start_event["args"]["api_key"]
+        api_base = DEFAULT_BASE_URL
+        if start_event and "api_base" in start_event["args"]:
+            api_base = start_event["args"]["api_base"]
         if not os.path.exists(directory):
             print(f"Workspace directory {directory} does not exist. Creating it...")
             os.makedirs(directory)
         directory = os.path.relpath(directory, os.getcwd())
-        llm = LLM(model)
+        llm = LLM(model=model, api_key=api_key, base_url=api_base)
         AgentCls = Agent.get_cls(agent_cls)
         self.agent = AgentCls(llm)
         try:
