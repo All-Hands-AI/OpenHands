@@ -38,7 +38,6 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
 
 
 DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4-0125-preview")
 
 def parse_event(data):
     if "action" not in data:
@@ -120,14 +119,17 @@ class Session:
         agent_cls = "LangchainsAgent"
         if start_event and "agent_cls" in start_event["args"]:
             agent_cls = start_event["args"]["agent_cls"]
-        model = LLM_MODEL
+        if start_event and "api_key" in start_event.args:
+            api_key = start_event.args["api_key"]
+        if start_event and "base_url" in start_event.args:
+            base_url = start_event.args["base_url"]
         if start_event and "model" in start_event["args"]:
             model = start_event["args"]["model"]
         if not os.path.exists(directory):
             print(f"Workspace directory {directory} does not exist. Creating it...")
             os.makedirs(directory)
         directory = os.path.relpath(directory, os.getcwd())
-        llm = LLM(model)
+        llm = LLM(model=model, api_key=api_key, base_url=base_url)
         AgentCls = Agent.get_cls(agent_cls)
         self.agent = AgentCls(llm)
         self.controller = AgentController(self.agent, workdir=directory, callbacks=[self.on_agent_event])
