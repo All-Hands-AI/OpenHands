@@ -40,6 +40,7 @@ class BackgroundCommand:
         res = b""
         tail = b""
         i = 0
+        byte_order = sys.byteorder
         while i < len(logs):
             prefix = logs[i : i + 8]
             if len(prefix) < 8:
@@ -54,7 +55,7 @@ class BackgroundCommand:
                 msg_type in [b"\x00", b"\x01", b"\x02", b"\x03"]
                 and padding == b"\x00\x00\x00"
             ):
-                msg_length = int.from_bytes(prefix[4:8])  # , byteorder='big'
+                msg_length = int.from_bytes(prefix[4:8], byteorder=byte_order)
                 res += logs[i + 8 : i + 8 + msg_length]
                 i += 8 + msg_length
             else:
