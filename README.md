@@ -64,7 +64,7 @@ LLM_MODEL="claude-3-opus-20240229"
 ```
 
 You can also set the base URL for local/custom models:
-```bash
+```toml
 LLM_BASE_URL="https://localhost:3000"
 ```
 
