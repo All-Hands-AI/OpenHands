@@ -1,2 +1,0 @@
-cd frontend
-npx lint-staged

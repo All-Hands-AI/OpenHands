@@ -5,3 +5,6 @@
   margin: 1rem;
   border-radius: 1rem;
 }
+iframe{
+  border-radius: 10px;
+}
