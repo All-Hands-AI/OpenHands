@@ -46,8 +46,6 @@ Make sure you have python >= 3.10.
 python -m pip install pipenv
 pipenv install -v
 pipenv shell
-
-python -m pip install -r requirements.txt
 uvicorn opendevin.server.listen:app --port 3000
 ```
 
