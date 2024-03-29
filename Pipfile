@@ -24,8 +24,9 @@ llama-index-embeddings-huggingface = "*"
 llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 google-generativeai = "*"
+typing-extensions = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.10"
+python_version = "3.11"
