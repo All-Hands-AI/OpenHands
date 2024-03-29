@@ -3,7 +3,13 @@ import { appendAssistantMessage } from "../state/chatSlice";
 import { setInitialized } from "../state/taskSlice";
 import store from "../store";
 
-export const MODELS = [
+const { VITE_URL } = import.meta.env;
+export async function fetchModels() {
+  const response = await fetch(`${VITE_URL}/litellm-models`);
+  return response.json();
+}
+
+export const INITIAL_MODELS = [
   "gpt-3.5-turbo-1106",
   "gpt-4-0125-preview",
   "claude-3-haiku-20240307",
@@ -11,7 +17,7 @@ export const MODELS = [
   "claude-3-sonnet-20240229",
 ];
 
-export type Model = (typeof MODELS)[number];
+export type Model = (typeof INITIAL_MODELS)[number];
 
 export const AGENTS = ["LangchainsAgent", "CodeActAgent"];
 
