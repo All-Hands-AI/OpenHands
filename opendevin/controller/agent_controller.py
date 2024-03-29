@@ -1,15 +1,17 @@
+
 import asyncio
 from typing import List, Callable
 import traceback
 
+from opendevin.plan import Plan
 from opendevin.state import State
 from opendevin.agent import Agent
 from opendevin.action import (
     Action,
     NullAction,
-    FileReadAction,
-    FileWriteAction,
     AgentFinishAction,
+    AddTaskAction,
+    ModifyTaskAction
 )
 from opendevin.observation import (
     Observation,
@@ -17,9 +19,7 @@ from opendevin.observation import (
     NullObservation
 )
 
-
 from .command_manager import CommandManager
-
 
 def print_with_indent(text: str):
     print("\t"+text.replace("\n","\n\t"), flush=True)
@@ -53,10 +53,10 @@ class AgentController:
         self.state.history.append((action, observation))
         self.state.updated_info.append((action, observation))
 
-
     async def start_loop(self, task: str):
         finished = False
-        self.state = State(task)
+        plan = Plan(task)
+        self.state = State(plan)
         for i in range(self.max_iterations):
             try:
                 finished = await self.step(i)
@@ -72,6 +72,9 @@ class AgentController:
     async def step(self, i: int):
         print("\n\n==============", flush=True)
         print("STEP", i, flush=True)
+        print_with_indent("\nPLAN:\n")
+        print_with_indent(self.state.plan.__str__())
+
         log_obs = self.command_manager.get_background_obs()
         for obs in log_obs:
             self.add_history(NullAction(), obs)
@@ -94,15 +97,26 @@ class AgentController:
 
         await self._run_callbacks(action)
 
-        if isinstance(action, AgentFinishAction):
+        finished = isinstance(action, AgentFinishAction)
+        if finished:
             print_with_indent("\nFINISHED")
             return True
-        if isinstance(action, (FileReadAction, FileWriteAction)):
-            action_cls = action.__class__
-            _kwargs = action.__dict__
-            _kwargs["base_path"] = self.workdir
-            action = action_cls(**_kwargs)
-            print(action, flush=True)
+
+        if isinstance(action, AddTaskAction):
+            try:
+                self.state.plan.add_subtask(action.parent, action.goal, action.subtasks)
+            except Exception as e:
+                observation = AgentErrorObservation(str(e))
+                print_with_indent("\nADD TASK ERROR:\n%s" % observation)
+                traceback.print_exc()
+        elif isinstance(action, ModifyTaskAction):
+            try:
+                self.state.plan.set_subtask_state(action.id, action.state)
+            except Exception as e:
+                observation = AgentErrorObservation(str(e))
+                print_with_indent("\nMODIFY TASK ERROR:\n%s" % observation)
+                traceback.print_exc()
+
         if action.executable:
             try:
                 observation = action.run(self)
