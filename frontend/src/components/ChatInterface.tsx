@@ -61,17 +61,21 @@ function DirectoryInput(): JSX.Element {
 
   return (
     <div className="flex p-2 justify-center gap-2 bg-neutral-700">
-      <label htmlFor="directoryInput" className="label">
+      <label htmlFor="directory-input" className="label">
         Directory
       </label>
       <input
         type="text"
         className="input"
-        id="directoryInput"
+        id="directory-input"
         placeholder="Default"
         onChange={onDirectoryInputChange}
       />
-      <button className={`btn ${editing ? "" : "hidden"}`} onClick={save}>
+      <button
+        type="button"
+        className={`btn ${editing ? "" : "hidden"}`}
+        onClick={save}
+      >
         Save
       </button>
     </div>
