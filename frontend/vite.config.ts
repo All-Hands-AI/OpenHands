@@ -7,7 +7,7 @@ export default defineConfig({
   base: "",
   plugins: [react(), viteTsconfigPaths()],
   server: {
-    // this sets a default port to 3000
+    // this sets a default port to 3001
     port: 3001,
   },
 });
