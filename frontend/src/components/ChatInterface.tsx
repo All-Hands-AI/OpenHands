@@ -4,7 +4,7 @@ import assistantAvatar from "../assets/assistant-avatar.png";
 import userAvatar from "../assets/user-avatar.png";
 import { sendChatMessage } from "../services/chatService";
 import { RootState } from "../store";
-import "./ChatInterface.css";
+import "./css/ChatInterface.css";
 import { changeDirectory as sendChangeDirectorySocketMessage } from "../services/settingsService";
 
 function MessageList(): JSX.Element {
