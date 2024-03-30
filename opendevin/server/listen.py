@@ -35,4 +35,4 @@ async def get_litellm_models():
     """
     Get all agents supported by LiteLLM.
     """
-    return list(Agent._registry.keys())
+    return Agent.listAgents()
