@@ -1,5 +1,5 @@
 import React from "react";
-import "./Browser.css";
+import "./css/Browser.css";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
 

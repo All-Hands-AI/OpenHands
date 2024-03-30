@@ -58,7 +58,9 @@ function App(): JSX.Element {
       <div className="right-pane">
         <div className="navbar bg-base-100">
           <div className="flex-1">
-            <div className="btn btn-ghost text-xl xl:w-full xl:h-full h-1/2 w-1/2 ml-4">OpenDevin Workspace</div>
+            <div className="btn btn-ghost text-xl xl:w-full xl:h-full h-1/2 w-1/2 ml-4">
+              OpenDevin Workspace
+            </div>
           </div>
           <div className="flex">
             <BannerSettings />

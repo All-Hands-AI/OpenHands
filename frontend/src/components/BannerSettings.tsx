@@ -6,7 +6,7 @@ import {
   changeModel,
   fetchModels,
 } from "../services/settingsService";
-import "./BannerSettings.css";
+import "./css/BannerSettings.css";
 
 function ModelSelect(): JSX.Element {
   const [models, setModels] = useState<string[]>(INITIAL_MODELS);
