@@ -1,7 +1,5 @@
 from typing import List
 
-from langchain.prompts import PromptTemplate
-
 from opendevin import config
 
 if config.get_or_default("DEBUG", False):
@@ -19,12 +17,15 @@ from opendevin.observation import (
 )
 
 ACTION_PROMPT = """
-You're a thoughtful robot. Your main task is to {task}.
+You're a thoughtful robot. Your main task is this:
+
+%(task)s
+
 Don't expand the scope of your task--just complete it as written.
 
 This is your internal monologue, in JSON format:
 ```json
-{monologue}
+%(monologue)s
 ```
 
 Your most recent thought is at the bottom of that monologue. Continue your train of thought.
@@ -52,7 +53,7 @@ Here are the possible actions:
   * `thought` - the thought to record
 * `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
-{background_commands}
+%(background_commands)s
 
 You MUST take time to think in between read, write, run, browse, and recall actions.
 You should never act twice in a row without thinking. But if your last several
@@ -65,7 +66,7 @@ Notes:
 
 What is your next thought or action? Again, you must reply with JSON, and only with JSON.
 
-{hint}
+%(hint)s
 """
 
 MONOLOGUE_SUMMARY_PROMPT = """
@@ -77,7 +78,7 @@ internal monologue. You can summarize individual thoughts, and
 you can condense related thoughts together with a description
 of their content.
 ```json
-{monologue}
+%(monologue)s
 ```
 Make the summaries as pithy and informative as possible.
 Be specific about what happened and what was learned. The summary
@@ -93,8 +94,9 @@ You can also use the same action and args from the source monologue.
 
 
 def get_summarize_monologue_prompt(thoughts):
-    prompt = PromptTemplate.from_template(MONOLOGUE_SUMMARY_PROMPT)
-    return prompt.format(monologue=json.dumps({'old_monologue': thoughts}, indent=2))
+    return MONOLOGUE_SUMMARY_PROMPT % {
+        'monologue': json.dumps({'old_monologue': thoughts}, indent=2),
+    }
 
 def get_request_action_prompt(
         task: str,
@@ -121,13 +123,12 @@ def get_request_action_prompt(
         bg_commands_message += "\nYou can end any process by sending a `kill` action with the numerical `id` above."
     latest_thought = thoughts[-1]
 
-    prompt = PromptTemplate.from_template(ACTION_PROMPT)
-    return prompt.format(
-        task=task,
-        monologue=json.dumps(thoughts, indent=2),
-        background_commands=bg_commands_message,
-        hint=hint,
-    )
+    return ACTION_PROMPT % {
+        'task': task,
+        'monologue': json.dumps(thoughts, indent=2),
+        'background_commands': bg_commands_message,
+        'hint': hint,
+    }
 
 def parse_action_response(response: str) -> Action:
     json_start = response.find("{")
