@@ -1,5 +1,5 @@
 import store from "../store";
-import { ActionMessage } from "./types/Message";
+import { ActionMessage } from "../types/Message";
 import { setScreenshotSrc, setUrl } from "../state/browserSlice";
 import { appendAssistantMessage } from "../state/chatSlice";
 import { setCode } from "../state/codeSlice";

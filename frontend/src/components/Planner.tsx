@@ -2,34 +2,31 @@ import React from "react";
 
 function Planner(): JSX.Element {
   return (
-    <div
-      className="planner"
-      style={{
-        background: "black",
-        padding: "1rem",
-        height: "90%",
-        margin: "1rem",
-        borderRadius: "1rem",
-      }}
-    >
+    <div className="h-full w-full bg-bg-workspace">
       <h3>
         Current Focus: Set up the development environment according to the
         project&apos;s instructions.
       </h3>
-      <ul>
-        <li>
+      <ul className="ml-4 mt-3">
+        <li className="space-x-2">
           <input type="checkbox" checked readOnly />
-          Clone the repository and review the README for project setup
-          instructions.
+          <span>
+            Clone the repository and review the README for project setup
+            instructions.
+          </span>
         </li>
-        <li>
+        <li className="space-x-2">
           <input type="checkbox" checked readOnly />
-          Identify the package manager and install necessary dependencies.
+          <span>
+            Identify the package manager and install necessary dependencies.
+          </span>
         </li>
-        <li>
+        <li className="space-x-2">
           <input type="checkbox" />
-          Set up the development environment according to the project&apos;s
-          instructions.
+          <span>
+            Set up the development environment according to the project&apos;s
+            instructions.
+          </span>
         </li>
         {/* Add more tasks */}
       </ul>

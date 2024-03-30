@@ -1,15 +1,15 @@
 import store from "../store";
-import { ActionMessage, ObservationMessage } from "./types/Message";
+import { ActionMessage, ObservationMessage } from "../types/Message";
 import { appendError } from "../state/errorsSlice";
 import { handleActionMessage } from "./actions";
 import { handleObservationMessage } from "./observations";
 
 type SocketMessage = ActionMessage | ObservationMessage;
 
-const WS_URL = import.meta.env.VITE_TERMINAL_WS_URL;
+const WS_URL = import.meta.env.VITE_WS_URL;
 if (!WS_URL) {
   throw new Error(
-    "The environment variable VITE_TERMINAL_WS_URL is not set. Please set it to the WebSocket URL of the terminal server.",
+    "The environment variable VITE_WS_URL is not set. Please set it to the WebSocket URL of the terminal server.",
   );
 }
 

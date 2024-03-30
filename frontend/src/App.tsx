@@ -1,83 +1,87 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.css";
 import ChatInterface from "./components/ChatInterface";
-import Terminal from "./components/Terminal";
-import Planner from "./components/Planner";
-import CodeEditor from "./components/CodeEditor";
-import Browser from "./components/Browser";
 import Errors from "./components/Errors";
-import BannerSettings from "./components/BannerSettings";
+import SettingModal from "./components/SettingModal";
+import {
+  AGENTS,
+  changeAgent,
+  changeDirectory as sendChangeDirectorySocketMessage,
+  changeModel,
+  fetchModels,
+  INITIAL_MODELS,
+} from "./services/settingsService";
+import Workspace from "./components/Workspace";
 
-const TAB_OPTIONS = ["terminal", "planner", "code", "browser"] as const;
-type TabOption = (typeof TAB_OPTIONS)[number];
-
-type TabProps = {
-  name: string;
-  active: boolean;
-  onClick: () => void;
-};
-function Tab({ name, active, onClick }: TabProps): JSX.Element {
-  return (
-    <div
-      className={`tab ${active ? "tab-active" : ""}`}
-      onClick={() => onClick()}
-    >
-      <p className="font-bold">{name}</p>
-    </div>
-  );
-}
-
-const tabData = {
-  terminal: {
-    name: "Terminal",
-    component: null,
-  },
-  planner: {
-    name: "Planner",
-    component: <Planner key="planner" />,
-  },
-  code: {
-    name: "Code Editor",
-    component: <CodeEditor key="code" />,
-  },
-  browser: {
-    name: "Browser",
-    component: <Browser key="browser" />,
-  },
-};
+const cachedModels = JSON.parse(
+  localStorage.getItem("supportedModels") || "[]",
+);
+const cachedAgents = JSON.parse(
+  localStorage.getItem("supportedAgents") || "[]",
+);
 
 function App(): JSX.Element {
-  const [activeTab, setActiveTab] = useState<TabOption>("terminal");
+  const [settingOpen, setSettingOpen] = useState(false);
+  const [workspaceDirectory, setWorkspaceDirectory] = useState(
+    localStorage.getItem("workspaceDirectory") || "./workspace",
+  );
+  const [model, setModel] = useState(
+    localStorage.getItem("model") || "gpt-3.5-turbo-1106",
+  );
+  const [supportedModels, setSupportedModels] = useState(
+    cachedModels.length > 0 ? cachedModels : INITIAL_MODELS,
+  );
+  const [agent, setAgent] = useState(
+    localStorage.getItem("agent") || "LangchainsAgent",
+  );
+  const [supportedAgents] = useState(
+    cachedAgents.length > 0 ? cachedAgents : AGENTS,
+  );
+
+  useEffect(() => {
+    fetchModels().then((fetchedModels) => {
+      setSupportedModels(fetchedModels);
+      localStorage.setItem("supportedModels", JSON.stringify(fetchedModels));
+    });
+  }, []);
+
+  const handleCloseModal = () => {
+    setSettingOpen(false);
+  };
+
+  const handleSaveCfg = () => {
+    sendChangeDirectorySocketMessage(workspaceDirectory);
+    changeModel(model);
+    changeAgent(agent);
+    localStorage.setItem("model", model);
+    localStorage.setItem("workspaceDirectory", workspaceDirectory);
+    localStorage.setItem("agent", agent);
+    setSettingOpen(false);
+  };
 
   return (
-    <div className="app flex">
+    <div className="flex h-screen bg-bg-dark text-white">
       <Errors />
-      <div className="left-pane">
-        <ChatInterface />
+      <div className="flex-1 rounded-xl m-4 overflow-hidden bg-bg-light">
+        <ChatInterface setSettingOpen={setSettingOpen} />
       </div>
-      <div className="right-pane">
-        <div className="navbar bg-base-100">
-          <div className="flex-1">
-            <div className="btn btn-ghost text-xl xl:w-full xl:h-full h-1/2 w-1/2 ml-4">OpenDevin Workspace</div>
-          </div>
-          <div className="flex">
-            <BannerSettings />
-          </div>
-        </div>
-        <div role="tablist" className="tabs tabs-bordered tabs-lg bg-base-100">
-          {TAB_OPTIONS.map((tab) => (
-            <Tab
-              key={tab}
-              name={tabData[tab].name}
-              active={activeTab === tab}
-              onClick={() => setActiveTab(tab)}
-            />
-          ))}
-        </div>
-        {/* Keep terminal permanently open - see component for more details */}
-        <Terminal key="terminal" hidden={activeTab !== "terminal"} />
-        {tabData[activeTab].component}
+      <div className="flex flex-col flex-1 m-4 overflow-hidden rounded-xl bg-bg-light">
+        <Workspace />
       </div>
+
+      <SettingModal
+        isOpen={settingOpen}
+        onClose={handleCloseModal}
+        onSave={handleSaveCfg}
+        workspaceDir={workspaceDirectory}
+        setWorkspaceDir={setWorkspaceDirectory}
+        model={model}
+        setModel={setModel}
+        supportedModels={supportedModels}
+        agent={agent}
+        setAgent={setAgent}
+        supportedAgents={supportedAgents}
+      />
     </div>
   );
 }
