@@ -41,6 +41,10 @@ python -m pipenv install -v
 python -m pipenv shell
 uvicorn opendevin.server.listen:app --port 3000
 ```
+If `pipenv` doesn't work for you, you can also run:
+```
+python -m pipenv requirements > requirements.txt && python -m pip install -r requirements.txt
+```
 
 Then, in a second terminal, start the frontend:
 ```bash
