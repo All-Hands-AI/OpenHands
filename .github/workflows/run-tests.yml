@@ -12,6 +12,9 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install dependencies
-        run: pip install --upgrade pip && pip install -r requirements.txt
+        run: |
+          python -m pip install pipenv
+          python -m pipenv install -v
+          python -m pipenv shell
       - name: Run Tests
         run: pytest ./tests
