@@ -31,7 +31,7 @@ async def get_litellm_models():
     return litellm.model_list
 
 @app.get("/litellm-agents")
-async def get_litellm_models():
+async def get_litellm_agents():
     """
     Get all agents supported by LiteLLM.
     """
