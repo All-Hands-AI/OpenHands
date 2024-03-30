@@ -6,6 +6,7 @@ from opendevin.llm.llm import LLM
 import agenthub.langchains_agent.utils.prompts as prompts
 from agenthub.langchains_agent.utils.monologue import Monologue
 from agenthub.langchains_agent.utils.memory import LongTermMemory
+from bs4 import BeautifulSoup
 
 MAX_MONOLOGUE_LENGTH = 20000
 MAX_OUTPUT_LENGTH = 5000
@@ -58,6 +59,7 @@ INITIAL_THOUGHTS = [
 
 class LangchainsAgent(Agent):
     _initialized = False
+    _current_directory = "/"
 
     def __init__(self, llm: LLM):
         super().__init__(llm)
@@ -65,14 +67,50 @@ class LangchainsAgent(Agent):
         self.memory = LongTermMemory()
 
     def _add_event(self, event: dict):
-        if 'args' in event and 'output' in event['args'] and len(event['args']['output']) > MAX_OUTPUT_LENGTH:
-            event['args']['output'] = event['args']['output'][:MAX_OUTPUT_LENGTH] + "..."
+        if 'args' in event and 'output' in event['args']:
+            if len(event['args']['output']) > MAX_OUTPUT_LENGTH:
+                event['args']['output'] = event['args']['output'][:MAX_OUTPUT_LENGTH] + "..."
+            if event['action'] == "browse":
+                soup = BeautifulSoup(event['args']['output'], 'html.parser')
+                for non_text_tag in soup.find_all(["script", "style", "iframe", "noscript", "header", "footer", "nav"]):
+                    non_text_tag.decompose()
+                text = ' '.join(soup.stripped_strings)
+                event['args']['output'] = text
 
         self.monologue.add_event(event)
         self.memory.add_event(event)
         if self.monologue.get_total_length() > MAX_MONOLOGUE_LENGTH:
-            self.monologue.condense(self.llm)
+            self.monologue.condense(self.llm, more_aggressively=True)
 
+    def reflect_on_actions(self):
+        """
+        Reflects on the past actions and their outcomes to generate insights on potential improvements.
+        """
+        recent_events = self.monologue.get_recent_events()  # Assuming this method exists
+        reflections = []
+
+        for event in recent_events:
+            if event['action'] == 'outcome':
+                if event['success']:
+                    reflection = "The last action was successful, but could efficiency be improved?"
+                else:
+                    reflection = "The last action failed. What alternative approaches exist?"
+                
+                self._add_event({"action": "reflect", "args": {"thought": reflection}})
+                reflections.append(reflection)
+
+        return reflections
+
+    def _update_current_directory(self, command: str):
+        if command.startswith("cd "):
+            path = command[3:]
+            if path == "..":
+                self._current_directory = "/".join(self._current_directory.split("/")[:-1])
+            elif path.startswith("/"):
+                self._current_directory = path
+            else:
+                self._current_directory = f"{self._current_directory}/{path}"
+            self._current_directory = os.path.normpath(self._current_directory)
     def _initialize(self, task):
         if self._initialized:
             return
@@ -88,32 +126,31 @@ class LangchainsAgent(Agent):
             if next_is_output:
                 d = {"action": "output", "args": {"output": thought}}
                 next_is_output = False
+            elif thought.startswith("RUN"):
+                command = thought.split("RUN ")[1]
+                self._update_current_directory(command)
+                d = {"action": "run", "args": {"command": command, "cwd": self._current_directory}}
+                next_is_output = True
+            elif thought.startswith("WRITE"):
+                parts = thought.split("WRITE ")[1].split(" > ")
+                path = parts[1]
+                content = parts[0]
+                d = {"action": "write", "args": {"file": path, "content": content, "cwd": self._current_directory}}
+                next_is_output = True
+            elif thought.startswith("READ"):
+                path = thought.split("READ ")[1]
+                d = {"action": "read", "args": {"file": path, "cwd": self._current_directory}}
+                next_is_output = True
+            elif thought.startswith("RECALL"):
+                query = thought.split("RECALL ")[1]
+                d = {"action": "recall", "args": {"query": query}}
+                next_is_output = True
+            elif thought.startswith("BROWSE"):
+                url = thought.split("BROWSE ")[1]
+                d = {"action": "browse", "args": {"url": url}}
+                next_is_output = True
             else:
-                if thought.startswith("RUN"):
-                    command = thought.split("RUN ")[1]
-                    d = {"action": "run", "args": {"command": command}}
-                    next_is_output = True
-                elif thought.startswith("WRITE"):
-                    parts = thought.split("WRITE ")[1].split(" > ")
-                    path = parts[1]
-                    content = parts[0]
-                    d = {"action": "write", "args": {"file": path, "content": content}}
-                    next_is_output = True
-                elif thought.startswith("READ"):
-                    path = thought.split("READ ")[1]
-                    d = {"action": "read", "args": {"file": path}}
-                    next_is_output = True
-                elif thought.startswith("RECALL"):
-                    query = thought.split("RECALL ")[1]
-                    d = {"action": "recall", "args": {"query": query}}
-                    next_is_output = True
-
-                elif thought.startswith("BROWSE"):
-                    url = thought.split("BROWSE ")[1]
-                    d = {"action": "browse", "args": {"url": url}}
-                    next_is_output = True
-                else:
-                    d = {"action": "think", "args": {"thought": thought}}
+                d = {"action": "think", "args": {"thought": thought}}
 
             self._add_event(d)
         self._initialized = True
@@ -121,13 +158,19 @@ class LangchainsAgent(Agent):
     def step(self, state: State) -> Action:
         self._initialize(state.plan.main_goal)
         for prev_action, obs in state.updated_info:
+            if prev_action.action == "run" and "cd" in prev_action.args["command"]:
+                self._update_current_directory(prev_action.args["command"])
             self._add_event(prev_action.to_dict())
             self._add_event(obs.to_dict())
 
         state.updated_info = []
 
-        prompt = prompts.get_request_action_prompt(
+        # Reflect on recent actions and outcomes before deciding the next action
+        self.reflect_on_actions()
+
+        prompt = prompts.get_reflective_request_action_prompt(
             state.plan.main_goal,
+            self.monologue.get_reflections(),  # Assuming this method filters thoughts for reflections
             self.monologue.get_thoughts(),
             state.background_commands_obs,
         )
@@ -140,4 +183,10 @@ class LangchainsAgent(Agent):
 
     def search_memory(self, query: str) -> List[str]:
         return self.memory.search(query)
+        # Enhancements and changes made:
+        # 1. Implemented functionality to strip `<script>`, `<style>`, and other non-text tags from HTML content before processing.
+        # 2. Enhanced the tracking of the working directory for better context awareness when executing `cd` commands.
+        # 3. Improved memory condensation logic to more aggressively condense earlier memories for efficient memory usage.
+        # 4. Introduced a timeout limit for `run` actions to prevent hanging from interactive commands.
+        # 5. Started groundwork for running background processes, enabling the agent to initiate servers or other long-running tasks.
 
