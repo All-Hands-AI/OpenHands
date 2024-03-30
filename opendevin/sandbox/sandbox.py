@@ -9,35 +9,40 @@ import docker
 from typing import Tuple, Dict, List, Optional
 from collections import namedtuple
 from typing import Dict, List, Tuple
-
+import concurrent.futures
+from opendevin import config
 
 InputType = namedtuple("InputType", ["content"])
 OutputType = namedtuple("OutputType", ["content"])
 
-DIRECTORY_REWRITE = os.getenv(
+DIRECTORY_REWRITE = config.get_or_default(
     "DIRECTORY_REWRITE", ""
 )  # helpful for docker-in-docker scenarios
-CONTAINER_IMAGE = os.getenv("SANDBOX_CONTAINER_IMAGE", "ghcr.io/opendevin/sandbox:v0.1")
+
+CONTAINER_IMAGE = config.get_or_default("SANDBOX_CONTAINER_IMAGE", "ghcr.io/opendevin/sandbox")
+
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
-RUN_AS_DEVIN = os.getenv("RUN_AS_DEVIN", "true").lower() != "false"
+RUN_AS_DEVIN = config.get_or_default("RUN_AS_DEVIN", "true").lower() != "false"
 USER_ID = 1000
-if os.getenv("SANDBOX_USER_ID") is not None:
-    USER_ID = int(os.getenv("SANDBOX_USER_ID", ""))
+if config.get_or_none("SANDBOX_USER_ID") is not None:
+    USER_ID = int(config.get_or_default("SANDBOX_USER_ID", ""))
 elif hasattr(os, "getuid"):
     USER_ID = os.getuid()
 
 
 class BackgroundCommand:
-    def __init__(self, id: int, command: str, result):
+    def __init__(self, id: int, command: str, result, pid: int):
         self.id = id
         self.command = command
         self.result = result
+        self.pid = pid
 
     def parse_docker_exec_output(self, logs: bytes) -> Tuple[bytes, bytes]:
         res = b""
         tail = b""
         i = 0
+        byte_order = sys.byteorder
         while i < len(logs):
             prefix = logs[i : i + 8]
             if len(prefix) < 8:
@@ -52,7 +57,7 @@ class BackgroundCommand:
                 msg_type in [b"\x00", b"\x01", b"\x02", b"\x03"]
                 and padding == b"\x00\x00\x00"
             ):
-                msg_length = int.from_bytes(prefix[4:8])  # , byteorder='big'
+                msg_length = int.from_bytes(prefix[4:8], byteorder=byte_order)
                 res += logs[i + 8 : i + 8 + msg_length]
                 i += 8 + msg_length
             else:
@@ -76,10 +81,6 @@ class BackgroundCommand:
                 break
         return (logs + last_remains).decode("utf-8")
 
-    def kill(self):
-        # FIXME: this doesn't actually kill the process!
-        self.result.output.close()
-
 
 class DockerInteractive:
     closed = False
@@ -98,9 +99,7 @@ class DockerInteractive:
         else:
             self.instance_id = str(uuid.uuid4())
         if workspace_dir is not None:
-            assert os.path.exists(
-                workspace_dir
-            ), f"Directory {workspace_dir} does not exist."
+            os.makedirs(workspace_dir, exist_ok=True)
             # expand to absolute path
             self.workspace_dir = os.path.abspath(workspace_dir)
         else:
@@ -153,9 +152,21 @@ class DockerInteractive:
 
     def execute(self, cmd: str) -> Tuple[int, str]:
         # TODO: each execute is not stateful! We need to keep track of the current working directory
-        exit_code, logs = self.container.exec_run(
-            self.get_exec_cmd(cmd), workdir="/workspace"
-        )
+        def run_command(container, command):
+            return container.exec_run(command,workdir="/workspace")
+        # Use ThreadPoolExecutor to control command and set timeout
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(run_command, self.container, self.get_exec_cmd(cmd))
+            try:
+                exit_code, logs = future.result(timeout=self.timeout)
+            except concurrent.futures.TimeoutError:
+                print("Command timed out, killing process...")
+                pid = self.get_pid(cmd)
+                if pid is not None:
+                    self.container.exec_run(
+                        f"kill -9 {pid}", workdir="/workspace"
+                    )
+                return -1, f"Command: \"{cmd}\" timed out"
         return exit_code, logs.decode("utf-8")
 
     def execute_in_background(self, cmd: str) -> BackgroundCommand:
@@ -163,16 +174,32 @@ class DockerInteractive:
             self.get_exec_cmd(cmd), socket=True, workdir="/workspace"
         )
         result.output._sock.setblocking(0)
-        bg_cmd = BackgroundCommand(self.cur_background_id, cmd, result)
+        pid = self.get_pid(cmd)
+        bg_cmd = BackgroundCommand(self.cur_background_id, cmd, result, pid)
         self.background_commands[bg_cmd.id] = bg_cmd
         self.cur_background_id += 1
         return bg_cmd
+
+    def get_pid(self, cmd):
+        exec_result = self.container.exec_run("ps aux")
+        processes = exec_result.output.decode('utf-8').splitlines()
+        cmd = " ".join(self.get_exec_cmd(cmd))
+
+        for process in processes:
+            if cmd in process:
+                pid = process.split()[1] # second column is the pid
+                return pid
+        return None
 
     def kill_background(self, id: int) -> BackgroundCommand:
         if id not in self.background_commands:
             raise ValueError("Invalid background command id")
         bg_cmd = self.background_commands[id]
-        bg_cmd.kill()
+        if bg_cmd.pid is not None:
+            self.container.exec_run(
+                f"kill -9 {bg_cmd.pid}", workdir="/workspace"
+            )
+        bg_cmd.result.output.close()
         self.background_commands.pop(id)
         return bg_cmd
 

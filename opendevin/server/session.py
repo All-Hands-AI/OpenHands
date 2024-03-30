@@ -4,54 +4,21 @@ from typing import Optional, Dict, Type, Union
 
 from fastapi import WebSocketDisconnect
 
+from opendevin import config
 from opendevin.action import (
     Action,
-    AgentFinishAction,
-    AgentRecallAction,
-    AgentThinkAction,
-    BrowseURLAction,
-    CmdKillAction,
-    CmdRunAction,
-    FileReadAction,
-    FileWriteAction,
     NullAction,
 )
+from opendevin.observation import NullObservation
 from opendevin.agent import Agent
 from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
 from opendevin.observation import Observation, UserMessageObservation
 
-# NOTE: this is a temporary solution - but hopefully we can use Action/Observation throughout the codebase
-ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
-    "run": CmdRunAction,
-    "kill": CmdKillAction,
-    "browse": BrowseURLAction,
-    "read": FileReadAction,
-    "write": FileWriteAction,
-    "recall": AgentRecallAction,
-    "think": AgentThinkAction,
-    "finish": AgentFinishAction,
-}
-
-
-DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4-0125-preview")
-
-def parse_event(data):
-    if "action" not in data:
-        return None
-    action = data["action"]
-    args = {}
-    if "args" in data:
-        args = data["args"]
-    message = None
-    if "message" in data:
-        message = data["message"]
-    return {
-        "action": action,
-        "args": args,
-        "message": message,
-    }
+DEFAULT_API_KEY = config.get_or_none("LLM_API_KEY")
+DEFAULT_BASE_URL = config.get_or_none("LLM_BASE_URL")
+DEFAULT_WORKSPACE_DIR = config.get_or_default("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
+LLM_MODEL = config.get_or_default("LLM_MODEL", "gpt-4-0125-preview")
 
 class Session:
     def __init__(self, websocket):
@@ -85,20 +52,20 @@ class Session:
                     await self.send_error("Invalid JSON")
                     continue
 
-                event = parse_event(data)
-                if event is None:
+                action = data.get("action", None)
+                if action is None:
                     await self.send_error("Invalid event")
                     continue
-                if event["action"] == "initialize":
-                    await self.create_controller(event)
-                elif event["action"] == "start":
-                    await self.start_task(event)
+                if action == "initialize":
+                    await self.create_controller(data)
+                elif action == "start":
+                    await self.start_task(data)
                 else:
                     if self.controller is None:
                         await self.send_error("No agent started. Please wait a second...")
 
-                    elif event["action"] == "chat":
-                        self.controller.add_history(NullAction(), UserMessageObservation(event["message"]))
+                    elif action == "chat":
+                        self.controller.add_history(NullAction(), UserMessageObservation(data["message"]))
                     else:
                         # TODO: we only need to implement user message for now
                         # since even Devin does not support having the user taking other
@@ -121,11 +88,17 @@ class Session:
         model = LLM_MODEL
         if start_event and "model" in start_event["args"]:
             model = start_event["args"]["model"]
+        api_key = DEFAULT_API_KEY
+        if start_event and "api_key" in start_event["args"]:
+            api_key = start_event["args"]["api_key"]
+        api_base = DEFAULT_BASE_URL
+        if start_event and "api_base" in start_event["args"]:
+            api_base = start_event["args"]["api_base"]
         if not os.path.exists(directory):
             print(f"Workspace directory {directory} does not exist. Creating it...")
             os.makedirs(directory)
         directory = os.path.relpath(directory, os.getcwd())
-        llm = LLM(model)
+        llm = LLM(model=model, api_key=api_key, base_url=api_base)
         AgentCls = Agent.get_cls(agent_cls)
         self.agent = AgentCls(llm)
         try:
@@ -147,34 +120,15 @@ class Session:
             return
         self.agent_task = asyncio.create_task(self.controller.start_loop(task), name="agent loop")
 
+<<<<<<< HEAD
     def on_agent_event(self, event: Union[Observation, Action]):
         # FIXME: we need better serialization
+=======
+    def on_agent_event(self, event: Observation | Action):
+        if isinstance(event, NullAction):
+            return
+        if isinstance(event, NullObservation):
+            return
+>>>>>>> main
         event_dict = event.to_dict()
-        if "action" in event_dict:
-            if event_dict["action"] == "CmdRunAction":
-                event_dict["action"] = "run"
-            elif event_dict["action"] == "CmdKillAction":
-                event_dict["action"] = "kill"
-            elif event_dict["action"] == "BrowseURLAction":
-                event_dict["action"] = "browse"
-            elif event_dict["action"] == "FileReadAction":
-                event_dict["action"] = "read"
-            elif event_dict["action"] == "FileWriteAction":
-                event_dict["action"] = "write"
-            elif event_dict["action"] == "AgentFinishAction":
-                event_dict["action"] = "finish"
-            elif event_dict["action"] == "AgentRecallAction":
-                event_dict["action"] = "recall"
-            elif event_dict["action"] == "AgentThinkAction":
-                event_dict["action"] = "think"
-        if "observation" in event_dict:
-            if event_dict["observation"] == "UserMessageObservation":
-                event_dict["observation"] = "chat"
-            elif event_dict["observation"] == "AgentMessageObservation":
-                event_dict["observation"] = "chat"
-            elif event_dict["observation"] == "CmdOutputObservation":
-                event_dict["observation"] = "run"
-            elif event_dict["observation"] == "FileReadObservation":
-                event_dict["observation"] = "read"
-
         asyncio.create_task(self.send(event_dict), name="send event in callback")
