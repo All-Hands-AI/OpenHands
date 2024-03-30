@@ -24,14 +24,16 @@ class JsonWebsocketAddon {
     this._socket.addEventListener("message", (event) => {
       const { action, args, observation, content } = JSON.parse(event.data);
       if (action === "run") {
+        // TODO rewrite with new logic
         terminal.writeln(args.command);
       }
       if (observation === "run") {
-        console.log(content);
-        content.split("\n").forEach((line: string) => {
-          terminal.writeln(line);
-        });
-        terminal.write("\n$ ");
+        terminal.clear();
+        terminal.write(content);
+        // content.split("\n").forEach((line: string) => {
+        //   terminal.writeln(line);
+        // });
+        // terminal.write("\n$ ");
       }
     });
   }
@@ -64,9 +66,8 @@ function Terminal({ hidden }: TerminalProps): JSX.Element {
       // is too large and switching tabs causes a layout shift.
       cols: 0,
       fontFamily: "Menlo, Monaco, 'Courier New', monospace",
-      fontSize: 14,
+      fontSize: 16,
     });
-    terminal.write("$ ");
 
     const fitAddon = new FitAddon();
     terminal.loadAddon(fitAddon);
@@ -79,7 +80,7 @@ function Terminal({ hidden }: TerminalProps): JSX.Element {
 
       if (e.domEvent.ctrlKey && e.domEvent.key === "c") {
         inputLengthRef.current = 0;
-        terminal.write("\n$");
+        // terminal.write("\n$");
       }
 
       if (printable) {

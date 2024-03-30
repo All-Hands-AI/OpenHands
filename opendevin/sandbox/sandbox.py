@@ -151,9 +151,9 @@ class DockerInteractive:
         return bg_cmd.read_logs()
 
     def execute(self, cmd: str) -> Tuple[int, str]:
-        os.write(self.socket.fileno(), b"{cmd}\n")
+        os.write(self.docker_socket.fileno(), "{}\n".format(cmd).encode())
         time.sleep(1)
-        output = os.read(self.socket.fileno(), 10000).decode("utf-8")
+        output = os.read(self.docker_socket.fileno(), 10000).decode()
         # # TODO: each execute is not stateful! We need to keep track of the current working directory
         # def run_command(container, command):
         #     return container.exec_run(command,workdir="/workspace")
@@ -248,7 +248,7 @@ class DockerInteractive:
             # start the container
             self.container = docker_client.containers.run(
                 self.container_image,
-                command="tail -f /dev/null",
+                command="bash",
                 network_mode="host",
                 working_dir="/workspace",
                 name=self.container_name,

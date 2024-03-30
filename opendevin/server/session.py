@@ -27,6 +27,7 @@ class Session:
         self.agent: Optional[Agent] = None
         self.agent_task = None
         self.current_input = ""
+        self.terminal_buffer = ""
         asyncio.create_task(self.create_controller(), name="create controller") # FIXME: starting the docker container synchronously causes a websocket error...
 
     async def send_error(self, message):
@@ -52,6 +53,7 @@ class Session:
                     await self.send_error("Invalid JSON")
                     continue
 
+                print("message ", data["message"])
                 action = data.get("action", None)
                 if action is None:
                     await self.send_error("Invalid event")
@@ -70,7 +72,9 @@ class Session:
                         if data["message"] == "\r":
                             if self.controller:
                                 output = self.controller.run_command(self.current_input)
-                                await self.send({"observation": "run", "content": output.content})
+                                # TODO slice original command data from output
+                                self.terminal_buffer += output.content
+                                await self.send({"observation": "run", "content": self.terminal_buffer})
                             else:
                                 # TODO raise ControllerNotImplementedError
                                 pass
@@ -78,6 +82,9 @@ class Session:
                         elif data["message"] == "\x7f":
                             if len(self.current_input) > 0:
                                 self.current_input = self.current_input[:-1]
+                        elif data["message"] == "\x03": # Ctrl+C
+                            self.current_input = ""
+                            output = self.controller.run_command("")
                         else:
                             self.current_input += data["message"]
                     elif action == "chat":
