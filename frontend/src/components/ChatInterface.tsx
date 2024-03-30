@@ -14,10 +14,10 @@ interface ITypingChatProps {
 }
 
 /**
- *@param msg
+ * @param msg
  * @returns jsx
  *
- * compoent used for typing effect when assitant replies
+ * component used for typing effect when assistant replies
  *
  * makes uses of useTypingEffect hook
  *
