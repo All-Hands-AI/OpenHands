@@ -151,23 +151,27 @@ class DockerInteractive:
         return bg_cmd.read_logs()
 
     def execute(self, cmd: str) -> Tuple[int, str]:
-        # TODO: each execute is not stateful! We need to keep track of the current working directory
-        def run_command(container, command):
-            return container.exec_run(command,workdir="/workspace")
-        # Use ThreadPoolExecutor to control command and set timeout
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(run_command, self.container, self.get_exec_cmd(cmd))
-            try:
-                exit_code, logs = future.result(timeout=self.timeout)
-            except concurrent.futures.TimeoutError:
-                print("Command timed out, killing process...")
-                pid = self.get_pid(cmd)
-                if pid is not None:
-                    self.container.exec_run(
-                        f"kill -9 {pid}", workdir="/workspace"
-                    )
-                return -1, f"Command: \"{cmd}\" timed out"
-        return exit_code, logs.decode("utf-8")
+        os.write(self.socket.fileno(), b"{cmd}\n")
+        time.sleep(1)
+        output = os.read(self.socket.fileno(), 10000).decode("utf-8")
+        # # TODO: each execute is not stateful! We need to keep track of the current working directory
+        # def run_command(container, command):
+        #     return container.exec_run(command,workdir="/workspace")
+        # # Use ThreadPoolExecutor to control command and set timeout
+        # with concurrent.futures.ThreadPoolExecutor() as executor:
+        #     future = executor.submit(run_command, self.container, self.get_exec_cmd(cmd))
+        #     try:
+        #         exit_code, logs = future.result(timeout=self.timeout)
+        #     except concurrent.futures.TimeoutError:
+        #         print("Command timed out, killing process...")
+        #         pid = self.get_pid(cmd)
+        #         if pid is not None:
+        #             self.container.exec_run(
+        #                 f"kill -9 {pid}", workdir="/workspace"
+        #             )
+        #         return -1, f"Command: \"{cmd}\" timed out"
+        # return exit_code, logs.decode("utf-8")
+        return 0, output
 
     def execute_in_background(self, cmd: str) -> BackgroundCommand:
         result = self.container.exec_run(
