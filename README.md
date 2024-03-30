@@ -45,6 +45,13 @@ If `pipenv` doesn't work for you, you can also run:
 ```
 python -m pipenv requirements > requirements.txt && python -m pip install -r requirements.txt
 ```
+If you are working on Windows you can run :
+```
+set OPENAI_API_KEY=...
+set WORKSPACE_DIR=C:\path\to\your\project
+python -m pip install -r requirements.txt
+python -m uvicorn opendevin.server.listen:app --port 3000
+```
 
 Then, in a second terminal, start the frontend:
 ```bash
