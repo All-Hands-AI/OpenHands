@@ -45,8 +45,8 @@ We manage python packages and the virtual environment with `pipenv`.
 Make sure you have python >= 3.10.
 ```bash
 python -m pip install pipenv
-pipenv install -v
-pipenv shell
+python -m pipenv install -v
+python -m pipenv shell
 uvicorn opendevin.server.listen:app --port 3000
 ```
 
