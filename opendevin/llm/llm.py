@@ -26,13 +26,17 @@ class LLM:
             print(f"Logging prompts to {self._debug_dir}/{self._debug_id}")
             completion_unwrapped = self._completion
             def wrapper(*args, **kwargs):
+                dir = self._debug_dir + "/" + self._debug_id + "/" + str(self._debug_idx)
+                os.makedirs(dir, exist_ok=True)
                 if "messages" in kwargs:
                     messages = kwargs["messages"]
                 else:
                     messages = args[1]
+                self.write_debug_prompt(dir, messages)
                 resp = completion_unwrapped(*args, **kwargs)
                 message_back = resp['choices'][0]['message']['content']
-                self.write_debug(messages, message_back)
+                self.write_debug_response(dir, message_back)
+                self._debug_idx += 1
                 return resp
             self._completion = wrapper # type: ignore
 
@@ -43,18 +47,14 @@ class LLM:
         """
         return self._completion
 
-    def write_debug(self, messages, response):
-        if not self._debug_dir:
-            return
-        dir = self._debug_dir + "/" + self._debug_id + "/" + str(self._debug_idx)
-        os.makedirs(dir, exist_ok=True)
+    def write_debug_prompt(self, dir, messages):
         prompt_out = ""
         for message in messages:
             prompt_out += "<" + message["role"] + ">\n"
             prompt_out += message["content"] + "\n\n"
         with open(f"{dir}/prompt.md", "w") as f:
             f.write(prompt_out)
+
+    def write_debug_response(self, dir, response):
         with open(f"{dir}/response.md", "w") as f:
             f.write(response)
-        self._debug_idx += 1
-
