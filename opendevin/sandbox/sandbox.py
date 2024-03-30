@@ -151,8 +151,11 @@ class DockerInteractive:
         return bg_cmd.read_logs()
 
     def execute(self, cmd: str) -> Tuple[int, str]:
+        # TODO Super hacky! The os.read from docker_socket needs to be run
+        # in a separate long lived thread that polls for new data 
+        # from the socket
         os.write(self.docker_socket.fileno(), "{}\n".format(cmd).encode())
-        time.sleep(1)
+        time.sleep(0.1)
         output = os.read(self.docker_socket.fileno(), 10000).decode()
         # # TODO: each execute is not stateful! We need to keep track of the current working directory
         # def run_command(container, command):

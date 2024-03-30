@@ -53,7 +53,6 @@ class Session:
                     await self.send_error("Invalid JSON")
                     continue
 
-                print("message ", data["message"])
                 action = data.get("action", None)
                 if action is None:
                     await self.send_error("Invalid event")
@@ -74,7 +73,7 @@ class Session:
                                 output = self.controller.run_command(self.current_input)
                                 # TODO slice original command data from output
                                 self.terminal_buffer += output.content
-                                await self.send({"observation": "run", "content": self.terminal_buffer})
+                                await self.send({"term": "output", "content": self.terminal_buffer})
                             else:
                                 # TODO raise ControllerNotImplementedError
                                 pass
@@ -82,6 +81,7 @@ class Session:
                         elif data["message"] == "\x7f":
                             if len(self.current_input) > 0:
                                 self.current_input = self.current_input[:-1]
+                        # TODO not sure this condition works
                         elif data["message"] == "\x03": # Ctrl+C
                             self.current_input = ""
                             output = self.controller.run_command("")

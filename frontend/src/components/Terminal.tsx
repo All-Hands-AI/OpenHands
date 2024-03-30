@@ -22,14 +22,23 @@ class JsonWebsocketAddon {
       }),
     );
     this._socket.addEventListener("message", (event) => {
-      const { action, args, observation, content } = JSON.parse(event.data);
+      /* 
+        TODO this destructure is very fragile, what if we want
+        to add new fields? Maybe not though, probably not much 
+        more that could be added
+      */
+      const { term, action, args, observation, content } = JSON.parse(
+        event.data,
+      );
       if (action === "run") {
-        // TODO rewrite with new logic
+        // TODO rewrite with new formatting
         terminal.writeln(args.command);
       }
-      if (observation === "run") {
+      if (term === "output") {
         terminal.clear();
         terminal.write(content);
+      }
+      if (observation === "run") {
         // content.split("\n").forEach((line: string) => {
         //   terminal.writeln(line);
         // });
@@ -79,8 +88,8 @@ function Terminal({ hidden }: TerminalProps): JSX.Element {
         !e.domEvent.altKey && !e.domEvent.ctrlKey && !e.domEvent.metaKey;
 
       if (e.domEvent.ctrlKey && e.domEvent.key === "c") {
+        // TODO go to newline with CTRL+C
         inputLengthRef.current = 0;
-        // terminal.write("\n$");
       }
 
       if (printable) {

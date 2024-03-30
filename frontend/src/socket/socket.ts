@@ -19,8 +19,15 @@ socket.addEventListener("message", (event) => {
   const socketMessage = JSON.parse(event.data) as SocketMessage;
   if ("action" in socketMessage) {
     handleActionMessage(socketMessage);
-  } else {
+  } else if ("observation" in socketMessage) {
     handleObservationMessage(socketMessage);
+  } else {
+    /* 
+      TODO
+      This now enters for user messages when terminal input is
+      entered.  Terminal input will be specified with the 
+      message type "term": "output"
+    */
   }
 });
 socket.addEventListener("error", () => {

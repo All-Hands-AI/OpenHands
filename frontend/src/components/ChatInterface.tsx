@@ -105,7 +105,7 @@ function ChatInterface(): JSX.Element {
             onChange={(e) => setInputMessage(e.target.value)}
             placeholder="Send a message (won't interrupt the Assistant)"
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
+              if (e.key === "Enter" && document.activeElement === e.target) {
                 handleSendMessage();
               }
             }}
