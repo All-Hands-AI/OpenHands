@@ -27,6 +27,7 @@ First, pull our latest sandbox image [here](https://github.com/opendevin/OpenDev
 ```bash
 docker pull ghcr.io/opendevin/sandbox
 ```
+Note: you need to be able to [run `docker` without sudo](https://docs.docker.com/engine/install/linux-postinstall/)
 
 Then copy `config.toml.template` to `config.toml`. Add an OpenAI API key to `config.toml`,
 or see below for how to use different models.
