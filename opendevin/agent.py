@@ -96,6 +96,6 @@ class Agent(ABC):
         Retrieves the list of all agent names from the registry.
         """
         if not bool(cls._registry):
-            raise ValueError(f"No agent class registered.")
+            raise ValueError("No agent class registered.")
         return list(cls._registry.keys())
         
