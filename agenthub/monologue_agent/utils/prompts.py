@@ -2,10 +2,6 @@ from typing import List
 
 from opendevin import config
 
-if config.get_or_default("DEBUG", False):
-    from langchain.globals import set_debug
-    set_debug(True)
-
 from . import json
 
 from opendevin.action import (

@@ -112,7 +112,7 @@ class Session:
         directory = DEFAULT_WORKSPACE_DIR
         if start_event and "directory" in start_event["args"]:
             directory = start_event["args"]["directory"]
-        agent_cls = "LangchainsAgent"
+        agent_cls = "MonologueAgent"
         if start_event and "agent_cls" in start_event["args"]:
             agent_cls = start_event["args"]["agent_cls"]
         model = LLM_MODEL

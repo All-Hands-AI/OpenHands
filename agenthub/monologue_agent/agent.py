@@ -24,9 +24,9 @@ from opendevin.observation import (
     BrowserOutputObservation,
 )
 
-import agenthub.langchains_agent.utils.prompts as prompts
-from agenthub.langchains_agent.utils.monologue import Monologue
-from agenthub.langchains_agent.utils.memory import LongTermMemory
+import agenthub.monologue_agent.utils.prompts as prompts
+from agenthub.monologue_agent.utils.monologue import Monologue
+from agenthub.monologue_agent.utils.memory import LongTermMemory
 
 MAX_MONOLOGUE_LENGTH = 20000
 MAX_OUTPUT_LENGTH = 5000
@@ -77,7 +77,7 @@ INITIAL_THOUGHTS = [
 ]
 
 
-class LangchainsAgent(Agent):
+class MonologueAgent(Agent):
     _initialized = False
 
     def __init__(self, llm: LLM):
