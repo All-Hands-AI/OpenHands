@@ -7,32 +7,30 @@ assignees: ''
 
 ---
 <!-- You MUST fill out this template. We will close issues that don't include enough information to reproduce -->
-**Describe the bug**
+#### Describe the bug
 <!-- a short description of the problem -->
 
-**Setup and configuration**
-<!-- tell us everything about your environment -->
-My config.toml and environment vars (be sure to redact API keys):
-```toml
-```
-
-Commands I ran to install and run OpenDevin:
-```
-```
-
-Current version:
+#### Setup and configuration
+**Current version**:
 <!-- run `git log -n 1` to see this -->
 ```bash
 ```
 
-**Steps to Reproduce**
+<!-- tell us everything about your environment -->
+**My config.toml and environment vars** (be sure to redact API keys):
+```toml
+```
+
+**Commands I ran to install and run OpenDevin**:
+```
+```
+
+**Steps to Reproduce**:
 1.
 2.
 3.
 
-**Expected behavior**
+**Logs, error messages, and screenshots**:
 
-**Actual behavior**
+#### Additional Context
 
-**Additional context**
-<!-- Please include logs, screenshots, etc. -->
