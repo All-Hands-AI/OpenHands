@@ -1,41 +1,34 @@
 import React, { useState } from "react";
+import { Tab, Tabs } from "@nextui-org/react";
 import Terminal from "./Terminal";
 import Planner from "./Planner";
 import CodeEditor from "./CodeEditor";
 import Browser from "./Browser";
 import { TabType, TabOption, AllTabs } from "../types/TabOption";
-
-type TabProps = {
-  name: string;
-  active: boolean;
-  onClick: () => void;
-};
-function Tab({ name, active, onClick }: TabProps): JSX.Element {
-  return (
-    <div
-      className={`tab ${active ? "tab-active" : ""}`}
-      onClick={() => onClick()}
-    >
-      <p className="font-bold">{name}</p>
-    </div>
-  );
-}
+import CmdLine from "../assets/cmd-line";
+import Calendar from "../assets/calendar";
+import Earth from "../assets/earth";
+import Pencil from "../assets/pencil";
 
 const tabData = {
-  terminal: {
+  [TabOption.TERMINAL]: {
     name: "Terminal",
+    icon: <CmdLine />,
     component: <Terminal key="terminal" />,
   },
-  planner: {
+  [TabOption.PLANNER]: {
     name: "Planner",
+    icon: <Calendar />,
     component: <Planner key="planner" />,
   },
-  code: {
+  [TabOption.CODE]: {
     name: "Code Editor",
+    icon: <Pencil />,
     component: <CodeEditor key="code" />,
   },
-  browser: {
+  [TabOption.BROWSER]: {
     name: "Browser",
+    icon: <Earth />,
     component: <Browser key="browser" />,
   },
 };
@@ -49,14 +42,25 @@ function Workspace() {
         OpenDevin Workspace
       </div>
       <div role="tablist" className="tabs tabs-bordered tabs-lg ">
-        {AllTabs.map((tab) => (
-          <Tab
-            key={tab}
-            name={tabData[tab].name}
-            active={activeTab === tab}
-            onClick={() => setActiveTab(tab)}
-          />
-        ))}
+        <Tabs
+          variant="underlined"
+          size="lg"
+          onSelectionChange={(v) => {
+            setActiveTab(v as TabType);
+          }}
+        >
+          {AllTabs.map((tab) => (
+            <Tab
+              key={tab}
+              title={
+                <div className="flex items-center space-x-2">
+                  {tabData[tab].icon}
+                  <span>{tabData[tab].name}</span>
+                </div>
+              }
+            />
+          ))}
+        </Tabs>
       </div>
       <div className="h-full w-full p-4 bg-bg-workspace">
         {tabData[activeTab].component}

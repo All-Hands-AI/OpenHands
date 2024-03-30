@@ -15,11 +15,8 @@ export default {
       },
     },
   },
-  daisyui: {
-    themes: ["dark"],
-  },
   darkMode: "class",
-  plugins: [require('daisyui'), nextui({
+  plugins: [nextui({
     defaultTheme: "dark"
   })],
 }
