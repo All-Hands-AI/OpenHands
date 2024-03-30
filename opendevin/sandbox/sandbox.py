@@ -23,7 +23,7 @@ CONTAINER_IMAGE = config.get_or_default("SANDBOX_CONTAINER_IMAGE", "ghcr.io/open
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
-RUN_AS_DEVIN = config.get_or_default("RUN_AS_DEVIN", "true").lower() != "false"
+RUN_AS_DEVIN = config.get_or_default("RUN_AS_DEVIN", "false").lower() != "false"
 USER_ID = 1000
 if config.get_or_none("SANDBOX_USER_ID") is not None:
     USER_ID = int(config.get_or_default("SANDBOX_USER_ID", ""))
