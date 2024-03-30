@@ -24,9 +24,9 @@ socket.addEventListener("message", (event) => {
   } else {
     /* 
       TODO
-      This now enters for user messages when terminal input is
+      This condition fires for user messages when terminal input is
       entered.  Terminal input will be specified with the 
-      message type "term": "output"
+      message type "term": "output", possibly handle
     */
   }
 });

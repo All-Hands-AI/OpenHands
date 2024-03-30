@@ -35,6 +35,11 @@ class JsonWebsocketAddon {
         terminal.writeln(args.command);
       }
       if (term === "output") {
+        /*
+          TODO
+          The backend currently rewrites the entire terminal each iteration, 
+          super inefficient.  Need to rewrite to only append new lines.
+        */
         terminal.clear();
         terminal.write(content);
       }
@@ -116,6 +121,9 @@ function Terminal({ hidden }: TerminalProps): JSX.Element {
 
     const jsonWebsocketAddon = new JsonWebsocketAddon(socket);
     terminal.loadAddon(jsonWebsocketAddon);
+
+    const initPayload = JSON.stringify({ action: "terminal", message: "init" });
+    socket.send(initPayload);
 
     return () => {
       terminal.dispose();

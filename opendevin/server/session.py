@@ -68,7 +68,12 @@ class Session:
                     elif action == "chat":
                         self.controller.add_history(NullAction(), UserMessageObservation(data["message"]))
                     elif action == "terminal":
-                        if data["message"] == "\r":
+                        if data["message"] == "init":
+                            output = self.controller.run_command("")
+                            output = self.controller.run_command("")
+                            self.terminal_buffer += output.content.split("\n")[1]
+                            await self.send({"term": "output", "content": self.terminal_buffer})
+                        elif data["message"] == "\r":
                             if self.controller:
                                 output = self.controller.run_command(self.current_input)
                                 # TODO slice original command data from output
@@ -82,9 +87,9 @@ class Session:
                             if len(self.current_input) > 0:
                                 self.current_input = self.current_input[:-1]
                         # TODO not sure this condition works
-                        elif data["message"] == "\x03": # Ctrl+C
-                            self.current_input = ""
-                            output = self.controller.run_command("")
+                        # elif data["message"] == "\x03": # Ctrl+C
+                        #     self.current_input = ""
+                        #     output = self.controller.run_command("")
                         else:
                             self.current_input += data["message"]
                     elif action == "chat":

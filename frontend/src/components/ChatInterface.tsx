@@ -36,15 +36,6 @@ function MessageList(): JSX.Element {
   );
 }
 
-function InitializingStatus(): JSX.Element {
-  return (
-    <div className="initializing-status">
-      <img src={assistantAvatar} alt="assistant avatar" className="avatar" />
-      <div>Initializing agent (may take up to 10 seconds)...</div>
-    </div>
-  );
-}
-
 function DirectoryInput(): JSX.Element {
   const [editing, setEditing] = useState(false);
   const [directory, setDirectory] = useState("Default");
@@ -83,7 +74,6 @@ function DirectoryInput(): JSX.Element {
 }
 
 function ChatInterface(): JSX.Element {
-  const { initialized } = useSelector((state: RootState) => state.task);
   const [inputMessage, setInputMessage] = useState("");
 
   const handleSendMessage = () => {
@@ -96,7 +86,7 @@ function ChatInterface(): JSX.Element {
   return (
     <div className="chat-interface">
       <DirectoryInput />
-      {initialized ? <MessageList /> : <InitializingStatus />}
+      <MessageList />
       <div className="input-container">
         <div className="input-box">
           <input
@@ -110,11 +100,7 @@ function ChatInterface(): JSX.Element {
               }
             }}
           />
-          <button
-            type="button"
-            onClick={handleSendMessage}
-            disabled={!initialized}
-          >
+          <button type="button" onClick={handleSendMessage}>
             <span className="button-text">Send</span>
           </button>
         </div>
