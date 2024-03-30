@@ -21,6 +21,10 @@ assignees: ''
 ```toml
 ```
 
+**My model and agent** (see top-right of the UI):
+* Model:
+* Agent:
+
 **Commands I ran to install and run OpenDevin**:
 ```
 ```
