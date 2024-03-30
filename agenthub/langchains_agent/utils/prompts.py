@@ -34,11 +34,11 @@ It must be an object, and it must contain two fields:
 * `args`, which is a map of key-value pairs, specifying the arguments for that action
 
 Here are the possible actions:
-* `read` - reads the contents of a file. Arguments:
+* `read` - reads the content of a file. Arguments:
   * `path` - the path of the file to read
-* `write` - writes the contents to a file. Arguments:
+* `write` - writes the content to a file. Arguments:
   * `path` - the path of the file to write
-  * `contents` - the contents to write to the file
+  * `content` - the content to write to the file
 * `run` - runs a command. Arguments:
   * `command` - the command to run
   * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.

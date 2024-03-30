@@ -11,11 +11,11 @@ class ActionType(str, Enum):
     """
 
     READ = "read"
-    """Reads the contents of a file.
+    """Reads the content of a file.
     """
 
     WRITE = "write"
-    """Writes the contents to a file.
+    """Writes the content to a file.
     """
 
     RUN = "run"
