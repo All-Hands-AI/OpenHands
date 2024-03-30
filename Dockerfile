@@ -28,4 +28,5 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # RUN apt-get update && apt-get install -y procps
-CMD ["uvicorn", "opendevin.server.listen:app", "--host", "0.0.0.0", "--port", "3000"]
+# CMD ["uvicorn", "opendevin.server.listen:app", "--host", "0.0.0.0", "--port", "3000"]
+CMD ["python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "-m", "uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "3000"]

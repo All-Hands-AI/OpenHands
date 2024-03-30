@@ -10,8 +10,6 @@ from typing import Tuple, Dict, List, Optional
 from collections import namedtuple
 from typing import Dict, List, Tuple
 
-import docker
-
 
 InputType = namedtuple("InputType", ["content"])
 OutputType = namedtuple("OutputType", ["content"])

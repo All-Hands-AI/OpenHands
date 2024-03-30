@@ -40,8 +40,8 @@ function AgentSelect(): JSX.Element {
 function BannerSettings(): JSX.Element {
   return (
     <div className="banner">
-      <ModelSelect />
-      <AgentSelect />
+      <ModelSelect key="model-select" />
+      <AgentSelect key="agent-select" />
     </div>
   );
 }

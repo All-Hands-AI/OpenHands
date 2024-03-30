@@ -80,6 +80,7 @@ class Session:
             while True:
                 try:
                     data = await self.websocket.receive_json()
+                    print(f"Received data: {data}")
                 except ValueError:
                     await self.send_error("Invalid JSON")
                     continue

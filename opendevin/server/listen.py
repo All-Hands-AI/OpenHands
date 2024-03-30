@@ -6,7 +6,7 @@ app = FastAPI()
 
 # This endpoint receives events from the client (i.e. the browser)
 # @app.websocket("/ws")
-@app.websocket("/")
+@app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     session = Session(websocket)

@@ -12,13 +12,8 @@ services:
       - .:/app
     environment:
       env_file: .env
-      # command: uvicorn opendevin.server.listen:app --port 3000
-      # make this python container allow to debug from vscode with command
-    # command: "uvicorn opendevin.server.listen:app --host 0.0.0.0 --port 5678" # replace the command with uvicorn
-    command: ["sh", "-c", "pip install debugpy -t /tmp && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 -m uvicorn opendevin.server.listen:app --host 0.0.0.0 --port 3000"]
-    # ws://localhost:3000/ws this need to support websocket
-      # command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload 
-      
+    # command: ["sh", "-c", "pip install debugpy -t /tmp && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 -m uvicorn opendevin.server.listen:app --host 0.0.0.0 --port 3000"]
+    command: ["sh", "-c", "python -m debugpy --wait-for-client --listen 0.0.0.0:5678 -m uvicorn opendevin.server.listen:app --host 0.0.0.0 --port 3000"]
     networks: 
       - opendevin-network 
 

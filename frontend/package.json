@@ -20,6 +20,8 @@
     "@vitejs/plugin-react": "^4.2.1",
     "@xterm/xterm": "^5.4.0",
     "eslint-config-airbnb-typescript": "^18.0.0",
+    "http-proxy-agent": "^7.0.2",
+    "https-proxy-agent": "^7.0.4",
     "npm": "^10.5.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
