@@ -15,11 +15,18 @@ COPY Pipfile .
 COPY Pipfile.lock .
 RUN pipenv install --deploy
 
-# Create and switch to a new user
-RUN useradd --no-create-home appuser
-USER appuser
+# Create user and group "app" and set cache directory for huggingface hub
+RUN groupadd -r app && useradd --no-log-init -r -g app app \
+    && mkdir -p /app/.cache/huggingface/hub \
+    && chown -R app:app /app
+
+USER app
 
 FROM build as runtime
+
+ENV HF_HOME=/app/.cache/huggingface/hub
+
+WORKDIR /app
 
 COPY ./opendevin ./opendevin
 COPY ./agenthub ./agenthub

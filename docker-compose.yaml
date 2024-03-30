@@ -1,20 +1,20 @@
 version: '3.8'
 
 services:
-  # frontend:
-  #   build: 
-  #     context: ./frontend
-  #     dockerfile: ./frontend/Dockerfile
-  #   env_file:
-  #     - .env
-  #   ports:
-  #     - "3000:3000"
-  #   volumes:
-  #     - ./frontend:/app
-  #   depends_on:
-  #     - backend
-  #   environment:
-  #     - REACT_APP_BACKEND_URL=http://localhost:8080
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/app
+    restart:
+      on-failure
+    # environment:
+    #   - REACT_APP_BACKEND_URL=http://localhost:8080
 
   backend:
     build:
@@ -24,6 +24,8 @@ services:
       - "3000:3000"
     volumes:
       - ./opendevin:/app/opendevin
+    restart:
+      on-failure
 
 networks:
   default:
