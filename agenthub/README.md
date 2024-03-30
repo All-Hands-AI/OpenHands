@@ -51,7 +51,7 @@ Here is a list of available Observations:
 - [`AgentRecallObservation`](../opendevin/observation/recall.py)
 - [`AgentErrorObservation`](../opendevin/observation/error.py)
 
-You can use `observation.to_dict()` and `observation_from_dict` to serialize and deserialize actions.
+You can use `observation.to_dict()` and `observation_from_dict` to serialize and deserialize observations.
 
 ## Interface
 Every agent must implement the following methods:
