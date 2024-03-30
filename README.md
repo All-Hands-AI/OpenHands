@@ -23,26 +23,18 @@ OpenDevin is still a work in progress. But you can run the alpha version to see 
 * [NodeJS](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) >= 14.8
 
 ### Installation
-First, make sure Docker is running:
-```bash
-docker ps # this should exit successfully
-```
-
-Then pull our latest image [here](https://github.com/opendevin/OpenDevin/pkgs/container/sandbox)
+First, pull our latest sandbox image [here](https://github.com/opendevin/OpenDevin/pkgs/container/sandbox)
 ```bash
 docker pull ghcr.io/opendevin/sandbox
 ```
 
-Then copy `config.toml.template` to `config.toml`. Add an API key to `config.toml`.
-(See below for how to use different models.)
+Then copy `config.toml.template` to `config.toml`. Add an OpenAI API key to `config.toml`,
+or see below for how to use different models.
 ```toml
-OPENAI_API_KEY="..."
-WORKSPACE_DIR="..."
+LLM_API_KEY="sk-..."
 ```
 
-Next, start the backend.
-We manage python packages and the virtual environment with `pipenv`.
-Make sure you have python >= 3.10.
+Next, start the backend:
 ```bash
 python -m pip install pipenv
 python -m pipenv install -v
@@ -56,6 +48,7 @@ cd frontend
 npm install
 npm start
 ```
+You'll see OpenDevin running at localhost:3001
 
 ### Picking a Model
 We use LiteLLM, so you can run OpenDevin with any foundation model, including OpenAI, Claude, and Gemini.
@@ -78,20 +71,6 @@ And you can customize which embeddings are used for the vector database storage:
 ```toml
 LLM_EMBEDDING_MODEL="llama2" # can be "llama2", "openai", "azureopenai", or "local"
 ```
-
-### Running the app
-You should be able to run the backend now
-```bash
-uvicorn opendevin.server.listen:app --port 3000
-```
-Then in a second terminal:
-```bash
-cd frontend
-npm install
-npm run start -- --port 3001
-```
-
-You'll see OpenDevin running at localhost:3001
 
 ### Running on the Command Line
 You can run OpenDevin from your command line:
