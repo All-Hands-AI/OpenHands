@@ -2,7 +2,8 @@ from opendevin.server.session import Session
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 import agenthub # noqa F401 (we import this to get the agents registered)
-import litellm
+import litellm 
+from opendevin.agent import Agent
 
 app = FastAPI()
 
@@ -34,4 +35,4 @@ async def get_litellm_models():
     """
     Get all agents supported by LiteLLM.
     """
-    return ["LangchainsAgent", "CodeActAgent", "PlannerAgent"]
+    return list(Agent._registry.keys())

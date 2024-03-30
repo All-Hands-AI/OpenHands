@@ -46,7 +46,7 @@ function AgentSelect(): JSX.Element {
       className="select max-w-xs bg-base-300 xl:w-full w-1/3"
     >
       {agents.map((agent) => (
-        <option>{agent}</option>
+        <option key={agent}>{agent}</option>
       ))}
     </select>
   );
