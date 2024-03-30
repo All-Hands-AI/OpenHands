@@ -208,7 +208,6 @@ class DockerInteractive:
         self.closed = True
 
     def stop_docker_container(self):
-
         # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
             docker_client = docker.from_env()
@@ -250,8 +249,15 @@ class DockerInteractive:
                 working_dir="/workspace",
                 name=self.container_name,
                 detach=True,
+                stdin_open=True,
+                tty=True,
                 volumes={self.workspace_dir: {"bind": "/workspace", "mode": "rw"}},
             )
+            self.docker_socket = self.container.attach_socket(
+                params={"stdin": 1, "stdout": 1, "stderr": 1, "stream": 1},
+            )
+            # Set socket as nonblocking
+            self.docker_socket._sock.setblocking(False)
         except Exception as e:
             print(f"Failed to start container: {e}")
             raise e
