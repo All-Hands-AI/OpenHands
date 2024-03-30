@@ -17,6 +17,7 @@ Welcome to OpenDevin, an open-source project aiming to replicate [Devin](https:/
 OpenDevin is still a work in progress. But you can run the alpha version to see things working end-to-end.
 
 ### Requirements
+* Linux, Mac OS, or [WSL on Windows](https://learn.microsoft.com/en-us/windows/wsl/install)
 * [Docker](https://docs.docker.com/engine/install/)
 * [Python](https://www.python.org/downloads/) >= 3.10
 * [NodeJS](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) >= 14.8
@@ -46,8 +47,6 @@ Make sure you have python >= 3.10.
 python -m pip install pipenv
 pipenv install -v
 pipenv shell
-
-python -m pip install -r requirements.txt
 uvicorn opendevin.server.listen:app --port 3000
 ```
 

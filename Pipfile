@@ -25,6 +25,7 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 google-generativeai = "*"
 typing-extensions = "*"
+toml = "*"
 
 [dev-packages]
 

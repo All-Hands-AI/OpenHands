@@ -18,7 +18,7 @@ RUN pipenv install --deploy
 # Create user and group "app" and set cache directory for huggingface hub
 RUN groupadd -r app && useradd --no-log-init -r -g app app \
     && mkdir -p /app/.cache/huggingface/hub \
-    && chown -R app:app /app
+    && chown -R app:app /app/.cache/huggingface/hub
 
 USER app
 
