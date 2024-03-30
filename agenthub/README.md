@@ -35,6 +35,8 @@ Here is a list of available Actions, which can be returned by `agent.step()`:
 - [`AgentThinkAction`](../opendevin/action/agent.py) - A no-op that allows the agent to add plaintext to the history (as well as the chat log)
 - [`AgentFinishAction`](../opendevin/action/agent.py) - Stops the control loop, allowing the user to enter a new task
 
+You can use `action.to_dict()` and `action_from_dict` to serialize and deserialize actions.
+
 ## Observations
 There are also several types of Observations. These are typically available in the step following the corresponding Action.
 But they may also appear as a result of asynchronous events (e.g. a message from the user, logs from a command running
@@ -48,6 +50,8 @@ Here is a list of available Observations:
 - [`UserMessageObservation`](../opendevin/observation/)
 - [`AgentRecallObservation`](../opendevin/observation/recall.py)
 - [`AgentErrorObservation`](../opendevin/observation/error.py)
+
+You can use `observation.to_dict()` and `observation_from_dict` to serialize and deserialize actions.
 
 ## Interface
 Every agent must implement the following methods:
