@@ -1,7 +1,5 @@
 from typing import List
 
-from opendevin import config
-
 from . import json
 
 from opendevin.action import (
