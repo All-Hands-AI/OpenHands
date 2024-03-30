@@ -27,7 +27,7 @@ docker build -f opendevin/sandbox/Dockerfile -t opendevin/sandbox:v0.1 .
 
 Or you can pull the latest image [here](https://github.com/opendevin/OpenDevin/pkgs/container/sandbox):
 ```bash
-docker pull ghcr.io/opendevin/sandbox:v0.1
+docker pull ghcr.io/opendevin/sandbox
 ```
 
 2. Set the `OPENAI_API_KEY`, please find more details [here](https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety). Also, choose the model you want. Default is `gpt-4-0125-preview`
