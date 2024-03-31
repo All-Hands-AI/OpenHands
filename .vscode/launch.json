@@ -11,7 +11,7 @@
       },
       "pathMappings": [
           {
-              "localRoot": "${workspaceFolder}",
+              "localRoot": "${workspaceFolder}/backend",
               "remoteRoot": "/app"
           }
       ]

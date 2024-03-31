@@ -27,5 +27,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+FROM python:3.10-slim-buster
+WORKDIR /app
+COPY --from=base /usr/local/bin /usr/local/bin
+COPY --from=base /usr/local/lib /usr/local/lib
+COPY --from=base /usr/local/include /usr/local/include
+COPY --from=base /usr/local/share /usr/local/share
+COPY --from=base /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+
 # RUN apt-get update && apt-get install -y procps
 CMD ["uvicorn", "opendevin.server.listen:app", "--host", "0.0.0.0", "--port", "3000"]

@@ -2,7 +2,7 @@
 import asyncio
 from typing import List, Callable
 import traceback
-
+from opendevin import config
 from opendevin.plan import Plan
 from opendevin.state import State
 from opendevin.agent import Agent
@@ -19,7 +19,12 @@ from opendevin.observation import (
     NullObservation
 )
 
-from .command_manager import CommandManager
+AM_I_IN_A_DOCKER_CONTAINER = config.get_or_default("AM_I_IN_A_DOCKER_CONTAINER", "")
+
+if(AM_I_IN_A_DOCKER_CONTAINER == "Yes"):
+    from .command_manager_without_sandbox import CommandManager
+else:    
+    from .command_manager import CommandManager
 
 def print_with_indent(text: str):
     print("\t"+text.replace("\n","\n\t"), flush=True)
