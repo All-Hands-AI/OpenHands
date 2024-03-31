@@ -27,7 +27,9 @@ function MessageList(): JSX.Element {
               alt={`${msg.sender} avatar`}
               className="w-[40px] h-[40px] mx-2.5"
             />
-            <Card className="w-4/5">
+            <Card
+              className={`w-4/5 ${msg.sender === "user" ? "bg-primary" : ""}`}
+            >
               <CardBody>{msg.content}</CardBody>
             </Card>
           </div>
