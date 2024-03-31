@@ -23,15 +23,11 @@ class AgentRecallAction(ExecutableAction):
         Returns:
             AgentRecallObservation: Observation containing recalled memories.
         """
-        try:
-            memories = controller.agent.search_memory(self.query)
-            return AgentRecallObservation(
-                content="Recalling memories...",
-                memories=memories
-            )
-        except Exception as e:
-            # Log the error or handle it appropriately based on your application's requirements
-            raise RuntimeError(f"Error while recalling memories: {e}")
+        memories = controller.agent.search_memory(self.query)
+        return AgentRecallObservation(
+            content="Recalling memories...",
+            memories=memories
+        )
 
     @property
     def message(self) -> str:
