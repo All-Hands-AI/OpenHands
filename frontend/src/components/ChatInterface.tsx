@@ -4,8 +4,33 @@ import { useSelector } from "react-redux";
 import assistantAvatar from "../assets/assistant-avatar.png";
 import CogTooth from "../assets/cog-tooth";
 import userAvatar from "../assets/user-avatar.png";
+import { useTypingEffect } from "../hooks/useTypingEffect";
 import { sendChatMessage } from "../services/chatService";
+import { Message } from "../state/chatSlice";
 import { RootState } from "../store";
+
+interface ITypingChatProps {
+  msg: Message;
+}
+
+/**
+ * @param msg
+ * @returns jsx
+ *
+ * component used for typing effect when assistant replies
+ *
+ * makes uses of useTypingEffect hook
+ *
+ */
+function TypingChat({ msg }: ITypingChatProps) {
+  return (
+    msg?.content && (
+      <Card>
+        <CardBody>{useTypingEffect([msg?.content], { loop: false })}</CardBody>
+      </Card>
+    )
+  );
+}
 
 function MessageList(): JSX.Element {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -18,20 +43,22 @@ function MessageList(): JSX.Element {
   return (
     <div className="flex-1 overflow-y-auto">
       {messages.map((msg, index) => (
-        <div key={index} className="flex mb-2.5">
+        <div key={index} className="flex mb-2.5 pr-5 pl-5">
           <div
-            className={`${msg.sender === "user" ? "flex-row-reverse mt-2.5 mr-2.5 mb-0 ml-auto" : ""} flex min-w-0`}
+            className={`flex mt-2.5 mb-0 min-w-0 ${msg.sender === "user" && "flex-row-reverse ml-auto"}`}
           >
             <img
               src={msg.sender === "user" ? userAvatar : assistantAvatar}
               alt={`${msg.sender} avatar`}
               className="w-[40px] h-[40px] mx-2.5"
             />
-            <Card
-              className={`max-w-[80%] ${msg.sender === "user" ? "bg-primary" : ""}`}
-            >
-              <CardBody>{msg.content}</CardBody>
-            </Card>
+            {msg.sender !== "user" ? (
+              <TypingChat msg={msg} />
+            ) : (
+              <Card className="bg-primary">
+                <CardBody>{msg.content}</CardBody>
+              </Card>
+            )}
           </div>
         </div>
       ))}
