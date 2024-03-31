@@ -1,11 +1,11 @@
-import React, { ChangeEvent, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
+import { Card, CardBody } from "@nextui-org/react";
 import assistantAvatar from "../assets/assistant-avatar.png";
 import userAvatar from "../assets/user-avatar.png";
 import { sendChatMessage } from "../services/chatService";
 import { RootState } from "../store";
-import "./css/ChatInterface.css";
-import { changeDirectory as sendChangeDirectorySocketMessage } from "../services/settingsService";
+import CogTooth from "../assets/cog-tooth";
 
 function MessageList(): JSX.Element {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -16,18 +16,20 @@ function MessageList(): JSX.Element {
   }, [messages]);
 
   return (
-    <div className="message-list">
+    <div className="flex-1 overflow-y-auto">
       {messages.map((msg, index) => (
-        <div key={index} className="message-layout">
+        <div key={index} className="flex mb-2.5">
           <div
-            className={`${msg.sender === "user" ? "user-message" : "message"}`}
+            className={`${msg.sender === "user" ? "flex flex-row-reverse mt-2.5 mr-2.5 mb-0 ml-auto" : "flex"}`}
           >
             <img
               src={msg.sender === "user" ? userAvatar : assistantAvatar}
               alt={`${msg.sender} avatar`}
-              className="avatar"
+              className="w-[40px] h-[40px] mx-2.5"
             />
-            <div className="chat chat-bubble">{msg.content}</div>
+            <Card className="w-4/5">
+              <CardBody>{msg.content}</CardBody>
+            </Card>
           </div>
         </div>
       ))}
@@ -38,51 +40,22 @@ function MessageList(): JSX.Element {
 
 function InitializingStatus(): JSX.Element {
   return (
-    <div className="initializing-status">
-      <img src={assistantAvatar} alt="assistant avatar" className="avatar" />
+    <div className="flex items-center m-auto h-full">
+      <img
+        src={assistantAvatar}
+        alt="assistant avatar"
+        className="w-[40px] h-[40px] mx-2.5"
+      />
       <div>Initializing agent (may take up to 10 seconds)...</div>
     </div>
   );
 }
 
-function DirectoryInput(): JSX.Element {
-  const [editing, setEditing] = useState(false);
-  const [directory, setDirectory] = useState("Default");
-
-  function save() {
-    setEditing(false);
-    sendChangeDirectorySocketMessage(directory);
-  }
-
-  function onDirectoryInputChange(e: ChangeEvent<HTMLInputElement>) {
-    setEditing(true);
-    setDirectory(e.target.value);
-  }
-
-  return (
-    <div className="flex p-2 justify-center gap-2 bg-neutral-700">
-      <label htmlFor="directory-input" className="label">
-        Directory
-      </label>
-      <input
-        type="text"
-        className="input"
-        id="directory-input"
-        placeholder="Default"
-        onChange={onDirectoryInputChange}
-      />
-      <button
-        type="button"
-        className={`btn ${editing ? "" : "hidden"}`}
-        onClick={save}
-      >
-        Save
-      </button>
-    </div>
-  );
+interface Props {
+  setSettingOpen: (isOpen: boolean) => void;
 }
 
-function ChatInterface(): JSX.Element {
+function ChatInterface({ setSettingOpen }: Props): JSX.Element {
   const { initialized } = useSelector((state: RootState) => state.task);
   const [inputMessage, setInputMessage] = useState("");
 
@@ -94,13 +67,22 @@ function ChatInterface(): JSX.Element {
   };
 
   return (
-    <div className="chat-interface">
-      <DirectoryInput />
+    <div className="flex flex-col h-full p-0 bg-bg-light">
+      <div className="w-full flex justify-between p-5">
+        <div />
+        <div
+          className="cursor-pointer hover:opacity-80"
+          onClick={() => setSettingOpen(true)}
+        >
+          <CogTooth />
+        </div>
+      </div>
       {initialized ? <MessageList /> : <InitializingStatus />}
-      <div className="input-container">
-        <div className="input-box">
+      <div className="w-full flex items-center p-5 rounded-none rounded-bl-lg rounded-br-lg">
+        <div className="w-full flex items-center rounded-xl text-base bg-bg-input">
           <input
             type="text"
+            className="flex-1 py-4 px-2.5 border-none mx-4 bg-bg-input text-white outline-none"
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             placeholder="Send a message (won't interrupt the Assistant)"
@@ -112,10 +94,11 @@ function ChatInterface(): JSX.Element {
           />
           <button
             type="button"
+            className="bg-transparent border-none rounded py-2.5 px-5 hover:opacity-80 cursor-pointer select-none"
             onClick={handleSendMessage}
             disabled={!initialized}
           >
-            <span className="button-text">Send</span>
+            Send
           </button>
         </div>
       </div>

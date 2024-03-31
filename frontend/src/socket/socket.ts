@@ -1,5 +1,5 @@
 import store from "../store";
-import { ActionMessage, ObservationMessage } from "./types/Message";
+import { ActionMessage, ObservationMessage } from "../types/Message";
 import { appendError } from "../state/errorsSlice";
 import { handleActionMessage } from "./actions";
 import { handleObservationMessage } from "./observations";
