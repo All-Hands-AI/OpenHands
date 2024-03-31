@@ -25,7 +25,7 @@ repos:
     rev: v0.3.3
     hooks:
       - id: ruff
-        entry: ruff check --config dev_config/python/ruff.toml opendevin/ agenthub/
+        entry: ruff check --config dev_config/python/ruff.toml backend/opendevin/ backend/agenthub/
         always_run: true
         pass_filenames: false
 
@@ -34,6 +34,6 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies: [types-requests, types-setuptools]
-        entry: mypy --config-file dev_config/python/mypy.ini opendevin/ agenthub/
+        entry: mypy --config-file dev_config/python/mypy.ini backend/opendevin/ backend/agenthub/
         always_run: true
         pass_filenames: false
