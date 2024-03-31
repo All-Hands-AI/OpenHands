@@ -1,6 +1,6 @@
 # Agent Framework Research
 
-In this folder, there may exist multiple implementations of `Agent` that will be used by the 
+In this folder, there may exist multiple implementations of `Agent` that will be used by the framework.
 
 For example, `agenthub/langchain_agent`, `agenthub/metagpt_agent`, `agenthub/codeact_agent`, etc.
 Contributors from different backgrounds and interests can choose to contribute to any (or all!) of these directions.
@@ -17,7 +17,7 @@ See the [LiteLLM docs for `self.llm.completion`](https://docs.litellm.ai/docs/co
 
 ## State
 The `state` contains:
-* A history of actions taken by the agent, as well as any obserations (e.g. file content, command output) from those actions
+* A history of actions taken by the agent, as well as any observations (e.g. file content, command output) from those actions
 * A list of actions/observations that have happened since the most recent step
 * A [`plan`](https://github.com/OpenDevin/OpenDevin/blob/main/opendevin/plan.py), which contains the main goal
   * The agent can add and modify subtasks through the `AddTaskAction` and `ModifyTaskAction`
