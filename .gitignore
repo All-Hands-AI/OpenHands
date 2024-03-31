@@ -193,6 +193,7 @@ yarn-error.log*
 .envrc
 /workspace
 /debug
-
+/backend/workspace/testProject
 # configuration
 config.toml
+backend/config.toml

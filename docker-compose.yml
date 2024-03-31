@@ -3,17 +3,15 @@ version: "3.4"
 services:
   app:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
-      - "5678:5678" 
     volumes:
-      - .:/app
+      - ./backend:/app
     environment:
       env_file: .env
-    # command: ["sh", "-c", "pip install debugpy -t /tmp && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 -m uvicorn opendevin.server.listen:app --host 0.0.0.0 --port 3000"]
-    command: ["sh", "-c", "python -m debugpy --wait-for-client --listen 0.0.0.0:5678 -m uvicorn opendevin.server.listen:app --host 0.0.0.0 --port 3000"]
+    command: ["sh", "-c", "uvicorn opendevin.server.listen:app --host 0.0.0.0 --port 3000"]
     networks: 
       - opendevin-network 
 
@@ -23,21 +21,12 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3001:3001"
-      - "5173:5173" # for debugpy
     volumes:
       - ./frontend:/app
-    command: npm run dev
-    # make this nodejs container allow to debug from vscode
+    command: npm start
     networks: 
       - opendevin-network 
 
 networks: 
   opendevin-network: 
-    driver: bridge 
-    
-
-
-
-
-
-
+    driver: bridge

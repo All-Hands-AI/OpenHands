@@ -120,15 +120,10 @@ class Session:
             return
         self.agent_task = asyncio.create_task(self.controller.start_loop(task), name="agent loop")
 
-<<<<<<< HEAD
-    def on_agent_event(self, event: Union[Observation, Action]):
-        # FIXME: we need better serialization
-=======
     def on_agent_event(self, event: Observation | Action):
         if isinstance(event, NullAction):
             return
         if isinstance(event, NullObservation):
             return
->>>>>>> main
         event_dict = event.to_dict()
         asyncio.create_task(self.send(event_dict), name="send event in callback")
