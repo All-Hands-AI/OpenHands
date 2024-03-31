@@ -76,7 +76,7 @@ As described in [here](https://github.com/OpenDevin/OpenDevin/labels), we create
 
 
 ## How to begin
-Please check the details in each parts: [frontend](./frontend/README.md), [agenthub](./agenthub/README.md), [evaluation](./evaluation/README.md), [server](./server/README.md).
+Please check the details in each parts: [frontend](./frontend/README.md), [agenthub](./agenthub/README.md), [evaluation](./evaluation/README.md), [server](./opendevin/server/README.md).
 
 ## Tests
 TODO: make sure code pass the test before submit.
