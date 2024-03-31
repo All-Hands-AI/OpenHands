@@ -140,5 +140,11 @@ def parse_action_response(response: str) -> Action:
     return action_from_dict(action_dict)
 
 def parse_summary_response(response: str) -> List[dict]:
+    response = response.strip()
+    if response.startswith('```') and response.endswith('```'):
+        if response.startswith('```json'):
+            response = response[7:-3]
+        else:
+            response = response[3:-3]
     parsed = json.loads(response)
     return parsed['new_monologue']
