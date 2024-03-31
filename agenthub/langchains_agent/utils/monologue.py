@@ -1,3 +1,4 @@
+import traceback
 
 import agenthub.langchains_agent.utils.json as json
 import agenthub.langchains_agent.utils.prompts as prompts
@@ -29,7 +30,11 @@ class Monologue:
             messages = [{"content": prompt,"role": "user"}]
             resp = llm.completion(messages=messages)
             summary_resp = resp['choices'][0]['message']['content']
-            self.thoughts = prompts.parse_summary_response(summary_resp)
+            self.thoughts = prompts.parse_summary_response(strip_markdown(summary_resp))
         except Exception as e:
-            # Consider logging the error here instead of or in addition to raising an exception
+            traceback.print_exc()
             raise RuntimeError(f"Error condensing thoughts: {e}")
+
+def strip_markdown(markdown_json):
+    # remove markdown code block
+    return markdown_json.replace('```json\n', '').replace('```', '').strip()
