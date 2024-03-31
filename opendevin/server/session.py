@@ -5,15 +5,11 @@ from typing import Optional
 from fastapi import WebSocketDisconnect
 
 from opendevin import config
-from opendevin.action import (
-    Action,
-    NullAction,
-)
-from opendevin.observation import NullObservation
+from opendevin.action import Action, NullAction
 from opendevin.agent import Agent
 from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
-from opendevin.observation import Observation, UserMessageObservation
+from opendevin.observation import Observation, NullObservation, UserMessageObservation
 
 DEFAULT_API_KEY = config.get_or_none("LLM_API_KEY")
 DEFAULT_BASE_URL = config.get_or_none("LLM_BASE_URL")
@@ -26,22 +22,22 @@ class Session:
         self.websocket = websocket
         self.controller: Optional[AgentController] = None
         self.agent: Optional[Agent] = None
-        self.agent_task = None
-        asyncio.create_task(self.create_controller(), name="create controller") # FIXME: starting the docker container synchronously causes a websocket error...
+        self.agent_task: Optional[asyncio.Task] = None
+        asyncio.create_task(self.create_controller(), name="create_controller")
 
-    async def send_error(self, message):
-        await self.send({"error": True, "message": message})
+    async def send_error(self, message: str):
+        if self.websocket:
+            try:
+                await self.websocket.send_json({"error": True, "message": message})
+            except Exception as e:
+                print(f"Error sending error message to client: {e}")
 
-    async def send_message(self, message):
-        await self.send({"message": message})
-
-    async def send(self, data):
-        if self.websocket is None:
-            return
-        try:
-            await self.websocket.send_json(data)
-        except Exception as e:
-            print("Error sending data to client", e)
+    async def send_message(self, message: str):
+        if self.websocket:
+            try:
+                await self.websocket.send_json({"message": message})
+            except Exception as e:
+                print(f"Error sending message to client: {e}")
 
     async def start_listening(self):
         try:
@@ -63,20 +59,15 @@ class Session:
                 else:
                     if self.controller is None:
                         await self.send_error("No agent started. Please wait a second...")
-
                     elif action == "chat":
                         self.controller.add_history(NullAction(), UserMessageObservation(data["message"]))
                     else:
-                        # TODO: we only need to implement user message for now
-                        # since even Devin does not support having the user taking other
-                        # actions (e.g., edit files) while the agent is running
-                        raise NotImplementedError
+                        await self.send_error("Unsupported action")
 
-        except WebSocketDisconnect as e:
-            self.websocket = None
-            if self.agent_task:
-                self.agent_task.cancel()
-            print("Client websocket disconnected", e)
+        except WebSocketDisconnect:
+            print("Client websocket disconnected")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
 
     async def create_controller(self, start_event=None):
         directory = DEFAULT_WORKSPACE_DIR
@@ -106,11 +97,11 @@ class Session:
         self.agent = AgentCls(llm)
         try:
             self.controller = AgentController(self.agent, workdir=directory, container_image=container_image, callbacks=[self.on_agent_event])
-        except Exception:
-            print("Error creating controller.")
+        except Exception as e:
+            print(f"Error creating controller: {e}")
             await self.send_error("Error creating controller. Please check Docker is running using `docker ps`.")
             return
-        await self.send({"action": "initialize", "message": "Control loop started."})
+        await self.send_message("Control loop started.")
 
     async def start_task(self, start_event):
         if "task" not in start_event["args"]:
@@ -121,12 +112,9 @@ class Session:
         if self.controller is None:
             await self.send_error("No agent started. Please wait a second...")
             return
-        self.agent_task = asyncio.create_task(self.controller.start_loop(task), name="agent loop")
+        self.agent_task = asyncio.create_task(self.controller.start_loop(task), name="agent_loop")
 
     def on_agent_event(self, event: Observation | Action):
-        if isinstance(event, NullAction):
-            return
-        if isinstance(event, NullObservation):
-            return
-        event_dict = event.to_dict()
-        asyncio.create_task(self.send(event_dict), name="send event in callback")
+        if not isinstance(event, (NullAction, NullObservation)):
+            event_dict = event.to_dict()
+            asyncio.create_task(self.send(event_dict), name="send_event_in_callback")
