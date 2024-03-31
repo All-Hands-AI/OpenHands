@@ -1,13 +1,13 @@
+import { Card, CardBody } from "@nextui-org/react";
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { Card, CardBody } from "@nextui-org/react";
 import assistantAvatar from "../assets/assistant-avatar.png";
-import userAvatar from "../assets/user-avatar.png";
-import { sendChatMessage } from "../services/chatService";
-import { RootState } from "../store";
 import CogTooth from "../assets/cog-tooth";
+import userAvatar from "../assets/user-avatar.png";
 import { useTypingEffect } from "../hooks/useTypingEffect";
+import { sendChatMessage } from "../services/chatService";
 import { Message } from "../state/chatSlice";
+import { RootState } from "../store";
 
 interface ITypingChatProps {
   msg: Message;
@@ -45,7 +45,7 @@ function MessageList(): JSX.Element {
       {messages.map((msg, index) => (
         <div key={index} className="flex mb-2.5 pr-5 pl-5">
           <div
-            className={`flex mt-2.5 mb-0 ${msg.sender === "user" && "flex-row-reverse ml-auto"}`}
+            className={`flex mt-2.5 mb-0 min-w-0 ${msg.sender === "user" && "flex-row-reverse ml-auto"}`}
           >
             <img
               src={msg.sender === "user" ? userAvatar : assistantAvatar}
