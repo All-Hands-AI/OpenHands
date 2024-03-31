@@ -25,6 +25,7 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 google-generativeai = "*"
 toml = "*"
+json_repair = "*"
 
 [dev-packages]
 
