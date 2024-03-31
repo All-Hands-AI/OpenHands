@@ -62,11 +62,7 @@ class Session:
                     elif action == "chat":
                         self.controller.add_history(NullAction(), UserMessageObservation(data["message"]))
                     else:
-# <<<<<<< patch-1
-                        await self.send_error("Unsupported action")
-  =======
-                        await self.send_error("I didn't recognize this action:" + action)
-# >>>>>>> main
+                        await self.send_error("I didn't recognize this action: " + action)
 
         except WebSocketDisconnect:
             print("Client websocket disconnected")
