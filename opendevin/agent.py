@@ -89,3 +89,13 @@ class Agent(ABC):
         if name not in cls._registry:
             raise ValueError(f"No agent class registered under '{name}'.")
         return cls._registry[name]
+
+    @classmethod
+    def listAgents(cls) -> list[str]:
+        """
+        Retrieves the list of all agent names from the registry.
+        """
+        if not bool(cls._registry):
+            raise ValueError("No agent class registered.")
+        return list(cls._registry.keys())
+        

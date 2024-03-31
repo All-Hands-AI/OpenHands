@@ -30,12 +30,13 @@ class AgentController:
         agent: Agent,
         workdir: str,
         max_iterations: int = 100,
+        container_image: str | None = None,
         callbacks: List[Callable] = [],
     ):
         self.agent = agent
         self.max_iterations = max_iterations
         self.workdir = workdir
-        self.command_manager = CommandManager(workdir)
+        self.command_manager = CommandManager(workdir,container_image)
         self.callbacks = callbacks
 
     def update_state_for_step(self, i):
