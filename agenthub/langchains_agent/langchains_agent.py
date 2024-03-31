@@ -7,22 +7,6 @@ import agenthub.langchains_agent.utils.prompts as prompts
 from agenthub.langchains_agent.utils.monologue import Monologue
 from agenthub.langchains_agent.utils.memory import LongTermMemory
 
-from opendevin.action import (
-    NullAction,
-    CmdRunAction,
-    CmdKillAction,
-    BrowseURLAction,
-    FileReadAction,
-    FileWriteAction,
-    AgentRecallAction,
-    AgentThinkAction,
-    AgentFinishAction,
-)
-from opendevin.observation import (
-    CmdOutputObservation,
-)
-
-
 MAX_MONOLOGUE_LENGTH = 20000
 MAX_OUTPUT_LENGTH = 5000
 
@@ -81,7 +65,7 @@ class LangchainsAgent(Agent):
         self.memory = LongTermMemory()
 
     def _add_event(self, event: dict):
-        if 'output' in event['args'] and len(event['args']['output']) > MAX_OUTPUT_LENGTH:
+        if 'args' in event and 'output' in event['args'] and len(event['args']['output']) > MAX_OUTPUT_LENGTH:
             event['args']['output'] = event['args']['output'][:MAX_OUTPUT_LENGTH] + "..."
 
         self.monologue.add_event(event)
@@ -136,45 +120,9 @@ class LangchainsAgent(Agent):
 
     def step(self, state: State) -> Action:
         self._initialize(state.plan.main_goal)
-        # TODO: make langchains agent use Action & Observation
-        # completly from ground up
-
-        # Translate state to action_dict
         for prev_action, obs in state.updated_info:
-            d = None
-            if isinstance(obs, CmdOutputObservation):
-                if obs.error:
-                    d = {"action": "error", "args": {"output": obs.content}}
-                else:
-                    d = {"action": "output", "args": {"output": obs.content}}
-            else:
-                d = {"action": "output", "args": {"output": obs.content}}
-            if d is not None:
-                self._add_event(d)
-
-            d = None
-            if isinstance(prev_action, CmdRunAction):
-                d = {"action": "run", "args": {"command": prev_action.command}}
-            elif isinstance(prev_action, CmdKillAction):
-                d = {"action": "kill", "args": {"id": prev_action.id}}
-            elif isinstance(prev_action, BrowseURLAction):
-                d = {"action": "browse", "args": {"url": prev_action.url}}
-            elif isinstance(prev_action, FileReadAction):
-                d = {"action": "read", "args": {"file": prev_action.path}}
-            elif isinstance(prev_action, FileWriteAction):
-                d = {"action": "write", "args": {"file": prev_action.path, "content": prev_action.contents}}
-            elif isinstance(prev_action, AgentRecallAction):
-                d = {"action": "recall", "args": {"query": prev_action.query}}
-            elif isinstance(prev_action, AgentThinkAction):
-                d = {"action": "think", "args": {"thought": prev_action.thought}}
-            elif isinstance(prev_action, AgentFinishAction):
-                d = {"action": "finish"}
-            elif isinstance(prev_action, NullAction):
-                d = None
-            else:
-                raise ValueError(f"Unknown action type: {prev_action}")
-            if d is not None:
-                self._add_event(d)
+            self._add_event(prev_action.to_dict())
+            self._add_event(obs.to_dict())
 
         state.updated_info = []
 

@@ -1,8 +1,6 @@
-from typing import List, Dict, Type
+from typing import List
 
-from langchain_core.pydantic_v1 import BaseModel
 from langchain.prompts import PromptTemplate
-from langchain_core.output_parsers import JsonOutputParser
 
 from opendevin import config
 
@@ -13,34 +11,12 @@ if config.get_or_default("DEBUG", False):
 from . import json
 
 from opendevin.action import (
+    action_from_dict,
     Action,
-    CmdRunAction,
-    CmdKillAction,
-    BrowseURLAction,
-    FileReadAction,
-    FileWriteAction,
-    AgentRecallAction,
-    AgentThinkAction,
-    AgentFinishAction,
-    AgentSummarizeAction,
 )
 from opendevin.observation import (
     CmdOutputObservation,
 )
-
-
-ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
-    "run": CmdRunAction,
-    "kill": CmdKillAction,
-    "browse": BrowseURLAction,
-    "read": FileReadAction,
-    "write": FileWriteAction,
-    "recall": AgentRecallAction,
-    "think": AgentThinkAction,
-    "summarize": AgentSummarizeAction,
-    "finish": AgentFinishAction,
-}
-CLASS_TO_ACTION_TYPE: Dict[Type[Action], str] = {v: k for k, v in ACTION_TYPE_TO_CLASS.items()}
 
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is to {task}.
@@ -116,15 +92,6 @@ You can also use the same action and args from the source monologue.
 """
 
 
-class _ActionDict(BaseModel):
-    action: str
-    args: dict
-
-
-class NewMonologue(BaseModel):
-    new_monologue: List[_ActionDict]
-
-
 def get_summarize_monologue_prompt(thoughts):
     prompt = PromptTemplate.from_template(MONOLOGUE_SUMMARY_PROMPT)
     return prompt.format(monologue=json.dumps({'old_monologue': thoughts}, indent=2))
@@ -137,13 +104,14 @@ def get_request_action_prompt(
     hint = ''
     if len(thoughts) > 0:
         latest_thought = thoughts[-1]
-        if latest_thought["action"] == 'think':
-            if latest_thought["args"]['thought'].startswith("OK so my task is"):
-                hint = "You're just getting started! What should you do first?"
-            else:
-                hint = "You've been thinking a lot lately. Maybe it's time to take action?"
-        elif latest_thought["action"] == 'error':
-            hint = "Looks like that last command failed. Maybe you need to fix it, or try something else."
+        if "action" in latest_thought:
+            if latest_thought["action"] == 'think':
+                if latest_thought["args"]['thought'].startswith("OK so my task is"):
+                    hint = "You're just getting started! What should you do first?"
+                else:
+                    hint = "You've been thinking a lot lately. Maybe it's time to take action?"
+            elif latest_thought["action"] == 'error':
+                hint = "Looks like that last command failed. Maybe you need to fix it, or try something else."
 
     bg_commands_message = ""
     if len(background_commands_obs) > 0:
@@ -162,17 +130,15 @@ def get_request_action_prompt(
     )
 
 def parse_action_response(response: str) -> Action:
-    parser = JsonOutputParser(pydantic_object=_ActionDict)
-    action_dict = parser.parse(response)
+    json_start = response.find("{")
+    json_end = response.rfind("}") + 1
+    response = response[json_start:json_end]
+    action_dict = json.loads(response)
     if 'content' in action_dict:
         # The LLM gets confused here. Might as well be robust
         action_dict['contents'] = action_dict.pop('content')
+    return action_from_dict(action_dict)
 
-    action = ACTION_TYPE_TO_CLASS[action_dict["action"]](**action_dict["args"])
-    return action
-
-def parse_summary_response(response: str) -> List[Action]:
-    parser = JsonOutputParser(pydantic_object=NewMonologue)
-    parsed = parser.parse(response)
-    #thoughts = [ACTION_TYPE_TO_CLASS[t['action']](**t['args']) for t in parsed['new_monologue']]
+def parse_summary_response(response: str) -> List[dict]:
+    parsed = json.loads(response)
     return parsed['new_monologue']

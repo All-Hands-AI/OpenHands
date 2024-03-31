@@ -3,7 +3,7 @@ from typing import List, Tuple, Dict, Type
 
 from opendevin.controller.agent_controller import print_with_indent
 from opendevin.plan import Plan
-from opendevin.action import Action
+from opendevin.action import Action, action_from_dict
 from opendevin.observation import Observation
 
 from opendevin.action import (
@@ -136,15 +136,10 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
     latest_action: Action = NullAction()
     for action, observation in sub_history:
         if not isinstance(action, NullAction):
-            #if not isinstance(action, ModifyTaskAction) and not isinstance(action, AddTaskAction):
-            action_dict = action.to_dict()
-            action_dict["action"] = convert_action(action_dict["action"])
-            history_dicts.append(action_dict)
+            history_dicts.append(action.to_dict())
             latest_action = action
         if not isinstance(observation, NullObservation):
-            observation_dict = observation.to_dict()
-            observation_dict["observation"] = convert_observation(observation_dict["observation"])
-            history_dicts.append(observation_dict)
+            history_dicts.append(observation.to_dict())
     history_str = json.dumps(history_dicts, indent=2)
 
     hint = ""
@@ -157,7 +152,7 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
         plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
         hint = plan_status
 
-    latest_action_id = convert_action(latest_action.to_dict()["action"])
+    latest_action_id = latest_action.to_dict()['action']
 
     if current_task is not None:
         if latest_action_id == "":
@@ -200,43 +195,6 @@ def parse_response(response: str) -> Action:
     if 'content' in action_dict:
         # The LLM gets confused here. Might as well be robust
         action_dict['contents'] = action_dict.pop('content')
-
-    args_dict = action_dict.get("args", {})
-    action = ACTION_TYPE_TO_CLASS[action_dict["action"]](**args_dict)
+    action = action_from_dict(action_dict)
     return action
 
-def convert_action(action):
-    if action == "CmdRunAction":
-        action = "run"
-    elif action == "CmdKillAction":
-        action = "kill"
-    elif action == "BrowseURLAction":
-        action = "browse"
-    elif action == "FileReadAction":
-        action = "read"
-    elif action == "FileWriteAction":
-        action = "write"
-    elif action == "AgentFinishAction":
-        action = "finish"
-    elif action == "AgentRecallAction":
-        action = "recall"
-    elif action == "AgentThinkAction":
-        action = "think"
-    elif action == "AgentSummarizeAction":
-        action = "summarize"
-    elif action == "AddTaskAction":
-        action = "add_task"
-    elif action == "ModifyTaskAction":
-        action = "modify_task"
-    return action
-
-def convert_observation(observation):
-    if observation == "UserMessageObservation":
-        observation = "chat"
-    elif observation == "AgentMessageObservation":
-        observation = "chat"
-    elif observation == "CmdOutputObservation":
-        observation = "run"
-    elif observation == "FileReadObservation":
-        observation = "read"
-    return observation

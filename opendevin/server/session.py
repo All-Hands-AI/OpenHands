@@ -19,6 +19,7 @@ DEFAULT_API_KEY = config.get_or_none("LLM_API_KEY")
 DEFAULT_BASE_URL = config.get_or_none("LLM_BASE_URL")
 DEFAULT_WORKSPACE_DIR = config.get_or_default("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
 LLM_MODEL = config.get_or_default("LLM_MODEL", "gpt-4-0125-preview")
+CONTAINER_IMAGE = config.get_or_default("SANDBOX_CONTAINER_IMAGE", "ghcr.io/opendevin/sandbox")
 
 class Session:
     def __init__(self, websocket):
@@ -93,6 +94,9 @@ class Session:
         api_base = DEFAULT_BASE_URL
         if start_event and "api_base" in start_event["args"]:
             api_base = start_event["args"]["api_base"]
+        container_image = CONTAINER_IMAGE
+        if start_event and "container_image" in start_event["args"]:
+            container_image = start_event["args"]["container_image"]
         if not os.path.exists(directory):
             print(f"Workspace directory {directory} does not exist. Creating it...")
             os.makedirs(directory)
@@ -101,7 +105,7 @@ class Session:
         AgentCls = Agent.get_cls(agent_cls)
         self.agent = AgentCls(llm)
         try:
-            self.controller = AgentController(self.agent, workdir=directory, callbacks=[self.on_agent_event])
+            self.controller = AgentController(self.agent, workdir=directory, container_image=container_image, callbacks=[self.on_agent_event])
         except Exception:
             print("Error creating controller.")
             await self.send_error("Error creating controller. Please check Docker is running using `docker ps`.")

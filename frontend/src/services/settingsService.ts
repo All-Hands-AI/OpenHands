@@ -9,6 +9,11 @@ export async function fetchModels() {
   return response.json();
 }
 
+export async function fetchAgents() {
+  const response = await fetch(`${VITE_URL}/litellm-agents`);
+  return response.json();
+}
+
 export const INITIAL_MODELS = [
   "gpt-3.5-turbo-1106",
   "gpt-4-0125-preview",
@@ -19,9 +24,9 @@ export const INITIAL_MODELS = [
 
 export type Model = (typeof INITIAL_MODELS)[number];
 
-export const AGENTS = ["LangchainsAgent", "CodeActAgent"];
+export const INITIAL_AGENTS = ["LangchainsAgent", "CodeActAgent"];
 
-export type Agent = (typeof AGENTS)[number];
+export type Agent = (typeof INITIAL_AGENTS)[number];
 
 function changeSetting(setting: string, value: string): void {
   const event = { action: "initialize", args: { [setting]: value } };
