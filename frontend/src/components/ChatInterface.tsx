@@ -1,4 +1,4 @@
-import { Card, CardBody } from "@nextui-org/react";
+import { Card, CardBody, Textarea } from "@nextui-org/react";
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import assistantAvatar from "../assets/assistant-avatar.png";
@@ -107,29 +107,32 @@ function ChatInterface({ setSettingOpen }: Props): JSX.Element {
         </div>
       </div>
       {initialized ? <MessageList /> : <InitializingStatus />}
-      <div className="w-full flex items-center p-5 rounded-none rounded-bl-lg rounded-br-lg">
-        <div className="w-full flex items-center rounded-xl text-base bg-bg-input">
-          <input
-            type="text"
-            className="flex-1 py-4 px-2.5 border-none mx-4 bg-bg-input text-white outline-none"
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            placeholder="Send a message (won't interrupt the Assistant)"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleSendMessage();
-              }
-            }}
-          />
-          <button
-            type="button"
-            className="bg-transparent border-none rounded py-2.5 px-5 hover:opacity-80 cursor-pointer select-none"
-            onClick={handleSendMessage}
-            disabled={!initialized}
-          >
-            Send
-          </button>
-        </div>
+      <div className="w-full relative text-base">
+        <Textarea
+          className="py-4 px-4"
+          classNames={{
+            input: "pr-16 py-2",
+          }}
+          value={inputMessage}
+          maxRows={10}
+          minRows={1}
+          variant="bordered"
+          onChange={(e) => setInputMessage(e.target.value)}
+          placeholder="Send a message (won't interrupt the Assistant)"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              handleSendMessage();
+            }
+          }}
+        />
+        <button
+          type="button"
+          className="bg-transparent border-none rounded py-2.5 px-5 hover:opacity-80 cursor-pointer select-none absolute right-5 bottom-6"
+          onClick={handleSendMessage}
+          disabled={!initialized}
+        >
+          Send
+        </button>
       </div>
     </div>
   );
