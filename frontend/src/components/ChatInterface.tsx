@@ -24,11 +24,16 @@ interface ITypingChatProps {
  */
 function TypingChat({ msg }: ITypingChatProps) {
   return (
-    msg?.content && (
-      <Card>
-        <CardBody>{useTypingEffect([msg?.content], { loop: false })}</CardBody>
-      </Card>
-    )
+    // eslint-disable-next-line react/jsx-no-useless-fragment
+    <>
+      {msg?.content && (
+        <Card>
+          <CardBody>
+            {useTypingEffect([msg?.content], { loop: false })}
+          </CardBody>
+        </Card>
+      )}
+    </>
   );
 }
 
