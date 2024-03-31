@@ -145,6 +145,8 @@ class AgentController:
                 pass
         await asyncio.sleep(0.001) # Give back control for a tick, so we can await in callbacks
     
+    # TODO I hacked this in because I wanted to be able to run commands 
+    # session.py, but maybe there should be a separate TerminalController ?
+    # - @jojeyh
     def run_command(self, command: str, background=False) -> CmdOutputObservation:
-        # TODO should we run this in background?
         return self.command_manager.run_command(command, background)
