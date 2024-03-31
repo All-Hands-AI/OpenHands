@@ -6,3 +6,7 @@ def my_encoder(obj):
 
 def dumps(obj, **kwargs):
     return json.dumps(obj, default=my_encoder, **kwargs)
+
+def loads(s, **kwargs):
+    return json.loads(s, **kwargs)
+

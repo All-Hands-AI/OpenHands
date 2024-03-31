@@ -1,12 +1,13 @@
 import React, { ChangeEvent, useEffect, useState } from "react";
 import {
-  AGENTS,
+  INITIAL_AGENTS,
   INITIAL_MODELS,
   changeAgent,
   changeModel,
+  fetchAgents,
   fetchModels,
 } from "../services/settingsService";
-import "./BannerSettings.css";
+import "./css/BannerSettings.css";
 
 function ModelSelect(): JSX.Element {
   const [models, setModels] = useState<string[]>(INITIAL_MODELS);
@@ -31,6 +32,12 @@ function ModelSelect(): JSX.Element {
 }
 
 function AgentSelect(): JSX.Element {
+  const [agents, setAgents] = useState<string[]>(INITIAL_AGENTS);
+  useEffect(() => {
+    fetchAgents().then((fetchedAgents) => {
+      setAgents(fetchedAgents);
+    });
+  }, []);
   return (
     <select
       onChange={(e: ChangeEvent<HTMLSelectElement>) =>
@@ -38,8 +45,8 @@ function AgentSelect(): JSX.Element {
       }
       className="select max-w-xs bg-base-300 xl:w-full w-1/3"
     >
-      {AGENTS.map((agent) => (
-        <option>{agent}</option>
+      {agents.map((agent) => (
+        <option key={agent}>{agent}</option>
       ))}
     </select>
   );
