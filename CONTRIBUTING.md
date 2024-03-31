@@ -82,6 +82,7 @@ Please refer to the README in each module:
 - [evaluation](./evaluation/README.md)
 - [opendevin](./opendevin/README.md)
     - [server](./opendevin/server/README.md)
+    - [mock server](./opendevin/mock/README.md)
 
 ## Tests
 TODO: make sure code pass the test before submit.
