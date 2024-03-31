@@ -7,8 +7,10 @@ import {
   ModalFooter,
   Input,
   Button,
+  Autocomplete,
+  AutocompleteItem,
 } from "@nextui-org/react";
-import { Select, ConfigProvider, theme } from "antd";
+import { KeyboardEvent } from "@react-types/shared/src/events";
 import {
   AGENTS,
   changeAgent,
@@ -64,19 +66,11 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
     onClose();
   };
 
-  const filterOption = (
-    input: string,
-    option?: { label: string; value: string },
-  ) => (option?.label ?? "").toLowerCase().includes(input.toLowerCase());
+  const customFilter = (item: string, input: string) =>
+    item.toLowerCase().includes(input.toLowerCase());
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      hideCloseButton
-      isDismissable={false}
-      backdrop="blur"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} hideCloseButton backdrop="blur">
       <ModalContent>
         <>
           <ModalHeader className="flex flex-col gap-1">
@@ -91,37 +85,49 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
               onChange={(e) => setWorkspaceDirectory(e.target.value)}
             />
 
-            <ConfigProvider
-              theme={{
-                algorithm: theme.darkAlgorithm,
+            <Autocomplete
+              defaultItems={supportedModels.map((v: string) => ({
+                label: v,
+                value: v,
+              }))}
+              label="Model"
+              placeholder="Select a model"
+              defaultSelectedKey={model}
+              // className="max-w-xs"
+              onSelectionChange={(key) => {
+                setModel(key as string);
               }}
+              onKeyDown={(e: KeyboardEvent) => e.continuePropagation()}
+              defaultFilter={customFilter}
             >
-              <Select
-                showSearch
-                size="large"
-                placeholder="Select a model"
-                onChange={setModel}
-                defaultValue={model}
-                filterOption={filterOption}
-                options={supportedModels.map((v: string) => ({
-                  value: v,
-                  label: v,
-                }))}
-              />
+              {(item: { label: string; value: string }) => (
+                <AutocompleteItem key={item.value} value={item.value}>
+                  {item.label}
+                </AutocompleteItem>
+              )}
+            </Autocomplete>
 
-              <Select
-                showSearch
-                size="large"
-                placeholder="Select a agent"
-                onChange={setAgent}
-                defaultValue={agent}
-                filterOption={filterOption}
-                options={supportedAgents.map((v: string) => ({
-                  value: v,
-                  label: v,
-                }))}
-              />
-            </ConfigProvider>
+            <Autocomplete
+              defaultItems={supportedAgents.map((v: string) => ({
+                label: v,
+                value: v,
+              }))}
+              label="Agent"
+              placeholder="Select a agent"
+              defaultSelectedKey={agent}
+              // className="max-w-xs"
+              onSelectionChange={(key) => {
+                setAgent(key as string);
+              }}
+              onKeyDown={(e: KeyboardEvent) => e.continuePropagation()}
+              defaultFilter={customFilter}
+            >
+              {(item: { label: string; value: string }) => (
+                <AutocompleteItem key={item.value} value={item.value}>
+                  {item.label}
+                </AutocompleteItem>
+              )}
+            </Autocomplete>
           </ModalBody>
 
           <ModalFooter>
