@@ -12,7 +12,7 @@ import {
 } from "@nextui-org/react";
 import { KeyboardEvent } from "@react-types/shared/src/events";
 import {
-  AGENTS,
+  INITIAL_AGENTS,
   changeAgent,
   changeDirectory as sendChangeDirectorySocketMessage,
   changeModel,
@@ -46,7 +46,7 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
     localStorage.getItem("agent") || "LangchainsAgent",
   );
   const [supportedAgents] = useState(
-    cachedAgents.length > 0 ? cachedAgents : AGENTS,
+    cachedAgents.length > 0 ? cachedAgents : INITIAL_AGENTS,
   );
 
   useEffect(() => {
