@@ -1,51 +1,143 @@
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
+
+from opendevin.observation import AgentRecallObservation, AgentMessageObservation, Observation
+from .base import ExecutableAction, NotExecutableAction
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
-    from opendevin.observation import Observation
+
 
 @dataclass
-class Action:
-    def run(self, controller: "AgentController") -> "Observation":
-        raise NotImplementedError
+class AgentRecallAction(ExecutableAction):
+    query: str
+    action: str = "recall"
 
-    def to_dict(self):
-        d = asdict(self)
+    def run(self, controller: "AgentController") -> AgentRecallObservation:
+        """
+        Executes the action to recall memories based on the provided query.
+
+        Args:
+            controller (AgentController): The agent controller.
+
+        Returns:
+            AgentRecallObservation: Observation containing recalled memories.
+        """
         try:
-            v = d.pop('action')
-        except KeyError:
-            raise NotImplementedError(f'{self=} does not have action attribute set')
-        return {'action': v, "args": d, "message": self.message}
-
-    @property
-    def executable(self) -> bool:
-        raise NotImplementedError
-
-    @property
-    def message(self) -> str:
-        raise NotImplementedError
-
-@dataclass
-class ExecutableAction(Action):
-    @property
-    def executable(self) -> bool:
-        return True
-
-
-@dataclass
-class NotExecutableAction(Action):
-    @property
-    def executable(self) -> bool:
-        return False
-
-@dataclass
-class NullAction(NotExecutableAction):
-    """An action that does nothing.
-    This is used when the agent need to receive user follow-up messages from the frontend.
-    """
-    action: str = "null"
+            memories = controller.agent.search_memory(self.query)
+            return AgentRecallObservation(
+                content="Recalling memories...",
+                memories=memories
+            )
+        except Exception as e:
+            # Handle exceptions gracefully
+            raise RuntimeError(f"Error while recalling memories: {e}")
 
     @property
     def message(self) -> str:
-        return "No action"
+        """
+        Provides a message indicating the action being performed.
+
+        Returns:
+            str: Message indicating the action.
+        """
+        return f"Searching memories for: '{self.query}'..."
+
+
+@dataclass
+class AgentThinkAction(NotExecutableAction):
+    thought: str
+    action: str = "think"
+
+    def run(self, controller: "AgentController") -> Observation:
+        """
+        Raises NotImplementedError as this action is not executable.
+
+        Args:
+            controller (AgentController): The agent controller.
+
+        Raises:
+            NotImplementedError: Always raised as this action is not executable.
+        """
+        raise NotImplementedError("AgentThinkAction is not executable")
+
+    @property
+    def message(self) -> str:
+        """
+        Provides the thought associated with this action.
+
+        Returns:
+            str: The thought associated with this action.
+        """
+        return self.thought
+
+
+@dataclass
+class AgentEchoAction(ExecutableAction):
+    content: str
+    action: str = "echo"
+
+    def run(self, controller: "AgentController") -> Observation:
+        """
+        Executes the action to echo the provided content.
+
+        Args:
+            controller (AgentController): The agent controller.
+
+        Returns:
+            AgentMessageObservation: Observation containing the echoed message.
+        """
+        return AgentMessageObservation(self.content)
+
+    @property
+    def message(self) -> str:
+        """
+        Provides the content associated with this action.
+
+        Returns:
+            str: The content associated with this action.
+        """
+        return self.content
+
+
+@dataclass
+class AgentSummarizeAction(NotExecutableAction):
+    summary: str
+    action: str = "summarize"
+
+    @property
+    def message(self) -> str:
+        """
+        Provides the summary associated with this action.
+
+        Returns:
+            str: The summary associated with this action.
+        """
+        return self.summary
+
+
+@dataclass
+class AgentFinishAction(NotExecutableAction):
+    action: str = "finish"
+
+    def run(self, controller: "AgentController") -> Observation:
+        """
+        Raises NotImplementedError as this action is not executable.
+
+        Args:
+            controller (AgentController): The agent controller.
+
+        Raises:
+            NotImplementedError: Always raised as this action is not executable.
+        """
+        raise NotImplementedError("AgentFinishAction is not executable")
+
+    @property
+    def message(self) -> str:
+        """
+        Provides a completion message.
+
+        Returns:
+            str: A completion message.
+        """
+        return "All done! What's next?"
