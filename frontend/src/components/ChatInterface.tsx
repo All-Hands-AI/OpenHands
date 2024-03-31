@@ -1,11 +1,11 @@
+import { Card, CardBody } from "@nextui-org/react";
 import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { Card, CardBody } from "@nextui-org/react";
 import assistantAvatar from "../assets/assistant-avatar.png";
+import CogTooth from "../assets/cog-tooth";
 import userAvatar from "../assets/user-avatar.png";
 import { sendChatMessage } from "../services/chatService";
 import { RootState } from "../store";
-import CogTooth from "../assets/cog-tooth";
 
 function MessageList(): JSX.Element {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -20,7 +20,7 @@ function MessageList(): JSX.Element {
       {messages.map((msg, index) => (
         <div key={index} className="flex mb-2.5">
           <div
-            className={`${msg.sender === "user" ? "flex flex-row-reverse mt-2.5 mr-2.5 mb-0 ml-auto" : "flex"}`}
+            className={`${msg.sender === "user" ? "flex-row-reverse mt-2.5 mr-2.5 mb-0 ml-auto" : ""} flex min-w-0`}
           >
             <img
               src={msg.sender === "user" ? userAvatar : assistantAvatar}
@@ -28,7 +28,7 @@ function MessageList(): JSX.Element {
               className="w-[40px] h-[40px] mx-2.5"
             />
             <Card
-              className={`w-4/5 ${msg.sender === "user" ? "bg-primary" : ""}`}
+              className={`max-w-[80%] ${msg.sender === "user" ? "bg-primary" : ""}`}
             >
               <CardBody>{msg.content}</CardBody>
             </Card>
