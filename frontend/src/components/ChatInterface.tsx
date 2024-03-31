@@ -25,7 +25,7 @@ interface ITypingChatProps {
 function TypingChat({ msg }: ITypingChatProps) {
   return (
     msg?.content && (
-      <Card className={`w-4/5 ${msg.sender === "user" ? "bg-primary" : ""}`}>
+      <Card>
         <CardBody>{useTypingEffect([msg?.content], { loop: false })}</CardBody>
       </Card>
     )
@@ -43,9 +43,9 @@ function MessageList(): JSX.Element {
   return (
     <div className="flex-1 overflow-y-auto">
       {messages.map((msg, index) => (
-        <div key={index} className="flex mb-2.5">
+        <div key={index} className="flex mb-2.5 pr-5 pl-5">
           <div
-            className={`${msg.sender === "user" ? "flex flex-row-reverse mt-2.5 mr-2.5 mb-0 ml-auto" : "flex"}`}
+            className={`flex mt-2.5 mb-0 ${msg.sender === "user" && "flex-row-reverse ml-auto"}`}
           >
             <img
               src={msg.sender === "user" ? userAvatar : assistantAvatar}
@@ -55,9 +55,7 @@ function MessageList(): JSX.Element {
             {msg.sender !== "user" ? (
               <TypingChat msg={msg} />
             ) : (
-              <Card
-                className={`w-4/5 ${msg.sender === "user" ? "bg-primary" : ""}`}
-              >
+              <Card className="bg-primary">
                 <CardBody>{msg.content}</CardBody>
               </Card>
             )}
