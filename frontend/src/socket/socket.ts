@@ -6,12 +6,7 @@ import { handleObservationMessage } from "./observations";
 
 type SocketMessage = ActionMessage | ObservationMessage;
 
-const WS_URL = import.meta.env.VITE_WS_URL;
-if (!WS_URL) {
-  throw new Error(
-    "The environment variable VITE_WS_URL is not set. Please set it to the WebSocket URL of the terminal server.",
-  );
-}
+const WS_URL = `ws://${window.location.host}/ws`;
 
 const socket = new WebSocket(WS_URL);
 
