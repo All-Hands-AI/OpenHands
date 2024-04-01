@@ -98,16 +98,6 @@ def run_test_case(test_cases_dir, workspace_dir, request):
             AssertionError: If the test case execution fails (non-zero return code).
 
         Steps:
-            1. Constructs the necessary directory paths for the test case.
-            2. Reads the task from the 'task.txt' file in the test case directory.
-            3. Prepares the output directory for the agent and test case.
-            4. Cleans up any existing workspace directory for the agent and test case.
-            5. Copies the 'start' directory (if exists) to the workspace directory.
-            6. Maps the agent name to the corresponding agent class.
-            7. Runs the OpenDevin main script with the appropriate arguments.
-            8. Captures the stdout and stderr of the script execution.
-            9. Logs the stdout and stderr.
-            10. Asserts that the script execution was successful (return code 0).
         """
         case_dir = os.path.join(test_cases_dir, case)
         task = open(os.path.join(case_dir, 'task.txt'), 'r').read().strip()
