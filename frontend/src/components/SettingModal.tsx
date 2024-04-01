@@ -91,6 +91,7 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
                 value: v,
               }))}
               label="Model"
+              isReadOnly
               placeholder="Select a model"
               defaultSelectedKey={model}
               // className="max-w-xs"
@@ -113,6 +114,7 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
                 value: v,
               }))}
               label="Agent"
+              isReadOnly
               placeholder="Select a agent"
               defaultSelectedKey={agent}
               // className="max-w-xs"
