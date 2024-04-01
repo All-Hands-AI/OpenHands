@@ -42,3 +42,11 @@ class ActionType(str, Enum):
     """If you're absolutely certain that you've completed your task and have tested your work, 
     use the finish action to stop working.
     """
+
+    SUMMARIZE = "summarize"
+
+    ADD_TASK = "add_task"
+
+    MODIFY_TASK = "modify_task"
+
+    NULL = "null"

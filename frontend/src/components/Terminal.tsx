@@ -3,6 +3,8 @@ import { IDisposable, Terminal as XtermTerminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import socket from "../socket/socket";
+import ActionType from "../types/ActionType";
+import ObservationType from "../types/ObservationType";
 
 class JsonWebsocketAddon {
   _socket: WebSocket;
@@ -23,10 +25,10 @@ class JsonWebsocketAddon {
     );
     this._socket.addEventListener("message", (event) => {
       const { action, args, observation, content } = JSON.parse(event.data);
-      if (action === "run") {
+      if (action === ActionType.RUN) {
         terminal.writeln(args.command);
       }
-      if (observation === "run") {
+      if (observation === ObservationType.RUN) {
         content.split("\n").forEach((line: string) => {
           terminal.writeln(line);
         });

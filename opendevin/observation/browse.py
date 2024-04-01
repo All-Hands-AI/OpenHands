@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 
 from .base import Observation
+from opendevin.schema import ObservationType
+
 
 @dataclass
 class BrowserOutputObservation(Observation):
@@ -11,11 +13,8 @@ class BrowserOutputObservation(Observation):
     url: str
     status_code: int = 200
     error: bool = False
-    observation : str = "browse"
+    observation: str = ObservationType.BROWSE
 
     @property
     def message(self) -> str:
         return "Visited " + self.url
-
-
-

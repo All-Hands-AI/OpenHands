@@ -3,6 +3,7 @@ from opendevin.agent import Agent
 from opendevin.state import State
 from opendevin.action import Action
 from opendevin.llm.llm import LLM
+from opendevin.schema import ActionType
 import agenthub.langchains_agent.utils.prompts as prompts
 from agenthub.langchains_agent.utils.monologue import Monologue
 from agenthub.langchains_agent.utils.memory import LongTermMemory
@@ -65,8 +66,14 @@ class LangchainsAgent(Agent):
         self.memory = LongTermMemory()
 
     def _add_event(self, event: dict):
-        if 'args' in event and 'output' in event['args'] and len(event['args']['output']) > MAX_OUTPUT_LENGTH:
-            event['args']['output'] = event['args']['output'][:MAX_OUTPUT_LENGTH] + "..."
+        if (
+            "args" in event
+            and "output" in event["args"]
+            and len(event["args"]["output"]) > MAX_OUTPUT_LENGTH
+        ):
+            event["args"]["output"] = (
+                event["args"]["output"][:MAX_OUTPUT_LENGTH] + "..."
+            )
 
         self.monologue.add_event(event)
         self.memory.add_event(event)
@@ -91,29 +98,32 @@ class LangchainsAgent(Agent):
             else:
                 if thought.startswith("RUN"):
                     command = thought.split("RUN ")[1]
-                    d = {"action": "run", "args": {"command": command}}
+                    d = {"action": ActionType.RUN, "args": {"command": command}}
                     next_is_output = True
                 elif thought.startswith("WRITE"):
                     parts = thought.split("WRITE ")[1].split(" > ")
                     path = parts[1]
                     content = parts[0]
-                    d = {"action": "write", "args": {"file": path, "content": content}}
+                    d = {
+                        "action": ActionType.WRITE,
+                        "args": {"file": path, "content": content},
+                    }
                     next_is_output = True
                 elif thought.startswith("READ"):
                     path = thought.split("READ ")[1]
-                    d = {"action": "read", "args": {"file": path}}
+                    d = {"action": ActionType.READ, "args": {"file": path}}
                     next_is_output = True
                 elif thought.startswith("RECALL"):
                     query = thought.split("RECALL ")[1]
-                    d = {"action": "recall", "args": {"query": query}}
+                    d = {"action": ActionType.RECALL, "args": {"query": query}}
                     next_is_output = True
 
                 elif thought.startswith("BROWSE"):
                     url = thought.split("BROWSE ")[1]
-                    d = {"action": "browse", "args": {"url": url}}
+                    d = {"action": ActionType.BROWSE, "args": {"url": url}}
                     next_is_output = True
                 else:
-                    d = {"action": "think", "args": {"thought": thought}}
+                    d = {"action": ActionType.THINK, "args": {"thought": thought}}
 
             self._add_event(d)
         self._initialized = True
@@ -131,13 +141,12 @@ class LangchainsAgent(Agent):
             self.monologue.get_thoughts(),
             state.background_commands_obs,
         )
-        messages = [{"content": prompt,"role": "user"}]
+        messages = [{"content": prompt, "role": "user"}]
         resp = self.llm.completion(messages=messages)
-        action_resp = resp['choices'][0]['message']['content']
+        action_resp = resp["choices"][0]["message"]["content"]
         action = prompts.parse_action_response(action_resp)
         self.latest_action = action
         return action
 
     def search_memory(self, query: str) -> List[str]:
         return self.memory.search(query)
-

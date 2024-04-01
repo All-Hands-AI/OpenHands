@@ -6,6 +6,8 @@ class ObservationType(str, Enum):
     """The contents of a file
     """
 
+    WRITE = "write"
+
     BROWSE = "browse"
     """The HTML contents of a URL
     """
@@ -21,3 +23,9 @@ class ObservationType(str, Enum):
     CHAT = "chat"
     """A message from the user
     """
+
+    MESSAGE = "message"
+
+    ERROR = "error"
+
+    NULL = "null"

@@ -1,5 +1,7 @@
 import copy
 from dataclasses import dataclass
+from opendevin.schema import ObservationType
+
 
 @dataclass
 class Observation:
@@ -36,7 +38,8 @@ class NullObservation(Observation):
     This data class represents a null observation.
     This is used when the produced action is NOT executable.
     """
-    observation : str = "null"
+
+    observation: str = ObservationType.NULL
 
     @property
     def message(self) -> str:
