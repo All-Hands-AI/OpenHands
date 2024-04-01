@@ -93,10 +93,13 @@ function ChatInterface({ setSettingOpen }: Props): JSX.Element {
   const { initialized } = useSelector((state: RootState) => state.task);
   const [inputMessage, setInputMessage] = useState("");
 
-  const handleSendMessage = () => {
-    if (inputMessage.trim() !== "") {
-      sendChatMessage(inputMessage);
-      setInputMessage("");
+  const handleSendMessage = (e?: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e?.key === "Enter" && !e.shiftKey) {
+      e.preventDefault(); // Prevent the default behavior of the Enter key
+      if (inputMessage.trim() !== "") {
+        sendChatMessage(inputMessage);
+        setInputMessage(""); // Clear the input value after sending the message
+      }
     }
   };
 
@@ -124,16 +127,12 @@ function ChatInterface({ setSettingOpen }: Props): JSX.Element {
           variant="bordered"
           onChange={(e) => setInputMessage(e.target.value)}
           placeholder="Send a message (won't interrupt the Assistant)"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              handleSendMessage();
-            }
-          }}
+          onKeyDown={handleSendMessage}
         />
         <button
           type="button"
           className="bg-transparent border-none rounded py-2.5 px-5 hover:opacity-80 cursor-pointer select-none absolute right-5 bottom-6"
-          onClick={handleSendMessage}
+          onClick={() => handleSendMessage()}
           disabled={!initialized}
         >
           Send
