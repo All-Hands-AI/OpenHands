@@ -14,12 +14,10 @@ services:
       - backend
     volumes:
       - ./config.toml:/usr/src/app/config.toml
-      - workspace:/workspace
+
     command: ["npm", "start", "--", "--host", "0.0.0.0"]
-    environment:
-      - WORKSPACE_DIR="/workspace"
     links:
-      - devin-backend:backend
+      - backend
 
   backend:
     build:
@@ -30,11 +28,11 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     container_name: devin-backend
-    environment:
-      - WORKSPACE_DIR="/workspace"
     volumes:
+      - ./config.toml:/usr/src/app/config.toml
       - /var/run/docker.sock:/var/run/docker.sock
-      - workspace:/workspace
+      # - workspace:/workspace
+      # - workspace:/usr/src/app/workspace
     privileged: true
 
 networks:
