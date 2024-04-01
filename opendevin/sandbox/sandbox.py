@@ -11,6 +11,7 @@ import docker
 import concurrent.futures
 
 from opendevin import config
+from opendevin._logging import opendevin_logger as logger
 
 InputType = namedtuple("InputType", ["content"])
 OutputType = namedtuple("OutputType", ["content"])
@@ -103,11 +104,11 @@ class DockerInteractive:
             self.workspace_dir = os.path.abspath(workspace_dir)
         else:
             self.workspace_dir = os.getcwd()
-            print(f"workspace unspecified, using current directory: {workspace_dir}")
+            logger.info(f"workspace unspecified, using current directory: {workspace_dir}")
         if DIRECTORY_REWRITE != "":
             parts = DIRECTORY_REWRITE.split(":")
             self.workspace_dir = self.workspace_dir.replace(parts[0], parts[1])
-            print("Rewriting workspace directory to:", self.workspace_dir)
+            logger.info("Rewriting workspace directory to:", self.workspace_dir)
 
         # TODO: this timeout is actually essential - need a better way to set it
         # if it is too short, the container may still waiting for previous
@@ -163,7 +164,7 @@ class DockerInteractive:
             try:
                 exit_code, logs = future.result(timeout=self.timeout)
             except concurrent.futures.TimeoutError:
-                print("Command timed out, killing process...")
+                logger.exception("Command timed out, killing process...", exc_info=False)
                 pid = self.get_pid(cmd)
                 if pid is not None:
                     self.container.exec_run(f"kill -9 {pid}", workdir="/workspace")
@@ -212,8 +213,7 @@ class DockerInteractive:
         try:
             docker_client = docker.from_env()
         except docker.errors.DockerException as e:
-            print("Please check Docker is running using `docker ps`.")
-            print(f"Error! {e}", flush=True)
+            logger.exception('Please check Docker is running using `docker ps`.', exc_info=False)
             raise e
 
         try:
@@ -244,9 +244,10 @@ class DockerInteractive:
     def restart_docker_container(self):
         try:
             self.stop_docker_container()
+            logger.info("Container stopped")
         except docker.errors.DockerException as e:
-            print(f"Failed to stop container: {e}")
-            raise e
+            logger.exception("Failed to stop container", exc_info=False)
+            raise e 
 
         try:
             # Initialize docker client. Throws an exception if Docker is not reachable.
@@ -262,17 +263,18 @@ class DockerInteractive:
                 detach=True,
                 volumes={self.workspace_dir: {"bind": "/workspace", "mode": "rw"}},
             )
+            logger.info("Container started")
         except Exception as e:
-            print(f"Failed to start container: {e}")
+            logger.exception("Failed to start container", exc_info=False)
             raise e
 
         # wait for container to be ready
         elapsed = 0
         while self.container.status != "running":
             if self.container.status == "exited":
-                print("container exited")
-                print("container logs:")
-                print(self.container.logs())
+                logger.info("container exited")
+                logger.info("container logs:")
+                logger.info(self.container.logs())
                 break
             time.sleep(1)
             elapsed += 1
@@ -310,10 +312,10 @@ if __name__ == "__main__":
             workspace_dir=args.directory,
         )
     except Exception as e:
-        print(f"Failed to start Docker container: {e}")
+        logger.exception("Failed to start Docker container")
         sys.exit(1)
 
-    print("Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
+    logger.info("Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
 
     bg_cmd = docker_interactive.execute_in_background(
         "while true; do echo 'dot ' && sleep 1; done"
@@ -325,22 +327,22 @@ if __name__ == "__main__":
             try:
                 user_input = input(">>> ")
             except EOFError:
-                print("\nExiting...")
+                logger.info("Exiting...")
                 break
             if user_input.lower() == "exit":
-                print("Exiting...")
+                logger.info("Exiting...")
                 break
             if user_input.lower() == "kill":
                 docker_interactive.kill_background(bg_cmd.id)
-                print("Background process killed")
+                logger.info("Background process killed")
                 continue
             exit_code, output = docker_interactive.execute(user_input)
-            print("exit code:", exit_code)
-            print(output + "\n", end="")
+            logger.info("exit code: %d", exit_code)
+            logger.info(output)
             if bg_cmd.id in docker_interactive.background_commands:
                 logs = docker_interactive.read_logs(bg_cmd.id)
-                print("background logs:", logs, "\n")
+                logger.info("background logs: %s", logs)
             sys.stdout.flush()
     except KeyboardInterrupt:
-        print("\nExiting...")
+        logger.info("Exiting...")
     docker_interactive.close()

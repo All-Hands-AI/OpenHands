@@ -17,6 +17,7 @@ from opendevin.action import (
 )
 from opendevin.observation import Observation, AgentErrorObservation, NullObservation
 from opendevin import config
+from opendevin._logging import opendevin_logger as logger
 
 from .command_manager import CommandManager
 
@@ -108,12 +109,12 @@ class AgentController:
             try:
                 finished = await self.step(i)
             except Exception as e:
-                print("Error in loop", e, flush=True)
+                logger.error("Error in loop", exc_info=True)
                 raise e
             if finished:
                 break
         if not finished:
-            print("Exited before finishing", flush=True)
+            logger.info("Exited before finishing the task.")
 
     async def step(self, i: int):
         print("\n\n==============", flush=True)
@@ -190,7 +191,7 @@ class AgentController:
             try:
                 callback(event)
             except Exception as e:
-                print("Callback error:" + str(idx), e, flush=True)
+                logger.error(f"Callback error: {idx}", exc_info=True)
                 pass
         await asyncio.sleep(
             0.001
