@@ -40,6 +40,7 @@ Next, start the backend:
 python -m pip install pipenv
 python -m pipenv install -v
 python -m pipenv shell
+python -m pipenv install -e ./opendevin
 uvicorn opendevin.server.listen:app --port 3000
 ```
 If `pipenv` doesn't work for you, you can also run:
