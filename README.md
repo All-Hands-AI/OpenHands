@@ -101,40 +101,46 @@ After completing the MVP, the team will focus on research in various areas, incl
 
 Getting started with the OpenDevin project is incredibly easy. Follow these simple steps to set up and run OpenDevin on your system:
 
-### 1. Build and Setup
+### 1. Requirements
+* Linux, Mac OS, or [WSL on Windows](https://learn.microsoft.com/en-us/windows/wsl/install)
+* [Docker](https://docs.docker.com/engine/install/)
+* [Python](https://www.python.org/downloads/) >= 3.11
+* [NodeJS](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) >= 14.8
 
-1. **Build the Project:** Begin by building the project, which includes setting up the environment and installing dependencies. This step ensures that OpenDevin is ready to run smoothly on your system.
+### 2. Build and Setup
+
+- **Build the Project:** Begin by building the project, which includes setting up the environment and installing dependencies. This step ensures that OpenDevin is ready to run smoothly on your system.
     ```bash
     make build
     ```
 
-2. **Setup the Environment:** With just one command, configure OpenDevin by providing essential details such as the LLM API key, LLM Model name, and workspace directory. This straightforward setup process ensures that OpenDevin is tailored to your specific requirements.
+- **Setup the Environment:** With just one command, configure OpenDevin by providing essential details such as the LLM API key, LLM Model name, and workspace directory. This straightforward setup process ensures that OpenDevin is tailored to your specific requirements.
     ```bash
     make setup-config
     ```
 
-### 2. Run the Application
+### 3. Run the Application
 
-3. **Run the Application:** Once the setup is complete, launching OpenDevin is as simple as running a single command. This command starts both the backend and frontend servers seamlessly, allowing you to interact with OpenDevin without any hassle.
+- **Run the Application:** Once the setup is complete, launching OpenDevin is as simple as running a single command. This command starts both the backend and frontend servers seamlessly, allowing you to interact with OpenDevin without any hassle.
     ```bash
     make run
     ```
 
-### 3. Individual Server Startup
+### 4. Individual Server Startup
 
-4. **Start the Backend Server:** If you prefer, you can start the backend server independently to focus on backend-related tasks or configurations.
+- **Start the Backend Server:** If you prefer, you can start the backend server independently to focus on backend-related tasks or configurations.
     ```bash
     make start-backend
     ```
 
-5. **Start the Frontend Server:** Similarly, you can start the frontend server on its own to work on frontend-related components or interface enhancements.
+- **Start the Frontend Server:** Similarly, you can start the frontend server on its own to work on frontend-related components or interface enhancements.
     ```bash
     make start-frontend
     ```
 
-### 4. Help
+### 5. Help
 
-6. **Help:** Need assistance or information on available targets and commands? The help command provides all the necessary guidance to ensure a smooth experience with OpenDevin.
+- **Get Some Help:** Need assistance or information on available targets and commands? The help command provides all the necessary guidance to ensure a smooth experience with OpenDevin.
     ```bash
     make help
     ```
