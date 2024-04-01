@@ -47,6 +47,9 @@ If `pipenv` doesn't work for you, you can also run:
 python -m pipenv requirements > requirements.txt && python -m pip install -r requirements.txt
 ```
 
+If you're seeing installation errors due to `torch`, try using `Pipfile.torchidx` instead of `Pipfile`.
+Please consult the value of `--index-url` in [PyTorch install command browser](https://pytorch.org/get-started/locally/#start-locally) to find appropriate package index URL for you.
+
 Then, in a second terminal, start the frontend:
 ```bash
 cd frontend
