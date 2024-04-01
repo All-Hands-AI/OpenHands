@@ -1,6 +1,17 @@
 from typing import List
 
+from langchain.prompts import PromptTemplate
+
+from opendevin import config
+
+if config.get_or_default("DEBUG", False):
+    from langchain.globals import set_debug
+
+    set_debug(True)
+
 from . import json
+
+import re
 
 from opendevin.action import (
     action_from_dict,
@@ -11,16 +22,19 @@ from opendevin.observation import (
 )
 
 ACTION_PROMPT = """
-You're a thoughtful robot. Your main task is this:
-
-%(task)s
-
+You're a thoughtful robot. Your main task is to {task}.
 Don't expand the scope of your task--just complete it as written.
 
 This is your internal monologue, in JSON format:
+<<<<<<< HEAD
 
 %(monologue)s
 
+=======
+```json
+{monologue}
+```
+>>>>>>> 3b1dc12 (Tweak for weak llms)
 
 Your most recent thought is at the bottom of that monologue. Continue your train of thought.
 What is your next thought or action? Your response must be in JSON format.
@@ -29,11 +43,11 @@ It must be an object, and it must contain two fields:
 * `args`, which is a map of key-value pairs, specifying the arguments for that action
 
 Here are the possible actions:
-* `read` - reads the content of a file. Arguments:
+* `read` - reads the contents of a file. Arguments:
   * `path` - the path of the file to read
-* `write` - writes the content to a file. Arguments:
+* `write` - writes the contents to a file. Arguments:
   * `path` - the path of the file to write
-  * `content` - the content to write to the file
+  * `contents` - the contents to write to the file
 * `run` - runs a command. Arguments:
   * `command` - the command to run
   * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.
@@ -47,7 +61,7 @@ Here are the possible actions:
   * `thought` - the thought to record
 * `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
-%(background_commands)s
+{background_commands}
 
 You MUST take time to think in between read, write, run, browse, and recall actions.
 You should never act twice in a row without thinking. But if your last several
@@ -60,7 +74,7 @@ Notes:
 
 What is your next thought or action? Again, you must reply with JSON, and only with JSON.
 
-%(hint)s
+{hint}
 """
 
 MONOLOGUE_SUMMARY_PROMPT = """
@@ -99,9 +113,9 @@ def get_summarize_monologue_prompt(thoughts: List[dict]):
     }
 
 def get_request_action_prompt(
-        task: str,
-        thoughts: List[dict],
-        background_commands_obs: List[CmdOutputObservation] = [],
+    task: str,
+    thoughts: List[dict],
+    background_commands_obs: List[CmdOutputObservation] = [],
 ):
     """
     Gets the action prompt formatted with appropriate values.
@@ -119,21 +133,23 @@ def get_request_action_prompt(
     if len(thoughts) > 0:
         latest_thought = thoughts[-1]
         if "action" in latest_thought:
-            if latest_thought["action"] == 'think':
-                if latest_thought["args"]['thought'].startswith("OK so my task is"):
+            if latest_thought["action"] == "think":
+                if latest_thought["args"]["thought"].startswith("OK so my task is"):
                     hint = "You're just getting started! What should you do first?"
                 else:
                     hint = "You've been thinking a lot lately. Maybe it's time to take action?"
-            elif latest_thought["action"] == 'error':
+            elif latest_thought["action"] == "error":
                 hint = "Looks like that last command failed. Maybe you need to fix it, or try something else."
 
     bg_commands_message = ""
     if len(background_commands_obs) > 0:
         bg_commands_message = "The following commands are running in the background:"
         for command_obs in background_commands_obs:
-            bg_commands_message += f"\n`{command_obs.command_id}`: {command_obs.command}"
+            bg_commands_message += (
+                f"\n`{command_obs.command_id}`: {command_obs.command}"
+            )
         bg_commands_message += "\nYou can end any process by sending a `kill` action with the numerical `id` above."
-        
+
     return ACTION_PROMPT % {
         'task': task,
         'monologue': json.dumps(thoughts, indent=2),
@@ -151,11 +167,29 @@ def parse_action_response(response: str) -> Action:
     Returns:
     - Action: The action that was found in the response string
     """
-    action_dict = json.loads(response)
-    if 'content' in action_dict:
+    json_start = response.find("{")
+    json_end = response.rfind("}") + 1
+    response_json = response[json_start:json_end]
+    try:
+        action_dict = json.loads(response_json)
+    except json.decoder.JSONDecodeError:
+        # Find response-looking json in the output and use the more promising one. Helps with weak llms
+        response_json = re.finditer(
+            r"""{\s*\"action\":\s?\"(\w+)\"(?:,?|,\s*\"args\":\s?{((?:.|\s)*?)})\s*}""",
+            response)  # Find all response-looking strings
+        def rank(match):
+            return len(match[2]) if match[1] == "think" else 130  # Crudely rank multiple responses by length
+        try:
+            response_json = max(response_json, key=rank)[0]  # Use the highest ranked response
+        except ValueError as e:
+            raise ValueError(
+                "Output from the llm isn't properly formatted. The model may be misconfigured."
+            ) from e
+    if "content" in action_dict:
         # The LLM gets confused here. Might as well be robust
-        action_dict['contents'] = action_dict.pop('content')
+        action_dict["contents"] = action_dict.pop("content")
     return action_from_dict(action_dict)
+
 
 def parse_summary_response(response: str) -> List[dict]:
     """
@@ -168,4 +202,4 @@ def parse_summary_response(response: str) -> List[dict]:
     - List[dict]: The list of summaries output by the model
     """
     parsed = json.loads(response)
-    return parsed['new_monologue']
+    return parsed["new_monologue"]
