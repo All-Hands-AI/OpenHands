@@ -8,6 +8,7 @@ import { useTypingEffect } from "../hooks/useTypingEffect";
 import { sendChatMessage } from "../services/chatService";
 import { Message } from "../state/chatSlice";
 import { RootState } from "../store";
+import Loader from "./Loader";
 
 interface ITypingChatProps {
   msg: Message;
@@ -74,12 +75,8 @@ function MessageList(): JSX.Element {
 
 function InitializingStatus(): JSX.Element {
   return (
-    <div className="flex items-center m-auto h-full">
-      <img
-        src={assistantAvatar}
-        alt="assistant avatar"
-        className="w-[40px] h-[40px] mx-2.5"
-      />
+    <div className="flex flex-col items-center justify-center m-auto h-full">
+      <Loader />
       <div>Initializing agent (may take up to 10 seconds)...</div>
     </div>
   );
