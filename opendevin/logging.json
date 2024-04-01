@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "disable_existing_loggers": false,
+  "formatters": {
+    "console_formatter": {
+      "format": "%(asctime)s [%(levelname)s] %(message)s"
+    },
+    "file_formatter": {
+      "format": "%(asctime)s [%(levelname)s] %(message)s"
+    }
+  },
+  "handlers": {
+    "console_handler": {
+      "class": "logging.StreamHandler",
+      "level": "INFO",
+      "formatter": "console_formatter",
+      "stream": "ext://sys.stdout"
+    },
+    "file_handler": {
+      "class": "logging.FileHandler",
+      "level": "INFO",
+      "formatter": "file_formatter",
+      "filename": "../logs/opendevin.log"
+    },
+    "llm_file_handler": {
+      "class": "logging.FileHandler",
+      "level": "DEBUG",
+      "formatter": "file_formatter",
+      "filename": "../logs/llm.log"
+    }
+  },
+  "loggers": {
+    "opendevin": {
+      "level": "INFO",
+      "handlers": ["console_handler", "file_handler"]
+    },
+    "llm": {
+      "level": "DEBUG",
+      "handlers": ["llm_file_handler"]
+    }
+  }
+}
