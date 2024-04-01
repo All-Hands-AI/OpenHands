@@ -16,8 +16,6 @@ services:
       - ./config.toml:/usr/src/app/config.toml
 
     command: ["npm", "start", "--", "--host", "0.0.0.0"]
-    links:
-      - backend
 
   backend:
     build:
