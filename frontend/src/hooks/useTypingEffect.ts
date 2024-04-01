@@ -7,9 +7,20 @@ export const useTypingEffect = (
   {
     loop = false,
     playbackRate = 0.1,
-  }: { loop?: boolean; playbackRate?: number } = {
+    setTypingAcitve = () => {},
+    setCurrentQueueMarkerState = () => {},
+    currentQueueMarker = 0,
+  }: {
+    loop?: boolean;
+    playbackRate?: number;
+    setTypingAcitve?: (bool: boolean) => void;
+    setCurrentQueueMarkerState?: (marker: number) => void;
+    currentQueueMarker: number;
+  } = {
     loop: false,
     playbackRate: 0.1,
+    setTypingAcitve: () => {},
+    currentQueueMarker: 0,
   },
 ) => {
   // eslint-disable-next-line prefer-const
@@ -31,6 +42,8 @@ export const useTypingEffect = (
       stringIndex++;
       if (stringIndex === strings.length) {
         if (!loop) {
+          setTypingAcitve(false);
+          setCurrentQueueMarkerState(currentQueueMarker + 1);
           return;
         }
         stringIndex = 0;
