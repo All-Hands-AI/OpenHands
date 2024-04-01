@@ -60,19 +60,29 @@
   </ol>
 </details>
 
-## 🐚 About OpenDevin
+## 🎯 Mission
 
 [Project Demo Video](https://github.com/OpenDevin/OpenDevin/assets/38853559/5b1092cc-3554-4357-a279-c2a2e9b352ad)
 
-OpenDevin is an open-source project that aims to replicate and enhance the capabilities of [Devin](https://www.cognition-labs.com/introducing-devin), an autonomous AI software engineer developed by Cognition Labs. Devin is designed to navigate the complexities of software engineering, leveraging a combination of tools such as a shell, code editor, and web browser to showcase the untapped potential of large language models (LLMs) in software development.
+Welcome to OpenDevin, an open-source project aiming to replicate Devin, an autonomous AI software engineer who is capable of executing complex engineering tasks and collaborating actively with users on software development projects. This project aspires to replicate, enhance, and innovate upon Devin through the power of the open-source community.
 
-The primary goals of the OpenDevin project are:
+<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
+    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
+        ↑ Back to Top ↑
+    </a>
+</p>
 
-1. **Replication**: To faithfully replicate the core functionality and capabilities of the original Devin model, providing a platform for further research and development.
-2. **Enhancement**: To explore ways to expand upon Devin's abilities, identifying both its strengths and areas for improvement, with the goal of guiding the progress of open code models.
-3. **Innovation**: To tackle the unique challenges faced by Code LLMs in practical scenarios, producing innovative solutions that contribute significantly to the open-source community and pave the way for future advancements.
+## 🤔 What is Devin?
+Devin represents a cutting-edge autonomous agent designed to navigate the complexities of software engineering. It leverages a combination of tools such as a shell, code editor, and web browser, showcasing the untapped potential of LLMs in software development. Our goal is to explore and expand upon Devin's capabilities, identifying both its strengths and areas for improvement, to guide the progress of open code models.
 
-By engaging the open-source community, the OpenDevin project aspires to become a collaborative effort that drives the evolution of AI-powered software engineering tools. Through a multifaceted research strategy, the team aims to advance the state of the art in areas such as core technical research, specialist abilities, task planning, and comprehensive evaluation.
+<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
+    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
+        ↑ Back to Top ↑
+    </a>
+</p>
+
+## 🐚 Why OpenDevin?
+The OpenDevin project is born out of a desire to replicate, enhance, and innovate beyond the original Devin model. By engaging the open-source community, we aim to tackle the challenges faced by Code LLMs in practical scenarios, producing works that significantly contribute to the community and pave the way for future advancements.
 
 <p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
     <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
