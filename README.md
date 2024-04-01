@@ -38,7 +38,7 @@ LLM_API_KEY="sk-..."
 Next, start the backend:
 ```bash
 python -m pip install pipenv
-python -m pipenv install -v
+python -m pipenv install
 python -m pipenv shell
 uvicorn opendevin.server.listen:app --port 3000
 ```
