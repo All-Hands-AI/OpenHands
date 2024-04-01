@@ -26,8 +26,6 @@ class Action:
     def message(self) -> str:
         raise NotImplementedError
 
-
-
 @dataclass
 class ExecutableAction(Action):
     @property
