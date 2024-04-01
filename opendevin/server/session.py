@@ -117,7 +117,10 @@ class Session:
         if self.controller is None:
             await self.send_error("No agent started. Please wait a second...")
             return
-        self.agent_task = asyncio.create_task(self.controller.start_loop(task), name="agent loop")
+        try:
+            self.agent_task = await asyncio.create_task(self.controller.start_loop(task), name="agent loop")
+        except Exception as e:
+            await self.send_error(f"Could not start task.")
 
     def on_agent_event(self, event: Observation | Action):
         if isinstance(event, NullAction):
