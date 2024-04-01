@@ -21,7 +21,7 @@ assignees: ''
 ```toml
 ```
 
-**My model and agent** (see top-right of the UI):
+**My model and agent** (you can see these settings in the UI):
 * Model:
 * Agent:
 
