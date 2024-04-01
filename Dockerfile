@@ -1,14 +1,27 @@
-FROM tiangolo/uvicorn-gunicorn:python3.11-slim
+# Stage 1: Build Python application
+FROM python:3.11 AS build
 
+# Set the working directory for the build stage
 WORKDIR /usr/src/app
 
-COPY . .
+# Copy the Python application source code into the container
+COPY --exclude=frontend --exclude=docs --exclude=.github . .
 
-RUN python -m pip install --upgrade pipenv
+# Install dependencies using Pipenv (assuming Pipfile exists)
+RUN pip install pipenv
+RUN pipenv install --system --deploy --ignore-pipfile
 
-ENV PIP_DEFAULT_TIMEOUT=100
-RUN pipenv install --verbose
+# Stage 2: Create DinD container
+FROM docker:26.0.0-dind
 
-EXPOSE 3000
+# Copy Python application from the build stage
+COPY --from=build /usr/src/app /usr/src/app
 
-CMD pipenv run uvicorn opendevin.server.listen:app --port 3000 --host 0.0.0.0
+# Set the working directory for the DinD container
+WORKDIR /usr/src/app
+
+# Expose port for Uvicorn app
+EXPOSE 8000
+
+# Command to run the Uvicorn app
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]

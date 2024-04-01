@@ -1,1 +1,5 @@
 config.toml
+frontend
+.github
+docs
+tests
