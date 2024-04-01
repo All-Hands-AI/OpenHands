@@ -1,14 +1,5 @@
 from typing import List
 
-from langchain.prompts import PromptTemplate
-
-from opendevin import config
-
-if config.get_or_default("DEBUG", False):
-    from langchain.globals import set_debug
-
-    set_debug(True)
-
 from . import json
 
 import re
@@ -22,19 +13,15 @@ from opendevin.observation import (
 )
 
 ACTION_PROMPT = """
-You're a thoughtful robot. Your main task is to {task}.
+You're a thoughtful robot. Your main task is this:
+%(task)s
+
 Don't expand the scope of your task--just complete it as written.
 
 This is your internal monologue, in JSON format:
-<<<<<<< HEAD
 
 %(monologue)s
 
-=======
-```json
-{monologue}
-```
->>>>>>> 3b1dc12 (Tweak for weak llms)
 
 Your most recent thought is at the bottom of that monologue. Continue your train of thought.
 What is your next thought or action? Your response must be in JSON format.
@@ -180,7 +167,7 @@ def parse_action_response(response: str) -> Action:
         def rank(match):
             return len(match[2]) if match[1] == "think" else 130  # Crudely rank multiple responses by length
         try:
-            response_json = max(response_json, key=rank)[0]  # Use the highest ranked response
+            response_json = json.loads(max(response_json, key=rank)[0])  # Use the highest ranked response
         except ValueError as e:
             raise ValueError(
                 "Output from the llm isn't properly formatted. The model may be misconfigured."
