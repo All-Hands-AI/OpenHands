@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DOCKER_IMAGE=ghcr.io/opendevin/eval-swe-bench:v0.1
+DOCKER_IMAGE=ghcr.io/opendevin/eval-swe-bench
 WORK_DIR=`pwd`
 
 docker run \

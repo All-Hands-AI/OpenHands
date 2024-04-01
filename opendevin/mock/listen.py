@@ -25,5 +25,9 @@ async def websocket_endpoint(websocket: WebSocket):
 def read_root():
     return {"message": "This is a mock server"}
 
+@app.get("/litellm-models")
+def read_llm_models():
+    return ["model-mock"]
+
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=3000)
