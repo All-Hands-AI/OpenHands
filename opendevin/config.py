@@ -5,12 +5,30 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+DEFAULT_CONFIG = {
+    "LLM_API_KEY": None,
+    "LLM_BASE_URL": None,
+    "WORKSPACE_DIR": os.path.join(os.getcwd(), "workspace"),
+    "LLM_MODEL": "gpt-4-0125-preview",
+    "SANDBOX_CONTAINER_IMAGE": "ghcr.io/opendevin/sandbox",
+    "RUN_AS_DEVIN": "false",
+    "LLM_EMBEDDING_MODEL": "local",
+    "LLM_NUM_RETRIES": 6,
+    "LLM_COOLDOWN_TIME" : 1,
+    "DIRECTORY_REWRITE" : "",
+    "PROMPT_DEBUG_DIR": "",
+    "LLM_EMBEDDING_MODEL": "local",
+}
+
 config_str = ""
 if os.path.exists("config.toml"):
     with open("config.toml", "rb") as f:
         config_str = f.read().decode("utf-8")
 
 config = toml.loads(config_str)
+for key, value in DEFAULT_CONFIG.items():
+    if key not in config:
+        config[key] = value
 
 def _get(key: str, default):
     value = config.get(key, default)
@@ -38,3 +56,9 @@ def get_or_none(key: str):
     Get a key from the config, or return None if it doesn't exist.
     """
     return _get(key, None)
+
+def get(key: str):
+    """
+    Get a key from the config, please make sure it exists.
+    """
+    return config.get(key)
