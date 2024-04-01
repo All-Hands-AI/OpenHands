@@ -30,11 +30,11 @@ It must be an object, and it must contain two fields:
 * `args`, which is a map of key-value pairs, specifying the arguments for that action
 
 Here are the possible actions:
-* `read` - reads the contents of a file. Arguments:
+* `read` - reads the content of a file. Arguments:
   * `path` - the path of the file to read
-* `write` - writes the contents to a file. Arguments:
+* `write` - writes the content to a file. Arguments:
   * `path` - the path of the file to write
-  * `contents` - the contents to write to the file
+  * `content` - the content to write to the file
 * `run` - runs a command. Arguments:
   * `command` - the command to run
   * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.
@@ -48,7 +48,7 @@ Here are the possible actions:
   * `thought` - the thought to record
 * `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
-{background_commands}
+%(background_commands)s
 
 You MUST take time to think in between read, write, run, browse, and recall actions.
 You should never act twice in a row without thinking. But if your last several
@@ -61,7 +61,7 @@ Notes:
 
 What is your next thought or action? Again, you must reply with JSON, and only with JSON.
 
-{hint}
+%(hint)s
 """
 
 MONOLOGUE_SUMMARY_PROMPT = """
