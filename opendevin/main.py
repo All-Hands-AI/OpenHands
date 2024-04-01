@@ -18,8 +18,8 @@ def read_task_from_stdin() -> str:
     """Read task from stdin."""
     return sys.stdin.read()
 
-async def main():
-    """Main coroutine to run the agent controller with task input flexibility."""
+def parse_arguments():
+    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="Run an agent with a specific task")
     parser.add_argument("-d", "--directory", required=True, type=str, help="The working directory for the agent")
     parser.add_argument("-t", "--task", type=str, default="", help="The task for the agent to perform")
@@ -27,7 +27,11 @@ async def main():
     parser.add_argument("-c", "--agent-cls", default="LangchainsAgent", type=str, help="The agent class to use")
     parser.add_argument("-m", "--model-name", default=config.get_or_default("LLM_MODEL", "gpt-4-0125-preview"), type=str, help="The (litellm) model name to use")
     parser.add_argument("-i", "--max-iterations", default=100, type=int, help="The maximum number of iterations to run the agent")
-    args = parser.parse_args()
+    return parser.parse_args()
+
+async def main():
+    """Main coroutine to run the agent controller with task input flexibility."""
+    args = parse_arguments()
 
     # Determine the task source
     if args.file:
