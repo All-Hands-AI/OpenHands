@@ -7,7 +7,7 @@ This is a WebSocket server that executes tasks using an agent.
 Create a `.env` file with the contents
 
 ```sh
-OPENAI_API_KEY=<YOUR OPENAI API KEY>
+LLM_API_KEY=<YOUR OPENAI API KEY>
 ```
 
 Install requirements:
@@ -36,7 +36,7 @@ websocat ws://127.0.0.1:3000/ws
 ## Supported Environment Variables
 
 ```sh
-OPENAI_API_KEY=sk-... # Your OpenAI API Key
+LLM_API_KEY=sk-... # Your OpenAI API Key
 LLM_MODEL=gpt-4-0125-preview # Default model for the agent to use
 WORKSPACE_DIR=/path/to/your/workspace # Default path to model's workspace
 ```

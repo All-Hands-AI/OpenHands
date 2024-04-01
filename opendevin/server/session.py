@@ -4,6 +4,7 @@ from typing import Optional
 
 from fastapi import WebSocketDisconnect
 
+from opendevin import config
 from opendevin.action import (
     Action,
     NullAction,
@@ -14,8 +15,11 @@ from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
 from opendevin.observation import Observation, UserMessageObservation
 
-DEFAULT_WORKSPACE_DIR = os.getenv("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4-0125-preview")
+DEFAULT_API_KEY = config.get_or_none("LLM_API_KEY")
+DEFAULT_BASE_URL = config.get_or_none("LLM_BASE_URL")
+DEFAULT_WORKSPACE_DIR = config.get_or_default("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
+LLM_MODEL = config.get_or_default("LLM_MODEL", "gpt-4-0125-preview")
+CONTAINER_IMAGE = config.get_or_default("SANDBOX_CONTAINER_IMAGE", "ghcr.io/opendevin/sandbox")
 
 class Session:
     def __init__(self, websocket):
@@ -59,14 +63,10 @@ class Session:
                 else:
                     if self.controller is None:
                         await self.send_error("No agent started. Please wait a second...")
-
                     elif action == "chat":
                         self.controller.add_history(NullAction(), UserMessageObservation(data["message"]))
                     else:
-                        # TODO: we only need to implement user message for now
-                        # since even Devin does not support having the user taking other
-                        # actions (e.g., edit files) while the agent is running
-                        raise NotImplementedError
+                        await self.send_error("I didn't recognize this action:" + action)
 
         except WebSocketDisconnect as e:
             self.websocket = None
@@ -84,15 +84,24 @@ class Session:
         model = LLM_MODEL
         if start_event and "model" in start_event["args"]:
             model = start_event["args"]["model"]
+        api_key = DEFAULT_API_KEY
+        if start_event and "api_key" in start_event["args"]:
+            api_key = start_event["args"]["api_key"]
+        api_base = DEFAULT_BASE_URL
+        if start_event and "api_base" in start_event["args"]:
+            api_base = start_event["args"]["api_base"]
+        container_image = CONTAINER_IMAGE
+        if start_event and "container_image" in start_event["args"]:
+            container_image = start_event["args"]["container_image"]
         if not os.path.exists(directory):
             print(f"Workspace directory {directory} does not exist. Creating it...")
             os.makedirs(directory)
         directory = os.path.relpath(directory, os.getcwd())
-        llm = LLM(model)
+        llm = LLM(model=model, api_key=api_key, base_url=api_base)
         AgentCls = Agent.get_cls(agent_cls)
         self.agent = AgentCls(llm)
         try:
-            self.controller = AgentController(self.agent, workdir=directory, callbacks=[self.on_agent_event])
+            self.controller = AgentController(self.agent, workdir=directory, container_image=container_image, callbacks=[self.on_agent_event])
         except Exception:
             print("Error creating controller.")
             await self.send_error("Error creating controller. Please check Docker is running using `docker ps`.")
