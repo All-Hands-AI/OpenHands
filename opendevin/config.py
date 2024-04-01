@@ -17,7 +17,6 @@ DEFAULT_CONFIG = {
     "LLM_COOLDOWN_TIME" : 1,
     "DIRECTORY_REWRITE" : "",
     "PROMPT_DEBUG_DIR": "",
-    "LLM_EMBEDDING_MODEL": "local",
 }
 
 config_str = ""
