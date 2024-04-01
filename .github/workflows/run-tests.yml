@@ -16,4 +16,4 @@ jobs:
           python -m pip install pipenv
           python -m pipenv install
       - name: Run Tests
-        run: pytest ./tests
+        run: python -m pytest ./tests
