@@ -1,27 +1,41 @@
-# Stage 1: Build Python application
-FROM python:3.11 AS build
+# Stage 1: Builder stage
+FROM python:3.11 AS builder
 
-# Set the working directory for the build stage
+# Set working directory
 WORKDIR /usr/src/app
 
-# Copy the Python application source code into the container
-COPY --exclude=frontend --exclude=docs --exclude=.github . .
+# Copy application files
+COPY . .
 
-# Install dependencies using Pipenv (assuming Pipfile exists)
+# Install build dependencies
+#TODO: are these really needed? 
+RUN apk update && \
+    apk add --no-cache build-base libffi-dev openssl-dev cargo
+
+# Create virtual environment
+RUN python -m venv /venv
+ENV PATH="/venv/bin:$PATH"
+
+# Install pipenv
 RUN pip install pipenv
-RUN pipenv install --system --deploy --ignore-pipfile
 
-# Stage 2: Create DinD container
-FROM docker:26.0.0-dind
+# Install project dependencies
+# RUN pipenv install --deploy --ignore-pipfile
+RUN pipenv install -v
 
-# Copy Python application from the build stage
-COPY --from=build /usr/src/app /usr/src/app
+# -----------------------------------------------------------------------------
+# Stage 2: Production stage
+FROM docker:26.0.0-dind AS production
 
-# Set the working directory for the DinD container
+# Set working directory
 WORKDIR /usr/src/app
+
+# Copy application files from the builder stage
+COPY --from=builder /venv /venv
+COPY --from=builder /usr/src/app .
 
 # Expose port for Uvicorn app
-EXPOSE 8000
+EXPOSE 3000
 
 # Command to run the Uvicorn app
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/venv/bin/uvicorn", "app:app", "--host", "0.0.0.0", "--port", "3000"]
