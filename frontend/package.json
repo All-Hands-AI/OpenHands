@@ -8,6 +8,8 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
+    "@nextui-org/react": "^2.2.10",
+    "@react-types/shared": "^3.22.1",
     "@reduxjs/toolkit": "^2.2.2",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
@@ -35,7 +37,7 @@
     "xterm-addon-fit": "^0.8.0"
   },
   "scripts": {
-    "start": "vite",
+    "start": "vite --port 3001 --host",
     "dev": "vite --port 5173 --host",
     "build": "tsc && vite build",
     "test": "jest",
