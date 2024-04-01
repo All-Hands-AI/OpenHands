@@ -93,6 +93,7 @@ class AgentController:
             observation = AgentErrorObservation(str(e))
             print_with_indent("\nAGENT ERROR:\n%s" % observation)
             traceback.print_exc()
+            # TODO Change to more robust error handling
             if "The api_key client option must be set" in observation.content:
                 raise 
         self.update_state_after_step()
