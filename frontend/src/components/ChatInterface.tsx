@@ -46,7 +46,7 @@ function TypingChat() {
               setTypingAcitve,
               setCurrentQueueMarkerState,
               currentQueueMarker,
-              playbackRate: 0.001,
+              playbackRate: 0.25,
             })}
           </CardBody>
         </Card>
