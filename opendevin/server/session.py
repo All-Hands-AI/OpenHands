@@ -22,7 +22,20 @@ LLM_MODEL = config.get_or_default("LLM_MODEL", "gpt-4-0125-preview")
 CONTAINER_IMAGE = config.get_or_default("SANDBOX_CONTAINER_IMAGE", "ghcr.io/opendevin/sandbox")
 
 class Session:
+    """Represents a session with an agent.
+
+    Attributes:
+        websocket: The WebSocket connection associated with the session.
+        controller: The AgentController instance for controlling the agent.
+        agent: The Agent instance representing the agent.
+        agent_task: The task representing the agent's execution.
+    """
     def __init__(self, websocket):
+        """Initializes a new instance of the Session class.
+
+        Args:
+            websocket: The WebSocket connection associated with the session.
+        """
         self.websocket = websocket
         self.controller: Optional[AgentController] = None
         self.agent: Optional[Agent] = None
@@ -30,12 +43,27 @@ class Session:
         asyncio.create_task(self.create_controller(), name="create controller") # FIXME: starting the docker container synchronously causes a websocket error...
 
     async def send_error(self, message):
+        """Sends an error message to the client.
+
+        Args:
+            message: The error message to send.
+        """
         await self.send({"error": True, "message": message})
 
     async def send_message(self, message):
+        """Sends a message to the client.
+
+        Args:
+            message: The message to send.
+        """
         await self.send({"message": message})
 
     async def send(self, data):
+        """Sends data to the client.
+
+        Args:
+            data: The data to send.
+        """
         if self.websocket is None:
             return
         try:
@@ -44,6 +72,7 @@ class Session:
             print("Error sending data to client", e)
 
     async def start_listening(self):
+        """Starts listening for messages from the client."""
         try:
             while True:
                 try:
@@ -75,6 +104,11 @@ class Session:
             print("Client websocket disconnected", e)
 
     async def create_controller(self, start_event=None):
+        """Creates an AgentController instance.
+
+        Args:
+            start_event: The start event data (optional).
+        """
         directory = DEFAULT_WORKSPACE_DIR
         if start_event and "directory" in start_event["args"]:
             directory = start_event["args"]["directory"]
@@ -109,6 +143,11 @@ class Session:
         await self.send({"action": "initialize", "message": "Control loop started."})
 
     async def start_task(self, start_event):
+        """Starts a task for the agent.
+
+        Args:
+            start_event: The start event data.
+        """
         if "task" not in start_event["args"]:
             await self.send_error("No task specified")
             return
@@ -120,6 +159,11 @@ class Session:
         self.agent_task = asyncio.create_task(self.controller.start_loop(task), name="agent loop")
 
     def on_agent_event(self, event: Observation | Action):
+        """Callback function for agent events.
+
+        Args:
+            event: The agent event (Observation or Action).
+        """
         if isinstance(event, NullAction):
             return
         if isinstance(event, NullObservation):
