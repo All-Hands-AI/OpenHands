@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    networks:
+      - opendevin
+    ports:
+      - "127.0.0.1:3001:3001"
+    container_name: devin-frontend
+    depends_on:
+      - backend
+    volumes:
+      - ./config.toml:/usr/src/app/config.toml
+      - workspace:/workspace
+    command: ["npm", "start", "--", "--host", "0.0.0.0"]
+    environment:
+      - WORKSPACE_DIR="/workspace"
+    links:
+      - devin-backend:backend
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - opendevin
+    ports:
+      - "127.0.0.1:3000:3000"
+    container_name: devin-backend
+    environment:
+      - WORKSPACE_DIR="/workspace"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - workspace:/workspace
+    privileged: true
+
+networks:
+  opendevin:
+    name: opendevin
+
+volumes:
+  workspace:
+    driver: local
