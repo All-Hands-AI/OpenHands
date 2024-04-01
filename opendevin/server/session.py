@@ -120,7 +120,7 @@ class Session:
         try:
             self.agent_task = await asyncio.create_task(self.controller.start_loop(task), name="agent loop")
         except Exception as e:
-            await self.send_error(f"Could not start task.")
+            await self.send_error(f"Error during task loop.")
 
     def on_agent_event(self, event: Observation | Action):
         if isinstance(event, NullAction):
