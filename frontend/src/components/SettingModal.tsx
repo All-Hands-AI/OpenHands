@@ -17,6 +17,7 @@ import {
   changeDirectory as sendChangeDirectorySocketMessage,
   changeModel,
   fetchModels,
+  fetchAgents,
   INITIAL_MODELS,
 } from "../services/settingsService";
 
@@ -43,9 +44,9 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
     cachedModels.length > 0 ? cachedModels : INITIAL_MODELS,
   );
   const [agent, setAgent] = useState(
-    localStorage.getItem("agent") || "LangchainsAgent",
+    localStorage.getItem("agent") || "MonologueAgent",
   );
-  const [supportedAgents] = useState(
+  const [supportedAgents, setSupportedAgents] = useState(
     cachedAgents.length > 0 ? cachedAgents : INITIAL_AGENTS,
   );
 
@@ -53,6 +54,10 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
     fetchModels().then((fetchedModels) => {
       setSupportedModels(fetchedModels);
       localStorage.setItem("supportedModels", JSON.stringify(fetchedModels));
+    });
+    fetchAgents().then((fetchedAgents) => {
+      setSupportedAgents(fetchedAgents);
+      localStorage.setItem("supportedAgents", JSON.stringify(fetchedAgents));
     });
   }, []);
 

@@ -33,13 +33,13 @@ class FileReadAction(ExecutableAction):
 @dataclass
 class FileWriteAction(ExecutableAction):
     path: str
-    contents: str
+    content: str
     action: str = "write"
 
     def run(self, controller) -> FileWriteObservation:
         path = resolve_path(controller.workdir, self.path)
         with open(path, 'w', encoding='utf-8') as file:
-            file.write(self.contents)
+            file.write(self.content)
         return FileWriteObservation(content="", path=self.path)
 
     @property
