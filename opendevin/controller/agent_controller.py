@@ -63,7 +63,6 @@ class AgentController:
                 finished = await self.step(i)
             except Exception as e:
                 print("Error in loop", e, flush=True)
-                traceback.print_exc()
                 raise e
             if finished:
                 break
