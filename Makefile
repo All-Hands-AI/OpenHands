@@ -52,7 +52,7 @@ setup-config:
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
 	 echo "WORKSPACE_DIR=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
 
-        @mv $(CONFIG_FILE).tmp $(CONFIG_FILE)
+	@mv $(CONFIG_FILE).tmp $(CONFIG_FILE)
 
 # Help
 help:
