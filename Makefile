@@ -31,6 +31,7 @@ start-frontend:
 # Run the app
 run:
 	@echo "Running the app..."
+	@rm logs/pipe
 	@mkfifo logs/pipe
 	@cat logs/pipe | (make start-backend) &
 	@echo 'test' | tee logs/pipe | (make start-frontend)
