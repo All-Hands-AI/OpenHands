@@ -15,8 +15,8 @@ build:
 	@echo "Pulling Docker image..."
 	@docker pull $(DOCKER_IMAGE)
 	@echo "Installing Python dependencies..."
-	@python -m pip install pipenv
-	@python -m pipenv install -v
+	@pip install poetry
+	@poetry install
 	@echo "Setting up frontend environment..."
 	@echo "Detect Node.js version..."
 	@cd frontend && node ./scripts/detect-node-version.js
@@ -30,7 +30,7 @@ build:
 # Start backend
 start-backend:
 	@echo "Starting backend..."
-	@python -m pipenv run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT)
+	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT)
 
 # Start frontend
 start-frontend:
@@ -45,10 +45,8 @@ run:
 		exit 1; \
 	fi
 	@mkdir -p logs
-	@rm -f logs/pipe
-	@mkfifo logs/pipe
-	@cat logs/pipe | (make start-backend) &
-	@echo 'test' | tee logs/pipe | (make start-frontend)
+	@poetry run nohup uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) --host "::" > logs/backend_$(shell date +'%Y%m%d_%H%M%S').log 2>&1 &
+	@cd frontend && npm run start -- --port $(FRONTEND_PORT)
 
 # Setup config.toml
 setup-config:
