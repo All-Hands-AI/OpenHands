@@ -11,10 +11,8 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.11'
-      - name: Install dependencies
+      - name: Run tests
         run: |
           python -m pip install pipenv
           python -m pipenv install
-      - name: Run Tests
-        run: |
           python -m pipenv run pytest ./tests
