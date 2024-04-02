@@ -1,3 +1,4 @@
+import os
 from opendevin.server.session import Session
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +15,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+from opendevin import config
+DEFAULT_WORKSPACE_DIR = config.get_or_default("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
 
 # This endpoint receives events from the client (i.e. the browser)
 @app.websocket("/ws")

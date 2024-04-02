@@ -14,6 +14,9 @@ socket.addEventListener("message", (event) => {
   const socketMessage = JSON.parse(event.data) as SocketMessage;
   if ("action" in socketMessage) {
     handleActionMessage(socketMessage);
+  } else if (socketMessage.observation === "files") {
+    // TODO handle the files observation
+    console.log(socketMessage.content);
   } else {
     handleObservationMessage(socketMessage);
   }

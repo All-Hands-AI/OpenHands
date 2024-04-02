@@ -89,13 +89,19 @@ class Session:
                     await self.create_controller(data)
                 elif action == "start":
                     await self.start_task(data)
+                elif action == "files":
+                    # TODO get files from using command manager
+                    observation = self.controller.command_manager.run_command("ls")
+                    observation_dict = observation.to_dict()
+                    observation_dict["observation"] = "files"
+                    await self.send(observation_dict)
                 else:
                     if self.controller is None:
                         await self.send_error("No agent started. Please wait a second...")
                     elif action == "chat":
                         self.controller.add_history(NullAction(), UserMessageObservation(data["message"]))
                     else:
-                        await self.send_error("I didn't recognize this action:" + action)
+                        await self.send_error("I didn't recognize this action: " + action)
 
         except WebSocketDisconnect as e:
             self.websocket = None

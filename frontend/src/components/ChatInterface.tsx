@@ -8,6 +8,7 @@ import { useTypingEffect } from "../hooks/useTypingEffect";
 import { sendChatMessage } from "../services/chatService";
 import { Message } from "../state/chatSlice";
 import { RootState } from "../store";
+import { getFiles } from "../services/fileService";
 
 interface ITypingChatProps {
   msg: Message;
@@ -92,6 +93,12 @@ interface Props {
 function ChatInterface({ setSettingOpen }: Props): JSX.Element {
   const { initialized } = useSelector((state: RootState) => state.task);
   const [inputMessage, setInputMessage] = useState("");
+
+  useEffect(() => {
+    if (initialized) {
+      getFiles();
+    }
+  }, [initialized]);
 
   const handleSendMessage = () => {
     if (inputMessage.trim() !== "") {
