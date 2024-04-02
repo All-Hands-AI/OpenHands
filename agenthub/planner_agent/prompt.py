@@ -139,7 +139,10 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
             history_dicts.append(action.to_dict())
             latest_action = action
         if not isinstance(observation, NullObservation):
-            history_dicts.append(observation.to_dict())
+            observation_dict = observation.to_dict()
+            if "extras" in observation_dict and "screenshot" in observation_dict["extras"]:
+                del observation_dict["extras"]["screenshot"]
+            history_dicts.append(observation_dict)
     history_str = json.dumps(history_dicts, indent=2)
 
     hint = ""
