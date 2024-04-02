@@ -1,18 +1,19 @@
-import store from "../store";
-import { ActionMessage } from "../types/Message";
 import { setScreenshotSrc, setUrl } from "../state/browserSlice";
 import { appendAssistantMessage } from "../state/chatSlice";
-import { setCode } from "../state/codeSlice";
+import { initializeFiles, setCode, updatePath } from "../state/codeSlice";
 import { setInitialized } from "../state/taskSlice";
+import store from "../store";
+import { ActionMessage } from "../types/Message";
 
 const messageActions = {
-  initialize: () => {
+  initialize: (message: ActionMessage) => {
     store.dispatch(setInitialized(true));
     store.dispatch(
       appendAssistantMessage(
         "Hello, I am OpenDevin, an AI Software Engineer. What would you like me to build you today?",
       ),
     );
+    store.dispatch(initializeFiles(message.message));
   },
   browse: (message: ActionMessage) => {
     const { url, screenshotSrc } = message.args;
@@ -20,13 +21,21 @@ const messageActions = {
     store.dispatch(setScreenshotSrc(screenshotSrc));
   },
   write: (message: ActionMessage) => {
-    store.dispatch(setCode(message.args.content));
+    const { path, content } = message.args;
+    store.dispatch(updatePath(path));
+    store.dispatch(setCode(content));
   },
   think: (message: ActionMessage) => {
     store.dispatch(appendAssistantMessage(message.args.thought));
   },
   finish: (message: ActionMessage) => {
     store.dispatch(appendAssistantMessage(message.message));
+  },
+  file_selected: (message: ActionMessage) => {
+    store.dispatch(setCode(message.message));
+  },
+  refresh_files: (message: ActionMessage) => {
+    store.dispatch(initializeFiles(message.message));
   },
 };
 
