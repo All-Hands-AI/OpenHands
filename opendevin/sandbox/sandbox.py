@@ -1,9 +1,10 @@
-import atexit
 import os
-import select
 import sys
+import tty
 import time
 import uuid
+import select
+import atexit
 from collections import namedtuple
 from typing import Dict, List, Tuple
 
@@ -11,6 +12,7 @@ import docker
 import concurrent.futures
 
 from opendevin import config
+from opendevin.sandbox.utils import Stream
 
 InputType = namedtuple("InputType", ["content"])
 OutputType = namedtuple("OutputType", ["content"])
@@ -152,8 +154,11 @@ class DockerInteractive:
 
     def execute(self, cmd: str) -> Tuple[int, str]:
         # TODO: each execute is not stateful! We need to keep track of the current working directory
+
         def run_command(container, command):
+            import pdb; pdb.set_trace()
             return container.exec_run(command,workdir="/workspace")
+
         # Use ThreadPoolExecutor to control command and set timeout
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(run_command, self.container, self.get_exec_cmd(cmd))
@@ -231,6 +236,28 @@ class DockerInteractive:
         except docker.errors.NotFound:
             pass
 
+    def _container_info(self):
+        """
+        Thin wrapper around client.inspect_container().
+        """
+        return self.docker_client.inspect_container(self.container)
+
+    def _attach_sockets(self):
+        config = self._container_info()["Config"]
+        assert config["AttachStdin"], "Container must have stdin attached"
+        assert config["AttachStdout"], "Container must have stdout attached"
+        assert config["AttachStderr"], "Container must have stderr attached"
+        assert config["Tty"], "TTY must be enabled to attach streams"
+        self.stdin_stream: Stream = Stream(self.docker_client.attach_socket(
+            self.container, params={"stdin": 1, "stream": 1}
+        ))
+        self.stdout_stream: Stream = Stream(self.docker_client.attach_socket(
+            self.container, params={"stdout": 1, "stream": 1}
+        ))
+        self.stderr_stream: Stream = Stream(self.docker_client.attach_socket(
+            self.container, params={"stderr": 1, "stream": 1}
+        ))
+
     def restart_docker_container(self):
         try:
             self.stop_docker_container()
@@ -240,18 +267,35 @@ class DockerInteractive:
 
         try:
             # Initialize docker client. Throws an exception if Docker is not reachable.
-            docker_client = docker.from_env()
+            # docker_client = docker.from_env()
+            self.docker_client = docker.APIClient()
 
             # start the container
-            self.container = docker_client.containers.run(
+            # low-level api
+            # https://docker-py.readthedocs.io/en/stable/api.html#docker.api.container.ContainerApiMixin.create_container
+            self.container = self.docker_client.create_container(
                 self.container_image,
-                command="tail -f /dev/null",
-                network_mode="host",
+                command="/bin/bash",
+                user="devin" if RUN_AS_DEVIN else None,
+                stdin_open=True,
+                tty=True,
                 working_dir="/workspace",
+                # networking_config=docker_client.create_networking_config(
                 name=self.container_name,
-                detach=True,
-                volumes={self.workspace_dir: {"bind": "/workspace", "mode": "rw"}},
+                # detach=True,
+                volumes=["/workspace"],
+                host_config=self.docker_client.create_host_config(
+                    binds={self.workspace_dir: {"bind": "/workspace", "mode": "rw"},},
+                    network_mode="host",
+                ),
             )
+            self._attach_sockets()
+            self.stdin_stream.write("echo 'hello'\n".encode("utf-8"))
+            # TODO: FIXME: The stdout_stream.read() is blocking indefinitely
+            print(self.stdout_stream.read().decode("utf-8"))
+            import pdb; pdb.set_trace()
+            print(self.stderr_stream.read().decode("utf-8"))
+            
         except Exception as e:
             print(f"Failed to start container: {e}")
             raise e
@@ -266,7 +310,7 @@ class DockerInteractive:
                 break
             time.sleep(1)
             elapsed += 1
-            self.container = docker_client.containers.get(self.container_name)
+            self.container = self.docker_client.containers.get(self.container_name)
             if elapsed > self.timeout:
                 break
         if self.container.status != "running":
