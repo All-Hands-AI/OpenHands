@@ -37,6 +37,7 @@ const SETTINGS_MAP = new Map<string, string>([
 export function sendSettings(
   socket: WebSocket,
   reduxSettings: { [id: string]: string },
+  appendMessages: boolean = true,
 ): void {
   const socketSettings = Object.fromEntries(
     Object.entries(reduxSettings).map(([setting, value]) => [
@@ -48,7 +49,9 @@ export function sendSettings(
   const eventString = JSON.stringify(event);
   socket.send(eventString);
   store.dispatch(setInitialized(false));
-  for (const [setting, value] of Object.entries(reduxSettings)) {
-    store.dispatch(appendAssistantMessage(`Set ${setting} to "${value}"`));
+  if (appendMessages) {
+    for (const [setting, value] of Object.entries(reduxSettings)) {
+      store.dispatch(appendAssistantMessage(`Set ${setting} to "${value}"`));
+    }
   }
 }
