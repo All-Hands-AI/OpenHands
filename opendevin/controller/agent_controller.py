@@ -2,7 +2,8 @@
 import asyncio
 import inspect
 import traceback
-from typing import List, Callable, Literal, Mapping, Any
+from typing import List, Callable, Literal, Mapping, Awaitable, Any, cast
+
 from termcolor import colored
 
 from opendevin.plan import Plan
@@ -140,7 +141,7 @@ class AgentController:
         if action.executable:
             try:
                 if inspect.isawaitable(action.run(self)):
-                    observation = await action.run(self)
+                    observation = await cast(Awaitable[Observation], action.run(self))
                 else:
                     observation = action.run(self)
             except Exception as e:
