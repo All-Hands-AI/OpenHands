@@ -10,10 +10,5 @@ def dumps(obj, **kwargs):
 
 def loads(s, **kwargs):
     s_repaired = repair_json(s)
-
-    if s_repaired != s:
-        print(f"Repaired JSON: {s_repaired}")
-        print(f"Original JSON: {s}")
-
     return json.loads(s_repaired, **kwargs)
 
