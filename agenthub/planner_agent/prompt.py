@@ -1,7 +1,7 @@
 import json
 from typing import List, Tuple, Dict, Type
 
-from opendevin.controller.agent_controller import print_with_indent
+from opendevin.controller.agent_controller import print_with_color
 from opendevin.plan import Plan
 from opendevin.action import Action, action_from_dict
 from opendevin.observation import Observation
@@ -97,11 +97,11 @@ It must be an object, and it must contain two fields:
 * `action`, which is one of the actions below
 * `args`, which is a map of key-value pairs, specifying the arguments for that action
 
-* `read` - reads the contents of a file. Arguments:
+* `read` - reads the content of a file. Arguments:
   * `path` - the path of the file to read
-* `write` - writes the contents to a file. Arguments:
+* `write` - writes the content to a file. Arguments:
   * `path` - the path of the file to write
-  * `contents` - the contents to write to the file
+  * `content` - the content to write to the file
 * `run` - runs a command on the command line in a Linux shell. Arguments:
   * `command` - the command to run
   * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.
@@ -178,7 +178,7 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
         elif latest_action_id == "finish":
             hint = ""
 
-    print_with_indent("HINT:\n" + hint)
+    print_with_color("HINT:\n" + hint, "INFO")
     return prompt % {
         'task': plan.main_goal,
         'plan': plan_str,
@@ -192,9 +192,9 @@ def parse_response(response: str) -> Action:
     json_end = response.rfind("}") + 1
     response = response[json_start:json_end]
     action_dict = json.loads(response)
-    if 'content' in action_dict:
+    if 'contents' in action_dict:
         # The LLM gets confused here. Might as well be robust
-        action_dict['contents'] = action_dict.pop('content')
+        action_dict['content'] = action_dict.pop('contents')
     action = action_from_dict(action_dict)
     return action
 

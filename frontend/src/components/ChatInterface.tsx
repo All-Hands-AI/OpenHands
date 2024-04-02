@@ -209,7 +209,9 @@ function ChatInterface({ setSettingOpen }: Props): JSX.Element {
           maxRows={10}
           minRows={1}
           variant="bordered"
-          onChange={(e) => setInputMessage(e.target.value)}
+          onChange={(e) =>
+            e.target.value !== "\n" && setInputMessage(e.target.value)
+          }
           placeholder="Send a message (won't interrupt the Assistant)"
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
