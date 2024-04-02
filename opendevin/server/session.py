@@ -47,9 +47,6 @@ class Session:
         self.controller: Optional[AgentController] = None
         self.agent: Optional[Agent] = None
         self.agent_task = None
-        asyncio.create_task(
-            self.create_controller(), name="create controller"
-        )  # FIXME: starting the docker container synchronously causes a websocket error...
 
     async def send_error(self, message):
         """Sends an error message to the client.
@@ -168,6 +165,9 @@ class Session:
         container_image = CONTAINER_IMAGE
         if start_event and "container_image" in start_event["args"]:
             container_image = start_event["args"]["container_image"]
+        max_iterations = 100
+        if start_event and "max_iterations" in start_event["args"]:
+            max_iterations = start_event["args"]["max_iterations"]
         if not os.path.exists(directory):
             print(f"Workspace directory {directory} does not exist. Creating it...")
             os.makedirs(directory)
@@ -180,6 +180,7 @@ class Session:
             self.controller = AgentController(
                 self.agent,
                 workdir=directory,
+                max_iterations=max_iterations,
                 container_image=container_image,
                 callbacks=[self.on_agent_event],
             )
@@ -207,9 +208,12 @@ class Session:
         if self.controller is None:
             await self.send_error("No agent started. Please wait a second...")
             return
-        self.agent_task = asyncio.create_task(
-            self.controller.start_loop(task), name="agent loop"
-        )
+        try:
+            self.agent_task = await asyncio.create_task(
+                self.controller.start_loop(task), name="agent loop"
+            )
+        except Exception:
+            await self.send_error("Error during task loop.")
 
     def on_agent_event(self, event: Observation | Action):
         """Callback function for agent events.

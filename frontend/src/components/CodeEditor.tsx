@@ -10,6 +10,7 @@ import {
   FaFolderOpen,
   FaHtml5,
   FaList,
+  FaMarkdown,
   FaNpm,
   FaPython,
 } from "react-icons/fa";
@@ -43,6 +44,8 @@ function FileIcon({ filename }: FileIconProps): JSX.Element | null {
       return <FaNpm />;
     case "html":
       return <FaHtml5 />;
+    case "md":
+      return <FaMarkdown />;
     default:
       return <FaFile />;
   }

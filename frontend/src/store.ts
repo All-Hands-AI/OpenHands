@@ -4,6 +4,7 @@ import chatReducer from "./state/chatSlice";
 import codeReducer from "./state/codeSlice";
 import taskReducer from "./state/taskSlice";
 import errorsReducer from "./state/errorsSlice";
+import settingsReducer from "./state/settingsSlice";
 
 const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ const store = configureStore({
     code: codeReducer,
     task: taskReducer,
     errors: errorsReducer,
+    settings: settingsReducer,
   },
 });
 

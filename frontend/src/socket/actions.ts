@@ -10,7 +10,7 @@ const messageActions = {
     store.dispatch(setInitialized(true));
     store.dispatch(
       appendAssistantMessage(
-        "Hello, I am OpenDevin, an AI Software Engineer. What would you like me to build you today?",
+        "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
       ),
     );
     store.dispatch(initializeFiles(message.message));
