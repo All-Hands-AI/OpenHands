@@ -7,6 +7,8 @@ from functools import partial
 from opendevin import config
 
 DEFAULT_MODEL_NAME = config.get_or_default("LLM_MODEL", "gpt-4-0125-preview")
+from opendevin.llm.g4faysnc import get_completion
+DEFAULT_MODEL = config.get_or_default("LLM_MODEL", "gpt-4-0125-preview")
 DEFAULT_API_KEY = config.get_or_none("LLM_API_KEY")
 DEFAULT_BASE_URL = config.get_or_none("LLM_BASE_URL")
 DEFAULT_LLM_NUM_RETRIES = config.get_or_default("LLM_NUM_RETRIES", 6)
@@ -50,6 +52,8 @@ class LLM:
         )
         self._completion = partial(self._router.completion, model=self.model_name)
 
+        # self._completion = partial(litellm_completion, model=self.model, api_key=self.api_key, base_url=self.base_url)
+        self._completion = get_completion
         if self._debug_dir:
             print(f"Logging prompts to {self._debug_dir}/{self._debug_id}")
             completion_unwrapped = self._completion
