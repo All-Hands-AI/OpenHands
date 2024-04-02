@@ -40,7 +40,6 @@ class Session:
         self.controller: Optional[AgentController] = None
         self.agent: Optional[Agent] = None
         self.agent_task = None
-        asyncio.create_task(self.create_controller(), name="create controller") # FIXME: starting the docker container synchronously causes a websocket error...
 
     async def send_error(self, message):
         """Sends an error message to the client.

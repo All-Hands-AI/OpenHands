@@ -1,4 +1,3 @@
-import socket from "../socket/socket";
 import { appendAssistantMessage } from "../state/chatSlice";
 import { setInitialized } from "../state/taskSlice";
 import store from "../store";
@@ -27,22 +26,32 @@ export const INITIAL_AGENTS = ["MonologueAgent", "CodeActAgent"];
 
 export type Agent = (typeof INITIAL_AGENTS)[number];
 
-function changeSetting(setting: string, value: string): void {
-  const event = { action: "initialize", args: { [setting]: value } };
+// Map Redux settings to socket event arguments
+const SETTINGS_MAP = new Map<string, string>([
+  ["model", "model"],
+  ["agent", "agent_cls"],
+  ["workspaceDirectory", "directory"],
+]);
+
+// Send settings to the server
+export function sendSettings(
+  socket: WebSocket,
+  reduxSettings: { [id: string]: string },
+  appendMessages: boolean = true,
+): void {
+  const socketSettings = Object.fromEntries(
+    Object.entries(reduxSettings).map(([setting, value]) => [
+      SETTINGS_MAP.get(setting) || setting,
+      value,
+    ]),
+  );
+  const event = { action: "initialize", args: socketSettings };
   const eventString = JSON.stringify(event);
   socket.send(eventString);
   store.dispatch(setInitialized(false));
-  store.dispatch(appendAssistantMessage(`Changed ${setting} to "${value}"`));
-}
-
-export function changeModel(model: Model): void {
-  changeSetting("model", model);
-}
-
-export function changeAgent(agent: Agent): void {
-  changeSetting("agent_cls", agent);
-}
-
-export function changeDirectory(directory: string): void {
-  changeSetting("directory", directory);
+  if (appendMessages) {
+    for (const [setting, value] of Object.entries(reduxSettings)) {
+      store.dispatch(appendAssistantMessage(`Set ${setting} to "${value}"`));
+    }
+  }
 }
