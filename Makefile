@@ -49,8 +49,9 @@ run:
 		exit 1; \
 	fi
 	@mkdir -p logs
-	@poetry shell
-	@nohup uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) --host "::" > logs/backend_$(shell date +'%Y%m%d_%H%M%S').log 2>&1 &
+	@poetry run nohup uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) > logs/backend_$(shell date +'%Y%m%d_%H%M%S').log 2>&1 &
+	@echo "Waiting for the backend to start..."
+	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
 	@cd frontend && npm run start -- --port $(FRONTEND_PORT)
 
 # Setup config.toml
