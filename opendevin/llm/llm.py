@@ -33,7 +33,6 @@ class LLM:
 
         # We use litellm's Router in order to support retries (especially rate limit backoff retries). 
         # Typically you would use a whole model list, but it's unnecessary with our implementation's structure
-        print('Current Model & default:', self.model_name, DEFAULT_MODEL_NAME)
         self._router = Router(
             model_list=[{
                 "model_name": self.model_name,
