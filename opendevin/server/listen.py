@@ -1,4 +1,3 @@
-import os
 from opendevin.server.session import Session
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
