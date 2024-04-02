@@ -18,8 +18,9 @@ build:
 	@echo "Installing Python dependencies..."
 	@curl -sSL https://install.python-poetry.org | python3 -
 	@poetry install
-	@poetry shell
-	@pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
+	@echo "Activating Poetry shell..."
+	@echo "Installing pre-commit hooks..."
+	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
 	@echo "Setting up frontend environment..."
 	@echo "Detect Node.js version..."
 	@cd frontend && node ./scripts/detect-node-version.js
@@ -33,7 +34,6 @@ build:
 # Start backend
 start-backend:
 	@echo "Starting backend..."
-	@poetry shell
 	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT)
 
 # Start frontend
