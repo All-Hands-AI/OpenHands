@@ -1,5 +1,5 @@
 <p align="center">
-  <img alt="OpenDevin Logo" src="./OpenDevinLogo.jpg" width="100" />
+  <img alt="OpenDevin Logo" src="./logo.png" width="150" />
 </p>
 
 # OpenDevin: Code Less, Make More
@@ -14,14 +14,24 @@ Welcome to OpenDevin, an open-source project aiming to replicate [Devin](https:/
 
 ## Work in Progress
 
-OpenDevin is still a work in progress. But you can run the current app to see things working end-to-end.
+OpenDevin is still a work in progress. But you can run the alpha version to see things working end-to-end.
 
 ### Requirements
 * [Docker](https://docs.docker.com/engine/install/)
 * [Python](https://www.python.org/downloads/) >= 3.10
-* [NPM](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
+* [NodeJS](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) >= 14.8
 
 ### Installation
+First, make sure Docker is running:
+```bash
+docker ps # this should exit successfully
+```
+Then pull our latest image [here](https://github.com/opendevin/OpenDevin/pkgs/container/sandbox)
+```bash
+docker pull ghcr.io/opendevin/sandbox:v0.1
+```
+
+Then start the backend:
 ```bash
 export OPENAI_API_KEY="..."
 export WORKSPACE_DIR="/path/to/your/project"
@@ -36,6 +46,34 @@ npm run start -- --port 3001
 ```
 
 You'll see OpenDevin running at localhost:3001
+
+### Picking a Model
+We use LiteLLM, so you can run OpenDevin with any foundation model, including OpenAI, Claude, and Gemini.
+LiteLLM has a [full list of providers](https://docs.litellm.ai/docs/providers).
+
+To change the model, set the `LLM_MODEL` and `LLM_API_KEY` environment variables.
+
+For example, to run Claude:
+```bash
+export LLM_API_KEY="your-api-key"
+export LLM_MODEL="claude-3-opus-20240229"
+```
+
+You can also set the base URL for local/custom models:
+```bash
+export LLM_BASE_URL="https://localhost:3000"
+```
+
+And you can customize which embeddings are used for the vector database storage:
+```bash
+export LLM_EMBEDDING_MODEL="llama2" # can be "llama2", "openai", "azureopenai", or "local"
+```
+
+### Running on the Command Line
+You can run OpenDevin from your command line:
+```bash
+PYTHONPATH=`pwd` python opendevin/main.py -d ./workspace/ -i 100 -t "Write a bash script that prints 'hello world'"
+```
 
 ## 🤔 What is [Devin](https://www.cognition-labs.com/introducing-devin)?
 
@@ -88,3 +126,5 @@ We use Slack to discuss. Feel free to fill in the [form](https://forms.gle/758d5
 Stay updated on OpenDevin's progress, share your ideas, and collaborate with fellow enthusiasts and experts. Together, we can make significant strides towards simplifying software engineering tasks and creating more efficient, powerful tools for developers everywhere.
 
 🐚 **Code less, make more with OpenDevin.**
+
+[![Star History Chart](https://api.star-history.com/svg?repos=OpenDevin/OpenDevin&type=Date)](https://star-history.com/#OpenDevin/OpenDevin&Date)

@@ -28,7 +28,7 @@ class Observation:
     @property
     def message(self) -> str:
         """Returns a message describing the observation."""
-        return "The agent made an observation."
+        return ""
 
 
 @dataclass
@@ -47,8 +47,31 @@ class CmdOutputObservation(Observation):
 
     @property
     def message(self) -> str:
-        return f'The agent observed command "{self.command}" executed with exit code {self.exit_code}.'
+        return f'Command `{self.command}` executed with exit code {self.exit_code}.'
 
+@dataclass
+class FileReadObservation(Observation):
+    """
+    This data class represents the content of a file.
+    """
+
+    path: str
+
+    @property
+    def message(self) -> str:
+        return f"I read the file {self.path}."
+
+@dataclass
+class FileWriteObservation(Observation):
+    """
+    This data class represents a file write operation
+    """
+
+    path: str
+
+    @property
+    def message(self) -> str:
+        return f"I wrote to the file {self.path}."
 
 @dataclass
 class BrowserOutputObservation(Observation):
@@ -62,7 +85,7 @@ class BrowserOutputObservation(Observation):
 
     @property
     def message(self) -> str:
-        return "The agent observed the browser output at URL."
+        return "Visited " + self.url
 
 
 @dataclass
@@ -75,7 +98,7 @@ class UserMessageObservation(Observation):
 
     @property
     def message(self) -> str:
-        return "The agent received a message from the user."
+        return ""
 
 
 @dataclass
@@ -88,7 +111,7 @@ class AgentMessageObservation(Observation):
 
     @property
     def message(self) -> str:
-        return "The agent received a message from itself."
+        return ""
 
 
 @dataclass
@@ -104,6 +127,16 @@ class AgentRecallObservation(Observation):
     def message(self) -> str:
         return "The agent recalled memories."
 
+
+@dataclass
+class AgentErrorObservation(Observation):
+    """
+    This data class represents an error encountered by the agent.
+    """
+
+    @property
+    def message(self) -> str:
+        return "Oops. Something went wrong: " + self.content
 
 @dataclass
 class NullObservation(Observation):

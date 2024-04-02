@@ -22,6 +22,7 @@ from opendevin.action import (
     AgentRecallAction,
     AgentThinkAction,
     AgentFinishAction,
+    AgentSummarizeAction,
 )
 from opendevin.observation import (
     CmdOutputObservation,
@@ -36,6 +37,7 @@ ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
     "write": FileWriteAction,
     "recall": AgentRecallAction,
     "think": AgentThinkAction,
+    "summarize": AgentSummarizeAction,
     "finish": AgentFinishAction,
 }
 CLASS_TO_ACTION_TYPE: Dict[Type[Action], str] = {v: k for k, v in ACTION_TYPE_TO_CLASS.items()}
@@ -126,7 +128,7 @@ class NewMonologue(BaseModel):
 
 def get_summarize_monologue_prompt(thoughts):
     prompt = PromptTemplate.from_template(MONOLOGUE_SUMMARY_PROMPT)
-    return prompt.format(monologue=json.dumps({'old_monologue': thoughts}))
+    return prompt.format(monologue=json.dumps({'old_monologue': thoughts}, indent=2))
 
 def get_request_action_prompt(
         task: str,
@@ -155,7 +157,7 @@ def get_request_action_prompt(
     prompt = PromptTemplate.from_template(ACTION_PROMPT)
     return prompt.format(
         task=task,
-        monologue=json.dumps(thoughts),
+        monologue=json.dumps(thoughts, indent=2),
         background_commands=bg_commands_message,
         hint=hint,
     )
@@ -163,11 +165,15 @@ def get_request_action_prompt(
 def parse_action_response(response: str) -> Action:
     parser = JsonOutputParser(pydantic_object=_ActionDict)
     action_dict = parser.parse(response)
+    if 'content' in action_dict:
+        # The LLM gets confused here. Might as well be robust
+        action_dict['contents'] = action_dict.pop('content')
+
     action = ACTION_TYPE_TO_CLASS[action_dict["action"]](**action_dict["args"])
     return action
 
 def parse_summary_response(response: str) -> List[Action]:
     parser = JsonOutputParser(pydantic_object=NewMonologue)
     parsed = parser.parse(response)
-    thoughts = [ACTION_TYPE_TO_CLASS[t['action']](**t['args']) for t in parsed['new_monologue']]
-    return thoughts
+    #thoughts = [ACTION_TYPE_TO_CLASS[t['action']](**t['args']) for t in parsed['new_monologue']]
+    return parsed['new_monologue']

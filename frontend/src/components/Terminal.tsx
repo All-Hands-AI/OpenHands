@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { IDisposable, Terminal as XtermTerminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import socket from "../state/socket";
+import socket from "../socket/socket";
 
 class JsonWebsocketAddon {
   _socket: WebSocket;
@@ -22,12 +22,12 @@ class JsonWebsocketAddon {
       }),
     );
     this._socket.addEventListener("message", (event) => {
-      const { action, args } = JSON.parse(event.data);
+      const { action, args, observation, content } = JSON.parse(event.data);
       if (action === "run") {
         terminal.writeln(args.command);
       }
-      if (action === "output") {
-        args.output.split("\n").forEach((line: string) => {
+      if (observation === "run") {
+        content.split("\n").forEach((line: string) => {
           terminal.writeln(line);
         });
         terminal.write("\n$ ");
@@ -92,6 +92,7 @@ function Terminal({ hidden }: TerminalProps): JSX.Element {
         width: "100%",
         height: "100%",
         display: hidden ? "none" : "block",
+        padding: "1rem",
       }}
     />
   );

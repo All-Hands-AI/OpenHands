@@ -1,13 +1,7 @@
-.url {
-  margin: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: white;
-  border-radius: 2rem;
-  color: #252526;
-}
-
-.screenshot {
-  width: 100%;
-  max-height: calc(100vh - 100px); /* 100px is the height of the header */
-  object-fit: cover;
+.mockup-browser {
+  background: black;
+  padding: 1rem;
+  height: 90%;
+  margin: 1rem;
+  border-radius: 1rem;
 }

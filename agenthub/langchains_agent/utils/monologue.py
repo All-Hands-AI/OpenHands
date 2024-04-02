@@ -26,8 +26,10 @@ class Monologue:
     def condense(self, llm):
         try:
             prompt = prompts.get_summarize_monologue_prompt(self.thoughts)
-            response = llm.prompt(prompt)
-            self.thoughts = prompts.parse_summary_response(response)
+            messages = [{"content": prompt,"role": "user"}]
+            resp = llm.completion(messages=messages)
+            summary_resp = resp['choices'][0]['message']['content']
+            self.thoughts = prompts.parse_summary_response(summary_resp)
         except Exception as e:
             # Consider logging the error here instead of or in addition to raising an exception
             raise RuntimeError(f"Error condensing thoughts: {e}")
