@@ -25,7 +25,7 @@ def parse_arguments():
     parser.add_argument("-t", "--task", type=str, default="", help="The task for the agent to perform")
     parser.add_argument("-f", "--file", type=str, help="Path to a file containing the task. Overrides -t if both are provided.")
     parser.add_argument("-c", "--agent-cls", default="MonologueAgent", type=str, help="The agent class to use")
-    parser.add_argument("-m", "--model-name", default=config.get_or_default("LLM_MODEL", "gpt-4-0125-preview"), type=str, help="The (litellm) model name to use")
+    parser.add_argument("-m", "--model-name", default=config.get("LLM_MODEL"), type=str, help="The (litellm) model name to use")
     parser.add_argument("-i", "--max-iterations", default=100, type=int, help="The maximum number of iterations to run the agent")
     return parser.parse_args()
 

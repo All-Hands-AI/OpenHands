@@ -15,11 +15,11 @@ from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
 from opendevin.observation import Observation, UserMessageObservation
 
-DEFAULT_API_KEY = config.get_or_none("LLM_API_KEY")
-DEFAULT_BASE_URL = config.get_or_none("LLM_BASE_URL")
-DEFAULT_WORKSPACE_DIR = config.get_or_default("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
-LLM_MODEL = config.get_or_default("LLM_MODEL", "gpt-4-0125-preview")
-CONTAINER_IMAGE = config.get_or_default("SANDBOX_CONTAINER_IMAGE", "ghcr.io/opendevin/sandbox")
+DEFAULT_API_KEY = config.get("LLM_API_KEY")
+DEFAULT_BASE_URL = config.get("LLM_BASE_URL")
+DEFAULT_WORKSPACE_DIR = config.get("WORKSPACE_DIR")
+LLM_MODEL = config.get("LLM_MODEL")
+CONTAINER_IMAGE = config.get("SANDBOX_CONTAINER_IMAGE")
 
 class Session:
     """Represents a session with an agent.
