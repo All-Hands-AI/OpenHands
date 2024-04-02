@@ -8,6 +8,7 @@ FRONTEND_PORT = 3001
 DEFAULT_WORKSPACE_DIR = "./workspace"
 DEFAULT_MODEL = "gpt-4-0125-preview"
 CONFIG_FILE = config.toml
+PRECOMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
 
 # Build
 build:
@@ -15,8 +16,10 @@ build:
 	@echo "Pulling Docker image..."
 	@docker pull $(DOCKER_IMAGE)
 	@echo "Installing Python dependencies..."
-	@pip install poetry
+	@curl -sSL https://install.python-poetry.org | python3 -
 	@poetry install
+	@poetry shell
+	@pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
 	@echo "Setting up frontend environment..."
 	@echo "Detect Node.js version..."
 	@cd frontend && node ./scripts/detect-node-version.js
@@ -30,6 +33,7 @@ build:
 # Start backend
 start-backend:
 	@echo "Starting backend..."
+	@poetry shell
 	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT)
 
 # Start frontend
@@ -45,7 +49,8 @@ run:
 		exit 1; \
 	fi
 	@mkdir -p logs
-	@poetry run nohup uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) --host "::" > logs/backend_$(shell date +'%Y%m%d_%H%M%S').log 2>&1 &
+	@poetry shell
+	@nohup uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) --host "::" > logs/backend_$(shell date +'%Y%m%d_%H%M%S').log 2>&1 &
 	@cd frontend && npm run start -- --port $(FRONTEND_PORT)
 
 # Setup config.toml

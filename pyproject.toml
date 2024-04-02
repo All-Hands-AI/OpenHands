@@ -8,11 +8,12 @@ readme = "README.md"
 repository = "https://github.com/OpenDevin/OpenDevin"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.11"
 datasets = "^2.18.0"
 pandas = "^2.2.1"
 litellm = "^1.34.13"
 termcolor = "^2.4.0"
+torch = {version = "*", source = "pytorch"}
 seaborn = "^0.13.2"
 docker = "^7.0.0"
 fastapi = "^0.110.0"
@@ -46,7 +47,7 @@ pytest = "^8.1.1"
 [[tool.poetry.source]]
 name = "pytorch"
 url = "https://download.pytorch.org/whl/cpu"
-priority = "primary"
+priority = "supplemental"
 
 [build-system]
 requires = ["poetry-core"]
