@@ -1,11 +1,40 @@
-import React, { ChangeEvent, useEffect, useRef, useState } from "react";
+import { Card, CardBody, Textarea } from "@nextui-org/react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import assistantAvatar from "../assets/assistant-avatar.png";
+import CogTooth from "../assets/cog-tooth";
 import userAvatar from "../assets/user-avatar.png";
+import { useTypingEffect } from "../hooks/useTypingEffect";
 import { sendChatMessage } from "../services/chatService";
+import { Message } from "../state/chatSlice";
 import { RootState } from "../store";
-import "./css/ChatInterface.css";
-import { changeDirectory as sendChangeDirectorySocketMessage } from "../services/settingsService";
+
+interface ITypingChatProps {
+  msg: Message;
+}
+
+/**
+ * @param msg
+ * @returns jsx
+ *
+ * component used for typing effect when assistant replies
+ *
+ * makes uses of useTypingEffect hook
+ *
+ */
+function TypingChat({ msg }: ITypingChatProps) {
+  return (
+    // eslint-disable-next-line react/jsx-no-useless-fragment
+    <>
+      {msg?.content && (
+        <Card>
+          <CardBody>
+            {useTypingEffect([msg?.content], { loop: false })}
+          </CardBody>
+        </Card>
+      )}
+    </>
+  );
+}
 
 function MessageList(): JSX.Element {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -16,18 +45,24 @@ function MessageList(): JSX.Element {
   }, [messages]);
 
   return (
-    <div className="message-list">
+    <div className="flex-1 overflow-y-auto">
       {messages.map((msg, index) => (
-        <div key={index} className="message-layout">
+        <div key={index} className="flex mb-2.5 pr-5 pl-5">
           <div
-            className={`${msg.sender === "user" ? "user-message" : "message"}`}
+            className={`flex mt-2.5 mb-0 min-w-0 ${msg.sender === "user" && "flex-row-reverse ml-auto"}`}
           >
             <img
               src={msg.sender === "user" ? userAvatar : assistantAvatar}
               alt={`${msg.sender} avatar`}
-              className="avatar"
+              className="w-[40px] h-[40px] mx-2.5"
             />
-            <div className="chat chat-bubble">{msg.content}</div>
+            {msg.sender !== "user" ? (
+              <TypingChat msg={msg} />
+            ) : (
+              <Card className="bg-primary">
+                <CardBody>{msg.content}</CardBody>
+              </Card>
+            )}
           </div>
         </div>
       ))}
@@ -36,44 +71,11 @@ function MessageList(): JSX.Element {
   );
 }
 
-function DirectoryInput(): JSX.Element {
-  const [editing, setEditing] = useState(false);
-  const [directory, setDirectory] = useState("Default");
-
-  function save() {
-    setEditing(false);
-    sendChangeDirectorySocketMessage(directory);
-  }
-
-  function onDirectoryInputChange(e: ChangeEvent<HTMLInputElement>) {
-    setEditing(true);
-    setDirectory(e.target.value);
-  }
-
-  return (
-    <div className="flex p-2 justify-center gap-2 bg-neutral-700">
-      <label htmlFor="directory-input" className="label">
-        Directory
-      </label>
-      <input
-        type="text"
-        className="input"
-        id="directory-input"
-        placeholder="Default"
-        onChange={onDirectoryInputChange}
-      />
-      <button
-        type="button"
-        className={`btn ${editing ? "" : "hidden"}`}
-        onClick={save}
-      >
-        Save
-      </button>
-    </div>
-  );
+interface Props {
+  setSettingOpen: (isOpen: boolean) => void;
 }
 
-function ChatInterface(): JSX.Element {
+function ChatInterface({ setSettingOpen }: Props): JSX.Element {
   const [inputMessage, setInputMessage] = useState("");
 
   const handleSendMessage = () => {
@@ -84,26 +86,44 @@ function ChatInterface(): JSX.Element {
   };
 
   return (
-    <div className="chat-interface">
-      <DirectoryInput />
-      <MessageList />
-      <div className="input-container">
-        <div className="input-box">
-          <input
-            type="text"
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            placeholder="Send a message (won't interrupt the Assistant)"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && document.activeElement === e.target) {
-                handleSendMessage();
-              }
-            }}
-          />
-          <button type="button" onClick={handleSendMessage}>
-            <span className="button-text">Send</span>
-          </button>
+    <div className="flex flex-col h-full p-0 bg-bg-light">
+      <div className="w-full flex justify-between p-5">
+        <div />
+        <div
+          className="cursor-pointer hover:opacity-80"
+          onClick={() => setSettingOpen(true)}
+        >
+          <CogTooth />
         </div>
+      </div>
+      <MessageList />
+      <div className="w-full relative text-base">
+        <Textarea
+          className="py-4 px-4"
+          classNames={{
+            input: "pr-16 py-2",
+          }}
+          value={inputMessage}
+          maxRows={10}
+          minRows={1}
+          variant="bordered"
+          onChange={(e) =>
+            e.target.value !== "\n" && setInputMessage(e.target.value)
+          }
+          placeholder="Send a message (won't interrupt the Assistant)"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              handleSendMessage();
+            }
+          }}
+        />
+        <button
+          type="button"
+          className="bg-transparent border-none rounded py-2.5 px-5 hover:opacity-80 cursor-pointer select-none absolute right-5 bottom-6"
+          onClick={handleSendMessage}
+        >
+          Send
+        </button>
       </div>
     </div>
   );

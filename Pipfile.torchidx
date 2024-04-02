@@ -3,7 +3,13 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
 
+[[source]]
+url = "https://download.pytorch.org/whl/cpu"
+verify_ssl = true
+name = "pytorch"
+
 [packages]
+torch = {version = "*", index = "pytorch"}
 datasets = "*"
 pandas = "*"
 litellm = "*"
@@ -23,7 +29,6 @@ llama-index-embeddings-ollama = "*"
 google-generativeai = "*"
 toml = "*"
 json_repair = "*"
-numpy = "*"  # Added numpy as a dependency
 
 [dev-packages]
 

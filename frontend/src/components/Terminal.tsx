@@ -58,20 +58,20 @@ class JsonWebsocketAddon {
   }
 }
 
-type TerminalProps = {
-  hidden: boolean;
-};
-
 /**
  * The terminal's content is set by write messages. To avoid complicated state logic,
  * we keep the terminal persistently open as a child of <App /> and hidden when not in use.
  */
 
-function Terminal({ hidden }: TerminalProps): JSX.Element {
+function Terminal(): JSX.Element {
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputLengthRef = useRef<number>(0);
 
   useEffect(() => {
+    const bgColor = getComputedStyle(document.documentElement)
+      .getPropertyValue("--bg-workspace")
+      .trim();
+
     const terminal = new XtermTerminal({
       // This value is set to the appropriate value by the
       // `fitAddon.fit()` call below.
@@ -80,7 +80,10 @@ function Terminal({ hidden }: TerminalProps): JSX.Element {
       // is too large and switching tabs causes a layout shift.
       cols: 0,
       fontFamily: "Menlo, Monaco, 'Courier New', monospace",
-      fontSize: 16,
+      fontSize: 14,
+      theme: {
+        background: bgColor,
+      },
     });
 
     const fitAddon = new FitAddon();
@@ -130,17 +133,7 @@ function Terminal({ hidden }: TerminalProps): JSX.Element {
     };
   }, []);
 
-  return (
-    <div
-      ref={terminalRef}
-      style={{
-        width: "100%",
-        height: "100%",
-        display: hidden ? "none" : "block",
-        padding: "1rem",
-      }}
-    />
-  );
+  return <div ref={terminalRef} className="h-full w-full block" />;
 }
 
 export default Terminal;

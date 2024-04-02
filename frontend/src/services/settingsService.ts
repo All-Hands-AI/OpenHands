@@ -3,14 +3,13 @@ import { appendAssistantMessage } from "../state/chatSlice";
 import { setInitialized } from "../state/taskSlice";
 import store from "../store";
 
-const { VITE_URL } = import.meta.env;
 export async function fetchModels() {
-  const response = await fetch(`${VITE_URL}/litellm-models`);
+  const response = await fetch(`/api/litellm-models`);
   return response.json();
 }
 
 export async function fetchAgents() {
-  const response = await fetch(`${VITE_URL}/litellm-agents`);
+  const response = await fetch(`/api/litellm-agents`);
   return response.json();
 }
 
@@ -24,7 +23,7 @@ export const INITIAL_MODELS = [
 
 export type Model = (typeof INITIAL_MODELS)[number];
 
-export const INITIAL_AGENTS = ["LangchainsAgent", "CodeActAgent"];
+export const INITIAL_AGENTS = ["MonologueAgent", "CodeActAgent"];
 
 export type Agent = (typeof INITIAL_AGENTS)[number];
 

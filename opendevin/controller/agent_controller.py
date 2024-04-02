@@ -64,8 +64,7 @@ class AgentController:
                 finished = await self.step(i)
             except Exception as e:
                 print("Error in loop", e, flush=True)
-                traceback.print_exc()
-                break
+                raise e
             if finished:
                 break
         if not finished:
@@ -95,6 +94,9 @@ class AgentController:
             observation = AgentErrorObservation(str(e))
             print_with_indent("\nAGENT ERROR:\n%s" % observation)
             traceback.print_exc()
+            # TODO Change to more robust error handling
+            if "The api_key client option must be set" in observation.content:
+                raise 
         self.update_state_after_step()
 
         await self._run_callbacks(action)
