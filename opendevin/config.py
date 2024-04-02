@@ -24,10 +24,14 @@ if os.path.exists("config.toml"):
     with open("config.toml", "rb") as f:
         config_str = f.read().decode("utf-8")
 
-config = toml.loads(config_str)
-for key, value in DEFAULT_CONFIG.items():
-    if key not in config:
-        config[key] = value if value is not None else os.environ.get(key)
+tomlConfig = toml.loads(config_str)
+config = DEFAULT_CONFIG.copy()
+for key, value in config.items():
+  if key in os.environ:
+    config[key] = os.environ[key]
+  elif key in tomlConfig:
+    config[key] = tomlConfig[key]
+
 
 def _get(key: str, default):
     value = config.get(key, default)
