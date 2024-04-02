@@ -97,10 +97,8 @@ class Session:
                         await self.send_error("I didn't recognize this action:" + action)
 
         except WebSocketDisconnect as e:
-            self.websocket = None
-            if self.agent_task:
-                self.agent_task.cancel()
             print("Client websocket disconnected", e)
+            self.disconnect()
 
     async def create_controller(self, start_event=None):
         """Creates an AgentController instance.
@@ -175,3 +173,10 @@ class Session:
             return
         event_dict = event.to_dict()
         asyncio.create_task(self.send(event_dict), name="send event in callback")
+    
+    def disconnect(self):
+        self.websocket = None
+        if self.agent_task:
+            self.agent_task.cancel()
+        if self.controller is not None:
+            self.controller.command_manager.shell.close()
