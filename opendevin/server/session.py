@@ -91,10 +91,14 @@ class Session:
                     await self.start_task(data)
                 elif action == "files":
                     # TODO get files from using command manager
-                    observation = self.controller.command_manager.run_command("ls")
-                    observation_dict = observation.to_dict()
-                    observation_dict["observation"] = "files"
-                    await self.send(observation_dict)
+                    if self.controller:
+                        observation = self.controller.command_manager.run_command("ls")
+                        observation_dict = observation.to_dict()
+                        observation_dict["observation"] = "files"
+                        await self.send(observation_dict)
+                    else:
+                        # TODO Raise ControllerNotImplentedError
+                        pass
                 else:
                     if self.controller is None:
                         await self.send_error("No agent started. Please wait a second...")
