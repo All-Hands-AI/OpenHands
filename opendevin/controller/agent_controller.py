@@ -59,9 +59,9 @@ class AgentController:
 
     def __init__(
         self,
-        id: str,
         agent: Agent,
         workdir: str,
+        id: str = "",
         max_iterations: int = 100,
         container_image: str | None = None,
         callbacks: List[Callable] = [],
