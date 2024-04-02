@@ -39,26 +39,24 @@
 <details>
   <summary>🗂️ Table of Contents</summary>
   <ol>
-    <li>
-      <a href="#about-the-project">🐚 About OpenDevin</a>
+    <li><a href="#-mission">🎯 Mission</a></li>
+    <li><a href="#-what-is-devin">🤔 What is Devin?</a></li>
+    <li><a href="#-why-opendevin">🐚 Why OpenDevin?</a></li>
+    <li><a href="#-project-status">🚧 Project Status</a></li>
+      <a href="#-get-started">🚀 Get Started</a>
       <ul>
-        <li><a href="#project-status">🚧 Project Status</a></li>
+        <li><a href="#1-requirements">1. Requirements</a></li>
+        <li><a href="#2-build-and-setup">2. Build and Setup</a></li>
+        <li><a href="#3-run-the-application">3. Run the Application</a></li>
+        <li><a href="#4-individual-server-startup">4. Individual Server Startup</a></li>
+        <li><a href="#5-help">5. Help</a></li>
       </ul>
     </li>
-    <li>
-      <a href="#get-started">🚀 Get Started</a>
-      <ul>
-        <li><a href="#1-build-and-setup">1. Build and Setup</a></li>
-        <li><a href="#2-run-the-application">2. Run the Application</a></li>
-        <li><a href="#3-individual-server-startup">3. Individual Server Startup</a></li>
-        <li><a href="#4-help">4. Help</a></li>
-      </ul>
-    </li>
-    <li><a href="#research-strategy">⭐️ Research Strategy</a></li>
-    <li><a href="#how-to-contribute">🤝 How to Contribute</a></li>
-    <li><a href="#join-our-community">🤖 Join Our Community</a></li>
-    <li><a href="#built-with">🛠️ Built With</a></li>
-    <li><a href="#license">📜 License</a></li>
+    <li><a href="#%EF%B8%8F-research-strategy">⭐️ Research Strategy</a></li>
+    <li><a href="#-how-to-contribute">🤝 How to Contribute</a></li>
+    <li><a href="#-join-our-community">🤖 Join Our Community</a></li>
+    <li><a href="#%EF%B8%8F-built-with">🛠️ Built With</a></li>
+    <li><a href="#-license">📜 License</a></li>
   </ol>
 </details>
 
@@ -207,7 +205,7 @@ Join our Slack workspace by filling out the [form](https://forms.gle/758d5p6Ve8r
 
 OpenDevin is built using a combination of powerful frameworks and libraries, providing a robust foundation for its development. Here are the key technologies used in the project:
 
-![FastAPI](https://img.shields.io/badge/FastAPI-black?style=for-the-badge) ![uvicorn](https://img.shields.io/badge/uvicorn-black?style=for-the-badge) ![LiteLLM](https://img.shields.io/badge/LiteLLM-black?style=for-the-badge) ![Docker](https://img.shields.io/badge/Docker-black?style=for-the-badge) ![Ruff](https://img.shields.io/badge/Ruff-black?style=for-the-badge) ![MyPy](https://img.shields.io/badge/MyPy-black?style=for-the-badge) ![LangChain](https://img.shields.io/badge/LangChain-black?style=for-the-badge) ![LangChain](https://img.shields.io/badge/LlamaIndex-black?style=for-the-badge) ![React](https://img.shields.io/badge/React-black?style=for-the-badge)
+![FastAPI](https://img.shields.io/badge/FastAPI-black?style=for-the-badge) ![uvicorn](https://img.shields.io/badge/uvicorn-black?style=for-the-badge) ![LiteLLM](https://img.shields.io/badge/LiteLLM-black?style=for-the-badge) ![Docker](https://img.shields.io/badge/Docker-black?style=for-the-badge) ![Ruff](https://img.shields.io/badge/Ruff-black?style=for-the-badge) ![MyPy](https://img.shields.io/badge/MyPy-black?style=for-the-badge) ![LlamaIndex](https://img.shields.io/badge/LlamaIndex-black?style=for-the-badge) ![React](https://img.shields.io/badge/React-black?style=for-the-badge)
 
 Please note that the selection of these technologies is in progress, and additional technologies may be added or existing ones may be removed as the project evolves. We strive to adopt the most suitable and efficient tools to enhance the capabilities of OpenDevin.
 
