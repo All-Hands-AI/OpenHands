@@ -176,4 +176,5 @@ class Session:
         self.websocket = None
         if self.agent_task:
             self.agent_task.cancel()
-        self.controller.command_manager.shell.close()
+        if self.controller is not None:
+            self.controller.command_manager.shell.close()
