@@ -1,7 +1,7 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
-import "./Errors.css";
+import "./css/Errors.css";
 
 function Errors(): JSX.Element {
   const errors = useSelector((state: RootState) => state.errors.errors);

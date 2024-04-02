@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-type Message = {
+export type Message = {
   content: string;
   sender: "user" | "assistant";
 };

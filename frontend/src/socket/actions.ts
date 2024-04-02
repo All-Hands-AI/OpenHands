@@ -1,5 +1,5 @@
 import store from "../store";
-import { ActionMessage } from "./types/Message";
+import { ActionMessage } from "../types/Message";
 import { setScreenshotSrc, setUrl } from "../state/browserSlice";
 import { appendAssistantMessage } from "../state/chatSlice";
 import { setCode } from "../state/codeSlice";
@@ -20,7 +20,7 @@ const messageActions = {
     store.dispatch(setScreenshotSrc(screenshotSrc));
   },
   write: (message: ActionMessage) => {
-    store.dispatch(setCode(message.args.contents));
+    store.dispatch(setCode(message.args.content));
   },
   think: (message: ActionMessage) => {
     store.dispatch(appendAssistantMessage(message.args.thought));

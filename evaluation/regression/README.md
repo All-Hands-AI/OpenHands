@@ -29,7 +29,7 @@ cases/
 ├── hello-world/
 │   ├── task.txt
 │   ├── outputs/
-│   │   ├── langchains_agent/
+│   │   ├── monologue_agent/
 │   │   │   └── workspace/
 │   │   │       ├── hello_world.sh
 │   │   └── codeact_agent/
@@ -39,7 +39,7 @@ cases/
 ├── create_web_app/
 │   ├── task.txt
 │   ├── outputs/
-│   │   ├── langchains_agent/
+│   │   ├── monologue_agent/
 │   │   │   └── workspace/
 │   │   │       ├── app.py
 │   │   │       ├── requirements.txt

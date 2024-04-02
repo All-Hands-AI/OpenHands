@@ -70,10 +70,10 @@ class CodeActAgent(Agent):
 
     def step(self, state: State) -> Action:
         if len(self.messages) == 0:
-            assert state.task, "Expecting instruction to be set"
+            assert state.plan.main_goal, "Expecting instruction to be set"
             self.messages = [
                 {"role": "system", "content": SYSTEM_MESSAGE},
-                {"role": "user", "content": state.task},
+                {"role": "user", "content": state.plan.main_goal},
             ]
         updated_info = state.updated_info
         if updated_info:
@@ -95,27 +95,23 @@ class CodeActAgent(Agent):
         )
         action_str: str = parse_response(response)
         self.messages.append({"role": "assistant", "content": action_str})
-        print(colored("===ASSISTANT:===\n" + action_str, "yellow"))
 
         command = re.search(r"<execute>(.*)</execute>", action_str, re.DOTALL)
         if command is not None:
             # a command was found
             command_group = command.group(1)
             if command_group.strip() == "exit":
-                print(colored("Exit received. Exiting...", "red"))
                 return AgentFinishAction()
             return CmdRunAction(command = command_group)
             # # execute the code
             # # TODO: does exit_code get loaded into Message?
             # exit_code, observation = self.env.execute(command_group)
             # self._history.append(Message(Role.ASSISTANT, observation))
-            # print(colored("===ENV OBSERVATION:===\n" + observation, "blue"))
         else:
             # we could provide a error message for the model to continue similar to
             # https://github.com/xingyaoww/mint-bench/blob/main/mint/envs/general_env.py#L18-L23
             # observation = INVALID_INPUT_MESSAGE
             # self._history.append(Message(Role.ASSISTANT, observation))
-            # print(colored("===ENV OBSERVATION:===\n" + observation, "blue"))
             return AgentEchoAction(content=INVALID_INPUT_MESSAGE)  # warning message to itself
 
 

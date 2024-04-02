@@ -17,6 +17,7 @@ def resolve_path(base_path, file_path):
 @dataclass
 class FileReadAction(ExecutableAction):
     path: str
+    action: str = "read"
 
     def run(self, controller) -> FileReadObservation:
         path = resolve_path(controller.workdir, self.path)
@@ -29,19 +30,18 @@ class FileReadAction(ExecutableAction):
     def message(self) -> str:
         return f"Reading file: {self.path}"
 
-
 @dataclass
 class FileWriteAction(ExecutableAction):
     path: str
-    contents: str
+    content: str
+    action: str = "write"
 
     def run(self, controller) -> FileWriteObservation:
         path = resolve_path(controller.workdir, self.path)
         with open(path, 'w', encoding='utf-8') as file:
-            file.write(self.contents)
+            file.write(self.content)
         return FileWriteObservation(content="", path=self.path)
 
     @property
     def message(self) -> str:
         return f"Writing file: {self.path}"
-

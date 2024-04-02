@@ -1,7 +1,9 @@
-import React from "react";
+// import React from "react";
+import * as React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import { Provider } from "react-redux";
+import { NextUIProvider } from "@nextui-org/react";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import store from "./store";
@@ -12,7 +14,9 @@ const root = ReactDOM.createRoot(
 root.render(
   <React.StrictMode>
     <Provider store={store}>
-      <App />
+      <NextUIProvider>
+        <App />
+      </NextUIProvider>
     </Provider>
   </React.StrictMode>,
 );
