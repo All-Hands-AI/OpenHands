@@ -31,7 +31,8 @@ def print_with_color(text: Any, print_type: str = "INFO"):
         "ACTION": "green",
         "OBSERVATION": "yellow",
         "INFO": "cyan",
-        "ERROR": "red"
+        "ERROR": "red",
+        "PLAN": "light_magenta",
     }
     color = TYPE_TO_COLOR.get(print_type.upper(), TYPE_TO_COLOR["INFO"])
     print(
@@ -89,8 +90,7 @@ class AgentController:
     async def step(self, i: int):
         print("\n\n==============", flush=True)
         print("STEP", i, flush=True)
-        print_with_indent("\nPLAN:\n")
-        print_with_indent(self.state.plan.__str__())
+        print_with_color(self.state.plan.main_goal, "PLAN")
 
         log_obs = self.command_manager.get_background_obs()
         for obs in log_obs:
@@ -124,14 +124,14 @@ class AgentController:
                 self.state.plan.add_subtask(action.parent, action.goal, action.subtasks)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
-                print_with_indent("\nADD TASK ERROR:\n%s" % observation)
+                print_with_color(observation, "ERROR")
                 traceback.print_exc()
         elif isinstance(action, ModifyTaskAction):
             try:
                 self.state.plan.set_subtask_state(action.id, action.state)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
-                print_with_indent("\nMODIFY TASK ERROR:\n%s" % observation)
+                print_with_color(observation, "ERROR")
                 traceback.print_exc()
 
         if action.executable:
