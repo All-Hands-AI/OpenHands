@@ -16,9 +16,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from opendevin import config
-DEFAULT_WORKSPACE_DIR = config.get_or_default("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
-
 # This endpoint receives events from the client (i.e. the browser)
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
