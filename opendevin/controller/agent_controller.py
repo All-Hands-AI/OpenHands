@@ -1,5 +1,6 @@
 
 import asyncio
+import inspect
 import traceback
 from typing import List, Callable, Literal, Mapping, Any
 from termcolor import colored
@@ -138,7 +139,10 @@ class AgentController:
 
         if action.executable:
             try:
-                observation = action.run(self)
+                if inspect.isawaitable(action.run(self)):
+                    observation = await action.run(self)
+                else:
+                    observation = action.run(self)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
                 print_with_color(observation, "ERROR")
