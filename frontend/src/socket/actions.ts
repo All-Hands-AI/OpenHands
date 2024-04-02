@@ -5,14 +5,20 @@ import { appendAssistantMessage } from "../state/chatSlice";
 import { setCode } from "../state/codeSlice";
 import { setInitialized } from "../state/taskSlice";
 
+let isInitialized = false;
+
 const messageActions = {
   initialize: () => {
     store.dispatch(setInitialized(true));
+    if (isInitialized) {
+      return;
+    }
     store.dispatch(
       appendAssistantMessage(
         "Hello, I am OpenDevin, an AI Software Engineer. What would you like me to build you today?",
       ),
     );
+    isInitialized = true;
   },
   browse: (message: ActionMessage) => {
     const { url, screenshotSrc } = message.args;

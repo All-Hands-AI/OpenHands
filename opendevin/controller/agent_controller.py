@@ -1,4 +1,3 @@
-
 import asyncio
 from typing import List, Callable
 import traceback
@@ -11,32 +10,34 @@ from opendevin.action import (
     NullAction,
     AgentFinishAction,
     AddTaskAction,
-    ModifyTaskAction
+    ModifyTaskAction,
 )
-from opendevin.observation import (
-    Observation,
-    AgentErrorObservation,
-    NullObservation
-)
+from opendevin.observation import Observation, AgentErrorObservation, NullObservation
 
 from .command_manager import CommandManager
 
+
 def print_with_indent(text: str):
-    print("\t"+text.replace("\n","\n\t"), flush=True)
+    print("\t" + text.replace("\n", "\n\t"), flush=True)
+
 
 class AgentController:
+    id: str
+
     def __init__(
         self,
+        id: str,
         agent: Agent,
         workdir: str,
         max_iterations: int = 100,
         container_image: str | None = None,
         callbacks: List[Callable] = [],
     ):
+        self.id = id
         self.agent = agent
         self.max_iterations = max_iterations
         self.workdir = workdir
-        self.command_manager = CommandManager(workdir,container_image)
+        self.command_manager = CommandManager(self.id, workdir, container_image)
         self.callbacks = callbacks
 
     def update_state_for_step(self, i):
@@ -142,4 +143,6 @@ class AgentController:
             except Exception as e:
                 print("Callback error:" + str(idx), e, flush=True)
                 pass
-        await asyncio.sleep(0.001) # Give back control for a tick, so we can await in callbacks
+        await asyncio.sleep(
+            0.001
+        )  # Give back control for a tick, so we can await in callbacks

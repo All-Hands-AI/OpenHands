@@ -1,7 +1,7 @@
-import socket from "../socket/socket";
 import { appendAssistantMessage } from "../state/chatSlice";
 import { setInitialized } from "../state/taskSlice";
 import store from "../store";
+import Socket from "../socket/socket";
 
 export async function fetchModels() {
   const response = await fetch(`/api/litellm-models`);
@@ -30,7 +30,7 @@ export type Agent = (typeof INITIAL_AGENTS)[number];
 function changeSetting(setting: string, value: string): void {
   const event = { action: "initialize", args: { [setting]: value } };
   const eventString = JSON.stringify(event);
-  socket.send(eventString);
+  Socket.send(eventString);
   store.dispatch(setInitialized(false));
   store.dispatch(appendAssistantMessage(`Changed ${setting} to "${value}"`));
 }

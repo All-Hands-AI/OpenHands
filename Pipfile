@@ -24,6 +24,7 @@ google-generativeai = "*"
 toml = "*"
 json_repair = "*"
 numpy = "*"  # Added numpy as a dependency
+pyjwt = "*"
 
 [dev-packages]
 

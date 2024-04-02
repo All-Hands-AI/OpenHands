@@ -2,15 +2,12 @@ import React, { useEffect, useRef } from "react";
 import { IDisposable, Terminal as XtermTerminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import socket from "../socket/socket";
+import Socket from "../socket/socket";
 
 class JsonWebsocketAddon {
-  _socket: WebSocket;
-
   _disposables: IDisposable[];
 
-  constructor(_socket: WebSocket) {
-    this._socket = _socket;
+  constructor() {
     this._disposables = [];
   }
 
@@ -18,10 +15,10 @@ class JsonWebsocketAddon {
     this._disposables.push(
       terminal.onData((data) => {
         const payload = JSON.stringify({ action: "terminal", data });
-        this._socket.send(payload);
+        Socket.send(payload);
       }),
     );
-    this._socket.addEventListener("message", (event) => {
+    Socket.addEventListener("message", (event) => {
       const { action, args, observation, content } = JSON.parse(event.data);
       if (action === "run") {
         terminal.writeln(args.command);
@@ -37,7 +34,7 @@ class JsonWebsocketAddon {
 
   dispose() {
     this._disposables.forEach((d) => d.dispose());
-    this._socket.removeEventListener("message", () => {});
+    Socket.removeEventListener("message", () => {});
   }
 }
 
@@ -80,7 +77,7 @@ function Terminal(): JSX.Element {
       fitAddon.fit();
     }, 1);
 
-    const jsonWebsocketAddon = new JsonWebsocketAddon(socket);
+    const jsonWebsocketAddon = new JsonWebsocketAddon();
     terminal.loadAddon(jsonWebsocketAddon);
 
     return () => {
