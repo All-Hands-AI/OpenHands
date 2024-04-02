@@ -35,6 +35,9 @@ class Monologue:
             traceback.print_exc()
             raise RuntimeError(f"Error condensing thoughts: {e}")
 
-def strip_markdown(markdown_json):
-    # remove markdown code block
-    return markdown_json.replace('```json\n', '').replace('```', '').strip()
+            if event['action'] == "browse":
+                soup = BeautifulSoup(event['args']['output'], 'html.parser')
+                for non_text_tag in soup.find_all(["script", "style", "iframe", "noscript", "header", "footer", "nav"]):
+                    non_text_tag.decompose()
+                text = ' '.join(soup.stripped_strings)
+                event['args']['output'] = text
