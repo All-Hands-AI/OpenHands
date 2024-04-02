@@ -23,11 +23,6 @@ types-toml = "^0.10.8.20240310"
 numpy = "^1.26.4"
 json-repair = "^0.11.1"
 
-[tool.poetry.group.langchain.dependencies]
-langchain = "^0.1.13"
-langchain-core = "^0.1.36"
-langchain-community = "^0.0.29"
-
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "^0.10.25"
 llama-index-vector-stores-chroma = "^0.1.6"
