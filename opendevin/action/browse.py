@@ -1,16 +1,20 @@
 import base64
 from dataclasses import dataclass
 from opendevin.observation import BrowserOutputObservation
+from typing import TYPE_CHECKING
 from playwright.async_api import async_playwright
 
 from .base import ExecutableAction
+
+if TYPE_CHECKING:
+    from opendevin.controller import AgentController
 
 @dataclass
 class BrowseURLAction(ExecutableAction):
     url: str
     action: str = "browse"
 
-    async def run(self, *args, **kwargs) -> BrowserOutputObservation:
+    async def run(self, controller: "AgentController") -> BrowserOutputObservation:
         async with async_playwright() as p:
             browser = await p.chromium.launch()
             page = await browser.new_page()
