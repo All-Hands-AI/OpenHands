@@ -18,6 +18,7 @@ import {
   fetchAgents,
   INITIAL_MODELS,
   sendSettings,
+  getInitialModel,
 } from "../services/settingsService";
 import {
   setModel,
@@ -54,6 +55,12 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
   );
 
   useEffect(() => {
+    async function setInitialModel() {
+      const initialModel = await getInitialModel();
+      store.dispatch(setModel(initialModel));
+    }
+    setInitialModel();
+
     fetchModels().then((fetchedModels) => {
       setSupportedModels(fetchedModels);
       localStorage.setItem("supportedModels", JSON.stringify(fetchedModels));
@@ -100,7 +107,7 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
               }))}
               label="Model"
               placeholder="Select a model"
-              defaultSelectedKey={model}
+              selectedKey={model}
               // className="max-w-xs"
               onSelectionChange={(key) => {
                 store.dispatch(setModel(key as string));
