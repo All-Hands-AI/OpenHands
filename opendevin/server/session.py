@@ -105,7 +105,8 @@ class Session:
                         elif data["message"] == "\r":
                             if self.controller:
                                 output = self.controller.run_command(self.current_input)
-                                # TODO slice original command data from output
+                                # TODO slice original command data from output,
+                                # currently rewrites entire buffer!
                                 self.terminal_buffer += output.content
                                 await self.send({"term": "output", "content": self.terminal_buffer})
                             else:
