@@ -43,6 +43,7 @@ setup-config:
 	@read -p "Enter your LLM API key: " llm_api_key; \
 	 echo "LLM_API_KEY=\"$$llm_api_key\"" >> $(CONFIG_FILE).tmp
 	@read -p "Enter your LLM Model name [default: gpt-4-0125-preview]: " llm_model; \
+	 llm_model=$${llm_model:-gpt-4-0125-preview}; \
 	 echo "LLM_MODEL=\"$$llm_model\"" >> $(CONFIG_FILE).tmp
 	@read -p "Enter your workspace directory [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
