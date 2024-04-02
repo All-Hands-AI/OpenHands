@@ -35,6 +35,7 @@ class BrowseURLAction(ExecutableAction):
         except Exception as e:
             return BrowserOutputObservation(
                 content=str(e),
+                screenshot="", 
                 error=True,
                 url=self.url
             )
