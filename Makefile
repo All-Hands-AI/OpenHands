@@ -31,9 +31,10 @@ start-frontend:
 # Run the app
 run:
 	@echo "Running the app..."
-	@mkdir -p logs
-	@pipenv run nohup uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) --host "::" > logs/backend_$(shell date +'%Y%m%d_%H%M%S').log 2>&1 &
-	@cd frontend && npm run start -- --port $(FRONTEND_PORT)
+	@rm logs/pipe
+	@mkfifo logs/pipe
+	@cat logs/pipe | (make start-backend) &
+	@echo 'test' | tee logs/pipe | (make start-frontend)
 
 # Setup config.toml
 setup-config:
