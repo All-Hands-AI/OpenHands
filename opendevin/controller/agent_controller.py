@@ -19,11 +19,14 @@ from opendevin.observation import (
     AgentErrorObservation,
     NullObservation
 )
+from opendevin import config
 
 from .command_manager import CommandManager
 
 
 ColorType = Literal['red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'light_grey', 'dark_grey', 'light_red', 'light_green', 'light_yellow', 'light_blue', 'light_magenta', 'light_cyan', 'white']
+
+DISABLE_COLOR_PRINTING = config.get_or_default("DISABLE_COLOR", "false").lower() == "true"
 
 def print_with_color(text: Any, print_type: str = "INFO"):
     TYPE_TO_COLOR: Mapping[str, ColorType] = {
@@ -35,11 +38,14 @@ def print_with_color(text: Any, print_type: str = "INFO"):
         "PLAN": "light_magenta",
     }
     color = TYPE_TO_COLOR.get(print_type.upper(), TYPE_TO_COLOR["INFO"])
-    print(
-        colored(f"\n{print_type.upper()}:\n", color, attrs=["bold"])
-        + colored(str(text), color),
-        flush=True,
-    )
+    if DISABLE_COLOR_PRINTING:
+        print(f"\n{print_type.upper()}:\n{str(text)}", flush=True)
+    else:
+        print(
+            colored(f"\n{print_type.upper()}:\n", color, attrs=["bold"])
+            + colored(str(text), color),
+            flush=True,
+        )
 
 class AgentController:
     def __init__(
