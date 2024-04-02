@@ -37,7 +37,7 @@ def test_agent_think_action_serialization_deserialization():
 def test_agent_recall_action_serialization_deserialization():
     original_action_dict = {
         'action': 'recall',
-        'args': {'query': 'This is a test.'}
+        'args': {'query': 'Test query.'}
     }
     serialization_deserialization(original_action_dict, AgentRecallAction)
 
@@ -93,7 +93,7 @@ def test_file_write_action_serialization_deserialization():
 def test_add_task_action_serialization_deserialization():
     original_action_dict = {
         'action': 'add_task',
-        'args': {'parent': 'This is a new task.', 'goal': 'this is a test goal', 'subtasks': []}
+        'args': {'parent': 'Test parent', 'goal': 'Test goal', 'subtasks': []}
     }
     serialization_deserialization(original_action_dict, AddTaskAction)
 
@@ -101,6 +101,6 @@ def test_add_task_action_serialization_deserialization():
 def test_modify_task_action_serialization_deserialization():
     original_action_dict = {
         'action': 'modify_task',
-        'args': {'id': 1, 'state': 'This is a test state.'}
+        'args': {'id': 1, 'state': 'Test state.'}
     }
     serialization_deserialization(original_action_dict, ModifyTaskAction)
