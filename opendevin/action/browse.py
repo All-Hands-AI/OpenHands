@@ -1,7 +1,7 @@
 import base64
 from dataclasses import dataclass
 from opendevin.observation import BrowserOutputObservation
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Coroutine
 from playwright.async_api import async_playwright
 
 from .base import ExecutableAction
@@ -14,7 +14,7 @@ class BrowseURLAction(ExecutableAction):
     url: str
     action: str = "browse"
 
-    async def run(self, controller: "AgentController") -> BrowserOutputObservation:
+    async def run(self, controller: "AgentController") -> Coroutine[None, None, BrowserOutputObservation]:
         try:
             async with async_playwright() as p:
                 browser = await p.chromium.launch()
