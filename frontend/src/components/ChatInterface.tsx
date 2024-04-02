@@ -46,7 +46,7 @@ function TypingChat() {
               setTypingAcitve,
               setCurrentQueueMarkerState,
               currentQueueMarker,
-              playbackRate: 0.25,
+              playbackRate: 0.1,
               addAssistanctMessageToChat,
               assistantMessageObj: messages?.[queuedTyping[currentQueueMarker]],
             })}
