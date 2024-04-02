@@ -1,4 +1,6 @@
 import {
+  Message,
+  appeendToNewChatSequence,
   appendUserMessage,
   emptyOutQueuedTyping,
   setCurrentQueueMarker,
@@ -28,4 +30,7 @@ export function setCurrentTypingMsgState(msg: string): void {
 }
 export function setCurrentQueueMarkerState(index: number): void {
   store.dispatch(setCurrentQueueMarker(index));
+}
+export function addAssistanctMessageToChat(msg: Message): void {
+  store.dispatch(appeendToNewChatSequence(msg));
 }

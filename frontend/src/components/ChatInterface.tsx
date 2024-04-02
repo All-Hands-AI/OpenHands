@@ -10,11 +10,12 @@ import {
   setCurrentQueueMarkerState,
   setCurrentTypingMsgState,
   setTypingAcitve,
+  addAssistanctMessageToChat,
 } from "../services/chatService";
 import { RootState } from "../store";
 import { Message } from "../state/chatSlice";
 
-interface IChatBubblerops {
+interface IChatBubbleProps {
   msg: Message;
 }
 
@@ -27,9 +28,8 @@ interface IChatBubblerops {
  *
  */
 function TypingChat() {
-  const { currentTypingMessage, currentQueueMarker } = useSelector(
-    (state: RootState) => state.chat,
-  );
+  const { currentTypingMessage, currentQueueMarker, queuedTyping, messages } =
+    useSelector((state: RootState) => state.chat);
   const typingEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,6 +47,8 @@ function TypingChat() {
               setCurrentQueueMarkerState,
               currentQueueMarker,
               playbackRate: 0.25,
+              addAssistanctMessageToChat,
+              assistantMessageObj: messages?.[queuedTyping[currentQueueMarker]],
             })}
           </CardBody>
         </Card>
@@ -56,7 +58,7 @@ function TypingChat() {
   );
 }
 
-function ChatBubble({ msg }: IChatBubblerops): JSX.Element {
+function ChatBubble({ msg }: IChatBubbleProps): JSX.Element {
   return (
     <div className="flex mb-2.5 pr-5 pl-5">
       <div
@@ -83,6 +85,7 @@ function MessageList(): JSX.Element {
     typingActive,
     currentQueueMarker,
     currentTypingMessage,
+    newChatSequence,
   } = useSelector((state: RootState) => state.chat);
 
   useEffect(() => {
@@ -132,7 +135,7 @@ function MessageList(): JSX.Element {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      {messages.map((msg, index) =>
+      {newChatSequence.map((msg, index) =>
         // eslint-disable-next-line no-nested-ternary
         msg.sender === "user" || msg.sender === "assistant" ? (
           <ChatBubble key={index} msg={msg} />
