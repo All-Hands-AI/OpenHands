@@ -7,6 +7,7 @@ import { useTypingEffect } from "../hooks/useTypingEffect";
 import { sendChatMessage } from "../services/chatService";
 import { Message } from "../state/chatSlice";
 import { RootState } from "../store";
+import assistantAvatar from "../assets/assistant-avatar.png";
 
 interface ITypingChatProps {
   msg: Message;

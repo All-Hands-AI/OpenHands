@@ -5,7 +5,7 @@ import ChatInterface from "./components/ChatInterface";
 import Errors from "./components/Errors";
 import SettingModal from "./components/SettingModal";
 import Workspace from "./components/Workspace";
-import assistantAvatar from "../assets/assistant-avatar.png";
+import assistantAvatar from "./assets/assistant-avatar.png";
 import { RootState } from "./store";
 
 function InitializingStatus(): JSX.Element {
