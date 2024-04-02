@@ -79,7 +79,7 @@ class BackgroundCommand:
                 logs += chunk
             else:
                 break
-        return (logs + last_remains).decode("utf-8")
+        return (logs + last_remains).decode("utf-8", errors="replace")
 
 
 class DockerInteractive:
