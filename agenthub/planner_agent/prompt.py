@@ -1,7 +1,7 @@
 import json
 from typing import List, Tuple, Dict, Type
 
-from opendevin.controller.agent_controller import print_with_indent
+from opendevin.controller.agent_controller import print_with_color
 from opendevin.plan import Plan
 from opendevin.action import Action, action_from_dict
 from opendevin.observation import Observation
@@ -139,7 +139,10 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
             history_dicts.append(action.to_dict())
             latest_action = action
         if not isinstance(observation, NullObservation):
-            history_dicts.append(observation.to_dict())
+            observation_dict = observation.to_dict()
+            if "extras" in observation_dict and "screenshot" in observation_dict["extras"]:
+                del observation_dict["extras"]["screenshot"]
+            history_dicts.append(observation_dict)
     history_str = json.dumps(history_dicts, indent=2)
 
     hint = ""
@@ -178,7 +181,7 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
         elif latest_action_id == "finish":
             hint = ""
 
-    print_with_indent("HINT:\n" + hint)
+    print_with_color("HINT:\n" + hint, "INFO")
     return prompt % {
         'task': plan.main_goal,
         'plan': plan_str,

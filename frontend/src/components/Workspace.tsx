@@ -62,9 +62,15 @@ function Workspace() {
           ))}
         </Tabs>
       </div>
-      <div className="h-full w-full p-4 bg-bg-workspace">
-        {tabData[activeTab].component}
-      </div>
+      {Object.keys(tabData).map((tab) => (
+        <div
+          className="h-full w-full p-4 bg-bg-workspace"
+          key={tab}
+          hidden={activeTab !== tab}
+        >
+          {tabData[tab as TabType].component}
+        </div>
+      ))}
     </>
   );
 }

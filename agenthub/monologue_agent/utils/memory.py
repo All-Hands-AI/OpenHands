@@ -7,7 +7,7 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from opendevin import config
 from . import json
 
-embedding_strategy = config.get_or_default("LLM_EMBEDDING_MODEL", "local")
+embedding_strategy = config.get("LLM_EMBEDDING_MODEL")
 
 # TODO: More embeddings: https://docs.llamaindex.ai/en/stable/examples/embeddings/OpenAI/
 # There's probably a more programmatic way to do this.
@@ -15,7 +15,7 @@ if embedding_strategy == "llama2":
     from llama_index.embeddings.ollama import OllamaEmbedding
     embed_model = OllamaEmbedding(
         model_name="llama2",
-        base_url=config.get_or_default("LLM_BASE_URL", "http://localhost:8000"),
+        base_url=config.get_or_error("LLM_BASE_URL"),
         ollama_additional_kwargs={"mirostat": 0},
     )
 elif embedding_strategy == "openai":

@@ -3,6 +3,7 @@ import { ActionMessage, ObservationMessage } from "../types/Message";
 import { appendError } from "../state/errorsSlice";
 import { handleActionMessage } from "./actions";
 import { handleObservationMessage } from "./observations";
+import { sendSettings } from "../services/settingsService";
 
 type SocketMessage = ActionMessage | ObservationMessage;
 
@@ -10,6 +11,10 @@ const WS_URL = `ws://${window.location.host}/ws`;
 
 const socket = new WebSocket(WS_URL);
 
+socket.addEventListener("open", () => {
+  const { settings } = store.getState();
+  sendSettings(socket, settings, false);
+});
 socket.addEventListener("message", (event) => {
   const socketMessage = JSON.parse(event.data) as SocketMessage;
   if ("action" in socketMessage) {
