@@ -6,7 +6,7 @@ ADD Pipfile.lock Pipfile /usr/src/app/
 
 WORKDIR /usr/src/app
 
-RUN /usr/local/bin/pipenv sync -v
+RUN /usr/local/bin/pipenv sync
 
 # -----------------------------------------------------------------------------
 FROM docker:26.0.0-dind AS runtime
