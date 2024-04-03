@@ -15,7 +15,7 @@ function CodeEditor(): JSX.Element {
     editor: editor.IStandaloneCodeEditor,
     monaco: Monaco,
   ) => {
-    // 定义一个自定义主题
+    // 定义一个自定义主题 - English: Define a custom theme
     monaco.editor.defineTheme("my-theme", {
       base: "vs-dark",
       inherit: true,
@@ -25,7 +25,7 @@ function CodeEditor(): JSX.Element {
       },
     });
 
-    // 应用自定义主题
+    // 应用自定义主题 - English: apply custom theme
     monaco.editor.setTheme("my-theme");
   };
 
