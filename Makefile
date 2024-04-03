@@ -9,21 +9,35 @@ DEFAULT_WORKSPACE_DIR = "./workspace"
 DEFAULT_MODEL = "gpt-4-0125-preview"
 CONFIG_FILE = config.toml
 
+UNAME_SYS = $(shell uname -s)
+# fallback to python3 if python is not available (e.g. on macOS)
+PYTHON_BIN = $(shell which python3 || which python)
+
+ifeq ($(shell which pipenv), )
+	ifeq ($(UNAME_SYS),Darwin)
+		INSTALL_PIPENV_CMD = brew install pipenv
+	else
+		INSTALL_PIPENV_CMD = $(PYTHON_BIN) -m pip install pipenv
+	endif
+else
+	INSTALL_PIPENV_CMD = echo "Pipenv is already installed."
+endif
+
 # Build
 build:
 	@echo "Building project..."
 	@echo "Pulling Docker image..."
 	@docker pull $(DOCKER_IMAGE)
 	@echo "Installing Python dependencies..."
-	@python -m pip install pipenv
-	@python -m pipenv install -v
+	@$(INSTALL_PIPENV_CMD)
+	@$(PYTHON_BIN) -m pipenv install
 	@echo "Setting up frontend environment..."
 	@cd frontend && npm install
 
 # Start backend
 start-backend:
 	@echo "Starting backend..."
-	@python -m pipenv run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT)
+	@$(PYTHON_BIN) -m pipenv run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT)
 
 # Start frontend
 start-frontend:
