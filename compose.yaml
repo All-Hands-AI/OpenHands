@@ -2,7 +2,6 @@ services:
   frontend:
     build:
       context: frontend
-      dockerfile: Dockerfile
     image: localhost/devin-frontend-image:latest
     networks:
       - opendevin
@@ -18,7 +17,6 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile
     image: localhost/devin-backend-image:latest
     networks:
       - opendevin
@@ -26,9 +24,10 @@ services:
       - "127.0.0.1:3000:3000"
     container_name: devin-backend
     volumes:
+      #TODO: is config.toml neeed in the frontend or backend or both? 
       - ./config.toml:/usr/src/app/config.toml
       - /var/run/docker.sock:/var/run/docker.sock
-      # - workspace:/workspace
+      #TODO: fix issue where workspace doesn't have permissions to write files
       # - workspace:/usr/src/app/workspace
     privileged: true
 
