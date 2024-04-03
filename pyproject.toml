@@ -22,6 +22,7 @@ uvicorn = "^0.29.0"
 types-toml = "^0.10.8.20240310"
 numpy = "^1.26.4"
 json-repair = "^0.11.1"
+playwright = "^1.42.0"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "^0.10.25"
