@@ -30,13 +30,9 @@ interface IChatBubbleProps {
 function TypingChat() {
   const { currentTypingMessage, currentQueueMarker, queuedTyping, messages } =
     useSelector((state: RootState) => state.chat);
-  const typingEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    typingEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [currentTypingMessage]);
 
   return (
+    // eslint-disable-next-line react/jsx-no-useless-fragment
     <>
       {currentQueueMarker !== null && (
         <Card className="bg-success-100">
@@ -53,7 +49,6 @@ function TypingChat() {
           </CardBody>
         </Card>
       )}
-      <div ref={typingEndRef} />
     </>
   );
 }
@@ -88,9 +83,24 @@ function MessageList(): JSX.Element {
     newChatSequence,
   } = useSelector((state: RootState) => state.chat);
 
+  const messageScroll = () => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  };
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    messageScroll();
+    if (!typingActive) return;
+
+    const interval = setInterval(() => {
+      messageScroll();
+    }, 1000);
+
+    // eslint-disable-next-line consistent-return
+    return () => clearInterval(interval);
+  }, [newChatSequence, typingActive]);
 
   useEffect(() => {
     const newMessage = messages?.[queuedTyping[currentQueueMarker]]?.content;
@@ -143,7 +153,6 @@ function MessageList(): JSX.Element {
           <div key={index} />
         ),
       )}
-      <div ref={messagesEndRef} />
 
       {typingActive && (
         <div className="flex mb-2.5 pr-5 pl-5 bg-s">
@@ -157,7 +166,7 @@ function MessageList(): JSX.Element {
           </div>
         </div>
       )}
-      {/* <div ref={messagesEndRef} /> */}
+      <div ref={messagesEndRef} />
     </div>
   );
 }
