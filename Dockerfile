@@ -6,17 +6,16 @@ ADD Pipfile.lock Pipfile /usr/src/app/
 
 WORKDIR /usr/src/app
 
-# This is an unfortunate and hacky workaround to mismatched lock files
-# https://github.com/pypa/pipenv/issues/1356#issuecomment-1813323742
-# RUN /usr/local/bin/pipenv lock --clear 
+RUN /usr/local/bin/pipenv --version
+# Upgrade to pipenv-2023.12.1 to fix issue where unable to install dependencies
+# https://github.com/pypa/pipenv/issues/1356
+RUN pip install pipenv==2023.12.1
+RUN /usr/local/bin/pipenv --version
 
-# RUN /usr/local/bin/pipenv sync
-RUN /usr/local/bin/pipenv install --ignore-pipfile
+RUN /usr/local/bin/pipenv sync
 
 # -----------------------------------------------------------------------------
 FROM docker:26.0.0-dind AS runtime
-
-RUN mkdir -v /usr/src/app/.venv
 
 COPY --from=builder /usr/src/app/ /usr/src/app
 
@@ -28,6 +27,4 @@ EXPOSE 3000
 
 USER devin
 
-# Command to run the Uvicorn app
-# CMD ["/venv/bin/uvicorn", "app:app", "--host", "0.0.0.0", "--port", "3000"]
 CMD ["/usr/src/app/.venv/bin/python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "3000"]
