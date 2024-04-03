@@ -85,6 +85,8 @@ class MonologueAgent(Agent):
         self.memory = LongTermMemory()
 
     def _add_event(self, event: dict):
+        if "extras" in event and "screenshot" in event["extras"]:
+            del event["extras"]["screenshot"]
         if 'args' in event and 'output' in event['args'] and len(event['args']['output']) > MAX_OUTPUT_LENGTH:
             event['args']['output'] = event['args']['output'][:MAX_OUTPUT_LENGTH] + "..."
 
@@ -114,7 +116,7 @@ class MonologueAgent(Agent):
                 elif output_type == "recall":
                     observation = AgentRecallObservation(content=thought, memories=[])
                 elif output_type == "browse":
-                    observation = BrowserOutputObservation(content=thought, url="")
+                    observation = BrowserOutputObservation(content=thought, url="", screenshot="")
                 self._add_event(observation.to_dict())
                 output_type = ""
             else:

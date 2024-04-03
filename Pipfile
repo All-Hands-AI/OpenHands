@@ -23,7 +23,8 @@ llama-index-embeddings-ollama = "*"
 google-generativeai = "*"
 toml = "*"
 json_repair = "*"
-numpy = "*"  # Added numpy as a dependency
+numpy = "*"
+playwright = "*"
 
 [dev-packages]
 
