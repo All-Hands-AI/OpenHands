@@ -247,6 +247,7 @@ class DockerInteractive:
                 self.container_image,
                 command="tail -f /dev/null",
                 network_mode="host",
+                userns_mode="host",
                 working_dir="/workspace",
                 name=self.container_name,
                 detach=True,
