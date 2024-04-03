@@ -2,7 +2,6 @@
 __pycache__/
 *.py[cod]
 *$py.class
-*.lock
 
 # C extensions
 *.so
