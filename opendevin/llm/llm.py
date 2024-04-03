@@ -2,6 +2,7 @@ import os
 import uuid
 
 from litellm.router import Router
+import litellm
 from functools import partial
 
 from opendevin import config
@@ -33,11 +34,15 @@ class LLM:
 
         # We use litellm's Router in order to support retries (especially rate limit backoff retries). 
         # Typically you would use a whole model list, but it's unnecessary with our implementation's structure
+        try:
+            model_provider = next(provider for provider, models in litellm.models_by_provider.items() if self.model_name in models)
+        except StopIteration:
+            model_provider = ""
         self._router = Router(
             model_list=[{
                 "model_name": self.model_name,
                 "litellm_params": {
-                    "model": self.model_name,
+                    "model": "{}/{}".format(model_provider, self.model_name),
                     "api_key": self.api_key,
                     "api_base": self.base_url
                 }
