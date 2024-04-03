@@ -102,7 +102,7 @@ function ChatInterface({ setSettingOpen }: Props): JSX.Element {
 
   return (
     <div className="flex flex-col h-full p-0 bg-bg-light">
-      <div className="w-full flex justify-between p-5">
+      <div className="w-full flex justify-between p-5 chat-theme">
         <div />
         <div
           className="cursor-pointer hover:opacity-80"

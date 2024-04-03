@@ -7,17 +7,22 @@ import { NextUIProvider } from "@nextui-org/react";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import store from "./store";
+import { ThemeProvider } from "./Theme.jsx";
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement,
 );
 root.render(
   <React.StrictMode>
+<ThemeProvider>
     <Provider store={store}>
       <NextUIProvider>
+      
         <App />
+       
       </NextUIProvider>
     </Provider>
+    </ThemeProvider>
   </React.StrictMode>,
 );
 

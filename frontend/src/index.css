@@ -1,11 +1,76 @@
 :root {
-  --bg-dark: #1e1e1e;
-  --bg-light: #292929;
-  --bg-input: #393939;
-  --bg-workspace: #171717;
-  background-color: var(--bg-dark) !important;
+  --primary-blue: rgb(0, 0, 255);
+  --secondary-blue: rgb(96, 96, 182);
+
+  --text-primary-light: black;
+  --text-primary-dark: white;
+
+  --text-secondary-light: rgb(70, 70, 70);
+  --text-secondary-dark: rgb(160, 160, 160);
+
+  --bg-primary-light: white;
+  --bg-primary-dark: black;
+
+  --bg-secondary-light: rgb(212, 212, 212);
+  --bg-secondary-dark: rgb(34, 34, 34);
+
+  --bg-navbar-light: rgb(104, 104, 255);
+  --bg-navbar-dark: rgb(29, 29, 58);
+}
+.test{
+  position: absolute;
+    left: calc(50% - 100px);
+    top: 36px;
+}
+.light{
+  --text-primary: var(--text-primary-light);
+  --text-secondary: var(--text-secondary-light);
+  --bg-primary: var(--bg-primary-light);
+  --bg-secondary: var(--bg-secondary-light);
+  --bg-navbar: var(--bg-navbar-light);
+  background-color: #fff;
 }
 
+.monaco-editor .margin {
+  background-color: unset !important;
+}
+
+.light .chat-theme {
+  background: #ccc;
+  color: #333;
+}
+
+.dark .monaco-editor, .dark .monaco-editor-background {
+  background-color: #000;
+}
+
+.light {
+  color: #333;
+}
+
+.light span, .light div {
+  color: #333;
+}
+
+.light .monaco-editor, .light .monaco-editor-background {
+  background-color: #fff;
+}
+
+.light .h-full.w-full.bg-bg-workspace span {
+  color: #333;
+}
+
+.light .xterm .xterm-viewport {
+  background-color: #fff !important;
+}
+
+.dark {
+  --text-primary: var(--text-primary-dark);
+  --text-secondary: var(--text-secondary-dark);
+  --bg-primary: var(--bg-primary-dark);
+  --bg-secondary: var(--bg-secondary-dark);
+  --bg-navbar: var(--bg-navbar-dark);
+}
 
 body {
   margin: 0;
