@@ -6,12 +6,12 @@ from functools import partial
 
 from opendevin import config
 
-DEFAULT_MODEL_NAME = config.get_or_default("LLM_MODEL", "gpt-4-0125-preview")
-DEFAULT_API_KEY = config.get_or_none("LLM_API_KEY")
-DEFAULT_BASE_URL = config.get_or_none("LLM_BASE_URL")
-DEFAULT_LLM_NUM_RETRIES = config.get_or_default("LLM_NUM_RETRIES", 6)
-DEFAULT_LLM_COOLDOWN_TIME = config.get_or_default("LLM_COOLDOWN_TIME", 1)
-PROMPT_DEBUG_DIR = config.get_or_default("PROMPT_DEBUG_DIR", "")
+DEFAULT_API_KEY = config.get("LLM_API_KEY")
+DEFAULT_BASE_URL = config.get("LLM_BASE_URL")
+DEFAULT_MODEL_NAME = config.get("LLM_MODEL")
+DEFAULT_LLM_NUM_RETRIES = config.get("LLM_NUM_RETRIES")
+DEFAULT_LLM_COOLDOWN_TIME = config.get("LLM_COOLDOWN_TIME")
+PROMPT_DEBUG_DIR = config.get("PROMPT_DEBUG_DIR")
 
 class LLM:
     def __init__(self,
