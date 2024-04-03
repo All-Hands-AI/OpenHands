@@ -130,6 +130,14 @@ Getting started with the OpenDevin project is incredibly easy. Follow these simp
     make setup-config
     ```
 
+You'll need to choose your LLM model as part of this step. By default, we use OpenAI's gpt-4, but you can
+use Anthropic's Claude, ollama, or any other LLM provider supported by LiteLLM. See the full
+list of supported models at [docs.litellm.ai/docs/providers](https://docs.litellm.ai/docs/providers).
+
+(Note: alternative models can be hard to work with. We will make LLM-specific available documentation available soon.
+If you've gotten OpenDevin working with a model other than OpenAI's GPT models,
+please [add your setup instructions here](https://github.com/OpenDevin/OpenDevin/issues/417).)
+
 ### 3. Run the Application
 
 - **Run the Application:** Once the setup is complete, launching OpenDevin is as simple as running a single command. This command starts both the backend and frontend servers seamlessly, allowing you to interact with OpenDevin without any hassle.

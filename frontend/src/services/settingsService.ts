@@ -2,6 +2,15 @@ import { appendAssistantMessage } from "../state/chatSlice";
 import { setInitialized } from "../state/taskSlice";
 import store from "../store";
 
+export async function getInitialModel() {
+  if (localStorage.getItem("model")) {
+    return localStorage.getItem("model");
+  }
+
+  const res = await fetch("/api/default-model");
+  return res.json();
+}
+
 export async function fetchModels() {
   const response = await fetch(`/api/litellm-models`);
   return response.json();
