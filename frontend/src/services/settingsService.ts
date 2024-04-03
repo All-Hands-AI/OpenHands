@@ -2,9 +2,21 @@ import { appendAssistantMessage } from "../state/chatSlice";
 import { setInitialized } from "../state/taskSlice";
 import store from "../store";
 
+// export async function fetchModels() {
+//   const response = await fetch(`/api/litellm-models`);
+//   return response.json();
+// }
+
 export async function fetchModels() {
   const response = await fetch(`/api/litellm-models`);
-  return response.json();
+  const models = await response.json();
+  // Add gemini/gemini-pro model to the fetched models
+  models.push("gemini/gemini-pro");
+  models.push("gemini-1.5-pro");
+  models.push("gemini-pro-vision");
+  models.push("gemini-1.5-pro-vision");
+
+  return models;
 }
 
 export async function fetchAgents() {
@@ -19,6 +31,8 @@ export const INITIAL_MODELS = [
   "claude-3-opus-20240229",
   "claude-3-sonnet-20240229",
 ];
+
+console.log("INITIAL_MODELS:", INITIAL_MODELS);
 
 export type Model = (typeof INITIAL_MODELS)[number];
 
