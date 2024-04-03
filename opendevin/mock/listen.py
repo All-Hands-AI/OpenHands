@@ -42,5 +42,9 @@ def read_llm_agents():
         "PlannerAgent",
     ]
 
+@app.get("/default-model")
+def read_default_model():
+    return "gpt-4"
+
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=3000)
