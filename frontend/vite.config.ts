@@ -16,7 +16,9 @@ export default defineConfig({
   base: "",
   plugins: [react(), viteTsconfigPaths()],
   server: {
-    port: 3001,
+    port: process.env.FRONTEND_PORT
+      ? Number.parseInt(process.env.FRONTEND_PORT, 10)
+      : 3001,
     proxy: {
       "/api": {
         target: `http://${BACKEND_HOST}/`,
