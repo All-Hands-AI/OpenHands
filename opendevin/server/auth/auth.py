@@ -19,7 +19,7 @@ def get_sid_from_token(token: str) -> str:
         return ""
 
 
-def sign_token(payload: Dict[str, any]) -> str:
+def sign_token(payload: Dict[str, object]) -> str:
     """Signs a JWT token."""
     # payload = {
     #     "sid": sid,

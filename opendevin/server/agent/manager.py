@@ -66,7 +66,7 @@ class AgentManager:
         """
         await session_manager.send(self.sid, data)
 
-    async def dispatch(self, action: str, data: dict):
+    async def dispatch(self, action: str | None, data: dict):
         """Dispatches actions to the agent from the client."""
         if action is None:
             await self.send_error("Invalid action")

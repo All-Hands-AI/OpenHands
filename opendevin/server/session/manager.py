@@ -44,7 +44,7 @@ class SessionManager:
         self.close()
         exit(0)
 
-    async def send(self, sid: str, data: Dict[str, any]) -> bool:
+    async def send(self, sid: str, data: Dict[str, object]) -> bool:
         """Sends data to the client."""
         message_stack.add_message(sid, "assistant", data)
         if sid not in self._sessions:

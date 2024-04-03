@@ -15,9 +15,9 @@ MSG_CACHE_FILE = os.path.join(CACHE_DIR, "messages.json")
 class Message:
     id: str = str(uuid.uuid4())
     role: str  # "user"| "assistant"
-    payload: Dict[str, any]
+    payload: Dict[str, object]
 
-    def __init__(self, role: str, payload: Dict[str, any]):
+    def __init__(self, role: str, payload: Dict[str, object]):
         self.role = role
         self.payload = payload
 
@@ -48,7 +48,7 @@ class MessageStack:
         self.close()
         exit(0)
 
-    def add_message(self, sid: str, role: str, message: Dict[str, any]):
+    def add_message(self, sid: str, role: str, message: Dict[str, object]):
         if sid not in self._messages:
             self._messages[sid] = []
         self._messages[sid].append(Message(role, message))
@@ -58,7 +58,7 @@ class MessageStack:
             return
         del self._messages[sid]
 
-    def get_messages(self, sid: str) -> List[Dict[str, any]]:
+    def get_messages(self, sid: str) -> List[Dict[str, object]]:
         if sid not in self._messages:
             return []
         return [msg.to_dict() for msg in self._messages[sid]]

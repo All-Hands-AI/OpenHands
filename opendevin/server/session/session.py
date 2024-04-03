@@ -8,17 +8,19 @@ DEL_DELT_SEC = 60 * 60 * 5
 
 class Session:
     sid: str
-    websocket: WebSocket
+    websocket: WebSocket | None
     last_active_ts: int = 0
     is_alive: bool = True
 
-    def __init__(self, sid: str, ws: WebSocket):
+    def __init__(self, sid: str, ws: WebSocket | None):
         self.sid = sid
         self.websocket = ws
         self.last_active_ts = int(time.time())
 
     async def loop_recv(self, dispatch: Callable):
         try:
+            if self.websocket is None:
+                return
             while True:
                 try:
                     data = await self.websocket.receive_json()
@@ -38,9 +40,9 @@ class Session:
                 self.is_alive = False
             print(f"Error in loop_recv: {e}")
 
-    async def send(self, data: Dict[str, any]) -> bool:
+    async def send(self, data: Dict[str, object]) -> bool:
         try:
-            if not self.is_alive:
+            if self.websocket is None or not self.is_alive:
                 return False
             await self.websocket.send_json(data)
             self.last_active_ts = int(time.time())
