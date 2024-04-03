@@ -11,7 +11,9 @@ CONFIG_FILE = config.toml
 
 UNAME_SYS = $(shell uname -s)
 # fallback to python3 if python is not available (e.g. on macOS)
-PYTHON_BIN = $(shell which python3 || which python)
+PYTHON_BIN = $(shell which python || which python3)
+ifeq ($(PYTHON_BIN),)
+$(error "Python is not installed. Please install Python 3.")
 
 ifeq ($(shell which pipenv), )
 	ifeq ($(UNAME_SYS),Darwin)
