@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import {
   Modal,
   ModalContent,
@@ -13,13 +14,18 @@ import {
 import { KeyboardEvent } from "@react-types/shared/src/events";
 import {
   INITIAL_AGENTS,
-  changeAgent,
-  changeDirectory as sendChangeDirectorySocketMessage,
-  changeModel,
   fetchModels,
   fetchAgents,
   INITIAL_MODELS,
+  sendSettings,
 } from "../services/settingsService";
+import {
+  setModel,
+  setAgent,
+  setWorkspaceDirectory,
+} from "../state/settingsSlice";
+import store, { RootState } from "../store";
+import socket from "../socket/socket";
 
 interface Props {
   isOpen: boolean;
@@ -34,17 +40,14 @@ const cachedAgents = JSON.parse(
 );
 
 function SettingModal({ isOpen, onClose }: Props): JSX.Element {
-  const [workspaceDirectory, setWorkspaceDirectory] = useState(
-    localStorage.getItem("workspaceDirectory") || "./workspace",
+  const model = useSelector((state: RootState) => state.settings.model);
+  const agent = useSelector((state: RootState) => state.settings.agent);
+  const workspaceDirectory = useSelector(
+    (state: RootState) => state.settings.workspaceDirectory,
   );
-  const [model, setModel] = useState(
-    localStorage.getItem("model") || "gpt-3.5-turbo-1106",
-  );
+
   const [supportedModels, setSupportedModels] = useState(
     cachedModels.length > 0 ? cachedModels : INITIAL_MODELS,
-  );
-  const [agent, setAgent] = useState(
-    localStorage.getItem("agent") || "MonologueAgent",
   );
   const [supportedAgents, setSupportedAgents] = useState(
     cachedAgents.length > 0 ? cachedAgents : INITIAL_AGENTS,
@@ -62,9 +65,7 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
   }, []);
 
   const handleSaveCfg = () => {
-    sendChangeDirectorySocketMessage(workspaceDirectory);
-    changeModel(model);
-    changeAgent(agent);
+    sendSettings(socket, { model, agent, workspaceDirectory });
     localStorage.setItem("model", model);
     localStorage.setItem("workspaceDirectory", workspaceDirectory);
     localStorage.setItem("agent", agent);
@@ -87,7 +88,9 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
               label="OpenDevin Workspace Directory"
               defaultValue={workspaceDirectory}
               placeholder="Default: ./workspace"
-              onChange={(e) => setWorkspaceDirectory(e.target.value)}
+              onChange={(e) =>
+                store.dispatch(setWorkspaceDirectory(e.target.value))
+              }
             />
 
             <Autocomplete
@@ -100,7 +103,7 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
               defaultSelectedKey={model}
               // className="max-w-xs"
               onSelectionChange={(key) => {
-                setModel(key as string);
+                store.dispatch(setModel(key as string));
               }}
               onKeyDown={(e: KeyboardEvent) => e.continuePropagation()}
               defaultFilter={customFilter}
@@ -122,7 +125,7 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
               defaultSelectedKey={agent}
               // className="max-w-xs"
               onSelectionChange={(key) => {
-                setAgent(key as string);
+                store.dispatch(setAgent(key as string));
               }}
               onKeyDown={(e: KeyboardEvent) => e.continuePropagation()}
               defaultFilter={customFilter}

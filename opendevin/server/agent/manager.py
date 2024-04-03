@@ -1,6 +1,4 @@
 import asyncio
-import atexit
-import signal
 import os
 from typing import Optional
 
@@ -16,15 +14,11 @@ from opendevin.llm.llm import LLM
 from opendevin.observation import Observation, UserMessageObservation
 from opendevin.server.session import session_manager
 
-DEFAULT_API_KEY = config.get_or_none("LLM_API_KEY")
-DEFAULT_BASE_URL = config.get_or_none("LLM_BASE_URL")
-DEFAULT_WORKSPACE_DIR = config.get_or_default(
-    "WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace")
-)
-LLM_MODEL = config.get_or_default("LLM_MODEL", "gpt-4-0125-preview")
-CONTAINER_IMAGE = config.get_or_default(
-    "SANDBOX_CONTAINER_IMAGE", "ghcr.io/opendevin/sandbox"
-)
+DEFAULT_API_KEY = config.get("LLM_API_KEY")
+DEFAULT_BASE_URL = config.get("LLM_BASE_URL")
+DEFAULT_WORKSPACE_DIR = config.get("WORKSPACE_DIR")
+LLM_MODEL = config.get("LLM_MODEL")
+CONTAINER_IMAGE = config.get("SANDBOX_CONTAINER_IMAGE")
 
 
 class AgentManager:
@@ -44,9 +38,9 @@ class AgentManager:
         self.controller: Optional[AgentController] = None
         self.agent: Optional[Agent] = None
         self.agent_task = None
-        asyncio.create_task(
-            self.create_controller(), name="create controller"
-        )  # FIXME: starting the docker container synchronously causes a websocket error...
+        # asyncio.create_task(
+        #     self.create_controller(), name="create controller"
+        # )  # FIXME: starting the docker container synchronously causes a websocket error...
 
     async def send_error(self, message):
         """Sends an error message to the client.
@@ -116,6 +110,9 @@ class AgentManager:
         container_image = CONTAINER_IMAGE
         if start_event and "container_image" in start_event["args"]:
             container_image = start_event["args"]["container_image"]
+        max_iterations = 100
+        if start_event and "max_iterations" in start_event["args"]:
+            max_iterations = start_event["args"]["max_iterations"]
         if not os.path.exists(directory):
             print(f"Workspace directory {directory} does not exist. Creating it...")
             os.makedirs(directory)
@@ -125,9 +122,9 @@ class AgentManager:
         self.agent = AgentCls(llm)
         try:
             self.controller = AgentController(
-                id=self.sid,
-                agent=self.agent,
+                self.agent,
                 workdir=directory,
+                max_iterations=max_iterations,
                 container_image=container_image,
                 callbacks=[self.on_agent_event],
             )
@@ -172,5 +169,11 @@ class AgentManager:
         if isinstance(event, NullObservation):
             return
         event_dict = event.to_dict()
-        task = asyncio.create_task(self.send(event_dict), name="send event in callback")
-        self._tasks.append(task)
+        asyncio.create_task(self.send(event_dict), name="send event in callback")
+
+    def disconnect(self):
+        self.websocket = None
+        if self.agent_task:
+            self.agent_task.cancel()
+        if self.controller is not None:
+            self.controller.command_manager.shell.close()

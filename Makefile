@@ -5,6 +5,7 @@ DOCKER_IMAGE = ghcr.io/opendevin/sandbox
 BACKEND_PORT = 3000
 FRONTEND_PORT = 3001
 DEFAULT_WORKSPACE_DIR = "./workspace"
+DEFAULT_MODEL = "gpt-4-0125-preview"
 CONFIG_FILE = config.toml
 
 # Build
@@ -13,15 +14,15 @@ build:
 	@echo "Pulling Docker image..."
 	@docker pull $(DOCKER_IMAGE)
 	@echo "Installing Python dependencies..."
-	@pip install pipenv
-	@pipenv install -v
+	@python -m pip install pipenv
+	@python -m pipenv install -v
 	@echo "Setting up frontend environment..."
 	@cd frontend && npm install
 
 # Start backend
 start-backend:
 	@echo "Starting backend..."
-	@pipenv run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT)
+	@python -m pipenv run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT)
 
 # Start frontend
 start-frontend:
@@ -32,15 +33,18 @@ start-frontend:
 run:
 	@echo "Running the app..."
 	@mkdir -p logs
-	@pipenv run nohup uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) --host "::" > logs/backend_$(shell date +'%Y%m%d_%H%M%S').log 2>&1 &
-	@cd frontend && npm run start -- --port $(FRONTEND_PORT)
+	@rm -f logs/pipe
+	@mkfifo logs/pipe
+	@cat logs/pipe | (make start-backend) &
+	@echo 'test' | tee logs/pipe | (make start-frontend)
 
 # Setup config.toml
 setup-config:
 	@echo "Setting up config.toml..."
 	@read -p "Enter your LLM API key: " llm_api_key; \
 	 echo "LLM_API_KEY=\"$$llm_api_key\"" >> $(CONFIG_FILE).tmp
-	@read -p "Enter your LLM Model name [default: gpt-4-0125-preview]: " llm_model; \
+	@read -p "Enter your LLM Model name [default: $(DEFAULT_MODEL)]: " llm_model; \
+	 llm_model=$${llm_model:-$(DEFAULT_MODEL)}; \
 	 echo "LLM_MODEL=\"$$llm_model\"" >> $(CONFIG_FILE).tmp
 	@read -p "Enter your workspace directory [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \

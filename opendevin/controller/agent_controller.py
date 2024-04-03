@@ -1,6 +1,8 @@
 import asyncio
+import inspect
 import traceback
-from typing import List, Callable, Literal, Mapping, Any
+from typing import List, Callable, Literal, Mapping, Awaitable, Any, cast
+
 from termcolor import colored
 
 from opendevin.plan import Plan
@@ -14,6 +16,7 @@ from opendevin.action import (
     ModifyTaskAction,
 )
 from opendevin.observation import Observation, AgentErrorObservation, NullObservation
+from opendevin import config
 
 from .command_manager import CommandManager
 
@@ -37,6 +40,11 @@ ColorType = Literal[
 ]
 
 
+DISABLE_COLOR_PRINTING = (
+    config.get_or_default("DISABLE_COLOR", "false").lower() == "true"
+)
+
+
 def print_with_color(text: Any, print_type: str = "INFO"):
     TYPE_TO_COLOR: Mapping[str, ColorType] = {
         "BACKGROUND LOG": "blue",
@@ -47,11 +55,14 @@ def print_with_color(text: Any, print_type: str = "INFO"):
         "PLAN": "light_magenta",
     }
     color = TYPE_TO_COLOR.get(print_type.upper(), TYPE_TO_COLOR["INFO"])
-    print(
-        colored(f"\n{print_type.upper()}:\n", color, attrs=["bold"])
-        + colored(str(text), color),
-        flush=True,
-    )
+    if DISABLE_COLOR_PRINTING:
+        print(f"\n{print_type.upper()}:\n{str(text)}", flush=True)
+    else:
+        print(
+            colored(f"\n{print_type.upper()}:\n", color, attrs=["bold"])
+            + colored(str(text), color),
+            flush=True,
+        )
 
 
 class AgentController:
@@ -155,7 +166,10 @@ class AgentController:
 
         if action.executable:
             try:
-                observation = action.run(self)
+                if inspect.isawaitable(action.run(self)):
+                    observation = await cast(Awaitable[Observation], action.run(self))
+                else:
+                    observation = action.run(self)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
                 print_with_color(observation, "ERROR")

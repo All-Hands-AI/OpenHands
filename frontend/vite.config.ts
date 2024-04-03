@@ -2,11 +2,13 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import viteTsconfigPaths from "vite-tsconfig-paths";
 
-const BACKEND_HOST = process.env.BACKEND_HOST || "localhost:3000";
+const BACKEND_HOST = process.env.BACKEND_HOST || "127.0.0.1:3000";
 
-// check BACKEND_HOST is something like "localhost:3000" or "example.com"
-if (!BACKEND_HOST.match(/^(localhost|[\w\d-]+(\.[\w\d-]+)+(:\d+)?)/)) {
-  throw new Error(`Invalid BACKEND_HOST ${BACKEND_HOST}, example BACKEND_HOST localhost:3000`);
+// check BACKEND_HOST is something like "example.com"
+if (!BACKEND_HOST.match(/^([\w\d-]+(\.[\w\d-]+)+(:\d+)?)/)) {
+  throw new Error(
+    `Invalid BACKEND_HOST ${BACKEND_HOST}, example BACKEND_HOST 127.0.0.1:3000`,
+  );
 }
 
 export default defineConfig({
