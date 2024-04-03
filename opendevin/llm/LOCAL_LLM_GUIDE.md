@@ -19,7 +19,7 @@ make build
 make setup-config
 ```
 
-## 3. Mofify config file:
+## 3. Modify config file:
 
 - after running `make setup-config` you will see a generated file called `config.toml` in `OpenDevin/`.
 
@@ -38,7 +38,7 @@ ollama model names can be found [here](https://ollama.com/library)
 Example:
 ![alt text](images/ollama.png)
 
-Note: The API key does not matter and the base url needs to be local with the port number you intend to use with litellm.
+Note: The API key does not matter and the base url needs to be `localhost` with the port number you intend to use with litellm. By default this is `11434`.
 
 ## 4. Run Litellm in CLI:
 
