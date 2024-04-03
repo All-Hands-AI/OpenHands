@@ -18,7 +18,11 @@ build:
 	@python -m pip install pipenv
 	@python -m pipenv install -v
 	@echo "Setting up frontend environment..."
-	@cd frontend && npm install
+	@cd frontend && if [ -f node_modules/.package-lock.json ]; then \
+		echo "Currently this project uses "pnpm" for dependency management, and has detected that you have previously installed dependencies using "npm", and has automatically deleted the "node_modules" directory in order to prevent unnecessary conflicts."; \
+		rm -rf node_modules; \
+	fi
+	@cd frontend && npm install -g corepack && corepack enable && pnpm install
 
 # Start backend
 start-backend:

@@ -27,7 +27,7 @@
     "react-dom": "^18.2.0",
     "react-redux": "^9.1.0",
     "react-syntax-highlighter": "^15.5.0",
-    "typescript": "^4.9.5",
+    "typescript": "^5.4.3",
     "vite": "^5.1.6",
     "vite-tsconfig-paths": "^4.3.2",
     "web-vitals": "^2.1.4",
@@ -85,5 +85,9 @@
     "prettier": "^3.2.5",
     "tailwindcss": "^3.4.2",
     "ts-jest": "^29.1.2"
+  },
+  "packageManager": "pnpm@8.15.6",
+  "volta": {
+    "node": "18.20.1"
   }
 }
