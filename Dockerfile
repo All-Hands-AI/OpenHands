@@ -6,7 +6,12 @@ ADD Pipfile.lock Pipfile /usr/src/app/
 
 WORKDIR /usr/src/app
 
-RUN /usr/local/bin/pipenv sync
+# This is an unfortunate and hacky workaround to mismatched lock files
+# https://github.com/pypa/pipenv/issues/1356#issuecomment-1813323742
+# RUN /usr/local/bin/pipenv lock --clear 
+
+# RUN /usr/local/bin/pipenv sync
+RUN /usr/local/bin/pipenv install --ignore-pipfile
 
 # -----------------------------------------------------------------------------
 FROM docker:26.0.0-dind AS runtime
