@@ -1,6 +1,6 @@
 from ollama import Client
 
-client = Client(host="http://127.0.0.1:11434")
+client = Client(host="http://127.0.0.1:8000")
 print(client)
 
 class Ollama:

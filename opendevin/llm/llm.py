@@ -52,7 +52,6 @@ class LLM:
         )
         self._completion = partial(self._router.completion, model=self.model_name)
 
-        # self._completion = partial(litellm_completion, model=self.model, api_key=self.api_key, base_url=self.base_url)
         self._completion = get_completion
         if self._debug_dir:
             print(f"Logging prompts to {self._debug_dir}/{self._debug_id}")
