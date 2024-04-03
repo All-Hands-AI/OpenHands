@@ -24,6 +24,7 @@ google-generativeai = "*"
 toml = "*"
 json_repair = "*"
 numpy = "*"
+playwright = "*"
 
 [dev-packages]
 

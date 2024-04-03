@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "9170cf0d01d4a99327a689fa0391c25b87b028546b793487e65b42191da8c848"
+            "sha256": "04ffebb292ad58ede52e50abe101a38eb213f03d47ea9d62a4adaf095690ed62"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -859,7 +859,7 @@
                 "sha256:fd096eb7ffef17c456cfa587523c5f92321ae02427ff955bebe9e3c63bc9f0da",
                 "sha256:fe754d231288e1e64323cfad462fcee8f0288654c10bdf4f603a39ed923bef33"
             ],
-            "markers": "platform_machine == 'aarch64' or (platform_machine == 'ppc64le' or (platform_machine == 'x86_64' or (platform_machine == 'amd64' or (platform_machine == 'AMD64' or (platform_machine == 'win32' or platform_machine == 'WIN32')))))",
+            "markers": "python_version >= '3.7'",
             "version": "==3.0.3"
         },
         "grpcio": {
@@ -2234,6 +2234,20 @@
             "markers": "python_version >= '3.8'",
             "version": "==10.3.0"
         },
+        "playwright": {
+            "hashes": [
+                "sha256:283887f0bdd0039c3d720e32fbc73a045c24fa800599a6ad60fb199c29580534",
+                "sha256:313f2551a772f57c9ccca017c4dd4661f2277166f9e1d84bbf5a2e316f0f892c",
+                "sha256:4e1fc1c049a0af64626ddd50814d14a01f316bcbb4d1aa83c3416fe420add558",
+                "sha256:b2a46a24641e5d468046cde567c98fdb8d85e32df901630b14dfb288cbd1ed4f",
+                "sha256:dbf473496808d4c2c816902c1dee2aabc029648e56ce8514b643f5a1a6fc8e22",
+                "sha256:e092c6cfbf797bff03fbdfc53c3e6a9e29fbcf6b82f9e43113d37494aee0561b",
+                "sha256:e2b293f077efeaa45253fde31cea4bc6b0ae8be6b5e65e8ce8b4aa3b9f0d55b6"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.8'",
+            "version": "==1.42.0"
+        },
         "portalocker": {
             "hashes": [
                 "sha256:2b035aa7828e46c58e9b31390ee1f169b98e1066ab10b9a6a861fe7e25ee4f33",
@@ -2475,6 +2489,14 @@
             ],
             "markers": "python_version >= '3.8'",
             "version": "==2.16.3"
+        },
+        "pyee": {
+            "hashes": [
+                "sha256:9bcc9647822234f42c228d88de63d0f9ffa881e87a87f9d36ddf5211f6ac977d",
+                "sha256:a642c51e3885a33ead087286e35212783a4e9b8d6514a10a5db4e57ac57b2b29"
+            ],
+            "markers": "python_version >= '3.8'",
+            "version": "==11.0.1"
         },
         "pygments": {
             "hashes": [

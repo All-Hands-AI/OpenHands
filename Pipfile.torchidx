@@ -29,6 +29,7 @@ llama-index-embeddings-ollama = "*"
 google-generativeai = "*"
 toml = "*"
 json_repair = "*"
+numpy = "*"
 playwright = "*"
 
 [dev-packages]
