@@ -15,11 +15,11 @@ from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
 from opendevin.observation import Observation, UserMessageObservation
 
-DEFAULT_API_KEY = config.get_or_none("LLM_API_KEY")
-DEFAULT_BASE_URL = config.get_or_none("LLM_BASE_URL")
-DEFAULT_WORKSPACE_DIR = config.get_or_default("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
-LLM_MODEL = config.get_or_default("LLM_MODEL", "gpt-4-0125-preview")
-CONTAINER_IMAGE = config.get_or_default("SANDBOX_CONTAINER_IMAGE", "ghcr.io/opendevin/sandbox")
+DEFAULT_API_KEY = config.get("LLM_API_KEY")
+DEFAULT_BASE_URL = config.get("LLM_BASE_URL")
+DEFAULT_WORKSPACE_DIR = config.get("WORKSPACE_DIR")
+LLM_MODEL = config.get("LLM_MODEL")
+CONTAINER_IMAGE = config.get("SANDBOX_CONTAINER_IMAGE")
 
 class Session:
     """Represents a session with an agent.
@@ -97,10 +97,8 @@ class Session:
                         await self.send_error("I didn't recognize this action:" + action)
 
         except WebSocketDisconnect as e:
-            self.websocket = None
-            if self.agent_task:
-                self.agent_task.cancel()
             print("Client websocket disconnected", e)
+            self.disconnect()
 
     async def create_controller(self, start_event=None):
         """Creates an AgentController instance.
@@ -175,3 +173,10 @@ class Session:
             return
         event_dict = event.to_dict()
         asyncio.create_task(self.send(event_dict), name="send event in callback")
+    
+    def disconnect(self):
+        self.websocket = None
+        if self.agent_task:
+            self.agent_task.cancel()
+        if self.controller is not None:
+            self.controller.command_manager.shell.close()
