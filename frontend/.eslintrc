@@ -18,11 +18,11 @@
     {
       "files": ["*.ts", "*.tsx"],
       "rules": {
-        // Allow state modification in Redux reducers
+        // Allow state modification in reduce and Redux reducers
         "no-param-reassign": ["error", {
           "props": true,
           "ignorePropertyModificationsFor": [
-            "state"
+            "acc", "state"
           ]
         }],
         // For https://stackoverflow.com/questions/55844608/stuck-with-eslint-error-i-e-separately-loops-should-be-avoided-in-favor-of-arra
