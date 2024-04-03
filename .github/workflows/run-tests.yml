@@ -15,4 +15,4 @@ jobs:
         run: |
           python -m pip install pipenv
           python -m pipenv install
-          python -m pipenv run pytest ./tests
+          pipenv run pytest ./tests
