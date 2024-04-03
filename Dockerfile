@@ -1,4 +1,4 @@
-FROM docker.io/oz123/pipenv:3.11-v2023-6-26 AS builder
+FROM docker.io/oz123/pipenv:3.11-2023.07.23 AS builder
 
 ENV PIPENV_VENV_IN_PROJECT=1
 
