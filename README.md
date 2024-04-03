@@ -35,27 +35,6 @@ or see below for how to use different models.
 LLM_API_KEY="sk-..."
 ```
 
-Next, there are 3 options for installation. Choose the one you are most comfortable with: 
-
-1. Docker Compose
-2. Makefiles
-3. Manual Install
-
-#### Docker compose
-
-Ensure you have a recent version of [docker](https://docs.docker.com/engine/install/) or [podman](https://podman.io/)
-
-```bash
-docker compose up --build
-```
-
-#### Make files
-```bash
-make install
-```
-
-#### Manual Install
-
 Next, start the backend:
 ```bash
 python -m pip install pipenv

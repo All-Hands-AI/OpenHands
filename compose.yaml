@@ -3,6 +3,7 @@ services:
     build:
       context: frontend
       dockerfile: Dockerfile
+    image: localhost/devin-frontend-image:latest
     networks:
       - opendevin
     ports:
@@ -18,6 +19,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: localhost/devin-backend-image:latest
     networks:
       - opendevin
     ports:
