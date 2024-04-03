@@ -27,7 +27,7 @@ start-backend:
 # Start frontend
 start-frontend:
 	@echo "Starting frontend..."
-	@cd frontend && npm run start -- --port $(FRONTEND_PORT)
+	@cd frontend && BACKEND_HOST="127.0.0.1:$(BACKEND_PORT)" npm run start -- --port $(FRONTEND_PORT)
 
 # Run the app
 run:
