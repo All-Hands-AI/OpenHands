@@ -1,9 +1,8 @@
 import asyncio
+import atexit
+import signal
 import os
 from typing import Optional
-
-import jwt
-from fastapi import WebSocketDisconnect
 
 from opendevin import config
 from opendevin.action import (
@@ -15,6 +14,7 @@ from opendevin.agent import Agent
 from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
 from opendevin.observation import Observation, UserMessageObservation
+from opendevin.server.session import session_manager
 
 DEFAULT_API_KEY = config.get_or_none("LLM_API_KEY")
 DEFAULT_BASE_URL = config.get_or_none("LLM_BASE_URL")
@@ -25,14 +25,12 @@ LLM_MODEL = config.get_or_default("LLM_MODEL", "gpt-4-0125-preview")
 CONTAINER_IMAGE = config.get_or_default(
     "SANDBOX_CONTAINER_IMAGE", "ghcr.io/opendevin/sandbox"
 )
-JWT_SECRET = os.getenv("JWT_SECRET", "5ecRe7")
 
 
-class Session:
+class AgentManager:
     """Represents a session with an agent.
 
     Attributes:
-        websocket: The WebSocket connection associated with the session.
         controller: The AgentController instance for controlling the agent.
         agent: The Agent instance representing the agent.
         agent_task: The task representing the agent's execution.
@@ -40,17 +38,9 @@ class Session:
 
     sid: str
 
-    def __init__(self, websocket):
-        """Initializes a new instance of the Session class.
-
-        Args:
-            websocket: The WebSocket connection associated with the session.
-        """
-        sid = self.get_sid(websocket.query_params.get("token"))
-        if sid == "":
-            return
+    def __init__(self, sid):
+        """Initializes a new instance of the Session class."""
         self.sid = sid
-        self.websocket = websocket
         self.controller: Optional[AgentController] = None
         self.agent: Optional[Agent] = None
         self.agent_task = None
@@ -58,25 +48,13 @@ class Session:
             self.create_controller(), name="create controller"
         )  # FIXME: starting the docker container synchronously causes a websocket error...
 
-    def get_sid(self, token: str) -> str:
-        """Gets the session ID from a JWT token."""
-        try:
-            payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-            if payload is None:
-                print("Invalid token, closing connection.")
-                return ""
-            return payload["sid"]
-        except Exception as e:
-            print("Error decoding token:", e)
-            return ""
-
     async def send_error(self, message):
         """Sends an error message to the client.
 
         Args:
             message: The error message to send.
         """
-        await self.send({"error": True, "message": message})
+        await session_manager.send_error(self.sid, message)
 
     async def send_message(self, message):
         """Sends a message to the client.
@@ -84,7 +62,7 @@ class Session:
         Args:
             message: The message to send.
         """
-        await self.send({"message": message})
+        await session_manager.send_message(self.sid, message)
 
     async def send(self, data):
         """Sends data to the client.
@@ -92,50 +70,27 @@ class Session:
         Args:
             data: The data to send.
         """
-        if self.websocket is None:
+        await session_manager.send(self.sid, data)
+
+    async def dispatch(self, action: str, data: dict):
+        """Dispatches actions to the agent from the client."""
+        if action is None:
+            await self.send_error("Invalid action")
             return
-        try:
-            await self.websocket.send_json(data)
-        except Exception as e:
-            print("Error sending data to client", e)
 
-    async def start_listening(self):
-        """Starts listening for messages from the client."""
-        try:
-            while True:
-                try:
-                    data = await self.websocket.receive_json()
-                except ValueError:
-                    await self.send_error("Invalid JSON")
-                    continue
-
-                action = data.get("action", None)
-                if action is None:
-                    await self.send_error("Invalid event")
-                    continue
-                if action == "initialize":
-                    await self.create_controller(data)
-                elif action == "start":
-                    await self.start_task(data)
-                else:
-                    if self.controller is None:
-                        await self.send_error(
-                            "No agent started. Please wait a second..."
-                        )
-                    elif action == "chat":
-                        self.controller.add_history(
-                            NullAction(), UserMessageObservation(data["message"])
-                        )
-                    else:
-                        await self.send_error(
-                            "I didn't recognize this action:" + action
-                        )
-
-        except WebSocketDisconnect as e:
-            self.websocket = None
-            if self.agent_task:
-                self.agent_task.cancel()
-            print("Client websocket disconnected", e)
+        if action == "initialize":
+            await self.create_controller(data)
+        elif action == "start":
+            await self.start_task(data)
+        else:
+            if self.controller is None:
+                await self.send_error("No agent started. Please wait a second...")
+            elif action == "chat":
+                self.controller.add_history(
+                    NullAction(), UserMessageObservation(data["message"])
+                )
+            else:
+                await self.send_error("I didn't recognize this action:" + action)
 
     async def create_controller(self, start_event=None):
         """Creates an AgentController instance.
@@ -202,6 +157,7 @@ class Session:
             self.agent_task = await asyncio.create_task(
                 self.controller.start_loop(task), name="agent loop"
             )
+            self._tasks.append(self.agent_task)
         except Exception:
             await self.send_error("Error during task loop.")
 
@@ -216,4 +172,5 @@ class Session:
         if isinstance(event, NullObservation):
             return
         event_dict = event.to_dict()
-        asyncio.create_task(self.send(event_dict), name="send event in callback")
+        task = asyncio.create_task(self.send(event_dict), name="send event in callback")
+        self._tasks.append(task)

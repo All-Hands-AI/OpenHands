@@ -1,32 +1,34 @@
 import * as jose from "jose";
+import { ResFetchToken } from "../types/ResponseType";
 
-const fetchToken = async (): Promise<string> => {
-  const response = await fetch(`/api/auth`);
+const fetchToken = async (): Promise<ResFetchToken> => {
+  const headers = new Headers({
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  });
+  const response = await fetch(`/api/auth`, { headers });
   if (response.status !== 200) {
     throw new Error("Get token failed.");
   }
-  const data = await response.json();
-  if (data.token === undefined || data.token === "") {
-    throw new Error("Get token failed.");
-  }
-  return data.token;
+  const data: ResFetchToken = await response.json();
+  return data;
 };
 
 const validateToken = (token: string): boolean => {
   try {
     const claims = jose.decodeJwt(token);
-    const exp = claims.exp ?? 0;
-    if (exp === 0) {
-      localStorage.removeItem("token");
-      return false;
-    }
-    if (exp > Date.now() / 1000) {
-      return true;
-    }
+    // const exp = claims.exp ?? 0;
+    // if (exp === 0) {
+    //   localStorage.removeItem("token");
+    //   return false;
+    // }
+    // if (exp > Date.now() / 1000) {
+    //   return true;
+    // }
+    return !(claims.sid === undefined || claims.sid === "");
   } catch (error) {
     return false;
   }
-  return false;
 };
 
 const getToken = async (): Promise<string> => {
@@ -35,7 +37,11 @@ const getToken = async (): Promise<string> => {
     return token;
   }
 
-  const newToken = await fetchToken();
+  const data = await fetchToken();
+  if (data.token === undefined || data.token === "") {
+    throw new Error("Get token failed.");
+  }
+  const newToken = data.token;
   if (validateToken(newToken)) {
     localStorage.setItem("token", newToken);
     return newToken;
@@ -43,4 +49,4 @@ const getToken = async (): Promise<string> => {
   throw new Error("Token validation failed.");
 };
 
-export { getToken };
+export { getToken, fetchToken };

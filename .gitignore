@@ -195,6 +195,7 @@ yarn-error.log*
 .envrc
 /workspace
 /debug
+cache
 
 # configuration
 config.toml

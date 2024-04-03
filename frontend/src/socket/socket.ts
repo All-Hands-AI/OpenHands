@@ -1,11 +1,7 @@
 import store from "../store";
-import { ActionMessage, ObservationMessage } from "../types/Message";
 import { appendError, removeError } from "../state/errorsSlice";
-import { handleActionMessage } from "./actions";
-import { handleObservationMessage } from "./observations";
+import { handleAssistantMessage } from "./actions";
 import { getToken } from "./auth";
-
-type SocketMessage = ActionMessage | ObservationMessage;
 
 class Socket {
   private static _socket: WebSocket | null = null;
@@ -30,12 +26,7 @@ class Socket {
       Socket._socket = new WebSocket(WS_URL);
 
       Socket._socket.onmessage = (e) => {
-        const socketMessage = JSON.parse(e.data) as SocketMessage;
-        if ("action" in socketMessage) {
-          handleActionMessage(socketMessage);
-        } else {
-          handleObservationMessage(socketMessage);
-        }
+        handleAssistantMessage(e.data);
       };
 
       Socket._socket.onerror = () => {

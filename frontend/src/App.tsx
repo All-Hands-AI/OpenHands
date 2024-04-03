@@ -1,12 +1,33 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.css";
+import { useSelector } from "react-redux";
 import ChatInterface from "./components/ChatInterface";
 import Errors from "./components/Errors";
 import SettingModal from "./components/SettingModal";
 import Workspace from "./components/Workspace";
+import store, { RootState } from "./store";
+import { setInitialized } from "./state/globalSlice";
+import { fetchMsgTotal } from "./socket/session";
+import LoadMessageModal from "./components/LoadMessageModal";
+import { ResFetchMsgTotal } from "./types/ResponseType";
 
 function App(): JSX.Element {
+  const { initialized } = useSelector((state: RootState) => state.global);
   const [settingOpen, setSettingOpen] = useState(false);
+  const [loadMsgWarning, setLoadMsgWarning] = useState(false);
+
+  useEffect(() => {
+    if (!initialized) {
+      fetchMsgTotal()
+        .then((data: ResFetchMsgTotal) => {
+          if (data.msg_total > 0) {
+            setLoadMsgWarning(true);
+          }
+          store.dispatch(setInitialized(true));
+        })
+        .catch();
+    }
+  }, []);
 
   const handleCloseModal = () => {
     setSettingOpen(false);
@@ -23,6 +44,11 @@ function App(): JSX.Element {
       </div>
 
       <SettingModal isOpen={settingOpen} onClose={handleCloseModal} />
+
+      <LoadMessageModal
+        isOpen={loadMsgWarning}
+        onClose={() => setLoadMsgWarning(false)}
+      />
     </div>
   );
 }

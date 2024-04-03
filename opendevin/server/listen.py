@@ -1,22 +1,24 @@
 import os
 import uuid
-from datetime import datetime, timedelta, timezone
 
-from opendevin.server.session import Session
+from opendevin.server.session import session_manager, message_stack
+from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.agent import Agent
+from opendevin.server.agent import AgentManager
 import agenthub  # noqa F401 (we import this to get the agents registered)
 
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import litellm
-import jwt
 from starlette import status
 from starlette.responses import JSONResponse
 
 JWT_SECRET = os.getenv("JWT_SECRET", "5ecRe7")
 
-app = FastAPI()
+security_scheme = HTTPBearer()
 
+app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3001"],
@@ -30,9 +32,12 @@ app.add_middleware(
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    session = Session(websocket)
-    # TODO: should this use asyncio instead of await?
-    await session.start_listening()
+    sid = get_sid_from_token(websocket.query_params.get("token"))
+    if sid == "":
+        return
+    session_manager.add_session(sid, websocket)
+    agent_manager = AgentManager(sid)
+    await session_manager.loop_recv(sid, agent_manager.dispatch)
 
 
 @app.get("/litellm-models")
@@ -52,15 +57,53 @@ async def get_litellm_agents():
 
 
 @app.get("/auth")
-async def get_token():
+async def get_token(
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+):
     """
     Get token for authentication when starts a websocket connection.
     """
-    payload = {
-        "sid": str(uuid.uuid4()),
-        "exp": datetime.now(timezone.utc) + timedelta(minutes=15),
-    }
+    sid = get_sid_from_token(credentials.credentials) or str(uuid.uuid4())
+    token = sign_token({"sid": sid})
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content={"token": jwt.encode(payload, JWT_SECRET, algorithm="HS256")},
+        content={"token": token},
+    )
+
+
+@app.get("/messages")
+async def get_messages(
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+):
+    data = []
+    sid = get_sid_from_token(credentials.credentials)
+    if sid != "":
+        data = message_stack.get_messages(sid)
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"messages": data},
+    )
+
+
+@app.get("/messages/total")
+async def get_message_total(
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+):
+    sid = get_sid_from_token(credentials.credentials)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"msg_total": message_stack.get_message_total(sid)},
+    )
+
+
+@app.delete("/messages")
+async def get_message_total(
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+):
+    sid = get_sid_from_token(credentials.credentials)
+    message_stack.del_messages(sid)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"ok": True},
     )

@@ -289,7 +289,10 @@ class DockerInteractive:
     def cleanup(self):
         if self.closed:
             return
-        self.container.remove(force=True)
+        try:
+            self.container.remove(force=True)
+        except docker.errors.NotFound:
+            pass
 
 
 if __name__ == "__main__":

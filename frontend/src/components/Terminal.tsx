@@ -2,7 +2,9 @@ import React, { useEffect, useRef } from "react";
 import { IDisposable, Terminal as XtermTerminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
+import { useSelector } from "react-redux";
 import Socket from "../socket/socket";
+import { RootState } from "../store";
 
 class JsonWebsocketAddon {
   _disposables: IDisposable[];
@@ -45,6 +47,7 @@ class JsonWebsocketAddon {
 
 function Terminal(): JSX.Element {
   const terminalRef = useRef<HTMLDivElement>(null);
+  const { commands } = useSelector((state: RootState) => state.cmd);
 
   useEffect(() => {
     const bgColor = getComputedStyle(document.documentElement)
@@ -80,10 +83,22 @@ function Terminal(): JSX.Element {
     const jsonWebsocketAddon = new JsonWebsocketAddon();
     terminal.loadAddon(jsonWebsocketAddon);
 
+    // FIXME, temporary solution to display the terminal,
+    // but it will rerender the terminal every time the commands change
+    commands.forEach((command) => {
+      if (command.type === "input") {
+        terminal.writeln(command.content);
+      } else {
+        command.content.split("\n").forEach((line: string) => {
+          terminal.writeln(line);
+        });
+        terminal.write("\n$ ");
+      }
+    });
     return () => {
       terminal.dispose();
     };
-  }, []);
+  }, [commands]);
 
   return <div ref={terminalRef} className="h-full w-full block" />;
 }
