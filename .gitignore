@@ -200,3 +200,5 @@ yarn-error.log*
 config.toml
 
 workspace*/
+
+Pipfile.lock
