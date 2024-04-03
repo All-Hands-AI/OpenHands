@@ -3,6 +3,7 @@
 # Variables
 DOCKER_IMAGE = ghcr.io/opendevin/sandbox
 BACKEND_PORT = 3000
+BACKEND_HOST = "127.0.0.1:$(BACKEND_PORT)"
 FRONTEND_PORT = 3001
 DEFAULT_WORKSPACE_DIR = "./workspace"
 DEFAULT_MODEL = "gpt-4-0125-preview"
@@ -27,7 +28,7 @@ start-backend:
 # Start frontend
 start-frontend:
 	@echo "Starting frontend..."
-	@cd frontend && npm run start -- --port $(FRONTEND_PORT)
+	@cd frontend && BACKEND_HOST=$(BACKEND_HOST) FRONTEND_PORT=$(FRONTEND_PORT) npm run start
 
 # Run the app
 run:

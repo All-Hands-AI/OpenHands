@@ -1182,12 +1182,12 @@
         },
         "litellm": {
             "hashes": [
-                "sha256:3cc9d60ac50ca4e76f5ef9c2d5438ee2789283bb6cd0ce70e58fb12409bc9e3f",
-                "sha256:a87f5d2b165fb94b3e8662f8a7f2a7a9be15be0399ad4a4025ed876aa20f8378"
+                "sha256:0e573d56d762f4060c53493da4a08c48034b5bb5ba22e34517065739adfd9154",
+                "sha256:ca50ede3ca8d3f9dc2765ca13cf2ff5c4e4b9afb4db222f9d7cb9ee838b6180f"
             ],
             "index": "pypi",
             "markers": "python_version not in '2.7, 3.0, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7' and python_version >= '3.8'",
-            "version": "==1.34.21"
+            "version": "==1.34.22"
         },
         "llama-index": {
             "hashes": [
@@ -1195,23 +1195,23 @@
                 "sha256:5a6036bcb2449277ede3244cfa1b49d9fab5dba30ad8b212c2df92449cfa7d48"
             ],
             "index": "pypi",
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
             "version": "==0.10.26"
         },
         "llama-index-agent-openai": {
             "hashes": [
-                "sha256:0127414bd0afcdd2eb5f7f97dc9693653ca435160fd09af83ac67fb3b07bf991",
-                "sha256:c9d0a2c43d2f752b80f7d3dd7e56e112c49dddbd06974973153cfdb9374b62b4"
+                "sha256:12063dd932c74015796f973986cc52d783f51fda38e4ead72a56d0fd195925ee",
+                "sha256:fa8cbc2c7be5a465848f8d5b432db01c55f07dfa06357edb7fb77fb17d534d1e"
             ],
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
-            "version": "==0.2.1"
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
+            "version": "==0.2.2"
         },
         "llama-index-cli": {
             "hashes": [
                 "sha256:44bc32af6d9bc0b523ad284f24fa1ec17288491243fe6d7c7b4770b3245dbb84",
                 "sha256:5de707e125aa877d70c61da70cc44fea72a9f7adb77f413b51f73b1deffdd750"
             ],
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
             "version": "==0.1.11"
         },
         "llama-index-core": {
@@ -1219,7 +1219,7 @@
                 "sha256:8ea27093a053aed79b7b5d80694152066ddaa5b70116308d48db382c76367a87",
                 "sha256:e08886b9d353fb45f63d0011e78326627f1ee5c7761585fdd85a9a0dfdbf0365"
             ],
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
             "version": "==0.10.26"
         },
         "llama-index-embeddings-azure-openai": {
@@ -1228,7 +1228,7 @@
                 "sha256:a84a6d7d67296690e5d20070ce5d9920ec56b0d339338d276eae2a7b2f822b9e"
             ],
             "index": "pypi",
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
             "version": "==0.1.6"
         },
         "llama-index-embeddings-huggingface": {
@@ -1237,7 +1237,7 @@
                 "sha256:e8beb7cbdea36bcee26a0282809f8329b0c55b2b4949a590a8da0f348aac066e"
             ],
             "index": "pypi",
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
             "version": "==0.2.0"
         },
         "llama-index-embeddings-ollama": {
@@ -1246,7 +1246,7 @@
                 "sha256:ac7afabfa1134059af351b021e05e256bf86dd15e5176ffa5ab0305bcf03b33f"
             ],
             "index": "pypi",
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
             "version": "==0.1.2"
         },
         "llama-index-embeddings-openai": {
@@ -1254,7 +1254,7 @@
                 "sha256:6023925ed1487b0688323d21711efbf8880e82ed3b87ef413255c3dc63a2f2fe",
                 "sha256:c71cc9820680c4cedfc9845dc87b94f6851d1ccce1e486fc91298f8fa8d9f27d"
             ],
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
             "version": "==0.1.7"
         },
         "llama-index-indices-managed-llama-cloud": {
@@ -1262,7 +1262,7 @@
                 "sha256:47cdde9f06bbddd508f0efcf41de425e85171ac2c8fda8a5fb2a89673e1c8c71",
                 "sha256:79f636cb6f4fabb12fec153564110f7f4dfda3cacb087793a5fec988484d7d2c"
             ],
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
             "version": "==0.1.5"
         },
         "llama-index-legacy": {
@@ -1270,7 +1270,7 @@
                 "sha256:714ada95beac179b4acefa4d2deff74bb7b2f22b0f699ac247d4cb67738d16d4",
                 "sha256:82ddc4691edbf49533d65582c249ba22c03fe96fbd3e92f7758dccef28e43834"
             ],
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
             "version": "==0.9.48"
         },
         "llama-index-llms-azure-openai": {
@@ -1278,7 +1278,7 @@
                 "sha256:180805a7114198155aad7cc3abdf599142c59242d366b11ee8a9150de35b7773",
                 "sha256:5a1c3d1a6a4fe4d03acb50b61594e6775dc86a431738afa291f3708029299a92"
             ],
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
             "version": "==0.1.5"
         },
         "llama-index-llms-openai": {
@@ -1286,7 +1286,7 @@
                 "sha256:13cec467962a6ccb9e63451c7febe8e9c2ed536bd6b1058239c2b4fd86776060",
                 "sha256:7eba66882ae84fa42b188941234b84267c48e449ef214f511756dcad3f9f0b62"
             ],
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
             "version": "==0.1.14"
         },
         "llama-index-multi-modal-llms-openai": {
@@ -1294,7 +1294,7 @@
                 "sha256:03b887d110551d5d5b99b9fd110824e6311f2e31f4d5e67dafd2ee66da32818d",
                 "sha256:6a5d6584c33a9d1b06cf5c874c63af2603fc93b660bde481a8c547e876c6e2c3"
             ],
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
             "version": "==0.1.4"
         },
         "llama-index-program-openai": {
@@ -1302,7 +1302,7 @@
                 "sha256:20b6efa706ac73e4dc5086900fea1ffcb1eb0787c8a6f081669d37da7235aee0",
                 "sha256:c33aa2d2876ad0ff1f9a2a755d4e7d4917240847d0174e7b2d0b8474499bb700"
             ],
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
             "version": "==0.1.5"
         },
         "llama-index-question-gen-openai": {
@@ -1310,7 +1310,7 @@
                 "sha256:1f83b49e8b2e665030d1ec8c54687d6985d9fa8426147b64e46628a9e489b302",
                 "sha256:4486198117a45457d2e036ae60b93af58052893cc7d78fa9b6f47dd47b81e2e1"
             ],
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
             "version": "==0.1.3"
         },
         "llama-index-readers-file": {
@@ -1318,7 +1318,7 @@
                 "sha256:692988b8c3ca2807d21a171351078b634ada2ff1682ebe4a484f82da384dfc55",
                 "sha256:830f06ec7b34437fc3bb5f268d235c5c7640296adb148d8f92277dceb7f0846d"
             ],
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
             "version": "==0.1.13"
         },
         "llama-index-readers-llama-parse": {
@@ -1326,7 +1326,7 @@
                 "sha256:78608b193c818894aefeee0aa303f02b7f80f2e4caf13866c2fd3b0b1023e2c0",
                 "sha256:c4914b37d12cceee56fbd185cca80f87d60acbf8ea7a73f9719610180be1fcdd"
             ],
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
             "version": "==0.1.4"
         },
         "llama-index-vector-stores-chroma": {
@@ -1335,7 +1335,7 @@
                 "sha256:6dff3dc9d79c4039fa46cd528e5e4b6ded6473e5ef632424134491007da4ebdb"
             ],
             "index": "pypi",
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
             "version": "==0.1.6"
         },
         "llama-parse": {
@@ -1343,7 +1343,7 @@
                 "sha256:52b450c9bb94746c5f86867f54fd2e74670d89b385dcb879eb93490a42fda628",
                 "sha256:ee521e9422db48dbdf00303cb6e90f1066131960b5ca4e14f5b5a6db6b7917e2"
             ],
-            "markers": "python_version < '4.0' and python_full_version >= '3.8.1'",
+            "markers": "python_full_version >= '3.8.1' and python_version < '4.0'",
             "version": "==0.4.0"
         },
         "llamaindex-py-client": {
@@ -1828,101 +1828,6 @@
             "index": "pypi",
             "markers": "python_version >= '3.9'",
             "version": "==1.26.4"
-        },
-        "nvidia-cublas-cu12": {
-            "hashes": [
-                "sha256:2b964d60e8cf11b5e1073d179d85fa340c120e99b3067558f3cf98dd69d02906",
-                "sha256:ee53ccca76a6fc08fb9701aa95b6ceb242cdaab118c3bb152af4e579af792728"
-            ],
-            "markers": "platform_system == 'Linux' and platform_machine == 'x86_64'",
-            "version": "==12.1.3.1"
-        },
-        "nvidia-cuda-cupti-cu12": {
-            "hashes": [
-                "sha256:bea8236d13a0ac7190bd2919c3e8e6ce1e402104276e6f9694479e48bb0eb2a4",
-                "sha256:e54fde3983165c624cb79254ae9818a456eb6e87a7fd4d56a2352c24ee542d7e"
-            ],
-            "markers": "platform_system == 'Linux' and platform_machine == 'x86_64'",
-            "version": "==12.1.105"
-        },
-        "nvidia-cuda-nvrtc-cu12": {
-            "hashes": [
-                "sha256:0a98a522d9ff138b96c010a65e145dc1b4850e9ecb75a0172371793752fd46ed",
-                "sha256:339b385f50c309763ca65456ec75e17bbefcbbf2893f462cb8b90584cd27a1c2"
-            ],
-            "markers": "platform_system == 'Linux' and platform_machine == 'x86_64'",
-            "version": "==12.1.105"
-        },
-        "nvidia-cuda-runtime-cu12": {
-            "hashes": [
-                "sha256:6e258468ddf5796e25f1dc591a31029fa317d97a0a94ed93468fc86301d61e40",
-                "sha256:dfb46ef84d73fababab44cf03e3b83f80700d27ca300e537f85f636fac474344"
-            ],
-            "markers": "platform_system == 'Linux' and platform_machine == 'x86_64'",
-            "version": "==12.1.105"
-        },
-        "nvidia-cudnn-cu12": {
-            "hashes": [
-                "sha256:5ccb288774fdfb07a7e7025ffec286971c06d8d7b4fb162525334616d7629ff9"
-            ],
-            "markers": "platform_system == 'Linux' and platform_machine == 'x86_64'",
-            "version": "==8.9.2.26"
-        },
-        "nvidia-cufft-cu12": {
-            "hashes": [
-                "sha256:794e3948a1aa71fd817c3775866943936774d1c14e7628c74f6f7417224cdf56",
-                "sha256:d9ac353f78ff89951da4af698f80870b1534ed69993f10a4cf1d96f21357e253"
-            ],
-            "markers": "platform_system == 'Linux' and platform_machine == 'x86_64'",
-            "version": "==11.0.2.54"
-        },
-        "nvidia-curand-cu12": {
-            "hashes": [
-                "sha256:75b6b0c574c0037839121317e17fd01f8a69fd2ef8e25853d826fec30bdba74a",
-                "sha256:9d264c5036dde4e64f1de8c50ae753237c12e0b1348738169cd0f8a536c0e1e0"
-            ],
-            "markers": "platform_system == 'Linux' and platform_machine == 'x86_64'",
-            "version": "==10.3.2.106"
-        },
-        "nvidia-cusolver-cu12": {
-            "hashes": [
-                "sha256:74e0c3a24c78612192a74fcd90dd117f1cf21dea4822e66d89e8ea80e3cd2da5",
-                "sha256:8a7ec542f0412294b15072fa7dab71d31334014a69f953004ea7a118206fe0dd"
-            ],
-            "markers": "platform_system == 'Linux' and platform_machine == 'x86_64'",
-            "version": "==11.4.5.107"
-        },
-        "nvidia-cusparse-cu12": {
-            "hashes": [
-                "sha256:b798237e81b9719373e8fae8d4f091b70a0cf09d9d85c95a557e11df2d8e9a5a",
-                "sha256:f3b50f42cf363f86ab21f720998517a659a48131e8d538dc02f8768237bd884c"
-            ],
-            "markers": "platform_system == 'Linux' and platform_machine == 'x86_64'",
-            "version": "==12.1.0.106"
-        },
-        "nvidia-nccl-cu12": {
-            "hashes": [
-                "sha256:a9734707a2c96443331c1e48c717024aa6678a0e2a4cb66b2c364d18cee6b48d"
-            ],
-            "markers": "platform_system == 'Linux' and platform_machine == 'x86_64'",
-            "version": "==2.19.3"
-        },
-        "nvidia-nvjitlink-cu12": {
-            "hashes": [
-                "sha256:75d6498c96d9adb9435f2bbdbddb479805ddfb97b5c1b32395c694185c20ca57",
-                "sha256:991905ffa2144cb603d8ca7962d75c35334ae82bf92820b6ba78157277da1ad2",
-                "sha256:c6428836d20fe7e327191c175791d38570e10762edc588fb46749217cd444c74"
-            ],
-            "markers": "python_version >= '3'",
-            "version": "==12.4.99"
-        },
-        "nvidia-nvtx-cu12": {
-            "hashes": [
-                "sha256:65f4d98982b31b60026e0e6de73fbdfc09d08a96f4656dd3665ca616a11e1e82",
-                "sha256:dc21cf308ca5691e7c04d962e213f8a4aa9bbfa23d95412f452254c2caeb09e5"
-            ],
-            "markers": "platform_system == 'Linux' and platform_machine == 'x86_64'",
-            "version": "==12.1.105"
         },
         "oauthlib": {
             "hashes": [
@@ -2520,6 +2425,7 @@
         "pymupdf": {
             "hashes": [
                 "sha256:02a6586979df2ad958b524ba42955beaa67fd21661616a0ed04ac07db009474c",
+                "sha256:0edda1024ada67603e5888f31656048d3fd53167c8b0d56f435b986eb507df8f",
                 "sha256:12078c0bee337de969dbd6d89ef446312794d74db365cb9ac14902b863b35414",
                 "sha256:38728bb6aab9e3879aa8ac4d337be8fe838d33973f43e3b7805b86265c24f349",
                 "sha256:38e6101dab2ff86c4e2444fcec8a04377ae1d6db1bef0f7a1ddab3ac6abe4d41",
@@ -2528,11 +2434,14 @@
                 "sha256:6832f1d9332810760b587ad375eb84d64ec8d8f29395995b463cb5f30533a413",
                 "sha256:6952d47f0f05cf9338470dda078e4533ddb876368b199ebfa2f9e6076311898b",
                 "sha256:6d412da9f9a73f66973eea4284776f292135906700a06c39122e862a1e3ccf58",
+                "sha256:73d07e127936948a29a7dbd4c831e9eb45a60b495d72e604d454fd040fd08c5f",
+                "sha256:73f86eefd7f3878f112fa10791aa2e63934cf59a4c024dd54cd6fe94443c352c",
                 "sha256:7df966954ff0edbcd5d743c5f6fb68b3203e67534747e8753691b8ffedeaa518",
                 "sha256:825c62367b01e61b4bce0cc96d45b0ec336475422cfa36de6f441b4d3389a26e",
                 "sha256:8489df092473d590fb14903433bd99a07dc3d2924f5a5c8ead615795f2d65a65",
                 "sha256:8a81106a8bc229823736487d2492fd3af724a94521a1cd9b67849dd04b9c31ed",
                 "sha256:8eb292d16671166acdaa280e98cac4368298f32556f2de2ee690782a635df8ee",
+                "sha256:95a54611abb7322f5b10b44cbf19b605ed172df2c4c7995ad78854bc8423dd9c",
                 "sha256:9a3b21c8fc274ff42855ca2da65961e2319b05b75ef9e2caf25c04f9083ec79c",
                 "sha256:b8a5247d0cec87765481c38d2b8602f0264bf7ca6b5dc3013caf64ce46ad4d5e",
                 "sha256:c54ff927257b432ffd39dc6a0a46bd1120e85d192100efca021f27d4b881cfd6",
@@ -2544,7 +2453,8 @@
                 "sha256:e3f7a101a14d742c93b660b7586ab4c1491caea9062a5de9c308578a7a4f8b69",
                 "sha256:e47504391908e2d721c743aed36196310a5e15355a85459c1c4ddcf8f2002fbe",
                 "sha256:ee9cfac470aeb6b5b7deb4f6472b7796c3132856849c635c8e56c7a371e40238",
-                "sha256:f775bb56391629e81b5f870fc3dec0a0fb44cb34a92b4696b9207b31234711df"
+                "sha256:f775bb56391629e81b5f870fc3dec0a0fb44cb34a92b4696b9207b31234711df",
+                "sha256:f7b7f2011fa522a57fb3d6a7a58bcdcf01ee59bdad536ef9eb5c3fdf1e04e6c3"
             ],
             "markers": "python_version >= '3.8'",
             "version": "==1.24.1"
@@ -2555,6 +2465,7 @@
                 "sha256:0fbcc0d2a9ce79fa38eb4e8bb5c959b582f7a49938874e9f61d1a6f5eeb1e4b8",
                 "sha256:17444ea7d6897c27759880ad76af537d19779f901de82ae9548598a70f614558",
                 "sha256:37179e363bf69ce9be637937c5469957b96968341dabe3ce8f4b690a82e9ad92",
+                "sha256:490f7fff4dbe362bc895cefdfc5030d712311d024d357a1388d64816eb215d34",
                 "sha256:ae67736058882cdd9459810a4aae9ac2b2e89ac2e916cb5fefb0f651c9739e9e"
             ],
             "markers": "python_version >= '3.8'",
@@ -2595,7 +2506,7 @@
                 "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3",
                 "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"
             ],
-            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2'",
             "version": "==2.9.0.post0"
         },
         "python-dotenv": {
@@ -3035,7 +2946,7 @@
                 "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926",
                 "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"
             ],
-            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2'",
             "version": "==1.16.0"
         },
         "sniffio": {
@@ -3324,7 +3235,7 @@
                 "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f"
             ],
             "index": "pypi",
-            "markers": "python_version >= '2.6' and python_version not in '3.0, 3.1, 3.2, 3.3'",
+            "markers": "python_version >= '2.6' and python_version not in '3.0, 3.1, 3.2'",
             "version": "==0.10.2"
         },
         "torch": {
@@ -3373,18 +3284,6 @@
             ],
             "markers": "python_full_version >= '3.8.0'",
             "version": "==4.39.3"
-        },
-        "triton": {
-            "hashes": [
-                "sha256:0af58716e721460a61886668b205963dc4d1e4ac20508cc3f623aef0d70283d5",
-                "sha256:227cc6f357c5efcb357f3867ac2a8e7ecea2298cd4606a8ba1e931d1d5a947df",
-                "sha256:a2294514340cfe4e8f4f9e5c66c702744c4a117d25e618bd08469d0bfed1e2e5",
-                "sha256:b8ce26093e539d727e7cf6f6f0d932b1ab0574dc02567e684377630d86723ace",
-                "sha256:da58a152bddb62cafa9a857dd2bc1f886dbf9f9c90a2b5da82157cd2b34392b0",
-                "sha256:e8fe46d3ab94a8103e291bd44c741cc294b91d1d81c1a2888254cbf7ff846dab"
-            ],
-            "markers": "python_version < '3.12' and platform_system == 'Linux' and platform_machine == 'x86_64'",
-            "version": "==2.2.0"
         },
         "typer": {
             "hashes": [
