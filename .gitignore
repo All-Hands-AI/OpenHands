@@ -200,3 +200,4 @@ logs
 
 # configuration
 config.toml
+config.toml.template
