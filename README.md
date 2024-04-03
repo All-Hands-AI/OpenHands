@@ -118,34 +118,42 @@ Getting started with the OpenDevin project is incredibly easy. Follow these simp
 * [Python](https://www.python.org/downloads/) >= 3.11
 * [NodeJS](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) >= 14.8
 
-### 2. Build and Setup
+### 2. Build and Setup The Environment
 
 - **Build the Project:** Begin by building the project, which includes setting up the environment and installing dependencies. This step ensures that OpenDevin is ready to run smoothly on your system.
     ```bash
     make build
     ```
 
-- **Setup the Environment:** With just one command, configure OpenDevin by providing essential details such as the LLM API key, LLM Model name, and workspace directory. This straightforward setup process ensures that OpenDevin is tailored to your specific requirements.
-    ```bash
-    make setup-config
-    ```
+### 3. Configuring the Language Model
 
-You'll need to choose your LLM model as part of this step. By default, we use OpenAI's gpt-4, but you can
-use Anthropic's Claude, ollama, or any other LLM provider supported by LiteLLM. See the full
-list of supported models at [docs.litellm.ai/docs/providers](https://docs.litellm.ai/docs/providers).
+OpenDevin supports a diverse array of Language Models (LMs) through the powerful [litellm](https://docs.litellm.ai) library. By default, we've chosen the mighty GPT-4 from OpenAI as our go-to model, but the world is your oyster! You can unleash the potential of Anthropic's suave Claude, the enigmatic Llama, or any other LM that piques your interest.
 
-(Note: alternative models can be hard to work with. We will make LLM-specific available documentation available soon.
-If you've gotten OpenDevin working with a model other than OpenAI's GPT models,
-please [add your setup instructions here](https://github.com/OpenDevin/OpenDevin/issues/417).)
+To configure the LM of your choice, follow these steps:
 
-### 3. Run the Application
+1. **Using the Makefile: The Effortless Approach**
+   With a single command, you can have a smooth LM setup for your OpenDevin experience. Simply run:
+   ```bash
+   make setup-config
+   ```
+   This command will prompt you to enter the LLM API key and model name, ensuring that OpenDevin is tailored to your specific needs.
+
+2. **Manual Config: The Artisanal Touch**
+   If you're feeling particularly adventurous, you can manually update the `config.toml` file located in the project's root directory. Here, you'll find the `llm_api_key` and `llm_model_name` fields, where you can set the LM of your choosing.
+
+**Note on Alternative Models:**
+Some alternative models may prove more challenging to tame than others. Fear not, brave adventurer! We shall soon unveil LLM-specific documentation to guide you on your quest. And if you've already mastered the art of wielding a model other than OpenAI's GPT, we encourage you to [share your setup instructions with us](https://github.com/OpenDevin/OpenDevin/issues/417).
+
+For a full list of the LM providers and models available, please consult the [litellm documentation](https://docs.litellm.ai/docs/providers).
+
+### 4. Run the Application
 
 - **Run the Application:** Once the setup is complete, launching OpenDevin is as simple as running a single command. This command starts both the backend and frontend servers seamlessly, allowing you to interact with OpenDevin without any hassle.
     ```bash
     make run
     ```
 
-### 4. Individual Server Startup
+### 5. Individual Server Startup
 
 - **Start the Backend Server:** If you prefer, you can start the backend server independently to focus on backend-related tasks or configurations.
     ```bash
@@ -157,7 +165,7 @@ please [add your setup instructions here](https://github.com/OpenDevin/OpenDevin
     make start-frontend
     ```
 
-### 5. Help
+### 6. Help
 
 - **Get Some Help:** Need assistance or information on available targets and commands? The help command provides all the necessary guidance to ensure a smooth experience with OpenDevin.
     ```bash
