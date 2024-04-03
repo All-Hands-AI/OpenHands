@@ -17,11 +17,9 @@ function compareVersions(v1, v2) {
   return 0;
 }
 
-// 获取当前 Node.js 版本（去掉版本号前的 'v'）
 const currentVersion = process.version.substring(1);
 const targetVersion = "18.17.1";
 
-// 比较当前版本号是否大于18.17.1
 if (compareVersions(currentVersion, targetVersion) > 0) {
   console.log(`Current Node.js version is ${currentVersion}, corepack is supported.`);
 } else {
