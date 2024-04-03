@@ -15,6 +15,7 @@ export default defineConfig({
   // depending on your application, base can also be "/"
   base: "",
   plugins: [react(), viteTsconfigPaths()],
+  clearScreen: false,
   server: {
     port: process.env.FRONTEND_PORT
       ? Number.parseInt(process.env.FRONTEND_PORT, 10)
