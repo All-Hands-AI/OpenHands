@@ -12,7 +12,17 @@ const WS_URL = `ws://${window.location.host}/ws`;
 const socket = new WebSocket(WS_URL);
 
 socket.addEventListener("open", () => {
-  const { settings } = store.getState();
+  const settingKeys = ["model", "agent", "workspaceDirectory"];
+  const settings = settingKeys.reduce(
+    (acc, key) => {
+      const value = localStorage.getItem(key);
+      if (value) {
+        acc[key] = value;
+      }
+      return acc;
+    },
+    {} as Record<string, string>,
+  );
   sendSettings(socket, settings, false);
 });
 socket.addEventListener("message", (event) => {

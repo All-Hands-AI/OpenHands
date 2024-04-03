@@ -17,6 +17,7 @@ DEFAULT_CONFIG = {
     "LLM_COOLDOWN_TIME" : 1,
     "DIRECTORY_REWRITE" : "",
     "PROMPT_DEBUG_DIR": "",
+    "MAX_ITERATIONS": 100,
 }
 
 config_str = ""

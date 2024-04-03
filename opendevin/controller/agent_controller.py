@@ -29,6 +29,7 @@ from .command_manager import CommandManager
 ColorType = Literal['red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'light_grey', 'dark_grey', 'light_red', 'light_green', 'light_yellow', 'light_blue', 'light_magenta', 'light_cyan', 'white']
 
 DISABLE_COLOR_PRINTING = config.get_or_default("DISABLE_COLOR", "false").lower() == "true"
+MAX_ITERATIONS = config.get("MAX_ITERATIONS")
 
 def print_with_color(text: Any, print_type: str = "INFO"):
     TYPE_TO_COLOR: Mapping[str, ColorType] = {
@@ -54,7 +55,7 @@ class AgentController:
         self,
         agent: Agent,
         workdir: str,
-        max_iterations: int = 100,
+        max_iterations: int = MAX_ITERATIONS,
         container_image: str | None = None,
         callbacks: List[Callable] = [],
     ):

@@ -3,6 +3,7 @@
 # Variables
 DOCKER_IMAGE = ghcr.io/opendevin/sandbox
 BACKEND_PORT = 3000
+BACKEND_HOST = "127.0.0.1:$(BACKEND_PORT)"
 FRONTEND_PORT = 3001
 DEFAULT_WORKSPACE_DIR = "./workspace"
 DEFAULT_MODEL = "gpt-4-0125-preview"
@@ -27,7 +28,7 @@ start-backend:
 # Start frontend
 start-frontend:
 	@echo "Starting frontend..."
-	@cd frontend && npm run start -- --port $(FRONTEND_PORT)
+	@cd frontend && BACKEND_HOST=$(BACKEND_HOST) FRONTEND_PORT=$(FRONTEND_PORT) npm run start
 
 # Run the app
 run:
@@ -41,14 +42,17 @@ run:
 # Setup config.toml
 setup-config:
 	@echo "Setting up config.toml..."
-	@read -p "Enter your LLM API key: " llm_api_key; \
-	 echo "LLM_API_KEY=\"$$llm_api_key\"" >> $(CONFIG_FILE).tmp
-	@read -p "Enter your LLM Model name [default: $(DEFAULT_MODEL)]: " llm_model; \
+	@read -p "Enter your LLM Model name (see docs.litellm.ai/docs/providers for full list) [default: $(DEFAULT_MODEL)]: " llm_model; \
 	 llm_model=$${llm_model:-$(DEFAULT_MODEL)}; \
 	 echo "LLM_MODEL=\"$$llm_model\"" >> $(CONFIG_FILE).tmp
+
+	@read -p "Enter your LLM API key: " llm_api_key; \
+	 echo "LLM_API_KEY=\"$$llm_api_key\"" >> $(CONFIG_FILE).tmp
+
 	@read -p "Enter your workspace directory [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
 	 echo "WORKSPACE_DIR=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
+
 	@mv $(CONFIG_FILE).tmp $(CONFIG_FILE)
 
 # Help
