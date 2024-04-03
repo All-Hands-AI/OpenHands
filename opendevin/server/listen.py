@@ -32,7 +32,7 @@ app.add_middleware(
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    sid = get_sid_from_token(websocket.query_params.get("token"))
+    sid = get_sid_from_token(websocket.query_params.get("token") or "")
     if sid == "":
         return
     session_manager.add_session(sid, websocket)
@@ -98,7 +98,7 @@ async def get_message_total(
 
 
 @app.delete("/messages")
-async def get_message_total(
+async def del_messages(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     sid = get_sid_from_token(credentials.credentials)

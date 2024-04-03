@@ -38,9 +38,9 @@ class AgentManager:
         self.controller: Optional[AgentController] = None
         self.agent: Optional[Agent] = None
         self.agent_task = None
-        # asyncio.create_task(
-        #     self.create_controller(), name="create controller"
-        # )  # FIXME: starting the docker container synchronously causes a websocket error...
+        asyncio.create_task(
+            self.create_controller(), name="create controller"
+        )  # FIXME: starting the docker container synchronously causes a websocket error...
 
     async def send_error(self, message):
         """Sends an error message to the client.
@@ -122,7 +122,8 @@ class AgentManager:
         self.agent = AgentCls(llm)
         try:
             self.controller = AgentController(
-                self.agent,
+                id=self.sid,
+                agent=self.agent,
                 workdir=directory,
                 max_iterations=max_iterations,
                 container_image=container_image,
@@ -154,7 +155,6 @@ class AgentManager:
             self.agent_task = await asyncio.create_task(
                 self.controller.start_loop(task), name="agent loop"
             )
-            self._tasks.append(self.agent_task)
         except Exception:
             await self.send_error("Error during task loop.")
 
