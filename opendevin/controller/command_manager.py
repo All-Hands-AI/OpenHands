@@ -2,6 +2,7 @@ from typing import List
 
 from opendevin.observation import CmdOutputObservation
 from opendevin.sandbox.sandbox import DockerInteractive
+from opendevin.sandbox.e2b_sandbox import E2BSandbox
 
 
 class CommandManager:
@@ -15,8 +16,10 @@ class CommandManager:
         self.shell = DockerInteractive(
             id=(id or "default"), workspace_dir=dir, container_image=container_image
         )
+        # self.shell = E2BSandbox()
 
     def run_command(self, command: str, background=False) -> CmdOutputObservation:
+        print(f"Running command in background: {background}")
         if background:
             return self._run_background(command)
         else:
