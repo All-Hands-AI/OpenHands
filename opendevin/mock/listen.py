@@ -42,7 +42,7 @@ def read_llm_agents():
         "PlannerAgent",
     ]
 
-@app.get("default-model")
+@app.get("/default-model")
 def read_default_model():
     return "gpt-4"
 
