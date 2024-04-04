@@ -25,7 +25,7 @@ build:
 		rm -rf node_modules; \
 	fi
 	@which corepack > /dev/null || (echo "Installing corepack..." && npm install -g corepack)
-	@cd frontend && corepack enable && pnpm install
+	@cd frontend && corepack enable && pnpm install && node ./scripts/make-i18n-translations.cjs
 
 # Start backend
 start-backend:

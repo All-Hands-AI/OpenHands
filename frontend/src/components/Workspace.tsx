@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Tab, Tabs } from "@nextui-org/react";
+import { useTranslation } from "react-i18next";
 import Terminal from "./Terminal";
 import Planner from "./Planner";
 import CodeEditor from "./CodeEditor";
@@ -9,37 +10,42 @@ import CmdLine from "../assets/cmd-line";
 import Calendar from "../assets/calendar";
 import Earth from "../assets/earth";
 import Pencil from "../assets/pencil";
-
-const tabData = {
-  [TabOption.TERMINAL]: {
-    name: "Terminal",
-    icon: <CmdLine />,
-    component: <Terminal key="terminal" />,
-  },
-  [TabOption.PLANNER]: {
-    name: "Planner",
-    icon: <Calendar />,
-    component: <Planner key="planner" />,
-  },
-  [TabOption.CODE]: {
-    name: "Code Editor",
-    icon: <Pencil />,
-    component: <CodeEditor key="code" />,
-  },
-  [TabOption.BROWSER]: {
-    name: "Browser",
-    icon: <Earth />,
-    component: <Browser key="browser" />,
-  },
-};
+import { I18nKey } from "../i18n/declaration";
 
 function Workspace() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>(TabOption.TERMINAL);
+
+  const tabData = useMemo(
+    () => ({
+      [TabOption.TERMINAL]: {
+        name: t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL),
+        icon: <CmdLine />,
+        component: <Terminal key="terminal" />,
+      },
+      [TabOption.PLANNER]: {
+        name: t(I18nKey.WORKSPACE$PLANNER_TAB_LABEL),
+        icon: <Calendar />,
+        component: <Planner key="planner" />,
+      },
+      [TabOption.CODE]: {
+        name: t(I18nKey.WORKSPACE$CODE_EDITOR_TAB_LABEL),
+        icon: <Pencil />,
+        component: <CodeEditor key="code" />,
+      },
+      [TabOption.BROWSER]: {
+        name: t(I18nKey.WORKSPACE$BROWSER_TAB_LABEL),
+        icon: <Earth />,
+        component: <Browser key="browser" />,
+      },
+    }),
+    [t],
+  );
 
   return (
     <>
       <div className="w-full p-4 text-2xl font-bold select-none">
-        OpenDevin Workspace
+        {t(I18nKey.WORKSPACE$TITLE)}
       </div>
       <div role="tablist" className="tabs tabs-bordered tabs-lg ">
         <Tabs

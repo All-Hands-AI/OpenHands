@@ -2,11 +2,14 @@ import React, { ChangeEvent, useState, KeyboardEvent } from "react";
 import { useSelector } from "react-redux";
 import { Textarea } from "@nextui-org/react";
 import { twMerge } from "tailwind-merge";
+import { useTranslation } from "react-i18next";
 import { RootState } from "../store";
 import useInputComposition from "../hooks/useInputComposition";
 import { sendChatMessage } from "../services/chatService";
+import { I18nKey } from "../i18n/declaration";
 
 function Input() {
+  const { t } = useTranslation();
   const { initialized } = useSelector((state: RootState) => state.task);
   const [inputMessage, setInputMessage] = useState("");
 
@@ -54,7 +57,7 @@ function Input() {
         onKeyDown={handleSendMessageOnEnter}
         onCompositionStart={onCompositionStart}
         onCompositionEnd={onCompositionEnd}
-        placeholder="Send a message (won't interrupt the Assistant)"
+        placeholder={t(I18nKey.CHAT_INTERFACE$INPUT_PLACEHOLDER)}
       />
       <button
         type="button"
@@ -65,7 +68,7 @@ function Input() {
         onClick={handleSendMessage}
         disabled={!initialized}
       >
-        Send
+        {t(I18nKey.CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT)}
       </button>
     </div>
   );

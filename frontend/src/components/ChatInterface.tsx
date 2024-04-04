@@ -1,6 +1,7 @@
 import { Card, CardBody } from "@nextui-org/react";
 import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import assistantAvatar from "../assets/assistant-avatar.png";
 import CogTooth from "../assets/cog-tooth";
 import userAvatar from "../assets/user-avatar.png";
@@ -14,6 +15,7 @@ import {
 import { RootState } from "../store";
 import { Message } from "../state/chatSlice";
 import Input from "./Input";
+import { I18nKey } from "../i18n/declaration";
 
 interface IChatBubbleProps {
   msg: Message;
@@ -169,6 +171,8 @@ function MessageList(): JSX.Element {
 }
 
 function InitializingStatus(): JSX.Element {
+  const { t } = useTranslation();
+
   return (
     <div className="flex items-center m-auto h-full">
       <img
@@ -176,7 +180,7 @@ function InitializingStatus(): JSX.Element {
         alt="assistant avatar"
         className="w-[40px] h-[40px] mx-2.5"
       />
-      <div>Initializing agent (may take up to 10 seconds)...</div>
+      <div>{t(I18nKey.CHAT_INTERFACE$INITIALZING_AGENT_LOADING_MESSAGE)}</div>
     </div>
   );
 }
