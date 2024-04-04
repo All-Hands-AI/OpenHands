@@ -9,7 +9,7 @@ def my_encoder(obj):
     - obj (Object): An object that will be converted
 
     Returns:
-    - dict: It the object can be converted it is returned in dict format
+    - dict: If the object can be converted it is returned in dict format
     """
     if hasattr(obj, "to_dict"):
         return obj.to_dict()
