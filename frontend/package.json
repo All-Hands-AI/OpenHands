@@ -44,6 +44,8 @@
     "build": "tsc && vite build",
     "test": "jest",
     "preview": "vite preview",
+    "make-i18n": "node scripts/make-i18n-translations.cjs",
+    "prelint": "pnpm run make-i18n",
     "lint": "eslint src/**/*.ts* && prettier --check src/**/*.ts*",
     "prepare": "cd .. && husky install frontend/.husky"
   },
