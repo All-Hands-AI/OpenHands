@@ -11,7 +11,7 @@ jobs:
       - name: Install PNPM
         uses: pnpm/action-setup@v2
         with:
-          run_install: false
+          package_json_file: frontend/package.json
 
       - name: Install Node.js 20
         uses: actions/setup-node@v2
