@@ -1,19 +1,19 @@
-import { Card, CardBody, Textarea } from "@nextui-org/react";
-import React, { useEffect, useRef, useState } from "react";
+import { Card, CardBody } from "@nextui-org/react";
+import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import assistantAvatar from "../assets/assistant-avatar.png";
 import CogTooth from "../assets/cog-tooth";
 import userAvatar from "../assets/user-avatar.png";
 import { useTypingEffect } from "../hooks/useTypingEffect";
 import {
-  sendChatMessage,
   setCurrentQueueMarkerState,
   setCurrentTypingMsgState,
   setTypingAcitve,
-  addAssistanctMessageToChat,
+  addAssistantMessageToChat,
 } from "../services/chatService";
 import { RootState } from "../store";
 import { Message } from "../state/chatSlice";
+import Input from "./Input";
 
 interface IChatBubbleProps {
   msg: Message;
@@ -31,25 +31,22 @@ function TypingChat() {
   const { currentTypingMessage, currentQueueMarker, queuedTyping, messages } =
     useSelector((state: RootState) => state.chat);
 
+  const messageContent = useTypingEffect([currentTypingMessage], {
+    loop: false,
+    setTypingAcitve,
+    setCurrentQueueMarkerState,
+    currentQueueMarker,
+    playbackRate: 0.1,
+    addAssistantMessageToChat,
+    assistantMessageObj: messages?.[queuedTyping[currentQueueMarker]],
+  });
+
   return (
-    // eslint-disable-next-line react/jsx-no-useless-fragment
-    <>
-      {currentQueueMarker !== null && (
-        <Card className="bg-success-100">
-          <CardBody>
-            {useTypingEffect([currentTypingMessage], {
-              loop: false,
-              setTypingAcitve,
-              setCurrentQueueMarkerState,
-              currentQueueMarker,
-              playbackRate: 0.1,
-              addAssistanctMessageToChat,
-              assistantMessageObj: messages?.[queuedTyping[currentQueueMarker]],
-            })}
-          </CardBody>
-        </Card>
-      )}
-    </>
+    currentQueueMarker !== null && (
+      <Card className="bg-success-100">
+        <CardBody>{messageContent}</CardBody>
+      </Card>
+    )
   );
 }
 
@@ -190,14 +187,6 @@ interface Props {
 
 function ChatInterface({ setSettingOpen }: Props): JSX.Element {
   const { initialized } = useSelector((state: RootState) => state.task);
-  const [inputMessage, setInputMessage] = useState("");
-
-  const handleSendMessage = () => {
-    if (inputMessage.trim() !== "") {
-      sendChatMessage(inputMessage);
-      setInputMessage("");
-    }
-  };
 
   return (
     <div className="flex flex-col h-full p-0 bg-bg-light">
@@ -211,35 +200,7 @@ function ChatInterface({ setSettingOpen }: Props): JSX.Element {
         </div>
       </div>
       {initialized ? <MessageList /> : <InitializingStatus />}
-      <div className="w-full relative text-base">
-        <Textarea
-          className="py-4 px-4"
-          classNames={{
-            input: "pr-16 py-2",
-          }}
-          value={inputMessage}
-          maxRows={10}
-          minRows={1}
-          variant="bordered"
-          onChange={(e) =>
-            e.target.value !== "\n" && setInputMessage(e.target.value)
-          }
-          placeholder="Send a message (won't interrupt the Assistant)"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              handleSendMessage();
-            }
-          }}
-        />
-        <button
-          type="button"
-          className="bg-transparent border-none rounded py-2.5 px-5 hover:opacity-80 cursor-pointer select-none absolute right-5 bottom-6"
-          onClick={handleSendMessage}
-          disabled={!initialized}
-        >
-          Send
-        </button>
-      </div>
+      <Input />
     </div>
   );
 }

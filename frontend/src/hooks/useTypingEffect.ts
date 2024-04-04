@@ -11,7 +11,7 @@ export const useTypingEffect = (
     setTypingAcitve = () => {},
     setCurrentQueueMarkerState = () => {},
     currentQueueMarker = 0,
-    addAssistanctMessageToChat = () => {},
+    addAssistantMessageToChat = () => {},
     assistantMessageObj = { content: "", sender: "assistant" },
   }: {
     loop?: boolean;
@@ -19,14 +19,14 @@ export const useTypingEffect = (
     setTypingAcitve?: (bool: boolean) => void;
     setCurrentQueueMarkerState?: (marker: number) => void;
     currentQueueMarker?: number;
-    addAssistanctMessageToChat?: (msg: Message) => void;
+    addAssistantMessageToChat?: (msg: Message) => void;
     assistantMessageObj?: Message;
   } = {
     loop: false,
     playbackRate: 0.1,
     setTypingAcitve: () => {},
     currentQueueMarker: 0,
-    addAssistanctMessageToChat: () => {},
+    addAssistantMessageToChat: () => {},
     assistantMessageObj: { content: "", sender: "assistant" },
   },
 ) => {
@@ -51,7 +51,7 @@ export const useTypingEffect = (
         if (!loop) {
           setTypingAcitve(false);
           setCurrentQueueMarkerState(currentQueueMarker + 1);
-          addAssistanctMessageToChat(assistantMessageObj);
+          addAssistantMessageToChat(assistantMessageObj);
           return;
         }
         stringIndex = 0;

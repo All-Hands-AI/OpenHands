@@ -65,6 +65,9 @@ dependencies:
   react-syntax-highlighter:
     specifier: ^15.5.0
     version: 15.5.0(react@18.2.0)
+  tailwind-merge:
+    specifier: ^2.2.2
+    version: 2.2.2
   typescript:
     specifier: ^5.4.3
     version: 5.4.3
