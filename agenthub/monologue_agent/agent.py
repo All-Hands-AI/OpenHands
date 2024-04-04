@@ -180,7 +180,7 @@ class MonologueAgent(Agent):
 
     def step(self, state: State) -> Action:
         """
-        Modifies the current state by adding the most rescent actions and observations, then prompts the model to think about its next action to take.
+        Modifies the current state by adding the most recent actions and observations, then prompts the model to think about it's next action to take.
 
         Parameters:
         - state (State): The current state based on previous steps taken
