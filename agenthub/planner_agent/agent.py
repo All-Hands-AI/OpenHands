@@ -15,7 +15,7 @@ class PlannerAgent(Agent):
 
     def __init__(self, llm: LLM):
         """
-        Initilize the Planner Agent with an LLM
+        Initialize the Planner Agent with an LLM
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
