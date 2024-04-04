@@ -210,12 +210,13 @@ class MonologueAgent(Agent):
     def search_memory(self, query: str) -> List[str]:
         """
         Uses VectorIndexRetriever to find related memories within the long term memory.
-
+        Uses search to produce top 10 results.
+        
         Parameters:
         - query (str): The query that we want to find related memories for
 
         Returns:
-        - List[str]: A list of all text results that matched the query
+        - List[str]: A list of top 10 text results that matched the query
         """
         return self.memory.search(query)
 
