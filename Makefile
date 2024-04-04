@@ -13,13 +13,22 @@ UNAME_SYS = $(shell uname -s)
 # fallback to python3 if python is not available (e.g. on macOS)
 PYTHON_BIN = $(shell which python || which python3)
 ifeq ($(PYTHON_BIN),)
-$(error "Python is not installed. Please install Python 3.")
+	$(error "Python is not installed. Please install Python 3.")
+endif
+
+INSTALL_PIPENV_BASE_CMD = $(PYTHON_BIN) -m pip install pipenv
+
+ifeq ($(shell which brew), )
+	INSTALL_PIPENV_BREW_CMD = echo "Error: Homebrew is not installed. Please install Homebrew from https://brew.sh/ and try again." && exit 1
+else
+	INSTALL_PIPENV_BREW_CMD = echo "Install pipenv from pip failed, try brew install pipenv..." && brew install pipenv
+endif
 
 ifeq ($(shell which pipenv), )
 	ifeq ($(UNAME_SYS),Darwin)
-		INSTALL_PIPENV_CMD = brew install pipenv
+		INSTALL_PIPENV_CMD = $(INSTALL_PIPENV_BASE_CMD) || $(INSTALL_PIPENV_BREW_CMD)
 	else
-		INSTALL_PIPENV_CMD = $(PYTHON_BIN) -m pip install pipenv
+		INSTALL_PIPENV_CMD = $(INSTALL_PIPENV_BASE_CMD)
 	endif
 else
 	INSTALL_PIPENV_CMD = echo "Pipenv is already installed."
