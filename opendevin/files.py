@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 
 class File:
@@ -10,7 +10,7 @@ class File:
         self.name = name
         self.children = children
 
-    def to_dict(self) -> Dict[str, any]:
+    def to_dict(self) -> Dict[str, Any]:
         """Converts the File object to a dictionary.
 
         Returns:
