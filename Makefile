@@ -16,6 +16,14 @@ ifeq ($(PYTHON_BIN),)
 	$(error "Python is not installed. Please install Python 3.")
 endif
 
+ifeq ($(shell which node), )
+	$(error "Node.js is not installed. Please install Node.js.")
+endif
+
+ifeq ($(shell which npm), )
+	$(error "npm is not installed. Please install npm.")
+endif
+
 INSTALL_PIPENV_BASE_CMD = $(PYTHON_BIN) -m pip install pipenv
 
 ifeq ($(shell which brew), )
