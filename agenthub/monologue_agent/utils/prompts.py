@@ -108,7 +108,7 @@ def get_request_action_prompt(
 
     Parametrs:
     - task (str): The current task the agent is trying to accomplish
-    - thoughts (List[dict]): The agents current toughts
+    - thoughts (List[dict]): The agent's current thoughts
     - background_commands_obs (List[CmdOutputObservation]): List of all observed background commands running
 
     Returns:
