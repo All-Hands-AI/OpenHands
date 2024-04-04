@@ -81,7 +81,19 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
   }, []);
 
   const handleSaveCfg = () => {
-    sendSettings(socket, { model, agent, workspaceDirectory, language });
+    const previousModel = localStorage.getItem("model");
+    const previousWorkspaceDirectory =
+      localStorage.getItem("workspaceDirectory");
+    const previousAgent = localStorage.getItem("agent");
+
+    if (
+      model !== previousModel ||
+      agent !== previousAgent ||
+      workspaceDirectory !== previousWorkspaceDirectory
+    ) {
+      sendSettings(socket, { model, agent, workspaceDirectory, language });
+    }
+
     localStorage.setItem("model", model);
     localStorage.setItem("workspaceDirectory", workspaceDirectory);
     localStorage.setItem("agent", agent);
