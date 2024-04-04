@@ -18,7 +18,14 @@ build:
 	@python -m pip install pipenv
 	@python -m pipenv install -v
 	@echo "Setting up frontend environment..."
-	@cd frontend && npm install
+	@echo "Detect Node.js version..."
+	@cd frontend && node ./scripts/detect-node-version.js
+	@cd frontend && if [ -f node_modules/.package-lock.json ]; then \
+		echo "This project currently uses "pnpm" for dependency management. It has detected that dependencies were previously installed using "npm" and has automatically deleted the "node_modules" directory to prevent unnecessary conflicts."; \
+		rm -rf node_modules; \
+	fi
+	@which corepack > /dev/null || (echo "Installing corepack..." && npm install -g corepack)
+	@cd frontend && corepack enable && pnpm install
 
 # Start backend
 start-backend:
@@ -33,6 +40,10 @@ start-frontend:
 # Run the app
 run:
 	@echo "Running the app..."
+	@if [ "$(OS)" == "Windows_NT" ]; then \
+		echo "`make run` is not supported on Windows. Please run `make start-frontend` and `make start-backend` separately."; \
+		exit 1; \
+	fi
 	@mkdir -p logs
 	@rm -f logs/pipe
 	@mkfifo logs/pipe
