@@ -43,7 +43,7 @@
     <li><a href="#-what-is-devin">🤔 What is Devin?</a></li>
     <li><a href="#-why-opendevin">🐚 Why OpenDevin?</a></li>
     <li><a href="#-project-status">🚧 Project Status</a></li>
-      <a href="#-get-started">🚀 Get Started</a>
+      <a href="#-get-started">🚀 Get Started </a>
       <ul>
         <li><a href="#1-requirements">1. Requirements</a></li>
         <li><a href="#2-build-and-setup">2. Build and Setup</a></li>
@@ -65,7 +65,7 @@
 [Project Demo Video](https://github.com/OpenDevin/OpenDevin/assets/38853559/71a472cc-df34-430c-8b1d-4d7286c807c9)
 
 
-Welcome to OpenDevin, an open-source project aiming to replicate Devin, an autonomous AI software engineer who is capable of executing complex engineering tasks and collaborating actively with users on software development projects. This project aspires to replicate, enhance, and innovate upon Devin through the power of the open-source community.
+Welcome to OpenDevin, an open-source project aiming to replicate Devin, an autonomous AI software engineer who is capable of executing complex engineering tasks and collaborating actively with users on software development projects. This project aspires to replicate, enhance, and innovate upon Devin through the power of the open-source community. 
 
 <p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
     <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
@@ -98,7 +98,7 @@ OpenDevin is currently a work in progress, but you can already run the alpha ver
 - **UI**: Developing a user-friendly interface, including a chat interface, a shell demonstrating commands, and a web browser.
 - **Architecture**: Building a stable agent framework with a robust backend that can read, write, and run simple commands.
 - **Agent Capabilities**: Enhancing the agent's abilities to generate bash scripts, run tests, and perform other software engineering tasks.
-- **Evaluation**: Establishing a minimal evaluation pipeline that is consistent with Devin's evaluation criteria.
+- **Evaluation**: Establishing a minimal evaluation pipeline that is consistent with Devin's evaluation criteria. 
 
 After completing the MVP, the team will focus on research in various areas, including foundation models, specialist capabilities, evaluation, and agent studies.
 
@@ -125,7 +125,7 @@ Getting started with the OpenDevin project is incredibly easy. Follow these simp
     make build
     ```
 
-- **Setup the Environment:** With just one command, configure OpenDevin by providing essential details such as the LLM API key, LLM Model name, and workspace directory. This straightforward setup process ensures that OpenDevin is tailored to your specific requirements.
+- **Setup the Environment:** With just one command, configure OpenDevin by providing essential details such as the LLM API key, LLM Model name, and workspace directory. This straightforward setup process ensures that OpenDevin is tailored to your specific requirements. 
     ```bash
     make setup-config
     ```
@@ -169,7 +169,7 @@ Achieving full replication of production-grade applications with LLMs is a compl
 1. **Core Technical Research:** Focusing on foundational research to understand and improve the technical aspects of code generation and handling.
 2. **Specialist Abilities:** Enhancing the effectiveness of core components through data curation, training methods, and more.
 3. **Task Planning:** Developing capabilities for bug detection, codebase management, and optimization.
-4. **Evaluation:** Establishing comprehensive evaluation metrics to better understand and improve our models.
+4. **Evaluation:** Establishing comprehensive evaluation metrics to better understand and improve our models. 
 
 <p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
     <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
@@ -193,7 +193,7 @@ For details, please check [this document](./CONTRIBUTING.md).
     </a>
 </p>
 
-## 🤖 Join Our Community
+## 🤖 Join Our Community 
 
 Join our Slack workspace by filling out the [form](https://forms.gle/758d5p6Ve8r2nxxq6). Stay updated on OpenDevin's progress, share ideas, and collaborate with fellow enthusiasts and experts. Let's simplify software engineering together!
 
@@ -234,4 +234,4 @@ Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more informati
 [issues-shield]: https://img.shields.io/github/issues/opendevin/opendevin?style=for-the-badge
 [issues-url]: https://github.com/OpenDevin/OpenDevin/issues
 [license-shield]: https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge
-[license-url]: https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE
+[license-url]: https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE 
