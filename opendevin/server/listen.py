@@ -1,4 +1,3 @@
-import os
 import uuid
 
 from opendevin.server.session import session_manager, message_stack
