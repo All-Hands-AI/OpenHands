@@ -91,7 +91,7 @@ def get_summarize_monologue_prompt(thoughts: List[dict]):
     """
     Gets the prompt for summarizing the monologue
 
-    Retruns: 
+    Returns: 
     - str: A formatted string with the current monologue within the prompt
     """
     return MONOLOGUE_SUMMARY_PROMPT % {
@@ -106,7 +106,7 @@ def get_request_action_prompt(
     """
     Gets the action prompt formatted with appropriate values
 
-    Paramters:
+    Parametrs:
     - task (str): The current task the agent is trying to accomplish
     - thoughts (List[dict]): The agents current toughts
     - background_commands_obs (List[CmdOutputObservation]): List of all observed background commands running
