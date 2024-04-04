@@ -47,7 +47,7 @@ class LongTermMemory:
 
     def __init__(self):
         """
-        Initilize the chromadb and set up ChromaVectorStore for later use.
+        Initialize the chromadb and set up ChromaVectorStore for later use.
         """
         db = chromadb.Client()
         self.collection = db.get_or_create_collection(name="memories")
