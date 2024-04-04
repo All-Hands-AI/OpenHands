@@ -1,5 +1,13 @@
-import { appendUserMessage } from "../state/chatSlice";
-import Socket from "../socket/socket";
+import {
+  Message,
+  appendToNewChatSequence,
+  appendUserMessage,
+  emptyOutQueuedTyping,
+  setCurrentQueueMarker,
+  setCurrentTypingMessage,
+  toggleTypingActive,
+} from "../state/chatSlice";
+import Socket from "./socket";
 import store from "../store";
 import { SocketMessage } from "../types/ResponseType";
 import { ActionMessage } from "../types/Message";
@@ -25,4 +33,22 @@ export function sendChatMessageFromEvent(event: string | SocketMessage): void {
   } catch (error) {
     //
   }
+}
+
+export function setTypingActive(bool: boolean): void {
+  store.dispatch(toggleTypingActive(bool));
+}
+
+export function resetQueuedTyping(): void {
+  store.dispatch(emptyOutQueuedTyping());
+}
+
+export function setCurrentTypingMsgState(msg: string): void {
+  store.dispatch(setCurrentTypingMessage(msg));
+}
+export function setCurrentQueueMarkerState(index: number): void {
+  store.dispatch(setCurrentQueueMarker(index));
+}
+export function addAssistantMessageToChat(msg: Message): void {
+  store.dispatch(appendToNewChatSequence(msg));
 }

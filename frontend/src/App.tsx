@@ -7,7 +7,7 @@ import SettingModal from "./components/SettingModal";
 import Workspace from "./components/Workspace";
 import store, { RootState } from "./store";
 import { setInitialized } from "./state/globalSlice";
-import { fetchMsgTotal } from "./socket/session";
+import { fetchMsgTotal } from "./services/session";
 import LoadMessageModal from "./components/LoadMessageModal";
 import { ResFetchMsgTotal } from "./types/ResponseType";
 

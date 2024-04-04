@@ -43,6 +43,7 @@ ColorType = Literal[
 DISABLE_COLOR_PRINTING = (
     config.get_or_default("DISABLE_COLOR", "false").lower() == "true"
 )
+MAX_ITERATIONS = config.get("MAX_ITERATIONS")
 
 
 def print_with_color(text: Any, print_type: str = "INFO"):
@@ -73,7 +74,7 @@ class AgentController:
         agent: Agent,
         workdir: str,
         id: str = "",
-        max_iterations: int = 100,
+        max_iterations: int = MAX_ITERATIONS,
         container_image: str | None = None,
         callbacks: List[Callable] = [],
     ):

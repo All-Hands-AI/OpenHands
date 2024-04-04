@@ -19,6 +19,7 @@ DEFAULT_BASE_URL = config.get("LLM_BASE_URL")
 DEFAULT_WORKSPACE_DIR = config.get("WORKSPACE_DIR")
 LLM_MODEL = config.get("LLM_MODEL")
 CONTAINER_IMAGE = config.get("SANDBOX_CONTAINER_IMAGE")
+MAX_ITERATIONS = config.get("MAX_ITERATIONS")
 
 
 class AgentManager:
@@ -38,9 +39,6 @@ class AgentManager:
         self.controller: Optional[AgentController] = None
         self.agent: Optional[Agent] = None
         self.agent_task = None
-        asyncio.create_task(
-            self.create_controller(), name="create controller"
-        )  # FIXME: starting the docker container synchronously causes a websocket error...
 
     async def send_error(self, message):
         """Sends an error message to the client.
@@ -110,7 +108,7 @@ class AgentManager:
         container_image = CONTAINER_IMAGE
         if start_event and "container_image" in start_event["args"]:
             container_image = start_event["args"]["container_image"]
-        max_iterations = 100
+        max_iterations = MAX_ITERATIONS
         if start_event and "max_iterations" in start_event["args"]:
             max_iterations = start_event["args"]["max_iterations"]
         if not os.path.exists(directory):

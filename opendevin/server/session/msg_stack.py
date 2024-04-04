@@ -69,11 +69,7 @@ class MessageStack:
         cnt = 0
         for msg in self._messages[sid]:
             # Ignore assistant init message for now.
-            if (
-                msg.role == "assistant"
-                and "action" in msg.payload
-                and msg.payload["action"] == ActionType.INIT
-            ):
+            if "action" in msg.payload and msg.payload["action"] == ActionType.INIT:
                 continue
             cnt += 1
         return cnt

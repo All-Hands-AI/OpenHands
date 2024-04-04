@@ -13,10 +13,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import litellm
 from starlette import status
 from starlette.responses import JSONResponse
-
-JWT_SECRET = os.getenv("JWT_SECRET", "5ecRe7")
-
-security_scheme = HTTPBearer()
+from opendevin import config
 
 app = FastAPI()
 app.add_middleware(
@@ -27,6 +24,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+security_scheme = HTTPBearer()
+
 
 # This endpoint receives events from the client (i.e. the browser)
 @app.websocket("/ws")
@@ -36,6 +35,8 @@ async def websocket_endpoint(websocket: WebSocket):
     if sid == "":
         return
     session_manager.add_session(sid, websocket)
+    # TODO: actually the agent_manager is created for each websocket connection, even if the session id is the same,
+    # we need to manage the agent in memory for reconnecting the same session id to the same agent
     agent_manager = AgentManager(sid)
     await session_manager.loop_recv(sid, agent_manager.dispatch)
 
@@ -107,3 +108,8 @@ async def del_messages(
         status_code=status.HTTP_200_OK,
         content={"ok": True},
     )
+
+
+@app.get("/default-model")
+def read_default_model():
+    return config.get_or_error("LLM_MODEL")

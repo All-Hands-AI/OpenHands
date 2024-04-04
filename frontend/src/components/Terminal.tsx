@@ -3,7 +3,7 @@ import { IDisposable, Terminal as XtermTerminal } from "@xterm/xterm";
 import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import { useSelector } from "react-redux";
-import Socket from "../socket/socket";
+import Socket from "../services/socket";
 import { RootState } from "../store";
 
 class JsonWebsocketAddon {

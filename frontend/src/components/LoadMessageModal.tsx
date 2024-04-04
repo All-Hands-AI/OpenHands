@@ -7,9 +7,9 @@ import {
   ModalFooter,
   Button,
 } from "@nextui-org/react";
-import { fetchMsgs, clearMsgs } from "../socket/session";
+import { fetchMsgs, clearMsgs } from "../services/session";
 import { sendChatMessageFromEvent } from "../services/chatService";
-import { handleAssistantMessage } from "../socket/actions";
+import { handleAssistantMessage } from "../services/actions";
 import { ResFetchMsg } from "../types/ResponseType";
 
 interface Props {

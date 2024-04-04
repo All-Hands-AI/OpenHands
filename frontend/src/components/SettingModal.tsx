@@ -17,7 +17,8 @@ import {
   fetchModels,
   fetchAgents,
   INITIAL_MODELS,
-  sendSettings,
+  saveSettings,
+  getInitialModel,
 } from "../services/settingsService";
 import {
   setModel,
@@ -25,7 +26,6 @@ import {
   setWorkspaceDirectory,
 } from "../state/settingsSlice";
 import store, { RootState } from "../store";
-import socket from "../socket/socket";
 
 interface Props {
   isOpen: boolean;
@@ -54,6 +54,12 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
   );
 
   useEffect(() => {
+    async function setInitialModel() {
+      const initialModel = await getInitialModel();
+      store.dispatch(setModel(initialModel));
+    }
+    setInitialModel();
+
     fetchModels().then((fetchedModels) => {
       setSupportedModels(fetchedModels);
       localStorage.setItem("supportedModels", JSON.stringify(fetchedModels));
@@ -65,10 +71,7 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
   }, []);
 
   const handleSaveCfg = () => {
-    sendSettings(socket, { model, agent, workspaceDirectory });
-    localStorage.setItem("model", model);
-    localStorage.setItem("workspaceDirectory", workspaceDirectory);
-    localStorage.setItem("agent", agent);
+    saveSettings({ model, agent, workspaceDirectory });
     onClose();
   };
 
@@ -100,7 +103,7 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
               }))}
               label="Model"
               placeholder="Select a model"
-              defaultSelectedKey={model}
+              selectedKey={model}
               // className="max-w-xs"
               onSelectionChange={(key) => {
                 store.dispatch(setModel(key as string));

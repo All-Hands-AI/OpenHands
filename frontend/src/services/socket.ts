@@ -2,6 +2,7 @@ import store from "../store";
 import { appendError, removeError } from "../state/errorsSlice";
 import { handleAssistantMessage } from "./actions";
 import { getToken } from "./auth";
+import ActionType from "../types/ActionType";
 
 class Socket {
   private static _socket: WebSocket | null = null;
@@ -24,6 +25,23 @@ class Socket {
     if (!Socket._socket || Socket._socket.readyState !== WebSocket.OPEN) {
       const WS_URL = `ws://${window.location.host}/ws?token=${token}`;
       Socket._socket = new WebSocket(WS_URL);
+
+      Socket._socket.onopen = () => {
+        const model = localStorage.getItem("model") || "";
+        const agent = localStorage.getItem("agent") || "";
+        const workspaceDirectory =
+          localStorage.getItem("workspaceDirectory") || "";
+        Socket._socket?.send(
+          JSON.stringify({
+            action: ActionType.INIT,
+            args: {
+              model,
+              agent_cls: agent,
+              directory: workspaceDirectory,
+            },
+          }),
+        );
+      };
 
       Socket._socket.onmessage = (e) => {
         handleAssistantMessage(e.data);

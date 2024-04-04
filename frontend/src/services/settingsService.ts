@@ -1,7 +1,16 @@
 import { appendAssistantMessage } from "../state/chatSlice";
 import { setInitialized } from "../state/taskSlice";
 import store from "../store";
-import Socket from "../socket/socket";
+import Socket from "./socket";
+
+export async function getInitialModel() {
+  if (localStorage.getItem("model")) {
+    return localStorage.getItem("model");
+  }
+
+  const res = await fetch("/api/default-model");
+  return res.json();
+}
 
 export async function fetchModels() {
   const response = await fetch(`/api/litellm-models`);
@@ -35,11 +44,7 @@ const SETTINGS_MAP = new Map<string, string>([
 ]);
 
 // Send settings to the server
-export function sendSettings(
-  socket: WebSocket,
-  reduxSettings: { [id: string]: string },
-  appendMessages: boolean = true,
-): void {
+export function saveSettings(reduxSettings: { [id: string]: string }): void {
   const socketSettings = Object.fromEntries(
     Object.entries(reduxSettings).map(([setting, value]) => [
       SETTINGS_MAP.get(setting) || setting,
@@ -48,11 +53,10 @@ export function sendSettings(
   );
   const event = { action: "initialize", args: socketSettings };
   const eventString = JSON.stringify(event);
-  Socket.send(eventString);
   store.dispatch(setInitialized(false));
-  if (appendMessages) {
-    for (const [setting, value] of Object.entries(reduxSettings)) {
-      store.dispatch(appendAssistantMessage(`Set ${setting} to "${value}"`));
-    }
+  Socket.send(eventString);
+  for (const [setting, value] of Object.entries(reduxSettings)) {
+    localStorage.setItem(setting, value);
+    store.dispatch(appendAssistantMessage(`Set ${setting} to "${value}"`));
   }
 }

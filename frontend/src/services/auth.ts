@@ -17,14 +17,6 @@ const fetchToken = async (): Promise<ResFetchToken> => {
 const validateToken = (token: string): boolean => {
   try {
     const claims = jose.decodeJwt(token);
-    // const exp = claims.exp ?? 0;
-    // if (exp === 0) {
-    //   localStorage.removeItem("token");
-    //   return false;
-    // }
-    // if (exp > Date.now() / 1000) {
-    //   return true;
-    // }
     return !(claims.sid === undefined || claims.sid === "");
   } catch (error) {
     return false;
