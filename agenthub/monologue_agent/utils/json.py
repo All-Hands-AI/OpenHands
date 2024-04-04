@@ -16,7 +16,7 @@ def my_encoder(obj):
 
 def dumps(obj, **kwargs):
     """
-    Serialize and object to str format
+    Serialize an object to str format
     """
 
     return json.dumps(obj, default=my_encoder, **kwargs)
