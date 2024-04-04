@@ -47,7 +47,6 @@ function Input() {
       <Textarea
         className="py-4 px-4"
         classNames={{
-          inputWrapper: "bg-neutral-700",
           input: "pr-16 py-2",
         }}
         value={inputMessage}
@@ -68,7 +67,6 @@ function Input() {
         )}
         onClick={handleSendMessage}
         disabled={!initialized}
-        aria-label="Send message"
       >
         <VscSend />
       </button>
