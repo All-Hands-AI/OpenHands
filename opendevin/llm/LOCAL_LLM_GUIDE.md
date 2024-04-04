@@ -1,8 +1,62 @@
-# Local LLM Guide with Ollama and Litellm
+# Local LLM Guide with Ollama server
 
-- This is a guide to use local LLM's with Ollama and Litellm
+## 0. Install Ollama:
+run the following command in a conda env with CUDA etc.
 
-## 1. Follow the default installation:
+Linux:
+```
+curl -fsSL https://ollama.com/install.sh | sh
+```
+Windows or macOS: 
+
+- Download from [here](https://ollama.com/download/)
+
+## 1. Install Models:
+Ollama model names can be found [here](https://ollama.com/library) (See example below)
+
+![alt text](images/ollama.png)
+
+Once you have found the model you want to use copy the command and run it in your conda env.
+
+Example of llama2 q4 quantized:
+```
+conda activate <env_name>
+ollama run llama2:13b-chat-q4_K_M
+```
+
+you can check which models you have downloaded like this:
+```
+~$ ollama list
+NAME                            ID              SIZE    MODIFIED
+llama2:latest                   78e26419b446    3.8 GB  6 weeks ago
+mistral:7b-instruct-v0.2-q4_K_M eb14864c7427    4.4 GB  2 weeks ago
+starcoder2:latest               f67ae0f64584    1.7 GB  19 hours ago
+```
+## 2. Run Ollama in CLI:
+This command starts up the ollama server that is on port 11434
+```
+conda activate <env_name>
+ollama serve
+```
+or
+```
+sudo systemctl start ollama
+```
+
+If you see something like this:
+```
+Error: listen tcp 127.0.0.1:11434: bind: address already in use
+```
+This is not an error it just means the server is already running
+
+to stop the server use:
+```
+sudo systemctl stop ollama
+```
+
+For more info go [here](https://github.com/ollama/ollama/blob/main/docs/faq.md)
+
+## 3. Follow the default installation of OpenDevin:
 ```
 git clone git@github.com:OpenDevin/OpenDevin.git
 ```
@@ -13,58 +67,33 @@ git clone git@github.com:<YOUR-USERNAME>/OpenDevin.git
 
 then `cd OpenDevin`
 
-## 2. Run setup commands:
+## 4. Run setup commands:
 ```
 make build
 make setup-config
 ```
 
-## 3. Modify config file:
+## 5. Modify config file:
 
 - after running `make setup-config` you will see a generated file called `config.toml` in `OpenDevin/`.
 
 - open this file and modify it to your needs based on this template:
 
 ```
-LLM_API_KEY="0"
+LLM_API_KEY="Ollama"
 LLM_MODEL="ollama/<model_name>"
+LLM_EMBEDDING_MODEL="local"
 LLM_BASE_URL="http://localhost:<port_number>"
 WORKSPACE_DIR="./workspace"
 ```
-`<port_number>` can be whatever you want just make sure it is not used by anything else.
+Notes: 
+- The API key does not matter and the base url needs to be `localhost` default port is `11434`.
+- `model_name` needs to be the entire model name. Ex. `LLM_MODEL="ollama/llama2:13b-chat-q4_K_M"`
 
-ollama model names can be found [here](https://ollama.com/library) 
-
-Example:
-![alt text](images/ollama.png)
-
-Note: The API key does not matter and the base url needs to be `localhost` with the port number you intend to use with litellm. By default this is `11434`.
-
-## 4. Run Litellm in CLI:
-
-- there are two options for this:
-
-#### 1. Run litellm in linux terminal:
-```
-conda activate <env_name>
-litellm --model ollama/<model_name>
-```
-
-#### 2. Create a batch script:
-- The below example assumes the use of miniconda3 with default install settings, you will need to change this to the path to your `conda.sh` file if you use something else.
-```
-start /B wsl.exe -d <DISTRO_NAME> -e bash -c "source ~/miniconda3/etc/profile.d/conda.sh && conda activate <ENV_NAME> && litellm --model ollama/<MODEL_NAME> --port <PORT>"
-```
-- The above script will spawn a wsl instance in your cmd terminal, activate your conda environment and then run the litellm command with your model and port number.
-- make sure you fill in all the <> brackets with the appropriate names.
-
-Either way you do it you should see something like this to confirm you have started the server:
-![alt text](images/example.png)
-
-## 5. Start OpenDevin:
+## 6. Start OpenDevin:
 
 At this point everything should be set up and working properly. 
-1. Start by running the litellm server using one of the methods outlined above
+1. Start by running the ollama server using the method outlined above
 2. Run `make build` in your terminal `~/OpenDevin/`
 3. Run `make run` in your terminal 
 4. If that fails try running the server and front end in sepparate terminals:
