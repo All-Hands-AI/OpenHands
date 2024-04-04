@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 
 if [ -n "${DEBUG}" ]; then set -eux; else set -eu; fi
 
