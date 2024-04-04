@@ -8,7 +8,6 @@ JWT_SECRET = os.getenv("JWT_SECRET", "5ecRe7")
 def get_sid_from_token(token: str) -> str:
     """Gets the session id from a JWT token."""
     try:
-        print(token, JWT_SECRET)
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         if payload is None:
             print("Invalid token")

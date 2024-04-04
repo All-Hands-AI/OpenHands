@@ -20,12 +20,7 @@ import {
   saveSettings,
   getInitialModel,
 } from "../services/settingsService";
-import {
-  setModel,
-  setAgent,
-  setWorkspaceDirectory,
-} from "../state/settingsSlice";
-import store, { RootState } from "../store";
+import { RootState } from "../store";
 
 interface Props {
   isOpen: boolean;
@@ -40,10 +35,15 @@ const cachedAgents = JSON.parse(
 );
 
 function SettingModal({ isOpen, onClose }: Props): JSX.Element {
-  const model = useSelector((state: RootState) => state.settings.model);
-  const agent = useSelector((state: RootState) => state.settings.agent);
-  const workspaceDirectory = useSelector(
+  const defModel = useSelector((state: RootState) => state.settings.model);
+  const [model, setModel] = useState(defModel);
+  const defAgent = useSelector((state: RootState) => state.settings.agent);
+  const [agent, setAgent] = useState(defAgent);
+  const defWorkspaceDirectory = useSelector(
     (state: RootState) => state.settings.workspaceDirectory,
+  );
+  const [workspaceDirectory, setWorkspaceDirectory] = useState(
+    defWorkspaceDirectory,
   );
 
   const [supportedModels, setSupportedModels] = useState(
@@ -54,11 +54,11 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
   );
 
   useEffect(() => {
-    async function setInitialModel() {
-      const initialModel = await getInitialModel();
-      store.dispatch(setModel(initialModel));
-    }
-    setInitialModel();
+    getInitialModel()
+      .then((initialModel) => {
+        setModel(initialModel);
+      })
+      .catch();
 
     fetchModels().then((fetchedModels) => {
       setSupportedModels(fetchedModels);
@@ -91,9 +91,7 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
               label="OpenDevin Workspace Directory"
               defaultValue={workspaceDirectory}
               placeholder="Default: ./workspace"
-              onChange={(e) =>
-                store.dispatch(setWorkspaceDirectory(e.target.value))
-              }
+              onChange={(e) => setWorkspaceDirectory(e.target.value)}
             />
 
             <Autocomplete
@@ -106,7 +104,7 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
               selectedKey={model}
               // className="max-w-xs"
               onSelectionChange={(key) => {
-                store.dispatch(setModel(key as string));
+                setModel(key as string);
               }}
               onKeyDown={(e: KeyboardEvent) => e.continuePropagation()}
               defaultFilter={customFilter}
@@ -128,7 +126,7 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
               defaultSelectedKey={agent}
               // className="max-w-xs"
               onSelectionChange={(key) => {
-                store.dispatch(setAgent(key as string));
+                setAgent(key as string);
               }}
               onKeyDown={(e: KeyboardEvent) => e.continuePropagation()}
               defaultFilter={customFilter}

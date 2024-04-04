@@ -111,6 +111,15 @@ class AgentManager:
         max_iterations = MAX_ITERATIONS
         if start_event and "max_iterations" in start_event["args"]:
             max_iterations = start_event["args"]["max_iterations"]
+
+        # double check preventing error occurs
+        if directory == "":
+            directory = DEFAULT_WORKSPACE_DIR
+        if agent_cls == "":
+            agent_cls = "MonologueAgent"
+        if model == "":
+            model = LLM_MODEL
+
         if not os.path.exists(directory):
             print(f"Workspace directory {directory} does not exist. Creating it...")
             os.makedirs(directory)

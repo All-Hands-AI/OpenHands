@@ -2,6 +2,11 @@ import { appendAssistantMessage } from "../state/chatSlice";
 import { setInitialized } from "../state/taskSlice";
 import store from "../store";
 import Socket from "./socket";
+import {
+  setAgent,
+  setModel,
+  setWorkspaceDirectory,
+} from "../state/settingsSlice";
 
 export async function getInitialModel() {
   if (localStorage.getItem("model")) {
@@ -59,4 +64,7 @@ export function saveSettings(reduxSettings: { [id: string]: string }): void {
     localStorage.setItem(setting, value);
     store.dispatch(appendAssistantMessage(`Set ${setting} to "${value}"`));
   }
+  store.dispatch(setModel(reduxSettings.model));
+  store.dispatch(setAgent(reduxSettings.agent));
+  store.dispatch(setWorkspaceDirectory(reduxSettings.workspaceDirectory));
 }
