@@ -34,7 +34,7 @@ start-frontend:
 run:
 	@echo "Running the app..."
 	@if [ "$(OS)" == "Windows_NT" ]; then \
-		echo "Windows is not supported. Please run `make start-frontend` and `make start-backend` separately."; \
+		echo "`make run` is not supported on Windows. Please run `make start-frontend` and `make start-backend` separately."; \
 		exit 1; \
 	fi
 	@mkdir -p logs
