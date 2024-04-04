@@ -2,9 +2,9 @@ import React, { ChangeEvent, useState, KeyboardEvent } from "react";
 import { useSelector } from "react-redux";
 import { Textarea } from "@nextui-org/react";
 import { twMerge } from "tailwind-merge";
-import { RootState } from "../store";
-import useInputComposition from "../hooks/useInputComposition";
-import { sendChatMessage } from "../services/chatService";
+import { RootState } from "../../store";
+import useInputComposition from "../../hooks/useInputComposition";
+import { sendChatMessage } from "../../services/chatService";
 
 function Input() {
   const { initialized } = useSelector((state: RootState) => state.task);
