@@ -1,6 +1,6 @@
 import { Tab, Tabs } from "@nextui-org/react";
 import React, { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+// import { useTranslation } from "react-i18next";
 import { FaCode } from "react-icons/fa6";
 import { IoIosGlobe } from "react-icons/io";
 import i18next from "i18next";
@@ -11,7 +11,7 @@ import CodeEditor from "./CodeEditor";
 import Planner from "./Planner";
 
 function Workspace() {
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>(TabOption.CODE);
 
   const tabData = useMemo(
