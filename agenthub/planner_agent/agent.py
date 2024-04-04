@@ -10,7 +10,7 @@ from opendevin.action import Action
 class PlannerAgent(Agent):
     """
     The planner agent is responsible for looking at the current progress of the task as well as the goal and evaluating the best coarse of action given the state.
-    This agent will respond with either a though or an action.
+    This agent will respond with either a thought or an action.
     """
 
     def __init__(self, llm: LLM):
