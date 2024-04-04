@@ -20,7 +20,7 @@ function compareVersions(v1, v2) {
 const currentVersion = process.version.substring(1);
 const targetVersion = "18.17.1";
 
-if (compareVersions(currentVersion, targetVersion) > 0) {
+if (compareVersions(currentVersion, targetVersion) >= 0) {
   console.log(`Current Node.js version is ${currentVersion}, corepack is supported.`);
 } else {
   console.error(`Current Node.js version is ${currentVersion}, but corepack is unsupported. Required version: ^${targetVersion}.`);
