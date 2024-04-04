@@ -11,7 +11,7 @@ class Monologue:
 
     def __init__(self):
         """
-        Initilize the empty list of thoughts
+        Initialize the empty list of thoughts
         """
         self.thoughts = []
 
@@ -31,10 +31,10 @@ class Monologue:
 
     def get_thoughts(self):
         """
-        Get the current toughts of the agent.
+        Get the current thoughts of the agent.
 
         Returns:
-        - List: The list of thoughts that the Agent has.
+        - List: The list of thoughts that the agent has.
         """
         return self.thoughts
 
