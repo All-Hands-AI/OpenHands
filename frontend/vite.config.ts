@@ -5,8 +5,8 @@ import viteTsconfigPaths from "vite-tsconfig-paths";
 const BACKEND_HOST = process.env.BACKEND_HOST || "127.0.0.1:3000";
 
 // check BACKEND_HOST is something like "localhost:3000"
-const backendHostRegex = /^(\w+(-\w+)*)(:(\d+))?$/;
-  throw new Error(
+if (!BACKEND_HOST.match(/^([\w\d-]+(:\d+)?)/)) {
+    throw new Error(
     `Invalid BACKEND_HOST ${BACKEND_HOST}, example BACKEND_HOST 127.0.0.1:3000`,
   );
 }

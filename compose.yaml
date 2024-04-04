@@ -30,7 +30,11 @@ services:
       #TODO: fix issue where workspace doesn't have permissions to write files
       # devin-backend   | Failed to start container: 500 Server Error for http+docker://localhost/v1.41/containers/create?name=sandbox-default: Internal Server Error \
       #("make cli opts(): making volume mountpoint for volume /usr/src/app/workspace: mkdir /usr/src/app: read-only file system")
-      - workspace:/usr/src/app/workspace:rw
+      # - workspace:/usr/src/app/workspace:rw
+      - type: volume
+        source: workspace
+        target: /usr/src/app/workspace
+        read_only: false
     privileged: true
 
 networks:
