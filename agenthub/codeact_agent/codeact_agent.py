@@ -13,10 +13,19 @@ from opendevin.observation import (
     AgentMessageObservation,
     CmdOutputObservation,
 )
+from opendevin.parse_commands import parse_command_file
 from opendevin.state import State
 
-from .commands import parse_command_file
+COMMAND_DOCS = parse_command_file()
+COMMAND_SEGMENT = (
+    f"""
 
+Apart from the standard bash commands, you can also use the following special commands:
+{COMMAND_DOCS}
+"""
+    if COMMAND_DOCS is not None
+    else ""
+)
 SYSTEM_MESSAGE = f"""You are a helpful assistant. You will be provided access (as root) to a bash shell to complete user-provided tasks.
 You will be able to execute commands in the bash shell, interact with the file system, install packages, and receive the output of your commands.
 
@@ -34,9 +43,7 @@ You can also write a block of code to a file:
 echo "import math
 print(math.pi)" > math.py
 </execute>
-
-Apart from the standard bash commands, you can also use the following special commands:
-{parse_command_file()}
+{COMMAND_SEGMENT}
 
 When you are done, execute "exit" to close the shell and end the conversation.
 """

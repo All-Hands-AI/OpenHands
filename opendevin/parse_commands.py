@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 
 import yaml
@@ -10,7 +11,9 @@ class Command:
     signature: str | None = None
 
 
-def parse_command_file() -> str:
+def parse_command_file() -> str | None:
+    if not os.path.exists("commands.sh"):
+        return None
     content = open("commands.sh", "r").read()
     lines = content.split("\n")
     commands: list[Command] = []

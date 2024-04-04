@@ -30,7 +30,7 @@ COPY environment.yml .
 RUN conda env create -f environment.yml
 
 # Add commands
-COPY ../../agenthub/codeact_agent/commands.sh .
+COPY ./commands.sh .
 RUN source commands.sh
 
 # Some missing packages
