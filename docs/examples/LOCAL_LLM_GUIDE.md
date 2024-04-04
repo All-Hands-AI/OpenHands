@@ -33,12 +33,16 @@ mistral:7b-instruct-v0.2-q4_K_M eb14864c7427    4.4 GB  2 weeks ago
 starcoder2:latest               f67ae0f64584    1.7 GB  19 hours ago
 ```
 ## 2. Run Ollama in CLI:
-This command starts up the ollama server that is on port 11434
+This command starts up the ollama server that is on port `11434`
+
+This will show the requests in CLI
 ```
 conda activate <env_name>
 ollama serve
 ```
 or
+
+This will run with no output in the background
 ```
 sudo systemctl start ollama
 ```
@@ -49,7 +53,7 @@ Error: listen tcp 127.0.0.1:11434: bind: address already in use
 ```
 This is not an error it just means the server is already running
 
-to stop the server use:
+To stop the server use:
 ```
 sudo systemctl stop ollama
 ```
@@ -65,7 +69,10 @@ or
 git clone git@github.com:<YOUR-USERNAME>/OpenDevin.git
 ```
 
-then `cd OpenDevin`
+then 
+```
+cd OpenDevin
+```
 
 ## 4. Run setup commands:
 ```
@@ -75,20 +82,22 @@ make setup-config
 
 ## 5. Modify config file:
 
-- after running `make setup-config` you will see a generated file called `config.toml` in `OpenDevin/`.
-
-- open this file and modify it to your needs based on this template:
+- After running `make setup-config` you will see a generated file `OpenDevin/config.toml`.
+- Open this file and modify it to your needs based on this template:
 
 ```
-LLM_API_KEY="Ollama"
+LLM_API_KEY="ollama"
 LLM_MODEL="ollama/<model_name>"
 LLM_EMBEDDING_MODEL="local"
 LLM_BASE_URL="http://localhost:<port_number>"
 WORKSPACE_DIR="./workspace"
 ```
 Notes: 
-- The API key does not matter and the base url needs to be `localhost` default port is `11434`.
-- `model_name` needs to be the entire model name. Ex. `LLM_MODEL="ollama/llama2:13b-chat-q4_K_M"`
+- The API key should be set to `"ollama"` 
+- The base url needs to be `localhost` 
+- By default ollama port is `11434` unless you set it
+- `model_name` needs to be the entire model name
+    - Example: `LLM_MODEL="ollama/llama2:13b-chat-q4_K_M"`
 
 ## 6. Start OpenDevin:
 

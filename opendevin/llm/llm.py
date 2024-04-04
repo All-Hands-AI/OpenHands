@@ -22,7 +22,7 @@ class LLM:
             cooldown_time=DEFAULT_LLM_COOLDOWN_TIME,
             debug_dir=PROMPT_DEBUG_DIR
     ):
-        self.model_name = model if model else DEFAULT_MODEL_NAME
+        self.model_name = model if model and api_key.lower() != 'ollama' else DEFAULT_MODEL_NAME
         self.api_key = api_key if api_key else DEFAULT_API_KEY
         self.base_url = base_url if base_url else DEFAULT_BASE_URL
         self.num_retries = num_retries if num_retries else DEFAULT_LLM_NUM_RETRIES
