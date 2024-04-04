@@ -116,7 +116,7 @@ Getting started with the OpenDevin project is incredibly easy. Follow these simp
 * Linux, Mac OS, or [WSL on Windows](https://learn.microsoft.com/en-us/windows/wsl/install)
 * [Docker](https://docs.docker.com/engine/install/)
 * [Python](https://www.python.org/downloads/) >= 3.11
-* [NodeJS](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) >= 14.8
+* [NodeJS](https://nodejs.org/en/download/package-manager) >= 18.17.1
 
 ### 2. Build and Setup The Environment
 
