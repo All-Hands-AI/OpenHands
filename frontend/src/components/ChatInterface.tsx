@@ -9,7 +9,7 @@ import {
   setCurrentQueueMarkerState,
   setCurrentTypingMsgState,
   setTypingAcitve,
-  addAssistanctMessageToChat,
+  addAssistantMessageToChat,
 } from "../services/chatService";
 import { RootState } from "../store";
 import { Message } from "../state/chatSlice";
@@ -37,7 +37,7 @@ function TypingChat() {
     setCurrentQueueMarkerState,
     currentQueueMarker,
     playbackRate: 0.1,
-    addAssistanctMessageToChat,
+    addAssistantMessageToChat,
     assistantMessageObj: messages?.[queuedTyping[currentQueueMarker]],
   });
 
