@@ -81,7 +81,7 @@ class CodeActAgent(Agent):
 
         Returns:
         - CmdRunAction(command) - command action to run
-        - AgentEchoAction(content=INVALID_INPUT_MESSAGE) - invalid command ouput
+        - AgentEchoAction(content=INVALID_INPUT_MESSAGE) - invalid command output
 
         Raises:
         - NotImplementedError - for actions other than CmdOutputObservation or AgentMessageObservation
