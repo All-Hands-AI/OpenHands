@@ -13,7 +13,6 @@ datasets = "*"
 pandas = "*"
 litellm = "*"
 termcolor = "*"
-torch = {version = "*", source = "pytorch"}
 seaborn = "*"
 docker = "*"
 fastapi = "*"
@@ -31,6 +30,8 @@ chromadb = "*"
 llama-index-embeddings-huggingface = "*"
 llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
+pymupdfb = "*"
+torch = "*"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "*"
