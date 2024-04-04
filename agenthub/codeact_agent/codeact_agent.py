@@ -35,7 +35,8 @@ echo "import math
 print(math.pi)" > math.py
 </execute>
 
-When you are done, execute "exit" to close the shell and end the conversation.
+When you are done, execute the following to close the shell and end the conversation:
+<execute>exit</execute> 
 """
 
 INVALID_INPUT_MESSAGE = (
@@ -112,7 +113,6 @@ class CodeActAgent(Agent):
             # observation = INVALID_INPUT_MESSAGE
             # self._history.append(Message(Role.ASSISTANT, observation))
             return AgentEchoAction(content=INVALID_INPUT_MESSAGE)  # warning message to itself
-
 
     def search_memory(self, query: str) -> List[str]:
         raise NotImplementedError("Implement this abstract method")
