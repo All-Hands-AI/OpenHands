@@ -5,16 +5,21 @@ import assistantAvatar from "../assets/assistant-avatar.png";
 import CogTooth from "../assets/cog-tooth";
 import userAvatar from "../assets/user-avatar.png";
 import { useTypingEffect } from "../hooks/useTypingEffect";
-import { sendChatMessage } from "../services/chatService";
-import { Message } from "../state/chatSlice";
+import {
+  sendChatMessage,
+  setCurrentQueueMarkerState,
+  setCurrentTypingMsgState,
+  setTypingAcitve,
+  addAssistanctMessageToChat,
+} from "../services/chatService";
 import { RootState } from "../store";
+import { Message } from "../state/chatSlice";
 
-interface ITypingChatProps {
+interface IChatBubbleProps {
   msg: Message;
 }
 
 /**
- * @param msg
  * @returns jsx
  *
  * component used for typing effect when assistant replies
@@ -22,14 +27,25 @@ interface ITypingChatProps {
  * makes uses of useTypingEffect hook
  *
  */
-function TypingChat({ msg }: ITypingChatProps) {
+function TypingChat() {
+  const { currentTypingMessage, currentQueueMarker, queuedTyping, messages } =
+    useSelector((state: RootState) => state.chat);
+
   return (
     // eslint-disable-next-line react/jsx-no-useless-fragment
     <>
-      {msg?.content && (
-        <Card>
+      {currentQueueMarker !== null && (
+        <Card className="bg-success-100">
           <CardBody>
-            {useTypingEffect([msg?.content], { loop: false })}
+            {useTypingEffect([currentTypingMessage], {
+              loop: false,
+              setTypingAcitve,
+              setCurrentQueueMarkerState,
+              currentQueueMarker,
+              playbackRate: 0.1,
+              addAssistanctMessageToChat,
+              assistantMessageObj: messages?.[queuedTyping[currentQueueMarker]],
+            })}
           </CardBody>
         </Card>
       )}
@@ -37,36 +53,119 @@ function TypingChat({ msg }: ITypingChatProps) {
   );
 }
 
+function ChatBubble({ msg }: IChatBubbleProps): JSX.Element {
+  return (
+    <div className="flex mb-2.5 pr-5 pl-5">
+      <div
+        className={`flex mt-2.5 mb-0 min-w-0 ${msg?.sender === "user" && "flex-row-reverse ml-auto"}`}
+      >
+        <img
+          src={msg?.sender === "user" ? userAvatar : assistantAvatar}
+          alt={`${msg?.sender} avatar`}
+          className="w-[40px] h-[40px] mx-2.5"
+        />
+        <Card className={`${msg?.sender === "user" ? "bg-primary-100" : ""}`}>
+          <CardBody>{msg?.content}</CardBody>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 function MessageList(): JSX.Element {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { messages } = useSelector((state: RootState) => state.chat);
+  const {
+    messages,
+    queuedTyping,
+    typingActive,
+    currentQueueMarker,
+    currentTypingMessage,
+    newChatSequence,
+  } = useSelector((state: RootState) => state.chat);
+
+  const messageScroll = () => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  };
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    messageScroll();
+    if (!typingActive) return;
+
+    const interval = setInterval(() => {
+      messageScroll();
+    }, 1000);
+
+    // eslint-disable-next-line consistent-return
+    return () => clearInterval(interval);
+  }, [newChatSequence, typingActive]);
+
+  useEffect(() => {
+    const newMessage = messages?.[queuedTyping[currentQueueMarker]]?.content;
+
+    if (
+      currentQueueMarker !== null &&
+      currentQueueMarker !== 0 &&
+      currentTypingMessage !== newMessage
+    ) {
+      setCurrentTypingMsgState(
+        messages?.[queuedTyping?.[currentQueueMarker]]?.content,
+      );
+    }
+  }, [queuedTyping]);
+
+  useEffect(() => {
+    if (currentTypingMessage === "") return;
+
+    if (!typingActive) setTypingAcitve(true);
+  }, [currentTypingMessage]);
+
+  useEffect(() => {
+    const newMessage = messages?.[queuedTyping[currentQueueMarker]]?.content;
+    if (
+      newMessage &&
+      typingActive === false &&
+      currentTypingMessage !== newMessage
+    ) {
+      if (currentQueueMarker !== 0) {
+        setCurrentTypingMsgState(
+          messages?.[queuedTyping?.[currentQueueMarker]]?.content,
+        );
+      }
+    }
+  }, [typingActive]);
+
+  useEffect(() => {
+    if (currentQueueMarker === 0) {
+      setCurrentTypingMsgState(messages?.[queuedTyping?.[0]]?.content);
+    }
+  }, [currentQueueMarker]);
 
   return (
     <div className="flex-1 overflow-y-auto">
-      {messages.map((msg, index) => (
-        <div key={index} className="flex mb-2.5 pr-5 pl-5">
-          <div
-            className={`flex mt-2.5 mb-0 min-w-0 ${msg.sender === "user" && "flex-row-reverse ml-auto"}`}
-          >
+      {newChatSequence.map((msg, index) =>
+        // eslint-disable-next-line no-nested-ternary
+        msg.sender === "user" || msg.sender === "assistant" ? (
+          <ChatBubble key={index} msg={msg} />
+        ) : (
+          <div key={index} />
+        ),
+      )}
+
+      {typingActive && (
+        <div className="flex mb-2.5 pr-5 pl-5 bg-s">
+          <div className="flex mt-2.5 mb-0 min-w-0 ">
             <img
-              src={msg.sender === "user" ? userAvatar : assistantAvatar}
-              alt={`${msg.sender} avatar`}
+              src={assistantAvatar}
+              alt="assistant avatar"
               className="w-[40px] h-[40px] mx-2.5"
             />
-            {msg.sender !== "user" ? (
-              <TypingChat msg={msg} />
-            ) : (
-              <Card className="bg-primary">
-                <CardBody>{msg.content}</CardBody>
-              </Card>
-            )}
+            <TypingChat />
           </div>
         </div>
-      ))}
+      )}
       <div ref={messagesEndRef} />
     </div>
   );
