@@ -79,7 +79,7 @@ INITIAL_THOUGHTS = [
 class MonologueAgent(Agent):
     """
     Responsible for talking to the user and acting as an overall project manager. 
-    The monologue agent has a long term memory that it is capable of modifying to suit its current needs. 
+    The monologue agent has a long term memory that it is capable of modifying to suit it's current needs. 
     This agent is mostly responsible for managing state and long term memory.
     """
 
@@ -87,7 +87,7 @@ class MonologueAgent(Agent):
 
     def __init__(self, llm: LLM):
         """
-        Initilizes the Monologue Agent with an llm, monologue, and memory.
+        Initializes the Monologue Agent with an llm, monologue, and memory.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
