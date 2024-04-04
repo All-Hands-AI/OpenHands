@@ -1,14 +1,16 @@
 const fs = require("fs");
 const path = require("path");
 const i18n = require("../src/i18n/translation.json");
-const set = require("lodash/set")
 
 // { [lang]: { [key]: content } }
 const translationMap = {};
 
 Object.entries(i18n).forEach(([key, transMap]) => {
   Object.entries(transMap).forEach(([lang, content]) => {
-    set(translationMap, [lang, key], content);
+    if (!translationMap[lang]) {
+      translationMap[lang] = {};
+    }
+    translationMap[lang][key] = content;
   })
 });
 
