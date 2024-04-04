@@ -27,6 +27,7 @@
     "react-dom": "^18.2.0",
     "react-redux": "^9.1.0",
     "react-syntax-highlighter": "^15.5.0",
+    "tailwind-merge": "^2.2.2",
     "typescript": "^5.4.3",
     "vite": "^5.1.6",
     "vite-tsconfig-paths": "^4.3.2",
@@ -50,12 +51,6 @@
     "src/**/*.ts*": [
       "eslint --fix",
       "prettier --write"
-    ]
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
     ]
   },
   "jest": {
