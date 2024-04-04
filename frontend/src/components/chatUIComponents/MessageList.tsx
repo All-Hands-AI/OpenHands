@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import assistantAvatar from "../../assets/assistant-avatar.png";
