@@ -31,7 +31,6 @@ llama-index-embeddings-huggingface = "*"
 llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 pymupdfb = "*"
-torch = "*"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "*"
@@ -41,10 +40,8 @@ pre-commit = "*"
 [tool.poetry.group.test.dependencies]
 pytest = "*"
 
-[[tool.poetry.source]]
-name = "pytorch"
-url = "https://download.pytorch.org/whl/cpu"
-priority = "supplemental"
+[tool.poetry.group.evaluation.dependencies]
+torch = "*"
 
 [build-system]
 requires = ["poetry-core"]

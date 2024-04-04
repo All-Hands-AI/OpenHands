@@ -17,7 +17,7 @@ build:
 	@docker pull $(DOCKER_IMAGE)
 	@echo "Installing Python dependencies..."
 	@curl -sSL https://install.python-poetry.org | python3 -
-	@poetry install
+	@poetry install --without evaluation
 	@echo "Activating Poetry shell..."
 	@echo "Installing pre-commit hooks..."
 	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
