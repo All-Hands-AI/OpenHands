@@ -121,7 +121,7 @@ class MonologueAgent(Agent):
         Short circuted to return when already initialized.
 
         Parameters:
-        - task (str): The initial goal statment provided by the user 
+        - task (str): The initial goal statement provided by the user 
 
         Raises:
         - ValueError: If task is not provided
@@ -209,7 +209,7 @@ class MonologueAgent(Agent):
 
     def search_memory(self, query: str) -> List[str]:
         """
-        Uses VectorIndexRetriever to find related memories withing the long term memory.
+        Uses VectorIndexRetriever to find related memories within the long term memory.
 
         Parameters:
         - query (str): The query that we want to find related memories for
