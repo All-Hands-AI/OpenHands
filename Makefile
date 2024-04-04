@@ -15,8 +15,8 @@ build:
 	@echo "Pulling Docker image..."
 	@docker pull $(DOCKER_IMAGE)
 	@echo "Installing Python dependencies..."
-	@python -m pip install pipenv
-	@python -m pipenv install -v
+	@python3 -m pip install pipenv
+	@python3 -m pipenv install -v
 	@echo "Setting up frontend environment..."
 	@echo "Detect Node.js version..."
 	@cd frontend && node ./scripts/detect-node-version.js
