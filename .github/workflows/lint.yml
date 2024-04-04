@@ -10,6 +10,10 @@ jobs:
 
       - name: Install PNPM
         uses: pnpm/action-setup@v2
+        with:
+          run_install: |
+            - args: [--frozen-lockfile]
+              cwd: frontend
 
       - name: Install Node.js 20
         uses: actions/setup-node@v2
@@ -17,10 +21,6 @@ jobs:
           node-version: 20
           cache: 'pnpm'
 
-      - name: Install dependencies
-        run: |
-          cd frontend
-          pnpm install
       - name: Lint
         run: |
           cd frontend
