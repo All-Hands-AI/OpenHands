@@ -106,7 +106,7 @@ def get_request_action_prompt(
     """
     Gets the action prompt formatted with appropriate values
 
-    Parametrs:
+    Parameters:
     - task (str): The current task the agent is trying to accomplish
     - thoughts (List[dict]): The agent's current thoughts
     - background_commands_obs (List[CmdOutputObservation]): List of all observed background commands running
