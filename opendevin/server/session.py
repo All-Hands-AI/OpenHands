@@ -16,15 +16,12 @@ from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
 from opendevin.observation import NullObservation, Observation, UserMessageObservation
 
-DEFAULT_API_KEY = config.get_or_none("LLM_API_KEY")
-DEFAULT_BASE_URL = config.get_or_none("LLM_BASE_URL")
-DEFAULT_WORKSPACE_DIR = config.get_or_default(
-    "WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace")
-)
-LLM_MODEL = config.get_or_default("LLM_MODEL", "gpt-4-0125-preview")
-CONTAINER_IMAGE = config.get_or_default(
-    "SANDBOX_CONTAINER_IMAGE", "ghcr.io/opendevin/sandbox"
-)
+DEFAULT_API_KEY = config.get("LLM_API_KEY")
+DEFAULT_BASE_URL = config.get("LLM_BASE_URL")
+DEFAULT_WORKSPACE_DIR = config.get("WORKSPACE_DIR")
+LLM_MODEL = config.get("LLM_MODEL")
+CONTAINER_IMAGE = config.get("SANDBOX_CONTAINER_IMAGE")
+MAX_ITERATIONS = config.get("MAX_ITERATIONS")
 
 
 class Session:
@@ -136,10 +133,8 @@ class Session:
                         )
 
         except WebSocketDisconnect as e:
-            self.websocket = None
-            if self.agent_task:
-                self.agent_task.cancel()
             print("Client websocket disconnected", e)
+            self.disconnect()
 
     async def create_controller(self, start_event=None):
         """Creates an AgentController instance.
@@ -165,7 +160,7 @@ class Session:
         container_image = CONTAINER_IMAGE
         if start_event and "container_image" in start_event["args"]:
             container_image = start_event["args"]["container_image"]
-        max_iterations = 100
+        max_iterations = MAX_ITERATIONS
         if start_event and "max_iterations" in start_event["args"]:
             max_iterations = start_event["args"]["max_iterations"]
         if not os.path.exists(directory):
@@ -227,3 +222,10 @@ class Session:
             return
         event_dict = event.to_dict()
         asyncio.create_task(self.send(event_dict), name="send event in callback")
+
+    def disconnect(self):
+        self.websocket = None
+        if self.agent_task:
+            self.agent_task.cancel()
+        if self.controller is not None:
+            self.controller.command_manager.shell.close()

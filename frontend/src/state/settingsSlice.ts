@@ -3,7 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 export const settingsSlice = createSlice({
   name: "settings",
   initialState: {
-    model: localStorage.getItem("model") || "gpt-4-0125-preview",
+    model: localStorage.getItem("model") || "",
     agent: localStorage.getItem("agent") || "MonologueAgent",
     workspaceDirectory:
       localStorage.getItem("workspaceDirectory") || "./workspace",
