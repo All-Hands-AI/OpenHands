@@ -20,10 +20,11 @@ class CommandManager:
 
     def run_command(self, command: str, background=False) -> CmdOutputObservation:
         print(f"Running command in background: {background}")
-        if background:
-            return self._run_background(command)
-        else:
-            return self._run_immediately(command)
+        return self._run_immediately(command)
+        # if background:
+        #     return self._run_background(command)
+        # else:
+        #     return self._run_immediately(command)
 
     def _run_immediately(self, command: str) -> CmdOutputObservation:
         exit_code, output = self.shell.execute(command)
@@ -31,14 +32,14 @@ class CommandManager:
             command_id=-1, content=output, command=command, exit_code=exit_code
         )
 
-    def _run_background(self, command: str) -> CmdOutputObservation:
-        bg_cmd = self.shell.execute_in_background(command)
-        return CmdOutputObservation(
-            content=f"Background command started. To stop it, send a `kill` action with id {bg_cmd.id}",
-            command_id=bg_cmd.id,
-            command=command,
-            exit_code=0,
-        )
+    # def _run_background(self, command: str) -> CmdOutputObservation:
+    #     bg_cmd = self.shell.execute_in_background(command)
+    #     return CmdOutputObservation(
+    #         content=f"Background command started. To stop it, send a `kill` action with id {bg_cmd.id}",
+    #         command_id=bg_cmd.id,
+    #         command=command,
+    #         exit_code=0,
+    #     )
 
     def kill_command(self, id: int) -> CmdOutputObservation:
         cmd = self.shell.kill_background(id)

@@ -17,12 +17,13 @@ DEFAULT_CONFIG = {
     'LLM_COOLDOWN_TIME': 1,
     'DIRECTORY_REWRITE': '',
     'MAX_ITERATIONS': 100,
+    'E2B_API_KEY': '',
 }
 
-config_str = ''
-if os.path.exists('config.toml'):
-    with open('config.toml', 'rb') as f:
-        config_str = f.read().decode('utf-8')
+config_str = ""
+if os.path.exists("config.toml"):
+    with open("config.toml", "rb") as f:
+        config_str = f.read().decode("utf-8")
 
 tomlConfig = toml.loads(config_str)
 config = DEFAULT_CONFIG.copy()

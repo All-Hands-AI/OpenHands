@@ -27,11 +27,8 @@ app.add_middleware(
 
 security_scheme = HTTPBearer()
 
-
 # This endpoint receives events from the client (i.e. the browser)
 @app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
     sid = get_sid_from_token(websocket.query_params.get("token") or "")
     if sid == "":
         return
@@ -42,12 +39,14 @@ async def websocket_endpoint(websocket: WebSocket):
     await session_manager.loop_recv(sid, agent_manager.dispatch)
 
 
+
 @app.get("/litellm-models")
 async def get_litellm_models():
     """
     Get all models supported by LiteLLM.
     """
     return list(set(litellm.model_list + list(litellm.model_cost.keys())))
+
 
 
 @app.get("/litellm-agents")
