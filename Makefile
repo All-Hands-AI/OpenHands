@@ -9,19 +9,22 @@ DEFAULT_WORKSPACE_DIR = "./workspace"
 DEFAULT_MODEL = "gpt-4-0125-preview"
 CONFIG_FILE = config.toml
 
+# Determine Python command
+PYTHON_CMD = $(shell command -v python3 || command -v python)
+
 # Build
 build:
 	@echo "Building project..."
 	@echo "Pulling Docker image..."
 	@docker pull $(DOCKER_IMAGE)
 	@echo "Installing Python dependencies..."
-	@python -m pip install pipenv
-	@python -m pipenv install -v
+	@$(PYTHON_CMD) -m pip install pipenv
+	@$(PYTHON_CMD) -m pipenv install -v
 	@echo "Setting up frontend environment..."
 	@echo "Detect Node.js version..."
 	@cd frontend && node ./scripts/detect-node-version.js
 	@cd frontend && if [ -f node_modules/.package-lock.json ]; then \
-		echo "This project currently uses "pnpm" for dependency management. It has detected that dependencies were previously installed using "npm" and has automatically deleted the "node_modules" directory to prevent unnecessary conflicts."; \
+		echo "This project currently uses \"pnpm\" for dependency management. It has detected that dependencies were previously installed using \"npm\" and has automatically deleted the \"node_modules\" directory to prevent unnecessary conflicts."; \
 		rm -rf node_modules; \
 	fi
 	@which corepack > /dev/null || (echo "Installing corepack..." && npm install -g corepack)
@@ -30,7 +33,7 @@ build:
 # Start backend
 start-backend:
 	@echo "Starting backend..."
-	@python -m pipenv run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT)
+	@$(PYTHON_CMD) -m pipenv run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT)
 
 # Start frontend
 start-frontend:
@@ -47,8 +50,8 @@ run:
 	@mkdir -p logs
 	@rm -f logs/pipe
 	@mkfifo logs/pipe
-	@cat logs/pipe | (make start-backend) &
-	@echo 'test' | tee logs/pipe | (make start-frontend)
+	@cat logs/pipe | ($(MAKE) start-backend) &
+	@echo 'test' | tee logs/pipe | ($(MAKE) start-frontend)
 
 # Setup config.toml
 setup-config:
@@ -79,4 +82,4 @@ help:
 	@echo "  help                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: install start-backend start-frontend run setup-config help
+.PHONY: build start-backend start-frontend run setup-config help
