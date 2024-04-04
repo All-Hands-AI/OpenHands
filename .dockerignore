@@ -1,7 +1,5 @@
-.gitattributes
 .github
 .idea
-.gitignore
 .ollama
 LICENSE
 README.md

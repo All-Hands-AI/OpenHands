@@ -1,6 +1,7 @@
 import { Tab, Tabs } from "@nextui-org/react";
 import React, { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+// import { useTranslation } from "react-i18next";
+import { FaCode } from "react-icons/fa6";
 import { IoIosGlobe } from "react-icons/io";
 import Calendar from "../assets/calendar";
 import { I18nKey } from "../i18n/declaration";
@@ -10,7 +11,7 @@ import CodeEditor from "./CodeEditor";
 import Planner from "./Planner";
 
 function Workspace() {
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>(TabOption.CODE);
 
   const tabData = useMemo(
@@ -35,31 +36,31 @@ function Workspace() {
   );
 
   return (
-    <div className="flex flex-col min-h-0 grow">
+    <>
       <div
         role="tablist"
-        className="tabs tabs-bordered tabs-lg border-b border-neutral-600 flex"
+        className="tabs tabs-bordered tabs-lg border-b border-neutral-600"
       >
         <Tabs
           disableCursorAnimation
           classNames={{
-            base: "w-full",
             tabList:
-              "w-full relative rounded-none bg-neutral-900 p-0 gap-0 h-[36px] flex",
-            tab: "rounded-none border-neutral-600 data-[selected=true]:bg-neutral-800 justify-start",
-            tabContent: "group-data-[selected=true]:text-white",
+              "w-full relative rounded-none bg-neutral-800 p-0 border-divider gap-0 h-[36px]",
+            cursor: "w-full bg-neutral-800  rounded-none",
+            tab: " rounded-none border-neutral-600 border-r-[1px] border-r",
+            tabContent: "group-data-[selected=true]:text-neutral-50",
           }}
+          variant="light"
           size="lg"
           onSelectionChange={(v) => {
             setActiveTab(v as TabType);
           }}
         >
-          {AllTabs.map((tab, index) => (
+          {AllTabs.map((tab) => (
             <Tab
               key={tab}
-              className={`flex-grow ${index + 1 === AllTabs.length ? "" : "border-r"}`}
               title={
-                <div className="flex grow items-center gap-2 justify-center text-xs">
+                <div className="flex items-center space-x-2 justify-center text-xs">
                   {tabData[tab].icon}
                   <span>{tabData[tab].name}</span>
                 </div>
@@ -68,10 +69,16 @@ function Workspace() {
           ))}
         </Tabs>
       </div>
-      <div className="grow w-full bg-neutral-800 flex min-h-0">
-        {tabData[activeTab as TabType].component}
-      </div>
-    </div>
+      {Object.keys(tabData).map((tab) => (
+        <div
+          className="h-full w-full bg-neutral-800"
+          key={tab}
+          hidden={activeTab !== tab}
+        >
+          {tabData[tab as TabType].component}
+        </div>
+      ))}
+    </>
   );
 }
 export default Workspace;
