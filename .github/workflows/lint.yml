@@ -7,15 +7,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+
+      - name: Install PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          package_json_file: frontend/package.json
+
+      - name: Install Node.js 20
+        uses: actions/setup-node@v2
         with:
           node-version: 20
-      - run: |
+          cache: 'pnpm'
+          cache-dependency-path: 'frontend/pnpm-lock.yaml'
+
+      - name: Install dependencies
+        run: |
           cd frontend
-          npm ci --legacy-peer-deps
-      - run: |
+          pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: |
           cd frontend
-          npm run lint
+          pnpm run lint
 
   lint-python:
     name: Lint python
