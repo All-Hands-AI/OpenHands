@@ -33,10 +33,10 @@ class Task:
             if isinstance(subtask, Task):
                 self.subtasks.append(subtask)
             else:
-                goal = subtask.get('goal')
-                state = subtask.get('state')
-                subtasks = subtask.get('subtasks')
-                self.subtasks.append(Task(self, goal, state, subtasks))
+                subtask_goal = subtask.get('goal', goal)
+                subtask_state = subtask.get('state', OPEN_STATE)
+                subtask_subtasks = subtask.get('subtasks', [])
+                self.subtasks.appendTask(self, subtask_goal, subtask_state, subtask_subtasks)
 
         self.state = OPEN_STATE
 
