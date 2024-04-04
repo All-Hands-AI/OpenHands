@@ -10,8 +10,12 @@ import {
   Button,
   Autocomplete,
   AutocompleteItem,
+  Select,
+  SelectItem,
 } from "@nextui-org/react";
 import { KeyboardEvent } from "@react-types/shared/src/events";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 import {
   INITIAL_AGENTS,
   fetchModels,
@@ -24,9 +28,12 @@ import {
   setModel,
   setAgent,
   setWorkspaceDirectory,
+  setLanguage,
 } from "../state/settingsSlice";
 import store, { RootState } from "../store";
 import socket from "../socket/socket";
+import { I18nKey } from "../i18n/declaration";
+import { AvailableLanguages } from "../i18n";
 
 interface Props {
   isOpen: boolean;
@@ -41,11 +48,13 @@ const cachedAgents = JSON.parse(
 );
 
 function SettingModal({ isOpen, onClose }: Props): JSX.Element {
+  const { t } = useTranslation();
   const model = useSelector((state: RootState) => state.settings.model);
   const agent = useSelector((state: RootState) => state.settings.agent);
   const workspaceDirectory = useSelector(
     (state: RootState) => state.settings.workspaceDirectory,
   );
+  const language = useSelector((state: RootState) => state.settings.language);
 
   const [supportedModels, setSupportedModels] = useState(
     cachedModels.length > 0 ? cachedModels : INITIAL_MODELS,
@@ -72,10 +81,12 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
   }, []);
 
   const handleSaveCfg = () => {
-    sendSettings(socket, { model, agent, workspaceDirectory });
+    sendSettings(socket, { model, agent, workspaceDirectory, language });
     localStorage.setItem("model", model);
     localStorage.setItem("workspaceDirectory", workspaceDirectory);
     localStorage.setItem("agent", agent);
+    localStorage.setItem("language", language);
+    i18next.changeLanguage(language);
     onClose();
   };
 
@@ -87,14 +98,18 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
       <ModalContent>
         <>
           <ModalHeader className="flex flex-col gap-1">
-            Configuration
+            {t(I18nKey.CONFIGURATION$MODAL_TITLE)}
           </ModalHeader>
           <ModalBody>
             <Input
               type="text"
-              label="OpenDevin Workspace Directory"
+              label={t(
+                I18nKey.CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_LABEL,
+              )}
               defaultValue={workspaceDirectory}
-              placeholder="Default: ./workspace"
+              placeholder={t(
+                I18nKey.CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER,
+              )}
               onChange={(e) =>
                 store.dispatch(setWorkspaceDirectory(e.target.value))
               }
@@ -105,10 +120,9 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
                 label: v,
                 value: v,
               }))}
-              label="Model"
-              placeholder="Select a model"
+              label={t(I18nKey.CONFIGURATION$MODEL_SELECT_LABEL)}
+              placeholder={t(I18nKey.CONFIGURATION$MODEL_SELECT_PLACEHOLDER)}
               selectedKey={model}
-              // className="max-w-xs"
               onSelectionChange={(key) => {
                 store.dispatch(setModel(key as string));
               }}
@@ -127,10 +141,9 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
                 label: v,
                 value: v,
               }))}
-              label="Agent"
-              placeholder="Select a agent"
+              label={t(I18nKey.CONFIGURATION$AGENT_SELECT_LABEL)}
+              placeholder={t(I18nKey.CONFIGURATION$AGENT_SELECT_PLACEHOLDER)}
               defaultSelectedKey={agent}
-              // className="max-w-xs"
               onSelectionChange={(key) => {
                 store.dispatch(setAgent(key as string));
               }}
@@ -143,14 +156,28 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
                 </AutocompleteItem>
               )}
             </Autocomplete>
+            <Select
+              selectionMode="single"
+              onChange={(e) => {
+                store.dispatch(setLanguage(e.target.value));
+              }}
+              selectedKeys={[language]}
+              label={t(I18nKey.CONFIGURATION$LANGUAGE_SELECT_LABEL)}
+            >
+              {AvailableLanguages.map((lang) => (
+                <SelectItem key={lang.value} value={lang.value}>
+                  {lang.label}
+                </SelectItem>
+              ))}
+            </Select>
           </ModalBody>
 
           <ModalFooter>
             <Button color="danger" variant="light" onPress={onClose}>
-              Close
+              {t(I18nKey.CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL)}
             </Button>
             <Button color="primary" onPress={handleSaveCfg}>
-              Save
+              {t(I18nKey.CONFIGURATION$MODAL_SAVE_BUTTON_LABEL)}
             </Button>
           </ModalFooter>
         </>
