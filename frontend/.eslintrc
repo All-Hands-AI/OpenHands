@@ -17,7 +17,9 @@
     "prettier/prettier": ["error"]
   },
   "settings": {
-    "version": "detect"
+    "react": {
+      "version": "detect"
+    }
   },
   "overrides": [
     {
