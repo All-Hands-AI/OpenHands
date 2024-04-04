@@ -10,8 +10,9 @@ services:
     container_name: devin-frontend
     depends_on:
       - backend
-    volumes:
-      - ./config.toml:/usr/src/app/config.toml
+    environment:
+      - BACKEND_HOST=devin-backend:3000
+      # - BACKEND_HOST=localhost:3000
     command: ["npm", "start", "--", "--host", "0.0.0.0"]
 
   backend:
@@ -24,17 +25,19 @@ services:
       - "127.0.0.1:3000:3000"
     container_name: devin-backend
     volumes:
-      #TODO: is config.toml neeed in the frontend or backend or both? 
       - ./config.toml:/usr/src/app/config.toml
       - /var/run/docker.sock:/var/run/docker.sock
       #TODO: fix issue where workspace doesn't have permissions to write files
-      # - workspace:/usr/src/app/workspace
+      # devin-backend   | Failed to start container: 500 Server Error for http+docker://localhost/v1.41/containers/create?name=sandbox-default: Internal Server Error \
+      #("make cli opts(): making volume mountpoint for volume /usr/src/app/workspace: mkdir /usr/src/app: read-only file system")
+      - workspace:/usr/src/app/workspace:rw
     privileged: true
 
 networks:
   opendevin:
     name: opendevin
+    driver: bridge
 
-# volumes:
-#   workspace:
-#     driver: local
+volumes:
+  workspace:
+    driver: local
