@@ -8,7 +8,6 @@
 -->
 
 
-
 <!-- PROJECT SHIELDS -->
 <!--
 *** I'm using markdown "reference style" links for readability.
@@ -31,8 +30,6 @@
   <img src="./logo.png" alt="Logo" width="200" height="200">
   <h1 align="center">OpenDevin: Code Less, Make More</h1>
 </div>
-
-
 
 
 <!-- TABLE OF CONTENTS -->
