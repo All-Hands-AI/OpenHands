@@ -63,15 +63,18 @@ setup-config:
 
 	@read -p "Enter your LLM API key: " llm_api_key; \
 	 echo "LLM_API_KEY=\"$$llm_api_key\"" >> $(CONFIG_FILE).tmp
+   
+	@read -p "Enter your LLM Base URL [mostly used for local LLMs, leave blank if not needed - example: http://localhost:5001/v1/]: " llm_base_url; \
+	 if [[ ! -z "$$llm_base_url" ]]; then echo "LLM_BASE_URL=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; fi
 
 	@echo "Enter your LLM Embedding Model\nChoices are openai, azureopenai, llama2 or leave blank to default to 'BAAI/bge-small-en-v1.5' via huggingface"; \
 	 read -p "> " llm_embedding_model; \
 	 	echo "LLM_EMBEDDING_MODEL=\"$$llm_embedding_model\"" >> $(CONFIG_FILE).tmp; \
 		if [ "$$llm_embedding_model" = "llama2" ]; then \
-			read -p "Enter the local model URL: " llm_base_url; \
+			read -p "Enter the local model URL (will overwrite LLM_BASE_URL): " llm_base_url; \
 				echo "LLM_BASE_URL=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; \
 		elif [ "$$llm_embedding_model" = "azureopenai" ]; then \
-			read -p "Enter the Azure endpoint URL: " llm_base_url; \
+			read -p "Enter the Azure endpoint URL (will overwrite LLM_BASE_URL): " llm_base_url; \
 				echo "LLM_BASE_URL=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; \
 			read -p "Enter the Azure LLM Deployment Name: " llm_deployment_name; \
 				echo "LLM_DEPLOYMENT_NAME=\"$$llm_deployment_name\"" >> $(CONFIG_FILE).tmp; \
