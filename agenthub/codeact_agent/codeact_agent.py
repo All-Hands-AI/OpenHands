@@ -53,9 +53,8 @@ def parse_response(response) -> str:
 
 class CodeActAgent(Agent):
     """
-    The Code Act Agent is responsible for executing commands. 
-    It is prompted by giving it an action to try and complete along with a list of previous steps taken. 
-    It has access to the terminal and can execute arbitrary code via <execute> COMMAND </execute>.
+    The Code Act Agent is a minimalist agent. 
+    The agent works by passing the model a list of action-observaiton pairs and prompting the model to take the next step.
     """
     
     def __init__(

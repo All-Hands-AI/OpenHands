@@ -104,7 +104,7 @@ def get_request_action_prompt(
         background_commands_obs: List[CmdOutputObservation] = [],
 ):
     """
-    Gets the action prompt formatted with appropriate values
+    Gets the action prompt formatted with appropriate values.
 
     Parameters:
     - task (str): The current task the agent is trying to accomplish
@@ -133,8 +133,7 @@ def get_request_action_prompt(
         for command_obs in background_commands_obs:
             bg_commands_message += f"\n`{command_obs.command_id}`: {command_obs.command}"
         bg_commands_message += "\nYou can end any process by sending a `kill` action with the numerical `id` above."
-    latest_thought = thoughts[-1]
-
+        
     return ACTION_PROMPT % {
         'task': task,
         'monologue': json.dumps(thoughts, indent=2),

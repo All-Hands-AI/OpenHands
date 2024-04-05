@@ -131,7 +131,8 @@ What is your next thought or action? Again, you must reply with JSON, and only w
 
 def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
     """
-    Returns the prompt for the planner agent, formatted with the most recent actions and observations in history
+    Gets the prompt for the planner agent. 
+    Formatted with the most recent action-observation pairs, current task, and hint based on last action
 
     Parameters:
     - plan (Plan): The original plan outlined by the user with LLM defined tasks

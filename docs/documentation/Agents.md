@@ -38,7 +38,8 @@ Responsible for talking to the user and acting as an overall manager of the proj
 ## Planner Agent:
 
 ### Description:
-The planner agent is responsible for looking at the current progress of the task as well as the goal and evaluating the best course of action given the state. This agent will respond with either a thought or an action.
+The planner agent utilizes a special prompting strategy to create long term plans for solving problems.
+The agent is given its previous action-observation pairs, current task, and hint based on last action taken at every step.
 
 ### Actions:
 `NullAction`,
@@ -73,7 +74,7 @@ The planner agent is responsible for looking at the current progress of the task
 ## CodeAct Agent:
 
 ### Description:
-This agent is responsible for executing commands. The agent is prompted by giving it an action to try and complete along with a list of previous steps taken. The Code Act Agent has access to the terminal and can execute arbitrary code via `<execute> COMMAND </execute>`.  
+The Code Act Agent is a minimalist agent. The agent works by passing the model a list of action-observaiton pairs and prompting the model to take the next step.
 
 ### Actions:
 `Action`,
