@@ -8,7 +8,7 @@ readme = "README.md"
 repository = "https://github.com/OpenDevin/OpenDevin"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.11,<4.0"
 datasets = "*"
 pandas = "*"
 litellm = "*"
