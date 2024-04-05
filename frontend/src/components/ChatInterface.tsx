@@ -1,21 +1,20 @@
 import { Card, CardBody } from "@nextui-org/react";
 import React, { useEffect, useRef } from "react";
-import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import assistantAvatar from "../assets/assistant-avatar.png";
-import CogTooth from "../assets/cog-tooth";
 import userAvatar from "../assets/user-avatar.png";
 import { useTypingEffect } from "../hooks/useTypingEffect";
+import { I18nKey } from "../i18n/declaration";
 import {
+  addAssistantMessageToChat,
   setCurrentQueueMarkerState,
   setCurrentTypingMsgState,
   setTypingAcitve,
-  addAssistantMessageToChat,
 } from "../services/chatService";
-import { RootState } from "../store";
 import { Message } from "../state/chatSlice";
+import { RootState } from "../store";
 import Input from "./Input";
-import { I18nKey } from "../i18n/declaration";
 
 interface IChatBubbleProps {
   msg: Message;
@@ -185,24 +184,12 @@ function InitializingStatus(): JSX.Element {
   );
 }
 
-interface Props {
-  setSettingOpen: (isOpen: boolean) => void;
-}
-
-function ChatInterface({ setSettingOpen }: Props): JSX.Element {
+function ChatInterface(): JSX.Element {
   const { initialized } = useSelector((state: RootState) => state.task);
 
   return (
-    <div className="flex flex-col h-full p-0 bg-bg-light">
-      <div className="w-full flex justify-between p-5">
-        <div />
-        <div
-          className="cursor-pointer hover:opacity-80"
-          onClick={() => setSettingOpen(true)}
-        >
-          <CogTooth />
-        </div>
-      </div>
+    <div className="flex flex-col h-full p-0 bg-bg-workspace">
+      <div className="border-b border-border text-lg px-4 py-2">Chat</div>
       {initialized ? <MessageList /> : <InitializingStatus />}
       <Input />
     </div>
