@@ -1,5 +1,5 @@
 import os
-import toml
+import toml  # type: ignore
 
 from dotenv import load_dotenv
 
@@ -17,6 +17,7 @@ DEFAULT_CONFIG = {
     "LLM_COOLDOWN_TIME" : 1,
     "DIRECTORY_REWRITE" : "",
     "PROMPT_DEBUG_DIR": "",
+    "MAX_ITERATIONS": 100,
 }
 
 config_str = ""
@@ -33,11 +34,13 @@ for key, value in config.items():
     config[key] = tomlConfig[key]
 
 
+
 def _get(key: str, default):
     value = config.get(key, default)
     if not value:
         value = os.environ.get(key, default)
     return value
+
 
 def get_or_error(key: str):
     """
@@ -48,11 +51,13 @@ def get_or_error(key: str):
         raise KeyError(f"Please set '{key}' in `config.toml` or `.env`.")
     return value
 
+
 def get_or_default(key: str, default):
     """
     Get a key from the config, or return a default value if it doesn't exist.
     """
     return _get(key, default)
+
 
 def get_or_none(key: str):
     """

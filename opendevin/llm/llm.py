@@ -44,9 +44,7 @@ class LLM:
             }],
             num_retries=self.num_retries,
             allowed_fails=self.num_retries, # We allow all retries to fail, so they can retry instead of going into "cooldown"
-            cooldown_time=self.cooldown_time,
-            # set_verbose=True,
-            # debug_level="DEBUG"
+            cooldown_time=self.cooldown_time
         )
         self._completion = partial(self._router.completion, model=self.model_name)
 

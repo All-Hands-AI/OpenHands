@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Message } from "../state/chatSlice";
 /**
  * hook to be used for typing chat effect
  */
@@ -7,9 +8,26 @@ export const useTypingEffect = (
   {
     loop = false,
     playbackRate = 0.1,
-  }: { loop?: boolean; playbackRate?: number } = {
+    setTypingActive = () => {},
+    setCurrentQueueMarkerState = () => {},
+    currentQueueMarker = 0,
+    addAssistantMessageToChat = () => {},
+    assistantMessageObj = { content: "", sender: "assistant" },
+  }: {
+    loop?: boolean;
+    playbackRate?: number;
+    setTypingActive?: (bool: boolean) => void;
+    setCurrentQueueMarkerState?: (marker: number) => void;
+    currentQueueMarker?: number;
+    addAssistantMessageToChat?: (msg: Message) => void;
+    assistantMessageObj?: Message;
+  } = {
     loop: false,
     playbackRate: 0.1,
+    setTypingActive: () => {},
+    currentQueueMarker: 0,
+    addAssistantMessageToChat: () => {},
+    assistantMessageObj: { content: "", sender: "assistant" },
   },
 ) => {
   // eslint-disable-next-line prefer-const
@@ -31,6 +49,9 @@ export const useTypingEffect = (
       stringIndex++;
       if (stringIndex === strings.length) {
         if (!loop) {
+          setTypingActive(false);
+          setCurrentQueueMarkerState(currentQueueMarker + 1);
+          addAssistantMessageToChat(assistantMessageObj);
           return;
         }
         stringIndex = 0;
