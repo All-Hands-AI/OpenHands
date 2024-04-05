@@ -125,6 +125,16 @@ Getting started with the OpenDevin project is incredibly easy. Follow these simp
     make build
     ```
 
+    **Troubleshooting for Mac Users:**
+
+    If you see `make: poetry: No such file or directory`, ensure `poetry` is accessible in your PATH by adding to `.zshrc` or `.bash_profile`:
+
+    ```bash
+    export PATH="$HOME/.local/bin:$PATH"
+    ```
+
+    Refer to [this StackOverflow post](https://stackoverflow.com/questions/70003829/poetry-installed-but-poetry-command-not-found) for details of the error.
+
 ### 3. Configuring the Language Model
 
 OpenDevin supports a diverse array of Language Models (LMs) through the powerful [litellm](https://docs.litellm.ai) library. By default, we've chosen the mighty GPT-4 from OpenAI as our go-to model, but the world is your oyster! You can unleash the potential of Anthropic's suave Claude, the enigmatic Llama, or any other LM that piques your interest.
