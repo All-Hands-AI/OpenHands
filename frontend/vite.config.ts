@@ -6,7 +6,7 @@ const BACKEND_HOST = process.env.BACKEND_HOST || "127.0.0.1:3000";
 
 // check BACKEND_HOST is something like "localhost:3000"
 if (!BACKEND_HOST.match(/^([\w\d-]+(:\d+)?)/)) {
-    throw new Error(
+  throw new Error(
     `Invalid BACKEND_HOST ${BACKEND_HOST}, example BACKEND_HOST 127.0.0.1:3000`,
   );
 }

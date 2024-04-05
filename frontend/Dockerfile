@@ -5,11 +5,10 @@ ENV FRONTEND_PORT=3001
 
 WORKDIR /usr/src/app
 
-COPY . .
-RUN rm -rf node_modules #TODO: simplify
+COPY package*.json .
 RUN corepack enable && pnpm install && pnpm run make-i18n
+COPY . .
 
 EXPOSE 3001
-
 
 CMD ["pnpm", "run", "start"]
