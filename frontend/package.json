@@ -23,6 +23,7 @@
     "@xterm/xterm": "^5.4.0",
     "eslint-config-airbnb-typescript": "^18.0.0",
     "framer-motion": "^11.0.24",
+    "jose": "^5.2.3",
     "i18next": "^23.10.1",
     "i18next-browser-languagedetector": "^7.2.1",
     "i18next-http-backend": "^2.5.0",

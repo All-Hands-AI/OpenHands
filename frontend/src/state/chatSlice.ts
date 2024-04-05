@@ -49,7 +49,7 @@ export const chatSlice = createSlice({
       state.currentTypingMessage = action.payload;
       // state.currentQueueMarker += 1;
     },
-    appeendToNewChatSequence: (state, action) => {
+    appendToNewChatSequence: (state, action) => {
       state.newChatSequence.push(action.payload);
     },
   },
@@ -62,7 +62,7 @@ export const {
   emptyOutQueuedTyping,
   setCurrentTypingMessage,
   setCurrentQueueMarker,
-  appeendToNewChatSequence,
+  appendToNewChatSequence,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

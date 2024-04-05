@@ -129,7 +129,19 @@ What is your next thought or action? Again, you must reply with JSON, and only w
 %(hint)s
 """
 
-def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
+def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
+    """
+    Gets the prompt for the planner agent. 
+    Formatted with the most recent action-observation pairs, current task, and hint based on last action
+
+    Parameters:
+    - plan (Plan): The original plan outlined by the user with LLM defined tasks
+    - history (List[Tuple[Action, Observation]]): List of corresponding action-observation pairs
+
+    Returns:
+    - str: The formatted string prompt with historical values
+    """
+
     plan_str = json.dumps(plan.task.to_dict(), indent=2)
     sub_history = history[-HISTORY_SIZE:]
     history_dicts = []
@@ -191,6 +203,15 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
     }
 
 def parse_response(response: str) -> Action:
+    """
+    Parses the model output to find a valid action to take
+
+    Parameters:
+    - response (str): A response from the model that potentially contains an Action.
+
+    Returns:
+    - Action: A valid next action to perform from model output
+    """
     json_start = response.find("{")
     json_end = response.rfind("}") + 1
     response = response[json_start:json_end]
