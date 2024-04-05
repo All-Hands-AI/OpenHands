@@ -35,7 +35,7 @@ function App(): JSX.Element {
     <div className="flex h-screen bg-bg-dark text-white">
       <LeftNav setSettingOpen={setSettingOpen} />
       <div className="flex flex-col grow gap-3 py-3 pr-3">
-        <div className="flex gap-3 grow">
+        <div className="flex gap-3 grow min-h-0">
           <div className="w-[500px] shrink-0 rounded-xl overflow-hidden border border-border">
             <ChatInterface />
           </div>
