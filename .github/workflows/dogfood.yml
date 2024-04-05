@@ -23,4 +23,4 @@ jobs:
         make build
 
     - name: Run OpenDevin
-      run: python ./opendevin/main.py -d ./ -t "${{ github.event.issue.title }} - ${{ github.event.issue.body }}"
+      run: poetry run python ./opendevin/main.py -d ./ -t "${{ github.event.issue.title }} - ${{ github.event.issue.body }}"
