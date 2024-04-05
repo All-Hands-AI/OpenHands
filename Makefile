@@ -31,6 +31,12 @@ build:
 	@which corepack > /dev/null || (echo "Installing corepack..." && npm install -g corepack)
 	@cd frontend && corepack enable && pnpm install && pnpm run make-i18n
 
+# Build Evaluation
+build-eval:
+	@echo "Building evaluation dependencies..."
+	@poetry install --only evaluation
+	@echo "Evaluation dependencies built successfully."
+
 # Start backend
 start-backend:
 	@echo "Starting backend..."
@@ -98,4 +104,4 @@ help:
 	@echo "  help                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: install start-backend start-frontend run setup-config help
+.PHONY: build build-eval start-backend start-frontend run setup-config help
