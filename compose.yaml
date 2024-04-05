@@ -36,6 +36,7 @@ services:
         target: /usr/src/app/workspace
         read_only: false
     privileged: true
+    command:  ["poetry", "run", "uvicorn", "opendevin.server.listen:app", "--host", "0.0.0.0", "--port", "3000", "--log-level", "debug"]
 
 networks:
   opendevin:
