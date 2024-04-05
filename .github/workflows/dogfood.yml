@@ -27,4 +27,10 @@ jobs:
         make build
 
     - name: Run OpenDevin
-      run: poetry run python ./opendevin/main.py -d ./ -t "${{ github.event.issue.title }} - ${{ github.event.issue.body }}"
+      env:
+        ISSUE_TITLE: ${{ github.event.issue.title }}
+        ISSUE_BODY: ${{ github.event.issue.body }}
+      run: |
+        # Replace new lines and double quotes in ISSUE_BODY
+        ESCAPED_ISSUE_BODY=$(echo "$ISSUE_BODY" | sed ':a;N;$!ba;s/\n/ /g' | sed 's/"/\\"/g')
+        poetry run python ./opendevin/main.py -d ./ -i 50 -t "${ISSUE_TITLE} - ${ESCAPED_ISSUE_BODY}"
