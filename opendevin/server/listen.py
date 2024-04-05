@@ -1,5 +1,8 @@
 from opendevin.server.session import Session
-from fastapi import FastAPI, WebSocket
+import json
+from pathlib import Path
+from opendevin import config, files
+from fastapi import FastAPI, WebSocket, Body
 from fastapi.middleware.cors import CORSMiddleware
 import agenthub  # noqa F401 (we import this to get the agents registered)
 import litellm
@@ -41,6 +44,20 @@ async def get_litellm_agents():
     """
     return Agent.listAgents()
 
+
 @app.get("/default-model")
 def read_default_model():
     return config.get_or_error("LLM_MODEL")
+
+
+@app.get("/refresh-files")
+def refresh_files():
+    structure = files.get_folder_structure(Path(str(config.get("WORKSPACE_DIR"))))
+    return json.dumps(structure.to_dict())
+
+
+@app.get("/select-file")
+def select_file(file: str):
+    with open(Path(Path(str(config.get("WORKSPACE_DIR"))), file), "r") as selected_file:
+        content = selected_file.read()
+    return json.dumps({"code": content})

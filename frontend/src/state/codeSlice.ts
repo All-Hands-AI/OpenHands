@@ -1,31 +1,23 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { INode, flattenTree } from "react-accessible-treeview";
 import { IFlatMetadata } from "react-accessible-treeview/dist/TreeView/utils";
-
-type File = {
-  name: string;
-  children?: File[];
-};
+import { WorkspaceFile } from "../services/fileService";
 
 export const codeSlice = createSlice({
   name: "code",
   initialState: {
     code: "# Welcome to OpenDevin!",
-    files: { name: "" } as File,
-    explorerOpen: true,
     selectedIds: [] as number[],
+    workspaceFolder: { name: "" } as WorkspaceFile,
   },
   reducers: {
     setCode: (state, action) => {
       state.code = action.payload;
     },
-    initializeFiles: (state, action) => {
-      state.files = JSON.parse(action.payload);
-    },
     updatePath: (state, action) => {
       const path = action.payload;
       const pathParts = path.split("/");
-      let current = state.files;
+      let current = state.workspaceFolder;
 
       for (let i = 0; i < pathParts.length - 1; i += 1) {
         const folderName = pathParts[i];
@@ -44,7 +36,7 @@ export const codeSlice = createSlice({
         current.children?.push({ name: fileName });
       }
 
-      const data = flattenTree(state.files);
+      const data = flattenTree(state.workspaceFolder);
       const checkPath: (
         file: INode<IFlatMetadata>,
         pathIndex: number,
@@ -66,13 +58,12 @@ export const codeSlice = createSlice({
         .map((file) => file.id) as number[];
       state.selectedIds = selected;
     },
-    toggleExplorer: (state) => {
-      state.explorerOpen = !state.explorerOpen;
+    updateWorkspace: (state, action) => {
+      state.workspaceFolder = action.payload;
     },
   },
 });
 
-export const { setCode, updatePath, initializeFiles, toggleExplorer } =
-  codeSlice.actions;
+export const { setCode, updatePath, updateWorkspace } = codeSlice.actions;
 
 export default codeSlice.reducer;

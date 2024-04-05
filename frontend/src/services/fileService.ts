@@ -1,13 +1,14 @@
-import socket from "../socket/socket";
+export type WorkspaceFile = {
+  name: string;
+  children?: WorkspaceFile[];
+};
 
-export function sendSelectedMessage(file: string): void {
-  const event = { action: "file_selected", args: { file } };
-  const eventString = JSON.stringify(event);
-  socket.send(eventString);
+export async function selectFile(file: string): Promise<string> {
+  const res = await fetch(`/api/select-file?file=${file}`);
+  return (await JSON.parse(await res.json()).code) as string;
 }
 
-export function sendRefreshFilesMessage(): void {
-  const event = { action: "refresh_files" };
-  const eventString = JSON.stringify(event);
-  socket.send(eventString);
+export async function getWorkspace(): Promise<WorkspaceFile> {
+  const res = await fetch("/api/refresh-files");
+  return (await JSON.parse(await res.json())) as WorkspaceFile;
 }

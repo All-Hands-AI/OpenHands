@@ -1,6 +1,6 @@
 import Editor, { Monaco } from "@monaco-editor/react";
 import type { editor } from "monaco-editor";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import TreeView, { flattenTree } from "react-accessible-treeview";
 import { DiJavascript } from "react-icons/di";
 import {
@@ -16,11 +16,8 @@ import {
 } from "react-icons/fa";
 import { VscClose, VscListTree, VscRefresh } from "react-icons/vsc";
 import { useSelector } from "react-redux";
-import {
-  sendRefreshFilesMessage,
-  sendSelectedMessage,
-} from "../services/fileService";
-import { toggleExplorer } from "../state/codeSlice";
+import { getWorkspace, selectFile } from "../services/fileService";
+import { setCode, updateWorkspace } from "../state/codeSlice";
 import store, { RootState } from "../store";
 
 interface FileIconProps {
@@ -64,14 +61,18 @@ function FolderIcon({ isOpen }: FolderIconProps): JSX.Element {
 }
 
 function Files(): JSX.Element | null {
-  const folder = useSelector((state: RootState) => state.code.files);
-  const selectedIds = useSelector((state: RootState) => state.code.selectedIds);
-  const explorerOpen = useSelector(
-    (state: RootState) => state.code.explorerOpen,
+  const workspaceFolder = useSelector(
+    (state: RootState) => state.code.workspaceFolder,
   );
-  const data = flattenTree(folder);
+  const selectedIds = useSelector((state: RootState) => state.code.selectedIds);
+  const [explorerOpen, setExplorerOpen] = useState(true);
+  const workspaceTree = flattenTree(workspaceFolder);
 
-  if (data.length <= 1) {
+  useEffect(() => {
+    getWorkspace().then((file) => store.dispatch(updateWorkspace(file)));
+  }, []);
+
+  if (workspaceTree.length <= 1) {
     return null;
   }
   if (!explorerOpen) {
@@ -80,7 +81,7 @@ function Files(): JSX.Element | null {
         <div className="flex gap-1 border-b-1 p-1 justify-end">
           <VscListTree
             className="cursor-pointer"
-            onClick={() => store.dispatch(toggleExplorer())}
+            onClick={() => setExplorerOpen(true)}
           />
         </div>
       </div>
@@ -90,33 +91,37 @@ function Files(): JSX.Element | null {
     <div className="min-w-[250px] h-full bg-bg-workspace border-r-1 flex flex-col">
       <div className="flex gap-1 border-b-1 p-1 justify-end">
         <VscRefresh
-          onClick={() => sendRefreshFilesMessage()}
+          onClick={() =>
+            getWorkspace().then((file) => store.dispatch(updateWorkspace(file)))
+          }
           className="cursor-pointer"
         />
         <VscClose
           className="cursor-pointer"
-          onClick={() => store.dispatch(toggleExplorer())}
+          onClick={() => setExplorerOpen(false)}
         />
       </div>
       <div className="w-full overflow-x-auto h-full py-2">
         <TreeView
           className="font-mono text-sm"
-          data={data}
+          data={workspaceTree}
           selectedIds={selectedIds}
-          expandedIds={data.map((node) => node.id)}
+          expandedIds={workspaceTree.map((node) => node.id)}
           onNodeSelect={(node) => {
             if (!node.isBranch) {
               let fullPath = node.element.name;
-              let currentNode = data.find(
+              let currentNode = workspaceTree.find(
                 (file) => file.id === node.element.id,
               );
-              while (currentNode && currentNode.parent) {
-                currentNode = data.find(
+              while (currentNode !== undefined && currentNode.parent) {
+                currentNode = workspaceTree.find(
                   (file) => file.id === node.element.parent,
                 );
                 fullPath = `${currentNode!.name}/${fullPath}`;
               }
-              sendSelectedMessage(fullPath);
+              selectFile(fullPath).then((code) => {
+                store.dispatch(setCode(code));
+              });
             }
           }}
           // eslint-disable-next-line react/no-unstable-nested-components

@@ -2,11 +2,11 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 
-class File:
+class WorkspaceFile:
     name: str
-    children: List["File"]
+    children: List["WorkspaceFile"]
 
-    def __init__(self, name: str, children: List["File"]):
+    def __init__(self, name: str, children: List["WorkspaceFile"]):
         self.name = name
         self.children = children
 
@@ -22,7 +22,7 @@ class File:
         }
 
 
-def get_folder_structure(workdir: Path) -> File:
+def get_folder_structure(workdir: Path) -> WorkspaceFile:
     """Gets the folder structure of a directory.
 
     Args:
@@ -31,12 +31,12 @@ def get_folder_structure(workdir: Path) -> File:
     Returns:
         The folder structure.
     """
-    root = File(name=workdir.name, children=[])
+    root = WorkspaceFile(name=workdir.name, children=[])
     for item in workdir.iterdir():
         if item.is_dir():
             dir = get_folder_structure(item)
             if dir.children:
                 root.children.append(dir)
         else:
-            root.children.append(File(name=item.name, children=[]))
+            root.children.append(WorkspaceFile(name=item.name, children=[]))
     return root

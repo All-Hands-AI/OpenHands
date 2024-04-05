@@ -1,12 +1,10 @@
 import asyncio
-import json
 import os
-from pathlib import Path
 from typing import Optional
 
 from fastapi import WebSocketDisconnect
 
-from opendevin import config, files
+from opendevin import config
 from opendevin.action import (
     Action,
     NullAction,
@@ -92,32 +90,6 @@ class Session:
                     await self.create_controller(data)
                 elif action == "start":
                     await self.start_task(data)
-                elif action == "file_selected":
-                    if self.controller is None:
-                        await self.send_error(
-                            "No agent started. Please wait a second..."
-                        )
-                    else:
-                        with open(
-                            Path(self.controller.workdir, data["args"]["file"]), "r"
-                        ) as file:
-                            content = file.read()
-                        await self.send({"action": "file_selected", "message": content})
-                elif action == "refresh_files":
-                    if self.controller is None:
-                        await self.send_error(
-                            "No agent started. Please wait a second..."
-                        )
-                    else:
-                        structure = files.get_folder_structure(
-                            Path(self.controller.workdir)
-                        )
-                        await self.send(
-                            {
-                                "action": "refresh_files",
-                                "message": json.dumps(structure.to_dict()),
-                            }
-                        )
                 else:
                     if self.controller is None:
                         await self.send_error(
@@ -167,7 +139,6 @@ class Session:
             print(f"Workspace directory {directory} does not exist. Creating it...")
             os.makedirs(directory)
         directory = os.path.relpath(directory, os.getcwd())
-        structure = files.get_folder_structure(Path(directory))
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
         AgentCls = Agent.get_cls(agent_cls)
         self.agent = AgentCls(llm)
@@ -185,9 +156,7 @@ class Session:
                 "Error creating controller. Please check Docker is running using `docker ps`."
             )
             return
-        await self.send(
-            {"action": "initialize", "message": json.dumps(structure.to_dict())}
-        )
+        await self.send({"action": "initialize"})
 
     async def start_task(self, start_event):
         """Starts a task for the agent.
