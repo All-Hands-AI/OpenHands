@@ -15,23 +15,15 @@ import {
 } from "@nextui-org/react";
 import { KeyboardEvent } from "@react-types/shared/src/events";
 import { useTranslation } from "react-i18next";
-import i18next from "i18next";
 import {
   INITIAL_AGENTS,
   fetchModels,
   fetchAgents,
   INITIAL_MODELS,
-  sendSettings,
+  saveSettings,
   getInitialModel,
 } from "../services/settingsService";
-import {
-  setModel,
-  setAgent,
-  setWorkspaceDirectory,
-  setLanguage,
-} from "../state/settingsSlice";
-import store, { RootState } from "../store";
-import socket from "../socket/socket";
+import { RootState } from "../store";
 import { I18nKey } from "../i18n/declaration";
 import { AvailableLanguages } from "../i18n";
 
@@ -48,13 +40,22 @@ const cachedAgents = JSON.parse(
 );
 
 function SettingModal({ isOpen, onClose }: Props): JSX.Element {
-  const { t } = useTranslation();
-  const model = useSelector((state: RootState) => state.settings.model);
-  const agent = useSelector((state: RootState) => state.settings.agent);
-  const workspaceDirectory = useSelector(
+  const defModel = useSelector((state: RootState) => state.settings.model);
+  const [model, setModel] = useState(defModel);
+  const defAgent = useSelector((state: RootState) => state.settings.agent);
+  const [agent, setAgent] = useState(defAgent);
+  const defWorkspaceDirectory = useSelector(
     (state: RootState) => state.settings.workspaceDirectory,
   );
-  const language = useSelector((state: RootState) => state.settings.language);
+  const [workspaceDirectory, setWorkspaceDirectory] = useState(
+    defWorkspaceDirectory,
+  );
+  const defLanguage = useSelector(
+    (state: RootState) => state.settings.language,
+  );
+  const [language, setLanguage] = useState(defLanguage);
+
+  const { t } = useTranslation();
 
   const [supportedModels, setSupportedModels] = useState(
     cachedModels.length > 0 ? cachedModels : INITIAL_MODELS,
@@ -64,11 +65,11 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
   );
 
   useEffect(() => {
-    async function setInitialModel() {
-      const initialModel = await getInitialModel();
-      store.dispatch(setModel(initialModel));
-    }
-    setInitialModel();
+    getInitialModel()
+      .then((initialModel) => {
+        setModel(initialModel);
+      })
+      .catch();
 
     fetchModels().then((fetchedModels) => {
       setSupportedModels(fetchedModels);
@@ -81,24 +82,12 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
   }, []);
 
   const handleSaveCfg = () => {
-    const previousModel = localStorage.getItem("model");
-    const previousWorkspaceDirectory =
-      localStorage.getItem("workspaceDirectory");
-    const previousAgent = localStorage.getItem("agent");
-
-    if (
-      model !== previousModel ||
-      agent !== previousAgent ||
-      workspaceDirectory !== previousWorkspaceDirectory
-    ) {
-      sendSettings(socket, { model, agent, workspaceDirectory, language });
-    }
-
-    localStorage.setItem("model", model);
-    localStorage.setItem("workspaceDirectory", workspaceDirectory);
-    localStorage.setItem("agent", agent);
-    localStorage.setItem("language", language);
-    i18next.changeLanguage(language);
+    saveSettings(
+      { model, agent, workspaceDirectory, language },
+      model !== defModel &&
+        agent !== defAgent &&
+        workspaceDirectory !== defWorkspaceDirectory,
+    );
     onClose();
   };
 
@@ -122,9 +111,7 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
               placeholder={t(
                 I18nKey.CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER,
               )}
-              onChange={(e) =>
-                store.dispatch(setWorkspaceDirectory(e.target.value))
-              }
+              onChange={(e) => setWorkspaceDirectory(e.target.value)}
             />
 
             <Autocomplete
@@ -136,7 +123,7 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
               placeholder={t(I18nKey.CONFIGURATION$MODEL_SELECT_PLACEHOLDER)}
               selectedKey={model}
               onSelectionChange={(key) => {
-                store.dispatch(setModel(key as string));
+                setModel(key as string);
               }}
               onKeyDown={(e: KeyboardEvent) => e.continuePropagation()}
               defaultFilter={customFilter}
@@ -157,7 +144,7 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
               placeholder={t(I18nKey.CONFIGURATION$AGENT_SELECT_PLACEHOLDER)}
               defaultSelectedKey={agent}
               onSelectionChange={(key) => {
-                store.dispatch(setAgent(key as string));
+                setAgent(key as string);
               }}
               onKeyDown={(e: KeyboardEvent) => e.continuePropagation()}
               defaultFilter={customFilter}
@@ -170,9 +157,7 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
             </Autocomplete>
             <Select
               selectionMode="single"
-              onChange={(e) => {
-                store.dispatch(setLanguage(e.target.value));
-              }}
+              onChange={(e) => setLanguage(e.target.value)}
               selectedKeys={[language]}
               label={t(I18nKey.CONFIGURATION$LANGUAGE_SELECT_LABEL)}
             >

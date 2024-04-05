@@ -1,6 +1,13 @@
 import { appendAssistantMessage } from "../state/chatSlice";
 import { setInitialized } from "../state/taskSlice";
 import store from "../store";
+import Socket from "./socket";
+import {
+  setAgent,
+  setLanguage,
+  setModel,
+  setWorkspaceDirectory,
+} from "../state/settingsSlice";
 
 export async function getInitialModel() {
   if (localStorage.getItem("model")) {
@@ -43,24 +50,28 @@ const SETTINGS_MAP = new Map<string, string>([
 ]);
 
 // Send settings to the server
-export function sendSettings(
-  socket: WebSocket,
+export function saveSettings(
   reduxSettings: { [id: string]: string },
-  appendMessages: boolean = true,
+  needToSend: boolean = false,
 ): void {
-  const socketSettings = Object.fromEntries(
-    Object.entries(reduxSettings).map(([setting, value]) => [
-      SETTINGS_MAP.get(setting) || setting,
-      value,
-    ]),
-  );
-  const event = { action: "initialize", args: socketSettings };
-  const eventString = JSON.stringify(event);
-  socket.send(eventString);
-  store.dispatch(setInitialized(false));
-  if (appendMessages) {
-    for (const [setting, value] of Object.entries(reduxSettings)) {
-      store.dispatch(appendAssistantMessage(`Set ${setting} to "${value}"`));
-    }
+  if (needToSend) {
+    const socketSettings = Object.fromEntries(
+      Object.entries(reduxSettings).map(([setting, value]) => [
+        SETTINGS_MAP.get(setting) || setting,
+        value,
+      ]),
+    );
+    const event = { action: "initialize", args: socketSettings };
+    const eventString = JSON.stringify(event);
+    store.dispatch(setInitialized(false));
+    Socket.send(eventString);
   }
+  for (const [setting, value] of Object.entries(reduxSettings)) {
+    localStorage.setItem(setting, value);
+    store.dispatch(appendAssistantMessage(`Set ${setting} to "${value}"`));
+  }
+  store.dispatch(setModel(reduxSettings.model));
+  store.dispatch(setAgent(reduxSettings.agent));
+  store.dispatch(setWorkspaceDirectory(reduxSettings.workspaceDirectory));
+  store.dispatch(setLanguage(reduxSettings.language));
 }

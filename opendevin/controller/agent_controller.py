@@ -1,4 +1,3 @@
-
 import asyncio
 import inspect
 import traceback
@@ -14,22 +13,38 @@ from opendevin.action import (
     NullAction,
     AgentFinishAction,
     AddTaskAction,
-    ModifyTaskAction
+    ModifyTaskAction,
 )
-from opendevin.observation import (
-    Observation,
-    AgentErrorObservation,
-    NullObservation
-)
+from opendevin.observation import Observation, AgentErrorObservation, NullObservation
 from opendevin import config
 
 from .command_manager import CommandManager
 
 
-ColorType = Literal['red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'light_grey', 'dark_grey', 'light_red', 'light_green', 'light_yellow', 'light_blue', 'light_magenta', 'light_cyan', 'white']
+ColorType = Literal[
+    "red",
+    "green",
+    "yellow",
+    "blue",
+    "magenta",
+    "cyan",
+    "light_grey",
+    "dark_grey",
+    "light_red",
+    "light_green",
+    "light_yellow",
+    "light_blue",
+    "light_magenta",
+    "light_cyan",
+    "white",
+]
 
-DISABLE_COLOR_PRINTING = config.get_or_default("DISABLE_COLOR", "false").lower() == "true"
+
+DISABLE_COLOR_PRINTING = (
+    config.get_or_default("DISABLE_COLOR", "false").lower() == "true"
+)
 MAX_ITERATIONS = config.get("MAX_ITERATIONS")
+
 
 def print_with_color(text: Any, print_type: str = "INFO"):
     TYPE_TO_COLOR: Mapping[str, ColorType] = {
@@ -50,19 +65,24 @@ def print_with_color(text: Any, print_type: str = "INFO"):
             flush=True,
         )
 
+
 class AgentController:
+    id: str
+
     def __init__(
         self,
         agent: Agent,
         workdir: str,
+        id: str = "",
         max_iterations: int = MAX_ITERATIONS,
         container_image: str | None = None,
         callbacks: List[Callable] = [],
     ):
+        self.id = id
         self.agent = agent
         self.max_iterations = max_iterations
         self.workdir = workdir
-        self.command_manager = CommandManager(workdir,container_image)
+        self.command_manager = CommandManager(self.id, workdir, container_image)
         self.callbacks = callbacks
 
     def update_state_for_step(self, i):
@@ -120,7 +140,7 @@ class AgentController:
             traceback.print_exc()
             # TODO Change to more robust error handling
             if "The api_key client option must be set" in observation.content:
-                raise 
+                raise
         self.update_state_after_step()
 
         await self._run_callbacks(action)
@@ -172,4 +192,6 @@ class AgentController:
             except Exception as e:
                 print("Callback error:" + str(idx), e, flush=True)
                 pass
-        await asyncio.sleep(0.001) # Give back control for a tick, so we can await in callbacks
+        await asyncio.sleep(
+            0.001
+        )  # Give back control for a tick, so we can await in callbacks
