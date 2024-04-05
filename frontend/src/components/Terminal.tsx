@@ -1,16 +1,15 @@
+import React, { useEffect, useRef } from "react";
 import { IDisposable, Terminal as XtermTerminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
-import React, { useEffect, useRef } from "react";
+import { useSelector } from "react-redux";
 import { FitAddon } from "xterm-addon-fit";
-import socket from "../socket/socket";
+import Socket from "../services/socket";
+import { RootState } from "../store";
 
 class JsonWebsocketAddon {
-  _socket: WebSocket;
-
   _disposables: IDisposable[];
 
-  constructor(_socket: WebSocket) {
-    this._socket = _socket;
+  constructor() {
     this._disposables = [];
   }
 
@@ -18,10 +17,10 @@ class JsonWebsocketAddon {
     this._disposables.push(
       terminal.onData((data) => {
         const payload = JSON.stringify({ action: "terminal", data });
-        this._socket.send(payload);
+        Socket.send(payload);
       }),
     );
-    this._socket.addEventListener("message", (event) => {
+    Socket.addEventListener("message", (event) => {
       const { action, args, observation, content } = JSON.parse(event.data);
       if (action === "run") {
         terminal.writeln(args.command);
@@ -37,7 +36,7 @@ class JsonWebsocketAddon {
 
   dispose() {
     this._disposables.forEach((d) => d.dispose());
-    this._socket.removeEventListener("message", () => {});
+    Socket.removeEventListener("message", () => {});
   }
 }
 
@@ -48,6 +47,7 @@ class JsonWebsocketAddon {
 
 function Terminal(): JSX.Element {
   const terminalRef = useRef<HTMLDivElement>(null);
+  const { commands } = useSelector((state: RootState) => state.cmd);
 
   useEffect(() => {
     const bgColor = getComputedStyle(document.documentElement)
@@ -80,13 +80,25 @@ function Terminal(): JSX.Element {
       fitAddon.fit();
     }, 1);
 
-    const jsonWebsocketAddon = new JsonWebsocketAddon(socket);
+    const jsonWebsocketAddon = new JsonWebsocketAddon();
     terminal.loadAddon(jsonWebsocketAddon);
 
+    // FIXME, temporary solution to display the terminal,
+    // but it will rerender the terminal every time the commands change
+    commands.forEach((command) => {
+      if (command.type === "input") {
+        terminal.writeln(command.content);
+      } else {
+        command.content.split("\n").forEach((line: string) => {
+          terminal.writeln(line);
+        });
+        terminal.write("\n$ ");
+      }
+    });
     return () => {
       terminal.dispose();
     };
-  }, []);
+  }, [commands]);
 
   return (
     <div className="flex flex-col h-full">

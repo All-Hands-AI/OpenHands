@@ -198,6 +198,7 @@ logs
 .envrc
 /workspace
 /debug
+cache
 
 # configuration
 config.toml

@@ -2,8 +2,6 @@ import asyncio
 import os
 from typing import Optional
 
-from fastapi import WebSocketDisconnect
-
 from opendevin import config
 from opendevin.action import (
     Action,
@@ -13,6 +11,7 @@ from opendevin.agent import Agent
 from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
 from opendevin.observation import NullObservation, Observation, UserMessageObservation
+from opendevin.server.session import session_manager
 
 DEFAULT_API_KEY = config.get("LLM_API_KEY")
 DEFAULT_BASE_URL = config.get("LLM_BASE_URL")
@@ -22,23 +21,20 @@ CONTAINER_IMAGE = config.get("SANDBOX_CONTAINER_IMAGE")
 MAX_ITERATIONS = config.get("MAX_ITERATIONS")
 
 
-class Session:
+class AgentManager:
     """Represents a session with an agent.
 
     Attributes:
-        websocket: The WebSocket connection associated with the session.
         controller: The AgentController instance for controlling the agent.
         agent: The Agent instance representing the agent.
         agent_task: The task representing the agent's execution.
     """
 
-    def __init__(self, websocket):
-        """Initializes a new instance of the Session class.
+    sid: str
 
-        Args:
-            websocket: The WebSocket connection associated with the session.
-        """
-        self.websocket = websocket
+    def __init__(self, sid):
+        """Initializes a new instance of the Session class."""
+        self.sid = sid
         self.controller: Optional[AgentController] = None
         self.agent: Optional[Agent] = None
         self.agent_task = None
@@ -49,7 +45,7 @@ class Session:
         Args:
             message: The error message to send.
         """
-        await self.send({"error": True, "message": message})
+        await session_manager.send_error(self.sid, message)
 
     async def send_message(self, message):
         """Sends a message to the client.
@@ -57,7 +53,7 @@ class Session:
         Args:
             message: The message to send.
         """
-        await self.send({"message": message})
+        await session_manager.send_message(self.sid, message)
 
     async def send(self, data):
         """Sends data to the client.
@@ -65,48 +61,27 @@ class Session:
         Args:
             data: The data to send.
         """
-        if self.websocket is None:
+        await session_manager.send(self.sid, data)
+
+    async def dispatch(self, action: str | None, data: dict):
+        """Dispatches actions to the agent from the client."""
+        if action is None:
+            await self.send_error("Invalid action")
             return
-        try:
-            await self.websocket.send_json(data)
-        except Exception as e:
-            print("Error sending data to client", e)
 
-    async def start_listening(self):
-        """Starts listening for messages from the client."""
-        try:
-            while True:
-                try:
-                    data = await self.websocket.receive_json()
-                except ValueError:
-                    await self.send_error("Invalid JSON")
-                    continue
-
-                action = data.get("action", None)
-                if action is None:
-                    await self.send_error("Invalid event")
-                    continue
-                if action == "initialize":
-                    await self.create_controller(data)
-                elif action == "start":
-                    await self.start_task(data)
-                else:
-                    if self.controller is None:
-                        await self.send_error(
-                            "No agent started. Please wait a second..."
-                        )
-                    elif action == "chat":
-                        self.controller.add_history(
-                            NullAction(), UserMessageObservation(data["message"])
-                        )
-                    else:
-                        await self.send_error(
-                            "I didn't recognize this action:" + action
-                        )
-
-        except WebSocketDisconnect as e:
-            print("Client websocket disconnected", e)
-            self.disconnect()
+        if action == "initialize":
+            await self.create_controller(data)
+        elif action == "start":
+            await self.start_task(data)
+        else:
+            if self.controller is None:
+                await self.send_error("No agent started. Please wait a second...")
+            elif action == "chat":
+                self.controller.add_history(
+                    NullAction(), UserMessageObservation(data["message"])
+                )
+            else:
+                await self.send_error("I didn't recognize this action:" + action)
 
     async def create_controller(self, start_event=None):
         """Creates an AgentController instance.
@@ -135,6 +110,15 @@ class Session:
         max_iterations = MAX_ITERATIONS
         if start_event and "max_iterations" in start_event["args"]:
             max_iterations = start_event["args"]["max_iterations"]
+
+        # double check preventing error occurs
+        if directory == "":
+            directory = DEFAULT_WORKSPACE_DIR
+        if agent_cls == "":
+            agent_cls = "MonologueAgent"
+        if model == "":
+            model = LLM_MODEL
+
         if not os.path.exists(directory):
             print(f"Workspace directory {directory} does not exist. Creating it...")
             os.makedirs(directory)
@@ -144,7 +128,8 @@ class Session:
         self.agent = AgentCls(llm)
         try:
             self.controller = AgentController(
-                self.agent,
+                id=self.sid,
+                agent=self.agent,
                 workdir=directory,
                 max_iterations=max_iterations,
                 container_image=container_image,
