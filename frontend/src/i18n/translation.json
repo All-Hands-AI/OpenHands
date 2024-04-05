@@ -1,0 +1,74 @@
+{
+  "WORKSPACE$TITLE": {
+    "en": "OpenDevin Workspace",
+    "zh-CN": "OpenDevin 工作区"
+  },
+  "WORKSPACE$TERMINAL_TAB_LABEL": {
+    "en": "Terminal",
+    "zh-CN": "终端"
+  },
+  "WORKSPACE$PLANNER_TAB_LABEL": {
+    "en": "Planner",
+    "zh-CN": "规划器"
+  },
+  "WORKSPACE$CODE_EDITOR_TAB_LABEL": {
+    "en": "Code Editor",
+    "zh-CN": "代码编辑器"
+  },
+  "WORKSPACE$BROWSER_TAB_LABEL": {
+    "en": "Browser",
+    "zh-CN": "浏览器"
+  },
+  "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_LABEL": {
+    "en": "OpenDevin Workspace directory",
+    "zh-CN": "OpenDevin 工作区目录"
+  },
+  "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER": {
+    "en": "Default: ./workspace",
+    "zh-CN": "默认：./workspace"
+  },
+  "CONFIGURATION$MODAL_TITLE": {
+    "en": "Configuration",
+    "zh-CN": "配置"
+  },
+  "CONFIGURATION$MODEL_SELECT_LABEL": {
+    "en": "Model",
+    "zh-CN": "模型"
+  },
+  "CONFIGURATION$MODEL_SELECT_PLACEHOLDER": {
+    "en": "Select a model",
+    "zh-CN": "选择一个模型"
+  },
+  "CONFIGURATION$AGENT_SELECT_LABEL": {
+    "en": "Agent",
+    "zh-CN": "代理"
+  },
+  "CONFIGURATION$AGENT_SELECT_PLACEHOLDER": {
+    "en": "Select a agent",
+    "zh-CN": "选择一个代理"
+  },
+  "CONFIGURATION$LANGUAGE_SELECT_LABEL": {
+    "en": "Language",
+    "zh-CN": "语言"
+  },
+  "CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL": {
+    "en": "Close",
+    "zh-CN": "关闭"
+  },
+  "CONFIGURATION$MODAL_SAVE_BUTTON_LABEL": {
+    "en": "Save",
+    "zh-CN": "保存"
+  },
+  "CHAT_INTERFACE$INITIALZING_AGENT_LOADING_MESSAGE": {
+    "en": "Initializing agent (may take up to 10 seconds)...",
+    "zh-CN": "初始化代理（可能需要 10 秒以上时间）"
+  },
+  "CHAT_INTERFACE$INPUT_PLACEHOLDER": {
+    "en": "Send a message (won't interrupt the Assistant)",
+    "zh-CN": "发送消息（不会打断助理）"
+  },
+  "CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT": {
+    "en": "Send",
+    "zh-CN": "发送"
+  }
+}

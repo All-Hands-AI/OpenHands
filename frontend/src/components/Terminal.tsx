@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from "react";
 import { IDisposable, Terminal as XtermTerminal } from "@xterm/xterm";
-import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
+import React, { useEffect, useRef } from "react";
+import { FitAddon } from "xterm-addon-fit";
 import socket from "../socket/socket";
 
 class JsonWebsocketAddon {
@@ -88,7 +88,14 @@ function Terminal(): JSX.Element {
     };
   }, []);
 
-  return <div ref={terminalRef} className="h-full w-full block" />;
+  return (
+    <div className="flex flex-col h-full">
+      <div className="px-4 py-2 text-lg border-b border-border">Terminal</div>
+      <div className="grow p-2 flex min-h-0">
+        <div ref={terminalRef} className="h-full w-full" />
+      </div>
+    </div>
+  );
 }
 
 export default Terminal;
