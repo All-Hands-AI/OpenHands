@@ -41,5 +41,6 @@ jobs:
       env:
         ISSUE_TITLE: ${{ github.event.issue.title }}
         ISSUE_BODY: ${{ github.event.issue.body }}
+        LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: |
         poetry run python ./opendevin/main.py -d "./" -i 50 -f task.txt
