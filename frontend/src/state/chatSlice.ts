@@ -1,9 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-
-export type Message = {
-  content: string;
-  sender: "user" | "assistant";
-};
+import { Message } from "../types/reduxSlice/TypesChatSlice";
 
 const initialMessages: Message[] = [];
 const queuedMessages: number[] = [];
@@ -42,9 +38,6 @@ export const chatSlice = createSlice({
     toggleTypingActive: (state, action) => {
       state.typingActive = action.payload;
     },
-    emptyOutQueuedTyping: (state) => {
-      state.queuedTyping = [];
-    },
     setCurrentTypingMessage: (state, action) => {
       state.currentTypingMessage = action.payload;
       // state.currentQueueMarker += 1;
@@ -59,7 +52,6 @@ export const {
   appendUserMessage,
   appendAssistantMessage,
   toggleTypingActive,
-  emptyOutQueuedTyping,
   setCurrentTypingMessage,
   setCurrentQueueMarker,
   appeendToNewChatSequence,

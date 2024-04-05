@@ -1,14 +1,13 @@
 import {
-  Message,
   appeendToNewChatSequence,
   appendUserMessage,
-  emptyOutQueuedTyping,
   setCurrentQueueMarker,
   setCurrentTypingMessage,
   toggleTypingActive,
 } from "../state/chatSlice";
 import socket from "../socket/socket";
 import store from "../store";
+import { Message } from "../types/reduxSlice/TypesChatSlice";
 
 export function sendChatMessage(message: string): void {
   store.dispatch(appendUserMessage(message));
@@ -20,11 +19,6 @@ export function sendChatMessage(message: string): void {
 export function setTypingAcitve(bool: boolean): void {
   store.dispatch(toggleTypingActive(bool));
 }
-
-export function resetQueuedTyping(): void {
-  store.dispatch(emptyOutQueuedTyping());
-}
-
 export function setCurrentTypingMsgState(msg: string): void {
   store.dispatch(setCurrentTypingMessage(msg));
 }

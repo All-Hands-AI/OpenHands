@@ -3,10 +3,10 @@ import { useSelector } from "react-redux";
 import { Textarea } from "@nextui-org/react";
 import { twMerge } from "tailwind-merge";
 import { useTranslation } from "react-i18next";
-import { RootState } from "../store";
-import useInputComposition from "../hooks/useInputComposition";
-import { sendChatMessage } from "../services/chatService";
-import { I18nKey } from "../i18n/declaration";
+import { RootState } from "../../store";
+import useInputComposition from "../../hooks/useInputComposition";
+import { sendChatMessage } from "../../services/chatService";
+import { I18nKey } from "../../i18n/declaration";
 
 function Input() {
   const { t } = useTranslation();
