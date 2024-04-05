@@ -1,85 +1,54 @@
 import React, { useState } from "react";
 import "./App.css";
+import CogTooth from "./assets/cog-tooth";
 import ChatInterface from "./components/ChatInterface";
-import Terminal from "./components/Terminal";
-import Planner from "./components/Planner";
-import CodeEditor from "./components/CodeEditor";
-import Browser from "./components/Browser";
 import Errors from "./components/Errors";
-import BannerSettings from "./components/BannerSettings";
+import SettingModal from "./components/SettingModal";
+import Terminal from "./components/Terminal";
+import Workspace from "./components/Workspace";
 
-const TAB_OPTIONS = ["terminal", "planner", "code", "browser"] as const;
-type TabOption = (typeof TAB_OPTIONS)[number];
+interface Props {
+  setSettingOpen: (isOpen: boolean) => void;
+}
 
-type TabProps = {
-  name: string;
-  active: boolean;
-  onClick: () => void;
-};
-function Tab({ name, active, onClick }: TabProps): JSX.Element {
+function LeftNav({ setSettingOpen }: Props): JSX.Element {
   return (
-    <div
-      className={`tab ${active ? "tab-active" : ""}`}
-      onClick={() => onClick()}
-    >
-      <p className="font-bold">{name}</p>
+    <div className="flex flex-col h-full p-4 bg-bg-dark w-16 items-center shrink-0">
+      <div
+        className="mt-auto cursor-pointer hover:opacity-80"
+        onClick={() => setSettingOpen(true)}
+      >
+        <CogTooth />
+      </div>
     </div>
   );
 }
 
-const tabData = {
-  terminal: {
-    name: "Terminal",
-    component: null,
-  },
-  planner: {
-    name: "Planner",
-    component: <Planner key="planner" />,
-  },
-  code: {
-    name: "Code Editor",
-    component: <CodeEditor key="code" />,
-  },
-  browser: {
-    name: "Browser",
-    component: <Browser key="browser" />,
-  },
-};
-
 function App(): JSX.Element {
-  const [activeTab, setActiveTab] = useState<TabOption>("terminal");
+  const [settingOpen, setSettingOpen] = useState(false);
+
+  const handleCloseModal = () => {
+    setSettingOpen(false);
+  };
 
   return (
-    <div className="app flex">
+    <div className="flex h-screen bg-bg-dark text-white">
+      <LeftNav setSettingOpen={setSettingOpen} />
+      <div className="flex flex-col grow gap-3 py-3 pr-3">
+        <div className="flex gap-3 grow">
+          <div className="w-[500px] shrink-0 rounded-xl overflow-hidden border border-border">
+            <ChatInterface />
+          </div>
+          <div className="flex flex-col flex-1 overflow-hidden rounded-xl bg-bg-workspace border border-border">
+            <Workspace />
+          </div>
+        </div>
+        <div className="h-72 shrink-0 bg-bg-workspace rounded-xl border border-border flex flex-col">
+          <Terminal key="terminal" />
+        </div>
+      </div>
+      <SettingModal isOpen={settingOpen} onClose={handleCloseModal} />
       <Errors />
-      <div className="left-pane">
-        <ChatInterface />
-      </div>
-      <div className="right-pane">
-        <div className="navbar bg-base-100">
-          <div className="flex-1">
-            <div className="btn btn-ghost text-xl xl:w-full xl:h-full h-1/2 w-1/2 ml-4">
-              OpenDevin Workspace
-            </div>
-          </div>
-          <div className="flex">
-            <BannerSettings />
-          </div>
-        </div>
-        <div role="tablist" className="tabs tabs-bordered tabs-lg bg-base-100">
-          {TAB_OPTIONS.map((tab) => (
-            <Tab
-              key={tab}
-              name={tabData[tab].name}
-              active={activeTab === tab}
-              onClick={() => setActiveTab(tab)}
-            />
-          ))}
-        </div>
-        {/* Keep terminal permanently open - see component for more details */}
-        <Terminal key="terminal" hidden={activeTab !== "terminal"} />
-        {tabData[activeTab].component}
-      </div>
     </div>
   );
 }

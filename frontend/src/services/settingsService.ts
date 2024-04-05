@@ -1,11 +1,23 @@
-import socket from "../socket/socket";
 import { appendAssistantMessage } from "../state/chatSlice";
 import { setInitialized } from "../state/taskSlice";
 import store from "../store";
 
-const { VITE_URL } = import.meta.env;
+export async function getInitialModel() {
+  if (localStorage.getItem("model")) {
+    return localStorage.getItem("model");
+  }
+
+  const res = await fetch("/api/default-model");
+  return res.json();
+}
+
 export async function fetchModels() {
-  const response = await fetch(`${VITE_URL}/litellm-models`);
+  const response = await fetch(`/api/litellm-models`);
+  return response.json();
+}
+
+export async function fetchAgents() {
+  const response = await fetch(`/api/litellm-agents`);
   return response.json();
 }
 
@@ -19,26 +31,36 @@ export const INITIAL_MODELS = [
 
 export type Model = (typeof INITIAL_MODELS)[number];
 
-export const AGENTS = ["LangchainsAgent", "CodeActAgent"];
+export const INITIAL_AGENTS = ["MonologueAgent", "CodeActAgent"];
 
-export type Agent = (typeof AGENTS)[number];
+export type Agent = (typeof INITIAL_AGENTS)[number];
 
-function changeSetting(setting: string, value: string): void {
-  const event = { action: "initialize", args: { [setting]: value } };
+// Map Redux settings to socket event arguments
+const SETTINGS_MAP = new Map<string, string>([
+  ["model", "model"],
+  ["agent", "agent_cls"],
+  ["workspaceDirectory", "directory"],
+]);
+
+// Send settings to the server
+export function sendSettings(
+  socket: WebSocket,
+  reduxSettings: { [id: string]: string },
+  appendMessages: boolean = true,
+): void {
+  const socketSettings = Object.fromEntries(
+    Object.entries(reduxSettings).map(([setting, value]) => [
+      SETTINGS_MAP.get(setting) || setting,
+      value,
+    ]),
+  );
+  const event = { action: "initialize", args: socketSettings };
   const eventString = JSON.stringify(event);
   socket.send(eventString);
   store.dispatch(setInitialized(false));
-  store.dispatch(appendAssistantMessage(`Changed ${setting} to "${value}"`));
-}
-
-export function changeModel(model: Model): void {
-  changeSetting("model", model);
-}
-
-export function changeAgent(agent: Agent): void {
-  changeSetting("agent_cls", agent);
-}
-
-export function changeDirectory(directory: string): void {
-  changeSetting("directory", directory);
+  if (appendMessages) {
+    for (const [setting, value] of Object.entries(reduxSettings)) {
+      store.dispatch(appendAssistantMessage(`Set ${setting} to "${value}"`));
+    }
+  }
 }

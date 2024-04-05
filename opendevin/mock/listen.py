@@ -25,5 +25,26 @@ async def websocket_endpoint(websocket: WebSocket):
 def read_root():
     return {"message": "This is a mock server"}
 
+@app.get("/litellm-models")
+def read_llm_models():
+    return [
+        "gpt-4",
+        "gpt-4-turbo-preview",
+        "gpt-4-0314",
+        "gpt-4-0613",
+    ]
+
+@app.get("/litellm-agents")
+def read_llm_agents():
+    return [
+        "MonologueAgent",
+        "CodeActAgent",
+        "PlannerAgent",
+    ]
+
+@app.get("/default-model")
+def read_default_model():
+    return "gpt-4"
+
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=3000)

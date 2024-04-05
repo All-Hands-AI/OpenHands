@@ -15,26 +15,55 @@ from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
 from opendevin.observation import Observation, UserMessageObservation
 
-DEFAULT_API_KEY = config.get_or_none("LLM_API_KEY")
-DEFAULT_BASE_URL = config.get_or_none("LLM_BASE_URL")
-DEFAULT_WORKSPACE_DIR = config.get_or_default("WORKSPACE_DIR", os.path.join(os.getcwd(), "workspace"))
-LLM_MODEL = config.get_or_default("LLM_MODEL", "gpt-4-0125-preview")
+DEFAULT_API_KEY = config.get("LLM_API_KEY")
+DEFAULT_BASE_URL = config.get("LLM_BASE_URL")
+DEFAULT_WORKSPACE_DIR = config.get("WORKSPACE_DIR")
+LLM_MODEL = config.get("LLM_MODEL")
+CONTAINER_IMAGE = config.get("SANDBOX_CONTAINER_IMAGE")
+MAX_ITERATIONS = config.get("MAX_ITERATIONS")
 
 class Session:
+    """Represents a session with an agent.
+
+    Attributes:
+        websocket: The WebSocket connection associated with the session.
+        controller: The AgentController instance for controlling the agent.
+        agent: The Agent instance representing the agent.
+        agent_task: The task representing the agent's execution.
+    """
     def __init__(self, websocket):
+        """Initializes a new instance of the Session class.
+
+        Args:
+            websocket: The WebSocket connection associated with the session.
+        """
         self.websocket = websocket
         self.controller: Optional[AgentController] = None
         self.agent: Optional[Agent] = None
         self.agent_task = None
-        asyncio.create_task(self.create_controller(), name="create controller") # FIXME: starting the docker container synchronously causes a websocket error...
 
     async def send_error(self, message):
+        """Sends an error message to the client.
+
+        Args:
+            message: The error message to send.
+        """
         await self.send({"error": True, "message": message})
 
     async def send_message(self, message):
+        """Sends a message to the client.
+
+        Args:
+            message: The message to send.
+        """
         await self.send({"message": message})
 
     async def send(self, data):
+        """Sends data to the client.
+
+        Args:
+            data: The data to send.
+        """
         if self.websocket is None:
             return
         try:
@@ -43,6 +72,7 @@ class Session:
             print("Error sending data to client", e)
 
     async def start_listening(self):
+        """Starts listening for messages from the client."""
         try:
             while True:
                 try:
@@ -62,26 +92,25 @@ class Session:
                 else:
                     if self.controller is None:
                         await self.send_error("No agent started. Please wait a second...")
-
                     elif action == "chat":
                         self.controller.add_history(NullAction(), UserMessageObservation(data["message"]))
                     else:
-                        # TODO: we only need to implement user message for now
-                        # since even Devin does not support having the user taking other
-                        # actions (e.g., edit files) while the agent is running
-                        raise NotImplementedError
+                        await self.send_error("I didn't recognize this action:" + action)
 
         except WebSocketDisconnect as e:
-            self.websocket = None
-            if self.agent_task:
-                self.agent_task.cancel()
             print("Client websocket disconnected", e)
+            self.disconnect()
 
     async def create_controller(self, start_event=None):
+        """Creates an AgentController instance.
+
+        Args:
+            start_event: The start event data (optional).
+        """
         directory = DEFAULT_WORKSPACE_DIR
         if start_event and "directory" in start_event["args"]:
             directory = start_event["args"]["directory"]
-        agent_cls = "LangchainsAgent"
+        agent_cls = "MonologueAgent"
         if start_event and "agent_cls" in start_event["args"]:
             agent_cls = start_event["args"]["agent_cls"]
         model = LLM_MODEL
@@ -93,6 +122,12 @@ class Session:
         api_base = DEFAULT_BASE_URL
         if start_event and "api_base" in start_event["args"]:
             api_base = start_event["args"]["api_base"]
+        container_image = CONTAINER_IMAGE
+        if start_event and "container_image" in start_event["args"]:
+            container_image = start_event["args"]["container_image"]
+        max_iterations = MAX_ITERATIONS
+        if start_event and "max_iterations" in start_event["args"]:
+            max_iterations = start_event["args"]["max_iterations"]
         if not os.path.exists(directory):
             print(f"Workspace directory {directory} does not exist. Creating it...")
             os.makedirs(directory)
@@ -101,7 +136,7 @@ class Session:
         AgentCls = Agent.get_cls(agent_cls)
         self.agent = AgentCls(llm)
         try:
-            self.controller = AgentController(self.agent, workdir=directory, callbacks=[self.on_agent_event])
+            self.controller = AgentController(self.agent, workdir=directory, max_iterations=max_iterations, container_image=container_image, callbacks=[self.on_agent_event])
         except Exception:
             print("Error creating controller.")
             await self.send_error("Error creating controller. Please check Docker is running using `docker ps`.")
@@ -109,6 +144,11 @@ class Session:
         await self.send({"action": "initialize", "message": "Control loop started."})
 
     async def start_task(self, start_event):
+        """Starts a task for the agent.
+
+        Args:
+            start_event: The start event data.
+        """
         if "task" not in start_event["args"]:
             await self.send_error("No task specified")
             return
@@ -117,12 +157,27 @@ class Session:
         if self.controller is None:
             await self.send_error("No agent started. Please wait a second...")
             return
-        self.agent_task = asyncio.create_task(self.controller.start_loop(task), name="agent loop")
+        try:
+            self.agent_task = await asyncio.create_task(self.controller.start_loop(task), name="agent loop")
+        except Exception:
+            await self.send_error("Error during task loop.")
 
     def on_agent_event(self, event: Observation | Action):
+        """Callback function for agent events.
+
+        Args:
+            event: The agent event (Observation or Action).
+        """
         if isinstance(event, NullAction):
             return
         if isinstance(event, NullObservation):
             return
         event_dict = event.to_dict()
         asyncio.create_task(self.send(event_dict), name="send event in callback")
+    
+    def disconnect(self):
+        self.websocket = None
+        if self.agent_task:
+            self.agent_task.cancel()
+        if self.controller is not None:
+            self.controller.command_manager.shell.close()

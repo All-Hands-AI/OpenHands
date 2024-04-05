@@ -15,15 +15,12 @@ from opendevin import config
 InputType = namedtuple("InputType", ["content"])
 OutputType = namedtuple("OutputType", ["content"])
 
-DIRECTORY_REWRITE = config.get_or_default(
-    "DIRECTORY_REWRITE", ""
-)  # helpful for docker-in-docker scenarios
-
-CONTAINER_IMAGE = config.get_or_default("SANDBOX_CONTAINER_IMAGE", "ghcr.io/opendevin/sandbox")
+DIRECTORY_REWRITE = config.get("DIRECTORY_REWRITE")  # helpful for docker-in-docker scenarios
+CONTAINER_IMAGE = config.get("SANDBOX_CONTAINER_IMAGE")
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
-RUN_AS_DEVIN = config.get_or_default("RUN_AS_DEVIN", "true").lower() != "false"
+RUN_AS_DEVIN = config.get("RUN_AS_DEVIN").lower() != "false"
 USER_ID = 1000
 if config.get_or_none("SANDBOX_USER_ID") is not None:
     USER_ID = int(config.get_or_default("SANDBOX_USER_ID", ""))
@@ -79,7 +76,7 @@ class BackgroundCommand:
                 logs += chunk
             else:
                 break
-        return (logs + last_remains).decode("utf-8")
+        return (logs + last_remains).decode("utf-8", errors="replace")
 
 
 class DockerInteractive:

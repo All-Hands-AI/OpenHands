@@ -1,11 +1,31 @@
 from typing import List
 from opendevin.agent import Agent
 from opendevin.state import State
-from opendevin.action import Action
 from opendevin.llm.llm import LLM
-import agenthub.langchains_agent.utils.prompts as prompts
-from agenthub.langchains_agent.utils.monologue import Monologue
-from agenthub.langchains_agent.utils.memory import LongTermMemory
+
+from opendevin.action import (
+    Action,
+    NullAction,
+    CmdRunAction,
+    FileWriteAction,
+    FileReadAction,
+    AgentRecallAction,
+    BrowseURLAction,
+    AgentThinkAction,
+)
+
+from opendevin.observation import (
+    Observation,
+    NullObservation,
+    CmdOutputObservation,
+    FileReadObservation,
+    AgentRecallObservation,
+    BrowserOutputObservation,
+)
+
+import agenthub.monologue_agent.utils.prompts as prompts
+from agenthub.monologue_agent.utils.monologue import Monologue
+from agenthub.monologue_agent.utils.memory import LongTermMemory
 
 MAX_MONOLOGUE_LENGTH = 20000
 MAX_OUTPUT_LENGTH = 5000
@@ -56,7 +76,7 @@ INITIAL_THOUGHTS = [
 ]
 
 
-class LangchainsAgent(Agent):
+class MonologueAgent(Agent):
     _initialized = False
 
     def __init__(self, llm: LLM):
@@ -65,6 +85,8 @@ class LangchainsAgent(Agent):
         self.memory = LongTermMemory()
 
     def _add_event(self, event: dict):
+        if "extras" in event and "screenshot" in event["extras"]:
+            del event["extras"]["screenshot"]
         if 'args' in event and 'output' in event['args'] and len(event['args']['output']) > MAX_OUTPUT_LENGTH:
             event['args']['output'] = event['args']['output'][:MAX_OUTPUT_LENGTH] + "..."
 
@@ -82,40 +104,47 @@ class LangchainsAgent(Agent):
         self.monologue = Monologue()
         self.memory = LongTermMemory()
 
-        next_is_output = False
+        output_type = ""
         for thought in INITIAL_THOUGHTS:
             thought = thought.replace("$TASK", task)
-            if next_is_output:
-                d = {"action": "output", "args": {"output": thought}}
-                next_is_output = False
+            if output_type != "":
+                observation: Observation = NullObservation(content="")
+                if output_type == "run":
+                    observation = CmdOutputObservation(content=thought, command_id=0, command="")
+                elif output_type == "read":
+                    observation = FileReadObservation(content=thought, path="")
+                elif output_type == "recall":
+                    observation = AgentRecallObservation(content=thought, memories=[])
+                elif output_type == "browse":
+                    observation = BrowserOutputObservation(content=thought, url="", screenshot="")
+                self._add_event(observation.to_dict())
+                output_type = ""
             else:
+                action: Action = NullAction()
                 if thought.startswith("RUN"):
                     command = thought.split("RUN ")[1]
-                    d = {"action": "run", "args": {"command": command}}
-                    next_is_output = True
+                    action = CmdRunAction(command)
+                    output_type = "run"
                 elif thought.startswith("WRITE"):
                     parts = thought.split("WRITE ")[1].split(" > ")
                     path = parts[1]
                     content = parts[0]
-                    d = {"action": "write", "args": {"file": path, "content": content}}
-                    next_is_output = True
+                    action = FileWriteAction(path=path, content=content)
                 elif thought.startswith("READ"):
                     path = thought.split("READ ")[1]
-                    d = {"action": "read", "args": {"file": path}}
-                    next_is_output = True
+                    action = FileReadAction(path=path)
+                    output_type = "read"
                 elif thought.startswith("RECALL"):
                     query = thought.split("RECALL ")[1]
-                    d = {"action": "recall", "args": {"query": query}}
-                    next_is_output = True
-
+                    action = AgentRecallAction(query=query)
+                    output_type = "recall"
                 elif thought.startswith("BROWSE"):
                     url = thought.split("BROWSE ")[1]
-                    d = {"action": "browse", "args": {"url": url}}
-                    next_is_output = True
+                    action = BrowseURLAction(url=url)
+                    output_type = "browse"
                 else:
-                    d = {"action": "think", "args": {"thought": thought}}
-
-            self._add_event(d)
+                    action = AgentThinkAction(thought=thought)
+                self._add_event(action.to_dict())
         self._initialized = True
 
     def step(self, state: State) -> Action:

@@ -1,5 +1,5 @@
 import store from "../store";
-import { ActionMessage } from "./types/Message";
+import { ActionMessage } from "../types/Message";
 import { setScreenshotSrc, setUrl } from "../state/browserSlice";
 import { appendAssistantMessage } from "../state/chatSlice";
 import { setCode } from "../state/codeSlice";
@@ -10,7 +10,7 @@ const messageActions = {
     store.dispatch(setInitialized(true));
     store.dispatch(
       appendAssistantMessage(
-        "Hello, I am OpenDevin, an AI Software Engineer. What would you like me to build you today?",
+        "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
       ),
     );
   },
@@ -20,7 +20,7 @@ const messageActions = {
     store.dispatch(setScreenshotSrc(screenshotSrc));
   },
   write: (message: ActionMessage) => {
-    store.dispatch(setCode(message.args.contents));
+    store.dispatch(setCode(message.args.content));
   },
   think: (message: ActionMessage) => {
     store.dispatch(appendAssistantMessage(message.args.thought));

@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from "react";
 import { IDisposable, Terminal as XtermTerminal } from "@xterm/xterm";
-import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
+import React, { useEffect, useRef } from "react";
+import { FitAddon } from "xterm-addon-fit";
 import socket from "../socket/socket";
 
 class JsonWebsocketAddon {
@@ -41,19 +41,19 @@ class JsonWebsocketAddon {
   }
 }
 
-type TerminalProps = {
-  hidden: boolean;
-};
-
 /**
  * The terminal's content is set by write messages. To avoid complicated state logic,
  * we keep the terminal persistently open as a child of <App /> and hidden when not in use.
  */
 
-function Terminal({ hidden }: TerminalProps): JSX.Element {
+function Terminal(): JSX.Element {
   const terminalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const bgColor = getComputedStyle(document.documentElement)
+      .getPropertyValue("--bg-workspace")
+      .trim();
+
     const terminal = new XtermTerminal({
       // This value is set to the appropriate value by the
       // `fitAddon.fit()` call below.
@@ -63,6 +63,9 @@ function Terminal({ hidden }: TerminalProps): JSX.Element {
       cols: 0,
       fontFamily: "Menlo, Monaco, 'Courier New', monospace",
       fontSize: 14,
+      theme: {
+        background: bgColor,
+      },
     });
     terminal.write("$ ");
 
@@ -86,15 +89,12 @@ function Terminal({ hidden }: TerminalProps): JSX.Element {
   }, []);
 
   return (
-    <div
-      ref={terminalRef}
-      style={{
-        width: "100%",
-        height: "100%",
-        display: hidden ? "none" : "block",
-        padding: "1rem",
-      }}
-    />
+    <div className="flex flex-col h-full">
+      <div className="px-4 py-2 text-lg border-b border-border">Terminal</div>
+      <div className="grow p-2 flex min-h-0">
+        <div ref={terminalRef} className="h-full w-full" />
+      </div>
+    </div>
   );
 }
 
