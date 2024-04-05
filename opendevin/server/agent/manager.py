@@ -141,7 +141,7 @@ class AgentManager:
                 "Error creating controller. Please check Docker is running using `docker ps`."
             )
             return
-        await self.send({"action": "initialize"})
+        await self.send({"action": "initialize", "message": "Control loop started."})
 
     async def start_task(self, start_event):
         """Starts a task for the agent.
