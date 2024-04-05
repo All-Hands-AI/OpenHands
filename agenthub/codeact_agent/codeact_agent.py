@@ -1,23 +1,32 @@
 import re
 from typing import List, Mapping
 
-
-from opendevin.agent import Agent
-from opendevin.state import State
 from opendevin.action import (
     Action,
-    CmdRunAction,
     AgentEchoAction,
     AgentFinishAction,
+    CmdRunAction,
 )
-from opendevin.observation import (
-    CmdOutputObservation,
-    AgentMessageObservation,
-)
-
+from opendevin.agent import Agent
 from opendevin.llm.llm import LLM
+from opendevin.observation import (
+    AgentMessageObservation,
+    CmdOutputObservation,
+)
+from opendevin.parse_commands import parse_command_file
+from opendevin.state import State
 
-SYSTEM_MESSAGE = """You are a helpful assistant. You will be provided access (as root) to a bash shell to complete user-provided tasks.
+COMMAND_DOCS = parse_command_file()
+COMMAND_SEGMENT = (
+    f"""
+
+Apart from the standard bash commands, you can also use the following special commands:
+{COMMAND_DOCS}
+"""
+    if COMMAND_DOCS is not None
+    else ""
+)
+SYSTEM_MESSAGE = f"""You are a helpful assistant. You will be provided access (as root) to a bash shell to complete user-provided tasks.
 You will be able to execute commands in the bash shell, interact with the file system, install packages, and receive the output of your commands.
 
 DO NOT provide code in ```triple backticks```. Instead, you should execute bash command on behalf of the user by wrapping them with <execute> and </execute>.
@@ -34,6 +43,7 @@ You can also write a block of code to a file:
 echo "import math
 print(math.pi)" > math.py
 </execute>
+{COMMAND_SEGMENT}
 
 When you are done, execute "exit" to close the shell and end the conversation.
 """
@@ -77,15 +87,21 @@ class CodeActAgent(Agent):
         updated_info = state.updated_info
         if updated_info:
             for prev_action, obs in updated_info:
-                assert isinstance(prev_action, (CmdRunAction, AgentEchoAction)), "Expecting CmdRunAction or AgentEchoAction for Action"
-                if isinstance(obs, AgentMessageObservation):  # warning message from itself
+                assert isinstance(
+                    prev_action, (CmdRunAction, AgentEchoAction)
+                ), "Expecting CmdRunAction or AgentEchoAction for Action"
+                if isinstance(
+                    obs, AgentMessageObservation
+                ):  # warning message from itself
                     self.messages.append({"role": "user", "content": obs.content})
                 elif isinstance(obs, CmdOutputObservation):
                     content = "OBSERVATION:\n" + obs.content
                     content += f"\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]"
                     self.messages.append({"role": "user", "content": content})
                 else:
-                    raise NotImplementedError(f"Unknown observation type: {obs.__class__}")
+                    raise NotImplementedError(
+                        f"Unknown observation type: {obs.__class__}"
+                    )
         response = self.llm.completion(
             messages=self.messages,
             stop=["</execute>"],
@@ -101,7 +117,7 @@ class CodeActAgent(Agent):
             command_group = command.group(1)
             if command_group.strip() == "exit":
                 return AgentFinishAction()
-            return CmdRunAction(command = command_group)
+            return CmdRunAction(command=command_group)
             # # execute the code
             # # TODO: does exit_code get loaded into Message?
             # exit_code, observation = self.env.execute(command_group)
@@ -111,9 +127,9 @@ class CodeActAgent(Agent):
             # https://github.com/xingyaoww/mint-bench/blob/main/mint/envs/general_env.py#L18-L23
             # observation = INVALID_INPUT_MESSAGE
             # self._history.append(Message(Role.ASSISTANT, observation))
-            return AgentEchoAction(content=INVALID_INPUT_MESSAGE)  # warning message to itself
-
+            return AgentEchoAction(
+                content=INVALID_INPUT_MESSAGE
+            )  # warning message to itself
 
     def search_memory(self, query: str) -> List[str]:
         raise NotImplementedError("Implement this abstract method")
-
