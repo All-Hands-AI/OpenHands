@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ReactNode } from "react";
 import { useSelector } from "react-redux";
 import { Card, CardBody } from "@nextui-org/react";
 import { RootState } from "../../store";
@@ -26,20 +26,17 @@ function TypingChat() {
     setTypingAcitve,
     setCurrentQueueMarkerState,
     currentQueueMarker,
-    playbackRate: 0.099,
+    playbackRate: 0.1,
     addAssistantMessageToChat,
     assistantMessageObj: messages?.[queuedTyping[currentQueueMarker]],
   });
 
   return (
-    // eslint-disable-next-line react/jsx-no-useless-fragment
-    <>
-      {currentQueueMarker !== null && (
-        <Card className="bg-success-100">
-          <CardBody>{messageContent}</CardBody>
-        </Card>
-      )}
-    </>
+    currentQueueMarker !== null && (
+      <Card className="bg-success-100">
+        <CardBody>{messageContent}</CardBody>
+      </Card>
+    )
   );
 }
 

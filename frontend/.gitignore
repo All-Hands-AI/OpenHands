@@ -1,0 +1,3 @@
+# i18n translation files make by script using `make build`
+public/locales/**/*
+src/i18n/declaration.ts

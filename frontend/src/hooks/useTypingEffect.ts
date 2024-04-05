@@ -73,6 +73,7 @@ export const useTypingEffect = (
     emulateKeyStroke();
     return () => {
       window.clearTimeout(timeoutId);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     };
   }, []);
 
