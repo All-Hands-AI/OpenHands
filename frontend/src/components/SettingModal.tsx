@@ -72,9 +72,11 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
       .catch();
 
     fetchModels().then((fetchedModels) => {
-      setSupportedModels(fetchedModels);
-      localStorage.setItem("supportedModels", JSON.stringify(fetchedModels));
+      const sortedModels = fetchedModels.sort(); // Sorting the models alphabetically
+      setSupportedModels(sortedModels);
+      localStorage.setItem("supportedModels", JSON.stringify(sortedModels));
     });
+
     fetchAgents().then((fetchedAgents) => {
       setSupportedAgents(fetchedAgents);
       localStorage.setItem("supportedAgents", JSON.stringify(fetchedAgents));
