@@ -1,11 +1,6 @@
-import logging
-import os
+import logging, os, sys
 from time import strftime
-
-logging.basicConfig(
-  level=logging.INFO,
-  format="%(asctime)s - [%(levelname)s] - %(message)s"
-)
+import traceback
 
 console_formatter = logging.Formatter(
     "\033[92m%(asctime)s - %(name)s:%(levelname)s\033[0m: %(filename)s:%(lineno)s - %(message)s",
@@ -14,6 +9,9 @@ console_formatter = logging.Formatter(
 file_formatter = logging.Formatter(
     "%(asctime)s - %(name)s:%(levelname)s: %(filename)s:%(lineno)s - %(message)s",
     datefmt="%H:%M:%S",
+)
+llm_formatter = logging.Formatter(
+    "%(message)s"
 )
 
 def get_console_handler():
@@ -36,12 +34,30 @@ def get_file_handler():
     file_handler.setFormatter(file_formatter)
     return file_handler
 
-opendevin_logger = logging.getLogger("opendevin")
-opendevin_logger.setLevel(logging.DEBUG)
+# Set up logging
+logging.basicConfig(level=logging.ERROR)
+
+def log_uncaught_exceptions(ex_cls, ex, tb):
+    logging.error(''.join(traceback.format_tb(tb)))
+    logging.error('{0}: {1}'.format(ex_cls, ex))
+
+sys.excepthook = log_uncaught_exceptions
+
+opendevin_logger = logging.getLogger()
+opendevin_logger.setLevel(logging.INFO)
 opendevin_logger.propagate = False
 opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.addHandler(get_file_handler())
+opendevin_logger.debug("Logging initialized")
+opendevin_logger.debug("Logging to %s", os.path.join(os.getcwd(), "logs", "opendevin.log"))
+opendevin_logger.name = "opendevin"
 
+# Exclude "litellm" from logging output
+litellm_logger = logging.getLogger('LiteLLM')
+litellm_logger.setLevel(logging.WARNING)
+opendevin_logger.addFilter(lambda record: not any(name in record.name.lower() for name in ["litellm", "litellm router", "litellm proxy"]))
+
+# LLM prompt and response logging
 class LlmFileHandler(logging.FileHandler):
 
     def __init__(self, filename, mode='a', encoding=None, delay=False):
@@ -55,7 +71,7 @@ class LlmFileHandler(logging.FileHandler):
             delay (bool, optional): Whether to delay file opening. Defaults to False.
         """
         self.filename = filename
-        self.message_counter = 0
+        self.message_counter = 1
         self.session = strftime("%y-%m-%d_%H-%M-%S")
         self.log_directory = os.path.join(os.getcwd(), "logs", "llm", self.session)
         os.makedirs(self.log_directory, exist_ok=True)
@@ -73,6 +89,7 @@ class LlmFileHandler(logging.FileHandler):
         self.stream = self._open()
         super().emit(record)
         self.stream.close
+        opendevin_logger.debug("Logging to %s", self.baseFilename)
         self.message_counter += 1
 
 def get_llm_prompt_file_handler():
@@ -81,7 +98,7 @@ def get_llm_prompt_file_handler():
     """
     llm_prompt_file_handler = LlmFileHandler("prompt")
     llm_prompt_file_handler.setLevel(logging.DEBUG)
-    llm_prompt_file_handler.setFormatter(file_formatter)
+    llm_prompt_file_handler.setFormatter(llm_formatter)
     return llm_prompt_file_handler
 
 def get_llm_response_file_handler():
@@ -90,7 +107,7 @@ def get_llm_response_file_handler():
     """
     llm_response_file_handler = LlmFileHandler("response")
     llm_response_file_handler.setLevel(logging.DEBUG)
-    llm_response_file_handler.setFormatter(file_formatter)
+    llm_response_file_handler.setFormatter(llm_formatter)
     return llm_response_file_handler
 
 llm_prompt_logger = logging.getLogger("prompt")

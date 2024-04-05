@@ -104,11 +104,13 @@ class DockerInteractive:
             self.workspace_dir = os.path.abspath(workspace_dir)
         else:
             self.workspace_dir = os.getcwd()
-            logger.info(f"workspace unspecified, using current directory: {workspace_dir}")
+            logger.info("workspace unspecified, using current directory: %s", workspace_dir)
         if DIRECTORY_REWRITE != "":
             parts = DIRECTORY_REWRITE.split(":")
             self.workspace_dir = self.workspace_dir.replace(parts[0], parts[1])
-            logger.info("Rewriting workspace directory to:", self.workspace_dir)
+            logger.info("Rewriting workspace directory to: %s", self.workspace_dir)
+        else:
+            logger.info("Using workspace directory: %s", self.workspace_dir)
 
         # TODO: this timeout is actually essential - need a better way to set it
         # if it is too short, the container may still waiting for previous
