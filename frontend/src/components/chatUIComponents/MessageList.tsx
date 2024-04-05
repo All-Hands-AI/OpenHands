@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import assistantAvatar from "../../assets/assistant-avatar.png";
@@ -37,6 +36,7 @@ function MessageList(): JSX.Element {
     }, 1000);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newChatSequence, typingActive]);
 
   useEffect(() => {
@@ -51,12 +51,14 @@ function MessageList(): JSX.Element {
         messages?.[queuedTyping?.[currentQueueMarker]]?.content,
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queuedTyping]);
 
   useEffect(() => {
     if (currentTypingMessage === "") return;
 
     if (!typingActive) setTypingAcitve(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTypingMessage]);
 
   useEffect(() => {
@@ -72,12 +74,14 @@ function MessageList(): JSX.Element {
         );
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [typingActive]);
 
   useEffect(() => {
     if (currentQueueMarker === 0) {
       setCurrentTypingMsgState(messages?.[queuedTyping?.[0]]?.content);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentQueueMarker]);
 
   return (
