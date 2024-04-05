@@ -25,7 +25,7 @@ build:
 	@echo "Detect Node.js version..."
 	@cd frontend && node ./scripts/detect-node-version.js
 	@cd frontend && if [ -f node_modules/.package-lock.json ]; then \
-		echo "This project currently uses "pnpm" for dependency management. It has detected that dependencies were previously installed using "npm" and has automatically deleted the "node_modules" directory to prevent unnecessary conflicts."; \
+		echo "This project currently uses \"pnpm\" for dependency management. It has detected that dependencies were previously installed using \"npm\" and has automatically deleted the \"node_modules\" directory to prevent unnecessary conflicts."; \
 		rm -rf node_modules; \
 	fi
 	@which corepack > /dev/null || (echo "Installing corepack..." && npm install -g corepack)
@@ -39,7 +39,7 @@ start-backend:
 # Start frontend
 start-frontend:
 	@echo "Starting frontend..."
-	@cd frontend && BACKEND_HOST=$(BACKEND_HOST) FRONTEND_PORT=$(FRONTEND_PORT) npm run start
+	@cd frontend && BACKEND_HOST=$(BACKEND_HOST) FRONTEND_PORT=$(FRONTEND_PORT) pnpm run start
 
 # Run the app
 run:
@@ -52,14 +52,14 @@ run:
 	@poetry run nohup uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) > logs/backend_$(shell date +'%Y%m%d_%H%M%S').log 2>&1 &
 	@echo "Waiting for the backend to start..."
 	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
-	@cd frontend && npm run start -- --port $(FRONTEND_PORT)
+	@cd frontend && pnpm run start -- --port $(FRONTEND_PORT)
 
 # Setup config.toml
 setup-config:
 	@echo "Setting up config.toml..."
-	@read -p "Enter your LLM Model name (see docs.litellm.ai/docs/providers for full list) [default: $(DEFAULT_MODEL)]: " llm_model; \
+	@read -p "Enter your LLM Model name (see https://docs.litellm.ai/docs/providers for full list) [default: $(DEFAULT_MODEL)]: " llm_model; \
 	 llm_model=$${llm_model:-$(DEFAULT_MODEL)}; \
-	 echo "LLM_MODEL=\"$$llm_model\"" >> $(CONFIG_FILE).tmp
+	 echo "LLM_MODEL=\"$$llm_model\"" > $(CONFIG_FILE).tmp
 
 	@read -p "Enter your LLM API key: " llm_api_key; \
 	 echo "LLM_API_KEY=\"$$llm_api_key\"" >> $(CONFIG_FILE).tmp
@@ -90,6 +90,7 @@ help:
 	@echo "Usage: make [target]"
 	@echo "Targets:"
 	@echo "  build               - Build project, including environment setup and dependencies."
+	@echo "  build-eval          - Build project evaluation pipeline, including environment setup and dependencies."
 	@echo "  start-backend       - Start the backend server for the OpenDevin project."
 	@echo "  start-frontend      - Start the frontend server for the OpenDevin project."
 	@echo "  run                 - Run the OpenDevin application, starting both backend and frontend servers."
@@ -98,4 +99,4 @@ help:
 	@echo "  help                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: install start-backend start-frontend run setup-config help
+.PHONY: build build-eval start-backend start-frontend run setup-config help
