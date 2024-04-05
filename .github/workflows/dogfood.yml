@@ -1,0 +1,26 @@
+name: Dogfooding OpenDevin
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  open-devin:
+    if: github.event.label.name == 'OpenDevin'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install Dependencies
+      run: |
+        make build
+
+    - name: Run OpenDevin
+      run: python ./opendevin/main.py -d ./ -t "${{ github.event.issue.title }} - ${{ github.event.issue.body }}"
