@@ -53,9 +53,9 @@ You've been given the following task:
 ## Plan
 As you complete this task, you're building a plan and keeping
 track of your progress. Here's a JSON representation of your plan:
-```json
+
 %(plan)s
-```
+
 
 %(plan_status)s
 
@@ -84,9 +84,9 @@ you MUST respond with the `finish` action.
 Here is a recent history of actions you've taken in service of this plan,
 as well as observations you've made. This only includes the MOST RECENT
 ten actions--more happened before that.
-```json
+
 %(history)s
-```
+
 
 Your most recent action is at the bottom of that history.
 
@@ -118,7 +118,7 @@ It must be an object, and it must contain two fields:
 * `modify_task` - close a task. Arguments:
   * `id` - the ID of the task to close
   * `state` - set to 'in_progress' to start the task, 'completed' to finish it, 'verified' to assert that it was successful, 'abandoned' to give up on it permanently, or `open` to stop working on it for now.
-* `finish` - if ALL of your tasks and subtasks have been verified or abanded, and you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
+* `finish` - if ALL of your tasks and subtasks have been verified or abandoned, and you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
 You MUST take time to think in between read, write, run, browse, and recall actions.
 You should never act twice in a row without thinking. But if your last several

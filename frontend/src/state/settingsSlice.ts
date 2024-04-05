@@ -7,6 +7,7 @@ export const settingsSlice = createSlice({
     agent: localStorage.getItem("agent") || "MonologueAgent",
     workspaceDirectory:
       localStorage.getItem("workspaceDirectory") || "./workspace",
+    language: localStorage.getItem("language") || "en",
   },
   reducers: {
     setModel: (state, action) => {
@@ -18,10 +19,13 @@ export const settingsSlice = createSlice({
     setWorkspaceDirectory: (state, action) => {
       state.workspaceDirectory = action.payload;
     },
+    setLanguage: (state, action) => {
+      state.language = action.payload;
+    },
   },
 });
 
-export const { setModel, setAgent, setWorkspaceDirectory } =
+export const { setModel, setAgent, setWorkspaceDirectory, setLanguage } =
   settingsSlice.actions;
 
 export default settingsSlice.reducer;

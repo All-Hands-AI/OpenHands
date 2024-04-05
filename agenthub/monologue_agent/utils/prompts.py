@@ -18,9 +18,9 @@ You're a thoughtful robot. Your main task is this:
 Don't expand the scope of your task--just complete it as written.
 
 This is your internal monologue, in JSON format:
-```json
+
 %(monologue)s
-```
+
 
 Your most recent thought is at the bottom of that monologue. Continue your train of thought.
 What is your next thought or action? Your response must be in JSON format.
@@ -71,9 +71,9 @@ Please return a new, smaller JSON array, which summarizes the
 internal monologue. You can summarize individual thoughts, and
 you can condense related thoughts together with a description
 of their content.
-```json
+
 %(monologue)s
-```
+
 Make the summaries as pithy and informative as possible.
 Be specific about what happened and what was learned. The summary
 will be used as keywords for searching for the original memory.

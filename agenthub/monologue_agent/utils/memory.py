@@ -21,7 +21,7 @@ if embedding_strategy == "llama2":
 elif embedding_strategy == "openai":
     from llama_index.embeddings.openai import OpenAIEmbedding
     embed_model = OpenAIEmbedding(
-        base_url=config.get_or_error("LLM_BASE_URL"),
+        model="text-embedding-ada-002"
     )
 elif embedding_strategy == "azureopenai":
     from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding  # Need to instruct to set these env variables in documentation
