@@ -5,11 +5,18 @@ ENV POETRY_REQUESTS_TIMEOUT=100
 
 WORKDIR /usr/src/app
 
-COPY pyproject.toml poetry.lock .
-RUN pip install poetry && poetry install --only main --no-root --no-directory
+RUN pip install poetry
+RUN poetry --version
+RUN python --version
 COPY . /usr/src/app
-RUN poetry install --only main
 
+# https://github.com/pymupdf/PyMuPDF/discussions/1486#discussioncomment-1861977
+RUN pip install MuPDF
+
+RUN poetry install --without evaluation
+
+#TODO: still getting this missing dependency
+# ModuleNotFoundError: No module named 'chromadb'
 
 USER root
 
