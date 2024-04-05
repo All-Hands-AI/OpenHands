@@ -1,8 +1,8 @@
 from opendevin.server.session import Session
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-import agenthub # noqa F401 (we import this to get the agents registered)
-import litellm 
+import agenthub  # noqa F401 (we import this to get the agents registered)
+import litellm
 from opendevin.agent import Agent
 from opendevin import config
 
@@ -16,6 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # This endpoint receives events from the client (i.e. the browser)
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -24,12 +25,14 @@ async def websocket_endpoint(websocket: WebSocket):
     # TODO: should this use asyncio instead of await?
     await session.start_listening()
 
+
 @app.get("/litellm-models")
 async def get_litellm_models():
     """
     Get all models supported by LiteLLM.
     """
-    return litellm.model_list
+    return list(set(litellm.model_list + list(litellm.model_cost.keys())))
+
 
 @app.get("/litellm-agents")
 async def get_litellm_agents():
