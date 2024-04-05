@@ -8,6 +8,7 @@ FRONTEND_PORT = 3001
 DEFAULT_WORKSPACE_DIR = "./workspace"
 DEFAULT_MODEL = "gpt-4-0125-preview"
 CONFIG_FILE = config.toml
+PRECOMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
 
 # Build
 build:
@@ -15,8 +16,11 @@ build:
 	@echo "Pulling Docker image..."
 	@docker pull $(DOCKER_IMAGE)
 	@echo "Installing Python dependencies..."
-	@python -m pip install pipenv
-	@python -m pipenv install -v
+	@curl -sSL https://install.python-poetry.org | python3 -
+	@poetry install --without evaluation
+	@echo "Activating Poetry shell..."
+	@echo "Installing pre-commit hooks..."
+	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
 	@echo "Setting up frontend environment..."
 	@echo "Detect Node.js version..."
 	@cd frontend && node ./scripts/detect-node-version.js
@@ -30,7 +34,7 @@ build:
 # Start backend
 start-backend:
 	@echo "Starting backend..."
-	@python -m pipenv run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT)
+	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT)
 
 # Start frontend
 start-frontend:
@@ -40,15 +44,15 @@ start-frontend:
 # Run the app
 run:
 	@echo "Running the app..."
-	@if [ "$(OS)" == "Windows_NT" ]; then \
+	@if [ "$(OS)" = "Windows_NT" ]; then \
 		echo "`make run` is not supported on Windows. Please run `make start-frontend` and `make start-backend` separately."; \
 		exit 1; \
 	fi
 	@mkdir -p logs
-	@rm -f logs/pipe
-	@mkfifo logs/pipe
-	@cat logs/pipe | (make start-backend) &
-	@echo 'test' | tee logs/pipe | (make start-frontend)
+	@poetry run nohup uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) > logs/backend_$(shell date +'%Y%m%d_%H%M%S').log 2>&1 &
+	@echo "Waiting for the backend to start..."
+	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
+	@cd frontend && npm run start -- --port $(FRONTEND_PORT)
 
 # Setup config.toml
 setup-config:
