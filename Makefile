@@ -15,8 +15,12 @@ build:
 	@echo "Building project..."
 	@echo "Pulling Docker image..."
 	@docker pull $(DOCKER_IMAGE)
-	@echo "Installing Python dependencies..."
-	@curl -sSL https://install.python-poetry.org | python3 -
+	@echo "Checking for Poetry..."
+	@if ! command -v poetry >/dev/null 2>&1; then \
+		echo "Installing Poetry..."; \
+		curl -sSL https://install.python-poetry.org | python3 -; \
+	fi
+	@echo "Installing project dependencies via Poetry..."
 	@poetry install --without evaluation
 	@echo "Installing pre-commit hooks..."
 	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
