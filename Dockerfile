@@ -11,9 +11,11 @@ RUN python --version
 COPY . /usr/src/app
 
 # https://github.com/pymupdf/PyMuPDF/discussions/1486#discussioncomment-1861977
-RUN pip install MuPDF
-
-RUN poetry install --without evaluation
+# https://github.com/pymupdf/PyMuPDF/discussions/875#discussioncomment-554936
+# https://github.com/OpenDevin/OpenDevin/pull/378#issuecomment-2034843314
+RUN poetry run pip install pymupdfb
+RUN poetry install --without evaluation --compile
+# RUN poetry install --without evaluation #TODO: see if we can get this working without --compile
 
 #TODO: still getting this missing dependency
 # ModuleNotFoundError: No module named 'chromadb'
