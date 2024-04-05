@@ -2,8 +2,10 @@ import { configureStore } from "@reduxjs/toolkit";
 import browserReducer from "./state/browserSlice";
 import chatReducer from "./state/chatSlice";
 import codeReducer from "./state/codeSlice";
+import commandReducer from "./state/commandSlice";
 import taskReducer from "./state/taskSlice";
 import errorsReducer from "./state/errorsSlice";
+import globalReducer from "./state/globalSlice";
 import settingsReducer from "./state/settingsSlice";
 
 const store = configureStore({
@@ -11,8 +13,10 @@ const store = configureStore({
     browser: browserReducer,
     chat: chatReducer,
     code: codeReducer,
+    cmd: commandReducer,
     task: taskReducer,
     errors: errorsReducer,
+    global: globalReducer,
     settings: settingsReducer,
   },
 });

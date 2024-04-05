@@ -10,7 +10,7 @@ import {
   addAssistantMessageToChat,
   setCurrentQueueMarkerState,
   setCurrentTypingMsgState,
-  setTypingAcitve,
+  setTypingActive,
 } from "../services/chatService";
 import { Message } from "../state/chatSlice";
 import { RootState } from "../store";
@@ -34,7 +34,7 @@ function TypingChat() {
 
   const messageContent = useTypingEffect([currentTypingMessage], {
     loop: false,
-    setTypingAcitve,
+    setTypingActive,
     setCurrentQueueMarkerState,
     currentQueueMarker,
     playbackRate: 0.1,
@@ -117,7 +117,7 @@ function MessageList(): JSX.Element {
   useEffect(() => {
     if (currentTypingMessage === "") return;
 
-    if (!typingActive) setTypingAcitve(true);
+    if (!typingActive) setTypingActive(true);
   }, [currentTypingMessage]);
 
   useEffect(() => {

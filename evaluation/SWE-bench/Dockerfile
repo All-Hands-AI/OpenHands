@@ -29,6 +29,10 @@ RUN conda --version
 COPY environment.yml .
 RUN conda env create -f environment.yml
 
+# Add commands
+COPY ./commands.sh .
+RUN source commands.sh
+
 # Some missing packages
 RUN pip install datasets python-dotenv gitpython
 
