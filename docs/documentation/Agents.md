@@ -3,7 +3,9 @@
 ## Monologue Agent:
 
 ### Description:
-Responsible for talking to the user and acting as an overall manager of the project. The monologue agent has a long term memory that it is capable of modifying to suit its current needs. This agent is mostly responsible for managing state and long term memory.
+The Monologue Agent utilizes long and short term memory to complete tasks.
+Long term memory is stored as a LongTermMemory object and the model uses it to search for examples from the past.
+Short term memory is stored as a Monologue object and the model can condense it as necessary.
 
 ### Actions:
 `Action`,
