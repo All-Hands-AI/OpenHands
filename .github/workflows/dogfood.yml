@@ -26,11 +26,20 @@ jobs:
       run: |
         make build
 
+    - name: Write Task File
+      env:
+        ISSUE_TITLE: ${{ github.event.issue.title }}
+        ISSUE_BODY: ${{ github.event.issue.body }}
+      run: |
+        echo "TITLE:" > task.txt
+        echo "${ISSUE_TITLE}" >> task.txt
+        echo "" >> task.txt
+        echo "BODY:" >> task.txt
+        echo "${ISSUE_BODY}" >> task.txt
+
     - name: Run OpenDevin
       env:
         ISSUE_TITLE: ${{ github.event.issue.title }}
         ISSUE_BODY: ${{ github.event.issue.body }}
       run: |
-        # Replace new lines and double quotes in ISSUE_BODY
-        ESCAPED_ISSUE_BODY=$(echo "$ISSUE_BODY" | sed ':a;N;$!ba;s/\n/ /g' | sed 's/"/\\"/g')
-        poetry run python ./opendevin/main.py -d ./ -i 50 -t "${ISSUE_TITLE} - ${ESCAPED_ISSUE_BODY}"
+        poetry run python ./opendevin/main.py -d "./" -i 50 -f task.txt
