@@ -77,14 +77,34 @@ INITIAL_THOUGHTS = [
 
 
 class MonologueAgent(Agent):
+    """
+    The Monologue Agent utilizes long and short term memory to complete tasks.
+    Long term memory is stored as a LongTermMemory object and the model uses it to search for examples from the past.
+    Short term memory is stored as a Monologue object and the model can condense it as necessary.
+    """
+
     _initialized = False
 
     def __init__(self, llm: LLM):
+        """
+        Initializes the Monologue Agent with an llm, monologue, and memory.
+
+        Parameters:
+        - llm (LLM): The llm to be used by this agent
+        """
         super().__init__(llm)
         self.monologue = Monologue()
         self.memory = LongTermMemory()
 
     def _add_event(self, event: dict):
+        """
+        Adds a new event to the agent's monologue and memory. 
+        Monologue automatically condenses when it gets too large.
+
+        Parameters:
+        - event (dict): The event that will be added to monologue and memory
+        """
+
         if "extras" in event and "screenshot" in event["extras"]:
             del event["extras"]["screenshot"]
         if 'args' in event and 'output' in event['args'] and len(event['args']['output']) > MAX_OUTPUT_LENGTH:
@@ -95,7 +115,18 @@ class MonologueAgent(Agent):
         if self.monologue.get_total_length() > MAX_MONOLOGUE_LENGTH:
             self.monologue.condense(self.llm)
 
-    def _initialize(self, task):
+    def _initialize(self, task: str):
+        """
+        Utilizes the INITIAL_THOUGHTS list to give the agent a context for it's capabilities and how to navigate the /workspace.
+        Short circuted to return when already initialized.
+
+        Parameters:
+        - task (str): The initial goal statement provided by the user 
+
+        Raises:
+        - ValueError: If task is not provided
+        """
+
         if self._initialized:
             return
 
@@ -148,6 +179,15 @@ class MonologueAgent(Agent):
         self._initialized = True
 
     def step(self, state: State) -> Action:
+        """
+        Modifies the current state by adding the most recent actions and observations, then prompts the model to think about it's next action to take using monologue, memory, and hint.
+
+        Parameters:
+        - state (State): The current state based on previous steps taken
+
+        Returns:
+        - Action: The next action to take based on LLM response
+        """
         self._initialize(state.plan.main_goal)
         for prev_action, obs in state.updated_info:
             self._add_event(prev_action.to_dict())
@@ -168,5 +208,15 @@ class MonologueAgent(Agent):
         return action
 
     def search_memory(self, query: str) -> List[str]:
+        """
+        Uses VectorIndexRetriever to find related memories within the long term memory.
+        Uses search to produce top 10 results.
+        
+        Parameters:
+        - query (str): The query that we want to find related memories for
+
+        Returns:
+        - List[str]: A list of top 10 text results that matched the query
+        """
         return self.memory.search(query)
 

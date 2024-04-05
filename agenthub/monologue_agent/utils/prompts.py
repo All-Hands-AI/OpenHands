@@ -87,7 +87,13 @@ You can also use the same action and args from the source monologue.
 """
 
 
-def get_summarize_monologue_prompt(thoughts):
+def get_summarize_monologue_prompt(thoughts: List[dict]):
+    """
+    Gets the prompt for summarizing the monologue
+
+    Returns: 
+    - str: A formatted string with the current monologue within the prompt
+    """
     return MONOLOGUE_SUMMARY_PROMPT % {
         'monologue': json.dumps({'old_monologue': thoughts}, indent=2),
     }
@@ -97,6 +103,18 @@ def get_request_action_prompt(
         thoughts: List[dict],
         background_commands_obs: List[CmdOutputObservation] = [],
 ):
+    """
+    Gets the action prompt formatted with appropriate values.
+
+    Parameters:
+    - task (str): The current task the agent is trying to accomplish
+    - thoughts (List[dict]): The agent's current thoughts
+    - background_commands_obs (List[CmdOutputObservation]): List of all observed background commands running
+
+    Returns:
+    - str: Formatted prompt string with hint, task, monologue, and background included
+    """
+
     hint = ''
     if len(thoughts) > 0:
         latest_thought = thoughts[-1]
@@ -115,8 +133,7 @@ def get_request_action_prompt(
         for command_obs in background_commands_obs:
             bg_commands_message += f"\n`{command_obs.command_id}`: {command_obs.command}"
         bg_commands_message += "\nYou can end any process by sending a `kill` action with the numerical `id` above."
-    latest_thought = thoughts[-1]
-
+        
     return ACTION_PROMPT % {
         'task': task,
         'monologue': json.dumps(thoughts, indent=2),
@@ -125,6 +142,15 @@ def get_request_action_prompt(
     }
 
 def parse_action_response(response: str) -> Action:
+    """
+    Parses a string to find an action within it
+
+    Parameters:
+    - response (str): The string to be parsed
+
+    Returns:
+    - Action: The action that was found in the response string
+    """
     json_start = response.find("{")
     json_end = response.rfind("}") + 1
     response = response[json_start:json_end]
@@ -135,5 +161,14 @@ def parse_action_response(response: str) -> Action:
     return action_from_dict(action_dict)
 
 def parse_summary_response(response: str) -> List[dict]:
+    """
+    Parses a summary of the monologue
+
+    Parameters:
+    - response (str): The response string to be parsed
+
+    Returns:
+    - List[dict]: The list of summaries output by the model
+    """
     parsed = json.loads(response)
     return parsed['new_monologue']

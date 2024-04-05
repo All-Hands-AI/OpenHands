@@ -45,7 +45,8 @@ print(math.pi)" > math.py
 </execute>
 {COMMAND_SEGMENT}
 
-When you are done, execute "exit" to close the shell and end the conversation.
+When you are done, execute the following to close the shell and end the conversation:
+<execute>exit</execute> 
 """
 
 INVALID_INPUT_MESSAGE = (
@@ -54,15 +55,18 @@ INVALID_INPUT_MESSAGE = (
     "If you already completed the task, please exit the shell by generating: <execute> exit </execute>."
 )
 
-
 def parse_response(response) -> str:
     action = response.choices[0].message.content
     if "<execute>" in action and "</execute>" not in action:
         action += "</execute>"
     return action
 
-
 class CodeActAgent(Agent):
+    """
+    The Code Act Agent is a minimalist agent. 
+    The agent works by passing the model a list of action-observaiton pairs and prompting the model to take the next step.
+    """
+    
     def __init__(
         self,
         llm: LLM,
@@ -71,13 +75,27 @@ class CodeActAgent(Agent):
         Initializes a new instance of the CodeActAgent class.
 
         Parameters:
-        - instruction (str): The instruction for the agent to execute.
-        - max_steps (int): The maximum number of steps to run the agent.
+        - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
         self.messages: List[Mapping[str, str]] = []
 
     def step(self, state: State) -> Action:
+        """
+        Performs one step using the Code Act Agent. 
+        This includes gathering info on previous steps and prompting the model to make a command to execute.
+
+        Parameters:
+        - state (State): used to get updated info and background commands
+
+        Returns:
+        - CmdRunAction(command) - command action to run
+        - AgentEchoAction(content=INVALID_INPUT_MESSAGE) - invalid command output
+
+        Raises:
+        - NotImplementedError - for actions other than CmdOutputObservation or AgentMessageObservation
+        """
+
         if len(self.messages) == 0:
             assert state.plan.main_goal, "Expecting instruction to be set"
             self.messages = [

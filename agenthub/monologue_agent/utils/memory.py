@@ -41,14 +41,28 @@ else:
 
 
 class LongTermMemory:
+    """
+    Responsible for storing information that the agent can call on later for better insights and context.
+    Uses chromadb to store and search through memories.
+    """
+
     def __init__(self):
+        """
+        Initialize the chromadb and set up ChromaVectorStore for later use.
+        """
         db = chromadb.Client()
         self.collection = db.get_or_create_collection(name="memories")
         vector_store = ChromaVectorStore(chroma_collection=self.collection)
         self.index = VectorStoreIndex.from_vector_store(vector_store, embed_model=embed_model)
         self.thought_idx = 0
 
-    def add_event(self, event):
+    def add_event(self, event: dict):
+        """
+        Adds a new event to the long term memory with a unique id.
+
+        Parameters:
+        - event (dict): The new event to be added to memory
+        """
         id = ""
         t = ""
         if "action" in event:
@@ -69,7 +83,17 @@ class LongTermMemory:
         self.thought_idx += 1
         self.index.insert(doc)
 
-    def search(self, query, k=10):
+    def search(self, query: str, k: int=10):
+        """
+        Searches through the current memory using VectorIndexRetriever
+
+        Parameters:
+        - query (str): A query to match search results to
+        - k (int): Number of top results to return
+
+        Returns:
+        - List[str]: List of top k results found in current memory
+        """
         retriever = VectorIndexRetriever(
             index=self.index,
             similarity_top_k=k,
