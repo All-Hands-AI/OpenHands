@@ -125,6 +125,11 @@ Getting started with the OpenDevin project is incredibly easy. Follow these simp
     make build
     ```
 
+- **For Mac users**, create a .zshrc file in your home folder with the following:
+    ```bash
+    export PATH="$HOME/.local/bin:$PATH"
+    ```
+
 ### 3. Configuring the Language Model
 
 OpenDevin supports a diverse array of Language Models (LMs) through the powerful [litellm](https://docs.litellm.ai) library. By default, we've chosen the mighty GPT-4 from OpenAI as our go-to model, but the world is your oyster! You can unleash the potential of Anthropic's suave Claude, the enigmatic Llama, or any other LM that piques your interest.
