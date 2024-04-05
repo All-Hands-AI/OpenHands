@@ -9,7 +9,7 @@ RUN pip install poetry
 RUN poetry --version
 RUN python --version
 
-COPY pyproject.toml poetry.lock /usr/src/app/
+COPY . /usr/src/app
 
 # https://github.com/OpenDevin/OpenDevin/issues/791
 # https://github.com/OpenDevin/OpenDevin/pull/378#issuecomment-2034843314
@@ -17,7 +17,6 @@ COPY pyproject.toml poetry.lock /usr/src/app/
 # https://github.com/pymupdf/PyMuPDF/discussions/875#discussioncomment-554936
 RUN poetry run pip install pymupdfb
 RUN poetry install --without evaluation
-COPY . /usr/src/app
 
 USER root
 
