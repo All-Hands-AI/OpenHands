@@ -1,6 +1,7 @@
 import { appendAssistantMessage } from "../state/chatSlice";
 import { setInitialized } from "../state/taskSlice";
 import store from "../store";
+import ActionType from "../types/ActionType";
 import Socket from "./socket";
 import {
   setAgent,
@@ -61,7 +62,7 @@ export function saveSettings(
         value,
       ]),
     );
-    const event = { action: "initialize", args: socketSettings };
+    const event = { action: ActionType.INIT, args: socketSettings };
     const eventString = JSON.stringify(event);
     store.dispatch(setInitialized(false));
     Socket.send(eventString);

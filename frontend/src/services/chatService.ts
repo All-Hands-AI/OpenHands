@@ -9,12 +9,13 @@ import {
 } from "../state/chatSlice";
 import Socket from "./socket";
 import store from "../store";
+import ActionType from "../types/ActionType";
 import { SocketMessage } from "../types/ResponseType";
 import { ActionMessage } from "../types/Message";
 
 export function sendChatMessage(message: string): void {
   store.dispatch(appendUserMessage(message));
-  const event = { action: "start", args: { task: message } };
+  const event = { action: ActionType.START, args: { task: message } };
   const eventString = JSON.stringify(event);
   Socket.send(eventString);
 }
