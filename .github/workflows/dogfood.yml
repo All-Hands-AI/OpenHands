@@ -97,13 +97,13 @@ jobs:
         # Extract PR number from URL
         PR_NUMBER=$(echo "$PR_URL" | grep -o '[0-9]\+$')
         
-        # Set output variables
-        echo "::set-output name=pr_url::$PR_URL"
-        echo "::set-output name=pr_number::$PR_NUMBER"
+        # Set environment vars
+        echo "PR_URL=$PR_URL" >> $GITHUB_ENV
+        echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
 
     - name: Post Comment
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
         gh issue comment ${{ github.event.issue.number }} \
-          -b "OpenDevin raised [PR #${{ steps.generate-pr.outputs.pr_number }}](${{ steps.generate-pr.outputs.pr_url }}) to close this issue."
+          -b "OpenDevin raised [PR #${{ env.PR_NUMBER }}](${{ env.PR_URL }}) to resolve this issue."
