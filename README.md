@@ -117,6 +117,7 @@ Getting started with the OpenDevin project is incredibly easy. Follow these simp
 * [Docker](https://docs.docker.com/engine/install/)(For those on MacOS, make sure to allow the default Docker socket to be used from advanced settings!)
 * [Python](https://www.python.org/downloads/) >= 3.11
 * [NodeJS](https://nodejs.org/en/download/package-manager) >= 18.17.1
+* [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) >= 1.8
 
 ### 2. Build and Setup The Environment
 
