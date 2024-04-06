@@ -20,6 +20,7 @@ build:
 	@poetry install --without evaluation
 	@echo "Activating Poetry shell..."
 	@echo "Installing pre-commit hooks..."
+	@git config --unset-all core.hooksPath || true
 	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
 	@echo "Setting up frontend environment..."
 	@echo "Detect Node.js version..."
