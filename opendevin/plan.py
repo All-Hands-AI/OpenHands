@@ -1,5 +1,5 @@
 from typing import List
-from opendevin._logging import opendevin_logger as logger
+from opendevin.logging import opendevin_logger as logger
 
 OPEN_STATE = 'open'
 COMPLETED_STATE = 'completed'

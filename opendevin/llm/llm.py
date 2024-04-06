@@ -5,7 +5,7 @@ from litellm.router import Router
 from functools import partial
 
 from opendevin import config
-from opendevin._logging import llm_prompt_logger, llm_response_logger
+from opendevin.logging import llm_prompt_logger, llm_response_logger
 
 DEFAULT_API_KEY = config.get("LLM_API_KEY")
 DEFAULT_BASE_URL = config.get("LLM_BASE_URL")

@@ -1,5 +1,5 @@
 import logging, os, sys
-from time import strftime
+from datetime import datetime
 import traceback
 
 console_formatter = logging.Formatter(
@@ -40,6 +40,17 @@ def get_file_handler():
 logging.basicConfig(level=logging.ERROR)
 
 def log_uncaught_exceptions(ex_cls, ex, tb):
+    """
+    Logs uncaught exceptions along with the traceback.
+
+    Args:
+        ex_cls (type): The type of the exception.
+        ex (Exception): The exception instance.
+        tb (traceback): The traceback object.
+
+    Returns:
+        None
+    """
     logging.error(''.join(traceback.format_tb(tb)))
     logging.error('{0}: {1}'.format(ex_cls, ex))
 
@@ -74,7 +85,7 @@ class LlmFileHandler(logging.FileHandler):
         """
         self.filename = filename
         self.message_counter = 1
-        self.session = strftime("%y-%m-%d_%H-%M-%S")
+        self.session = datetime.now().strftime("%y-%m-%d_%H-%M-%S")
         self.log_directory = os.path.join(os.getcwd(), "logs", "llm", self.session)
         os.makedirs(self.log_directory, exist_ok=True)
         self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{self.message_counter:03}.log")

@@ -11,7 +11,7 @@ import docker
 import concurrent.futures
 
 from opendevin import config
-from opendevin._logging import opendevin_logger as logger
+from opendevin.logging import opendevin_logger as logger
 
 InputType = namedtuple("InputType", ["content"])
 OutputType = namedtuple("OutputType", ["content"])

@@ -13,6 +13,7 @@ from opendevin.llm.llm import LLM
 from opendevin.observation import NullObservation, Observation, UserMessageObservation
 from opendevin.server.session import session_manager
 from opendevin.schema import ActionType
+from opendevin.logging import opendevin_logger as logger
 
 DEFAULT_API_KEY = config.get("LLM_API_KEY")
 DEFAULT_BASE_URL = config.get("LLM_BASE_URL")
@@ -121,7 +122,7 @@ class AgentManager:
             model = LLM_MODEL
 
         if not os.path.exists(directory):
-            print(f"Workspace directory {directory} does not exist. Creating it...")
+            logger.info("Workspace directory %s does not exist. Creating it...", directory)
             os.makedirs(directory)
         directory = os.path.relpath(directory, os.getcwd())
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
@@ -137,7 +138,7 @@ class AgentManager:
                 callbacks=[self.on_agent_event],
             )
         except Exception:
-            print("Error creating controller.")
+            logger.exception("Error creating controller.")
             await self.send_error(
                 "Error creating controller. Please check Docker is running using `docker ps`."
             )
