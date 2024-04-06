@@ -3,13 +3,13 @@ from enum import Enum
 
 class ObservationType(str, Enum):
     READ = "read"
-    """The contents of a file
+    """The content of a file
     """
 
     WRITE = "write"
 
     BROWSE = "browse"
-    """The HTML contents of a URL
+    """The HTML content of a URL
     """
 
     RUN = "run"

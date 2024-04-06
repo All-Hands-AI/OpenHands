@@ -11,6 +11,7 @@ class BrowserOutputObservation(Observation):
     """
 
     url: str
+    screenshot: str
     status_code: int = 200
     error: bool = False
     observation: str = ObservationType.BROWSE

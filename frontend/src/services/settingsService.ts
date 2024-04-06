@@ -1,8 +1,23 @@
-import socket from "../socket/socket";
 import { appendAssistantMessage } from "../state/chatSlice";
 import { setInitialized } from "../state/taskSlice";
 import store from "../store";
 import ActionType from "../types/ActionType";
+import Socket from "./socket";
+import {
+  setAgent,
+  setLanguage,
+  setModel,
+  setWorkspaceDirectory,
+} from "../state/settingsSlice";
+
+export async function getInitialModel() {
+  if (localStorage.getItem("model")) {
+    return localStorage.getItem("model");
+  }
+
+  const res = await fetch("/api/default-model");
+  return res.json();
+}
 
 export async function fetchModels() {
   const response = await fetch(`/api/litellm-models`);
@@ -24,26 +39,40 @@ export const INITIAL_MODELS = [
 
 export type Model = (typeof INITIAL_MODELS)[number];
 
-export const INITIAL_AGENTS = ["LangchainsAgent", "CodeActAgent"];
+export const INITIAL_AGENTS = ["MonologueAgent", "CodeActAgent"];
 
 export type Agent = (typeof INITIAL_AGENTS)[number];
 
-function changeSetting(setting: string, value: string): void {
-  const event = { action: ActionType.INIT, args: { [setting]: value } };
-  const eventString = JSON.stringify(event);
-  socket.send(eventString);
-  store.dispatch(setInitialized(false));
-  store.dispatch(appendAssistantMessage(`Changed ${setting} to "${value}"`));
-}
+// Map Redux settings to socket event arguments
+const SETTINGS_MAP = new Map<string, string>([
+  ["model", "model"],
+  ["agent", "agent_cls"],
+  ["workspaceDirectory", "directory"],
+]);
 
-export function changeModel(model: Model): void {
-  changeSetting("model", model);
-}
-
-export function changeAgent(agent: Agent): void {
-  changeSetting("agent_cls", agent);
-}
-
-export function changeDirectory(directory: string): void {
-  changeSetting("directory", directory);
+// Send settings to the server
+export function saveSettings(
+  reduxSettings: { [id: string]: string },
+  needToSend: boolean = false,
+): void {
+  if (needToSend) {
+    const socketSettings = Object.fromEntries(
+      Object.entries(reduxSettings).map(([setting, value]) => [
+        SETTINGS_MAP.get(setting) || setting,
+        value,
+      ]),
+    );
+    const event = { action: ActionType.INIT, args: socketSettings };
+    const eventString = JSON.stringify(event);
+    store.dispatch(setInitialized(false));
+    Socket.send(eventString);
+  }
+  for (const [setting, value] of Object.entries(reduxSettings)) {
+    localStorage.setItem(setting, value);
+    store.dispatch(appendAssistantMessage(`Set ${setting} to "${value}"`));
+  }
+  store.dispatch(setModel(reduxSettings.model));
+  store.dispatch(setAgent(reduxSettings.agent));
+  store.dispatch(setWorkspaceDirectory(reduxSettings.workspaceDirectory));
+  store.dispatch(setLanguage(reduxSettings.language));
 }

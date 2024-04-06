@@ -34,7 +34,24 @@ def read_root():
 
 @app.get("/litellm-models")
 def read_llm_models():
-    return ["model-mock"]
+    return [
+        "gpt-4",
+        "gpt-4-turbo-preview",
+        "gpt-4-0314",
+        "gpt-4-0613",
+    ]
+
+@app.get("/litellm-agents")
+def read_llm_agents():
+    return [
+        "MonologueAgent",
+        "CodeActAgent",
+        "PlannerAgent",
+    ]
+
+@app.get("/default-model")
+def read_default_model():
+    return "gpt-4"
 
 
 if __name__ == "__main__":

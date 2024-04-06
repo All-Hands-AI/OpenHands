@@ -1,18 +1,17 @@
 import React, { useEffect, useRef } from "react";
 import { IDisposable, Terminal as XtermTerminal } from "@xterm/xterm";
-import { FitAddon } from "xterm-addon-fit";
 import "@xterm/xterm/css/xterm.css";
-import socket from "../socket/socket";
+import { useSelector } from "react-redux";
+import { FitAddon } from "xterm-addon-fit";
 import ActionType from "../types/ActionType";
 import ObservationType from "../types/ObservationType";
+import Socket from "../services/socket";
+import { RootState } from "../store";
 
 class JsonWebsocketAddon {
-  _socket: WebSocket;
-
   _disposables: IDisposable[];
 
-  constructor(_socket: WebSocket) {
-    this._socket = _socket;
+  constructor() {
     this._disposables = [];
   }
 
@@ -20,10 +19,10 @@ class JsonWebsocketAddon {
     this._disposables.push(
       terminal.onData((data) => {
         const payload = JSON.stringify({ action: "terminal", data });
-        this._socket.send(payload);
+        Socket.send(payload);
       }),
     );
-    this._socket.addEventListener("message", (event) => {
+    Socket.addEventListener("message", (event) => {
       const { action, args, observation, content } = JSON.parse(event.data);
       if (action === ActionType.RUN) {
         terminal.writeln(args.command);
@@ -39,7 +38,7 @@ class JsonWebsocketAddon {
 
   dispose() {
     this._disposables.forEach((d) => d.dispose());
-    this._socket.removeEventListener("message", () => {});
+    Socket.removeEventListener("message", () => {});
   }
 }
 
@@ -50,6 +49,7 @@ class JsonWebsocketAddon {
 
 function Terminal(): JSX.Element {
   const terminalRef = useRef<HTMLDivElement>(null);
+  const { commands } = useSelector((state: RootState) => state.cmd);
 
   useEffect(() => {
     const bgColor = getComputedStyle(document.documentElement)
@@ -82,15 +82,34 @@ function Terminal(): JSX.Element {
       fitAddon.fit();
     }, 1);
 
-    const jsonWebsocketAddon = new JsonWebsocketAddon(socket);
+    const jsonWebsocketAddon = new JsonWebsocketAddon();
     terminal.loadAddon(jsonWebsocketAddon);
 
+    // FIXME, temporary solution to display the terminal,
+    // but it will rerender the terminal every time the commands change
+    commands.forEach((command) => {
+      if (command.type === "input") {
+        terminal.writeln(command.content);
+      } else {
+        command.content.split("\n").forEach((line: string) => {
+          terminal.writeln(line);
+        });
+        terminal.write("\n$ ");
+      }
+    });
     return () => {
       terminal.dispose();
     };
-  }, []);
+  }, [commands]);
 
-  return <div ref={terminalRef} className="h-full w-full block" />;
+  return (
+    <div className="flex flex-col h-full">
+      <div className="px-4 py-2 text-lg border-b border-border">Terminal</div>
+      <div className="grow p-2 flex min-h-0">
+        <div ref={terminalRef} className="h-full w-full" />
+      </div>
+    </div>
+  );
 }
 
 export default Terminal;

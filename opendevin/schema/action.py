@@ -11,11 +11,11 @@ class ActionType(str, Enum):
     """
 
     READ = "read"
-    """Reads the contents of a file.
+    """Reads the content of a file.
     """
 
     WRITE = "write"
-    """Writes the contents to a file.
+    """Writes the content to a file.
     """
 
     RUN = "run"
@@ -42,6 +42,8 @@ class ActionType(str, Enum):
     """If you're absolutely certain that you've completed your task and have tested your work, 
     use the finish action to stop working.
     """
+
+    CHAT = "chat"
 
     SUMMARIZE = "summarize"
 

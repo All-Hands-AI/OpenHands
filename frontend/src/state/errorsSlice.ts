@@ -11,9 +11,12 @@ export const errorsSlice = createSlice({
     appendError: (state, action) => {
       state.errors.push(action.payload);
     },
+    removeError: (state, action) => {
+      state.errors = state.errors.filter((error) => error !== action.payload);
+    },
   },
 });
 
-export const { appendError } = errorsSlice.actions;
+export const { appendError, removeError } = errorsSlice.actions;
 
 export default errorsSlice.reducer;
