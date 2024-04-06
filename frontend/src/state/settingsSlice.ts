@@ -24,7 +24,7 @@ export const settingsSlice = createSlice({
       state.workspaceDirectory = action.payload;
     },
     setLanguage: (state, action) => {
-      localStorage.setItem("workspaceDirectory", action.payload);
+      localStorage.setItem("language", action.payload);
       state.language = action.payload;
       i18next.changeLanguage(action.payload);
     },
