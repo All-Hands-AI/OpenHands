@@ -1,9 +1,9 @@
 import { Tab, Tabs } from "@nextui-org/react";
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { FaCode } from "react-icons/fa6";
 import Calendar from "../assets/calendar";
 import Earth from "../assets/earth";
-import Pencil from "../assets/pencil";
 import { I18nKey } from "../i18n/declaration";
 import { AllTabs, TabOption, TabType } from "../types/TabOption";
 import Browser from "./Browser";
@@ -23,7 +23,7 @@ function Workspace() {
       },
       [TabOption.CODE]: {
         name: t(I18nKey.WORKSPACE$CODE_EDITOR_TAB_LABEL),
-        icon: <Pencil />,
+        icon: <FaCode />,
         component: <CodeEditor key="code" />,
       },
       [TabOption.BROWSER]: {
@@ -42,6 +42,14 @@ function Workspace() {
         className="tabs tabs-bordered tabs-lg border-b border-border"
       >
         <Tabs
+          disableCursorAnimation
+          classNames={{
+            tabList:
+              "w-full relative rounded-none bg-bg-workspace p-0 border-divider gap-0",
+            cursor: "w-full bg-bg-workspace  rounded-none",
+            tab: "max-w-fit px-4 h-12 rounded-none border-border-editor-sidebar border-r-[1px] border-r",
+            tabContent: "group-data-[selected=true]:text-text-editor-active",
+          }}
           variant="light"
           size="lg"
           onSelectionChange={(v) => {
@@ -63,7 +71,7 @@ function Workspace() {
       </div>
       {Object.keys(tabData).map((tab) => (
         <div
-          className="h-full w-full p-4 bg-bg-workspace"
+          className="h-full w-full bg-bg-workspace"
           key={tab}
           hidden={activeTab !== tab}
         >
