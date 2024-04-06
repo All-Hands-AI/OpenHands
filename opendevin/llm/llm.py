@@ -47,12 +47,9 @@ class LLM:
         self._completion = partial(
             self._router.completion, model=self.model_name)
 
-        # print(f"Logging prompts to {self._debug_dir}/{self._debug_id}")
         completion_unwrapped = self._completion
 
         def wrapper(*args, **kwargs):
-            # dir = self._debug_dir + "/" + self._debug_id + "/" + str(self._debug_idx)
-            # os.makedirs(dir, exist_ok=True)
             if 'messages' in kwargs:
                 messages = kwargs['messages']
             else:
@@ -61,7 +58,6 @@ class LLM:
             resp = completion_unwrapped(*args, **kwargs)
             message_back = resp['choices'][0]['message']['content']
             llm_response_logger.debug(message_back)
-            # self._debug_idx += 1
             return resp
         self._completion = wrapper  # type: ignore
 
@@ -72,14 +68,3 @@ class LLM:
         """
         return self._completion
 
-    def write_debug_prompt(self, dir, messages):
-        prompt_out = ''
-        for message in messages:
-            prompt_out += '<' + message['role'] + '>\n'
-            prompt_out += message['content'] + '\n\n'
-        with open(f"{dir}/prompt.md", 'w') as f:
-            f.write(prompt_out)
-
-    def write_debug_response(self, dir, response):
-        with open(f"{dir}/response.md", 'w') as f:
-            f.write(response)

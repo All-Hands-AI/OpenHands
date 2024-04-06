@@ -74,14 +74,11 @@ opendevin_logger.debug('Logging to %s', os.path.join(
 opendevin_logger.name = 'opendevin'
 
 # Exclude "litellm" from logging output
-litellm_logger = logging.getLogger('LiteLLM')
-litellm_logger.setLevel(logging.WARNING)
-opendevin_logger.addFilter(lambda record: not any(name in record.name.lower(
-) for name in ['litellm', 'litellm router', 'litellm proxy']))
+logging.getLogger('LiteLLM').disabled = True
+logging.getLogger('LiteLLM Router').disabled = True
+logging.getLogger('LiteLLM Proxy').disabled = True
 
 # LLM prompt and response logging
-
-
 class LlmFileHandler(logging.FileHandler):
 
     def __init__(self, filename, mode='a', encoding=None, delay=False):
@@ -118,6 +115,7 @@ class LlmFileHandler(logging.FileHandler):
         self.stream.close
         opendevin_logger.debug('Logging to %s', self.baseFilename)
         self.message_counter += 1
+
 
 
 def get_llm_prompt_file_handler():
