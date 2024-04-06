@@ -13,5 +13,6 @@ jobs:
           python-version: '3.11'
       - name: Run tests
         run: |
+          curl -sSL https://install.python-poetry.org | python3 -
           make build
           poetry run pytest ./tests
