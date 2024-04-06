@@ -8,11 +8,13 @@ services:
     ports:
       - "3001:3001"
     container_name: devin-frontend
-    depends_on:
-      - backend
+    volumes:
+      - workspace:/usr/src/app/workspace
+    # depends_on:
+      # backend:
+        # condition: service_healthy
     environment:
       - BACKEND_HOST=devin-backend:3000
-      # - BACKEND_HOST=localhost:3000
     command: ["npm", "start", "--", "--host", "0.0.0.0"]
 
   backend:
@@ -27,16 +29,16 @@ services:
     volumes:
       - ./config.toml:/usr/src/app/config.toml
       - /var/run/docker.sock:/var/run/docker.sock
-      #TODO: fix issue where workspace doesn't have permissions to write files
-      # devin-backend   | Failed to start container: 500 Server Error for http+docker://localhost/v1.41/containers/create?name=sandbox-default: Internal Server Error \
-      #("make cli opts(): making volume mountpoint for volume /usr/src/app/workspace: mkdir /usr/src/app: read-only file system")
-      # - workspace:/usr/src/app/workspace:rw
-      - type: volume
-        source: workspace
-        target: /usr/src/app/workspace
-        read_only: false
-    privileged: true
-    command:  ["poetry", "run", "uvicorn", "opendevin.server.listen:app", "--host", "0.0.0.0", "--port", "3000", "--log-level", "debug"]
+      # - "socket:/var/run"
+    volumes_from:
+      - "frontend:rw"
+    command: ["poetry", "run", "uvicorn", "opendevin.server.listen:app", "--host", "0.0.0.0", "--port", "3000", "--log-level", "debug"]
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:3000/api"]
+    #   interval: 1s
+    #   timeout: 5s
+    #   retries: 5
+    #   start_period: 10s
 
 networks:
   opendevin:
@@ -46,3 +48,4 @@ networks:
 volumes:
   workspace:
     driver: local
+  # socket:
