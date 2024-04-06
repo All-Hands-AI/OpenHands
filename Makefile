@@ -56,16 +56,24 @@ build:
 	fi
 	@echo "$(GREEN)Pulling Docker image...$(RESET)"
 	@docker pull $(DOCKER_IMAGE)
-	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
+	@echo "$(YELLOW)Installing Poetry...$(RESET)"
 	@curl -sSL https://install.python-poetry.org | python3 -
+	@echo "$(GREEN)Poetry installed successfully.$(RESET)"
+	@echo "$(YELLOW)Checking Poetry PATH...$(RESET)"
+	@if command -v poetry > /dev/null; then \
+		echo "$(BLUE)Poetry is already added to the PATH."; \
+	else \
+		echo "$(RED)Poetry is not added to the PATH. Please add it to your PATH and rerun `make build`$(RESET)"; \
+		exit 1; \
+	fi
+	@echo "$(YELLOW)Installing Python dependencies...$(RESET)"
 	@poetry install --without evaluation
-	@echo "$(GREEN)Activating Poetry shell...$(RESET)"
-	@echo "$(GREEN)Installing pre-commit hooks...$(RESET)"
+	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
+	@echo "$(YELLOW)Installing pre-commit hooks...$(RESET)"
 	@git config --unset-all core.hooksPath || true
 	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
+	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 	@echo "$(GREEN)Setting up frontend environment...$(RESET)"
-	@echo "$(YELLOW)Detect Node.js version...$(RESET)"
-	@cd frontend && node ./scripts/detect-node-version.js
 	@cd frontend && if [ -f node_modules/.package-lock.json ]; then \
 		echo "$(YELLOW)This project currently uses \"pnpm\" for dependency management. It has detected that dependencies were previously installed using \"npm\" and has automatically deleted the \"node_modules\" directory to prevent unnecessary conflicts.$(RESET)"; \
 		rm -rf node_modules; \
