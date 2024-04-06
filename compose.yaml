@@ -32,8 +32,6 @@ services:
       - type: bind
         source: ./config.toml
         target: /usr/src/app/config.toml
-      # When using podman change source to the podman socket (see podman desktop to copy/paste)
-      # unix:///var/folders/r3/hy7xk2kd6ms83c026dddzcnc0000gn/T/podman/podman-machine-default-api.sock
       - type: bind
         source: /var/run/docker.sock
         target: /var/run/docker.sock
