@@ -7,11 +7,10 @@ from opendevin.action import (
     Action,
     NullAction,
 )
-from opendevin.observation import NullObservation
 from opendevin.agent import Agent
 from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
-from opendevin.observation import Observation, UserMessageObservation
+from opendevin.observation import NullObservation, Observation, UserMessageObservation
 from opendevin.server.session import session_manager
 
 DEFAULT_API_KEY = config.get("LLM_API_KEY")
