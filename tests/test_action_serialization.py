@@ -1,4 +1,3 @@
-import pytest
 from opendevin.action import (
     action_from_dict,
     Action,

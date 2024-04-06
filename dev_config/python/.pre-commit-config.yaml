@@ -7,7 +7,6 @@ repos:
       - id: check-yaml
       - id: debug-statements
       - id: double-quote-string-fixer
-      - id: requirements-txt-fixer
 
   - repo: https://github.com/hhatto/autopep8
     rev: v2.1.0
@@ -22,18 +21,24 @@ repos:
         pass_filenames: false
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.3
+    # Ruff version.
+    rev: v0.3.5
     hooks:
+      # Run the linter.
       - id: ruff
         entry: ruff check --config dev_config/python/ruff.toml opendevin/ agenthub/
-        always_run: true
-        pass_filenames: false
+        types_or: [ python, pyi, jupyter ]
+        args: [ --fix ]
+      # Run the formatter.
+      - id: ruff-format
+        entry: ruff check --config dev_config/python/ruff.toml opendevin/ agenthub/
+        types_or: [ python, pyi, jupyter ]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.9.0
     hooks:
       - id: mypy
-        additional_dependencies: [types-requests, types-setuptools]
+        additional_dependencies: [types-requests, types-setuptools, types-pyyaml, types-toml]
         entry: mypy --config-file dev_config/python/mypy.ini opendevin/ agenthub/
         always_run: true
         pass_filenames: false
