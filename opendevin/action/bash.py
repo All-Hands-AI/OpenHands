@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from .base import ExecutableAction
+from opendevin.schema import ActionType
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
@@ -12,7 +13,7 @@ if TYPE_CHECKING:
 class CmdRunAction(ExecutableAction):
     command: str
     background: bool = False
-    action: str = "run"
+    action: str = ActionType.RUN
 
     def run(self, controller: "AgentController") -> "CmdOutputObservation":
         return controller.command_manager.run_command(self.command, self.background)
@@ -21,10 +22,11 @@ class CmdRunAction(ExecutableAction):
     def message(self) -> str:
         return f"Running command: {self.command}"
 
+
 @dataclass
 class CmdKillAction(ExecutableAction):
     id: int
-    action: str = "kill"
+    action: str = ActionType.KILL
 
     def run(self, controller: "AgentController") -> "CmdOutputObservation":
         return controller.command_manager.kill_command(self.id)

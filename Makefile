@@ -36,16 +36,6 @@ build:
 		echo "$(RED)npm is not installed. Please install Node.js to continue.$(RESET)"; \
 		exit 1; \
 	fi
-	@echo "$(YELLOW)Checking pnpm installation...$(RESET)"
-	@if command -v pnpm > /dev/null; then \
-		PNPM_VERSION=$(shell pnpm --version); \
-		echo "$(BLUE)pnpm is already installed. Version: $${PNPM_VERSION}$(RESET)"; \
-	else \
-		echo "$(YELLOW)pnpm is not installed. Installing corepack to enable pnpm...$(RESET)"; \
-		npm install -g corepack; \
-		corepack enable; \
-		echo "$(BLUE)pnpm installed and enabled.$(RESET)"; \
-	fi
 	@echo "$(YELLOW)Checking Docker installation...$(RESET)"
 	@if command -v docker > /dev/null; then \
 		DOCKER_VERSION=$(shell docker --version | awk '{print $$3}'); \
@@ -54,20 +44,27 @@ build:
 		echo "$(RED)Docker is not installed. Please install Docker to continue.$(RESET)"; \
 		exit 1; \
 	fi
+	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
+	@if command -v poetry > /dev/null; then \
+		echo "$(BLUE)Poetry is already installed.$(RESET)"; \
+	else \
+		echo "$(YELLOW)Poetry is not installed. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
+		echo "$(YELLOW) curl -sSL https://install.python-poetry.org | python3 -$(RESET)"; \
+		echo "$(YELLOW)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
+		exit 1; \
+	fi
 	@echo "$(GREEN)Pulling Docker image...$(RESET)"
 	@docker pull $(DOCKER_IMAGE)
-	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
-	@curl -sSL https://install.python-poetry.org | python3 -
 	@poetry install --without evaluation
 	@echo "$(GREEN)Activating Poetry shell...$(RESET)"
 	@echo "$(GREEN)Setting up frontend environment...$(RESET)"
 	@echo "$(YELLOW)Detect Node.js version...$(RESET)"
 	@cd frontend && node ./scripts/detect-node-version.js
-	@cd frontend && if [ -f node_modules/.package-lock.json ]; then \
-		echo "$(YELLOW)This project currently uses \"pnpm\" for dependency management. It has detected that dependencies were previously installed using \"npm\" and has automatically deleted the \"node_modules\" directory to prevent unnecessary conflicts.$(RESET)"; \
-		rm -rf node_modules; \
-	fi
-	@cd frontend && echo "$(BLUE)Enabling pnpm...$(RESET)" && corepack enable && echo "$(BLUE)Installing frontend dependencies with pnpm...$(RESET)" && pnpm install && echo "$(BLUE)Running make-i18n with pnpm...$(RESET)" && pnpm run make-i18n
+	@cd frontend && \
+		echo "$(BLUE)Installing frontend dependencies with npm...$(RESET)" && \
+		npm install && \
+		echo "$(BLUE)Running make-i18n with npm...$(RESET)" && \
+		npm run make-i18n
 	@echo "$(GREEN)Installing pre-commit hooks...$(RESET)"
 	@git config --unset-all core.hooksPath || true
 	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
@@ -81,7 +78,7 @@ start-backend:
 # Start frontend
 start-frontend:
 	@echo "$(GREEN)Starting frontend...$(RESET)"
-	@cd frontend && BACKEND_HOST=$(BACKEND_HOST) FRONTEND_PORT=$(FRONTEND_PORT) pnpm run start
+	@cd frontend && BACKEND_HOST=$(BACKEND_HOST) FRONTEND_PORT=$(FRONTEND_PORT) npm run start
 
 # Run the app
 run:
@@ -95,7 +92,7 @@ run:
 	@echo "$(YELLOW)Waiting for the backend to start...$(RESET)"
 	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
 	@echo "$(GREEN)Backend started successfully.$(RESET)"
-	@cd frontend && echo "$(BLUE)Starting frontend with pnpm...$(RESET)" && pnpm run start -- --port $(FRONTEND_PORT)
+	@cd frontend && echo "$(BLUE)Starting frontend with npm...$(RESET)" && npm run start -- --port $(FRONTEND_PORT)
 	@echo "$(GREEN)Application started successfully.$(RESET)"
 
 # Setup config.toml

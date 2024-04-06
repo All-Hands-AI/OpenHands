@@ -123,8 +123,7 @@ class CodeActAgent(Agent):
         response = self.llm.completion(
             messages=self.messages,
             stop=["</execute>"],
-            temperature=0.0,
-            seed=42,
+            temperature=0.0
         )
         action_str: str = parse_response(response)
         self.messages.append({"role": "assistant", "content": action_str})

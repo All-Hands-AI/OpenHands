@@ -1,8 +1,14 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from opendevin.observation import AgentRecallObservation, AgentMessageObservation, Observation
+from opendevin.observation import (
+    AgentRecallObservation,
+    AgentMessageObservation,
+    Observation,
+)
+from opendevin.schema import ActionType
 from .base import ExecutableAction, NotExecutableAction
+
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
 
@@ -10,22 +16,23 @@ if TYPE_CHECKING:
 @dataclass
 class AgentRecallAction(ExecutableAction):
     query: str
-    action: str = "recall"
+    action: str = ActionType.RECALL
 
     def run(self, controller: "AgentController") -> AgentRecallObservation:
         return AgentRecallObservation(
             content="Recalling memories...",
-            memories=controller.agent.search_memory(self.query)
+            memories=controller.agent.search_memory(self.query),
         )
 
     @property
     def message(self) -> str:
         return f"Let me dive into my memories to find what you're looking for! Searching for: '{self.query}'. This might take a moment."
 
+
 @dataclass
 class AgentThinkAction(NotExecutableAction):
     thought: str
-    action: str = "think"
+    action: str = ActionType.THINK
 
     def run(self, controller: "AgentController") -> "Observation":
         raise NotImplementedError
@@ -33,6 +40,7 @@ class AgentThinkAction(NotExecutableAction):
     @property
     def message(self) -> str:
         return self.thought
+
 
 @dataclass
 class AgentEchoAction(ExecutableAction):
@@ -46,19 +54,21 @@ class AgentEchoAction(ExecutableAction):
     def message(self) -> str:
         return self.content
 
+
 @dataclass
 class AgentSummarizeAction(NotExecutableAction):
     summary: str
 
-    action: str = "summarize"
+    action: str = ActionType.SUMMARIZE
 
     @property
     def message(self) -> str:
         return self.summary
 
+
 @dataclass
 class AgentFinishAction(NotExecutableAction):
-    action: str = "finish"
+    action: str = ActionType.FINISH
 
     def run(self, controller: "AgentController") -> "Observation":
         raise NotImplementedError
