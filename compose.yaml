@@ -29,7 +29,6 @@ services:
     volumes:
       - ./config.toml:/usr/src/app/config.toml
       - /var/run/docker.sock:/var/run/docker.sock
-      # - "socket:/var/run"
     volumes_from:
       - "frontend:rw"
     command: ["poetry", "run", "uvicorn", "opendevin.server.listen:app", "--host", "0.0.0.0", "--port", "3000", "--log-level", "debug"]
@@ -48,4 +47,3 @@ networks:
 volumes:
   workspace:
     driver: local
-  # socket:

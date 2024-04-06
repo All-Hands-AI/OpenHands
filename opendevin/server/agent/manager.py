@@ -136,8 +136,8 @@ class AgentManager:
                 container_image=container_image,
                 callbacks=[self.on_agent_event],
             )
-        except Exception:
-            print("Error creating controller.")
+        except Exception as e:
+            print("Error creating controller:", e)
             await self.send_error(
                 "Error creating controller. Please check Docker is running using `docker ps`."
             )
