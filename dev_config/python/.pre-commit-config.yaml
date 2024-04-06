@@ -7,7 +7,6 @@ repos:
       - id: check-yaml
       - id: debug-statements
       - id: double-quote-string-fixer
-      - id: requirements-txt-fixer
 
   - repo: https://github.com/hhatto/autopep8
     rev: v2.1.0
