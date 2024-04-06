@@ -1,18 +1,21 @@
-import logging, os, sys
-from datetime import datetime
+import logging
+import os
+import sys
 import traceback
+from datetime import datetime
 
 console_formatter = logging.Formatter(
-    "\033[92m%(asctime)s - %(name)s:%(levelname)s\033[0m: %(filename)s:%(lineno)s - %(message)s",
-    datefmt="%H:%M:%S",
+    '\033[92m%(asctime)s - %(name)s:%(levelname)s\033[0m: %(filename)s:%(lineno)s - %(message)s',
+    datefmt='%H:%M:%S',
 )
 file_formatter = logging.Formatter(
-    "%(asctime)s - %(name)s:%(levelname)s: %(filename)s:%(lineno)s - %(message)s",
-    datefmt="%H:%M:%S",
+    '%(asctime)s - %(name)s:%(levelname)s: %(filename)s:%(lineno)s - %(message)s',
+    datefmt='%H:%M:%S',
 )
 llm_formatter = logging.Formatter(
-    "%(message)s"
+    '%(message)s'
 )
+
 
 def get_console_handler():
     """
@@ -23,21 +26,24 @@ def get_console_handler():
     console_handler.setFormatter(console_formatter)
     return console_handler
 
+
 def get_file_handler():
     """
     Returns a file handler for logging.
     """
-    log_dir = os.path.join(os.getcwd(), "logs")
+    log_dir = os.path.join(os.getcwd(), 'logs')
     os.makedirs(log_dir, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     file_name = f"opendevin_{timestamp}.log"
-    file_handler = logging.FileHandler(os.path.join(log_dir, file_name ))
+    file_handler = logging.FileHandler(os.path.join(log_dir, file_name))
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(file_formatter)
     return file_handler
 
+
 # Set up logging
 logging.basicConfig(level=logging.ERROR)
+
 
 def log_uncaught_exceptions(ex_cls, ex, tb):
     """
@@ -54,6 +60,7 @@ def log_uncaught_exceptions(ex_cls, ex, tb):
     logging.error(''.join(traceback.format_tb(tb)))
     logging.error('{0}: {1}'.format(ex_cls, ex))
 
+
 sys.excepthook = log_uncaught_exceptions
 
 opendevin_logger = logging.getLogger()
@@ -61,16 +68,20 @@ opendevin_logger.setLevel(logging.INFO)
 opendevin_logger.propagate = False
 opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.addHandler(get_file_handler())
-opendevin_logger.debug("Logging initialized")
-opendevin_logger.debug("Logging to %s", os.path.join(os.getcwd(), "logs", "opendevin.log"))
-opendevin_logger.name = "opendevin"
+opendevin_logger.debug('Logging initialized')
+opendevin_logger.debug('Logging to %s', os.path.join(
+    os.getcwd(), 'logs', 'opendevin.log'))
+opendevin_logger.name = 'opendevin'
 
 # Exclude "litellm" from logging output
 litellm_logger = logging.getLogger('LiteLLM')
 litellm_logger.setLevel(logging.WARNING)
-opendevin_logger.addFilter(lambda record: not any(name in record.name.lower() for name in ["litellm", "litellm router", "litellm proxy"]))
+opendevin_logger.addFilter(lambda record: not any(name in record.name.lower(
+) for name in ['litellm', 'litellm router', 'litellm proxy']))
 
 # LLM prompt and response logging
+
+
 class LlmFileHandler(logging.FileHandler):
 
     def __init__(self, filename, mode='a', encoding=None, delay=False):
@@ -85,10 +96,12 @@ class LlmFileHandler(logging.FileHandler):
         """
         self.filename = filename
         self.message_counter = 1
-        self.session = datetime.now().strftime("%y-%m-%d_%H-%M-%S")
-        self.log_directory = os.path.join(os.getcwd(), "logs", "llm", self.session)
+        self.session = datetime.now().strftime('%y-%m-%d_%H-%M-%S')
+        self.log_directory = os.path.join(
+            os.getcwd(), 'logs', 'llm', self.session)
         os.makedirs(self.log_directory, exist_ok=True)
-        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{self.message_counter:03}.log")
+        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{
+                                         self.message_counter:03}.log")
         super().__init__(self.baseFilename, mode, encoding, delay)
 
     def emit(self, record):
@@ -98,37 +111,41 @@ class LlmFileHandler(logging.FileHandler):
         Args:
             record (logging.LogRecord): The log record to emit.
         """
-        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{self.message_counter:03}.log")
+        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{
+                                         self.message_counter:03}.log")
         self.stream = self._open()
         super().emit(record)
         self.stream.close
-        opendevin_logger.debug("Logging to %s", self.baseFilename)
+        opendevin_logger.debug('Logging to %s', self.baseFilename)
         self.message_counter += 1
+
 
 def get_llm_prompt_file_handler():
     """
     Returns a file handler for LLM prompt logging.
     """
-    llm_prompt_file_handler = LlmFileHandler("prompt")
+    llm_prompt_file_handler = LlmFileHandler('prompt')
     llm_prompt_file_handler.setLevel(logging.DEBUG)
     llm_prompt_file_handler.setFormatter(llm_formatter)
     return llm_prompt_file_handler
+
 
 def get_llm_response_file_handler():
     """
     Returns a file handler for LLM response logging.
     """
-    llm_response_file_handler = LlmFileHandler("response")
+    llm_response_file_handler = LlmFileHandler('response')
     llm_response_file_handler.setLevel(logging.DEBUG)
     llm_response_file_handler.setFormatter(llm_formatter)
     return llm_response_file_handler
 
-llm_prompt_logger = logging.getLogger("prompt")
+
+llm_prompt_logger = logging.getLogger('prompt')
 llm_prompt_logger.setLevel(logging.DEBUG)
 llm_prompt_logger.propagate = False
 llm_prompt_logger.addHandler(get_llm_prompt_file_handler())
 
-llm_response_logger = logging.getLogger("response")
+llm_response_logger = logging.getLogger('response')
 llm_response_logger.setLevel(logging.DEBUG)
 llm_response_logger.propagate = False
 llm_response_logger.addHandler(get_llm_response_file_handler())
