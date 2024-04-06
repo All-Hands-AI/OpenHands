@@ -48,7 +48,7 @@
     "test": "jest",
     "preview": "vite preview",
     "make-i18n": "node scripts/make-i18n-translations.cjs",
-    "prelint": "pnpm run make-i18n",
+    "prelint": "npm run make-i18n",
     "lint": "eslint src/**/*.ts* && prettier --check src/**/*.ts*",
     "prepare": "cd .. && husky install frontend/.husky"
   },
@@ -91,7 +91,7 @@
     "tailwindcss": "^3.4.2",
     "ts-jest": "^29.1.2"
   },
-  "packageManager": "pnpm@8.15.6",
+  "packageManager": "npm@10.5.0",
   "volta": {
     "node": "18.20.1"
   }
