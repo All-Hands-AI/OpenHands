@@ -57,7 +57,13 @@ build:
 	@echo "$(GREEN)Pulling Docker image...$(RESET)"
 	@docker pull $(DOCKER_IMAGE)
 	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
-	@curl -sSL https://install.python-poetry.org | python3 -
+	@if command -v poetry > /dev/null; then \
+		echo "$(BLUE)Poetry is already installed.$(RESET)"; \
+	else \
+		echo "$(YELLOW)Poetry is not installed. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
+		echo "$(YELLOW)curl -sSL https://install.python-poetry.org | python3 -$(RESET)"; \
+		exit 1; \
+	fi
 	@poetry install --without evaluation
 	@echo "$(GREEN)Activating Poetry shell...$(RESET)"
 	@echo "$(GREEN)Setting up frontend environment...$(RESET)"
