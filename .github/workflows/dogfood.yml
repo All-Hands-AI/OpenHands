@@ -27,9 +27,9 @@ jobs:
         python-version: '3.12'
         cache: 'poetry'
     
-    # - name: Install Dependencies
-    #   run: |
-    #     make build
+    - name: Install Dependencies
+      run: |
+        make build
 
     - name: Write Task File
       env:
@@ -42,17 +42,13 @@ jobs:
         echo "BODY:" >> task.txt
         echo "${ISSUE_BODY}" >> task.txt
 
-    # - name: Run OpenDevin
-    #   env:
-    #     ISSUE_TITLE: ${{ github.event.issue.title }}
-    #     ISSUE_BODY: ${{ github.event.issue.body }}
-    #     LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-    #   run: |
-    #     poetry run python ./opendevin/main.py -d "./" -i 50 -f task.txt
-
-    - name: Temp generate change
+    - name: Run OpenDevin
+      env:
+        ISSUE_TITLE: ${{ github.event.issue.title }}
+        ISSUE_BODY: ${{ github.event.issue.body }}
+        LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: |
-        echo "OpenDevin: Resolve Issue #${{ github.event.issue.number }}" >> FOO.md
+        poetry run python ./opendevin/main.py -d "./" -i 50 -f task.txt
 
     - name: Setup Git, Create Branch, and Commit Changes
       run: |
@@ -66,8 +62,8 @@ jobs:
         # Checkout new branch
         git checkout -b $BRANCH_NAME
 
-        # Add all changes to staging
-        git add -A
+        # Add all changes to staging, except task.txt
+        git add --all -- ':!task.txt'
 
         # Commit the changes, if any
         git commit -m "OpenDevin: Resolve Issue #${{ github.event.issue.number }}"
