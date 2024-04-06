@@ -59,7 +59,8 @@ build:
 		echo "$(BLUE)Poetry is already installed.$(RESET)"; \
 	else \
 		echo "$(YELLOW)Poetry is not installed. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
-		echo "$(YELLOW)curl -sSL https://install.python-poetry.org | python3 -$(RESET)"; \
+		echo "$(YELLOW) curl -sSL https://install.python-poetry.org | python3 -$(RESET)"; \
+		echo "$(YELLOW)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
 		exit 1; \
 	fi
 	@echo "$(GREEN)Pulling Docker image...$(RESET)"
