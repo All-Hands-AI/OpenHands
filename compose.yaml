@@ -1,5 +1,3 @@
-# OSX/Windows users: Ensure you increase the ram of docker machine 
-
 services:
   frontend:
     build:
@@ -10,11 +8,6 @@ services:
     ports:
       - "3001:3001"
     container_name: devin-frontend
-    # volumes:
-      # - workspace:/usr/src/app/workspace
-    # depends_on:
-      # backend:
-        # condition: service_healthy
     environment:
       - BACKEND_HOST=devin-backend:3000
     command: ["npm", "start", "--", "--host", "0.0.0.0"]
@@ -29,31 +22,17 @@ services:
       - "3000:3000"
     container_name: devin-backend
     volumes:
-      - type: bind
-        source: ./config.toml
-        target: /usr/src/app/config.toml
-      - type: bind
-        source: /var/run/docker.sock
-        target: /var/run/docker.sock
-      - type: bind
-        source: ./workspace
-        target: /usr/src/app/workspace
-    # volumes_from:
-    #   - "frontend:rw"
+      - ./config.toml:/usr/src/app/config.toml
+      - /var/run/docker.sock:/var/run/docker.sock
+      - workspace:/usr/src/app/workspace
     privileged: true
-    command: ["poetry", "run", "uvicorn", "opendevin.server.listen:app", "--host", "0.0.0.0", "--port", "3000", "--log-level", "debug"]
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "http://localhost:3000/api"]
-    #   interval: 1s
-    #   timeout: 5s
-    #   retries: 5
-    #   start_period: 10s
+    command: ["poetry", "run", "uvicorn", "opendevin.server.listen:app", "--host", "0.0.0.0", "--port", "3000", "--log-level", "info"]
 
 networks:
   opendevin:
     name: opendevin
     driver: bridge
 
-# volumes:
-#   workspace:
-#     driver: local
+volumes:
+  workspace:
+    driver: local
