@@ -5,6 +5,7 @@ import { Tabs, Tab } from "@nextui-org/react";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
 import Files from "./Files";
+import { cn } from "../utils/utils";
 
 function CodeEditor(): JSX.Element {
   const [selectedFileName, setSelectedFileName] = useState("welcome");
@@ -35,7 +36,9 @@ function CodeEditor(): JSX.Element {
 
   return (
     <div
-      className={`${explorerOpen ? "grid-cols-[250px_auto]" : "grid-cols-[50px_auto]"} grid h-full bg-bg-workspace transition-all duration-500 ease-in-out`}
+      className={`${cn(
+        explorerOpen ? "grid-cols-[250px_auto]" : "grid-cols-[50px_auto]",
+      )} grid h-full bg-bg-workspace transition-all duration-500 ease-in-out`}
     >
       <div>
         <Files

@@ -47,6 +47,9 @@ dependencies:
   '@xterm/xterm':
     specifier: ^5.4.0
     version: 5.4.0
+  clsx:
+    specifier: ^2.1.0
+    version: 2.1.0
   eslint-config-airbnb-typescript:
     specifier: ^18.0.0
     version: 18.0.0(@typescript-eslint/eslint-plugin@7.5.0)(@typescript-eslint/parser@7.5.0)(eslint-plugin-import@2.29.1)(eslint@8.57.0)
