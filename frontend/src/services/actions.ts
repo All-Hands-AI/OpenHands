@@ -1,12 +1,12 @@
-import store from "../store";
-import { ActionMessage } from "../types/Message";
 import { setScreenshotSrc, setUrl } from "../state/browserSlice";
 import { appendAssistantMessage } from "../state/chatSlice";
-import { setCode } from "../state/codeSlice";
-import { setInitialized } from "../state/taskSlice";
-import { handleObservationMessage } from "./observations";
+import { setCode, updatePath } from "../state/codeSlice";
 import { appendInput } from "../state/commandSlice";
+import { setInitialized } from "../state/taskSlice";
+import store from "../store";
+import { ActionMessage } from "../types/Message";
 import { SocketMessage } from "../types/ResponseType";
+import { handleObservationMessage } from "./observations";
 
 let isInitialized = false;
 
@@ -29,7 +29,9 @@ const messageActions = {
     store.dispatch(setScreenshotSrc(screenshotSrc));
   },
   write: (message: ActionMessage) => {
-    store.dispatch(setCode(message.args.content));
+    const { path, content } = message.args;
+    store.dispatch(updatePath(path));
+    store.dispatch(setCode(content));
   },
   think: (message: ActionMessage) => {
     store.dispatch(appendAssistantMessage(message.args.thought));

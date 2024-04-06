@@ -1,18 +1,20 @@
+import json
 import uuid
+from pathlib import Path
 
-from opendevin.server.session import session_manager, message_stack
-from opendevin.server.auth import get_sid_from_token, sign_token
-from opendevin.agent import Agent
-from opendevin.server.agent import AgentManager
-import agenthub  # noqa F401 (we import this to get the agents registered)
-
-from fastapi import FastAPI, WebSocket, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import litellm
+from fastapi import Depends, FastAPI, WebSocket
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from starlette import status
 from starlette.responses import JSONResponse
-from opendevin import config
+
+import agenthub  # noqa F401 (we import this to get the agents registered)
+from opendevin import config, files
+from opendevin.agent import Agent
+from opendevin.server.agent import AgentManager
+from opendevin.server.auth import get_sid_from_token, sign_token
+from opendevin.server.session import message_stack, session_manager
 
 app = FastAPI()
 app.add_middleware(
@@ -112,3 +114,16 @@ async def del_messages(
 @app.get("/default-model")
 def read_default_model():
     return config.get_or_error("LLM_MODEL")
+
+
+@app.get("/refresh-files")
+def refresh_files():
+    structure = files.get_folder_structure(Path(str(config.get("WORKSPACE_DIR"))))
+    return json.dumps(structure.to_dict())
+
+
+@app.get("/select-file")
+def select_file(file: str):
+    with open(Path(Path(str(config.get("WORKSPACE_DIR"))), file), "r") as selected_file:
+        content = selected_file.read()
+    return json.dumps({"code": content})
