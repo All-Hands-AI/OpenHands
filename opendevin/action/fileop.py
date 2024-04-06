@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 from opendevin.observation import FileReadObservation, FileWriteObservation
 from opendevin.schema import ActionType
+
 from .base import ExecutableAction
 
 # This is the path where the workspace is mounted in the container

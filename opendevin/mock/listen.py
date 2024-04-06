@@ -41,6 +41,7 @@ def read_llm_models():
         "gpt-4-0613",
     ]
 
+
 @app.get("/litellm-agents")
 def read_llm_agents():
     return [
@@ -48,6 +49,7 @@ def read_llm_agents():
         "CodeActAgent",
         "PlannerAgent",
     ]
+
 
 @app.get("/default-model")
 def read_default_model():
