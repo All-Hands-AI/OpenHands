@@ -29,7 +29,9 @@ def get_file_handler():
     """
     log_dir = os.path.join(os.getcwd(), "logs")
     os.makedirs(log_dir, exist_ok=True)
-    file_handler = logging.FileHandler(os.path.join(log_dir, "opendevin.log"))
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    file_name = f"opendevin_{timestamp}.log"
+    file_handler = logging.FileHandler(os.path.join(log_dir, file_name ))
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(file_formatter)
     return file_handler
