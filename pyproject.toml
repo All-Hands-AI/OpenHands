@@ -12,6 +12,7 @@ python = "^3.11"
 datasets = "*"
 pandas = "*"
 litellm = "*"
+google-generativeai = "*" # To use litellm with Gemini Pro API
 termcolor = "*"
 seaborn = "*"
 docker = "*"
