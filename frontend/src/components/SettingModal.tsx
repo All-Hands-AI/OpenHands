@@ -127,6 +127,8 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
               }}
               onKeyDown={(e: KeyboardEvent) => e.continuePropagation()}
               defaultFilter={customFilter}
+              defaultInputValue={model}
+              allowsCustomValue
             >
               {(item: { label: string; value: string }) => (
                 <AutocompleteItem key={item.value} value={item.value}>
