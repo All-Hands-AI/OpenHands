@@ -60,9 +60,6 @@ build:
 	@curl -sSL https://install.python-poetry.org | python3 -
 	@poetry install --without evaluation
 	@echo "$(GREEN)Activating Poetry shell...$(RESET)"
-	@echo "$(GREEN)Installing pre-commit hooks...$(RESET)"
-	@git config --unset-all core.hooksPath || true
-	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Setting up frontend environment...$(RESET)"
 	@echo "$(YELLOW)Detect Node.js version...$(RESET)"
 	@cd frontend && node ./scripts/detect-node-version.js
@@ -71,6 +68,9 @@ build:
 		rm -rf node_modules; \
 	fi
 	@cd frontend && echo "$(BLUE)Enabling pnpm...$(RESET)" && corepack enable && echo "$(BLUE)Installing frontend dependencies with pnpm...$(RESET)" && pnpm install && echo "$(BLUE)Running make-i18n with pnpm...$(RESET)" && pnpm run make-i18n
+	@echo "$(GREEN)Installing pre-commit hooks...$(RESET)"
+	@git config --unset-all core.hooksPath || true
+	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Build completed successfully.$(RESET)"
 
 # Start backend
@@ -107,7 +107,7 @@ setup-config:
 
 	@read -p "Enter your LLM API key: " llm_api_key; \
 	 echo "LLM_API_KEY=\"$$llm_api_key\"" >> $(CONFIG_FILE).tmp
-   
+
 	@read -p "Enter your LLM Base URL [mostly used for local LLMs, leave blank if not needed - example: http://localhost:5001/v1/]: " llm_base_url; \
 	 if [[ ! -z "$$llm_base_url" ]]; then echo "LLM_BASE_URL=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; fi
 
