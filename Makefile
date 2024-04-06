@@ -54,8 +54,6 @@ build:
 		echo "$(RED)Docker is not installed. Please install Docker to continue.$(RESET)"; \
 		exit 1; \
 	fi
-	@echo "$(GREEN)Pulling Docker image...$(RESET)"
-	@docker pull $(DOCKER_IMAGE)
 	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
 	@if command -v poetry > /dev/null; then \
 		echo "$(BLUE)Poetry is already installed.$(RESET)"; \
@@ -64,6 +62,8 @@ build:
 		echo "$(YELLOW)curl -sSL https://install.python-poetry.org | python3 -$(RESET)"; \
 		exit 1; \
 	fi
+	@echo "$(GREEN)Pulling Docker image...$(RESET)"
+	@docker pull $(DOCKER_IMAGE)
 	@poetry install --without evaluation
 	@echo "$(GREEN)Activating Poetry shell...$(RESET)"
 	@echo "$(GREEN)Setting up frontend environment...$(RESET)"
