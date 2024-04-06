@@ -24,6 +24,8 @@
   <a href="https://github.com/OpenDevin/OpenDevin/stargazers"><img src="https://img.shields.io/github/stars/opendevin/opendevin?style=for-the-badge" alt="Stargazers"></a>
   <a href="https://github.com/OpenDevin/OpenDevin/issues"><img src="https://img.shields.io/github/issues/opendevin/opendevin?style=for-the-badge" alt="Issues"></a>
   <a href="https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE"><img src="https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge" alt="MIT License"></a>
+  <a href="https://discord.gg/mBuDGRzzES"><img src="https://discord.com/assets/07dca80a102d4149e9736d4b162cff6f.ico" alt="Discord" height="30" width="30"></a>
+
 </div>
 
 <!-- PROJECT LOGO -->
