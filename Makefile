@@ -36,16 +36,6 @@ build:
 		echo "$(RED)npm is not installed. Please install Node.js to continue.$(RESET)"; \
 		exit 1; \
 	fi
-	@echo "$(YELLOW)Checking pnpm installation...$(RESET)"
-	@if command -v pnpm > /dev/null; then \
-		PNPM_VERSION=$(shell pnpm --version); \
-		echo "$(BLUE)pnpm is already installed. Version: $${PNPM_VERSION}$(RESET)"; \
-	else \
-		echo "$(YELLOW)pnpm is not installed. Installing corepack to enable pnpm...$(RESET)"; \
-		npm install -g corepack; \
-		corepack enable; \
-		echo "$(BLUE)pnpm installed and enabled.$(RESET)"; \
-	fi
 	@echo "$(YELLOW)Checking Docker installation...$(RESET)"
 	@if command -v docker > /dev/null; then \
 		DOCKER_VERSION=$(shell docker --version | awk '{print $$3}'); \
@@ -63,11 +53,11 @@ build:
 	@echo "$(GREEN)Setting up frontend environment...$(RESET)"
 	@echo "$(YELLOW)Detect Node.js version...$(RESET)"
 	@cd frontend && node ./scripts/detect-node-version.js
-	@cd frontend && if [ -f node_modules/.package-lock.json ]; then \
-		echo "$(YELLOW)This project currently uses \"pnpm\" for dependency management. It has detected that dependencies were previously installed using \"npm\" and has automatically deleted the \"node_modules\" directory to prevent unnecessary conflicts.$(RESET)"; \
-		rm -rf node_modules; \
-	fi
-	@cd frontend && echo "$(BLUE)Enabling pnpm...$(RESET)" && corepack enable && echo "$(BLUE)Installing frontend dependencies with pnpm...$(RESET)" && pnpm install && echo "$(BLUE)Running make-i18n with pnpm...$(RESET)" && pnpm run make-i18n
+	@cd frontend && \
+		echo "$(BLUE)Installing frontend dependencies with npm...$(RESET)" && \
+		npm install && \
+		echo "$(BLUE)Running make-i18n with npm...$(RESET)" && \
+		npm run make-i18n
 	@echo "$(GREEN)Installing pre-commit hooks...$(RESET)"
 	@git config --unset-all core.hooksPath || true
 	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
