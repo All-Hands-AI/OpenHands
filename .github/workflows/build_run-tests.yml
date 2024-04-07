@@ -17,8 +17,10 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install Docker
         run: brew install docker
-      - name: Install Poetry
-        run: curl -sSL https://install.python-poetry.org | python3 -
+      - name: Install and configure Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
       - name: Build Environment
         run: make build
       - name: Run Tests
