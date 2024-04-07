@@ -16,7 +16,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
