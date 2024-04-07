@@ -63,15 +63,14 @@ def log_uncaught_exceptions(ex_cls, ex, tb):
 
 sys.excepthook = log_uncaught_exceptions
 
-opendevin_logger = logging.getLogger()
+opendevin_logger = logging.getLogger("opendevin")
 opendevin_logger.setLevel(logging.INFO)
-opendevin_logger.propagate = False
 opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.addHandler(get_file_handler())
+opendevin_logger.propagate = False
 opendevin_logger.debug('Logging initialized')
 opendevin_logger.debug('Logging to %s', os.path.join(
     os.getcwd(), 'logs', 'opendevin.log'))
-opendevin_logger.name = 'opendevin'
 
 # Exclude "litellm" from logging output
 logging.getLogger('LiteLLM').disabled = True
