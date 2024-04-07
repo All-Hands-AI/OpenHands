@@ -1,31 +1,23 @@
-from enum import Enum
+from pydantic import BaseModel, Field
 
 
-class ObservationType(str, Enum):
-    READ = "read"
+class ObservationType(BaseModel):
+    READ: str = Field(default="read")
     """The content of a file
     """
 
-    WRITE = "write"
-
-    BROWSE = "browse"
+    BROWSE: str = Field(default="browse")
     """The HTML content of a URL
     """
 
-    RUN = "run"
+    RUN: str = Field(default="run")
     """The output of a command
     """
 
-    RECALL = "recall"
+    RECALL: str = Field(default="recall")
     """The result of a search
     """
 
-    CHAT = "chat"
+    CHAT: str = Field(default="chat")
     """A message from the user
     """
-
-    MESSAGE = "message"
-
-    ERROR = "error"
-
-    NULL = "null"
