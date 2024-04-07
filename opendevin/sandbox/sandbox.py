@@ -9,7 +9,6 @@ from collections import namedtuple
 from typing import Dict, List, Tuple
 
 import docker
-import concurrent.futures
 
 from opendevin import config
 from opendevin.logging import opendevin_logger as logger
@@ -128,7 +127,7 @@ class DockerInteractive:
         else:
             self.container_image = container_image
 
-        self.container_name = f"sandbox-{self.instance_id}"
+        self.container_name = f'sandbox-{self.instance_id}'
 
         if not self.is_container_running():
             self.restart_docker_container()
@@ -137,36 +136,38 @@ class DockerInteractive:
             self.start_ssh_session()
         else:
             # TODO: implement ssh into root
-            raise NotImplementedError('Running as root is not supported at the moment.')
+            raise NotImplementedError(
+                'Running as root is not supported at the moment.')
         atexit.register(self.cleanup)
 
     def setup_devin_user(self):
         exit_code, logs = self.container.exec_run(
-            ["/bin/bash", "-c", f"useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {USER_ID} opendevin"],
+            ['/bin/bash', '-c',
+                f'useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {USER_ID} opendevin'],
             workdir='/workspace',
         )
         exit_code, logs = self.container.exec_run(
-            ["/bin/bash", "-c", "echo 'opendevin:opendevin' | chpasswd"],
+            ['/bin/bash', '-c', "echo 'opendevin:opendevin' | chpasswd"],
             workdir='/workspace',
         )
         exit_code, logs = self.container.exec_run(
-            ["/bin/bash", "-c", "echo 'opendevin-sandbox' > /etc/hostname"],
+            ['/bin/bash', '-c', "echo 'opendevin-sandbox' > /etc/hostname"],
             workdir='/workspace',
         )
 
     def start_ssh_session(self):
         # start ssh session at the background
         self.ssh = pxssh.pxssh()
-        hostname = "localhost"
-        username = "opendevin"
-        password = "opendevin"
+        hostname = 'localhost'
+        username = 'opendevin'
+        password = 'opendevin'
         self.ssh.login(hostname, username, password, port=2222)
 
         # Fix: https://github.com/pexpect/pexpect/issues/669
         self.ssh.sendline("bind 'set enable-bracketed-paste off'")
         self.ssh.prompt()
         # cd to workspace
-        self.ssh.sendline(f"cd /workspace")
+        self.ssh.sendline('cd /workspace')
         self.ssh.prompt()
 
     def get_exec_cmd(self, cmd: str) -> List[str]:
@@ -191,7 +192,8 @@ class DockerInteractive:
             # send a SIGINT to the process
             self.ssh.sendintr()
             self.ssh.prompt()
-            command_output = self.ssh.before.decode('utf-8').lstrip(cmd).strip()
+            command_output = self.ssh.before.decode(
+                'utf-8').lstrip(cmd).strip()
             return -1, f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}'
         command_output = self.ssh.before.decode('utf-8').lstrip(cmd).strip()
 
@@ -199,7 +201,8 @@ class DockerInteractive:
         self.ssh.sendline('echo $?')
         self.ssh.prompt()
         exit_code = self.ssh.before.decode('utf-8')
-        exit_code = int(exit_code.lstrip('echo $?').strip())  # remove the echo $? itself
+        # remove the echo $? itself
+        exit_code = int(exit_code.lstrip('echo $?').strip())
         return exit_code, command_output
 
     def execute_in_background(self, cmd: str) -> BackgroundCommand:
@@ -230,7 +233,7 @@ class DockerInteractive:
         bg_cmd = self.background_commands[id]
         if bg_cmd.pid is not None:
             self.container.exec_run(
-                f"kill -9 {bg_cmd.pid}", workdir='/workspace')
+                f'kill -9 {bg_cmd.pid}', workdir='/workspace')
         bg_cmd.result.output.close()
         self.background_commands.pop(id)
         return bg_cmd
