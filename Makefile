@@ -53,8 +53,8 @@ build:
 	@echo "$(GREEN)Pulling Docker image...$(RESET)"
 	@docker pull $(DOCKER_IMAGE)
 	@if [ "$(shell uname)" = "Darwin" ]; then \
-		echo "$(BLUE)macOS detected. Setting HNSWLIB_NO_NATIVE=1$(RESET)"; \
-		export HNSWLIB_NO_NATIVE=1; \
+		echo "$(BLUE)Installing `chroma-hnswlib`...$(RESET)"; \
+		poetry run pip install chroma-hnswlib; \
 	fi
 	@poetry install --without evaluation
 	@echo "$(GREEN)Activating Poetry shell...$(RESET)"
