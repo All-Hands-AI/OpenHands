@@ -92,26 +92,46 @@ class AgentManager:
             start_event: The start event data (optional).
         """
         directory = DEFAULT_WORKSPACE_DIR
-        if directory == "" and start_event and "directory" in start_event["args"]:
-            directory = start_event["args"]["directory"]
+        if start_event and "directory" in start_event["args"]:
+            evt_directory = start_event["args"]["directory"]
+            if directory == "" or (evt_directory != "" and evt_directory != directory):
+                directory = evt_directory
+
         agent_cls = "MonologueAgent"
-        if agent_cls == "" and start_event and "agent_cls" in start_event["args"]:
-            agent_cls = start_event["args"]["agent_cls"]
+        if start_event and "agent_cls" in start_event["args"]:
+            evt_agent_cls = start_event["args"]["agent_cls"]
+            if agent_cls == "" or (evt_agent_cls != "" and evt_agent_cls != agent_cls):
+                agent_cls = evt_agent_cls
+
         model = LLM_MODEL
-        if model == "" and start_event and "model" in start_event["args"]:
-            model = start_event["args"]["model"]
+        if start_event and "model" in start_event["args"]:
+            evt_model = start_event["args"]["model"]
+            if model == "" or (evt_model != "" and evt_model != model):
+                model = evt_model
+
         api_key = DEFAULT_API_KEY
-        if api_key == "" and start_event and "api_key" in start_event["args"]:
-            api_key = start_event["args"]["api_key"]
+        if start_event and "api_key" in start_event["args"]:
+            evt_api_key = start_event["args"]["api_key"]
+            if api_key == "" or (evt_api_key != "" and evt_api_key != api_key):
+                api_key = evt_api_key
+
         api_base = DEFAULT_BASE_URL
-        if api_base == "" and start_event and "api_base" in start_event["args"]:
-            api_base = start_event["args"]["api_base"]
+        if start_event and "api_base" in start_event["args"]:
+            evt_api_base = start_event["args"]["api_base"]
+            if api_base == "" or (evt_api_base != "" and evt_api_base != api_base):
+                api_base = evt_api_base
+
         container_image = CONTAINER_IMAGE
-        if container_image == "" and start_event and "container_image" in start_event["args"]:
-            container_image = start_event["args"]["container_image"]
+        if start_event and "container_image" in start_event["args"]:
+            evt_container_image = start_event["args"]["container_image"]
+            if container_image == "" or (evt_container_image != "" and evt_container_image != container_image):
+                container_image = evt_container_image
+
         max_iterations = MAX_ITERATIONS
-        if max_iterations == 0 and start_event and "max_iterations" in start_event["args"]:
-            max_iterations = start_event["args"]["max_iterations"]
+        if start_event and "max_iterations" in start_event["args"]:
+            evt_max_iterations = start_event["args"]["max_iterations"]
+            if max_iterations == 0 or (evt_max_iterations > 0 and evt_max_iterations != max_iterations):
+                max_iterations = evt_max_iterations
 
         # double check preventing error occurs
         if directory == "":

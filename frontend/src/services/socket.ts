@@ -27,7 +27,7 @@ class Socket {
       Socket._socket = new WebSocket(WS_URL);
 
       Socket._socket.onopen = () => {
-        const model = localStorage.getItem("model") || "gpt-3.5-turbo-1106";
+        const model = localStorage.getItem("model") || "";
         const agent = localStorage.getItem("agent") || "MonologueAgent";
         const workspaceDirectory =
           localStorage.getItem("workspaceDirectory") || "./workspace";
