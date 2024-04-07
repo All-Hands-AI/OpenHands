@@ -52,7 +52,10 @@ build:
 	fi
 	@echo "$(GREEN)Pulling Docker image...$(RESET)"
 	@docker pull $(DOCKER_IMAGE)
-	@poetry config installer.modern-installation false
+	@if [ "$(shell uname)" = "Darwin" ]; then \
+		echo "$(BLUE)macOS detected. Setting HNSWLIB_NO_NATIVE=1$(RESET)"; \
+		export HNSWLIB_NO_NATIVE=1; \
+	fi
 	@poetry install --without evaluation
 	@echo "$(GREEN)Activating Poetry shell...$(RESET)"
 	@echo "$(GREEN)Setting up frontend environment...$(RESET)"
