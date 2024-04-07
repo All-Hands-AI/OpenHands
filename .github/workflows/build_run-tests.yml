@@ -21,12 +21,10 @@ jobs:
 
       - name: Start Docker
         run: |
-          # Start Docker.app if not already running
-          if ! pgrep -f Docker.app; then
-            open -a /Applications/Docker.app
-            # Wait for Docker to be ready
-            while ! docker info >/dev/null 2>&1; do sleep 1; done
-          fi
+          plutil -lint registry/recipes/osx/com.docker.registry.plist
+          cp registry/recipes/osx/com.docker.registry.plist ~/Library/LaunchAgents/
+          chmod 644 ~/Library/LaunchAgents/com.docker.registry.plist
+          launchctl load ~/Library/LaunchAgents/com.docker.registry.plist
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
