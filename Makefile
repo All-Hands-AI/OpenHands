@@ -6,7 +6,7 @@ BACKEND_PORT = 3000
 BACKEND_HOST = "127.0.0.1:$(BACKEND_PORT)"
 FRONTEND_PORT = 3001
 DEFAULT_WORKSPACE_DIR = "./workspace"
-DEFAULT_MODEL = "gpt-4-0125-preview"
+DEFAULT_MODEL = "gpt-3.5-turbo-1106"
 CONFIG_FILE = config.toml
 PRECOMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
 

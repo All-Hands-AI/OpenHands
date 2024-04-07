@@ -9,14 +9,13 @@ DEFAULT_CONFIG = {
     'LLM_API_KEY': None,
     'LLM_BASE_URL': None,
     'WORKSPACE_DIR': os.path.join(os.getcwd(), 'workspace'),
-    'LLM_MODEL': 'gpt-4-0125-preview',
+    'LLM_MODEL': 'gpt-3.5-turbo-1106',
     'SANDBOX_CONTAINER_IMAGE': 'ghcr.io/opendevin/sandbox',
     'RUN_AS_DEVIN': 'false',
     'LLM_EMBEDDING_MODEL': 'local',
     'LLM_NUM_RETRIES': 6,
     'LLM_COOLDOWN_TIME': 1,
     'DIRECTORY_REWRITE': '',
-    'PROMPT_DEBUG_DIR': '',
     'MAX_ITERATIONS': 100,
 }
 
