@@ -1,28 +1,7 @@
 # OpenDevin Server
 
 This is a WebSocket server that executes tasks using an agent.
-
-## Install
-
-Create a `.env` file with the contents
-
-```sh
-LLM_API_KEY=<YOUR OPENAI API KEY>
-```
-
-Install requirements:
-
-```sh
-python3.12 -m venv venv
-source venv/bin/activate
-python -m pip install -r requirements.txt
-```
-
-## Start the Server
-
-```sh
-uvicorn opendevin.server.listen:app --reload --port 3000
-```
+`After Starting the Server:`
 
 ## Test the Server
 
