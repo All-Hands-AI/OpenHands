@@ -2,7 +2,6 @@ import store from "../store";
 import { appendError, removeError } from "../state/errorsSlice";
 import { handleAssistantMessage } from "./actions";
 import { getToken } from "./auth";
-import ActionType from "../types/ActionType";
 
 class Socket {
   private static _socket: WebSocket | null = null;
@@ -27,20 +26,20 @@ class Socket {
       Socket._socket = new WebSocket(WS_URL);
 
       Socket._socket.onopen = () => {
-        const model = localStorage.getItem("model") || "gpt-3.5-turbo-1106";
-        const agent = localStorage.getItem("agent") || "MonologueAgent";
-        const workspaceDirectory =
-          localStorage.getItem("workspaceDirectory") || "./workspace";
-        Socket._socket?.send(
-          JSON.stringify({
-            action: ActionType.INIT,
-            args: {
-              model,
-              agent_cls: agent,
-              directory: workspaceDirectory,
-            },
-          }),
-        );
+        // const model = localStorage.getItem(ArgConfigType.MODEL) || "";
+        // const agent = localStorage.getItem(ArgConfigType.AGENT_CLS) || "";
+        // const workspaceDirectory =
+        //   localStorage.getItem(ArgConfigType.DIRECTORY) || "";
+        // Socket._socket?.send(
+        //   JSON.stringify({
+        //     action: ActionType.INIT,
+        //     args: {
+        //       model,
+        //       agent_cls: agent,
+        //       directory: workspaceDirectory,
+        //     },
+        //   }),
+        // );
       };
 
       Socket._socket.onmessage = (e) => {

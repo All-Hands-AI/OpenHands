@@ -1,5 +1,9 @@
 import { ActionMessage, ObservationMessage } from "./Message";
 
+interface ResConfigurations {
+  [key: string]: string | boolean | number;
+}
+
 interface ResFetchToken {
   token: string;
 }
@@ -25,6 +29,7 @@ interface ResDelMsg {
 type SocketMessage = ActionMessage | ObservationMessage;
 
 export {
+  type ResConfigurations,
   type ResFetchToken,
   type ResFetchMsgTotal,
   type ResFetchMsg,
