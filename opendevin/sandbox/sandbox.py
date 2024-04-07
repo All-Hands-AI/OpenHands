@@ -4,6 +4,7 @@ import select
 import sys
 import time
 import uuid
+from pexpect import pxssh
 from collections import namedtuple
 from typing import Dict, List, Tuple
 
@@ -133,21 +134,44 @@ class DockerInteractive:
             self.restart_docker_container()
         if RUN_AS_DEVIN:
             self.setup_devin_user()
+            self.start_ssh_session()
+        else:
+            # TODO: implement ssh into root
+            raise NotImplementedError('Running as root is not supported at the moment.')
         atexit.register(self.cleanup)
 
     def setup_devin_user(self):
         exit_code, logs = self.container.exec_run(
-            [
-                '/bin/bash',
-                '-c',
-                f'useradd --shell /bin/bash -u {USER_ID} -o -c "" -m devin',
-            ],
+            ["/bin/bash", "-c", f"useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {USER_ID} opendevin"],
+            workdir='/workspace',
+        )
+        exit_code, logs = self.container.exec_run(
+            ["/bin/bash", "-c", "echo 'opendevin:opendevin' | chpasswd"],
+            workdir='/workspace',
+        )
+        exit_code, logs = self.container.exec_run(
+            ["/bin/bash", "-c", "echo 'opendevin-sandbox' > /etc/hostname"],
             workdir='/workspace',
         )
 
+    def start_ssh_session(self):
+        # start ssh session at the background
+        self.ssh = pxssh.pxssh()
+        hostname = "localhost"
+        username = "opendevin"
+        password = "opendevin"
+        self.ssh.login(hostname, username, password, port=2222)
+
+        # Fix: https://github.com/pexpect/pexpect/issues/669
+        self.ssh.sendline("bind 'set enable-bracketed-paste off'")
+        self.ssh.prompt()
+        # cd to workspace
+        self.ssh.sendline(f"cd /workspace")
+        self.ssh.prompt()
+
     def get_exec_cmd(self, cmd: str) -> List[str]:
         if RUN_AS_DEVIN:
-            return ['su', 'devin', '-c', cmd]
+            return ['su', 'opendevin', '-c', cmd]
         else:
             return ['/bin/bash', '-c', cmd]
 
@@ -158,26 +182,25 @@ class DockerInteractive:
         return bg_cmd.read_logs()
 
     def execute(self, cmd: str) -> Tuple[int, str]:
-        # TODO: each execute is not stateful! We need to keep track of the current working directory
-        def run_command(container, command):
-            return container.exec_run(command, workdir='/workspace')
+        # use self.ssh
+        self.ssh.sendline(cmd)
+        success = self.ssh.prompt(timeout=self.timeout)
+        if not success:
+            logger.exception(
+                'Command timed out, killing process...', exc_info=False)
+            # send a SIGINT to the process
+            self.ssh.sendintr()
+            self.ssh.prompt()
+            command_output = self.ssh.before.decode('utf-8').lstrip(cmd).strip()
+            return -1, f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}'
+        command_output = self.ssh.before.decode('utf-8').lstrip(cmd).strip()
 
-        # Use ThreadPoolExecutor to control command and set timeout
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(
-                run_command, self.container, self.get_exec_cmd(cmd)
-            )
-            try:
-                exit_code, logs = future.result(timeout=self.timeout)
-            except concurrent.futures.TimeoutError:
-                logger.exception(
-                    'Command timed out, killing process...', exc_info=False)
-                pid = self.get_pid(cmd)
-                if pid is not None:
-                    self.container.exec_run(
-                        f"kill -9 {pid}", workdir='/workspace')
-                return -1, f'Command: "{cmd}" timed out'
-        return exit_code, logs.decode('utf-8')
+        # get the exit code
+        self.ssh.sendline('echo $?')
+        self.ssh.prompt()
+        exit_code = self.ssh.before.decode('utf-8')
+        exit_code = int(exit_code.lstrip('echo $?').strip())  # remove the echo $? itself
+        return exit_code, command_output
 
     def execute_in_background(self, cmd: str) -> BackgroundCommand:
         result = self.container.exec_run(
@@ -266,10 +289,11 @@ class DockerInteractive:
             # start the container
             self.container = docker_client.containers.run(
                 self.container_image,
-                command='tail -f /dev/null',
+                command='/usr/sbin/sshd -D -p 2222',
                 network_mode='host',
                 working_dir='/workspace',
                 name=self.container_name,
+                hostname='opendevin_sandbox',
                 detach=True,
                 volumes={self.workspace_dir: {
                     'bind': '/workspace', 'mode': 'rw'}},

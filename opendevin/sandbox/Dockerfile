@@ -15,3 +15,6 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
+
+RUN apt update && apt install openssh-server sudo -y
+RUN service ssh start
