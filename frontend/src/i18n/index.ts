@@ -8,7 +8,9 @@ export const AvailableLanguages = [
   { label: "English", value: "en" },
   { label: "简体中文", value: "zh-CN" },
   { label: "한국어", value: "ko-KR" },
+  { label: "Norsk", value: "no" }
 ];
+
 
 i18n
   .use(Backend)
