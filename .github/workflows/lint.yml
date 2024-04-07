@@ -32,9 +32,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
+      - name: Create mypy cache directory
+        run: mkdir -p .mypy_cache
       - name: Install dependencies
         run: pip install ruff mypy types-PyYAML types-toml
+      - name: Run mypy
+        run: python -m mypy --install-types --non-interactive --config-file dev_config/python/mypy.ini opendevin/ agenthub/
       - name: Run ruff
         run: ruff check --config dev_config/python/ruff.toml opendevin/ agenthub/
-      - name: Run mypy
-        run: mypy --install-types --non-interactive --config-file dev_config/python/mypy.ini opendevin/ agenthub/
+      

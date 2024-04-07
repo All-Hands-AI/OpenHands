@@ -97,8 +97,7 @@ class LlmFileHandler(logging.FileHandler):
         self.log_directory = os.path.join(
             os.getcwd(), 'logs', 'llm', self.session)
         os.makedirs(self.log_directory, exist_ok=True)
-        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{
-                                         self.message_counter:03}.log")
+        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{self.message_counter:03}.log")
         super().__init__(self.baseFilename, mode, encoding, delay)
 
     def emit(self, record):
@@ -108,8 +107,7 @@ class LlmFileHandler(logging.FileHandler):
         Args:
             record (logging.LogRecord): The log record to emit.
         """
-        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{
-                                         self.message_counter:03}.log")
+        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{self.message_counter:03}.log")
         self.stream = self._open()
         super().emit(record)
         self.stream.close
