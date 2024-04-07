@@ -60,7 +60,7 @@ async def get_litellm_agents():
 
 @app.get('/auth')
 async def get_token(
-        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     """
     Get token for authentication when starts a websocket connection.
@@ -75,7 +75,7 @@ async def get_token(
 
 @app.get('/messages')
 async def get_messages(
-        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     data = []
     sid = get_sid_from_token(credentials.credentials)
@@ -90,7 +90,7 @@ async def get_messages(
 
 @app.get('/messages/total')
 async def get_message_total(
-        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     sid = get_sid_from_token(credentials.credentials)
     return JSONResponse(
@@ -101,7 +101,7 @@ async def get_message_total(
 
 @app.delete('/messages')
 async def del_messages(
-        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     sid = get_sid_from_token(credentials.credentials)
     message_stack.del_messages(sid)

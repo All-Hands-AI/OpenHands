@@ -107,7 +107,8 @@ class AgentManager:
         api_key = self.get_arg_or_default(args, ConfigType.LLM_API_KEY)
         api_base = self.get_arg_or_default(args, ConfigType.LLM_BASE_URL)
         container_image = self.get_arg_or_default(
-            args, ConfigType.SANDBOX_CONTAINER_IMAGE)
+            args, ConfigType.SANDBOX_CONTAINER_IMAGE
+        )
         max_iterations = self.get_arg_or_default(
             args, ConfigType.MAX_ITERATIONS)
 

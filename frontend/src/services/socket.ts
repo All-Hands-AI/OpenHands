@@ -25,22 +25,7 @@ class Socket {
       const WS_URL = `ws://${window.location.host}/ws?token=${token}`;
       Socket._socket = new WebSocket(WS_URL);
 
-      Socket._socket.onopen = () => {
-        // const model = localStorage.getItem(ArgConfigType.MODEL) || "";
-        // const agent = localStorage.getItem(ArgConfigType.AGENT_CLS) || "";
-        // const workspaceDirectory =
-        //   localStorage.getItem(ArgConfigType.DIRECTORY) || "";
-        // Socket._socket?.send(
-        //   JSON.stringify({
-        //     action: ActionType.INIT,
-        //     args: {
-        //       model,
-        //       agent_cls: agent,
-        //       directory: workspaceDirectory,
-        //     },
-        //   }),
-        // );
-      };
+      Socket._socket.onopen = () => {};
 
       Socket._socket.onmessage = (e) => {
         handleAssistantMessage(e.data);
