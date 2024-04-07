@@ -50,7 +50,7 @@ def parse_arguments():
     parser.add_argument(
         "-m",
         "--model-name",
-        default=config.get_or_default("LLM_MODEL", "gpt-4-0125-preview"),
+        default=config.get_or_default("LLM_MODEL", "gpt-3.5-turbo-1106"),
         type=str,
         help="The (litellm) model name to use",
     )
