@@ -1,74 +1,92 @@
 {
   "WORKSPACE$TITLE": {
     "en": "OpenDevin Workspace",
-    "zh-CN": "OpenDevin 工作区"
+    "zh-CN": "OpenDevin 工作区",
+    "de": "OpenDevin Arbeitsbereich"
   },
   "WORKSPACE$TERMINAL_TAB_LABEL": {
     "en": "Terminal",
-    "zh-CN": "终端"
+    "zh-CN": "终端",
+    "de": "Terminal"
   },
   "WORKSPACE$PLANNER_TAB_LABEL": {
     "en": "Planner",
-    "zh-CN": "规划器"
+    "zh-CN": "规划器",
+    "de": "Planer"
   },
   "WORKSPACE$CODE_EDITOR_TAB_LABEL": {
     "en": "Code Editor",
-    "zh-CN": "代码编辑器"
+    "zh-CN": "代码编辑器",
+    "de": "Code-Editor"
   },
   "WORKSPACE$BROWSER_TAB_LABEL": {
     "en": "Browser",
-    "zh-CN": "浏览器"
+    "zh-CN": "浏览器",
+    "de": "Browser"
   },
   "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_LABEL": {
     "en": "OpenDevin Workspace directory",
-    "zh-CN": "OpenDevin 工作区目录"
+    "zh-CN": "OpenDevin 工作区目录",
+    "de": "OpenDevin Arbeitsbereichsverzeichnis"
   },
   "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER": {
     "en": "Default: ./workspace",
-    "zh-CN": "默认：./workspace"
+    "zh-CN": "默认：./workspace",
+    "de": "Standard: ./workspace"
   },
   "CONFIGURATION$MODAL_TITLE": {
     "en": "Configuration",
-    "zh-CN": "配置"
+    "zh-CN": "配置",
+    "de": "Konfiguration"
   },
   "CONFIGURATION$MODEL_SELECT_LABEL": {
     "en": "Model",
-    "zh-CN": "模型"
+    "zh-CN": "模型",
+    "de": "Modell"
   },
   "CONFIGURATION$MODEL_SELECT_PLACEHOLDER": {
     "en": "Select a model",
-    "zh-CN": "选择一个模型"
+    "zh-CN": "选择一个模型",
+    "de": "Wähle ein Modell"
   },
   "CONFIGURATION$AGENT_SELECT_LABEL": {
     "en": "Agent",
-    "zh-CN": "代理"
+    "zh-CN": "代理",
+    "de": "Agent"
   },
   "CONFIGURATION$AGENT_SELECT_PLACEHOLDER": {
     "en": "Select a agent",
-    "zh-CN": "选择一个代理"
+    "zh-CN": "选择一个代理",
+    "de": "Wähle einen Agenten"
   },
   "CONFIGURATION$LANGUAGE_SELECT_LABEL": {
     "en": "Language",
-    "zh-CN": "语言"
+    "zh-CN": "语言",
+    "de": "Sprache"
   },
   "CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL": {
     "en": "Close",
-    "zh-CN": "关闭"
+    "zh-CN": "关闭",
+    "de": "Schließen"
   },
   "CONFIGURATION$MODAL_SAVE_BUTTON_LABEL": {
     "en": "Save",
-    "zh-CN": "保存"
+    "zh-CN": "保存",
+    "de": "Speichern"
   },
   "CHAT_INTERFACE$INITIALZING_AGENT_LOADING_MESSAGE": {
     "en": "Initializing agent (may take up to 10 seconds)...",
-    "zh-CN": "初始化代理（可能需要 10 秒以上时间）"
+    "zh-CN": "初始化代理（可能需要 10 秒以上时间）",
+    "de": "Agent wird initialisiert (kann bis zu 10 Sekunden dauern)..."
   },
   "CHAT_INTERFACE$INPUT_PLACEHOLDER": {
     "en": "Send a message (won't interrupt the Assistant)",
-    "zh-CN": "发送消息（不会打断助理）"
+    "zh-CN": "发送消息（不会打断助理）",
+    "de": "Sende eine Nachricht (unterbricht den Assistenten nicht)"
   },
   "CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT": {
     "en": "Send",
-    "zh-CN": "发送"
+    "zh-CN": "发送",
+    "de": "Senden"
   }
 }
