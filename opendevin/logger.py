@@ -3,11 +3,66 @@ import os
 import sys
 import traceback
 from datetime import datetime
+from opendevin import config
+from typing import Literal, Mapping, Any
+from termcolor import colored
 
-console_formatter = logging.Formatter(
-    '\033[92m%(asctime)s - %(name)s:%(levelname)s\033[0m: %(filename)s:%(lineno)s - %(message)s',
+DISABLE_COLOR_PRINTING = (
+    config.get_or_default('DISABLE_COLOR', 'false').lower() == 'true'
+)
+
+ColorType = Literal[
+    'red',
+    'green',
+    'yellow',
+    'blue',
+    'magenta',
+    'cyan',
+    'light_grey',
+    'dark_grey',
+    'light_red',
+    'light_green',
+    'light_yellow',
+    'light_blue',
+    'light_magenta',
+    'light_cyan',
+    'white',
+]
+
+LOG_COLORS: Mapping[str, ColorType] = {
+    'BACKGROUND LOG': 'blue',
+    'ACTION': 'green',
+    'OBSERVATION': 'yellow',
+    'INFO': 'cyan',
+    'ERROR': 'red',
+    'PLAN': 'light_magenta',
+}
+
+def print_with_color(text: Any, print_type: str = 'INFO'):
+    color = LOG_COLORS.get(print_type.upper(), LOG_COLORS['INFO'])
+    if DISABLE_COLOR_PRINTING:
+        print(f"\n{print_type.upper()}:\n{str(text)}", flush=True)
+    else:
+        print(
+            colored(f"\n{print_type.upper()}:\n", color, attrs=['bold'])
+            + colored(str(text), color),
+            flush=True,
+        )
+
+
+class ColoredFormatter(logging.Formatter):
+    def format(self, record):
+        msg_type = record.__dict__.get('msg_type', 'INFO')
+        if msg_type in LOG_COLORS and not DISABLE_COLOR_PRINTING:
+            msg_type_color = colored(msg_type, LOG_COLORS[msg_type])
+            record.msg_type = msg_type_color
+        return super().format(record)
+
+console_formatter = ColoredFormatter(
+    '\033[92m%(asctime)s - %(name)s:%(levelname)s\033[0m: %(filename)s:%(lineno)s - %(msg_type)s - %(message)s',
     datefmt='%H:%M:%S',
 )
+
 file_formatter = logging.Formatter(
     '%(asctime)s - %(name)s:%(levelname)s: %(filename)s:%(lineno)s - %(message)s',
     datefmt='%H:%M:%S',
@@ -72,7 +127,7 @@ opendevin_logger.debug('Logging initialized')
 opendevin_logger.debug('Logging to %s', os.path.join(
     os.getcwd(), 'logs', 'opendevin.log'))
 
-# Exclude "litellm" from logging output
+# Exclude LiteLLM from logging output
 logging.getLogger('LiteLLM').disabled = True
 logging.getLogger('LiteLLM Router').disabled = True
 logging.getLogger('LiteLLM Proxy').disabled = True
@@ -121,8 +176,10 @@ def get_llm_prompt_file_handler():
     Returns a file handler for LLM prompt logging.
     """
     llm_prompt_file_handler = LlmFileHandler('prompt')
-    llm_prompt_file_handler.setLevel(logging.INFO)
     llm_prompt_file_handler.setFormatter(llm_formatter)
+    llm_prompt_file_handler.setLevel(logging.INFO)
+    if os.getenv('DEBUG'):
+        llm_prompt_file_handler.setLevel(logging.DEBUG)
     return llm_prompt_file_handler
 
 
@@ -131,8 +188,10 @@ def get_llm_response_file_handler():
     Returns a file handler for LLM response logging.
     """
     llm_response_file_handler = LlmFileHandler('response')
-    llm_response_file_handler.setLevel(logging.INFO)
     llm_response_file_handler.setFormatter(llm_formatter)
+    llm_response_file_handler.setLevel(logging.INFO)
+    if os.getenv('DEBUG'):
+        llm_response_file_handler.setLevel(logging.DEBUG)
     return llm_response_file_handler
 
 
@@ -143,3 +202,36 @@ llm_prompt_logger.addHandler(get_llm_prompt_file_handler())
 llm_response_logger = logging.getLogger('response')
 llm_response_logger.propagate = False
 llm_response_logger.addHandler(get_llm_response_file_handler())
+
+# LLM initialization exception, wrapping errors from LiteLLM during LLM initialization
+class LlmInitializationException(Exception):
+    def __init__(self, message):
+        """
+        Initializes an instance of LlmInitializationException.
+
+        Args:
+            message (str): The error message.
+        """
+        super().__init__(message)
+
+    def __str__(self):
+        """
+        Returns a string representation of the exception.
+
+        Returns:
+            str: The string representation of the exception.
+        """
+        if self.args:
+            return self.args[0]
+        return ''
+
+    def __repr__(self):
+        """
+        Returns a string representation of the exception.
+
+        Returns:
+            str: The string representation of the exception.
+        """
+        return self.__str__()
+
+
