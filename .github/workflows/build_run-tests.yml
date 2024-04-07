@@ -21,10 +21,7 @@ jobs:
 
       - name: Start Docker
         run: |
-          plutil -lint registry/recipes/osx/com.docker.registry.plist
-          cp registry/recipes/osx/com.docker.registry.plist ~/Library/LaunchAgents/
-          chmod 644 ~/Library/LaunchAgents/com.docker.registry.plist
-          launchctl load ~/Library/LaunchAgents/com.docker.registry.plist
+          /Applications/Docker.app/Contents/MacOS/Docker
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
