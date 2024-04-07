@@ -12,6 +12,7 @@ import concurrent.futures
 
 from opendevin import config
 from opendevin.logging import opendevin_logger as logger
+from opendevin.controller.command_executor import CommandExecutor
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
@@ -84,7 +85,7 @@ class BackgroundCommand:
         return (logs + last_remains).decode('utf-8', errors='replace')
 
 
-class DockerInteractive:
+class DockerInteractive(CommandExecutor):
     closed = False
     cur_background_id = 0
     background_commands: Dict[int, BackgroundCommand] = {}
@@ -127,7 +128,7 @@ class DockerInteractive:
         else:
             self.container_image = container_image
 
-        self.container_name = f"sandbox-{self.instance_id}"
+        self.container_name = f'sandbox-{self.instance_id}'
 
         if not self.is_container_running():
             self.restart_docker_container()
@@ -175,7 +176,7 @@ class DockerInteractive:
                 pid = self.get_pid(cmd)
                 if pid is not None:
                     self.container.exec_run(
-                        f"kill -9 {pid}", workdir='/workspace')
+                        f'kill -9 {pid}', workdir='/workspace')
                 return -1, f'Command: "{cmd}" timed out'
         return exit_code, logs.decode('utf-8')
 
@@ -207,7 +208,7 @@ class DockerInteractive:
         bg_cmd = self.background_commands[id]
         if bg_cmd.pid is not None:
             self.container.exec_run(
-                f"kill -9 {bg_cmd.pid}", workdir='/workspace')
+                f'kill -9 {bg_cmd.pid}', workdir='/workspace')
         bg_cmd.result.output.close()
         self.background_commands.pop(id)
         return bg_cmd
