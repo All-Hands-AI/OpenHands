@@ -1,4 +1,5 @@
 from typing import List
+from opendevin.logging import opendevin_logger as logger
 
 OPEN_STATE = 'open'
 COMPLETED_STATE = 'completed'
@@ -87,6 +88,7 @@ class Task:
             ValueError: If the provided state is invalid.
         """
         if state not in STATES:
+            logger.error('Invalid state: %s', state)
             raise ValueError('Invalid state:' + state)
         self.state = state
         if state == COMPLETED_STATE or state == ABANDONED_STATE or state == VERIFIED_STATE:

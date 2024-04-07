@@ -11,22 +11,23 @@ import docker
 import concurrent.futures
 
 from opendevin import config
+from opendevin.logging import opendevin_logger as logger
 
-InputType = namedtuple("InputType", ["content"])
-OutputType = namedtuple("OutputType", ["content"])
+InputType = namedtuple('InputType', ['content'])
+OutputType = namedtuple('OutputType', ['content'])
 
 DIRECTORY_REWRITE = config.get(
-    "DIRECTORY_REWRITE"
+    'DIRECTORY_REWRITE'
 )  # helpful for docker-in-docker scenarios
-CONTAINER_IMAGE = config.get("SANDBOX_CONTAINER_IMAGE")
+CONTAINER_IMAGE = config.get('SANDBOX_CONTAINER_IMAGE')
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
-RUN_AS_DEVIN = config.get("RUN_AS_DEVIN").lower() != "false"
+RUN_AS_DEVIN = config.get('RUN_AS_DEVIN').lower() != 'false'
 USER_ID = 1000
-if config.get_or_none("SANDBOX_USER_ID") is not None:
-    USER_ID = int(config.get_or_default("SANDBOX_USER_ID", ""))
-elif hasattr(os, "getuid"):
+if config.get_or_none('SANDBOX_USER_ID') is not None:
+    USER_ID = int(config.get_or_default('SANDBOX_USER_ID', ''))
+elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
 
 
@@ -38,47 +39,49 @@ class BackgroundCommand:
         self.pid = pid
 
     def parse_docker_exec_output(self, logs: bytes) -> Tuple[bytes, bytes]:
-        res = b""
-        tail = b""
+        res = b''
+        tail = b''
         i = 0
         byte_order = sys.byteorder
         while i < len(logs):
-            prefix = logs[i : i + 8]
+            prefix = logs[i: i + 8]
             if len(prefix) < 8:
                 msg_type = prefix[0:1]
-                if msg_type in [b"\x00", b"\x01", b"\x02", b"\x03"]:
+                if msg_type in [b'\x00', b'\x01', b'\x02', b'\x03']:
                     tail = prefix
                 break
 
             msg_type = prefix[0:1]
             padding = prefix[1:4]
             if (
-                msg_type in [b"\x00", b"\x01", b"\x02", b"\x03"]
-                and padding == b"\x00\x00\x00"
+                msg_type in [b'\x00', b'\x01', b'\x02', b'\x03']
+                and padding == b'\x00\x00\x00'
             ):
                 msg_length = int.from_bytes(prefix[4:8], byteorder=byte_order)
-                res += logs[i + 8 : i + 8 + msg_length]
+                res += logs[i + 8: i + 8 + msg_length]
                 i += 8 + msg_length
             else:
-                res += logs[i : i + 1]
+                res += logs[i: i + 1]
                 i += 1
         return res, tail
 
     def read_logs(self) -> str:
         # TODO: get an exit code if process is exited
-        logs = b""
-        last_remains = b""
+        logs = b''
+        last_remains = b''
         while True:
-            ready_to_read, _, _ = select.select([self.result.output], [], [], 0.1)  # type: ignore[has-type]
+            ready_to_read, _, _ = select.select(
+                [self.result.output], [], [], 0.1)  # type: ignore[has-type]
             if ready_to_read:
                 data = self.result.output.read(4096)  # type: ignore[has-type]
                 if not data:
                     break
-                chunk, last_remains = self.parse_docker_exec_output(last_remains + data)
+                chunk, last_remains = self.parse_docker_exec_output(
+                    last_remains + data)
                 logs += chunk
             else:
                 break
-        return (logs + last_remains).decode("utf-8", errors="replace")
+        return (logs + last_remains).decode('utf-8', errors='replace')
 
 
 class DockerInteractive:
@@ -103,11 +106,15 @@ class DockerInteractive:
             self.workspace_dir = os.path.abspath(workspace_dir)
         else:
             self.workspace_dir = os.getcwd()
-            print(f"workspace unspecified, using current directory: {workspace_dir}")
-        if DIRECTORY_REWRITE != "":
-            parts = DIRECTORY_REWRITE.split(":")
+            logger.info(
+                'workspace unspecified, using current directory: %s', workspace_dir)
+        if DIRECTORY_REWRITE != '':
+            parts = DIRECTORY_REWRITE.split(':')
             self.workspace_dir = self.workspace_dir.replace(parts[0], parts[1])
-            print("Rewriting workspace directory to:", self.workspace_dir)
+            logger.info('Rewriting workspace directory to: %s',
+                        self.workspace_dir)
+        else:
+            logger.info('Using workspace directory: %s', self.workspace_dir)
 
         # TODO: this timeout is actually essential - need a better way to set it
         # if it is too short, the container may still waiting for previous
@@ -131,29 +138,29 @@ class DockerInteractive:
     def setup_devin_user(self):
         exit_code, logs = self.container.exec_run(
             [
-                "/bin/bash",
-                "-c",
+                '/bin/bash',
+                '-c',
                 f'useradd --shell /bin/bash -u {USER_ID} -o -c "" -m devin',
             ],
-            workdir="/workspace",
+            workdir='/workspace',
         )
 
     def get_exec_cmd(self, cmd: str) -> List[str]:
         if RUN_AS_DEVIN:
-            return ["su", "devin", "-c", cmd]
+            return ['su', 'devin', '-c', cmd]
         else:
-            return ["/bin/bash", "-c", cmd]
+            return ['/bin/bash', '-c', cmd]
 
     def read_logs(self, id) -> str:
         if id not in self.background_commands:
-            raise ValueError("Invalid background command id")
+            raise ValueError('Invalid background command id')
         bg_cmd = self.background_commands[id]
         return bg_cmd.read_logs()
 
     def execute(self, cmd: str) -> Tuple[int, str]:
         # TODO: each execute is not stateful! We need to keep track of the current working directory
         def run_command(container, command):
-            return container.exec_run(command, workdir="/workspace")
+            return container.exec_run(command, workdir='/workspace')
 
         # Use ThreadPoolExecutor to control command and set timeout
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -163,16 +170,18 @@ class DockerInteractive:
             try:
                 exit_code, logs = future.result(timeout=self.timeout)
             except concurrent.futures.TimeoutError:
-                print("Command timed out, killing process...")
+                logger.exception(
+                    'Command timed out, killing process...', exc_info=False)
                 pid = self.get_pid(cmd)
                 if pid is not None:
-                    self.container.exec_run(f"kill -9 {pid}", workdir="/workspace")
+                    self.container.exec_run(
+                        f"kill -9 {pid}", workdir='/workspace')
                 return -1, f'Command: "{cmd}" timed out'
-        return exit_code, logs.decode("utf-8")
+        return exit_code, logs.decode('utf-8')
 
     def execute_in_background(self, cmd: str) -> BackgroundCommand:
         result = self.container.exec_run(
-            self.get_exec_cmd(cmd), socket=True, workdir="/workspace"
+            self.get_exec_cmd(cmd), socket=True, workdir='/workspace'
         )
         result.output._sock.setblocking(0)
         pid = self.get_pid(cmd)
@@ -182,9 +191,9 @@ class DockerInteractive:
         return bg_cmd
 
     def get_pid(self, cmd):
-        exec_result = self.container.exec_run("ps aux")
-        processes = exec_result.output.decode("utf-8").splitlines()
-        cmd = " ".join(self.get_exec_cmd(cmd))
+        exec_result = self.container.exec_run('ps aux')
+        processes = exec_result.output.decode('utf-8').splitlines()
+        cmd = ' '.join(self.get_exec_cmd(cmd))
 
         for process in processes:
             if cmd in process:
@@ -194,10 +203,11 @@ class DockerInteractive:
 
     def kill_background(self, id: int) -> BackgroundCommand:
         if id not in self.background_commands:
-            raise ValueError("Invalid background command id")
+            raise ValueError('Invalid background command id')
         bg_cmd = self.background_commands[id]
         if bg_cmd.pid is not None:
-            self.container.exec_run(f"kill -9 {bg_cmd.pid}", workdir="/workspace")
+            self.container.exec_run(
+                f"kill -9 {bg_cmd.pid}", workdir='/workspace')
         bg_cmd.result.output.close()
         self.background_commands.pop(id)
         return bg_cmd
@@ -212,8 +222,8 @@ class DockerInteractive:
         try:
             docker_client = docker.from_env()
         except docker.errors.DockerException as e:
-            print("Please check Docker is running using `docker ps`.")
-            print(f"Error! {e}", flush=True)
+            logger.exception(
+                'Please check Docker is running using `docker ps`.', exc_info=False)
             raise e
 
         try:
@@ -221,7 +231,7 @@ class DockerInteractive:
             container.stop()
             container.remove()
             elapsed = 0
-            while container.status != "exited":
+            while container.status != 'exited':
                 time.sleep(1)
                 elapsed += 1
                 if elapsed > self.timeout:
@@ -234,7 +244,7 @@ class DockerInteractive:
         try:
             docker_client = docker.from_env()
             container = docker_client.containers.get(self.container_name)
-            if container.status == "running":
+            if container.status == 'running':
                 self.container = container
                 return True
             return False
@@ -244,8 +254,9 @@ class DockerInteractive:
     def restart_docker_container(self):
         try:
             self.stop_docker_container()
+            logger.info('Container stopped')
         except docker.errors.DockerException as e:
-            print(f"Failed to stop container: {e}")
+            logger.exception('Failed to stop container', exc_info=False)
             raise e
 
         try:
@@ -255,32 +266,34 @@ class DockerInteractive:
             # start the container
             self.container = docker_client.containers.run(
                 self.container_image,
-                command="tail -f /dev/null",
-                network_mode="host",
-                working_dir="/workspace",
+                command='tail -f /dev/null',
+                network_mode='host',
+                working_dir='/workspace',
                 name=self.container_name,
                 detach=True,
-                volumes={self.workspace_dir: {"bind": "/workspace", "mode": "rw"}},
+                volumes={self.workspace_dir: {
+                    'bind': '/workspace', 'mode': 'rw'}},
             )
+            logger.info('Container started')
         except Exception as e:
-            print(f"Failed to start container: {e}")
+            logger.exception('Failed to start container', exc_info=False)
             raise e
 
         # wait for container to be ready
         elapsed = 0
-        while self.container.status != "running":
-            if self.container.status == "exited":
-                print("container exited")
-                print("container logs:")
-                print(self.container.logs())
+        while self.container.status != 'running':
+            if self.container.status == 'exited':
+                logger.info('container exited')
+                logger.info('container logs:')
+                logger.info(self.container.logs())
                 break
             time.sleep(1)
             elapsed += 1
             self.container = docker_client.containers.get(self.container_name)
             if elapsed > self.timeout:
                 break
-        if self.container.status != "running":
-            raise Exception("Failed to start container")
+        if self.container.status != 'running':
+            raise Exception('Failed to start container')
 
     # clean up the container, cannot do it in __del__ because the python interpreter is already shutting down
     def cleanup(self):
@@ -292,16 +305,17 @@ class DockerInteractive:
             pass
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser(description="Interactive Docker container")
+    parser = argparse.ArgumentParser(
+        description='Interactive Docker container')
     parser.add_argument(
-        "-d",
-        "--directory",
+        '-d',
+        '--directory',
         type=str,
         default=None,
-        help="The directory to mount as the workspace in the Docker container.",
+        help='The directory to mount as the workspace in the Docker container.',
     )
     args = parser.parse_args()
 
@@ -310,10 +324,11 @@ if __name__ == "__main__":
             workspace_dir=args.directory,
         )
     except Exception as e:
-        print(f"Failed to start Docker container: {e}")
+        logger.exception('Failed to start Docker container: %s', e)
         sys.exit(1)
 
-    print("Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
+    logger.info(
+        "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
 
     bg_cmd = docker_interactive.execute_in_background(
         "while true; do echo 'dot ' && sleep 1; done"
@@ -323,24 +338,24 @@ if __name__ == "__main__":
     try:
         while True:
             try:
-                user_input = input(">>> ")
+                user_input = input('>>> ')
             except EOFError:
-                print("\nExiting...")
+                logger.info('Exiting...')
                 break
-            if user_input.lower() == "exit":
-                print("Exiting...")
+            if user_input.lower() == 'exit':
+                logger.info('Exiting...')
                 break
-            if user_input.lower() == "kill":
+            if user_input.lower() == 'kill':
                 docker_interactive.kill_background(bg_cmd.id)
-                print("Background process killed")
+                logger.info('Background process killed')
                 continue
             exit_code, output = docker_interactive.execute(user_input)
-            print("exit code:", exit_code)
-            print(output + "\n", end="")
+            logger.info('exit code: %d', exit_code)
+            logger.info(output)
             if bg_cmd.id in docker_interactive.background_commands:
                 logs = docker_interactive.read_logs(bg_cmd.id)
-                print("background logs:", logs, "\n")
+                logger.info('background logs: %s', logs)
             sys.stdout.flush()
     except KeyboardInterrupt:
-        print("\nExiting...")
+        logger.info('Exiting...')
     docker_interactive.close()

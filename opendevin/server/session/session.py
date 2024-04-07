@@ -3,6 +3,8 @@ from typing import Dict, Callable
 from fastapi import WebSocket, WebSocketDisconnect
 from .msg_stack import message_stack
 
+from opendevin.logging import opendevin_logger as logger
+
 DEL_DELT_SEC = 60 * 60 * 5
 
 
@@ -33,12 +35,12 @@ class Session:
                 await dispatch(action, data)
         except WebSocketDisconnect:
             self.is_alive = False
-            print(f"WebSocket disconnected, sid: {self.sid}")
+            logger.info("WebSocket disconnected, sid: %s", self.sid)
         except RuntimeError as e:
             # WebSocket is not connected
             if "WebSocket is not connected" in str(e):
                 self.is_alive = False
-            print(f"Error in loop_recv: {e}")
+            logger.exception("Error in loop_recv: %s", e)
 
     async def send(self, data: Dict[str, object]) -> bool:
         try:
