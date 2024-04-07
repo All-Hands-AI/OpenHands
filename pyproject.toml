@@ -23,6 +23,7 @@ types-toml = "*"
 numpy = "*"
 json-repair = "*"
 playwright = "*"
+e2b = "^0.14.13"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
