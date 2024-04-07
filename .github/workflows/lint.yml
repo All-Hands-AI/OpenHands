@@ -33,7 +33,7 @@ jobs:
         with:
           python-version: 3.11
       - name: Install dependencies
-        run: pip install ruff mypy
+        run: pip install ruff mypy types-PyYAML types-toml
       - name: Run ruff
         run: ruff check --config dev_config/python/ruff.toml opendevin/ agenthub/
       - name: Run mypy
