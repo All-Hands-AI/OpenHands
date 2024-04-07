@@ -6,6 +6,7 @@ import { initReactI18next } from "react-i18next";
 export const AvailableLanguages = [
   { label: "English", value: "en" },
   { label: "简体中文", value: "zh-CN" },
+  { label: "Deutsch", value: "de" },
 ];
 
 i18n
@@ -17,7 +18,7 @@ i18n
     debug: process.env.NODE_ENV === "development",
   })
   .then(() => {
-    // assume all detected   languages are available
+    // assume all detected languages are available
     const detectLanguage = i18n.language;
     // cannot trust browser language setting
     const settingLanguage = localStorage.getItem("language");
