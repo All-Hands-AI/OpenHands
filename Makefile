@@ -22,24 +22,21 @@ build:
 	@echo "$(GREEN)Building project...$(RESET)"
 	@echo "$(YELLOW)Checking Python installation...$(RESET)"
 	@if command -v python3 > /dev/null; then \
-		PYTHON_VERSION=$(shell python3 --version 2>&1 | cut -d ' ' -f 2); \
-		echo "$(BLUE)Python 3 is already installed. Version: $${PYTHON_VERSION}$(RESET)"; \
+		echo "$(BLUE)$(shell python3 --version) is already installed.$(RESET)"; \
 	else \
 		echo "$(RED)Python 3 is not installed. Please install Python 3 to continue.$(RESET)"; \
 		exit 1; \
 	fi
 	@echo "$(YELLOW)Checking npm installation...$(RESET)"
 	@if command -v npm > /dev/null; then \
-		NPM_VERSION=$(shell npm --version); \
-		echo "$(BLUE)npm is already installed. Version: $${NPM_VERSION}$(RESET)"; \
+		echo "$(BLUE)npm $(shell npm --version) is already installed.$(RESET)"; \
 	else \
 		echo "$(RED)npm is not installed. Please install Node.js to continue.$(RESET)"; \
 		exit 1; \
 	fi
 	@echo "$(YELLOW)Checking Docker installation...$(RESET)"
 	@if command -v docker > /dev/null; then \
-		DOCKER_VERSION=$(shell docker --version | awk '{print $$3}'); \
-		echo "$(BLUE)Docker is already installed. Version: $${DOCKER_VERSION}$(RESET)"; \
+		echo "$(BLUE)$(shell docker --version) is already installed.$(RESET)"; \
 	else \
 		echo "$(RED)Docker is not installed. Please install Docker to continue.$(RESET)"; \
 		exit 1; \
