@@ -8,27 +8,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install PNPM
-        uses: pnpm/action-setup@v3
-        with:
-          package_json_file: frontend/package.json
-
       - name: Install Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
-          cache-dependency-path: 'frontend/pnpm-lock.yaml'
 
       - name: Install dependencies
         run: |
           cd frontend
-          pnpm install --frozen-lockfile
+          npm install --frozen-lockfile
 
       - name: Lint
         run: |
           cd frontend
-          pnpm run lint
+          npm run lint
 
   lint-python:
     name: Lint python

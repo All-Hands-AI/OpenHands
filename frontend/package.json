@@ -18,6 +18,7 @@
     "i18next": "^23.10.1",
     "i18next-browser-languagedetector": "^7.2.1",
     "i18next-http-backend": "^2.5.0",
+    "monaco-editor": "^0.47.0",
     "react": "^18.2.0",
     "react-accessible-treeview": "^2.8.3",
     "react-dom": "^18.2.0",
@@ -37,7 +38,7 @@
     "test": "jest",
     "preview": "vite preview",
     "make-i18n": "node scripts/make-i18n-translations.cjs",
-    "prelint": "pnpm run make-i18n",
+    "prelint": "npm run make-i18n",
     "lint": "eslint src/**/*.ts* && prettier --check src/**/*.ts*",
     "prepare": "cd .. && husky install frontend/.husky"
   },
@@ -79,7 +80,7 @@
     "prettier": "^3.2.5",
     "tailwindcss": "^3.4.2",
     "ts-jest": "^29.1.2",
-    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "@types/node": "^18.0.0 ",
@@ -90,7 +91,7 @@
     "eslint-config-airbnb-typescript": "^18.0.0",
     "typescript": "^5.4.3"
   },
-  "packageManager": "pnpm@8.15.6",
+  "packageManager": "npm@10.5.0",
   "volta": {
     "node": "18.20.1"
   }

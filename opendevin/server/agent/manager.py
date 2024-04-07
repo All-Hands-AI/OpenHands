@@ -12,6 +12,7 @@ from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
 from opendevin.observation import NullObservation, Observation, UserMessageObservation
 from opendevin.server.session import session_manager
+from opendevin.schema import ActionType
 
 DEFAULT_API_KEY = config.get("LLM_API_KEY")
 DEFAULT_BASE_URL = config.get("LLM_BASE_URL")
@@ -69,14 +70,14 @@ class AgentManager:
             await self.send_error("Invalid action")
             return
 
-        if action == "initialize":
+        if action == ActionType.INIT:
             await self.create_controller(data)
-        elif action == "start":
+        elif action == ActionType.START:
             await self.start_task(data)
         else:
             if self.controller is None:
                 await self.send_error("No agent started. Please wait a second...")
-            elif action == "chat":
+            elif action == ActionType.CHAT:
                 self.controller.add_history(
                     NullAction(), UserMessageObservation(data["message"])
                 )
@@ -141,7 +142,7 @@ class AgentManager:
                 "Error creating controller. Please check Docker is running using `docker ps`."
             )
             return
-        await self.send({"action": "initialize", "message": "Control loop started."})
+        await self.send({"action": ActionType.INIT, "message": "Control loop started."})
 
     async def start_task(self, start_event):
         """Starts a task for the agent.

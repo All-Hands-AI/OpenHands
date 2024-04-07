@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 
 from .base import Observation
+from opendevin.schema import ObservationType
+
 
 @dataclass
 class CmdOutputObservation(Observation):
@@ -11,7 +13,7 @@ class CmdOutputObservation(Observation):
     command_id: int
     command: str
     exit_code: int = 0
-    observation : str = "run"
+    observation: str = ObservationType.RUN
 
     @property
     def error(self) -> bool:
@@ -19,6 +21,4 @@ class CmdOutputObservation(Observation):
 
     @property
     def message(self) -> str:
-        return f'Command `{self.command}` executed with exit code {self.exit_code}.'
-
-
+        return f"Command `{self.command}` executed with exit code {self.exit_code}."

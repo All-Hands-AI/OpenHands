@@ -5,7 +5,7 @@ import signal
 import uuid
 from typing import Dict, List
 
-from opendevin.server.schema.action import ActionType
+from opendevin.schema.action import ActionType
 
 
 CACHE_DIR = os.getenv("CACHE_DIR", "cache")

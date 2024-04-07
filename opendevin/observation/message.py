@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 
 from .base import Observation
+from opendevin.schema import ObservationType
+
 
 @dataclass
 class UserMessageObservation(Observation):
@@ -9,7 +11,7 @@ class UserMessageObservation(Observation):
     """
 
     role: str = "user"
-    observation : str = "message"
+    observation: str = ObservationType.MESSAGE
 
     @property
     def message(self) -> str:
@@ -23,11 +25,8 @@ class AgentMessageObservation(Observation):
     """
 
     role: str = "assistant"
-    observation : str = "message"
+    observation: str = ObservationType.MESSAGE
 
     @property
     def message(self) -> str:
         return ""
-
-
-
