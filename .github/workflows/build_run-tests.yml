@@ -15,10 +15,8 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Docker
-        run: |
-            brew install --cask docker
-            dockerd &
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
