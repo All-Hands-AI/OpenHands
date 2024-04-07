@@ -1,9 +1,11 @@
 import os
 import toml
+import re
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
 
 DEFAULT_CONFIG = {
     'LLM_API_KEY': None,
@@ -28,7 +30,7 @@ tomlConfig = toml.loads(config_str)
 config = DEFAULT_CONFIG.copy()
 for key, value in config.items():
     if key in os.environ:
-        config[key] = os.environ[key]
+        config[key] = rmv_double_quotes(os.environ[key])
     elif key in tomlConfig:
         config[key] = tomlConfig[key]
 
@@ -36,7 +38,7 @@ for key, value in config.items():
 def _get(key: str, default):
     value = config.get(key, default)
     if not value:
-        value = os.environ.get(key, default)
+        value = rmv_double_quotes(os.environ.get(key, default))
     return value
 
 
@@ -69,3 +71,12 @@ def get(key: str):
     Get a key from the config, please make sure it exists.
     """
     return config.get(key)
+
+# removal of double quotes that come from Windows os env
+def rmv_double_quotes(quote_str):
+    if isinstance(quote_str, str):
+        double_quote_re = re.compile(r'"')
+        if double_quote_re.search(quote_str):
+            quote_str = quote_str.replace('"', '')
+    
+    return quote_str
