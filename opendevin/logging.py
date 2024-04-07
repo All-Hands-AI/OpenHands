@@ -120,7 +120,7 @@ def get_llm_prompt_file_handler():
     Returns a file handler for LLM prompt logging.
     """
     llm_prompt_file_handler = LlmFileHandler('prompt')
-    llm_prompt_file_handler.setLevel(logging.DEBUG)
+    llm_prompt_file_handler.setLevel(logging.INFO)
     llm_prompt_file_handler.setFormatter(llm_formatter)
     return llm_prompt_file_handler
 
@@ -130,17 +130,15 @@ def get_llm_response_file_handler():
     Returns a file handler for LLM response logging.
     """
     llm_response_file_handler = LlmFileHandler('response')
-    llm_response_file_handler.setLevel(logging.DEBUG)
+    llm_response_file_handler.setLevel(logging.INFO)
     llm_response_file_handler.setFormatter(llm_formatter)
     return llm_response_file_handler
 
 
 llm_prompt_logger = logging.getLogger('prompt')
-llm_prompt_logger.setLevel(logging.DEBUG)
 llm_prompt_logger.propagate = False
 llm_prompt_logger.addHandler(get_llm_prompt_file_handler())
 
 llm_response_logger = logging.getLogger('response')
-llm_response_logger.setLevel(logging.DEBUG)
 llm_response_logger.propagate = False
 llm_response_logger.addHandler(get_llm_response_file_handler())
