@@ -10,7 +10,8 @@ from .parser import parse_command
 from .prompts import (
     START_MESSAGE,
     STEP_PROMPT,
-    MEMORY_FORMAT
+    MEMORY_FORMAT,
+    NO_ACTION
 )
 
 
@@ -49,7 +50,18 @@ class ThinkActAgent(Agent):
 
         resp = self.llm.completion(messages=messages)
         action_resp = resp['choices'][0]['message']['content']
+        # TODO: need to implement converting to Action from str
         action, thought = parse_command(action_resp)
+
+        # TODO: need to refactor this
+        if not action:
+            messages.insert(0, NO_ACTION(action_resp))
+            resp = self.llm.completion(messages=messages)
+            action_resp = resp['choices'][0]['message']['content']
+            action, thought = parse_command(action_resp)
+
+        # TODO: add in checker for editing files using a linter
+
         self.latest_action = action
         return action
 
