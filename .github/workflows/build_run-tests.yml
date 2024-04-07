@@ -16,7 +16,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Docker
-        run: brew install --cask docker
+        run: |
+            brew install --cask docker
+            dockerd &
       - name: Install and configure Poetry
         uses: snok/install-poetry@v1
         with:
