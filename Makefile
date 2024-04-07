@@ -54,6 +54,7 @@ build:
 	@docker pull $(DOCKER_IMAGE)
 	@if [ "$(shell uname)" = "Darwin" ]; then \
 		echo "$(BLUE)Installing `chroma-hnswlib`...$(RESET)"; \
+		export HNSWLIB_NO_NATIVE=1; \
 		poetry run pip install chroma-hnswlib; \
 	fi
 	@poetry install --without evaluation
