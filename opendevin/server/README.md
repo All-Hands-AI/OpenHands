@@ -3,20 +3,7 @@
 This is a WebSocket server that executes tasks using an agent.
 
 ## Install
-
-Create a `.env` file with the contents
-
-```sh
-LLM_API_KEY=<YOUR OPENAI API KEY>
-```
-
-Install requirements:
-
-```sh
-python3.12 -m venv venv
-source venv/bin/activate
-python -m pip install -r requirements.txt
-```
+Follow the instructions in the base README.md to install dependencies and set up.
 
 ## Start the Server
 

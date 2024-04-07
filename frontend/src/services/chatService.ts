@@ -2,9 +2,7 @@ import {
   Message,
   appendToNewChatSequence,
   appendUserMessage,
-  emptyOutQueuedTyping,
-  setCurrentQueueMarker,
-  setCurrentTypingMessage,
+  takeOneTypeIt,
   toggleTypingActive,
 } from "../state/chatSlice";
 import Socket from "./socket";
@@ -39,17 +37,9 @@ export function sendChatMessageFromEvent(event: string | SocketMessage): void {
 export function setTypingActive(bool: boolean): void {
   store.dispatch(toggleTypingActive(bool));
 }
-
-export function resetQueuedTyping(): void {
-  store.dispatch(emptyOutQueuedTyping());
-}
-
-export function setCurrentTypingMsgState(msg: string): void {
-  store.dispatch(setCurrentTypingMessage(msg));
-}
-export function setCurrentQueueMarkerState(index: number): void {
-  store.dispatch(setCurrentQueueMarker(index));
-}
 export function addAssistantMessageToChat(msg: Message): void {
   store.dispatch(appendToNewChatSequence(msg));
+}
+export function takeOneAndType(): void {
+  store.dispatch(takeOneTypeIt());
 }
