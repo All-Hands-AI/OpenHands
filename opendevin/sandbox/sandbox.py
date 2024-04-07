@@ -131,6 +131,8 @@ class DockerInteractive:
 
         if not self.is_container_running():
             self.restart_docker_container()
+        # set up random user password
+        self._ssh_password = str(uuid.uuid4())
         if RUN_AS_DEVIN:
             self.setup_devin_user()
             self.start_ssh_session()
@@ -147,7 +149,8 @@ class DockerInteractive:
             workdir='/workspace',
         )
         exit_code, logs = self.container.exec_run(
-            ['/bin/bash', '-c', "echo 'opendevin:opendevin' | chpasswd"],
+            ['/bin/bash', '-c',
+                f"echo 'opendevin:{self._ssh_password}' | chpasswd"],
             workdir='/workspace',
         )
         exit_code, logs = self.container.exec_run(
@@ -160,8 +163,7 @@ class DockerInteractive:
         self.ssh = pxssh.pxssh()
         hostname = 'localhost'
         username = 'opendevin'
-        password = 'opendevin'
-        self.ssh.login(hostname, username, password, port=2222)
+        self.ssh.login(hostname, username, self._ssh_password, port=2222)
 
         # Fix: https://github.com/pexpect/pexpect/issues/669
         self.ssh.sendline("bind 'set enable-bracketed-paste off'")
@@ -292,7 +294,8 @@ class DockerInteractive:
             # start the container
             self.container = docker_client.containers.run(
                 self.container_image,
-                command='/usr/sbin/sshd -D -p 2222',
+                # only allow connections from localhost
+                command="/usr/sbin/sshd -D -p 2222 -o 'ListenAddress=127.0.0.1'",
                 network_mode='host',
                 working_dir='/workspace',
                 name=self.container_name,
