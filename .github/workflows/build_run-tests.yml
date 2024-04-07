@@ -16,10 +16,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Docker
-        run: |
-            sudo hdiutil attach Docker.dmg |
-            sudo /Volumes/Docker/Docker.app/Contents/MacOS/install |
-            sudo hdiutil detach /Volumes/Docker |
+        run: brew install docker
       - name: Install Poetry
         run: curl -sSL https://install.python-poetry.org | python3 -
       - name: Build Environment
