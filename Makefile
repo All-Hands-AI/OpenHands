@@ -52,6 +52,7 @@ build:
 	fi
 	@echo "$(GREEN)Pulling Docker image...$(RESET)"
 	@docker pull $(DOCKER_IMAGE)
+	@poetry config installer.modern-installation false
 	@poetry install --without evaluation
 	@echo "$(GREEN)Activating Poetry shell...$(RESET)"
 	@echo "$(GREEN)Setting up frontend environment...$(RESET)"
