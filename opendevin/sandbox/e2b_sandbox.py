@@ -8,6 +8,7 @@ from opendevin import config
 
 
 # TODO: Fix types
+# TODO: process_id should be int, not string
 class BackgroundCommand:
     def __init__(self, process: Process, cmd: str):
         self._process = process
@@ -19,7 +20,6 @@ class BackgroundCommand:
     def read_logs(self):
         return '\n'.join([m.line for m in self._process.output_messages])
 
-    # TODO: OpenDevin expects this to be a int.
     @property
     def process_id(self) -> int:
         return int(self._process.process_id)
