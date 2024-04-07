@@ -92,25 +92,25 @@ class AgentManager:
             start_event: The start event data (optional).
         """
         directory = DEFAULT_WORKSPACE_DIR
-        if start_event and "directory" in start_event["args"]:
+        if directory == "" and start_event and "directory" in start_event["args"]:
             directory = start_event["args"]["directory"]
         agent_cls = "MonologueAgent"
-        if start_event and "agent_cls" in start_event["args"]:
+        if agent_cls == "" and start_event and "agent_cls" in start_event["args"]:
             agent_cls = start_event["args"]["agent_cls"]
         model = LLM_MODEL
-        if start_event and "model" in start_event["args"]:
+        if model == "" and start_event and "model" in start_event["args"]:
             model = start_event["args"]["model"]
         api_key = DEFAULT_API_KEY
-        if start_event and "api_key" in start_event["args"]:
+        if api_key == "" and start_event and "api_key" in start_event["args"]:
             api_key = start_event["args"]["api_key"]
         api_base = DEFAULT_BASE_URL
-        if start_event and "api_base" in start_event["args"]:
+        if api_base == "" and start_event and "api_base" in start_event["args"]:
             api_base = start_event["args"]["api_base"]
         container_image = CONTAINER_IMAGE
-        if start_event and "container_image" in start_event["args"]:
+        if container_image == "" and start_event and "container_image" in start_event["args"]:
             container_image = start_event["args"]["container_image"]
         max_iterations = MAX_ITERATIONS
-        if start_event and "max_iterations" in start_event["args"]:
+        if max_iterations == 0 and start_event and "max_iterations" in start_event["args"]:
             max_iterations = start_event["args"]["max_iterations"]
 
         # double check preventing error occurs
