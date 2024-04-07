@@ -6,6 +6,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# removal of double quotes that come from Windows os env
+def rmv_double_quotes(quote_str):
+    if isinstance(quote_str, str):
+        double_quote_re = re.compile(r'"')
+        if double_quote_re.search(quote_str):
+            quote_str = quote_str.replace('"', '')
+    
+    return quote_str
 
 DEFAULT_CONFIG = {
     'LLM_API_KEY': None,
@@ -72,11 +80,3 @@ def get(key: str):
     """
     return config.get(key)
 
-# removal of double quotes that come from Windows os env
-def rmv_double_quotes(quote_str):
-    if isinstance(quote_str, str):
-        double_quote_re = re.compile(r'"')
-        if double_quote_re.search(quote_str):
-            quote_str = quote_str.replace('"', '')
-    
-    return quote_str
