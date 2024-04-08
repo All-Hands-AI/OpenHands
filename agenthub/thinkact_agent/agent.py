@@ -42,9 +42,7 @@ class ThinkActAgent(Agent):
             temperature=0.0
         )
         action_resp = resp['choices'][0]['message']['content']
-        action, thought = parse_command(action_resp)
-
-        return (action, thought)
+        return parse_command(action_resp)
 
     def step(self, state: State) -> Action:
         """

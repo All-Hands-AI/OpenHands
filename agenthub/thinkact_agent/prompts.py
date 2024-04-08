@@ -82,6 +82,6 @@ def CONTEXT_PROMPT(memory, window):
     res += '===== Memories =====\n'
     for idx, mem in enumerate(cur_mems):
         res += f'\nMemory {idx}:\n{mem}\n'
-    res += '======= End ======='
+    res += '======= End =======\n'
     res += 'Use these memories to provide additional context to the problem you are solving.\n'
     return res
