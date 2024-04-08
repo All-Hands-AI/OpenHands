@@ -1,7 +1,6 @@
 from typing import List
-
 from opendevin.observation import CmdOutputObservation
-from opendevin.sandbox.e2b_sandbox import E2BSandbox
+from opendevin.sandbox.docker.sandbox import DockerInteractive
 
 
 class CommandManager:
@@ -12,10 +11,10 @@ class CommandManager:
         container_image: str | None = None,
     ):
         self.directory = dir
-        # self.shell = DockerInteractive(
-        #     id=(id or "default"), workspace_dir=dir, container_image=container_image
-        # )
-        self.shell = E2BSandbox()
+        # self.shell = E2BSandbox()
+        self.shell = DockerInteractive(
+            id=(id or 'default'), workspace_dir=dir, container_image=container_image
+        )
 
     def run_command(self, command: str, background=False) -> CmdOutputObservation:
         if background:
@@ -32,14 +31,15 @@ class CommandManager:
     def _run_background(self, command: str) -> CmdOutputObservation:
         bg_cmd = self.shell.execute_in_background(command)
         return CmdOutputObservation(
-            content=f'Background command started. To stop it, send a `kill` action with id {bg_cmd.process_id}',
-            command_id=bg_cmd.process_id,
+            content=f'Background command started. To stop it, send a `kill` action with id {bg_cmd.id}',
+            command_id=bg_cmd.id,
             command=command,
             exit_code=0,
         )
 
     def kill_command(self, id: int) -> CmdOutputObservation:
-        cmd = self.shell.kill_background(str(id))
+        # cmd = self.shell.kill_background(str(id))
+        cmd = self.shell.kill_background(id)
         return CmdOutputObservation(
             content=f'Background command with id {id} has been killed.',
             command_id=id,

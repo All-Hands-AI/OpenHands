@@ -1,41 +1,16 @@
 from typing import Dict, Tuple
-from e2b import Sandbox, Process
+from e2b import Sandbox
 from e2b.sandbox.exception import (
     TimeoutException,
 )
 
 from opendevin import config
-
-
-# TODO: Fix types
-# TODO: process_id should be int, not string
-class BackgroundCommand:
-    def __init__(self, process: Process, cmd: str):
-        self._process = process
-        self._cmd_str = cmd
-
-    def kill(self):
-        self._process.kill()
-
-    def read_logs(self):
-        return '\n'.join([m.line for m in self._process.output_messages])
-
-    @property
-    def process_id(self) -> int:
-        return int(self._process.process_id)
-
-    @property
-    def command(self) -> str:
-        return self._cmd_str
-
-    @property
-    def output_messages(self):
-        return self._process.output_messages
+from opendevin.sandbox.e2b.process import E2BProcess
 
 
 class E2BSandbox:
     closed = False
-    background_commands: Dict[str, BackgroundCommand] = {}
+    background_commands: Dict[str, E2BProcess] = {}
 
     def __init__(
         self,
@@ -71,12 +46,13 @@ class E2BSandbox:
         logs_str = '\n'.join(logs)
         if process.exit_code is None:
             return -1, logs_str
+
+        assert process_output.exit_code is not None
         return process_output.exit_code, logs_str
 
     def execute_in_background(self, cmd: str):
         process = self.sandbox.process.start(cmd)
-        self.background_commands[process.process_id] = BackgroundCommand(
-            process, cmd)
+        self.background_commands[process.process_id] = E2BProcess(process, cmd)
         return process
 
     def kill_background(self, process_id: str):

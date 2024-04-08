@@ -1,6 +1,5 @@
 import atexit
 import os
-import select
 import sys
 import time
 import uuid
@@ -12,6 +11,8 @@ import concurrent.futures
 
 from opendevin import config
 from opendevin.logging import opendevin_logger as logger
+from opendevin.controller.command_executor import CommandExecutor
+from opendevin.sandbox.docker.process import DockerProcess
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
@@ -31,63 +32,10 @@ elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
 
 
-class BackgroundCommand:
-    def __init__(self, id: int, command: str, result, pid: int):
-        self.id = id
-        self.command = command
-        self.result = result
-        self.pid = pid
-
-    def parse_docker_exec_output(self, logs: bytes) -> Tuple[bytes, bytes]:
-        res = b''
-        tail = b''
-        i = 0
-        byte_order = sys.byteorder
-        while i < len(logs):
-            prefix = logs[i: i + 8]
-            if len(prefix) < 8:
-                msg_type = prefix[0:1]
-                if msg_type in [b'\x00', b'\x01', b'\x02', b'\x03']:
-                    tail = prefix
-                break
-
-            msg_type = prefix[0:1]
-            padding = prefix[1:4]
-            if (
-                msg_type in [b'\x00', b'\x01', b'\x02', b'\x03']
-                and padding == b'\x00\x00\x00'
-            ):
-                msg_length = int.from_bytes(prefix[4:8], byteorder=byte_order)
-                res += logs[i + 8: i + 8 + msg_length]
-                i += 8 + msg_length
-            else:
-                res += logs[i: i + 1]
-                i += 1
-        return res, tail
-
-    def read_logs(self) -> str:
-        # TODO: get an exit code if process is exited
-        logs = b''
-        last_remains = b''
-        while True:
-            ready_to_read, _, _ = select.select(
-                [self.result.output], [], [], 0.1)  # type: ignore[has-type]
-            if ready_to_read:
-                data = self.result.output.read(4096)  # type: ignore[has-type]
-                if not data:
-                    break
-                chunk, last_remains = self.parse_docker_exec_output(
-                    last_remains + data)
-                logs += chunk
-            else:
-                break
-        return (logs + last_remains).decode('utf-8', errors='replace')
-
-
-class DockerInteractive:
+class DockerInteractive(CommandExecutor):
     closed = False
     cur_background_id = 0
-    background_commands: Dict[int, BackgroundCommand] = {}
+    background_commands: Dict[int, DockerProcess] = {}
 
     def __init__(
         self,
@@ -127,7 +75,7 @@ class DockerInteractive:
         else:
             self.container_image = container_image
 
-        self.container_name = f"sandbox-{self.instance_id}"
+        self.container_name = f'sandbox-{self.instance_id}'
 
         if not self.is_container_running():
             self.restart_docker_container()
@@ -175,17 +123,17 @@ class DockerInteractive:
                 pid = self.get_pid(cmd)
                 if pid is not None:
                     self.container.exec_run(
-                        f"kill -9 {pid}", workdir='/workspace')
+                        f'kill -9 {pid}', workdir='/workspace')
                 return -1, f'Command: "{cmd}" timed out'
         return exit_code, logs.decode('utf-8')
 
-    def execute_in_background(self, cmd: str) -> BackgroundCommand:
+    def execute_in_background(self, cmd: str) -> DockerProcess:
         result = self.container.exec_run(
             self.get_exec_cmd(cmd), socket=True, workdir='/workspace'
         )
         result.output._sock.setblocking(0)
         pid = self.get_pid(cmd)
-        bg_cmd = BackgroundCommand(self.cur_background_id, cmd, result, pid)
+        bg_cmd = DockerProcess(self.cur_background_id, cmd, result, pid)
         self.background_commands[bg_cmd.id] = bg_cmd
         self.cur_background_id += 1
         return bg_cmd
@@ -201,13 +149,13 @@ class DockerInteractive:
                 return pid
         return None
 
-    def kill_background(self, id: int) -> BackgroundCommand:
+    def kill_background(self, id: int) -> DockerProcess:
         if id not in self.background_commands:
             raise ValueError('Invalid background command id')
         bg_cmd = self.background_commands[id]
         if bg_cmd.pid is not None:
             self.container.exec_run(
-                f"kill -9 {bg_cmd.pid}", workdir='/workspace')
+                f'kill -9 {bg_cmd.pid}', workdir='/workspace')
         bg_cmd.result.output.close()
         self.background_commands.pop(id)
         return bg_cmd

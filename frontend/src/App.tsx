@@ -7,11 +7,11 @@ import Errors from "./components/Errors";
 import SettingModal from "./components/SettingModal";
 import Terminal from "./components/Terminal";
 import Workspace from "./components/Workspace";
-import store, { RootState } from "./store";
-import { setInitialized } from "./state/globalSlice";
 import { fetchMsgTotal } from "./services/session";
 import LoadMessageModal from "./components/LoadMessageModal";
-import { ResFetchMsgTotal } from "./types/ResponseType";
+import { ResConfigurations, ResFetchMsgTotal } from "./types/ResponseType";
+import { fetchConfigurations, saveSettings } from "./services/settingsService";
+import { RootState } from "./store";
 
 interface Props {
   setSettingOpen: (isOpen: boolean) => void;
@@ -30,22 +30,38 @@ function LeftNav({ setSettingOpen }: Props): JSX.Element {
   );
 }
 
+// React.StrictMode will cause double rendering, use this to prevent it
+let initOnce = false;
+
 function App(): JSX.Element {
-  const { initialized } = useSelector((state: RootState) => state.global);
   const [settingOpen, setSettingOpen] = useState(false);
   const [loadMsgWarning, setLoadMsgWarning] = useState(false);
+  const settings = useSelector((state: RootState) => state.settings);
 
   useEffect(() => {
-    if (!initialized) {
-      fetchMsgTotal()
-        .then((data: ResFetchMsgTotal) => {
-          if (data.msg_total > 0) {
-            setLoadMsgWarning(true);
-          }
-          store.dispatch(setInitialized(true));
-        })
-        .catch();
-    }
+    if (initOnce) return;
+    initOnce = true;
+    // only fetch configurations in the first time
+    fetchConfigurations()
+      .then((data: ResConfigurations) => {
+        saveSettings(
+          Object.fromEntries(
+            Object.entries(data).map(([key, value]) => [key, String(value)]),
+          ),
+          Object.fromEntries(
+            Object.entries(settings).map(([key, value]) => [key, value]),
+          ),
+          true,
+        );
+      })
+      .catch();
+    fetchMsgTotal()
+      .then((data: ResFetchMsgTotal) => {
+        if (data.msg_total > 0) {
+          setLoadMsgWarning(true);
+        }
+      })
+      .catch();
   }, []);
 
   const handleCloseModal = () => {

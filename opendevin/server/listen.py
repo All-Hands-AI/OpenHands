@@ -111,9 +111,9 @@ async def del_messages(
     )
 
 
-@app.get('/default-model')
+@app.get('/configurations')
 def read_default_model():
-    return config.get_or_error('LLM_MODEL')
+    return config.get_all()
 
 
 @app.get('/refresh-files')
