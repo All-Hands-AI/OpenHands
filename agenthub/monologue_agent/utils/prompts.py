@@ -151,9 +151,6 @@ def parse_action_response(response: str) -> Action:
     Returns:
     - Action: The action that was found in the response string
     """
-    json_start = response.find("{")
-    json_end = response.rfind("}") + 1
-    response = response[json_start:json_end]
     action_dict = json.loads(response)
     if 'content' in action_dict:
         # The LLM gets confused here. Might as well be robust

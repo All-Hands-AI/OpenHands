@@ -2,8 +2,8 @@
 This is a simple mock server to facilitate development in the frontend.
 
 ## Start the Server
+Follow the instructions in the README to install dependencies. Then run:
 ```
-python -m pip install -r requirements.txt
 python listen.py
 ```
 
