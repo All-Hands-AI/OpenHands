@@ -134,26 +134,37 @@ class DockerInteractive(CommandExecutor):
             self.restart_docker_container()
         # set up random user password
         self._ssh_password = str(uuid.uuid4())
-        if RUN_AS_DEVIN:
-            self.setup_devin_user()
-            self.start_ssh_session()
-        else:
-            # TODO: implement ssh into root
-            raise NotImplementedError(
-                'Running as root is not supported at the moment.')
+        self.setup_user()
+        self.start_ssh_session()
         atexit.register(self.cleanup)
 
-    def setup_devin_user(self):
+    def setup_user(self):
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c',
                 f'useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {USER_ID} opendevin'],
             workdir='/workspace',
         )
+        if exit_code != 0:
+            raise Exception(
+                f'Failed to create opendevin user in sandbox: {logs}')
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c',
                 f"echo 'opendevin:{self._ssh_password}' | chpasswd"],
             workdir='/workspace',
         )
+        if exit_code != 0:
+            raise Exception(f'Failed to set password in sandbox: {logs}')
+
+        if not RUN_AS_DEVIN:
+            exit_code, logs = self.container.exec_run(
+                # change password for root
+                ['/bin/bash', '-c',
+                    f"echo 'root:{self._ssh_password}' | chpasswd"],
+                workdir='/workspace',
+            )
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to set password for root in sandbox: {logs}')
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c', "echo 'opendevin-sandbox' > /etc/hostname"],
             workdir='/workspace',
@@ -163,7 +174,10 @@ class DockerInteractive(CommandExecutor):
         # start ssh session at the background
         self.ssh = pxssh.pxssh()
         hostname = 'localhost'
-        username = 'opendevin'
+        if RUN_AS_DEVIN:
+            username = 'opendevin'
+        else:
+            username = 'root'
         self.ssh.login(hostname, username, self._ssh_password, port=2222)
 
         # Fix: https://github.com/pexpect/pexpect/issues/669
@@ -295,8 +309,8 @@ class DockerInteractive(CommandExecutor):
             # start the container
             self.container = docker_client.containers.run(
                 self.container_image,
-                # only allow connections from localhost
-                command="/usr/sbin/sshd -D -p 2222 -o 'ListenAddress=127.0.0.1'",
+                # only allow connections from localhost AND allow root login
+                command="/usr/sbin/sshd -D -p 2222 -o 'PermitRootLogin=yes'",
                 network_mode='host',
                 working_dir='/workspace',
                 name=self.container_name,
@@ -321,6 +335,8 @@ class DockerInteractive(CommandExecutor):
             time.sleep(1)
             elapsed += 1
             self.container = docker_client.containers.get(self.container_name)
+            logger.info(
+                f'waiting for container to start: {elapsed}, container status: {self.container.status}')
             if elapsed > self.timeout:
                 break
         if self.container.status != 'running':
