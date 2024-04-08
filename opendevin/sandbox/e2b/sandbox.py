@@ -10,7 +10,8 @@ from opendevin.sandbox.e2b.process import E2BProcess
 
 class E2BSandbox:
     closed = False
-    background_commands: Dict[str, E2BProcess] = {}
+    cur_background_id = 0
+    background_commands: Dict[int, E2BProcess] = {}
 
     def __init__(
         self,
@@ -26,7 +27,7 @@ class E2BSandbox:
         self.timeout = timeout
         print('Started E2B sandbox')
 
-    def read_logs(self, process_id: str) -> str:
+    def read_logs(self, process_id: int) -> str:
         proc = self.background_commands.get(process_id)
         if proc is None:
             raise ValueError(f'Process {process_id} not found')
@@ -50,12 +51,14 @@ class E2BSandbox:
         assert process_output.exit_code is not None
         return process_output.exit_code, logs_str
 
-    def execute_in_background(self, cmd: str):
+    def execute_in_background(self, cmd: str) -> E2BProcess:
         process = self.sandbox.process.start(cmd)
-        self.background_commands[process.process_id] = E2BProcess(process, cmd)
-        return process
+        e2b_process = E2BProcess(process, cmd)
+        self.cur_background_id += 1
+        self.background_commands[self.cur_background_id] = e2b_process
+        return e2b_process
 
-    def kill_background(self, process_id: str):
+    def kill_background(self, process_id: int):
         process = self.background_commands.get(process_id)
         if process is None:
             raise ValueError(f'Process {process_id} not found')

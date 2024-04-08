@@ -22,6 +22,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.MAX_ITERATIONS: 100,
     ConfigType.AGENT: 'MonologueAgent',
     ConfigType.E2B_API_KEY: '',
+    ConfigType.SANDBOX_MODE: 'docker',  # Can be 'docker' or 'e2b'
 }
 
 config_str = ''

@@ -15,3 +15,4 @@ class ConfigType(str, Enum):
     MAX_ITERATIONS = 'MAX_ITERATIONS'
     AGENT = 'AGENT'
     E2B_API_KEY = 'E2B_API_KEY'
+    SANDBOX_MODE = 'SANDBOX_MODE'

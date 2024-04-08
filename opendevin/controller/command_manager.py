@@ -1,6 +1,9 @@
 from typing import List
+
+from opendevin import config
 from opendevin.observation import CmdOutputObservation
 from opendevin.sandbox.docker.sandbox import DockerInteractive
+from opendevin.sandbox.e2b.sandbox import E2BSandbox
 
 
 class CommandManager:
@@ -11,10 +14,17 @@ class CommandManager:
         container_image: str | None = None,
     ):
         self.directory = dir
-        # self.shell = E2BSandbox()
-        self.shell = DockerInteractive(
-            id=(id or 'default'), workspace_dir=dir, container_image=container_image
-        )
+        self.shell: DockerInteractive | E2BSandbox
+
+        sandbox_mode = config.get('SANDBOX_MODE')
+        if sandbox_mode == 'docker':
+            self.shell = DockerInteractive(
+                id=(id or 'default'), workspace_dir=dir, container_image=container_image
+            )
+        elif sandbox_mode == 'e2b':
+            self.shell = E2BSandbox()
+        else:
+            raise ValueError(f'Unknown sandbox mode: {sandbox_mode}')
 
     def run_command(self, command: str, background=False) -> CmdOutputObservation:
         if background:
@@ -38,7 +48,6 @@ class CommandManager:
         )
 
     def kill_command(self, id: int) -> CmdOutputObservation:
-        # cmd = self.shell.kill_background(str(id))
         cmd = self.shell.kill_background(id)
         return CmdOutputObservation(
             content=f'Background command with id {id} has been killed.',
