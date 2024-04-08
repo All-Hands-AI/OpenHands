@@ -6,6 +6,8 @@ class ObservationType(BaseModel):
     """The content of a file
     """
 
+    WRITE: str = Field(default="write")
+
     BROWSE: str = Field(default="browse")
     """The HTML content of a URL
     """
