@@ -4,27 +4,28 @@ import select
 import sys
 import time
 import uuid
-from pexpect import pxssh
 from collections import namedtuple
 from typing import Dict, List, Tuple
 
 import docker
+from pexpect import pxssh
 
 from opendevin import config
-from opendevin.logging import opendevin_logger as logger
 from opendevin.controller.command_executor import CommandExecutor
+from opendevin.logging import opendevin_logger as logger
+from opendevin.schema import ConfigType
+from opendevin.utils import find_available_tcp_port
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
-DIRECTORY_REWRITE = config.get(
-    'DIRECTORY_REWRITE'
-)  # helpful for docker-in-docker scenarios
-CONTAINER_IMAGE = config.get('SANDBOX_CONTAINER_IMAGE')
+# helpful for docker-in-docker scenarios
+DIRECTORY_REWRITE = config.get(ConfigType.DIRECTORY_REWRITE)
+CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
-RUN_AS_DEVIN = config.get('RUN_AS_DEVIN').lower() != 'false'
+RUN_AS_DEVIN = config.get(ConfigType.RUN_AS_DEVIN).lower() != 'false'
 USER_ID = 1000
 if config.get_or_none('SANDBOX_USER_ID') is not None:
     USER_ID = int(config.get_or_default('SANDBOX_USER_ID', ''))
@@ -55,8 +56,8 @@ class BackgroundCommand:
             msg_type = prefix[0:1]
             padding = prefix[1:4]
             if (
-                msg_type in [b'\x00', b'\x01', b'\x02', b'\x03']
-                and padding == b'\x00\x00\x00'
+                    msg_type in [b'\x00', b'\x01', b'\x02', b'\x03']
+                    and padding == b'\x00\x00\x00'
             ):
                 msg_length = int.from_bytes(prefix[4:8], byteorder=byte_order)
                 res += logs[i + 8: i + 8 + msg_length]
@@ -86,21 +87,36 @@ class BackgroundCommand:
 
 
 class DockerInteractive(CommandExecutor):
-    closed = False
+    instance_id: str
+    container_image: str
+    container_name_prefix = 'sandbox-'
+    container_name: str
+    container: docker.models.containers.Container
+    docker_client: docker.DockerClient
+
+    _ssh_password: str
+    _ssh_port: int
+
     cur_background_id = 0
     background_commands: Dict[int, BackgroundCommand] = {}
+    timeout: int
 
     def __init__(
-        self,
-        workspace_dir: str | None = None,
-        container_image: str | None = None,
-        timeout: int = 120,
-        id: str | None = None,
+            self,
+            workspace_dir: str | None = None,
+            container_image: str | None = None,
+            timeout: int = 120,
+            sid: str | None = None,
     ):
-        if id is not None:
-            self.instance_id = id
-        else:
-            self.instance_id = str(uuid.uuid4())
+        # Initialize docker client. Throws an exception if Docker is not reachable.
+        try:
+            self.docker_client = docker.from_env()
+        except Exception as ex:
+            logger.exception(
+                'Please check Docker is running using `docker ps`.', exc_info=False)
+            raise ex
+
+        self.instance_id = sid if sid is not None else str(uuid.uuid4())
         if workspace_dir is not None:
             os.makedirs(workspace_dir, exist_ok=True)
             # expand to absolute path
@@ -121,19 +137,17 @@ class DockerInteractive(CommandExecutor):
         # if it is too short, the container may still waiting for previous
         # command to finish (e.g. apt-get update)
         # if it is too long, the user may have to wait for a unnecessary long time
-        self.timeout: int = timeout
+        self.timeout = timeout
+        self.container_image = CONTAINER_IMAGE if container_image is None else container_image
+        self.container_name = self.container_name_prefix + self.instance_id
 
-        if container_image is None:
-            self.container_image = CONTAINER_IMAGE
-        else:
-            self.container_image = container_image
-
-        self.container_name = f'sandbox-{self.instance_id}'
-
-        if not self.is_container_running():
-            self.restart_docker_container()
         # set up random user password
         self._ssh_password = str(uuid.uuid4())
+        self._ssh_port = find_available_tcp_port()
+
+        # always restart the container, cuz the initial be regarded as a new session
+        self.restart_docker_container()
+
         if RUN_AS_DEVIN:
             self.setup_devin_user()
             self.start_ssh_session()
@@ -141,17 +155,17 @@ class DockerInteractive(CommandExecutor):
             # TODO: implement ssh into root
             raise NotImplementedError(
                 'Running as root is not supported at the moment.')
-        atexit.register(self.cleanup)
+        atexit.register(self.close)
 
     def setup_devin_user(self):
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c',
-                f'useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {USER_ID} opendevin'],
+             f'useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {USER_ID} opendevin'],
             workdir='/workspace',
         )
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c',
-                f"echo 'opendevin:{self._ssh_password}' | chpasswd"],
+             f"echo 'opendevin:{self._ssh_password}' | chpasswd"],
             workdir='/workspace',
         )
         exit_code, logs = self.container.exec_run(
@@ -164,7 +178,8 @@ class DockerInteractive(CommandExecutor):
         self.ssh = pxssh.pxssh()
         hostname = 'localhost'
         username = 'opendevin'
-        self.ssh.login(hostname, username, self._ssh_password, port=2222)
+        self.ssh.login(hostname, username, self._ssh_password,
+                       port=self._ssh_port)
 
         # Fix: https://github.com/pexpect/pexpect/issues/669
         self.ssh.sendline("bind 'set enable-bracketed-paste off'")
@@ -241,22 +256,9 @@ class DockerInteractive(CommandExecutor):
         self.background_commands.pop(id)
         return bg_cmd
 
-    def close(self):
-        self.stop_docker_container()
-        self.closed = True
-
     def stop_docker_container(self):
-
-        # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
-            docker_client = docker.from_env()
-        except docker.errors.DockerException as e:
-            logger.exception(
-                'Please check Docker is running using `docker ps`.', exc_info=False)
-            raise e
-
-        try:
-            container = docker_client.containers.get(self.container_name)
+            container = self.docker_client.containers.get(self.container_name)
             container.stop()
             container.remove()
             elapsed = 0
@@ -265,14 +267,14 @@ class DockerInteractive(CommandExecutor):
                 elapsed += 1
                 if elapsed > self.timeout:
                     break
-                container = docker_client.containers.get(self.container_name)
+                container = self.docker_client.containers.get(
+                    self.container_name)
         except docker.errors.NotFound:
             pass
 
     def is_container_running(self):
         try:
-            docker_client = docker.from_env()
-            container = docker_client.containers.get(self.container_name)
+            container = self.docker_client.containers.get(self.container_name)
             if container.status == 'running':
                 self.container = container
                 return True
@@ -284,20 +286,17 @@ class DockerInteractive(CommandExecutor):
         try:
             self.stop_docker_container()
             logger.info('Container stopped')
-        except docker.errors.DockerException as e:
+        except docker.errors.DockerException as ex:
             logger.exception('Failed to stop container', exc_info=False)
-            raise e
+            raise ex
 
         try:
-            # Initialize docker client. Throws an exception if Docker is not reachable.
-            docker_client = docker.from_env()
-
             # start the container
-            self.container = docker_client.containers.run(
+            self.container = self.docker_client.containers.run(
                 self.container_image,
                 # only allow connections from localhost
                 command="/usr/sbin/sshd -D -p 2222 -o 'ListenAddress=0.0.0.0'",
-                ports={'2222/tcp': 2222},
+                ports={'2222/tcp': self._ssh_port},
                 working_dir='/workspace',
                 name=self.container_name,
                 hostname='opendevin_sandbox',
@@ -306,9 +305,9 @@ class DockerInteractive(CommandExecutor):
                     'bind': '/workspace', 'mode': 'rw'}},
             )
             logger.info('Container started')
-        except Exception as e:
+        except Exception as ex:
             logger.exception('Failed to start container', exc_info=False)
-            raise e
+            raise ex
 
         # wait for container to be ready
         elapsed = 0
@@ -320,20 +319,22 @@ class DockerInteractive(CommandExecutor):
                 break
             time.sleep(1)
             elapsed += 1
-            self.container = docker_client.containers.get(self.container_name)
+            self.container = self.docker_client.containers.get(
+                self.container_name)
             if elapsed > self.timeout:
                 break
         if self.container.status != 'running':
             raise Exception('Failed to start container')
 
     # clean up the container, cannot do it in __del__ because the python interpreter is already shutting down
-    def cleanup(self):
-        if self.closed:
-            return
-        try:
-            self.container.remove(force=True)
-        except docker.errors.NotFound:
-            pass
+    def close(self):
+        containers = self.docker_client.containers.list(all=True)
+        for container in containers:
+            try:
+                if container.name.startswith(self.container_name_prefix):
+                    container.remove(force=True)
+            except docker.errors.NotFound:
+                pass
 
 
 if __name__ == '__main__':

@@ -6,7 +6,7 @@ import { getToken } from "./auth";
 class Socket {
   private static _socket: WebSocket | null = null;
 
-  public static initialize(): void {
+  public static tryInitialize(): void {
     getToken()
       .then((token) => {
         Socket._initialize(token);
@@ -42,14 +42,14 @@ class Socket {
       Socket._socket.onclose = () => {
         // Reconnect after a delay
         setTimeout(() => {
-          Socket.initialize();
+          Socket.tryInitialize();
         }, 3000); // Reconnect after 3 seconds
       };
     }
   }
 
   static send(message: string): void {
-    Socket.initialize();
+    Socket.tryInitialize();
     if (Socket._socket && Socket._socket.readyState === WebSocket.OPEN) {
       Socket._socket.send(message);
     } else {
@@ -78,6 +78,6 @@ class Socket {
   }
 }
 
-Socket.initialize();
+Socket.tryInitialize();
 
 export default Socket;

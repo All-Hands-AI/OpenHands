@@ -5,9 +5,7 @@ from typing import List, Callable, Literal, Mapping, Awaitable, Any, cast
 
 from termcolor import colored
 
-from opendevin.plan import Plan
-from opendevin.state import State
-from opendevin.agent import Agent
+from opendevin import config
 from opendevin.action import (
     Action,
     NullAction,
@@ -15,12 +13,12 @@ from opendevin.action import (
     AddTaskAction,
     ModifyTaskAction,
 )
-from opendevin.observation import Observation, AgentErrorObservation, NullObservation
-from opendevin import config
+from opendevin.agent import Agent
 from opendevin.logging import opendevin_logger as logger
-
+from opendevin.observation import Observation, AgentErrorObservation, NullObservation
+from opendevin.plan import Plan
+from opendevin.state import State
 from .command_manager import CommandManager
-
 
 ColorType = Literal[
     'red',
@@ -39,7 +37,6 @@ ColorType = Literal[
     'light_cyan',
     'white',
 ]
-
 
 DISABLE_COLOR_PRINTING = (
     config.get_or_default('DISABLE_COLOR', 'false').lower() == 'true'
@@ -69,17 +66,22 @@ def print_with_color(text: Any, print_type: str = 'INFO'):
 
 class AgentController:
     id: str
+    agent: Agent
+    max_iterations: int
+    workdir: str
+    command_manager: CommandManager
+    callbacks: List[Callable]
 
     def __init__(
-        self,
-        agent: Agent,
-        workdir: str,
-        id: str = '',
-        max_iterations: int = MAX_ITERATIONS,
-        container_image: str | None = None,
-        callbacks: List[Callable] = [],
+            self,
+            agent: Agent,
+            workdir: str,
+            sid: str = '',
+            max_iterations: int = MAX_ITERATIONS,
+            container_image: str | None = None,
+            callbacks: List[Callable] = [],
     ):
-        self.id = id
+        self.id = sid
         self.agent = agent
         self.max_iterations = max_iterations
         self.workdir = workdir
@@ -192,9 +194,8 @@ class AgentController:
             idx = self.callbacks.index(callback)
             try:
                 callback(event)
-            except Exception:
-                logger.exception('Callback error: %s', idx)
-                pass
+            except Exception as e:
+                logger.exception(f'Callback error: {e}, idx: {idx}')
         await asyncio.sleep(
             0.001
         )  # Give back control for a tick, so we can await in callbacks

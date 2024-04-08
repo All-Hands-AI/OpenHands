@@ -1,18 +1,23 @@
 from typing import List
+
 from opendevin.observation import CmdOutputObservation
 from opendevin.sandbox.sandbox import DockerInteractive
 
 
 class CommandManager:
+    id: str
+    directory: str
+    shell: DockerInteractive
+
     def __init__(
-        self,
-        id: str,
-        dir: str,
-        container_image: str | None = None,
+            self,
+            sid: str,
+            directory: str,
+            container_image: str | None = None,
     ):
-        self.directory = dir
+        self.directory = directory
         self.shell = DockerInteractive(
-            id=(id or 'default'), workspace_dir=dir, container_image=container_image
+            sid=(sid or 'default'), workspace_dir=directory, container_image=container_image
         )
 
     def run_command(self, command: str, background=False) -> CmdOutputObservation:
@@ -29,8 +34,10 @@ class CommandManager:
 
     def _run_background(self, command: str) -> CmdOutputObservation:
         bg_cmd = self.shell.execute_in_background(command)
+        content = 'Background command started. To stop it, send a `kill` action with id {}'.format(
+            bg_cmd.id)
         return CmdOutputObservation(
-            content=f'Background command started. To stop it, send a `kill` action with id {bg_cmd.id}',
+            content=content,
             command_id=bg_cmd.id,
             command=command,
             exit_code=0,
