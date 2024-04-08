@@ -39,14 +39,14 @@ function Files({
   }, []);
 
   if (workspaceTree.length <= 1) {
-    <div className="h-full bg-bg-editor-sidebar border-border-editor-sidebar items-center border-r-1 flex flex-col">
+    <div className="h-full bg-neutral-700 border-neutral-600 items-center border-r-1 flex flex-col">
       <div>No workspace found</div>
     </div>;
   }
 
   if (!explorerOpen) {
     return (
-      <div className="h-full bg-bg-editor-sidebar border-border-editor-sidebar items-center border-r-1 flex flex-col">
+      <div className="h-full bg-neutral-800 border-neutral-600 items-center border-r-1 flex flex-col">
         <div className="flex mt-2 p-1 justify-end">
           <TbLayoutSidebarRightCollapseFilled
             className="cursor-pointer"
@@ -57,7 +57,7 @@ function Files({
     );
   }
   return (
-    <div className="bg-bg-editor-sidebar h-full border-r-1 border-r-border-editor-sidebar flex flex-col">
+    <div className="bg-neutral-800 h-full border-r-1 border-r-neutral-600 flex flex-col">
       <div className="flex p-2 items-center justify-between ">
         <Accordion className="px-0" defaultExpandedKeys={["1"]} isCompact>
           <AccordionItem
@@ -70,7 +70,7 @@ function Files({
             aria-label={workspaceFolder.name}
             title={
               <div className="group flex items-center justify-between ">
-                <span>{workspaceFolder.name}</span>
+                <span className="text-neutral-400">{workspaceFolder.name}</span>
                 <div className="opacity-0 translate-y-[10px] transition-all ease-in-out  group-hover:opacity-100 transform group-hover:-translate-y-0 ">
                   <Button
                     type="button"
@@ -84,7 +84,7 @@ function Files({
                         store.dispatch(updateWorkspace(file)),
                       )
                     }
-                    className="cursor-pointer text-[12px] bg-bg-editor-sidebar"
+                    className="cursor-pointer text-[12px] bg-neutral-800"
                     isIconOnly
                     aria-label="Refresh"
                   >
@@ -98,7 +98,7 @@ function Files({
                     }}
                     variant="flat"
                     onClick={() => setExplorerOpen(false)}
-                    className="cursor-pointer text-[12px]  bg-bg-editor-sidebar"
+                    className="cursor-pointer text-[12px]  bg-neutral-800"
                     isIconOnly
                     aria-label="Refresh"
                   >
@@ -110,14 +110,14 @@ function Files({
             className="editor-accordion"
             startContent={
               <div className="flex items-center gap-1">
-                <IoIosArrowDown className="text-text-editor-base" />
-                <AiOutlineFolder className="text-text-editor-base" />
+                <IoIosArrowDown className="text-neutral-400" />
+                <AiOutlineFolder className="text-neutral-400" />
               </div>
             }
           >
             <div className="w-full overflow-x-auto h-full py-2">
               <TreeView
-                className="font-mono text-sm text-text-editor-base"
+                className="font-mono text-sm text-neutral-400"
                 data={workspaceTree}
                 selectedIds={selectedIds}
                 expandedIds={workspaceTree.map((node) => node.id)}
@@ -151,7 +151,7 @@ function Files({
                     // eslint-disable-next-line react/jsx-props-no-spreading
                     {...getNodeProps()}
                     style={{ paddingLeft: 20 * (level - 1) }}
-                    className="cursor-pointer rounded-[5px] p-1 nowrap flex items-center gap-2 aria-selected:bg-bg-editor-active aria-selected:text-text-editor-active hover:text-text-editor-active"
+                    className="cursor-pointer rounded-[5px] p-1 nowrap flex items-center gap-2 aria-selected:bg-neutral-600 aria-selected:text-neutral-50 hover:text-neutral-50"
                   >
                     <div className="shrink-0 pl-5">
                       {isBranch ? (

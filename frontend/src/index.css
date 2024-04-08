@@ -9,7 +9,7 @@
   --bg-editor-sidebar: #24272E;
   --bg-editor-active: #31343D;
   --border-editor-sidebar: #3C3C4A;
-  background-color: var(--bg-dark) !important;
+  background-color: var(--neutral-900) !important;
 }
 
 body {
@@ -31,7 +31,7 @@ code {
 }
 
 .editor-accordion-title {
-  color: var(--text-editor-base) !important;
+  color: var(--bg-neutral-400) !important;
 }
 
 .editor-accordion-content {

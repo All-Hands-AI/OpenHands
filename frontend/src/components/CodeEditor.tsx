@@ -26,7 +26,7 @@ function CodeEditor(): JSX.Element {
       inherit: true,
       rules: [],
       colors: {
-        "editor.background": bgColor,
+        "editor.background": "#171717",
       },
     });
 
@@ -38,7 +38,7 @@ function CodeEditor(): JSX.Element {
     <div
       className={`${cn(
         explorerOpen ? "grid-cols-[250px_auto]" : "grid-cols-[50px_auto]",
-      )} grid h-full bg-bg-workspace transition-all duration-500 ease-in-out`}
+      )} grid h-full bg-neutral-900 transition-all duration-500 ease-in-out`}
     >
       <div>
         <Files
@@ -52,10 +52,10 @@ function CodeEditor(): JSX.Element {
           disableCursorAnimation
           classNames={{
             tabList:
-              "gap-6 w-full relative rounded-none bg-bg-workspace p-0 border-b border-r border-divider ",
-            cursor: "w-full bg-bg-workspace rounded-none",
-            tab: "max-w-fit px-4 h-12",
-            tabContent: "group-data-[selected=true]:text-text-editor-active",
+              "w-full relative rounded-none bg-neutral-900 p-0 border-r border-divider",
+            cursor: "w-full bg-neutral-600 rounded-none",
+            tab: "max-w-fit px-4 h-[36px]",
+            tabContent: "group-data-[selected=true]:text-neutral-50 ",
           }}
           aria-label="Options"
         >
@@ -70,7 +70,6 @@ function CodeEditor(): JSX.Element {
             <div>
               <Editor
                 height="100vh"
-                theme="vs-dark"
                 defaultLanguage="python"
                 defaultValue="# Welcome to OpenDevin!"
                 value={code}
