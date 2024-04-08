@@ -4,9 +4,10 @@ import select
 import sys
 import time
 import uuid
+import platform
 from pexpect import pxssh
 from collections import namedtuple
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import docker
 
@@ -134,26 +135,53 @@ class DockerInteractive(CommandExecutor):
             self.restart_docker_container()
         # set up random user password
         self._ssh_password = str(uuid.uuid4())
-        if RUN_AS_DEVIN:
-            self.setup_devin_user()
-            self.start_ssh_session()
-        else:
-            # TODO: implement ssh into root
-            raise NotImplementedError(
-                'Running as root is not supported at the moment.')
+        self.setup_user()
+        self.start_ssh_session()
         atexit.register(self.cleanup)
 
-    def setup_devin_user(self):
+    def setup_user(self):
+        # Check if the opendevin user exists
+        exit_code, logs = self.container.exec_run(
+            ['/bin/bash', '-c', 'id -u opendevin'],
+            workdir='/workspace',
+        )
+        if exit_code == 0:
+            # User exists, delete it
+            exit_code, logs = self.container.exec_run(
+                ['/bin/bash', '-c', 'userdel -r opendevin'],
+                workdir='/workspace',
+            )
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to remove opendevin user in sandbox: {logs}')
+
+        # Create the opendevin user
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c',
                 f'useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {USER_ID} opendevin'],
             workdir='/workspace',
         )
+        if exit_code != 0:
+            raise Exception(
+                f'Failed to create opendevin user in sandbox: {logs}')
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c',
                 f"echo 'opendevin:{self._ssh_password}' | chpasswd"],
             workdir='/workspace',
         )
+        if exit_code != 0:
+            raise Exception(f'Failed to set password in sandbox: {logs}')
+
+        if not RUN_AS_DEVIN:
+            exit_code, logs = self.container.exec_run(
+                # change password for root
+                ['/bin/bash', '-c',
+                    f"echo 'root:{self._ssh_password}' | chpasswd"],
+                workdir='/workspace',
+            )
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to set password for root in sandbox: {logs}')
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c', "echo 'opendevin-sandbox' > /etc/hostname"],
             workdir='/workspace',
@@ -163,7 +191,13 @@ class DockerInteractive(CommandExecutor):
         # start ssh session at the background
         self.ssh = pxssh.pxssh()
         hostname = 'localhost'
-        username = 'opendevin'
+        if RUN_AS_DEVIN:
+            username = 'opendevin'
+        else:
+            username = 'root'
+        logger.info(
+            f"Connecting to {username}@{hostname} via ssh. If you encounter any issues, you can try `ssh -v -p 2222 {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub."
+        )
         self.ssh.login(hostname, username, self._ssh_password, port=2222)
 
         # Fix: https://github.com/pexpect/pexpect/issues/669
@@ -292,12 +326,25 @@ class DockerInteractive(CommandExecutor):
             # Initialize docker client. Throws an exception if Docker is not reachable.
             docker_client = docker.from_env()
 
+            network_kwargs: Dict[str, Union[str, Dict[str, int]]] = {}
+            if platform.system() == 'Linux':
+                network_kwargs['network_mode'] = 'host'
+            elif platform.system() == 'Darwin':
+                # FIXME: This is a temporary workaround for Mac OS
+                network_kwargs['ports'] = {'2222/tcp': 2222}
+                logger.warning(
+                    ('Using port forwarding for Mac OS. '
+                     'Server started by OpenDevin will not be accessible from the host machine at the moment. '
+                     'See https://github.com/OpenDevin/OpenDevin/issues/897 for more information.'
+                     )
+                )
+
             # start the container
             self.container = docker_client.containers.run(
                 self.container_image,
-                # only allow connections from localhost
-                command="/usr/sbin/sshd -D -p 2222 -o 'ListenAddress=0.0.0.0'",
-                ports={'2222/tcp': 2222},
+                # allow root login
+                command="/usr/sbin/sshd -D -p 2222 -o 'PermitRootLogin=yes'",
+                **network_kwargs,
                 working_dir='/workspace',
                 name=self.container_name,
                 hostname='opendevin_sandbox',
@@ -321,6 +368,8 @@ class DockerInteractive(CommandExecutor):
             time.sleep(1)
             elapsed += 1
             self.container = docker_client.containers.get(self.container_name)
+            logger.info(
+                f'waiting for container to start: {elapsed}, container status: {self.container.status}')
             if elapsed > self.timeout:
                 break
         if self.container.status != 'running':
