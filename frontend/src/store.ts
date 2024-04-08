@@ -5,7 +5,6 @@ import codeReducer from "./state/codeSlice";
 import commandReducer from "./state/commandSlice";
 import taskReducer from "./state/taskSlice";
 import errorsReducer from "./state/errorsSlice";
-import globalReducer from "./state/globalSlice";
 import settingsReducer from "./state/settingsSlice";
 
 const store = configureStore({
@@ -16,7 +15,6 @@ const store = configureStore({
     cmd: commandReducer,
     task: taskReducer,
     errors: errorsReducer,
-    global: globalReducer,
     settings: settingsReducer,
   },
 });

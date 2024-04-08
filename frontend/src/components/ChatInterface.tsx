@@ -8,9 +8,8 @@ import { useTypingEffect } from "../hooks/useTypingEffect";
 import { I18nKey } from "../i18n/declaration";
 import {
   addAssistantMessageToChat,
-  setCurrentQueueMarkerState,
-  setCurrentTypingMsgState,
   setTypingActive,
+  takeOneAndType,
 } from "../services/chatService";
 import { Message } from "../state/chatSlice";
 import { RootState } from "../store";
@@ -29,25 +28,21 @@ interface IChatBubbleProps {
  *
  */
 function TypingChat() {
-  const { currentTypingMessage, currentQueueMarker, queuedTyping, messages } =
-    useSelector((state: RootState) => state.chat);
+  const { typeThis } = useSelector((state: RootState) => state.chat);
 
-  const messageContent = useTypingEffect([currentTypingMessage], {
+  const messageContent = useTypingEffect([typeThis?.content], {
     loop: false,
     setTypingActive,
-    setCurrentQueueMarkerState,
-    currentQueueMarker,
-    playbackRate: 0.1,
+    playbackRate: 0.099,
     addAssistantMessageToChat,
-    assistantMessageObj: messages?.[queuedTyping[currentQueueMarker]],
+    takeOneAndType,
+    typeThis,
   });
 
   return (
-    currentQueueMarker !== null && (
-      <Card className="bg-success-100">
-        <CardBody>{messageContent}</CardBody>
-      </Card>
-    )
+    <Card className="bg-success-100">
+      <CardBody>{messageContent}</CardBody>
+    </Card>
   );
 }
 
@@ -72,14 +67,9 @@ function ChatBubble({ msg }: IChatBubbleProps): JSX.Element {
 
 function MessageList(): JSX.Element {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const {
-    messages,
-    queuedTyping,
-    typingActive,
-    currentQueueMarker,
-    currentTypingMessage,
-    newChatSequence,
-  } = useSelector((state: RootState) => state.chat);
+  const { typingActive, newChatSequence, typeThis } = useSelector(
+    (state: RootState) => state.chat,
+  );
 
   const messageScroll = () => {
     messagesEndRef.current?.scrollIntoView({
@@ -101,56 +91,17 @@ function MessageList(): JSX.Element {
   }, [newChatSequence, typingActive]);
 
   useEffect(() => {
-    const newMessage = messages?.[queuedTyping[currentQueueMarker]]?.content;
-
-    if (
-      currentQueueMarker !== null &&
-      currentQueueMarker !== 0 &&
-      currentTypingMessage !== newMessage
-    ) {
-      setCurrentTypingMsgState(
-        messages?.[queuedTyping?.[currentQueueMarker]]?.content,
-      );
-    }
-  }, [queuedTyping]);
-
-  useEffect(() => {
-    if (currentTypingMessage === "") return;
+    if (typeThis.content === "") return;
 
     if (!typingActive) setTypingActive(true);
-  }, [currentTypingMessage]);
-
-  useEffect(() => {
-    const newMessage = messages?.[queuedTyping[currentQueueMarker]]?.content;
-    if (
-      newMessage &&
-      typingActive === false &&
-      currentTypingMessage !== newMessage
-    ) {
-      if (currentQueueMarker !== 0) {
-        setCurrentTypingMsgState(
-          messages?.[queuedTyping?.[currentQueueMarker]]?.content,
-        );
-      }
-    }
-  }, [typingActive]);
-
-  useEffect(() => {
-    if (currentQueueMarker === 0) {
-      setCurrentTypingMsgState(messages?.[queuedTyping?.[0]]?.content);
-    }
-  }, [currentQueueMarker]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typeThis]);
 
   return (
     <div className="flex-1 overflow-y-auto">
-      {newChatSequence.map((msg, index) =>
-        // eslint-disable-next-line no-nested-ternary
-        msg.sender === "user" || msg.sender === "assistant" ? (
-          <ChatBubble key={index} msg={msg} />
-        ) : (
-          <div key={index} />
-        ),
-      )}
+      {newChatSequence.map((msg, index) => (
+        <ChatBubble key={index} msg={msg} />
+      ))}
 
       {typingActive && (
         <div className="flex mb-2.5 pr-5 pl-5 bg-s">
@@ -188,8 +139,8 @@ function ChatInterface(): JSX.Element {
   const { initialized } = useSelector((state: RootState) => state.task);
 
   return (
-    <div className="flex flex-col h-full p-0 bg-bg-workspace">
-      <div className="border-b border-border text-lg px-4 py-2">Chat</div>
+    <div className="flex flex-col h-full p-0 bg-neutral-800">
+      <div className="border-b border-neutral-600 text-sm px-4 py-2">Chat</div>
       {initialized ? <MessageList /> : <InitializingStatus />}
       <Input />
     </div>
