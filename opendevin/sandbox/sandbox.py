@@ -296,8 +296,8 @@ class DockerInteractive(CommandExecutor):
             self.container = docker_client.containers.run(
                 self.container_image,
                 # only allow connections from localhost
-                command="/usr/sbin/sshd -D -p 2222 -o 'ListenAddress=127.0.0.1'",
-                network_mode='host',
+                command="/usr/sbin/sshd -D -p 2222 -o 'ListenAddress=0.0.0.0'",
+                ports={'2222/tcp': 2222},
                 working_dir='/workspace',
                 name=self.container_name,
                 hostname='opendevin_sandbox',
