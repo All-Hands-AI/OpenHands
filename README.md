@@ -24,6 +24,9 @@
   <a href="https://github.com/OpenDevin/OpenDevin/stargazers"><img src="https://img.shields.io/github/stars/opendevin/opendevin?style=for-the-badge" alt="Stargazers"></a>
   <a href="https://github.com/OpenDevin/OpenDevin/issues"><img src="https://img.shields.io/github/issues/opendevin/opendevin?style=for-the-badge" alt="Issues"></a>
   <a href="https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE"><img src="https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge" alt="MIT License"></a>
+  </br>
+  <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2etftj1dd-X1fDL2PYIVpsmJZkqEYANw"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="Join our Slack community"></a>
+  <a href="https://discord.gg/mBuDGRzzES"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community"></a>
 </div>
 
 <!-- PROJECT LOGO -->
@@ -117,6 +120,7 @@ Getting started with the OpenDevin project is incredibly easy. Follow these simp
 * [Docker](https://docs.docker.com/engine/install/)(For those on MacOS, make sure to allow the default Docker socket to be used from advanced settings!)
 * [Python](https://www.python.org/downloads/) >= 3.11
 * [NodeJS](https://nodejs.org/en/download/package-manager) >= 18.17.1
+* [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) >= 1.8
 
 ### 2. Build and Setup The Environment
 
@@ -211,7 +215,12 @@ For details, please check [this document](./CONTRIBUTING.md).
 
 ## 🤖 Join Our Community
 
-Join our Slack workspace by filling out the [form](https://forms.gle/758d5p6Ve8r2nxxq6). Stay updated on OpenDevin's progress, share ideas, and collaborate with fellow enthusiasts and experts. Let's simplify software engineering together!
+Now we have both Slack workspace for the collaboration on building OpenDevin and Discord server for discussion about anything related, e.g., this project, LLM, agent, etc. 
+
+* [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2etftj1dd-X1fDL2PYIVpsmJZkqEYANw)
+* [Discord server](https://discord.gg/mBuDGRzzES)
+
+If you would love to contribute, feel free to join our community (note that now there is no need to fill in the [form](https://forms.gle/758d5p6Ve8r2nxxq6)). Let's simplify software engineering together!
 
 🐚 **Code less, make more with OpenDevin.**
 

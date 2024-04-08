@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 
 from opendevin.observation import FileReadObservation, FileWriteObservation
+from opendevin.schema import ActionType
 
 from .base import ExecutableAction
 
@@ -19,7 +20,7 @@ def resolve_path(base_path, file_path):
 @dataclass
 class FileReadAction(ExecutableAction):
     path: str
-    action: str = "read"
+    action: str = ActionType.READ
 
     def run(self, controller) -> FileReadObservation:
         path = resolve_path(controller.workdir, self.path)
@@ -35,7 +36,7 @@ class FileReadAction(ExecutableAction):
 class FileWriteAction(ExecutableAction):
     path: str
     content: str
-    action: str = "write"
+    action: str = ActionType.WRITE
 
     def run(self, controller) -> FileWriteObservation:
         whole_path = resolve_path(controller.workdir, self.path)

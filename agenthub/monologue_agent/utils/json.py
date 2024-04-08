@@ -25,6 +25,11 @@ def loads(s, **kwargs):
     """
     Create a JSON object from str
     """
-    s_repaired = repair_json(s)
-    return json.loads(s_repaired, **kwargs)
+    json_start = s.find("{")
+    json_end = s.rfind("}") + 1
+    if json_start == -1 or json_end == -1:
+        raise ValueError("Invalid response: no JSON found")
+    s = s[json_start:json_end]
+    s = repair_json(s)
+    return json.loads(s, **kwargs)
 

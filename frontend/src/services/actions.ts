@@ -7,11 +7,12 @@ import store from "../store";
 import { ActionMessage } from "../types/Message";
 import { SocketMessage } from "../types/ResponseType";
 import { handleObservationMessage } from "./observations";
+import ActionType from "../types/ActionType";
 
 let isInitialized = false;
 
 const messageActions = {
-  initialize: () => {
+  [ActionType.INIT]: () => {
     store.dispatch(setInitialized(true));
     if (isInitialized) {
       return;
@@ -23,23 +24,23 @@ const messageActions = {
     );
     isInitialized = true;
   },
-  browse: (message: ActionMessage) => {
+  [ActionType.BROWSE]: (message: ActionMessage) => {
     const { url, screenshotSrc } = message.args;
     store.dispatch(setUrl(url));
     store.dispatch(setScreenshotSrc(screenshotSrc));
   },
-  write: (message: ActionMessage) => {
+  [ActionType.WRITE]: (message: ActionMessage) => {
     const { path, content } = message.args;
     store.dispatch(updatePath(path));
     store.dispatch(setCode(content));
   },
-  think: (message: ActionMessage) => {
+  [ActionType.THINK]: (message: ActionMessage) => {
     store.dispatch(appendAssistantMessage(message.args.thought));
   },
-  finish: (message: ActionMessage) => {
+  [ActionType.FINISH]: (message: ActionMessage) => {
     store.dispatch(appendAssistantMessage(message.message));
   },
-  run: (message: ActionMessage) => {
+  [ActionType.RUN]: (message: ActionMessage) => {
     store.dispatch(appendInput(message.args.command));
   },
 };

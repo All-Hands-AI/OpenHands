@@ -5,7 +5,8 @@ import signal
 import uuid
 from typing import Dict, List
 
-from opendevin.server.schema.action import ActionType
+from opendevin.schema.action import ActionType
+from opendevin.logging import opendevin_logger as logger
 
 
 CACHE_DIR = os.getenv("CACHE_DIR", "cache")
@@ -44,7 +45,7 @@ class MessageStack:
         self._save_messages()
 
     def handle_signal(self, signum, _):
-        print(f"Received signal {signum}, exiting...")
+        logger.info("Received signal %s, exiting...", signum)
         self.close()
         exit(0)
 

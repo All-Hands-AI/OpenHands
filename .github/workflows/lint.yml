@@ -8,27 +8,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install PNPM
-        uses: pnpm/action-setup@v3
-        with:
-          package_json_file: frontend/package.json
-
       - name: Install Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
-          cache-dependency-path: 'frontend/pnpm-lock.yaml'
 
       - name: Install dependencies
         run: |
           cd frontend
-          pnpm install --frozen-lockfile
+          npm install --frozen-lockfile
 
       - name: Lint
         run: |
           cd frontend
-          pnpm run lint
+          npm run lint
 
   lint-python:
     name: Lint python
@@ -39,9 +32,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
+      - name: Create mypy cache directory
+        run: mkdir -p .mypy_cache
       - name: Install dependencies
-        run: pip install ruff mypy
+        run: pip install ruff mypy types-PyYAML types-toml
+      - name: Run mypy
+        run: python -m mypy --install-types --non-interactive --config-file dev_config/python/mypy.ini opendevin/ agenthub/
       - name: Run ruff
         run: ruff check --config dev_config/python/ruff.toml opendevin/ agenthub/
-      - name: Run mypy
-        run: mypy --install-types --non-interactive --config-file dev_config/python/mypy.ini opendevin/ agenthub/
+      

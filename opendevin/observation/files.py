@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 
 from .base import Observation
+from opendevin.schema import ObservationType
+
 
 @dataclass
 class FileReadObservation(Observation):
@@ -9,11 +11,12 @@ class FileReadObservation(Observation):
     """
 
     path: str
-    observation : str = "read"
+    observation: str = ObservationType.READ
 
     @property
     def message(self) -> str:
         return f"I read the file {self.path}."
+
 
 @dataclass
 class FileWriteObservation(Observation):
@@ -22,10 +25,8 @@ class FileWriteObservation(Observation):
     """
 
     path: str
-    observation : str = "write"
+    observation: str = ObservationType.WRITE
 
     @property
     def message(self) -> str:
         return f"I wrote to the file {self.path}."
-
-
