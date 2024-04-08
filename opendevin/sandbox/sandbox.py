@@ -139,6 +139,21 @@ class DockerInteractive(CommandExecutor):
         atexit.register(self.cleanup)
 
     def setup_user(self):
+         # Check if the opendevin user exists
+        exit_code, logs = self.container.exec_run(
+            ['/bin/bash', '-c', 'id -u opendevin'],
+            workdir='/workspace',
+        )
+        if exit_code == 0:
+            # User exists, delete it
+            exit_code, logs = self.container.exec_run(
+                ['/bin/bash', '-c', 'userdel -r opendevin'],
+                workdir='/workspace',
+            )
+            if exit_code != 0:
+                raise Exception(f'Failed to remove opendevin user in sandbox: {logs}')
+
+        # Create the opendevin user
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c',
                 f'useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {USER_ID} opendevin'],
