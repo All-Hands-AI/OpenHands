@@ -309,9 +309,8 @@ class DockerInteractive(CommandExecutor):
             # start the container
             self.container = docker_client.containers.run(
                 self.container_image,
-                # only allow connections from localhost AND allow root login
+                # allow root login
                 command="/usr/sbin/sshd -D -p 2222 -o 'PermitRootLogin=yes'",
-                network_mode='host',
                 working_dir='/workspace',
                 name=self.container_name,
                 hostname='opendevin_sandbox',
