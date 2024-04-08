@@ -5,13 +5,12 @@ from opendevin.action import (
     FileReadAction,
     FileWriteAction,
     BrowseURLAction,
-    NullAction
 )
 
 # commands: exit, read, write, browse, kill, search_file, search_dir
 
 
-def get_action_from_string(command_string: str) -> Action:
+def get_action_from_string(command_string: str) -> Action | None:
     """
     Parses the command string to find which command the agent wants to run
     Converts the command into a proper Action and returns
@@ -33,7 +32,7 @@ def get_action_from_string(command_string: str) -> Action:
         elif len(args) > 2:
             file, start = args[0], int(args[1])
         else:
-            return NullAction()
+            return None
 
         return FileReadAction(file, start)
 
@@ -68,8 +67,9 @@ def parse_command(input_str: str):
         parts = input_str.split('```')
         command_str = parts[1].strip()
         action = get_action_from_string(command_str)
-        ind = 2 if len(parts) > 2 else 1
-        accompanying_text = ''.join(parts[:-ind]).strip()
-        return action, accompanying_text
-    else:
-        return None, input_str  # used for retry
+        if action:
+            ind = 2 if len(parts) > 2 else 1
+            accompanying_text = ''.join(parts[:-ind]).strip()
+            return action, accompanying_text
+
+    return None, input_str  # used for retry

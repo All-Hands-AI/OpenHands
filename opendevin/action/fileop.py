@@ -1,7 +1,16 @@
 import os
+import subprocess
+import sys
+
 from dataclasses import dataclass
 
-from opendevin.observation import FileReadObservation, FileWriteObservation
+from opendevin.observation import (
+    FileReadObservation,
+    FileWriteObservation,
+    AgentErrorObservation,
+    Observation
+)
+
 from opendevin.schema import ActionType
 
 from .base import ExecutableAction
@@ -9,6 +18,54 @@ from .base import ExecutableAction
 # This is the path where the workspace is mounted in the container
 # The LLM sometimes returns paths with this prefix, so we need to remove it
 PATH_PREFIX = '/workspace/'
+
+# claude generated this and I have no clue if it works properly
+
+
+def validate_file_content(file_path, content):
+    """
+    Validates the content of a code file by checking for syntax errors.
+
+    Args:
+        file_path (str): The full path to the file being validated.
+        content (str): The content of the file to be validated.
+
+    Returns:
+        str or None: Error message if there are syntax errors, otherwise None.
+    """
+    file_extension = os.path.splitext(
+        file_path)[1][1:]  # Get the file extension without the dot
+
+    # Determine the appropriate validation command based on the file extension
+    validation_commands = {
+        'py': [sys.executable, '-c', 'import sys; compile(sys.stdin.read(), "<string>", "exec")'],
+        'js': ['node', '-c', '-'],
+        'java': ['javac', '-encoding', 'UTF-8', '-Xlint:all', '-'],
+        'cpp': ['g++', '-std=c++11', '-Wall', '-Wextra', '-Werror', '-x', 'c++', '-c', '-'],
+        'c': ['gcc', '-std=c11', '-Wall', '-Wextra', '-Werror', '-x', 'c', '-c', '-']
+    }
+    ignore_types = ['txt', 'md', 'doc', 'pdf']
+
+    if file_extension in ignore_types:
+        return ''
+
+    elif file_extension in validation_commands:
+        try:
+            # Run the validation command and capture the output
+            subprocess.run(
+                validation_commands[file_extension],
+                input=content.encode(),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True, check=True
+            )
+        except subprocess.CalledProcessError as e:
+            return e.stderr.strip()
+        else:
+            return ''
+    else:
+        # If the file extension is not recognized, return a default error message
+        return f'Unsupported file type: {file_extension}'
 
 
 def resolve_path(base_path, file_path):
@@ -38,7 +95,9 @@ class FileReadAction(ExecutableAction):
                 code_slice = all_lines[self.start_index: end_index]
             else:
                 code_slice = all_lines[:]
-            return FileReadObservation(path=path, content='\n'.join(code_slice))
+            if isinstance(code_slice, list) and len(code_slice) > 1:
+                code_view = '\n'.join(code_slice)
+            return FileReadObservation(path=path, content=code_view)
 
     @property
     def message(self) -> str:
@@ -53,18 +112,22 @@ class FileWriteAction(ExecutableAction):
     end: int
     action: str = ActionType.WRITE
 
-    def run(self, controller) -> FileWriteObservation:
+    def run(self, controller) -> Observation:
         whole_path = resolve_path(controller.workdir, self.path)
 
         with open(whole_path, 'w', encoding='utf-8') as file:
             all_lines = file.readlines()
             insert = self.content.split('\n')
             new_file = all_lines[:self.start] + insert + all_lines[self.end:]
-            # if valid_changes(new_file, self.path):
-            #    file.write('\n'.join(new_file))
-            file.write('\n'.join(new_file))
-        # TODO: Check the new file to see if the code was written properly
-        return FileWriteObservation(content='', path=self.path)
+            content_str = '\n'.join(new_file)
+            validation_error = validate_file_content(whole_path, content_str)
+            if validation_error:
+                file.write(content_str)
+                return FileWriteObservation(content='', path=self.path)
+            else:
+                # Revert to the old file content
+                file.write('\n'.join(all_lines))
+                return AgentErrorObservation(content=validation_error)
 
     @property
     def message(self) -> str:
