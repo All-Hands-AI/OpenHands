@@ -2,36 +2,57 @@ from typing import List
 from opendevin.agent import Agent
 from opendevin.llm.llm import LLM
 from opendevin.state import State
-from opendevin.action import Action
+from opendevin.action import Action, AgentThinkAction
 from opendevin.observation import Observation
 
 from .parser import parse_command
 
 from .prompts import (
-    START_MESSAGE,
+    SYSTEM_MESSAGE,
     STEP_PROMPT,
     MEMORY_FORMAT,
-    NO_ACTION
+    NO_ACTION,
+    CONTEXT_PROMPT
 )
+
+# TODO: Add state management
 
 
 class ThinkActAgent(Agent):
     """
-    An attempt to recreate swe_agent with output parsing, prompting style, and Application Computer Interface.
+    An attempt to recreate swe_agent with output parsing, prompting style, and Application Computer Interface (ACI).
 
     SWE-agent includes ACI functions like 'goto', 'search_for', 'edit', 'scroll', 'run'
     """
 
     def __init__(self, llm: LLM):
         super().__init__(llm)
+        self.memory_window = 5
+        self.max_retries = 5
         self.running_memory: List[str] = []
 
     def _remember(self, action: Action, observation: Observation):
+        """Agent has a limited memory of the few steps implemented as a queue"""
         memory = MEMORY_FORMAT(action.to_dict(), observation.to_dict())
         self.running_memory.append(memory)
 
-    def step(self, state: State) -> Action:
+    def _think_act(self, messages: List[dict]) -> tuple[Action, str]:
+        resp = self.llm.completion(
+            messages=messages,
+            temperature=0.0
+        )
+        action_resp = resp['choices'][0]['message']['content']
+        action, thought = parse_command(action_resp)
 
+        return (action, thought)
+
+    def step(self, state: State) -> Action:
+        """
+        SWE-Agent step:
+            1. Get context - past actions, custom commands, current step
+            2. Perform think-act - prompt model for action and reasoning
+            3. Catch errors - ensure model takes action (5 attempts max)
+        """
         for prev_action, obs in state.updated_info:
             self._remember(prev_action, obs)
 
@@ -40,27 +61,30 @@ class ThinkActAgent(Agent):
             state.plan.get_current_task(),
             state.working_dir,
             state.file_name,
-            '\n\n'.join(t for t in self.running_memory)
         )
 
-        messages = [
-            {'content': prompt, 'role': 'user'},
-            {'content': START_MESSAGE, 'role': 'user'}
+        context = CONTEXT_PROMPT(
+            self.running_memory,
+            self.memory_window
+        )
+
+        msgs = [
+            {'content': context, 'role': 'user'},
+            {'content': SYSTEM_MESSAGE, 'role': 'user'},
+            {'content': prompt, 'role': 'user'}
         ]
+        print('\n\n'.join([m['content'] for m in msgs]))
+        action, thought = self._think_act(messages=msgs)
 
-        resp = self.llm.completion(messages=messages)
-        action_resp = resp['choices'][0]['message']['content']
-        # TODO: need to implement converting to Action from str
-        action, thought = parse_command(action_resp)
+        start_msg_len = len(msgs)
+        while not action and len(msgs) < self.max_retries + start_msg_len:
+            error = NO_ACTION(thought)
+            error_msg = {'content': error, 'role': 'user'}
+            msgs.append(error_msg)
+            action, thought = self._think_act(messages=msgs)
 
-        # TODO: need to refactor this
         if not action:
-            messages.insert(0, NO_ACTION(action_resp))
-            resp = self.llm.completion(messages=messages)
-            action_resp = resp['choices'][0]['message']['content']
-            action, thought = parse_command(action_resp)
-
-        # TODO: add in checker for editing files using a linter
+            action = AgentThinkAction(thought)
 
         self.latest_action = action
         return action

@@ -1,5 +1,30 @@
+from opendevin.action import (
+    Action,
+    AgentFinishAction,
+    CmdRunAction,
+)
 
-def parse_command(input_str):
+
+def get_action_from_string(command_string: str) -> Action:
+    """
+    Parses the command string to find which command the agent wants to run
+    Converts the command into a proper Action and returns
+    """
+    vars = command_string.split(' ')
+    cmd = vars[0]
+    args = [] if len(vars) == 1 else vars[0:]
+    bg = True if '--background' in args else False
+
+    if 'exit' == cmd:
+        return AgentFinishAction()
+
+    # TODO: need to integrate all of the custom commands
+
+    else:
+        return CmdRunAction(command_string, background=bg)
+
+
+def parse_command(input_str: str):
     """
     Parses a given string and separates the command (enclosed in triple backticks) from any accompanying text.
 
@@ -9,34 +34,13 @@ def parse_command(input_str):
     Returns:
         tuple: A tuple containing the command and the accompanying text (if any).
     """
-    # Check if the input string contains a triple backtick-enclosed command
+    input_str = input_str.strip()
     if '```' in input_str:
-        # Split the input string at the triple backticks
         parts = input_str.split('```')
-
-        # The command is the text between the triple backticks
-        command = parts[1].strip()
-
-        # The accompanying text is everything else
-        accompanying_text = ''.join(parts[:-2]).strip()
-
-        return command, accompanying_text
+        command_str = parts[1].strip()
+        action = get_action_from_string(command_str)
+        ind = 2 if len(parts) > 2 else 1
+        accompanying_text = ''.join(parts[:-ind]).strip()
+        return action, accompanying_text
     else:
-        # If no command is found, return None for the command and the original input string as the accompanying text
         return None, input_str
-
-
-def try_edit(file, from_line, to_line, modification):
-    """
-    The goal of this function is to attempt to perform the edit that the bot wants then lint it to find any errors.
-    This will improve the model's performance by not changing code unless it works.
-
-    Parameters:
-    - file (str): Path to file we are editing
-    - from_line (int): Line to start editing at
-    - to_line (int): Line to stop editing at
-    - modification (str): The changes the agent wants to make
-    """
-    if to_line > from_line:
-        to_line = from_line
-    pass
