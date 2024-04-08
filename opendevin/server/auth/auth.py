@@ -1,6 +1,7 @@
 import os
 import jwt
 from typing import Dict
+from opendevin.logging import opendevin_logger as logger
 
 JWT_SECRET = os.getenv("JWT_SECRET", "5ecRe7")
 
@@ -10,11 +11,11 @@ def get_sid_from_token(token: str) -> str:
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         if payload is None:
-            print("Invalid token")
+            logger.error("Invalid token")
             return ""
         return payload["sid"]
     except Exception as e:
-        print("Error decoding token:", e)
+        logger.exception("Error decoding token: %s", e)
         return ""
 
 

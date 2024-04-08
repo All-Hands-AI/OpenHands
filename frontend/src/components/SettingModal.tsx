@@ -1,31 +1,31 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  Input,
-  Button,
   Autocomplete,
   AutocompleteItem,
+  Button,
+  Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
   Select,
   SelectItem,
 } from "@nextui-org/react";
 import { KeyboardEvent } from "@react-types/shared/src/events";
 import { useTranslation } from "react-i18next";
 import {
-  INITIAL_AGENTS,
-  fetchModels,
   fetchAgents,
+  fetchModels,
+  INITIAL_AGENTS,
   INITIAL_MODELS,
   saveSettings,
-  getInitialModel,
 } from "../services/settingsService";
 import { RootState } from "../store";
 import { I18nKey } from "../i18n/declaration";
 import { AvailableLanguages } from "../i18n";
+import ArgConfigType from "../types/ConfigType";
 
 interface Props {
   isOpen: boolean;
@@ -39,21 +39,17 @@ const cachedAgents = JSON.parse(
   localStorage.getItem("supportedAgents") || "[]",
 );
 
-function SettingModal({ isOpen, onClose }: Props): JSX.Element {
-  const defModel = useSelector((state: RootState) => state.settings.model);
-  const [model, setModel] = useState(defModel);
-  const defAgent = useSelector((state: RootState) => state.settings.agent);
-  const [agent, setAgent] = useState(defAgent);
-  const defWorkspaceDirectory = useSelector(
-    (state: RootState) => state.settings.workspaceDirectory,
+function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
+  const settings = useSelector((state: RootState) => state.settings);
+  const [model, setModel] = useState(settings[ArgConfigType.LLM_MODEL]);
+  const [inputModel, setInputModel] = useState(
+    settings[ArgConfigType.LLM_MODEL],
   );
+  const [agent, setAgent] = useState(settings[ArgConfigType.AGENT]);
   const [workspaceDirectory, setWorkspaceDirectory] = useState(
-    defWorkspaceDirectory,
+    settings[ArgConfigType.WORKSPACE_DIR],
   );
-  const defLanguage = useSelector(
-    (state: RootState) => state.settings.language,
-  );
-  const [language, setLanguage] = useState(defLanguage);
+  const [language, setLanguage] = useState(settings[ArgConfigType.LANGUAGE]);
 
   const { t } = useTranslation();
 
@@ -65,12 +61,6 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
   );
 
   useEffect(() => {
-    getInitialModel()
-      .then((initialModel) => {
-        setModel(initialModel);
-      })
-      .catch();
-
     fetchModels().then((fetchedModels) => {
       const sortedModels = fetchedModels.sort(); // Sorting the models alphabetically
       setSupportedModels(sortedModels);
@@ -85,10 +75,16 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
 
   const handleSaveCfg = () => {
     saveSettings(
-      { model, agent, workspaceDirectory, language },
-      model !== defModel &&
-        agent !== defAgent &&
-        workspaceDirectory !== defWorkspaceDirectory,
+      {
+        [ArgConfigType.LLM_MODEL]: model ?? inputModel,
+        [ArgConfigType.AGENT]: agent,
+        [ArgConfigType.WORKSPACE_DIR]: workspaceDirectory,
+        [ArgConfigType.LANGUAGE]: language,
+      },
+      Object.fromEntries(
+        Object.entries(settings).map(([key, value]) => [key, value]),
+      ),
+      false,
     );
     onClose();
   };
@@ -127,9 +123,10 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
               onSelectionChange={(key) => {
                 setModel(key as string);
               }}
+              onInputChange={(e) => setInputModel(e)}
               onKeyDown={(e: KeyboardEvent) => e.continuePropagation()}
               defaultFilter={customFilter}
-              defaultInputValue={model}
+              defaultInputValue={inputModel}
               allowsCustomValue
             >
               {(item: { label: string; value: string }) => (
@@ -185,6 +182,12 @@ function SettingModal({ isOpen, onClose }: Props): JSX.Element {
       </ModalContent>
     </Modal>
   );
+}
+
+function SettingModal({ isOpen, onClose }: Props): JSX.Element {
+  // Do not render the modal if it is not open, prevents reading empty from localStorage after initialization
+  if (!isOpen) return <div />;
+  return <InnerSettingModal isOpen={isOpen} onClose={onClose} />;
 }
 
 export default SettingModal;

@@ -2,10 +2,12 @@ import i18n from "i18next";
 import Backend from "i18next-http-backend";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
+import ArgConfigType from "../types/ConfigType";
 
 export const AvailableLanguages = [
   { label: "English", value: "en" },
   { label: "简体中文", value: "zh-CN" },
+  { label: "한국어", value: "ko-KR" },
 ];
 
 i18n
@@ -20,14 +22,14 @@ i18n
     // assume all detected   languages are available
     const detectLanguage = i18n.language;
     // cannot trust browser language setting
-    const settingLanguage = localStorage.getItem("language");
+    const settingLanguage = localStorage.getItem(ArgConfigType.LANGUAGE);
 
     // if setting is not initialized, but detected language is available, use detected language and update language setting
     if (
       !settingLanguage &&
       AvailableLanguages.some((lang) => detectLanguage === lang.value)
     ) {
-      localStorage.setItem("language", detectLanguage);
+      localStorage.setItem(ArgConfigType.LANGUAGE, detectLanguage);
       i18n.changeLanguage(detectLanguage);
       return;
     }
