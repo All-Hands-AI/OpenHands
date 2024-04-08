@@ -23,6 +23,7 @@ types-toml = "*"
 numpy = "*"
 json-repair = "*"
 playwright = "*"
+pexpect = "*"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
@@ -31,7 +32,6 @@ chromadb = "*"
 llama-index-embeddings-huggingface = "*"
 llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
-pymupdfb = "*"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "*"

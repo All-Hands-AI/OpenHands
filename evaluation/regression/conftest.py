@@ -67,9 +67,9 @@ def model(request):
         request: The pytest request object.
 
     Returns:
-        The model name, defaulting to "gpt-4-0125-preview".
-    """
-    return request.config.getoption("model", default="gpt-4-0125-preview")
+        The model name, defaulting to "gpt-3.5-turbo-1106".
+    ""
+    return request.config.getoption("model", default="gpt-3.5-turbo-1106")
 
 @pytest.fixture
 def run_test_case(test_cases_dir, workspace_dir, request):
@@ -115,7 +115,7 @@ def run_test_case(test_cases_dir, workspace_dir, request):
             "monologue_agent":"MonologueAgent",
             "codeact_agent":"CodeActAgent"
         }
-        process = subprocess.Popen(["python3", f"{SCRIPT_DIR}/../../opendevin/main.py", "-d", f"{os.path.join(agent_dir, 'workspace')}", "-c", f"{agents_ref[agent]}", "-t", f"{task}", "-m", "gpt-4-0125-preview"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        process = subprocess.Popen(["python3", f"{SCRIPT_DIR}/../../opendevin/main.py", "-d", f"{os.path.join(agent_dir, 'workspace')}", "-c", f"{agents_ref[agent]}", "-t", f"{task}", "-m", "gpt-3.5-turbo-1106"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         stdout, stderr = process.communicate()
         logging.info(f"Stdout: {stdout}")
         logging.error(f"Stderr: {stderr}")

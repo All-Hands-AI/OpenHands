@@ -3,20 +3,7 @@
 This is a WebSocket server that executes tasks using an agent.
 
 ## Install
-
-Create a `.env` file with the contents
-
-```sh
-LLM_API_KEY=<YOUR OPENAI API KEY>
-```
-
-Install requirements:
-
-```sh
-python3.12 -m venv venv
-source venv/bin/activate
-python -m pip install -r requirements.txt
-```
+Follow the instructions in the base README.md to install dependencies and set up.
 
 ## Start the Server
 
@@ -37,7 +24,7 @@ websocat ws://127.0.0.1:3000/ws
 
 ```sh
 LLM_API_KEY=sk-... # Your OpenAI API Key
-LLM_MODEL=gpt-4-0125-preview # Default model for the agent to use
+LLM_MODEL=gpt-3.5-turbo-1106 # Default model for the agent to use
 WORKSPACE_DIR=/path/to/your/workspace # Default path to model's workspace
 ```
 
