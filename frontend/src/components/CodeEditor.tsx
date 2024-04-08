@@ -1,11 +1,11 @@
 import Editor, { Monaco } from "@monaco-editor/react";
+import { Tab, Tabs } from "@nextui-org/react";
 import type { editor } from "monaco-editor";
 import React, { useState } from "react";
-import { Tabs, Tab } from "@nextui-org/react";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
-import Files from "./Files";
 import { cn } from "../utils/utils";
+import Files from "./Files";
 
 function CodeEditor(): JSX.Element {
   const [selectedFileName, setSelectedFileName] = useState("welcome");
@@ -43,12 +43,13 @@ function CodeEditor(): JSX.Element {
           explorerOpen={explorerOpen}
         />
       </div>
-      <div>
+      <div className="flex flex-col">
         <Tabs
           disableCursorAnimation
           classNames={{
+            base: "border-b border-divider",
             tabList:
-              "w-full relative rounded-none bg-neutral-900 p-0 border-r border-divider",
+              "w-full relative rounded-none bg-neutral-900 p-0 border-divider",
             cursor: "w-full bg-neutral-600 rounded-none",
             tab: "max-w-fit px-4 h-[36px]",
             tabContent: "group-data-[selected=true]:text-neutral-50 ",
