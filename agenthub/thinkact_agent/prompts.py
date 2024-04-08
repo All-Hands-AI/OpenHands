@@ -1,18 +1,40 @@
 from opendevin.parse_commands import parse_command_file
 
+
+DEFAULT_COMMANDS = {
+    'exit': 'Executed when task is complete',
+    'read <file_name> [<start_line>]': 'shows a given file\'s contents starting from <start_line>, default start is 0',
+    'write <file> <start_line> <end_line> <changes>': 'modifies a <file> by replacing the current lines between <start_line> and <end_line> with <changes>',
+    'browse <url>': 'returns the text version of any url',
+    'bash': 'Any real bash command is valid. Examples: cd, ls, rm, grep, dir, mv, wget, git, zip, etc. with their arguments included',
+}
+
+
+DEFAULT_COMMAND_STR = '\n'.join(
+    [k + ' - ' + v for k, v in DEFAULT_COMMANDS.items()])
+
+
 COMMAND_DOCS = parse_command_file()
 
-COMMAND_SEGMENT = (
-    f"""
 
+CUSTOM_COMMANDS = f"""
 Apart from the standard bash commands, you can also use the following special commands:
 {COMMAND_DOCS}
 """
-    if COMMAND_DOCS is not None
-    else ''
-)
+
+
+COMMAND_SEGMENT = CUSTOM_COMMANDS if COMMAND_DOCS is not None else ''
+
+
+DOCUMENTATION = f"""
+Documentation:
+{DEFAULT_COMMAND_STR}
+{COMMAND_SEGMENT}
+"""
+
 
 RESPONSE_FORMAT = '''
+items in <> are suggestions for you, fill them out based on the context of the problem you are solving.
 Format:
     "Thoughts:
     <Some thoughts that you have on what to do next>
@@ -22,10 +44,11 @@ Format:
     ```"
 '''
 
+
 SYSTEM_MESSAGE = f'''
 You are an autonomous coding agent, here to provide solutions for coding issues.
 You have been given a custom interface, including some commands you can run.
-{COMMAND_SEGMENT}
+{DOCUMENTATION}
 '''.strip()
 
 
@@ -37,7 +60,7 @@ You did not include any action to take in your most recent output:
 ==== End Output ===
 
 Remember these are the custom commands you can use:
-{COMMAND_SEGMENT}
+{DOCUMENTATION}
 
 Lets try that again, it is very important that you adhere to the output format
 This time, be sure to use the exact format below, replacing anything in <> with the appropriate value(s):

@@ -44,8 +44,6 @@ class FileReadAction(ExecutableAction):
     def message(self) -> str:
         return f'Reading file: {self.path}'
 
-# TODO: need to add start_line and end_line here
-
 
 @dataclass
 class FileWriteAction(ExecutableAction):

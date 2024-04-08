@@ -2,7 +2,13 @@ from opendevin.action import (
     Action,
     AgentFinishAction,
     CmdRunAction,
+    FileReadAction,
+    FileWriteAction,
+    BrowseURLAction,
+    NullAction
 )
+
+# commands: exit, read, write, browse, kill, search_file, search_dir
 
 
 def get_action_from_string(command_string: str) -> Action:
@@ -12,16 +18,39 @@ def get_action_from_string(command_string: str) -> Action:
     """
     vars = command_string.split(' ')
     cmd = vars[0]
-    args = [] if len(vars) == 1 else vars[0:]
-    bg = True if '--background' in args else False
+    args = [] if len(vars) == 1 else ' '.join(vars[1:])
 
+    # TODO: add exception handling for improper commands
     if 'exit' == cmd:
         return AgentFinishAction()
+
+    elif 'read' == cmd:
+        if len(args) == 1:
+            file = args[0]
+            start = 0
+        elif len(args) == 2:
+            file, start = args[0], int(args[1])
+        elif len(args) > 2:
+            file, start = args[0], int(args[1])
+        else:
+            return NullAction()
+
+        return FileReadAction(file, start)
+
+    elif 'write' == cmd:
+        assert len(args) >= 4, 'These are not the args you are looking for'
+        file = args[0]
+        start, end = [int(arg) for arg in args[1:3]]
+        content = ' '.join(args[3:])
+        return FileWriteAction(file, content, start, end)
+
+    elif 'browse' == cmd:
+        return BrowseURLAction(args[0].strip())
 
     # TODO: need to integrate all of the custom commands
 
     else:
-        return CmdRunAction(command_string, background=bg)
+        return CmdRunAction(command_string)
 
 
 def parse_command(input_str: str):
@@ -43,4 +72,4 @@ def parse_command(input_str: str):
         accompanying_text = ''.join(parts[:-ind]).strip()
         return action, accompanying_text
     else:
-        return None, input_str
+        return None, input_str  # used for retry
