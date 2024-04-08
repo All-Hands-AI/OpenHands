@@ -330,7 +330,8 @@ class DockerInteractive(CommandExecutor):
                 self.container_image,
                 # allow root login
                 command="/usr/sbin/sshd -D -p 2222 -o 'PermitRootLogin=yes'",
-                network_mode='host',
+                # network_mode='host', # FIXME: this is not working on Mac OS (https://github.com/docker/roadmap/issues/238)
+                ports={'2222/tcp': 2222},
                 working_dir='/workspace',
                 name=self.container_name,
                 hostname='opendevin_sandbox',
