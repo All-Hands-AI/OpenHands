@@ -12,10 +12,6 @@ function CodeEditor(): JSX.Element {
   const [explorerOpen, setExplorerOpen] = useState(true);
   const code = useSelector((state: RootState) => state.code.code);
 
-  const bgColor = getComputedStyle(document.documentElement)
-    .getPropertyValue("--bg-workspace")
-    .trim();
-
   const handleEditorDidMount = (
     editor: editor.IStandaloneCodeEditor,
     monaco: Monaco,

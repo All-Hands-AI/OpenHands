@@ -2,12 +2,11 @@ import { Tab, Tabs } from "@nextui-org/react";
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FaCode } from "react-icons/fa6";
+import { IoIosGlobe } from "react-icons/io";
 import Calendar from "../assets/calendar";
-import Earth from "../assets/earth";
 import { I18nKey } from "../i18n/declaration";
 import { AllTabs, TabOption, TabType } from "../types/TabOption";
 import Browser from "./Browser";
-import { IoIosGlobe } from "react-icons/io";
 import CodeEditor from "./CodeEditor";
 import Planner from "./Planner";
 
