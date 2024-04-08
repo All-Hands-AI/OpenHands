@@ -311,6 +311,7 @@ class DockerInteractive(CommandExecutor):
                 self.container_image,
                 # allow root login
                 command="/usr/sbin/sshd -D -p 2222 -o 'PermitRootLogin=yes'",
+                network_mode='host',
                 working_dir='/workspace',
                 name=self.container_name,
                 hostname='opendevin_sandbox',
