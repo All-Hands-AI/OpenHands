@@ -182,6 +182,11 @@ For a full list of the LM providers and models available, please consult the [li
     </a>
 </p>
 
+
+## ⚡ One-Cilck Deployment
+
+[![Deploy on RepoCloud](https://d16t0pc4846x52.cloudfront.net/deploy.png)](https://repocloud.io/details/?app_id=260)
+
 ## ⭐️ Research Strategy
 
 Achieving full replication of production-grade applications with LLMs is a complex endeavor. Our strategy involves:
