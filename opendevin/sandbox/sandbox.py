@@ -140,6 +140,18 @@ class DockerInteractive(CommandExecutor):
         atexit.register(self.cleanup)
 
     def setup_user(self):
+
+        # Make users sudoers passwordless
+        # TODO(sandbox): add this line in the Dockerfile for next minor version of docker image
+        exit_code, logs = self.container.exec_run(
+            ['/bin/bash', '-c',
+                r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"],
+            workdir='/workspace',
+        )
+        if exit_code != 0:
+            raise Exception(
+                f'Failed to make all users passwordless sudoers in sandbox: {logs}')
+
         # Check if the opendevin user exists
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c', 'id -u opendevin'],
