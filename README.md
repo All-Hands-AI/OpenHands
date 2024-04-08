@@ -122,7 +122,7 @@ Getting started with the OpenDevin project is incredibly easy. Follow these simp
 * [NodeJS](https://nodejs.org/en/download/package-manager) >= 18.17.1
 * [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) >= 1.8
 
-Make sure you have all these dependencies installed before moving on to making build.
+Make sure you have all these dependencies installed before moving on to `make build`.
 
 ### 2. Build and Setup The Environment
 
