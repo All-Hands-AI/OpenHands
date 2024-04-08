@@ -9,25 +9,23 @@ export const useTypingEffect = (
     loop = false,
     playbackRate = 0.1,
     setTypingActive = () => {},
-    setCurrentQueueMarkerState = () => {},
-    currentQueueMarker = 0,
     addAssistantMessageToChat = () => {},
-    assistantMessageObj = { content: "", sender: "assistant" },
+    takeOneAndType = () => {},
+    typeThis = { content: "", sender: "assistant" },
   }: {
     loop?: boolean;
     playbackRate?: number;
     setTypingActive?: (bool: boolean) => void;
-    setCurrentQueueMarkerState?: (marker: number) => void;
-    currentQueueMarker?: number;
     addAssistantMessageToChat?: (msg: Message) => void;
-    assistantMessageObj?: Message;
+    takeOneAndType?: () => void;
+    typeThis?: Message;
   } = {
     loop: false,
     playbackRate: 0.1,
     setTypingActive: () => {},
-    currentQueueMarker: 0,
     addAssistantMessageToChat: () => {},
-    assistantMessageObj: { content: "", sender: "assistant" },
+    takeOneAndType: () => {},
+    typeThis: { content: "", sender: "assistant" },
   },
 ) => {
   // eslint-disable-next-line prefer-const
@@ -50,8 +48,8 @@ export const useTypingEffect = (
       if (stringIndex === strings.length) {
         if (!loop) {
           setTypingActive(false);
-          setCurrentQueueMarkerState(currentQueueMarker + 1);
-          addAssistantMessageToChat(assistantMessageObj);
+          addAssistantMessageToChat(typeThis);
+          takeOneAndType();
           return;
         }
         stringIndex = 0;
@@ -73,6 +71,7 @@ export const useTypingEffect = (
     return () => {
       window.clearTimeout(timeoutId);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const nonBreakingSpace = "\u00A0";

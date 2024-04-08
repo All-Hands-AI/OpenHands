@@ -12,6 +12,7 @@ import docker
 
 from opendevin import config
 from opendevin.logging import opendevin_logger as logger
+from opendevin.controller.command_executor import CommandExecutor
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
@@ -84,7 +85,7 @@ class BackgroundCommand:
         return (logs + last_remains).decode('utf-8', errors='replace')
 
 
-class DockerInteractive:
+class DockerInteractive(CommandExecutor):
     closed = False
     cur_background_id = 0
     background_commands: Dict[int, BackgroundCommand] = {}
