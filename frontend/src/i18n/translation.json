@@ -2,91 +2,109 @@
   "WORKSPACE$TITLE": {
     "en": "OpenDevin Workspace",
     "zh-CN": "OpenDevin 工作区",
-    "ko-KR": "OpenDevin 워크스페이스"
+    "ko-KR": "OpenDevin 워크스페이스",
+    "no": "OpenDevin Arbeidsområde"
   },
   "WORKSPACE$TERMINAL_TAB_LABEL": {
     "en": "Terminal",
     "zh-CN": "终端",
-    "ko-KR": "터미널"
+    "ko-KR": "터미널",
+    "no": "Terminal"
   },
   "WORKSPACE$PLANNER_TAB_LABEL": {
     "en": "Planner",
     "zh-CN": "规划器",
-    "ko-KR": "플래너"
+    "ko-KR": "플래너",
+    "no": "Planlegger"
   },
   "WORKSPACE$CODE_EDITOR_TAB_LABEL": {
     "en": "Code Editor",
     "zh-CN": "代码编辑器",
-    "ko-KR": "코드 편집기"
+    "ko-KR": "코드 편집기",
+    "no": "Kode editor"
   },
   "WORKSPACE$BROWSER_TAB_LABEL": {
     "en": "Browser",
     "zh-CN": "浏览器",
-    "ko-KR": "브라우저"
+    "ko-KR": "브라우저",
+    "no": "Nettleser"
   },
   "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_LABEL": {
     "en": "OpenDevin Workspace directory",
     "zh-CN": "OpenDevin 工作区目录",
-    "ko-KR": "OpenDevin 워크스페이스 폴더"
+    "ko-KR": "OpenDevin 워크스페이스 폴더",
+    "no": "OpenDevin arbeidsmappe"
   },
   "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER": {
     "en": "Default: ./workspace",
     "zh-CN": "默认：./workspace",
-    "ko-KR": "기본: ./workspace"
+    "ko-KR": "기본: ./workspace",
+    "no": "Standard: ./workspace"
   },
   "CONFIGURATION$MODAL_TITLE": {
     "en": "Configuration",
     "zh-CN": "配置",
-    "ko-KR": "설정"
+    "ko-KR": "설정",
+    "no": "Konfigurasjon"
   },
   "CONFIGURATION$MODEL_SELECT_LABEL": {
     "en": "Model",
     "zh-CN": "模型",
-    "ko-KR": "모델"
+    "ko-KR": "모델",
+    "no": "Modell"
   },
   "CONFIGURATION$MODEL_SELECT_PLACEHOLDER": {
     "en": "Select a model",
     "zh-CN": "选择一个模型",
-    "ko-KR": "모델 선택"
+    "ko-KR": "모델 선택",
+    "no": "Velg en modell"
   },
   "CONFIGURATION$AGENT_SELECT_LABEL": {
     "en": "Agent",
     "zh-CN": "代理",
-    "ko-KR": "에이전트"
+    "ko-KR": "에이전트",
+    "no": "Agent"
   },
   "CONFIGURATION$AGENT_SELECT_PLACEHOLDER": {
-    "en": "Select a agent",
+    "en": "Select an agent",
     "zh-CN": "选择一个代理",
-    "ko-KR": "에이전트 선택"
+    "ko-KR": "에이전트 선택",
+    "no": "Velg en agent"
   },
   "CONFIGURATION$LANGUAGE_SELECT_LABEL": {
     "en": "Language",
     "zh-CN": "语言",
-    "ko-KR": "언어"
+    "ko-KR": "언어",
+    "no": "Språk"
   },
   "CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL": {
     "en": "Close",
     "zh-CN": "关闭",
-    "ko-KR": "닫기"
+    "ko-KR": "닫기",
+    "no": "Lukk"
   },
   "CONFIGURATION$MODAL_SAVE_BUTTON_LABEL": {
     "en": "Save",
     "zh-CN": "保存",
-    "ko-KR": "저장"
+    "ko-KR": "저장",
+    "no": "Lagre"
   },
   "CHAT_INTERFACE$INITIALZING_AGENT_LOADING_MESSAGE": {
     "en": "Initializing agent (may take up to 10 seconds)...",
     "zh-CN": "初始化代理（可能需要 10 秒以上时间）",
-    "ko-KR": "에이전트 설치중(10초 정도 걸립니다)..."
+    "ko-KR": "에이전트 설치중(10초 정도 걸립니다)...",
+    "no": "Initialiserer agent (det kan ta opptil 10 sekunder)..."
   },
   "CHAT_INTERFACE$INPUT_PLACEHOLDER": {
     "en": "Send a message (won't interrupt the Assistant)",
     "zh-CN": "发送消息（不会打断助理）",
-    "ko-KR": "메시지 전송(어시스턴트를 방해하지 않음)"
+    "ko-KR": "메시지 전송(어시스턴트를 방해하지 않음)",
+    "no": "Send en melding (det vil ikke avbryte assistenten)"
   },
   "CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT": {
     "en": "Send",
     "zh-CN": "发送",
-    "ko-KR": "전송"
+    "ko-KR": "전송",
+    "no": "Send"
   }
 }
