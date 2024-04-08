@@ -139,7 +139,7 @@ class DockerInteractive(CommandExecutor):
         atexit.register(self.cleanup)
 
     def setup_user(self):
-         # Check if the opendevin user exists
+        # Check if the opendevin user exists
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c', 'id -u opendevin'],
             workdir='/workspace',
@@ -151,7 +151,8 @@ class DockerInteractive(CommandExecutor):
                 workdir='/workspace',
             )
             if exit_code != 0:
-                raise Exception(f'Failed to remove opendevin user in sandbox: {logs}')
+                raise Exception(
+                    f'Failed to remove opendevin user in sandbox: {logs}')
 
         # Create the opendevin user
         exit_code, logs = self.container.exec_run(
@@ -194,7 +195,7 @@ class DockerInteractive(CommandExecutor):
         else:
             username = 'root'
         logger.info(
-            f"Connecting to {username}@{hostname} via ssh. If you encounter any issues, you can try `ssh -p 2222 {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub."
+            f"Connecting to {username}@{hostname} via ssh. If you encounter any issues, you can try `ssh -v -p 2222 {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub."
         )
         self.ssh.login(hostname, username, self._ssh_password, port=2222)
 
