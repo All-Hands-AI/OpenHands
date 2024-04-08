@@ -33,8 +33,8 @@ class E2BSandbox:
             raise ValueError(f'Process {process_id} not found')
         return '\n'.join([m.line for m in proc.output_messages])
 
-    # TODO: This is synchronous, so there's no reason for it to return None.
     def execute(self, cmd: str) -> Tuple[int, str]:
+        print('Running command in e2b sandbox:', cmd)
         process = self.sandbox.process.start(cmd)
         try:
             process_output = process.wait(timeout=self.timeout)
@@ -52,6 +52,7 @@ class E2BSandbox:
         return process_output.exit_code, logs_str
 
     def execute_in_background(self, cmd: str) -> E2BProcess:
+        print('Running background command in e2b sandbox:', cmd)
         process = self.sandbox.process.start(cmd)
         e2b_process = E2BProcess(process, cmd)
         self.cur_background_id += 1
