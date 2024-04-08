@@ -62,7 +62,6 @@ class AgentUnit:
             await self.send_error('Invalid action')
             return
 
-        print('=========', action, data)
         match action:
             case ActionType.INIT:
                 if self.controller is not None:
@@ -100,7 +99,6 @@ class AgentUnit:
         Args:
             start_event: The start event data (optional).
         """
-        print('---------------------------------1-')
         args = {
             key: value
             for key, value in start_event.get('args', {}).items()
@@ -124,7 +122,6 @@ class AgentUnit:
             os.makedirs(directory)
         directory = os.path.relpath(directory, os.getcwd())
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
-        print('-----------------------------2-----')
         try:
             self.controller = AgentController(
                 sid=self.sid,
@@ -134,14 +131,12 @@ class AgentUnit:
                 container_image=container_image,
                 callbacks=[self.on_agent_event],
             )
-            print('------------------------3----------')
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
             await self.send_error(
                 'Error creating controller. Please check Docker is running using `docker ps`.'
             )
             return
-        print('----------------------------------')
         await self.init_done()
 
     async def init_done(self):
