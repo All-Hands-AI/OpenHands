@@ -139,8 +139,8 @@ function ChatInterface(): JSX.Element {
   const { initialized } = useSelector((state: RootState) => state.task);
 
   return (
-    <div className="flex flex-col h-full p-0 bg-bg-workspace">
-      <div className="border-b border-border text-lg px-4 py-2">Chat</div>
+    <div className="flex flex-col h-full p-0 bg-neutral-800">
+      <div className="border-b border-neutral-600 text-sm px-4 py-2">Chat</div>
       {initialized ? <MessageList /> : <InitializingStatus />}
       <Input />
     </div>
