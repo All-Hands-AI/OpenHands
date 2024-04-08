@@ -4,9 +4,10 @@ import select
 import sys
 import time
 import uuid
+import platform
 from pexpect import pxssh
 from collections import namedtuple
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import docker
 
@@ -325,13 +326,25 @@ class DockerInteractive(CommandExecutor):
             # Initialize docker client. Throws an exception if Docker is not reachable.
             docker_client = docker.from_env()
 
+            network_kwargs: Dict[str, Union[str, Dict[str, int]]] = {}
+            if platform.system() == 'Linux':
+                network_kwargs['network_mode'] = 'host'
+            elif platform.system() == 'Darwin':
+                # FIXME: This is a temporary workaround for Mac OS
+                network_kwargs['ports'] = {'2222/tcp': 2222}
+                logger.warning(
+                    ('Using port forwarding for Mac OS. '
+                     'Server started by OpenDevin will not be accessible from the host machine at the moment. '
+                     'See https://github.com/OpenDevin/OpenDevin/issues/897 for more information.'
+                     )
+                )
+
             # start the container
             self.container = docker_client.containers.run(
                 self.container_image,
                 # allow root login
                 command="/usr/sbin/sshd -D -p 2222 -o 'PermitRootLogin=yes'",
-                # network_mode='host', # FIXME: this is not working on Mac OS (https://github.com/docker/roadmap/issues/238)
-                ports={'2222/tcp': 2222},
+                **network_kwargs,
                 working_dir='/workspace',
                 name=self.container_name,
                 hostname='opendevin_sandbox',
