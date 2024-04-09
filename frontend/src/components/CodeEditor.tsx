@@ -4,7 +4,6 @@ import type { editor } from "monaco-editor";
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
-import { cn } from "../utils/utils";
 import Files from "./Files";
 
 function CodeEditor(): JSX.Element {
@@ -31,19 +30,13 @@ function CodeEditor(): JSX.Element {
   };
 
   return (
-    <div
-      className={`${cn(
-        explorerOpen ? "grid-cols-[250px_auto]" : "grid-cols-[50px_auto]",
-      )} grid h-full bg-neutral-900 transition-all duration-500 ease-in-out`}
-    >
-      <div>
-        <Files
-          setSelectedFileName={setSelectedFileName}
-          setExplorerOpen={setExplorerOpen}
-          explorerOpen={explorerOpen}
-        />
-      </div>
-      <div className="flex flex-col">
+    <div className="flex h-full w-full bg-neutral-900 transition-all duration-500 ease-in-out">
+      <Files
+        setSelectedFileName={setSelectedFileName}
+        setExplorerOpen={setExplorerOpen}
+        explorerOpen={explorerOpen}
+      />
+      <div className="flex flex-col min-h-0 w-full">
         <Tabs
           disableCursorAnimation
           classNames={{
@@ -63,18 +56,17 @@ function CodeEditor(): JSX.Element {
                 : selectedFileName.toLocaleLowerCase()
             }
             title={!selectedFileName ? "Welcome" : selectedFileName}
-          >
-            <div>
-              <Editor
-                height="100vh"
-                defaultLanguage="python"
-                defaultValue="# Welcome to OpenDevin!"
-                value={code}
-                onMount={handleEditorDidMount}
-              />
-            </div>
-          </Tab>
+          />
         </Tabs>
+        <div className="flex grow">
+          <Editor
+            height="100%"
+            defaultLanguage="python"
+            defaultValue="# Welcome to OpenDevin!"
+            value={code}
+            onMount={handleEditorDidMount}
+          />
+        </div>
       </div>
     </div>
   );

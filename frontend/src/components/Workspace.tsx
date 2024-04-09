@@ -36,7 +36,7 @@ function Workspace() {
   );
 
   return (
-    <>
+    <div className="flex flex-col min-h-0 grow">
       <div
         role="tablist"
         className="tabs tabs-bordered tabs-lg border-b border-neutral-600 flex"
@@ -69,16 +69,10 @@ function Workspace() {
           ))}
         </Tabs>
       </div>
-      {Object.keys(tabData).map((tab) => (
-        <div
-          className="h-full w-full bg-neutral-800"
-          key={tab}
-          hidden={activeTab !== tab}
-        >
-          {tabData[tab as TabType].component}
-        </div>
-      ))}
-    </>
+      <div className="grow w-full bg-neutral-800 flex min-h-0">
+        {tabData[activeTab as TabType].component}
+      </div>
+    </div>
   );
 }
 export default Workspace;
