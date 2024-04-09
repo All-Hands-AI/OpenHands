@@ -26,6 +26,7 @@ build:
 	@$(MAKE) -s install-frontend-dependencies
 	@$(MAKE) -s install-precommit-hooks
 	@echo "$(GREEN)Build completed successfully.$(RESET)"
+	@sleep infinity
 
 check-dependencies:
 	@echo "$(YELLOW)Checking dependencies...$(RESET)"
@@ -113,7 +114,7 @@ start-backend:
 # Start frontend
 start-frontend:
 	@echo "$(YELLOW)Starting frontend...$(RESET)"
-	@cd frontend && BACKEND_HOST=$(BACKEND_HOST) FRONTEND_PORT=$(FRONTEND_PORT) npm run start
+	@cd frontend && BACKEND_HOST=$(BACKEND_HOST) FRONTEND_PORT=$(FRONTEND_PORT) npm run start -- --host
 
 # Run the app
 run:
