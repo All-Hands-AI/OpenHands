@@ -32,6 +32,7 @@ check-dependencies:
 	@$(MAKE) -s check-system
 	@$(MAKE) -s check-python
 	@$(MAKE) -s check-npm
+	@$(MAKE) -s check-nodejs
 	@$(MAKE) -s check-docker
 	@$(MAKE) -s check-poetry
 	@echo "$(GREEN)Dependencies checked successfully.$(RESET)"
@@ -52,8 +53,8 @@ check-system:
 check-python:
 	@echo "$(YELLOW)Checking Python installation...$(RESET)"
 	@if command -v python3 > /dev/null; then \
-		PYTHON_VERSION=$(shell python3 --version 2>&1 | awk '{print $$2}' | cut -d'.' -f1-2); \
-		if [ "$${PYTHON_VERSION%%.*}" -ge 3 ] && [ "$${PYTHON_VERSION#*.}" -ge 11 ]; then \
+		PYTHON_VERSION=$(shell python3 --version 2>&1 | sed -E 's/Python //g' | cut -d'.' -f1-2); \
+		if [ $${PYTHON_VERSION%%.*} -ge 3 ] && [ $${PYTHON_VERSION#*.} -ge 11 ]; then \
 			echo "$(BLUE)$(shell python3 --version) is already installed.$(RESET)"; \
 		else \
 			echo "$(RED)Python 3.11 or later is required. Please install Python 3.11 or later to continue.$(RESET)"; \
@@ -67,16 +68,25 @@ check-python:
 check-npm:
 	@echo "$(YELLOW)Checking npm installation...$(RESET)"
 	@if command -v npm > /dev/null; then \
-		NPM_VERSION=$(shell npm --version); \
-		IFS='.' read -ra NPM_VERSION_ARRAY <<< "$$NPM_VERSION"; \
-		if [ $${NPM_VERSION_ARRAY[0]} -ge 18 ] && [ $${NPM_VERSION_ARRAY[1]} -ge 17 ] && [ $${NPM_VERSION_ARRAY[2]} -ge 1 ]; then \
-			echo "$(BLUE)npm $$NPM_VERSION is already installed.$(RESET)"; \
+		echo "$(BLUE)npm $(shell npm --version) is already installed.$(RESET)"; \
+	else \
+		echo "$(RED)npm is not installed. Please install Node.js to continue.$(RESET)"; \
+		exit 1; \
+	fi
+
+check-nodejs:
+	@echo "$(YELLOW)Checking Node.js installation...$(RESET)" \
+	@if command -v node > /dev/null; then \
+		NODE_VERSION=$(shell node --version | sed -E 's/v//g'); \
+		IFS='.' read -ra NODE_VERSION_ARRAY <<< "$$NODE_VERSION"; \
+		if [ "$${NODE_VERSION_ARRAY[0]}" -gt 18 ] || ([ "$${NODE_VERSION_ARRAY[0]}" -eq 18 ] && [ "$${NODE_VERSION_ARRAY[1]}" -gt 17 ]) || ([ "$${NODE_VERSION_ARRAY[0]}" -eq 18 ] && [ "$${NODE_VERSION_ARRAY[1]}" -eq 17 ] && [ "$${NODE_VERSION_ARRAY[2]}" -ge 1 ]); then \
+			echo "$(BLUE)Node.js $$NODE_VERSION is already installed.$(RESET)"; \
 		else \
 			echo "$(RED)Node.js 18.17.1 or later is required. Please install Node.js 18.17.1 or later to continue.$(RESET)"; \
 			exit 1; \
 		fi; \
 	else \
-		echo "$(RED)npm is not installed. Please install Node.js to continue.$(RESET)"; \
+		echo "$(RED)Node.js is not installed. Please install Node.js to continue.$(RESET)"; \
 		exit 1; \
 	fi
 
