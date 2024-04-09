@@ -45,7 +45,7 @@ check-system:
 	elif [ "$$(uname -r | grep -i microsoft)" ]; then \
 		echo "$(BLUE)Windows Subsystem for Linux detected.$(RESET)"; \
 	else \
-		echo "$(RED)Unsupported system detected. Please use macOS, Linux, or Windows Subsystem for Linux.$(RESET)"; \
+		echo "$(RED)Unsupported system detected. Please use macOS, Linux, or Windows Subsystem for Linux (WSL).$(RESET)"; \
 		exit 1; \
 	fi
 		
