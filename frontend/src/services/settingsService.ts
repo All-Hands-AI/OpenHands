@@ -3,9 +3,9 @@ import { setInitialized } from "../state/taskSlice";
 import store from "../store";
 import ActionType from "../types/ActionType";
 import Socket from "./socket";
-import { setByKey } from "../state/settingsSlice";
+import { setAllSettings, setByKey } from "../state/settingsSlice";
 import { ResConfigurations } from "../types/ResponseType";
-import ArgConfigType from "../types/ConfigType";
+import { ArgConfigType } from "../types/ConfigType";
 
 export async function fetchConfigurations(): Promise<ResConfigurations> {
   const headers = new Headers({
@@ -43,6 +43,7 @@ export const INITIAL_AGENTS = ["MonologueAgent", "CodeActAgent"];
 
 export type Agent = (typeof INITIAL_AGENTS)[number];
 
+// all available settings in the frontend
 // TODO: add the values to i18n to support multi languages
 const DISPLAY_MAP = new Map<string, string>([
   [ArgConfigType.LLM_MODEL, "model"],
@@ -57,32 +58,45 @@ export function saveSettings(
   oldSettings: { [key: string]: string },
   isInit: boolean = false,
 ): void {
-  let needToSend = false;
-  const updatedSettings: { [key: string]: string } = {};
-  const mergedSettings = { ...oldSettings, ...newSettings };
-  Object.keys(newSettings).forEach((key) => {
-    if (
-      Object.hasOwnProperty.call(oldSettings, key) &&
-      oldSettings[key] !== String(newSettings[key])
-    ) {
-      if (isInit && oldSettings[key] !== "") {
-        mergedSettings[key] = oldSettings[key];
-        return;
-      }
-      needToSend = true;
-      updatedSettings[key] = String(newSettings[key]);
-      mergedSettings[key] = String(newSettings[key]);
-    } else {
-      mergedSettings[key] = oldSettings[key];
-    }
-  });
+  const { mergedSettings, updatedSettings, needToSend } = Object.keys(
+    newSettings,
+  ).reduce(
+    (acc, key) => {
+      const newValue = String(newSettings[key]);
+      const oldValue = oldSettings[key];
 
-  if (needToSend || isInit) {
-    const event = { action: ActionType.INIT, args: mergedSettings };
-    const eventString = JSON.stringify(event);
-    store.dispatch(setInitialized(false));
-    Socket.send(eventString);
-  }
+      // key doesn't exist in frontend settings will be overwritten by backend settings
+      if (oldValue === undefined) {
+        acc.mergedSettings[key] = newValue;
+        acc.updatedSettings[key] = newValue;
+        return acc;
+      }
+      if (!DISPLAY_MAP.has(key)) {
+        acc.mergedSettings[key] = newValue;
+        return acc;
+      }
+
+      if (oldValue === newValue || (isInit && oldValue !== "")) {
+        acc.mergedSettings[key] = oldValue;
+        return acc;
+      }
+
+      acc.mergedSettings[key] = newValue;
+      acc.updatedSettings[key] = newValue;
+      acc.needToSend = true;
+
+      return acc;
+    },
+    {
+      mergedSettings: { ...oldSettings },
+      updatedSettings: {},
+      needToSend: false,
+    } as {
+      mergedSettings: { [key: string]: string };
+      updatedSettings: { [key: string]: string };
+      needToSend: boolean;
+    },
+  );
 
   for (const [key, value] of Object.entries(updatedSettings)) {
     if (DISPLAY_MAP.has(key)) {
@@ -91,5 +105,17 @@ export function saveSettings(
         appendAssistantMessage(`Set ${DISPLAY_MAP.get(key)} to "${value}"`),
       );
     }
+  }
+
+  if (isInit) {
+    store.dispatch(setAllSettings(JSON.stringify(newSettings)));
+  }
+
+  delete mergedSettings.ALL_SETTINGS;
+  if (needToSend || isInit) {
+    const event = { action: ActionType.INIT, args: mergedSettings };
+    const eventString = JSON.stringify(event);
+    store.dispatch(setInitialized(false));
+    Socket.send(eventString);
   }
 }

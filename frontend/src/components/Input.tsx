@@ -45,7 +45,6 @@ function Input() {
   return (
     <div className="w-full relative text-base">
       <Textarea
-        disabled={!initialized}
         className="py-4 px-4"
         classNames={{
           inputWrapper: "bg-neutral-700",

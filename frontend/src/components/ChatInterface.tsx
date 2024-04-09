@@ -1,12 +1,10 @@
 import { Card, CardBody } from "@nextui-org/react";
 import React, { useEffect, useRef } from "react";
-import { useTranslation } from "react-i18next";
 import { IoMdChatbubbles } from "react-icons/io";
 import { useSelector } from "react-redux";
 import assistantAvatar from "../assets/assistant-avatar.png";
 import userAvatar from "../assets/user-avatar.png";
 import { useTypingEffect } from "../hooks/useTypingEffect";
-import { I18nKey } from "../i18n/declaration";
 import {
   addAssistantMessageToChat,
   setTypingActive,
@@ -14,6 +12,7 @@ import {
 } from "../services/chatService";
 import { Message } from "../state/chatSlice";
 import { RootState } from "../store";
+import AgentStatusBar from "./AgentStatusBar";
 import Input from "./Input";
 
 interface IChatBubbleProps {
@@ -121,21 +120,6 @@ function MessageList(): JSX.Element {
   );
 }
 
-function InitializingStatus(): JSX.Element {
-  const { t } = useTranslation();
-
-  return (
-    <div className="flex items-center m-auto h-full">
-      <img
-        src={assistantAvatar}
-        alt="assistant avatar"
-        className="w-[40px] h-[40px] mx-2.5"
-      />
-      <div>{t(I18nKey.CHAT_INTERFACE$INITIALZING_AGENT_LOADING_MESSAGE)}</div>
-    </div>
-  );
-}
-
 function ChatInterface(): JSX.Element {
   const { initialized } = useSelector((state: RootState) => state.task);
 
@@ -145,7 +129,8 @@ function ChatInterface(): JSX.Element {
         <IoMdChatbubbles />
         Chat
       </div>
-      {initialized ? <MessageList /> : <InitializingStatus />}
+      <MessageList />
+      {initialized ? null : <AgentStatusBar />}
       <Input />
     </div>
   );
