@@ -25,7 +25,7 @@ import {
 import { RootState } from "../store";
 import { I18nKey } from "../i18n/declaration";
 import { AvailableLanguages } from "../i18n";
-import ArgConfigType from "../types/ConfigType";
+import { ArgConfigType } from "../types/ConfigType";
 
 interface Props {
   isOpen: boolean;

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import "./App.css";
-import { useSelector } from "react-redux";
 import CogTooth from "./assets/cog-tooth";
 import ChatInterface from "./components/ChatInterface";
 import Errors from "./components/Errors";
@@ -11,7 +10,8 @@ import { fetchMsgTotal } from "./services/session";
 import LoadMessageModal from "./components/LoadMessageModal";
 import { ResConfigurations, ResFetchMsgTotal } from "./types/ResponseType";
 import { fetchConfigurations, saveSettings } from "./services/settingsService";
-import { RootState } from "./store";
+import Socket from "./services/socket";
+import { getCachedConfig } from "./utils/storage";
 
 interface Props {
   setSettingOpen: (isOpen: boolean) => void;
@@ -36,25 +36,26 @@ let initOnce = false;
 function App(): JSX.Element {
   const [settingOpen, setSettingOpen] = useState(false);
   const [loadMsgWarning, setLoadMsgWarning] = useState(false);
-  const settings = useSelector((state: RootState) => state.settings);
+  const [rerender, setRerender] = useState(false);
 
-  useEffect(() => {
-    if (initOnce) return;
-    initOnce = true;
-    // only fetch configurations in the first time
+  const getConfigurations = () => {
     fetchConfigurations()
       .then((data: ResConfigurations) => {
+        setRerender((prevState) => !prevState);
+        const settings = getCachedConfig();
+
         saveSettings(
           Object.fromEntries(
             Object.entries(data).map(([key, value]) => [key, String(value)]),
           ),
-          Object.fromEntries(
-            Object.entries(settings).map(([key, value]) => [key, value]),
-          ),
+          settings,
           true,
         );
       })
       .catch();
+  };
+
+  const getMsgTotal = () => {
     fetchMsgTotal()
       .then((data: ResFetchMsgTotal) => {
         if (data.msg_total > 0) {
@@ -62,6 +63,16 @@ function App(): JSX.Element {
         }
       })
       .catch();
+  };
+
+  useEffect(() => {
+    if (initOnce) return;
+    initOnce = true;
+
+    Socket.registerCallback("open", [getConfigurations, getMsgTotal]);
+
+    getConfigurations();
+    getMsgTotal();
   }, []);
 
   const handleCloseModal = () => {
@@ -91,6 +102,8 @@ function App(): JSX.Element {
         onClose={() => setLoadMsgWarning(false)}
       />
       <Errors />
+
+      <div className="hidden" data-rerender={rerender} />
     </div>
   );
 }
