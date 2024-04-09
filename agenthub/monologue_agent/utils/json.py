@@ -33,11 +33,5 @@ def loads(s, **kwargs):
     if json_start == -1 or json_end == -1:
         raise ValueError('Invalid response: no JSON found')
     s = s[json_start:json_end]
-    s = strip_markdown(s)
     s = repair_json(s)
     return json.loads(s, **kwargs)
-
-
-def strip_markdown(markdown_json):
-    # remove markdown code block
-    return markdown_json.replace('```json\n', '').replace('```', '').strip()
