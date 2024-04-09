@@ -141,7 +141,7 @@ class AgentController:
             print_with_color(observation, 'ERROR')
             traceback.print_exc()
             # TODO Change to more robust error handling
-            if 'The api_key client option must be set' in observation.content:
+            if 'The api_key client option must be set' or 'Incorrect API key provided:' in observation.content:
                 raise
         self.update_state_after_step()
 
