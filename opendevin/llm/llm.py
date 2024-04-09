@@ -1,6 +1,5 @@
-from datetime import datetime
 
-from litellm.router import Router
+from litellm import completion as litellm_completion
 from functools import partial
 
 from opendevin import config
@@ -24,28 +23,8 @@ class LLM:
         self.model_name = model if model else DEFAULT_MODEL_NAME
         self.api_key = api_key if api_key else DEFAULT_API_KEY
         self.base_url = base_url if base_url else DEFAULT_BASE_URL
-        self.num_retries = num_retries if num_retries else DEFAULT_LLM_NUM_RETRIES
-        self.cooldown_time = cooldown_time if cooldown_time else DEFAULT_LLM_COOLDOWN_TIME
-        self._debug_id = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
 
-        # We use litellm's Router in order to support retries (especially rate limit backoff retries).
-        # Typically you would use a whole model list, but it's unnecessary with our implementation's structure
-        self._router = Router(
-            model_list=[{
-                'model_name': self.model_name,
-                'litellm_params': {
-                    'model': self.model_name,
-                    'api_key': self.api_key,
-                    'api_base': self.base_url
-                }
-            }],
-            num_retries=self.num_retries,
-            # We allow all retries to fail, so they can retry instead of going into "cooldown"
-            allowed_fails=self.num_retries,
-            cooldown_time=self.cooldown_time
-        )
-        self._completion = partial(
-            self._router.completion, model=self.model_name)
+        self._completion = partial(litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url)
 
         completion_unwrapped = self._completion
 
@@ -67,4 +46,3 @@ class LLM:
         Decorator for the litellm completion function.
         """
         return self._completion
-
