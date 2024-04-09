@@ -75,7 +75,7 @@ check-npm:
 	fi
 
 check-nodejs:
-	@echo "$(YELLOW)Checking Node.js installation...$(RESET)" \
+	@echo "$(YELLOW)Checking Node.js installation...$(RESET)"
 	@if command -v node > /dev/null; then \
 		NODE_VERSION=$(shell node --version | sed -E 's/v//g'); \
 		IFS='.' read -ra NODE_VERSION_ARRAY <<< "$$NODE_VERSION"; \
