@@ -1,0 +1,61 @@
+version: "3.8"
+
+services:
+
+  opendevin-build:
+    build:
+      dockerfile: ./Dockerfile
+    image: opendevin:latest
+    container_name: opendevin-build
+    restart: unless-stopped
+    command: make build
+    healthcheck:
+      test: pytest --version
+      interval: 5s
+      timeout: 2s
+      retries: 6000
+    networks:
+      - opendevin-network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./src:/OpenDevin
+      - opendevin-volume:/usr
+  
+  backend:
+    build: .
+    image: opendevin:latest
+    container_name: opendevin-backend
+    restart: unless-stopped
+    command: make start-backend
+    ports:
+      - 3000:3000
+    networks:
+      - opendevin-network
+    volumes_from:
+      - opendevin-build
+    depends_on:
+      opendevin-build:
+        condition: service_healthy
+
+  frontend:
+    build: .
+    image: opendevin:latest
+    container_name: opendevin-frontend
+    restart: unless-stopped
+    command: make start-frontend
+    ports:
+      - 3001:3001
+    networks:
+      - opendevin-network
+    volumes_from:
+      - opendevin-build
+    depends_on:
+      opendevin-build:
+        condition: service_healthy
+
+volumes:
+  opendevin-volume: null
+
+networks:
+  opendevin-network:
+    driver: bridge
