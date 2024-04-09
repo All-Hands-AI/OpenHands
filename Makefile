@@ -4,6 +4,7 @@
 DOCKER_IMAGE = ghcr.io/opendevin/sandbox
 BACKEND_PORT = 3000
 BACKEND_HOST = "127.0.0.1:$(BACKEND_PORT)"
+CONTAINER_BACKEND_HOST = "http://host.docker.internal:$(BACKEND_PORT)"
 FRONTEND_PORT = 3001
 DEFAULT_WORKSPACE_DIR = "./workspace"
 DEFAULT_MODEL = "gpt-3.5-turbo-1106"
@@ -115,6 +116,11 @@ start-backend:
 start-frontend:
 	@echo "$(YELLOW)Starting frontend...$(RESET)"
 	@cd frontend && BACKEND_HOST=$(BACKEND_HOST) FRONTEND_PORT=$(FRONTEND_PORT) npm run start -- --host
+
+# Start frontend
+start-frontend-container:
+	@echo "$(YELLOW)Starting frontend...$(RESET)"
+	@cd frontend && BACKEND_HOST=$(CONTAINER_BACKEND_HOST) FRONTEND_PORT=$(FRONTEND_PORT) npm run start -- --host
 
 # Run the app
 run:
