@@ -70,14 +70,14 @@ It is crucial you use the format provided as the output will be parsed automatic
 '''
 
 
-def STEP_PROMPT(step, task, dir, file): return f'''
-You are currently on step {step} of your task:
+def file_info(dir, file, line):
+    return '' if not file else f'\nCurrent working directory and file:\n- Directory: {dir}\n- File: {file}\n- Line: {line}\n\n'
+
+
+def STEP_PROMPT(step, task, dir, file, line_num): return f'''
+You are currently on step {step} of your attempt to:
 {task}
-
-Current working directory and file:
-- Directory: {dir}
-- File: {file}
-
+{file_info(dir, file, line_num)}
 Based on what you have done and the task that you are trying to complete output two things.
 - First, think about what your next action should be and plan it out.
 - Second, create a piece of code that will execute your next action.

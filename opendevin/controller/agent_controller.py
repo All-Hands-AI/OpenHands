@@ -58,10 +58,10 @@ def print_with_color(text: Any, print_type: str = 'INFO'):
     }
     color = TYPE_TO_COLOR.get(print_type.upper(), TYPE_TO_COLOR['INFO'])
     if DISABLE_COLOR_PRINTING:
-        print(f"\n{print_type.upper()}:\n{str(text)}", flush=True)
+        print(f'\n{print_type.upper()}:\n{str(text)}', flush=True)
     else:
         print(
-            colored(f"\n{print_type.upper()}:\n", color, attrs=['bold'])
+            colored(f'\n{print_type.upper()}:\n', color, attrs=['bold'])
             + colored(str(text), color),
             flush=True,
         )
@@ -105,7 +105,7 @@ class AgentController:
     async def start_loop(self, task: str):
         finished = False
         plan = Plan(task)
-        self.state = State(plan)
+        self.state = State(plan, self.workdir)
         for i in range(self.max_iterations):
             try:
                 finished = await self.step(i)

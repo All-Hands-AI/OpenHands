@@ -15,8 +15,8 @@ from opendevin.observation import (
 @dataclass
 class State:
     plan: Plan
+    working_dir: str
     iteration: int = 0
-    working_dir: str = './workspace'
     file_name: str = ''
     cur_line: int = 0
     background_commands_obs: List[CmdOutputObservation] = field(

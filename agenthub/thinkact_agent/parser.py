@@ -37,7 +37,7 @@ def get_action_from_string(command_string: str) -> Action | None:
         return FileReadAction(file, start)
 
     elif 'write' == cmd:
-        assert len(args) >= 4, 'These are not the args you are looking for'
+        assert len(args) >= 4, 'Not enough arguments for this command'
         file = args[0]
         start, end = [int(arg) for arg in args[1:3]]
         content = ' '.join(args[3:])

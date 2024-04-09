@@ -56,9 +56,10 @@ class ThinkActAgent(Agent):
 
         prompt = STEP_PROMPT(
             state.iteration,
-            state.plan.get_current_task(),
+            state.plan.main_goal,
             state.working_dir,
             state.file_name,
+            state.cur_line
         )
 
         context = CONTEXT_PROMPT(
@@ -71,7 +72,7 @@ class ThinkActAgent(Agent):
             {'content': SYSTEM_MESSAGE, 'role': 'user'},
             {'content': prompt, 'role': 'user'}
         ]
-        print('\n\n'.join([m['content'] for m in msgs]))
+        print('\n\n\n'.join([m['content'] for m in msgs]))
         action, thought = self._think_act(messages=msgs)
 
         start_msg_len = len(msgs)
