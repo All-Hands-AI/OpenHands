@@ -23,3 +23,9 @@ class ObservationType(BaseModel):
     CHAT: str = Field(default="chat")
     """A message from the user
     """
+
+    MESSAGE: str = Field(default="message")
+
+    ERROR: str = Field(default="error")
+
+    NULL: str = Field(default="null")
