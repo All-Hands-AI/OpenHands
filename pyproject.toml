@@ -38,12 +38,12 @@ ruff = "*"
 mypy = "*"
 pre-commit = "*"
 
-[tool.poetry.group.test.dependencies]
-pytest = "*"
-
 [tool.poetry.group.evaluation.dependencies]
 torch = "*"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.test.dependencies]
+pytest = "*"
