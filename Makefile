@@ -51,19 +51,32 @@ check-system:
 		
 check-python:
 	@echo "$(YELLOW)Checking Python installation...$(RESET)"
-	@if command -v python3 > /dev/null && [[ "$(shell python3 --version 2>&1 | awk '{print $$2} | cut -d'.' -f1-2)" >= "3.11" ]]; then \
-		echo "$(BLUE)$(shell python3 --version) is already installed.$(RESET)"; \
+	@if command -v python3 > /dev/null; then \
+		PYTHON_VERSION=$(shell python3 --version 2>&1 | awk '{print $$2}' | cut -d'.' -f1-2); \
+		if [ "$${PYTHON_VERSION%%.*}" -ge 3 ] && [ "$${PYTHON_VERSION#*.}" -ge 11 ]; then \
+			echo "$(BLUE)$(shell python3 --version) is already installed.$(RESET)"; \
+		else \
+			echo "$(RED)Python 3.11 or later is required. Please install Python 3.11 or later to continue.$(RESET)"; \
+			exit 1; \
+		fi; \
 	else \
-		echo "$(RED)Python 3.11 or later is required. Please install Python 3.11 or later to continue.$(RESET)"; \
+		echo "$(RED)Python 3 is not installed. Please install Python 3 to continue.$(RESET)"; \
 		exit 1; \
 	fi
 
 check-npm:
 	@echo "$(YELLOW)Checking npm installation...$(RESET)"
-	@if command -v npm > /dev/null && [[ "$(shell npm --version)" >= "18.17.1" ]]; then \
-		echo "$(BLUE)npm $(shell npm --version) is already installed.$(RESET)"; \
+	@if command -v npm > /dev/null; then \
+		NPM_VERSION=$(shell npm --version); \
+		IFS='.' read -ra NPM_VERSION_ARRAY <<< "$$NPM_VERSION"; \
+		if [ $${NPM_VERSION_ARRAY[0]} -ge 18 ] && [ $${NPM_VERSION_ARRAY[1]} -ge 17 ] && [ $${NPM_VERSION_ARRAY[2]} -ge 1 ]; then \
+			echo "$(BLUE)npm $$NPM_VERSION is already installed.$(RESET)"; \
+		else \
+			echo "$(RED)Node.js 18.17.1 or later is required. Please install Node.js 18.17.1 or later to continue.$(RESET)"; \
+			exit 1; \
+		fi; \
 	else \
-		echo "$(RED)Node.js 18.17.1 or later is required. Please install Node.js 18.17.1 or later to continue.$(RESET)"; \
+		echo "$(RED)npm is not installed. Please install Node.js to continue.$(RESET)"; \
 		exit 1; \
 	fi
 
@@ -78,10 +91,19 @@ check-docker:
 
 check-poetry:
 	@echo "$(YELLOW)Checking Poetry installation...$(RESET)"
-	@if command -v poetry > /dev/null && [[ "$(shell poetry --version | awk '{print $$2}')" >= "1.8" ]]; then \
-		echo "$(BLUE)$(shell poetry --version) is already installed.$(RESET)"; \
+	@if command -v poetry > /dev/null; then \
+		POETRY_VERSION=$(shell poetry --version | awk '{print $$2}'); \
+		IFS='.' read -ra POETRY_VERSION_ARRAY <<< "$$POETRY_VERSION"; \
+		if [ $${POETRY_VERSION_ARRAY[0]} -ge 1 ] && [ $${POETRY_VERSION_ARRAY[1]} -ge 8 ]; then \
+			echo "$(BLUE)$(shell poetry --version) is already installed.$(RESET)"; \
+		else \
+			echo "$(RED)Poetry 1.8 or later is required. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
+			echo "$(RED) curl -sSL https://install.python-poetry.org | python3 -$(RESET)"; \
+			echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
+			exit 1; \
+		fi; \
 	else \
-		echo "$(RED)Poetry 1.8 or later is required. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
+		echo "$(RED)Poetry is not installed. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
 		echo "$(RED) curl -sSL https://install.python-poetry.org | python3 -$(RESET)"; \
 		echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
 		exit 1; \
