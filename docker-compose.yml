@@ -18,7 +18,7 @@ services:
       - opendevin-network
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./src:/OpenDevin
+      - ./:/OpenDevin
       - opendevin-volume:/usr
   
   backend:
