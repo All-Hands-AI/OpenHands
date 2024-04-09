@@ -1631,24 +1631,24 @@ i18n = ["Babel (>=2.7)"]
 
 [[package]]
 name = "joblib"
-version = "1.3.2"
+version = "1.4.0"
 description = "Lightweight pipelining with Python functions"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "joblib-1.3.2-py3-none-any.whl", hash = "sha256:ef4331c65f239985f3f2220ecc87db222f08fd22097a3dd5698f693875f8cbb9"},
-    {file = "joblib-1.3.2.tar.gz", hash = "sha256:92f865e621e17784e7955080b6d042489e3b8e294949cc44c6eac304f59772b1"},
+    {file = "joblib-1.4.0-py3-none-any.whl", hash = "sha256:42942470d4062537be4d54c83511186da1fc14ba354961a2114da91efa9a4ed7"},
+    {file = "joblib-1.4.0.tar.gz", hash = "sha256:1eb0dc091919cd384490de890cb5dfd538410a6d4b3b54eef09fb8c50b409b1c"},
 ]
 
 [[package]]
 name = "json-repair"
-version = "0.11.1"
+version = "0.12.1"
 description = "A package to repair broken json strings"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "json_repair-0.11.1-py3-none-any.whl", hash = "sha256:bc9dff1659c8814599ef1318a186e23d7275cb3db6c4abfb1c9dd3ad2eac7a6c"},
-    {file = "json_repair-0.11.1.tar.gz", hash = "sha256:20dac7488cfcef5bd3cf19268cc38c8669199776d624b6dcdab6339872ad23d1"},
+    {file = "json_repair-0.12.1-py3-none-any.whl", hash = "sha256:32d0aeba9b46a39e88e37ae5cc0c936085f00a6c816fcb9bc7212b9e9605d2c4"},
+    {file = "json_repair-0.12.1.tar.gz", hash = "sha256:e76ca2f5d250b66e6274baff03dabaed4b9f12554fc869334cb1f2352fabcba8"},
 ]
 
 [[package]]
@@ -1792,13 +1792,13 @@ adal = ["adal (>=1.0.2)"]
 
 [[package]]
 name = "litellm"
-version = "1.34.33"
+version = "1.34.34"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.34.33-py3-none-any.whl", hash = "sha256:88164642dcc30239c9294f1375c7b15c4f664f927b9e5b6d7c81936e67daeec7"},
-    {file = "litellm-1.34.33.tar.gz", hash = "sha256:43b4b06086aa934131e056f46cc553e160abc63dd40a844b9bae65a603914557"},
+    {file = "litellm-1.34.34-py3-none-any.whl", hash = "sha256:c9eefd4b5adec3c2e6d0ab765a4fcebd475a895c7e417f47f8e677410b607f51"},
+    {file = "litellm-1.34.34.tar.gz", hash = "sha256:d11c9d5296d052a9e5e1187ac7b33683f3a581740abc4de6a9c327d3f3c7187c"},
 ]
 
 [package.dependencies]
@@ -3999,13 +3999,13 @@ diagrams = ["jinja2", "railroad-diagrams"]
 
 [[package]]
 name = "pypdf"
-version = "4.1.0"
+version = "4.2.0"
 description = "A pure-python PDF library capable of splitting, merging, cropping, and transforming PDF files"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "pypdf-4.1.0-py3-none-any.whl", hash = "sha256:16cac912a05200099cef3f347c4c7e0aaf0a6d027603b8f9a973c0ea500dff89"},
-    {file = "pypdf-4.1.0.tar.gz", hash = "sha256:01c3257ec908676efd60a4537e525b89d48e0852bc92b4e0aa4cc646feda17cc"},
+    {file = "pypdf-4.2.0-py3-none-any.whl", hash = "sha256:dc035581664e0ad717e3492acebc1a5fc23dba759e788e3d4a9fc9b1a32e72c1"},
+    {file = "pypdf-4.2.0.tar.gz", hash = "sha256:fe63f3f7d1dcda1c9374421a94c1bba6c6f8c4a62173a59b64ffd52058f846b1"},
 ]
 
 [package.extras]
@@ -5235,13 +5235,13 @@ tutorials = ["matplotlib", "pandas", "tabulate", "torch"]
 
 [[package]]
 name = "typer"
-version = "0.12.1"
+version = "0.12.2"
 description = "Typer, build great CLIs. Easy to code. Based on Python type hints."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "typer-0.12.1-py3-none-any.whl", hash = "sha256:43ebb23c8a358c3d623e31064359a65f50229d0bf73ae8dfd203f49d9126ae06"},
-    {file = "typer-0.12.1.tar.gz", hash = "sha256:72d218ef3c686aed9c6ff3ca25b238aee0474a1628b29c559b18b634cfdeca88"},
+    {file = "typer-0.12.2-py3-none-any.whl", hash = "sha256:e1accbaa7e2b2350753acec896ac30493ac573211a8d4603e88f8356217e01f7"},
+    {file = "typer-0.12.2.tar.gz", hash = "sha256:977929604fde12aeada011852ad9c64370501be6ac2eac248f3161cdc9eeb7c9"},
 ]
 
 [package.dependencies]
