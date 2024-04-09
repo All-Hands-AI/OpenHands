@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 class ActionType(BaseModel):
     INIT: str = Field(default="initialize")
-    """Initializes the agent. Only sent by client.
+    """Initialiszes the agent. Only sent by client.
     """
 
     START: str = Field(default="start")
@@ -42,3 +42,13 @@ class ActionType(BaseModel):
     """If you're absolutely certain that you've completed your task and have tested your work, 
     use the finish action to stop working.
     """
+
+    CHAT: str = Field(default="chat")
+
+    SUMMARIZE: str = Field(default="summarize")
+
+    ADD_TASK: str = Field(default="add_task")
+
+    MODIFY_TASK: str = Field(default="modify_task")
+
+    NULL: str = Field(default="null")
