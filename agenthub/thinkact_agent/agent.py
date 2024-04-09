@@ -55,7 +55,6 @@ class ThinkActAgent(Agent):
             self._remember(prev_action, obs)
 
         prompt = STEP_PROMPT(
-            state.iteration,
             state.plan.main_goal,
             state.working_dir,
             state.file_name,
@@ -68,11 +67,14 @@ class ThinkActAgent(Agent):
         )
 
         msgs = [
-            {'content': context, 'role': 'user'},
             {'content': SYSTEM_MESSAGE, 'role': 'user'},
             {'content': prompt, 'role': 'user'}
         ]
-        print('\n\n\n'.join([m['content'] for m in msgs]))
+
+        if len(self.running_memory) > 0:
+            msgs.insert(0, context)
+
+        # print('\n\n\n'.join([m['content'] for m in msgs]))
         action, thought = self._think_act(messages=msgs)
 
         start_msg_len = len(msgs)
