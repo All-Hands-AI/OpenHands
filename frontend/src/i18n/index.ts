@@ -7,6 +7,7 @@ import ArgConfigType from "../types/ConfigType";
 export const AvailableLanguages = [
   { label: "English", value: "en" },
   { label: "简体中文", value: "zh-CN" },
+  { label: "繁体中文", value: "zh-TW" },
   { label: "한국어", value: "ko-KR" },
   { label: "Norsk", value: "no" },
 ];
