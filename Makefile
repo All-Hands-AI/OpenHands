@@ -29,27 +29,41 @@ build:
 
 check-dependencies:
 	@echo "$(YELLOW)Checking dependencies...$(RESET)"
+	@$(MAKE) -s check-system
 	@$(MAKE) -s check-python
 	@$(MAKE) -s check-npm
 	@$(MAKE) -s check-docker
 	@$(MAKE) -s check-poetry
 	@echo "$(GREEN)Dependencies checked successfully.$(RESET)"
 
+check-system:
+	@echo "$(YELLOW)Checking system...$(RESET)"
+	@if [ "$(shell uname)" = "Darwin" ]; then \
+		echo "$(BLUE)macOS detected.$(RESET)"; \
+	elif [ "$(shell uname)" = "Linux" ]; then \
+		echo "$(BLUE)Linux detected.$(RESET)"; \
+	elif [ "$$(uname -r | grep -i microsoft)" ]; then \
+		echo "$(BLUE)Windows Subsystem for Linux detected.$(RESET)"; \
+	else \
+		echo "$(RED)Unsupported system detected. Please use macOS, Linux, or Windows Subsystem for Linux.$(RESET)"; \
+		exit 1; \
+	fi
+		
 check-python:
 	@echo "$(YELLOW)Checking Python installation...$(RESET)"
-	@if command -v python3 > /dev/null; then \
+	@if command -v python3 > /dev/null && [[ "$(shell python3 --version 2>&1 | awk '{print $$2} | cut -d'.' -f1-2)" >= "3.11" ]]; then \
 		echo "$(BLUE)$(shell python3 --version) is already installed.$(RESET)"; \
 	else \
-		echo "$(RED)Python 3 is not installed. Please install Python 3 to continue.$(RESET)"; \
+		echo "$(RED)Python 3.11 or later is required. Please install Python 3.11 or later to continue.$(RESET)"; \
 		exit 1; \
 	fi
 
 check-npm:
 	@echo "$(YELLOW)Checking npm installation...$(RESET)"
-	@if command -v npm > /dev/null; then \
+	@if command -v npm > /dev/null && [[ "$(shell npm --version)" >= "18.17.1" ]]; then \
 		echo "$(BLUE)npm $(shell npm --version) is already installed.$(RESET)"; \
 	else \
-		echo "$(RED)npm is not installed. Please install Node.js to continue.$(RESET)"; \
+		echo "$(RED)Node.js 18.17.1 or later is required. Please install Node.js 18.17.1 or later to continue.$(RESET)"; \
 		exit 1; \
 	fi
 
@@ -64,10 +78,10 @@ check-docker:
 
 check-poetry:
 	@echo "$(YELLOW)Checking Poetry installation...$(RESET)"
-	@if command -v poetry > /dev/null; then \
+	@if command -v poetry > /dev/null && [[ "$(shell poetry --version | awk '{print $$2}')" >= "1.8" ]]; then \
 		echo "$(BLUE)$(shell poetry --version) is already installed.$(RESET)"; \
 	else \
-		echo "$(RED)Poetry is not installed. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
+		echo "$(RED)Poetry 1.8 or later is required. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
 		echo "$(RED) curl -sSL https://install.python-poetry.org | python3 -$(RESET)"; \
 		echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
 		exit 1; \
