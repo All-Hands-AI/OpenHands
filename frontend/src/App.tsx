@@ -36,12 +36,10 @@ let initOnce = false;
 function App(): JSX.Element {
   const [settingOpen, setSettingOpen] = useState(false);
   const [loadMsgWarning, setLoadMsgWarning] = useState(false);
-  const [rerender, setRerender] = useState(false);
 
   const getConfigurations = () => {
     fetchConfigurations()
       .then((data: ResConfigurations) => {
-        setRerender((prevState) => !prevState);
         const settings = getCachedConfig();
 
         saveSettings(
@@ -102,8 +100,6 @@ function App(): JSX.Element {
         onClose={() => setLoadMsgWarning(false)}
       />
       <Errors />
-
-      <div className="hidden" data-rerender={rerender} />
     </div>
   );
 }
