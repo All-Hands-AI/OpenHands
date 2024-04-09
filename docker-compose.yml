@@ -42,7 +42,7 @@ services:
     image: opendevin:latest
     container_name: opendevin-frontend
     restart: unless-stopped
-    command: make start-frontend
+    command: make start-frontend-container
     ports:
       - 3001:3001
     networks:
@@ -58,4 +58,5 @@ volumes:
 
 networks:
   opendevin-network:
+    name: opendevin-network
     driver: bridge
