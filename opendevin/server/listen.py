@@ -112,7 +112,7 @@ async def del_messages(
 
 @app.get('/configurations')
 def read_default_model():
-    return config.get_all()
+    return config.get_fe_config()
 
 
 @app.get('/refresh-files')
