@@ -1,4 +1,3 @@
-import json
 import uuid
 from pathlib import Path
 
@@ -120,11 +119,11 @@ def read_default_model():
 def refresh_files():
     structure = files.get_folder_structure(
         Path(str(config.get('WORKSPACE_DIR'))))
-    return json.dumps(structure.to_dict())
+    return structure.to_dict()
 
 
 @app.get('/select-file')
 def select_file(file: str):
     with open(Path(Path(str(config.get('WORKSPACE_DIR'))), file), 'r') as selected_file:
         content = selected_file.read()
-    return json.dumps({'code': content})
+    return {'code': content}
