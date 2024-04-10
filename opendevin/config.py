@@ -75,8 +75,10 @@ def get(key: str):
     return config.get(key)
 
 
-def get_all() -> dict:
+def get_fe_config() -> dict:
     """
     Get all the configuration values by performing a deep copy.
     """
-    return copy.deepcopy(config)
+    fe_config = copy.deepcopy(config)
+    del fe_config['LLM_API_KEY']
+    return fe_config
