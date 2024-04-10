@@ -1,87 +1,193 @@
-<p align="center">
-  <img alt="OpenDevin Logo" src="./logo.png" width="150" />
+<a name="readme-top"></a>
+<!--
+*** Thanks for checking out the Best-README-Template. If you have a suggestion
+*** that would make this better, please fork the repo and create a pull request
+*** or simply open an issue with the tag "enhancement".
+*** Don't forget to give the project a star!
+*** Thanks again! Now go create something AMAZING! :D
+-->
+
+
+
+<!-- PROJECT SHIELDS -->
+<!--
+*** I'm using markdown "reference style" links for readability.
+*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
+*** See the bottom of this document for the declaration of the reference variables
+*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
+*** https://www.markdownguide.org/basic-syntax/#reference-style-links
+-->
+
+<div align="center">
+  <a href="https://github.com/OpenDevin/OpenDevin/graphs/contributors"><img src="https://img.shields.io/github/contributors/opendevin/opendevin?style=for-the-badge" alt="Contributors"></a>
+  <a href="https://github.com/OpenDevin/OpenDevin/network/members"><img src="https://img.shields.io/github/forks/opendevin/opendevin?style=for-the-badge" alt="Forks"></a>
+  <a href="https://github.com/OpenDevin/OpenDevin/stargazers"><img src="https://img.shields.io/github/stars/opendevin/opendevin?style=for-the-badge" alt="Stargazers"></a>
+  <a href="https://github.com/OpenDevin/OpenDevin/issues"><img src="https://img.shields.io/github/issues/opendevin/opendevin?style=for-the-badge" alt="Issues"></a>
+  <a href="https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE"><img src="https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge" alt="MIT License"></a>
+  </br>
+  <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2etftj1dd-X1fDL2PYIVpsmJZkqEYANw"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="Join our Slack community"></a>
+  <a href="https://discord.gg/mBuDGRzzES"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community"></a>
+</div>
+
+<!-- PROJECT LOGO -->
+<div align="center">
+  <img src="./logo.png" alt="Logo" width="200" height="200">
+  <h1 align="center">OpenDevin: Code Less, Make More</h1>
+</div>
+
+
+
+
+<!-- TABLE OF CONTENTS -->
+<details>
+  <summary>🗂️ Table of Contents</summary>
+  <ol>
+    <li><a href="#-mission">🎯 Mission</a></li>
+    <li><a href="#-what-is-devin">🤔 What is Devin?</a></li>
+    <li><a href="#-why-opendevin">🐚 Why OpenDevin?</a></li>
+    <li><a href="#-project-status">🚧 Project Status</a></li>
+      <a href="#-get-started">🚀 Get Started</a>
+      <ul>
+        <li><a href="#1-requirements">1. Requirements</a></li>
+        <li><a href="#2-build-and-setup">2. Build and Setup</a></li>
+        <li><a href="#3-run-the-application">3. Run the Application</a></li>
+        <li><a href="#4-individual-server-startup">4. Individual Server Startup</a></li>
+        <li><a href="#5-help">5. Help</a></li>
+      </ul>
+    </li>
+    <li><a href="#%EF%B8%8F-research-strategy">⭐️ Research Strategy</a></li>
+    <li><a href="#-how-to-contribute">🤝 How to Contribute</a></li>
+    <li><a href="#-join-our-community">🤖 Join Our Community</a></li>
+    <li><a href="#%EF%B8%8F-built-with">🛠️ Built With</a></li>
+    <li><a href="#-license">📜 License</a></li>
+  </ol>
+</details>
+
+## 🎯 Mission
+
+[Project Demo Video](https://github.com/OpenDevin/OpenDevin/assets/38853559/71a472cc-df34-430c-8b1d-4d7286c807c9)
+
+
+Welcome to OpenDevin, an open-source project aiming to replicate Devin, an autonomous AI software engineer who is capable of executing complex engineering tasks and collaborating actively with users on software development projects. This project aspires to replicate, enhance, and innovate upon Devin through the power of the open-source community.
+
+<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
+    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
+        ↑ Back to Top ↑
+    </a>
 </p>
 
-# OpenDevin: Code Less, Make More
-
-![License](https://img.shields.io/badge/license-MIT-green)
-
-[demo-video.webm](https://github.com/OpenDevin/OpenDevin/assets/38853559/5b1092cc-3554-4357-a279-c2a2e9b352ad)
-
-
-## Mission 🎯
-Welcome to OpenDevin, an open-source project aiming to replicate [Devin](https://www.cognition-labs.com/introducing-devin), an autonomous AI software engineer who is capable of executing complex engineering tasks and collaborating actively with users on software development projects. This project aspires to replicate, enhance, and innovate upon Devin through the power of the open-source community.
-
-## Work in Progress
-
-OpenDevin is still a work in progress. But you can run the alpha version to see things working end-to-end.
-
-### Requirements
-* [Docker](https://docs.docker.com/engine/install/)
-* [Python](https://www.python.org/downloads/) >= 3.10
-* [NodeJS](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) >= 14.8
-
-### Installation
-First, make sure Docker is running:
-```bash
-docker ps # this should exit successfully
-```
-Then pull our latest image [here](https://github.com/opendevin/OpenDevin/pkgs/container/sandbox)
-```bash
-docker pull ghcr.io/opendevin/sandbox:v0.1
-```
-
-Then start the backend:
-```bash
-export OPENAI_API_KEY="..."
-export WORKSPACE_DIR="/path/to/your/project"
-python -m pip install -r requirements.txt
-uvicorn opendevin.server.listen:app --port 3000
-```
-Then in a second terminal:
-```bash
-cd frontend
-npm install
-npm run start -- --port 3001
-```
-
-You'll see OpenDevin running at localhost:3001
-
-### Picking a Model
-We use LiteLLM, so you can run OpenDevin with any foundation model, including OpenAI, Claude, and Gemini.
-LiteLLM has a [full list of providers](https://docs.litellm.ai/docs/providers).
-
-To change the model, set the `LLM_MODEL` and `LLM_API_KEY` environment variables.
-
-For example, to run Claude:
-```bash
-export LLM_API_KEY="your-api-key"
-export LLM_MODEL="claude-3-opus-20240229"
-```
-
-You can also set the base URL for local/custom models:
-```bash
-export LLM_BASE_URL="https://localhost:3000"
-```
-
-And you can customize which embeddings are used for the vector database storage:
-```bash
-export LLM_EMBEDDING_MODEL="llama2" # can be "llama2", "openai", "azureopenai", or "local"
-```
-
-### Running on the Command Line
-You can run OpenDevin from your command line:
-```bash
-PYTHONPATH=`pwd` python opendevin/main.py -d ./workspace/ -i 100 -t "Write a bash script that prints 'hello world'"
-```
-
-## 🤔 What is [Devin](https://www.cognition-labs.com/introducing-devin)?
-
+## 🤔 What is Devin?
 Devin represents a cutting-edge autonomous agent designed to navigate the complexities of software engineering. It leverages a combination of tools such as a shell, code editor, and web browser, showcasing the untapped potential of LLMs in software development. Our goal is to explore and expand upon Devin's capabilities, identifying both its strengths and areas for improvement, to guide the progress of open code models.
 
-## 🐚 Why OpenDevin?
+<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
+    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
+        ↑ Back to Top ↑
+    </a>
+</p>
 
+## 🐚 Why OpenDevin?
 The OpenDevin project is born out of a desire to replicate, enhance, and innovate beyond the original Devin model. By engaging the open-source community, we aim to tackle the challenges faced by Code LLMs in practical scenarios, producing works that significantly contribute to the community and pave the way for future advancements.
+
+<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
+    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
+        ↑ Back to Top ↑
+    </a>
+</p>
+
+## 🚧 Project Status
+
+OpenDevin is currently a work in progress, but you can already run the alpha version to see the end-to-end system in action. The project team is actively working on the following key milestones:
+
+- **UI**: Developing a user-friendly interface, including a chat interface, a shell demonstrating commands, and a web browser.
+- **Architecture**: Building a stable agent framework with a robust backend that can read, write, and run simple commands.
+- **Agent Capabilities**: Enhancing the agent's abilities to generate bash scripts, run tests, and perform other software engineering tasks.
+- **Evaluation**: Establishing a minimal evaluation pipeline that is consistent with Devin's evaluation criteria.
+
+After completing the MVP, the team will focus on research in various areas, including foundation models, specialist capabilities, evaluation, and agent studies.
+
+<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
+    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
+        ↑ Back to Top ↑
+    </a>
+</p>
+
+## ⚠️ Caveats and Warnings
+* OpenDevin is still an alpha project. It is changing very quickly and is unstable. We are working on getting a stable release out in the coming weeks.
+* OpenDevin will issue many prompts to the LLM you configure. Most of these LLMs cost money--be sure to set spending limits and monitor usage.
+* OpenDevin runs `bash` commands within a Docker sandbox, so it should not affect your machine. But your workspace directory will be attached to that sandbox, and files in the directory may be modified or deleted.
+* Our default Agent is currently the MonologueAgent, which has limited capabilities, but is fairly stable. We're working on other Agent implementations, including [SWE Agent](https://swe-agent.com/). You can [read about our current set of agents here](./docs/documentation/Agents.md).
+
+## 🚀 Get Started
+
+Getting started with the OpenDevin project is incredibly easy. Follow these simple steps to set up and run OpenDevin on your system:
+
+### 1. Requirements
+* Linux, Mac OS, or [WSL on Windows](https://learn.microsoft.com/en-us/windows/wsl/install)
+* [Docker](https://docs.docker.com/engine/install/)(For those on MacOS, make sure to allow the default Docker socket to be used from advanced settings!)
+* [Python](https://www.python.org/downloads/) >= 3.11
+* [NodeJS](https://nodejs.org/en/download/package-manager) >= 18.17.1
+* [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) >= 1.8
+
+Make sure you have all these dependencies installed before moving on to `make build`.
+
+### 2. Build and Setup The Environment
+
+- **Build the Project:** Begin by building the project, which includes setting up the environment and installing dependencies. This step ensures that OpenDevin is ready to run smoothly on your system.
+    ```bash
+    make build
+    ```
+
+### 3. Configuring the Language Model
+
+OpenDevin supports a diverse array of Language Models (LMs) through the powerful [litellm](https://docs.litellm.ai) library. By default, we've chosen the mighty GPT-4 from OpenAI as our go-to model, but the world is your oyster! You can unleash the potential of Anthropic's suave Claude, the enigmatic Llama, or any other LM that piques your interest.
+
+To configure the LM of your choice, follow these steps:
+
+1. **Using the Makefile: The Effortless Approach**
+   With a single command, you can have a smooth LM setup for your OpenDevin experience. Simply run:
+   ```bash
+   make setup-config
+   ```
+   This command will prompt you to enter the LLM API key and model name, ensuring that OpenDevin is tailored to your specific needs.
+
+**Note on Alternative Models:**
+Some alternative models may prove more challenging to tame than others. Fear not, brave adventurer! We shall soon unveil LLM-specific documentation to guide you on your quest. And if you've already mastered the art of wielding a model other than OpenAI's GPT, we encourage you to [share your setup instructions with us](https://github.com/OpenDevin/OpenDevin/issues/417).
+
+For a full list of the LM providers and models available, please consult the [litellm documentation](https://docs.litellm.ai/docs/providers).
+
+There is also [documentation for running with local models using ollama](./docs/documentation/LOCAL_LLM_GUIDE.md).
+
+### 4. Run the Application
+
+- **Run the Application:** Once the setup is complete, launching OpenDevin is as simple as running a single command. This command starts both the backend and frontend servers seamlessly, allowing you to interact with OpenDevin without any hassle.
+    ```bash
+    make run
+    ```
+
+### 5. Individual Server Startup
+
+- **Start the Backend Server:** If you prefer, you can start the backend server independently to focus on backend-related tasks or configurations.
+    ```bash
+    make start-backend
+    ```
+
+- **Start the Frontend Server:** Similarly, you can start the frontend server on its own to work on frontend-related components or interface enhancements.
+    ```bash
+    make start-frontend
+    ```
+
+### 6. Help
+
+- **Get Some Help:** Need assistance or information on available targets and commands? The help command provides all the necessary guidance to ensure a smooth experience with OpenDevin.
+    ```bash
+    make help
+    ```
+
+<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
+    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
+        ↑ Back to Top ↑
+    </a>
+</p>
 
 ## ⭐️ Research Strategy
 
@@ -92,25 +198,13 @@ Achieving full replication of production-grade applications with LLMs is a compl
 3. **Task Planning:** Developing capabilities for bug detection, codebase management, and optimization.
 4. **Evaluation:** Establishing comprehensive evaluation metrics to better understand and improve our models.
 
+<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
+    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
+        ↑ Back to Top ↑
+    </a>
+</p>
 
-## 🛠 Technology Stack
-
-- **Sandboxing Environment:** Ensuring safe execution of code using technologies like Docker and Kubernetes.
-- **Frontend Interface:** Developing user-friendly interfaces for monitoring progress and interacting with Devin, potentially leveraging frameworks like React or creating a VSCode plugin for a more integrated experience.
-
-## 🚀 Next Steps
-
-An MVP demo is urgent for us. Here are the most important things to do:
-
-- UI: a chat interface, a shell demonstrating commands, a browser, etc.
-- Architecture: an agent framework with a stable backend, which can read, write and run simple commands
-- Agent: capable of generating bash scripts, running tests, etc.
-- Evaluation: a minimal evaluation pipeline that is consistent with Devin's evaluation.
-
-After finishing building the MVP, we will move towards research in different topics, including foundation models, specialist capabilities, evaluation, agent studies, etc.
-
-
-## How to Contribute
+## 🤝 How to Contribute
 
 OpenDevin is a community-driven project, and we welcome contributions from everyone. Whether you're a developer, a researcher, or simply enthusiastic about advancing the field of software engineering with AI, there are many ways to get involved:
 
@@ -120,11 +214,56 @@ OpenDevin is a community-driven project, and we welcome contributions from every
 
 For details, please check [this document](./CONTRIBUTING.md).
 
-## Join Us
-We use Slack to discuss. Feel free to fill in the [form](https://forms.gle/758d5p6Ve8r2nxxq6) if you would like to join the Slack organization of OpenDevin. We will reach out shortly if we feel you are a good fit to the current team! 
+<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
+    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
+        ↑ Back to Top ↑
+    </a>
+</p>
 
-Stay updated on OpenDevin's progress, share your ideas, and collaborate with fellow enthusiasts and experts. Together, we can make significant strides towards simplifying software engineering tasks and creating more efficient, powerful tools for developers everywhere.
+## 🤖 Join Our Community
+
+Now we have both Slack workspace for the collaboration on building OpenDevin and Discord server for discussion about anything related, e.g., this project, LLM, agent, etc. 
+
+* [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2etftj1dd-X1fDL2PYIVpsmJZkqEYANw)
+* [Discord server](https://discord.gg/mBuDGRzzES)
+
+If you would love to contribute, feel free to join our community (note that now there is no need to fill in the [form](https://forms.gle/758d5p6Ve8r2nxxq6)). Let's simplify software engineering together!
 
 🐚 **Code less, make more with OpenDevin.**
 
 [![Star History Chart](https://api.star-history.com/svg?repos=OpenDevin/OpenDevin&type=Date)](https://star-history.com/#OpenDevin/OpenDevin&Date)
+
+## 🛠️ Built With
+
+OpenDevin is built using a combination of powerful frameworks and libraries, providing a robust foundation for its development. Here are the key technologies used in the project:
+
+![FastAPI](https://img.shields.io/badge/FastAPI-black?style=for-the-badge) ![uvicorn](https://img.shields.io/badge/uvicorn-black?style=for-the-badge) ![LiteLLM](https://img.shields.io/badge/LiteLLM-black?style=for-the-badge) ![Docker](https://img.shields.io/badge/Docker-black?style=for-the-badge) ![Ruff](https://img.shields.io/badge/Ruff-black?style=for-the-badge) ![MyPy](https://img.shields.io/badge/MyPy-black?style=for-the-badge) ![LlamaIndex](https://img.shields.io/badge/LlamaIndex-black?style=for-the-badge) ![React](https://img.shields.io/badge/React-black?style=for-the-badge)
+
+Please note that the selection of these technologies is in progress, and additional technologies may be added or existing ones may be removed as the project evolves. We strive to adopt the most suitable and efficient tools to enhance the capabilities of OpenDevin.
+
+<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
+    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
+        ↑ Back to Top ↑
+    </a>
+</p>
+
+## 📜 License
+
+Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more information.
+
+<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
+    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
+        ↑ Back to Top ↑
+    </a>
+</p>
+
+[contributors-shield]: https://img.shields.io/github/contributors/opendevin/opendevin?style=for-the-badge
+[contributors-url]: https://github.com/OpenDevin/OpenDevin/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/opendevin/opendevin?style=for-the-badge
+[forks-url]: https://github.com/OpenDevin/OpenDevin/network/members
+[stars-shield]: https://img.shields.io/github/stars/opendevin/opendevin?style=for-the-badge
+[stars-url]: https://github.com/OpenDevin/OpenDevin/stargazers
+[issues-shield]: https://img.shields.io/github/issues/opendevin/opendevin?style=for-the-badge
+[issues-url]: https://github.com/OpenDevin/OpenDevin/issues
+[license-shield]: https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge
+[license-url]: https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE

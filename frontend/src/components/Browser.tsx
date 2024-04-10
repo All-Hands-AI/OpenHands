@@ -1,15 +1,31 @@
 import React from "react";
-import "./Browser.css";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
 
 function Browser(): JSX.Element {
-  const url = useSelector((state: RootState) => state.browser.url);
+  const { url, screenshotSrc } = useSelector(
+    (state: RootState) => state.browser,
+  );
+
+  const imgSrc =
+    screenshotSrc && screenshotSrc.startsWith("data:image/png;base64,")
+      ? screenshotSrc
+      : `data:image/png;base64,${screenshotSrc || ""}`;
+
   return (
-    <div className="mockup-browser">
+    <div className="h-full m-2 bg-neutral-700 mockup-browser">
       <div className="mockup-browser-toolbar">
         <div className="input">{url}</div>
       </div>
+      {screenshotSrc ? (
+        <img
+          src={imgSrc}
+          alt="Browser Screenshot"
+          style={{ maxWidth: "100%", height: "auto" }}
+        />
+      ) : (
+        <div>No screenshot available.</div>
+      )}
     </div>
   );
 }

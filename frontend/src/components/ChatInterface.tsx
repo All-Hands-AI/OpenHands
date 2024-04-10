@@ -1,124 +1,133 @@
-import React, { ChangeEvent, useEffect, useRef, useState } from "react";
+import { Card, CardBody } from "@nextui-org/react";
+import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import assistantAvatar from "../assets/assistant-avatar.png";
 import userAvatar from "../assets/user-avatar.png";
-import { sendChatMessage } from "../services/chatService";
+import { useTypingEffect } from "../hooks/useTypingEffect";
+import {
+  addAssistantMessageToChat,
+  setTypingActive,
+  takeOneAndType,
+} from "../services/chatService";
+import { Message } from "../state/chatSlice";
 import { RootState } from "../store";
-import "./ChatInterface.css";
-import { changeDirectory as sendChangeDirectorySocketMessage } from "../services/settingsService";
+import Input from "./Input";
+import AgentStatusBar from "./AgentStatusBar";
+
+interface IChatBubbleProps {
+  msg: Message;
+}
+
+/**
+ * @returns jsx
+ *
+ * component used for typing effect when assistant replies
+ *
+ * makes uses of useTypingEffect hook
+ *
+ */
+function TypingChat() {
+  const { typeThis } = useSelector((state: RootState) => state.chat);
+
+  const messageContent = useTypingEffect([typeThis?.content], {
+    loop: false,
+    setTypingActive,
+    playbackRate: 0.099,
+    addAssistantMessageToChat,
+    takeOneAndType,
+    typeThis,
+  });
+
+  return (
+    <Card className="bg-success-100">
+      <CardBody>{messageContent}</CardBody>
+    </Card>
+  );
+}
+
+function ChatBubble({ msg }: IChatBubbleProps): JSX.Element {
+  return (
+    <div className="flex mb-2.5 pr-5 pl-5">
+      <div
+        className={`flex mt-2.5 mb-0 min-w-0 ${msg?.sender === "user" && "flex-row-reverse ml-auto"}`}
+      >
+        <img
+          src={msg?.sender === "user" ? userAvatar : assistantAvatar}
+          alt={`${msg?.sender} avatar`}
+          className="w-[40px] h-[40px] mx-2.5"
+        />
+        <Card className={`${msg?.sender === "user" ? "bg-primary-100" : ""}`}>
+          <CardBody>{msg?.content}</CardBody>
+        </Card>
+      </div>
+    </div>
+  );
+}
 
 function MessageList(): JSX.Element {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { messages } = useSelector((state: RootState) => state.chat);
+  const { typingActive, newChatSequence, typeThis } = useSelector(
+    (state: RootState) => state.chat,
+  );
+
+  const messageScroll = () => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  };
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    messageScroll();
+    if (!typingActive) return;
+
+    const interval = setInterval(() => {
+      messageScroll();
+    }, 1000);
+
+    // eslint-disable-next-line consistent-return
+    return () => clearInterval(interval);
+  }, [newChatSequence, typingActive]);
+
+  useEffect(() => {
+    if (typeThis.content === "") return;
+
+    if (!typingActive) setTypingActive(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typeThis]);
 
   return (
-    <div className="message-list">
-      {messages.map((msg, index) => (
-        <div key={index} className="message-layout">
-          <div
-            className={`${msg.sender === "user" ? "user-message" : "message"}`}
-          >
+    <div className="flex-1 overflow-y-auto">
+      {newChatSequence.map((msg, index) => (
+        <ChatBubble key={index} msg={msg} />
+      ))}
+
+      {typingActive && (
+        <div className="flex mb-2.5 pr-5 pl-5 bg-s">
+          <div className="flex mt-2.5 mb-0 min-w-0 ">
             <img
-              src={msg.sender === "user" ? userAvatar : assistantAvatar}
-              alt={`${msg.sender} avatar`}
-              className="avatar"
+              src={assistantAvatar}
+              alt="assistant avatar"
+              className="w-[40px] h-[40px] mx-2.5"
             />
-            <div className="chat chat-bubble">{msg.content}</div>
+            <TypingChat />
           </div>
         </div>
-      ))}
+      )}
       <div ref={messagesEndRef} />
-    </div>
-  );
-}
-
-function InitializingStatus(): JSX.Element {
-  return (
-    <div className="initializing-status">
-      <img src={assistantAvatar} alt="assistant avatar" className="avatar" />
-      <div>Initializing agent (may take up to 10 seconds)...</div>
-    </div>
-  );
-}
-
-function DirectoryInput(): JSX.Element {
-  const [editing, setEditing] = useState(false);
-  const [directory, setDirectory] = useState("Default");
-
-  function save() {
-    setEditing(false);
-    sendChangeDirectorySocketMessage(directory);
-  }
-
-  function onDirectoryInputChange(e: ChangeEvent<HTMLInputElement>) {
-    setEditing(true);
-    setDirectory(e.target.value);
-  }
-
-  return (
-    <div className="flex p-2 justify-center gap-2 bg-neutral-700">
-      <label htmlFor="directory-input" className="label">
-        Directory
-      </label>
-      <input
-        type="text"
-        className="input"
-        id="directory-input"
-        placeholder="Default"
-        onChange={onDirectoryInputChange}
-      />
-      <button
-        type="button"
-        className={`btn ${editing ? "" : "hidden"}`}
-        onClick={save}
-      >
-        Save
-      </button>
     </div>
   );
 }
 
 function ChatInterface(): JSX.Element {
   const { initialized } = useSelector((state: RootState) => state.task);
-  const [inputMessage, setInputMessage] = useState("");
-
-  const handleSendMessage = () => {
-    if (inputMessage.trim() !== "") {
-      sendChatMessage(inputMessage);
-      setInputMessage("");
-    }
-  };
 
   return (
-    <div className="chat-interface">
-      <DirectoryInput />
-      {initialized ? <MessageList /> : <InitializingStatus />}
-      <div className="input-container">
-        <div className="input-box">
-          <input
-            type="text"
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            placeholder="Send a message (won't interrupt the Assistant)"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleSendMessage();
-              }
-            }}
-          />
-          <button
-            type="button"
-            onClick={handleSendMessage}
-            disabled={!initialized}
-          >
-            <span className="button-text">Send</span>
-          </button>
-        </div>
-      </div>
+    <div className="flex flex-col h-full p-0 bg-neutral-800">
+      <div className="border-b border-neutral-600 text-sm px-4 py-2">Chat</div>
+      <MessageList />
+      {initialized ? null : <AgentStatusBar />}
+      <Input />
     </div>
   );
 }

@@ -3,20 +3,7 @@
 This is a WebSocket server that executes tasks using an agent.
 
 ## Install
-
-Create a `.env` file with the contents
-
-```sh
-OPENAI_API_KEY=<YOUR OPENAI API KEY>
-```
-
-Install requirements:
-
-```sh
-python3.12 -m venv venv
-source venv/bin/activate
-python -m pip install -r requirements.txt
-```
+Follow the instructions in the base README.md to install dependencies and set up.
 
 ## Start the Server
 
@@ -36,8 +23,8 @@ websocat ws://127.0.0.1:3000/ws
 ## Supported Environment Variables
 
 ```sh
-OPENAI_API_KEY=sk-... # Your OpenAI API Key
-LLM_MODEL=gpt-4-0125-preview # Default model for the agent to use
+LLM_API_KEY=sk-... # Your OpenAI API Key
+LLM_MODEL=gpt-3.5-turbo-1106 # Default model for the agent to use
 WORKSPACE_DIR=/path/to/your/workspace # Default path to model's workspace
 ```
 
@@ -60,11 +47,11 @@ This list may grow over time.
   * `agent_cls` - the class of the agent to use
 * `start` - starts a new development task. Only sent by the client.
   * `task` - the task to start
-* `read` - reads the contents of a file.
+* `read` - reads the content of a file.
   * `path` - the path of the file to read
-* `write` - writes the contents to a file.
+* `write` - writes the content to a file.
   * `path` - the path of the file to write
-  * `contents` - the contents to write to the file
+  * `content` - the content to write to the file
 * `run` - runs a command.
   * `command` - the command to run
   * `background` - if true, run the command in the background
@@ -87,9 +74,9 @@ An observation has four parts:
 
 There are several kinds of observations. Their extras are listed below.
 This list may grow over time.
-* `read` - the contents of a file
+* `read` - the content of a file
   * `path` - the path of the file read
-* `browse` - the HTML contents of a url
+* `browse` - the HTML content of a url
   * `url` - the URL opened
 * `run` - the output of a command
   * `command` - the command run

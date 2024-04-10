@@ -8,23 +8,32 @@
     "airbnb-typescript",
     "prettier",
     "plugin:@typescript-eslint/eslint-recommended",
-    "plugin:@typescript-eslint/recommended"
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended",
+    "plugin:react-hooks/recommended"
   ],
   "plugins": ["prettier"],
   "rules": {
     "prettier/prettier": ["error"]
   },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  },
   "overrides": [
     {
       "files": ["*.ts", "*.tsx"],
       "rules": {
-        // Allow state modification in Redux reducers
+        // Allow state modification in reduce and Redux reducers
         "no-param-reassign": ["error", {
           "props": true,
           "ignorePropertyModificationsFor": [
-            "state"
+            "acc", "state"
           ]
         }],
+        // For https://stackoverflow.com/questions/55844608/stuck-with-eslint-error-i-e-separately-loops-should-be-avoided-in-favor-of-arra
+        "no-restricted-syntax": "off",
         "import/prefer-default-export": "off",
         "no-underscore-dangle": "off",
         "jsx-a11y/no-static-element-interactions": "off",
