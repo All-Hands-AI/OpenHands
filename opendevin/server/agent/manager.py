@@ -10,7 +10,7 @@ from opendevin.action import (
 from opendevin.agent import Agent
 from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
-from opendevin.logging import opendevin_logger as logger
+from opendevin.logger import opendevin_logger as logger
 from opendevin.observation import NullObservation, Observation, UserMessageObservation
 from opendevin.schema import ActionType, ConfigType
 from opendevin.server.session import session_manager
@@ -88,6 +88,7 @@ class AgentManager:
         Returns:
             The value of the key or the default value.
         """
+
         return _args.get(key, config.get(key))
 
     async def create_controller(self, start_event: dict):
@@ -104,11 +105,9 @@ class AgentManager:
         directory = self.get_arg_or_default(args, ConfigType.WORKSPACE_DIR)
         agent_cls = self.get_arg_or_default(args, ConfigType.AGENT)
         model = self.get_arg_or_default(args, ConfigType.LLM_MODEL)
-        api_key = self.get_arg_or_default(args, ConfigType.LLM_API_KEY)
-        api_base = self.get_arg_or_default(args, ConfigType.LLM_BASE_URL)
-        container_image = self.get_arg_or_default(
-            args, ConfigType.SANDBOX_CONTAINER_IMAGE
-        )
+        api_key = config.get(ConfigType.LLM_API_KEY)
+        api_base = config.get(ConfigType.LLM_BASE_URL)
+        container_image = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
         max_iterations = self.get_arg_or_default(
             args, ConfigType.MAX_ITERATIONS)
 

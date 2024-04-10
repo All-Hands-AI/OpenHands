@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./App.css";
+import { Toaster } from "react-hot-toast";
 import CogTooth from "./assets/cog-tooth";
 import ChatInterface from "./components/ChatInterface";
 import Errors from "./components/Errors";
@@ -111,6 +112,7 @@ function App(): JSX.Element {
         onClose={() => setLoadMsgWarning(false)}
       />
       <Errors />
+      <Toaster />
     </div>
   );
 }
