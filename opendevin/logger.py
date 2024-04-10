@@ -63,7 +63,7 @@ def log_uncaught_exceptions(ex_cls, ex, tb):
 
 sys.excepthook = log_uncaught_exceptions
 
-opendevin_logger = logging.getLogger("opendevin")
+opendevin_logger = logging.getLogger('opendevin')
 opendevin_logger.setLevel(logging.INFO)
 opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.addHandler(get_file_handler())
@@ -78,6 +78,8 @@ logging.getLogger('LiteLLM Router').disabled = True
 logging.getLogger('LiteLLM Proxy').disabled = True
 
 # LLM prompt and response logging
+
+
 class LlmFileHandler(logging.FileHandler):
 
     def __init__(self, filename, mode='a', encoding=None, delay=False):
@@ -96,7 +98,8 @@ class LlmFileHandler(logging.FileHandler):
         self.log_directory = os.path.join(
             os.getcwd(), 'logs', 'llm', self.session)
         os.makedirs(self.log_directory, exist_ok=True)
-        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{self.message_counter:03}.log")
+        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{
+                                         self.message_counter:03}.log")
         super().__init__(self.baseFilename, mode, encoding, delay)
 
     def emit(self, record):
@@ -106,13 +109,13 @@ class LlmFileHandler(logging.FileHandler):
         Args:
             record (logging.LogRecord): The log record to emit.
         """
-        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{self.message_counter:03}.log")
+        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{
+                                         self.message_counter:03}.log")
         self.stream = self._open()
         super().emit(record)
         self.stream.close
         opendevin_logger.debug('Logging to %s', self.baseFilename)
         self.message_counter += 1
-
 
 
 def get_llm_prompt_file_handler():
