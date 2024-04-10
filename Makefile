@@ -123,6 +123,10 @@ run:
 		exit 1; \
 	fi
 	@mkdir -p logs
+	@if nc -z localhost $(BACKEND_PORT); then \
+		echo "$(RED)Port $(BACKEND_PORT) is already in use. Please make sure the port is available before running the app.$(RESET)"; \
+		exit 1; \
+	fi
 	@echo "$(YELLOW)Starting backend server...$(RESET)"
 	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) &
 	@echo "$(YELLOW)Waiting for the backend to start...$(RESET)"
