@@ -9,8 +9,8 @@ export const AvailableLanguages = [
   { label: "简体中文", value: "zh-CN" },
   { label: "繁體中文", value: "zh-TW" },
   { label: "한국어", value: "ko-KR" },
-  { label: "Deutsch", value: "de" },
   { label: "Norsk", value: "no" },
+  { label: "Deutsch", value: "de" }, // Added German
 ];
 
 i18n
@@ -20,12 +20,6 @@ i18n
   .init({
     fallbackLng: "en",
     debug: process.env.NODE_ENV === "development",
-    backend: {
-      loadPath: "/locales/{{lng}}/{{ns}}.json",
-    },
-    ns: ["translation"],
-    defaultNS: "translation",
-    supportedLngs: ["en", "zh-CN", "ko-KR", "de", "no"],
   })
   .then(() => {
     // assume all detected languages are available
