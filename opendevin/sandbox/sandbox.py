@@ -211,8 +211,9 @@ class DockerInteractive(CommandExecutor):
             f"Connecting to {username}@{hostname} via ssh."
         )
         logger.info(
-            f"If you encounter any issues, you can try `ssh -v -p 2222 {username}@{
-                hostname}` with the password '{self._ssh_password}' and report the issue on GitHub."
+            # FIXME: mypy and autopep8 fight each other on this line
+            # autopep8: off
+            f"If you encounter any issues, you can try `ssh -v -p 2222 {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub."
         )
         self.ssh.login(hostname, username, self._ssh_password, port=2222)
 
