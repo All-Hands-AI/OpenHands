@@ -7,7 +7,7 @@ import uuid
 import platform
 from pexpect import pxssh
 from collections import namedtuple
-from typing import Dict, List, Tuple, Union
+from typing import Any, cast
 
 import docker
 
@@ -18,29 +18,30 @@ from opendevin.controller.command_executor import CommandExecutor
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
-DIRECTORY_REWRITE = config.get(
+DIRECTORY_REWRITE = cast(str, config.get(
     'DIRECTORY_REWRITE'
-)  # helpful for docker-in-docker scenarios
+))  # helpful for docker-in-docker scenarios
 CONTAINER_IMAGE = config.get('SANDBOX_CONTAINER_IMAGE')
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
-RUN_AS_DEVIN = config.get('RUN_AS_DEVIN').lower() != 'false'
+RUN_AS_DEVIN = str(config.get('RUN_AS_DEVIN')).lower() != 'false'
 USER_ID = 1000
-if config.get_or_none('SANDBOX_USER_ID') is not None:
-    USER_ID = int(config.get_or_default('SANDBOX_USER_ID', ''))
+sandbox_user_id = config.get_or_none('SANDBOX_USER_ID')
+if sandbox_user_id is not None:
+    USER_ID = int(sandbox_user_id)
 elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
 
 
 class BackgroundCommand:
-    def __init__(self, id: int, command: str, result, pid: int):
-        self.id = id
-        self.command = command
-        self.result = result
-        self.pid = pid
+    def __init__(self, id: int, command: str, result: Any, pid: int | None) -> None:
+        self.id: int = id
+        self.command: str = command
+        self.result: Any = result
+        self.pid: int | None = pid
 
-    def parse_docker_exec_output(self, logs: bytes) -> Tuple[bytes, bytes]:
+    def parse_docker_exec_output(self, logs: bytes) -> tuple[bytes, bytes]:
         res = b''
         tail = b''
         i = 0
@@ -73,9 +74,9 @@ class BackgroundCommand:
         last_remains = b''
         while True:
             ready_to_read, _, _ = select.select(
-                [self.result.output], [], [], 0.1)  # type: ignore[has-type]
+                [self.result.output], [], [], 0.1)
             if ready_to_read:
-                data = self.result.output.read(4096)  # type: ignore[has-type]
+                data = self.result.output.read(4096)
                 if not data:
                     break
                 chunk, last_remains = self.parse_docker_exec_output(
@@ -89,7 +90,7 @@ class BackgroundCommand:
 class DockerInteractive(CommandExecutor):
     closed = False
     cur_background_id = 0
-    background_commands: Dict[int, BackgroundCommand] = {}
+    background_commands: dict[int, BackgroundCommand] = {}
 
     def __init__(
         self,
@@ -97,7 +98,7 @@ class DockerInteractive(CommandExecutor):
         container_image: str | None = None,
         timeout: int = 120,
         id: str | None = None,
-    ):
+    ) -> None:
         if id is not None:
             self.instance_id = id
         else:
@@ -139,7 +140,7 @@ class DockerInteractive(CommandExecutor):
         self.start_ssh_session()
         atexit.register(self.cleanup)
 
-    def setup_user(self):
+    def setup_user(self) -> None:
 
         # Make users sudoers passwordless
         # TODO(sandbox): add this line in the Dockerfile for next minor version of docker image
@@ -199,7 +200,7 @@ class DockerInteractive(CommandExecutor):
             workdir='/workspace',
         )
 
-    def start_ssh_session(self):
+    def start_ssh_session(self) -> None:
         # start ssh session at the background
         self.ssh = pxssh.pxssh()
         hostname = 'localhost'
@@ -219,19 +220,19 @@ class DockerInteractive(CommandExecutor):
         self.ssh.sendline('cd /workspace')
         self.ssh.prompt()
 
-    def get_exec_cmd(self, cmd: str) -> List[str]:
+    def get_exec_cmd(self, cmd: str) -> list[str]:
         if RUN_AS_DEVIN:
             return ['su', 'opendevin', '-c', cmd]
         else:
             return ['/bin/bash', '-c', cmd]
 
-    def read_logs(self, id) -> str:
+    def read_logs(self, id: int) -> str:
         if id not in self.background_commands:
             raise ValueError('Invalid background command id')
         bg_cmd = self.background_commands[id]
         return bg_cmd.read_logs()
 
-    def execute(self, cmd: str) -> Tuple[int, str]:
+    def execute(self, cmd: str) -> tuple[int, str]:
         # use self.ssh
         self.ssh.sendline(cmd)
         success = self.ssh.prompt(timeout=self.timeout)
@@ -265,7 +266,7 @@ class DockerInteractive(CommandExecutor):
         self.cur_background_id += 1
         return bg_cmd
 
-    def get_pid(self, cmd):
+    def get_pid(self, cmd: str) -> int | None:
         exec_result = self.container.exec_run('ps aux')
         processes = exec_result.output.decode('utf-8').splitlines()
         cmd = ' '.join(self.get_exec_cmd(cmd))
@@ -273,7 +274,7 @@ class DockerInteractive(CommandExecutor):
         for process in processes:
             if cmd in process:
                 pid = process.split()[1]  # second column is the pid
-                return pid
+                return int(pid)
         return None
 
     def kill_background(self, id: int) -> BackgroundCommand:
@@ -287,11 +288,11 @@ class DockerInteractive(CommandExecutor):
         self.background_commands.pop(id)
         return bg_cmd
 
-    def close(self):
+    def close(self) -> None:
         self.stop_docker_container()
         self.closed = True
 
-    def stop_docker_container(self):
+    def stop_docker_container(self) -> None:
 
         # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
@@ -315,7 +316,7 @@ class DockerInteractive(CommandExecutor):
         except docker.errors.NotFound:
             pass
 
-    def is_container_running(self):
+    def is_container_running(self) -> bool:
         try:
             docker_client = docker.from_env()
             container = docker_client.containers.get(self.container_name)
@@ -326,7 +327,7 @@ class DockerInteractive(CommandExecutor):
         except docker.errors.NotFound:
             return False
 
-    def restart_docker_container(self):
+    def restart_docker_container(self) -> None:
         try:
             self.stop_docker_container()
             logger.info('Container stopped')
@@ -338,7 +339,7 @@ class DockerInteractive(CommandExecutor):
             # Initialize docker client. Throws an exception if Docker is not reachable.
             docker_client = docker.from_env()
 
-            network_kwargs: Dict[str, Union[str, Dict[str, int]]] = {}
+            network_kwargs: dict[str, str | dict[str, int]] = {}
             if platform.system() == 'Linux':
                 network_kwargs['network_mode'] = 'host'
             elif platform.system() == 'Darwin':
@@ -388,7 +389,7 @@ class DockerInteractive(CommandExecutor):
             raise Exception('Failed to start container')
 
     # clean up the container, cannot do it in __del__ because the python interpreter is already shutting down
-    def cleanup(self):
+    def cleanup(self) -> None:
         if self.closed:
             return
         try:

@@ -8,7 +8,7 @@ from opendevin.schema import ConfigType
 
 load_dotenv()
 
-DEFAULT_CONFIG: dict = {
+DEFAULT_CONFIG: dict[str, str | int | None] = {
     ConfigType.LLM_API_KEY: None,
     ConfigType.LLM_BASE_URL: None,
     ConfigType.WORKSPACE_DIR: os.path.join(os.getcwd(), 'workspace'),
@@ -37,14 +37,14 @@ for k, v in config.items():
         config[k] = tomlConfig[k]
 
 
-def _get(key: str, default):
+def _get(key: str, default: str | int | None) -> str | int | None:
     value = config.get(key, default)
     if not value:
         value = os.environ.get(key, default)
     return value
 
 
-def get_or_error(key: str):
+def get_or_error(key: str) -> str | int | None:
     """
     Get a key from the config, or raise an error if it doesn't exist.
     """
@@ -54,28 +54,28 @@ def get_or_error(key: str):
     return value
 
 
-def get_or_default(key: str, default):
+def get_or_default(key: str, default: str | int | None) -> str | int | None:
     """
     Get a key from the config, or return a default value if it doesn't exist.
     """
     return _get(key, default)
 
 
-def get_or_none(key: str):
+def get_or_none(key: str) -> str | int | None:
     """
     Get a key from the config, or return None if it doesn't exist.
     """
     return _get(key, None)
 
 
-def get(key: str):
+def get(key: str) -> str | int | None:
     """
     Get a key from the config, please make sure it exists.
     """
     return config.get(key)
 
 
-def get_all() -> dict:
+def get_all() -> dict[str, str | int | None]:
     """
     Get all the configuration values by performing a deep copy.
     """

@@ -5,15 +5,19 @@ from opendevin.observation import FileReadObservation, FileWriteObservation
 from opendevin.schema import ActionType
 
 from .base import ExecutableAction
+from typing import TYPE_CHECKING
 
 # This is the path where the workspace is mounted in the container
 # The LLM sometimes returns paths with this prefix, so we need to remove it
-PATH_PREFIX = "/workspace/"
+PATH_PREFIX = '/workspace/'
+
+if TYPE_CHECKING:
+    from opendevin.controller import AgentController
 
 
-def resolve_path(base_path, file_path):
+def resolve_path(base_path: str, file_path: str) -> str:
     if file_path.startswith(PATH_PREFIX):
-        file_path = file_path[len(PATH_PREFIX) :]
+        file_path = file_path[len(PATH_PREFIX):]
     return os.path.join(base_path, file_path)
 
 
@@ -22,14 +26,14 @@ class FileReadAction(ExecutableAction):
     path: str
     action: str = ActionType.READ
 
-    def run(self, controller) -> FileReadObservation:
+    def run(self, controller: 'AgentController') -> FileReadObservation:
         path = resolve_path(controller.workdir, self.path)
-        with open(path, "r", encoding="utf-8") as file:
+        with open(path, 'r', encoding='utf-8') as file:
             return FileReadObservation(path=path, content=file.read())
 
     @property
     def message(self) -> str:
-        return f"Reading file: {self.path}"
+        return f'Reading file: {self.path}'
 
 
 @dataclass
@@ -38,12 +42,12 @@ class FileWriteAction(ExecutableAction):
     content: str
     action: str = ActionType.WRITE
 
-    def run(self, controller) -> FileWriteObservation:
+    def run(self, controller: 'AgentController') -> FileWriteObservation:
         whole_path = resolve_path(controller.workdir, self.path)
-        with open(whole_path, "w", encoding="utf-8") as file:
+        with open(whole_path, 'w', encoding='utf-8') as file:
             file.write(self.content)
-        return FileWriteObservation(content="", path=self.path)
+        return FileWriteObservation(content='', path=self.path)
 
     @property
     def message(self) -> str:
-        return f"Writing file: {self.path}"
+        return f'Writing file: {self.path}'

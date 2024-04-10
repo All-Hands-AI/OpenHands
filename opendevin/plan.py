@@ -1,20 +1,22 @@
-from typing import List
 from opendevin.logging import opendevin_logger as logger
+from typing import Any, cast
 
 OPEN_STATE = 'open'
 COMPLETED_STATE = 'completed'
 ABANDONED_STATE = 'abandoned'
 IN_PROGRESS_STATE = 'in_progress'
 VERIFIED_STATE = 'verified'
-STATES = [OPEN_STATE, COMPLETED_STATE, ABANDONED_STATE, IN_PROGRESS_STATE, VERIFIED_STATE]
+STATES = [OPEN_STATE, COMPLETED_STATE,
+          ABANDONED_STATE, IN_PROGRESS_STATE, VERIFIED_STATE]
+
 
 class Task:
     id: str
     goal: str
-    parent: "Task | None"
-    subtasks: List["Task"]
+    parent: 'Task | None'
+    subtasks: list['Task']
 
-    def __init__(self, parent: "Task | None", goal: str, state: str=OPEN_STATE, subtasks: List = []):
+    def __init__(self, parent: 'Task | None', goal: str, state: str = OPEN_STATE, subtasks: list['Task | dict[str, Any]'] = []) -> None:
         """Initializes a new instance of the Task class.
 
         Args:
@@ -34,14 +36,15 @@ class Task:
             if isinstance(subtask, Task):
                 self.subtasks.append(subtask)
             else:
-                goal = subtask.get('goal')
-                state = subtask.get('state')
-                subtasks = subtask.get('subtasks')
+                goal = cast(str, subtask.get('goal'))
+                state = cast(str, subtask.get('state'))
+                subtasks = cast(list['Task | dict[str, Any]'],
+                                subtask.get('subtasks'))
                 self.subtasks.append(Task(self, goal, state, subtasks))
 
         self.state = OPEN_STATE
 
-    def to_string(self, indent=""):
+    def to_string(self, indent: str = '') -> str:
         """Returns a string representation of the task and its subtasks.
 
         Args:
@@ -66,7 +69,7 @@ class Task:
             result += subtask.to_string(indent + '    ')
         return result
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         """Returns a dictionary representation of the task.
 
         Returns:
@@ -79,7 +82,7 @@ class Task:
             'subtasks': [t.to_dict() for t in self.subtasks]
         }
 
-    def set_state(self, state):
+    def set_state(self, state: str) -> None:
         """Sets the state of the task and its subtasks.
 
         Args:            state: The new state of the task.
@@ -99,7 +102,7 @@ class Task:
             if self.parent is not None:
                 self.parent.set_state(state)
 
-    def get_current_task(self) -> "Task | None":
+    def get_current_task(self) -> 'Task | None':
         """Retrieves the current task in progress.
 
         Returns:
@@ -112,6 +115,7 @@ class Task:
             return self
         return None
 
+
 class Plan:
     """Represents a plan consisting of tasks.
 
@@ -122,7 +126,7 @@ class Plan:
     main_goal: str
     task: Task
 
-    def __init__(self, task: str):
+    def __init__(self, task: str) -> None:
         """Initializes a new instance of the Plan class.
 
         Args:
@@ -131,7 +135,7 @@ class Plan:
         self.main_goal = task
         self.task = Task(parent=None, goal=task, subtasks=[])
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Returns a string representation of the plan.
 
         Returns:
@@ -165,7 +169,7 @@ class Plan:
             task = task.subtasks[part]
         return task
 
-    def add_subtask(self, parent_id: str, goal: str, subtasks: List = []):
+    def add_subtask(self, parent_id: str, goal: str, subtasks: list[Task | dict[str, Any]] = []) -> None:
         """Adds a subtask to a parent task.
 
         Args:
@@ -177,7 +181,7 @@ class Plan:
         child = Task(parent=parent, goal=goal, subtasks=subtasks)
         parent.subtasks.append(child)
 
-    def set_subtask_state(self, id: str, state: str):
+    def set_subtask_state(self, id: str, state: str) -> None:
         """Sets the state of a subtask.
 
         Args:
@@ -187,7 +191,7 @@ class Plan:
         task = self.get_task_by_id(id)
         task.set_state(state)
 
-    def get_current_task(self):
+    def get_current_task(self) -> Task | None:
         """Retrieves the current task in progress.
 
         Returns:
@@ -195,3 +199,7 @@ class Plan:
         """
         return self.task.get_current_task()
 
+
+if __name__ == '__main__':
+    plan = Plan('hello')
+    Plan('111')

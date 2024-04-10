@@ -1,5 +1,6 @@
 import uuid
 from pathlib import Path
+from typing import Any
 
 import litellm
 from fastapi import Depends, FastAPI, WebSocket
@@ -28,8 +29,8 @@ security_scheme = HTTPBearer()
 
 
 # This endpoint receives events from the client (i.e. the browser)
-@app.websocket('/ws')
-async def websocket_endpoint(websocket: WebSocket):
+@app.websocket('/ws')   # type: ignore[misc]
+async def websocket_endpoint(websocket: WebSocket) -> None:
     await websocket.accept()
     sid = get_sid_from_token(websocket.query_params.get('token') or '')
     if sid == '':
@@ -41,26 +42,26 @@ async def websocket_endpoint(websocket: WebSocket):
     await session_manager.loop_recv(sid, agent_manager.dispatch)
 
 
-@app.get('/litellm-models')
-async def get_litellm_models():
+@app.get('/litellm-models')   # type: ignore[misc]
+async def get_litellm_models() -> list[str]:
     """
     Get all models supported by LiteLLM.
     """
     return list(set(litellm.model_list + list(litellm.model_cost.keys())))
 
 
-@app.get('/litellm-agents')
-async def get_litellm_agents():
+@app.get('/litellm-agents')   # type: ignore[misc]
+async def get_litellm_agents() -> list[str]:
     """
     Get all agents supported by LiteLLM.
     """
     return Agent.listAgents()
 
 
-@app.get('/auth')
+@app.get('/auth')   # type: ignore[misc]
 async def get_token(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
-):
+) -> JSONResponse:
     """
     Get token for authentication when starts a websocket connection.
     """
@@ -72,10 +73,10 @@ async def get_token(
     )
 
 
-@app.get('/messages')
+@app.get('/messages')   # type: ignore[misc]
 async def get_messages(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
-):
+) -> JSONResponse:
     data = []
     sid = get_sid_from_token(credentials.credentials)
     if sid != '':
@@ -87,10 +88,10 @@ async def get_messages(
     )
 
 
-@app.get('/messages/total')
+@app.get('/messages/total')   # type: ignore[misc]
 async def get_message_total(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
-):
+) -> JSONResponse:
     sid = get_sid_from_token(credentials.credentials)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -98,10 +99,10 @@ async def get_message_total(
     )
 
 
-@app.delete('/messages')
+@app.delete('/messages')   # type: ignore[misc]
 async def del_messages(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
-):
+) -> JSONResponse:
     sid = get_sid_from_token(credentials.credentials)
     message_stack.del_messages(sid)
     return JSONResponse(
@@ -110,20 +111,20 @@ async def del_messages(
     )
 
 
-@app.get('/configurations')
-def read_default_model():
+@app.get('/configurations')   # type: ignore[misc]
+def read_default_model() -> dict[str, str | int | None]:
     return config.get_all()
 
 
-@app.get('/refresh-files')
-def refresh_files():
+@app.get('/refresh-files')   # type: ignore[misc]
+def refresh_files() -> dict[str, Any]:
     structure = files.get_folder_structure(
         Path(str(config.get('WORKSPACE_DIR'))))
     return structure.to_dict()
 
 
-@app.get('/select-file')
-def select_file(file: str):
+@app.get('/select-file')   # type: ignore[misc]
+def select_file(file: str) -> dict[str, Any]:
     with open(Path(Path(str(config.get('WORKSPACE_DIR'))), file), 'r') as selected_file:
         content = selected_file.read()
     return {'code': content}

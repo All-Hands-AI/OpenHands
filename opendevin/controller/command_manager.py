@@ -1,4 +1,3 @@
-from typing import List
 from opendevin.observation import CmdOutputObservation
 from opendevin.sandbox.sandbox import DockerInteractive
 
@@ -9,13 +8,13 @@ class CommandManager:
         id: str,
         dir: str,
         container_image: str | None = None,
-    ):
+    ) -> None:
         self.directory = dir
         self.shell = DockerInteractive(
             id=(id or 'default'), workspace_dir=dir, container_image=container_image
         )
 
-    def run_command(self, command: str, background=False) -> CmdOutputObservation:
+    def run_command(self, command: str, background: bool = False) -> CmdOutputObservation:
         if background:
             return self._run_background(command)
         else:
@@ -45,7 +44,7 @@ class CommandManager:
             exit_code=0,
         )
 
-    def get_background_obs(self) -> List[CmdOutputObservation]:
+    def get_background_obs(self) -> list[CmdOutputObservation]:
         obs = []
         for _id, cmd in self.shell.background_commands.items():
             output = cmd.read_logs()

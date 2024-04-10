@@ -3,63 +3,64 @@ import json
 import atexit
 import signal
 import uuid
-from typing import Dict, List
 
 from opendevin.schema.action import ActionType
 from opendevin.logging import opendevin_logger as logger
+from typing import Any
+from types import FrameType
 
 
-CACHE_DIR = os.getenv("CACHE_DIR", "cache")
-MSG_CACHE_FILE = os.path.join(CACHE_DIR, "messages.json")
+CACHE_DIR = os.getenv('CACHE_DIR', 'cache')
+MSG_CACHE_FILE = os.path.join(CACHE_DIR, 'messages.json')
 
 
 class Message:
     id: str = str(uuid.uuid4())
     role: str  # "user"| "assistant"
-    payload: Dict[str, object]
+    payload: dict[str, object]
 
-    def __init__(self, role: str, payload: Dict[str, object]):
+    def __init__(self, role: str, payload: dict[str, object]) -> None:
         self.role = role
         self.payload = payload
 
-    def to_dict(self):
-        return {"id": self.id, "role": self.role, "payload": self.payload}
+    def to_dict(self) -> dict[str, Any]:
+        return {'id': self.id, 'role': self.role, 'payload': self.payload}
 
     @classmethod
-    def from_dict(cls, data: Dict):
-        m = cls(data["role"], data["payload"])
-        m.id = data["id"]
+    def from_dict(cls, data: dict[str, Any]) -> 'Message':
+        m = cls(data['role'], data['payload'])
+        m.id = data['id']
         return m
 
 
 class MessageStack:
-    _messages: Dict[str, List[Message]] = {}
+    _messages: dict[str, list[Message]] = {}
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._load_messages()
         atexit.register(self.close)
         signal.signal(signal.SIGINT, self.handle_signal)
         signal.signal(signal.SIGTERM, self.handle_signal)
 
-    def close(self):
+    def close(self) -> None:
         self._save_messages()
 
-    def handle_signal(self, signum, _):
-        logger.info("Received signal %s, exiting...", signum)
+    def handle_signal(self, signum: int, _: FrameType | None) -> None:
+        logger.info(f'Received signal {signum}, exiting...')
         self.close()
         exit(0)
 
-    def add_message(self, sid: str, role: str, message: Dict[str, object]):
+    def add_message(self, sid: str, role: str, message: dict[str, object]) -> None:
         if sid not in self._messages:
             self._messages[sid] = []
         self._messages[sid].append(Message(role, message))
 
-    def del_messages(self, sid: str):
+    def del_messages(self, sid: str) -> None:
         if sid not in self._messages:
             return
         del self._messages[sid]
 
-    def get_messages(self, sid: str) -> List[Dict[str, object]]:
+    def get_messages(self, sid: str) -> list[dict[str, object]]:
         if sid not in self._messages:
             return []
         return [msg.to_dict() for msg in self._messages[sid]]
@@ -70,27 +71,28 @@ class MessageStack:
         cnt = 0
         for msg in self._messages[sid]:
             # Ignore assistant init message for now.
-            if "action" in msg.payload and msg.payload["action"] == ActionType.INIT:
+            if 'action' in msg.payload and msg.payload['action'] == ActionType.INIT:
                 continue
             cnt += 1
         return cnt
 
-    def _save_messages(self):
+    def _save_messages(self) -> None:
         if not os.path.exists(CACHE_DIR):
             os.makedirs(CACHE_DIR)
         data = {}
         for sid, msgs in self._messages.items():
             data[sid] = [msg.to_dict() for msg in msgs]
-        with open(MSG_CACHE_FILE, "w+") as file:
+        with open(MSG_CACHE_FILE, 'w+') as file:
             json.dump(data, file)
 
-    def _load_messages(self):
+    def _load_messages(self) -> None:
         try:
             # TODO: delete useless messages
-            with open(MSG_CACHE_FILE, "r") as file:
+            with open(MSG_CACHE_FILE, 'r') as file:
                 data = json.load(file)
                 for sid, msgs in data.items():
-                    self._messages[sid] = [Message.from_dict(msg) for msg in msgs]
+                    self._messages[sid] = [
+                        Message.from_dict(msg) for msg in msgs]
         except FileNotFoundError:
             pass
         except json.decoder.JSONDecodeError:

@@ -3,6 +3,8 @@ import os
 import sys
 import traceback
 from datetime import datetime
+from typing import TextIO, Any
+from types import TracebackType
 
 console_formatter = logging.Formatter(
     '\033[92m%(asctime)s - %(name)s:%(levelname)s\033[0m: %(filename)s:%(lineno)s - %(message)s',
@@ -17,7 +19,7 @@ llm_formatter = logging.Formatter(
 )
 
 
-def get_console_handler():
+def get_console_handler() -> logging.StreamHandler[TextIO]:
     """
     Returns a console handler for logging.
     """
@@ -27,14 +29,14 @@ def get_console_handler():
     return console_handler
 
 
-def get_file_handler():
+def get_file_handler() -> logging.FileHandler:
     """
     Returns a file handler for logging.
     """
     log_dir = os.path.join(os.getcwd(), 'logs')
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    file_name = f"opendevin_{timestamp}.log"
+    file_name = f'opendevin_{timestamp}.log'
     file_handler = logging.FileHandler(os.path.join(log_dir, file_name))
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(file_formatter)
@@ -45,7 +47,7 @@ def get_file_handler():
 logging.basicConfig(level=logging.ERROR)
 
 
-def log_uncaught_exceptions(ex_cls, ex, tb):
+def log_uncaught_exceptions(ex_cls: type[BaseException], ex: BaseException, tb: TracebackType | None) -> Any:
     """
     Logs uncaught exceptions along with the traceback.
 
@@ -55,15 +57,16 @@ def log_uncaught_exceptions(ex_cls, ex, tb):
         tb (traceback): The traceback object.
 
     Returns:
-        None
+        Any
     """
     logging.error(''.join(traceback.format_tb(tb)))
     logging.error('{0}: {1}'.format(ex_cls, ex))
+    return None
 
 
 sys.excepthook = log_uncaught_exceptions
 
-opendevin_logger = logging.getLogger("opendevin")
+opendevin_logger = logging.getLogger('opendevin')
 opendevin_logger.setLevel(logging.INFO)
 opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.addHandler(get_file_handler())
@@ -78,9 +81,11 @@ logging.getLogger('LiteLLM Router').disabled = True
 logging.getLogger('LiteLLM Proxy').disabled = True
 
 # LLM prompt and response logging
+
+
 class LlmFileHandler(logging.FileHandler):
 
-    def __init__(self, filename, mode='a', encoding=None, delay=False):
+    def __init__(self, filename: str, mode: str = 'a', encoding: str | None = None, delay: bool = False) -> None:
         """
         Initializes an instance of LlmFileHandler.
 
@@ -90,23 +95,25 @@ class LlmFileHandler(logging.FileHandler):
             encoding (str, optional): The file encoding. Defaults to None.
             delay (bool, optional): Whether to delay file opening. Defaults to False.
         """
-        self.filename = filename
-        self.message_counter = 1
-        self.session = datetime.now().strftime('%y-%m-%d_%H-%M-%S')
-        self.log_directory = os.path.join(
+        self.filename: str = filename
+        self.message_counter: int = 1
+        self.session: str = datetime.now().strftime('%y-%m-%d_%H-%M-%S')
+        self.log_directory: str = os.path.join(
             os.getcwd(), 'logs', 'llm', self.session)
         os.makedirs(self.log_directory, exist_ok=True)
-        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{self.message_counter:03}.log")
+        self.baseFilename: str = os.path.join(
+            self.log_directory, f'{self.filename}_{self.message_counter:03}.log')
         super().__init__(self.baseFilename, mode, encoding, delay)
 
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord) -> None:
         """
         Emits a log record.
 
         Args:
             record (logging.LogRecord): The log record to emit.
         """
-        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{self.message_counter:03}.log")
+        self.baseFilename = os.path.join(
+            self.log_directory, f'{self.filename}_{self.message_counter:03}.log')
         self.stream = self._open()
         super().emit(record)
         self.stream.close
@@ -114,8 +121,7 @@ class LlmFileHandler(logging.FileHandler):
         self.message_counter += 1
 
 
-
-def get_llm_prompt_file_handler():
+def get_llm_prompt_file_handler() -> LlmFileHandler:
     """
     Returns a file handler for LLM prompt logging.
     """
@@ -125,7 +131,7 @@ def get_llm_prompt_file_handler():
     return llm_prompt_file_handler
 
 
-def get_llm_response_file_handler():
+def get_llm_response_file_handler() -> LlmFileHandler:
     """
     Returns a file handler for LLM response logging.
     """

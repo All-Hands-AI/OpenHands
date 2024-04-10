@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, cast
 
 from . import json
 
@@ -87,29 +87,30 @@ You can also use the same action and args from the source monologue.
 """
 
 
-def get_summarize_monologue_prompt(thoughts: List[dict]):
+def get_summarize_monologue_prompt(thoughts: list[dict[str, Any]]) -> str:
     """
     Gets the prompt for summarizing the monologue
 
-    Returns: 
+    Returns:
     - str: A formatted string with the current monologue within the prompt
     """
     return MONOLOGUE_SUMMARY_PROMPT % {
         'monologue': json.dumps({'old_monologue': thoughts}, indent=2),
     }
 
+
 def get_request_action_prompt(
         task: str,
-        thoughts: List[dict],
-        background_commands_obs: List[CmdOutputObservation] = [],
-):
+        thoughts: list[dict[str, Any]],
+        background_commands_obs: list[CmdOutputObservation] = [],
+) -> str:
     """
     Gets the action prompt formatted with appropriate values.
 
     Parameters:
     - task (str): The current task the agent is trying to accomplish
-    - thoughts (List[dict]): The agent's current thoughts
-    - background_commands_obs (List[CmdOutputObservation]): List of all observed background commands running
+    - thoughts (list[dict[str, Any]]): The agent's current thoughts
+    - background_commands_obs (list[CmdOutputObservation]): List of all observed background commands running
 
     Returns:
     - str: Formatted prompt string with hint, task, monologue, and background included
@@ -118,28 +119,29 @@ def get_request_action_prompt(
     hint = ''
     if len(thoughts) > 0:
         latest_thought = thoughts[-1]
-        if "action" in latest_thought:
-            if latest_thought["action"] == 'think':
-                if latest_thought["args"]['thought'].startswith("OK so my task is"):
+        if 'action' in latest_thought:
+            if latest_thought['action'] == 'think':
+                if latest_thought['args']['thought'].startswith('OK so my task is'):
                     hint = "You're just getting started! What should you do first?"
                 else:
                     hint = "You've been thinking a lot lately. Maybe it's time to take action?"
-            elif latest_thought["action"] == 'error':
-                hint = "Looks like that last command failed. Maybe you need to fix it, or try something else."
+            elif latest_thought['action'] == 'error':
+                hint = 'Looks like that last command failed. Maybe you need to fix it, or try something else.'
 
-    bg_commands_message = ""
+    bg_commands_message = ''
     if len(background_commands_obs) > 0:
-        bg_commands_message = "The following commands are running in the background:"
+        bg_commands_message = 'The following commands are running in the background:'
         for command_obs in background_commands_obs:
-            bg_commands_message += f"\n`{command_obs.command_id}`: {command_obs.command}"
-        bg_commands_message += "\nYou can end any process by sending a `kill` action with the numerical `id` above."
-        
+            bg_commands_message += f'\n`{command_obs.command_id}`: {command_obs.command}'
+        bg_commands_message += '\nYou can end any process by sending a `kill` action with the numerical `id` above.'
+
     return ACTION_PROMPT % {
         'task': task,
         'monologue': json.dumps(thoughts, indent=2),
         'background_commands': bg_commands_message,
         'hint': hint,
     }
+
 
 def parse_action_response(response: str) -> Action:
     """
@@ -157,7 +159,8 @@ def parse_action_response(response: str) -> Action:
         action_dict['contents'] = action_dict.pop('content')
     return action_from_dict(action_dict)
 
-def parse_summary_response(response: str) -> List[dict]:
+
+def parse_summary_response(response: str) -> list[dict[str, Any]]:
     """
     Parses a summary of the monologue
 
@@ -165,7 +168,7 @@ def parse_summary_response(response: str) -> List[dict]:
     - response (str): The response string to be parsed
 
     Returns:
-    - List[dict]: The list of summaries output by the model
+    - list[dict[str, Any]]: The list of summaries output by the model
     """
     parsed = json.loads(response)
-    return parsed['new_monologue']
+    return cast(list[dict[str, Any]], parsed['new_monologue'])

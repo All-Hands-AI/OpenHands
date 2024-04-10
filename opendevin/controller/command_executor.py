@@ -1,18 +1,18 @@
-from typing import Tuple
 from abc import ABC, abstractmethod
+from typing import Any
 
 
 class CommandExecutor(ABC):
     @abstractmethod
-    def execute(self, cmd: str) -> Tuple[int, str]:
+    def execute(self, cmd: str) -> tuple[int, str]:
         pass
 
     @abstractmethod
-    def execute_in_background(self, cmd: str):
+    def execute_in_background(self, cmd: str) -> Any:
         pass
 
     @abstractmethod
-    def kill_background(self, id: int):
+    def kill_background(self, id: int) -> Any:
         pass
 
     @abstractmethod
@@ -20,5 +20,5 @@ class CommandExecutor(ABC):
         pass
 
     @abstractmethod
-    def close(self):
+    def close(self) -> None:
         pass

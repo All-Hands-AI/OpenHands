@@ -1,7 +1,7 @@
 import asyncio
 import inspect
 import traceback
-from typing import List, Callable, Literal, Mapping, Awaitable, Any, cast
+from typing import Callable, Literal, Mapping, Awaitable, Any, cast
 
 from termcolor import colored
 
@@ -42,12 +42,12 @@ ColorType = Literal[
 
 
 DISABLE_COLOR_PRINTING = (
-    config.get_or_default('DISABLE_COLOR', 'false').lower() == 'true'
+    cast(str, config.get_or_default('DISABLE_COLOR', 'false')).lower() == 'true'
 )
-MAX_ITERATIONS = config.get('MAX_ITERATIONS')
+MAX_ITERATIONS = cast(int, config.get('MAX_ITERATIONS'))
 
 
-def print_with_color(text: Any, print_type: str = 'INFO'):
+def print_with_color(text: Any, print_type: str = 'INFO') -> None:
     TYPE_TO_COLOR: Mapping[str, ColorType] = {
         'BACKGROUND LOG': 'blue',
         'ACTION': 'green',
@@ -58,10 +58,10 @@ def print_with_color(text: Any, print_type: str = 'INFO'):
     }
     color = TYPE_TO_COLOR.get(print_type.upper(), TYPE_TO_COLOR['INFO'])
     if DISABLE_COLOR_PRINTING:
-        print(f"\n{print_type.upper()}:\n{str(text)}", flush=True)
+        print(f'\n{print_type.upper()}:\n{str(text)}', flush=True)
     else:
         print(
-            colored(f"\n{print_type.upper()}:\n", color, attrs=['bold'])
+            colored(f'\n{print_type.upper()}:\n', color, attrs=['bold'])
             + colored(str(text), color),
             flush=True,
         )
@@ -77,8 +77,8 @@ class AgentController:
         id: str = '',
         max_iterations: int = MAX_ITERATIONS,
         container_image: str | None = None,
-        callbacks: List[Callable] = [],
-    ):
+        callbacks: list[Callable[[Observation | Action], None]] = [],
+    ) -> None:
         self.id = id
         self.agent = agent
         self.max_iterations = max_iterations
@@ -87,14 +87,14 @@ class AgentController:
             self.id, workdir, container_image)
         self.callbacks = callbacks
 
-    def update_state_for_step(self, i):
+    def update_state_for_step(self, i: int) -> None:
         self.state.iteration = i
         self.state.background_commands_obs = self.command_manager.get_background_obs()
 
-    def update_state_after_step(self):
+    def update_state_after_step(self) -> None:
         self.state.updated_info = []
 
-    def add_history(self, action: Action, observation: Observation):
+    def add_history(self, action: Action, observation: Observation) -> None:
         if not isinstance(action, Action):
             raise ValueError('action must be an instance of Action')
         if not isinstance(observation, Observation):
@@ -102,7 +102,7 @@ class AgentController:
         self.state.history.append((action, observation))
         self.state.updated_info.append((action, observation))
 
-    async def start_loop(self, task: str):
+    async def start_loop(self, task: str) -> None:
         finished = False
         plan = Plan(task)
         self.state = State(plan)
@@ -117,7 +117,7 @@ class AgentController:
         if not finished:
             logger.info('Exited before finishing the task.')
 
-    async def step(self, i: int):
+    async def step(self, i: int) -> bool:
         print('\n\n==============', flush=True)
         print('STEP', i, flush=True)
         print_with_color(self.state.plan.main_goal, 'PLAN')
@@ -184,8 +184,9 @@ class AgentController:
 
         self.add_history(action, observation)
         await self._run_callbacks(observation)
+        return False
 
-    async def _run_callbacks(self, event):
+    async def _run_callbacks(self, event: Observation | Action | None) -> None:
         if event is None:
             return
         for callback in self.callbacks:

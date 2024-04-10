@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import Optional
+from typing import Any
 
 from opendevin import config
 from opendevin.action import (
@@ -27,14 +27,14 @@ class AgentManager:
 
     sid: str
 
-    def __init__(self, sid):
+    def __init__(self, sid: str) -> None:
         """Initializes a new instance of the Session class."""
-        self.sid = sid
-        self.controller: Optional[AgentController] = None
-        self.agent: Optional[Agent] = None
-        self.agent_task = None
+        self.sid: str = sid
+        self.controller: AgentController | None = None
+        self.agent: Agent | None = None
+        self.agent_task: Any | None = None
 
-    async def send_error(self, message):
+    async def send_error(self, message: str) -> None:
         """Sends an error message to the client.
 
         Args:
@@ -42,7 +42,7 @@ class AgentManager:
         """
         await session_manager.send_error(self.sid, message)
 
-    async def send_message(self, message):
+    async def send_message(self, message: str) -> None:
         """Sends a message to the client.
 
         Args:
@@ -50,7 +50,7 @@ class AgentManager:
         """
         await session_manager.send_message(self.sid, message)
 
-    async def send(self, data):
+    async def send(self, data: dict[str, object]) -> None:
         """Sends data to the client.
 
         Args:
@@ -58,7 +58,7 @@ class AgentManager:
         """
         await session_manager.send(self.sid, data)
 
-    async def dispatch(self, action: str | None, data: dict):
+    async def dispatch(self, action: str | None, data: dict[str, Any]) -> None:
         """Dispatches actions to the agent from the client."""
         if action is None:
             await self.send_error('Invalid action')
@@ -78,7 +78,7 @@ class AgentManager:
             else:
                 await self.send_error("I didn't recognize this action:" + action)
 
-    def get_arg_or_default(self, _args: dict, key: ConfigType) -> str:
+    def get_arg_or_default(self, _args: dict[str, Any], key: ConfigType) -> Any:
         """Gets an argument from the args dictionary or the default value.
 
         Args:
@@ -90,7 +90,7 @@ class AgentManager:
         """
         return _args.get(key, config.get(key))
 
-    async def create_controller(self, start_event: dict):
+    async def create_controller(self, start_event: dict[str, Any]) -> None:
         """Creates an AgentController instance.
 
         Args:
@@ -138,7 +138,7 @@ class AgentManager:
             return
         await self.send({'action': ActionType.INIT, 'message': 'Control loop started.'})
 
-    async def start_task(self, start_event):
+    async def start_task(self, start_event: dict[str, Any]) -> None:
         """Starts a task for the agent.
 
         Args:
@@ -159,7 +159,7 @@ class AgentManager:
         except Exception:
             await self.send_error('Error during task loop.')
 
-    def on_agent_event(self, event: Observation | Action):
+    def on_agent_event(self, event: Observation | Action) -> None:
         """Callback function for agent events.
 
         Args:
@@ -173,7 +173,7 @@ class AgentManager:
         asyncio.create_task(self.send(event_dict),
                             name='send event in callback')
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         self.websocket = None
         if self.agent_task:
             self.agent_task.cancel()

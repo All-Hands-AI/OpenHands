@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import List, Tuple
 
 from opendevin.plan import Plan
 
@@ -11,10 +10,13 @@ from opendevin.observation import (
     CmdOutputObservation,
 )
 
+
 @dataclass
 class State:
     plan: Plan
     iteration: int = 0
-    background_commands_obs: List[CmdOutputObservation] = field(default_factory=list)
-    history: List[Tuple[Action, Observation]] = field(default_factory=list)
-    updated_info: List[Tuple[Action, Observation]] = field(default_factory=list)
+    background_commands_obs: list[CmdOutputObservation] = field(
+        default_factory=list)
+    history: list[tuple[Action, Observation]] = field(default_factory=list)
+    updated_info: list[tuple[Action, Observation]
+                       ] = field(default_factory=list)
