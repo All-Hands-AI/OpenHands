@@ -10,6 +10,7 @@ export const AvailableLanguages = [
   { label: "繁體中文", value: "zh-TW" },
   { label: "한국어", value: "ko-KR" },
   { label: "Norsk", value: "no" },
+  { label: "Arabic", value: "ar" },
 ];
 
 i18n
