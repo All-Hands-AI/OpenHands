@@ -102,8 +102,8 @@ check-docker:
 check-poetry:
 	@echo "$(YELLOW)Checking Poetry installation...$(RESET)"
 	@if command -v poetry > /dev/null; then \
-		POETRY_VERSION=$(shell poetry --version | awk '{print $$2}'); \
-		IFS='.' read -ra POETRY_VERSION_ARRAY <<< "$$POETRY_VERSION"; \
+		POETRY_VERSION=$(shell poetry --version 2>&1 | sed -E 's/Poetry \(version ([0-9]+\.[0-9]+\.[0-9]+)\)/\1/'); \
+		IFS='.' read -r -a POETRY_VERSION_ARRAY <<< "$$POETRY_VERSION"; \
 		if [ $${POETRY_VERSION_ARRAY[0]} -ge 1 ] && [ $${POETRY_VERSION_ARRAY[1]} -ge 8 ]; then \
 			echo "$(BLUE)$(shell poetry --version) is already installed.$(RESET)"; \
 		else \
