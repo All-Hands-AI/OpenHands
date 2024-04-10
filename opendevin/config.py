@@ -14,7 +14,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.WORKSPACE_DIR: os.path.join(os.getcwd(), 'workspace'),
     ConfigType.LLM_MODEL: 'gpt-3.5-turbo-1106',
     ConfigType.SANDBOX_CONTAINER_IMAGE: 'ghcr.io/opendevin/sandbox',
-    ConfigType.RUN_AS_DEVIN: 'false',
+    ConfigType.RUN_AS_DEVIN: 'true',
     ConfigType.LLM_EMBEDDING_MODEL: 'local',
     ConfigType.LLM_NUM_RETRIES: 6,
     ConfigType.LLM_COOLDOWN_TIME: 1,
@@ -77,8 +77,10 @@ def get(key: str):
     return config.get(key)
 
 
-def get_all() -> dict:
+def get_fe_config() -> dict:
     """
     Get all the configuration values by performing a deep copy.
     """
-    return copy.deepcopy(config)
+    fe_config = copy.deepcopy(config)
+    del fe_config['LLM_API_KEY']
+    return fe_config

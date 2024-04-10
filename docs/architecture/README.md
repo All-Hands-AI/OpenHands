@@ -17,7 +17,7 @@ The generation of the backend architecture diagram is partially automated. The d
 4. Review the diff between the new and the previous diagram and manually check if the changes are correct.  
 *Make sure not to remove parts that were manually added to the diagram in the past and are still relevant.*
 
-4. Add the commit hash of the commit that was used to generat the diagram to the diagram footer.
+4. Add the commit hash of the commit that was used to generate the diagram to the diagram footer.
 
 5. Export the diagram as PNG and SVG files and replace the existing diagrams in the `docs/architecture` directory. This can be done with (e.g. [PlantText](https://www.planttext.com/))
 

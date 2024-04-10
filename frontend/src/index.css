@@ -4,7 +4,12 @@
   --bg-input: #393939;
   --bg-workspace: #1f2228;
   --border: #3c3c4a;
-  background-color: var(--bg-dark) !important;
+  --text-editor-base: #9099AC;
+  --text-editor-active:#C4CBDA;
+  --bg-editor-sidebar: #24272E;
+  --bg-editor-active: #31343D;
+  --border-editor-sidebar: #3C3C4A;
+  background-color: var(--neutral-900) !important;
 }
 
 body {
@@ -19,4 +24,23 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
+}
+
+.editor-accordion h2 > button{
+  padding: 0;
+}
+
+.editor-accordion-title {
+  color: var(--bg-neutral-400) !important;
+}
+
+.editor-accordion-content {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.editor-accordion-content ul {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }

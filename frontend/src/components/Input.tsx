@@ -1,12 +1,12 @@
-import React, { ChangeEvent, useState, KeyboardEvent } from "react";
-import { useSelector } from "react-redux";
 import { Textarea } from "@nextui-org/react";
-import { twMerge } from "tailwind-merge";
+import React, { ChangeEvent, KeyboardEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { RootState } from "../store";
+import { useSelector } from "react-redux";
+import { twMerge } from "tailwind-merge";
 import useInputComposition from "../hooks/useInputComposition";
-import { sendChatMessage } from "../services/chatService";
 import { I18nKey } from "../i18n/declaration";
+import { sendChatMessage } from "../services/chatService";
+import { RootState } from "../store";
 
 function Input() {
   const { t } = useTranslation();
@@ -44,7 +44,6 @@ function Input() {
   return (
     <div className="w-full relative text-base">
       <Textarea
-        disabled={!initialized}
         className="py-4 px-4"
         classNames={{
           input: "pr-16 py-2",

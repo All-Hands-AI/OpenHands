@@ -3,11 +3,12 @@ import os
 import sys
 import time
 import uuid
+import platform
+from pexpect import pxssh
 from collections import namedtuple
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import docker
-import concurrent.futures
 
 from opendevin import config
 from opendevin.logging import opendevin_logger as logger
@@ -79,23 +80,95 @@ class DockerInteractive(CommandExecutor):
 
         if not self.is_container_running():
             self.restart_docker_container()
-        if RUN_AS_DEVIN:
-            self.setup_devin_user()
+        # set up random user password
+        self._ssh_password = str(uuid.uuid4())
+        self.setup_user()
+        self.start_ssh_session()
         atexit.register(self.cleanup)
 
-    def setup_devin_user(self):
+    def setup_user(self):
+
+        # Make users sudoers passwordless
+        # TODO(sandbox): add this line in the Dockerfile for next minor version of docker image
         exit_code, logs = self.container.exec_run(
-            [
-                '/bin/bash',
-                '-c',
-                f'useradd --shell /bin/bash -u {USER_ID} -o -c "" -m devin',
-            ],
+            ['/bin/bash', '-c',
+                r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"],
+            workdir='/workspace',
+        )
+        if exit_code != 0:
+            raise Exception(
+                f'Failed to make all users passwordless sudoers in sandbox: {logs}')
+
+        # Check if the opendevin user exists
+        exit_code, logs = self.container.exec_run(
+            ['/bin/bash', '-c', 'id -u opendevin'],
+            workdir='/workspace',
+        )
+        if exit_code == 0:
+            # User exists, delete it
+            exit_code, logs = self.container.exec_run(
+                ['/bin/bash', '-c', 'userdel -r opendevin'],
+                workdir='/workspace',
+            )
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to remove opendevin user in sandbox: {logs}')
+
+        # Create the opendevin user
+        exit_code, logs = self.container.exec_run(
+            ['/bin/bash', '-c',
+                f'useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {USER_ID} opendevin'],
+            workdir='/workspace',
+        )
+        if exit_code != 0:
+            raise Exception(
+                f'Failed to create opendevin user in sandbox: {logs}')
+        exit_code, logs = self.container.exec_run(
+            ['/bin/bash', '-c',
+                f"echo 'opendevin:{self._ssh_password}' | chpasswd"],
+            workdir='/workspace',
+        )
+        if exit_code != 0:
+            raise Exception(f'Failed to set password in sandbox: {logs}')
+
+        if not RUN_AS_DEVIN:
+            exit_code, logs = self.container.exec_run(
+                # change password for root
+                ['/bin/bash', '-c',
+                    f"echo 'root:{self._ssh_password}' | chpasswd"],
+                workdir='/workspace',
+            )
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to set password for root in sandbox: {logs}')
+        exit_code, logs = self.container.exec_run(
+            ['/bin/bash', '-c', "echo 'opendevin-sandbox' > /etc/hostname"],
             workdir='/workspace',
         )
 
+    def start_ssh_session(self):
+        # start ssh session at the background
+        self.ssh = pxssh.pxssh()
+        hostname = 'localhost'
+        if RUN_AS_DEVIN:
+            username = 'opendevin'
+        else:
+            username = 'root'
+        logger.info(
+            f"Connecting to {username}@{hostname} via ssh. If you encounter any issues, you can try `ssh -v -p 2222 {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub."
+        )
+        self.ssh.login(hostname, username, self._ssh_password, port=2222)
+
+        # Fix: https://github.com/pexpect/pexpect/issues/669
+        self.ssh.sendline("bind 'set enable-bracketed-paste off'")
+        self.ssh.prompt()
+        # cd to workspace
+        self.ssh.sendline('cd /workspace')
+        self.ssh.prompt()
+
     def get_exec_cmd(self, cmd: str) -> List[str]:
         if RUN_AS_DEVIN:
-            return ['su', 'devin', '-c', cmd]
+            return ['su', 'opendevin', '-c', cmd]
         else:
             return ['/bin/bash', '-c', cmd]
 
@@ -106,26 +179,27 @@ class DockerInteractive(CommandExecutor):
         return bg_cmd.read_logs()
 
     def execute(self, cmd: str) -> Tuple[int, str]:
-        # TODO: each execute is not stateful! We need to keep track of the current working directory
-        def run_command(container, command):
-            return container.exec_run(command, workdir='/workspace')
+        # use self.ssh
+        self.ssh.sendline(cmd)
+        success = self.ssh.prompt(timeout=self.timeout)
+        if not success:
+            logger.exception(
+                'Command timed out, killing process...', exc_info=False)
+            # send a SIGINT to the process
+            self.ssh.sendintr()
+            self.ssh.prompt()
+            command_output = self.ssh.before.decode(
+                'utf-8').lstrip(cmd).strip()
+            return -1, f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}'
+        command_output = self.ssh.before.decode('utf-8').lstrip(cmd).strip()
 
-        # Use ThreadPoolExecutor to control command and set timeout
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(
-                run_command, self.container, self.get_exec_cmd(cmd)
-            )
-            try:
-                exit_code, logs = future.result(timeout=self.timeout)
-            except concurrent.futures.TimeoutError:
-                logger.exception(
-                    'Command timed out, killing process...', exc_info=False)
-                pid = self.get_pid(cmd)
-                if pid is not None:
-                    self.container.exec_run(
-                        f'kill -9 {pid}', workdir='/workspace')
-                return -1, f'Command: "{cmd}" timed out'
-        return exit_code, logs.decode('utf-8')
+        # get the exit code
+        self.ssh.sendline('echo $?')
+        self.ssh.prompt()
+        exit_code = self.ssh.before.decode('utf-8')
+        # remove the echo $? itself
+        exit_code = int(exit_code.lstrip('echo $?').strip())
+        return exit_code, command_output
 
     def execute_in_background(self, cmd: str) -> DockerProcess:
         result = self.container.exec_run(
@@ -211,13 +285,28 @@ class DockerInteractive(CommandExecutor):
             # Initialize docker client. Throws an exception if Docker is not reachable.
             docker_client = docker.from_env()
 
+            network_kwargs: Dict[str, Union[str, Dict[str, int]]] = {}
+            if platform.system() == 'Linux':
+                network_kwargs['network_mode'] = 'host'
+            elif platform.system() == 'Darwin':
+                # FIXME: This is a temporary workaround for Mac OS
+                network_kwargs['ports'] = {'2222/tcp': 2222}
+                logger.warning(
+                    ('Using port forwarding for Mac OS. '
+                     'Server started by OpenDevin will not be accessible from the host machine at the moment. '
+                     'See https://github.com/OpenDevin/OpenDevin/issues/897 for more information.'
+                     )
+                )
+
             # start the container
             self.container = docker_client.containers.run(
                 self.container_image,
-                command='tail -f /dev/null',
-                network_mode='host',
+                # allow root login
+                command="/usr/sbin/sshd -D -p 2222 -o 'PermitRootLogin=yes'",
+                **network_kwargs,
                 working_dir='/workspace',
                 name=self.container_name,
+                hostname='opendevin_sandbox',
                 detach=True,
                 volumes={self.workspace_dir: {
                     'bind': '/workspace', 'mode': 'rw'}},
@@ -238,6 +327,8 @@ class DockerInteractive(CommandExecutor):
             time.sleep(1)
             elapsed += 1
             self.container = docker_client.containers.get(self.container_name)
+            logger.info(
+                f'waiting for container to start: {elapsed}, container status: {self.container.status}')
             if elapsed > self.timeout:
                 break
         if self.container.status != 'running':
