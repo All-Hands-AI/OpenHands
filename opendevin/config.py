@@ -21,6 +21,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.DIRECTORY_REWRITE: '',
     ConfigType.MAX_ITERATIONS: 100,
     ConfigType.AGENT: 'MonologueAgent',
+    ConfigType.SANDBOX_TYPE: 'exec'
 }
 
 config_str = ''
