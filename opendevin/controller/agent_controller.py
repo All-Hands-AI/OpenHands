@@ -42,7 +42,7 @@ ColorType = Literal[
 
 
 DISABLE_COLOR_PRINTING = (
-    config.get_or_default('DISABLE_COLOR', 'false').lower() == 'true'
+    config.get('DISABLE_COLOR', 'false').lower() == 'true'
 )
 MAX_ITERATIONS = config.get('MAX_ITERATIONS')
 
@@ -58,10 +58,10 @@ def print_with_color(text: Any, print_type: str = 'INFO'):
     }
     color = TYPE_TO_COLOR.get(print_type.upper(), TYPE_TO_COLOR['INFO'])
     if DISABLE_COLOR_PRINTING:
-        print(f"\n{print_type.upper()}:\n{str(text)}", flush=True)
+        print(f'\n{print_type.upper()}:\n{str(text)}', flush=True)
     else:
         print(
-            colored(f"\n{print_type.upper()}:\n", color, attrs=['bold'])
+            colored(f'\n{print_type.upper()}:\n', color, attrs=['bold'])
             + colored(str(text), color),
             flush=True,
         )

@@ -37,42 +37,16 @@ for k, v in config.items():
         config[k] = tomlConfig[k]
 
 
-def _get(key: str, default):
+def get(key: str, default=None, required=False):
+    """
+    Get a key from the config or environment variables.
+    """
     value = config.get(key, default)
     if not value:
         value = os.environ.get(key, default)
-    return value
-
-
-def get_or_error(key: str):
-    """
-    Get a key from the config, or raise an error if it doesn't exist.
-    """
-    value = get_or_none(key)
-    if not value:
+    if not value and required:
         raise KeyError(f"Please set '{key}' in `config.toml` or `.env`.")
     return value
-
-
-def get_or_default(key: str, default):
-    """
-    Get a key from the config, or return a default value if it doesn't exist.
-    """
-    return _get(key, default)
-
-
-def get_or_none(key: str):
-    """
-    Get a key from the config, or return None if it doesn't exist.
-    """
-    return _get(key, None)
-
-
-def get(key: str):
-    """
-    Get a key from the config, please make sure it exists.
-    """
-    return config.get(key)
 
 
 def get_all() -> dict:
