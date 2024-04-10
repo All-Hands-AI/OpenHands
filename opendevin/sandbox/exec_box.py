@@ -10,7 +10,7 @@ import docker
 import concurrent.futures
 
 from opendevin import config
-from opendevin.logging import opendevin_logger as logger
+from opendevin.logger import opendevin_logger as logger
 from opendevin.sandbox.sandbox import Sandbox, BackgroundCommand
 
 InputType = namedtuple('InputType', ['content'])
