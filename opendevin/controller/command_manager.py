@@ -37,9 +37,11 @@ class CommandManager:
 
     def _run_background(self, command: str) -> CmdOutputObservation:
         bg_cmd = self.shell.execute_in_background(command)
+        # FIXME: autopep8 and mypy are fighting each other on this line
+        # autopep8: off
+        content = f'Background command started. To stop it, send a `kill` action with id {bg_cmd.id}'
         return CmdOutputObservation(
-            content=f'Background command started. To stop it, send a `kill` action with id {
-                bg_cmd.id}',
+            content=content,
             command_id=bg_cmd.id,
             command=command,
             exit_code=0,
