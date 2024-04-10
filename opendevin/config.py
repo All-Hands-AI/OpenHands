@@ -80,5 +80,5 @@ def get_fe_config() -> dict:
     Get all the configuration values by performing a deep copy.
     """
     fe_config = copy.deepcopy(config)
-    fe_config['LLM_API_KEY'] = '0000000'
+    del fe_config['LLM_API_KEY']
     return fe_config
