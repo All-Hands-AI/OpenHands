@@ -27,6 +27,7 @@ class E2BSandbox:
         self.timeout = timeout
         print('Started E2B sandbox')
 
+    # TODO: This won't work if we didn't wait for the background process to finish
     def read_logs(self, process_id: int) -> str:
         proc = self.background_commands.get(process_id)
         if proc is None:

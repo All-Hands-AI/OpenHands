@@ -14,15 +14,15 @@ class CommandManager:
         container_image: str | None = None,
     ):
         self.directory = dir
-        self.shell: DockerInteractive | E2BSandbox
+        self.sandbox: DockerInteractive | E2BSandbox
 
         sandbox_mode = config.get('SANDBOX_MODE')
         if sandbox_mode == 'docker':
-            self.shell = DockerInteractive(
+            self.sandbox = DockerInteractive(
                 id=(id or 'default'), workspace_dir=dir, container_image=container_image
             )
         elif sandbox_mode == 'e2b':
-            self.shell = E2BSandbox()
+            self.sandbox = E2BSandbox()
         else:
             raise ValueError(f'Unknown sandbox mode: {sandbox_mode}')
 
@@ -33,13 +33,13 @@ class CommandManager:
             return self._run_immediately(command)
 
     def _run_immediately(self, command: str) -> CmdOutputObservation:
-        exit_code, output = self.shell.execute(command)
+        exit_code, output = self.sandbox.execute(command)
         return CmdOutputObservation(
             command_id=-1, content=output, command=command, exit_code=exit_code
         )
 
     def _run_background(self, command: str) -> CmdOutputObservation:
-        bg_cmd = self.shell.execute_in_background(command)
+        bg_cmd = self.sandbox.execute_in_background(command)
         return CmdOutputObservation(
             content=f'Background command started. To stop it, send a `kill` action with id {bg_cmd.id}',
             command_id=bg_cmd.id,
@@ -48,7 +48,7 @@ class CommandManager:
         )
 
     def kill_command(self, id: int) -> CmdOutputObservation:
-        cmd = self.shell.kill_background(id)
+        cmd = self.sandbox.kill_background(id)
         return CmdOutputObservation(
             content=f'Background command with id {id} has been killed.',
             command_id=id,
@@ -58,7 +58,7 @@ class CommandManager:
 
     def get_background_obs(self) -> List[CmdOutputObservation]:
         obs = []
-        for _id, cmd in self.shell.background_commands.items():
+        for _id, cmd in self.sandbox.background_commands.items():
             output = cmd.read_logs()
             if output is not None and output != '':
                 obs.append(

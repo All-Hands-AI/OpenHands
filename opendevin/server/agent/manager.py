@@ -177,4 +177,4 @@ class AgentManager:
         if self.agent_task:
             self.agent_task.cancel()
         if self.controller is not None:
-            self.controller.command_manager.shell.close()
+            self.controller.command_manager.sandbox.close()
