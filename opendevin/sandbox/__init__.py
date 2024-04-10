@@ -1,8 +1,8 @@
 from .sandbox import Sandbox
-from .ssh_box import SSHBox
-from .exec_box import ExecBox
+from .ssh_box import DockerSSHBox
+from .exec_box import DockerExecBox
 __all__ = [
     'Sandbox',
-    'SSHBox',
-    'ExecBox',
+    'DockerSSHBox',
+    'DockerExecBox',
 ]

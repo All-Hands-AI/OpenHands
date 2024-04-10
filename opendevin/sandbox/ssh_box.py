@@ -32,7 +32,7 @@ elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
 
 
-class SSHBox(Sandbox):
+class DockerSSHBox(Sandbox):
     closed = False
     cur_background_id = 0
     background_commands: Dict[int, BackgroundCommand] = {}
@@ -360,7 +360,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     try:
-        ssh_box = SSHBox(
+        ssh_box = DockerSSHBox(
             workspace_dir=args.directory,
         )
     except Exception as e:

@@ -1,6 +1,6 @@
 from typing import List
 from opendevin.observation import CmdOutputObservation
-from opendevin.sandbox import ExecBox, SSHBox, Sandbox
+from opendevin.sandbox import DockerExecBox, DockerSSHBox, Sandbox
 from opendevin import config
 
 
@@ -15,11 +15,11 @@ class CommandManager:
     ):
         self.directory = dir
         if config.get('SANDBOX_TYPE').lower() == 'exec':
-            self.shell = ExecBox(
+            self.shell = DockerExecBox(
                 id=(id or 'default'), workspace_dir=dir, container_image=container_image
             )
         else:
-            self.shell = SSHBox(
+            self.shell = DockerSSHBox(
                 id=(id or 'default'), workspace_dir=dir, container_image=container_image
             )
 
