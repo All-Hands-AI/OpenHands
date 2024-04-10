@@ -16,6 +16,8 @@ DEFAULT_CONFIG: dict = {
     ConfigType.SANDBOX_CONTAINER_IMAGE: 'ghcr.io/opendevin/sandbox',
     ConfigType.RUN_AS_DEVIN: 'true',
     ConfigType.LLM_EMBEDDING_MODEL: 'local',
+    ConfigType.LLM_DEPLOYMENT_NAME: None,
+    ConfigType.LLM_API_VERSION: None,
     ConfigType.LLM_NUM_RETRIES: 6,
     ConfigType.LLM_COOLDOWN_TIME: 1,
     ConfigType.DIRECTORY_REWRITE: '',
