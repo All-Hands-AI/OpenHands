@@ -3,10 +3,10 @@ from opendevin.parse_commands import parse_command_file
 
 DEFAULT_COMMANDS = {
     'exit': 'Executed when task is complete',
-    'read <file_name> [<start_line>]': 'shows a given file\'s contents starting from <start_line>, default start is 0',
-    'write <file> <changes> [<start_line>] [<end_line>]': 'modifies a <file> by replacing the current lines between <start_line> and <end_line> with <changes>',
-    'browse <url>': 'returns the text version of any url',
-    '<bash_command> <args>': 'Any bash command is valid (cd, ls, rm, grep, dir, mv, wget, git, zip, etc.) with their arguments included',
+    'read <file_name> [<start_line>]': 'Shows a given file\'s contents starting from <start_line>. Default start_line = 0',
+    'write <file> <changes> [<start_line>] [<end_line>]': 'Modifies a <file> by replacing the current lines between <start_line> and <end_line> with <changes>. Default start_line = 0 and end_line = -1. Calling this with no line args will replace the whole file.',
+    'browse <url>': 'Returns the text version of any url, this can be useful to look up documentation or finding issues on github',
+    '<bash_command> <args>': 'You can use any bash command you need (cd, ls, rm, grep, dir, mv, wget, git, zip, etc.) with their arguments included',
 }
 
 

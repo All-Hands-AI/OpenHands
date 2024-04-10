@@ -54,7 +54,7 @@ def validate_file_content(file_path, content):
             # Run the validation command and capture the output
             subprocess.run(
                 validation_commands[file_extension],
-                input=content.encode(),
+                input=content.encode('utf-8'),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True, check=True
@@ -108,17 +108,20 @@ class FileReadAction(ExecutableAction):
 class FileWriteAction(ExecutableAction):
     path: str
     content: str
-    start: int
-    end: int
+    start: int = 0
+    end: int = -1
     action: str = ActionType.WRITE
 
     def run(self, controller) -> Observation:
         whole_path = resolve_path(controller.workdir, self.path)
+        mode = 'w' if not os.path.exists(whole_path) else 'r+'
 
-        with open(whole_path, 'w', encoding='utf-8') as file:
+        with open(whole_path, mode, encoding='utf-8') as file:
             all_lines = file.readlines()
             insert = self.content.split('\n')
-            new_file = all_lines[:self.start] + insert + all_lines[self.end:]
+            new_file = all_lines[:self.start] if self.start != 0 else ['']
+            new_file += insert + [''] if self.end == - \
+                1 else all_lines[self.end:]
             content_str = '\n'.join(new_file)
             validation_error = validate_file_content(whole_path, content_str)
             if validation_error:

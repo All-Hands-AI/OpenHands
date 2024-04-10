@@ -5,7 +5,12 @@ from opendevin.action import (
     FileReadAction,
     FileWriteAction,
     BrowseURLAction,
+    AgentEchoAction,
 )
+
+import re
+
+from .prompts import DEFAULT_COMMAND_STR, COMMAND_SEGMENT
 
 # commands: exit, read, write, browse, kill, search_file, search_dir
 
@@ -24,32 +29,50 @@ def get_action_from_string(command_string: str) -> Action | None:
         return AgentFinishAction()
 
     elif 'read' == cmd:
-        if len(args) == 1:
-            file = args[0]
-            start = 0
-        elif len(args) == 2:
-            file, start = args[0], int(args[1])
-        elif len(args) > 2:
-            file, start = args[0], int(args[1])
-        else:
-            return None
+        rex = r'^read\s+(\S+)(?:\s+(\d+))?$'
+        valid = re.match(rex, command_string, re.DOTALL)
+        if valid:
+            file, start = valid.groups()
 
-        return FileReadAction(file, start)
+            start = 0 if not start.isalnum() else int(start)
+
+            return FileReadAction(file, start)
+        else:
+            return AgentEchoAction(f'Invalid command structure for\n ```\n{command_string}\n```.\nTry again using this format:\n{DEFAULT_COMMAND_STR}')
 
     elif 'write' == cmd:
-        assert len(args) >= 4, 'Not enough arguments for this command'
-        file = args[0]
-        start, end = [int(arg) for arg in args[1:3]]
-        content = ' '.join(args[3:])
-        return FileWriteAction(file, content, start, end)
+        rex = r'^write\s+(\S+)\s+(\S.*)\s*(\d*)\s*(\d*)?$'
+        valid = re.match(rex, command_string, re.DOTALL)
+
+        if valid:
+            file, content, start, end = valid.groups()
+
+            start = 0 if not start.isalnum() else int(start)
+            end = -1 if not end.isalnum() else int(end)
+
+            return FileWriteAction(file, content, start, end)
+        else:
+            return AgentEchoAction(f'Invalid command structure for\n ```\n{command_string}\n```.\nTry again using this format:\n{DEFAULT_COMMAND_STR}')
 
     elif 'browse' == cmd:
         return BrowseURLAction(args[0].strip())
 
-    # TODO: need to integrate all of the custom commands
-
+    elif cmd in ['search_file', 'search_dir', 'find_file']:
+        rex = r'^(search_file|search_dir|find_file)\s+(\S+)(?:\s+(\S+))?$'
+        valid = re.match(rex, command_string, re.DOTALL)
+        if valid:
+            return CmdRunAction(command_string)
+        else:
+            return AgentEchoAction(f'Invalid command structure for\n ```\n{command_string}\n```.\nTry again using this format:\n{COMMAND_SEGMENT}')
     else:
-        return CmdRunAction(command_string)
+        # check bash command
+        obs = str(CmdRunAction(f'type {cmd}'))
+        if obs.split(':')[-1].strip() == 'not found':
+            # echo not found error for llm
+            return AgentEchoAction(content=obs)
+        else:
+            # run valid command
+            return CmdRunAction(command_string)
 
 
 def parse_command(input_str: str):

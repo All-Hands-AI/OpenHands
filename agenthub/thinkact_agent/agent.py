@@ -72,7 +72,7 @@ class ThinkActAgent(Agent):
         ]
 
         if len(self.running_memory) > 0:
-            msgs.insert(0, context)
+            msgs.insert(0, {'content': context, 'role': 'user'})
 
         # print('\n\n\n'.join([m['content'] for m in msgs]))
         action, thought = self._think_act(messages=msgs)
