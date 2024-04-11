@@ -12,6 +12,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.LLM_API_KEY: None,
     ConfigType.LLM_BASE_URL: None,
     ConfigType.WORKSPACE_DIR: os.path.join(os.getcwd(), 'workspace'),
+    ConfigType.WORKSPACE_MOUNT_BASE: None,
     ConfigType.LLM_MODEL: 'gpt-3.5-turbo-1106',
     ConfigType.SANDBOX_CONTAINER_IMAGE: 'ghcr.io/opendevin/sandbox',
     ConfigType.RUN_AS_DEVIN: 'true',

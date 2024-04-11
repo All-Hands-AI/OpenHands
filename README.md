@@ -129,10 +129,10 @@ export WORKSPACE_DIR=$(pwd)/workspace # The directory you want OpenDevin to work
 docker build -t opendevin-app .
 docker run \
     -e LLM_API_KEY \
-    -e WORKSPACE_DIR \
+    -e WORKSPACE_MOUNT_BASE=$WORKSPACE_DIR
     -p 2001:3001 -p 2000:3000 \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v $WORKSPACE_DIR:/app/workspace \
+    -v $WORKSPACE_DIR:/workspace \
     opendevin-app
 ```
 Replace `$(pwd)/workspace` with the path to the code you want OpenDevin to work with.
