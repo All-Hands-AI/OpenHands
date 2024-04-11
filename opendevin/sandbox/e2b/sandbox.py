@@ -21,11 +21,17 @@ class E2BSandbox:
         self.sandbox = Sandbox(
             api_key=config.get('E2B_API_KEY'),
             template=template,
-            on_stderr=lambda x: print(f'E2B SANDBOX STDERR: {x}'),
-            on_stdout=lambda x: print(f'E2B SANDBOX STDOUT: {x}'),
+            # It's possible to stream stdout and stderr from sandbox and from each process
+            # on_stderr=lambda x: print(f'E2B SANDBOX STDERR: {x}'),
+            # on_stdout=lambda x: print(f'E2B SANDBOX STDOUT: {x}'),
+            cwd='/home/user',  # Default workdir inside sandbox
         )
         self.timeout = timeout
-        print('Started E2B sandbox')
+        print('Started E2B sandbox', self.sandbox.id)
+
+    @property
+    def filesystem(self):
+        return self.sandbox.filesystem
 
     # TODO: This won't work if we didn't wait for the background process to finish
     def read_logs(self, process_id: int) -> str:
@@ -35,7 +41,6 @@ class E2BSandbox:
         return '\n'.join([m.line for m in proc.output_messages])
 
     def execute(self, cmd: str) -> Tuple[int, str]:
-        print('Running command in e2b sandbox:', cmd)
         process = self.sandbox.process.start(cmd)
         try:
             process_output = process.wait(timeout=self.timeout)
@@ -53,7 +58,6 @@ class E2BSandbox:
         return process_output.exit_code, logs_str
 
     def execute_in_background(self, cmd: str) -> E2BProcess:
-        print('Running background command in e2b sandbox:', cmd)
         process = self.sandbox.process.start(cmd)
         e2b_process = E2BProcess(process, cmd)
         self.cur_background_id += 1
