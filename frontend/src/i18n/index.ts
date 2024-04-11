@@ -23,13 +23,6 @@ i18n
   .init({
     fallbackLng: "en",
     debug: process.env.NODE_ENV === "development",
-    backend: {
-      loadPath: "/locales/{{lng}}/{{ns}}.json",
-      addPath: "/locales/{{lng}}/{{ns}}",
-      allowMultiLoading: true,
-      crossDomain: true,
-      languages: ["en", "zh-CN", "zh-TW", "ko-KR", "no", "de", "it", "pt", "es"],
-    },
   })
   .then(() => {
     // assume all detected languages are available
