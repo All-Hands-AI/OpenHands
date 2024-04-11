@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from "react";
 import "./App.css";
+import { Toaster } from "react-hot-toast";
 import CogTooth from "./assets/cog-tooth";
 import ChatInterface from "./components/ChatInterface";
 import Errors from "./components/Errors";
+import LoadMessageModal from "./components/LoadMessageModal";
+import { Container, Orientation } from "./components/Resizable";
 import SettingModal from "./components/SettingModal";
 import Terminal from "./components/Terminal";
 import Workspace from "./components/Workspace";
 import { fetchMsgTotal } from "./services/session";
-import LoadMessageModal from "./components/LoadMessageModal";
-import { ResConfigurations, ResFetchMsgTotal } from "./types/ResponseType";
 import { fetchConfigurations, saveSettings } from "./services/settingsService";
 import Socket from "./services/socket";
+import { ResConfigurations, ResFetchMsgTotal } from "./types/ResponseType";
 import { getCachedConfig } from "./utils/storage";
 
 interface Props {
@@ -78,28 +80,39 @@ function App(): JSX.Element {
   };
 
   return (
-    <div className="flex h-screen bg-neutral-900 text-white">
-      <LeftNav setSettingOpen={setSettingOpen} />
-      <div className="flex flex-col grow gap-3 py-3 pr-3">
-        <div className="flex gap-3 grow min-h-0">
-          <div className="w-[500px] shrink-0 rounded-xl overflow-hidden border border-neutral-600">
-            <ChatInterface />
-          </div>
-          <div className="flex flex-col flex-1 overflow-hidden rounded-xl bg-neutral-800 border border-neutral-600">
-            <Workspace />
-          </div>
-        </div>
-        <div className="h-72 shrink-0 bg-neutral-800 rounded-xl border border-neutral-600 flex flex-col">
-          <Terminal key="terminal" />
-        </div>
+    <div className="h-screen w-screen flex flex-col">
+      <div className="flex grow bg-neutral-900 text-white min-h-0">
+        <LeftNav setSettingOpen={setSettingOpen} />
+        <Container
+          orientation={Orientation.VERTICAL}
+          className="grow p-3 py-3 pr-3 min-w-0"
+          initialSize={window.innerHeight - 300}
+          firstChild={
+            <Container
+              orientation={Orientation.HORIZONTAL}
+              className="grow h-full min-h-0 min-w-0"
+              initialSize={500}
+              firstChild={<ChatInterface />}
+              firstClassName="min-w-[500px] rounded-xl overflow-hidden border border-neutral-600"
+              secondChild={<Workspace />}
+              secondClassName="flex flex-col overflow-hidden rounded-xl bg-neutral-800 border border-neutral-600 grow min-w-[500px] min-w-[500px]"
+            />
+          }
+          firstClassName="min-h-72"
+          secondChild={<Terminal key="terminal" />}
+          secondClassName="min-h-72 bg-neutral-800 rounded-xl border border-neutral-600 flex flex-col"
+        />
       </div>
+      {/* This div is for the footer that will be added later
+      <div className="h-8 w-full border-t border-border px-2" />
+      */}
       <SettingModal isOpen={settingOpen} onClose={handleCloseModal} />
-
       <LoadMessageModal
         isOpen={loadMsgWarning}
         onClose={() => setLoadMsgWarning(false)}
       />
       <Errors />
+      <Toaster />
     </div>
   );
 }

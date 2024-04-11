@@ -1,7 +1,7 @@
-import store from "../store";
-import { appendError, removeError } from "../state/errorsSlice";
+// import { toast } from "sonner";
 import { handleAssistantMessage } from "./actions";
 import { getToken } from "./auth";
+import toast from "../utils/toast";
 
 class Socket {
   private static _socket: WebSocket | null = null;
@@ -27,12 +27,9 @@ class Socket {
       .then((token) => {
         Socket._initialize(token);
       })
-      .catch((err) => {
-        const msg = `Failed to get token: ${err}.`;
-        store.dispatch(appendError(msg));
-        setTimeout(() => {
-          store.dispatch(removeError(msg));
-        }, 2000);
+      .catch(() => {
+        const msg = `Connection failed. Retry...`;
+        toast.stickyError("ws", msg);
 
         if (this.isFirstRun) {
           setTimeout(() => {
@@ -49,6 +46,7 @@ class Socket {
     Socket._socket = new WebSocket(WS_URL);
 
     Socket._socket.onopen = (e) => {
+      toast.stickySuccess("ws", "Connected to server.");
       Socket.callbacks.open?.forEach((callback) => {
         callback(e);
       });
@@ -59,11 +57,8 @@ class Socket {
     };
 
     Socket._socket.onerror = () => {
-      const msg = "Failed connection to server";
-      store.dispatch(appendError(msg));
-      setTimeout(() => {
-        store.dispatch(removeError(msg));
-      }, 2000);
+      const msg = "Connection failed. Retry...";
+      toast.stickyError("ws", msg);
     };
 
     Socket._socket.onclose = () => {
@@ -88,11 +83,8 @@ class Socket {
     if (Socket.isConnected()) {
       Socket._socket?.send(message);
     } else {
-      const msg = "WebSocket connection is not ready.";
-      store.dispatch(appendError(msg));
-      setTimeout(() => {
-        store.dispatch(removeError(msg));
-      }, 2000);
+      const msg = "Connection failed. Retry...";
+      toast.stickyError("ws", msg);
     }
   }
 

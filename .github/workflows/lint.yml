@@ -35,9 +35,8 @@ jobs:
       - name: Create mypy cache directory
         run: mkdir -p .mypy_cache
       - name: Install dependencies
-        run: pip install ruff mypy types-PyYAML types-toml
+        run: pip install ruff mypy==1.9.0 types-PyYAML types-toml
       - name: Run mypy
         run: python -m mypy --install-types --non-interactive --config-file dev_config/python/mypy.ini opendevin/ agenthub/
       - name: Run ruff
         run: ruff check --config dev_config/python/ruff.toml opendevin/ agenthub/
-      
