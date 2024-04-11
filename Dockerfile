@@ -1,30 +1,30 @@
-FROM node:21.7.2-bookworm-slim
+FROM node:21.7.2-bookworm-slim as frontend-builder
 
-WORKDIR /OpenDevin
+WORKDIR /app
+
+COPY ./frontend/package.json frontend/package-lock.json ./
+RUN npm install
+
+COPY ./frontend ./
+RUN npm run build
+
+
+FROM python:3.12-slim as runtime
+
+WORKDIR /app
+ENV PYTHONPATH '/app'
 
 RUN apt-get update -y
 RUN apt-get install -y curl make git python3.11 python3-pip
 RUN curl -fsSL https://get.docker.com | sh
 RUN python3 -m pip install poetry  --break-system-packages
 
-COPY ./frontend/package.json frontend/package-lock.json ./frontend/
-RUN cd frontend && npm install && cd ..
-
-COPY ./frontend/scripts ./frontend/scripts
-COPY ./frontend/src/i18n/translation.json ./frontend/src/i18n/translation.json
-RUN cd frontend && npm run make-i18n && cd ..
-
 COPY ./pyproject.toml ./poetry.lock ./
 RUN poetry install --without evaluation
 
-COPY ./frontend/*.json ./frontend/
-COPY ./frontend/*.js ./frontend/
-COPY ./frontend/*.ts ./frontend/
-COPY ./frontend/src/* ./frontend/src/
-COPY ./frontend/public ./frontend/
+COPY --from=frontend-builder /app/dist ./frontend/dist
 
 COPY ./opendevin ./opendevin
 COPY ./agenthub ./agenthub
-COPY ./entrypoint.sh ./
 
-ENTRYPOINT ["./entrypoint.sh"]
+CMD ["poetry", "run", "uvicorn", "opendevin.server.listen:app", "--host", "0.0.0.0", "--port", "3000"]
