@@ -5,7 +5,13 @@ export type Message = {
   sender: "user" | "assistant";
 };
 
-const initialMessages: Message[] = [];
+const initialMessages: Message[] = [
+  {
+    content:
+      "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    sender: "assistant",
+  },
+];
 export const chatSlice = createSlice({
   name: "chat",
   initialState: {
@@ -13,7 +19,7 @@ export const chatSlice = createSlice({
     typingActive: false,
     userMessages: initialMessages,
     assistantMessages: initialMessages,
-    assistantMessagesTypingQueue: initialMessages,
+    assistantMessagesTypingQueue: [] as Message[],
     newChatSequence: initialMessages,
     typeThis: { content: "", sender: "assistant" } as Message,
   },

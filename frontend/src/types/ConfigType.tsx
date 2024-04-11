@@ -15,4 +15,20 @@ enum ArgConfigType {
   LANGUAGE = "LANGUAGE",
 }
 
-export default ArgConfigType;
+const SupportedList: string[] = [
+  // ArgConfigType.LLM_API_KEY,
+  // ArgConfigType.LLM_BASE_URL,
+  ArgConfigType.WORKSPACE_DIR,
+  ArgConfigType.LLM_MODEL,
+  // ArgConfigType.SANDBOX_CONTAINER_IMAGE,
+  // ArgConfigType.RUN_AS_DEVIN,
+  // ArgConfigType.LLM_EMBEDDING_MODEL,
+  // ArgConfigType.LLM_NUM_RETRIES,
+  // ArgConfigType.LLM_COOLDOWN_TIME,
+  // ArgConfigType.DIRECTORY_REWRITE,
+  // ArgConfigType.MAX_ITERATIONS,
+  ArgConfigType.AGENT,
+  ArgConfigType.LANGUAGE,
+];
+
+export { ArgConfigType, SupportedList };

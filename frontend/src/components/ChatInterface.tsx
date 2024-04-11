@@ -1,11 +1,7 @@
 import { Card, CardBody } from "@nextui-org/react";
 import React, { useEffect, useRef } from "react";
-import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import assistantAvatar from "../assets/assistant-avatar.png";
-import userAvatar from "../assets/user-avatar.png";
 import { useTypingEffect } from "../hooks/useTypingEffect";
-import { I18nKey } from "../i18n/declaration";
 import {
   addAssistantMessageToChat,
   setTypingActive,
@@ -13,6 +9,7 @@ import {
 } from "../services/chatService";
 import { Message } from "../state/chatSlice";
 import { RootState } from "../store";
+import AgentStatusBar from "./AgentStatusBar";
 import Input from "./Input";
 
 interface IChatBubbleProps {
@@ -40,7 +37,7 @@ function TypingChat() {
   });
 
   return (
-    <Card className="bg-success-100">
+    <Card className="bg-neutral-500">
       <CardBody>{messageContent}</CardBody>
     </Card>
   );
@@ -48,16 +45,15 @@ function TypingChat() {
 
 function ChatBubble({ msg }: IChatBubbleProps): JSX.Element {
   return (
-    <div className="flex mb-2.5 pr-5 pl-5">
+    <div
+      className={`flex mb-2.5 pr-5 pl-5 max-w-[90%] ${msg?.sender === "user" ? "self-end" : ""}`}
+    >
       <div
         className={`flex mt-2.5 mb-0 min-w-0 ${msg?.sender === "user" && "flex-row-reverse ml-auto"}`}
       >
-        <img
-          src={msg?.sender === "user" ? userAvatar : assistantAvatar}
-          alt={`${msg?.sender} avatar`}
-          className="w-[40px] h-[40px] mx-2.5"
-        />
-        <Card className={`${msg?.sender === "user" ? "bg-primary-100" : ""}`}>
+        <Card
+          className={`${msg?.sender === "user" ? "bg-neutral-700" : "bg-neutral-500"}`}
+        >
           <CardBody>{msg?.content}</CardBody>
         </Card>
       </div>
@@ -98,7 +94,7 @@ function MessageList(): JSX.Element {
   }, [typeThis]);
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-y-auto flex flex-col">
       {newChatSequence.map((msg, index) => (
         <ChatBubble key={index} msg={msg} />
       ))}
@@ -106,31 +102,11 @@ function MessageList(): JSX.Element {
       {typingActive && (
         <div className="flex mb-2.5 pr-5 pl-5 bg-s">
           <div className="flex mt-2.5 mb-0 min-w-0 ">
-            <img
-              src={assistantAvatar}
-              alt="assistant avatar"
-              className="w-[40px] h-[40px] mx-2.5"
-            />
             <TypingChat />
           </div>
         </div>
       )}
       <div ref={messagesEndRef} />
-    </div>
-  );
-}
-
-function InitializingStatus(): JSX.Element {
-  const { t } = useTranslation();
-
-  return (
-    <div className="flex items-center m-auto h-full">
-      <img
-        src={assistantAvatar}
-        alt="assistant avatar"
-        className="w-[40px] h-[40px] mx-2.5"
-      />
-      <div>{t(I18nKey.CHAT_INTERFACE$INITIALZING_AGENT_LOADING_MESSAGE)}</div>
     </div>
   );
 }
@@ -141,7 +117,8 @@ function ChatInterface(): JSX.Element {
   return (
     <div className="flex flex-col h-full p-0 bg-neutral-800">
       <div className="border-b border-neutral-600 text-sm px-4 py-2">Chat</div>
-      {initialized ? <MessageList /> : <InitializingStatus />}
+      <MessageList />
+      {initialized ? null : <AgentStatusBar />}
       <Input />
     </div>
   );
