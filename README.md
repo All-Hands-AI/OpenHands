@@ -124,6 +124,7 @@ Getting started with the OpenDevin project is incredibly easy. Follow these simp
 The easiest way to run OpenDevin is inside a Docker container.
 You can run:
 ```bash
+export LLM_API_KEY="sk-..." # Your OpenAI API key, or any other LLM API key
 docker build -t opendevin-app .
 docker run \
     -e LLM_API_KEY \
@@ -135,6 +136,26 @@ docker run \
 Replace `$(pwd)/workspace` with the path to the code you want OpenDevin to work with.
 
 See [Development.md](Development.md) for instructions on running OpenDevin without Docker.
+
+## 🤖 LLM Backends
+OpenDevin can work with any LLM backend.
+For a full list of the LM providers and models available, please consult the
+[litellm documentation](https://docs.litellm.ai/docs/providers).
+
+The following environment variables might be necessary for some LLMs:
+* `LLM_API_KEY`
+* `LLM_BASE_URL`
+* `LLM_EMBEDDING_MODEL`
+* `LLM_DEPLOYMENT_NAME`
+* `LLM_API_VERSION`
+
+**Note on Alternative Models:**
+Some alternative models may prove more challenging to tame than others.
+Fear not, brave adventurer! We shall soon unveil LLM-specific documentation to guide you on your quest.
+And if you've already mastered the art of wielding a model other than OpenAI's GPT,
+we encourage you to [share your setup instructions with us](https://github.com/OpenDevin/OpenDevin/issues/417).
+
+There is also [documentation for running with local models using ollama](./docs/documentation/LOCAL_LLM_GUIDE.md).
 
 ## ⭐️ Research Strategy
 
