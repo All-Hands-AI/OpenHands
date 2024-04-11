@@ -125,12 +125,14 @@ The easiest way to run OpenDevin is inside a Docker container.
 You can run:
 ```bash
 export LLM_API_KEY="sk-..." # Your OpenAI API key, or any other LLM API key
+export WORKSPACE_DIR=$(pwd)/workspace # The directory you want OpenDevin to work with
 docker build -t opendevin-app .
 docker run \
     -e LLM_API_KEY \
+    -e WORKSPACE_DIR \
     -p 2001:3001 -p 2000:3000 \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v $(pwd)/workspace:/OpenDevin/workspace \
+    -v $WORKSPACE_DIR:/app/workspace \
     opendevin-app
 ```
 Replace `$(pwd)/workspace` with the path to the code you want OpenDevin to work with.
