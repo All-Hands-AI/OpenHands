@@ -11,6 +11,9 @@ export const AvailableLanguages = [
   { label: "한국어", value: "ko-KR" },
   { label: "Norsk", value: "no" },
   { label: "Deutsch", value: "de" },
+  { label: "Italiano", value: "it" },
+  { label: "Português", value: "pt" },
+  { label: "Español", value: "es" },
 ];
 
 i18n
@@ -20,6 +23,13 @@ i18n
   .init({
     fallbackLng: "en",
     debug: process.env.NODE_ENV === "development",
+    backend: {
+      loadPath: "/locales/{{lng}}/{{ns}}.json",
+      addPath: "/locales/{{lng}}/{{ns}}",
+      allowMultiLoading: true,
+      crossDomain: true,
+      languages: ["en", "zh-CN", "zh-TW", "ko-KR", "no", "de", "it", "pt", "es"],
+    },
   })
   .then(() => {
     // assume all detected languages are available
