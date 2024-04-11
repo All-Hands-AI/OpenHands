@@ -110,6 +110,8 @@ class AgentManager:
         container_image = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
         max_iterations = self.get_arg_or_default(
             args, ConfigType.MAX_ITERATIONS)
+        max_chars = self.get_arg_or_default(
+            args, ConfigType.MAX_CHARS)
 
         if not os.path.exists(directory):
             logger.info(
@@ -126,6 +128,7 @@ class AgentManager:
                 agent=self.agent,
                 workdir=directory,
                 max_iterations=int(max_iterations),
+                max_chars=int(max_chars),
                 container_image=container_image,
                 callbacks=[self.on_agent_event],
             )

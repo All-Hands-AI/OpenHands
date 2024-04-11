@@ -18,6 +18,7 @@ from opendevin.action import (
 from opendevin.observation import Observation, AgentErrorObservation, NullObservation
 from opendevin import config
 from opendevin.logger import opendevin_logger as logger
+from opendevin.exceptions import MaxCharsExceedError
 
 from .command_manager import CommandManager
 
@@ -45,6 +46,7 @@ DISABLE_COLOR_PRINTING = (
     config.get_or_default('DISABLE_COLOR', 'false').lower() == 'true'
 )
 MAX_ITERATIONS = config.get('MAX_ITERATIONS')
+MAX_CHARS = config.get('MAX_CHARS')
 
 
 def print_with_color(text: Any, print_type: str = 'INFO'):
@@ -76,12 +78,14 @@ class AgentController:
         workdir: str,
         id: str = '',
         max_iterations: int = MAX_ITERATIONS,
+        max_chars: int = MAX_CHARS,
         container_image: str | None = None,
         callbacks: List[Callable] = [],
     ):
         self.id = id
         self.agent = agent
         self.max_iterations = max_iterations
+        self.max_chars = max_chars
         self.workdir = workdir
         self.command_manager = CommandManager(
             self.id, workdir, container_image)
@@ -121,6 +125,10 @@ class AgentController:
         print('\n\n==============', flush=True)
         print('STEP', i, flush=True)
         print_with_color(self.state.plan.main_goal, 'PLAN')
+
+        if self.state.num_of_chars > self.max_chars:
+            raise MaxCharsExceedError(
+                self.state.num_of_chars, self.max_chars)
 
         log_obs = self.command_manager.get_background_obs()
         for obs in log_obs:
