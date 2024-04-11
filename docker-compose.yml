@@ -1,48 +1,60 @@
+# docker compose file version
 version: "3.8"
 
+# defining the services to be running in a distributed environment
 services:
 
+  # defining the master service that will setup the runtime environment for other services
+
+  ## This single opendevin-build container can be exported as a .tar so all the things will be preinstalled and user just does dokcer load 
   opendevin-build:
     build:
-      dockerfile: ./Dockerfile
-    image: opendevin:latest
-    container_name: opendevin-build
-    restart: unless-stopped
-    command: make build
+      dockerfile: ./Dockerfile                                  # pointing to the location of the Dockerfile which contains the requirements of the runtime envisronment
+    image: opendevin:latest                                     # naming the image that will be built, which stores the information of the runtime requirements
+    container_name: opendevin-build                             # naming the container that will run, which is the actual runtime environment
+    restart: unless-stopped                                     # specifying the condition that container should try to restart every time unless its stopped
+    command: make build                                         # specifying the command that will be executed when the container is successfully running
+    
+    # defining the condition for a health container
     healthcheck:
-      test: pytest --version
-      interval: 5s
-      timeout: 2s
-      retries: 6000
+      test: pytest --version                                    # verifying if pytest is installed or not (must be the last library to be installed (for now :)))
+      interval: 5s                                              # verify every 5 seconds
+      timeout: 2s                                               # wait for validity conformation for 2 seconds
+      retries: 6000                                             # keep trying 6000 times
+    
+    # specifying the common network used to communicate with other services
     networks:
       - opendevin-network
+
+    # defining the driectory mappings within the container
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./:/OpenDevin
-      - opendevin-volume:/usr
+      - /var/run/docker.sock:/var/run/docker.sock               # mapping the docker socket inside the container with the one in the host machine (bind mount)
+      - ./:/OpenDevin                                           # mapping all the code files into the OpenDevin directory inside the container, plcaed at root ('/') location (bind mount)
+      - opendevin-volume:/usr                                   # mapping the /usr directory into a docker volume. It contains information of all the libraries installed in this container via poetry so that it can be shared with other containers
   
+  # defining the slave service that depends on the master service
   backend:
-    build: .
-    image: opendevin:latest
-    container_name: opendevin-backend
+    build: .                                                    # IDK why I have to put this, but no new image is created...
+    image: opendevin:latest                                     # specifying to use the same image built by the master service
+    container_name: opendevin-backend                             
     restart: unless-stopped
     command: make start-backend
     ports:
-      - 3000:3000
+      - 3000:3000                                               # mapping the backend port to the localhost:3000 of host machine
     networks:
       - opendevin-network
     volumes_from:
-      - opendevin-build
+      - opendevin-build                                         # specifying to use the volumes made/used by master service
     depends_on:
       opendevin-build:
-        condition: service_healthy
+        condition: service_healthy                              # specifying the condition to start the slave service only when the health check of master service is successful
 
   frontend:
     build: .
     image: opendevin:latest
     container_name: opendevin-frontend
     restart: unless-stopped
-    command: make start-frontend-container
+    command: make start-frontend
     ports:
       - 3001:3001
     networks:
@@ -53,9 +65,11 @@ services:
       opendevin-build:
         condition: service_healthy
 
+# defining the common volume used by services to share directory structures
 volumes:
   opendevin-volume: null
 
+# defining the common network used by services to communicate
 networks:
   opendevin-network:
     name: opendevin-network
