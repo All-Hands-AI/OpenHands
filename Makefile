@@ -123,14 +123,14 @@ run:
 		exit 1; \
 	fi
 	@mkdir -p logs
-	@if nc -z localhost $(BACKEND_PORT); then \
+	@if netstat -tln | grep -q ":$(BACKEND_PORT) "; then \
 		echo "$(RED)Port $(BACKEND_PORT) is already in use. Please make sure the port is available before running the app.$(RESET)"; \
 		exit 1; \
 	fi
 	@echo "$(YELLOW)Starting backend server...$(RESET)"
 	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) &
 	@echo "$(YELLOW)Waiting for the backend to start...$(RESET)"
-	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
+	@until netstat -tln | grep -q ":$(BACKEND_PORT) "; do sleep 0.1; done
 	@echo "$(GREEN)Backend started successfully.$(RESET)"
 	@cd frontend && echo "$(BLUE)Starting frontend with npm...$(RESET)" && npm run start -- --port $(FRONTEND_PORT)
 	@echo "$(GREEN)Application started successfully.$(RESET)"
