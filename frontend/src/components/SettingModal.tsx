@@ -100,6 +100,7 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
             {t(I18nKey.CONFIGURATION$MODAL_TITLE)}
           </ModalHeader>
           <ModalBody>
+            {/* FIXME: Implement workspace directory for the new dockerized world
             <Input
               type="text"
               label={t(
@@ -111,6 +112,7 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
               )}
               onChange={(e) => setWorkspaceDirectory(e.target.value)}
             />
+            */}
 
             <Autocomplete
               defaultItems={supportedModels.map((v: string) => ({
