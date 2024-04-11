@@ -1,6 +1,7 @@
 from typing import List
 
 from . import json
+from json import JSONDecodeError
 
 import re
 
@@ -156,21 +157,21 @@ def parse_action_response(response: str) -> Action:
     """
     json_start = response.find("{")
     json_end = response.rfind("}") + 1
-    response_json = response[json_start:json_end]
+    response_json_str = response[json_start:json_end]
     try:
-        action_dict = json.loads(response_json)
-    except json.decoder.JSONDecodeError:
+        action_dict = json.loads(response_json_str)
+    except JSONDecodeError:
         # Find response-looking json in the output and use the more promising one. Helps with weak llms
-        response_json = re.finditer(
+        response_json_matches = re.finditer(
             r"""{\s*\"action\":\s?\"(\w+)\"(?:,?|,\s*\"args\":\s?{((?:.|\s)*?)})\s*}""",
             response)  # Find all response-looking strings
         def rank(match):
             return len(match[2]) if match[1] == "think" else 130  # Crudely rank multiple responses by length
         try:
-            response_json = json.loads(max(response_json, key=rank)[0])  # Use the highest ranked response
+            action_dict = json.loads(max(response_json_matches, key=rank)[0])  # Use the highest ranked response
         except ValueError as e:
             raise ValueError(
-                "Output from the llm isn't properly formatted. The model may be misconfigured."
+                "Output from the LLM isn't properly formatted. The model may be misconfigured."
             ) from e
     if "content" in action_dict:
         # The LLM gets confused here. Might as well be robust
