@@ -23,6 +23,12 @@ OutputType = namedtuple('OutputType', ['content'])
 DIRECTORY_REWRITE = config.get(ConfigType.DIRECTORY_REWRITE)
 CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
 
+SSH_HOSTNAME = config.get(ConfigType.SSH_HOSTNAME)
+
+USE_HOST_NETWORK = platform.system() == 'Linux'
+if config.get(ConfigType.USE_HOST_NETWORK) is not None:
+    USE_HOST_NETWORK = config.get(ConfigType.USE_HOST_NETWORK).lower() != 'false'
+
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
 RUN_AS_DEVIN = config.get('RUN_AS_DEVIN').lower() != 'false'
@@ -161,7 +167,7 @@ class DockerSSHBox(Sandbox):
     def start_ssh_session(self):
         # start ssh session at the background
         self.ssh = pxssh.pxssh()
-        hostname = 'localhost'
+        hostname = SSH_HOSTNAME
         if RUN_AS_DEVIN:
             username = 'opendevin'
         else:

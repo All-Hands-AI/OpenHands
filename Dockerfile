@@ -29,5 +29,6 @@ COPY ./agenthub ./agenthub
 
 ENV RUN_AS_DEVIN=false
 ENV USE_HOST_NETWORK=false
+ENV SSH_HOSTNAME=host.docker.internal
 
 CMD ["poetry", "run", "uvicorn", "opendevin.server.listen:app", "--host", "0.0.0.0", "--port", "3000"]

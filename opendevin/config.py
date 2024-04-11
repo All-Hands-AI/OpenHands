@@ -25,6 +25,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.AGENT: 'MonologueAgent',
     ConfigType.SANDBOX_TYPE: 'ssh',
     ConfigType.USE_HOST_NETWORK: 'false',
+    ConfigType.SSH_HOSTNAME: 'localhost',
 }
 
 config_str = ''
