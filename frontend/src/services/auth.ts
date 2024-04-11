@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 import * as jose from "jose";
 import { ResFetchToken } from "../types/ResponseType";
 

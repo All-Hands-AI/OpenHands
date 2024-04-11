@@ -15,8 +15,8 @@ RUN if [ -n "$debug" ]; then set -eux; fi && \
     apk --no-cache add openssl ca-certificates && \
     mkdir -p /root/devin/.ssl && \
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-      -keyout /root/devin/.ssl/privkey.pem \
-      -out /root/devin/.ssl/fullchain.pem \
+      -keyout /root/devin/ssl/privkey.pem \
+      -out /root/devin/ssl/fullchain.pem \
       -config /etc/ssl/openssl.cnf
 
 ARG node_env
