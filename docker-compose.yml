@@ -19,7 +19,7 @@ services:
     healthcheck:
       test: pytest --version                                    # verifying if pytest is installed or not (must be the last library to be installed (for now :)))
       interval: 5s                                              # verify every 5 seconds
-      timeout: 2s                                               # wait for validity conformation for 2 seconds
+      timeout: 2s                                               # wait for validity confirmation for 2 seconds
       retries: 6000                                             # keep trying 6000 times
     
     # specifying the common network used to communicate with other services
@@ -34,7 +34,6 @@ services:
   
   # defining the slave service that depends on the master service
   backend:
-    build: .                                                    # IDK why I have to put this, but no new image is created...
     image: opendevin:latest                                     # specifying to use the same image built by the master service
     container_name: opendevin-backend                             
     restart: unless-stopped
@@ -50,7 +49,6 @@ services:
         condition: service_healthy                              # specifying the condition to start the slave service only when the health check of master service is successful
 
   frontend:
-    build: .
     image: opendevin:latest
     container_name: opendevin-frontend
     restart: unless-stopped
@@ -67,10 +65,13 @@ services:
 
 # defining the common volume used by services to share directory structures
 volumes:
-  opendevin-volume: null
+  opendevin-volume:
+    name: opendevin-volume
+    external: false
 
 # defining the common network used by services to communicate
 networks:
   opendevin-network:
     name: opendevin-network
     driver: bridge
+    external: false
