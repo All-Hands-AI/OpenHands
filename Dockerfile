@@ -27,4 +27,7 @@ COPY --from=frontend-builder /app/dist ./frontend/dist
 COPY ./opendevin ./opendevin
 COPY ./agenthub ./agenthub
 
+ENV RUN_AS_DEVIN=false
+ENV USE_HOST_NETWORK=false
+
 CMD ["poetry", "run", "uvicorn", "opendevin.server.listen:app", "--host", "0.0.0.0", "--port", "3000"]
