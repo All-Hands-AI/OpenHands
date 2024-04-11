@@ -1,4 +1,3 @@
-import { appendAssistantMessage } from "../state/chatSlice";
 import { setInitialized } from "../state/taskSlice";
 import store from "../store";
 import ActionType from "../types/ActionType";
@@ -6,6 +5,7 @@ import Socket from "./socket";
 import { setAllSettings, setByKey } from "../state/settingsSlice";
 import { ResConfigurations } from "../types/ResponseType";
 import { ArgConfigType } from "../types/ConfigType";
+import toast from "../utils/toast";
 
 export async function fetchConfigurations(): Promise<ResConfigurations> {
   const headers = new Headers({
@@ -98,12 +98,14 @@ export function saveSettings(
     },
   );
 
+  let i = 0;
   for (const [key, value] of Object.entries(updatedSettings)) {
     if (DISPLAY_MAP.has(key)) {
       store.dispatch(setByKey({ key, value }));
-      store.dispatch(
-        appendAssistantMessage(`Set ${DISPLAY_MAP.get(key)} to "${value}"`),
-      );
+      setTimeout(() => {
+        toast.settingsChanged(`Set ${DISPLAY_MAP.get(key)} to "${value}"`);
+      }, i * 500);
+      i += 1;
     }
   }
 

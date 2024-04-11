@@ -3,6 +3,7 @@ from opendevin.llm.llm import LLM
 import agenthub.monologue_agent.utils.json as json
 import agenthub.monologue_agent.utils.prompts as prompts
 
+
 class Monologue:
     """
     The monologue is a representation for the agent's internal monologue where it can think.
@@ -26,7 +27,7 @@ class Monologue:
         - ValueError: If t is not a dict
         """
         if not isinstance(t, dict):
-            raise ValueError("Event must be a dictionary")
+            raise ValueError('Event must be a dictionary')
         self.thoughts.append(t)
 
     def get_thoughts(self):
@@ -63,17 +64,13 @@ class Monologue:
         Raises:
         - RunTimeError: When the condensing process fails for any reason
         """
-        
+
         try:
             prompt = prompts.get_summarize_monologue_prompt(self.thoughts)
-            messages = [{"content": prompt,"role": "user"}]
+            messages = [{'content': prompt, 'role': 'user'}]
             resp = llm.completion(messages=messages)
             summary_resp = resp['choices'][0]['message']['content']
-            self.thoughts = prompts.parse_summary_response(strip_markdown(summary_resp))
+            self.thoughts = prompts.parse_summary_response(summary_resp)
         except Exception as e:
             traceback.print_exc()
             raise RuntimeError(f"Error condensing thoughts: {e}")
-
-def strip_markdown(markdown_json):
-    # remove markdown code block
-    return markdown_json.replace('```json\n', '').replace('```', '').strip()

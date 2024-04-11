@@ -63,7 +63,7 @@ def log_uncaught_exceptions(ex_cls, ex, tb):
 
 sys.excepthook = log_uncaught_exceptions
 
-opendevin_logger = logging.getLogger("opendevin")
+opendevin_logger = logging.getLogger('opendevin')
 opendevin_logger.setLevel(logging.INFO)
 opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.addHandler(get_file_handler())
@@ -78,6 +78,8 @@ logging.getLogger('LiteLLM Router').disabled = True
 logging.getLogger('LiteLLM Proxy').disabled = True
 
 # LLM prompt and response logging
+
+
 class LlmFileHandler(logging.FileHandler):
 
     def __init__(self, filename, mode='a', encoding=None, delay=False):
@@ -112,7 +114,6 @@ class LlmFileHandler(logging.FileHandler):
         self.stream.close
         opendevin_logger.debug('Logging to %s', self.baseFilename)
         self.message_counter += 1
-
 
 
 def get_llm_prompt_file_handler():

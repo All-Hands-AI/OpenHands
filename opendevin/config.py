@@ -16,11 +16,14 @@ DEFAULT_CONFIG: dict = {
     ConfigType.SANDBOX_CONTAINER_IMAGE: 'ghcr.io/opendevin/sandbox',
     ConfigType.RUN_AS_DEVIN: 'true',
     ConfigType.LLM_EMBEDDING_MODEL: 'local',
+    ConfigType.LLM_DEPLOYMENT_NAME: None,
+    ConfigType.LLM_API_VERSION: None,
     ConfigType.LLM_NUM_RETRIES: 6,
     ConfigType.LLM_COOLDOWN_TIME: 1,
     ConfigType.DIRECTORY_REWRITE: '',
     ConfigType.MAX_ITERATIONS: 100,
     ConfigType.AGENT: 'MonologueAgent',
+    ConfigType.SANDBOX_TYPE: 'ssh'
 }
 
 config_str = ''
@@ -42,8 +45,6 @@ def get(key: str, default=None, required=False):
     Get a key from the config or environment variables.
     """
     value = config.get(key, default)
-    if not value:
-        value = os.environ.get(key, default)
     if not value and required:
         raise KeyError(f"Please set '{key}' in `config.toml` or `.env`.")
     return value
@@ -53,4 +54,6 @@ def get_all() -> dict:
     """
     Get all the configuration values by performing a deep copy.
     """
-    return copy.deepcopy(config)
+    fe_config = copy.deepcopy(config)
+    del fe_config['LLM_API_KEY']
+    return fe_config
