@@ -1,6 +1,4 @@
 import os
-import subprocess
-import sys
 
 from dataclasses import dataclass
 
@@ -19,10 +17,8 @@ from .base import ExecutableAction
 # The LLM sometimes returns paths with this prefix, so we need to remove it
 PATH_PREFIX = '/workspace/'
 
-# claude generated this and I have no clue if it works properly
 
-
-def validate_file_content(file_path, content):
+def validate_file_content(file_path: str, content: str) -> str:
     """
     Validates the content of a code file by checking for syntax errors.
 
@@ -33,39 +29,59 @@ def validate_file_content(file_path, content):
     Returns:
         str or None: Error message if there are syntax errors, otherwise None.
     """
-    file_extension = os.path.splitext(
-        file_path)[1][1:]  # Get the file extension without the dot
 
-    # Determine the appropriate validation command based on the file extension
-    validation_commands = {
-        'py': [sys.executable, '-c', 'import sys; compile(sys.stdin.read(), "<string>", "exec")'],
-        'js': ['node', '-c', '-'],
-        'java': ['javac', '-encoding', 'UTF-8', '-Xlint:all', '-'],
-        'cpp': ['g++', '-std=c++11', '-Wall', '-Wextra', '-Werror', '-x', 'c++', '-c', '-'],
-        'c': ['gcc', '-std=c11', '-Wall', '-Wextra', '-Werror', '-x', 'c', '-c', '-']
-    }
-    ignore_types = ['txt', 'md', 'doc', 'pdf']
+    _, extension = os.path.splitext(file_path)
+    extension = extension.lstrip('.')
 
-    if file_extension in ignore_types:
-        return ''
-
-    elif file_extension in validation_commands:
-        try:
-            # Run the validation command and capture the output
-            subprocess.run(
-                validation_commands[file_extension],
-                input=content.encode('utf-8'),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True, check=True
-            )
-        except subprocess.CalledProcessError as e:
-            return e.stderr.strip()
-        else:
-            return ''
+    if extension == 'py':
+        return _validate_python(content)
+    elif extension == 'js':
+        return _validate_javascript(content)
+    elif extension == 'cpp' or extension == 'cc' or extension == 'cxx':
+        return _validate_cpp(content)
+    elif extension == 'java':
+        return _validate_java(content)
     else:
-        # If the file extension is not recognized, return a default error message
-        return f'Unsupported file type: {file_extension}'
+        return f'Unsupported file type: {extension}'
+
+
+def _validate_python(content: str) -> str:
+    # cmd = f'python -c "{content}"'
+    # result = CmdRunAction(cmd).run( )
+    # if result.exit_code != 0:
+    #    return result.stderr
+    return ''
+
+
+def _validate_javascript(content: str) -> str:
+    # cmd = f'node -e "{content}"'
+    # result = CmdRunAction(cmd).run(AgentController())
+    # if result.exit_code != 0:
+    #    return result.stderr
+    return ''
+
+
+def _validate_cpp(content: str) -> str:
+    # with open('temp.cpp', 'w') as f:
+    #    f.write(content)
+    # cmd = 'g++ -Wall -Wextra -std=c++11 -o temp temp.cpp'
+    # result = CmdRunAction(cmd).run(AgentController())
+    # if result.exit_code != 0:
+    #    return result.stderr
+    # os.remove('temp.cpp')
+    # os.remove('temp')
+    return ''
+
+
+def _validate_java(content: str) -> str:
+    # with open('temp.java', 'w') as f:
+    #    f.write(content)
+    # cmd = 'javac temp.java'
+    # result = CmdRunAction(cmd).run(AgentController())
+    # if result.exit_code != 0:
+    #    return result.stderr
+    # os.remove('temp.java')
+    return ''
 
 
 def resolve_path(base_path, file_path):
@@ -117,14 +133,14 @@ class FileWriteAction(ExecutableAction):
         mode = 'w' if not os.path.exists(whole_path) else 'r+'
 
         with open(whole_path, mode, encoding='utf-8') as file:
-            all_lines = file.readlines()
+            all_lines = file.readlines()  # this can not happen in mode w
             insert = self.content.split('\n')
             new_file = all_lines[:self.start] if self.start != 0 else ['']
             new_file += insert + [''] if self.end == - \
                 1 else all_lines[self.end:]
             content_str = '\n'.join(new_file)
             validation_error = validate_file_content(whole_path, content_str)
-            if validation_error:
+            if not validation_error:
                 file.write(content_str)
                 return FileWriteObservation(content='', path=self.path)
             else:

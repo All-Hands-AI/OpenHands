@@ -15,8 +15,6 @@ from .prompts import (
     CONTEXT_PROMPT
 )
 
-# TODO: Add state management
-
 
 class ThinkActAgent(Agent):
     """
@@ -61,17 +59,16 @@ class ThinkActAgent(Agent):
             state.cur_line
         )
 
-        context = CONTEXT_PROMPT(
-            self.running_memory,
-            self.memory_window
-        )
-
         msgs = [
             {'content': SYSTEM_MESSAGE, 'role': 'user'},
             {'content': prompt, 'role': 'user'}
         ]
 
         if len(self.running_memory) > 0:
+            context = CONTEXT_PROMPT(
+                self.running_memory,
+                self.memory_window
+            )
             msgs.insert(0, {'content': context, 'role': 'user'})
 
         # print('\n\n\n'.join([m['content'] for m in msgs]))

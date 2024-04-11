@@ -34,21 +34,21 @@ def get_action_from_string(command_string: str) -> Action | None:
         if valid:
             file, start = valid.groups()
 
-            start = 0 if not start.isalnum() else int(start)
+            start = 0 if not start else int(start)
 
             return FileReadAction(file, start)
         else:
             return AgentEchoAction(f'Invalid command structure for\n ```\n{command_string}\n```.\nTry again using this format:\n{DEFAULT_COMMAND_STR}')
 
     elif 'write' == cmd:
-        rex = r'^write\s+(\S+)\s+(\S.*)\s*(\d*)\s*(\d*)?$'
+        rex = r'^write\s+(\S+)\s+(\S.*)\s*(?:(\d+)s*(\d+))?$'
         valid = re.match(rex, command_string, re.DOTALL)
 
         if valid:
             file, content, start, end = valid.groups()
 
-            start = 0 if not start.isalnum() else int(start)
-            end = -1 if not end.isalnum() else int(end)
+            start = 0 if not start else int(start)
+            end = -1 if not end else int(end)
 
             return FileWriteAction(file, content, start, end)
         else:
