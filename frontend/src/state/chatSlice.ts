@@ -34,7 +34,7 @@ export const chatSlice = createSlice({
 
       if (
         state.assistantMessagesTypingQueue.length > 0 ||
-        state.typingActive === true
+        state.typingActive
       ) {
         state.assistantMessagesTypingQueue.push({
           content: action.payload,
@@ -42,7 +42,7 @@ export const chatSlice = createSlice({
         });
       } else if (
         state.assistantMessagesTypingQueue.length === 0 &&
-        state.typingActive === false
+        !state.typingActive
       ) {
         state.typeThis = {
           content: action.payload,
