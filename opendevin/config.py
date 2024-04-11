@@ -42,7 +42,7 @@ for k, v in config.items():
 
 def get(key: str, default=None, required=False):
     """
-    Get a key from the config or environment variables.
+    Get a key from the environment variables or config.toml or default configs.
     """
     value = config.get(key, default)
     if not value and required:
@@ -50,9 +50,9 @@ def get(key: str, default=None, required=False):
     return value
 
 
-def get_all() -> dict:
+def get_fe_config() -> dict:
     """
-    Get all the configuration values by performing a deep copy.
+    Get all the frontend configuration values by performing a deep copy.
     """
     fe_config = copy.deepcopy(config)
     del fe_config['LLM_API_KEY']

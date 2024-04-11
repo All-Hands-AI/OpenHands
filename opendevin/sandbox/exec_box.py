@@ -25,8 +25,8 @@ CONTAINER_IMAGE = config.get('SANDBOX_CONTAINER_IMAGE')
 # How do we make this more flexible?
 RUN_AS_DEVIN = config.get('RUN_AS_DEVIN').lower() != 'false'
 USER_ID = 1000
-if config.get_or_none('SANDBOX_USER_ID') is not None:
-    USER_ID = int(config.get_or_default('SANDBOX_USER_ID', ''))
+if SANDBOX_USER_ID := config.get('SANDBOX_USER_ID'):
+    USER_ID = int(SANDBOX_USER_ID)
 elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
 

@@ -1,34 +1,8 @@
 import select
 import sys
-import time
-import uuid
-import platform
-from pexpect import pxssh
-from collections import namedtuple
-from typing import Dict, List, Tuple, Union
-
-import docker
-
-from opendevin import config
-from opendevin.logging import opendevin_logger as logger
-from opendevin.controller.command_executor import CommandExecutor
-
-InputType = namedtuple('InputType', ['content'])
-OutputType = namedtuple('OutputType', ['content'])
-
-DIRECTORY_REWRITE = config.get(
-    'DIRECTORY_REWRITE'
-)  # helpful for docker-in-docker scenarios
-CONTAINER_IMAGE = config.get('SANDBOX_CONTAINER_IMAGE')
-
-# FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
-# How do we make this more flexible?
-RUN_AS_DEVIN = config.get('RUN_AS_DEVIN').lower() != 'false'
-USER_ID = 1000
-if config.get('SANDBOX_USER_ID'):
-    USER_ID = int(config.get('SANDBOX_USER_ID', ''))
-elif hasattr(os, 'getuid'):
-    USER_ID = os.getuid()
+from typing import Tuple
+from abc import ABC, abstractmethod
+from typing import Dict
 
 
 class BackgroundCommand:
