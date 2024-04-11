@@ -21,6 +21,7 @@ RESET=\033[0m
 build:
 	@echo "$(GREEN)Building project...$(RESET)"
 	@$(MAKE) -s check-dependencies
+	@$(MAKE) -s pull-docker-image
 	@$(MAKE) -s install-python-dependencies
 	@$(MAKE) -s install-frontend-dependencies
 	@$(MAKE) -s install-precommit-hooks
@@ -30,6 +31,7 @@ check-dependencies:
 	@echo "$(YELLOW)Checking dependencies...$(RESET)"
 	@$(MAKE) -s check-python
 	@$(MAKE) -s check-npm
+	@$(MAKE) -s check-docker
 	@$(MAKE) -s check-poetry
 	@echo "$(GREEN)Dependencies checked successfully.$(RESET)"
 
