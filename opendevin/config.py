@@ -23,7 +23,8 @@ DEFAULT_CONFIG: dict = {
     ConfigType.DIRECTORY_REWRITE: '',
     ConfigType.MAX_ITERATIONS: 100,
     ConfigType.AGENT: 'MonologueAgent',
-    ConfigType.SANDBOX_TYPE: 'ssh'
+    ConfigType.SANDBOX_TYPE: 'ssh',
+    ConfigType.USE_HOST_NETWORK: 'false',
 }
 
 config_str = ''
