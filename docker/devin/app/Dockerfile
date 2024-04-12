@@ -137,9 +137,10 @@ RUN if [ -n "$debug" ]; then set -eux; fi && \
     conda info --envs && \
     echo "PYTHONPATH variable:" $(env | grep PYTHONPATH)
 
-COPY docker/devin/app/run_api.py run_api.py
 COPY docker/devin/app/entrypoint.sh /docker-entrypoint.sh
-COPY docker/devin/app/configure.py "${APP_DIR}/configure_devin"
 COPY docker/env_debug.sh "$bin_dir/env_debug"
+
+COPY docker/devin/app/configure.py "${APP_DIR}/configure_devin"
+COPY docker/devin/app/devin_up.py "${APP_DIR}/devin_up"
 
 CMD ["-m", "mixtral", "-e", "llama2"]

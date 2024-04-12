@@ -24,7 +24,7 @@ which vite
 
 if [ -n "${DEBUG}" ]; then
     vite --config vite.config.js --host 0.0.0.0 --port "${UI_HTTP_PORT:?}" \
-        --clearScreen false --debug True
+        --clearScreen false --debug
 else
     vite --config vite.config.js --host 0.0.0.0 --port "${UI_HTTP_PORT:?}"
 fi

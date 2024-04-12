@@ -4,8 +4,8 @@ services:
   # Devin Out-of-The-Box Agent Service
   app:
     container_name: devin-app
-    hostname: oppendevin
-    image: oppendevin-cuda_${CUDA_VERSION:?}-conda:latest
+    hostname: opendevin
+    image: lehcode/oppendevin-cuda_${CUDA_VERSION:?}_conda:dev
     pull_policy: always
     build:
       dockerfile: docker/devin/app/Dockerfile

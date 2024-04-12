@@ -81,7 +81,7 @@ COPY --from=builder $build_dir .
 COPY --from=builder $build_dir/yarn.lock $build_dir/yarn.lock
 COPY --from=builder $build_dir/package.json $build_dir/package.json
 COPY --from=builder $build_dir/.npmrc $build_dir/.npmrc
-COPY --from=builder $build_dir/vite.config.js $build_dir/vite.config.js
+COPY --from=builder $build_dir/vite.config.js $build_dir/vite.config.ext.js
 
 RUN --mount=type=cache,target=$pm_cache_dir \
     if [ -n "$debug" ]; then set -eux; fi && \
@@ -94,8 +94,6 @@ RUN --mount=type=cache,target=$pm_cache_dir \
 RUN --mount=type=cache,target=$pm_cache_dir \
     if [ -n "$debug" ]; then set -eux; fi && \
     yarn add -P classnames webpack typescript
-
-COPY docker/devin/ui/vite.config.js $app_dir/vite.config.ext.js
 
 RUN --mount=type=cache,target=$build_dir/dist \
     if [ -n "$debug" ]; then set -eux; fi && \
