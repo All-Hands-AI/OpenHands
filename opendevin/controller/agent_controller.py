@@ -5,9 +5,7 @@ from typing import List, Callable, Literal, Mapping, Awaitable, Any, cast
 
 from termcolor import colored
 
-from opendevin.plan import Plan
-from opendevin.state import State
-from opendevin.agent import Agent
+from opendevin import config
 from opendevin.action import (
     Action,
     NullAction,
@@ -15,13 +13,13 @@ from opendevin.action import (
     AddTaskAction,
     ModifyTaskAction,
 )
-from opendevin.observation import Observation, AgentErrorObservation, NullObservation
-from opendevin import config
+from opendevin.agent import Agent
 from opendevin.logger import opendevin_logger as logger
 from opendevin.exceptions import MaxCharsExceedError
-
+from opendevin.observation import Observation, AgentErrorObservation, NullObservation
+from opendevin.plan import Plan
+from opendevin.state import State
 from .command_manager import CommandManager
-
 
 ColorType = Literal[
     'red',
@@ -41,9 +39,8 @@ ColorType = Literal[
     'white',
 ]
 
-
 DISABLE_COLOR_PRINTING = (
-    config.get_or_default('DISABLE_COLOR', 'false').lower() == 'true'
+    config.get('DISABLE_COLOR').lower() == 'true'
 )
 MAX_ITERATIONS = config.get('MAX_ITERATIONS')
 MAX_CHARS = config.get('MAX_CHARS')
@@ -60,10 +57,10 @@ def print_with_color(text: Any, print_type: str = 'INFO'):
     }
     color = TYPE_TO_COLOR.get(print_type.upper(), TYPE_TO_COLOR['INFO'])
     if DISABLE_COLOR_PRINTING:
-        print(f"\n{print_type.upper()}:\n{str(text)}", flush=True)
+        print(f'\n{print_type.upper()}:\n{str(text)}', flush=True)
     else:
         print(
-            colored(f"\n{print_type.upper()}:\n", color, attrs=['bold'])
+            colored(f'\n{print_type.upper()}:\n', color, attrs=['bold'])
             + colored(str(text), color),
             flush=True,
         )
@@ -71,18 +68,23 @@ def print_with_color(text: Any, print_type: str = 'INFO'):
 
 class AgentController:
     id: str
+    agent: Agent
+    max_iterations: int
+    workdir: str
+    command_manager: CommandManager
+    callbacks: List[Callable]
 
     def __init__(
         self,
         agent: Agent,
         workdir: str,
-        id: str = '',
+        sid: str = '',
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
         container_image: str | None = None,
         callbacks: List[Callable] = [],
     ):
-        self.id = id
+        self.id = sid
         self.agent = agent
         self.max_iterations = max_iterations
         self.max_chars = max_chars
@@ -149,7 +151,10 @@ class AgentController:
             print_with_color(observation, 'ERROR')
             traceback.print_exc()
             # TODO Change to more robust error handling
-            if 'The api_key client option must be set' in observation.content or 'Incorrect API key provided:' in observation.content:
+            if (
+                'The api_key client option must be set' in observation.content
+                or 'Incorrect API key provided:' in observation.content
+            ):
                 raise
         self.update_state_after_step()
 
@@ -200,9 +205,8 @@ class AgentController:
             idx = self.callbacks.index(callback)
             try:
                 callback(event)
-            except Exception:
-                logger.exception('Callback error: %s', idx)
-                pass
+            except Exception as e:
+                logger.exception(f"Callback error: {e}, idx: {idx}")
         await asyncio.sleep(
             0.001
         )  # Give back control for a tick, so we can await in callbacks

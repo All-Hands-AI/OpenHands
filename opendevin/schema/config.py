@@ -18,3 +18,4 @@ class ConfigType(str, Enum):
     MAX_CHARS = 'MAX_CHARS'
     AGENT = 'AGENT'
     SANDBOX_TYPE = 'SANDBOX_TYPE'
+    DISABLE_COLOR = 'DISABLE_COLOR'

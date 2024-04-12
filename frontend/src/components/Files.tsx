@@ -1,7 +1,7 @@
+import { Accordion, AccordionItem, Button } from "@nextui-org/react";
 import React, { useEffect } from "react";
 import TreeView, { flattenTree } from "react-accessible-treeview";
 import { AiOutlineFolder } from "react-icons/ai";
-import { Accordion, AccordionItem, Button } from "@nextui-org/react";
 import {
   TbLayoutSidebarLeftCollapseFilled,
   TbLayoutSidebarRightCollapseFilled,
@@ -13,8 +13,8 @@ import { useSelector } from "react-redux";
 import { getWorkspace, selectFile } from "../services/fileService";
 import { setCode, updateWorkspace } from "../state/codeSlice";
 import store, { RootState } from "../store";
-import FolderIcon from "./FolderIcon";
 import FileIcon from "./FileIcons";
+import FolderIcon from "./FolderIcon";
 
 interface FilesProps {
   setSelectedFileName: React.Dispatch<React.SetStateAction<string>>;
@@ -57,7 +57,7 @@ function Files({
     );
   }
   return (
-    <div className="bg-neutral-800 h-full border-r-1 border-r-neutral-600 flex flex-col">
+    <div className="bg-neutral-800 h-full border-r-1 border-r-neutral-600 flex flex-col w-[250px]">
       <div className="flex p-2 items-center justify-between ">
         <Accordion className="px-0" defaultExpandedKeys={["1"]} isCompact>
           <AccordionItem
