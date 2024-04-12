@@ -50,7 +50,7 @@ We have refined the original SWE-bench evaluation pipeline to enhance its effici
 
 #init: number of instances where testbeds have been successfully initialized.
 
-In the 3 Devin-failed instances (see below), Devin has made changes to the tests, which are incomptible with the provided test patch and causes failures during patch application. The evaluation adopted by Devin does not seem to align with the original SWE-bench evaluation.
+In the 3 Devin-failed instances (see below), Devin has made changes to the tests, which are incompatible with the provided test patch and causes failures during patch application. The evaluation adopted by Devin does not seem to align with the original SWE-bench evaluation.
 
 ```shell
 django__django-11244
