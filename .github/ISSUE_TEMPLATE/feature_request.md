@@ -1,6 +1,6 @@
 ---
 name: Feature Request
-about: Suggest an idea for devin features
+about: Suggest an idea for OpenDevin features
 title: ''
 labels: 'enhancement'
 assignees: ''

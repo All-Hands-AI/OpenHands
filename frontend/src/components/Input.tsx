@@ -1,15 +1,15 @@
 import { Textarea } from "@nextui-org/react";
 import React, { ChangeEvent, KeyboardEvent, useState } from "react";
-// import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { twMerge } from "tailwind-merge";
-import i18next from "i18next";
 import useInputComposition from "../hooks/useInputComposition";
+import { I18nKey } from "../i18n/declaration";
 import { sendChatMessage } from "../services/chatService";
 import { RootState } from "../store";
 
 function Input() {
-  // const { t } = useTranslation();
+  const { t } = useTranslation();
   const { initialized } = useSelector((state: RootState) => state.task);
   const [inputMessage, setInputMessage] = useState("");
 
@@ -56,7 +56,7 @@ function Input() {
         onKeyDown={handleSendMessageOnEnter}
         onCompositionStart={onCompositionStart}
         onCompositionEnd={onCompositionEnd}
-        placeholder={i18next.t("CHAT_INTERFACE$INPUT_PLACEHOLDER")}
+        placeholder={t(I18nKey.CHAT_INTERFACE$INPUT_PLACEHOLDER)}
       />
       <button
         type="button"
@@ -67,7 +67,7 @@ function Input() {
         onClick={handleSendMessage}
         disabled={!initialized}
       >
-        {i18next.t("CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT")}
+        {t(I18nKey.CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT)}
       </button>
     </div>
   );

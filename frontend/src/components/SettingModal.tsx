@@ -14,8 +14,7 @@ import {
   SelectItem,
 } from "@nextui-org/react";
 import { KeyboardEvent } from "@react-types/shared/src/events";
-// import { useTranslation } from "react-i18next";
-import i18next from "i18next";
+import { useTranslation } from "react-i18next";
 import {
   fetchAgents,
   fetchModels,
@@ -24,6 +23,7 @@ import {
   saveSettings,
 } from "../services/settingsService";
 import { RootState } from "../store";
+import { I18nKey } from "../i18n/declaration";
 import { AvailableLanguages } from "../i18n";
 import { ArgConfigType } from "../types/ConfigType";
 
@@ -51,7 +51,7 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
   );
   const [language, setLanguage] = useState(settings[ArgConfigType.LANGUAGE]);
 
-  // const { t } = useTranslation();
+  const { t } = useTranslation();
 
   const [supportedModels, setSupportedModels] = useState(
     cachedModels.length > 0 ? cachedModels : INITIAL_MODELS,
@@ -97,17 +97,17 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
       <ModalContent>
         <>
           <ModalHeader className="flex flex-col gap-1">
-            {i18next.t("CONFIGURATION$MODAL_TITLE")}
+            {t(I18nKey.CONFIGURATION$MODAL_TITLE)}
           </ModalHeader>
           <ModalBody>
             <Input
               type="text"
-              label={i18next.t(
-                "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_LABEL",
+              label={t(
+                I18nKey.CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_LABEL,
               )}
               defaultValue={workspaceDirectory}
-              placeholder={i18next.t(
-                "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER",
+              placeholder={t(
+                I18nKey.CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER,
               )}
               onChange={(e) => setWorkspaceDirectory(e.target.value)}
             />
@@ -117,8 +117,8 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
                 label: v,
                 value: v,
               }))}
-              label={i18next.t("CONFIGURATION$MODEL_SELECT_LABEL")}
-              placeholder={i18next.t("CONFIGURATION$MODEL_SELECT_PLACEHOLDER")}
+              label={t(I18nKey.CONFIGURATION$MODEL_SELECT_LABEL)}
+              placeholder={t(I18nKey.CONFIGURATION$MODEL_SELECT_PLACEHOLDER)}
               selectedKey={model}
               onSelectionChange={(key) => {
                 setModel(key as string);
@@ -141,8 +141,8 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
                 label: v,
                 value: v,
               }))}
-              label={i18next.t("CONFIGURATION$AGENT_SELECT_LABEL")}
-              placeholder={i18next.t("CONFIGURATION$AGENT_SELECT_PLACEHOLDER")}
+              label={t(I18nKey.CONFIGURATION$AGENT_SELECT_LABEL)}
+              placeholder={t(I18nKey.CONFIGURATION$AGENT_SELECT_PLACEHOLDER)}
               defaultSelectedKey={agent}
               onSelectionChange={(key) => {
                 setAgent(key as string);
@@ -160,7 +160,7 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
               selectionMode="single"
               onChange={(e) => setLanguage(e.target.value)}
               selectedKeys={[language]}
-              label={i18next.t("CONFIGURATION$LANGUAGE_SELECT_LABEL")}
+              label={t(I18nKey.CONFIGURATION$LANGUAGE_SELECT_LABEL)}
             >
               {AvailableLanguages.map((lang) => (
                 <SelectItem key={lang.value} value={lang.value}>
@@ -172,10 +172,10 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
 
           <ModalFooter>
             <Button color="danger" variant="light" onPress={onClose}>
-              {i18next.t("CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL")}
+              {t(I18nKey.CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL)}
             </Button>
             <Button color="primary" onPress={handleSaveCfg}>
-              {i18next.t("CONFIGURATION$MODAL_SAVE_BUTTON_LABEL")}
+              {t(I18nKey.CONFIGURATION$MODAL_SAVE_BUTTON_LABEL)}
             </Button>
           </ModalFooter>
         </>
