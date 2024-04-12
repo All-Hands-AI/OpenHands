@@ -1,4 +1,5 @@
 import atexit
+import concurrent.futures
 import os
 import sys
 import time
@@ -7,19 +8,18 @@ from collections import namedtuple
 from typing import Dict, List, Tuple
 
 import docker
-import concurrent.futures
 
 from opendevin import config
 from opendevin.logger import opendevin_logger as logger
 from opendevin.sandbox.sandbox import Sandbox, BackgroundCommand
+from opendevin.schema import ConfigType
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
-DIRECTORY_REWRITE = config.get(
-    'DIRECTORY_REWRITE'
-)  # helpful for docker-in-docker scenarios
-CONTAINER_IMAGE = config.get('SANDBOX_CONTAINER_IMAGE')
+# helpful for docker-in-docker scenarios
+DIRECTORY_REWRITE = config.get(ConfigType.DIRECTORY_REWRITE)
+CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
@@ -32,21 +32,32 @@ elif hasattr(os, 'getuid'):
 
 
 class DockerExecBox(Sandbox):
-    closed = False
+    instance_id: str
+    container_image: str
+    container_name_prefix = 'opendevin-sandbox-'
+    container_name: str
+    container: docker.models.containers.Container
+    docker_client: docker.DockerClient
+
     cur_background_id = 0
     background_commands: Dict[int, BackgroundCommand] = {}
 
     def __init__(
-        self,
-        workspace_dir: str | None = None,
-        container_image: str | None = None,
-        timeout: int = 120,
-        id: str | None = None,
+            self,
+            workspace_dir: str | None = None,
+            container_image: str | None = None,
+            timeout: int = 120,
+            sid: str | None = None,
     ):
-        if id is not None:
-            self.instance_id = id
-        else:
-            self.instance_id = str(uuid.uuid4())
+        # Initialize docker client. Throws an exception if Docker is not reachable.
+        try:
+            self.docker_client = docker.from_env()
+        except Exception as ex:
+            logger.exception(
+                'Please check Docker is running using `docker ps`.', exc_info=False)
+            raise ex
+
+        self.instance_id = sid if sid is not None else str(uuid.uuid4())
         if workspace_dir is not None:
             os.makedirs(workspace_dir, exist_ok=True)
             # expand to absolute path
@@ -67,20 +78,16 @@ class DockerExecBox(Sandbox):
         # if it is too short, the container may still waiting for previous
         # command to finish (e.g. apt-get update)
         # if it is too long, the user may have to wait for a unnecessary long time
-        self.timeout: int = timeout
+        self.timeout = timeout
+        self.container_image = CONTAINER_IMAGE if container_image is None else container_image
+        self.container_name = self.container_name_prefix + self.instance_id
 
-        if container_image is None:
-            self.container_image = CONTAINER_IMAGE
-        else:
-            self.container_image = container_image
+        # always restart the container, cuz the initial be regarded as a new session
+        self.restart_docker_container()
 
-        self.container_name = f'sandbox-{self.instance_id}'
-
-        if not self.is_container_running():
-            self.restart_docker_container()
         if RUN_AS_DEVIN:
             self.setup_devin_user()
-        atexit.register(self.cleanup)
+        atexit.register(self.close)
 
     def setup_devin_user(self):
         exit_code, logs = self.container.exec_run(
@@ -159,22 +166,9 @@ class DockerExecBox(Sandbox):
         self.background_commands.pop(id)
         return bg_cmd
 
-    def close(self):
-        self.stop_docker_container()
-        self.closed = True
-
     def stop_docker_container(self):
-
-        # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
-            docker_client = docker.from_env()
-        except docker.errors.DockerException as e:
-            logger.exception(
-                'Please check Docker is running using `docker ps`.', exc_info=False)
-            raise e
-
-        try:
-            container = docker_client.containers.get(self.container_name)
+            container = self.docker_client.containers.get(self.container_name)
             container.stop()
             container.remove()
             elapsed = 0
@@ -183,14 +177,14 @@ class DockerExecBox(Sandbox):
                 elapsed += 1
                 if elapsed > self.timeout:
                     break
-                container = docker_client.containers.get(self.container_name)
+                container = self.docker_client.containers.get(
+                    self.container_name)
         except docker.errors.NotFound:
             pass
 
     def is_container_running(self):
         try:
-            docker_client = docker.from_env()
-            container = docker_client.containers.get(self.container_name)
+            container = self.docker_client.containers.get(self.container_name)
             if container.status == 'running':
                 self.container = container
                 return True
@@ -207,11 +201,8 @@ class DockerExecBox(Sandbox):
             raise e
 
         try:
-            # Initialize docker client. Throws an exception if Docker is not reachable.
-            docker_client = docker.from_env()
-
             # start the container
-            self.container = docker_client.containers.run(
+            self.container = self.docker_client.containers.run(
                 self.container_image,
                 command='tail -f /dev/null',
                 network_mode='host',
@@ -222,9 +213,9 @@ class DockerExecBox(Sandbox):
                     'bind': '/workspace', 'mode': 'rw'}},
             )
             logger.info('Container started')
-        except Exception as e:
+        except Exception as ex:
             logger.exception('Failed to start container', exc_info=False)
-            raise e
+            raise ex
 
         # wait for container to be ready
         elapsed = 0
@@ -236,20 +227,21 @@ class DockerExecBox(Sandbox):
                 break
             time.sleep(1)
             elapsed += 1
-            self.container = docker_client.containers.get(self.container_name)
+            self.container = self.docker_client.containers.get(self.container_name)
             if elapsed > self.timeout:
                 break
         if self.container.status != 'running':
             raise Exception('Failed to start container')
 
     # clean up the container, cannot do it in __del__ because the python interpreter is already shutting down
-    def cleanup(self):
-        if self.closed:
-            return
-        try:
-            self.container.remove(force=True)
-        except docker.errors.NotFound:
-            pass
+    def close(self):
+        containers = self.docker_client.containers.list(all=True)
+        for container in containers:
+            try:
+                if container.name.startswith(self.container_name_prefix):
+                    container.remove(force=True)
+            except docker.errors.NotFound:
+                pass
 
 
 if __name__ == '__main__':
