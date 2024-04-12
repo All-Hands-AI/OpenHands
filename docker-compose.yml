@@ -1,11 +1,10 @@
 version: "3.8"
-
 services:
   # Devin Out-of-The-Box Agent Service
-  devin:
-    container_name: devin
-    hostname: devin
-    image: lehcode/opendevin-cuda${CUDA_VERSION:?}-miniconda:dev
+  app:
+    container_name: devin-app
+    hostname: oppendevin
+    image: oppendevin-cuda_${CUDA_VERSION:?}-conda:latest
     pull_policy: always
     build:
       dockerfile: docker/devin/app/Dockerfile
@@ -15,7 +14,7 @@ services:
         debug: ${DEBUG:-}
         conda_dir: /var/miniconda
         nvidia_utils_driver: 550
-        app_dir: ${APP_DIR:?}
+        app_dir: /opt/opendevin
         venv_name: ${VENV_NAME:?}
         locale: ${LANG:?}
         timezone: ${TZ:?}
@@ -23,6 +22,7 @@ services:
     env_file:
       - ./.env
       - docker/devin/app/.env
+    command: /docker-entrypoint.sh -m mixtral -e llama2
     depends_on:
       - litellm
       - postgres
