@@ -11,6 +11,7 @@ export const AvailableLanguages = [
   { label: "한국어", value: "ko-KR" },
   { label: "Norsk", value: "no" },
   { label: "Arabic", value: "ar" },
+  { label: "Deutsch", value: "de" },
 ];
 
 i18n
@@ -22,7 +23,7 @@ i18n
     debug: process.env.NODE_ENV === "development",
   })
   .then(() => {
-    // assume all detected   languages are available
+    // assume all detected languages are available
     const detectLanguage = i18n.language;
     // cannot trust browser language setting
     const settingLanguage = localStorage.getItem(ArgConfigType.LANGUAGE);
