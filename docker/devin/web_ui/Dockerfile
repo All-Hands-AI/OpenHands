@@ -23,6 +23,7 @@ RUN if [ -n "$debug" ]; then set -eux; fi && \
 ARG node_env
 ARG node_options
 ARG pm_cache_dir=/usr/local/share/.cache/yarn/v6
+ARG build_dir
 ARG build_dir=/opt/opendevin/build_ui
 
 ENV NODE_ENV="$node_env"
@@ -103,6 +104,7 @@ RUN --mount=type=cache,target=$pm_cache_dir \
     if [ -n "$debug" ]; then set -eux; fi && \
     yarn add -P classnames webpack typescript
 
+
 COPY frontend/vite.config.js $app_dir/vite.config.js
 
 RUN --mount=type=cache,target=$build_dir/dist \
@@ -113,7 +115,6 @@ RUN --mount=type=cache,target=$build_dir/dist \
     yarn cache clean
 
 COPY docker/devin/web_ui/entrypoint.sh /docker-entrypoint.sh
-
 RUN --mount=type=cache,target=$build_dir/dist \
     if [ -n "$debug" ]; then set -eux; fi && \
     vite build --config vite.config.js --clearScreen false
