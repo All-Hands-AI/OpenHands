@@ -12,7 +12,7 @@ services:
         ws_port: ${DEVIN_WS_PORT:?}
         jupyter_port: ${JUPYTER_PORT:?}
         debug: ${DEBUG:-}
-        conda_dir: /var/miniconda
+        conda_dir: ${APP_DIR:?}/.conda
         nvidia_utils_driver: 550
         app_dir: /opt/opendevin
         venv_name: ${VENV_NAME:?}

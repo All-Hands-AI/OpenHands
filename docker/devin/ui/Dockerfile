@@ -15,13 +15,14 @@ RUN if [ -n "$debug" ]; then set -eux; fi && \
     apk --no-cache add openssl ca-certificates && \
     mkdir -p /root/devin/.ssl && \
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-      -keyout /root/devin/ssl/privkey.pem \
-      -out /root/devin/ssl/fullchain.pem \
+      -keyout /root/devin/.ssl/privkey.pem \
+      -out /root/devin/.ssl/fullchain.pem \
       -config /etc/ssl/openssl.cnf
 
 ARG node_env
 ARG node_options
 ARG pm_cache_dir=/usr/local/share/.cache/yarn/v6
+ARG build_dir
 ARG build_dir=/opt/opendevin/build_ui
 
 ENV NODE_ENV="$node_env"
@@ -102,7 +103,6 @@ RUN --mount=type=cache,target=$build_dir/dist \
     vite build --config vite.config.js --clearScreen false
 
 COPY docker/devin/ui/entrypoint.sh /docker-entrypoint.sh
-COPY frontend/vite.config.js $app_dir/vite.config.js
 
 ENTRYPOINT ["/docker-entrypoint.sh", "--"]
 CMD ["-m", "mistral:7b", "-e", "llama2"]
