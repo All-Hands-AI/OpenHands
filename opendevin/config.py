@@ -45,7 +45,9 @@ def get(key: str, required: bool = False):
     """
     Get a key from the environment variables or config.toml or default configs.
     """
-    value = config.get(key)
+    value = os.environ.get(key)
+    if not value:
+      value = config.get(key)
     if not value and required:
         raise KeyError(f"Please set '{key}' in `config.toml` or `.env`.")
     return value
