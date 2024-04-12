@@ -27,6 +27,14 @@ build:
 	@$(MAKE) -s install-precommit-hooks
 	@echo "$(GREEN)Build completed successfully.$(RESET)"
 
+build-nodocker:
+	@echo "$(GREEN)Building project...$(RESET)"
+	@$(MAKE) -s check-dependencies
+	@$(MAKE) -s install-python-dependencies
+	@$(MAKE) -s install-frontend-dependencies
+	@$(MAKE) -s install-precommit-hooks
+	@echo "$(GREEN)Build completed successfully.$(RESET)"
+
 check-dependencies:
 	@echo "$(YELLOW)Checking dependencies...$(RESET)"
 	@$(MAKE) -s check-python
