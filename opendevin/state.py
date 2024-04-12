@@ -17,8 +17,8 @@ class State:
     plan: Plan
     working_dir: str
     iteration: int = 0
-    file_name: str = ''
-    cur_line: int = 0
+    # number of characters we have sent to and received from LLM so far for current task
+    num_of_chars: int = 0
     background_commands_obs: List[CmdOutputObservation] = field(
         default_factory=list)
     history: List[Tuple[Action, Observation]] = field(default_factory=list)

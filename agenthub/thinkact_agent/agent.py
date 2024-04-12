@@ -55,8 +55,8 @@ class ThinkActAgent(Agent):
         prompt = STEP_PROMPT(
             state.plan.main_goal,
             state.working_dir,
-            state.file_name,
-            state.cur_line
+            'N/A',
+            0
         )
 
         msgs = [

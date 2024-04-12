@@ -52,7 +52,7 @@ INITIAL_THOUGHTS = [
     'RUN echo "hello world"',
     'hello world',
     'Cool! I bet I can write files too using the write action.',
-    "WRITE 0 1 echo \"console.log('hello world')\" > test.js",
+    "WRITE echo \"console.log('hello world')\" > test.js",
     '',
     "I just created test.js. I'll try and run it now.",
     'RUN node test.js',
@@ -171,10 +171,8 @@ class MonologueAgent(Agent):
                 elif thought.startswith('WRITE'):
                     parts = thought.split('WRITE ')[1].split(' > ')
                     path = parts[1]
-                    start, end, content = parts[0].split(' ')
-                    start_ind, end_ind = int(start), int(end)
-                    action = FileWriteAction(
-                        path=path, start=start_ind, end=end_ind, content=content)
+                    content = parts[0]
+                    action = FileWriteAction(path=path, content=content)
                 elif thought.startswith('READ'):
                     path = thought.split('READ ')[1]
                     action = FileReadAction(path=path)
@@ -217,6 +215,7 @@ class MonologueAgent(Agent):
         messages = [{'content': prompt, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)
         action_resp = resp['choices'][0]['message']['content']
+        state.num_of_chars += len(prompt) + len(action_resp)
         action = prompts.parse_action_response(action_resp)
         self.latest_action = action
         return action
