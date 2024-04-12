@@ -1,0 +1,112 @@
+name: 🐞 Bug Report
+description: File a bug report to help us improve
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+        
+        #### Describe the bug
+        <!-- a short description of the problem -->
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Bug Description
+      description: Provide a short description of the problem
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        #### Setup and configuration
+        **Current version**:
+        <!-- run `git log -n 1` to see this -->
+
+  - type: code
+    id: current-version
+    attributes:
+      label: Current Version
+      description: Run `git log -n 1` to see this
+      render: bash
+
+  - type: markdown 
+    attributes:
+      value: |
+        **My config.toml and environment vars** (be sure to redact API keys):
+
+  - type: code
+    id: config
+    attributes:
+      label: Config
+      description: Paste your config.toml and environment vars (redact API keys)
+      render: toml
+
+  - type: markdown
+    attributes:
+      value: |
+        **My model and agent** (you can see these settings in the UI):
+
+  - type: textarea
+    id: model-agent
+    attributes:
+      label: Model and Agent
+      description: Specify your model and agent settings
+      placeholder: |
+        * Model: 
+        * Agent:
+
+  - type: markdown
+    attributes:
+      value: |
+        **Commands I ran to install and run OpenDevin**:
+
+  - type: code
+    id: install-commands
+    attributes:
+      label: Install Commands
+      description: Paste the commands you ran to install and run OpenDevin
+      render: bash
+
+  - type: markdown
+    attributes:
+      value: |
+        **Steps to Reproduce**:
+
+  - type: textarea
+    id: repro-steps
+    attributes:
+      label: Reproduction Steps
+      description: List the steps to reproduce the issue
+      placeholder: |
+        1. 
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        **Logs, error messages, and screenshots**:
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, Errors, Screenshots
+      description: Provide relevant logs, error messages, and screenshots
+      render: markdown
+
+  - type: markdown
+    attributes:
+      value: #### Additional Context
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here.
+
