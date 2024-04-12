@@ -2,13 +2,15 @@
 
 This folder implements the [CodeAct idea](https://arxiv.org/abs/2402.13463) that relies on LLM to autonomously perform actions in a Bash shell. It requires more from the LLM itself: LLM needs to be capable enough to do all the stuff autonomously, instead of stuck in an infinite loop. 
 
-A minimalistic example can be found at [research/codeact/examples/run_flask_server_with_bash.py](./examples/run_flask_server_with_bash.py):
+**NOTE: This agent is still highly experimental and under active development to reach the capability described in the original paper & [repo](https://github.com/xingyaoww/code-act).**
+
+<video src="https://github.com/xingyaoww/code-act/assets/38853559/62c80ada-62ce-447e-811c-fc801dd4beac"> </video>
+*Demo of the expected capability - work-in-progress.*
 
 ```bash
 mkdir workspace
 PYTHONPATH=`pwd`:$PYTHONPATH python3 opendevin/main.py -d ./workspace -c CodeActAgent -t "Please write a flask app that returns 'Hello, World\!' at the root URL, then start the app on port 5000. python3 has already been installed for you."
 ```
-
 
 Example: prompts `gpt-4-0125-preview` to write a flask server, install `flask` library, and start the server.
 

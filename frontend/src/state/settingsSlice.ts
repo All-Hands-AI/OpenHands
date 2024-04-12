@@ -1,37 +1,36 @@
 import { createSlice } from "@reduxjs/toolkit";
 import i18next from "i18next";
+import { ArgConfigType } from "../types/ConfigType";
 
 export const settingsSlice = createSlice({
   name: "settings",
   initialState: {
-    model: localStorage.getItem("model") || "gpt-3.5-turbo-1106",
-    agent: localStorage.getItem("agent") || "MonologueAgent",
-    workspaceDirectory:
-      localStorage.getItem("workspaceDirectory") || "./workspace",
-    language: localStorage.getItem("language") || "en",
-  },
+    ALL_SETTINGS: localStorage.getItem("ALL_SETTINGS") || "",
+    [ArgConfigType.LLM_MODEL]:
+      localStorage.getItem(ArgConfigType.LLM_MODEL) || "",
+    [ArgConfigType.AGENT]: localStorage.getItem(ArgConfigType.AGENT) || "",
+    [ArgConfigType.WORKSPACE_DIR]:
+      localStorage.getItem(ArgConfigType.WORKSPACE_DIR) || "",
+    [ArgConfigType.LANGUAGE]:
+      localStorage.getItem(ArgConfigType.LANGUAGE) || "en",
+  } as { [key: string]: string },
   reducers: {
-    setModel: (state, action) => {
-      localStorage.setItem("model", action.payload);
-      state.model = action.payload;
+    setByKey: (state, action) => {
+      const { key, value } = action.payload;
+      state[key] = value;
+      localStorage.setItem(key, value);
+      // language is a special case for now.
+      if (key === ArgConfigType.LANGUAGE) {
+        i18next.changeLanguage(value);
+      }
     },
-    setAgent: (state, action) => {
-      localStorage.setItem("agent", action.payload);
-      state.agent = action.payload;
-    },
-    setWorkspaceDirectory: (state, action) => {
-      localStorage.setItem("workspaceDirectory", action.payload);
-      state.workspaceDirectory = action.payload;
-    },
-    setLanguage: (state, action) => {
-      localStorage.setItem("language", action.payload);
-      state.language = action.payload;
-      i18next.changeLanguage(action.payload);
+    setAllSettings: (state, action) => {
+      state.ALL_SETTINGS = action.payload;
+      localStorage.setItem("ALL_SETTINGS", action.payload);
     },
   },
 });
 
-export const { setModel, setAgent, setWorkspaceDirectory, setLanguage } =
-  settingsSlice.actions;
+export const { setByKey, setAllSettings } = settingsSlice.actions;
 
 export default settingsSlice.reducer;

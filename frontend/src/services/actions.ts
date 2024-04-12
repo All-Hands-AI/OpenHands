@@ -9,20 +9,9 @@ import { SocketMessage } from "../types/ResponseType";
 import { handleObservationMessage } from "./observations";
 import ActionType from "../types/ActionType";
 
-let isInitialized = false;
-
 const messageActions = {
   [ActionType.INIT]: () => {
     store.dispatch(setInitialized(true));
-    if (isInitialized) {
-      return;
-    }
-    store.dispatch(
-      appendAssistantMessage(
-        "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
-      ),
-    );
-    isInitialized = true;
   },
   [ActionType.BROWSE]: (message: ActionMessage) => {
     const { url, screenshotSrc } = message.args;

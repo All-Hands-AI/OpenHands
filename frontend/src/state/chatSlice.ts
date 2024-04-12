@@ -5,20 +5,23 @@ export type Message = {
   sender: "user" | "assistant";
 };
 
-const initialMessages: Message[] = [];
-const queuedMessages: number[] = [];
-const currentQueueMarker: number = 0;
+const initialMessages: Message[] = [
+  {
+    content:
+      "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    sender: "assistant",
+  },
+];
 export const chatSlice = createSlice({
   name: "chat",
   initialState: {
     messages: initialMessages,
-    queuedTyping: queuedMessages,
     typingActive: false,
-    currentTypingMessage: "",
-    currentQueueMarker,
     userMessages: initialMessages,
     assistantMessages: initialMessages,
+    assistantMessagesTypingQueue: [] as Message[],
     newChatSequence: initialMessages,
+    typeThis: { content: "", sender: "assistant" } as Message,
   },
   reducers: {
     appendUserMessage: (state, action) => {
@@ -28,29 +31,39 @@ export const chatSlice = createSlice({
     },
     appendAssistantMessage: (state, action) => {
       state.messages.push({ content: action.payload, sender: "assistant" });
-      state.assistantMessages.push({
-        content: action.payload,
-        sender: "assistant",
-      });
-      // state.queuedTyping.push(action.payload);
-      const assistantMessageIndex = state.messages.length - 1;
-      state.queuedTyping.push(assistantMessageIndex);
+
+      if (
+        state.assistantMessagesTypingQueue.length > 0 ||
+        state.typingActive === true
+      ) {
+        state.assistantMessagesTypingQueue.push({
+          content: action.payload,
+          sender: "assistant",
+        });
+      } else if (
+        state.assistantMessagesTypingQueue.length === 0 &&
+        state.typingActive === false
+      ) {
+        state.typeThis = {
+          content: action.payload,
+          sender: "assistant",
+        };
+        state.typingActive = true;
+      }
     },
-    setCurrentQueueMarker: (state, action) => {
-      state.currentQueueMarker = action.payload;
-    },
+
     toggleTypingActive: (state, action) => {
       state.typingActive = action.payload;
     },
-    emptyOutQueuedTyping: (state) => {
-      state.queuedTyping = [];
-    },
-    setCurrentTypingMessage: (state, action) => {
-      state.currentTypingMessage = action.payload;
-      // state.currentQueueMarker += 1;
-    },
+
     appendToNewChatSequence: (state, action) => {
       state.newChatSequence.push(action.payload);
+    },
+
+    takeOneTypeIt: (state) => {
+      if (state.assistantMessagesTypingQueue.length > 0) {
+        state.typeThis = state.assistantMessagesTypingQueue.shift() as Message;
+      }
     },
   },
 });
@@ -59,10 +72,8 @@ export const {
   appendUserMessage,
   appendAssistantMessage,
   toggleTypingActive,
-  emptyOutQueuedTyping,
-  setCurrentTypingMessage,
-  setCurrentQueueMarker,
   appendToNewChatSequence,
+  takeOneTypeIt,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;
