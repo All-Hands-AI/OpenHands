@@ -11,7 +11,7 @@ jobs:
         with:
           # Aggressively close issues that have been explicitly labeled `age-out`
           any-of-labels: age-out
-          stale-issue-message: 'This issue is stale because it has been open for 7 days with no activity. Remove stale label or comment or this will be closed in 5 days.'
+          stale-issue-message: 'This issue is stale because it has been open for 7 days with no activity. Remove stale label or comment or this will be closed in 1 day.'
           close-issue-message: 'This issue was closed because it has been stalled for over 7 days with no activity.'
           stale-pr-message: 'This PR is stale because it has been open for 7 days with no activity. Remove stale label or comment or this will be closed in 5 days.'
           close-pr-message: 'This PR was closed because it has been stalled for over 7 days with no activity.'
