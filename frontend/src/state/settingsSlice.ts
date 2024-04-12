@@ -18,7 +18,6 @@ export const settingsSlice = createSlice({
     setByKey: (state, action) => {
       const { key, value } = action.payload;
       state[key] = value;
-      console.log("setByKey", key, value);
       localStorage.setItem(key, value);
       // language is a special case for now.
       if (key === ArgConfigType.LANGUAGE) {

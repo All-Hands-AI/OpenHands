@@ -76,7 +76,7 @@ The agent is given its previous action-observation pairs, current task, and hint
 ## CodeAct Agent:
 
 ### Description:
-The Code Act Agent is a minimalist agent. The agent works by passing the model a list of action-observaiton pairs and prompting the model to take the next step.
+The Code Act Agent is a minimalist agent. The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
 
 ### Actions:
 `Action`,
