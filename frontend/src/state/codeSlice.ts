@@ -6,7 +6,7 @@ import { WorkspaceFile } from "../services/fileService";
 export const codeSlice = createSlice({
   name: "code",
   initialState: {
-    code: "# Welcome to devin!",
+    code: "# Welcome to OpenDevin!",
     selectedIds: [] as number[],
     workspaceFolder: { name: "" } as WorkspaceFile,
   },

@@ -25,6 +25,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+requirements.txt
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -201,7 +202,3 @@ cache
 
 # configuration
 config.toml
-
-.mitmproxy/mitmproxy-*
-.ollama/models
-.ollama/id_*

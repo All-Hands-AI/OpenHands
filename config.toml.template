@@ -1,7 +1,4 @@
 # This is a template. Run `cp config.toml.template config.toml` to use it.
 
-LLM_MODEL="ollama/deepseek-coder:6.7b"
-LLM_API_KEY="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"
-LLM_EMBEDDING_MODEL="local"
-LLM_BASE_URL="http://litellm:11111"
-WORKSPACE_DIR="/home/wsluser/develop/oppendevin/workspace"
+LLM_API_KEY="<YOUR OPENAI API KEY>"
+WORKSPACE_DIR="./workspace"

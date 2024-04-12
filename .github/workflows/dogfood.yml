@@ -1,4 +1,4 @@
-name: Use devin to Resolve GitHub Issue
+name: Use OpenDevin to Resolve GitHub Issue
 
 on:
   issues:
@@ -42,7 +42,7 @@ jobs:
         echo "BODY:" >> task.txt
         echo "${ISSUE_BODY}" >> task.txt
 
-    - name: Run devin
+    - name: Run OpenDevin
       env:
         ISSUE_TITLE: ${{ github.event.issue.title }}
         ISSUE_BODY: ${{ github.event.issue.body }}

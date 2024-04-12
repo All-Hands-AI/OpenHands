@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a problem with devin
+about: Report a problem with OpenDevin
 title: ''
 labels: 'bug'
 assignees: ''

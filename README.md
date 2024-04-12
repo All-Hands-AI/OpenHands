@@ -150,6 +150,16 @@ To configure the LM of your choice, follow these steps:
    ```
    This command will prompt you to enter the LLM API key and model name, ensuring that OpenDevin is tailored to your specific needs.
 
+
+You can manually update the `config.toml` file located in the project's root directory. Here, you'll find the `LLM_API_KEY` and `LLM_MODEL_NAME` fields, where you can set the LM of your choosing.
+You can configure the LLM Embedding Model using `LLM_EMBEDDING_MODEL` key in `config.toml`.
+
+```bash config.toml
+LLM_API_KEY="sk-12345678"
+LLM_MODEL="mistral"
+LLM_EMBEDDING_MODEL="llama2"
+```
+
 **Note on Alternative Models:**
 Some alternative models may prove more challenging to tame than others. Fear not, brave adventurer! We shall soon unveil LLM-specific documentation to guide you on your quest. And if you've already mastered the art of wielding a model other than OpenAI's GPT, we encourage you to [share your setup instructions with us](https://github.com/OpenDevin/OpenDevin/issues/417).
 
@@ -158,6 +168,8 @@ For a full list of the LM providers and models available, please consult the [li
 There is also [documentation for running with local models using ollama](./docs/documentation/LOCAL_LLM_GUIDE.md).
 
 We are working on a [guide for running OpenDevin with Azure](./docs/documentation/AZURE_LLM_GUIDE.md).
+
+[Docker Compose Documentation](./docker/README.md)
 
 ### 4. Run the Application
 
@@ -177,7 +189,7 @@ We are working on a [guide for running OpenDevin with Azure](./docs/documentatio
     ```bash
     make start-frontend
     ```
-
+  
 ### 6. Help
 
 - **Get Some Help:** Need assistance or information on available targets and commands? The help command provides all the necessary guidance to ensure a smooth experience with OpenDevin.
@@ -224,7 +236,7 @@ For details, please check [this document](./CONTRIBUTING.md).
 
 ## 🤖 Join Our Community
 
-Now we have both Slack workspace for the collaboration on building OpenDevin and Discord server for discussion about anything related, e.g., this project, LLM, agent, etc.
+Now we have both Slack workspace for the collaboration on building OpenDevin and Discord server for discussion about anything related, e.g., this project, LLM, agent, etc. 
 
 * [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2etftj1dd-X1fDL2PYIVpsmJZkqEYANw)
 * [Discord server](https://discord.gg/mBuDGRzzES)
