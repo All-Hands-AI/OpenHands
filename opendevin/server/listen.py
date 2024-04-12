@@ -1,4 +1,3 @@
-import json
 import uuid
 from pathlib import Path
 
@@ -19,21 +18,21 @@ from opendevin.server.session import message_stack, session_manager
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3001"],
+    allow_origins=['http://localhost:3001'],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=['*'],
+    allow_headers=['*'],
 )
 
 security_scheme = HTTPBearer()
 
 
 # This endpoint receives events from the client (i.e. the browser)
-@app.websocket("/ws")
+@app.websocket('/ws')
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    sid = get_sid_from_token(websocket.query_params.get("token") or "")
-    if sid == "":
+    sid = get_sid_from_token(websocket.query_params.get('token') or '')
+    if sid == '':
         return
     session_manager.add_session(sid, websocket)
     # TODO: actually the agent_manager is created for each websocket connection, even if the session id is the same,
@@ -42,7 +41,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await session_manager.loop_recv(sid, agent_manager.dispatch)
 
 
-@app.get("/litellm-models")
+@app.get('/litellm-models')
 async def get_litellm_models():
     """
     Get all models supported by LiteLLM.
@@ -50,7 +49,7 @@ async def get_litellm_models():
     return list(set(litellm.model_list + list(litellm.model_cost.keys())))
 
 
-@app.get("/litellm-agents")
+@app.get('/litellm-agents')
 async def get_litellm_agents():
     """
     Get all agents supported by LiteLLM.
@@ -58,7 +57,7 @@ async def get_litellm_agents():
     return Agent.listAgents()
 
 
-@app.get("/auth")
+@app.get('/auth')
 async def get_token(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
@@ -66,40 +65,40 @@ async def get_token(
     Get token for authentication when starts a websocket connection.
     """
     sid = get_sid_from_token(credentials.credentials) or str(uuid.uuid4())
-    token = sign_token({"sid": sid})
+    token = sign_token({'sid': sid})
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content={"token": token},
+        content={'token': token},
     )
 
 
-@app.get("/messages")
+@app.get('/messages')
 async def get_messages(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     data = []
     sid = get_sid_from_token(credentials.credentials)
-    if sid != "":
+    if sid != '':
         data = message_stack.get_messages(sid)
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content={"messages": data},
+        content={'messages': data},
     )
 
 
-@app.get("/messages/total")
+@app.get('/messages/total')
 async def get_message_total(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     sid = get_sid_from_token(credentials.credentials)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content={"msg_total": message_stack.get_message_total(sid)},
+        content={'msg_total': message_stack.get_message_total(sid)},
     )
 
 
-@app.delete("/messages")
+@app.delete('/messages')
 async def del_messages(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
@@ -107,23 +106,24 @@ async def del_messages(
     message_stack.del_messages(sid)
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content={"ok": True},
+        content={'ok': True},
     )
 
 
-@app.get("/default-model")
+@app.get('/configurations')
 def read_default_model():
-    return config.get_or_error("LLM_MODEL")
+    return config.get_fe_config()
 
 
-@app.get("/refresh-files")
+@app.get('/refresh-files')
 def refresh_files():
-    structure = files.get_folder_structure(Path(str(config.get("WORKSPACE_DIR"))))
-    return json.dumps(structure.to_dict())
+    structure = files.get_folder_structure(
+        Path(str(config.get('WORKSPACE_DIR'))))
+    return structure.to_dict()
 
 
-@app.get("/select-file")
+@app.get('/select-file')
 def select_file(file: str):
-    with open(Path(Path(str(config.get("WORKSPACE_DIR"))), file), "r") as selected_file:
+    with open(Path(Path(str(config.get('WORKSPACE_DIR'))), file), 'r') as selected_file:
         content = selected_file.read()
-    return json.dumps({"code": content})
+    return {'code': content}

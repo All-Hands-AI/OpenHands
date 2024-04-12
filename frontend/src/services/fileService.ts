@@ -5,10 +5,12 @@ export type WorkspaceFile = {
 
 export async function selectFile(file: string): Promise<string> {
   const res = await fetch(`/api/select-file?file=${file}`);
-  return (await JSON.parse(await res.json()).code) as string;
+  const data = await res.json();
+  return data.code as string;
 }
 
 export async function getWorkspace(): Promise<WorkspaceFile> {
   const res = await fetch("/api/refresh-files");
-  return (await JSON.parse(await res.json())) as WorkspaceFile;
+  const data = await res.json();
+  return data as WorkspaceFile;
 }

@@ -10,17 +10,10 @@ from opendevin.action import (
 from opendevin.agent import Agent
 from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
+from opendevin.logger import opendevin_logger as logger
 from opendevin.observation import NullObservation, Observation, UserMessageObservation
+from opendevin.schema import ActionType, ConfigType
 from opendevin.server.session import session_manager
-from opendevin.schema import ActionType
-from opendevin.logging import opendevin_logger as logger
-
-DEFAULT_API_KEY = config.get("LLM_API_KEY")
-DEFAULT_BASE_URL = config.get("LLM_BASE_URL")
-DEFAULT_WORKSPACE_DIR = config.get("WORKSPACE_DIR")
-LLM_MODEL = config.get("LLM_MODEL")
-CONTAINER_IMAGE = config.get("SANDBOX_CONTAINER_IMAGE")
-MAX_ITERATIONS = config.get("MAX_ITERATIONS")
 
 
 class AgentManager:
@@ -68,7 +61,7 @@ class AgentManager:
     async def dispatch(self, action: str | None, data: dict):
         """Dispatches actions to the agent from the client."""
         if action is None:
-            await self.send_error("Invalid action")
+            await self.send_error('Invalid action')
             return
 
         if action == ActionType.INIT:
@@ -77,52 +70,51 @@ class AgentManager:
             await self.start_task(data)
         else:
             if self.controller is None:
-                await self.send_error("No agent started. Please wait a second...")
+                await self.send_error('No agent started. Please wait a second...')
             elif action == ActionType.CHAT:
                 self.controller.add_history(
-                    NullAction(), UserMessageObservation(data["message"])
+                    NullAction(), UserMessageObservation(data['message'])
                 )
             else:
                 await self.send_error("I didn't recognize this action:" + action)
 
-    async def create_controller(self, start_event=None):
+    def get_arg_or_default(self, _args: dict, key: ConfigType) -> str:
+        """Gets an argument from the args dictionary or the default value.
+
+        Args:
+            _args: The args dictionary.
+            key: The key to get.
+
+        Returns:
+            The value of the key or the default value.
+        """
+
+        return _args.get(key, config.get(key))
+
+    async def create_controller(self, start_event: dict):
         """Creates an AgentController instance.
 
         Args:
             start_event: The start event data (optional).
         """
-        directory = DEFAULT_WORKSPACE_DIR
-        if start_event and "directory" in start_event["args"]:
-            directory = start_event["args"]["directory"]
-        agent_cls = "MonologueAgent"
-        if start_event and "agent_cls" in start_event["args"]:
-            agent_cls = start_event["args"]["agent_cls"]
-        model = LLM_MODEL
-        if start_event and "model" in start_event["args"]:
-            model = start_event["args"]["model"]
-        api_key = DEFAULT_API_KEY
-        if start_event and "api_key" in start_event["args"]:
-            api_key = start_event["args"]["api_key"]
-        api_base = DEFAULT_BASE_URL
-        if start_event and "api_base" in start_event["args"]:
-            api_base = start_event["args"]["api_base"]
-        container_image = CONTAINER_IMAGE
-        if start_event and "container_image" in start_event["args"]:
-            container_image = start_event["args"]["container_image"]
-        max_iterations = MAX_ITERATIONS
-        if start_event and "max_iterations" in start_event["args"]:
-            max_iterations = start_event["args"]["max_iterations"]
-
-        # double check preventing error occurs
-        if directory == "":
-            directory = DEFAULT_WORKSPACE_DIR
-        if agent_cls == "":
-            agent_cls = "MonologueAgent"
-        if model == "":
-            model = LLM_MODEL
+        args = {
+            key: value
+            for key, value in start_event.get('args', {}).items()
+            if value != ''
+        }  # remove empty values, prevent FE from sending empty strings
+        directory = self.get_arg_or_default(args, ConfigType.WORKSPACE_DIR)
+        agent_cls = self.get_arg_or_default(args, ConfigType.AGENT)
+        model = self.get_arg_or_default(args, ConfigType.LLM_MODEL)
+        api_key = config.get(ConfigType.LLM_API_KEY)
+        api_base = config.get(ConfigType.LLM_BASE_URL)
+        container_image = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
+        max_iterations = self.get_arg_or_default(
+            args, ConfigType.MAX_ITERATIONS)
 
         if not os.path.exists(directory):
-            logger.info("Workspace directory %s does not exist. Creating it...", directory)
+            logger.info(
+                'Workspace directory %s does not exist. Creating it...', directory
+            )
             os.makedirs(directory)
         directory = os.path.relpath(directory, os.getcwd())
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
@@ -133,17 +125,17 @@ class AgentManager:
                 id=self.sid,
                 agent=self.agent,
                 workdir=directory,
-                max_iterations=max_iterations,
+                max_iterations=int(max_iterations),
                 container_image=container_image,
                 callbacks=[self.on_agent_event],
             )
         except Exception:
-            logger.exception("Error creating controller.")
+            logger.exception('Error creating controller.')
             await self.send_error(
-                "Error creating controller. Please check Docker is running using `docker ps`."
+                'Error creating controller. Please check Docker is running using `docker ps`.'
             )
             return
-        await self.send({"action": ActionType.INIT, "message": "Control loop started."})
+        await self.send({'action': ActionType.INIT, 'message': 'Control loop started.'})
 
     async def start_task(self, start_event):
         """Starts a task for the agent.
@@ -151,20 +143,20 @@ class AgentManager:
         Args:
             start_event: The start event data.
         """
-        if "task" not in start_event["args"]:
-            await self.send_error("No task specified")
+        if 'task' not in start_event['args']:
+            await self.send_error('No task specified')
             return
-        await self.send_message("Starting new task...")
-        task = start_event["args"]["task"]
+        await self.send_message('Starting new task...')
+        task = start_event['args']['task']
         if self.controller is None:
-            await self.send_error("No agent started. Please wait a second...")
+            await self.send_error('No agent started. Please wait a second...')
             return
         try:
             self.agent_task = await asyncio.create_task(
-                self.controller.start_loop(task), name="agent loop"
+                self.controller.start_loop(task), name='agent loop'
             )
         except Exception:
-            await self.send_error("Error during task loop.")
+            await self.send_error('Error during task loop.')
 
     def on_agent_event(self, event: Observation | Action):
         """Callback function for agent events.
@@ -177,7 +169,8 @@ class AgentManager:
         if isinstance(event, NullObservation):
             return
         event_dict = event.to_dict()
-        asyncio.create_task(self.send(event_dict), name="send event in callback")
+        asyncio.create_task(self.send(event_dict),
+                            name='send event in callback')
 
     def disconnect(self):
         self.websocket = None
