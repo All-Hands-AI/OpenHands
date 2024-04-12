@@ -1,3 +1,5 @@
 from .manager import AgentManager
 
-__all__ = ["AgentManager"]
+agent_manager = AgentManager()
+
+__all__ = ['AgentManager', 'agent_manager']
