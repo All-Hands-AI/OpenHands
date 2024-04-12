@@ -12,8 +12,6 @@ if [ -n "${DEBUG}" ]; then
 
     echo "Nvidia CUDA properties:"
     nvidia-smi
-#     pwd
-    bash $BIN_DIR/env_debug
 fi
 
 set -eux
