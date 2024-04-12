@@ -36,7 +36,7 @@ elif hasattr(os, 'getuid'):
 class DockerSSHBox(Sandbox):
     instance_id: str
     container_image: str
-    container_name_prefix = 'sandbox-'
+    container_name_prefix = 'opendevin-sandbox-'
     container_name: str
     container: docker.models.containers.Container
     docker_client: docker.DockerClient
