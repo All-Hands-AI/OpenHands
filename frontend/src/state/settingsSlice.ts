@@ -25,7 +25,6 @@ export const settingsSlice = createSlice({
     setAllSettings: (state, action) => {
       state.ALL_SETTINGS = action.payload;
       localStorage.setItem("ALL_SETTINGS", action.payload);
-      console.log('all settings', action.payload);
     },
   },
 });
