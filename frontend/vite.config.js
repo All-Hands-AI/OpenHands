@@ -84,4 +84,17 @@ if (process.env.DEBIAN_FRONTEND === "noninteractive") {
   viteConfig = { ...viteConfig, ...dockerConfig };
 }
 
+// Applied only in non-interactive environment, i.e. Docker
+if (process.env.DEBIAN_FRONTEND === "noninteractive") {
+  const dockerConfig = {
+    server: {
+      host: os.hostname(),
+      origin: `http://web_ui:${process.env.UI_HTTP_PORT}`,
+      port: 4173,
+    },
+  };
+
+  viteConfig = Object.assign({}, ...viteConfig, ...dockerConfig);
+}
+
 export default defineConfig(viteConfig);
