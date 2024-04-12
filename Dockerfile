@@ -25,11 +25,11 @@ RUN python3 -m pip install poetry  --break-system-packages
 COPY ./pyproject.toml ./poetry.lock ./
 RUN poetry install --without evaluation
 
-COPY --from=frontend-builder /app/dist ./frontend/dist
-
 COPY ./opendevin ./opendevin
 COPY ./agenthub ./agenthub
+RUN poetry run python opendevin/download.py # No-op to download assets
+
+COPY --from=frontend-builder /app/dist ./frontend/dist
 RUN mkdir /workspace
-RUN poetry run python opendevin/download.py # No-op to download models
 
 CMD ["poetry", "run", "uvicorn", "opendevin.server.listen:app", "--host", "0.0.0.0", "--port", "3000"]
