@@ -51,7 +51,7 @@ def parse_arguments():
     parser.add_argument(
         '-m',
         '--model-name',
-        default=config.get('LLM_MODEL', 'gpt-3.5-turbo-1106'),
+        default=config.get('LLM_MODEL'),
         type=str,
         help='The (litellm) model name to use',
     )

@@ -42,7 +42,7 @@ ColorType = Literal[
 
 
 DISABLE_COLOR_PRINTING = (
-    config.get('DISABLE_COLOR', 'false').lower() == 'true'
+    config.get('DISABLE_COLOR').lower() == 'true'
 )
 MAX_ITERATIONS = config.get('MAX_ITERATIONS')
 

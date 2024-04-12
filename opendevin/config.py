@@ -23,7 +23,8 @@ DEFAULT_CONFIG: dict = {
     ConfigType.DIRECTORY_REWRITE: '',
     ConfigType.MAX_ITERATIONS: 100,
     ConfigType.AGENT: 'MonologueAgent',
-    ConfigType.SANDBOX_TYPE: 'ssh'
+    ConfigType.SANDBOX_TYPE: 'ssh',
+    ConfigType.DISABLE_COLOR: 'false',
 }
 
 config_str = ''
@@ -40,11 +41,11 @@ for k, v in config.items():
         config[k] = tomlConfig[k]
 
 
-def get(key: str, default=None, required=False):
+def get(key: str, required: bool = False):
     """
     Get a key from the environment variables or config.toml or default configs.
     """
-    value = config.get(key, default)
+    value = config.get(key)
     if not value and required:
         raise KeyError(f"Please set '{key}' in `config.toml` or `.env`.")
     return value
