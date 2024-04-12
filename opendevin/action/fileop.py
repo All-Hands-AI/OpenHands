@@ -111,8 +111,7 @@ class FileReadAction(ExecutableAction):
                 code_slice = all_lines[self.start_index: end_index]
             else:
                 code_slice = all_lines[:]
-            if isinstance(code_slice, list) and len(code_slice) > 1:
-                code_view = '\n'.join(code_slice)
+            code_view = '\n'.join(code_slice)
             return FileReadObservation(path=path, content=code_view)
 
     @property
@@ -131,18 +130,22 @@ class FileWriteAction(ExecutableAction):
     def run(self, controller) -> Observation:
         whole_path = resolve_path(controller.workdir, self.path)
         mode = 'w' if not os.path.exists(whole_path) else 'r+'
-
+        insert = self.content.split('\n')
         with open(whole_path, mode, encoding='utf-8') as file:
-            all_lines = file.readlines()  # this can not happen in mode w
-            insert = self.content.split('\n')
-            new_file = all_lines[:self.start] if self.start != 0 else ['']
-            new_file += insert + [''] if self.end == - \
-                1 else all_lines[self.end:]
+            if mode != 'w':
+                all_lines = file.readlines()
+                new_file = [''] if self.start == 0 else all_lines[:self.start]
+                new_file += insert
+                new_file += [''] if self.end == -1 else all_lines[self.end:]
+            else:
+                new_file = insert
             content_str = '\n'.join(new_file)
             validation_error = validate_file_content(whole_path, content_str)
             if not validation_error:
+                file.seek(0)
                 file.write(content_str)
-                return FileWriteObservation(content='', path=self.path)
+                file.truncate()
+                return FileWriteObservation(content=content_str, path=self.path)
             else:
                 # Revert to the old file content
                 file.write('\n'.join(all_lines))

@@ -6,6 +6,7 @@ from opendevin.action import (
     FileWriteAction,
     BrowseURLAction,
     AgentEchoAction,
+    AgentThinkAction,
 )
 
 import re
@@ -22,11 +23,14 @@ def get_action_from_string(command_string: str) -> Action | None:
     """
     vars = command_string.split(' ')
     cmd = vars[0]
-    args = [] if len(vars) == 1 else ' '.join(vars[1:])
+    args = [] if len(vars) == 1 else vars[1:]
 
     # TODO: add exception handling for improper commands
     if 'exit' == cmd:
         return AgentFinishAction()
+
+    elif 'think' == cmd:
+        return AgentThinkAction(' '.join(args))
 
     elif 'read' == cmd:
         rex = r'^read\s+(\S+)(?:\s+(\d+))?$'
