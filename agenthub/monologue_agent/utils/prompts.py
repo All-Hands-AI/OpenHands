@@ -155,11 +155,8 @@ def parse_action_response(response: str) -> Action:
     Returns:
     - Action: The action that was found in the response string
     """
-    json_start = response.find("{")
-    json_end = response.rfind("}") + 1
-    response_json_str = response[json_start:json_end]
     try:
-        action_dict = json.loads(response_json_str)
+        action_dict = json.loads(response)
     except JSONDecodeError:
         # Find response-looking json in the output and use the more promising one. Helps with weak llms
         response_json_matches = re.finditer(
