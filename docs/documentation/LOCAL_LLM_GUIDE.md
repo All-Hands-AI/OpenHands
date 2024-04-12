@@ -125,7 +125,7 @@ You can resolve it by running:
     ```
 
 3. If you experiencing issues related to networking, such as `NoneType object has no attribute 'request'` when executing `make run`, you may need to configure your WSL2 networking settings. Follow these steps:
-   - Open or create the `.wslconfig` file located at `C:\Users\%username%\.wslconfig` on your Windows 10 host machine.
+   - Open or create the `.wslconfig` file located at `C:\Users\%username%\.wslconfig` on your Windows host machine.
    - Add the following configuration to the `.wslconfig` file:
         ```
         [wsl2]
