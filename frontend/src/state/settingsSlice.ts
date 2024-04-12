@@ -9,8 +9,6 @@ export const settingsSlice = createSlice({
     [ArgConfigType.LLM_MODEL]:
       localStorage.getItem(ArgConfigType.LLM_MODEL) || "",
     [ArgConfigType.AGENT]: localStorage.getItem(ArgConfigType.AGENT) || "",
-    [ArgConfigType.WORKSPACE_DIR]:
-      localStorage.getItem(ArgConfigType.WORKSPACE_DIR) || "",
     [ArgConfigType.LANGUAGE]:
       localStorage.getItem(ArgConfigType.LANGUAGE) || "en",
   } as { [key: string]: string },
@@ -27,6 +25,7 @@ export const settingsSlice = createSlice({
     setAllSettings: (state, action) => {
       state.ALL_SETTINGS = action.payload;
       localStorage.setItem("ALL_SETTINGS", action.payload);
+      console.log('all settings', action.payload);
     },
   },
 });
