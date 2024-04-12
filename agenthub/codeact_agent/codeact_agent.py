@@ -64,7 +64,7 @@ def parse_response(response) -> str:
 class CodeActAgent(Agent):
     """
     The Code Act Agent is a minimalist agent. 
-    The agent works by passing the model a list of action-observaiton pairs and prompting the model to take the next step.
+    The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
     """
     
     def __init__(

@@ -17,7 +17,7 @@ from opendevin.action import (
 )
 from opendevin.observation import Observation, AgentErrorObservation, NullObservation
 from opendevin import config
-from opendevin.logging import opendevin_logger as logger
+from opendevin.logger import opendevin_logger as logger
 
 from .command_manager import CommandManager
 
@@ -141,7 +141,7 @@ class AgentController:
             print_with_color(observation, 'ERROR')
             traceback.print_exc()
             # TODO Change to more robust error handling
-            if 'The api_key client option must be set' or 'Incorrect API key provided:' in observation.content:
+            if 'The api_key client option must be set' in observation.content or 'Incorrect API key provided:' in observation.content:
                 raise
         self.update_state_after_step()
 

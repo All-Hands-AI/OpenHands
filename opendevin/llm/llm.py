@@ -3,7 +3,7 @@ from litellm import completion as litellm_completion
 from functools import partial
 
 from opendevin import config
-from opendevin.logging import llm_prompt_logger, llm_response_logger
+from opendevin.logger import llm_prompt_logger, llm_response_logger
 
 DEFAULT_API_KEY = config.get('LLM_API_KEY')
 DEFAULT_BASE_URL = config.get('LLM_BASE_URL')
@@ -24,7 +24,8 @@ class LLM:
         self.api_key = api_key if api_key else DEFAULT_API_KEY
         self.base_url = base_url if base_url else DEFAULT_BASE_URL
 
-        self._completion = partial(litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url)
+        self._completion = partial(
+            litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url)
 
         completion_unwrapped = self._completion
 

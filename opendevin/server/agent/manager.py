@@ -10,7 +10,7 @@ from opendevin.action import (
 from opendevin.agent import Agent
 from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
-from opendevin.logging import opendevin_logger as logger
+from opendevin.logger import opendevin_logger as logger
 from opendevin.observation import NullObservation, Observation, UserMessageObservation
 from opendevin.schema import ActionType, ConfigType
 from opendevin.server.session import session_manager
