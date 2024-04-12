@@ -15,7 +15,7 @@ services:
       args:
         # jupyter_port: ${JUPYTER_PORT:?}
         debug: ${DEBUG:-}
-        conda_dir: ${APP_DIR:?}/.conda
+        conda_dir: /var/miniconda
         nvidia_utils_driver: 550
         app_root: ${APP_ROOT:?}
         venv_name: ${VENV_NAME:?}
