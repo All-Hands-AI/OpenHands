@@ -5,13 +5,10 @@ FROM node:${node_version}-alpine as builder
 ARG node_version
 ARG npm_version
 ARG debug
-ARG build_dir=/opt/opendevin/build
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 COPY docker/openssl.cnf /etc/ssl/openssl.cnf
-
-WORKDIR $build_dir
 
 RUN if [ -n "$debug" ]; then set -eux; fi && \
     apk update && if [ -z "$debug" ]; then apk upgrade; fi && \
@@ -25,12 +22,14 @@ RUN if [ -n "$debug" ]; then set -eux; fi && \
 ARG node_env
 ARG node_options
 ARG pm_cache_dir=/usr/local/share/.cache/yarn/v6
-ARG build_dir
+ARG build_dir=/opt/opendevin/build_ui
 
 ENV NODE_ENV="$node_env"
 ENV yarn_global_root=/usr/local/lib
 ENV PATH="${PATH}:$yarn_global_root/node_modules/npm/bin:$yarn_global_root/bin"
 ENV NODE_OPTIONS="$node_options"
+
+WORKDIR $build_dir
 
 RUN --mount=type=cache,target=$pm_cache_dir \
     if [ -n "$debug" ]; then set -eux; fi && \
@@ -70,7 +69,7 @@ ENV DEBUG=$debug
 ENV NODE_OPTIONS="$node_options"
 ENV NODE_ENV=$node_env
 
-ARG build_dir=/opt/opendevin/build
+ARG build_dir=/opt/opendevin/build_ui
 ARG pm_cache_dir=/usr/local/share/.cache/yarn/v6
 
 ENV yarn_global_root=/usr/local/lib
