@@ -5,9 +5,7 @@ from typing import List, Callable, Literal, Mapping, Awaitable, Any, cast
 
 from termcolor import colored
 
-from opendevin.plan import Plan
-from opendevin.state import State
-from opendevin.agent import Agent
+from opendevin import config
 from opendevin.action import (
     Action,
     NullAction,
@@ -15,12 +13,13 @@ from opendevin.action import (
     AddTaskAction,
     ModifyTaskAction,
 )
-from opendevin.observation import Observation, AgentErrorObservation, NullObservation
-from opendevin import config
+from opendevin.agent import Agent
 from opendevin.logger import opendevin_logger as logger
-
+from opendevin.exceptions import MaxCharsExceedError
+from opendevin.observation import Observation, AgentErrorObservation, NullObservation
+from opendevin.plan import Plan
+from opendevin.state import State
 from .command_manager import CommandManager
-
 
 ColorType = Literal[
     'red',
@@ -40,11 +39,11 @@ ColorType = Literal[
     'white',
 ]
 
-
 DISABLE_COLOR_PRINTING = (
-    config.get_or_default('DISABLE_COLOR', 'false').lower() == 'true'
+    config.get('DISABLE_COLOR').lower() == 'true'
 )
 MAX_ITERATIONS = config.get('MAX_ITERATIONS')
+MAX_CHARS = config.get('MAX_CHARS')
 
 
 def print_with_color(text: Any, print_type: str = 'INFO'):
@@ -69,19 +68,26 @@ def print_with_color(text: Any, print_type: str = 'INFO'):
 
 class AgentController:
     id: str
+    agent: Agent
+    max_iterations: int
+    workdir: str
+    command_manager: CommandManager
+    callbacks: List[Callable]
 
     def __init__(
         self,
         agent: Agent,
         workdir: str,
-        id: str = '',
+        sid: str = '',
         max_iterations: int = MAX_ITERATIONS,
+        max_chars: int = MAX_CHARS,
         container_image: str | None = None,
         callbacks: List[Callable] = [],
     ):
-        self.id = id
+        self.id = sid
         self.agent = agent
         self.max_iterations = max_iterations
+        self.max_chars = max_chars
         self.workdir = workdir
         self.command_manager = CommandManager(
             self.id, workdir, container_image)
@@ -122,6 +128,10 @@ class AgentController:
         print('STEP', i, flush=True)
         print_with_color(self.state.plan.main_goal, 'PLAN')
 
+        if self.state.num_of_chars > self.max_chars:
+            raise MaxCharsExceedError(
+                self.state.num_of_chars, self.max_chars)
+
         log_obs = self.command_manager.get_background_obs()
         for obs in log_obs:
             self.add_history(NullAction(), obs)
@@ -141,7 +151,10 @@ class AgentController:
             print_with_color(observation, 'ERROR')
             traceback.print_exc()
             # TODO Change to more robust error handling
-            if 'The api_key client option must be set' in observation.content or 'Incorrect API key provided:' in observation.content:
+            if (
+                'The api_key client option must be set' in observation.content
+                or 'Incorrect API key provided:' in observation.content
+            ):
                 raise
         self.update_state_after_step()
 
@@ -192,9 +205,8 @@ class AgentController:
             idx = self.callbacks.index(callback)
             try:
                 callback(event)
-            except Exception:
-                logger.exception('Callback error: %s', idx)
-                pass
+            except Exception as e:
+                logger.exception(f"Callback error: {e}, idx: {idx}")
         await asyncio.sleep(
             0.001
         )  # Give back control for a tick, so we can await in callbacks
