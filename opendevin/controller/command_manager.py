@@ -8,23 +8,20 @@ from opendevin.schema import ConfigType
 
 class CommandManager:
     id: str
-    directory: str
     shell: Sandbox
 
     def __init__(
             self,
             sid: str,
-            directory: str,
             container_image: str | None = None,
     ):
-        self.directory = directory
         if config.get(ConfigType.SANDBOX_TYPE).lower() == 'exec':
             self.shell = DockerExecBox(
-                sid=(sid or 'default'), workspace_dir=directory, container_image=container_image
+                sid=(sid or 'default'), container_image=container_image
             )
         else:
             self.shell = DockerSSHBox(
-                sid=(sid or 'default'), workspace_dir=directory, container_image=container_image
+                sid=(sid or 'default'), container_image=container_image
             )
 
     def run_command(self, command: str, background=False) -> CmdOutputObservation:

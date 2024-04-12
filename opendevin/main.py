@@ -26,13 +26,6 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description='Run an agent with a specific task')
     parser.add_argument(
-        '-d',
-        '--directory',
-        required=True,
-        type=str,
-        help='The working directory for the agent',
-    )
-    parser.add_argument(
         '-t', '--task', type=str, default='', help='The task for the agent to perform'
     )
     parser.add_argument(
@@ -82,13 +75,14 @@ async def main():
             'No task provided. Please specify a task through -t, -f.')
 
     print(
-        f'Running agent {args.agent_cls} (model: {args.model_name}, directory: {args.directory}) with task: "{task}"'
+        f'Running agent {args.agent_cls} (model: {args.model_name}) with task: "{
+            task}"'
     )
     llm = LLM(args.model_name)
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
     controller = AgentController(
-        agent=agent, workdir=args.directory, max_iterations=args.max_iterations
+        agent=agent, max_iterations=args.max_iterations
     )
 
     await controller.start_loop(task)

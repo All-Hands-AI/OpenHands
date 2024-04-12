@@ -134,7 +134,7 @@ docker build -t opendevin-app .
 
 docker run \
     -e LLM_API_KEY \
-    -e WORKSPACE_MOUNT_BASE=$WORKSPACE_DIR \
+    -e WORKSPACE_BASE=$WORKSPACE_DIR \
     -p 2001:3001 -p 2000:3000 \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v $WORKSPACE_DIR:/workspace \

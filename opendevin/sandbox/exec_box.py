@@ -17,9 +17,8 @@ from opendevin.schema import ConfigType
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
-# helpful for docker-in-docker scenarios
-DIRECTORY_REWRITE = config.get(ConfigType.DIRECTORY_REWRITE)
 CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
+WORKSPACE_BASE = config.get('WORKSPACE_BASE')
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
@@ -44,7 +43,6 @@ class DockerExecBox(Sandbox):
 
     def __init__(
             self,
-            workspace_dir: str | None = None,
             container_image: str | None = None,
             timeout: int = 120,
             sid: str | None = None,
@@ -58,21 +56,6 @@ class DockerExecBox(Sandbox):
             raise ex
 
         self.instance_id = sid if sid is not None else str(uuid.uuid4())
-        if workspace_dir is not None:
-            os.makedirs(workspace_dir, exist_ok=True)
-            # expand to absolute path
-            self.workspace_dir = os.path.abspath(workspace_dir)
-        else:
-            self.workspace_dir = os.getcwd()
-            logger.info(
-                'workspace unspecified, using current directory: %s', workspace_dir)
-        if DIRECTORY_REWRITE != '':
-            parts = DIRECTORY_REWRITE.split(':')
-            self.workspace_dir = self.workspace_dir.replace(parts[0], parts[1])
-            logger.info('Rewriting workspace directory to: %s',
-                        self.workspace_dir)
-        else:
-            logger.info('Using workspace directory: %s', self.workspace_dir)
 
         # TODO: this timeout is actually essential - need a better way to set it
         # if it is too short, the container may still waiting for previous
@@ -209,7 +192,7 @@ class DockerExecBox(Sandbox):
                 working_dir='/workspace',
                 name=self.container_name,
                 detach=True,
-                volumes={self.workspace_dir: {
+                volumes={WORKSPACE_BASE: {
                     'bind': '/workspace', 'mode': 'rw'}},
             )
             logger.info('Container started')
@@ -227,7 +210,8 @@ class DockerExecBox(Sandbox):
                 break
             time.sleep(1)
             elapsed += 1
-            self.container = self.docker_client.containers.get(self.container_name)
+            self.container = self.docker_client.containers.get(
+                self.container_name)
             if elapsed > self.timeout:
                 break
         if self.container.status != 'running':
@@ -245,23 +229,8 @@ class DockerExecBox(Sandbox):
 
 
 if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description='Interactive Docker container')
-    parser.add_argument(
-        '-d',
-        '--directory',
-        type=str,
-        default=None,
-        help='The directory to mount as the workspace in the Docker container.',
-    )
-    args = parser.parse_args()
-
     try:
-        exec_box = DockerExecBox(
-            workspace_dir=args.directory,
-        )
+        exec_box = DockerExecBox()
     except Exception as e:
         logger.exception('Failed to start Docker container: %s', e)
         sys.exit(1)

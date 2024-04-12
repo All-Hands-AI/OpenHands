@@ -104,7 +104,6 @@ class AgentUnit:
             for key, value in start_event.get('args', {}).items()
             if value != ''
         }  # remove empty values, prevent FE from sending empty strings
-        directory = self.get_arg_or_default(args, ConfigType.WORKSPACE_DIR)
         agent_cls = self.get_arg_or_default(args, ConfigType.AGENT)
         model = self.get_arg_or_default(args, ConfigType.LLM_MODEL)
         api_key = config.get(ConfigType.LLM_API_KEY)
@@ -118,7 +117,6 @@ class AgentUnit:
             self.controller = AgentController(
                 sid=self.sid,
                 agent=Agent.get_cls(agent_cls)(llm),
-                workdir=directory,
                 max_iterations=int(max_iterations),
                 container_image=container_image,
                 callbacks=[self.on_agent_event],

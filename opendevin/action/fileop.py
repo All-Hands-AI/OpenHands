@@ -6,15 +6,13 @@ from opendevin.schema import ActionType
 
 from .base import ExecutableAction
 
-# This is the path where the workspace is mounted in the container
-# The LLM sometimes returns paths with this prefix, so we need to remove it
-PATH_PREFIX = "/workspace/"
+PATH_PREFIX = '/workspace/'
 
 
-def resolve_path(base_path, file_path):
+def resolve_path(file_path):
     if file_path.startswith(PATH_PREFIX):
-        file_path = file_path[len(PATH_PREFIX) :]
-    return os.path.join(base_path, file_path)
+        file_path = file_path[len(PATH_PREFIX):]
+    return os.path.join(PATH_PREFIX, file_path)
 
 
 @dataclass
@@ -23,8 +21,8 @@ class FileReadAction(ExecutableAction):
     action: str = ActionType.READ
 
     def run(self, controller) -> FileReadObservation:
-        path = resolve_path(controller.workdir, self.path)
-        with open(path, "r", encoding="utf-8") as file:
+        path = resolve_path(self.path)
+        with open(path, 'r', encoding='utf-8') as file:
             return FileReadObservation(path=path, content=file.read())
 
     @property
@@ -39,10 +37,10 @@ class FileWriteAction(ExecutableAction):
     action: str = ActionType.WRITE
 
     def run(self, controller) -> FileWriteObservation:
-        whole_path = resolve_path(controller.workdir, self.path)
-        with open(whole_path, "w", encoding="utf-8") as file:
+        whole_path = resolve_path(self.path)
+        with open(whole_path, 'w', encoding='utf-8') as file:
             file.write(self.content)
-        return FileWriteObservation(content="", path=self.path)
+        return FileWriteObservation(content='', path=self.path)
 
     @property
     def message(self) -> str:

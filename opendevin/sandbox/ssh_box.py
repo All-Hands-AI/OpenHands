@@ -19,8 +19,6 @@ from opendevin.utils import find_available_tcp_port
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
-# helpful for docker-in-docker scenarios
-DIRECTORY_REWRITE = config.get(ConfigType.DIRECTORY_REWRITE)
 CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
 
 SSH_HOSTNAME = config.get(ConfigType.SSH_HOSTNAME)
@@ -58,7 +56,6 @@ class DockerSSHBox(Sandbox):
 
     def __init__(
             self,
-            workspace_dir: str | None = None,
             container_image: str | None = None,
             timeout: int = 120,
             sid: str | None = None,
@@ -72,21 +69,6 @@ class DockerSSHBox(Sandbox):
             raise ex
 
         self.instance_id = sid if sid is not None else str(uuid.uuid4())
-        if workspace_dir is not None:
-            os.makedirs(workspace_dir, exist_ok=True)
-            # expand to absolute path
-            self.workspace_dir = os.path.abspath(workspace_dir)
-        else:
-            self.workspace_dir = os.getcwd()
-            logger.info(
-                'workspace unspecified, using current directory: %s', workspace_dir)
-        if DIRECTORY_REWRITE != '':
-            parts = DIRECTORY_REWRITE.split(':')
-            self.workspace_dir = self.workspace_dir.replace(parts[0], parts[1])
-            logger.info('Rewriting workspace directory to: %s',
-                        self.workspace_dir)
-        else:
-            logger.info('Using workspace directory: %s', self.workspace_dir)
 
         # TODO: this timeout is actually essential - need a better way to set it
         # if it is too short, the container may still waiting for previous
@@ -312,11 +294,7 @@ class DockerSSHBox(Sandbox):
                      )
                 )
 
-            mount_dir = self.workspace_dir
-            if WORKSPACE_BASE is not None:
-                if mount_dir.startswith('/'):
-                    mount_dir = mount_dir[1:]
-                mount_dir = os.path.join(WORKSPACE_BASE, mount_dir)
+            mount_dir = WORKSPACE_BASE
 
             # start the container
             self.container = self.docker_client.containers.run(
@@ -371,23 +349,9 @@ class DockerSSHBox(Sandbox):
 
 
 if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description='Interactive Docker container')
-    parser.add_argument(
-        '-d',
-        '--directory',
-        type=str,
-        default=None,
-        help='The directory to mount as the workspace in the Docker container.',
-    )
-    args = parser.parse_args()
 
     try:
-        ssh_box = DockerSSHBox(
-            workspace_dir=args.directory,
-        )
+        ssh_box = DockerSSHBox()
     except Exception as e:
         logger.exception('Failed to start Docker container: %s', e)
         sys.exit(1)
