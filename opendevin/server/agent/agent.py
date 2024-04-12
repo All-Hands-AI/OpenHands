@@ -1,5 +1,4 @@
 import asyncio
-import os
 from typing import Optional
 
 from opendevin import config
@@ -114,12 +113,6 @@ class AgentUnit:
         max_iterations = self.get_arg_or_default(
             args, ConfigType.MAX_ITERATIONS)
 
-        if not os.path.exists(directory):
-            logger.info(
-                'Workspace directory %s does not exist. Creating it...', directory
-            )
-            os.makedirs(directory)
-        directory = os.path.relpath(directory, os.getcwd())
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
         try:
             self.controller = AgentController(
