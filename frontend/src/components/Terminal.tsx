@@ -52,10 +52,6 @@ function Terminal(): JSX.Element {
   const { commands } = useSelector((state: RootState) => state.cmd);
 
   useEffect(() => {
-    const bgColor = getComputedStyle(document.documentElement)
-      .getPropertyValue("--bg-workspace")
-      .trim();
-
     const terminal = new XtermTerminal({
       // This value is set to the appropriate value by the
       // `fitAddon.fit()` call below.
@@ -66,7 +62,7 @@ function Terminal(): JSX.Element {
       fontFamily: "Menlo, Monaco, 'Courier New', monospace",
       fontSize: 14,
       theme: {
-        background: bgColor,
+        background: "#262626",
       },
     });
     terminal.write("$ ");
@@ -104,7 +100,9 @@ function Terminal(): JSX.Element {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-4 py-2 text-lg border-b border-border">Terminal</div>
+      <div className="px-4 py-2 text-sm border-b border-neutral-600">
+        Terminal
+      </div>
       <div className="grow p-2 flex min-h-0">
         <div ref={terminalRef} className="h-full w-full" />
       </div>

@@ -111,6 +111,12 @@ After completing the MVP, the team will focus on research in various areas, incl
     </a>
 </p>
 
+## ⚠️ Caveats and Warnings
+* OpenDevin is still an alpha project. It is changing very quickly and is unstable. We are working on getting a stable release out in the coming weeks.
+* OpenDevin will issue many prompts to the LLM you configure. Most of these LLMs cost money--be sure to set spending limits and monitor usage.
+* OpenDevin runs `bash` commands within a Docker sandbox, so it should not affect your machine. But your workspace directory will be attached to that sandbox, and files in the directory may be modified or deleted.
+* Our default Agent is currently the MonologueAgent, which has limited capabilities, but is fairly stable. We're working on other Agent implementations, including [SWE Agent](https://swe-agent.com/). You can [read about our current set of agents here](./docs/documentation/Agents.md).
+
 ## 🚀 Get Started
 
 Getting started with the OpenDevin project is incredibly easy. Follow these simple steps to set up and run OpenDevin on your system:
@@ -121,6 +127,8 @@ Getting started with the OpenDevin project is incredibly easy. Follow these simp
 * [Python](https://www.python.org/downloads/) >= 3.11
 * [NodeJS](https://nodejs.org/en/download/package-manager) >= 18.17.1
 * [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) >= 1.8
+
+Make sure you have all these dependencies installed before moving on to `make build`.
 
 ### 2. Build and Setup The Environment
 
@@ -142,13 +150,12 @@ To configure the LM of your choice, follow these steps:
    ```
    This command will prompt you to enter the LLM API key and model name, ensuring that OpenDevin is tailored to your specific needs.
 
-2. **Manual Config: The Artisanal Touch**
-   If you're feeling particularly adventurous, you can manually update the `config.toml` file located in the project's root directory. Here, you'll find the `llm_api_key` and `llm_model_name` fields, where you can set the LM of your choosing.
-
 **Note on Alternative Models:**
 Some alternative models may prove more challenging to tame than others. Fear not, brave adventurer! We shall soon unveil LLM-specific documentation to guide you on your quest. And if you've already mastered the art of wielding a model other than OpenAI's GPT, we encourage you to [share your setup instructions with us](https://github.com/OpenDevin/OpenDevin/issues/417).
 
 For a full list of the LM providers and models available, please consult the [litellm documentation](https://docs.litellm.ai/docs/providers).
+
+There is also [documentation for running with local models using ollama](./docs/documentation/LOCAL_LLM_GUIDE.md).
 
 ### 4. Run the Application
 

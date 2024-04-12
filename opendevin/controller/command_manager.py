@@ -1,13 +1,15 @@
 from typing import List
 
+from opendevin import config
 from opendevin.observation import CmdOutputObservation
-from opendevin.sandbox.sandbox import DockerInteractive
+from opendevin.sandbox import DockerExecBox, DockerSSHBox, Sandbox
+from opendevin.schema import ConfigType
 
 
 class CommandManager:
     id: str
     directory: str
-    shell: DockerInteractive
+    shell: Sandbox
 
     def __init__(
             self,
@@ -16,9 +18,14 @@ class CommandManager:
             container_image: str | None = None,
     ):
         self.directory = directory
-        self.shell = DockerInteractive(
-            sid=(sid or 'default'), workspace_dir=directory, container_image=container_image
-        )
+        if config.get(ConfigType.SANDBOX_TYPE).lower() == 'exec':
+            self.shell = DockerExecBox(
+                sid=(sid or 'default'), workspace_dir=directory, container_image=container_image
+            )
+        else:
+            self.shell = DockerSSHBox(
+                sid=(sid or 'default'), workspace_dir=directory, container_image=container_image
+            )
 
     def run_command(self, command: str, background=False) -> CmdOutputObservation:
         if background:
@@ -34,8 +41,9 @@ class CommandManager:
 
     def _run_background(self, command: str) -> CmdOutputObservation:
         bg_cmd = self.shell.execute_in_background(command)
-        content = 'Background command started. To stop it, send a `kill` action with id {}'.format(
-            bg_cmd.id)
+        # FIXME: autopep8 and mypy are fighting each other on this line
+        # autopep8: off
+        content = f'Background command started. To stop it, send a `kill` action with id {bg_cmd.id}'
         return CmdOutputObservation(
             content=content,
             command_id=bg_cmd.id,
