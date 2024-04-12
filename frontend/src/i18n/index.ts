@@ -12,6 +12,7 @@ export const AvailableLanguages = [
   { label: "Norsk", value: "no" },
   { label: "Arabic", value: "ar" },
   { label: "Deutsch", value: "de" },
+  { label: "Français", value: "fr" },
 ];
 
 i18n

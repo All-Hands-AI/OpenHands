@@ -110,6 +110,7 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
                 I18nKey.CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER,
               )}
               onChange={(e) => setWorkspaceDirectory(e.target.value)}
+              style={{ direction: language === "ar" ? "rtl" : "ltr" }}
             />
 
             <Autocomplete
