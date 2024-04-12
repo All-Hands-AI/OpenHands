@@ -1,5 +1,7 @@
+// eslint-disable-next-line import/no-extraneous-dependencies
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+// eslint-disable-next-line import/no-extraneous-dependencies
 import viteTsconfigPaths from "vite-tsconfig-paths";
 
 const BACKEND_HOST = process.env.BACKEND_HOST || "127.0.0.1:3000";
@@ -13,6 +15,7 @@ if (!BACKEND_HOST.match(/^([\w\d-]+(\.[\w\d-]+)+(:\d+)?)/)) {
 
 // Define separate configurations for development and production modes
 let viteConfig;
+// eslint-disable-next-line prefer-const
 viteConfig = {
   // depending on your application, base can also be "/"
   base: "",

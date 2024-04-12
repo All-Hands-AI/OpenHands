@@ -1,4 +1,5 @@
 version: "3.8"
+
 services:
   # Devin Out-of-The-Box Agent Service
   app:
@@ -12,7 +13,7 @@ services:
         ws_port: ${DEVIN_WS_PORT:?}
         jupyter_port: ${JUPYTER_PORT:?}
         debug: ${DEBUG:-}
-        conda_dir: ${APP_DIR:?}/.conda
+        conda_dir: /var/miniconda
         nvidia_utils_driver: 550
         app_dir: /opt/opendevin
         venv_name: ${VENV_NAME:?}
@@ -22,7 +23,7 @@ services:
     env_file:
       - ./.env
       - docker/devin/app/.env
-    command: /docker-entrypoint.sh -m mixtral -e llama2
+#    command: /docker-entrypoint.sh -m mixtral -e llama2
     depends_on:
       - litellm
       - postgres
