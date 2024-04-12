@@ -29,7 +29,7 @@ build:
 
 build-nodocker:
 	@echo "$(GREEN)Building project...$(RESET)"
-	@$(MAKE) -s check-dependencies
+	@$(MAKE) -s check-dependencies-nodocker
 	@$(MAKE) -s install-python-dependencies
 	@$(MAKE) -s install-frontend-dependencies
 	@$(MAKE) -s install-precommit-hooks
@@ -40,6 +40,13 @@ check-dependencies:
 	@$(MAKE) -s check-python
 	@$(MAKE) -s check-npm
 	@$(MAKE) -s check-docker
+	@$(MAKE) -s check-poetry
+	@echo "$(GREEN)Dependencies checked successfully.$(RESET)"
+
+check-dependencies-nodocker:
+	@echo "$(YELLOW)Checking dependencies...$(RESET)"
+	@$(MAKE) -s check-python
+	@$(MAKE) -s check-npm
 	@$(MAKE) -s check-poetry
 	@echo "$(GREEN)Dependencies checked successfully.$(RESET)"
 
