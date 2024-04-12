@@ -39,7 +39,7 @@ if SANDBOX_USER_ID := config.get('SANDBOX_USER_ID'):
 elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
 
-WORKSPACE_MOUNT_BASE = config.get('WORKSPACE_MOUNT_BASE')
+WORKSPACE_BASE = config.get('WORKSPACE_BASE')
 
 
 class DockerSSHBox(Sandbox):
@@ -313,10 +313,10 @@ class DockerSSHBox(Sandbox):
                 )
 
             mount_dir = self.workspace_dir
-            if WORKSPACE_MOUNT_BASE is not None:
+            if WORKSPACE_BASE is not None:
                 if mount_dir.startswith('/'):
                     mount_dir = mount_dir[1:]
-                mount_dir = os.path.join(WORKSPACE_MOUNT_BASE, mount_dir)
+                mount_dir = os.path.join(WORKSPACE_BASE, mount_dir)
 
             # start the container
             self.container = self.docker_client.containers.run(
