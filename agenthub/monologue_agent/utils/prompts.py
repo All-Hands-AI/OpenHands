@@ -1,6 +1,9 @@
 from typing import List
 
 from . import json
+from json import JSONDecodeError
+
+import re
 
 from opendevin.action import (
     action_from_dict,
@@ -12,7 +15,6 @@ from opendevin.observation import (
 
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is this:
-
 %(task)s
 
 Don't expand the scope of your task--just complete it as written.
@@ -99,9 +101,9 @@ def get_summarize_monologue_prompt(thoughts: List[dict]):
     }
 
 def get_request_action_prompt(
-        task: str,
-        thoughts: List[dict],
-        background_commands_obs: List[CmdOutputObservation] = [],
+    task: str,
+    thoughts: List[dict],
+    background_commands_obs: List[CmdOutputObservation] = [],
 ):
     """
     Gets the action prompt formatted with appropriate values.
@@ -119,21 +121,23 @@ def get_request_action_prompt(
     if len(thoughts) > 0:
         latest_thought = thoughts[-1]
         if "action" in latest_thought:
-            if latest_thought["action"] == 'think':
-                if latest_thought["args"]['thought'].startswith("OK so my task is"):
+            if latest_thought["action"] == "think":
+                if latest_thought["args"]["thought"].startswith("OK so my task is"):
                     hint = "You're just getting started! What should you do first?"
                 else:
                     hint = "You've been thinking a lot lately. Maybe it's time to take action?"
-            elif latest_thought["action"] == 'error':
+            elif latest_thought["action"] == "error":
                 hint = "Looks like that last command failed. Maybe you need to fix it, or try something else."
 
     bg_commands_message = ""
     if len(background_commands_obs) > 0:
         bg_commands_message = "The following commands are running in the background:"
         for command_obs in background_commands_obs:
-            bg_commands_message += f"\n`{command_obs.command_id}`: {command_obs.command}"
+            bg_commands_message += (
+                f"\n`{command_obs.command_id}`: {command_obs.command}"
+            )
         bg_commands_message += "\nYou can end any process by sending a `kill` action with the numerical `id` above."
-        
+
     return ACTION_PROMPT % {
         'task': task,
         'monologue': json.dumps(thoughts, indent=2),
@@ -151,11 +155,26 @@ def parse_action_response(response: str) -> Action:
     Returns:
     - Action: The action that was found in the response string
     """
-    action_dict = json.loads(response)
-    if 'content' in action_dict:
+    try:
+        action_dict = json.loads(response)
+    except JSONDecodeError:
+        # Find response-looking json in the output and use the more promising one. Helps with weak llms
+        response_json_matches = re.finditer(
+            r"""{\s*\"action\":\s?\"(\w+)\"(?:,?|,\s*\"args\":\s?{((?:.|\s)*?)})\s*}""",
+            response)  # Find all response-looking strings
+        def rank(match):
+            return len(match[2]) if match[1] == "think" else 130  # Crudely rank multiple responses by length
+        try:
+            action_dict = json.loads(max(response_json_matches, key=rank)[0])  # Use the highest ranked response
+        except ValueError as e:
+            raise ValueError(
+                "Output from the LLM isn't properly formatted. The model may be misconfigured."
+            ) from e
+    if "content" in action_dict:
         # The LLM gets confused here. Might as well be robust
-        action_dict['contents'] = action_dict.pop('content')
+        action_dict["contents"] = action_dict.pop("content")
     return action_from_dict(action_dict)
+
 
 def parse_summary_response(response: str) -> List[dict]:
     """
@@ -168,4 +187,4 @@ def parse_summary_response(response: str) -> List[dict]:
     - List[dict]: The list of summaries output by the model
     """
     parsed = json.loads(response)
-    return parsed['new_monologue']
+    return parsed["new_monologue"]
