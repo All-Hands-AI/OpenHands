@@ -1,0 +1,5 @@
+version: "3.8"
+
+services:
+  sandbox:
+    image: ghcr.io/opendevin/sandbox

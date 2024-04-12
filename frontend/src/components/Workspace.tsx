@@ -3,8 +3,8 @@ import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FaCode } from "react-icons/fa6";
 import { IoIosGlobe } from "react-icons/io";
+import i18next from "i18next";
 import Calendar from "../assets/calendar";
-import { I18nKey } from "../i18n/declaration";
 import { AllTabs, TabOption, TabType } from "../types/TabOption";
 import Browser from "./Browser";
 import CodeEditor from "./CodeEditor";
@@ -17,17 +17,17 @@ function Workspace() {
   const tabData = useMemo(
     () => ({
       [TabOption.PLANNER]: {
-        name: t(I18nKey.WORKSPACE$PLANNER_TAB_LABEL),
+        name: i18next.t("WORKSPACE$PLANNER_TAB_LABEL"),
         icon: <Calendar />,
         component: <Planner key="planner" />,
       },
       [TabOption.CODE]: {
-        name: t(I18nKey.WORKSPACE$CODE_EDITOR_TAB_LABEL),
+        name: i18next.t("WORKSPACE$CODE_EDITOR_TAB_LABEL"),
         icon: <FaCode size={18} />,
         component: <CodeEditor key="code" />,
       },
       [TabOption.BROWSER]: {
-        name: t(I18nKey.WORKSPACE$BROWSER_TAB_LABEL),
+        name: i18next.t("WORKSPACE$BROWSER_TAB_LABEL"),
         icon: <IoIosGlobe size={18} />,
         component: <Browser key="browser" />,
       },
