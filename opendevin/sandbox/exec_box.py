@@ -13,6 +13,7 @@ from opendevin import config
 from opendevin.logger import opendevin_logger as logger
 from opendevin.sandbox.sandbox import Sandbox, BackgroundCommand
 from opendevin.schema import ConfigType
+from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
@@ -107,7 +108,7 @@ class DockerExecBox(Sandbox):
 
     def read_logs(self, id) -> str:
         if id not in self.background_commands:
-            raise ValueError('Invalid background command id')
+            raise SandboxInvalidBackgroundCommandError()
         bg_cmd = self.background_commands[id]
         return bg_cmd.read_logs()
 
@@ -157,7 +158,7 @@ class DockerExecBox(Sandbox):
 
     def kill_background(self, id: int) -> BackgroundCommand:
         if id not in self.background_commands:
-            raise ValueError('Invalid background command id')
+            raise SandboxInvalidBackgroundCommandError()
         bg_cmd = self.background_commands[id]
         if bg_cmd.pid is not None:
             self.container.exec_run(
@@ -227,7 +228,8 @@ class DockerExecBox(Sandbox):
                 break
             time.sleep(1)
             elapsed += 1
-            self.container = self.docker_client.containers.get(self.container_name)
+            self.container = self.docker_client.containers.get(
+                self.container_name)
             if elapsed > self.timeout:
                 break
         if self.container.status != 'running':
