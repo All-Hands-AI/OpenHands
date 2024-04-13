@@ -35,7 +35,7 @@ jobs:
       - name: Create mypy cache directory
         run: mkdir -p .mypy_cache
       - name: Install dependencies
-        run: pip install autopep8 ruff mypy==1.9.0 types-PyYAML types-toml
+        run: pip install autopep8==2.1.0 ruff mypy==1.9.0 types-PyYAML types-toml
       - name: Run autopep8
         run: autopep8 --diff --recursive opendevin/ agenthub/
       - name: Run mypy
