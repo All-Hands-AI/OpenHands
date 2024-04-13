@@ -29,7 +29,7 @@ class SessionManager:
         self._sessions[sid].update_connection(ws_conn)
 
     async def loop_recv(self, sid: str, dispatch: Callable):
-        print(f"Starting loop_recv for sid: {sid}")
+        print(f'Starting loop_recv for sid: {sid}')
         """Starts listening for messages from the client."""
         if sid not in self._sessions:
             return
@@ -39,7 +39,7 @@ class SessionManager:
         self._save_sessions()
 
     def handle_signal(self, signum, _):
-        print(f"Received signal {signum}, exiting...")
+        print(f'Received signal {signum}, exiting...')
         self.close()
         exit(0)
 
