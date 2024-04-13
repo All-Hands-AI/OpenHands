@@ -1,0 +1,179 @@
+version: "3.8"
+
+services:
+  # Devin Out-of-The-Box Agent Service
+  devin:
+    container_name: devin
+    hostname: devin
+    image: lehcode/opendevin-cuda${CUDA_VERSION:?}-miniconda:dev
+    pull_policy: always
+    build:
+      dockerfile: docker/devin/app/Dockerfile
+      args:
+        ws_port: ${DEVIN_WS_PORT:?}
+        jupyter_port: ${JUPYTER_PORT:?}
+        debug: ${DEBUG:-}
+        conda_dir: /var/miniconda
+        nvidia_utils_driver: 550
+        app_dir: ${APP_DIR:?}
+        venv_name: ${VENV_NAME:?}
+        locale: ${LANG:?}
+        timezone: ${TZ:?}
+        backend_host: ${DEVIN_HOST:?}
+    env_file:
+      - ./.env
+      - docker/devin/app/.env
+    depends_on:
+      - litellm
+      - postgres
+      - redis
+    networks:
+      opendevin-net:
+        ipv4_address: ${DEVIN_HOST:?}
+    volumes:
+      - root_dir_vol:/root
+      - pip_cache_vol:/root/.cache/pip
+      - conda_vol:${CONDA_PREFIX:?}
+#      - ./requirements.txt:${APP_DIR:?}/requirements.txt
+      - ./environment.yml:${APP_DIR:?}/environment.yml
+      - ./workspace:${WORKSPACE_DIR:?}
+      - ./docker/devin/app/.condarc:${CONDA_PREFIX:?}/.condarc
+      - ./Makefile:${APP_DIR:?}/Makefile
+      - ./pyproject.toml:${APP_DIR:?}/pyproject.toml
+      - ./config.toml.template:${APP_DIR:?}/config.toml.template
+      - ./.env:${APP_DIR:?}/.env
+      - ./opendevin:${APP_DIR:?}/opendevin
+      - ./agenthub:${APP_DIR:?}/agenthub
+      - ./dev_config:${APP_DIR:?}/dev_config
+      - ./tests:${APP_DIR:?}/tests
+    tmpfs:
+      - /run
+      - /tmp
+      - /var/run
+    ports:
+      - "${DEVIN_WS_PORT}:${DEVIN_WS_PORT}"
+      - "${JUPYTER_PORT:?}:${JUPYTER_PORT:?}"
+    tty: true
+    stdin_open: true
+    restart: no
+    entrypoint: /docker-entrypoint.sh
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: "nvidia"
+              count: 1
+              capabilities: [ "gpu" ]
+    healthcheck:
+      test: [ "CMD", "curl", "-L", "http://localhost:${DEVIN_WS_PORT}" ]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 2m
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    pull_policy: always
+    container_name: litellm
+    command: "--config /etc/config.yaml --port ${LITELLM_PORT} --num_workers 8 --detailed_debug"
+    environment:
+      LITELLM_DEFAULT_MODEL: ${LITELLM_DEFAULT_MODEL:?}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_CONTAINER_PORT}/${POSTGRES_DB}
+    ports:
+      - "${LITELLM_PORT}:4000"
+    volumes:
+      - pip_cache_vol:/root/.cache/pip:tmpfs=4G
+      - ./docker/litellm/config.yaml:/etc/config.yaml
+      - ./docker/env_debug.sh:/usr/local/bin/env_debug
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - opendevin-net
+    healthcheck:
+      test: [ "CMD", "litellm", "--health" ]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 2m
+    tmpfs:
+      - /run
+      - /var/run
+      - /tmp
+      - /var/tmp
+
+  redis:
+    image: redis/redis-stack:latest
+    pull_policy: always
+    container_name: redis-stack
+    env_file:
+      - .env
+      - docker/redis/redis.env
+    ports:
+      - "0.0.0.0:${REDIS_SERVER_PORT}:6379"
+      - "0.0.0.0:${REDIS_INSIGHT_PORT}:8001"
+    volumes:
+      - redis_data:${REDIS_DATA:-/data}
+    networks:
+      - opendevin-net
+
+  postgres:
+    image: postgres:latest
+    pull_policy: always
+    container_name: db-postgres
+    env_file:
+      - .env
+      - docker/postgres/postgres.env
+    volumes:
+      - posgtres_data:${POSTGRES_DATA:-/var/lib/postgres}
+    ports:
+      - "${POSTGRES_HOST_PORT}:${POSTGRES_CONTAINER_PORT}"
+    tmpfs:
+      - /var/run:size=1m
+      - /tmp
+    networks:
+      - opendevin-net
+
+  # UI service
+  ui:
+    container_name: devin-ui
+    image: lehcode/opendevin_ui-node${NODE_VERSION:?}-npm${NPM_VERSION}-pnpm-reactjs:dev
+    pull_policy: always
+    build:
+      dockerfile: docker/devin/ui/Dockerfile
+      args:
+        node_version: ${NODE_VERSION:?}
+        npm_version: ${NPM_VERSION:?}
+        node_env: ${NODE_ENV:?}
+        debug: ${DEBUG:?}
+        node_options: ${NODE_OPTIONS}
+    env_file:
+      - ./.env
+      - docker/devin/ui/.env
+    environment:
+      BACKEND_HOST: ${DEVIN_HOST:?}:${DEVIN_API_PORT:?}
+      FRONTEND_PORT: ${UI_HTTP_PORT:?}
+      LLM_PROXY_HOST: litellm
+      LLM_PROXY_PORT: ${LITELLM_PORT:?}
+    networks:
+      - opendevin-net
+    ports:
+      - "${UI_HTTP_PORT:?}:${UI_HTTP_PORT:?}"
+      - "${UI_HTTPS_PORT:?}:${UI_HTTPS_PORT:?}"
+    tty: false
+    entrypoint: "/docker-entrypoint.sh"
+
+networks:
+  opendevin-net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  root_dir_vol:
+  posgtres_data:
+  redis_data:
+  pip_cache_vol:
+  conda_vol:
+  od_vol:
