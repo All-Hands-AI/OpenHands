@@ -1,5 +1,8 @@
 {
+  "extends": "@tsconfig/node18/tsconfig.json",
   "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./",
     "target": "es5",
     "lib": [
       "dom",
@@ -19,11 +22,11 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react",
-    "types": ["vite/client"]
+    "types": ["vite/client", "node"]
   },
   "include": [
-    "src", 
-    "vite-env.d.ts",
-    "vite.config.ts"
-  ]
+    "src/**/*",
+    "vite.config.js"
+  ],
+  "exclude": ["node_modules"]
 }
