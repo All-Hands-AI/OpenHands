@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-extraneous-dependencies
 import * as jose from "jose";
 import { ResFetchToken } from "../types/ResponseType";
 
@@ -6,7 +7,10 @@ const fetchToken = async (): Promise<ResFetchToken> => {
     "Content-Type": "application/json",
     Authorization: `Bearer ${localStorage.getItem("token")}`,
   });
-  const response = await fetch(`/api/auth`, { headers });
+  const response = await fetch(
+    `http://${process.env.APP_HOST}:${process.env.APP_PORT}/api/auth`,
+    { headers },
+  );
   if (response.status !== 200) {
     throw new Error("Get token failed.");
   }

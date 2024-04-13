@@ -1,0 +1,53 @@
+name: <VENV_NAME>
+channels:
+  - conda-forge
+  - conda
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1
+  - _openmp_mutex=4.5
+  - bcrypt=4.1.2
+  - brotli-python=1.1.0
+  - bzip2=1.0.8
+  - ca-certificates=2024.2.2
+  - certifi=2024.2.2
+  - cffi=1.16.0
+  - charset-normalizer=3.3.2
+  - cryptography=42.0.5
+  - docker-py=7.0.0
+  - idna=3.6
+  - ld_impl_linux-64=2.40
+  - libexpat=2.6.2
+  - libffi=3.4.2
+  - libgcc-ng=13.2.0
+  - libgomp=13.2.0
+  - libnsl=2.0.1
+  - libsodium=1.0.18
+  - libsqlite=3.45.2
+  - libstdcxx-ng=13.2.0
+  - libuuid=2.38.1
+  - libxcrypt=4.4.36
+  - libzlib=1.2.13
+  - ncurses=6.4.20240210
+  - openssl=3.2.1
+  - packaging=24.0
+  - paramiko=3.4.0
+  - pip=24.0
+  - pycparser=2.22
+  - pynacl=1.5.0
+  - pysocks=1.7.1
+  - python=3.11.8
+  - python_abi=3.11
+  - pywin32-on-windows=0.1.0
+  - readline=8.2
+  - requests=2.31.0
+  - setuptools=69.2.0
+  - six=1.16.0
+  - tk=8.6.13
+  - transformers=4.39.2
+  - tzdata=2024a
+  - urllib3=2.2.1
+  - websocket-client=1.7.0
+  - wheel=0.43.0
+  - xz=5.2.6
+prefix: <CONDA_DIR>/envs/<VENV_NAME>
