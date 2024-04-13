@@ -37,7 +37,7 @@ jobs:
       - name: Install dependencies
         run: pip install autopep8 ruff mypy==1.9.0 types-PyYAML types-toml
       - name: Run autopep8
-        run: autopep8 --in-place --recursive opendevin/ agenthub/
+        run: autopep8 --diff --recursive opendevin/ agenthub/
       - name: Run mypy
         run: python -m mypy --install-types --non-interactive --config-file dev_config/python/mypy.ini opendevin/ agenthub/
       - name: Run ruff
