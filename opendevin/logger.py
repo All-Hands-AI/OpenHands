@@ -4,11 +4,11 @@ import sys
 import traceback
 from datetime import datetime
 from opendevin import config
-from typing import Literal, Mapping, Any
+from typing import Literal, Mapping
 from termcolor import colored
 
 DISABLE_COLOR_PRINTING = (
-    config.get_or_default('DISABLE_COLOR', 'false').lower() == 'true'
+    config.get('DISABLE_COLOR').lower() == 'true'
 )
 
 ColorType = Literal[
@@ -38,25 +38,26 @@ LOG_COLORS: Mapping[str, ColorType] = {
     'PLAN': 'light_magenta',
 }
 
-def print_with_color(text: Any, print_type: str = 'INFO'):
-    color = LOG_COLORS.get(print_type.upper(), LOG_COLORS['INFO'])
-    if DISABLE_COLOR_PRINTING:
-        print(f"\n{print_type.upper()}:\n{str(text)}", flush=True)
-    else:
-        print(
-            colored(f"\n{print_type.upper()}:\n", color, attrs=['bold'])
-            + colored(str(text), color),
-            flush=True,
-        )
-
 
 class ColoredFormatter(logging.Formatter):
     def format(self, record):
         msg_type = record.__dict__.get('msg_type', 'INFO')
         if msg_type in LOG_COLORS and not DISABLE_COLOR_PRINTING:
             msg_type_color = colored(msg_type, LOG_COLORS[msg_type])
-            record.msg_type = msg_type_color
-        return super().format(record)
+            msg = colored(record.msg, LOG_COLORS[msg_type])
+            time_str = colored(self.formatTime(record, self.datefmt), 'green')
+            name_str = colored(record.name, 'cyan')
+            level_str = colored(record.levelname, 'yellow')
+        else:
+            msg_type_color = msg_type
+            msg = record.msg
+            time_str = self.formatTime(record, self.datefmt)
+            name_str = record.name
+            level_str = record.levelname
+        if msg_type == 'STEP':
+            msg = '\n\n==============\n' + msg + '\n'
+        return f'{time_str} - {name_str}:{level_str}: {record.filename}:{record.lineno}\n{msg_type_color}\n{msg}'
+
 
 console_formatter = ColoredFormatter(
     '\033[92m%(asctime)s - %(name)s:%(levelname)s\033[0m: %(filename)s:%(lineno)s - %(msg_type)s - %(message)s',
@@ -202,36 +203,3 @@ llm_prompt_logger.addHandler(get_llm_prompt_file_handler())
 llm_response_logger = logging.getLogger('response')
 llm_response_logger.propagate = False
 llm_response_logger.addHandler(get_llm_response_file_handler())
-
-# LLM initialization exception, wrapping errors from LiteLLM during LLM initialization
-class LlmInitializationException(Exception):
-    def __init__(self, message):
-        """
-        Initializes an instance of LlmInitializationException.
-
-        Args:
-            message (str): The error message.
-        """
-        super().__init__(message)
-
-    def __str__(self):
-        """
-        Returns a string representation of the exception.
-
-        Returns:
-            str: The string representation of the exception.
-        """
-        if self.args:
-            return self.args[0]
-        return ''
-
-    def __repr__(self):
-        """
-        Returns a string representation of the exception.
-
-        Returns:
-            str: The string representation of the exception.
-        """
-        return self.__str__()
-
-

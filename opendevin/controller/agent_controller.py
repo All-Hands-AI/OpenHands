@@ -83,7 +83,6 @@ class AgentController:
             logger.info('Exited before finishing the task.')
 
     async def step(self, i: int):
-        logger.info('\n\n==============', extra={'msg_type': 'STEP'})
         logger.info(f'STEP {i}', extra={'msg_type': 'STEP'})
         logger.info(self.state.plan.main_goal, extra={'msg_type': 'PLAN'})
 

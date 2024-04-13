@@ -3,7 +3,6 @@ from litellm import completion as litellm_completion
 from functools import partial
 
 from opendevin import config
-from opendevin.logger import opendevin_logger as logger, LlmInitializationException
 from opendevin.logger import llm_prompt_logger, llm_response_logger
 
 DEFAULT_API_KEY = config.get('LLM_API_KEY')
@@ -29,7 +28,7 @@ class LLM:
             litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url)
 
         completion_unwrapped = self._completion
-        
+
         def wrapper(*args, **kwargs):
             if 'messages' in kwargs:
                 messages = kwargs['messages']
