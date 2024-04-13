@@ -2,9 +2,6 @@ from e2b import Process as E2BSandboxProcess
 
 from opendevin.sandbox.process import Process
 
-# TODO: Fix types
-# TODO: process_id should be int, not string
-
 
 class E2BProcess(Process):
     def __init__(self, process: E2BSandboxProcess, cmd: str):
@@ -18,7 +15,7 @@ class E2BProcess(Process):
         return '\n'.join([m.line for m in self._process.output_messages])
 
     @property
-    def id(self) -> int:
+    def pid(self) -> int:
         return int(self._process.process_id)
 
     @property

@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 class Process(ABC):
     @property
     @abstractmethod
-    def id(self) -> int:
+    def pid(self) -> int:
         pass
 
     @property

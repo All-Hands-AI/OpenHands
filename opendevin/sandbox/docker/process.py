@@ -7,14 +7,14 @@ from opendevin.sandbox.process import Process
 
 class DockerProcess(Process):
     def __init__(self, id: int, command: str, result, pid: int):
-        self._id = id
+        self.id = id
         self._command = command
         self.result = result
-        self.pid = pid
+        self._pid = pid
 
     @property
-    def id(self) -> int:
-        return self._id
+    def pid(self) -> int:
+        return self._pid
 
     @property
     def command(self) -> str:

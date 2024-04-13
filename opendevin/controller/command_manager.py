@@ -2,29 +2,34 @@ from typing import List
 
 from opendevin import config
 from opendevin.observation import CmdOutputObservation
-from opendevin.sandbox.docker.sandbox import DockerInteractive
-from opendevin.sandbox.e2b.sandbox import E2BSandbox
+from opendevin.sandbox import DockerExecBox, DockerSSHBox, E2Bbox, Sandbox
+from opendevin.schema import ConfigType
 
 
 class CommandManager:
-    def __init__(
-        self,
-        id: str,
-        dir: str,
-        container_image: str | None = None,
-    ):
-        self.directory = dir
-        self.sandbox: DockerInteractive | E2BSandbox
+    id: str
+    directory: str
+    sandbox: Sandbox
 
-        sandbox_mode = config.get('SANDBOX_MODE')
-        if sandbox_mode == 'docker':
-            self.sandbox = DockerInteractive(
-                id=(id or 'default'), workspace_dir=dir, container_image=container_image
+    def __init__(
+            self,
+            sid: str,
+            directory: str,
+            container_image: str | None = None,
+    ):
+        self.directory = directory
+
+        sandbox_type = config.get(ConfigType.SANDBOX_TYPE).lower()
+        if sandbox_type == 'ssh':
+            self.sandbox = DockerSSHBox(
+                sid=(sid or 'default'), workspace_dir=directory, container_image=container_image
             )
-        elif sandbox_mode == 'e2b':
-            self.sandbox = E2BSandbox()
+        elif sandbox_type == 'e2b':
+            self.sandbox = E2Bbox()
         else:
-            raise ValueError(f'Unknown sandbox mode: {sandbox_mode}')
+            self.sandbox = DockerExecBox(
+                sid=(sid or 'default'), workspace_dir=directory, container_image=container_image
+            )
 
     def run_command(self, command: str, background=False) -> CmdOutputObservation:
         if background:
@@ -40,9 +45,12 @@ class CommandManager:
 
     def _run_background(self, command: str) -> CmdOutputObservation:
         bg_cmd = self.sandbox.execute_in_background(command)
+        # FIXME: autopep8 and mypy are fighting each other on this line
+        # autopep8: off
+        content = f'Background command started. To stop it, send a `kill` action with id {bg_cmd.pid}'
         return CmdOutputObservation(
-            content=f'Background command started. To stop it, send a `kill` action with id {bg_cmd.id}',
-            command_id=bg_cmd.id,
+            content=content,
+            command_id=bg_cmd.pid,
             command=command,
             exit_code=0,
         )

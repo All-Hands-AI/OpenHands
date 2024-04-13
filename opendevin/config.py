@@ -16,13 +16,20 @@ DEFAULT_CONFIG: dict = {
     ConfigType.SANDBOX_CONTAINER_IMAGE: 'ghcr.io/opendevin/sandbox',
     ConfigType.RUN_AS_DEVIN: 'true',
     ConfigType.LLM_EMBEDDING_MODEL: 'local',
+    ConfigType.LLM_DEPLOYMENT_NAME: None,
+    ConfigType.LLM_API_VERSION: None,
     ConfigType.LLM_NUM_RETRIES: 6,
     ConfigType.LLM_COOLDOWN_TIME: 1,
     ConfigType.DIRECTORY_REWRITE: '',
     ConfigType.MAX_ITERATIONS: 100,
+    # GPT-4 pricing is $10 per 1M input tokens. Since tokenization happens on LLM side,
+    # we cannot easily count number of tokens, but we can count characters.
+    # Assuming 5 characters per token, 5 million is a reasonable default limit.
+    ConfigType.MAX_CHARS: 5_000_000,
     ConfigType.AGENT: 'MonologueAgent',
     ConfigType.E2B_API_KEY: '',
-    ConfigType.SANDBOX_MODE: 'docker',  # Can be 'docker' or 'e2b'
+    ConfigType.SANDBOX_TYPE: 'ssh',  # Can be 'ssh', 'exec', or 'e2b'
+    ConfigType.DISABLE_COLOR: 'false',
 }
 
 config_str = ''
@@ -39,47 +46,21 @@ for k, v in config.items():
         config[k] = tomlConfig[k]
 
 
-def _get(key: str, default):
-    value = config.get(key, default)
-    if not value:
-        value = os.environ.get(key, default)
-    return value
-
-
-def get_or_error(key: str):
+def get(key: str, required: bool = False):
     """
-    Get a key from the config, or raise an error if it doesn't exist.
+    Get a key from the environment variables or config.toml or default configs.
     """
-    value = get_or_none(key)
+    value = os.environ.get(key)
     if not value:
+        value = config.get(key)
+    if not value and required:
         raise KeyError(f"Please set '{key}' in `config.toml` or `.env`.")
     return value
 
 
-def get_or_default(key: str, default):
-    """
-    Get a key from the config, or return a default value if it doesn't exist.
-    """
-    return _get(key, default)
-
-
-def get_or_none(key: str):
-    """
-    Get a key from the config, or return None if it doesn't exist.
-    """
-    return _get(key, None)
-
-
-def get(key: str):
-    """
-    Get a key from the config, please make sure it exists.
-    """
-    return config.get(key)
-
-
 def get_fe_config() -> dict:
     """
-    Get all the configuration values by performing a deep copy.
+    Get all the frontend configuration values by performing a deep copy.
     """
     fe_config = copy.deepcopy(config)
     del fe_config['LLM_API_KEY']

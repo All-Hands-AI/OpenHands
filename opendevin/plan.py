@@ -1,20 +1,22 @@
 from typing import List
-from opendevin.logging import opendevin_logger as logger
+from opendevin.logger import opendevin_logger as logger
 
 OPEN_STATE = 'open'
 COMPLETED_STATE = 'completed'
 ABANDONED_STATE = 'abandoned'
 IN_PROGRESS_STATE = 'in_progress'
 VERIFIED_STATE = 'verified'
-STATES = [OPEN_STATE, COMPLETED_STATE, ABANDONED_STATE, IN_PROGRESS_STATE, VERIFIED_STATE]
+STATES = [OPEN_STATE, COMPLETED_STATE,
+          ABANDONED_STATE, IN_PROGRESS_STATE, VERIFIED_STATE]
+
 
 class Task:
     id: str
     goal: str
-    parent: "Task | None"
-    subtasks: List["Task"]
+    parent: 'Task | None'
+    subtasks: List['Task']
 
-    def __init__(self, parent: "Task | None", goal: str, state: str=OPEN_STATE, subtasks: List = []):
+    def __init__(self, parent: 'Task | None', goal: str, state: str = OPEN_STATE, subtasks: List = []):
         """Initializes a new instance of the Task class.
 
         Args:
@@ -41,7 +43,7 @@ class Task:
 
         self.state = OPEN_STATE
 
-    def to_string(self, indent=""):
+    def to_string(self, indent=''):
         """Returns a string representation of the task and its subtasks.
 
         Args:
@@ -99,7 +101,7 @@ class Task:
             if self.parent is not None:
                 self.parent.set_state(state)
 
-    def get_current_task(self) -> "Task | None":
+    def get_current_task(self) -> 'Task | None':
         """Retrieves the current task in progress.
 
         Returns:
@@ -111,6 +113,7 @@ class Task:
         if self.state == IN_PROGRESS_STATE:
             return self
         return None
+
 
 class Plan:
     """Represents a plan consisting of tasks.
@@ -194,4 +197,3 @@ class Plan:
             The current task in progress, or None if no task is in progress.
         """
         return self.task.get_current_task()
-
