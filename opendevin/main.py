@@ -62,7 +62,8 @@ def parse_arguments():
         type=int,
         help='The maximum number of iterations to run the agent',
     )
-    return parser.parse_args()
+    args, _ = parser.parse_known_args()
+    return args
 
 
 async def main():
@@ -85,7 +86,6 @@ async def main():
         f'Running agent {args.agent_cls} (model: {args.model_name}, directory: {
             args.directory}) with task: "{task}"'
     )
-    config.set('WORKSPACE_BASE', args.directory)
     llm = LLM(args.model_name)
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)

@@ -1,6 +1,7 @@
 import copy
 import os
 
+import argparse
 import toml
 from dotenv import load_dotenv
 
@@ -12,6 +13,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.LLM_API_KEY: None,
     ConfigType.LLM_BASE_URL: None,
     ConfigType.WORKSPACE_BASE: os.getcwd(),
+    ConfigType.WORKSPACE_MOUNT_REWRITE: None,
     ConfigType.LLM_MODEL: 'gpt-3.5-turbo-1106',
     ConfigType.SANDBOX_CONTAINER_IMAGE: 'ghcr.io/opendevin/sandbox',
     ConfigType.RUN_AS_DEVIN: 'true',
@@ -42,24 +44,32 @@ for k, v in config.items():
         config[k] = tomlConfig[k]
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description='Run an agent with a specific task')
+    parser.add_argument(
+        '-d',
+        '--directory',
+        type=str,
+        help='The working directory for the agent',
+    )
+    args, _ = parser.parse_known_args()
+    if args.directory:
+        config[ConfigType.WORKSPACE_BASE] = os.path.abspath(args.directory)
+        print(f"Setting workspace base to {config[ConfigType.WORKSPACE_BASE]}")
+
+
+parse_arguments()
+
+
 def get(key: str, required: bool = False):
     """
     Get a key from the environment variables or config.toml or default configs.
     """
-    value = os.environ.get(key)
-    if not value:
-        value = config.get(key)
+    value = config.get(key)
     if not value and required:
         raise KeyError(f"Please set '{key}' in `config.toml` or `.env`.")
     return value
-
-
-def set(key: str, value: str):
-    """
-    Set a key in the environment variables or config.toml.
-    """
-    os.environ[key] = value
-    config[key] = value
 
 
 def get_fe_config() -> dict:

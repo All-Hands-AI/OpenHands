@@ -186,6 +186,10 @@ class DockerExecBox(Sandbox):
 
         try:
             # start the container
+            mount_dir = WORKSPACE_BASE
+            if config.get('WORKSPACE_MOUNT_REWRITE'):
+                parts = config.get('WORKSPACE_MOUNT_REWRITE').split(':')
+                mount_dir = mount_dir.replace(parts[0], parts[1])
             self.container = self.docker_client.containers.run(
                 self.container_image,
                 command='tail -f /dev/null',
@@ -193,7 +197,7 @@ class DockerExecBox(Sandbox):
                 working_dir=SANDBOX_WORKSPACE_DIR,
                 name=self.container_name,
                 detach=True,
-                volumes={WORKSPACE_BASE: {
+                volumes={mount_dir: {
                     'bind': SANDBOX_WORKSPACE_DIR, 'mode': 'rw'}},
             )
             logger.info('Container started')

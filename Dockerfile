@@ -16,8 +16,8 @@ ENV PYTHONPATH '/app'
 ENV RUN_AS_DEVIN=false
 ENV USE_HOST_NETWORK=false
 ENV SSH_HOSTNAME=host.docker.internal
-ENV WORKSPACE_DIR=/opt/workspace_base
-RUN mkdir -p $WORKSPACE_DIR
+ENV WORKSPACE_BASE=/opt/workspace_base
+RUN mkdir -p $WORKSPACE_BASE
 
 RUN apt-get update -y
 RUN apt-get install -y curl make git build-essential

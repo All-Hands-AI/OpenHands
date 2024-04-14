@@ -3,16 +3,18 @@ from dataclasses import dataclass
 
 from opendevin.observation import FileReadObservation, FileWriteObservation
 from opendevin.schema import ActionType
+from opendevin import config
 
 from .base import ExecutableAction
 
-PATH_PREFIX = '/workspace/'
+SANDBOX_PATH_PREFIX = '/workspace/'
 
 
 def resolve_path(file_path):
-    if file_path.startswith(PATH_PREFIX):
-        file_path = file_path[len(PATH_PREFIX):]
-    return os.path.join(PATH_PREFIX, file_path)
+    if file_path.startswith(SANDBOX_PATH_PREFIX):
+        # Sometimes LLMs include the absolute path of the file inside the sandbox
+        file_path = file_path[len(SANDBOX_PATH_PREFIX):]
+    return os.path.join(config.get('WORKSPACE_BASE'), file_path)
 
 
 @dataclass

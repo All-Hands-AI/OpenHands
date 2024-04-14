@@ -297,6 +297,9 @@ class DockerSSHBox(Sandbox):
                 )
 
             mount_dir = WORKSPACE_BASE
+            if config.get('WORKSPACE_MOUNT_REWRITE'):
+                parts = config.get('WORKSPACE_MOUNT_REWRITE').split(':')
+                mount_dir = mount_dir.replace(parts[0], parts[1])
 
             # start the container
             self.container = self.docker_client.containers.run(
