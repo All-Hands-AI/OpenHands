@@ -3,18 +3,16 @@ description: File a bug report to help us improve
 title: "[Bug]: "
 labels: ["bug", "triage"]
 body:
+
   - type: markdown
     attributes:
       value: |
         Thanks for taking the time to fill out this bug report!
-        
-        #### Describe the bug
-        <!-- a short description of the problem -->
 
   - type: textarea
     id: bug-description
     attributes:
-      label: Bug Description
+      label: Describe the bug
       description: Provide a short description of the problem
     validations:
       required: true
@@ -22,9 +20,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        #### Setup and configuration
-        **Current version**:
-        <!-- run `git log -n 1` to see this -->
+        What is the current version of the software?
 
   - type: code
     id: current-version
@@ -33,22 +29,22 @@ body:
       description: Run `git log -n 1` to see this
       render: bash
 
-  - type: markdown 
+  - type: markdown
     attributes:
       value: |
-        **My config.toml and environment vars** (be sure to redact API keys):
+        Please provide your config.toml and environment vars (be sure to redact API keys).
 
   - type: code
     id: config
     attributes:
-      label: Config
+      label: Configuration
       description: Paste your config.toml and environment vars (redact API keys)
       render: toml
 
   - type: markdown
     attributes:
       value: |
-        **My model and agent** (you can see these settings in the UI):
+        What model and agent are you using? (You can see these settings in the UI)
 
   - type: textarea
     id: model-agent
@@ -56,13 +52,13 @@ body:
       label: Model and Agent
       description: Specify your model and agent settings
       placeholder: |
-        * Model: 
+        * Model:
         * Agent:
 
   - type: markdown
     attributes:
       value: |
-        **Commands I ran to install and run OpenDevin**:
+        What commands did you run to install and run OpenDevin?
 
   - type: code
     id: install-commands
@@ -74,7 +70,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Steps to Reproduce**:
+        Please list the steps to reproduce the issue.
 
   - type: textarea
     id: repro-steps
@@ -82,7 +78,7 @@ body:
       label: Reproduction Steps
       description: List the steps to reproduce the issue
       placeholder: |
-        1. 
+        1.
         2.
         3.
     validations:
@@ -91,7 +87,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Logs, error messages, and screenshots**:
+        Please provide relevant logs, error messages, and screenshots.
 
   - type: textarea
     id: logs
@@ -102,11 +98,11 @@ body:
 
   - type: markdown
     attributes:
-      value: #### Additional Context
+      value: |
+        Please add any additional context about the problem here.
 
   - type: textarea
     id: additional-context
     attributes:
       label: Additional Context
-      description: Add any other context about the problem here.
-
+      description: Add any other context about the problem here
