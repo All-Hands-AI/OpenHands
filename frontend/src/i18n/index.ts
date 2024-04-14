@@ -11,9 +11,6 @@ export const AvailableLanguages = [
   { label: "한국어", value: "ko-KR" },
   { label: "Norsk", value: "no" },
   { label: "Deutsch", value: "de" },
-  { label: "Italiano", value: "it" },
-  { label: "Português", value: "pt" },
-  { label: "Español", value: "es" },
 ];
 
 i18n

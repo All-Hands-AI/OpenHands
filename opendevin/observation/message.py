@@ -10,12 +10,12 @@ class UserMessageObservation(Observation):
     This data class represents a message sent by the user.
     """
 
-    role: str = 'user'
+    role: str = "user"
     observation: str = ObservationType.MESSAGE
 
     @property
     def message(self) -> str:
-        return ''
+        return ""
 
 
 @dataclass
@@ -24,9 +24,9 @@ class AgentMessageObservation(Observation):
     This data class represents a message sent by the agent.
     """
 
-    role: str = 'assistant'
+    role: str = "assistant"
     observation: str = ObservationType.MESSAGE
 
     @property
     def message(self) -> str:
-        return ''
+        return ""

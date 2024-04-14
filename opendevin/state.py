@@ -11,15 +11,10 @@ from opendevin.observation import (
     CmdOutputObservation,
 )
 
-
 @dataclass
 class State:
     plan: Plan
     iteration: int = 0
-    # number of characters we have sent to and received from LLM so far for current task
-    num_of_chars: int = 0
-    background_commands_obs: List[CmdOutputObservation] = field(
-        default_factory=list)
+    background_commands_obs: List[CmdOutputObservation] = field(default_factory=list)
     history: List[Tuple[Action, Observation]] = field(default_factory=list)
-    updated_info: List[Tuple[Action, Observation]
-                       ] = field(default_factory=list)
+    updated_info: List[Tuple[Action, Observation]] = field(default_factory=list)
