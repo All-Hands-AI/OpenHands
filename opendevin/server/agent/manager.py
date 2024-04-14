@@ -35,7 +35,7 @@ class AgentManager:
         await self.sid_to_agent[sid].dispatch(action, data)
 
     def handle_signal(self, signum, _):
-        print(f"Received signal {signum}, exiting...")
+        print(f'Received signal {signum}, exiting...')
         self.close()
         exit(0)
 

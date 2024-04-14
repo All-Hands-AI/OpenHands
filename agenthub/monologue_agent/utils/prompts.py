@@ -167,8 +167,7 @@ def parse_action_response(response: str) -> Action:
             response)  # Find all response-looking strings
 
         def rank(match):
-            # Crudely rank multiple responses by length
-            return len(match[2]) if match[1] == 'think' else 130
+            return len(match[2]) if match[1] == 'think' else 130  # Crudely rank multiple responses by length
         try:
             action_dict = json.loads(max(response_json_matches, key=rank)[
                                      0])  # Use the highest ranked response

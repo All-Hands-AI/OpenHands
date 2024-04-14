@@ -168,11 +168,10 @@ class DockerSSHBox(Sandbox):
         else:
             username = 'root'
         logger.info(
-            # FIXME: mypy and autopep8 fight each other on this line
-            # autopep8: off
             f"Connecting to {username}@{hostname} via ssh. If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub."
         )
-        self.ssh.login(hostname, username, self._ssh_password, port=self._ssh_port)
+        self.ssh.login(hostname, username, self._ssh_password,
+                       port=self._ssh_port)
 
         # Fix: https://github.com/pexpect/pexpect/issues/669
         self.ssh.sendline("bind 'set enable-bracketed-paste off'")
