@@ -23,7 +23,7 @@ jobs:
           # Be more lenient with other issues
           stale-issue-message: 'This issue is stale because it has been open for 30 days with no activity. Remove stale label or comment or this will be closed in 7 days.'
           close-issue-message: 'This issue was closed because it has been stalled for over 30 days with no activity.'
-          stale-pr-message: 'This PR is stale because it has been open for 30 days with no activity. Remove stale label or comment or this will be closed in 5 days.'
+          stale-pr-message: 'This PR is stale because it has been open for 30 days with no activity. Remove stale label or comment or this will be closed in 7 days.'
           close-pr-message: 'This PR was closed because it has been stalled for over 30 days with no activity.'
           days-before-stale: 30
           days-before-close: 7
