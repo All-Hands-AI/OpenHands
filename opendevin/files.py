@@ -4,9 +4,9 @@ from typing import Any, Dict, List
 
 class WorkspaceFile:
     name: str
-    children: List["WorkspaceFile"]
+    children: List['WorkspaceFile']
 
-    def __init__(self, name: str, children: List["WorkspaceFile"]):
+    def __init__(self, name: str, children: List['WorkspaceFile']):
         self.name = name
         self.children = children
 
@@ -17,8 +17,8 @@ class WorkspaceFile:
             The dictionary representation of the File object.
         """
         return {
-            "name": self.name,
-            "children": [child.to_dict() for child in self.children],
+            'name': self.name,
+            'children': [child.to_dict() for child in self.children],
         }
 
 
