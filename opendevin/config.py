@@ -13,6 +13,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.LLM_API_KEY: None,
     ConfigType.LLM_BASE_URL: None,
     ConfigType.WORKSPACE_BASE: os.getcwd(),
+    ConfigType.WORKSPACE_MOUNT_PATH: None,
     ConfigType.WORKSPACE_MOUNT_REWRITE: None,
     ConfigType.LLM_MODEL: 'gpt-3.5-turbo-1106',
     ConfigType.SANDBOX_CONTAINER_IMAGE: 'ghcr.io/opendevin/sandbox',
@@ -64,6 +65,16 @@ def parse_arguments():
 
 
 parse_arguments()
+
+
+def finalize_config():
+    if config.get(ConfigType.WORKSPACE_MOUNT_REWRITE) and not config.get(ConfigType.WORKSPACE_MOUNT_PATH):
+        base = config.get(ConfigType.WORKSPACE_BASE) or os.getcwd()
+        parts = config[ConfigType.WORKSPACE_MOUNT_REWRITE].split(':')
+        config[ConfigType.WORKSPACE_MOUNT_PATH] = base.replace(parts[0], parts[1])
+
+
+finalize_config()
 
 
 def get(key: str, required: bool = False):

@@ -40,8 +40,6 @@ if SANDBOX_USER_ID := config.get('SANDBOX_USER_ID'):
 elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
 
-WORKSPACE_BASE = config.get('WORKSPACE_BASE')
-
 
 class DockerSSHBox(Sandbox):
     instance_id: str
@@ -296,11 +294,8 @@ class DockerSSHBox(Sandbox):
                      )
                 )
 
-            mount_dir = WORKSPACE_BASE
-            if config.get('WORKSPACE_MOUNT_REWRITE'):
-                parts = config.get('WORKSPACE_MOUNT_REWRITE').split(':')
-                mount_dir = mount_dir.replace(parts[0], parts[1])
-
+            mount_dir = config.get('WORKSPACE_MOUNT_PATH')
+            print('Mounting workspace directory: ', mount_dir)
             # start the container
             self.container = self.docker_client.containers.run(
                 self.container_image,

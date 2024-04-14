@@ -127,17 +127,17 @@ You can run:
 # Your OpenAI API key, or any other LLM API key
 export LLM_API_KEY="sk-..."
 
-# The directory you want OpenDevin to work with. MUST be an absolute path!
+# The directory you want OpenDevin to modify. MUST be an absolute path!
 export WORKSPACE_DIR=$(pwd)/workspace
 
 docker build -t opendevin-app .
 
 docker run \
-    -e LLM_API_KEY \
-    -e WORKSPACE_BASE=$WORKSPACE_DIR \
     -p 2001:3001 -p 2000:3000 \
-    -v /var/run/docker.sock:/var/run/docker.sock \
+    -e LLM_API_KEY \
+    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_DIR \
     -v $WORKSPACE_DIR:/workspace \
+    -v /var/run/docker.sock:/var/run/docker.sock \
     opendevin-app
 ```
 Replace `$(pwd)/workspace` with the path to the code you want OpenDevin to work with.

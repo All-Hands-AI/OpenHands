@@ -19,7 +19,6 @@ InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
 CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
-WORKSPACE_BASE = config.get('WORKSPACE_BASE')
 SANDBOX_WORKSPACE_DIR = '/workspace'
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
@@ -187,10 +186,7 @@ class DockerExecBox(Sandbox):
 
         try:
             # start the container
-            mount_dir = WORKSPACE_BASE
-            if config.get('WORKSPACE_MOUNT_REWRITE'):
-                parts = config.get('WORKSPACE_MOUNT_REWRITE').split(':')
-                mount_dir = mount_dir.replace(parts[0], parts[1])
+            mount_dir = config.get('WORKSPACE_MOUNT_PATH')
             self.container = self.docker_client.containers.run(
                 self.container_image,
                 command='tail -f /dev/null',
