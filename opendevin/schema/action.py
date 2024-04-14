@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 
 class ActionType(BaseModel):
     INIT: str = Field(default="initialize")
-    """Initialiszes the agent. Only sent by client.
+    """Initializes the agent. Only sent by client.
     """
 
     START: str = Field(default="start")
