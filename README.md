@@ -137,12 +137,12 @@ docker run \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_DIR \
     -v $WORKSPACE_DIR:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -p 2000:3000 \
+    -p 3000:3000 \
     opendevin-app
 ```
 Replace `$(pwd)/workspace` with the path to the code you want OpenDevin to work with.
 
-You can find opendevin running at `http://localhost:2000`.
+You can find opendevin running at `http://localhost:3000`.
 
 See [Development.md](Development.md) for instructions on running OpenDevin without Docker.
 
