@@ -117,13 +117,11 @@ class CodeActAgent(Agent):
                         {'role': 'user', 'content': obs.content})
                 elif isinstance(obs, CmdOutputObservation):
                     content = 'OBSERVATION:\n' + obs.content
-                    # FIXME: autopep8 and mypy are fighting each other on this line
-                    # autopep8: off
-                    content += f"\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]"
+                    content += f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
                     self.messages.append({'role': 'user', 'content': content})
                 else:
                     raise NotImplementedError(
-                        f"Unknown observation type: {obs.__class__}"
+                        f'Unknown observation type: {obs.__class__}'
                     )
         response = self.llm.completion(
             messages=self.messages,
