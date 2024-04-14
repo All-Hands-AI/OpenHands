@@ -206,7 +206,7 @@ class AgentController:
             try:
                 callback(event)
             except Exception as e:
-                logger.exception(f"Callback error: {e}, idx: {idx}")
+                logger.exception(f'Callback error: {e}, idx: {idx}')
         await asyncio.sleep(
             0.001
         )  # Give back control for a tick, so we can await in callbacks

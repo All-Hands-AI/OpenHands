@@ -51,7 +51,7 @@ class Monologue:
             try:
                 total_length += len(json.dumps(t))
             except TypeError as e:
-                print(f"Error serializing thought: {e}")
+                print(f'Error serializing thought: {e}')
         return total_length
 
     def condense(self, llm: LLM):
@@ -73,4 +73,4 @@ class Monologue:
             self.thoughts = prompts.parse_summary_response(summary_resp)
         except Exception as e:
             traceback.print_exc()
-            raise RuntimeError(f"Error condensing thoughts: {e}")
+            raise RuntimeError(f'Error condensing thoughts: {e}')

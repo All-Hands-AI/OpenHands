@@ -2,30 +2,30 @@ from enum import Enum
 
 
 class ObservationType(str, Enum):
-    READ = "read"
+    READ = 'read'
     """The content of a file
     """
 
-    WRITE = "write"
+    WRITE = 'write'
 
-    BROWSE = "browse"
+    BROWSE = 'browse'
     """The HTML content of a URL
     """
 
-    RUN = "run"
+    RUN = 'run'
     """The output of a command
     """
 
-    RECALL = "recall"
+    RECALL = 'recall'
     """The result of a search
     """
 
-    CHAT = "chat"
+    CHAT = 'chat'
     """A message from the user
     """
 
-    MESSAGE = "message"
+    MESSAGE = 'message'
 
-    ERROR = "error"
+    ERROR = 'error'
 
-    NULL = "null"
+    NULL = 'null'
