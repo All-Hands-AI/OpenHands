@@ -13,6 +13,9 @@ export const AvailableLanguages = [
   { label: "Arabic", value: "ar" },
   { label: "Deutsch", value: "de" },
   { label: "Français", value: "fr" },
+  { label: "Italiano", value: "it" },
+  { label: "Português", value: "pt" },
+  { label: "Español", value: "es" },
 ];
 
 i18n

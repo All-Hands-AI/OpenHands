@@ -11,7 +11,7 @@ from starlette.responses import JSONResponse
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin import config, files
 from opendevin.agent import Agent
-from opendevin.server.agent import AgentManager
+from opendevin.server.agent import agent_manager
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import message_stack, session_manager
 
@@ -37,7 +37,7 @@ async def websocket_endpoint(websocket: WebSocket):
     session_manager.add_session(sid, websocket)
     # TODO: actually the agent_manager is created for each websocket connection, even if the session id is the same,
     # we need to manage the agent in memory for reconnecting the same session id to the same agent
-    agent_manager = AgentManager(sid)
+    agent_manager.register_agent(sid)
     await session_manager.loop_recv(sid, agent_manager.dispatch)
 
 
@@ -54,12 +54,12 @@ async def get_litellm_agents():
     """
     Get all agents supported by LiteLLM.
     """
-    return Agent.listAgents()
+    return Agent.list_agents()
 
 
 @app.get('/auth')
 async def get_token(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     """
     Get token for authentication when starts a websocket connection.
@@ -74,7 +74,7 @@ async def get_token(
 
 @app.get('/messages')
 async def get_messages(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     data = []
     sid = get_sid_from_token(credentials.credentials)
@@ -89,7 +89,7 @@ async def get_messages(
 
 @app.get('/messages/total')
 async def get_message_total(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     sid = get_sid_from_token(credentials.credentials)
     return JSONResponse(
@@ -100,7 +100,7 @@ async def get_message_total(
 
 @app.delete('/messages')
 async def del_messages(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     sid = get_sid_from_token(credentials.credentials)
     message_stack.del_messages(sid)
