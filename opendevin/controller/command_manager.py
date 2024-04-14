@@ -18,16 +18,19 @@ class CommandManager:
             container_image: str | None = None,
     ):
         self.directory = directory
-        if config.get(ConfigType.SANDBOX_TYPE).lower() == 'exec':
+        sandbox_type = config.get(ConfigType.SANDBOX_TYPE).lower()
+        if sandbox_type == 'exec':
             self.shell = DockerExecBox(
                 sid=(sid or 'default'), workspace_dir=directory, container_image=container_image
             )
-        elif config.get('SANDBOX_TYPE').lower() == 'local':
+        elif sandbox_type == 'local':
             self.shell = LocalBox(workspace_dir=directory)
-        else:
+        elif sandbox_type == 'ssh':
             self.shell = DockerSSHBox(
                 sid=(sid or 'default'), workspace_dir=directory, container_image=container_image
             )
+        else:
+            raise ValueError(f'Invalid sandbox type: {sandbox_type}')
 
     def run_command(self, command: str, background=False) -> CmdOutputObservation:
         if background:
