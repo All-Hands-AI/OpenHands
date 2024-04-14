@@ -136,7 +136,7 @@ docker run \
     -p 2001:3001 -p 2000:3000 \
     -e LLM_API_KEY \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_DIR \
-    -v $WORKSPACE_DIR:/workspace \
+    -v $WORKSPACE_DIR:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     opendevin-app
 ```
