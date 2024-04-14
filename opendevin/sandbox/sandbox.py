@@ -1,8 +1,8 @@
 import select
 import sys
-from typing import Tuple
 from abc import ABC, abstractmethod
 from typing import Dict
+from typing import Tuple
 
 
 class BackgroundCommand:
@@ -28,8 +28,8 @@ class BackgroundCommand:
             msg_type = prefix[0:1]
             padding = prefix[1:4]
             if (
-                msg_type in [b'\x00', b'\x01', b'\x02', b'\x03']
-                and padding == b'\x00\x00\x00'
+                    msg_type in [b'\x00', b'\x01', b'\x02', b'\x03']
+                    and padding == b'\x00\x00\x00'
             ):
                 msg_length = int.from_bytes(prefix[4:8], byteorder=byte_order)
                 res += logs[i + 8: i + 8 + msg_length]

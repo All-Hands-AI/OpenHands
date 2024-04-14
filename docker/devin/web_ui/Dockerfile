@@ -116,7 +116,6 @@ COPY docker/devin/web_ui/entrypoint.sh /docker-entrypoint.sh
 
 RUN --mount=type=cache,target=$build_dir/dist \
     if [ -n "$debug" ]; then set -eux; fi && \
-    chmod a+x /docker-entrypoint.sh && \
     vite build --config vite.config.js --clearScreen false
 
 ENTRYPOINT ["/bin/sh", "-c", "/docker-entrypoint.sh"]

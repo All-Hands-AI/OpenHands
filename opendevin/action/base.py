@@ -9,16 +9,16 @@ if TYPE_CHECKING:
 
 @dataclass
 class Action:
-    def run(self, controller: "AgentController") -> "Observation":
+    def run(self, controller: 'AgentController') -> 'Observation':
         raise NotImplementedError
 
     def to_dict(self):
         d = asdict(self)
         try:
-            v = d.pop("action")
+            v = d.pop('action')
         except KeyError:
-            raise NotImplementedError(f"{self=} does not have action attribute set")
-        return {"action": v, "args": d, "message": self.message}
+            raise NotImplementedError(f'{self=} does not have action attribute set')
+        return {'action': v, 'args': d, 'message': self.message}
 
     @property
     def executable(self) -> bool:
@@ -53,4 +53,4 @@ class NullAction(NotExecutableAction):
 
     @property
     def message(self) -> str:
-        return "No action"
+        return 'No action'

@@ -17,19 +17,19 @@ class Observation:
     def to_dict(self) -> dict:
         """Converts the observation to a dictionary."""
         extras = copy.deepcopy(self.__dict__)
-        content = extras.pop("content", "")
-        observation = extras.pop("observation", "")
+        content = extras.pop('content', '')
+        observation = extras.pop('observation', '')
         return {
-            "observation": observation,
-            "content": content,
-            "extras": extras,
-            "message": self.message,
+            'observation': observation,
+            'content': content,
+            'extras': extras,
+            'message': self.message,
         }
 
     @property
     def message(self) -> str:
         """Returns a message describing the observation."""
-        return ""
+        return ''
 
 
 @dataclass
@@ -43,4 +43,4 @@ class NullObservation(Observation):
 
     @property
     def message(self) -> str:
-        return ""
+        return ''
