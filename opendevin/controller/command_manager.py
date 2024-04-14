@@ -2,7 +2,7 @@ from typing import List
 
 from opendevin import config
 from opendevin.observation import CmdOutputObservation
-from opendevin.sandbox import DockerExecBox, DockerSSHBox, Sandbox
+from opendevin.sandbox import DockerExecBox, DockerSSHBox, Sandbox, LocalBox
 from opendevin.schema import ConfigType
 
 
@@ -22,6 +22,8 @@ class CommandManager:
             self.shell = DockerExecBox(
                 sid=(sid or 'default'), workspace_dir=directory, container_image=container_image
             )
+        elif config.get('SANDBOX_TYPE').lower() == 'local':
+            self.shell = LocalBox(workspace_dir=directory)
         else:
             self.shell = DockerSSHBox(
                 sid=(sid or 'default'), workspace_dir=directory, container_image=container_image
