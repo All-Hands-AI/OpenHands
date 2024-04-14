@@ -1,6 +1,5 @@
-import backoff
-import litellm
 
+import time
 from litellm import completion as litellm_completion
 from functools import partial
 
@@ -29,10 +28,20 @@ class LLM:
         self._completion = partial(
             litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url)
 
+        def backoff_retry(func, max_retries=num_retries, base_delay=cooldown_time):
+            retries = 0
+            while retries < max_retries:
+                try:
+                    return func()
+                except Exception as e:
+                    print(f'Error: {e}. Retrying in {base_delay * 2 ** retries} seconds...')
+                    time.sleep(base_delay * 2 ** retries)
+                    retries += 1
+            raise Exception('Max retries exceeded.')
+
         completion_unwrapped = self._completion
 
-        @backoff.on_exception(backoff.expo,
-                              litellm.exceptions.APIConnectionError)
+        @backoff_retry
         def wrapper(*args, **kwargs):
             if 'messages' in kwargs:
                 messages = kwargs['messages']
