@@ -12,9 +12,9 @@ class AgentRecallObservation(Observation):
     """
 
     memories: List[str]
-    role: str = "assistant"
+    role: str = 'assistant'
     observation: str = ObservationType.RECALL
 
     @property
     def message(self) -> str:
-        return "The agent recalled memories."
+        return 'The agent recalled memories.'
