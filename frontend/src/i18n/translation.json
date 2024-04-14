@@ -7,8 +7,7 @@
     "no": "OpenDevin Arbeidsområde",
     "zh-TW": "OpenDevin 工作區",
     "ar": "مساحة عمل أوبنديفين",
-    "fr": "OpenDevin Espace de travail"
-    "zh-TW": "OpenDevin 工作區",
+    "fr": "OpenDevin Espace de travail",
     "it": "Area di lavoro OpenDevin",
     "pt": "Espaço de trabalho OpenDevin",
     "es": "Espacio de trabajo de OpenDevin"
@@ -22,8 +21,7 @@
     "zh-TW": "終端機",
     "it": "Terminale",
     "pt": "Terminal",
-    "es": "Terminal"
-    "zh-TW": "終端機",
+    "es": "Terminal",
     "ar": "الطرفية",
     "fr": "Terminal"
   },
@@ -35,8 +33,7 @@
     "no": "Planlegger",
     "zh-TW": "計畫器",
     "ar": "المخطط",
-    "fr": "Planificateur"
-    "zh-TW": "計畫器",
+    "fr": "Planificateur",
     "it": "Pianificatore",
     "pt": "Planejador",
     "es": "Planificador"
@@ -49,8 +46,7 @@
     "no": "Kode editor",
     "zh-TW": "程式碼編輯器",
     "ar": "محرر الكود",
-    "fr": "Éditeur de code"
-    "zh-TW": "程式碼編輯器",
+    "fr": "Éditeur de code",
     "it": "Editor di codice",
     "pt": "Editor de código",
     "es": "Editor de código"
@@ -64,8 +60,7 @@
     "zh-TW": "瀏覽器",
     "it": "Browser",
     "pt": "Navegador",
-    "es": "Navegador"
-    "zh-TW": "瀏覽器",
+    "es": "Navegador",
     "ar": "المتصفح",
     "fr": "Navigateur"
   },
@@ -78,8 +73,7 @@
     "zh-TW": "OpenDevin 工作區目錄",
     "it": "Directory dell'area di lavoro OpenDevin",
     "pt": "Diretório do espaço de trabalho OpenDevin",
-    "es": "Directorio del espacio de trabajo de OpenDevin"
-    "zh-TW": "OpenDevin 工作區目錄",
+    "es": "Directorio del espacio de trabajo de OpenDevin",
     "ar": "مجلد مساحة عمل أوبنديفين",
     "fr": "Répertoire de l'espace de travail OpenDevin"
   },
@@ -91,8 +85,7 @@
     "no": "Standard: ./workspace",
     "zh-TW": "默认：./workspace",
     "ar": "الافتراضي: ./workspace",
-    "fr": "Par défaut: ./workspace"
-    "zh-TW": "默认：./workspace",
+    "fr": "Par défaut: ./workspace",
     "it": "Predefinito: ./workspace",
     "pt": "Padrão: ./workspace",
     "es": "Predeterminado: ./workspace"
@@ -106,8 +99,7 @@
     "zh-TW": "設定",
     "it": "Configurazione",
     "pt": "Configuração",
-    "es": "Configuración"
-    "zh-TW": "設定",
+    "es": "Configuración",
     "ar": "التكوين",
     "fr": "Configuration"
   },
@@ -120,8 +112,7 @@
     "zh-TW": "模型",
     "it": "Modello",
     "pt": "Modelo",
-    "es": "Modelo"
-    "zh-TW": "模型",
+    "es": "Modelo",
     "ar": "النموذج",
     "fr": "Modèle"
   },
@@ -134,8 +125,7 @@
     "zh-TW": "選擇模型",
     "it": "Seleziona un modello",
     "pt": "Selecione um modelo",
-    "es": "Seleccionar un modelo"
-    "zh-TW": "選擇模型",
+    "es": "Seleccionar un modelo",
     "ar": "حدد نموذج",
     "fr": "Sélectionner un modèle"
   },
@@ -148,8 +138,7 @@
     "zh-TW": "智能體",
     "it": "Agente",
     "pt": "Agente",
-    "es": "Agente"
-    "zh-TW": "智能體",
+    "es": "Agente",
     "ar": "الوكيل",
     "fr": "Agent"
   },
@@ -162,8 +151,7 @@
     "zh-TW": "選擇智能體",
     "it": "Seleziona un agente",
     "pt": "Selecione um agente",
-    "es": "Seleccionar un agente"
-    "zh-TW": "選擇智能體",
+    "es": "Seleccionar un agente",
     "ar": "حدد وكيلا",
     "fr": "Sélectionner un agent"
   },
@@ -175,8 +163,7 @@
     "no": "Språk",
     "zh-TW": "語言",
     "ar": "اللغة",
-    "fr": "Langue"
-    "zh-TW": "語言",
+    "fr": "Langue",
     "it": "Lingua",
     "pt": "Idioma",
     "es": "Idioma"
@@ -190,8 +177,7 @@
     "zh-TW": "關閉",
     "it": "Chiudi",
     "pt": "Fechar",
-    "es": "Cerrar"
-    "zh-TW": "關閉",
+    "es": "Cerrar",
     "ar": "إغلاق",
     "fr": "Fermer"
   },
@@ -203,8 +189,7 @@
     "no": "Lagre",
     "zh-TW": "儲存",
     "ar": "حفظ",
-    "fr": "Enregistrer"
-    "zh-TW": "儲存",
+    "fr": "Enregistrer",
     "it": "Salva",
     "pt": "Salvar",
     "es": "Guardar"
@@ -218,8 +203,7 @@
     "zh-TW": "初始化智能體（可能需要 10 秒以上時間）",
     "it": "Inizializzazione dell'agente (può richiedere fino a 10 secondi)...",
     "pt": "Inicializando o agente (pode levar até 10 segundos)...",
-    "es": "Inicializando el agente (puede tardar hasta 10 segundos)..."
-    "zh-TW": "初始化智能體（可能需要 10 秒以上時間）",
+    "es": "Inicializando el agente (puede tardar hasta 10 segundos)...",
     "ar": "جاري تهيئة الوكيل (قد يستغرق حتى 10 ثواني)...",
     "fr": "Initialisation de l'agent (peut prendre jusqu'à 10 secondes)..."
   },
@@ -232,8 +216,7 @@
     "zh-TW": "發送訊息（不會打擾到助理）",
     "it": "Invia un messaggio (non interromperà l'Assistente)",
     "pt": "Envie uma mensagem (não interromperá o Assistente)",
-    "es": "Enviar un mensaje (no interrumpirá al Asistente)"
-    "zh-TW": "發送訊息（不會打擾到助理）",
+    "es": "Enviar un mensaje (no interrumpirá al Asistente)",
     "ar": "إرسال رسالة (لن يقاطع المساعد)",
     "fr": "Envoyer un message (ne pas interrompre l'Assistant)"
   },
@@ -246,9 +229,7 @@
     "zh-TW": "發送",
     "it": "Invia",
     "pt": "Enviar",
-    "es": "Enviar"
-  }
-    "zh-TW": "發送",
+    "es": "Enviar",
     "ar": "إرسال",
     "fr": "Envoyer"
   },
