@@ -3,19 +3,21 @@ version: "3.8"
 services:
   # Devin Out-of-The-Box Agent Service
   devin:
-    container_name: devin
+    container_name: devin_backend
     hostname: devin
-    image: lehcode/opendevin-cuda${CUDA_VERSION:?}-miniconda:dev
+    image: lehcode/opendevin_api-cuda${CUDA_VERSION:?}-miniconda:dev
     pull_policy: always
+    # Override the default models and rebuild image with restart container then
+    # These arguments will override defaults
+    # command: "[-m <your_model_name>] [-e <your_embeddings_model_name>]"
     build:
       dockerfile: docker/devin/app/Dockerfile
       args:
-        ws_port: ${DEVIN_WS_PORT:?}
-        jupyter_port: ${JUPYTER_PORT:?}
+        # jupyter_port: ${JUPYTER_PORT:?}
         debug: ${DEBUG:-}
         conda_dir: /var/miniconda
         nvidia_utils_driver: 550
-        app_dir: ${APP_DIR:?}
+        app_root: ${APP_ROOT:?}
         venv_name: ${VENV_NAME:?}
         locale: ${LANG:?}
         timezone: ${TZ:?}
@@ -33,19 +35,18 @@ services:
     volumes:
       - root_dir_vol:/root
       - pip_cache_vol:/root/.cache/pip
-      - conda_vol:${CONDA_PREFIX:?}
-#      - ./requirements.txt:${APP_DIR:?}/requirements.txt
-      - ./environment.yml:${APP_DIR:?}/environment.yml
+      - conda_vol:${CONDA_ROOT:?}
+      - ./environment.yml:${APP_ROOT:?}/environment.yml
       - ./workspace:${WORKSPACE_DIR:?}
-      - ./docker/devin/app/.condarc:${CONDA_PREFIX:?}/.condarc
-      - ./Makefile:${APP_DIR:?}/Makefile
-      - ./pyproject.toml:${APP_DIR:?}/pyproject.toml
-      - ./config.toml.template:${APP_DIR:?}/config.toml.template
-      - ./.env:${APP_DIR:?}/.env
-      - ./opendevin:${APP_DIR:?}/opendevin
-      - ./agenthub:${APP_DIR:?}/agenthub
-      - ./dev_config:${APP_DIR:?}/dev_config
-      - ./tests:${APP_DIR:?}/tests
+#      - ./docker/devin/app/.condarc:${CONDA_ROOT:?}/.condarc
+#      - ./Makefile:${APP_ROOT:?}/Makefile
+#      - ./pyproject.toml:${APP_ROOT:?}/pyproject.toml
+#      - ./config.toml.dist:${APP_ROOT:?}/config.toml
+#      - ./.env:${APP_ROOT:?}/.env
+#      - ./opendevin:${APP_ROOT:?}/opendevin
+#      - ./agenthub:${APP_ROOT:?}/agenthub
+#      - ./dev_config:${APP_ROOT:?}/dev_config
+#      - ./tests:${APP_ROOT:?}/tests
     tmpfs:
       - /run
       - /tmp
@@ -53,8 +54,9 @@ services:
     ports:
       - "${DEVIN_WS_PORT}:${DEVIN_WS_PORT}"
       - "${JUPYTER_PORT:?}:${JUPYTER_PORT:?}"
+      # VSCode Python remote debugger
+      - "5678:5678"
     tty: true
-    stdin_open: true
     restart: no
     entrypoint: /docker-entrypoint.sh
     deploy:
@@ -74,10 +76,10 @@ services:
   litellm:
     image: ghcr.io/berriai/litellm:main-latest
     pull_policy: always
-    container_name: litellm
+    container_name: litellm_proxy
     command: "--config /etc/config.yaml --port ${LITELLM_PORT} --num_workers 8 --detailed_debug"
     environment:
-      LITELLM_DEFAULT_MODEL: ${LITELLM_DEFAULT_MODEL:?}
+      DEFAULT_CHAT_MODEL: ${DEFAULT_CHAT_MODEL:?}
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_CONTAINER_PORT}/${POSTGRES_DB}
     ports:
       - "${LITELLM_PORT}:4000"
@@ -105,7 +107,7 @@ services:
   redis:
     image: redis/redis-stack:latest
     pull_policy: always
-    container_name: redis-stack
+    container_name: redis_stack
     env_file:
       - .env
       - docker/redis/redis.env
@@ -120,7 +122,7 @@ services:
   postgres:
     image: postgres:latest
     pull_policy: always
-    container_name: db-postgres
+    container_name: db_postgres
     env_file:
       - .env
       - docker/postgres/postgres.env
@@ -135,12 +137,12 @@ services:
       - opendevin-net
 
   # UI service
-  ui:
-    container_name: devin-ui
+  web_ui:
+    container_name: devin_ui
     image: lehcode/opendevin_ui-node${NODE_VERSION:?}-npm${NPM_VERSION}-pnpm-reactjs:dev
     pull_policy: always
     build:
-      dockerfile: docker/devin/ui/Dockerfile
+      dockerfile: docker/devin/web_ui/Dockerfile
       args:
         node_version: ${NODE_VERSION:?}
         npm_version: ${NPM_VERSION:?}
@@ -149,7 +151,7 @@ services:
         node_options: ${NODE_OPTIONS}
     env_file:
       - ./.env
-      - docker/devin/ui/.env
+      - docker/devin/web_ui/.env
     environment:
       BACKEND_HOST: ${DEVIN_HOST:?}:${DEVIN_API_PORT:?}
       FRONTEND_PORT: ${UI_HTTP_PORT:?}
@@ -160,8 +162,8 @@ services:
     ports:
       - "${UI_HTTP_PORT:?}:${UI_HTTP_PORT:?}"
       - "${UI_HTTPS_PORT:?}:${UI_HTTPS_PORT:?}"
-    tty: false
-    entrypoint: "/docker-entrypoint.sh"
+    tty: true
+    command: ""
 
 networks:
   opendevin-net:
