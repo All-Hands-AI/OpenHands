@@ -1,5 +1,7 @@
 from typing import List
+
 from opendevin.logger import opendevin_logger as logger
+from opendevin.exceptions import PlanInvalidStateError
 
 OPEN_STATE = 'open'
 COMPLETED_STATE = 'completed'
@@ -87,11 +89,11 @@ class Task:
         Args:            state: The new state of the task.
 
         Raises:
-            ValueError: If the provided state is invalid.
+            PlanInvalidStateError: If the provided state is invalid.
         """
         if state not in STATES:
             logger.error('Invalid state: %s', state)
-            raise ValueError('Invalid state:' + state)
+            raise PlanInvalidStateError(state)
         self.state = state
         if state == COMPLETED_STATE or state == ABANDONED_STATE or state == VERIFIED_STATE:
             for subtask in self.subtasks:

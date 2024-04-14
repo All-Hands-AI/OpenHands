@@ -3,6 +3,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import viteTsconfigPaths from "vite-tsconfig-paths";
+import * as os from "node:os";
 
 const BACKEND_HOST = process.env.BACKEND_HOST || "127.0.0.1:3000";
 
@@ -40,7 +41,7 @@ viteConfig = {
     },
   },
   build: {
-    minify: true,
+    minify: false,
     sourcemap: "inline",
     optimizeDeps: {
       include: ["lodash/fp", "src/index.tsx"],
@@ -64,18 +65,20 @@ viteConfig = {
 // Conditional configuration based on NODE_ENV
 if (process.env.NODE_ENV === "production") {
   // Production configuration
-  viteConfig.base = "/"; // Set the base URL for production
+  viteConfig.base = "/";
+  viteConfig.build.minify = true;
 } else {
   // Development configuration
-  viteConfig.base = ""; // Set the base URL for development
-  viteConfig.build.minify = false; // Set the base URL for development
+  viteConfig.base = "";
 }
 
 // Applied only in non-interactive environment, i.e. Docker
 if (process.env.DEBIAN_FRONTEND === "noninteractive") {
   const dockerConfig = {
     server: {
-      origin: `http://ui:${process.env.UI_HTTP_PORT}`,
+      host: os.hostname(),
+      origin: `http://web_ui:${process.env.UI_HTTP_PORT}`,
+      port: 4173,
     },
   };
 
