@@ -1,5 +1,7 @@
 import traceback
+
 from opendevin.llm.llm import LLM
+from opendevin.exceptions import AgentEventTypeError
 import agenthub.monologue_agent.utils.json as json
 import agenthub.monologue_agent.utils.prompts as prompts
 
@@ -24,10 +26,10 @@ class Monologue:
         - t (dict): The thought that we want to add to memory
 
         Raises:
-        - ValueError: If t is not a dict
+        - AgentEventTypeError: If t is not a dict
         """
         if not isinstance(t, dict):
-            raise ValueError('Event must be a dictionary')
+            raise AgentEventTypeError()
         self.thoughts.append(t)
 
     def get_thoughts(self):
@@ -51,7 +53,7 @@ class Monologue:
             try:
                 total_length += len(json.dumps(t))
             except TypeError as e:
-                print(f"Error serializing thought: {e}")
+                print(f'Error serializing thought: {e}')
         return total_length
 
     def condense(self, llm: LLM):
@@ -73,4 +75,4 @@ class Monologue:
             self.thoughts = prompts.parse_summary_response(summary_resp)
         except Exception as e:
             traceback.print_exc()
-            raise RuntimeError(f"Error condensing thoughts: {e}")
+            raise RuntimeError(f'Error condensing thoughts: {e}')
