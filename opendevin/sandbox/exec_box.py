@@ -19,6 +19,7 @@ OutputType = namedtuple('OutputType', ['content'])
 
 CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
 WORKSPACE_BASE = config.get('WORKSPACE_BASE')
+SANDBOX_WORKSPACE_DIR = '/workspace'
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
@@ -79,7 +80,7 @@ class DockerExecBox(Sandbox):
                 '-c',
                 f'useradd --shell /bin/bash -u {USER_ID} -o -c "" -m devin',
             ],
-            workdir='/workspace',
+            workdir=SANDBOX_WORKSPACE_DIR,
         )
 
     def get_exec_cmd(self, cmd: str) -> List[str]:
@@ -97,7 +98,7 @@ class DockerExecBox(Sandbox):
     def execute(self, cmd: str) -> Tuple[int, str]:
         # TODO: each execute is not stateful! We need to keep track of the current working directory
         def run_command(container, command):
-            return container.exec_run(command, workdir='/workspace')
+            return container.exec_run(command, workdir=SANDBOX_WORKSPACE_DIR)
 
         # Use ThreadPoolExecutor to control command and set timeout
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -112,13 +113,13 @@ class DockerExecBox(Sandbox):
                 pid = self.get_pid(cmd)
                 if pid is not None:
                     self.container.exec_run(
-                        f'kill -9 {pid}', workdir='/workspace')
+                        f'kill -9 {pid}', workdir=SANDBOX_WORKSPACE_DIR)
                 return -1, f'Command: "{cmd}" timed out'
         return exit_code, logs.decode('utf-8')
 
     def execute_in_background(self, cmd: str) -> BackgroundCommand:
         result = self.container.exec_run(
-            self.get_exec_cmd(cmd), socket=True, workdir='/workspace'
+            self.get_exec_cmd(cmd), socket=True, workdir=SANDBOX_WORKSPACE_DIR
         )
         result.output._sock.setblocking(0)
         pid = self.get_pid(cmd)
@@ -144,7 +145,7 @@ class DockerExecBox(Sandbox):
         bg_cmd = self.background_commands[id]
         if bg_cmd.pid is not None:
             self.container.exec_run(
-                f'kill -9 {bg_cmd.pid}', workdir='/workspace')
+                f'kill -9 {bg_cmd.pid}', workdir=SANDBOX_WORKSPACE_DIR)
         bg_cmd.result.output.close()
         self.background_commands.pop(id)
         return bg_cmd
@@ -189,11 +190,11 @@ class DockerExecBox(Sandbox):
                 self.container_image,
                 command='tail -f /dev/null',
                 network_mode='host',
-                working_dir='/workspace',
+                working_dir=SANDBOX_WORKSPACE_DIR,
                 name=self.container_name,
                 detach=True,
                 volumes={WORKSPACE_BASE: {
-                    'bind': '/workspace', 'mode': 'rw'}},
+                    'bind': SANDBOX_WORKSPACE_DIR, 'mode': 'rw'}},
             )
             logger.info('Container started')
         except Exception as ex:

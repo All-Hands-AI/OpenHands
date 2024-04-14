@@ -19,6 +19,8 @@ from opendevin.utils import find_available_tcp_port
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
+SANDBOX_WORKSPACE_DIR = '/workspace'
+
 CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
 
 SSH_HOSTNAME = config.get(ConfigType.SSH_HOSTNAME)
@@ -103,7 +105,7 @@ class DockerSSHBox(Sandbox):
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c',
              r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"],
-            workdir='/workspace',
+            workdir=SANDBOX_WORKSPACE_DIR,
         )
         if exit_code != 0:
             raise Exception(
@@ -112,13 +114,13 @@ class DockerSSHBox(Sandbox):
         # Check if the opendevin user exists
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c', 'id -u opendevin'],
-            workdir='/workspace',
+            workdir=SANDBOX_WORKSPACE_DIR,
         )
         if exit_code == 0:
             # User exists, delete it
             exit_code, logs = self.container.exec_run(
                 ['/bin/bash', '-c', 'userdel -r opendevin'],
-                workdir='/workspace',
+                workdir=SANDBOX_WORKSPACE_DIR,
             )
             if exit_code != 0:
                 raise Exception(
@@ -129,7 +131,7 @@ class DockerSSHBox(Sandbox):
             exit_code, logs = self.container.exec_run(
                 ['/bin/bash', '-c',
                  f'useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {USER_ID} opendevin'],
-                workdir='/workspace',
+                workdir=SANDBOX_WORKSPACE_DIR,
             )
             if exit_code != 0:
                 raise Exception(
@@ -137,7 +139,7 @@ class DockerSSHBox(Sandbox):
             exit_code, logs = self.container.exec_run(
                 ['/bin/bash', '-c',
                  f"echo 'opendevin:{self._ssh_password}' | chpasswd"],
-                workdir='/workspace',
+                workdir=SANDBOX_WORKSPACE_DIR,
             )
             if exit_code != 0:
                 raise Exception(f'Failed to set password in sandbox: {logs}')
@@ -146,14 +148,14 @@ class DockerSSHBox(Sandbox):
                 # change password for root
                 ['/bin/bash', '-c',
                  f"echo 'root:{self._ssh_password}' | chpasswd"],
-                workdir='/workspace',
+                workdir=SANDBOX_WORKSPACE_DIR,
             )
             if exit_code != 0:
                 raise Exception(
                     f'Failed to set password for root in sandbox: {logs}')
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c', "echo 'opendevin-sandbox' > /etc/hostname"],
-            workdir='/workspace',
+            workdir=SANDBOX_WORKSPACE_DIR,
         )
 
     def start_ssh_session(self):
@@ -215,7 +217,7 @@ class DockerSSHBox(Sandbox):
 
     def execute_in_background(self, cmd: str) -> BackgroundCommand:
         result = self.container.exec_run(
-            self.get_exec_cmd(cmd), socket=True, workdir='/workspace'
+            self.get_exec_cmd(cmd), socket=True, workdir=SANDBOX_WORKSPACE_DIR
         )
         result.output._sock.setblocking(0)
         pid = self.get_pid(cmd)
@@ -241,7 +243,7 @@ class DockerSSHBox(Sandbox):
         bg_cmd = self.background_commands[id]
         if bg_cmd.pid is not None:
             self.container.exec_run(
-                f'kill -9 {bg_cmd.pid}', workdir='/workspace')
+                f'kill -9 {bg_cmd.pid}', workdir=SANDBOX_WORKSPACE_DIR)
         bg_cmd.result.output.close()
         self.background_commands.pop(id)
         return bg_cmd
@@ -302,13 +304,13 @@ class DockerSSHBox(Sandbox):
                 # allow root login
                 command="/usr/sbin/sshd -D -p 2222 -o 'PermitRootLogin=yes'",
                 **network_kwargs,
-                working_dir='/workspace',
+                working_dir=SANDBOX_WORKSPACE_DIR,
                 name=self.container_name,
                 hostname='opendevin_sandbox',
                 detach=True,
                 volumes={
                     mount_dir: {
-                        'bind': '/workspace',
+                        'bind': SANDBOX_WORKSPACE_DIR,
                         'mode': 'rw'
                     },
                 },
