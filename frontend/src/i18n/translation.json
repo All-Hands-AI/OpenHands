@@ -236,9 +236,13 @@
   "CHAT_INTERFACE$INITIAL_MESSAGE": {
     "en": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "zh-CN": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "de": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "ko-KR": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "no": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "zh-TW": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "it": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "pt": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "es": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "ar": "مرحبا! أنا OpenDevin، مهندس برمجيات AI. ماذا تود أن تبني معي اليوم؟",
     "fr": "Salut! Je suis OpenDevin, un ingénieur logiciel en IA. Que voudriez-vous construire avec moi aujourd'hui?"
   },
@@ -246,9 +250,13 @@
     "en": "Assistant",
     "zh-CN": "Assistant",
     "ko-KR": "Assistant",
+    "de": "Assistant",
     "no": "Assistant",
     "zh-TW": "Assistant",
+    "it": "Assistant",
+    "pt": "Assistant",
+    "es": "Assistant",
     "ar": "مساعد",
     "fr": "Assistant"
-  },
+  }
 }
