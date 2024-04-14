@@ -48,15 +48,9 @@ export type Agent = (typeof INITIAL_AGENTS)[number];
 const DISPLAY_MAP = new Map<string, string>([
   [ArgConfigType.LLM_MODEL, "model"],
   [ArgConfigType.AGENT, "agent"],
-  // [ArgConfigType.WORKSPACE_DIR, "directory"],
+  [ArgConfigType.WORKSPACE_DIR, "directory"],
   [ArgConfigType.LANGUAGE, "language"],
 ]);
-
-const SUPPORTED_SETTINGS = new Array<string>(
-  ArgConfigType.LLM_MODEL,
-  ArgConfigType.AGENT,
-  ArgConfigType.LANGUAGE,
-);
 
 // Send settings to the server
 export function saveSettings(
@@ -64,25 +58,10 @@ export function saveSettings(
   oldSettings: { [key: string]: string },
   isInit: boolean = false,
 ): void {
-  newSettings = { ...newSettings };
-  oldSettings = { ...oldSettings };
-  for (const key in newSettings) {
-    if (!SUPPORTED_SETTINGS.includes(key)) {
-      delete newSettings[key];
-    }
-  }
-  for (const key in oldSettings) {
-    if (!SUPPORTED_SETTINGS.includes(key)) {
-      delete oldSettings[key];
-    }
-  }
   const { mergedSettings, updatedSettings, needToSend } = Object.keys(
     newSettings,
   ).reduce(
     (acc, key) => {
-      if (!SUPPORTED_SETTINGS.includes(key)) {
-        return acc;
-      }
       const newValue = String(newSettings[key]);
       const oldValue = oldSettings[key];
 
