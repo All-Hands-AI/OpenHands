@@ -64,9 +64,3 @@ There is also [documentation for running with local models using ollama](./docs/
     ```bash
     make help
     ```
-
-<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
-    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
-        ↑ Back to Top ↑
-    </a>
-</p>
