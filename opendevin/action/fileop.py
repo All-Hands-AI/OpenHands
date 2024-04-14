@@ -8,11 +8,11 @@ from .base import ExecutableAction
 
 # This is the path where the workspace is mounted in the container
 # The LLM sometimes returns paths with this prefix, so we need to remove it
-PATH_PREFIXS = ['/workspace/', './workspace/']
+PATH_PREFIXES = ['/workspace/', './workspace/']
 
 
 def resolve_path(base_path, file_path):
-    for PATH_PREFIX in PATH_PREFIXS:
+    for PATH_PREFIX in PATH_PREFIXES:
         if file_path.startswith(PATH_PREFIX):
             file_path = file_path[len(PATH_PREFIX):]
             break
