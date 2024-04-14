@@ -111,6 +111,7 @@ class AgentUnit:
         container_image = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
         max_iterations = self.get_arg_or_default(
             args, ConfigType.MAX_ITERATIONS)
+        max_chars = self.get_arg_or_default(args, ConfigType.MAX_CHARS)
 
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
         try:
@@ -118,6 +119,7 @@ class AgentUnit:
                 sid=self.sid,
                 agent=Agent.get_cls(agent_cls)(llm),
                 max_iterations=int(max_iterations),
+                max_chars=int(max_chars),
                 container_image=container_image,
                 callbacks=[self.on_agent_event],
             )

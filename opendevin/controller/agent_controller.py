@@ -1,9 +1,12 @@
 import asyncio
 import inspect
 import traceback
+import time
 from typing import List, Callable, Literal, Mapping, Awaitable, Any, cast
 
 from termcolor import colored
+from litellm.exceptions import APIConnectionError
+from openai import AuthenticationError
 
 from opendevin import config
 from opendevin.action import (
@@ -15,6 +18,7 @@ from opendevin.action import (
 )
 from opendevin.agent import Agent
 from opendevin.logger import opendevin_logger as logger
+from opendevin.exceptions import MaxCharsExceedError, AgentNoActionError
 from opendevin.observation import Observation, AgentErrorObservation, NullObservation
 from opendevin.plan import Plan
 from opendevin.state import State
@@ -42,6 +46,7 @@ DISABLE_COLOR_PRINTING = (
     config.get('DISABLE_COLOR').lower() == 'true'
 )
 MAX_ITERATIONS = config.get('MAX_ITERATIONS')
+MAX_CHARS = config.get('MAX_CHARS')
 
 
 def print_with_color(text: Any, print_type: str = 'INFO'):
@@ -76,6 +81,7 @@ class AgentController:
         agent: Agent,
         sid: str = '',
         max_iterations: int = MAX_ITERATIONS,
+        max_chars: int = MAX_CHARS,
         container_image: str | None = None,
         callbacks: List[Callable] = [],
     ):
@@ -83,6 +89,7 @@ class AgentController:
         self.agent = agent
         self.max_iterations = max_iterations
         self.command_manager = CommandManager(self.id, container_image)
+        self.max_chars = max_chars
         self.callbacks = callbacks
 
     def update_state_for_step(self, i):
@@ -94,9 +101,11 @@ class AgentController:
 
     def add_history(self, action: Action, observation: Observation):
         if not isinstance(action, Action):
-            raise ValueError('action must be an instance of Action')
+            raise TypeError(
+                f'action must be an instance of Action, got {type(action).__name__} instead')
         if not isinstance(observation, Observation):
-            raise ValueError('observation must be an instance of Observation')
+            raise TypeError(
+                f'observation must be an instance of Observation, got {type(observation).__name__} instead')
         self.state.history.append((action, observation))
         self.state.updated_info.append((action, observation))
 
@@ -119,6 +128,9 @@ class AgentController:
         print('\n\n==============', flush=True)
         print('STEP', i, flush=True)
         print_with_color(self.state.plan.main_goal, 'PLAN')
+        if self.state.num_of_chars > self.max_chars:
+            raise MaxCharsExceedError(
+                self.state.num_of_chars, self.max_chars)
 
         log_obs = self.command_manager.get_background_obs()
         for obs in log_obs:
@@ -132,17 +144,29 @@ class AgentController:
         try:
             action = self.agent.step(self.state)
             if action is None:
-                raise ValueError('Agent must return an action')
+                raise AgentNoActionError()
             print_with_color(action, 'ACTION')
         except Exception as e:
             observation = AgentErrorObservation(str(e))
             print_with_color(observation, 'ERROR')
             traceback.print_exc()
+            if isinstance(e, APIConnectionError):
+                time.sleep(3)
             # TODO Change to more robust error handling
             if (
                 'The api_key client option must be set' in observation.content
                 or 'Incorrect API key provided:' in observation.content
             ):
+                raise
+
+            # raise specific exceptions that need to be handled outside
+            # note: we are using AuthenticationError class from openai rather than
+            # litellm because:
+            # 1) litellm.exceptions.AuthenticationError is a subclass of openai.AuthenticationError
+            # 2) embeddings call, initiated by llama-index, has no wrapper for authentication
+            #    errors. This means we have to catch individual authentication errors
+            #    from different providers, and OpenAI is one of these.
+            if isinstance(e, (AuthenticationError, AgentNoActionError)):
                 raise
         self.update_state_after_step()
 
@@ -194,7 +218,7 @@ class AgentController:
             try:
                 callback(event)
             except Exception as e:
-                logger.exception(f"Callback error: {e}, idx: {idx}")
+                logger.exception(f'Callback error: {e}, idx: {idx}')
         await asyncio.sleep(
             0.001
         )  # Give back control for a tick, so we can await in callbacks

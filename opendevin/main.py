@@ -5,6 +5,7 @@ from typing import Type
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin import config
+from opendevin.schema import ConfigType
 from opendevin.agent import Agent
 from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
@@ -51,16 +52,23 @@ def parse_arguments():
     parser.add_argument(
         '-m',
         '--model-name',
-        default=config.get('LLM_MODEL'),
+        default=config.get(ConfigType.LLM_MODEL),
         type=str,
         help='The (litellm) model name to use',
     )
     parser.add_argument(
         '-i',
         '--max-iterations',
-        default=100,
+        default=config.get(ConfigType.MAX_ITERATIONS),
         type=int,
         help='The maximum number of iterations to run the agent',
+    )
+    parser.add_argument(
+        '-n',
+        '--max-chars',
+        default=config.get(ConfigType.MAX_CHARS),
+        type=int,
+        help='The maximum number of characters to send to and receive from LLM per task',
     )
     args, _ = parser.parse_known_args()
     return args
@@ -90,7 +98,7 @@ async def main():
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
     controller = AgentController(
-        agent=agent, max_iterations=args.max_iterations
+        agent=agent, max_iterations=args.max_iterations, max_chars=args.max_chars
     )
 
     await controller.start_loop(task)

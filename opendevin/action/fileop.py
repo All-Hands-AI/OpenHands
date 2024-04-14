@@ -29,7 +29,7 @@ class FileReadAction(ExecutableAction):
 
     @property
     def message(self) -> str:
-        return f"Reading file: {self.path}"
+        return f'Reading file: {self.path}'
 
 
 @dataclass
@@ -46,4 +46,4 @@ class FileWriteAction(ExecutableAction):
 
     @property
     def message(self) -> str:
-        return f"Writing file: {self.path}"
+        return f'Writing file: {self.path}'
