@@ -6,13 +6,34 @@ from typing import Tuple
 
 
 class BackgroundCommand:
+    """
+    Represents a background command execution
+    """
     def __init__(self, id: int, command: str, result, pid: int):
+        """
+        Initialize a BackgroundCommand instance.
+
+        Args:
+            id (int): The identifier of the command.
+            command (str): The command to be executed.
+            result: The result of the command execution.
+            pid (int): The process ID (PID) of the command.
+        """
         self.id = id
         self.command = command
         self.result = result
         self.pid = pid
 
     def parse_docker_exec_output(self, logs: bytes) -> Tuple[bytes, bytes]:
+        """
+        Parses the output of a Docker exec command.
+
+        Args:
+            logs (bytes): The raw output logs of the command.
+
+        Returns:
+            Tuple[bytes, bytes]: A tuple containing the parsed output and any remaining data.
+        """
         res = b''
         tail = b''
         i = 0
@@ -40,6 +61,12 @@ class BackgroundCommand:
         return res, tail
 
     def read_logs(self) -> str:
+        """
+        Read and decode the logs of the command.
+
+        Returns:
+            str: The decoded logs of the command.
+        """
         # TODO: get an exit code if process is exited
         logs = b''
         last_remains = b''
