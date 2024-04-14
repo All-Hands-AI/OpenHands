@@ -4,7 +4,7 @@ services:
   # Devin Out-of-The-Box Agent Service
   devin:
     container_name: devin_backend
-    hostname: devin_coder
+    hostname: devin
     image: lehcode/opendevin_api-cuda${CUDA_VERSION:?}-miniconda:dev
     pull_policy: always
     # Override the default models and rebuild image with restart container then

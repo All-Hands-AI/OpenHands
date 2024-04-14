@@ -5,8 +5,6 @@
 
 if [ -n "${DEBUG}" ]; then set -eux; fi
 
-PATH="${PATH}:$yarn_global_root/node_modules/npm/bin:$yarn_global_root/bin"
-
 echo "Backend endpoint address http://${DEVIN_HOST}:${DEVIN_API_PORT}"
 
 if [ -n "${SECURE_MODE}" ]; then
