@@ -5,7 +5,8 @@ import time
 from typing import List, Callable, Literal, Mapping, Awaitable, Any, cast
 
 from termcolor import colored
-from litellm.exceptions import AuthenticationError, APIConnectionError
+from litellm.exceptions import APIConnectionError
+from openai import AuthenticationError
 
 from opendevin import config
 from opendevin.action import (
@@ -158,6 +159,12 @@ class AgentController:
                 time.sleep(3)
 
             # raise specific exceptions that need to be handled outside
+            # note: we are using AuthenticationError class from openai rather than
+            # litellm because:
+            # 1) litellm.exceptions.AuthenticationError is a subclass of openai.AuthenticationError
+            # 2) embeddings call, initiated by llama-index, has no wrapper for authentication
+            #    errors. This means we have to catch individual authentication errors
+            #    from different providers, and OpenAI is one of these.
             if isinstance(e, (AuthenticationError, AgentNoActionError)):
                 raise
         self.update_state_after_step()
