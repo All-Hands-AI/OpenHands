@@ -6,4 +6,3 @@ There's a lot of low-hanging fruit for this agent:
 * Improve memory condensing--condense earlier memories more aggressively
 * Limit the time that `run` can wait (in case agent runs an interactive command and it's hanging)
 * Figure out how to run background processes, e.g. `node server.js` to start a server
-
