@@ -29,16 +29,16 @@ class LLM:
         self._completion = partial(
             litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url)
 
-        def backoff_retry(func, max_retries=num_retries, base_delay=cooldown_time):
+        def backoff_retry(func, *args, **kwargs):
             retries = 0
-            while retries < max_retries:
+            while retries < num_retries:
                 try:
-                    return func()
+                    return func(*args, **kwargs)
                 except litellm.exceptions.APIConnectionError as e:
                     if '400' in str(e):
                         raise e
-                    print(f'Error: {e}. Retrying in {base_delay * 2 ** retries} seconds...')
-                    time.sleep(base_delay * 2 ** retries)
+                    print(f'Error: {e}. Retrying in {cooldown_time * 2 ** retries} seconds...')
+                    time.sleep(cooldown_time * 2 ** retries)
                     retries += 1
             raise Exception('Max retries exceeded.')
 
