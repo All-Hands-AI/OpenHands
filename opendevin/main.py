@@ -89,8 +89,7 @@ async def main():
             'No task provided. Please specify a task through -t, -f.')
 
     print(
-        f'Running agent {args.agent_cls} (model: {args.model_name}, directory: {
-            args.directory}) with task: "{task}"'
+        f'Running agent {args.agent_cls} (model: {args.model_name}, directory: {args.directory}) with task: "{task}"'
     )
     llm = LLM(args.model_name)
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
