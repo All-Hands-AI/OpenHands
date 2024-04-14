@@ -1,3 +1,5 @@
+import backoff
+import litellm
 
 from litellm import completion as litellm_completion
 from functools import partial
@@ -29,6 +31,8 @@ class LLM:
 
         completion_unwrapped = self._completion
 
+        @backoff.on_exception(backoff.expo,
+                              litellm.exceptions.APIConnectionError)
         def wrapper(*args, **kwargs):
             if 'messages' in kwargs:
                 messages = kwargs['messages']

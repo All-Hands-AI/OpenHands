@@ -9,6 +9,7 @@ repository = "https://github.com/OpenDevin/OpenDevin"
 
 [tool.poetry.dependencies]
 python = "^3.11"
+backoff = "*"
 datasets = "*"
 pandas = "*"
 litellm = "*"
