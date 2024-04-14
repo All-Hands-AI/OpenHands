@@ -80,12 +80,11 @@ async def main():
     # Determine the task source
     if args.file:
         task = read_task_from_file(args.file)
+    elif args.task:
+        task = args.task
     elif not sys.stdin.isatty():
         task = read_task_from_stdin()
     else:
-        task = args.task
-
-    if not task:
         raise ValueError(
             'No task provided. Please specify a task through -t, -f.')
 
