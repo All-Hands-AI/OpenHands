@@ -169,8 +169,7 @@ def parse_action_response(response: str) -> Action:
         def rank(match):
             return len(match[2]) if match[1] == 'think' else 130  # Crudely rank multiple responses by length
         try:
-            action_dict = json.loads(max(response_json_matches, key=rank)[
-                                     0])  # Use the highest ranked response
+            action_dict = json.loads(max(response_json_matches, key=rank)[0])  # Use the highest ranked response
         except ValueError as e:
             raise LLMOutputError(
                 "Output from the LLM isn't properly formatted. The model may be misconfigured."

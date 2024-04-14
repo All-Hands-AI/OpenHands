@@ -228,8 +228,7 @@ class DockerExecBox(Sandbox):
                 break
             time.sleep(1)
             elapsed += 1
-            self.container = self.docker_client.containers.get(
-                self.container_name)
+            self.container = self.docker_client.containers.get(self.container_name)
             if elapsed > self.timeout:
                 break
         if self.container.status != 'running':
