@@ -2,7 +2,7 @@ from typing import List
 
 from opendevin import config
 from opendevin.observation import CmdOutputObservation
-from opendevin.sandbox import DockerExecBox, DockerSSHBox, E2Bbox, Sandbox
+from opendevin.sandbox import DockerExecBox, DockerSSHBox, E2BBox, Sandbox
 from opendevin.schema import ConfigType
 
 
@@ -25,7 +25,7 @@ class CommandManager:
                 sid=(sid or 'default'), workspace_dir=directory, container_image=container_image
             )
         elif sandbox_type == 'e2b':
-            self.sandbox = E2Bbox()
+            self.sandbox = E2BBox()
         else:
             self.sandbox = DockerExecBox(
                 sid=(sid or 'default'), workspace_dir=directory, container_image=container_image

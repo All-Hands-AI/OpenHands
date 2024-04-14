@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from opendevin.observation import FileReadObservation, FileWriteObservation
 from opendevin.schema import ActionType
-from opendevin.sandbox import E2Bbox
+from opendevin.sandbox import E2BBox
 
 from .base import ExecutableAction
 
@@ -24,7 +24,7 @@ class FileReadAction(ExecutableAction):
     action: str = ActionType.READ
 
     def run(self, controller) -> FileReadObservation:
-        if isinstance(controller.command_manager.sandbox, E2Bbox):
+        if isinstance(controller.command_manager.sandbox, E2BBox):
             print('READING FROM PATH', self.path)
             content = controller.command_manager.sandbox.filesystem.read(
                 self.path)
@@ -47,7 +47,7 @@ class FileWriteAction(ExecutableAction):
     action: str = ActionType.WRITE
 
     def run(self, controller) -> FileWriteObservation:
-        if isinstance(controller.command_manager.sandbox, E2Bbox):
+        if isinstance(controller.command_manager.sandbox, E2BBox):
             print('WRITING TO PATH', self.path)
             controller.command_manager.sandbox.filesystem.write(
                 self.path, self.content)

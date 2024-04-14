@@ -11,7 +11,7 @@ from opendevin.sandbox.e2b.process import E2BProcess
 from opendevin.sandbox.process import Process
 
 
-class E2Bbox(Sandbox):
+class E2BBox(Sandbox):
     closed = False
     cur_background_id = 0
     background_commands: Dict[int, Process] = {}

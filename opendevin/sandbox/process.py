@@ -12,15 +12,6 @@ class Process(ABC):
     def command(self) -> str:
         pass
 
-    # @property
-    # @abstractmethod
-    # def exit_code(self) -> int | None: # The reason it can be none is because the process can still be running
-    #    pass
-
-    # @abstractmethod
-    # def kill(self):
-    #     pass
-
     @abstractmethod
     def read_logs(self) -> str:
         pass
