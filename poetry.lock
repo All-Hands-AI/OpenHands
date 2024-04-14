@@ -1792,13 +1792,13 @@ adal = ["adal (>=1.0.2)"]
 
 [[package]]
 name = "litellm"
-version = "1.34.34"
+version = "1.35.5"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.34.34-py3-none-any.whl", hash = "sha256:c9eefd4b5adec3c2e6d0ab765a4fcebd475a895c7e417f47f8e677410b607f51"},
-    {file = "litellm-1.34.34.tar.gz", hash = "sha256:d11c9d5296d052a9e5e1187ac7b33683f3a581740abc4de6a9c327d3f3c7187c"},
+    {file = "litellm-1.35.5-py3-none-any.whl", hash = "sha256:ffc7ad5550534f737097e8e33cef575dc806e5ff4c624aaec2b400e28c2b4ea3"},
+    {file = "litellm-1.35.5.tar.gz", hash = "sha256:4545d4af8cd177c1539968335920253ad44c38e09420854f142ffff9cdb3fff7"},
 ]
 
 [package.dependencies]
