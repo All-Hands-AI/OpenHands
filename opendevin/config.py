@@ -22,6 +22,10 @@ DEFAULT_CONFIG: dict = {
     ConfigType.LLM_COOLDOWN_TIME: 1,
     ConfigType.DIRECTORY_REWRITE: '',
     ConfigType.MAX_ITERATIONS: 100,
+    # GPT-4 pricing is $10 per 1M input tokens. Since tokenization happens on LLM side,
+    # we cannot easily count number of tokens, but we can count characters.
+    # Assuming 5 characters per token, 5 million is a reasonable default limit.
+    ConfigType.MAX_CHARS: 5_000_000,
     ConfigType.AGENT: 'MonologueAgent',
     ConfigType.SANDBOX_TYPE: 'ssh',
     ConfigType.DISABLE_COLOR: 'false',
@@ -47,7 +51,7 @@ def get(key: str, required: bool = False):
     """
     value = os.environ.get(key)
     if not value:
-      value = config.get(key)
+        value = config.get(key)
     if not value and required:
         raise KeyError(f"Please set '{key}' in `config.toml` or `.env`.")
     return value
