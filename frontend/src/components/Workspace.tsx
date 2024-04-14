@@ -2,6 +2,7 @@ import { Tab, Tabs } from "@nextui-org/react";
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IoIosGlobe } from "react-icons/io";
+import { VscCode } from "react-icons/vsc";
 import Calendar from "../assets/calendar";
 import { I18nKey } from "../i18n/declaration";
 import { AllTabs, TabOption, TabType } from "../types/TabOption";
@@ -22,7 +23,7 @@ function Workspace() {
       },
       [TabOption.CODE]: {
         name: t(I18nKey.WORKSPACE$CODE_EDITOR_TAB_LABEL),
-        icon: <FaCode size={18} />,
+        icon: <VscCode size={18} />,
         component: <CodeEditor key="code" />,
       },
       [TabOption.BROWSER]: {
