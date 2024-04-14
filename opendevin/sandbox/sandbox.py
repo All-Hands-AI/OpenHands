@@ -27,7 +27,6 @@ class BackgroundCommand:
 
     def parse_docker_exec_output(self, logs: bytes) -> Tuple[bytes, bytes]:
         """
-        Explaination:
             When you execute a command using `exec` in a docker container, the output produced will be in bytes. this function parses the output of a Docker exec command.
 
         Example:
