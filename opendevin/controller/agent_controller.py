@@ -152,12 +152,6 @@ class AgentController:
             traceback.print_exc()
             if isinstance(e, APIConnectionError):
                 time.sleep(3)
-            # TODO Change to more robust error handling
-            if (
-                'The api_key client option must be set' in observation.content
-                or 'Incorrect API key provided:' in observation.content
-            ):
-                raise
 
             # raise specific exceptions that need to be handled outside
             # note: we are using AuthenticationError class from openai rather than

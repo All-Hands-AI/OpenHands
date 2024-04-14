@@ -79,13 +79,6 @@ class DockerSSHBox(Sandbox):
         self.container_image = CONTAINER_IMAGE if container_image is None else container_image
         self.container_name = self.container_name_prefix + self.instance_id
 
-        if container_image is None:
-            self.container_image = CONTAINER_IMAGE
-        else:
-            self.container_image = container_image
-
-        self.container_name = f'sandbox-{self.instance_id}'
-
         # set up random user password
         self._ssh_password = str(uuid.uuid4())
         self._ssh_port = find_available_tcp_port()
