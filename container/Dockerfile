@@ -19,9 +19,9 @@ ENV SSH_HOSTNAME=host.docker.internal
 ENV WORKSPACE_BASE=/opt/workspace_base
 RUN mkdir -p $WORKSPACE_BASE
 
-RUN apt-get update -y
-RUN apt-get install -y curl make git build-essential
-RUN python3 -m pip install poetry  --break-system-packages
+RUN apt-get update -y \
+    && apt-get install -y curl make git build-essential \
+    && python3 -m pip install poetry  --break-system-packages
 
 COPY ./pyproject.toml ./poetry.lock ./
 RUN poetry install --without evaluation
