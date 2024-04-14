@@ -11,12 +11,19 @@ from opendevin.action import (
 
 import re
 
-from .prompts import DEFAULT_COMMAND_STR, COMMAND_SEGMENT
+from .prompts import COMMAND_SEGMENT, COMMAND_USAGE
 
 # commands: exit, read, write, browse, kill, search_file, search_dir
 
+no_open_file_error = AgentEchoAction(
+    'You are not currently in a file. You can use the read command to open a file and then use goto to navigate through it.')
 
-def get_action_from_string(command_string: str) -> Action | None:
+
+def invalid_error(
+    cmd, docs): return f'Invalid command structure for\n ```\n{cmd}\n```.\nTry again using this format:\n{COMMAND_USAGE[docs]}'
+
+
+def get_action_from_string(command_string: str, path: str, line: int) -> Action | None:
     """
     Parses the command string to find which command the agent wants to run
     Converts the command into a proper Action and returns
@@ -25,38 +32,74 @@ def get_action_from_string(command_string: str) -> Action | None:
     cmd = vars[0]
     args = [] if len(vars) == 1 else vars[1:]
 
-    # TODO: add exception handling for improper commands
     if 'exit' == cmd:
         return AgentFinishAction()
 
     elif 'think' == cmd:
         return AgentThinkAction(' '.join(args))
 
+    elif 'scroll_up' == cmd:
+        if not path:
+            return no_open_file_error
+        return FileReadAction(path, line+100)
+
+    elif 'scroll_down' == cmd:
+        if not path:
+            return no_open_file_error
+        return FileReadAction(path, line-100)
+
+    elif 'goto' == cmd:
+        if not path:
+            return no_open_file_error
+        rex = r'goto\s+(\d+)'
+        valid = re.match(rex, command_string)
+        if valid:
+            return FileReadAction(path, int(valid.group(1)))
+        else:
+            return AgentEchoAction(invalid_error(command_string, 'goto'))
+
+    elif 'edit' == cmd:
+        if not path:
+            return no_open_file_error
+        rex = r'edit\s+(\d+)\s+(\d+)\s+(\S.*)'
+        valid = re.match(rex, command_string, re.DOTALL)
+        if valid:
+            start = int(valid.group(1))
+            end = int(valid.group(2))
+            change = valid.group(3)
+            return FileWriteAction(path, change, start, end)
+        else:
+            return AgentEchoAction(invalid_error(command_string, 'edit'))
+
     elif 'read' == cmd:
         rex = r'^read\s+(\S+)(?:\s+(\d+))?$'
         valid = re.match(rex, command_string, re.DOTALL)
         if valid:
-            file, start = valid.groups()
+            file = valid.group(1)
+            start_str = valid.group(2)
 
-            start = 0 if not start else int(start)
+            start = 0 if not start_str else int(start_str)
 
             return FileReadAction(file, start)
         else:
-            return AgentEchoAction(f'Invalid command structure for\n ```\n{command_string}\n```.\nTry again using this format:\n{DEFAULT_COMMAND_STR}')
+            return AgentEchoAction(invalid_error(command_string, 'read'))
 
     elif 'write' == cmd:
         rex = r'^write\s+(\S+)\s+(\S.*)\s*(?:(\d+)s*(\d+))?$'
         valid = re.match(rex, command_string, re.DOTALL)
 
         if valid:
-            file, content, start, end = valid.groups()
+            file = valid.group(1)
+            content = valid.group(2)
+            start_str = valid.group(3)
+            end_str = valid.group(4)
 
-            start = 0 if not start else int(start)
-            end = -1 if not end else int(end)
+            start = 0 if not start_str else int(start_str)
+            end = -1 if not end_str else int(end_str)
 
             return FileWriteAction(file, content, start, end)
         else:
-            return AgentEchoAction(f'Invalid command structure for\n ```\n{command_string}\n```.\nTry again using this format:\n{DEFAULT_COMMAND_STR}')
+            return AgentEchoAction(invalid_error(command_string, 'write'))
 
     elif 'browse' == cmd:
         return BrowseURLAction(args[0].strip())
@@ -79,7 +122,7 @@ def get_action_from_string(command_string: str) -> Action | None:
             return CmdRunAction(command_string)
 
 
-def parse_command(input_str: str):
+def parse_command(input_str: str, path: str, line: int):
     """
     Parses a given string and separates the command (enclosed in triple backticks) from any accompanying text.
 
@@ -93,7 +136,7 @@ def parse_command(input_str: str):
     if '```' in input_str:
         parts = input_str.split('```')
         command_str = parts[1].strip()
-        action = get_action_from_string(command_str)
+        action = get_action_from_string(command_str, path, line)
         if action:
             ind = 2 if len(parts) > 2 else 1
             accompanying_text = ''.join(parts[:-ind]).strip()

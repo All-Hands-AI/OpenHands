@@ -2,7 +2,12 @@ from typing import List
 from opendevin.agent import Agent
 from opendevin.llm.llm import LLM
 from opendevin.state import State
-from opendevin.action import Action, AgentThinkAction
+from opendevin.action import (
+    Action,
+    AgentThinkAction,
+    FileReadAction,
+    FileWriteAction,
+)
 from opendevin.observation import Observation
 
 from .parser import parse_command
@@ -16,7 +21,7 @@ from .prompts import (
 )
 
 
-class ThinkActAgent(Agent):
+class SWEAgent(Agent):
     """
     An attempt to recreate swe_agent with output parsing, prompting style, and Application Computer Interface (ACI).
 
@@ -28,6 +33,8 @@ class ThinkActAgent(Agent):
         self.memory_window = 5
         self.max_retries = 5
         self.running_memory: List[str] = []
+        self.cur_file: str = ''
+        self.cur_line: int = 0
 
     def _remember(self, action: Action, observation: Observation):
         """Agent has a limited memory of the few steps implemented as a queue"""
@@ -37,10 +44,20 @@ class ThinkActAgent(Agent):
     def _think_act(self, messages: List[dict]) -> tuple[Action, str]:
         resp = self.llm.completion(
             messages=messages,
-            temperature=0.0
+            temperature=0.0,
         )
         action_resp = resp['choices'][0]['message']['content']
-        return parse_command(action_resp)
+        return parse_command(action_resp, self.cur_file, self.cur_line)
+
+    def _update(self, action: Action):
+
+        if isinstance(action, FileReadAction):
+            self.cur_file = action.path
+            self.cur_line = action.start_index
+
+        elif isinstance(action, FileWriteAction):
+            self.cur_file = action.path
+            self.cur_line = action.start
 
     def step(self, state: State) -> Action:
         """
@@ -55,8 +72,8 @@ class ThinkActAgent(Agent):
         prompt = STEP_PROMPT(
             state.plan.main_goal,
             state.working_dir,
-            'N/A',
-            0
+            self.cur_file,
+            self.cur_line
         )
 
         msgs = [
@@ -69,9 +86,9 @@ class ThinkActAgent(Agent):
                 self.running_memory,
                 self.memory_window
             )
-            msgs.insert(0, {'content': context, 'role': 'user'})
+            msgs.insert(1, {'content': context, 'role': 'user'})
 
-        # print('\n\n\n'.join([m['content'] for m in msgs]))
+        # print('\n'.join([m['content'] for m in msgs]))
         action, thought = self._think_act(messages=msgs)
 
         start_msg_len = len(msgs)
@@ -83,7 +100,7 @@ class ThinkActAgent(Agent):
 
         if not action:
             action = AgentThinkAction(thought)
-
+        self._update(action)
         self.latest_action = action
         return action
 
