@@ -81,7 +81,7 @@ class DockerExecBox(Sandbox):
         ]
         for cmd in cmds:
             exit_code, logs = self.container.exec_run(
-                ['/bin/bash', '-c', cmd], workdir=SANDBOX_DIR
+                ['/bin/bash', '-c', cmd], workdir=SANDBOX_WORKSPACE_DIR
             )
             if exit_code != 0:
                 raise Exception(f'Failed to setup devin user: {logs}')

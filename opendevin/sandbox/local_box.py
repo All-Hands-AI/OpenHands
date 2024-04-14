@@ -1,7 +1,6 @@
 import subprocess
 import atexit
-import os
-from typing import Tuple, Dict, Optional
+from typing import Tuple, Dict
 from opendevin.sandbox.sandbox import Sandbox, BackgroundCommand
 from opendevin import config
 
@@ -19,6 +18,7 @@ from opendevin import config
 #
 #  DO NOT USE THIS SANDBOX IN A PRODUCTION ENVIRONMENT
 # ===============================================================================
+
 
 class LocalBox(Sandbox):
     def __init__(self, timeout: int = 120):
