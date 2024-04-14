@@ -28,6 +28,8 @@ ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in ac
 
 
 def action_from_dict(action: dict) -> Action:
+    if not isinstance(action, dict):
+        raise TypeError('action must be a dictionary')
     action = action.copy()
     if 'action' not in action:
         raise KeyError(f"'action' key is not found in {action=}")
