@@ -130,7 +130,7 @@ export LLM_API_KEY="sk-..."
 # The directory you want OpenDevin to modify. MUST be an absolute path!
 export WORKSPACE_DIR=$(pwd)/workspace
 
-docker build -t opendevin-app .
+docker build -t opendevin-app -f container/Dockerfile .
 
 docker run \
     -e LLM_API_KEY \
