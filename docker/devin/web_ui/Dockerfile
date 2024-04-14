@@ -12,12 +12,13 @@ COPY docker/openssl.cnf /etc/ssl/openssl.cnf
 
 RUN if [ -n "$debug" ]; then set -eux; fi && \
     apk update && if [ -z "$debug" ]; then apk upgrade; fi && \
-    apk --no-cache add openssl ca-certificates && \
+    apk --no-cache add git openssl ca-certificates && \
     mkdir -p /root/devin/.ssl && \
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-      -keyout /root/devin/.ssl/privkey.pem \
-      -out /root/devin/.ssl/fullchain.pem \
-      -config /etc/ssl/openssl.cnf
+    -keyout /root/devin/.ssl/server_privkey.pem \
+    -out /root/devin/.ssl/server_fullchain.pem \
+    -config /etc/ssl/openssl.cnf && \
+    rm -rf /var/cache/apk/*
 
 ARG node_env
 ARG node_options
@@ -52,18 +53,22 @@ COPY frontend/public ./public
 COPY frontend/scripts ./scripts
 COPY .env .
 
-
 RUN --mount=type=cache,target=$pm_cache_dir \
     if [ -n "$debug" ]; then set -eux; fi && \
     yarn install && tsc
 
+RUN rm -rf "$pm_cache_dir/*"
 
-FROM node:${node_version}-slim as serve
+FROM node:${node_version}-alpine as serve
+
+RUN if [ -n "$debug" ]; then set -eux; fi && \
+    apk update && if [ -z "$debug" ]; then apk upgrade; fi && \
+    apk --no-cache add git
 
 ARG debug
 ARG node_env
 ARG node_options
-ARG app_dir=/opt/opendevin/ui
+ARG app_root=/opt/opendevin/ui
 
 ENV DEBUG=$debug
 ENV NODE_OPTIONS="$node_options"
@@ -81,25 +86,38 @@ COPY --from=builder $build_dir .
 COPY --from=builder $build_dir/yarn.lock $build_dir/yarn.lock
 COPY --from=builder $build_dir/package.json $build_dir/package.json
 COPY --from=builder $build_dir/.npmrc $build_dir/.npmrc
-COPY --from=builder $build_dir/vite.config.js $build_dir/vite.config.ext.js
+COPY --from=builder $build_dir/vite.config.js $build_dir/vite.config.js
+
+COPY --from=builder /etc/ssl/openssl.cnf /etc/ssl/openssl.cnf
+COPY --from=builder /root/devin/.ssl/server_privkey.pem /root/devin/.ssl/privkey.pem
+COPY --from=builder /root/devin/.ssl/server_fullchain.pem /root/devin/.ssl/fullchain.pem
 
 RUN --mount=type=cache,target=$pm_cache_dir \
     if [ -n "$debug" ]; then set -eux; fi && \
     npm config set prefix "${yarn_global_root}" && \
     npm config set audit false && \
     npm config set fund false && \
-    yarn global add \
-      vite esbuild nx@latest @nx/react
+    yarn global add vite esbuild nx@latest @nx/react
 
 RUN --mount=type=cache,target=$pm_cache_dir \
     if [ -n "$debug" ]; then set -eux; fi && \
     yarn add -P classnames webpack typescript
 
+COPY frontend/vite.config.js $app_dir/vite.config.js
+
+RUN --mount=type=cache,target=$build_dir/dist \
+    echo "Finalizing build..." && \
+    if [ -n "$debug" ]; then set -eux; fi && \
+    rm -rf /var/lib/apt/lists/* && \
+    npm cache clean --force && \
+    yarn cache clean
+
+COPY docker/devin/web_ui/entrypoint.sh /docker-entrypoint.sh
+
 RUN --mount=type=cache,target=$build_dir/dist \
     if [ -n "$debug" ]; then set -eux; fi && \
+    chmod a+x /docker-entrypoint.sh && \
     vite build --config vite.config.js --clearScreen false
 
-COPY docker/devin/ui/entrypoint.sh /docker-entrypoint.sh
-
-ENTRYPOINT ["/docker-entrypoint.sh", "--"]
-CMD ["-m", "mistral:7b", "-e", "llama2"]
+ENTRYPOINT ["/bin/sh", "-c", "/docker-entrypoint.sh"]
+CMD "-m ${DEFAULT_CHAT_MODEL} -e ${DEFAULT_EMBEDDINGS_MODEL} --"
