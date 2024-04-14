@@ -3,8 +3,8 @@ version: "3.8"
 services:
   # Devin Out-of-The-Box Agent Service
   devin:
-    container_name: devin_backend
-    hostname: devin
+    container_name: devin_api
+    hostname: devin-api
     image: lehcode/opendevin_api-cuda${CUDA_VERSION:?}-miniconda:dev
     pull_policy: always
     # Override the default models and rebuild image with restart container then
@@ -25,6 +25,7 @@ services:
     env_file:
       - ./.env
       - docker/devin/app/.env
+    command: "-m mixtral -e llama2"
     depends_on:
       - litellm
       - postgres
@@ -38,15 +39,6 @@ services:
       - conda_vol:${CONDA_ROOT:?}
       - ./environment.yml:${APP_ROOT:?}/environment.yml
       - ./workspace:${WORKSPACE_DIR:?}
-#      - ./docker/devin/app/.condarc:${CONDA_ROOT:?}/.condarc
-#      - ./Makefile:${APP_ROOT:?}/Makefile
-#      - ./pyproject.toml:${APP_ROOT:?}/pyproject.toml
-#      - ./config.toml.dist:${APP_ROOT:?}/config.toml
-#      - ./.env:${APP_ROOT:?}/.env
-#      - ./opendevin:${APP_ROOT:?}/opendevin
-#      - ./agenthub:${APP_ROOT:?}/agenthub
-#      - ./dev_config:${APP_ROOT:?}/dev_config
-#      - ./tests:${APP_ROOT:?}/tests
     tmpfs:
       - /run
       - /tmp
@@ -138,7 +130,7 @@ services:
 
   # UI service
   web_ui:
-    container_name: devin_ui
+    container_name: devin_web
     image: lehcode/opendevin_ui-node${NODE_VERSION:?}-npm${NPM_VERSION}-pnpm-reactjs:dev
     pull_policy: always
     build:

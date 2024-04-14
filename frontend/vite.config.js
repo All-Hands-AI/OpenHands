@@ -69,7 +69,6 @@ if (process.env.NODE_ENV === "production") {
   viteConfig.build.minify = true;
 } else {
   // Development configuration
-  viteConfig.base = "";
 }
 
 // Applied only in non-interactive environment, i.e. Docker
@@ -82,7 +81,7 @@ if (process.env.DEBIAN_FRONTEND === "noninteractive") {
     },
   };
 
-  viteConfig = Object.assign({}, ...viteConfig, ...dockerConfig);
+  viteConfig = { ...viteConfig, ...dockerConfig };
 }
 
 export default defineConfig(viteConfig);

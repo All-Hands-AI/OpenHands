@@ -1,0 +1,17 @@
+model_list:
+  - model_name: llama2
+    litellm_params:
+      model: ollama/llama2:70b
+      api_base: http://localhost:11434
+  - model_name: deepseek-coder
+    litellm_params:
+      model: ollama/deepseek-coder:6.7b
+      api_base: http://localhost:11434
+  - model_name: vicuna
+    litellm_params:
+      model: ollama/vicuna:7b-16k
+      api_base: http://localhost:11434
+  - model_name: mistral
+    litellm_params:
+      model: ollama/mistral:7b
+      api_base: http://localhost:11434

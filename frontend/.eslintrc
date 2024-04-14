@@ -45,9 +45,12 @@
           "required": {
               "some": [ "nesting", "id" ]
           }
-        }],        
-        "react/no-array-index-key": "off"
-      },"parserOptions": {
+        }],
+        "react/no-array-index-key": "off",
+        "react/jsx-no-undef": "warn",
+        "react-hooks/exhaustive-deps": "warn"
+      },
+      "parserOptions": {
         "project": ["**/tsconfig.json"]
       }
     }
