@@ -1,5 +1,6 @@
-
+import litellm
 import time
+
 from litellm import completion as litellm_completion
 from functools import partial
 
@@ -33,7 +34,9 @@ class LLM:
             while retries < max_retries:
                 try:
                     return func()
-                except Exception as e:
+                except litellm.exceptions.APIConnectionError as e:
+                    if '400' in str(e):
+                        raise e
                     print(f'Error: {e}. Retrying in {base_delay * 2 ** retries} seconds...')
                     time.sleep(base_delay * 2 ** retries)
                     retries += 1
