@@ -1,3 +1,5 @@
+import litellm
+import time
 
 from litellm import completion_with_retries as litellm_completion
 from functools import partial
@@ -27,8 +29,24 @@ class LLM:
         self._completion = partial(
             litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url, num_retries=num_retries, retry_strategy='exponential_backoff_retry')
 
+        def backoff_retry(func):
+            def wrapper(*args, **kwargs):
+                retries = 0
+                while retries < num_retries:
+                    try:
+                        return func(*args, **kwargs)
+                    except litellm.exceptions.APIConnectionError as e:
+                        if '400' in str(e):
+                            raise e
+                        print(f'Error: {e}. Retrying in {cooldown_time * 2 ** retries} seconds...')
+                        time.sleep(cooldown_time * 2 ** retries)
+                        retries += 1
+                raise Exception('Max retries exceeded.')
+            return wrapper
+
         completion_unwrapped = self._completion
 
+        @backoff_retry
         def wrapper(*args, **kwargs):
             if 'messages' in kwargs:
                 messages = kwargs['messages']
