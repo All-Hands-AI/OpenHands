@@ -1,5 +1,7 @@
 import traceback
+
 from opendevin.llm.llm import LLM
+from opendevin.exceptions import AgentEventTypeError
 import agenthub.monologue_agent.utils.json as json
 import agenthub.monologue_agent.utils.prompts as prompts
 
@@ -24,10 +26,10 @@ class Monologue:
         - t (dict): The thought that we want to add to memory
 
         Raises:
-        - ValueError: If t is not a dict
+        - AgentEventTypeError: If t is not a dict
         """
         if not isinstance(t, dict):
-            raise ValueError('Event must be a dictionary')
+            raise AgentEventTypeError()
         self.thoughts.append(t)
 
     def get_thoughts(self):

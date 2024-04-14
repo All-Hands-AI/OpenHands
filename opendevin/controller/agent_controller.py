@@ -1,9 +1,12 @@
 import asyncio
 import inspect
 import traceback
+import time
 from typing import List, Callable, Literal, Mapping, Awaitable, Any, cast
 
 from termcolor import colored
+from litellm.exceptions import APIConnectionError
+from openai import AuthenticationError
 
 from opendevin import config
 from opendevin.action import (
@@ -15,7 +18,7 @@ from opendevin.action import (
 )
 from opendevin.agent import Agent
 from opendevin.logger import opendevin_logger as logger
-from opendevin.exceptions import MaxCharsExceedError
+from opendevin.exceptions import MaxCharsExceedError, AgentNoActionError
 from opendevin.observation import Observation, AgentErrorObservation, NullObservation
 from opendevin.plan import Plan
 from opendevin.state import State
@@ -102,9 +105,11 @@ class AgentController:
 
     def add_history(self, action: Action, observation: Observation):
         if not isinstance(action, Action):
-            raise ValueError('action must be an instance of Action')
+            raise TypeError(
+                f'action must be an instance of Action, got {type(action).__name__} instead')
         if not isinstance(observation, Observation):
-            raise ValueError('observation must be an instance of Observation')
+            raise TypeError(
+                f'observation must be an instance of Observation, got {type(observation).__name__} instead')
         self.state.history.append((action, observation))
         self.state.updated_info.append((action, observation))
 
@@ -144,17 +149,23 @@ class AgentController:
         try:
             action = self.agent.step(self.state)
             if action is None:
-                raise ValueError('Agent must return an action')
+                raise AgentNoActionError()
             print_with_color(action, 'ACTION')
         except Exception as e:
             observation = AgentErrorObservation(str(e))
             print_with_color(observation, 'ERROR')
             traceback.print_exc()
-            # TODO Change to more robust error handling
-            if (
-                'The api_key client option must be set' in observation.content
-                or 'Incorrect API key provided:' in observation.content
-            ):
+            if isinstance(e, APIConnectionError):
+                time.sleep(3)
+
+            # raise specific exceptions that need to be handled outside
+            # note: we are using AuthenticationError class from openai rather than
+            # litellm because:
+            # 1) litellm.exceptions.AuthenticationError is a subclass of openai.AuthenticationError
+            # 2) embeddings call, initiated by llama-index, has no wrapper for authentication
+            #    errors. This means we have to catch individual authentication errors
+            #    from different providers, and OpenAI is one of these.
+            if isinstance(e, (AuthenticationError, AgentNoActionError)):
                 raise
         self.update_state_after_step()
 

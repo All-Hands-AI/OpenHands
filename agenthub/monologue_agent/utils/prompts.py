@@ -12,6 +12,7 @@ from opendevin.action import (
 from opendevin.observation import (
     CmdOutputObservation,
 )
+from opendevin.exceptions import LLMOutputError
 
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is this:
@@ -170,7 +171,7 @@ def parse_action_response(response: str) -> Action:
         try:
             action_dict = json.loads(max(response_json_matches, key=rank)[0])  # Use the highest ranked response
         except ValueError as e:
-            raise ValueError(
+            raise LLMOutputError(
                 "Output from the LLM isn't properly formatted. The model may be misconfigured."
             ) from e
     if 'content' in action_dict:
