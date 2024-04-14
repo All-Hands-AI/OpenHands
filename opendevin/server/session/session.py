@@ -1,9 +1,10 @@
 import time
 from typing import Dict, Callable
+
 from fastapi import WebSocket, WebSocketDisconnect
-from .msg_stack import message_stack
 
 from opendevin.logger import opendevin_logger as logger
+from .msg_stack import message_stack
 
 DEL_DELT_SEC = 60 * 60 * 5
 
@@ -32,7 +33,7 @@ class Session:
 
                 message_stack.add_message(self.sid, 'user', data)
                 action = data.get('action', None)
-                await dispatch(action, data)
+                await dispatch(self.sid, action, data)
         except WebSocketDisconnect:
             self.is_alive = False
             logger.info('WebSocket disconnected, sid: %s', self.sid)

@@ -1,20 +1,25 @@
+import { Accordion, AccordionItem } from "@nextui-org/react";
 import React, { useEffect } from "react";
-import TreeView, { flattenTree } from "react-accessible-treeview";
+import TreeView, {
+  ITreeViewOnNodeSelectProps,
+  flattenTree,
+} from "react-accessible-treeview";
 import { AiOutlineFolder } from "react-icons/ai";
-import { Accordion, AccordionItem, Button } from "@nextui-org/react";
-import {
-  TbLayoutSidebarLeftCollapseFilled,
-  TbLayoutSidebarRightCollapseFilled,
-} from "react-icons/tb";
 
-import { IoIosArrowDown } from "react-icons/io";
-import { VscRefresh } from "react-icons/vsc";
-import { useSelector } from "react-redux";
+import {
+  IoIosArrowDown,
+  IoIosArrowForward,
+  IoIosArrowBack,
+  IoIosRefresh,
+} from "react-icons/io";
+
+import { useDispatch, useSelector } from "react-redux";
 import { getWorkspace, selectFile } from "../services/fileService";
 import { setCode, updateWorkspace } from "../state/codeSlice";
-import store, { RootState } from "../store";
-import FolderIcon from "./FolderIcon";
+import { RootState } from "../store";
 import FileIcon from "./FileIcons";
+import FolderIcon from "./FolderIcon";
+import IconButton, { IconButtonProps } from "./IconButton";
 
 interface FilesProps {
   setSelectedFileName: React.Dispatch<React.SetStateAction<string>>;
@@ -22,11 +27,38 @@ interface FilesProps {
   explorerOpen: boolean;
 }
 
+function RefreshButton({
+  onClick,
+  ariaLabel,
+}: Omit<IconButtonProps, "icon">): React.ReactElement {
+  return (
+    <IconButton
+      icon={<IoIosRefresh size={20} />}
+      onClick={onClick}
+      ariaLabel={ariaLabel}
+    />
+  );
+}
+
+function CloseButton({
+  onClick,
+  ariaLabel,
+}: Omit<IconButtonProps, "icon">): React.ReactElement {
+  return (
+    <IconButton
+      icon={<IoIosArrowBack size={20} />}
+      onClick={onClick}
+      ariaLabel={ariaLabel}
+    />
+  );
+}
+
 function Files({
   setSelectedFileName,
   setExplorerOpen,
   explorerOpen,
 }: FilesProps): JSX.Element {
+  const dispatch = useDispatch();
   const workspaceFolder = useSelector(
     (state: RootState) => state.code.workspaceFolder,
   );
@@ -35,7 +67,7 @@ function Files({
   const workspaceTree = flattenTree(workspaceFolder);
 
   useEffect(() => {
-    getWorkspace().then((file) => store.dispatch(updateWorkspace(file)));
+    getWorkspace().then((file) => dispatch(updateWorkspace(file)));
   }, []);
 
   if (workspaceTree.length <= 1) {
@@ -46,9 +78,10 @@ function Files({
 
   if (!explorerOpen) {
     return (
-      <div className="h-full bg-neutral-800 border-neutral-600 items-center border-r-1 flex flex-col">
-        <div className="flex mt-2 p-1 justify-end">
-          <TbLayoutSidebarRightCollapseFilled
+      <div className="h-full min-w-[48px] bg-neutral-800 border-neutral-600 items-center border-r-1 flex flex-col transition-all ease-soft-spring">
+        <div className="flex mt-2 p-2 justify-end">
+          <IoIosArrowForward
+            size={20}
             className="cursor-pointer"
             onClick={() => setExplorerOpen(true)}
           />
@@ -56,8 +89,28 @@ function Files({
       </div>
     );
   }
+
+  const handleNodeSelect = (node: ITreeViewOnNodeSelectProps) => {
+    if (!node.isBranch) {
+      let fullPath = node.element.name;
+      setSelectedFileName(fullPath);
+      let currentNode = workspaceTree.find(
+        (file) => file.id === node.element.id,
+      );
+      while (currentNode !== undefined && currentNode.parent) {
+        currentNode = workspaceTree.find(
+          (file) => file.id === node.element.parent,
+        );
+        fullPath = `${currentNode?.name}/${fullPath}`;
+      }
+      selectFile(fullPath).then((code) => {
+        dispatch(setCode(code));
+      });
+    }
+  };
+
   return (
-    <div className="bg-neutral-800 h-full border-r-1 border-r-neutral-600 flex flex-col">
+    <div className="bg-neutral-800 min-w-[228px] h-full border-r-1 border-r-neutral-600 flex flex-col transition-all ease-soft-spring">
       <div className="flex p-2 items-center justify-between ">
         <Accordion className="px-0" defaultExpandedKeys={["1"]} isCompact>
           <AccordionItem
@@ -69,41 +122,23 @@ function Files({
             key="1"
             aria-label={workspaceFolder.name}
             title={
-              <div className="group flex items-center justify-between ">
-                <span className="text-neutral-400">{workspaceFolder.name}</span>
-                <div className="opacity-0 translate-y-[10px] transition-all ease-in-out  group-hover:opacity-100 transform group-hover:-translate-y-0 ">
-                  <Button
-                    type="button"
-                    style={{
-                      width: "24px",
-                      height: "24px",
-                    }}
-                    variant="flat"
+              <div className="group flex items-center justify-between">
+                <span className="text-neutral-400 text-sm">
+                  {workspaceFolder.name}
+                </span>
+                <div className="opacity-0 translate-y-[10px] transition-all ease-in-out group-hover:opacity-100 transform group-hover:-translate-y-0 flex h-[24px] items-center gap-1">
+                  <RefreshButton
                     onClick={() =>
                       getWorkspace().then((file) =>
-                        store.dispatch(updateWorkspace(file)),
+                        dispatch(updateWorkspace(file)),
                       )
                     }
-                    className="cursor-pointer text-[12px] bg-neutral-800"
-                    isIconOnly
-                    aria-label="Refresh"
-                  >
-                    <VscRefresh />
-                  </Button>
-                  <Button
-                    type="button"
-                    style={{
-                      width: "24px",
-                      height: "24px",
-                    }}
-                    variant="flat"
+                    ariaLabel="Refresh"
+                  />
+                  <CloseButton
                     onClick={() => setExplorerOpen(false)}
-                    className="cursor-pointer text-[12px]  bg-neutral-800"
-                    isIconOnly
-                    aria-label="Refresh"
-                  >
-                    <TbLayoutSidebarLeftCollapseFilled />
-                  </Button>
+                    ariaLabel="Close Explorer"
+                  />
                 </div>
               </div>
             }
@@ -115,30 +150,13 @@ function Files({
               </div>
             }
           >
-            <div className="w-full overflow-x-auto h-full py-2">
+            <div className="w-full overflow-x-auto h-full pt-[4px]">
               <TreeView
-                className="font-mono text-sm text-neutral-400"
+                className="text-sm text-neutral-400"
                 data={workspaceTree}
                 selectedIds={selectedIds}
                 expandedIds={workspaceTree.map((node) => node.id)}
-                onNodeSelect={(node) => {
-                  if (!node.isBranch) {
-                    let fullPath = node.element.name;
-                    setSelectedFileName(fullPath);
-                    let currentNode = workspaceTree.find(
-                      (file) => file.id === node.element.id,
-                    );
-                    while (currentNode !== undefined && currentNode.parent) {
-                      currentNode = workspaceTree.find(
-                        (file) => file.id === node.element.parent,
-                      );
-                      fullPath = `${currentNode!.name}/${fullPath}`;
-                    }
-                    selectFile(fullPath).then((code) => {
-                      store.dispatch(setCode(code));
-                    });
-                  }
-                }}
+                onNodeSelect={handleNodeSelect}
                 // eslint-disable-next-line react/no-unstable-nested-components
                 nodeRenderer={({
                   element,
@@ -151,9 +169,9 @@ function Files({
                     // eslint-disable-next-line react/jsx-props-no-spreading
                     {...getNodeProps()}
                     style={{ paddingLeft: 20 * (level - 1) }}
-                    className="cursor-pointer rounded-[5px] p-1 nowrap flex items-center gap-2 aria-selected:bg-neutral-600 aria-selected:text-neutral-50 hover:text-neutral-50"
+                    className="cursor-pointer rounded-[5px] p-1 nowrap flex items-center gap-2 aria-selected:bg-neutral-600 aria-selected:text-white hover:text-white"
                   >
-                    <div className="shrink-0 pl-5">
+                    <div className="shrink-0 pl-[48px]">
                       {isBranch ? (
                         <FolderIcon isOpen={isExpanded} />
                       ) : (
