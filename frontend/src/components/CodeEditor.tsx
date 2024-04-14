@@ -1,10 +1,11 @@
 import Editor, { Monaco } from "@monaco-editor/react";
-import { Tab, Tabs } from "@nextui-org/react";
 import type { editor } from "monaco-editor";
 import React, { useState } from "react";
+import { Tabs, Tab } from "@nextui-org/react";
 import { useSelector } from "react-redux";
 import { RootState } from "../store";
 import Files from "./Files";
+import { cn } from "../utils/utils";
 
 function CodeEditor(): JSX.Element {
   const [selectedFileName, setSelectedFileName] = useState("welcome");
@@ -30,22 +31,27 @@ function CodeEditor(): JSX.Element {
   };
 
   return (
-    <div className="flex h-full w-full bg-neutral-900 transition-all duration-500 ease-in-out">
-      <Files
-        setSelectedFileName={setSelectedFileName}
-        setExplorerOpen={setExplorerOpen}
-        explorerOpen={explorerOpen}
-      />
-      <div className="flex flex-col min-h-0 w-full">
+    <div
+      className={`${cn(
+        explorerOpen ? "grid-cols-[250px_auto]" : "grid-cols-[50px_auto]",
+      )} grid h-full bg-neutral-900 transition-all duration-500 ease-in-out`}
+    >
+      <div>
+        <Files
+          setSelectedFileName={setSelectedFileName}
+          setExplorerOpen={setExplorerOpen}
+          explorerOpen={explorerOpen}
+        />
+      </div>
+      <div>
         <Tabs
           disableCursorAnimation
           classNames={{
-            base: "border-b border-divider",
             tabList:
-              "w-full relative rounded-none bg-neutral-900 p-0 border-divider",
+              "w-full relative rounded-none bg-neutral-900 p-0 border-r border-divider",
             cursor: "w-full bg-neutral-600 rounded-none",
             tab: "max-w-fit px-4 h-[36px]",
-            tabContent: "group-data-[selected=true]:text-white ",
+            tabContent: "group-data-[selected=true]:text-neutral-50 ",
           }}
           aria-label="Options"
         >
@@ -56,17 +62,18 @@ function CodeEditor(): JSX.Element {
                 : selectedFileName.toLocaleLowerCase()
             }
             title={!selectedFileName ? "Welcome" : selectedFileName}
-          />
+          >
+            <div>
+              <Editor
+                height="100vh"
+                defaultLanguage="python"
+                defaultValue="# Welcome to OpenDevin!"
+                value={code}
+                onMount={handleEditorDidMount}
+              />
+            </div>
+          </Tab>
         </Tabs>
-        <div className="flex grow">
-          <Editor
-            height="100%"
-            defaultLanguage="python"
-            defaultValue="# Welcome to OpenDevin!"
-            value={code}
-            onMount={handleEditorDidMount}
-          />
-        </div>
       </div>
     </div>
   );

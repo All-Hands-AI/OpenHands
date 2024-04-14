@@ -17,9 +17,9 @@ class BrowseURLAction(ExecutableAction):
     url: str
     action: str = ActionType.BROWSE
 
-    async def run(self, controller: 'AgentController') -> BrowserOutputObservation:  # type: ignore
+    async def run(self, controller: "AgentController") -> BrowserOutputObservation:  # type: ignore
         asked_url = self.url
-        if not asked_url.startswith('http'):
+        if not asked_url.startswith("http"):
             asked_url = os.path.abspath(os.curdir) + self.url
         try:
             async with async_playwright() as p:
@@ -27,11 +27,11 @@ class BrowseURLAction(ExecutableAction):
                 page = await browser.new_page()
                 response = await page.goto(asked_url)
                 # content = await page.content()
-                inner_text = await page.evaluate('() => document.body.innerText')
+                inner_text = await page.evaluate("() => document.body.innerText")
                 screenshot_bytes = await page.screenshot(full_page=True)
                 await browser.close()
 
-                screenshot_base64 = base64.b64encode(screenshot_bytes).decode('utf-8')
+                screenshot_base64 = base64.b64encode(screenshot_bytes).decode("utf-8")
                 return BrowserOutputObservation(
                     content=inner_text,  # HTML content of the page
                     screenshot=screenshot_base64,  # Base64-encoded screenshot
@@ -41,11 +41,12 @@ class BrowseURLAction(ExecutableAction):
         except Exception as e:
             return BrowserOutputObservation(
                 content=str(e),
-                screenshot='',
+                screenshot="", 
                 error=True,
                 url=asked_url
             )
 
+
     @property
     def message(self) -> str:
-        return f'Browsing URL: {self.url}'
+        return f"Browsing URL: {self.url}"

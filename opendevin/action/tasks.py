@@ -13,7 +13,7 @@ class AddTaskAction(NotExecutableAction):
 
     @property
     def message(self) -> str:
-        return f'Added task: {self.goal}'
+        return f"Added task: {self.goal}"
 
 
 @dataclass
@@ -24,4 +24,4 @@ class ModifyTaskAction(NotExecutableAction):
 
     @property
     def message(self) -> str:
-        return f'Set task {self.id} to {self.state}'
+        return f"Set task {self.id} to {self.state}"

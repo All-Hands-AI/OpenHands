@@ -1,13 +1,12 @@
+import React, { useEffect, useRef } from "react";
 import { IDisposable, Terminal as XtermTerminal } from "@xterm/xterm";
 import "@xterm/xterm/css/xterm.css";
-import React, { useEffect, useRef } from "react";
-import { VscTerminal } from "react-icons/vsc";
 import { useSelector } from "react-redux";
 import { FitAddon } from "xterm-addon-fit";
-import Socket from "../services/socket";
-import { RootState } from "../store";
 import ActionType from "../types/ActionType";
 import ObservationType from "../types/ObservationType";
+import Socket from "../services/socket";
+import { RootState } from "../store";
 
 class JsonWebsocketAddon {
   _disposables: IDisposable[];
@@ -101,8 +100,7 @@ function Terminal(): JSX.Element {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 px-4 py-2 text-sm border-b border-neutral-600">
-        <VscTerminal />
+      <div className="px-4 py-2 text-sm border-b border-neutral-600">
         Terminal
       </div>
       <div className="grow p-2 flex min-h-0">

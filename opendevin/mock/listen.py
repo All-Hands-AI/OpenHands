@@ -18,14 +18,14 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             # receive message
             data = await websocket.receive_json()
-            print(f'Received message: {data}')
+            print(f"Received message: {data}")
 
             # send mock response to client
-            response = {'message': f'receive {data}'}
+            response = {'message': f"receive {data}"}
             await websocket.send_json(response)
-            print(f'Sent message: {response}')
+            print(f"Sent message: {response}")
     except Exception as e:
-        print(f'WebSocket Error: {e}')
+        print(f"WebSocket Error: {e}")
 
 
 @app.get('/')

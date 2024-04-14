@@ -44,9 +44,6 @@ pytest = "*"
 [tool.poetry.group.evaluation.dependencies]
 torch = "*"
 
-[tool.autopep8]
-ignore = [ "E501" ]
-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

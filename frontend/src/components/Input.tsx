@@ -1,16 +1,15 @@
 import { Textarea } from "@nextui-org/react";
 import React, { ChangeEvent, KeyboardEvent, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { VscSend } from "react-icons/vsc";
+// import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { twMerge } from "tailwind-merge";
+import i18next from "i18next";
 import useInputComposition from "../hooks/useInputComposition";
-import { I18nKey } from "../i18n/declaration";
 import { sendChatMessage } from "../services/chatService";
 import { RootState } from "../store";
 
 function Input() {
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
   const { initialized } = useSelector((state: RootState) => state.task);
   const [inputMessage, setInputMessage] = useState("");
 
@@ -47,7 +46,6 @@ function Input() {
       <Textarea
         className="py-4 px-4"
         classNames={{
-          inputWrapper: "bg-neutral-700",
           input: "pr-16 py-2",
         }}
         value={inputMessage}
@@ -58,7 +56,7 @@ function Input() {
         onKeyDown={handleSendMessageOnEnter}
         onCompositionStart={onCompositionStart}
         onCompositionEnd={onCompositionEnd}
-        placeholder={t(I18nKey.CHAT_INTERFACE$INPUT_PLACEHOLDER)}
+        placeholder={i18next.t("CHAT_INTERFACE$INPUT_PLACEHOLDER")}
       />
       <button
         type="button"
@@ -68,9 +66,8 @@ function Input() {
         )}
         onClick={handleSendMessage}
         disabled={!initialized}
-        aria-label="Send message"
       >
-        <VscSend />
+        {i18next.t("CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT")}
       </button>
     </div>
   );
