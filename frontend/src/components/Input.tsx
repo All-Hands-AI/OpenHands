@@ -1,6 +1,7 @@
 import { Textarea } from "@nextui-org/react";
 import React, { ChangeEvent, KeyboardEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { VscSend } from "react-icons/vsc";
 import { useSelector } from "react-redux";
 import { twMerge } from "tailwind-merge";
 import useInputComposition from "../hooks/useInputComposition";
@@ -46,6 +47,7 @@ function Input() {
       <Textarea
         className="py-4 px-4"
         classNames={{
+          inputWrapper: "bg-neutral-700",
           input: "pr-16 py-2",
         }}
         value={inputMessage}
@@ -66,8 +68,9 @@ function Input() {
         )}
         onClick={handleSendMessage}
         disabled={!initialized}
+        aria-label="Send message"
       >
-        {t(I18nKey.CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT)}
+        <VscSend />
       </button>
     </div>
   );
