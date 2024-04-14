@@ -29,7 +29,6 @@ def parse_arguments():
     parser.add_argument(
         '-d',
         '--directory',
-        required=True,
         type=str,
         help='The working directory for the agent',
     )
