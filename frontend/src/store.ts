@@ -6,6 +6,7 @@ import commandReducer from "./state/commandSlice";
 import taskReducer from "./state/taskSlice";
 import errorsReducer from "./state/errorsSlice";
 import settingsReducer from "./state/settingsSlice";
+import agentReducer from "./state/agentSlice";
 
 const store = configureStore({
   reducer: {
@@ -16,6 +17,7 @@ const store = configureStore({
     task: taskReducer,
     errors: errorsReducer,
     settings: settingsReducer,
+    agent: agentReducer,
   },
 });
 

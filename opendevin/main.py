@@ -99,7 +99,7 @@ async def main():
         agent=agent, workdir=args.directory, max_iterations=args.max_iterations, max_chars=args.max_chars
     )
 
-    await controller.start_loop(task)
+    await controller.start(task)
 
 
 if __name__ == '__main__':

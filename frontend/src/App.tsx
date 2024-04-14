@@ -36,7 +36,9 @@ function LeftNav({ setSettingOpen }: Props): JSX.Element {
 let initOnce = false;
 
 function App(): JSX.Element {
+  const [isInitialized, setIsInitialized] = useState(false);
   const [settingOpen, setSettingOpen] = useState(false);
+  const [isWarned, setIsWarned] = useState(false);
   const [loadMsgWarning, setLoadMsgWarning] = useState(false);
 
   const getConfigurations = () => {
@@ -50,16 +52,21 @@ function App(): JSX.Element {
           ),
           settings,
           true,
+          isInitialized,
         );
+
+        setIsInitialized(true);
       })
       .catch();
   };
 
   const getMsgTotal = () => {
+    if (isWarned) return;
     fetchMsgTotal()
       .then((data: ResFetchMsgTotal) => {
         if (data.msg_total > 0) {
           setLoadMsgWarning(true);
+          setIsWarned(true);
         }
       })
       .catch();

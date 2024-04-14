@@ -25,3 +25,14 @@ class ModifyTaskAction(NotExecutableAction):
     @property
     def message(self) -> str:
         return f'Set task {self.id} to {self.state}'
+
+
+@dataclass
+class TaskStateChangedAction(NotExecutableAction):
+    """Fake action, just to notify the client that a task state has changed."""
+    task_state: str
+    action: str = ActionType.CHANGE_TASK_STATE
+
+    @property
+    def message(self) -> str:
+        return f'Task state changed to {self.task_state}'

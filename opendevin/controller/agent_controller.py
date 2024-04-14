@@ -22,7 +22,9 @@ from opendevin.exceptions import MaxCharsExceedError, AgentNoActionError
 from opendevin.observation import Observation, AgentErrorObservation, NullObservation
 from opendevin.plan import Plan
 from opendevin.state import State
+from opendevin.schema import TaskState
 from .command_manager import CommandManager
+from ..action.tasks import TaskStateChangedAction
 
 ColorType = Literal[
     'red',
@@ -42,9 +44,7 @@ ColorType = Literal[
     'white',
 ]
 
-DISABLE_COLOR_PRINTING = (
-    config.get('DISABLE_COLOR').lower() == 'true'
-)
+DISABLE_COLOR_PRINTING = config.get('DISABLE_COLOR').lower() == 'true'
 MAX_ITERATIONS = config.get('MAX_ITERATIONS')
 MAX_CHARS = config.get('MAX_CHARS')
 
@@ -77,6 +77,12 @@ class AgentController:
     command_manager: CommandManager
     callbacks: List[Callable]
 
+    state: State | None = None
+
+    _task_state: TaskState = TaskState.INIT
+    _finished: bool = False
+    _cur_step: int = 0
+
     def __init__(
         self,
         agent: Agent,
@@ -92,50 +98,109 @@ class AgentController:
         self.max_iterations = max_iterations
         self.max_chars = max_chars
         self.workdir = workdir
-        self.command_manager = CommandManager(
-            self.id, workdir, container_image)
+        self.command_manager = CommandManager(self.id, workdir, container_image)
         self.callbacks = callbacks
 
     def update_state_for_step(self, i):
+        if self.state is None:
+            return
         self.state.iteration = i
         self.state.background_commands_obs = self.command_manager.get_background_obs()
 
     def update_state_after_step(self):
+        if self.state is None:
+            return
         self.state.updated_info = []
 
     def add_history(self, action: Action, observation: Observation):
+        if self.state is None:
+            return
         if not isinstance(action, Action):
             raise TypeError(
-                f'action must be an instance of Action, got {type(action).__name__} instead')
+                f'action must be an instance of Action, got {type(action).__name__} instead'
+            )
         if not isinstance(observation, Observation):
             raise TypeError(
-                f'observation must be an instance of Observation, got {type(observation).__name__} instead')
+                f'observation must be an instance of Observation, got {type(observation).__name__} instead'
+            )
         self.state.history.append((action, observation))
         self.state.updated_info.append((action, observation))
 
-    async def start_loop(self, task: str):
-        finished = False
-        plan = Plan(task)
-        self.state = State(plan)
-        for i in range(self.max_iterations):
+    async def _run(self):
+        if self.state is None:
+            return
+
+        if self._task_state != TaskState.RUNNING:
+            raise ValueError('Task is not in running state')
+
+        for i in range(self._cur_step, self.max_iterations):
             try:
-                finished = await self.step(i)
+                self._finished = await self.step(i)
             except Exception as e:
                 logger.error('Error in loop', exc_info=True)
                 raise e
-            if finished:
-                break
-        if not finished:
+
+            match self._task_state:
+                case TaskState.FINISHED, TaskState.STOPPED:
+                    await self.reset_task()  # type: ignore[unreachable]
+                    break
+                case TaskState.PAUSED:
+                    # save current state for resuming
+                    self._cur_step = i + 1  # type: ignore[unreachable]
+                    await self.notify_task_state_changed()
+                    break
+
+        if not self._finished:
             logger.info('Exited before finishing the task.')
 
+    async def start(self, task: str):
+        """Starts the agent controller with a task.
+        If task already run before, it will continue from the last step.
+        """
+        self._task_state = TaskState.RUNNING
+        await self.notify_task_state_changed()
+
+        self.state = State(Plan(task))
+
+        await self._run()
+
+    async def resume(self):
+        if self.state is None:
+            raise ValueError('No task to resume')
+
+        self._task_state = TaskState.RUNNING
+        await self.notify_task_state_changed()
+
+        await self._run()
+
+    async def reset_task(self):
+        self.state = None
+        self._cur_step = 0
+        self._task_state = TaskState.INIT
+        await self.notify_task_state_changed()
+
+    async def set_task_state_to(self, state: TaskState):
+        self._task_state = state
+        if state == TaskState.STOPPED:
+            await self.reset_task()
+        logger.info(f'Task state set to {state}')
+
+    def get_task_state(self):
+        """Returns the current state of the agent task."""
+        return self._task_state
+
+    async def notify_task_state_changed(self):
+        await self._run_callbacks(TaskStateChangedAction(self._task_state))
+
     async def step(self, i: int):
+        if self.state is None:
+            return
         print('\n\n==============', flush=True)
         print('STEP', i, flush=True)
         print_with_color(self.state.plan.main_goal, 'PLAN')
 
         if self.state.num_of_chars > self.max_chars:
-            raise MaxCharsExceedError(
-                self.state.num_of_chars, self.max_chars)
+            raise MaxCharsExceedError(self.state.num_of_chars, self.max_chars)
 
         log_obs = self.command_manager.get_background_obs()
         for obs in log_obs:
@@ -178,8 +243,7 @@ class AgentController:
 
         if isinstance(action, AddTaskAction):
             try:
-                self.state.plan.add_subtask(
-                    action.parent, action.goal, action.subtasks)
+                self.state.plan.add_subtask(action.parent, action.goal, action.subtasks)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
                 print_with_color(observation, 'ERROR')
@@ -215,7 +279,7 @@ class AgentController:
         for callback in self.callbacks:
             idx = self.callbacks.index(callback)
             try:
-                callback(event)
+                await callback(event)
             except Exception as e:
                 logger.exception(f'Callback error: {e}, idx: {idx}')
         await asyncio.sleep(

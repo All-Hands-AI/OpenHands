@@ -57,6 +57,7 @@ export function saveSettings(
   newSettings: { [key: string]: string },
   oldSettings: { [key: string]: string },
   isInit: boolean = false,
+  isReconnect: boolean = false,
 ): void {
   const { mergedSettings, updatedSettings, needToSend } = Object.keys(
     newSettings,
@@ -114,6 +115,10 @@ export function saveSettings(
   }
 
   delete mergedSettings.ALL_SETTINGS;
+  if (isReconnect) {
+    mergedSettings.reconnect = "true";
+  }
+
   if (needToSend || isInit) {
     const event = { action: ActionType.INIT, args: mergedSettings };
     const eventString = JSON.stringify(event);
