@@ -11,7 +11,6 @@ load_dotenv()
 DEFAULT_CONFIG: dict = {
     ConfigType.LLM_API_KEY: None,
     ConfigType.LLM_BASE_URL: None,
-    ConfigType.WORKSPACE_DIR: None,
     ConfigType.WORKSPACE_BASE: os.getcwd(),
     ConfigType.LLM_MODEL: 'gpt-3.5-turbo-1106',
     ConfigType.SANDBOX_CONTAINER_IMAGE: 'ghcr.io/opendevin/sandbox',
@@ -53,6 +52,14 @@ def get(key: str, required: bool = False):
     if not value and required:
         raise KeyError(f"Please set '{key}' in `config.toml` or `.env`.")
     return value
+
+
+def set(key: str, value: str):
+    """
+    Set a key in the environment variables or config.toml.
+    """
+    os.environ[key] = value
+    config[key] = value
 
 
 def get_fe_config() -> dict:

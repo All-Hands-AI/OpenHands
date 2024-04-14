@@ -120,13 +120,13 @@ def read_default_model():
 @app.get('/api/refresh-files')
 def refresh_files():
     structure = files.get_folder_structure(
-        Path(str(config.get('WORKSPACE_DIR'))))
+        Path(str(config.get('WORKSPACE_BASE'))))
     return structure.to_dict()
 
 
 @app.get('/api/select-file')
 def select_file(file: str):
-    with open(Path(Path(str(config.get('WORKSPACE_DIR'))), file), 'r') as selected_file:
+    with open(Path(Path(str(config.get('WORKSPACE_BASE'))), file), 'r') as selected_file:
         content = selected_file.read()
     return {'code': content}
 
