@@ -74,14 +74,17 @@ class DockerExecBox(Sandbox):
         atexit.register(self.close)
 
     def setup_devin_user(self):
-        exit_code, logs = self.container.exec_run(
-            [
-                '/bin/bash',
-                '-c',
-                f'useradd --shell /bin/bash -u {USER_ID} -o -c "" -m devin',
-            ],
-            workdir=SANDBOX_WORKSPACE_DIR,
-        )
+        cmds = [
+            f'useradd --shell /bin/bash -u {USER_ID} -o -c "" -m devin',
+            r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers",
+            'sudo adduser devin sudo',
+        ]
+        for cmd in cmds:
+            exit_code, logs = self.container.exec_run(
+                ['/bin/bash', '-c', cmd], workdir=SANDBOX_DIR
+            )
+            if exit_code != 0:
+                raise Exception(f'Failed to setup devin user: {logs}')
 
     def get_exec_cmd(self, cmd: str) -> List[str]:
         if RUN_AS_DEVIN:
@@ -241,7 +244,7 @@ if __name__ == '__main__':
         "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
 
     bg_cmd = exec_box.execute_in_background(
-        "while true; do echo 'dot ' && sleep 1; done"
+        "while true; do echo -n '.' && sleep 1; done"
     )
 
     sys.stdout.flush()
