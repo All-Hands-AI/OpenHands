@@ -18,7 +18,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 COPY docker/locales /etc/locale.gen
 
-ADD --checksum=sha256:b978856ec3c826eb495b60e3fffe621f670c101150ebcbdeede4f961f22dc438 https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh /tmp/miniconda.sh
+ADD --checksum=sha256:3f2e5498e550a6437f15d9cc8020d52742d0ba70976ee8fce4f0daefa3992d2e https://repo.anaconda.com/miniconda/Miniconda3-py311_24.1.2-0-Linux-x86_64.sh /tmp/miniconda.sh
 
 RUN --mount=type=cache,target=${apt_cache_dir},sharing=locked \
     if [ -n "${DEBUG}" ]; then set -eux; fi && \
@@ -102,7 +102,6 @@ WORKDIR "$APP_ROOT"
 
 COPY .env .
 COPY pyproject.toml .
-COPY README.md .
 
 ENV POETRY_HOME=/etc/poetry
 ENV PATH="${POETRY_HOME}/bin:${PATH}"
