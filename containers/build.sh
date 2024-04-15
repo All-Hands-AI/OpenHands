@@ -32,7 +32,12 @@ for dir in ./containers/*; do
   for tag in ${tags[@]}; do
     tag_args+=" -t $DOCKER_REPOSITORY:$tag"
   done
-  docker build $tag_args -f $dir/Dockerfile $DOCKER_BASE_DIR
+
+  docker buildx build \
+    $tag_args \
+    --platform linux/amd64,linux/arm64 \
+    -f $dir/Dockerfile $DOCKER_BASE_DIR
+
   if [[ $1 == "--push" ]]; then
     for tag in ${tags[@]}; do
       docker push $DOCKER_REPOSITORY:$tag
