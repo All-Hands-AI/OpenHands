@@ -31,7 +31,7 @@ RUN conda env create -f environment.yml
 
 # Add commands
 COPY ./commands.sh .
-RUN . commands.sh
+RUN . ./commands.sh
 
 # Some missing packages
 RUN pip install datasets python-dotenv gitpython
