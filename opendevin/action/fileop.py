@@ -25,7 +25,6 @@ class FileReadAction(ExecutableAction):
 
     def run(self, controller) -> FileReadObservation:
         if isinstance(controller.command_manager.sandbox, E2BBox):
-            print('READING FROM PATH', self.path)
             content = controller.command_manager.sandbox.filesystem.read(
                 self.path)
             return FileReadObservation(path=self.path, content=content)
