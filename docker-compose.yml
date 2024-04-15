@@ -3,8 +3,8 @@ version: "3.8"
 services:
   # Devin Out-of-The-Box Agent Service
   devin:
-    container_name: devin_backend
-    hostname: devin_coder
+    container_name: devin_api
+    hostname: devin-api
     image: lehcode/opendevin_api-cuda${CUDA_VERSION:?}-miniconda:dev
     pull_policy: always
     # Override the default models and rebuild image with restart container then
@@ -139,7 +139,7 @@ services:
 
   # UI service
   web_ui:
-    container_name: devin_ui
+    container_name: devin_web
     image: lehcode/opendevin_ui-node${NODE_VERSION:?}-npm${NPM_VERSION}-pnpm-reactjs:dev
     pull_policy: always
     build:

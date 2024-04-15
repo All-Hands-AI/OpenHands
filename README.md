@@ -159,6 +159,8 @@ There is also [documentation for running with local models using ollama](./docs/
 
 We are working on a [guide for running OpenDevin with Azure](./docs/documentation/AZURE_LLM_GUIDE.md).
 
+[Docker Compose Documentation](./docker/README.md)
+
 ### 4. Run the Application
 
 - **Run the Application:** Once the setup is complete, launching OpenDevin is as simple as running a single command. This command starts both the backend and frontend servers seamlessly, allowing you to interact with OpenDevin without any hassle.
@@ -224,7 +226,7 @@ For details, please check [this document](./CONTRIBUTING.md).
 
 ## 🤖 Join Our Community
 
-Now we have both Slack workspace for the collaboration on building OpenDevin and Discord server for discussion about anything related, e.g., this project, LLM, agent, etc.
+Now we have both Slack workspace for the collaboration on building OpenDevin and Discord server for discussion about anything related, e.g., this project, LLM, agent, etc. 
 
 * [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2etftj1dd-X1fDL2PYIVpsmJZkqEYANw)
 * [Discord server](https://discord.gg/mBuDGRzzES)
