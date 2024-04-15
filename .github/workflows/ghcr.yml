@@ -19,9 +19,6 @@ jobs:
         image: ["app", "evaluation", "sandbox"]
 
     steps:
-      - name: checkout
-        uses: actions/checkout@v4
-
       - name: Maximize build space
         uses: easimon/maximize-build-space@master
         with:
@@ -31,6 +28,9 @@ jobs:
           remove-android: 'true'
           remove-haskell: 'true'
           remove-codeql: 'true'
+
+      - name: checkout
+        uses: actions/checkout@v4
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
