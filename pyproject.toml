@@ -47,3 +47,9 @@ torch = "*"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.autopep8]
+ignore = [ "E501" ]
+
+[tool.black]
+skip-string-normalization = true
