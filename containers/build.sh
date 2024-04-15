@@ -16,7 +16,7 @@ if [[ -n $GITHUB_REF_NAME ]]; then
     minor_version=$(echo $GITHUB_REF_NAME | cut -d. -f1,2)
     tags+=($major_version $minor_version)
   fi
-  tags+=($GITHUB_REF_NAME)
+  tags+=(echo $GITHUB_REF_NAME | sed 's/[^a-zA-Z0-9.-]\+/-/g')
 fi
 echo "Tags: ${tags[@]}"
 
