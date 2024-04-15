@@ -7,7 +7,7 @@ if [[ $2 == "--push" ]]; then
   push=1
 fi
 
-echo -e "\n\n======\nBuilding $image_name\n"
+echo -e "Building: $image_name"
 tags=(latest)
 if [[ -n $GITHUB_REF_NAME ]]; then
   # check if ref name is a version number
