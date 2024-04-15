@@ -34,18 +34,15 @@ source $dir/config.sh
 echo "Repo: $DOCKER_REPOSITORY"
 echo "Base dir: $DOCKER_BASE_DIR"
 docker pull $DOCKER_REPOSITORY:main || true # try to get any cached layers
-tag_args=""
+args=""
 for tag in ${tags[@]}; do
-  tag_args+=" -t $DOCKER_REPOSITORY:$tag"
+  args+=" -t $DOCKER_REPOSITORY:$tag"
 done
+if [[ $push -eq 1 ]]; then
+  args+=" --push"
+fi
 
 docker buildx build \
-  $tag_args \
+  $args \
   --platform linux/amd64,linux/arm64 \
   -f $dir/Dockerfile $DOCKER_BASE_DIR
-
-if [[ $push -eq 1 ]]; then
-  for tag in ${tags[@]}; do
-    docker push $DOCKER_REPOSITORY:$tag
-  done
-fi
