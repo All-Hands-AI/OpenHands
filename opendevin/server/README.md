@@ -25,7 +25,7 @@ websocat ws://127.0.0.1:3000/ws
 ```sh
 LLM_API_KEY=sk-... # Your OpenAI API Key
 LLM_MODEL=gpt-3.5-turbo-1106 # Default model for the agent to use
-WORKSPACE_DIR=/path/to/your/workspace # Default path to model's workspace
+WORKSPACE_BASE=/path/to/your/workspace # Default path to model's workspace
 ```
 
 ## API Schema
