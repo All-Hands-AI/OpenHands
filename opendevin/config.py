@@ -21,7 +21,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.LLM_EMBEDDING_MODEL: 'local',
     ConfigType.LLM_DEPLOYMENT_NAME: None,
     ConfigType.LLM_API_VERSION: None,
-    ConfigType.LLM_NUM_RETRIES: 1,
+    ConfigType.LLM_NUM_RETRIES: 5,
     ConfigType.LLM_COOLDOWN_TIME: 1,
     ConfigType.MAX_ITERATIONS: 100,
     # GPT-4 pricing is $10 per 1M input tokens. Since tokenization happens on LLM side,

@@ -166,6 +166,11 @@ we encourage you to [share your setup instructions with us](https://github.com/O
 
 There is also [documentation for running with local models using ollama](./docs/documentation/LOCAL_LLM_GUIDE.md).
 
+**Note on API retries and rate limits:**
+Some LLMs have rate limits and may require retries. OpenDevin will automatically retry requests if it receives a 429 error or API connection error.
+You can set NUM_RETRIES and COOLDOWN_TIME environment variables to control the number of retries and the time between retries.
+By default, NUM_RETRIES is 5 and COOLDOWN_TIME is 1 second.
+
 ## ⭐️ Research Strategy
 
 Achieving full replication of production-grade applications with LLMs is a complex endeavor. Our strategy involves:
