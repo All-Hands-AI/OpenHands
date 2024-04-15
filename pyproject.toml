@@ -34,6 +34,7 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
+black = "24.4.0"
 ruff = "0.3.7"
 mypy = "1.9.0"
 pre-commit = "3.7.0"
@@ -43,9 +44,6 @@ pytest = "*"
 
 [tool.poetry.group.evaluation.dependencies]
 torch = "*"
-
-[tool.autopep8]
-ignore = [ "E501" ]
 
 [build-system]
 requires = ["poetry-core"]
