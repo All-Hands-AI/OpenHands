@@ -147,7 +147,7 @@ class LlmFileHandler(logging.FileHandler):
         """
         self.filename = filename
         self.message_counter = 1
-        self.session = datetime.now().strftime('%y-%m-%d_%H-%Ms')
+        self.session = datetime.now().strftime('%y-%m-%d_%H-%M')
         self.log_directory = os.path.join(
             os.getcwd(), 'logs', 'llm', self.session)
         os.makedirs(self.log_directory, exist_ok=True)
