@@ -1,7 +1,9 @@
 import litellm
 import time
 
-from litellm import completion_with_retries as litellm_completion
+from litellm import completion as litellm_completion
+from tenacity import retry, wait_random_exponential, retry_if_not_exception_type, stop_after_attempt
+from litellm.exceptions import AuthenticationError
 from functools import partial
 
 from opendevin import config
@@ -46,7 +48,12 @@ class LLM:
 
         completion_unwrapped = self._completion
 
-        @backoff_retry
+                def after_each_retry(retry_state):
+            logger.info(f'Attempt number {retry_state.attempt_number}')
+
+        @retry(reraise=True,
+               stop=stop_after_attempt(num_retries),
+               wait=wait_random_exponential(min=1, max=5), retry=retry_if_not_exception_type(AuthenticationError), after=after_each_retry)
         def wrapper(*args, **kwargs):
             if 'messages' in kwargs:
                 messages = kwargs['messages']
