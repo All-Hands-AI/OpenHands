@@ -1,5 +1,3 @@
-import litellm
-import time
 
 from litellm import completion as litellm_completion
 from tenacity import retry, wait_random_exponential, retry_if_not_exception_type, stop_after_attempt
@@ -29,27 +27,12 @@ class LLM:
         self.base_url = base_url if base_url else DEFAULT_BASE_URL
 
         self._completion = partial(
-            litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url, num_retries=num_retries, retry_strategy='exponential_backoff_retry')
-
-        def backoff_retry(func):
-            def wrapper(*args, **kwargs):
-                retries = 0
-                while retries < num_retries:
-                    try:
-                        return func(*args, **kwargs)
-                    except litellm.exceptions.APIConnectionError as e:
-                        if '400' in str(e):
-                            raise e
-                        print(f'Error: {e}. Retrying in {cooldown_time * 2 ** retries} seconds...')
-                        time.sleep(cooldown_time * 2 ** retries)
-                        retries += 1
-                raise Exception('Max retries exceeded.')
-            return wrapper
+            litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url)
 
         completion_unwrapped = self._completion
 
-                def after_each_retry(retry_state):
-            logger.info(f'Attempt number {retry_state.attempt_number}')
+        def after_each_retry(retry_state):
+            llm_prompt_logger.info(f'Attempt number {retry_state.attempt_number}')
 
         @retry(reraise=True,
                stop=stop_after_attempt(num_retries),
