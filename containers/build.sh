@@ -1,7 +1,13 @@
 #!/bin/bash
 set -eo pipefail
 
-echo "Building docker images..."
+image_name=$1
+push=0
+if [[ $2 == "--push" ]]; then
+  push=1
+fi
+
+echo -e "\n\n======\nBuilding $image_name\n"
 tags=(latest)
 if [[ -n $GITHUB_REF_NAME ]]; then
   # check if ref name is a version number
@@ -14,33 +20,31 @@ if [[ -n $GITHUB_REF_NAME ]]; then
 fi
 echo "Tags: ${tags[@]}"
 
-for dir in ./containers/*; do
-  echo -e "\n\n======\nBuilding $dir\n"
-  if [ ! -f $dir/Dockerfile ]; then
-    echo "No Dockerfile found, skipping"
-    break
-  fi
-  if [ ! -f $dir/config.sh ]; then
-    echo "No config.sh found for Dockerfile, skipping"
-    break
-  fi
-  source $dir/config.sh
-  echo "Repo: $DOCKER_REPOSITORY"
-  echo "Base dir: $DOCKER_BASE_DIR"
-  docker pull $DOCKER_REPOSITORY:main || true # try to get any cached layers
-  tag_args=""
-  for tag in ${tags[@]}; do
-    tag_args+=" -t $DOCKER_REPOSITORY:$tag"
-  done
-
-  docker buildx build \
-    $tag_args \
-    --platform linux/amd64,linux/arm64 \
-    -f $dir/Dockerfile $DOCKER_BASE_DIR
-
-  if [[ $1 == "--push" ]]; then
-    for tag in ${tags[@]}; do
-      docker push $DOCKER_REPOSITORY:$tag
-    done
-  fi
+dir=./containers/$image_name
+if [ ! -f $dir/Dockerfile ]; then
+  echo "No Dockerfile found"
+  exit 1
+fi
+if [ ! -f $dir/config.sh ]; then
+  echo "No config.sh found for Dockerfile"
+  exit 1
+fi
+source $dir/config.sh
+echo "Repo: $DOCKER_REPOSITORY"
+echo "Base dir: $DOCKER_BASE_DIR"
+docker pull $DOCKER_REPOSITORY:main || true # try to get any cached layers
+tag_args=""
+for tag in ${tags[@]}; do
+  tag_args+=" -t $DOCKER_REPOSITORY:$tag"
 done
+
+docker buildx build \
+  $tag_args \
+  --platform linux/amd64,linux/arm64 \
+  -f $dir/Dockerfile $DOCKER_BASE_DIR
+
+if [[ $push -eq 1 ]]; then
+  for tag in ${tags[@]}; do
+    docker push $DOCKER_REPOSITORY:$tag
+  done
+fi

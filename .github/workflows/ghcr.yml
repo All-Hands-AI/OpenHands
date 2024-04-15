@@ -16,6 +16,9 @@ jobs:
   ghcr_build_and_push:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event.inputs.reason != ''
+    strategy:
+      matrix:
+        image: ["app", "evaluation", "sandbox"]
 
     steps:
       - name: checkout
@@ -31,5 +34,5 @@ jobs:
       - name: Log-in to ghcr.io
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Build and push multi-arch container images
-        run: ./containers/build.sh --push
+      - name: Build and push ${{ matrix.image }}
+        run: ./containers/build.sh ${{ matrix.image }} --push
