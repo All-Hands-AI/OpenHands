@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { Button, ButtonGroup, Tooltip } from "@nextui-org/react";
 import { useSelector } from "react-redux";
-import StopIcon from "../assets/stop";
 import PauseIcon from "../assets/pause";
 import PlayIcon from "../assets/play";
 import AgentTaskAction from "../types/AgentTaskAction";
@@ -29,10 +28,6 @@ function AgentControlBar() {
     [AgentTaskAction.RESTART]: {
       icon: <ArrowIcon />,
       tooltip: "Restart a new agent task",
-    },
-    [AgentTaskAction.STOP]: {
-      icon: <StopIcon />,
-      tooltip: "Stop the agent task",
     },
     [AgentTaskAction.PAUSE]: {
       icon: <PauseIcon />,

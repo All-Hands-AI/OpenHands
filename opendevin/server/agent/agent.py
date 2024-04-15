@@ -169,7 +169,7 @@ class AgentUnit:
                 callbacks=[self.on_agent_event],
             )
         except Exception as e:
-            logger.exception(f"Error creating controller: {e}")
+            logger.exception(f'Error creating controller: {e}')
             await self.send_error(
                 'Error creating controller. Please check Docker is running using `docker ps`.'
             )
