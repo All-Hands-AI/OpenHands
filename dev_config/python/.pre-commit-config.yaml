@@ -7,11 +7,6 @@ repos:
       - id: check-yaml
       - id: debug-statements
 
-  - repo: https://github.com/psf/black
-    rev: 24.4.0
-    hooks:
-      - id: black
-
   - repo: https://github.com/asottile/setup-cfg-fmt
     rev: v2.5.0
     hooks:
