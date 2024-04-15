@@ -24,7 +24,6 @@ export default defineConfig({
       "/api": {
         target: `http://${BACKEND_HOST}/`,
         changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/api/, ""),
       },
       "/ws": {
         target: `ws://${BACKEND_HOST}/`,
