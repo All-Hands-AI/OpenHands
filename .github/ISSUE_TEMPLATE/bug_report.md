@@ -16,10 +16,13 @@ assignees: ''
 ```bash
 ```
 
+* Operating System:
+  
 <!-- tell us everything about your environment -->
 **My config.toml and environment vars** (be sure to redact API keys):
 ```toml
 ```
+
 
 **My model and agent** (you can see these settings in the UI):
 * Model:
