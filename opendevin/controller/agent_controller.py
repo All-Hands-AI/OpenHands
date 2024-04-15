@@ -107,8 +107,8 @@ class AgentController:
             logger.info(action, extra={'msg_type': 'ACTION'})
         except Exception as e:
             observation = AgentErrorObservation(str(e))
-            logger.info(observation, extra={'msg_type': 'ERROR'})
-            traceback.print_exc()
+            logger.error(e)
+
             if isinstance(e, APIConnectionError):
                 time.sleep(3)
 
@@ -136,14 +136,14 @@ class AgentController:
                     action.parent, action.goal, action.subtasks)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
-                logger.info(observation, extra={'msg_type': 'ERROR'})
+                logger.error(e)
                 traceback.print_exc()
         elif isinstance(action, ModifyTaskAction):
             try:
                 self.state.plan.set_subtask_state(action.id, action.state)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
-                logger.info(observation, extra={'msg_type': 'ERROR'})
+                logger.error(e)
                 traceback.print_exc()
 
         if action.executable:
@@ -153,7 +153,7 @@ class AgentController:
                     observation = await cast(Awaitable[Observation], observation)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
-                logger.info(observation, extra={'msg_type': 'ERROR'})
+                logger.error(e)
                 traceback.print_exc()
 
         if not isinstance(observation, NullObservation):

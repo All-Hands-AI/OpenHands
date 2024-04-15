@@ -41,26 +41,22 @@ LOG_COLORS: Mapping[str, ColorType] = {
 
 class ColoredFormatter(logging.Formatter):
     def format(self, record):
-        msg_type = record.__dict__.get('msg_type', 'INFO')
+        msg_type = record.__dict__.get('msg_type', None)
         if msg_type in LOG_COLORS and not DISABLE_COLOR_PRINTING:
             msg_type_color = colored(msg_type, LOG_COLORS[msg_type])
             msg = colored(record.msg, LOG_COLORS[msg_type])
             time_str = colored(self.formatTime(record, self.datefmt), 'green')
             name_str = colored(record.name, 'cyan')
             level_str = colored(record.levelname, 'yellow')
-        else:
-            msg_type_color = msg_type
-            msg = record.msg
-            time_str = self.formatTime(record, self.datefmt)
-            name_str = record.name
-            level_str = record.levelname
-        if msg_type == 'STEP':
-            msg = '\n\n==============\n' + msg + '\n'
-        return f'{time_str} - {name_str}:{level_str}: {record.filename}:{record.lineno}\n{msg_type_color}\n{msg}'
+            return f'{time_str} - {name_str}:{level_str}: {record.filename}:{record.lineno}\n{msg_type_color}\n{msg}'
+        elif msg_type == 'STEP':
+            msg = '\n\n==============\n' + record.msg + '\n'
+            return f'{msg}'
+        return super().format(record)
 
 
 console_formatter = ColoredFormatter(
-    '\033[92m%(asctime)s - %(name)s:%(levelname)s\033[0m: %(filename)s:%(lineno)s - %(msg_type)s - %(message)s',
+    '\033[92m%(asctime)s - %(name)s:%(levelname)s\033[0m: %(filename)s:%(lineno)s - %(message)s',
     datefmt='%H:%M:%S',
 )
 
