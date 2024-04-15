@@ -25,6 +25,7 @@ build:
 	@$(MAKE) -s install-python-dependencies
 	@$(MAKE) -s install-frontend-dependencies
 	@$(MAKE) -s install-precommit-hooks
+	@$(MAKE) -s build-frontend
 	@echo "$(GREEN)Build completed successfully.$(RESET)"
 
 check-dependencies:
@@ -104,6 +105,10 @@ install-precommit-hooks:
 	@git config --unset-all core.hooksPath || true
 	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
+
+build-frontend:
+	@echo "$(YELLOW)Building frontend...$(RESET)"
+	@cd frontend && npm run build
 
 # Start backend
 start-backend:
