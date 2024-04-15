@@ -3,6 +3,7 @@ import React, { ChangeEvent, KeyboardEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { VscSend } from "react-icons/vsc";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { twMerge } from "tailwind-merge";
 import useInputComposition from "../hooks/useInputComposition";
 import { I18nKey } from "../i18n/declaration";
@@ -12,6 +13,7 @@ import { RootState } from "../store";
 function Input() {
   const { t } = useTranslation();
   const { initialized } = useSelector((state: RootState) => state.task);
+  const { t } = useTranslation();
   const [inputMessage, setInputMessage] = useState("");
 
   const handleSendMessage = () => {
