@@ -188,7 +188,7 @@ class MonologueAgent(Agent):
                     output_type = ActionType.BROWSE
                 else:
                     action = AgentThinkAction(thought=thought)
-                self._add_event(action.to_dict())
+                self._add_event(action.to_memory())
         self._initialized = True
 
     def step(self, state: State) -> Action:

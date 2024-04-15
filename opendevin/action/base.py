@@ -20,6 +20,11 @@ class Action:
             raise NotImplementedError(f'{self=} does not have action attribute set')
         return {'action': v, 'args': d, 'message': self.message}
 
+    def to_memory(self):
+        d = self.to_dict()
+        action = d.pop('action')
+        return {'action': action, 'args': d}
+
     @property
     def executable(self) -> bool:
         raise NotImplementedError
