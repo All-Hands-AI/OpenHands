@@ -2,7 +2,8 @@ name: Build and publish multi-arch container images
 
 on:
   push:
-    branches: [ main ]
+    # FIXME: re-enable this branches: [ main ]
+    branches: [ '*' ]
     tags: '^v[0-9]+\.[0-9]+\.[0-9]+$'
   workflow_dispatch:
     inputs:
