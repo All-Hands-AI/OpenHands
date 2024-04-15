@@ -36,6 +36,9 @@ ENV SSH_HOSTNAME=host.docker.internal
 ENV WORKSPACE_BASE=/opt/workspace_base
 RUN mkdir -p $WORKSPACE_BASE
 
+RUN apt-get update -y \
+    && apt-get install -y curl ssh
+
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH='/app'
