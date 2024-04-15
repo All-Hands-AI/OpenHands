@@ -1,6 +1,6 @@
 
 from litellm import completion as litellm_completion
-from tenacity import retry, retry_if_exception_type, stop_after_attempt
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_random_exponential
 from litellm.exceptions import APIConnectionError, RateLimitError
 from functools import partial
 
@@ -54,9 +54,16 @@ class LLM:
             opendevin_logger.info(f'Attempt #{retry_state.attempt_number} | Sleeping for {seconds}s for {retry_state.outcome.exception()}', )
             return seconds
 
+        def rate_limited_attempt(retry_state):
+            opendevin_logger.info(f'Rate limited. Waiting for {retry_state.outcome.exception()}')
+            return True
+
         @retry(reraise=True,
                stop=stop_after_attempt(num_retries),
-               wait=my_wait, retry=retry_if_exception_type((APIConnectionError, RateLimitError)))
+               wait=my_wait, retry=retry_if_exception_type(APIConnectionError))
+        @retry(reraise=True,
+               stop=stop_after_attempt(num_retries),
+               wait=wait_random_exponential(min=2, max=20), retry=retry_if_exception_type(RateLimitError), after=rate_limited_attempt)
         def wrapper(*args, **kwargs):
             if 'messages' in kwargs:
                 messages = kwargs['messages']
