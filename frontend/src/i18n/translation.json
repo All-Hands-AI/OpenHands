@@ -8,7 +8,8 @@
     "zh-TW": "OpenDevin 工作區",
     "it": "Area di lavoro OpenDevin",
     "pt": "Espaço de trabalho OpenDevin",
-    "es": "Espacio de trabajo de OpenDevin"
+    "es": "Espacio de trabajo de OpenDevin",
+    "tr": "OpenDevin Çalışma Alanı"
   },
   "WORKSPACE$TERMINAL_TAB_LABEL": {
     "en": "Terminal",
@@ -19,7 +20,8 @@
     "zh-TW": "終端機",
     "it": "Terminale",
     "pt": "Terminal",
-    "es": "Terminal"
+    "es": "Terminal",
+    "tr": "Terminal"
   },
   "WORKSPACE$PLANNER_TAB_LABEL": {
     "en": "Planner",
@@ -30,7 +32,8 @@
     "zh-TW": "計畫器",
     "it": "Pianificatore",
     "pt": "Planejador",
-    "es": "Planificador"
+    "es": "Planificador",
+    "tr": "Planlayıcı"
   },
   "WORKSPACE$CODE_EDITOR_TAB_LABEL": {
     "en": "Code Editor",
@@ -41,7 +44,8 @@
     "zh-TW": "程式碼編輯器",
     "it": "Editor di codice",
     "pt": "Editor de código",
-    "es": "Editor de código"
+    "es": "Editor de código",
+    "tr": "Kod editörü"
   },
   "WORKSPACE$BROWSER_TAB_LABEL": {
     "en": "Browser",
@@ -52,7 +56,8 @@
     "zh-TW": "瀏覽器",
     "it": "Browser",
     "pt": "Navegador",
-    "es": "Navegador"
+    "es": "Navegador",
+    "tr": "Tarayıcı"
   },
   "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_LABEL": {
     "en": "OpenDevin Workspace directory",
@@ -63,7 +68,8 @@
     "zh-TW": "OpenDevin 工作區目錄",
     "it": "Directory dell'area di lavoro OpenDevin",
     "pt": "Diretório do espaço de trabalho OpenDevin",
-    "es": "Directorio del espacio de trabajo de OpenDevin"
+    "es": "Directorio del espacio de trabajo de OpenDevin",
+    "tr": "OpenDevin çalışma alanı dizini"
   },
   "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER": {
     "en": "Default: ./workspace",
@@ -74,7 +80,8 @@
     "zh-TW": "默认：./workspace",
     "it": "Predefinito: ./workspace",
     "pt": "Padrão: ./workspace",
-    "es": "Predeterminado: ./workspace"
+    "es": "Predeterminado: ./workspace",
+    "tr":"Standart: ./workspace"
   },
   "CONFIGURATION$MODAL_TITLE": {
     "en": "Configuration",
@@ -85,7 +92,8 @@
     "zh-TW": "設定",
     "it": "Configurazione",
     "pt": "Configuração",
-    "es": "Configuración"
+    "es": "Configuración",
+    "tr": "Konfigürasyon"
   },
   "CONFIGURATION$MODEL_SELECT_LABEL": {
     "en": "Model",
@@ -96,7 +104,8 @@
     "zh-TW": "模型",
     "it": "Modello",
     "pt": "Modelo",
-    "es": "Modelo"
+    "es": "Modelo",
+    "tr": "Model"
   },
   "CONFIGURATION$MODEL_SELECT_PLACEHOLDER": {
     "en": "Select a model",
@@ -107,7 +116,8 @@
     "zh-TW": "選擇模型",
     "it": "Seleziona un modello",
     "pt": "Selecione um modelo",
-    "es": "Seleccionar un modelo"
+    "es": "Seleccionar un modelo",
+    "tr": "Model Seç"
   },
   "CONFIGURATION$AGENT_SELECT_LABEL": {
     "en": "Agent",
@@ -118,7 +128,8 @@
     "zh-TW": "智能體",
     "it": "Agente",
     "pt": "Agente",
-    "es": "Agente"
+    "es": "Agente",
+    "tr": "Ajan"
   },
   "CONFIGURATION$AGENT_SELECT_PLACEHOLDER": {
     "en": "Select an agent",
@@ -129,7 +140,8 @@
     "zh-TW": "選擇智能體",
     "it": "Seleziona un agente",
     "pt": "Selecione um agente",
-    "es": "Seleccionar un agente"
+    "es": "Seleccionar un agente",
+    "tr": "Ajan Seç"
   },
   "CONFIGURATION$LANGUAGE_SELECT_LABEL": {
     "en": "Language",
@@ -140,7 +152,8 @@
     "zh-TW": "語言",
     "it": "Lingua",
     "pt": "Idioma",
-    "es": "Idioma"
+    "es": "Idioma",
+    "tr": "Dil"
   },
   "CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL": {
     "en": "Close",
@@ -151,7 +164,8 @@
     "zh-TW": "關閉",
     "it": "Chiudi",
     "pt": "Fechar",
-    "es": "Cerrar"
+    "es": "Cerrar",
+    "tr": "Kapat"
   },
   "CONFIGURATION$MODAL_SAVE_BUTTON_LABEL": {
     "en": "Save",
@@ -162,7 +176,8 @@
     "zh-TW": "儲存",
     "it": "Salva",
     "pt": "Salvar",
-    "es": "Guardar"
+    "es": "Guardar",
+    "tr": "Kaydet"
   },
   "CHAT_INTERFACE$INITIALZING_AGENT_LOADING_MESSAGE": {
     "en": "Initializing agent (may take up to 10 seconds)...",
@@ -173,7 +188,8 @@
     "zh-TW": "初始化智能體（可能需要 10 秒以上時間）",
     "it": "Inizializzazione dell'agente (può richiedere fino a 10 secondi)...",
     "pt": "Inicializando o agente (pode levar até 10 segundos)...",
-    "es": "Inicializando el agente (puede tardar hasta 10 segundos)..."
+    "es": "Inicializando el agente (puede tardar hasta 10 segundos)...",
+    "tr": "Ajan başlatılıyor (bu işlem 10 saniye kadar sürebilir)..."
   },
   "CHAT_INTERFACE$INPUT_PLACEHOLDER": {
     "en": "Send a message (won't interrupt the Assistant)",
@@ -184,7 +200,8 @@
     "zh-TW": "發送訊息（不會打擾到助理）",
     "it": "Invia un messaggio (non interromperà l'Assistente)",
     "pt": "Envie uma mensagem (não interromperá o Assistente)",
-    "es": "Enviar un mensaje (no interrumpirá al Asistente)"
+    "es": "Enviar un mensaje (no interrumpirá al Asistente)",
+    "tr": "Bir mesaj gönderin (Asistan Kesilmeyecek)" 
   },
   "CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT": {
     "en": "Send",
@@ -195,6 +212,7 @@
     "zh-TW": "發送",
     "it": "Invia",
     "pt": "Enviar",
-    "es": "Enviar"
+    "es": "Enviar",
+    "tr": "Gönder"
   }
 }
