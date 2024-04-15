@@ -22,8 +22,8 @@ class Action:
 
     def to_memory(self):
         d = self.to_dict()
-        action = d.pop('action')
-        return {'action': action, 'args': d}
+        d.pop('message', None)
+        return d
 
     @property
     def executable(self) -> bool:

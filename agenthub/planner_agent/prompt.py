@@ -150,7 +150,7 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
     latest_action: Action = NullAction()
     for action, observation in sub_history:
         if not isinstance(action, NullAction):
-            history_dicts.append(action.to_dict())
+            history_dicts.append(action.to_memory())
             latest_action = action
         if not isinstance(observation, NullObservation):
             observation_dict = observation.to_dict()
