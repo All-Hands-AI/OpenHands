@@ -117,8 +117,8 @@ sys.excepthook = log_uncaught_exceptions
 
 opendevin_logger = logging.getLogger('opendevin')
 opendevin_logger.setLevel(logging.INFO)
-opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.addHandler(get_file_handler())
+opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.propagate = False
 opendevin_logger.debug('Logging initialized')
 opendevin_logger.debug('Logging to %s', os.path.join(
@@ -135,7 +135,7 @@ class LlmFileHandler(logging.FileHandler):
     # LLM prompt and response logging
     """
 
-    def __init__(self, filename, mode='a', encoding=None, delay=False):
+    def __init__(self, filename, mode='a', encoding='utf-8', delay=False):
         """
         Initializes an instance of LlmFileHandler.
 
