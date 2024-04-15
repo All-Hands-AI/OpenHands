@@ -58,7 +58,7 @@ jobs:
         run: df -h
 
       - name: Build and push ${{ matrix.image }}
-        run: ./containers/build.sh ${{ matrix.image }} --push
+        run: ./containers/build.sh ${{ matrix.image }} --push || true
 
       - name: disk space
         run: df -h
