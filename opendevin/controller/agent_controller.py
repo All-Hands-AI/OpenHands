@@ -1,11 +1,9 @@
 import asyncio
 import inspect
 import traceback
-import time
 from typing import List, Callable, Literal, Mapping, Awaitable, Any, cast
 
 from termcolor import colored
-from litellm.exceptions import APIConnectionError
 from openai import AuthenticationError
 
 from opendevin import config
@@ -150,8 +148,6 @@ class AgentController:
             observation = AgentErrorObservation(str(e))
             print_with_color(observation, 'ERROR')
             traceback.print_exc()
-            if isinstance(e, APIConnectionError):
-                time.sleep(3)
 
             # raise specific exceptions that need to be handled outside
             # note: we are using AuthenticationError class from openai rather than
