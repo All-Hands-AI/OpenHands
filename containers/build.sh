@@ -45,4 +45,4 @@ fi
 docker buildx build \
   $args \
   --platform linux/amd64,linux/arm64 \
-  -f $dir/Dockerfile $DOCKER_BASE_DIR || df -h
+  -f $dir/Dockerfile $DOCKER_BASE_DIR

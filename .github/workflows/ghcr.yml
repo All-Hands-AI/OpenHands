@@ -19,36 +19,18 @@ jobs:
         image: ["app", "evaluation", "sandbox"]
 
     steps:
-      - name: disk space
-        run: df -h
-
       - name: checkout
         uses: actions/checkout@v4
 
-      - name: disk space
-        run: df -h
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
-
-      - name: disk space
-        run: df -h
 
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: disk space
-        run: df -h
-
       - name: Log-in to ghcr.io
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: disk space
-        run: df -h
-
       - name: Build and push ${{ matrix.image }}
-        run: ./containers/build.sh ${{ matrix.image }} --push || true
-
-      - name: disk space
-        run: df -h
+        run: ./containers/build.sh ${{ matrix.image }} --push
