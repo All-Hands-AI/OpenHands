@@ -85,7 +85,7 @@ def get_file_handler():
     """
     log_dir = os.path.join(os.getcwd(), 'logs')
     os.makedirs(log_dir, exist_ok=True)
-    timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    timestamp = datetime.now().strftime('%Y-%m-%d')
     file_name = f'opendevin_{timestamp}.log'
     file_handler = logging.FileHandler(os.path.join(log_dir, file_name))
     file_handler.setLevel(logging.DEBUG)
@@ -148,11 +148,10 @@ class LlmFileHandler(logging.FileHandler):
         self.filename = filename
         self.message_counter = 1
         self.session = datetime.now().strftime('%y-%m-%d_%H-%M')
-        self.log_directory = os.path.join(
-            os.getcwd(), 'logs', 'llm', self.session)
+        self.log_directory = os.path.join(os.getcwd(), 'logs', 'llm', self.session)
         os.makedirs(self.log_directory, exist_ok=True)
-        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{
-                                         self.message_counter:03}.log")
+        filename = f'{self.filename}_{self.message_counter:03}.log'
+        self.baseFilename = os.path.join(self.log_directory, filename)
         super().__init__(self.baseFilename, mode, encoding, delay)
 
     def emit(self, record):
@@ -162,8 +161,8 @@ class LlmFileHandler(logging.FileHandler):
         Args:
             record (logging.LogRecord): The log record to emit.
         """
-        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{
-                                         self.message_counter:03}.log")
+        filename = f'{self.filename}_{self.message_counter:03}.log'
+        self.baseFilename = os.path.join(self.log_directory, filename)
         self.stream = self._open()
         super().emit(record)
         self.stream.close
