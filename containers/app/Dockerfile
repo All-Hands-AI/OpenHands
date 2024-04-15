@@ -23,7 +23,7 @@ RUN apt-get update -y \
     && python3 -m pip install poetry  --break-system-packages
 
 COPY ./pyproject.toml ./poetry.lock ./
-RUN poetry install --without evaluation
+RUN poetry install --without evaluation --no-root
 
 COPY ./opendevin ./opendevin
 COPY ./agenthub ./agenthub
