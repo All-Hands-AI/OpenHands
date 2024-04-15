@@ -133,10 +133,11 @@ logging.getLogger('LiteLLM').disabled = True
 logging.getLogger('LiteLLM Router').disabled = True
 logging.getLogger('LiteLLM Proxy').disabled = True
 
-# LLM prompt and response logging
-
 
 class LlmFileHandler(logging.FileHandler):
+    """
+    # LLM prompt and response logging
+    """
 
     def __init__(self, filename, mode='a', encoding=None, delay=False):
         """
@@ -150,11 +151,12 @@ class LlmFileHandler(logging.FileHandler):
         """
         self.filename = filename
         self.message_counter = 1
-        self.session = datetime.now().strftime('%y-%m-%d_%H-%M-%S')
+        self.session = datetime.now().strftime('%y-%m-%d_%H-%Ms')
         self.log_directory = os.path.join(
             os.getcwd(), 'logs', 'llm', self.session)
         os.makedirs(self.log_directory, exist_ok=True)
-        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{self.message_counter:03}.log")
+        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{
+                                         self.message_counter:03}.log")
         super().__init__(self.baseFilename, mode, encoding, delay)
 
     def emit(self, record):
@@ -164,7 +166,8 @@ class LlmFileHandler(logging.FileHandler):
         Args:
             record (logging.LogRecord): The log record to emit.
         """
-        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{self.message_counter:03}.log")
+        self.baseFilename = os.path.join(self.log_directory, f"{self.filename}_{
+                                         self.message_counter:03}.log")
         self.stream = self._open()
         super().emit(record)
         self.stream.close
@@ -176,11 +179,9 @@ def get_llm_prompt_file_handler():
     """
     Returns a file handler for LLM prompt logging.
     """
-    llm_prompt_file_handler = LlmFileHandler('prompt')
+    llm_prompt_file_handler = LlmFileHandler('prompt', delay=True)
     llm_prompt_file_handler.setFormatter(llm_formatter)
-    llm_prompt_file_handler.setLevel(logging.INFO)
-    if os.getenv('DEBUG'):
-        llm_prompt_file_handler.setLevel(logging.DEBUG)
+    llm_prompt_file_handler.setLevel(logging.DEBUG)
     return llm_prompt_file_handler
 
 
@@ -188,18 +189,18 @@ def get_llm_response_file_handler():
     """
     Returns a file handler for LLM response logging.
     """
-    llm_response_file_handler = LlmFileHandler('response')
+    llm_response_file_handler = LlmFileHandler('response', delay=True)
     llm_response_file_handler.setFormatter(llm_formatter)
-    llm_response_file_handler.setLevel(logging.INFO)
-    if os.getenv('DEBUG'):
-        llm_response_file_handler.setLevel(logging.DEBUG)
+    llm_response_file_handler.setLevel(logging.DEBUG)
     return llm_response_file_handler
 
 
 llm_prompt_logger = logging.getLogger('prompt')
 llm_prompt_logger.propagate = False
+llm_prompt_logger.setLevel(logging.DEBUG)
 llm_prompt_logger.addHandler(get_llm_prompt_file_handler())
 
 llm_response_logger = logging.getLogger('response')
 llm_response_logger.propagate = False
+llm_response_logger.setLevel(logging.DEBUG)
 llm_response_logger.addHandler(get_llm_response_file_handler())
