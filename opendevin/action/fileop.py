@@ -47,7 +47,6 @@ class FileWriteAction(ExecutableAction):
 
     def run(self, controller) -> FileWriteObservation:
         if isinstance(controller.command_manager.sandbox, E2BBox):
-            print('WRITING TO PATH', self.path)
             controller.command_manager.sandbox.filesystem.write(
                 self.path, self.content)
             return FileWriteObservation(content='', path=self.path)
