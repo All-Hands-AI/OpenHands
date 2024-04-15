@@ -10,7 +10,6 @@ LABEL org.opencontainers.image.author="lehcode <53556648+lehcode@users.noreply.g
 
 ARG debug
 ARG apt_cache_dir=/var/cache/apt
-
 ARG nvidia_utils_driver=550
 
 ENV DEBUG="$debug"

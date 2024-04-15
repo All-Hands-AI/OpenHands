@@ -97,7 +97,8 @@ RUN --mount=type=cache,target=$pm_cache_dir \
     npm config set prefix "${yarn_global_root}" && \
     npm config set audit false && \
     npm config set fund false && \
-    yarn global add vite esbuild nx@latest @nx/react
+    yarn global add vite esbuild nx@latest @nx/react \
+    typescript webpack classnames
 
 RUN --mount=type=cache,target=$pm_cache_dir \
     if [ -n "$debug" ]; then set -eux; fi && \

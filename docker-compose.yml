@@ -3,8 +3,8 @@ version: "3.8"
 services:
   # Devin Out-of-The-Box Agent Service
   devin:
-    container_name: devin_backend
-    hostname: devin_coder
+    container_name: devin_api
+    hostname: devin-api
     image: lehcode/opendevin_api-cuda${CUDA_VERSION:?}-miniconda:dev
     pull_policy: always
     # Override the default models and rebuild image with restart container then
@@ -88,6 +88,9 @@ services:
       - pip_cache_vol:/root/.cache/pip:tmpfs=4G
       - ./docker/litellm/config.yaml:/etc/config.yaml
       - ./docker/env_debug.sh:/usr/local/bin/env_debug
+    env_file:
+      - .env
+      - docker/litellm/.env
     depends_on:
       - redis
       - postgres
@@ -106,27 +109,26 @@ services:
       - /var/tmp
 
   redis:
-    image: redis/redis-stack:latest
+    image: ${REDIS_IMAGE:?}:latest
+    container_name: od_redis
     pull_policy: always
-    container_name: redis_stack
-    env_file:
-      - .env
-      - docker/redis/redis.env
+    env_file: docker/redis/.env
     ports:
-      - "0.0.0.0:${REDIS_SERVER_PORT}:6379"
-      - "0.0.0.0:${REDIS_INSIGHT_PORT}:8001"
+      - "${REDIS_SERVER_PORT}:6379"
+      - "${REDIS_INSIGHT_PORT}:8001"
     volumes:
-      - redis_data:${REDIS_DATA:-/data}
+#      - ./docker/redis/data:/data
+      - ./docker/redis/stack.conf:/redis-stack.conf
     networks:
       - opendevin-net
 
   postgres:
     image: postgres:latest
     pull_policy: always
-    container_name: db_postgres
+    container_name: od_postgres
     env_file:
       - .env
-      - docker/postgres/postgres.env
+      - docker/postgres/.env
     volumes:
       - posgtres_data:${POSTGRES_DATA:-/var/lib/postgres}
     ports:
@@ -139,7 +141,8 @@ services:
 
   # UI service
   web_ui:
-    container_name: devin_ui
+    container_name: devin_web
+    hostname: devin_web
     image: lehcode/opendevin_ui-node${NODE_VERSION:?}-npm${NPM_VERSION}-pnpm-reactjs:dev
     pull_policy: always
     build:
