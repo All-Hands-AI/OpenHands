@@ -12,7 +12,7 @@ on:
 
 jobs:
   ghcr_build_and_push:
-    runs-on: alpine
+    runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event.inputs.reason != ''
     strategy:
       matrix:
@@ -21,6 +21,13 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
+
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 512
+          swap-size-mb: 1024
+          remove-dotnet: 'true'
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
