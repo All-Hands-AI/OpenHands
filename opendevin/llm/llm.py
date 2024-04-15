@@ -59,4 +59,4 @@ class LLM:
         return self._completion
 
     def __str__(self):
-        return f"LLM(model={self.model_name}, base_url={self.base_url})"
+        return f'LLM(model={self.model_name}, base_url={self.base_url})'
