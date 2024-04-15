@@ -32,6 +32,7 @@
             "acc", "state"
           ]
         }],
+        "no-duplicate-imports": "warn",
         "import/no-extraneous-dependencies": "off",
         "@typescript-eslint/no-unused-vars": "warn",
         // For https://stackoverflow.com/questions/55844608/stuck-with-eslint-error-i-e-separately-loops-should-be-avoided-in-favor-of-arra
