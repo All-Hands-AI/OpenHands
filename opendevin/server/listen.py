@@ -4,9 +4,9 @@ from pathlib import Path
 import litellm
 from fastapi import Depends, FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
 from starlette import status
 from starlette.responses import JSONResponse
 
@@ -61,7 +61,7 @@ async def get_litellm_agents():
 
 @app.get('/api/auth')
 async def get_token(
-        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     """
     Get token for authentication when starts a websocket connection.
@@ -76,7 +76,7 @@ async def get_token(
 
 @app.get('/api/messages')
 async def get_messages(
-        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     data = []
     sid = get_sid_from_token(credentials.credentials)
@@ -91,7 +91,7 @@ async def get_messages(
 
 @app.get('/api/messages/total')
 async def get_message_total(
-        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     sid = get_sid_from_token(credentials.credentials)
     return JSONResponse(
@@ -100,9 +100,9 @@ async def get_message_total(
     )
 
 
-@app.delete('/messages')
+@app.delete('/api/messages')
 async def del_messages(
-        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     sid = get_sid_from_token(credentials.credentials)
     message_stack.del_messages(sid)
@@ -119,14 +119,15 @@ def read_default_model():
 
 @app.get('/api/refresh-files')
 def refresh_files():
-    structure = files.get_folder_structure(
-        Path(str(config.get('WORKSPACE_BASE'))))
+    structure = files.get_folder_structure(Path(str(config.get('WORKSPACE_BASE'))))
     return structure.to_dict()
 
 
 @app.get('/api/select-file')
 def select_file(file: str):
-    with open(Path(Path(str(config.get('WORKSPACE_BASE'))), file), 'r') as selected_file:
+    with open(
+        Path(Path(str(config.get('WORKSPACE_BASE'))), file), 'r'
+    ) as selected_file:
         content = selected_file.read()
     return {'code': content}
 
@@ -135,5 +136,6 @@ def select_file(file: str):
 async def docs_redirect():
     response = RedirectResponse(url='/index.html')
     return response
+
 
 app.mount('/', StaticFiles(directory='./frontend/dist'), name='dist')
