@@ -159,6 +159,8 @@ class AgentController:
             #    from different providers, and OpenAI is one of these.
             if isinstance(e, (AuthenticationError, ContextWindowExceededError, APIConnectionError, AgentNoActionError)):
                 raise
+            if action is None:
+                raise AgentNoActionError()
         self.update_state_after_step()
 
         await self._run_callbacks(action)
