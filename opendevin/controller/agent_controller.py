@@ -5,6 +5,7 @@ from typing import List, Callable, Literal, Mapping, Awaitable, Any, cast
 
 from termcolor import colored
 from openai import AuthenticationError
+from litellm import ContextWindowExceededError, APIConnectionError
 
 from opendevin import config
 from opendevin.action import (
@@ -156,7 +157,7 @@ class AgentController:
             # 2) embeddings call, initiated by llama-index, has no wrapper for authentication
             #    errors. This means we have to catch individual authentication errors
             #    from different providers, and OpenAI is one of these.
-            if isinstance(e, (AuthenticationError, AgentNoActionError)):
+            if isinstance(e, (AuthenticationError, ContextWindowExceededError, APIConnectionError, AgentNoActionError)):
                 raise
         self.update_state_after_step()
 
