@@ -2,7 +2,7 @@
 name: Question
 about: Use this template to ask a question regarding the project.
 title: ''
-labels: help wanted
+labels: question
 assignees: ''
 
 ---
