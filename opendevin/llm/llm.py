@@ -15,6 +15,10 @@ DEFAULT_LLM_COOLDOWN_TIME = config.get('LLM_COOLDOWN_TIME')
 
 
 class LLM:
+    """
+    The LLM class represents a Language Model instance.
+    """
+
     def __init__(self,
                  model=DEFAULT_MODEL_NAME,
                  api_key=DEFAULT_API_KEY,
@@ -22,6 +26,20 @@ class LLM:
                  num_retries=DEFAULT_LLM_NUM_RETRIES,
                  cooldown_time=DEFAULT_LLM_COOLDOWN_TIME,
                  ):
+        """
+        Args:
+            model (str, optional): The name of the language model. Defaults to LLM_MODEL.
+            api_key (str, optional): The API key for accessing the language model. Defaults to LLM_API_KEY.
+            base_url (str, optional): The base URL for the language model API. Defaults to LLM_BASE_URL. Not necessary for OpenAI.
+            num_retries (int, optional): The number of retries for API calls. Defaults to LLM_NUM_RETRIES.
+            cooldown_time (int, optional): The cooldown time between retries in seconds. Defaults to LLM_COOLDOWN_TIME.
+
+        Attributes:
+            model_name (str): The name of the language model.
+            api_key (str): The API key for accessing the language model.
+            base_url (str): The base URL for the language model API.
+            completion (function): A decorator for the litellm completion function.
+        """
         self.model_name = model if model else DEFAULT_MODEL_NAME
         self.api_key = api_key if api_key else DEFAULT_API_KEY
         self.base_url = base_url if base_url else DEFAULT_BASE_URL
