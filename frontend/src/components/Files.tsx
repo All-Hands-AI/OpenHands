@@ -68,6 +68,7 @@ function Files({
 
   useEffect(() => {
     getWorkspace().then((file) => dispatch(updateWorkspace(file)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (workspaceTree.length <= 1) {
