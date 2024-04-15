@@ -194,10 +194,9 @@ class AgentController:
 
         if action.executable:
             try:
-                if inspect.isawaitable(action.run(self)):
-                    observation = await cast(Awaitable[Observation], action.run(self))
-                else:
-                    observation = action.run(self)
+                observation = action.run(self)
+                if inspect.isawaitable(observation):
+                    observation = await cast(Awaitable[Observation], observation)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
                 print_with_color(observation, 'ERROR')
