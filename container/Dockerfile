@@ -6,8 +6,7 @@ COPY ./frontend/package.json frontend/package-lock.json ./
 RUN npm install
 
 COPY ./frontend ./
-RUN npm run build
-
+RUN npm run make-i18n && npm run build
 
 FROM python:3.12-slim as runtime
 
