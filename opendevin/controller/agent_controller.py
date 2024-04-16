@@ -101,9 +101,6 @@ class AgentController:
         observation: Observation = NullObservation('')
         try:
             action = self.agent.step(self.state)
-            if action is None:
-                raise AgentNoActionError()
-            logger.info(action, extra={'msg_type': 'ACTION'})
         except Exception as e:
             observation = AgentErrorObservation(str(e))
             logger.exception(e)
@@ -115,10 +112,12 @@ class AgentController:
             # 2) embeddings call, initiated by llama-index, has no wrapper for authentication
             #    errors. This means we have to catch individual authentication errors
             #    from different providers, and OpenAI is one of these.
-            if isinstance(e, (AuthenticationError, ContextWindowExceededError, APIConnectionError, AgentNoActionError)):
+            if isinstance(e, (AuthenticationError, ContextWindowExceededError, APIConnectionError)):
                 raise
-            if action is None:
-                raise AgentNoActionError()
+        if action is None:
+            raise AgentNoActionError()
+        logger.info(action, extra={'msg_type': 'ACTION'})
+
         self.update_state_after_step()
 
         await self._run_callbacks(action)
