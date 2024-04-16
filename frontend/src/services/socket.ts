@@ -21,11 +21,16 @@ class Socket {
 
   // prevent it failed in the first run, all related listen events never be called
   private static isFirstRun = true;
+  private static initializing = false;
 
   public static tryInitialize(): void {
+    console.log('try init');
+    this.initializing = true;
     getToken()
       .then((token) => {
+        console.log('got tok');
         Socket._initialize(token);
+        this.initializing = false;
       })
       .catch(() => {
         const msg = `Connection failed. Retry...`;
@@ -78,6 +83,10 @@ class Socket {
   }
 
   static send(message: string): void {
+    if (Socket.initializing) {
+      setTimeout(() => Socket.send(message), 1000);
+      return;
+    }
     if (!Socket.isConnected()) Socket.tryInitialize();
 
     if (Socket.isConnected()) {
