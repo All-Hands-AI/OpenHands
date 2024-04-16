@@ -12,8 +12,6 @@ import { useTranslation } from "react-i18next";
 import {
   fetchAgents,
   fetchModels,
-  INITIAL_AGENTS,
-  INITIAL_MODELS,
   saveSettings,
 } from "../services/settingsService";
 import { RootState } from "../store";
@@ -45,23 +43,17 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
 
   const { t } = useTranslation();
 
-  const [supportedModels, setSupportedModels] = useState(
-    cachedModels.length > 0 ? cachedModels : INITIAL_MODELS,
-  );
-  const [supportedAgents, setSupportedAgents] = useState(
-    cachedAgents.length > 0 ? cachedAgents : INITIAL_AGENTS,
-  );
+  const [supportedModels, setSupportedModels] = useState([]);
+  const [supportedAgents, setSupportedAgents] = useState([]);
 
   useEffect(() => {
     fetchModels().then((fetchedModels) => {
       const sortedModels = fetchedModels.sort(); // Sorting the models alphabetically
       setSupportedModels(sortedModels);
-      localStorage.setItem("supportedModels", JSON.stringify(sortedModels));
     });
 
     fetchAgents().then((fetchedAgents) => {
       setSupportedAgents(fetchedAgents);
-      localStorage.setItem("supportedAgents", JSON.stringify(fetchedAgents));
     });
   }, []);
 
