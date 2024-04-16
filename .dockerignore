@@ -1,0 +1,5 @@
+frontend/node_modules
+config.toml
+.envrc
+.env
+.git

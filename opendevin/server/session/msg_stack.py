@@ -1,7 +1,6 @@
 import os
 import json
 import atexit
-import signal
 import uuid
 from typing import Dict, List
 
@@ -38,16 +37,10 @@ class MessageStack:
     def __init__(self):
         self._load_messages()
         atexit.register(self.close)
-        signal.signal(signal.SIGINT, self.handle_signal)
-        signal.signal(signal.SIGTERM, self.handle_signal)
 
     def close(self):
+        logger.info('Saving messages...')
         self._save_messages()
-
-    def handle_signal(self, signum, _):
-        logger.info('Received signal %s, exiting...', signum)
-        self.close()
-        exit(0)
 
     def add_message(self, sid: str, role: str, message: Dict[str, object]):
         if sid not in self._messages:
