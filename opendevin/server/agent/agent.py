@@ -63,10 +63,6 @@ class AgentUnit:
 
         match action:
             case ActionType.INIT:
-                if self.controller is not None:
-                    # Agent already started, no need to create a new one
-                    await self.init_done()
-                    return
                 await self.create_controller(data)
             case ActionType.START:
                 await self.start_task(data)
