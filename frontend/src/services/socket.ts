@@ -24,11 +24,10 @@ class Socket {
   private static initializing = false;
 
   public static tryInitialize(): void {
-    this.initializing = true;
+    Socket.initializing = true;
     getToken()
       .then((token) => {
         Socket._initialize(token);
-        this.initializing = false;
       })
       .catch(() => {
         const msg = `Connection failed. Retry...`;
@@ -50,6 +49,7 @@ class Socket {
 
     Socket._socket.onopen = (e) => {
       toast.stickySuccess("ws", "Connected to server.");
+      Socket.initializing = false;
       Socket.callbacks.open?.forEach((callback) => {
         callback(e);
       });
@@ -85,7 +85,9 @@ class Socket {
       setTimeout(() => Socket.send(message), 1000);
       return;
     }
-    if (!Socket.isConnected()) Socket.tryInitialize();
+    if (!Socket.isConnected()) {
+      Socket.tryInitialize();
+    }
 
     if (Socket.isConnected()) {
       Socket._socket?.send(message);
