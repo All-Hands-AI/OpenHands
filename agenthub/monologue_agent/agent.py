@@ -3,6 +3,7 @@ from opendevin.agent import Agent
 from opendevin.state import State
 from opendevin.llm.llm import LLM
 from opendevin.schema import ActionType, ObservationType
+from opendevin.exceptions import AgentNoInstructionError
 
 from opendevin.action import (
     Action,
@@ -131,14 +132,14 @@ class MonologueAgent(Agent):
         - task (str): The initial goal statement provided by the user
 
         Raises:
-        - ValueError: If task is not provided
+        - AgentNoInstructionError: If task is not provided
         """
 
         if self._initialized:
             return
 
         if task is None or task == '':
-            raise ValueError('Instruction must be provided')
+            raise AgentNoInstructionError()
         self.monologue = Monologue()
         self.memory = LongTermMemory()
 

@@ -47,8 +47,8 @@ function Workspace() {
             base: "w-full",
             tabList:
               "w-full relative rounded-none bg-neutral-900 p-0 gap-0 h-[36px] flex",
-            tab: "rounded-none border-neutral-600 data-[selected=true]:bg-neutral-800",
-            tabContent: "group-data-[selected=true]:text-neutral-50",
+            tab: "rounded-none border-neutral-600 data-[selected=true]:bg-neutral-800 justify-start",
+            tabContent: "group-data-[selected=true]:text-white",
           }}
           size="lg"
           onSelectionChange={(v) => {

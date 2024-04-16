@@ -7,7 +7,7 @@ Linux:
 ```
 curl -fsSL https://ollama.com/install.sh | sh
 ```
-Windows or macOS: 
+Windows or macOS:
 
 - Download from [here](https://ollama.com/download/)
 
@@ -60,30 +60,10 @@ sudo systemctl stop ollama
 
 For more info go [here](https://github.com/ollama/ollama/blob/main/docs/faq.md)
 
-## 3. Follow the default installation of OpenDevin:
-```
-git clone git@github.com:OpenDevin/OpenDevin.git
-```
-or 
-```
-git clone git@github.com:<YOUR-USERNAME>/OpenDevin.git
-```
+## 3. Start OpenDevin
 
-then 
-```
-cd OpenDevin
-```
-
-## 4. Run setup commands:
-```
-make build
-make setup-config
-```
-
-## 5. Modify config file:
-
-- After running `make setup-config` you will see a generated file `OpenDevin/config.toml`.
-- Open this file and modify it to your needs based on this template:
+Use the instructions in [README.md](/README.md) to start OpenDevin using Docker.
+When running `docker run`, add the following environment variables using `-e`:
 
 ```
 LLM_API_KEY="ollama"
@@ -92,20 +72,37 @@ LLM_EMBEDDING_MODEL="local"
 LLM_BASE_URL="http://localhost:<port_number>"
 WORKSPACE_DIR="./workspace"
 ```
-Notes: 
-- The API key should be set to `"ollama"` 
-- The base url needs to be `localhost` 
+Notes:
+- The API key should be set to `"ollama"`
+- The base url needs to be `localhost`
 - By default ollama port is `11434` unless you set it
 - `model_name` needs to be the entire model name
     - Example: `LLM_MODEL="ollama/llama2:13b-chat-q4_K_M"`
 
-## 6. Start OpenDevin:
+You should now be able to connect to `http://localhost:3001/` with your local model running!
 
-At this point everything should be set up and working properly. 
-1. Start by running the ollama server using the method outlined above
-2. Run `make build` in your terminal `~/OpenDevin/`
-3. Run `make run` in your terminal 
-4. If that fails try running the server and front end in sepparate terminals:
- - In the first terminal `make start-backend`
- - In the second terminal `make start-frontend`
-5. you should now be able to connect to `http://localhost:3001/` with your local model running!
+
+## Additional Notes for WSL2 Users:
+
+1. If you encounter the following error during setup: `Exception: Failed to create opendevin user in sandbox: b'useradd: UID 0 is not unique\n'`
+You can resolve it by running:
+    ```
+    export SANDBOX_USER_ID=1000
+    ```
+
+2. If you face issues running Poetry even after installing it during the build process, you may need to add its binary path to your environment:
+    ```
+    export PATH="$HOME/.local/bin:$PATH"
+    ```
+
+3. If you experiencing issues related to networking, such as `NoneType object has no attribute 'request'` when executing `make run`, you may need to configure your WSL2 networking settings. Follow these steps:
+   - Open or create the `.wslconfig` file located at `C:\Users\%username%\.wslconfig` on your Windows host machine.
+   - Add the following configuration to the `.wslconfig` file:
+        ```
+        [wsl2]
+        networkingMode=mirrored
+        localhostForwarding=true
+        ```
+   - Save the `.wslconfig` file.
+   - Restart WSL2 completely by exiting any running WSL2 instances and executing the command `wsl --shutdown` in your command prompt or terminal.
+   - After restarting WSL, attempt to execute `make run` again. The networking issue should be resolved.
