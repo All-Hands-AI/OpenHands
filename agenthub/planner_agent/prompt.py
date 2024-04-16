@@ -5,6 +5,7 @@ from opendevin.controller.agent_controller import print_with_color
 from opendevin.plan import Plan
 from opendevin.action import Action, action_from_dict
 from opendevin.observation import Observation
+from opendevin.schema import ActionType
 
 from opendevin.action import (
     NullAction,
@@ -26,17 +27,17 @@ from opendevin.observation import (
 )
 
 ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
-    "run": CmdRunAction,
-    "kill": CmdKillAction,
-    "browse": BrowseURLAction,
-    "read": FileReadAction,
-    "write": FileWriteAction,
-    "recall": AgentRecallAction,
-    "think": AgentThinkAction,
-    "summarize": AgentSummarizeAction,
-    "finish": AgentFinishAction,
-    "add_task": AddTaskAction,
-    "modify_task": ModifyTaskAction,
+    ActionType.RUN: CmdRunAction,
+    ActionType.KILL: CmdKillAction,
+    ActionType.BROWSE: BrowseURLAction,
+    ActionType.READ: FileReadAction,
+    ActionType.WRITE: FileWriteAction,
+    ActionType.RECALL: AgentRecallAction,
+    ActionType.THINK: AgentThinkAction,
+    ActionType.SUMMARIZE: AgentSummarizeAction,
+    ActionType.FINISH: AgentFinishAction,
+    ActionType.ADD_TASK: AddTaskAction,
+    ActionType.MODIFY_TASK: ModifyTaskAction,
 }
 
 HISTORY_SIZE = 10
@@ -53,9 +54,9 @@ You've been given the following task:
 ## Plan
 As you complete this task, you're building a plan and keeping
 track of your progress. Here's a JSON representation of your plan:
-```json
+
 %(plan)s
-```
+
 
 %(plan_status)s
 
@@ -84,9 +85,9 @@ you MUST respond with the `finish` action.
 Here is a recent history of actions you've taken in service of this plan,
 as well as observations you've made. This only includes the MOST RECENT
 ten actions--more happened before that.
-```json
+
 %(history)s
-```
+
 
 Your most recent action is at the bottom of that history.
 
@@ -118,7 +119,7 @@ It must be an object, and it must contain two fields:
 * `modify_task` - close a task. Arguments:
   * `id` - the ID of the task to close
   * `state` - set to 'in_progress' to start the task, 'completed' to finish it, 'verified' to assert that it was successful, 'abandoned' to give up on it permanently, or `open` to stop working on it for now.
-* `finish` - if ALL of your tasks and subtasks have been verified or abanded, and you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
+* `finish` - if ALL of your tasks and subtasks have been verified or abandoned, and you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
 You MUST take time to think in between read, write, run, browse, and recall actions.
 You should never act twice in a row without thinking. But if your last several
@@ -129,7 +130,20 @@ What is your next thought or action? Again, you must reply with JSON, and only w
 %(hint)s
 """
 
-def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
+
+def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
+    """
+    Gets the prompt for the planner agent.
+    Formatted with the most recent action-observation pairs, current task, and hint based on last action
+
+    Parameters:
+    - plan (Plan): The original plan outlined by the user with LLM defined tasks
+    - history (List[Tuple[Action, Observation]]): List of corresponding action-observation pairs
+
+    Returns:
+    - str: The formatted string prompt with historical values
+    """
+
     plan_str = json.dumps(plan.task.to_dict(), indent=2)
     sub_history = history[-HISTORY_SIZE:]
     history_dicts = []
@@ -139,10 +153,16 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
             history_dicts.append(action.to_dict())
             latest_action = action
         if not isinstance(observation, NullObservation):
-            history_dicts.append(observation.to_dict())
+            observation_dict = observation.to_dict()
+            if (
+                'extras' in observation_dict
+                and 'screenshot' in observation_dict['extras']
+            ):
+                del observation_dict['extras']['screenshot']
+            history_dicts.append(observation_dict)
     history_str = json.dumps(history_dicts, indent=2)
 
-    hint = ""
+    hint = ''
     current_task = plan.get_current_task()
     if current_task is not None:
         plan_status = f"You're currently working on this task:\n{current_task.goal}."
@@ -155,30 +175,30 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
     latest_action_id = latest_action.to_dict()['action']
 
     if current_task is not None:
-        if latest_action_id == "":
+        if latest_action_id == '':
             hint = "You haven't taken any actions yet. Start by using `ls` to check out what files you're working with."
-        elif latest_action_id == "run":
-            hint = "You should think about the command you just ran, what output it gave, and how that affects your plan."
-        elif latest_action_id == "read":
-            hint = "You should think about the file you just read, what you learned from it, and how that affects your plan."
-        elif latest_action_id == "write":
-            hint = "You just changed a file. You should think about how it affects your plan."
-        elif latest_action_id == "browse":
-            hint = "You should think about the page you just visited, and what you learned from it."
-        elif latest_action_id == "think":
+        elif latest_action_id == ActionType.RUN:
+            hint = 'You should think about the command you just ran, what output it gave, and how that affects your plan.'
+        elif latest_action_id == ActionType.READ:
+            hint = 'You should think about the file you just read, what you learned from it, and how that affects your plan.'
+        elif latest_action_id == ActionType.WRITE:
+            hint = 'You just changed a file. You should think about how it affects your plan.'
+        elif latest_action_id == ActionType.BROWSE:
+            hint = 'You should think about the page you just visited, and what you learned from it.'
+        elif latest_action_id == ActionType.THINK:
             hint = "Look at your last thought in the history above. What does it suggest? Don't think anymore--take action."
-        elif latest_action_id == "recall":
-            hint = "You should think about the information you just recalled, and how it should affect your plan."
-        elif latest_action_id == "add_task":
-            hint = "You should think about the next action to take."
-        elif latest_action_id == "modify_task":
-            hint = "You should think about the next action to take."
-        elif latest_action_id == "summarize":
-            hint = ""
-        elif latest_action_id == "finish":
-            hint = ""
+        elif latest_action_id == ActionType.RECALL:
+            hint = 'You should think about the information you just recalled, and how it should affect your plan.'
+        elif latest_action_id == ActionType.ADD_TASK:
+            hint = 'You should think about the next action to take.'
+        elif latest_action_id == ActionType.MODIFY_TASK:
+            hint = 'You should think about the next action to take.'
+        elif latest_action_id == ActionType.SUMMARIZE:
+            hint = ''
+        elif latest_action_id == ActionType.FINISH:
+            hint = ''
 
-    print_with_color("HINT:\n" + hint, "INFO")
+    print_with_color('HINT:\n' + hint, 'INFO')
     return prompt % {
         'task': plan.main_goal,
         'plan': plan_str,
@@ -187,9 +207,19 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]):
         'plan_status': plan_status,
     }
 
+
 def parse_response(response: str) -> Action:
-    json_start = response.find("{")
-    json_end = response.rfind("}") + 1
+    """
+    Parses the model output to find a valid action to take
+
+    Parameters:
+    - response (str): A response from the model that potentially contains an Action.
+
+    Returns:
+    - Action: A valid next action to perform from model output
+    """
+    json_start = response.find('{')
+    json_end = response.rfind('}') + 1
     response = response[json_start:json_end]
     action_dict = json.loads(response)
     if 'contents' in action_dict:
@@ -197,4 +227,3 @@ def parse_response(response: str) -> Action:
         action_dict['content'] = action_dict.pop('contents')
     action = action_from_dict(action_dict)
     return action
-

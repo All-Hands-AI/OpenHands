@@ -1,0 +1,52 @@
+[tool.poetry]
+name = "opendevin"
+version = "0.1.0"
+description = "OpenDevin: Code Less, Make More"
+authors = ["OpenDevin"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/OpenDevin/OpenDevin"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+datasets = "*"
+pandas = "*"
+litellm = "*"
+google-generativeai = "*" # To use litellm with Gemini Pro API
+termcolor = "*"
+seaborn = "*"
+docker = "*"
+fastapi = "*"
+toml = "*"
+uvicorn = "*"
+types-toml = "*"
+numpy = "*"
+json-repair = "*"
+playwright = "*"
+pexpect = "*"
+
+[tool.poetry.group.llama-index.dependencies]
+llama-index = "*"
+llama-index-vector-stores-chroma = "*"
+chromadb = "*"
+llama-index-embeddings-huggingface = "*"
+llama-index-embeddings-azure-openai = "*"
+llama-index-embeddings-ollama = "*"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "0.3.7"
+mypy = "1.9.0"
+pre-commit = "3.7.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = "*"
+
+[tool.poetry.group.evaluation.dependencies]
+torch = "*"
+
+[tool.autopep8]
+ignore = [ "E501" ]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

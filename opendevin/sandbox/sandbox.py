@@ -1,333 +1,148 @@
-import atexit
-import os
 import select
 import sys
-import time
-import uuid
-from collections import namedtuple
-from typing import Dict, List, Tuple
-
-import docker
-import concurrent.futures
-
-from opendevin import config
-
-InputType = namedtuple("InputType", ["content"])
-OutputType = namedtuple("OutputType", ["content"])
-
-DIRECTORY_REWRITE = config.get_or_default(
-    "DIRECTORY_REWRITE", ""
-)  # helpful for docker-in-docker scenarios
-
-CONTAINER_IMAGE = config.get_or_default("SANDBOX_CONTAINER_IMAGE", "ghcr.io/opendevin/sandbox")
-
-# FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
-# How do we make this more flexible?
-RUN_AS_DEVIN = config.get_or_default("RUN_AS_DEVIN", "false").lower() != "false"
-USER_ID = 1000
-if config.get_or_none("SANDBOX_USER_ID") is not None:
-    USER_ID = int(config.get_or_default("SANDBOX_USER_ID", ""))
-elif hasattr(os, "getuid"):
-    USER_ID = os.getuid()
+from abc import ABC, abstractmethod
+from typing import Dict
+from typing import Tuple
 
 
 class BackgroundCommand:
+    """
+    Represents a background command execution
+    """
+
     def __init__(self, id: int, command: str, result, pid: int):
+        """
+        Initialize a BackgroundCommand instance.
+
+        Args:
+            id (int): The identifier of the command.
+            command (str): The command to be executed.
+            result: The result of the command execution.
+            pid (int): The process ID (PID) of the command.
+        """
         self.id = id
         self.command = command
         self.result = result
         self.pid = pid
 
     def parse_docker_exec_output(self, logs: bytes) -> Tuple[bytes, bytes]:
-        res = b""
-        tail = b""
+        """
+            When you execute a command using `exec` in a docker container, the output produced will be in bytes. this function parses the output of a Docker exec command.
+
+        Example:
+            Considering you have a docker container named `my_container` up and running
+            $ docker exec my_container echo "Hello OpenDevin!"
+            >> b'\x00\x00\x00\x00\x00\x00\x00\x13Hello OpenDevin!'
+
+            Such binary logs will be processed by this function.
+
+            The function handles message types, padding, and byte order to create a usable result. The primary goal is to convert raw container logs into a more structured format for further analysis or display.
+
+            The function also returns a tail of bytes to ensure that no information is lost. It is a way to handle edge cases and maintain data integrity.
+
+            >> output_bytes = b'\x00\x00\x00\x00\x00\x00\x00\x13Hello OpenDevin!'
+            >> parsed_output, remaining_bytes = parse_docker_exec_output(output_bytes)
+
+            >> print(parsed_output)
+            b'Hello OpenDevin!'
+
+            >> print(remaining_bytes)
+            b''
+
+        Args:
+            logs (bytes): The raw output logs of the command.
+
+        Returns:
+            Tuple[bytes, bytes]: A tuple containing the parsed output and any remaining data.
+        """
+        res = b''
+        tail = b''
         i = 0
         byte_order = sys.byteorder
         while i < len(logs):
-            prefix = logs[i : i + 8]
+            prefix = logs[i: i + 8]
             if len(prefix) < 8:
                 msg_type = prefix[0:1]
-                if msg_type in [b"\x00", b"\x01", b"\x02", b"\x03"]:
+                if msg_type in [b'\x00', b'\x01', b'\x02', b'\x03']:
                     tail = prefix
                 break
 
             msg_type = prefix[0:1]
             padding = prefix[1:4]
             if (
-                msg_type in [b"\x00", b"\x01", b"\x02", b"\x03"]
-                and padding == b"\x00\x00\x00"
+                    msg_type in [b'\x00', b'\x01', b'\x02', b'\x03']
+                    and padding == b'\x00\x00\x00'
             ):
                 msg_length = int.from_bytes(prefix[4:8], byteorder=byte_order)
-                res += logs[i + 8 : i + 8 + msg_length]
+                res += logs[i + 8: i + 8 + msg_length]
                 i += 8 + msg_length
             else:
-                res += logs[i : i + 1]
+                res += logs[i: i + 1]
                 i += 1
         return res, tail
 
     def read_logs(self) -> str:
+        """
+        Read and decode the logs of the command.
+
+        This function continuously reads the standard output of a subprocess and
+        processes the output using the parse_docker_exec_output function to handle
+        binary log messages. It concatenates and decodes the output bytes into a
+        string, ensuring that no partial messages are lost during reading.
+
+        Dummy Example:
+
+        >> cmd = 'echo "Hello OpenDevin!"'
+        >> result = subprocess.Popen(
+            cmd, shell=True, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, text=True, cwd='.'
+            )
+        >> bg_cmd = BackgroundCommand(id, cmd = cmd, result = result, pid)
+
+        >> logs = bg_cmd.read_logs()
+        >> print(logs)
+        Hello OpenDevin!
+
+        Returns:
+            str: The decoded logs(string) of the command.
+        """
         # TODO: get an exit code if process is exited
-        logs = b""
-        last_remains = b""
+        logs = b''
+        last_remains = b''
         while True:
-            ready_to_read, _, _ = select.select([self.result.output], [], [], 0.1)  # type: ignore[has-type]
+            ready_to_read, _, _ = select.select(
+                [self.result.output], [], [], 0.1)  # type: ignore[has-type]
             if ready_to_read:
                 data = self.result.output.read(4096)  # type: ignore[has-type]
                 if not data:
                     break
-                chunk, last_remains = self.parse_docker_exec_output(last_remains + data)
+                chunk, last_remains = self.parse_docker_exec_output(
+                    last_remains + data)
                 logs += chunk
             else:
                 break
-        return (logs + last_remains).decode("utf-8", errors="replace")
+        return (logs + last_remains).decode('utf-8', errors='replace')
 
 
-class DockerInteractive:
-    closed = False
-    cur_background_id = 0
+class Sandbox(ABC):
     background_commands: Dict[int, BackgroundCommand] = {}
 
-    def __init__(
-        self,
-        workspace_dir: str | None = None,
-        container_image: str | None = None,
-        timeout: int = 120,
-        id: str | None = None,
-    ):
-        if id is not None:
-            self.instance_id = id
-        else:
-            self.instance_id = str(uuid.uuid4())
-        if workspace_dir is not None:
-            os.makedirs(workspace_dir, exist_ok=True)
-            # expand to absolute path
-            self.workspace_dir = os.path.abspath(workspace_dir)
-        else:
-            self.workspace_dir = os.getcwd()
-            print(f"workspace unspecified, using current directory: {workspace_dir}")
-        if DIRECTORY_REWRITE != "":
-            parts = DIRECTORY_REWRITE.split(":")
-            self.workspace_dir = self.workspace_dir.replace(parts[0], parts[1])
-            print("Rewriting workspace directory to:", self.workspace_dir)
-
-        # TODO: this timeout is actually essential - need a better way to set it
-        # if it is too short, the container may still waiting for previous
-        # command to finish (e.g. apt-get update)
-        # if it is too long, the user may have to wait for a unnecessary long time
-        self.timeout: int = timeout
-
-        if container_image is None:
-            self.container_image = CONTAINER_IMAGE
-        else:
-            self.container_image = container_image
-
-        self.container_name = f"sandbox-{self.instance_id}"
-
-        self.restart_docker_container()
-        if RUN_AS_DEVIN:
-            self.setup_devin_user()
-        atexit.register(self.cleanup)
-
-    def setup_devin_user(self):
-        exit_code, logs = self.container.exec_run(
-            [
-                "/bin/bash",
-                "-c",
-                f'useradd --shell /bin/bash -u {USER_ID} -o -c "" -m devin',
-            ],
-            workdir="/workspace",
-        )
-
-    def get_exec_cmd(self, cmd: str) -> List[str]:
-        if RUN_AS_DEVIN:
-            return ["su", "devin", "-c", cmd]
-        else:
-            return ["/bin/bash", "-c", cmd]
-
-    def read_logs(self, id) -> str:
-        if id not in self.background_commands:
-            raise ValueError("Invalid background command id")
-        bg_cmd = self.background_commands[id]
-        return bg_cmd.read_logs()
-
+    @abstractmethod
     def execute(self, cmd: str) -> Tuple[int, str]:
-        # TODO: each execute is not stateful! We need to keep track of the current working directory
-        def run_command(container, command):
-            return container.exec_run(command,workdir="/workspace")
-        # Use ThreadPoolExecutor to control command and set timeout
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(run_command, self.container, self.get_exec_cmd(cmd))
-            try:
-                exit_code, logs = future.result(timeout=self.timeout)
-            except concurrent.futures.TimeoutError:
-                print("Command timed out, killing process...")
-                pid = self.get_pid(cmd)
-                if pid is not None:
-                    self.container.exec_run(
-                        f"kill -9 {pid}", workdir="/workspace"
-                    )
-                return -1, f"Command: \"{cmd}\" timed out"
-        return exit_code, logs.decode("utf-8")
+        pass
 
-    def execute_in_background(self, cmd: str) -> BackgroundCommand:
-        result = self.container.exec_run(
-            self.get_exec_cmd(cmd), socket=True, workdir="/workspace"
-        )
-        result.output._sock.setblocking(0)
-        pid = self.get_pid(cmd)
-        bg_cmd = BackgroundCommand(self.cur_background_id, cmd, result, pid)
-        self.background_commands[bg_cmd.id] = bg_cmd
-        self.cur_background_id += 1
-        return bg_cmd
+    @abstractmethod
+    def execute_in_background(self, cmd: str):
+        pass
 
-    def get_pid(self, cmd):
-        exec_result = self.container.exec_run("ps aux")
-        processes = exec_result.output.decode('utf-8').splitlines()
-        cmd = " ".join(self.get_exec_cmd(cmd))
+    @abstractmethod
+    def kill_background(self, id: int):
+        pass
 
-        for process in processes:
-            if cmd in process:
-                pid = process.split()[1] # second column is the pid
-                return pid
-        return None
+    @abstractmethod
+    def read_logs(self, id: int) -> str:
+        pass
 
-    def kill_background(self, id: int) -> BackgroundCommand:
-        if id not in self.background_commands:
-            raise ValueError("Invalid background command id")
-        bg_cmd = self.background_commands[id]
-        if bg_cmd.pid is not None:
-            self.container.exec_run(
-                f"kill -9 {bg_cmd.pid}", workdir="/workspace"
-            )
-        bg_cmd.result.output.close()
-        self.background_commands.pop(id)
-        return bg_cmd
-
+    @abstractmethod
     def close(self):
-        self.stop_docker_container()
-        self.closed = True
-
-    def stop_docker_container(self):
-
-        # Initialize docker client. Throws an exception if Docker is not reachable.
-        try:
-            docker_client = docker.from_env()
-        except docker.errors.DockerException as e:
-            print('Please check Docker is running using `docker ps`.')
-            print(f"Error! {e}", flush=True)
-            raise e
-
-        try:
-            container = docker_client.containers.get(self.container_name)
-            container.stop()
-            container.remove()
-            elapsed = 0
-            while container.status != "exited":
-                time.sleep(1)
-                elapsed += 1
-                if elapsed > self.timeout:
-                    break
-                container = docker_client.containers.get(self.container_name)
-        except docker.errors.NotFound:
-            pass
-
-    def restart_docker_container(self):
-        try:
-            self.stop_docker_container()
-        except docker.errors.DockerException as e:
-            print(f"Failed to stop container: {e}")
-            raise e 
-
-        try:
-            # Initialize docker client. Throws an exception if Docker is not reachable.
-            docker_client = docker.from_env()
-
-            # start the container
-            self.container = docker_client.containers.run(
-                self.container_image,
-                command="tail -f /dev/null",
-                network_mode="host",
-                working_dir="/workspace",
-                name=self.container_name,
-                detach=True,
-                volumes={self.workspace_dir: {"bind": "/workspace", "mode": "rw"}},
-            )
-        except Exception as e:
-            print(f"Failed to start container: {e}")
-            raise e
-
-        # wait for container to be ready
-        elapsed = 0
-        while self.container.status != "running":
-            if self.container.status == "exited":
-                print("container exited")
-                print("container logs:")
-                print(self.container.logs())
-                break
-            time.sleep(1)
-            elapsed += 1
-            self.container = docker_client.containers.get(self.container_name)
-            if elapsed > self.timeout:
-                break
-        if self.container.status != "running":
-            raise Exception("Failed to start container")
-
-    # clean up the container, cannot do it in __del__ because the python interpreter is already shutting down
-    def cleanup(self):
-        if self.closed:
-            return
-        self.container.remove(force=True)
-
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Interactive Docker container")
-    parser.add_argument(
-        "-d",
-        "--directory",
-        type=str,
-        default=None,
-        help="The directory to mount as the workspace in the Docker container.",
-    )
-    args = parser.parse_args()
-
-    try:
-        docker_interactive = DockerInteractive(
-            workspace_dir=args.directory,
-        )
-    except Exception as e:
-        print(f"Failed to start Docker container: {e}")
-        sys.exit(1)
-
-    print("Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
-
-    bg_cmd = docker_interactive.execute_in_background(
-        "while true; do echo 'dot ' && sleep 1; done"
-    )
-
-    sys.stdout.flush()
-    try:
-        while True:
-            try:
-                user_input = input(">>> ")
-            except EOFError:
-                print("\nExiting...")
-                break
-            if user_input.lower() == "exit":
-                print("Exiting...")
-                break
-            if user_input.lower() == "kill":
-                docker_interactive.kill_background(bg_cmd.id)
-                print("Background process killed")
-                continue
-            exit_code, output = docker_interactive.execute(user_input)
-            print("exit code:", exit_code)
-            print(output + "\n", end="")
-            if bg_cmd.id in docker_interactive.background_commands:
-                logs = docker_interactive.read_logs(bg_cmd.id)
-                print("background logs:", logs, "\n")
-            sys.stdout.flush()
-    except KeyboardInterrupt:
-        print("\nExiting...")
-    docker_interactive.close()
+        pass

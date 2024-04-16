@@ -1,59 +1,66 @@
-import React, { useState } from "react";
 import { Tab, Tabs } from "@nextui-org/react";
-import Terminal from "./Terminal";
-import Planner from "./Planner";
-import CodeEditor from "./CodeEditor";
-import Browser from "./Browser";
-import { TabType, TabOption, AllTabs } from "../types/TabOption";
-import CmdLine from "../assets/cmd-line";
+import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { IoIosGlobe } from "react-icons/io";
+import { VscCode } from "react-icons/vsc";
 import Calendar from "../assets/calendar";
-import Earth from "../assets/earth";
-import Pencil from "../assets/pencil";
-
-const tabData = {
-  [TabOption.TERMINAL]: {
-    name: "Terminal",
-    icon: <CmdLine />,
-    component: <Terminal key="terminal" />,
-  },
-  [TabOption.PLANNER]: {
-    name: "Planner",
-    icon: <Calendar />,
-    component: <Planner key="planner" />,
-  },
-  [TabOption.CODE]: {
-    name: "Code Editor",
-    icon: <Pencil />,
-    component: <CodeEditor key="code" />,
-  },
-  [TabOption.BROWSER]: {
-    name: "Browser",
-    icon: <Earth />,
-    component: <Browser key="browser" />,
-  },
-};
+import { I18nKey } from "../i18n/declaration";
+import { AllTabs, TabOption, TabType } from "../types/TabOption";
+import Browser from "./Browser";
+import CodeEditor from "./CodeEditor";
+import Planner from "./Planner";
 
 function Workspace() {
-  const [activeTab, setActiveTab] = useState<TabType>(TabOption.TERMINAL);
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState<TabType>(TabOption.CODE);
+
+  const tabData = useMemo(
+    () => ({
+      [TabOption.PLANNER]: {
+        name: t(I18nKey.WORKSPACE$PLANNER_TAB_LABEL),
+        icon: <Calendar />,
+        component: <Planner key="planner" />,
+      },
+      [TabOption.CODE]: {
+        name: t(I18nKey.WORKSPACE$CODE_EDITOR_TAB_LABEL),
+        icon: <VscCode size={18} />,
+        component: <CodeEditor key="code" />,
+      },
+      [TabOption.BROWSER]: {
+        name: t(I18nKey.WORKSPACE$BROWSER_TAB_LABEL),
+        icon: <IoIosGlobe size={18} />,
+        component: <Browser key="browser" />,
+      },
+    }),
+    [t],
+  );
 
   return (
-    <>
-      <div className="w-full p-4 text-2xl font-bold select-none">
-        OpenDevin Workspace
-      </div>
-      <div role="tablist" className="tabs tabs-bordered tabs-lg ">
+    <div className="flex flex-col min-h-0 grow">
+      <div
+        role="tablist"
+        className="tabs tabs-bordered tabs-lg border-b border-neutral-600 flex"
+      >
         <Tabs
-          variant="underlined"
+          disableCursorAnimation
+          classNames={{
+            base: "w-full",
+            tabList:
+              "w-full relative rounded-none bg-neutral-900 p-0 gap-0 h-[36px] flex",
+            tab: "rounded-none border-neutral-600 data-[selected=true]:bg-neutral-800 justify-start",
+            tabContent: "group-data-[selected=true]:text-white",
+          }}
           size="lg"
           onSelectionChange={(v) => {
             setActiveTab(v as TabType);
           }}
         >
-          {AllTabs.map((tab) => (
+          {AllTabs.map((tab, index) => (
             <Tab
               key={tab}
+              className={`flex-grow ${index + 1 === AllTabs.length ? "" : "border-r"}`}
               title={
-                <div className="flex items-center space-x-2">
+                <div className="flex grow items-center gap-2 justify-center text-xs">
                   {tabData[tab].icon}
                   <span>{tabData[tab].name}</span>
                 </div>
@@ -62,10 +69,10 @@ function Workspace() {
           ))}
         </Tabs>
       </div>
-      <div className="h-full w-full p-4 bg-bg-workspace">
-        {tabData[activeTab].component}
+      <div className="grow w-full bg-neutral-800 flex min-h-0">
+        {tabData[activeTab as TabType].component}
       </div>
-    </>
+    </div>
   );
 }
 export default Workspace;

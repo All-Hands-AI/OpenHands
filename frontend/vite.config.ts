@@ -15,13 +15,15 @@ export default defineConfig({
   // depending on your application, base can also be "/"
   base: "",
   plugins: [react(), viteTsconfigPaths()],
+  clearScreen: false,
   server: {
-    port: 3001,
+    port: process.env.FRONTEND_PORT
+      ? Number.parseInt(process.env.FRONTEND_PORT, 10)
+      : 3001,
     proxy: {
       "/api": {
         target: `http://${BACKEND_HOST}/`,
         changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/api/, ""),
       },
       "/ws": {
         target: `ws://${BACKEND_HOST}/`,

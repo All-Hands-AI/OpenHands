@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Message } from "../state/chatSlice";
 /**
  * hook to be used for typing chat effect
  */
@@ -7,9 +8,24 @@ export const useTypingEffect = (
   {
     loop = false,
     playbackRate = 0.1,
-  }: { loop?: boolean; playbackRate?: number } = {
+    setTypingActive = () => {},
+    addAssistantMessageToChat = () => {},
+    takeOneAndType = () => {},
+    typeThis = { content: "", sender: "assistant" },
+  }: {
+    loop?: boolean;
+    playbackRate?: number;
+    setTypingActive?: (bool: boolean) => void;
+    addAssistantMessageToChat?: (msg: Message) => void;
+    takeOneAndType?: () => void;
+    typeThis?: Message;
+  } = {
     loop: false,
     playbackRate: 0.1,
+    setTypingActive: () => {},
+    addAssistantMessageToChat: () => {},
+    takeOneAndType: () => {},
+    typeThis: { content: "", sender: "assistant" },
   },
 ) => {
   // eslint-disable-next-line prefer-const
@@ -31,6 +47,9 @@ export const useTypingEffect = (
       stringIndex++;
       if (stringIndex === strings.length) {
         if (!loop) {
+          setTypingActive(false);
+          addAssistantMessageToChat(typeThis);
+          takeOneAndType();
           return;
         }
         stringIndex = 0;
@@ -52,6 +71,7 @@ export const useTypingEffect = (
     return () => {
       window.clearTimeout(timeoutId);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const nonBreakingSpace = "\u00A0";

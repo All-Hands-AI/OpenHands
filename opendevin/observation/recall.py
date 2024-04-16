@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from typing import List
 
 from .base import Observation
+from opendevin.schema import ObservationType
+
 
 @dataclass
 class AgentRecallObservation(Observation):
@@ -10,12 +12,9 @@ class AgentRecallObservation(Observation):
     """
 
     memories: List[str]
-    role: str = "assistant"
-    observation : str = "recall"
+    role: str = 'assistant'
+    observation: str = ObservationType.RECALL
 
     @property
     def message(self) -> str:
-        return "The agent recalled memories."
-
-
-
+        return 'The agent recalled memories.'
