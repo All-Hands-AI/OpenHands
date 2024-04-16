@@ -138,6 +138,7 @@ def select_file(file: str):
         return Response(f'{{"error": "{error_msg}"}}', status_code=500)
     return {'code': content}
 
+
 @app.get('/')
 async def docs_redirect():
     response = RedirectResponse(url='/index.html')
