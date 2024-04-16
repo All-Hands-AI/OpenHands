@@ -18,6 +18,7 @@ class AddTaskAction(ExecutableAction):
 
     async def run(self, controller: 'AgentController') -> NullObservation:  # type: ignore
         controller.state.plan.add_subtask(self.parent, self.goal, self.subtasks)
+        return NullObservation('')
 
     @property
     def message(self) -> str:
