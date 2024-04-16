@@ -154,5 +154,11 @@ RUN if [ -n "$debug" ]; then set -eux; fi && \
     chmod a+x /docker-entrypoint.sh && \
     rm -rf /var/lib/apt/lists/*
 
+ARG devin_ws_port
+ARG jupyter_port
+
+EXPOSE $devin_ws_port
+EXPOSE $jupyter_port
+
 ENTRYPOINT ["/docker-entrypoint.sh", "-c"]
 CMD "-m ${DEFAULT_CHAT_MODEL} -e ${DEFAULT_EMBEDDINGS_MODEL} --"
