@@ -58,7 +58,11 @@ There is also [documentation for running with local models using ollama](./docs/
     make start-frontend
     ```
 
-### 6. Help
+### 6. LLM Debugging
+
+If you encounter any issues with the Language Model (LM) or you're simply curious, you can inspect the actual LLM prompts and responses. To do so, export DEBUG=1 in the environment and restart the backend. OpenDevin will then log the prompts and responses in the logs/llm/CURRENT_DATE directory, allowing you to identify the causes.
+
+### 7. Help
 
 - **Get Some Help:** Need assistance or information on available targets and commands? The help command provides all the necessary guidance to ensure a smooth experience with OpenDevin.
     ```bash
