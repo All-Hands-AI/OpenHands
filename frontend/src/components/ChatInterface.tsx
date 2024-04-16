@@ -101,7 +101,7 @@ function MessageList(): JSX.Element {
       ))}
 
       {typingActive && (
-        <div className="flex mb-2.5 pr-5 pl-5 bg-s">
+        <div className="flex mb-2.5 pr-5 pl-5 max-w-[90%]">
           <div className="flex mt-2.5 mb-0 min-w-0 ">
             <TypingChat />
           </div>
