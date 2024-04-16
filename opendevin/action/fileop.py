@@ -25,7 +25,6 @@ class FileReadAction(ExecutableAction):
 
     def run(self, controller) -> FileReadObservation:
         if isinstance(controller.command_manager.sandbox, E2BBox):
-            print('READING FROM PATH', self.path)
             content = controller.command_manager.sandbox.filesystem.read(
                 self.path)
             return FileReadObservation(path=self.path, content=content)
@@ -48,7 +47,6 @@ class FileWriteAction(ExecutableAction):
 
     def run(self, controller) -> FileWriteObservation:
         if isinstance(controller.command_manager.sandbox, E2BBox):
-            print('WRITING TO PATH', self.path)
             controller.command_manager.sandbox.filesystem.write(
                 self.path, self.content)
             return FileWriteObservation(content='', path=self.path)
