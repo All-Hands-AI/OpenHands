@@ -25,13 +25,6 @@ interface Props {
   onClose: () => void;
 }
 
-const cachedModels = JSON.parse(
-  localStorage.getItem("supportedModels") || "[]",
-);
-const cachedAgents = JSON.parse(
-  localStorage.getItem("supportedAgents") || "[]",
-);
-
 function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
   const settings = useSelector((state: RootState) => state.settings);
   const [model, setModel] = useState(settings[ArgConfigType.LLM_MODEL]);

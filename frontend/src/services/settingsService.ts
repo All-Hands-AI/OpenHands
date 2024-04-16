@@ -3,7 +3,6 @@ import store from "../store";
 import ActionType from "../types/ActionType";
 import Socket from "./socket";
 import { setAllSettings, setByKey } from "../state/settingsSlice";
-import { ResConfigurations } from "../types/ResponseType";
 import { ArgConfigType } from "../types/ConfigType";
 import toast from "../utils/toast";
 
@@ -32,12 +31,10 @@ type SettingsUpdateInfo = {
   needToSend: boolean;
 };
 
-export const getSettingsForInitialize = () => {
-  return {
+export const getSettingsForInitialize = () => ({
     LLM_MODEL: localStorage.getItem("LLM_MODEL") || undefined,
     AGENT: localStorage.getItem("AGENT") || undefined,
-  }
-}
+});
 
 // Function to merge and update settings
 export const mergeAndUpdateSettings = (
