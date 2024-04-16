@@ -7,9 +7,9 @@ import TreeView, {
 import { AiOutlineFolder } from "react-icons/ai";
 
 import {
+  IoIosArrowBack,
   IoIosArrowDown,
   IoIosArrowForward,
-  IoIosArrowBack,
   IoIosRefresh,
 } from "react-icons/io";
 
@@ -33,7 +33,12 @@ function RefreshButton({
 }: Omit<IconButtonProps, "icon">): React.ReactElement {
   return (
     <IconButton
-      icon={<IoIosRefresh size={20} />}
+      icon={
+        <IoIosRefresh
+          size={20}
+          className="text-neutral-400 hover:text-neutral-100 transition"
+        />
+      }
       onClick={onClick}
       ariaLabel={ariaLabel}
     />
@@ -46,7 +51,12 @@ function CloseButton({
 }: Omit<IconButtonProps, "icon">): React.ReactElement {
   return (
     <IconButton
-      icon={<IoIosArrowBack size={20} />}
+      icon={
+        <IoIosArrowBack
+          size={20}
+          className="text-neutral-400 hover:text-neutral-100 transition"
+        />
+      }
       onClick={onClick}
       ariaLabel={ariaLabel}
     />
@@ -68,6 +78,7 @@ function Files({
 
   useEffect(() => {
     getWorkspace().then((file) => dispatch(updateWorkspace(file)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (workspaceTree.length <= 1) {
@@ -82,7 +93,7 @@ function Files({
         <div className="flex mt-2 p-2 justify-end">
           <IoIosArrowForward
             size={20}
-            className="cursor-pointer"
+            className="cursor-pointer text-neutral-600 hover:text-neutral-100 transition"
             onClick={() => setExplorerOpen(true)}
           />
         </div>
@@ -111,7 +122,7 @@ function Files({
 
   return (
     <div className="bg-neutral-800 min-w-[228px] h-full border-r-1 border-r-neutral-600 flex flex-col transition-all ease-soft-spring">
-      <div className="flex p-2 items-center justify-between ">
+      <div className="flex p-2 items-center justify-between relative">
         <Accordion className="px-0" defaultExpandedKeys={["1"]} isCompact>
           <AccordionItem
             classNames={{
@@ -126,20 +137,6 @@ function Files({
                 <span className="text-neutral-400 text-sm">
                   {workspaceFolder.name}
                 </span>
-                <div className="opacity-0 translate-y-[10px] transition-all ease-in-out group-hover:opacity-100 transform group-hover:-translate-y-0 flex h-[24px] items-center gap-1">
-                  <RefreshButton
-                    onClick={() =>
-                      getWorkspace().then((file) =>
-                        dispatch(updateWorkspace(file)),
-                      )
-                    }
-                    ariaLabel="Refresh"
-                  />
-                  <CloseButton
-                    onClick={() => setExplorerOpen(false)}
-                    ariaLabel="Close Explorer"
-                  />
-                </div>
               </div>
             }
             className="editor-accordion"
@@ -185,6 +182,18 @@ function Files({
             </div>
           </AccordionItem>
         </Accordion>
+        <div className="transform flex h-[24px] items-center gap-1 absolute top-2 right-2">
+          <RefreshButton
+            onClick={() =>
+              getWorkspace().then((file) => dispatch(updateWorkspace(file)))
+            }
+            ariaLabel="Refresh"
+          />
+          <CloseButton
+            onClick={() => setExplorerOpen(false)}
+            ariaLabel="Close Explorer"
+          />
+        </div>
       </div>
     </div>
   );
