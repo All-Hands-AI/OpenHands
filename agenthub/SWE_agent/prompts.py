@@ -130,24 +130,22 @@ It is crucial you use the format provided as the output will be parsed automatic
 '''
 
 
-def file_info(dir: str, file: str, line: int):
-    res = 'CURRENT WORKSPACE:\n'
-    res += f'Working Directory: {dir}'
+def file_info(file: str, line: int):
     if file:
-        res += f'''Open File: {file} on line {line}
+        return f'''CURRENT WORKSPACE:
+    Open File: {file} on line {line}
     You can use these commands with the current file:
     Navigation: `scroll_up`, `scroll_down`, and `goto <line>`
     Modification: `edit <start_line> <end_line> <changes>`
     '''
-    return res
 
 
-def STEP_PROMPT(task, dir, file, line_num): return f'''
+def STEP_PROMPT(task, file, line_num): return f'''
 {RESPONSE_FORMAT}
 You are currently trying to complete this task:
 {task}
 
-{file_info(dir, file, line_num)}
+{file_info(file, line_num)}
 
 Keep all of the guidelines above in mind when you are thinking and making code.
 Please come up with a thought and action based on your current task and latest steps.

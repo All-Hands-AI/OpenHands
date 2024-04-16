@@ -112,7 +112,7 @@ class AgentController:
     async def start_loop(self, task: str):
         finished = False
         plan = Plan(task)
-        self.state = State(plan, self.workdir)
+        self.state = State(plan)
         for i in range(self.max_iterations):
             try:
                 finished = await self.step(i)

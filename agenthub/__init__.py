@@ -1,3 +1,4 @@
+from . import SWE_agent
 from dotenv import load_dotenv
 load_dotenv()
 

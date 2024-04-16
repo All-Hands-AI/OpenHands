@@ -47,9 +47,10 @@ class SWEAgent(Agent):
             temperature=0.05,
         )
         action_resp = resp['choices'][0]['message']['content']
-        print(f"\033[90m{resp['usage']}\033[0m")
-        print(
-            f'\n======== RAW ======\n\033[94m{action_resp}\033[0m\n==== END RAW ====\n')
+        print(f"\033[92m{resp['usage']}\033[0m")
+        print('\n======== RAW ======',
+              f'\033[94m{action_resp}\033[0m',
+              '==== END RAW ====\n', sep='\n')
         return parse_command(action_resp, self.cur_file, self.cur_line)
 
     def _update(self, action: Action):
@@ -73,7 +74,6 @@ class SWEAgent(Agent):
 
         prompt = STEP_PROMPT(
             state.plan.main_goal,
-            state.working_dir,
             self.cur_file,
             self.cur_line
         )
