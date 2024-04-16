@@ -52,15 +52,19 @@ const DISPLAY_MAP = new Map<string, string>([
   [ArgConfigType.LANGUAGE, "language"],
 ]);
 
-// Send settings to the server
-export function saveSettings(
-  newSettings: { [key: string]: string },
-  oldSettings: { [key: string]: string },
-  isInit: boolean = false,
-): void {
-  const { mergedSettings, updatedSettings, needToSend } = Object.keys(
-    newSettings,
-  ).reduce(
+type SettingsUpdateInfo = {
+  mergedSettings: Record<string, string>;
+  updatedSettings: Record<string, string>;
+  needToSend: boolean;
+};
+
+// Function to merge and update settings
+export const mergeAndUpdateSettings = (
+  newSettings: Record<string, string>,
+  oldSettings: Record<string, string>,
+  isInit: boolean,
+) =>
+  Object.keys(newSettings).reduce(
     (acc, key) => {
       const newValue = String(newSettings[key]);
       const oldValue = oldSettings[key];
@@ -71,6 +75,7 @@ export function saveSettings(
         acc.updatedSettings[key] = newValue;
         return acc;
       }
+
       if (!DISPLAY_MAP.has(key)) {
         acc.mergedSettings[key] = newValue;
         return acc;
@@ -91,13 +96,10 @@ export function saveSettings(
       mergedSettings: { ...oldSettings },
       updatedSettings: {},
       needToSend: false,
-    } as {
-      mergedSettings: { [key: string]: string };
-      updatedSettings: { [key: string]: string };
-      needToSend: boolean;
-    },
+    } as SettingsUpdateInfo,
   );
 
+const dispatchSettings = (updatedSettings: Record<string, string>) => {
   let i = 0;
   for (const [key, value] of Object.entries(updatedSettings)) {
     if (DISPLAY_MAP.has(key)) {
@@ -108,16 +110,38 @@ export function saveSettings(
       i += 1;
     }
   }
+};
+
+const sendSettings = (
+  mergedSettings: Record<string, string>,
+  needToSend: boolean,
+  isInit: boolean,
+) => {
+  const settingsCopy = { ...mergedSettings };
+  delete settingsCopy.ALL_SETTINGS;
+
+  if (needToSend || isInit) {
+    const event = { action: ActionType.INIT, args: settingsCopy };
+    const eventString = JSON.stringify(event);
+    store.dispatch(setInitialized(false));
+    Socket.send(eventString);
+  }
+};
+
+// Save and send settings to the server
+export function saveSettings(
+  newSettings: { [key: string]: string },
+  oldSettings: { [key: string]: string },
+  isInit: boolean = false,
+): void {
+  const { mergedSettings, updatedSettings, needToSend } =
+    mergeAndUpdateSettings(newSettings, oldSettings, isInit);
+
+  dispatchSettings(updatedSettings);
 
   if (isInit) {
     store.dispatch(setAllSettings(JSON.stringify(newSettings)));
   }
 
-  delete mergedSettings.ALL_SETTINGS;
-  if (needToSend || isInit) {
-    const event = { action: ActionType.INIT, args: mergedSettings };
-    const eventString = JSON.stringify(event);
-    store.dispatch(setInitialized(false));
-    Socket.send(eventString);
-  }
+  sendSettings(mergedSettings, needToSend, isInit);
 }
