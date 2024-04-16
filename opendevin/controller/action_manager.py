@@ -1,12 +1,25 @@
-from typing import List
+from typing import List, Awaitable, cast
+import traceback
+import inspect
 
 from opendevin import config
 from opendevin.observation import CmdOutputObservation
 from opendevin.sandbox import DockerExecBox, DockerSSHBox, Sandbox, LocalBox
 from opendevin.schema import ConfigType
+from opendevin.logger import opendevin_logger as logger
+from opendevin.action import (
+    Action,
+    AddTaskAction,
+    ModifyTaskAction,
+)
+from opendevin.observation import (
+    Observation,
+    AgentErrorObservation,
+    NullObservation,
+)
 
 
-class CommandManager:
+class ActionManager:
     id: str
     shell: Sandbox
 
@@ -28,6 +41,34 @@ class CommandManager:
             )
         else:
             raise ValueError(f'Invalid sandbox type: {sandbox_type}')
+
+    async def run_action(self, action: Action, agent_controller) -> Observation:
+        observation: Observation = NullObservation('')
+        if isinstance(action, AddTaskAction):
+            try:
+                agent_controller.state.plan.add_subtask(
+                    action.parent, action.goal, action.subtasks)
+            except Exception as e:
+                observation = AgentErrorObservation(str(e))
+                logger.error(e)
+                traceback.print_exc()
+        elif isinstance(action, ModifyTaskAction):
+            try:
+                agent_controller.state.plan.set_subtask_state(action.id, action.state)
+            except Exception as e:
+                observation = AgentErrorObservation(str(e))
+                logger.error(e)
+                traceback.print_exc()
+        elif action.executable:
+            try:
+                observation = action.run(agent_controller)
+                if inspect.isawaitable(observation):
+                    observation = await cast(Awaitable[Observation], observation)
+            except Exception as e:
+                observation = AgentErrorObservation(str(e))
+                logger.error(e)
+                traceback.print_exc()
+        return observation
 
     def run_command(self, command: str, background=False) -> CmdOutputObservation:
         if background:
