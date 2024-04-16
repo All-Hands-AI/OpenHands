@@ -53,12 +53,13 @@ async def get_litellm_models():
     return list(set(litellm.model_list + list(litellm.model_cost.keys())))
 
 
-@app.get('/api/litellm-agents')
-async def get_litellm_agents():
+@app.get('/api/agents')
+async def get_agents():
     """
     Get all agents supported by LiteLLM.
     """
-    return Agent.list_agents()
+    agents = Agent.list_agents()
+    return agents
 
 
 @app.get('/api/auth')

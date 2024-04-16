@@ -43,7 +43,7 @@ def read_llm_models():
     ]
 
 
-@app.get('/litellm-agents')
+@app.get('/agents')
 def read_llm_agents():
     return [
         'MonologueAgent',

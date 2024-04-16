@@ -13,7 +13,7 @@ export async function fetchModels() {
 }
 
 export async function fetchAgents() {
-  const response = await fetch(`/api/litellm-agents`);
+  const response = await fetch(`/api/agents`);
   return response.json();
 }
 
