@@ -30,7 +30,7 @@ class E2BBox(Sandbox):
             cwd='/home/user',  # Default workdir inside sandbox
         )
         self.timeout = timeout
-        logger.info('Started E2B sandbox', self.sandbox.id)
+        logger.info(f'Started E2B sandbox with ID "{self.sandbox.id}"')
 
     @property
     def filesystem(self):
