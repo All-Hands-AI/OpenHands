@@ -3,6 +3,7 @@ name: Publish Docker Image
 on:
   push:
     branches: [ '**' ]
+    tags: [ '**' ]
   workflow_dispatch:
     inputs:
       reason:
