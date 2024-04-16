@@ -25,27 +25,30 @@ def resolve_path(file_path):
 @dataclass
 class FileReadAction(ExecutableAction):
     """
-    Reads a file from a given path up to 100 lines.
-    Default lines 0:100
+    Reads a file from a given path.
+    Can be set to read specific lines using start and end
+    Default lines 0:-1 (whole file)
     """
     path: str
-    start_index: int = 0
+    start: int = 0
+    end: int = -1
     thoughts: str = ''
     action: str = ActionType.READ
 
     def run(self, controller) -> FileReadObservation:
         path = resolve_path(self.path)
+        self.start = max(self.start, 0)
         with open(path, 'r', encoding='utf-8') as file:
-            all_lines = file.readlines()
-            total_lines = len(all_lines)
-            if total_lines >= 100:
-                end_index = self.start_index + 100 if total_lines - \
-                    self.start_index - 100 >= 0 else -1
-                code_slice = all_lines[self.start_index: end_index]
+            if self.end < self.start:
+                code_view = file.read()
             else:
-                code_slice = all_lines[:]
-            code_view = ''.join(code_slice)
-            return FileReadObservation(path=path, content=code_view)
+                all_lines = file.readlines()
+                num_lines = len(all_lines)
+                begin = max(0, min(self.start, num_lines - 2))
+                end = -1 if self.end > num_lines else max(begin + 1, self.end)
+                code_slice = all_lines[begin:end]
+                code_view = ''.join(code_slice)
+        return FileReadObservation(path=path, content=code_view)
 
     @property
     def message(self) -> str:
@@ -77,7 +80,8 @@ class FileWriteAction(ExecutableAction):
             file.seek(0)
             file.writelines(new_file)
             file.truncate()
-        return FileWriteObservation(content=''.join(new_file), path=self.path)
+        obs = f'WRITE OPERATION:\nYou have written to "{self.path}" on these lines: {self.start}:{self.end}.'
+        return FileWriteObservation(content=obs + ''.join(new_file), path=self.path)
 
     @property
     def message(self) -> str:

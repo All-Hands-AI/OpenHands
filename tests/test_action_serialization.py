@@ -76,7 +76,7 @@ def test_browse_url_action_serialization_deserialization():
 def test_file_read_action_serialization_deserialization():
     original_action_dict = {
         'action': 'read',
-        'args': {'path': '/path/to/file.txt', 'start_index': 0, 'thoughts': 'None'}
+        'args': {'path': '/path/to/file.txt', 'start': 0, 'end': -1, 'thoughts': 'None'}
     }
     serialization_deserialization(original_action_dict, FileReadAction)
 

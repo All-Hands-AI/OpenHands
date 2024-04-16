@@ -36,7 +36,7 @@ class SWEAgent(Agent):
         self.cur_file: str = ''
         self.cur_line: int = 0
 
-    def _remember(self, action: Action, observation: Observation):
+    def _remember(self, action: Action, observation: Observation) -> None:
         """Agent has a limited memory of the few steps implemented as a queue"""
         memory = MEMORY_FORMAT(action.to_dict(), observation.to_dict())
         self.running_memory.append(memory)
@@ -47,18 +47,14 @@ class SWEAgent(Agent):
             temperature=0.05,
         )
         action_resp = resp['choices'][0]['message']['content']
-        print(f"\033[92m{resp['usage']}\033[0m")
-        print('\n======== RAW ======',
-              f'\033[94m{action_resp}\033[0m',
+        print(f"\033[1m\033[91m{resp['usage']}\033[0m")
+        print('\n==== RAW OUTPUT ====',
+              f'\033[96m{action_resp}\033[0m',
               '==== END RAW ====\n', sep='\n')
         return parse_command(action_resp, self.cur_file, self.cur_line)
 
-    def _update(self, action: Action):
-        if isinstance(action, FileReadAction):
-            self.cur_file = action.path
-            self.cur_line = action.start_index
-
-        elif isinstance(action, FileWriteAction):
+    def _update(self, action: Action) -> None:
+        if isinstance(action, (FileReadAction, FileWriteAction)):
             self.cur_file = action.path
             self.cur_line = action.start
 

@@ -51,12 +51,12 @@ def get_action_from_string(command_string: str, path: str, line: int, thoughts: 
     elif 'scroll_up' == cmd:
         if not path:
             return no_open_file_error
-        return FileReadAction(path, line + 100, thoughts)
+        return FileReadAction(path, line + 100, line + 200, thoughts)
 
     elif 'scroll_down' == cmd:
         if not path:
             return no_open_file_error
-        return FileReadAction(path, line - 100, thoughts)
+        return FileReadAction(path, line - 100, line, thoughts)
 
     elif 'goto' == cmd:
         if not path:
@@ -64,38 +64,44 @@ def get_action_from_string(command_string: str, path: str, line: int, thoughts: 
         rex = r'^goto\s+(\d+)$'
         valid = re.match(rex, command_string)
         if valid:
-            return FileReadAction(path, int(valid.group(1)), thoughts)
+            start = int(valid.group(1))
+            end = start + 100
+            return FileReadAction(path, start, end, thoughts)
         else:
             return AgentEchoAction(invalid_error(command_string, 'goto'))
 
     elif 'edit' == cmd:
         if not path:
             return no_open_file_error
-        rex = r'^edit\s+(\d+)\s+(\d+)\s+(\S.*)$'
+        rex = r'^edit\s+(\d+)\s+(-?\d+)\s+(\S.*)$'
         valid = re.match(rex, command_string, re.DOTALL)
         if valid:
             start = int(valid.group(1))
             end = int(valid.group(2))
             change = valid.group(3)
+            if '"' == change[-1] and '"' == change[0]:
+                change = change[1:-1]
             return FileWriteAction(path, change, start, end, thoughts)
         else:
             return AgentEchoAction(invalid_error(command_string, 'edit'))
 
     elif 'read' == cmd:
-        rex = r'^read\s+(\S+)(?:\s+(\d+))?$'
+        rex = r'^read\s+(\S+)(?:\s+(\d+))?(?:\s+(-?\d+))?$'
         valid = re.match(rex, command_string, re.DOTALL)
         if valid:
             file = valid.group(1)
             start_str = valid.group(2)
+            end_str = valid.group(3)
 
             start = 0 if not start_str else int(start_str)
+            end = -1 if not end_str else int(end_str)
 
-            return FileReadAction(file, start, thoughts)
+            return FileReadAction(file, start, end, thoughts)
         else:
             return AgentEchoAction(invalid_error(command_string, 'read'))
 
     elif 'write' == cmd:
-        rex = r'^write\s+(\S+)\s+(.*?)\s*(\d+)?\s*(\d+)?$'
+        rex = r'^write\s+(\S+)\s+(.*?)\s*(\d+)?\s*(-?\d+)?$'
         valid = re.match(rex, command_string, re.DOTALL)
 
         if valid:
@@ -106,6 +112,9 @@ def get_action_from_string(command_string: str, path: str, line: int, thoughts: 
 
             start = 0 if not start_str else int(start_str)
             end = -1 if not end_str else int(end_str)
+
+            if '"' == content[-1] and '"' == content[0]:
+                content = content[1:-1]
 
             return FileWriteAction(file, content, start, end, thoughts)
         else:

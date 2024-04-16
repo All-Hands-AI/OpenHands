@@ -1,9 +1,8 @@
 from opendevin.parse_commands import parse_command_file
 
-
 DEFAULT_COMMANDS_DICT = {
     'exit': 'Executed when task is complete',
-    'read <file_name> [<start_line>]': 'Shows a given file\'s contents starting from <start_line>. Default start_line = 0',
+    'read <file_name> [<start_line>] [<end_line>]': 'Shows a given file\'s contents starting from <start_line> up to <end_line>. Default: start_line = 0, end_line = -1. By default the whole file will be read.',
     'write <file> <changes> [<start_line>] [<end_line>]': 'Modifies a <file> by replacing the current lines between <start_line> and <end_line> with <changes>. Default start_line = 0 and end_line = -1. Calling this with no line args will replace the whole file.',
     'browse <url>': 'Returns the text version of any url, this can be useful to look up documentation or finding issues on github',
     'scroll_up': 'Takes no arguments. This will scroll up and show you the 100 lines above your current lines',
@@ -18,7 +17,7 @@ DEFAULT_COMMANDS_DICT = {
 
 COMMAND_USAGE = {
     'exit': 'Usage:\n```\nexit\n```\nExecuted when task is complete',
-    'read': 'Args:\n<file_name> [<start_line>]\nUsage:\n```read file.py\n```\nor\n```\nread example.py <start_line>\n```\nShows a given file\'s contents starting from <start_line>. Default start_line = 0',
+    'read': 'Args:\n<file_name> [<start_line>] [<end_line>]\nUsage:\n```\nread file.py\n```\nor\n```\nread example.py <start_line> <end_line>\n```\nShows a given file\'s contents starting from <start_line> up to <end_line>. Default: start_line = 0, end_line = -1. by default the whole file will be read.',
     'write': 'Args:\n<file> <changes> [<start_line>] [<end_line>]\nUsage:\n```\nwrite "def main():\n    print("This is line one")" 0 2\n```\nModifies a <file> by replacing the current lines between <start_line> and <end_line> with <changes>. Default start_line = 0 and end_line = -1. Calling this with no line args will replace the whole file.',
     'edit': 'Args:\n<start_line> <end_line> <changes>\nUsage:\n```\nedit 0 1 import pandas as pd\n```\nThis will modify the current file you are in with the changes you make between the line numbers you designate',
     'goto': 'Args:\n<line_num>\nUsage:\n```\ngoto <line_num>\n```\nThis will show you the 100 lines below and including the line you specify within your current file.',
@@ -39,12 +38,17 @@ CUSTOM_COMMANDS = f"""Custom bash commands:
 DOCUMENTATION = f"""DOCUMENTATION:
 It is recommend that you use the commands provided for interacting with files and your directory because they have been specially built for you.
 They will make it much easier for you to look at files and make changes. Using these commands will help you be better at your task.
+You can open an file by using either the read or write operations.
+- If a file already exists you should read it before making any changes. Use the `edit` command to make changes once you have read it.
+- If you are creating a new file use the write command. Use the `edit` command to make changes once you have created the new file.
 
 Commands:
 {DEFAULT_COMMANDS}
 {CUSTOM_COMMANDS}
-To modify a file use 'edit'. To move through the current file use 'goto' or 'scroll_up'/'scroll_down'
-when using write and edit do not surround the code with anything just write the code.
+
+The following commands require an open file to be used: edit, scroll_up, scroll_down, goto
+To modify the current file use 'edit'. To move through the current file use 'goto' or 'scroll_up'/'scroll_down'
+when using write and edit do not surround the code with any "" just write the code.
 """
 
 GENERAL_GUIDELINES = '''INSTRUCTIONS:
@@ -72,27 +76,31 @@ You will be given multiple iterations to complete this task so break it into ste
 
 Your output must contain the following:
 - First, thoughts about what your next action should be and plan it out.
-- You will have a memory of your thoughts so you can use this to remember things for the next step.
-- Use your thoughts to think about what you are currently doing, what you have done on prior steps and how that relates to solving the problem.
+    - You will have a memory of your thoughts so you can use this to remember things for the next step.
+    - Use your thoughts to think about what you are currently doing, what you have done on prior steps and how that relates to solving the problem.
 - Second, create a piece of code that will execute your next action based on the thoughts you have.
-- Remember that you can only have one action for each thought, do not include multiple actions.
-- The code MUST be surrounded in triple back ticks EXACTLY like this:
-```\n<code>\n```
+    - Remember that you can only have one action for each thought, do not include multiple actions.
+
+Your code MUST be surrounded in triple back ticks EXACTLY like this:
+```
+<code>
+```
 
 Notes:
-- Adhere to the format above so that the program loop continues smoothly, it is very important to only give one command per output.
+- Adhere to the format so that the program loop continues smoothly, it is very important to only give one command per output.
 - DO NOT give more than one command within the triple backticks. This will just throw an error and nothing will happen as a result.
 - Do not give multiple code blocks, if you do only the second one will be captured and run, this might give an error if the first one was necessary.
 - To execute multiple commands you should write them down in your thoughts section so you can remember it on the next step and execute them then.
 - The only commands you are not capable of executing are interactive commands like `python` or `node` by themselves.
-- If you think that you have completed the task that has been given to you based on your previous actions and outputs then use the ```exit``` as the command to let the system know that you are done.
+- If you think that you have completed the task that has been given to you based on your previous actions and outputs then use ``` exit ``` as the command to let the system know that you are done.
 - DO NOT make any copies of your previous memories those will be provided to you at each step, making copies just wastes time and energy. Think smarter not harder.
-- The write command requires proper indentation in the content section ex. `write hw.py def hello():\n    print(\'Hello World\')` this is how you would have to format your write command.
+- The write and edit commands requires proper indentation in the content section ex. `write hw.py def hello():\n    print(\'Hello World\')` this is how you would have to format your write command.
     - The white spaces matter as the code changes will be added to the code so they must have proper syntax.
 
 This is a template using the format described above
 Items in <> are suggestions for you, fill them out based on the context of the problem you are solving.
-"
+
+[ FORMAT ]
 Thoughts:
 <Provide clear and concise thoughts on the next step to take, highlighting any important details or context that should be remembered.>
 <You can use multiple lines to express your thoughts>
@@ -101,13 +109,18 @@ Action:
 ```
 <command> <params>
 ```
-"
-Do not provide anything extra just one thought and one action.
+[ END FORMAT ]
+
+Do not provide anything extra just your thought and action.
 '''
 
 SYSTEM_MESSAGE = f'''SYSTEM INFO:
-You are an autonomous coding agent, here to provide solutions for coding issues. I have been designed to assist you with a wide range of programming tasks, from code editing and debugging to testing and deployment. I have access to a variety of tools and commands that I can use to help you solve problems efficiently.
+You am an autonomous coding agent, here to provide solutions for coding issues.
+You have been designed to assist you with a wide range of programming tasks, from code editing and debugging to testing and deployment.
+You have access to a variety of tools and commands that you can use to help you solve problems efficiently.
+
 {GENERAL_GUIDELINES}
+
 {DOCUMENTATION}
 '''.strip()
 
@@ -157,11 +170,13 @@ Begin with your thought about the next step and then come up with an action to p
 '''.strip()
 
 
-def unpack_dict(data):
+def unpack_dict(data: dict, restrict: list[str] = []):
     lines = []
     for key, value in data.items():
-        if isinstance(value, dict):
-            nested_str = unpack_dict(value).replace('\n', '\n  ')
+        if key in restrict:
+            continue
+        elif isinstance(value, dict):
+            nested_str = unpack_dict(value, restrict).replace('\n', '\n  ')
             val = f'{key}:' + '\n  ' + f'{nested_str}'
             lines.append(val)
         else:
@@ -170,21 +185,21 @@ def unpack_dict(data):
 
 
 def MEMORY_FORMAT(act, obs): return f'''
-You performed this action:
-{unpack_dict(act)}
+Previous Action:
+{unpack_dict(act, ["content"])}
 
-The following happened as a result:
+Output from Action:
 {unpack_dict(obs)}
 '''.strip()
 
 
 def CONTEXT_PROMPT(memory, window):
-    res = f'These are your past {window} memories:\n'
+    res = f'These are your past {window} actions:\n'
     window_size = window if len(memory) > window else len(memory)
     cur_mems = memory[-window_size:]
-    res += '===== Memories =====\n'
+    res += '===== Previous Actions =====\n'
     for idx, mem in enumerate(cur_mems):
         res += f'\nMemory {idx}:\n{mem}\n'
-    res += '======= End =======\n'
-    res += 'Use these memories to provide additional context to the problem you are solving.\n'
+    res += '======= End Actions =======\n'
+    res += 'Use these memories to provide additional context to the problem you are solving.\nRemember that you have already completed these steps so you do not need to perform them again.'
     return res
