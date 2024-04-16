@@ -1,6 +1,5 @@
-from typing import List, Awaitable, cast
+from typing import List
 import traceback
-import inspect
 
 from opendevin import config
 from opendevin.observation import CmdOutputObservation
@@ -61,9 +60,7 @@ class ActionManager:
                 traceback.print_exc()
         elif action.executable:
             try:
-                observation = action.run(agent_controller)
-                if inspect.isawaitable(observation):
-                    observation = await cast(Awaitable[Observation], observation)
+                observation = await action.run(agent_controller)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
                 logger.error(e)
