@@ -279,7 +279,7 @@ class DockerSSHBox(Sandbox):
                 network_kwargs['network_mode'] = 'host'
             else:
                 # FIXME: This is a temporary workaround for Mac OS
-                network_kwargs['ports'] = {'2222/tcp': self._ssh_port}
+                network_kwargs['ports'] = {f'{self._ssh_port}/tcp': self._ssh_port}
                 logger.warning(
                     ('Using port forwarding for Mac OS. '
                      'Server started by OpenDevin will not be accessible from the host machine at the moment. '
@@ -293,7 +293,7 @@ class DockerSSHBox(Sandbox):
             self.container = self.docker_client.containers.run(
                 self.container_image,
                 # allow root login
-                command="/usr/sbin/sshd -D -p 2222 -o 'PermitRootLogin=yes'",
+                command=f"/usr/sbin/sshd -D -p {self._ssh_port} -o 'PermitRootLogin=yes'",
                 **network_kwargs,
                 working_dir=SANDBOX_WORKSPACE_DIR,
                 name=self.container_name,
