@@ -2,7 +2,7 @@ import uuid
 from pathlib import Path
 
 import litellm
-from fastapi import Depends, FastAPI, WebSocket, Response
+from fastapi import Depends, FastAPI, HTTPException, WebSocket, Response, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -119,8 +119,13 @@ def read_default_model():
 
 
 @app.get('/api/refresh-files')
-def refresh_files():
-    structure = files.get_folder_structure(Path(str(config.get('WORKSPACE_BASE'))))
+def refresh_files(prefix: str | None = Query(None, description='Path prefix from workspace base')):
+    """Refreshes and returns the file structure from a specified subdirectory, or the entire structure if no subdirectory is specified."""
+    base_path = Path(str(config.get('WORKSPACE_BASE'))).resolve()
+    try:
+        structure = files.get_folder_structure(base_path, prefix, depth=1 if prefix else None)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return structure.to_dict()
 
 
