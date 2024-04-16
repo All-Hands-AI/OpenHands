@@ -45,7 +45,7 @@ function CodeEditor(): JSX.Element {
               "w-full relative rounded-none bg-neutral-900 p-0 border-divider",
             cursor: "w-full bg-neutral-600 rounded-none",
             tab: "max-w-fit px-4 h-[36px]",
-            tabContent: "group-data-[selected=true]:text-neutral-50 ",
+            tabContent: "group-data-[selected=true]:text-white ",
           }}
           aria-label="Options"
         >

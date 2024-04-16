@@ -13,13 +13,13 @@ from opendevin import config
 from opendevin.logger import opendevin_logger as logger
 from opendevin.sandbox.sandbox import Sandbox, BackgroundCommand
 from opendevin.schema import ConfigType
+from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
-# helpful for docker-in-docker scenarios
-DIRECTORY_REWRITE = config.get(ConfigType.DIRECTORY_REWRITE)
 CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
+SANDBOX_WORKSPACE_DIR = '/workspace'
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
@@ -44,7 +44,6 @@ class DockerExecBox(Sandbox):
 
     def __init__(
             self,
-            workspace_dir: str | None = None,
             container_image: str | None = None,
             timeout: int = 120,
             sid: str | None = None,
@@ -58,21 +57,6 @@ class DockerExecBox(Sandbox):
             raise ex
 
         self.instance_id = sid if sid is not None else str(uuid.uuid4())
-        if workspace_dir is not None:
-            os.makedirs(workspace_dir, exist_ok=True)
-            # expand to absolute path
-            self.workspace_dir = os.path.abspath(workspace_dir)
-        else:
-            self.workspace_dir = os.getcwd()
-            logger.info(
-                'workspace unspecified, using current directory: %s', workspace_dir)
-        if DIRECTORY_REWRITE != '':
-            parts = DIRECTORY_REWRITE.split(':')
-            self.workspace_dir = self.workspace_dir.replace(parts[0], parts[1])
-            logger.info('Rewriting workspace directory to: %s',
-                        self.workspace_dir)
-        else:
-            logger.info('Using workspace directory: %s', self.workspace_dir)
 
         # TODO: this timeout is actually essential - need a better way to set it
         # if it is too short, the container may still waiting for previous
@@ -90,14 +74,17 @@ class DockerExecBox(Sandbox):
         atexit.register(self.close)
 
     def setup_devin_user(self):
-        exit_code, logs = self.container.exec_run(
-            [
-                '/bin/bash',
-                '-c',
-                f'useradd --shell /bin/bash -u {USER_ID} -o -c "" -m devin',
-            ],
-            workdir='/workspace',
-        )
+        cmds = [
+            f'useradd --shell /bin/bash -u {USER_ID} -o -c "" -m devin',
+            r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers",
+            'sudo adduser devin sudo',
+        ]
+        for cmd in cmds:
+            exit_code, logs = self.container.exec_run(
+                ['/bin/bash', '-c', cmd], workdir=SANDBOX_WORKSPACE_DIR
+            )
+            if exit_code != 0:
+                raise Exception(f'Failed to setup devin user: {logs}')
 
     def get_exec_cmd(self, cmd: str) -> List[str]:
         if RUN_AS_DEVIN:
@@ -107,14 +94,14 @@ class DockerExecBox(Sandbox):
 
     def read_logs(self, id) -> str:
         if id not in self.background_commands:
-            raise ValueError('Invalid background command id')
+            raise SandboxInvalidBackgroundCommandError()
         bg_cmd = self.background_commands[id]
         return bg_cmd.read_logs()
 
     def execute(self, cmd: str) -> Tuple[int, str]:
         # TODO: each execute is not stateful! We need to keep track of the current working directory
         def run_command(container, command):
-            return container.exec_run(command, workdir='/workspace')
+            return container.exec_run(command, workdir=SANDBOX_WORKSPACE_DIR)
 
         # Use ThreadPoolExecutor to control command and set timeout
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -129,13 +116,13 @@ class DockerExecBox(Sandbox):
                 pid = self.get_pid(cmd)
                 if pid is not None:
                     self.container.exec_run(
-                        f'kill -9 {pid}', workdir='/workspace')
+                        f'kill -9 {pid}', workdir=SANDBOX_WORKSPACE_DIR)
                 return -1, f'Command: "{cmd}" timed out'
         return exit_code, logs.decode('utf-8')
 
     def execute_in_background(self, cmd: str) -> BackgroundCommand:
         result = self.container.exec_run(
-            self.get_exec_cmd(cmd), socket=True, workdir='/workspace'
+            self.get_exec_cmd(cmd), socket=True, workdir=SANDBOX_WORKSPACE_DIR
         )
         result.output._sock.setblocking(0)
         pid = self.get_pid(cmd)
@@ -157,11 +144,11 @@ class DockerExecBox(Sandbox):
 
     def kill_background(self, id: int) -> BackgroundCommand:
         if id not in self.background_commands:
-            raise ValueError('Invalid background command id')
+            raise SandboxInvalidBackgroundCommandError()
         bg_cmd = self.background_commands[id]
         if bg_cmd.pid is not None:
             self.container.exec_run(
-                f'kill -9 {bg_cmd.pid}', workdir='/workspace')
+                f'kill -9 {bg_cmd.pid}', workdir=SANDBOX_WORKSPACE_DIR)
         bg_cmd.result.output.close()
         self.background_commands.pop(id)
         return bg_cmd
@@ -202,15 +189,16 @@ class DockerExecBox(Sandbox):
 
         try:
             # start the container
+            mount_dir = config.get('WORKSPACE_MOUNT_PATH')
             self.container = self.docker_client.containers.run(
                 self.container_image,
                 command='tail -f /dev/null',
                 network_mode='host',
-                working_dir='/workspace',
+                working_dir=SANDBOX_WORKSPACE_DIR,
                 name=self.container_name,
                 detach=True,
-                volumes={self.workspace_dir: {
-                    'bind': '/workspace', 'mode': 'rw'}},
+                volumes={mount_dir: {
+                    'bind': SANDBOX_WORKSPACE_DIR, 'mode': 'rw'}},
             )
             logger.info('Container started')
         except Exception as ex:
@@ -227,7 +215,8 @@ class DockerExecBox(Sandbox):
                 break
             time.sleep(1)
             elapsed += 1
-            self.container = self.docker_client.containers.get(self.container_name)
+            self.container = self.docker_client.containers.get(
+                self.container_name)
             if elapsed > self.timeout:
                 break
         if self.container.status != 'running':
@@ -245,23 +234,8 @@ class DockerExecBox(Sandbox):
 
 
 if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description='Interactive Docker container')
-    parser.add_argument(
-        '-d',
-        '--directory',
-        type=str,
-        default=None,
-        help='The directory to mount as the workspace in the Docker container.',
-    )
-    args = parser.parse_args()
-
     try:
-        exec_box = DockerExecBox(
-            workspace_dir=args.directory,
-        )
+        exec_box = DockerExecBox()
     except Exception as e:
         logger.exception('Failed to start Docker container: %s', e)
         sys.exit(1)
@@ -270,7 +244,7 @@ if __name__ == '__main__':
         "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
 
     bg_cmd = exec_box.execute_in_background(
-        "while true; do echo 'dot ' && sleep 1; done"
+        "while true; do echo -n '.' && sleep 1; done"
     )
 
     sys.stdout.flush()
