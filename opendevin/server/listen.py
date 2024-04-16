@@ -133,8 +133,8 @@ def select_file(file: str):
         with open(file_path, 'r') as selected_file:
             content = selected_file.read()
     except Exception as e:
-        logger.error(f"Error opening file {file}: {e}", exc_info=False)
-        error_msg = f"Error opening file: {e}"
+        logger.error(f'Error opening file {file}: {e}', exc_info=False)
+        error_msg = f'Error opening file: {e}'
         return Response(f'{{"error": "{error_msg}"}}', status_code=500)
     return {'code': content}
 
