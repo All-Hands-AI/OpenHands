@@ -12,17 +12,17 @@ class Action:
     async def run(self, controller: 'AgentController') -> 'Observation':
         raise NotImplementedError
 
-    def to_dict(self):
+    def to_memory(self):
         d = asdict(self)
         try:
             v = d.pop('action')
         except KeyError:
             raise NotImplementedError(f'{self=} does not have action attribute set')
-        return {'action': v, 'args': d, 'message': self.message}
+        return {'action': v, 'args': d}
 
-    def to_memory(self):
-        d = self.to_dict()
-        d.pop('message', None)
+    def to_dict(self):
+        d = self.to_memory()
+        d['message'] = self.message
         return d
 
     @property
