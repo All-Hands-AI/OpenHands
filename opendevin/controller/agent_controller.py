@@ -73,14 +73,12 @@ class AgentController:
     id: str
     agent: Agent
     max_iterations: int
-    workdir: str
     command_manager: CommandManager
     callbacks: List[Callable]
 
     def __init__(
         self,
         agent: Agent,
-        workdir: str,
         sid: str = '',
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
@@ -90,10 +88,8 @@ class AgentController:
         self.id = sid
         self.agent = agent
         self.max_iterations = max_iterations
+        self.command_manager = CommandManager(self.id, container_image)
         self.max_chars = max_chars
-        self.workdir = workdir
-        self.command_manager = CommandManager(
-            self.id, workdir, container_image)
         self.callbacks = callbacks
 
     def update_state_for_step(self, i):
@@ -132,7 +128,6 @@ class AgentController:
         print('\n\n==============', flush=True)
         print('STEP', i, flush=True)
         print_with_color(self.state.plan.main_goal, 'PLAN')
-
         if self.state.num_of_chars > self.max_chars:
             raise MaxCharsExceedError(
                 self.state.num_of_chars, self.max_chars)
@@ -194,10 +189,9 @@ class AgentController:
 
         if action.executable:
             try:
-                if inspect.isawaitable(action.run(self)):
-                    observation = await cast(Awaitable[Observation], action.run(self))
-                else:
-                    observation = action.run(self)
+                observation = action.run(self)
+                if inspect.isawaitable(observation):
+                    observation = await cast(Awaitable[Observation], observation)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
                 print_with_color(observation, 'ERROR')
