@@ -36,7 +36,16 @@ class FileReadAction(ExecutableAction):
     def run(self, controller) -> FileReadObservation:
         path = resolve_path(self.path)
         with open(path, 'r', encoding='utf-8') as file:
-            return FileReadObservation(path=path, content=file.read())
+            all_lines = file.readlines()
+            total_lines = len(all_lines)
+            if total_lines >= 100:
+                end_index = self.start_index + 100 if total_lines - \
+                    self.start_index - 100 >= 0 else -1
+                code_slice = all_lines[self.start_index: end_index]
+            else:
+                code_slice = all_lines[:]
+            code_view = ''.join(code_slice)
+            return FileReadObservation(path=path, content=code_view)
 
     @property
     def message(self) -> str:
@@ -54,9 +63,21 @@ class FileWriteAction(ExecutableAction):
 
     def run(self, controller) -> FileWriteObservation:
         whole_path = resolve_path(self.path)
-        with open(whole_path, 'w', encoding='utf-8') as file:
-            file.write(self.content)
-        return FileWriteObservation(content='', path=self.path)
+        mode = 'w' if not os.path.exists(whole_path) else 'r+'
+        insert = self.content.split('\n')
+        with open(whole_path, mode, encoding='utf-8') as file:
+            if mode != 'w':
+                all_lines = file.readlines()
+                new_file = [''] if self.start == 0 else all_lines[:self.start]
+                new_file += [i + '\n' for i in insert]
+                new_file += [''] if self.end == -1 else all_lines[self.end:]
+            else:
+                new_file = insert
+
+            file.seek(0)
+            file.writelines(new_file)
+            file.truncate()
+        return FileWriteObservation(content=''.join(new_file), path=self.path)
 
     @property
     def message(self) -> str:
