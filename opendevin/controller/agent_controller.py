@@ -1,13 +1,20 @@
 import asyncio
 import inspect
 import traceback
-from typing import List, Callable, Literal, Mapping, Awaitable, Any, cast
-
-from termcolor import colored
+from typing import List, Callable, Awaitable, cast
+from opendevin.plan import Plan
+from opendevin.state import State
+from opendevin.agent import Agent
+from opendevin.observation import Observation, AgentErrorObservation, NullObservation
 from openai import AuthenticationError
 from litellm import ContextWindowExceededError, APIConnectionError
 
 from opendevin import config
+from opendevin.logger import opendevin_logger as logger
+
+from opendevin.exceptions import MaxCharsExceedError
+from .command_manager import CommandManager
+
 from opendevin.action import (
     Action,
     NullAction,
@@ -15,57 +22,10 @@ from opendevin.action import (
     AddTaskAction,
     ModifyTaskAction,
 )
-from opendevin.agent import Agent
-from opendevin.logger import opendevin_logger as logger
-from opendevin.exceptions import MaxCharsExceedError, AgentNoActionError
-from opendevin.observation import Observation, AgentErrorObservation, NullObservation
-from opendevin.plan import Plan
-from opendevin.state import State
-from .command_manager import CommandManager
+from opendevin.exceptions import AgentNoActionError
 
-ColorType = Literal[
-    'red',
-    'green',
-    'yellow',
-    'blue',
-    'magenta',
-    'cyan',
-    'light_grey',
-    'dark_grey',
-    'light_red',
-    'light_green',
-    'light_yellow',
-    'light_blue',
-    'light_magenta',
-    'light_cyan',
-    'white',
-]
-
-DISABLE_COLOR_PRINTING = (
-    config.get('DISABLE_COLOR').lower() == 'true'
-)
 MAX_ITERATIONS = config.get('MAX_ITERATIONS')
 MAX_CHARS = config.get('MAX_CHARS')
-
-
-def print_with_color(text: Any, print_type: str = 'INFO'):
-    TYPE_TO_COLOR: Mapping[str, ColorType] = {
-        'BACKGROUND LOG': 'blue',
-        'ACTION': 'green',
-        'OBSERVATION': 'yellow',
-        'INFO': 'cyan',
-        'ERROR': 'red',
-        'PLAN': 'light_magenta',
-    }
-    color = TYPE_TO_COLOR.get(print_type.upper(), TYPE_TO_COLOR['INFO'])
-    if DISABLE_COLOR_PRINTING:
-        print(f'\n{print_type.upper()}:\n{str(text)}', flush=True)
-    else:
-        print(
-            colored(f'\n{print_type.upper()}:\n', color, attrs=['bold'])
-            + colored(str(text), color),
-            flush=True,
-        )
 
 
 class AgentController:
@@ -124,9 +84,8 @@ class AgentController:
             logger.info('Exited before finishing the task.')
 
     async def step(self, i: int):
-        print('\n\n==============', flush=True)
-        print('STEP', i, flush=True)
-        print_with_color(self.state.plan.main_goal, 'PLAN')
+        logger.info(f'STEP {i}', extra={'msg_type': 'STEP'})
+        logger.info(self.state.plan.main_goal, extra={'msg_type': 'PLAN'})
         if self.state.num_of_chars > self.max_chars:
             raise MaxCharsExceedError(
                 self.state.num_of_chars, self.max_chars)
@@ -135,7 +94,7 @@ class AgentController:
         for obs in log_obs:
             self.add_history(NullAction(), obs)
             await self._run_callbacks(obs)
-            print_with_color(obs, 'BACKGROUND LOG')
+            logger.info(obs, extra={'msg_type': 'BACKGROUND LOG'})
 
         self.update_state_for_step(i)
         action: Action = NullAction()
@@ -144,11 +103,10 @@ class AgentController:
             action = self.agent.step(self.state)
             if action is None:
                 raise AgentNoActionError()
-            print_with_color(action, 'ACTION')
+            logger.info(action, extra={'msg_type': 'ACTION'})
         except Exception as e:
             observation = AgentErrorObservation(str(e))
-            print_with_color(observation, 'ERROR')
-            traceback.print_exc()
+            logger.exception(e)
 
             # raise specific exceptions that need to be handled outside
             # note: we are using AuthenticationError class from openai rather than
@@ -167,7 +125,7 @@ class AgentController:
 
         finished = isinstance(action, AgentFinishAction)
         if finished:
-            print_with_color(action, 'INFO')
+            logger.info(action, extra={'msg_type': 'INFO'})
             return True
 
         if isinstance(action, AddTaskAction):
@@ -176,14 +134,14 @@ class AgentController:
                     action.parent, action.goal, action.subtasks)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
-                print_with_color(observation, 'ERROR')
+                logger.error(e)
                 traceback.print_exc()
         elif isinstance(action, ModifyTaskAction):
             try:
                 self.state.plan.set_subtask_state(action.id, action.state)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
-                print_with_color(observation, 'ERROR')
+                logger.error(e)
                 traceback.print_exc()
 
         if action.executable:
@@ -193,11 +151,11 @@ class AgentController:
                     observation = await cast(Awaitable[Observation], observation)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
-                print_with_color(observation, 'ERROR')
+                logger.error(e)
                 traceback.print_exc()
 
         if not isinstance(observation, NullObservation):
-            print_with_color(observation, 'OBSERVATION')
+            logger.info(observation, extra={'msg_type': 'OBSERVATION'})
 
         self.add_history(action, observation)
         await self._run_callbacks(observation)
