@@ -6,6 +6,9 @@ export type WorkspaceFile = {
 export async function selectFile(file: string): Promise<string> {
   const res = await fetch(`/api/select-file?file=${file}`);
   const data = await res.json();
+  if (res.status !== 200) {
+    throw new Error(data.error);
+  }
   return data.code as string;
 }
 
