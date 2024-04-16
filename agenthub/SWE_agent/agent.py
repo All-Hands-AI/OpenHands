@@ -30,8 +30,8 @@ class SWEAgent(Agent):
 
     def __init__(self, llm: LLM):
         super().__init__(llm)
-        self.memory_window = 5
-        self.max_retries = 5
+        self.memory_window = 4
+        self.max_retries = 2
         self.running_memory: List[str] = []
         self.cur_file: str = ''
         self.cur_line: int = 0
@@ -44,13 +44,15 @@ class SWEAgent(Agent):
     def _think_act(self, messages: List[dict]) -> tuple[Action, str]:
         resp = self.llm.completion(
             messages=messages,
-            temperature=0.0,
+            temperature=0.05,
         )
         action_resp = resp['choices'][0]['message']['content']
+        print(f"\033[90m{resp['usage']}\033[0m")
+        print(
+            f'\n======== RAW ======\n\033[94m{action_resp}\033[0m\n==== END RAW ====\n')
         return parse_command(action_resp, self.cur_file, self.cur_line)
 
     def _update(self, action: Action):
-
         if isinstance(action, FileReadAction):
             self.cur_file = action.path
             self.cur_line = action.start_index
@@ -87,8 +89,8 @@ class SWEAgent(Agent):
                 self.memory_window
             )
             msgs.insert(1, {'content': context, 'role': 'user'})
-
-        # print('\n'.join([m['content'] for m in msgs]))
+        # clrs = [''] * (len(msgs)-2) + ['\033[0;36m', '\033[0;35m']
+        # print('\n\n'.join([c+m['content']+'\033[0m' for c, m in zip(clrs, msgs)]))
         action, thought = self._think_act(messages=msgs)
 
         start_msg_len = len(msgs)
@@ -100,6 +102,7 @@ class SWEAgent(Agent):
 
         if not action:
             action = AgentThinkAction(thought)
+
         self._update(action)
         self.latest_action = action
         return action

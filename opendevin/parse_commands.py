@@ -12,10 +12,9 @@ class Command:
 
 
 def parse_command_file() -> str | None:
-    if not os.path.exists('evaluation/SWE-bench/commands.sh'):
-        print('Error reading commands, could not find commands.sh')
+    if not os.path.exists('commands.sh'):
         return None
-    content = open('evaluation/SWE-bench/commands.sh', 'r').read()
+    content = open('commands.sh', 'r').read()
     lines = content.split('\n')
     commands: list[Command] = []
     idx = 0

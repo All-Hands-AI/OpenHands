@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from opendevin.observation import (
     FileReadObservation,
     FileWriteObservation,
-    AgentErrorObservation,
     Observation
 )
 
@@ -16,72 +15,6 @@ from .base import ExecutableAction
 # This is the path where the workspace is mounted in the container
 # The LLM sometimes returns paths with this prefix, so we need to remove it
 PATH_PREFIX = '/workspace/'
-
-
-def validate_file_content(file_path: str, content: str) -> str:
-    """
-    Validates the content of a code file by checking for syntax errors.
-
-    Args:
-        file_path (str): The full path to the file being validated.
-        content (str): The content of the file to be validated.
-
-    Returns:
-        str or None: Error message if there are syntax errors, otherwise None.
-    """
-
-    _, extension = os.path.splitext(file_path)
-    extension = extension.lstrip('.')
-
-    if extension == 'py':
-        return _validate_python(content)
-    elif extension == 'js':
-        return _validate_javascript(content)
-    elif extension == 'cpp' or extension == 'cc' or extension == 'cxx':
-        return _validate_cpp(content)
-    elif extension == 'java':
-        return _validate_java(content)
-    else:
-        return f'Unsupported file type: {extension}'
-
-
-def _validate_python(content: str) -> str:
-    # cmd = f'python -c "{content}"'
-    # result = CmdRunAction(cmd).run( )
-    # if result.exit_code != 0:
-    #    return result.stderr
-    return ''
-
-
-def _validate_javascript(content: str) -> str:
-    # cmd = f'node -e "{content}"'
-    # result = CmdRunAction(cmd).run(AgentController())
-    # if result.exit_code != 0:
-    #    return result.stderr
-    return ''
-
-
-def _validate_cpp(content: str) -> str:
-    # with open('temp.cpp', 'w') as f:
-    #    f.write(content)
-    # cmd = 'g++ -Wall -Wextra -std=c++11 -o temp temp.cpp'
-    # result = CmdRunAction(cmd).run(AgentController())
-    # if result.exit_code != 0:
-    #    return result.stderr
-    # os.remove('temp.cpp')
-    # os.remove('temp')
-    return ''
-
-
-def _validate_java(content: str) -> str:
-    # with open('temp.java', 'w') as f:
-    #    f.write(content)
-    # cmd = 'javac temp.java'
-    # result = CmdRunAction(cmd).run(AgentController())
-    # if result.exit_code != 0:
-    #    return result.stderr
-    # os.remove('temp.java')
-    return ''
 
 
 def resolve_path(base_path, file_path):
@@ -98,6 +31,7 @@ class FileReadAction(ExecutableAction):
     """
     path: str
     start_index: int = 0
+    thoughts: str = ''
     action: str = ActionType.READ
 
     def run(self, controller) -> FileReadObservation:
@@ -111,7 +45,7 @@ class FileReadAction(ExecutableAction):
                 code_slice = all_lines[self.start_index: end_index]
             else:
                 code_slice = all_lines[:]
-            code_view = '\n'.join(code_slice)
+            code_view = ''.join(code_slice)
             return FileReadObservation(path=path, content=code_view)
 
     @property
@@ -125,6 +59,7 @@ class FileWriteAction(ExecutableAction):
     content: str
     start: int = 0
     end: int = -1
+    thoughts: str = ''
     action: str = ActionType.WRITE
 
     def run(self, controller) -> Observation:
@@ -135,21 +70,15 @@ class FileWriteAction(ExecutableAction):
             if mode != 'w':
                 all_lines = file.readlines()
                 new_file = [''] if self.start == 0 else all_lines[:self.start]
-                new_file += insert
+                new_file += [i + '\n' for i in insert]
                 new_file += [''] if self.end == -1 else all_lines[self.end:]
             else:
                 new_file = insert
-            content_str = '\n'.join(new_file)
-            validation_error = validate_file_content(whole_path, content_str)
-            if not validation_error:
-                file.seek(0)
-                file.write(content_str)
-                file.truncate()
-                return FileWriteObservation(content=content_str, path=self.path)
-            else:
-                # Revert to the old file content
-                file.write('\n'.join(all_lines))
-                return AgentErrorObservation(content=validation_error)
+
+            file.seek(0)
+            file.writelines(new_file)
+            file.truncate()
+            return FileWriteObservation(content=''.join(new_file), path=self.path)
 
     @property
     def message(self) -> str:
