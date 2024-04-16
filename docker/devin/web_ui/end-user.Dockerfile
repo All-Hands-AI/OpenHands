@@ -89,5 +89,11 @@ COPY --from=builder $build_dir/dist/ .
 
 COPY docker/devin/web_ui/entrypoint.sh /docker-entrypoint.sh
 
+ARG frontend_port
+
+ENV FRONTEND_PORT=$frontend_port
+
+EXPOSE $frontend_port
+
 ENTRYPOINT ["/bin/sh", "-c", "/docker-entrypoint.sh"]
 CMD "-m ${DEFAULT_CHAT_MODEL} -e ${DEFAULT_EMBEDDINGS_MODEL} --"
