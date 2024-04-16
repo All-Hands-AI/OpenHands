@@ -34,6 +34,7 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
+autopep8 = "v2.1.0"
 flake8 = "7.0.0"
 ruff = "0.3.7"
 mypy = "1.9.0"

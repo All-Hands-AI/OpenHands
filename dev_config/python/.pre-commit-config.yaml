@@ -15,6 +15,11 @@ repos:
         additional_dependencies:
           - flake8-quotes
 
+  - repo: https://github.com/hhatto/autopep8
+    rev: v2.1.0
+    hooks:
+      - id: autopep8
+
   - repo: https://github.com/asottile/setup-cfg-fmt
     rev: v2.5.0
     hooks:
