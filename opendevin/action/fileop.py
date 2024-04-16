@@ -39,8 +39,13 @@ class FileReadAction(ExecutableAction):
         path = resolve_path(self.path)
         self.start = max(self.start, 0)
         with open(path, 'r', encoding='utf-8') as file:
-            if self.end < self.start:
-                code_view = file.read()
+            if self.end == -1:
+                if self.start == 0:
+                    code_view = file.read()
+                else:
+                    all_lines = file.readlines()
+                    code_slice = all_lines[self.start:]
+                    code_view = ''.join(code_slice)
             else:
                 all_lines = file.readlines()
                 num_lines = len(all_lines)
