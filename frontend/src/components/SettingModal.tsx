@@ -13,6 +13,7 @@ import {
   fetchAgents,
   fetchModels,
   saveSettings,
+  getCurrentSettings,
 } from "../services/settingsService";
 import { RootState } from "../store";
 import { I18nKey } from "../i18n/declaration";
@@ -26,7 +27,7 @@ interface Props {
 }
 
 function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
-  const settings = useSelector((state: RootState) => state.settings);
+  const settings = getCurrentSettings();
   const [model, setModel] = useState(settings[ArgConfigType.LLM_MODEL]);
   const [inputModel, setInputModel] = useState(
     settings[ArgConfigType.LLM_MODEL],
@@ -57,10 +58,6 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
         [ArgConfigType.AGENT]: agent,
         [ArgConfigType.LANGUAGE]: language,
       },
-      Object.fromEntries(
-        Object.entries(settings).map(([key, value]) => [key, value]),
-      ),
-      false,
     );
     onClose();
   };

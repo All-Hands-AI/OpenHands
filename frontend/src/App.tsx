@@ -10,7 +10,7 @@ import SettingModal from "./components/SettingModal";
 import Terminal from "./components/Terminal";
 import Workspace from "./components/Workspace";
 import { fetchMsgTotal } from "./services/session";
-import { getSettingsForInitialize } from "./services/settingsService";
+import { getCurrentSettings } from "./services/settingsService";
 import Socket from "./services/socket";
 import { ResConfigurations, ResFetchMsgTotal } from "./types/ResponseType";
 import ActionType from "./types/ActionType";
@@ -54,7 +54,7 @@ function App(): JSX.Element {
     if (initOnce) return;
     initOnce = true;
 
-    const event = { action: ActionType.INIT, args: getSettingsForInitialize() };
+    const event = { action: ActionType.INIT, args: getCurrentSettings() };
     const eventString = JSON.stringify(event);
     Socket.send(eventString);
 
