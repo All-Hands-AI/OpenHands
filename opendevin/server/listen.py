@@ -2,7 +2,7 @@ import uuid
 from pathlib import Path
 
 import litellm
-from fastapi import Depends, FastAPI, WebSocket
+from fastapi import Depends, FastAPI, WebSocket, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
@@ -13,6 +13,7 @@ from starlette.responses import JSONResponse
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin import config, files
 from opendevin.agent import Agent
+from opendevin.logger import opendevin_logger as logger
 from opendevin.server.agent import agent_manager
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import message_stack, session_manager
@@ -126,8 +127,15 @@ def refresh_files():
 
 @app.get('/api/select-file')
 def select_file(file: str):
-    with open(Path(Path(str(config.get('WORKSPACE_BASE'))), file), 'r') as selected_file:
-        content = selected_file.read()
+    try:
+        workspace_base = config.get('WORKSPACE_BASE')
+        file_path = Path(workspace_base, file)
+        with open(file_path, 'r') as selected_file:
+            content = selected_file.read()
+    except Exception as e:
+        logger.error(f'Error opening file {file}: {e}', exc_info=False)
+        error_msg = f'Error opening file: {e}'
+        return Response(f'{{"error": "{error_msg}"}}', status_code=500)
     return {'code': content}
 
 
