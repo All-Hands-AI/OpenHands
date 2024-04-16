@@ -69,10 +69,10 @@ async def get_token(credentials: HTTPAuthorizationCredentials = Depends(security
         sid = get_sid_from_token(credentials.credentials)
         if not sid:
             sid = str(uuid.uuid4())
-            logger.info(f"Invalid or missing credentials, generating new session ID: {sid}")
+            logger.info(f'Invalid or missing credentials, generating new session ID: {sid}')
     else:
         sid = str(uuid.uuid4())
-        logger.info(f"No credentials provided, generating new session ID: {sid}")
+        logger.info(f'No credentials provided, generating new session ID: {sid}')
 
     token = sign_token({'sid': sid})
     return {'token': token, 'status': 'ok'}
