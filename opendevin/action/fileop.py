@@ -4,18 +4,18 @@ from dataclasses import dataclass
 from opendevin.observation import FileReadObservation, FileWriteObservation
 from opendevin.schema import ActionType
 from opendevin.sandbox import E2BBox
+from opendevin import config
 
 from .base import ExecutableAction
 
-# This is the path where the workspace is mounted in the container
-# The LLM sometimes returns paths with this prefix, so we need to remove it
-PATH_PREFIX = '/workspace/'
+SANDBOX_PATH_PREFIX = '/workspace/'
 
 
-def resolve_path(base_path, file_path):
-    if file_path.startswith(PATH_PREFIX):
-        file_path = file_path[len(PATH_PREFIX):]
-    return os.path.join(base_path, file_path)
+def resolve_path(file_path):
+    if file_path.startswith(SANDBOX_PATH_PREFIX):
+        # Sometimes LLMs include the absolute path of the file inside the sandbox
+        file_path = file_path[len(SANDBOX_PATH_PREFIX):]
+    return os.path.join(config.get('WORKSPACE_BASE'), file_path)
 
 
 @dataclass
@@ -31,7 +31,7 @@ class FileReadAction(ExecutableAction):
             return FileReadObservation(path=self.path, content=content)
 
         else:
-            path = resolve_path(controller.workdir, self.path)
+            path = resolve_path(self.path)
             with open(path, 'r', encoding='utf-8') as file:
                 return FileReadObservation(path=path, content=file.read())
 
@@ -53,7 +53,7 @@ class FileWriteAction(ExecutableAction):
                 self.path, self.content)
             return FileWriteObservation(content='', path=self.path)
         else:
-            whole_path = resolve_path(controller.workdir, self.path)
+            whole_path = resolve_path(self.path)
             with open(whole_path, 'w', encoding='utf-8') as file:
                 file.write(self.content)
             return FileWriteObservation(content='', path=self.path)

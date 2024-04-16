@@ -18,7 +18,7 @@ class E2BBox(Sandbox):
 
     def __init__(
         self,
-        template: str = 'base',
+        template: str = 'open-devin',
         timeout: int = 120,
     ):
         self.sandbox = E2BSandbox(

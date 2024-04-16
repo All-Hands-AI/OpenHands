@@ -1,6 +1,7 @@
 import copy
 import os
 
+import argparse
 import toml
 from dotenv import load_dotenv
 
@@ -11,16 +12,17 @@ load_dotenv()
 DEFAULT_CONFIG: dict = {
     ConfigType.LLM_API_KEY: None,
     ConfigType.LLM_BASE_URL: None,
-    ConfigType.WORKSPACE_DIR: os.path.join(os.getcwd(), 'workspace'),
+    ConfigType.WORKSPACE_BASE: os.getcwd(),
+    ConfigType.WORKSPACE_MOUNT_PATH: None,
+    ConfigType.WORKSPACE_MOUNT_REWRITE: None,
     ConfigType.LLM_MODEL: 'gpt-3.5-turbo-1106',
     ConfigType.SANDBOX_CONTAINER_IMAGE: 'ghcr.io/opendevin/sandbox',
     ConfigType.RUN_AS_DEVIN: 'true',
     ConfigType.LLM_EMBEDDING_MODEL: 'local',
     ConfigType.LLM_DEPLOYMENT_NAME: None,
     ConfigType.LLM_API_VERSION: None,
-    ConfigType.LLM_NUM_RETRIES: 6,
+    ConfigType.LLM_NUM_RETRIES: 1,
     ConfigType.LLM_COOLDOWN_TIME: 1,
-    ConfigType.DIRECTORY_REWRITE: '',
     ConfigType.MAX_ITERATIONS: 100,
     # GPT-4 pricing is $10 per 1M input tokens. Since tokenization happens on LLM side,
     # we cannot easily count number of tokens, but we can count characters.
@@ -29,6 +31,8 @@ DEFAULT_CONFIG: dict = {
     ConfigType.AGENT: 'MonologueAgent',
     ConfigType.E2B_API_KEY: '',
     ConfigType.SANDBOX_TYPE: 'ssh',  # Can be 'ssh', 'exec', or 'e2b'
+    ConfigType.USE_HOST_NETWORK: 'false',
+    ConfigType.SSH_HOSTNAME: 'localhost',
     ConfigType.DISABLE_COLOR: 'false',
 }
 
@@ -46,13 +50,39 @@ for k, v in config.items():
         config[k] = tomlConfig[k]
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description='Run an agent with a specific task')
+    parser.add_argument(
+        '-d',
+        '--directory',
+        type=str,
+        help='The working directory for the agent',
+    )
+    args, _ = parser.parse_known_args()
+    if args.directory:
+        config[ConfigType.WORKSPACE_BASE] = os.path.abspath(args.directory)
+        print(f'Setting workspace base to {config[ConfigType.WORKSPACE_BASE]}')
+
+
+parse_arguments()
+
+
+def finalize_config():
+    if config.get(ConfigType.WORKSPACE_MOUNT_REWRITE) and not config.get(ConfigType.WORKSPACE_MOUNT_PATH):
+        base = config.get(ConfigType.WORKSPACE_BASE) or os.getcwd()
+        parts = config[ConfigType.WORKSPACE_MOUNT_REWRITE].split(':')
+        config[ConfigType.WORKSPACE_MOUNT_PATH] = base.replace(parts[0], parts[1])
+
+
+finalize_config()
+
+
 def get(key: str, required: bool = False):
     """
     Get a key from the environment variables or config.toml or default configs.
     """
-    value = os.environ.get(key)
-    if not value:
-        value = config.get(key)
+    value = config.get(key)
     if not value and required:
         raise KeyError(f"Please set '{key}' in `config.toml` or `.env`.")
     return value

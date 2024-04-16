@@ -4,7 +4,6 @@ import {
   Autocomplete,
   AutocompleteItem,
   Button,
-  Input,
   Modal,
   ModalBody,
   ModalContent,
@@ -46,9 +45,6 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
     settings[ArgConfigType.LLM_MODEL],
   );
   const [agent, setAgent] = useState(settings[ArgConfigType.AGENT]);
-  const [workspaceDirectory, setWorkspaceDirectory] = useState(
-    settings[ArgConfigType.WORKSPACE_DIR],
-  );
   const [language, setLanguage] = useState(settings[ArgConfigType.LANGUAGE]);
 
   const { t } = useTranslation();
@@ -78,7 +74,6 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
       {
         [ArgConfigType.LLM_MODEL]: model ?? inputModel,
         [ArgConfigType.AGENT]: agent,
-        [ArgConfigType.WORKSPACE_DIR]: workspaceDirectory,
         [ArgConfigType.LANGUAGE]: language,
       },
       Object.fromEntries(
@@ -100,18 +95,6 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
             {t(I18nKey.CONFIGURATION$MODAL_TITLE)}
           </ModalHeader>
           <ModalBody>
-            <Input
-              type="text"
-              label={t(
-                I18nKey.CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_LABEL,
-              )}
-              defaultValue={workspaceDirectory}
-              placeholder={t(
-                I18nKey.CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER,
-              )}
-              onChange={(e) => setWorkspaceDirectory(e.target.value)}
-            />
-
             <Autocomplete
               defaultItems={supportedModels.map((v: string) => ({
                 label: v,

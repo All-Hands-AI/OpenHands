@@ -29,7 +29,6 @@ def parse_arguments():
     parser.add_argument(
         '-d',
         '--directory',
-        required=True,
         type=str,
         help='The working directory for the agent',
     )
@@ -70,7 +69,8 @@ def parse_arguments():
         type=int,
         help='The maximum number of characters to send to and receive from LLM per task',
     )
-    return parser.parse_args()
+    args, _ = parser.parse_known_args()
+    return args
 
 
 async def main():
@@ -80,17 +80,14 @@ async def main():
     # Determine the task source
     if args.file:
         task = read_task_from_file(args.file)
+    elif args.task:
+        task = args.task
     elif not sys.stdin.isatty():
         task = read_task_from_stdin()
     else:
-        task = args.task
-
-    if not task:
         raise ValueError(
             'No task provided. Please specify a task through -t, -f.')
 
-    # FIXME: autopep8 and mypy are fighting each other on this line
-    # autopep8: off
     print(
         f'Running agent {args.agent_cls} (model: {args.model_name}, directory: {args.directory}) with task: "{task}"'
     )
@@ -98,7 +95,7 @@ async def main():
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
     controller = AgentController(
-        agent=agent, workdir=args.directory, max_iterations=args.max_iterations, max_chars=args.max_chars
+        agent=agent, max_iterations=args.max_iterations, max_chars=args.max_chars
     )
 
     await controller.start_loop(task)
