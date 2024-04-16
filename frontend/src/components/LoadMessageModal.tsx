@@ -1,77 +1,82 @@
 import React from "react";
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  Button,
-} from "@nextui-org/react";
+import { Button } from "@nextui-org/react";
 import { fetchMsgs, clearMsgs } from "../services/session";
 import { sendChatMessageFromEvent } from "../services/chatService";
 import { handleAssistantMessage } from "../services/actions";
 import { ResFetchMsg } from "../types/ResponseType";
+import ODModal from "./ODModal";
+import toast from "../utils/toast";
 
-interface Props {
+interface LoadMessageModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-function LoadMessageModal({ isOpen, onClose }: Props): JSX.Element {
-  const handleDelMsg = () => {
+function LoadMessageModal({
+  isOpen,
+  onClose,
+}: LoadMessageModalProps): JSX.Element {
+  const handleStartNewSession = () => {
     clearMsgs().then().catch();
     onClose();
   };
 
-  const handleLoadMsg = () => {
-    fetchMsgs()
-      .then((data) => {
-        if (
-          data === undefined ||
-          data.messages === undefined ||
-          data.messages.length === 0
-        ) {
-          return;
+  const handleResumeSession = async () => {
+    try {
+      const data = await fetchMsgs();
+      if (!data || !data.messages || data.messages.length === 0) {
+        return;
+      }
+
+      data.messages.forEach((msg: ResFetchMsg) => {
+        switch (msg.role) {
+          case "user":
+            sendChatMessageFromEvent(msg.payload);
+            break;
+          case "assistant":
+            handleAssistantMessage(msg.payload);
+            break;
+          default:
+            break;
         }
-        const { messages } = data;
-        messages.forEach((msg: ResFetchMsg) => {
-          switch (msg.role) {
-            case "user":
-              sendChatMessageFromEvent(msg.payload);
-              break;
-            case "assistant":
-              handleAssistantMessage(msg.payload);
-              break;
-            default:
-          }
-        });
-      })
-      .catch();
-    onClose();
+      });
+
+      onClose();
+    } catch (error) {
+      toast.stickyError("ws", "Error fetching the session");
+    }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} hideCloseButton backdrop="blur">
-      <ModalContent>
-        <>
-          <ModalHeader className="flex flex-col gap-1">
-            Unfinished Session Detected
-          </ModalHeader>
-          <ModalBody>
-            You have an unfinished session. Do you want to load it?
-          </ModalBody>
-
-          <ModalFooter>
-            <Button color="danger" variant="light" onPress={handleDelMsg}>
-              No, start a new session
-            </Button>
-            <Button color="primary" onPress={handleLoadMsg}>
-              Okay, load it
-            </Button>
-          </ModalFooter>
-        </>
-      </ModalContent>
-    </Modal>
+    <ODModal
+      size="md"
+      isOpen={isOpen}
+      onClose={onClose}
+      hideCloseButton
+      backdrop="blur"
+      title="Unfinished Session Detected"
+      primaryAction={
+        <Button
+          className="bg-primary rounded-small"
+          onPress={handleResumeSession}
+        >
+          Resume Session
+        </Button>
+      }
+      secondaryAction={
+        <Button
+          className="bg-neutral-500 rounded-small"
+          onPress={handleStartNewSession}
+        >
+          Start New Session
+        </Button>
+      }
+    >
+      <p>
+        You seem to have an unfinished task. Would you like to pick up where you
+        left off or start fresh?
+      </p>
+    </ODModal>
   );
 }
 
