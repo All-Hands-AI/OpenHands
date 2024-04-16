@@ -114,11 +114,6 @@ async def del_messages(
     )
 
 
-@app.get('/api/configurations')
-def read_default_model():
-    return config.get_fe_config()
-
-
 @app.get('/api/refresh-files')
 def refresh_files():
     structure = files.get_folder_structure(Path(str(config.get('WORKSPACE_BASE'))))
