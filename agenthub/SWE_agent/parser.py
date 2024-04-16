@@ -51,12 +51,12 @@ def get_action_from_string(command_string: str, path: str, line: int, thoughts: 
     elif 'scroll_up' == cmd:
         if not path:
             return no_open_file_error
-        return FileReadAction(path, line+100, thoughts)
+        return FileReadAction(path, line + 100, thoughts)
 
     elif 'scroll_down' == cmd:
         if not path:
             return no_open_file_error
-        return FileReadAction(path, line-100, thoughts)
+        return FileReadAction(path, line - 100, thoughts)
 
     elif 'goto' == cmd:
         if not path:
