@@ -24,11 +24,9 @@ class Socket {
   private static initializing = false;
 
   public static tryInitialize(): void {
-    console.log('try init');
     this.initializing = true;
     getToken()
       .then((token) => {
-        console.log('got tok');
         Socket._initialize(token);
         this.initializing = false;
       })
@@ -39,7 +37,7 @@ class Socket {
         if (this.isFirstRun) {
           setTimeout(() => {
             this.tryInitialize();
-          }, 3000);
+          }, 1500);
         }
       });
   }
