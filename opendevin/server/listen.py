@@ -2,13 +2,11 @@ import uuid
 from pathlib import Path
 
 import litellm
-from fastapi import Depends, FastAPI, WebSocket, Response
+from fastapi import Depends, FastAPI, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
-from starlette import status
-from starlette.responses import JSONResponse
+from fastapi.responses import Response, RedirectResponse, JSONResponse
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin import config, files
@@ -17,6 +15,7 @@ from opendevin.logger import opendevin_logger as logger
 from opendevin.server.agent import agent_manager
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import message_stack, session_manager
+from opendevin.logger import opendevin_logger as logger
 
 app = FastAPI()
 app.add_middleware(
@@ -61,18 +60,22 @@ async def get_litellm_agents():
 
 
 @app.get('/api/auth')
-async def get_token(
-        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
-):
+async def get_token(credentials: HTTPAuthorizationCredentials = Depends(security_scheme)):
     """
-    Get token for authentication when starts a websocket connection.
+    Generate a JWT for authentication when starting a WebSocket connection. This endpoint checks if valid credentials
+    are provided and uses them to get a session ID. If no valid credentials are provided, it generates a new session ID.
     """
-    sid = get_sid_from_token(credentials.credentials) or str(uuid.uuid4())
+    if credentials and credentials.credentials:
+        sid = get_sid_from_token(credentials.credentials)
+        if not sid:
+            sid = str(uuid.uuid4())
+            logger.info(f"Invalid or missing credentials, generating new session ID: {sid}")
+    else:
+        sid = str(uuid.uuid4())
+        logger.info(f"No credentials provided, generating new session ID: {sid}")
+
     token = sign_token({'sid': sid})
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'token': token},
-    )
+    return {'token': token, 'status': 'ok'}
 
 
 @app.get('/api/messages')
