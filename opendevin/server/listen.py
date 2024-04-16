@@ -2,16 +2,19 @@ import uuid
 from pathlib import Path
 
 import litellm
-from fastapi import Depends, FastAPI, WebSocket
+from fastapi import Depends, FastAPI, WebSocket, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from starlette import status
 from starlette.responses import JSONResponse
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin import config, files
 from opendevin.agent import Agent
-from opendevin.server.agent import AgentManager
+from opendevin.logger import opendevin_logger as logger
+from opendevin.server.agent import agent_manager
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import message_stack, session_manager
 
@@ -37,11 +40,11 @@ async def websocket_endpoint(websocket: WebSocket):
     session_manager.add_session(sid, websocket)
     # TODO: actually the agent_manager is created for each websocket connection, even if the session id is the same,
     # we need to manage the agent in memory for reconnecting the same session id to the same agent
-    agent_manager = AgentManager(sid)
+    agent_manager.register_agent(sid)
     await session_manager.loop_recv(sid, agent_manager.dispatch)
 
 
-@app.get('/litellm-models')
+@app.get('/api/litellm-models')
 async def get_litellm_models():
     """
     Get all models supported by LiteLLM.
@@ -49,17 +52,17 @@ async def get_litellm_models():
     return list(set(litellm.model_list + list(litellm.model_cost.keys())))
 
 
-@app.get('/litellm-agents')
+@app.get('/api/litellm-agents')
 async def get_litellm_agents():
     """
     Get all agents supported by LiteLLM.
     """
-    return Agent.listAgents()
+    return Agent.list_agents()
 
 
-@app.get('/auth')
+@app.get('/api/auth')
 async def get_token(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     """
     Get token for authentication when starts a websocket connection.
@@ -72,9 +75,9 @@ async def get_token(
     )
 
 
-@app.get('/messages')
+@app.get('/api/messages')
 async def get_messages(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     data = []
     sid = get_sid_from_token(credentials.credentials)
@@ -87,9 +90,9 @@ async def get_messages(
     )
 
 
-@app.get('/messages/total')
+@app.get('/api/messages/total')
 async def get_message_total(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     sid = get_sid_from_token(credentials.credentials)
     return JSONResponse(
@@ -100,7 +103,7 @@ async def get_message_total(
 
 @app.delete('/messages')
 async def del_messages(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     sid = get_sid_from_token(credentials.credentials)
     message_stack.del_messages(sid)
@@ -110,20 +113,35 @@ async def del_messages(
     )
 
 
-@app.get('/configurations')
+@app.get('/api/configurations')
 def read_default_model():
     return config.get_fe_config()
 
 
-@app.get('/refresh-files')
+@app.get('/api/refresh-files')
 def refresh_files():
     structure = files.get_folder_structure(
-        Path(str(config.get('WORKSPACE_DIR'))))
+        Path(str(config.get('WORKSPACE_BASE'))))
     return structure.to_dict()
 
 
-@app.get('/select-file')
+@app.get('/api/select-file')
 def select_file(file: str):
-    with open(Path(Path(str(config.get('WORKSPACE_DIR'))), file), 'r') as selected_file:
-        content = selected_file.read()
+    try:
+        workspace_base = config.get('WORKSPACE_BASE')
+        file_path = Path(workspace_base, file)
+        with open(file_path, 'r') as selected_file:
+            content = selected_file.read()
+    except Exception as e:
+        logger.error(f'Error opening file {file}: {e}', exc_info=False)
+        error_msg = f'Error opening file: {e}'
+        return Response(f'{{"error": "{error_msg}"}}', status_code=500)
     return {'code': content}
+
+
+@app.get('/')
+async def docs_redirect():
+    response = RedirectResponse(url='/index.html')
+    return response
+
+app.mount('/', StaticFiles(directory='./frontend/dist'), name='dist')
