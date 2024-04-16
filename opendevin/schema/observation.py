@@ -2,30 +2,30 @@ from pydantic import BaseModel, Field
 
 
 class ObservationType(BaseModel):
-    READ: str = Field(default='read')
+    READ: str = Field(default="read")
     """The content of a file
     """
 
-    WRITE: str = Field(default='write')
+    WRITE: str = Field(default="write")
 
-    BROWSE: str = Field(default='browse')
+    BROWSE: str = Field(default="browse")
     """The HTML content of a URL
     """
 
-    RUN: str = Field(default='run')
+    RUN: str = Field(default="run")
     """The output of a command
     """
 
-    RECALL: str = Field(default='recall')
+    RECALL: str = Field(default="recall")
     """The result of a search
     """
 
-    CHAT: str = Field(default='chat')
+    CHAT: str = Field(default="chat")
     """A message from the user
     """
 
-    MESSAGE: str = Field(default='message')
+    MESSAGE: str = Field(default="message")
 
-    ERROR: str = Field(default='error')
+    ERROR: str = Field(default="error")
 
-    NULL: str = Field(default='null')
+    NULL: str = Field(default="null")
