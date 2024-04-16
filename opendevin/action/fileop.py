@@ -4,23 +4,24 @@ from dataclasses import dataclass
 
 from opendevin.observation import (
     FileReadObservation,
-    FileWriteObservation,
-    Observation
+    FileWriteObservation
 )
 
 from opendevin.schema import ActionType
+from opendevin import config
 
 from .base import ExecutableAction
 
 # This is the path where the workspace is mounted in the container
 # The LLM sometimes returns paths with this prefix, so we need to remove it
-PATH_PREFIX = '/workspace/'
+SANDBOX_PATH_PREFIX = '/workspace/'
 
 
-def resolve_path(base_path, file_path):
-    if file_path.startswith(PATH_PREFIX):
-        file_path = file_path[len(PATH_PREFIX):]
-    return os.path.join(base_path, file_path)
+def resolve_path(file_path):
+    if file_path.startswith(SANDBOX_PATH_PREFIX):
+        # Sometimes LLMs include the absolute path of the file inside the sandbox
+        file_path = file_path[len(SANDBOX_PATH_PREFIX):]
+    return os.path.join(config.get('WORKSPACE_BASE'), file_path)
 
 
 @dataclass
@@ -35,7 +36,7 @@ class FileReadAction(ExecutableAction):
     action: str = ActionType.READ
 
     def run(self, controller) -> FileReadObservation:
-        path = resolve_path(controller.workdir, self.path)
+        path = resolve_path(self.path)
         with open(path, 'r', encoding='utf-8') as file:
             all_lines = file.readlines()
             total_lines = len(all_lines)
@@ -62,8 +63,8 @@ class FileWriteAction(ExecutableAction):
     thoughts: str = ''
     action: str = ActionType.WRITE
 
-    def run(self, controller) -> Observation:
-        whole_path = resolve_path(controller.workdir, self.path)
+    def run(self, controller) -> FileWriteObservation:
+        whole_path = resolve_path(self.path)
         mode = 'w' if not os.path.exists(whole_path) else 'r+'
         insert = self.content.split('\n')
         with open(whole_path, mode, encoding='utf-8') as file:
