@@ -5,6 +5,7 @@ from llama_index.core import VectorStoreIndex
 from llama_index.vector_stores.chroma import ChromaVectorStore
 
 from opendevin import config
+from opendevin.logger import opendevin_logger as logger
 from . import json
 
 embedding_strategy = config.get('LLM_EMBEDDING_MODEL')
@@ -83,6 +84,7 @@ class LongTermMemory:
             },
         )
         self.thought_idx += 1
+        logger.debug("Adding %s event to memory: %d", t, self.thought_idx)
         self.index.insert(doc)
 
     def search(self, query: str, k: int = 10):
