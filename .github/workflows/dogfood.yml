@@ -14,7 +14,7 @@ jobs:
     if: github.event.label.name == 'dogfood-this'
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/opendevin/opendevin:rb-docker-tags
+      image: ghcr.io/opendevin/opendevin
       volumes:
         - /var/run/docker.sock:/var/run/docker.sock
 
