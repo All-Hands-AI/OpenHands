@@ -15,7 +15,6 @@ from opendevin.logger import opendevin_logger as logger
 from opendevin.server.agent import agent_manager
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import message_stack, session_manager
-from opendevin.logger import opendevin_logger as logger
 
 app = FastAPI()
 app.add_middleware(
