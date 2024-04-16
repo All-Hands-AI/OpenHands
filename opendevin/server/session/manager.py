@@ -1,11 +1,11 @@
 import atexit
 import json
 import os
-import signal
 from typing import Dict, Callable
 
 from fastapi import WebSocket
 
+from opendevin.logger import opendevin_logger as logger
 from .msg_stack import message_stack
 from .session import Session
 
@@ -19,8 +19,6 @@ class SessionManager:
     def __init__(self):
         self._load_sessions()
         atexit.register(self.close)
-        signal.signal(signal.SIGINT, self.handle_signal)
-        signal.signal(signal.SIGTERM, self.handle_signal)
 
     def add_session(self, sid: str, ws_conn: WebSocket):
         if sid not in self._sessions:
@@ -29,19 +27,15 @@ class SessionManager:
         self._sessions[sid].update_connection(ws_conn)
 
     async def loop_recv(self, sid: str, dispatch: Callable):
-        print(f"Starting loop_recv for sid: {sid}")
+        print(f'Starting loop_recv for sid: {sid}')
         """Starts listening for messages from the client."""
         if sid not in self._sessions:
             return
         await self._sessions[sid].loop_recv(dispatch)
 
     def close(self):
+        logger.info('Saving sessions...')
         self._save_sessions()
-
-    def handle_signal(self, signum, _):
-        print(f"Received signal {signum}, exiting...")
-        self.close()
-        exit(0)
 
     async def send(self, sid: str, data: Dict[str, object]) -> bool:
         """Sends data to the client."""

@@ -25,6 +25,7 @@ build:
 	@$(MAKE) -s install-python-dependencies
 	@$(MAKE) -s install-frontend-dependencies
 	@$(MAKE) -s install-precommit-hooks
+	@$(MAKE) -s build-frontend
 	@echo "$(GREEN)Build completed successfully.$(RESET)"
 
 build-nodocker:
@@ -120,6 +121,10 @@ install-precommit-hooks:
 	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 
+build-frontend:
+	@echo "$(YELLOW)Building frontend...$(RESET)"
+	@cd frontend && npm run build
+
 # Start backend
 start-backend:
 	@echo "$(YELLOW)Starting backend...$(RESET)"
@@ -181,7 +186,7 @@ setup-config-prompts:
 
 	@read -p "Enter your workspace directory [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
-	 echo "WORKSPACE_DIR=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
+	 echo "WORKSPACE_BASE=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
 
 # Help
 help:

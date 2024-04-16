@@ -1,7 +1,7 @@
 import atexit
-import signal
 
 from opendevin.server.session import session_manager
+from opendevin.logger import opendevin_logger as logger
 from .agent import AgentUnit
 
 
@@ -10,8 +10,6 @@ class AgentManager:
 
     def __init__(self):
         atexit.register(self.close)
-        signal.signal(signal.SIGINT, self.handle_signal)
-        signal.signal(signal.SIGTERM, self.handle_signal)
 
     def register_agent(self, sid: str):
         """Registers a new agent.
@@ -34,11 +32,7 @@ class AgentManager:
 
         await self.sid_to_agent[sid].dispatch(action, data)
 
-    def handle_signal(self, signum, _):
-        print(f"Received signal {signum}, exiting...")
-        self.close()
-        exit(0)
-
     def close(self):
+        logger.info(f'Closing {len(self.sid_to_agent)} agent(s)...')
         for sid, agent in self.sid_to_agent.items():
             agent.close()
