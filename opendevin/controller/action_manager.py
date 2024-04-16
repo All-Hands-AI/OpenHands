@@ -8,8 +8,6 @@ from opendevin.schema import ConfigType
 from opendevin.logger import opendevin_logger as logger
 from opendevin.action import (
     Action,
-    AddTaskAction,
-    ModifyTaskAction,
 )
 from opendevin.observation import (
     Observation,
@@ -43,28 +41,14 @@ class ActionManager:
 
     async def run_action(self, action: Action, agent_controller) -> Observation:
         observation: Observation = NullObservation('')
-        if isinstance(action, AddTaskAction):
-            try:
-                agent_controller.state.plan.add_subtask(
-                    action.parent, action.goal, action.subtasks)
-            except Exception as e:
-                observation = AgentErrorObservation(str(e))
-                logger.error(e)
-                traceback.print_exc()
-        elif isinstance(action, ModifyTaskAction):
-            try:
-                agent_controller.state.plan.set_subtask_state(action.id, action.state)
-            except Exception as e:
-                observation = AgentErrorObservation(str(e))
-                logger.error(e)
-                traceback.print_exc()
-        elif action.executable:
-            try:
-                observation = await action.run(agent_controller)
-            except Exception as e:
-                observation = AgentErrorObservation(str(e))
-                logger.error(e)
-                traceback.print_exc()
+        if not action.executable:
+            return observation
+        try:
+            observation = await action.run(agent_controller)
+        except Exception as e:
+            observation = AgentErrorObservation(str(e))
+            logger.error(e)
+            traceback.print_exc()
         return observation
 
     def run_command(self, command: str, background=False) -> CmdOutputObservation:
