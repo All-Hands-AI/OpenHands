@@ -21,8 +21,10 @@ def serialization_deserialization(original_action_dict, cls):
     assert isinstance(
         action_instance, cls), f'The action instance should be an instance of {cls.__name__}.'
     serialized_action_dict = action_instance.to_dict()
+    serialized_action_memory = action_instance.to_memory()
     serialized_action_dict.pop('message')
     assert serialized_action_dict == original_action_dict, 'The serialized action should match the original action dict.'
+    assert serialized_action_memory == original_action_dict, 'The serialized action in memory should match the original action dict.'
 
 
 def test_agent_think_action_serialization_deserialization():

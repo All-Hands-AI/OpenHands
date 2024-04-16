@@ -49,7 +49,7 @@ class LLM:
 
         completion_unwrapped = self._completion
 
-        def my_wait(retry_state):
+        def api_error_cooldown(retry_state):
             seconds = (retry_state.attempt_number) * cooldown_time
             opendevin_logger.info(f'Attempt #{retry_state.attempt_number} | Sleeping for {seconds}s for {retry_state.outcome.exception()}', )
             return seconds
@@ -60,7 +60,7 @@ class LLM:
 
         @retry(reraise=True,
                stop=stop_after_attempt(num_retries),
-               wait=my_wait, retry=retry_if_exception_type(APIConnectionError))
+               wait=api_error_cooldown, retry=retry_if_exception_type(APIConnectionError))
         @retry(reraise=True,
                stop=stop_after_attempt(num_retries),
                wait=wait_random_exponential(min=2, max=20), retry=retry_if_exception_type(RateLimitError), after=rate_limited_attempt)
