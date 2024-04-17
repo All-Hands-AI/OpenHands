@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class Action:
-    def run(self, controller: 'AgentController') -> 'Observation':
+    async def run(self, controller: 'AgentController') -> 'Observation':
         raise NotImplementedError
 
     def to_memory(self):

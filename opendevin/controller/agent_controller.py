@@ -1,7 +1,5 @@
 import asyncio
-import inspect
-import traceback
-from typing import List, Callable, Awaitable, cast
+from typing import List, Callable
 from opendevin.plan import Plan
 from opendevin.state import State
 from opendevin.agent import Agent
@@ -13,14 +11,12 @@ from opendevin import config
 from opendevin.logger import opendevin_logger as logger
 
 from opendevin.exceptions import MaxCharsExceedError
-from .command_manager import CommandManager
+from .action_manager import ActionManager
 
 from opendevin.action import (
     Action,
     NullAction,
     AgentFinishAction,
-    AddTaskAction,
-    ModifyTaskAction,
 )
 from opendevin.exceptions import AgentNoActionError
 
@@ -32,7 +28,7 @@ class AgentController:
     id: str
     agent: Agent
     max_iterations: int
-    command_manager: CommandManager
+    action_manager: ActionManager
     callbacks: List[Callable]
 
     def __init__(
@@ -47,13 +43,13 @@ class AgentController:
         self.id = sid
         self.agent = agent
         self.max_iterations = max_iterations
-        self.command_manager = CommandManager(self.id, container_image)
+        self.action_manager = ActionManager(self.id, container_image)
         self.max_chars = max_chars
         self.callbacks = callbacks
 
     def update_state_for_step(self, i):
         self.state.iteration = i
-        self.state.background_commands_obs = self.command_manager.get_background_obs()
+        self.state.background_commands_obs = self.action_manager.get_background_obs()
 
     def update_state_after_step(self):
         self.state.updated_info = []
@@ -90,7 +86,7 @@ class AgentController:
             raise MaxCharsExceedError(
                 self.state.num_of_chars, self.max_chars)
 
-        log_obs = self.command_manager.get_background_obs()
+        log_obs = self.action_manager.get_background_obs()
         for obs in log_obs:
             self.add_history(NullAction(), obs)
             await self._run_callbacks(obs)
@@ -127,31 +123,8 @@ class AgentController:
             logger.info(action, extra={'msg_type': 'INFO'})
             return True
 
-        if isinstance(action, AddTaskAction):
-            try:
-                self.state.plan.add_subtask(
-                    action.parent, action.goal, action.subtasks)
-            except Exception as e:
-                observation = AgentErrorObservation(str(e))
-                logger.error(e)
-                traceback.print_exc()
-        elif isinstance(action, ModifyTaskAction):
-            try:
-                self.state.plan.set_subtask_state(action.id, action.state)
-            except Exception as e:
-                observation = AgentErrorObservation(str(e))
-                logger.error(e)
-                traceback.print_exc()
-
-        if action.executable:
-            try:
-                observation = action.run(self)
-                if inspect.isawaitable(observation):
-                    observation = await cast(Awaitable[Observation], observation)
-            except Exception as e:
-                observation = AgentErrorObservation(str(e))
-                logger.error(e)
-                traceback.print_exc()
+        if isinstance(observation, NullObservation):
+            observation = await self.action_manager.run_action(action, self)
 
         if not isinstance(observation, NullObservation):
             logger.info(observation, extra={'msg_type': 'OBSERVATION'})
