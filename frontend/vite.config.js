@@ -1,9 +1,6 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-// eslint-disable-next-line import/no-extraneous-dependencies
 import viteTsconfigPaths from "vite-tsconfig-paths";
-import * as os from "node:os";
 
 const BACKEND_HOST = process.env.BACKEND_HOST || "127.0.0.1:3000";
 
@@ -20,7 +17,6 @@ let viteConfig;
 viteConfig = {
   // depending on your application, base can also be "/"
   base: "",
-  outDir: "dist",
   plugins: [react(), viteTsconfigPaths()],
   clearScreen: false,
   server: {
@@ -32,7 +28,6 @@ viteConfig = {
       "/api": {
         target: `http://${BACKEND_HOST}/`,
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
       },
       "/ws": {
         target: `ws://${BACKEND_HOST}/`,
@@ -69,6 +64,7 @@ if (process.env.NODE_ENV === "production") {
   viteConfig.build.minify = true;
 } else {
   // Development configuration
+  viteConfig.base = "";
 }
 
 // Applied only in non-interactive environment, i.e. Docker
@@ -81,20 +77,7 @@ if (process.env.DEBIAN_FRONTEND === "noninteractive") {
     },
   };
 
-  viteConfig = Object.assign({}, ...viteConfig, ...dockerConfig);
-}
-
-// Applied only in non-interactive environment, i.e. Docker
-if (process.env.DEBIAN_FRONTEND === "noninteractive") {
-  const dockerConfig = {
-    server: {
-      host: os.hostname(),
-      origin: `http://web_ui:${process.env.UI_HTTP_PORT}`,
-      port: 4173,
-    },
-  };
-
-  viteConfig = Object.assign({}, ...viteConfig, ...dockerConfig);
+  viteConfig = { ...viteConfig, ...dockerConfig };
 }
 
 export default defineConfig(viteConfig);

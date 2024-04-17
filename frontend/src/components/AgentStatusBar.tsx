@@ -1,9 +1,9 @@
 import React from "react";
-import { Trans } from "react-i18next";
-import i18next from "i18next";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "../i18n/declaration";
 
 function AgentStatusBar() {
-  const { t } = i18next;
+  const { t } = useTranslation();
 
   // TODO: Extend the agent status, e.g.:
   // - Agent is typing
@@ -15,7 +15,7 @@ function AgentStatusBar() {
     <div className="flex items-center space-x-3 ml-6">
       <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
       <span className="text-sm text-stone-400">
-        <Trans t={t}>CHAT_INTERFACE$INITIALZING_AGENT_LOADING_MESSAGE</Trans>
+        {t(I18nKey.CHAT_INTERFACE$INITIALZING_AGENT_LOADING_MESSAGE)}
       </span>
     </div>
   );

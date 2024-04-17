@@ -6,6 +6,8 @@ import litellm
 from fastapi import Depends, FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from starlette import status
 from starlette.responses import JSONResponse
 
@@ -46,7 +48,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await session_manager.loop_recv(sid, agent_manager.dispatch)
 
 
-@app.get('/litellm-models')
+@app.get('/api/litellm-models')
 async def get_litellm_models():
     """
     Get all models supported by LiteLLM.
@@ -54,7 +56,7 @@ async def get_litellm_models():
     return list(set(litellm.model_list + list(litellm.model_cost.keys())))
 
 
-@app.get('/litellm-agents')
+@app.get('/api/litellm-agents')
 async def get_litellm_agents():
     """
     Get all agents supported by LiteLLM.
@@ -62,7 +64,7 @@ async def get_litellm_agents():
     return Agent.list_agents()
 
 
-@app.get('/auth')
+@app.get('/api/auth')
 async def get_token(
         credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
@@ -77,7 +79,7 @@ async def get_token(
     )
 
 
-@app.get('/messages')
+@app.get('/api/messages')
 async def get_messages(
         credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
@@ -92,7 +94,7 @@ async def get_messages(
     )
 
 
-@app.get('/messages/total')
+@app.get('/api/messages/total')
 async def get_message_total(
         credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
@@ -115,20 +117,28 @@ async def del_messages(
     )
 
 
-@app.get('/configurations')
+@app.get('/api/configurations')
 def read_default_model():
     return config.get_fe_config()
 
 
-@app.get('/refresh-files')
+@app.get('/api/refresh-files')
 def refresh_files():
     structure = files.get_folder_structure(
-        Path(str(config.get('WORKSPACE_DIR'))))
+        Path(str(config.get('WORKSPACE_BASE'))))
     return structure.to_dict()
 
 
-@app.get('/select-file')
+@app.get('/api/select-file')
 def select_file(file: str):
-    with open(Path(Path(str(config.get('WORKSPACE_DIR'))), file), 'r') as selected_file:
+    with open(Path(Path(str(config.get('WORKSPACE_BASE'))), file), 'r') as selected_file:
         content = selected_file.read()
     return {'code': content}
+
+
+@app.get('/')
+async def docs_redirect():
+    response = RedirectResponse(url='/index.html')
+    return response
+
+app.mount('/', StaticFiles(directory='./frontend/dist'), name='dist')

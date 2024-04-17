@@ -1,0 +1,68 @@
+events{}
+
+http {
+    server {
+        listen 14044;
+
+        location / {
+            proxy_pass http://devin:14080;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            # proxy_set_header Host $host;
+            proxy_set_header Host devin:14080;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+
+    server{
+        listen 80;
+        server_name devin-ui-domain.local; # Replace with your domain
+
+        root /path/to/your/react/app/build; # The path to your React app's build directory
+        index index.html;
+
+        location /{
+            try_files $uri /index.html; # Serve index.html for any requests that don't match a file
+        }
+
+        # Optionally, configure gzip compression for better performance
+        gzip on;
+        gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+        # Optionally, set up a location block for handling API requests if you have an API
+        # location /api{
+        #     proxy_pass http://api-server; # Proxy API requests to your API server
+        # }
+    }
+
+    server{
+        listen 443 ssl;
+        server_name devin-ui-domain.local; # Replace with your domain
+
+        ssl_certificate /etc/nginx/ssl/mydomain.local/self.crt;
+        ssl_certificate_key /etc/nginx/ssl/mydomain.local/self.key;
+        # Uncomment if using Certbot to generate SSL certificate for real domain
+        # ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+        # ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+
+
+        root /path/to/your/react/app/build; # The path to your React app's build directory
+        index index.html;
+
+        location /{
+            try_files $uri /index.html; # Serve index.html for any requests that don't match a file
+        }
+
+        # Optionally, configure gzip compression for better performance
+        gzip on;
+        gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
+
+        # Optionally, set up a location block for handling API requests if you have an API
+        # location /api{
+        #     proxy_pass http://api-server; # Proxy API requests to your API server
+        # }
+    }
+}

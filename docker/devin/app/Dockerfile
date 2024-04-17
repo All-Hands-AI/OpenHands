@@ -10,15 +10,12 @@ LABEL org.opencontainers.image.author="lehcode <53556648+lehcode@users.noreply.g
 
 ARG debug
 ARG apt_cache_dir=/var/cache/apt
-
 ARG nvidia_utils_driver=550
 
 ENV DEBUG="$debug"
 ENV DEBIAN_FRONTEND=noninteractive
 
-COPY docker/locales /etc/locale.gen
-
-ADD --checksum=sha256:b978856ec3c826eb495b60e3fffe621f670c101150ebcbdeede4f961f22dc438 https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh /tmp/miniconda.sh
+ADD --checksum=sha256:3f2e5498e550a6437f15d9cc8020d52742d0ba70976ee8fce4f0daefa3992d2e https://repo.anaconda.com/miniconda/Miniconda3-py311_24.1.2-0-Linux-x86_64.sh /tmp/miniconda.sh
 
 RUN --mount=type=cache,target=${apt_cache_dir},sharing=locked \
     if [ -n "${DEBUG}" ]; then set -eux; fi && \
@@ -30,13 +27,14 @@ RUN --mount=type=cache,target=${apt_cache_dir},sharing=locked \
     if [ -z "${DEBUG}" ]; then apt-get -qy upgrade > /dev/null; fi
 
 ARG timezone=Etc/UTC
-ARG locale
+ARG lang
 
-ENV LANG="$locale"
+ENV LANG="$lang"
 ENV TZ="$timezone"
 
-RUN --mount=type=cache,target=/usr/share/i18n/locales \
-    if [ -n "$debug" ]; then set -eux; fi && \
+COPY docker/locales /etc/locale.gen
+
+RUN if [ -n "$debug" ]; then set -eux; fi && \
     echo "Configuring timezone and $ubuntu_version locale..." && \
     ln -fs "/usr/share/zoneinfo/$timezone" /etc/localtime > /dev/null && \
     echo "$TZ" | tee -pa /etc/timezone > /dev/null && \
@@ -102,7 +100,6 @@ WORKDIR "$APP_ROOT"
 
 COPY .env .
 COPY pyproject.toml .
-COPY README.md .
 
 ENV POETRY_HOME=/etc/poetry
 ENV PATH="${POETRY_HOME}/bin:${PATH}"
@@ -145,7 +142,6 @@ COPY .gitignore .
 COPY .gitattributes .
 
 COPY docker/devin/app/devin_up.py oppendevin_launcher
-COPY config.toml.template config.toml
 COPY docker/env_debug.sh "${APP_ROOT}/run/env_debug"
 COPY docker/devin/app/entrypoint.sh /docker-entrypoint.sh
 
@@ -155,6 +151,12 @@ RUN if [ -n "$debug" ]; then set -eux; fi && \
     poetry run pre-commit install --config /tmp/.pre-commit-config.yaml && \
     chmod a+x /docker-entrypoint.sh && \
     rm -rf /var/lib/apt/lists/*
+
+ARG devin_ws_port
+ARG jupyter_port
+
+EXPOSE $devin_ws_port
+EXPOSE $jupyter_port
 
 ENTRYPOINT ["/docker-entrypoint.sh", "-c"]
 CMD "-m ${DEFAULT_CHAT_MODEL} -e ${DEFAULT_EMBEDDINGS_MODEL} --"
