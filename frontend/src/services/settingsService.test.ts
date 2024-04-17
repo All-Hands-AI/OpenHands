@@ -6,7 +6,8 @@ jest.mock("./socket", () => ({
   send: jest.fn(),
 }));
 
-describe("getUpdatedSettings", () => {
+describe("mergeAndUpdateSettings", () => {
+
   it("should return initial settings if newSettings is empty", () => {
     const oldSettings = { key1: "value1" };
 

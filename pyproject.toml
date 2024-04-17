@@ -34,6 +34,8 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
+autopep8 = "v2.1.0"
+flake8 = "7.0.0"
 ruff = "0.3.7"
 mypy = "1.9.0"
 pre-commit = "3.7.0"
@@ -44,9 +46,14 @@ pytest = "*"
 [tool.poetry.group.evaluation.dependencies]
 torch = "*"
 
-[tool.autopep8]
-ignore = [ "E501" ]
-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.autopep8]
+# autopep8 fights with mypy on line length issue
+ignore = [ "E501" ]
+
+[tool.black]
+# prevent black (if installed) from changing single quotes to double quotes
+skip-string-normalization = true

@@ -60,7 +60,7 @@ def parse_arguments():
     args, _ = parser.parse_known_args()
     if args.directory:
         config[ConfigType.WORKSPACE_BASE] = os.path.abspath(args.directory)
-        print(f"Setting workspace base to {config[ConfigType.WORKSPACE_BASE]}")
+        print(f'Setting workspace base to {config[ConfigType.WORKSPACE_BASE]}')
 
 
 parse_arguments()

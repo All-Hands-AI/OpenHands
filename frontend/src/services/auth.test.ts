@@ -1,23 +1,25 @@
 import * as jose from "jose";
+import type { Mock } from "vitest";
 import { fetchToken, validateToken, getToken } from "./auth";
 
-jest.mock("jose", () => ({
-  decodeJwt: jest.fn(),
+vi.mock("jose", () => ({
+  decodeJwt: vi.fn(),
 }));
 
 // SUGGESTION: Prefer using msw for mocking requests (see https://mswjs.io/)
-global.fetch = jest.fn(() =>
+global.fetch = vi.fn(() =>
   Promise.resolve({
     status: 200,
     json: () => Promise.resolve({ token: "newToken" }),
   }),
-) as jest.Mock;
+) as Mock;
+
+Storage.prototype.getItem = vi.fn();
+Storage.prototype.setItem = vi.fn();
 
 describe("Auth Service", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    Storage.prototype.getItem = jest.fn();
-    Storage.prototype.setItem = jest.fn();
+    vi.clearAllMocks();
   });
 
   describe("fetchToken", () => {
@@ -32,7 +34,7 @@ describe("Auth Service", () => {
     });
 
     it("throws an error if response status is not 200", async () => {
-      (fetch as jest.Mock).mockImplementationOnce(() =>
+      (fetch as Mock).mockImplementationOnce(() =>
         Promise.resolve({ status: 401 }),
       );
       await expect(fetchToken()).rejects.toThrow("Get token failed.");
@@ -41,17 +43,17 @@ describe("Auth Service", () => {
 
   describe("validateToken", () => {
     it("returns true for a valid token", () => {
-      (jose.decodeJwt as jest.Mock).mockReturnValue({ sid: "123" });
+      (jose.decodeJwt as Mock).mockReturnValue({ sid: "123" });
       expect(validateToken("validToken")).toBe(true);
     });
 
     it("returns false for an invalid token", () => {
-      (jose.decodeJwt as jest.Mock).mockReturnValue({});
+      (jose.decodeJwt as Mock).mockReturnValue({});
       expect(validateToken("invalidToken")).toBe(false);
     });
 
     it("returns false when decodeJwt throws", () => {
-      (jose.decodeJwt as jest.Mock).mockImplementation(() => {
+      (jose.decodeJwt as Mock).mockImplementation(() => {
         throw new Error("Invalid token");
       });
       expect(validateToken("badToken")).toBe(false);
@@ -60,15 +62,15 @@ describe("Auth Service", () => {
 
   describe("getToken", () => {
     it("returns existing valid token from localStorage", async () => {
-      (jose.decodeJwt as jest.Mock).mockReturnValue({ sid: "123" });
-      (Storage.prototype.getItem as jest.Mock).mockReturnValue("existingToken");
+      (jose.decodeJwt as Mock).mockReturnValue({ sid: "123" });
+      (Storage.prototype.getItem as Mock).mockReturnValue("existingToken");
 
       const token = await getToken();
       expect(token).toBe("existingToken");
     });
 
     it("fetches, validates, and stores a new token when existing token is invalid", async () => {
-      (jose.decodeJwt as jest.Mock)
+      (jose.decodeJwt as Mock)
         .mockReturnValueOnce({})
         .mockReturnValueOnce({ sid: "123" });
 
@@ -78,7 +80,7 @@ describe("Auth Service", () => {
     });
 
     it("throws an error when fetched token is invalid", async () => {
-      (jose.decodeJwt as jest.Mock).mockReturnValue({});
+      (jose.decodeJwt as Mock).mockReturnValue({});
       await expect(getToken()).rejects.toThrow("Token validation failed.");
     });
   });
