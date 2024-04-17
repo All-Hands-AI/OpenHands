@@ -18,7 +18,7 @@ class AgentRecallAction(ExecutableAction):
     query: str
     action: str = ActionType.RECALL
 
-    def run(self, controller: 'AgentController') -> AgentRecallObservation:
+    async def run(self, controller: 'AgentController') -> AgentRecallObservation:
         return AgentRecallObservation(
             content='Recalling memories...',
             memories=controller.agent.search_memory(self.query),
@@ -34,7 +34,7 @@ class AgentThinkAction(NotExecutableAction):
     thought: str
     action: str = ActionType.THINK
 
-    def run(self, controller: 'AgentController') -> 'Observation':
+    async def run(self, controller: 'AgentController') -> 'Observation':
         raise NotImplementedError
 
     @property
@@ -47,7 +47,7 @@ class AgentEchoAction(ExecutableAction):
     content: str
     action: str = 'echo'
 
-    def run(self, controller: 'AgentController') -> 'Observation':
+    async def run(self, controller: 'AgentController') -> 'Observation':
         return AgentMessageObservation(self.content)
 
     @property
@@ -58,7 +58,6 @@ class AgentEchoAction(ExecutableAction):
 @dataclass
 class AgentSummarizeAction(NotExecutableAction):
     summary: str
-
     action: str = ActionType.SUMMARIZE
 
     @property
@@ -70,7 +69,7 @@ class AgentSummarizeAction(NotExecutableAction):
 class AgentFinishAction(NotExecutableAction):
     action: str = ActionType.FINISH
 
-    def run(self, controller: 'AgentController') -> 'Observation':
+    async def run(self, controller: 'AgentController') -> 'Observation':
         raise NotImplementedError
 
     @property

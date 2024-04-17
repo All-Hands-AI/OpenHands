@@ -2,11 +2,11 @@ import uuid
 from pathlib import Path
 
 import litellm
-from fastapi import Depends, FastAPI, WebSocket, Response
+from fastapi import Depends, FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
 from starlette import status
 from starlette.responses import JSONResponse
 
@@ -62,55 +62,43 @@ async def get_litellm_agents():
 
 @app.get('/api/auth')
 async def get_token(
-        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     """
     Get token for authentication when starts a websocket connection.
     """
     sid = get_sid_from_token(credentials.credentials) or str(uuid.uuid4())
     token = sign_token({'sid': sid})
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'token': token},
-    )
+    return {'token': token}
 
 
 @app.get('/api/messages')
 async def get_messages(
-        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     data = []
     sid = get_sid_from_token(credentials.credentials)
     if sid != '':
         data = message_stack.get_messages(sid)
 
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'messages': data},
-    )
+    return {'messages': data}
 
 
 @app.get('/api/messages/total')
 async def get_message_total(
-        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     sid = get_sid_from_token(credentials.credentials)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'msg_total': message_stack.get_message_total(sid)},
-    )
+    return {'msg_total': message_stack.get_message_total(sid)}
 
 
-@app.delete('/messages')
+@app.delete('/api/messages')
 async def del_messages(
-        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     sid = get_sid_from_token(credentials.credentials)
     message_stack.del_messages(sid)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'ok': True},
-    )
+    return {'ok': True}
 
 
 @app.get('/api/configurations')
@@ -120,8 +108,7 @@ def read_default_model():
 
 @app.get('/api/refresh-files')
 def refresh_files():
-    structure = files.get_folder_structure(
-        Path(str(config.get('WORKSPACE_BASE'))))
+    structure = files.get_folder_structure(Path(str(config.get('WORKSPACE_BASE'))))
     return structure.to_dict()
 
 
@@ -135,7 +122,10 @@ def select_file(file: str):
     except Exception as e:
         logger.error(f'Error opening file {file}: {e}', exc_info=False)
         error_msg = f'Error opening file: {e}'
-        return Response(f'{{"error": "{error_msg}"}}', status_code=500)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': error_msg},
+        )
     return {'code': content}
 
 
@@ -143,5 +133,6 @@ def select_file(file: str):
 async def docs_redirect():
     response = RedirectResponse(url='/index.html')
     return response
+
 
 app.mount('/', StaticFiles(directory='./frontend/dist'), name='dist')
