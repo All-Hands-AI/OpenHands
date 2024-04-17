@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import viteTsconfigPaths from "vite-tsconfig-paths";
+import * as os from "node:os";
 
 const BACKEND_HOST = process.env.BACKEND_HOST || "127.0.0.1:3000";
 
