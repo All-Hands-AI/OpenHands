@@ -38,7 +38,6 @@ COPY frontend/*.json .
 COPY frontend/.npmrc .
 COPY frontend/*.config.js .
 COPY frontend/index.html .
-COPY frontend/yarn.lock .
 COPY frontend/src ./src
 COPY frontend/public ./public
 COPY frontend/scripts ./scripts
@@ -57,9 +56,12 @@ RUN --mount=type=cache,target=$pm_cache_dir \
     vite nx@latest @nx/react && \
     yarn install
 
+ENV PATH=/usr/local/lib/bin:$PATH
+
 RUN if [ -n "$debug" ]; then set -eux; fi && \
     tsx && \
     sed -i 's/^\/\/.+//g' vite.config.js && \
+#    ls -al . && cat vite.config.js && exit 1  && \
     vite build --config vite.config.js --clearScreen false
 
 RUN if [ -n "$debug" ]; then set -eux; fi && \
@@ -67,7 +69,6 @@ RUN if [ -n "$debug" ]; then set -eux; fi && \
     if [ -n "$build_prod" ]; then rm -rf $pm_cache_dir/*; fi && \
     if [ -z "$build_prod" ]; then npm cache clean --force; fi && \
     if [ -z "$build_prod" ]; then yarn cache clean; fi
-
 
 COPY docker/devin/web_ui/entrypoint.sh /docker-entrypoint.sh
 

@@ -38,7 +38,6 @@ COPY frontend/*.json .
 COPY frontend/.npmrc .
 COPY frontend/*.config.js .
 COPY frontend/index.html .
-COPY frontend/yarn.lock .
 COPY frontend/src ./src
 COPY frontend/public ./public
 COPY frontend/scripts ./scripts

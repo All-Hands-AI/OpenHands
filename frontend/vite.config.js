@@ -81,7 +81,7 @@ if (process.env.DEBIAN_FRONTEND === "noninteractive") {
     },
   };
 
-  viteConfig = Object.assign({}, ...viteConfig, ...dockerConfig);
+  viteConfig = { ...viteConfig, ...dockerConfig };
 }
 
 export default defineConfig(viteConfig);
