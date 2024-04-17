@@ -8,8 +8,16 @@ export type Task = {
   goal: string;
   parent: "Task | None";
   subtasks: Task[];
-  state: string;
+  state: TaskState;
 };
+
+export enum TaskState {
+  OPEN_STATE = "open",
+  COMPLETED_STATE = "completed",
+  ABANDONED_STATE = "abandoned",
+  IN_PROGRESS_STATE = "in_progress",
+  VERIFIED_STATE = "verified",
+}
 
 export async function getPlan(): Promise<Plan | undefined> {
   const headers = new Headers({
