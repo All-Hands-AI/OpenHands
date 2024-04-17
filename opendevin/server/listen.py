@@ -78,6 +78,7 @@ async def get_token(
     token = sign_token({'sid': sid})
     return {'token': token, 'status': 'ok'}
 
+
 @app.get('/api/messages')
 async def get_messages(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
