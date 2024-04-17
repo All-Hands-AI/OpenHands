@@ -26,12 +26,12 @@ interface Props {
 
 function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
   const settings = getCurrentSettings();
-  const [model, setModel] = useState(settings[ArgConfigType.LLM_MODEL]);
+  const [model, setModel] = useState(settings.get(ArgConfigType.LLM_MODEL));
   const [inputModel, setInputModel] = useState(
-    settings[ArgConfigType.LLM_MODEL],
+    settings.get(ArgConfigType.LLM_MODEL),
   );
-  const [agent, setAgent] = useState(settings[ArgConfigType.AGENT]);
-  const [language, setLanguage] = useState(settings[ArgConfigType.LANGUAGE]);
+  const [agent, setAgent] = useState(settings.get(ArgConfigType.AGENT));
+  const [language, setLanguage] = useState(settings.get(ArgConfigType.LANGUAGE));
 
   const { t } = useTranslation();
 
@@ -128,7 +128,7 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
         <Select
           selectionMode="single"
           onChange={(e) => setLanguage(e.target.value)}
-          selectedKeys={[language]}
+          selectedKeys={[language || '']}
           label={t(I18nKey.CONFIGURATION$LANGUAGE_SELECT_LABEL)}
         >
           {AvailableLanguages.map((lang) => (

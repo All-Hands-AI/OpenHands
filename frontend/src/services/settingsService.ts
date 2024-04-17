@@ -18,33 +18,32 @@ export async function fetchAgents() {
 
 // all available settings in the frontend
 // TODO: add the values to i18n to support multi languages
-const DISPLAY_MAP = new Map<string, string>([
-  [ArgConfigType.LLM_MODEL, "model"],
-  [ArgConfigType.AGENT, "agent"],
-  [ArgConfigType.LANGUAGE, "language"],
-]);
-
-const DEFAULT_SETTINGS = new Map<string, string>([
-  [ArgConfigType.LLM_MODEL, "gpt-3.5-turbo"],
-  [ArgConfigType.AGENT, "MonologueAgent"],
-  [ArgConfigType.LANGUAGE, "en"],
-]);
-
-const getSettingOrDefault = (key: string) => {
-  const value = localStorage.getItem(key);
-  return value || DEFAULT_SETTINGS.get(key);
+const DISPLAY_MAP: { [key: string]: string; } = {
+  LLM_MODEL: "model",
+  AGENT: "agent",
+  LANGUAGE: "language",
 };
 
-export const getCurrentSettings = () => ({
+const DEFAULT_SETTINGS: { [key: string]: any; } = {
+  LLM_MODEL: "gpt-3.5-turbo",
+  AGENT: "MonologueAgent",
+  LANGUAGE: "en",
+};
+
+const getSettingOrDefault = (key: string): any => {
+  const value = localStorage.getItem(key);
+  return value || DEFAULT_SETTINGS[key];
+};
+
+export const getCurrentSettings = (): { [key: string]: any; } => ({
   LLM_MODEL: getSettingOrDefault("LLM_MODEL"),
   AGENT: getSettingOrDefault("AGENT"),
   LANGUAGE: getSettingOrDefault("LANGUAGE"),
 });
 
 // Function to merge and update settings
-export const getUpdatedSettings = (newSettings: Map<string, string>) => {
-  const currentSettings = getCurrentSettings();
-  const updatedSettings: Map<string, string> = {};
+export const getUpdatedSettings = (newSettings: { [key: string]: any; }, currentSettings: { [key: string]: any; }) => {
+  const updatedSettings: { [key: string]: any; } = {};
   SupportedSettings.forEach((setting) => {
     if (newSettings[setting] !== currentSettings[setting]) {
       updatedSettings[setting] = newSettings[setting];
@@ -57,9 +56,9 @@ const dispatchSettings = (updatedSettings: Record<string, string>) => {
   let i = 0;
   for (const [key, value] of Object.entries(updatedSettings)) {
     store.dispatch(setByKey({ key, value }));
-    if (DISPLAY_MAP.has(key)) {
+    if (key in DISPLAY_MAP) {
       setTimeout(() => {
-        toast.settingsChanged(`Set ${DISPLAY_MAP.get(key)} to "${value}"`);
+        toast.settingsChanged(`Set ${DISPLAY_MAP[key]} to "${value}"`);
       }, i * 500);
       i += 1;
     }
@@ -74,8 +73,9 @@ export const initializeAgent = () => {
 };
 
 // Save and send settings to the server
-export function saveSettings(newSettings: { [key: string]: string }): void {
-  const updatedSettings = getUpdatedSettings(newSettings);
+export function saveSettings(newSettings: { [key: string]: any }): void {
+  const currentSettings = getCurrentSettings();
+  const updatedSettings = getUpdatedSettings(newSettings, currentSettings);
 
   if (Object.keys(updatedSettings).length === 0) {
     return;
