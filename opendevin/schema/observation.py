@@ -28,5 +28,7 @@ class ObservationTypeSchema(BaseModel):
     """A message from the user
     """
 
+    NULL: str = Field(default='null')
+
 
 ObservationType = ObservationTypeSchema()
