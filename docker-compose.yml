@@ -142,7 +142,7 @@ services:
         node_version: ${NODE_VERSION:?}
         npm_version: ${NPM_VERSION:?}
         node_env: ${NODE_ENV:?}
-        debug: ${DEBUG:?}
+        debug: ${DEBUG}
         node_options: ${NODE_OPTIONS}
         build_prod: ${BUILD_PROD}
         frontend_port: ${UI_HTTP_PORT:?}

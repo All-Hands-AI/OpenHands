@@ -98,7 +98,6 @@ RUN --mount=type=cache,target=${conda_pkgs_dir},sharing=locked \
 
 WORKDIR "$APP_ROOT"
 
-COPY .env .
 COPY pyproject.toml .
 
 ENV POETRY_HOME=/etc/poetry
@@ -154,6 +153,8 @@ RUN if [ -n "$debug" ]; then set -eux; fi && \
 
 ARG devin_ws_port
 ARG jupyter_port
+
+COPY .env .
 
 EXPOSE $devin_ws_port
 EXPOSE $jupyter_port
