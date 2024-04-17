@@ -3,9 +3,10 @@ import browserReducer from "./state/browserSlice";
 import chatReducer from "./state/chatSlice";
 import codeReducer from "./state/codeSlice";
 import commandReducer from "./state/commandSlice";
-import taskReducer from "./state/taskSlice";
 import errorsReducer from "./state/errorsSlice";
+import planReducer from "./state/planSlice";
 import settingsReducer from "./state/settingsSlice";
+import taskReducer from "./state/taskSlice";
 
 const store = configureStore({
   reducer: {
@@ -16,6 +17,7 @@ const store = configureStore({
     task: taskReducer,
     errors: errorsReducer,
     settings: settingsReducer,
+    plan: planReducer,
   },
 });
 

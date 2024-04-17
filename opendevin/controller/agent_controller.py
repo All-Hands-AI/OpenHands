@@ -1,29 +1,28 @@
 import asyncio
 import inspect
-import traceback
 import time
-from typing import List, Callable, Awaitable, cast
-from opendevin.plan import Plan
-from opendevin.state import State
-from opendevin.agent import Agent
-from opendevin.observation import Observation, AgentErrorObservation, NullObservation
+import traceback
+from typing import Awaitable, Callable, List, cast
+
 from litellm.exceptions import APIConnectionError
 from openai import AuthenticationError
 
 from opendevin import config
-from opendevin.logger import opendevin_logger as logger
-
-from opendevin.exceptions import MaxCharsExceedError
-from .command_manager import CommandManager
-
 from opendevin.action import (
     Action,
-    NullAction,
-    AgentFinishAction,
     AddTaskAction,
+    AgentFinishAction,
     ModifyTaskAction,
+    NullAction,
 )
-from opendevin.exceptions import AgentNoActionError
+from opendevin.agent import Agent
+from opendevin.exceptions import AgentNoActionError, MaxCharsExceedError
+from opendevin.logger import opendevin_logger as logger
+from opendevin.observation import AgentErrorObservation, NullObservation, Observation
+from opendevin.plan import Plan
+from opendevin.state import State
+
+from .command_manager import CommandManager
 
 MAX_ITERATIONS = config.get('MAX_ITERATIONS')
 MAX_CHARS = config.get('MAX_CHARS')
@@ -62,10 +61,12 @@ class AgentController:
     def add_history(self, action: Action, observation: Observation):
         if not isinstance(action, Action):
             raise TypeError(
-                f'action must be an instance of Action, got {type(action).__name__} instead')
+                f"action must be an instance of Action, got {type(action).__name__} instead"
+            )
         if not isinstance(observation, Observation):
             raise TypeError(
-                f'observation must be an instance of Observation, got {type(observation).__name__} instead')
+                f"observation must be an instance of Observation, got {type(observation).__name__} instead"
+            )
         self.state.history.append((action, observation))
         self.state.updated_info.append((action, observation))
 
@@ -85,11 +86,10 @@ class AgentController:
             logger.info('Exited before finishing the task.')
 
     async def step(self, i: int):
-        logger.info(f'STEP {i}', extra={'msg_type': 'STEP'})
+        logger.info(f"STEP {i}", extra={'msg_type': 'STEP'})
         logger.info(self.state.plan.main_goal, extra={'msg_type': 'PLAN'})
         if self.state.num_of_chars > self.max_chars:
-            raise MaxCharsExceedError(
-                self.state.num_of_chars, self.max_chars)
+            raise MaxCharsExceedError(self.state.num_of_chars, self.max_chars)
 
         log_obs = self.command_manager.get_background_obs()
         for obs in log_obs:
@@ -132,8 +132,7 @@ class AgentController:
 
         if isinstance(action, AddTaskAction):
             try:
-                self.state.plan.add_subtask(
-                    action.parent, action.goal, action.subtasks)
+                self.state.plan.add_subtask(action.parent, action.goal, action.subtasks)
             except Exception as e:
                 observation = AgentErrorObservation(str(e))
                 logger.error(e)
@@ -170,7 +169,10 @@ class AgentController:
             try:
                 callback(event)
             except Exception as e:
-                logger.exception(f'Callback error: {e}, idx: {idx}')
+                logger.exception(f"Callback error: {e}, idx: {idx}")
         await asyncio.sleep(
             0.001
         )  # Give back control for a tick, so we can await in callbacks
+
+    def get_state(self):
+        return self.state

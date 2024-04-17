@@ -1,8 +1,9 @@
+import json
 import uuid
 from pathlib import Path
 
 import litellm
-from fastapi import Depends, FastAPI, WebSocket, Response
+from fastapi import Depends, FastAPI, Response, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -132,10 +133,32 @@ def select_file(file: str):
         with open(file_path, 'r') as selected_file:
             content = selected_file.read()
     except Exception as e:
-        logger.error(f'Error opening file {file}: {e}', exc_info=False)
-        error_msg = f'Error opening file: {e}'
+        logger.error(f"Error opening file {file}: {e}", exc_info=False)
+        error_msg = f"Error opening file: {e}"
         return Response(f'{{"error": "{error_msg}"}}', status_code=500)
     return {'code': content}
+
+
+@app.get('/api/plan')
+def get_plan(
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+):
+    sid = get_sid_from_token(credentials.credentials)
+    agent = agent_manager.sid_to_agent[sid]
+    controller = agent.controller
+    if controller is not None:
+        state = controller.get_state()
+        if state is not None:
+            return JSONResponse(
+                status_code=status.HTTP_200_OK,
+                content=json.dumps(
+                    {
+                        'mainGoal': controller.state.plan.main_goal,
+                        'task': controller.state.plan.task.to_dict(),
+                    }
+                ),
+            )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @app.get('/')
