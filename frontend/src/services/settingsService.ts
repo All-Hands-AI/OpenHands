@@ -32,7 +32,7 @@ const DEFAULT_SETTINGS: Settings = {
   LANGUAGE: "en",
 };
 
-const getSettingOrDefault = (key: string): string => {
+export const getSettingOrDefault = (key: string): string => {
   const value = localStorage.getItem(key);
   return value || DEFAULT_SETTINGS[key];
 };
@@ -57,7 +57,7 @@ export const getUpdatedSettings = (
   return updatedSettings;
 };
 
-const dispatchSettings = (updatedSettings: Record<string, string>) => {
+export const dispatchSettings = (updatedSettings: Record<string, string>) => {
   let i = 0;
   for (const [key, value] of Object.entries(updatedSettings)) {
     store.dispatch(setByKey({ key, value }));
