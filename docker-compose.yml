@@ -39,15 +39,6 @@ services:
       - conda_vol:${CONDA_ROOT:?}
       - ./environment.yml:${APP_ROOT:?}/environment.yml
       - ./workspace:${WORKSPACE_DIR:?}
-#      - ./docker/devin/app/.condarc:${CONDA_ROOT:?}/.condarc
-#      - ./Makefile:${APP_ROOT:?}/Makefile
-#      - ./pyproject.toml:${APP_ROOT:?}/pyproject.toml
-#      - ./config.toml.dist:${APP_ROOT:?}/config.toml
-#      - ./.env:${APP_ROOT:?}/.env
-#      - ./opendevin:${APP_ROOT:?}/opendevin
-#      - ./agenthub:${APP_ROOT:?}/agenthub
-#      - ./dev_config:${APP_ROOT:?}/dev_config
-#      - ./tests:${APP_ROOT:?}/tests
     tmpfs:
       - /run
       - /tmp
@@ -77,8 +68,8 @@ services:
   litellm:
     image: ghcr.io/berriai/litellm:main-latest
     pull_policy: always
-    container_name: litellm_proxy
-    command: "--config /etc/config.yaml --port ${LITELLM_PORT} --num_workers 8 --detailed_debug"
+    container_name: od_litellm_proxy
+    command: "--config /etc/litellm/config.yaml --port ${LITELLM_PORT} --num_workers 8 --detailed_debug"
     environment:
       DEFAULT_CHAT_MODEL: ${DEFAULT_CHAT_MODEL:?}
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_CONTAINER_PORT}/${POSTGRES_DB}
@@ -86,7 +77,7 @@ services:
       - "${LITELLM_PORT}:4000"
     volumes:
       - pip_cache_vol:/root/.cache/pip:tmpfs=4G
-      - ./docker/litellm/config.yaml:/etc/config.yaml
+      - ./litellm_config.yaml:/etc/litellm/config.yaml
       - ./docker/env_debug.sh:${APP_ROOT}/run/env_debug
     env_file:
       - .env

@@ -18,7 +18,7 @@ const fetchToken = async (): Promise<ResFetchToken> => {
   return data;
 };
 
-const validateToken = (token: string): boolean => {
+export const validateToken = (token: string): boolean => {
   try {
     const claims = jose.decodeJwt(token);
     return !(claims.sid === undefined || claims.sid === "");

@@ -1,2 +1,3 @@
 src/.vite
 **/*.md
+node_modules

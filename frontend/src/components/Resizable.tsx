@@ -42,7 +42,6 @@ export function Container({
   }, [firstSize, orientation]);
 
   const onMouseMove = (e: MouseEvent) => {
-    e.stopPropagation();
     e.preventDefault();
     if (firstSize && dividerPosition) {
       if (orientation === Orientation.HORIZONTAL) {
@@ -64,7 +63,6 @@ export function Container({
 
   const onMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
-    e.stopPropagation();
     setDividerPosition(
       orientation === Orientation.HORIZONTAL ? e.clientX : e.clientY,
     );

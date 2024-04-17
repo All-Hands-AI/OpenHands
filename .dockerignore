@@ -1,6 +1,10 @@
 **/__pycache__
 **/.venv
 **/.classpath
+**/.dockerignore
+.github
+.idea
+.ollama
 **/.project
 **/.settings
 **/.toolstarget
@@ -16,9 +20,7 @@
 **/obj
 **/secrets.dev.yaml
 **/values.dev.yaml
-.github
-.idea
-.ollama
+CONTRIBUTING.md
 LICENSE
 README.md
 logo.png

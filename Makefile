@@ -1,8 +1,14 @@
 # Makefile for OpenDevin project
 
 # Variables
+DOCKER_IMAGE = ghcr.io/opendevin/sandbox
+BACKEND_PORT = 3000
+BACKEND_HOST = "127.0.0.1:$(BACKEND_PORT)"
+FRONTEND_PORT = 3001
+DEFAULT_WORKSPACE_DIR = "./workspace"
 DEFAULT_MODEL = "gpt-3.5-turbo-1106"
 CONFIG_FILE = config.toml
+PRECOMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
 
 # ANSI color codes
 GREEN=\033[0;32m
@@ -15,21 +21,45 @@ RESET=\033[0m
 build:
 	@echo "$(GREEN)Building project...$(RESET)"
 	@$(MAKE) -s check-dependencies
-	@$(MAKE) -s docker-build
+	@$(MAKE) -s pull-docker-image
+	@$(MAKE) -s install-python-dependencies
+	@$(MAKE) -s install-frontend-dependencies
+	@$(MAKE) -s install-precommit-hooks
+	@$(MAKE) -s build-frontend
 	@echo "$(GREEN)Build completed successfully.$(RESET)"
 
 check-dependencies:
 	@echo "$(YELLOW)Checking dependencies...$(RESET)"
-	@$(MAKE) -s check-docker-compose
+	@$(MAKE) -s check-python
+	@$(MAKE) -s check-npm
+	@$(MAKE) -s check-docker
 	@$(MAKE) -s check-poetry
 	@echo "$(GREEN)Dependencies checked successfully.$(RESET)"
 
-check-docker-compose:
-	@echo "$(YELLOW)Checking Docker Compose installation...$(RESET)"
+check-python:
+	@echo "$(YELLOW)Checking Python installation...$(RESET)"
+	@if command -v python3 > /dev/null; then \
+		echo "$(BLUE)$(shell python3 --version) is already installed.$(RESET)"; \
+	else \
+		echo "$(RED)Python 3 is not installed. Please install Python 3 to continue.$(RESET)"; \
+		exit 1; \
+	fi
+
+check-npm:
+	@echo "$(YELLOW)Checking npm installation...$(RESET)"
+	@if command -v npm > /dev/null; then \
+		echo "$(BLUE)npm $(shell npm --version) is already installed.$(RESET)"; \
+	else \
+		echo "$(RED)npm is not installed. Please install Node.js to continue.$(RESET)"; \
+		exit 1; \
+	fi
+
+check-docker:
+	@echo "$(YELLOW)Checking Docker installation...$(RESET)"
 	@if command -v docker > /dev/null; then \
 		echo "$(BLUE)$(shell docker --version) is already installed.$(RESET)"; \
 	else \
-		echo "$(RED)Docker is not installed.\nPlease install Docker Desktop to continue.$(RESET)"; \
+		echo "$(RED)Docker is not installed. Please install Docker to continue.$(RESET)"; \
 		exit 1; \
 	fi
 
@@ -44,35 +74,51 @@ check-poetry:
 		exit 1; \
 	fi
 
-docker-build:
-	@read -p "Run 'docker compose down'? [Y/n]: " run_down;
-	@if [ ! -z "$$run_down" ] ; then @docker compose down \
-  	else exit 0; fi
-	@echo "$(YELLOW)Building Docker images...$(RESET)"
-	@docker compose -f docker-compose.yml build --pull > /dev/null
-	@echo "$(GREEN)Docker images generated successfully.$(RESET)"
+pull-docker-image:
+	@echo "$(YELLOW)Pulling Docker image...$(RESET)"
+	@docker pull $(DOCKER_IMAGE)
+	@echo "$(GREEN)Docker image pulled successfully.$(RESET)"
 
-docker-rebuild:
-	@echo "$(YELLOW)Force rebuilding Docker images...$(RESET)"
-	@read -p "Run 'docker compose down'? [Y/n]: " run_down; \
-    	 if [ ! -z = "$$run_down" ]; then docker compose down; else exit 0; fi
-	@docker compose -f docker-compose.yml build --pull --no-cache
-	@echo "$(GREEN)Docker images updated successfully.$(RESET)"
+install-python-dependencies:
+	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
+	@if [ "$(shell uname)" = "Darwin" ]; then \
+		echo "$(BLUE)Installing `chroma-hnswlib`...$(RESET)"; \
+		export HNSWLIB_NO_NATIVE=1; \
+		poetry run pip install chroma-hnswlib; \
+	fi
+	@poetry install --without evaluation
+	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
 
-docker-start:
-	@echo "$(YELLOW)Starting Docker services...$(RESET)"
-	@docker compose up --build
-	@echo "$(GREEN)All Docker services started$(RESET)"
+install-frontend-dependencies:
+	@echo "$(YELLOW)Setting up frontend environment...$(RESET)"
+	@echo "$(YELLOW)Detect Node.js version...$(RESET)"
+	@cd frontend && node ./scripts/detect-node-version.js
+	@cd frontend && \
+		echo "$(BLUE)Installing frontend dependencies with npm...$(RESET)" && \
+		npm install && \
+		echo "$(BLUE)Running make-i18n with npm...$(RESET)" && \
+		npm run make-i18n
+	@echo "$(GREEN)Frontend dependencies installed successfully.$(RESET)"
+
+install-precommit-hooks:
+	@echo "$(YELLOW)Installing pre-commit hooks...$(RESET)"
+	@git config --unset-all core.hooksPath || true
+	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
+	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
+
+build-frontend:
+	@echo "$(YELLOW)Building frontend...$(RESET)"
+	@cd frontend && npm run build
 
 # Start backend
 start-backend:
 	@echo "$(YELLOW)Starting backend...$(RESET)"
-	@docker compose up devin
+	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT)
 
 # Start frontend
 start-frontend:
 	@echo "$(YELLOW)Starting frontend...$(RESET)"
-	@docker compose up web_ui
+	@cd frontend && BACKEND_HOST=$(BACKEND_HOST) FRONTEND_PORT=$(FRONTEND_PORT) npm run start
 
 # Run the app
 run:
@@ -83,7 +129,7 @@ run:
 	fi
 	@mkdir -p logs
 	@echo "$(YELLOW)Starting backend server...$(RESET)"
-	@$(MAKE) docker-start
+	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) &
 	@echo "$(YELLOW)Waiting for the backend to start...$(RESET)"
 	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
 	@echo "$(GREEN)Backend started successfully.$(RESET)"
@@ -125,7 +171,7 @@ setup-config-prompts:
 
 	@read -p "Enter your workspace directory [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
-	 echo "WORKSPACE_DIR=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
+	 echo "WORKSPACE_BASE=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
 
 # Help
 help:
@@ -141,4 +187,4 @@ help:
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: build check-dependencies check-docker check-poetry setup-config setup-config-prompts docker-build docker-start help
+.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-precommit-hooks start-backend start-frontend run setup-config setup-config-prompts help

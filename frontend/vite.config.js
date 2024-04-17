@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -70,19 +69,6 @@ if (process.env.NODE_ENV === "production") {
 } else {
   // Development configuration
   viteConfig.base = "";
-}
-
-// Applied only in non-interactive environment, i.e. Docker
-if (process.env.DEBIAN_FRONTEND === "noninteractive") {
-  const dockerConfig = {
-    server: {
-      host: os.hostname(),
-      origin: `http://web_ui:${process.env.UI_HTTP_PORT}`,
-      port: 4173,
-    },
-  };
-
-  viteConfig = Object.assign({}, ...viteConfig, ...dockerConfig);
 }
 
 // Applied only in non-interactive environment, i.e. Docker
