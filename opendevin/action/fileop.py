@@ -22,7 +22,7 @@ class FileReadAction(ExecutableAction):
     path: str
     action: str = ActionType.READ
 
-    async def run(self, controller) -> FileReadObservation:
+    def run(self, controller) -> FileReadObservation:
         path = resolve_path(self.path)
         with open(path, 'r', encoding='utf-8') as file:
             return FileReadObservation(path=path, content=file.read())
@@ -38,7 +38,7 @@ class FileWriteAction(ExecutableAction):
     content: str
     action: str = ActionType.WRITE
 
-    async def run(self, controller) -> FileWriteObservation:
+    def run(self, controller) -> FileWriteObservation:
         whole_path = resolve_path(self.path)
         with open(whole_path, 'w', encoding='utf-8') as file:
             file.write(self.content)

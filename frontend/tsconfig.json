@@ -19,11 +19,10 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react",
-    "types": ["vite/client", "node"]
+    "types": ["vite/client", "vitest/globals"]
   },
   "include": [
-    "src/**/*",
+    "src",
     "vite.config.js"
-  ],
-  "exclude": ["node_modules"]
+  ]
 }
