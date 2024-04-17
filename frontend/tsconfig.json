@@ -24,6 +24,8 @@
   "include": [
     "src",
     "vite-env.d.ts",
-    "vite.config.ts"
+    "vite.config.ts",
+    "vitest.setup.ts",
+    "test-utils.tsx"
   ]
 }
