@@ -1,7 +1,7 @@
 from .agent_controller import AgentController
-from .command_manager import CommandManager
+from .action_manager import ActionManager
 
 __all__ = [
     'AgentController',
-    'CommandManager'
+    'ActionManager'
 ]

@@ -23,12 +23,11 @@ class FileReadAction(ExecutableAction):
     path: str
     action: str = ActionType.READ
 
-    def run(self, controller) -> FileReadObservation:
+    async def run(self, controller) -> FileReadObservation:
         if isinstance(controller.command_manager.sandbox, E2BBox):
             content = controller.command_manager.sandbox.filesystem.read(
                 self.path)
             return FileReadObservation(path=self.path, content=content)
-
         else:
             path = resolve_path(self.path)
             with open(path, 'r', encoding='utf-8') as file:

@@ -1,12 +1,22 @@
 from typing import List
+import traceback
 
 from opendevin import config
 from opendevin.observation import CmdOutputObservation
 from opendevin.sandbox import DockerExecBox, DockerSSHBox, Sandbox, LocalBox, E2BBox
 from opendevin.schema import ConfigType
+from opendevin.logger import opendevin_logger as logger
+from opendevin.action import (
+    Action,
+)
+from opendevin.observation import (
+    Observation,
+    AgentErrorObservation,
+    NullObservation,
+)
 
 
-class CommandManager:
+class ActionManager:
     id: str
     sandbox: Sandbox
 
@@ -30,6 +40,18 @@ class CommandManager:
             self.sandbox = E2BBox()
         else:
             raise ValueError(f'Invalid sandbox type: {sandbox_type}')
+
+    async def run_action(self, action: Action, agent_controller) -> Observation:
+        observation: Observation = NullObservation('')
+        if not action.executable:
+            return observation
+        try:
+            observation = await action.run(agent_controller)
+        except Exception as e:
+            observation = AgentErrorObservation(str(e))
+            logger.error(e)
+            traceback.print_exc()
+        return observation
 
     def run_command(self, command: str, background=False) -> CmdOutputObservation:
         if background:
