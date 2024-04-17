@@ -133,7 +133,7 @@ docker run \
     -v $WORKSPACE_DIR:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
-    ghcr.io/opendevin/opendevin:latest
+    ghcr.io/opendevin/opendevin:main
 ```
 Replace `$(pwd)/workspace` with the path to the code you want OpenDevin to work with.
 
