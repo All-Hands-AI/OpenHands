@@ -31,7 +31,9 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
     settings.get(ArgConfigType.LLM_MODEL),
   );
   const [agent, setAgent] = useState(settings.get(ArgConfigType.AGENT));
-  const [language, setLanguage] = useState(settings.get(ArgConfigType.LANGUAGE));
+  const [language, setLanguage] = useState(
+    settings.get(ArgConfigType.LANGUAGE)
+  );
 
   const { t } = useTranslation();
 
@@ -128,7 +130,7 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
         <Select
           selectionMode="single"
           onChange={(e) => setLanguage(e.target.value)}
-          selectedKeys={[language || '']}
+          selectedKeys={[language || ""]}
           label={t(I18nKey.CONFIGURATION$LANGUAGE_SELECT_LABEL)}
         >
           {AvailableLanguages.map((lang) => (

@@ -1,7 +1,7 @@
 import { setInitialized } from "../state/taskSlice";
 import store from "../store";
 import ActionType from "../types/ActionType";
-import { SupportedSettings, ArgConfigType } from "../types/ConfigType";
+import { SupportedSettings } from "../types/ConfigType";
 import Socket from "./socket";
 import { setByKey } from "../state/settingsSlice";
 import toast from "../utils/toast";
@@ -18,13 +18,13 @@ export async function fetchAgents() {
 
 // all available settings in the frontend
 // TODO: add the values to i18n to support multi languages
-const DISPLAY_MAP: { [key: string]: string; } = {
+const DISPLAY_MAP: { [key: string]: string } = {
   LLM_MODEL: "model",
   AGENT: "agent",
   LANGUAGE: "language",
 };
 
-const DEFAULT_SETTINGS: { [key: string]: any; } = {
+const DEFAULT_SETTINGS: { [key: string]: any } = {
   LLM_MODEL: "gpt-3.5-turbo",
   AGENT: "MonologueAgent",
   LANGUAGE: "en",
@@ -42,7 +42,7 @@ export const getCurrentSettings = (): { [key: string]: any; } => ({
 });
 
 // Function to merge and update settings
-export const getUpdatedSettings = (newSettings: { [key: string]: any; }, currentSettings: { [key: string]: any; }) => {
+export const getUpdatedSettings = (newSettings: { [key: string]: any }, currentSettings: { [key: string]: any; }) => {
   const updatedSettings: { [key: string]: any; } = {};
   SupportedSettings.forEach((setting) => {
     if (newSettings[setting] !== currentSettings[setting]) {

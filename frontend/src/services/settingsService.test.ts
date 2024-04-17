@@ -9,7 +9,6 @@ jest.mock("./socket", () => ({
 describe("getUpdatedSettings", () => {
   it("should return initial settings if newSettings is empty", () => {
     const oldSettings = { key1: "value1" };
-    const isInit = false;
 
     const result = getUpdatedSettings({}, oldSettings);
 
@@ -19,7 +18,6 @@ describe("getUpdatedSettings", () => {
   it("should add new keys to mergedSettings and updatedSettings", () => {
     const oldSettings = { key1: "value1" };
     const newSettings = { key2: "value2" };
-    const isInit = false;
 
     const result = getUpdatedSettings(newSettings, oldSettings);
 
@@ -31,7 +29,6 @@ describe("getUpdatedSettings", () => {
   it("should overwrite non-DISPLAY_MAP keys in mergedSettings", () => {
     const oldSettings = { key1: "value1" };
     const newSettings = { key1: "newvalue1" };
-    const isInit = false;
 
     const result = getUpdatedSettings(newSettings, oldSettings);
 
@@ -46,7 +43,6 @@ describe("getUpdatedSettings", () => {
     const newSettings = {
       [ArgConfigType.AGENT]: "MonologueAgent",
     };
-    const isInit = false;
 
     const result = getUpdatedSettings(newSettings, oldSettings);
 
@@ -80,7 +76,6 @@ describe("getUpdatedSettings", () => {
       key1: "newvalue1",
       key2: "value2",
     };
-    const isInit = false;
 
     const result = getUpdatedSettings(newSettings, oldSettings);
 
