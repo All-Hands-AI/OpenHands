@@ -58,7 +58,6 @@ class AgentEchoAction(ExecutableAction):
 @dataclass
 class AgentSummarizeAction(NotExecutableAction):
     summary: str
-
     action: str = ActionType.SUMMARIZE
 
     @property

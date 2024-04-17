@@ -2,7 +2,7 @@ import uuid
 from pathlib import Path
 
 import litellm
-from fastapi import Depends, FastAPI, WebSocket, Response
+from fastapi import Depends, FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -69,10 +69,7 @@ async def get_token(
     """
     sid = get_sid_from_token(credentials.credentials) or str(uuid.uuid4())
     token = sign_token({'sid': sid})
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'token': token},
-    )
+    return {'token': token}
 
 
 @app.get('/api/messages')
@@ -84,10 +81,7 @@ async def get_messages(
     if sid != '':
         data = message_stack.get_messages(sid)
 
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'messages': data},
-    )
+    return {'messages': data}
 
 
 @app.get('/api/messages/total')
@@ -95,10 +89,7 @@ async def get_message_total(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     sid = get_sid_from_token(credentials.credentials)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'msg_total': message_stack.get_message_total(sid)},
-    )
+    return {'msg_total': message_stack.get_message_total(sid)}
 
 
 @app.delete('/api/messages')
@@ -107,10 +98,7 @@ async def del_messages(
 ):
     sid = get_sid_from_token(credentials.credentials)
     message_stack.del_messages(sid)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'ok': True},
-    )
+    return {'ok': True}
 
 
 @app.get('/api/configurations')
@@ -134,7 +122,10 @@ def select_file(file: str):
     except Exception as e:
         logger.error(f'Error opening file {file}: {e}', exc_info=False)
         error_msg = f'Error opening file: {e}'
-        return Response(f'{{"error": "{error_msg}"}}', status_code=500)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': error_msg},
+        )
     return {'code': content}
 
 
