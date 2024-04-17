@@ -58,7 +58,7 @@ class LLM:
 
         @retry(reraise=True,
                stop=stop_after_attempt(num_retries),
-               wait=wait_random_exponential(min=min_wait, max=max_wait), retry=retry_if_exception_type(RateLimitError, APIConnectionError, ServiceUnavailableError), after=rate_limited_attempt)
+               wait=wait_random_exponential(min=min_wait, max=max_wait), retry=retry_if_exception_type((RateLimitError, APIConnectionError, ServiceUnavailableError)), after=rate_limited_attempt)
         def wrapper(*args, **kwargs):
             if 'messages' in kwargs:
                 messages = kwargs['messages']
