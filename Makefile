@@ -106,6 +106,10 @@ install-precommit-hooks:
 	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 
+lint:
+	@echo "$(YELLOW)Running linters...$(RESET)"
+	@poetry run pre-commit run --files opendevin/**/* agenthub/**/* --show-diff-on-failure --config $(PRECOMMIT_CONFIG_PATH)
+
 build-frontend:
 	@echo "$(YELLOW)Building frontend...$(RESET)"
 	@cd frontend && npm run build
@@ -178,6 +182,7 @@ help:
 	@echo "$(BLUE)Usage: make [target]$(RESET)"
 	@echo "Targets:"
 	@echo "  $(GREEN)build$(RESET)               - Build project, including environment setup and dependencies."
+	@echo "  $(GREEN)lint$(RESET)                - Run linters on the project."
 	@echo "  $(GREEN)setup-config$(RESET)        - Setup the configuration for OpenDevin by providing LLM API key,"
 	@echo "                        LLM Model name, and workspace directory."
 	@echo "  $(GREEN)start-backend$(RESET)       - Start the backend server for the OpenDevin project."
@@ -187,4 +192,4 @@ help:
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-precommit-hooks start-backend start-frontend run setup-config setup-config-prompts help
+.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-precommit-hooks lint start-backend start-frontend run setup-config setup-config-prompts help
