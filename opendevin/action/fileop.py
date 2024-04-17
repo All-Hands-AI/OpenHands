@@ -35,7 +35,7 @@ class FileReadAction(ExecutableAction):
     thoughts: str = ''
     action: str = ActionType.READ
 
-    def run(self, controller) -> FileReadObservation:
+    async def run(self, controller) -> FileReadObservation:
         path = resolve_path(self.path)
         self.start = max(self.start, 0)
         with open(path, 'r', encoding='utf-8') as file:
@@ -69,7 +69,7 @@ class FileWriteAction(ExecutableAction):
     thoughts: str = ''
     action: str = ActionType.WRITE
 
-    def run(self, controller) -> FileWriteObservation:
+    async def run(self, controller) -> FileWriteObservation:
         whole_path = resolve_path(self.path)
         mode = 'w' if not os.path.exists(whole_path) else 'r+'
         insert = self.content.split('\n')
