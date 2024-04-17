@@ -32,5 +32,7 @@ class ObservationTypeSchema(BaseModel):
 
     ERROR: str = Field(default='error')
 
+    NULL: str = Field(default='null')
+
 
 ObservationType = ObservationTypeSchema()
