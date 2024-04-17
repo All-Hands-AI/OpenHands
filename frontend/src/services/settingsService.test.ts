@@ -1,10 +1,6 @@
 import { getUpdatedSettings } from "./settingsService";
 import { ArgConfigType } from "../types/ConfigType";
 
-// We need to mock this to avoid `SyntaxError` from using `Socket` in `settingsService` during testing
-jest.mock("./socket", () => ({
-  send: jest.fn(),
-}));
 
 describe("mergeAndUpdateSettings", () => {
   it("should return initial settings if newSettings is empty", () => {
