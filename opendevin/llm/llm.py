@@ -10,8 +10,9 @@ from opendevin.logger import llm_prompt_logger, llm_response_logger, opendevin_l
 DEFAULT_API_KEY = config.get('LLM_API_KEY')
 DEFAULT_BASE_URL = config.get('LLM_BASE_URL')
 DEFAULT_MODEL_NAME = config.get('LLM_MODEL')
-DEFAULT_LLM_NUM_RETRIES = config.get('LLM_NUM_RETRIES')
-DEFAULT_LLM_COOLDOWN_TIME = config.get('LLM_COOLDOWN_TIME')
+LLM_NUM_RETRIES = config.get('LLM_NUM_RETRIES')
+LLM_MIN_WAIT = config.get('MIN_WAIT')
+LLM_MAX_WAIT = config.get('MAX_WAIT')
 
 
 class LLM:
@@ -23,8 +24,9 @@ class LLM:
                  model=DEFAULT_MODEL_NAME,
                  api_key=DEFAULT_API_KEY,
                  base_url=DEFAULT_BASE_URL,
-                 num_retries=DEFAULT_LLM_NUM_RETRIES,
-                 cooldown_time=DEFAULT_LLM_COOLDOWN_TIME,
+                 num_retries=LLM_NUM_RETRIES,
+                 min_wait=LLM_MIN_WAIT,
+                 max_wait=LLM_MAX_WAIT,
                  ):
         """
         Args:
@@ -49,21 +51,13 @@ class LLM:
 
         completion_unwrapped = self._completion
 
-        def api_error_cooldown(retry_state):
-            seconds = (retry_state.attempt_number) * cooldown_time
-            opendevin_logger.info(f'Attempt #{retry_state.attempt_number} | Sleeping for {seconds}s for {retry_state.outcome.exception()}', )
-            return seconds
-
         def rate_limited_attempt(retry_state):
-            opendevin_logger.info(f'Rate limited. Waiting for {retry_state.outcome.exception()}')
+            opendevin_logger.info(f'{retry_state.outcome.exception}. Attempt #{retry_state.attempt_number} | You can customize these settings in the configuration.')
             return True
 
         @retry(reraise=True,
                stop=stop_after_attempt(num_retries),
-               wait=api_error_cooldown, retry=retry_if_exception_type(APIConnectionError))
-        @retry(reraise=True,
-               stop=stop_after_attempt(num_retries),
-               wait=wait_random_exponential(min=2, max=20), retry=retry_if_exception_type(RateLimitError), after=rate_limited_attempt)
+               wait=wait_random_exponential(min=min_wait, max=max_wait), retry=retry_if_exception_type(RateLimitError, APIConnectionError), after=rate_limited_attempt)
         def wrapper(*args, **kwargs):
             if 'messages' in kwargs:
                 messages = kwargs['messages']
