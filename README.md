@@ -130,15 +130,13 @@ export LLM_API_KEY="sk-..."
 # The directory you want OpenDevin to modify. MUST be an absolute path!
 export WORKSPACE_DIR=$(pwd)/workspace
 
-docker build -t opendevin-app -f container/Dockerfile .
-
 docker run \
     -e LLM_API_KEY \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_DIR \
     -v $WORKSPACE_DIR:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
-    opendevin-app
+    ghcr.io/opendevin/opendevin:latest
 ```
 Replace `$(pwd)/workspace` with the path to the code you want OpenDevin to work with.
 
@@ -150,6 +148,9 @@ See [Development.md](Development.md) for instructions on running OpenDevin witho
 OpenDevin can work with any LLM backend.
 For a full list of the LM providers and models available, please consult the
 [litellm documentation](https://docs.litellm.ai/docs/providers).
+
+The `LLM_MODEL` environment variable controls which model is used in programmatic interactions,
+but choosing a model in the OpenDevin UI will override this setting.
 
 The following environment variables might be necessary for some LLMs:
 * `LLM_API_KEY`

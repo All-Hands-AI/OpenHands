@@ -1,8 +1,5 @@
 {
-  "extends": "@tsconfig/node18/tsconfig.json",
   "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./",
     "target": "es5",
     "lib": [
       "dom",

@@ -23,7 +23,7 @@ function Workspace() {
       },
       [TabOption.CODE]: {
         name: t(I18nKey.WORKSPACE$CODE_EDITOR_TAB_LABEL),
-        icon: <FaCode size={18} />,
+        icon: <VscCode size={18} />,
         component: <CodeEditor key="code" />,
       },
       [TabOption.BROWSER]: {

@@ -3,17 +3,18 @@ from pathlib import Path
 import os
 
 import litellm
-from fastapi import Depends, FastAPI, WebSocket
+from fastapi import Depends, FastAPI, WebSocket, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
 from starlette import status
 from starlette.responses import JSONResponse
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin import config, files
 from opendevin.agent import Agent
+from opendevin.logger import opendevin_logger as logger
 from opendevin.server.agent import agent_manager
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import message_stack, session_manager
@@ -66,7 +67,7 @@ async def get_litellm_agents():
 
 @app.get('/api/auth')
 async def get_token(
-        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     """
     Get token for authentication when starts a websocket connection.
@@ -81,7 +82,7 @@ async def get_token(
 
 @app.get('/api/messages')
 async def get_messages(
-        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     data = []
     sid = get_sid_from_token(credentials.credentials)
@@ -96,7 +97,7 @@ async def get_messages(
 
 @app.get('/api/messages/total')
 async def get_message_total(
-        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     sid = get_sid_from_token(credentials.credentials)
     return JSONResponse(
@@ -105,9 +106,9 @@ async def get_message_total(
     )
 
 
-@app.delete('/messages')
+@app.delete('/api/messages')
 async def del_messages(
-        credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     sid = get_sid_from_token(credentials.credentials)
     message_stack.del_messages(sid)
@@ -124,15 +125,21 @@ def read_default_model():
 
 @app.get('/api/refresh-files')
 def refresh_files():
-    structure = files.get_folder_structure(
-        Path(str(config.get('WORKSPACE_BASE'))))
+    structure = files.get_folder_structure(Path(str(config.get('WORKSPACE_BASE'))))
     return structure.to_dict()
 
 
 @app.get('/api/select-file')
 def select_file(file: str):
-    with open(Path(Path(str(config.get('WORKSPACE_BASE'))), file), 'r') as selected_file:
-        content = selected_file.read()
+    try:
+        workspace_base = config.get('WORKSPACE_BASE')
+        file_path = Path(workspace_base, file)
+        with open(file_path, 'r') as selected_file:
+            content = selected_file.read()
+    except Exception as e:
+        logger.error(f'Error opening file {file}: {e}', exc_info=False)
+        error_msg = f'Error opening file: {e}'
+        return Response(f'{{"error": "{error_msg}"}}', status_code=500)
     return {'code': content}
 
 
@@ -140,5 +147,6 @@ def select_file(file: str):
 async def docs_redirect():
     response = RedirectResponse(url='/index.html')
     return response
+
 
 app.mount('/', StaticFiles(directory='./frontend/dist'), name='dist')
