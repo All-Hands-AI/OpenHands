@@ -33,12 +33,12 @@ const DEFAULT_SETTINGS = new Map<string, string>([
 const getSettingOrDefault = (key: string) => {
   const value = localStorage.getItem(key);
   return value || DEFAULT_SETTINGS.get(key);
-}
+};
 
 export const getCurrentSettings = () => ({
-    LLM_MODEL: getSettingOrDefault("LLM_MODEL"),
-    AGENT: getSettingOrDefault("AGENT"),
-    LANGUAGE: getSettingOrDefault("LANGUAGE"),
+  LLM_MODEL: getSettingOrDefault("LLM_MODEL"),
+  AGENT: getSettingOrDefault("AGENT"),
+  LANGUAGE: getSettingOrDefault("LANGUAGE"),
 });
 
 // Function to merge and update settings

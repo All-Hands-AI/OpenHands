@@ -51,9 +51,9 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
 
   const handleSaveCfg = () => {
     saveSettings({
-        [ArgConfigType.LLM_MODEL]: model ?? inputModel,
-        [ArgConfigType.AGENT]: agent,
-        [ArgConfigType.LANGUAGE]: language,
+      [ArgConfigType.LLM_MODEL]: model ?? inputModel,
+      [ArgConfigType.AGENT]: agent,
+      [ArgConfigType.LANGUAGE]: language,
     });
     onClose();
   };
