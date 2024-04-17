@@ -169,8 +169,8 @@ There is also [documentation for running with local models using ollama](./docs/
 
 **Note on API retries and rate limits:**
 Some LLMs have rate limits and may require retries. OpenDevin will automatically retry requests if it receives a 429 error or API connection error.
-You can set NUM_RETRIES and COOLDOWN_TIME environment variables to control the number of retries and the time between retries.
-By default, NUM_RETRIES is 5 and COOLDOWN_TIME is 1 second.
+You can set LLM_NUM_RETRIES, LLM_MIN_WAIT, LLM_MAX_WAIT environment variables to control the number of retries and the time between retries.
+By default, LLM_NUM_RETRIES is 5 and LLM_MIN_WAIT, LLM_MAX_WAIT are 3 seconds and respectively 60 seconds.
 
 ## ⭐️ Research Strategy
 
