@@ -6,6 +6,8 @@ import Socket from "./socket";
 import { setByKey } from "../state/settingsSlice";
 import toast from "../utils/toast";
 
+type Settings = { [key: string]: string };
+
 export async function fetchModels() {
   const response = await fetch(`/api/litellm-models`);
   return response.json();
@@ -24,26 +26,29 @@ const DISPLAY_MAP: { [key: string]: string } = {
   LANGUAGE: "language",
 };
 
-const DEFAULT_SETTINGS: { [key: string]: any } = {
+const DEFAULT_SETTINGS: Settings = {
   LLM_MODEL: "gpt-3.5-turbo",
   AGENT: "MonologueAgent",
   LANGUAGE: "en",
 };
 
-const getSettingOrDefault = (key: string): any => {
+const getSettingOrDefault = (key: string): string => {
   const value = localStorage.getItem(key);
   return value || DEFAULT_SETTINGS[key];
 };
 
-export const getCurrentSettings = (): { [key: string]: any; } => ({
+export const getCurrentSettings = (): Settings => ({
   LLM_MODEL: getSettingOrDefault("LLM_MODEL"),
   AGENT: getSettingOrDefault("AGENT"),
   LANGUAGE: getSettingOrDefault("LANGUAGE"),
 });
 
 // Function to merge and update settings
-export const getUpdatedSettings = (newSettings: { [key: string]: any }, currentSettings: { [key: string]: any; }) => {
-  const updatedSettings: { [key: string]: any; } = {};
+export const getUpdatedSettings = (
+  newSettings: Settings,
+  currentSettings: Settings,
+) => {
+  const updatedSettings: Settings = {};
   SupportedSettings.forEach((setting) => {
     if (newSettings[setting] !== currentSettings[setting]) {
       updatedSettings[setting] = newSettings[setting];
@@ -73,7 +78,7 @@ export const initializeAgent = () => {
 };
 
 // Save and send settings to the server
-export function saveSettings(newSettings: { [key: string]: any }): void {
+export function saveSettings(newSettings: Settings): void {
   const currentSettings = getCurrentSettings();
   const updatedSettings = getUpdatedSettings(newSettings, currentSettings);
 
