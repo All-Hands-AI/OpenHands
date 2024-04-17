@@ -36,7 +36,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     sid = get_sid_from_token(websocket.query_params.get('token') or '')
     if sid == '':
-        logger.error(f'Failed to decode token: {websocket.query_params.get('token')}')
+        logger.error('Failed to decode token')
         return
     session_manager.add_session(sid, websocket)
     # TODO: actually the agent_manager is created for each websocket connection, even if the session id is the same,
