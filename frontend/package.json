@@ -103,7 +103,7 @@
     "vite": "^5.1.6",
     "vite-tsconfig-paths": "^4.3.2"
   },
-  "packageManager": "pnpm@8.15.6",
+  "packageManager": "yarn@1.22.22",
   "volta": {
     "node": "18.20.1"
   }

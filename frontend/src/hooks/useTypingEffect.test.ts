@@ -1,9 +1,15 @@
 import { renderHook, act } from "@testing-library/react";
 import { useTypingEffect } from "./useTypingEffect";
 
-jest.useFakeTimers();
-
 describe("useTypingEffect", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.clearAllTimers();
+  });
+
   // This test fails because the hook improperly handles this case.
   it.skip("should handle empty strings array", () => {
     const { result } = renderHook(() => useTypingEffect([]));
@@ -23,13 +29,13 @@ describe("useTypingEffect", () => {
 
     // Fast-forward time by to simulate typing message
     act(() => {
-      jest.advanceTimersByTime(msToRun - 1); // exclude the last character for testing
+      vi.advanceTimersByTime(msToRun - 1); // exclude the last character for testing
     });
 
     expect(result.current).toBe(message.slice(0, -1));
 
     act(() => {
-      jest.advanceTimersByTime(1); // include the last character
+      vi.advanceTimersByTime(1); // include the last character
     });
 
     expect(result.current).toBe(message);
@@ -46,13 +52,13 @@ describe("useTypingEffect", () => {
     const msToRun = (message.length - 2) * 100 * playbackRate;
 
     act(() => {
-      jest.advanceTimersByTime(msToRun - 1); // exclude the last character for testing
+      vi.advanceTimersByTime(msToRun - 1); // exclude the last character for testing
     });
 
     expect(result.current).toBe(message.slice(0, -1));
 
     act(() => {
-      jest.advanceTimersByTime(1); // include the last character
+      vi.advanceTimersByTime(1); // include the last character
     });
 
     expect(result.current).toBe(message);
@@ -67,7 +73,7 @@ describe("useTypingEffect", () => {
 
     // Fast-forward to end of first string
     act(() => {
-      jest.advanceTimersByTime(msToRunFirstString);
+      vi.advanceTimersByTime(msToRunFirstString);
     });
 
     expect(result.current).toBe(messages[0]); // Hello
@@ -75,14 +81,14 @@ describe("useTypingEffect", () => {
     // Fast-forward through the delay and through the second string
     act(() => {
       // TODO: Improve to clarify the expected timing
-      jest.runAllTimers();
+      vi.runAllTimers();
     });
 
     expect(result.current).toBe(messages[1]); // World
   });
 
   it("should call setTypingActive with false when typing completes without loop", () => {
-    const setTypingActiveMock = jest.fn();
+    const setTypingActiveMock = vi.fn();
 
     renderHook(() =>
       useTypingEffect(["Hello, world!", "This is a test message."], {
@@ -94,7 +100,7 @@ describe("useTypingEffect", () => {
     expect(setTypingActiveMock).not.toHaveBeenCalled();
 
     act(() => {
-      jest.runAllTimers();
+      vi.runAllTimers();
     });
 
     expect(setTypingActiveMock).toHaveBeenCalledWith(false);
@@ -102,7 +108,7 @@ describe("useTypingEffect", () => {
   });
 
   it("should call addAssistantMessageToChat with the typeThis argument when typing completes without loop", () => {
-    const addAssistantMessageToChatMock = jest.fn();
+    const addAssistantMessageToChatMock = vi.fn();
 
     renderHook(() =>
       useTypingEffect(["Hello, world!", "This is a test message."], {
@@ -116,7 +122,7 @@ describe("useTypingEffect", () => {
     expect(addAssistantMessageToChatMock).not.toHaveBeenCalled();
 
     act(() => {
-      jest.runAllTimers();
+      vi.runAllTimers();
     });
 
     expect(addAssistantMessageToChatMock).toHaveBeenCalledTimes(1);
@@ -127,7 +133,7 @@ describe("useTypingEffect", () => {
   });
 
   it("should call takeOneAndType when typing completes without loop", () => {
-    const takeOneAndTypeMock = jest.fn();
+    const takeOneAndTypeMock = vi.fn();
 
     renderHook(() =>
       useTypingEffect(["Hello, world!", "This is a test message."], {
@@ -139,7 +145,7 @@ describe("useTypingEffect", () => {
     expect(takeOneAndTypeMock).not.toHaveBeenCalled();
 
     act(() => {
-      jest.runAllTimers();
+      vi.runAllTimers();
     });
 
     expect(takeOneAndTypeMock).toHaveBeenCalledTimes(1);

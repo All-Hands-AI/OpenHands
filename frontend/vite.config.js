@@ -1,8 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-// eslint-disable-next-line import/no-extraneous-dependencies
 import viteTsconfigPaths from "vite-tsconfig-paths";
-import * as os from "node:os";
 
 const BACKEND_HOST = process.env.BACKEND_HOST || "127.0.0.1:3000";
 
@@ -19,7 +17,6 @@ let viteConfig;
 viteConfig = {
   // depending on your application, base can also be "/"
   base: "",
-  outDir: "dist",
   plugins: [react(), viteTsconfigPaths()],
   clearScreen: false,
   server: {
@@ -31,7 +28,6 @@ viteConfig = {
       "/api": {
         target: `http://${BACKEND_HOST}/`,
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
       },
       "/ws": {
         target: `ws://${BACKEND_HOST}/`,

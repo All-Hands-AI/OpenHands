@@ -163,7 +163,7 @@ services:
     command: ""
     volumes:
       - ./docker/openssl.cnf:/etc/ssl/od_openssl.cnf
-      - ./docker/nginx/nginx.conf.dist:/etc/nginx/nginx.conf
+#      - ./docker/nginx/nginx.conf.dist:/etc/nginx/nginx.conf
 
 networks:
   opendevin-net:

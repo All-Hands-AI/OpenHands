@@ -10,7 +10,7 @@ services:
     platform: linux/amd64
     env_file:
       - .env
-      - docker/ollama/.env
+      - docker/ollama/ollama.env
     tty: false
     ports:
       - "22434:11434"

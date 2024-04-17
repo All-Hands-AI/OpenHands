@@ -13,6 +13,7 @@ jobs:
   open-devin:
     if: github.event.label.name == 'dogfood-this'
     runs-on: ubuntu-latest
+    environment: OpenAI
 
     steps:
     - name: Checkout Repository

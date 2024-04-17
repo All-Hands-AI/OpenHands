@@ -1,3 +1,4 @@
+import type { Mock } from "vitest";
 import {
   ResDelMsg,
   ResFetchMsg,
@@ -7,12 +8,12 @@ import {
 import { clearMsgs, fetchMsgTotal, fetchMsgs } from "./session";
 
 // SUGGESTION: Prefer using msw for mocking requests (see https://mswjs.io/)
-global.fetch = jest.fn();
-Storage.prototype.getItem = jest.fn();
+global.fetch = vi.fn();
+Storage.prototype.getItem = vi.fn();
 
 describe("Session Service", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -26,7 +27,7 @@ describe("Session Service", () => {
         msg_total: 10,
       };
 
-      (fetch as jest.Mock).mockImplementationOnce(() =>
+      (fetch as Mock).mockImplementationOnce(() =>
         Promise.resolve({
           status: 200,
           json: () => Promise.resolve(expectedResult),
@@ -45,7 +46,7 @@ describe("Session Service", () => {
     it("throws an error if response status is not 200", async () => {
       // NOTE: The current implementation ONLY handles 200 status;
       // this means throwing even with a status of 201, 204, etc.
-      (fetch as jest.Mock).mockImplementationOnce(() =>
+      (fetch as Mock).mockImplementationOnce(() =>
         Promise.resolve({ status: 401 }),
       );
 
@@ -67,7 +68,7 @@ describe("Session Service", () => {
         ],
       };
 
-      (fetch as jest.Mock).mockImplementationOnce(() =>
+      (fetch as Mock).mockImplementationOnce(() =>
         Promise.resolve({
           status: 200,
           json: () => Promise.resolve(expectedResult),
@@ -84,7 +85,7 @@ describe("Session Service", () => {
     });
 
     it("throws an error if response status is not 200", async () => {
-      (fetch as jest.Mock).mockImplementationOnce(() =>
+      (fetch as Mock).mockImplementationOnce(() =>
         Promise.resolve({ status: 401 }),
       );
 
@@ -98,7 +99,7 @@ describe("Session Service", () => {
         ok: "true",
       };
 
-      (fetch as jest.Mock).mockImplementationOnce(() =>
+      (fetch as Mock).mockImplementationOnce(() =>
         Promise.resolve({
           status: 200,
           json: () => Promise.resolve(expectedResult),
@@ -116,7 +117,7 @@ describe("Session Service", () => {
     });
 
     it("throws an error if response status is not 200", async () => {
-      (fetch as jest.Mock).mockImplementationOnce(() =>
+      (fetch as Mock).mockImplementationOnce(() =>
         Promise.resolve({ status: 401 }),
       );
 

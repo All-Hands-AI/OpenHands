@@ -1,10 +1,11 @@
 import json
 from typing import List, Tuple, Dict, Type
+
+from opendevin.controller.agent_controller import print_with_color
 from opendevin.plan import Plan
 from opendevin.action import Action, action_from_dict
 from opendevin.observation import Observation
 from opendevin.schema import ActionType
-from opendevin.logger import opendevin_logger as logger
 
 from opendevin.action import (
     NullAction,
@@ -197,7 +198,7 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
         elif latest_action_id == ActionType.FINISH:
             hint = ''
 
-    logger.info('HINT:\n' + hint, extra={'msg_type': 'INFO'})
+    print_with_color('HINT:\n' + hint, 'INFO')
     return prompt % {
         'task': plan.main_goal,
         'plan': plan_str,
