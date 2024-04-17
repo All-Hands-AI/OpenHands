@@ -42,9 +42,9 @@ export const getCurrentSettings = () => ({
 });
 
 // Function to merge and update settings
-export const getUpdatedSettings = (newSettings: map<string, string>) => {
+export const getUpdatedSettings = (newSettings: Map<string, string>) => {
   const currentSettings = getCurrentSettings();
-  const updatedSettings = {};
+  const updatedSettings: Map<string, string> = {};
   SupportedSettings.forEach((setting) => {
     if (newSettings[setting] !== currentSettings[setting]) {
       updatedSettings[setting] = newSettings[setting];
