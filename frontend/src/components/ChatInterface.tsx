@@ -1,5 +1,6 @@
 import { Card, CardBody } from "@nextui-org/react";
 import React, { useEffect, useRef } from "react";
+import { IoMdChatbubbles } from "react-icons/io";
 import { useSelector } from "react-redux";
 import { useTypingEffect } from "../hooks/useTypingEffect";
 import {
@@ -100,7 +101,7 @@ function MessageList(): JSX.Element {
       ))}
 
       {typingActive && (
-        <div className="flex mb-2.5 pr-5 pl-5 bg-s">
+        <div className="flex mb-2.5 pr-5 pl-5 max-w-[90%]">
           <div className="flex mt-2.5 mb-0 min-w-0 ">
             <TypingChat />
           </div>
@@ -116,7 +117,10 @@ function ChatInterface(): JSX.Element {
 
   return (
     <div className="flex flex-col h-full p-0 bg-neutral-800">
-      <div className="border-b border-neutral-600 text-sm px-4 py-2">Chat</div>
+      <div className="flex items-center gap-2 border-b border-neutral-600 text-sm px-4 py-2">
+        <IoMdChatbubbles />
+        Chat
+      </div>
       <MessageList />
       {initialized ? null : <AgentStatusBar />}
       <Input />

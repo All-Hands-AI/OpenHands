@@ -1,89 +1,94 @@
 import atexit
 import os
+import platform
 import sys
 import time
 import uuid
-import platform
-from pexpect import pxssh
 from collections import namedtuple
 from typing import Dict, List, Tuple, Union
 
 import docker
+from pexpect import pxssh
 
 from opendevin import config
 from opendevin.logger import opendevin_logger as logger
 from opendevin.sandbox.sandbox import Sandbox, BackgroundCommand
+from opendevin.schema import ConfigType
+from opendevin.utils import find_available_tcp_port
+from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
-DIRECTORY_REWRITE = config.get(
-    'DIRECTORY_REWRITE'
-)  # helpful for docker-in-docker scenarios
-CONTAINER_IMAGE = config.get('SANDBOX_CONTAINER_IMAGE')
+SANDBOX_WORKSPACE_DIR = '/workspace'
+
+CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
+
+SSH_HOSTNAME = config.get(ConfigType.SSH_HOSTNAME)
+
+USE_HOST_NETWORK = platform.system() == 'Linux'
+if config.get(ConfigType.USE_HOST_NETWORK) is not None:
+    USE_HOST_NETWORK = config.get(
+        ConfigType.USE_HOST_NETWORK).lower() != 'false'
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
 RUN_AS_DEVIN = config.get('RUN_AS_DEVIN').lower() != 'false'
 USER_ID = 1000
-if config.get_or_none('SANDBOX_USER_ID') is not None:
-    USER_ID = int(config.get_or_default('SANDBOX_USER_ID', ''))
+if SANDBOX_USER_ID := config.get('SANDBOX_USER_ID'):
+    USER_ID = int(SANDBOX_USER_ID)
 elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
 
 
 class DockerSSHBox(Sandbox):
-    closed = False
+    instance_id: str
+    container_image: str
+    container_name_prefix = 'opendevin-sandbox-'
+    container_name: str
+    container: docker.models.containers.Container
+    docker_client: docker.DockerClient
+
+    _ssh_password: str
+    _ssh_port: int
+
     cur_background_id = 0
     background_commands: Dict[int, BackgroundCommand] = {}
 
     def __init__(
-        self,
-        workspace_dir: str | None = None,
-        container_image: str | None = None,
-        timeout: int = 120,
-        id: str | None = None,
+            self,
+            container_image: str | None = None,
+            timeout: int = 120,
+            sid: str | None = None,
     ):
-        if id is not None:
-            self.instance_id = id
-        else:
-            self.instance_id = str(uuid.uuid4())
-        if workspace_dir is not None:
-            os.makedirs(workspace_dir, exist_ok=True)
-            # expand to absolute path
-            self.workspace_dir = os.path.abspath(workspace_dir)
-        else:
-            self.workspace_dir = os.getcwd()
-            logger.info(
-                'workspace unspecified, using current directory: %s', workspace_dir)
-        if DIRECTORY_REWRITE != '':
-            parts = DIRECTORY_REWRITE.split(':')
-            self.workspace_dir = self.workspace_dir.replace(parts[0], parts[1])
-            logger.info('Rewriting workspace directory to: %s',
-                        self.workspace_dir)
-        else:
-            logger.info('Using workspace directory: %s', self.workspace_dir)
+        # Initialize docker client. Throws an exception if Docker is not reachable.
+        try:
+            self.docker_client = docker.from_env()
+        except Exception as ex:
+            logger.exception(
+                'Please check Docker is running using `docker ps`.', exc_info=False)
+            raise ex
+
+        self.instance_id = sid if sid is not None else str(uuid.uuid4())
 
         # TODO: this timeout is actually essential - need a better way to set it
         # if it is too short, the container may still waiting for previous
         # command to finish (e.g. apt-get update)
         # if it is too long, the user may have to wait for a unnecessary long time
-        self.timeout: int = timeout
+        self.timeout = timeout
+        self.container_image = CONTAINER_IMAGE if container_image is None else container_image
+        self.container_name = self.container_name_prefix + self.instance_id
 
-        if container_image is None:
-            self.container_image = CONTAINER_IMAGE
-        else:
-            self.container_image = container_image
-
-        self.container_name = f'sandbox-{self.instance_id}'
-
-        if not self.is_container_running():
-            self.restart_docker_container()
         # set up random user password
         self._ssh_password = str(uuid.uuid4())
+        self._ssh_port = find_available_tcp_port()
+
+        # always restart the container, cuz the initial be regarded as a new session
+        self.restart_docker_container()
+
         self.setup_user()
         self.start_ssh_session()
-        atexit.register(self.cleanup)
+        atexit.register(self.close)
 
     def setup_user(self):
 
@@ -91,8 +96,8 @@ class DockerSSHBox(Sandbox):
         # TODO(sandbox): add this line in the Dockerfile for next minor version of docker image
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c',
-                r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"],
-            workdir='/workspace',
+             r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"],
+            workdir=SANDBOX_WORKSPACE_DIR,
         )
         if exit_code != 0:
             raise Exception(
@@ -101,64 +106,63 @@ class DockerSSHBox(Sandbox):
         # Check if the opendevin user exists
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c', 'id -u opendevin'],
-            workdir='/workspace',
+            workdir=SANDBOX_WORKSPACE_DIR,
         )
         if exit_code == 0:
             # User exists, delete it
             exit_code, logs = self.container.exec_run(
                 ['/bin/bash', '-c', 'userdel -r opendevin'],
-                workdir='/workspace',
+                workdir=SANDBOX_WORKSPACE_DIR,
             )
             if exit_code != 0:
                 raise Exception(
                     f'Failed to remove opendevin user in sandbox: {logs}')
 
-        # Create the opendevin user
-        exit_code, logs = self.container.exec_run(
-            ['/bin/bash', '-c',
-                f'useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {USER_ID} opendevin'],
-            workdir='/workspace',
-        )
-        if exit_code != 0:
-            raise Exception(
-                f'Failed to create opendevin user in sandbox: {logs}')
-        exit_code, logs = self.container.exec_run(
-            ['/bin/bash', '-c',
-                f"echo 'opendevin:{self._ssh_password}' | chpasswd"],
-            workdir='/workspace',
-        )
-        if exit_code != 0:
-            raise Exception(f'Failed to set password in sandbox: {logs}')
-
-        if not RUN_AS_DEVIN:
+        if RUN_AS_DEVIN:
+            # Create the opendevin user
+            exit_code, logs = self.container.exec_run(
+                ['/bin/bash', '-c',
+                 f'useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {USER_ID} opendevin'],
+                workdir=SANDBOX_WORKSPACE_DIR,
+            )
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to create opendevin user in sandbox: {logs}')
+            exit_code, logs = self.container.exec_run(
+                ['/bin/bash', '-c',
+                 f"echo 'opendevin:{self._ssh_password}' | chpasswd"],
+                workdir=SANDBOX_WORKSPACE_DIR,
+            )
+            if exit_code != 0:
+                raise Exception(f'Failed to set password in sandbox: {logs}')
+        else:
             exit_code, logs = self.container.exec_run(
                 # change password for root
                 ['/bin/bash', '-c',
-                    f"echo 'root:{self._ssh_password}' | chpasswd"],
-                workdir='/workspace',
+                 f"echo 'root:{self._ssh_password}' | chpasswd"],
+                workdir=SANDBOX_WORKSPACE_DIR,
             )
             if exit_code != 0:
                 raise Exception(
                     f'Failed to set password for root in sandbox: {logs}')
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c', "echo 'opendevin-sandbox' > /etc/hostname"],
-            workdir='/workspace',
+            workdir=SANDBOX_WORKSPACE_DIR,
         )
 
     def start_ssh_session(self):
         # start ssh session at the background
         self.ssh = pxssh.pxssh()
-        hostname = 'localhost'
+        hostname = SSH_HOSTNAME
         if RUN_AS_DEVIN:
             username = 'opendevin'
         else:
             username = 'root'
         logger.info(
-            # FIXME: mypy and autopep8 fight each other on this line
-            # autopep8: off
-            f"Connecting to {username}@{hostname} via ssh. If you encounter any issues, you can try `ssh -v -p 2222 {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub."
+            f"Connecting to {username}@{hostname} via ssh. If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub."
         )
-        self.ssh.login(hostname, username, self._ssh_password, port=2222)
+        self.ssh.login(hostname, username, self._ssh_password,
+                       port=self._ssh_port)
 
         # Fix: https://github.com/pexpect/pexpect/issues/669
         self.ssh.sendline("bind 'set enable-bracketed-paste off'")
@@ -175,7 +179,7 @@ class DockerSSHBox(Sandbox):
 
     def read_logs(self, id) -> str:
         if id not in self.background_commands:
-            raise ValueError('Invalid background command id')
+            raise SandboxInvalidBackgroundCommandError()
         bg_cmd = self.background_commands[id]
         return bg_cmd.read_logs()
 
@@ -204,7 +208,7 @@ class DockerSSHBox(Sandbox):
 
     def execute_in_background(self, cmd: str) -> BackgroundCommand:
         result = self.container.exec_run(
-            self.get_exec_cmd(cmd), socket=True, workdir='/workspace'
+            self.get_exec_cmd(cmd), socket=True, workdir=SANDBOX_WORKSPACE_DIR
         )
         result.output._sock.setblocking(0)
         pid = self.get_pid(cmd)
@@ -226,31 +230,18 @@ class DockerSSHBox(Sandbox):
 
     def kill_background(self, id: int) -> BackgroundCommand:
         if id not in self.background_commands:
-            raise ValueError('Invalid background command id')
+            raise SandboxInvalidBackgroundCommandError()
         bg_cmd = self.background_commands[id]
         if bg_cmd.pid is not None:
             self.container.exec_run(
-                f'kill -9 {bg_cmd.pid}', workdir='/workspace')
+                f'kill -9 {bg_cmd.pid}', workdir=SANDBOX_WORKSPACE_DIR)
         bg_cmd.result.output.close()
         self.background_commands.pop(id)
         return bg_cmd
 
-    def close(self):
-        self.stop_docker_container()
-        self.closed = True
-
     def stop_docker_container(self):
-
-        # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
-            docker_client = docker.from_env()
-        except docker.errors.DockerException as e:
-            logger.exception(
-                'Please check Docker is running using `docker ps`.', exc_info=False)
-            raise e
-
-        try:
-            container = docker_client.containers.get(self.container_name)
+            container = self.docker_client.containers.get(self.container_name)
             container.stop()
             container.remove()
             elapsed = 0
@@ -259,14 +250,14 @@ class DockerSSHBox(Sandbox):
                 elapsed += 1
                 if elapsed > self.timeout:
                     break
-                container = docker_client.containers.get(self.container_name)
+                container = self.docker_client.containers.get(
+                    self.container_name)
         except docker.errors.NotFound:
             pass
 
     def is_container_running(self):
         try:
-            docker_client = docker.from_env()
-            container = docker_client.containers.get(self.container_name)
+            container = self.docker_client.containers.get(self.container_name)
             if container.status == 'running':
                 self.container = container
                 return True
@@ -278,20 +269,17 @@ class DockerSSHBox(Sandbox):
         try:
             self.stop_docker_container()
             logger.info('Container stopped')
-        except docker.errors.DockerException as e:
+        except docker.errors.DockerException as ex:
             logger.exception('Failed to stop container', exc_info=False)
-            raise e
+            raise ex
 
         try:
-            # Initialize docker client. Throws an exception if Docker is not reachable.
-            docker_client = docker.from_env()
-
             network_kwargs: Dict[str, Union[str, Dict[str, int]]] = {}
-            if platform.system() == 'Linux':
+            if USE_HOST_NETWORK:
                 network_kwargs['network_mode'] = 'host'
-            elif platform.system() == 'Darwin':
+            else:
                 # FIXME: This is a temporary workaround for Mac OS
-                network_kwargs['ports'] = {'2222/tcp': 2222}
+                network_kwargs['ports'] = {f'{self._ssh_port}/tcp': self._ssh_port}
                 logger.warning(
                     ('Using port forwarding for Mac OS. '
                      'Server started by OpenDevin will not be accessible from the host machine at the moment. '
@@ -299,23 +287,29 @@ class DockerSSHBox(Sandbox):
                      )
                 )
 
+            mount_dir = config.get('WORKSPACE_MOUNT_PATH')
+            print('Mounting workspace directory: ', mount_dir)
             # start the container
-            self.container = docker_client.containers.run(
+            self.container = self.docker_client.containers.run(
                 self.container_image,
                 # allow root login
-                command="/usr/sbin/sshd -D -p 2222 -o 'PermitRootLogin=yes'",
+                command=f"/usr/sbin/sshd -D -p {self._ssh_port} -o 'PermitRootLogin=yes'",
                 **network_kwargs,
-                working_dir='/workspace',
+                working_dir=SANDBOX_WORKSPACE_DIR,
                 name=self.container_name,
                 hostname='opendevin_sandbox',
                 detach=True,
-                volumes={self.workspace_dir: {
-                    'bind': '/workspace', 'mode': 'rw'}},
+                volumes={
+                    mount_dir: {
+                        'bind': SANDBOX_WORKSPACE_DIR,
+                        'mode': 'rw'
+                    },
+                },
             )
             logger.info('Container started')
-        except Exception as e:
+        except Exception as ex:
             logger.exception('Failed to start container', exc_info=False)
-            raise e
+            raise ex
 
         # wait for container to be ready
         elapsed = 0
@@ -327,7 +321,8 @@ class DockerSSHBox(Sandbox):
                 break
             time.sleep(1)
             elapsed += 1
-            self.container = docker_client.containers.get(self.container_name)
+            self.container = self.docker_client.containers.get(
+                self.container_name)
             logger.info(
                 f'waiting for container to start: {elapsed}, container status: {self.container.status}')
             if elapsed > self.timeout:
@@ -336,33 +331,20 @@ class DockerSSHBox(Sandbox):
             raise Exception('Failed to start container')
 
     # clean up the container, cannot do it in __del__ because the python interpreter is already shutting down
-    def cleanup(self):
-        if self.closed:
-            return
-        try:
-            self.container.remove(force=True)
-        except docker.errors.NotFound:
-            pass
+    def close(self):
+        containers = self.docker_client.containers.list(all=True)
+        for container in containers:
+            try:
+                if container.name.startswith(self.container_name_prefix):
+                    container.remove(force=True)
+            except docker.errors.NotFound:
+                pass
 
 
 if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description='Interactive Docker container')
-    parser.add_argument(
-        '-d',
-        '--directory',
-        type=str,
-        default=None,
-        help='The directory to mount as the workspace in the Docker container.',
-    )
-    args = parser.parse_args()
 
     try:
-        ssh_box = DockerSSHBox(
-            workspace_dir=args.directory,
-        )
+        ssh_box = DockerSSHBox()
     except Exception as e:
         logger.exception('Failed to start Docker container: %s', e)
         sys.exit(1)

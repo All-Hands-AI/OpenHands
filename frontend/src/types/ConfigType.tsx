@@ -10,6 +10,7 @@ enum ArgConfigType {
   LLM_COOLDOWN_TIME = "LLM_COOLDOWN_TIME",
   DIRECTORY_REWRITE = "DIRECTORY_REWRITE",
   MAX_ITERATIONS = "MAX_ITERATIONS",
+  MAX_CHARS = "MAX_CHARS",
   AGENT = "AGENT",
 
   LANGUAGE = "LANGUAGE",
@@ -18,7 +19,7 @@ enum ArgConfigType {
 const SupportedList: string[] = [
   // ArgConfigType.LLM_API_KEY,
   // ArgConfigType.LLM_BASE_URL,
-  ArgConfigType.WORKSPACE_DIR,
+  // ArgConfigType.WORKSPACE_DIR,
   ArgConfigType.LLM_MODEL,
   // ArgConfigType.SANDBOX_CONTAINER_IMAGE,
   // ArgConfigType.RUN_AS_DEVIN,

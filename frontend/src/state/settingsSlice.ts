@@ -9,8 +9,6 @@ export const settingsSlice = createSlice({
     [ArgConfigType.LLM_MODEL]:
       localStorage.getItem(ArgConfigType.LLM_MODEL) || "",
     [ArgConfigType.AGENT]: localStorage.getItem(ArgConfigType.AGENT) || "",
-    [ArgConfigType.WORKSPACE_DIR]:
-      localStorage.getItem(ArgConfigType.WORKSPACE_DIR) || "",
     [ArgConfigType.LANGUAGE]:
       localStorage.getItem(ArgConfigType.LANGUAGE) || "en",
   } as { [key: string]: string },

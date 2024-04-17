@@ -1,11 +1,10 @@
 import json
 from typing import List, Tuple, Dict, Type
-
-from opendevin.controller.agent_controller import print_with_color
 from opendevin.plan import Plan
 from opendevin.action import Action, action_from_dict
 from opendevin.observation import Observation
 from opendevin.schema import ActionType
+from opendevin.logger import opendevin_logger as logger
 
 from opendevin.action import (
     NullAction,
@@ -155,14 +154,14 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
         if not isinstance(observation, NullObservation):
             observation_dict = observation.to_dict()
             if (
-                "extras" in observation_dict
-                and "screenshot" in observation_dict["extras"]
+                'extras' in observation_dict
+                and 'screenshot' in observation_dict['extras']
             ):
-                del observation_dict["extras"]["screenshot"]
+                del observation_dict['extras']['screenshot']
             history_dicts.append(observation_dict)
     history_str = json.dumps(history_dicts, indent=2)
 
-    hint = ""
+    hint = ''
     current_task = plan.get_current_task()
     if current_task is not None:
         plan_status = f"You're currently working on this task:\n{current_task.goal}."
@@ -172,39 +171,39 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
         plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
         hint = plan_status
 
-    latest_action_id = latest_action.to_dict()["action"]
+    latest_action_id = latest_action.to_dict()['action']
 
     if current_task is not None:
-        if latest_action_id == "":
+        if latest_action_id == '':
             hint = "You haven't taken any actions yet. Start by using `ls` to check out what files you're working with."
         elif latest_action_id == ActionType.RUN:
-            hint = "You should think about the command you just ran, what output it gave, and how that affects your plan."
+            hint = 'You should think about the command you just ran, what output it gave, and how that affects your plan.'
         elif latest_action_id == ActionType.READ:
-            hint = "You should think about the file you just read, what you learned from it, and how that affects your plan."
+            hint = 'You should think about the file you just read, what you learned from it, and how that affects your plan.'
         elif latest_action_id == ActionType.WRITE:
-            hint = "You just changed a file. You should think about how it affects your plan."
+            hint = 'You just changed a file. You should think about how it affects your plan.'
         elif latest_action_id == ActionType.BROWSE:
-            hint = "You should think about the page you just visited, and what you learned from it."
+            hint = 'You should think about the page you just visited, and what you learned from it.'
         elif latest_action_id == ActionType.THINK:
             hint = "Look at your last thought in the history above. What does it suggest? Don't think anymore--take action."
         elif latest_action_id == ActionType.RECALL:
-            hint = "You should think about the information you just recalled, and how it should affect your plan."
+            hint = 'You should think about the information you just recalled, and how it should affect your plan.'
         elif latest_action_id == ActionType.ADD_TASK:
-            hint = "You should think about the next action to take."
+            hint = 'You should think about the next action to take.'
         elif latest_action_id == ActionType.MODIFY_TASK:
-            hint = "You should think about the next action to take."
+            hint = 'You should think about the next action to take.'
         elif latest_action_id == ActionType.SUMMARIZE:
-            hint = ""
+            hint = ''
         elif latest_action_id == ActionType.FINISH:
-            hint = ""
+            hint = ''
 
-    print_with_color("HINT:\n" + hint, "INFO")
+    logger.info('HINT:\n' + hint, extra={'msg_type': 'INFO'})
     return prompt % {
-        "task": plan.main_goal,
-        "plan": plan_str,
-        "history": history_str,
-        "hint": hint,
-        "plan_status": plan_status,
+        'task': plan.main_goal,
+        'plan': plan_str,
+        'history': history_str,
+        'hint': hint,
+        'plan_status': plan_status,
     }
 
 
@@ -218,12 +217,12 @@ def parse_response(response: str) -> Action:
     Returns:
     - Action: A valid next action to perform from model output
     """
-    json_start = response.find("{")
-    json_end = response.rfind("}") + 1
+    json_start = response.find('{')
+    json_end = response.rfind('}') + 1
     response = response[json_start:json_end]
     action_dict = json.loads(response)
-    if "contents" in action_dict:
+    if 'contents' in action_dict:
         # The LLM gets confused here. Might as well be robust
-        action_dict["content"] = action_dict.pop("contents")
+        action_dict['content'] = action_dict.pop('contents')
     action = action_from_dict(action_dict)
     return action
