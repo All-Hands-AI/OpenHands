@@ -78,6 +78,7 @@ class AgentController:
                 break
         if not finished:
             logger.info('Exited before finishing the task.')
+        self.agent.reset()
 
     async def step(self, i: int):
         logger.info(f'STEP {i}', extra={'msg_type': 'STEP'})

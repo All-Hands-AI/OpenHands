@@ -61,7 +61,11 @@ function CodeEditor(): JSX.Element {
         <div className="flex grow">
           <Editor
             height="100%"
-            defaultLanguage="python"
+            path={
+              selectedFileName === ""
+                ? "welcome.txt"
+                : selectedFileName.toLocaleLowerCase()
+            }
             defaultValue="# Welcome to OpenDevin!"
             value={code}
             onMount={handleEditorDidMount}

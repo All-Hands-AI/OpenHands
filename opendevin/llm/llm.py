@@ -43,6 +43,7 @@ class LLM:
             base_url (str): The base URL for the language model API.
             completion (function): A decorator for the litellm completion function.
         """
+        opendevin_logger.info(f'Initializing LLM with model: {model}')
         self.model_name = model if model else DEFAULT_MODEL_NAME
         self.api_key = api_key if api_key else DEFAULT_API_KEY
         self.base_url = base_url if base_url else DEFAULT_BASE_URL

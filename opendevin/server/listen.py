@@ -2,7 +2,7 @@ import uuid
 from pathlib import Path
 
 import litellm
-from fastapi import Depends, FastAPI, WebSocket, Response
+from fastapi import Depends, FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -36,6 +36,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     sid = get_sid_from_token(websocket.query_params.get('token') or '')
     if sid == '':
+        logger.error('Failed to decode token')
         return
     session_manager.add_session(sid, websocket)
     # TODO: actually the agent_manager is created for each websocket connection, even if the session id is the same,
@@ -52,12 +53,13 @@ async def get_litellm_models():
     return list(set(litellm.model_list + list(litellm.model_cost.keys())))
 
 
-@app.get('/api/litellm-agents')
-async def get_litellm_agents():
+@app.get('/api/agents')
+async def get_agents():
     """
     Get all agents supported by LiteLLM.
     """
-    return Agent.list_agents()
+    agents = Agent.list_agents()
+    return agents
 
 
 @app.get('/api/auth')
@@ -69,10 +71,7 @@ async def get_token(
     """
     sid = get_sid_from_token(credentials.credentials) or str(uuid.uuid4())
     token = sign_token({'sid': sid})
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'token': token},
-    )
+    return {'token': token}
 
 
 @app.get('/api/messages')
@@ -84,10 +83,7 @@ async def get_messages(
     if sid != '':
         data = message_stack.get_messages(sid)
 
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'messages': data},
-    )
+    return {'messages': data}
 
 
 @app.get('/api/messages/total')
@@ -95,10 +91,7 @@ async def get_message_total(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     sid = get_sid_from_token(credentials.credentials)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'msg_total': message_stack.get_message_total(sid)},
-    )
+    return {'msg_total': message_stack.get_message_total(sid)}
 
 
 @app.delete('/api/messages')
@@ -107,15 +100,7 @@ async def del_messages(
 ):
     sid = get_sid_from_token(credentials.credentials)
     message_stack.del_messages(sid)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'ok': True},
-    )
-
-
-@app.get('/api/configurations')
-def read_default_model():
-    return config.get_fe_config()
+    return {'ok': True}
 
 
 @app.get('/api/refresh-files')
@@ -134,7 +119,10 @@ def select_file(file: str):
     except Exception as e:
         logger.error(f'Error opening file {file}: {e}', exc_info=False)
         error_msg = f'Error opening file: {e}'
-        return Response(f'{{"error": "{error_msg}"}}', status_code=500)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': error_msg},
+        )
     return {'code': content}
 
 

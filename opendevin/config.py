@@ -1,4 +1,3 @@
-import copy
 import os
 
 import argparse
@@ -86,12 +85,3 @@ def get(key: str, required: bool = False):
     if not value and required:
         raise KeyError(f"Please set '{key}' in `config.toml` or `.env`.")
     return value
-
-
-def get_fe_config() -> dict:
-    """
-    Get all the frontend configuration values by performing a deep copy.
-    """
-    fe_config = copy.deepcopy(config)
-    del fe_config['LLM_API_KEY']
-    return fe_config
