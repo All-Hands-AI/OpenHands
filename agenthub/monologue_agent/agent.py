@@ -233,3 +233,7 @@ class MonologueAgent(Agent):
         - List[str]: A list of top 10 text results that matched the query
         """
         return self.memory.search(query)
+
+    def reset(self) -> None:
+        super().reset()
+        self.monologue = Monologue()
