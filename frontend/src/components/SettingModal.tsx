@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import {
   Autocomplete,
   AutocompleteItem,
@@ -15,7 +14,6 @@ import {
   saveSettings,
   getCurrentSettings,
 } from "../services/settingsService";
-import { RootState } from "../store";
 import { I18nKey } from "../i18n/declaration";
 import { AvailableLanguages } from "../i18n";
 import { ArgConfigType } from "../types/ConfigType";
@@ -52,13 +50,11 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
   }, []);
 
   const handleSaveCfg = () => {
-    saveSettings(
-      {
+    saveSettings({
         [ArgConfigType.LLM_MODEL]: model ?? inputModel,
         [ArgConfigType.AGENT]: agent,
         [ArgConfigType.LANGUAGE]: language,
-      },
-    );
+    });
     onClose();
   };
 

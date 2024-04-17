@@ -1,10 +1,9 @@
 import { setInitialized } from "../state/taskSlice";
 import store from "../store";
 import ActionType from "../types/ActionType";
-import { SupportedSettings } from "../types/ConfigType";
+import { SupportedSettings, ArgConfigType } from "../types/ConfigType";
 import Socket from "./socket";
-import { setAllSettings, setByKey } from "../state/settingsSlice";
-import { ArgConfigType } from "../types/ConfigType";
+import { setByKey } from "../state/settingsSlice";
 import toast from "../utils/toast";
 
 export async function fetchModels() {
@@ -31,16 +30,19 @@ const DEFAULT_SETTINGS = new Map<string, string>([
   [ArgConfigType.LANGUAGE, "en"],
 ]);
 
+const getSettingOrDefault = (key: string) => {
+  const value = localStorage.getItem(key);
+  return value || DEFAULT_SETTINGS.get(key);
+}
+
 export const getCurrentSettings = () => ({
-    LLM_MODEL: localStorage.getItem("LLM_MODEL") || DEFAULT_SETTINGS.get(ArgConfigType.LLM_MODEL),
-    AGENT: localStorage.getItem("AGENT") || DEFAULT_SETTINGS.get(ArgConfigType.AGENT),
-    LANGUAGE: localStorage.getItem("LANGUAGE") || DEFAULT_SETTINGS.get(ArgConfigType.LANGUAGE),
+    LLM_MODEL: getSettingOrDefault("LLM_MODEL"),
+    AGENT: getSettingOrDefault("AGENT"),
+    LANGUAGE: getSettingOrDefault("LANGUAGE"),
 });
 
 // Function to merge and update settings
-export const getUpdatedSettings = (
-  newSettings: map<string, string>,
-) => {
+export const getUpdatedSettings = (newSettings: map<string, string>) => {
   const currentSettings = getCurrentSettings();
   const updatedSettings = {};
   SupportedSettings.forEach((setting) => {
@@ -72,9 +74,7 @@ const initializeAgent = () => {
 };
 
 // Save and send settings to the server
-export function saveSettings(
-  newSettings: { [key: string]: string },
-): void {
+export function saveSettings(newSettings: { [key: string]: string }): void {
   const updatedSettings = getUpdatedSettings(newSettings);
 
   if (Object.keys(updatedSettings).length === 0) {
