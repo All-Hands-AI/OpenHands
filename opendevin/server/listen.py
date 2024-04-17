@@ -2,7 +2,7 @@ import uuid
 from pathlib import Path
 
 import litellm
-from fastapi import Depends, FastAPI, WebSocket, Response
+from fastapi import Depends, FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -49,7 +49,11 @@ async def get_litellm_models():
     """
     Get all models supported by LiteLLM.
     """
-    return list(set(litellm.model_list + list(litellm.model_cost.keys())))
+    models = list(set(litellm.model_list + list(litellm.model_cost.keys())))
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=models,
+    )
 
 
 @app.get('/api/litellm-agents')
@@ -57,7 +61,11 @@ async def get_litellm_agents():
     """
     Get all agents supported by LiteLLM.
     """
-    return Agent.list_agents()
+    agents = Agent.list_agents()
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=agents,
+    )
 
 
 @app.get('/api/auth')
@@ -115,13 +123,21 @@ async def del_messages(
 
 @app.get('/api/configurations')
 def read_default_model():
-    return config.get_fe_config()
+    fe_config = config.get_fe_config()
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=fe_config,
+    )
 
 
 @app.get('/api/refresh-files')
 def refresh_files():
     structure = files.get_folder_structure(Path(str(config.get('WORKSPACE_BASE'))))
-    return structure.to_dict()
+    structure_to_dict = structure.to_dict()
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=structure_to_dict,
+    )
 
 
 @app.get('/api/select-file')
@@ -134,8 +150,14 @@ def select_file(file: str):
     except Exception as e:
         logger.error(f'Error opening file {file}: {e}', exc_info=False)
         error_msg = f'Error opening file: {e}'
-        return Response(f'{{"error": "{error_msg}"}}', status_code=500)
-    return {'code': content}
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': error_msg},
+        )
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={'code': content},
+    )
 
 
 @app.get('/')
