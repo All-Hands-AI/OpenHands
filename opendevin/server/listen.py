@@ -47,17 +47,17 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.get('/api/litellm-models')
 async def get_litellm_models():
-    """
+    '''
     Get all models supported by LiteLLM.
-    """
+    '''
     return list(set(litellm.model_list + list(litellm.model_cost.keys())))
 
 
 @app.get('/api/litellm-agents')
 async def get_litellm_agents():
-    """
+    '''
     Get all agents supported by LiteLLM.
-    """
+    '''
     return Agent.list_agents()
 
 
@@ -65,15 +65,12 @@ async def get_litellm_agents():
 async def get_token(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
-    """
+    '''
     Get token for authentication when starts a websocket connection.
-    """
+    '''
     sid = get_sid_from_token(credentials.credentials) or str(uuid.uuid4())
     token = sign_token({'sid': sid})
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'token': token},
-    )
+    return {'token': token}
 
 
 @app.get('/api/messages')
@@ -85,10 +82,7 @@ async def get_messages(
     if sid != '':
         data = message_stack.get_messages(sid)
 
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'messages': data},
-    )
+    return {'messages': data}
 
 
 @app.get('/api/messages/total')
@@ -96,10 +90,7 @@ async def get_message_total(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     sid = get_sid_from_token(credentials.credentials)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'msg_total': message_stack.get_message_total(sid)},
-    )
+    return {'msg_total': message_stack.get_message_total(sid)}
 
 
 @app.delete('/api/messages')
@@ -108,10 +99,7 @@ async def del_messages(
 ):
     sid = get_sid_from_token(credentials.credentials)
     message_stack.del_messages(sid)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'ok': True},
-    )
+    return {'ok': True}
 
 
 @app.get('/api/configurations')
@@ -133,9 +121,12 @@ def select_file(file: str):
         with open(file_path, 'r') as selected_file:
             content = selected_file.read()
     except Exception as e:
-        logger.error(f"Error opening file {file}: {e}", exc_info=False)
-        error_msg = f"Error opening file: {e}"
-        return Response(f'{{"error": "{error_msg}"}}', status_code=500)
+        logger.error(f'Error opening file {file}: {e}', exc_info=False)
+        error_msg = f'Error opening file: {e}'
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': error_msg},
+        )
     return {'code': content}
 
 
