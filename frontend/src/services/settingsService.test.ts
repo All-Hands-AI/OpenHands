@@ -1,7 +1,6 @@
 import { getUpdatedSettings } from "./settingsService";
 import { ArgConfigType } from "../types/ConfigType";
 
-
 describe("mergeAndUpdateSettings", () => {
   it("should return initial settings if newSettings is empty", () => {
     const oldSettings = { key1: "value1" };
