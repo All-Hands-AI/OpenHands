@@ -34,10 +34,10 @@ const messageActions = {
   [ActionType.RUN]: (message: ActionMessage) => {
     store.dispatch(appendInput(message.args.command));
   },
-  [ActionType.ADD_TASK]: (message: ActionMessage) => {
+  [ActionType.ADD_TASK]: () => {
     getPlan().then((fetchedPlan) => store.dispatch(setPlan(fetchedPlan)));
   },
-  [ActionType.MODIFY_TASK]: (message: ActionMessage) => {
+  [ActionType.MODIFY_TASK]: () => {
     getPlan().then((fetchedPlan) => store.dispatch(setPlan(fetchedPlan)));
   },
 };
