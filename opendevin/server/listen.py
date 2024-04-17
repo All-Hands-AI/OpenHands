@@ -59,7 +59,6 @@ async def get_litellm_agents():
 
 
 @app.get('/api/auth')
-
 async def get_token(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
