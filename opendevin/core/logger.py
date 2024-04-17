@@ -33,7 +33,7 @@ LOG_COLORS: Mapping[str, ColorType] = {
     'BACKGROUND LOG': 'blue',
     'ACTION': 'green',
     'OBSERVATION': 'yellow',
-    'INFO': 'cyan',
+    'DETAIL': 'cyan',
     'ERROR': 'red',
     'PLAN': 'light_magenta',
 }
@@ -48,9 +48,9 @@ class ColoredFormatter(logging.Formatter):
             time_str = colored(
                 self.formatTime(record, self.datefmt), LOG_COLORS[msg_type]
             )
-            name_str = colored(record.name, 'cyan')
-            level_str = colored(record.levelname, 'yellow')
-            if msg_type in ['ERROR', 'INFO']:
+            name_str = colored(record.name, LOG_COLORS[msg_type])
+            level_str = colored(record.levelname, LOG_COLORS[msg_type])
+            if msg_type in ['ERROR']:
                 return f'{time_str} - {name_str}:{level_str}: {record.filename}:{record.lineno}\n{msg_type_color}\n{msg}'
             return f'{time_str} - {msg_type_color}\n{msg}'
         elif msg_type == 'STEP':
