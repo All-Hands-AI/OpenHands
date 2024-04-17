@@ -11,8 +11,8 @@ DEFAULT_API_KEY = config.get('LLM_API_KEY')
 DEFAULT_BASE_URL = config.get('LLM_BASE_URL')
 DEFAULT_MODEL_NAME = config.get('LLM_MODEL')
 LLM_NUM_RETRIES = config.get('LLM_NUM_RETRIES')
-LLM_MIN_WAIT = config.get('MIN_WAIT')
-LLM_MAX_WAIT = config.get('MAX_WAIT')
+LLM_MIN_WAIT = config.get('LLM_MIN_WAIT')
+LLM_MAX_WAIT = config.get('LLM_MAX_WAIT')
 
 
 class LLM:
@@ -34,7 +34,8 @@ class LLM:
             api_key (str, optional): The API key for accessing the language model. Defaults to LLM_API_KEY.
             base_url (str, optional): The base URL for the language model API. Defaults to LLM_BASE_URL. Not necessary for OpenAI.
             num_retries (int, optional): The number of retries for API calls. Defaults to LLM_NUM_RETRIES.
-            cooldown_time (int, optional): The cooldown time between retries in seconds. Defaults to LLM_COOLDOWN_TIME.
+            min_wait (int, optional): The minimum time to wait between retries in seconds. Defaults to LLM_MIN_TIME.
+            max_wait (int, optional): The maximum time to wait between retries in seconds. Defaults to LLM_MAX_TIME.
 
         Attributes:
             model_name (str): The name of the language model.
