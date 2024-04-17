@@ -19,8 +19,6 @@ class Socket {
     close: [],
   };
 
-  // prevent it failed in the first run, all related listen events never be called
-  private static isFirstRun = true;
   private static initializing = false;
 
   public static tryInitialize(): void {
@@ -33,11 +31,9 @@ class Socket {
         const msg = `Connection failed. Retry...`;
         toast.stickyError("ws", msg);
 
-        if (this.isFirstRun) {
-          setTimeout(() => {
-            this.tryInitialize();
-          }, 1500);
-        }
+        setTimeout(() => {
+          this.tryInitialize();
+        }, 1500);
       });
   }
 
@@ -70,8 +66,6 @@ class Socket {
         Socket.tryInitialize();
       }, 3000); // Reconnect after 3 seconds
     };
-
-    this.isFirstRun = false;
   }
 
   static isConnected(): boolean {
