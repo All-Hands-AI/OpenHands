@@ -6,7 +6,7 @@
 
 1. [Get your API key](https://e2b.dev/docs/getting-started/api-key)
 
-1. Set your E2B API key in the `config.toml` file as `E2B_API_KEY`
+1. Set your E2B API key to the `E2B_API_KEY` env var when starting the Docker container
 
 1. **Optional** - Install the CLI with NPM.
     ```sh
