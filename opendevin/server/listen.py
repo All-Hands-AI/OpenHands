@@ -49,11 +49,7 @@ async def get_litellm_models():
     """
     Get all models supported by LiteLLM.
     """
-    models = list(set(litellm.model_list + list(litellm.model_cost.keys())))
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=models,
-    )
+    return list(set(litellm.model_list + list(litellm.model_cost.keys())))
 
 
 @app.get('/api/litellm-agents')
@@ -61,11 +57,7 @@ async def get_litellm_agents():
     """
     Get all agents supported by LiteLLM.
     """
-    agents = Agent.list_agents()
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=agents,
-    )
+    return Agent.list_agents()
 
 
 @app.get('/api/auth')
@@ -77,10 +69,7 @@ async def get_token(
     """
     sid = get_sid_from_token(credentials.credentials) or str(uuid.uuid4())
     token = sign_token({'sid': sid})
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'token': token},
-    )
+    return {'token': token}
 
 
 @app.get('/api/messages')
@@ -92,10 +81,7 @@ async def get_messages(
     if sid != '':
         data = message_stack.get_messages(sid)
 
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'messages': data},
-    )
+    return {'messages': data}
 
 
 @app.get('/api/messages/total')
@@ -103,10 +89,7 @@ async def get_message_total(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     sid = get_sid_from_token(credentials.credentials)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'msg_total': message_stack.get_message_total(sid)},
-    )
+    return {'msg_total': message_stack.get_message_total(sid)}
 
 
 @app.delete('/api/messages')
@@ -115,29 +98,18 @@ async def del_messages(
 ):
     sid = get_sid_from_token(credentials.credentials)
     message_stack.del_messages(sid)
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'ok': True},
-    )
+    return {'ok': True}
 
 
 @app.get('/api/configurations')
 def read_default_model():
-    fe_config = config.get_fe_config()
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=fe_config,
-    )
+    return config.get_fe_config()
 
 
 @app.get('/api/refresh-files')
 def refresh_files():
     structure = files.get_folder_structure(Path(str(config.get('WORKSPACE_BASE'))))
-    structure_to_dict = structure.to_dict()
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content=structure_to_dict,
-    )
+    return structure.to_dict()
 
 
 @app.get('/api/select-file')
@@ -154,10 +126,7 @@ def select_file(file: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': error_msg},
         )
-    return JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'code': content},
-    )
+    return {'code': content}
 
 
 @app.get('/')
