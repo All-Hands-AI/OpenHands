@@ -37,6 +37,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     sid = get_sid_from_token(websocket.query_params.get('token') or '')
     if sid == '':
+        logger.error('Failed to decode token')
         return
     session_manager.add_session(sid, websocket)
     # TODO: actually the agent_manager is created for each websocket connection, even if the session id is the same,
@@ -53,21 +54,22 @@ async def get_litellm_models():
     return list(set(litellm.model_list + list(litellm.model_cost.keys())))
 
 
-@app.get('/api/litellm-agents')
-async def get_litellm_agents():
-    '''
+@app.get('/api/agents')
+async def get_agents():
+    """
     Get all agents supported by LiteLLM.
-    '''
-    return Agent.list_agents()
+    """
+    agents = Agent.list_agents()
+    return agents
 
 
 @app.get('/api/auth')
 async def get_token(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
-    '''
+    """
     Get token for authentication when starts a websocket connection.
-    '''
+    """
     sid = get_sid_from_token(credentials.credentials) or str(uuid.uuid4())
     token = sign_token({'sid': sid})
     return {'token': token}
@@ -100,11 +102,6 @@ async def del_messages(
     sid = get_sid_from_token(credentials.credentials)
     message_stack.del_messages(sid)
     return {'ok': True}
-
-
-@app.get('/api/configurations')
-def read_default_model():
-    return config.get_fe_config()
 
 
 @app.get('/api/refresh-files')
