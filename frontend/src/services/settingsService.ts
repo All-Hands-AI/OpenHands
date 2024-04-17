@@ -6,7 +6,7 @@ import Socket from "./socket";
 import { setByKey } from "../state/settingsSlice";
 import toast from "../utils/toast";
 
-type Settings = { [key: string]: string };
+export type Settings = { [key: string]: string };
 
 export async function fetchModels() {
   const response = await fetch(`/api/litellm-models`);

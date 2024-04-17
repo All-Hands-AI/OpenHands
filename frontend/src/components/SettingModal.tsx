@@ -13,6 +13,7 @@ import {
   fetchModels,
   saveSettings,
   getCurrentSettings,
+  Settings,
 } from "../services/settingsService";
 import { I18nKey } from "../i18n/declaration";
 import { AvailableLanguages } from "../i18n";
@@ -25,14 +26,14 @@ interface Props {
 }
 
 function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
-  const settings = getCurrentSettings();
-  const [model, setModel] = useState(settings.get(ArgConfigType.LLM_MODEL));
+  const currentSettings: Settings = getCurrentSettings();
+  const [model, setModel] = useState(currentSettings[ArgConfigType.LLM_MODEL]);
   const [inputModel, setInputModel] = useState(
-    settings.get(ArgConfigType.LLM_MODEL),
+    currentSettings[ArgConfigType.LLM_MODEL],
   );
-  const [agent, setAgent] = useState(settings.get(ArgConfigType.AGENT));
+  const [agent, setAgent] = useState(currentSettings[ArgConfigType.AGENT]);
   const [language, setLanguage] = useState(
-    settings.get(ArgConfigType.LANGUAGE),
+    currentSettings[ArgConfigType.LANGUAGE],
   );
 
   const { t } = useTranslation();
