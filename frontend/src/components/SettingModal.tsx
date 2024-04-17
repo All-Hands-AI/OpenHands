@@ -32,7 +32,7 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
   );
   const [agent, setAgent] = useState(settings.get(ArgConfigType.AGENT));
   const [language, setLanguage] = useState(
-    settings.get(ArgConfigType.LANGUAGE)
+    settings.get(ArgConfigType.LANGUAGE),
   );
 
   const { t } = useTranslation();

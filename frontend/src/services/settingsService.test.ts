@@ -15,7 +15,7 @@ describe("getUpdatedSettings", () => {
     expect(result).toEqual({});
   });
 
-  it("should add new keys to mergedSettings and updatedSettings", () => {
+  it("should add new keys to updatedSettings", () => {
     const oldSettings = { key1: "value1" };
     const newSettings = { key2: "value2" };
 
@@ -35,7 +35,7 @@ describe("getUpdatedSettings", () => {
     expect(result).toEqual({});
   });
 
-  it("should keep old values in mergedSettings if they are equal", () => {
+  it("should show no values if they are equal", () => {
     const oldSettings = {
       [ArgConfigType.LLM_MODEL]: "gpt-4-0125-preview",
       [ArgConfigType.AGENT]: "MonologueAgent",
@@ -49,22 +49,7 @@ describe("getUpdatedSettings", () => {
     expect(result).toEqual({});
   });
 
-  it("should keep old values in mergedSettings if isInit is true and old value is not empty", () => {
-    const oldSettings = {
-      [ArgConfigType.LLM_MODEL]: "gpt-4-0125-preview",
-      [ArgConfigType.AGENT]: "MonologueAgent",
-    };
-    const newSettings = {
-      [ArgConfigType.AGENT]: "MonologueAgent",
-    };
-    const isInit = true;
-
-    const result = getUpdatedSettings(newSettings, oldSettings);
-
-    expect(result).toEqual({});
-  });
-
-  it("should update mergedSettings, updatedSettings and set needToSend to true for relevant changes", () => {
+  it("should update all settings", () => {
     const oldSettings = {
       [ArgConfigType.LLM_MODEL]: "gpt-4-0125-preview",
       [ArgConfigType.AGENT]: "MonologueAgent",
