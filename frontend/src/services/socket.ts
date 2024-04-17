@@ -22,6 +22,7 @@ class Socket {
   private static initializing = false;
 
   public static tryInitialize(): void {
+    if (Socket.initializing) return;
     Socket.initializing = true;
     getToken()
       .then((token) => {
@@ -75,12 +76,12 @@ class Socket {
   }
 
   static send(message: string): void {
+    if (!Socket.isConnected()) {
+      Socket.tryInitialize();
+    }
     if (Socket.initializing) {
       setTimeout(() => Socket.send(message), 1000);
       return;
-    }
-    if (!Socket.isConnected()) {
-      Socket.tryInitialize();
     }
 
     if (Socket.isConnected()) {
