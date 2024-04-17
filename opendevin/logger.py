@@ -3,11 +3,63 @@ import os
 import sys
 import traceback
 from datetime import datetime
+from opendevin import config
+from typing import Literal, Mapping
+from termcolor import colored
 
-console_formatter = logging.Formatter(
+DISABLE_COLOR_PRINTING = (
+    config.get('DISABLE_COLOR').lower() == 'true'
+)
+
+ColorType = Literal[
+    'red',
+    'green',
+    'yellow',
+    'blue',
+    'magenta',
+    'cyan',
+    'light_grey',
+    'dark_grey',
+    'light_red',
+    'light_green',
+    'light_yellow',
+    'light_blue',
+    'light_magenta',
+    'light_cyan',
+    'white',
+]
+
+LOG_COLORS: Mapping[str, ColorType] = {
+    'BACKGROUND LOG': 'blue',
+    'ACTION': 'green',
+    'OBSERVATION': 'yellow',
+    'INFO': 'cyan',
+    'ERROR': 'red',
+    'PLAN': 'light_magenta',
+}
+
+
+class ColoredFormatter(logging.Formatter):
+    def format(self, record):
+        msg_type = record.__dict__.get('msg_type', None)
+        if msg_type in LOG_COLORS and not DISABLE_COLOR_PRINTING:
+            msg_type_color = colored(msg_type, LOG_COLORS[msg_type])
+            msg = colored(record.msg, LOG_COLORS[msg_type])
+            time_str = colored(self.formatTime(record, self.datefmt), 'green')
+            name_str = colored(record.name, 'cyan')
+            level_str = colored(record.levelname, 'yellow')
+            return f'{time_str} - {name_str}:{level_str}: {record.filename}:{record.lineno}\n{msg_type_color}\n{msg}'
+        elif msg_type == 'STEP':
+            msg = '\n\n==============\n' + record.msg + '\n'
+            return f'{msg}'
+        return super().format(record)
+
+
+console_formatter = ColoredFormatter(
     '\033[92m%(asctime)s - %(name)s:%(levelname)s\033[0m: %(filename)s:%(lineno)s - %(message)s',
     datefmt='%H:%M:%S',
 )
+
 file_formatter = logging.Formatter(
     '%(asctime)s - %(name)s:%(levelname)s: %(filename)s:%(lineno)s - %(message)s',
     datefmt='%H:%M:%S',
@@ -33,7 +85,7 @@ def get_file_handler():
     """
     log_dir = os.path.join(os.getcwd(), 'logs')
     os.makedirs(log_dir, exist_ok=True)
-    timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    timestamp = datetime.now().strftime('%Y-%m-%d')
     file_name = f'opendevin_{timestamp}.log'
     file_handler = logging.FileHandler(os.path.join(log_dir, file_name))
     file_handler.setLevel(logging.DEBUG)
@@ -65,24 +117,25 @@ sys.excepthook = log_uncaught_exceptions
 
 opendevin_logger = logging.getLogger('opendevin')
 opendevin_logger.setLevel(logging.INFO)
-opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.addHandler(get_file_handler())
+opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.propagate = False
 opendevin_logger.debug('Logging initialized')
 opendevin_logger.debug('Logging to %s', os.path.join(
     os.getcwd(), 'logs', 'opendevin.log'))
 
-# Exclude "litellm" from logging output
+# Exclude LiteLLM from logging output
 logging.getLogger('LiteLLM').disabled = True
 logging.getLogger('LiteLLM Router').disabled = True
 logging.getLogger('LiteLLM Proxy').disabled = True
 
-# LLM prompt and response logging
-
 
 class LlmFileHandler(logging.FileHandler):
+    """
+    # LLM prompt and response logging
+    """
 
-    def __init__(self, filename, mode='a', encoding=None, delay=False):
+    def __init__(self, filename, mode='a', encoding='utf-8', delay=False):
         """
         Initializes an instance of LlmFileHandler.
 
@@ -94,12 +147,11 @@ class LlmFileHandler(logging.FileHandler):
         """
         self.filename = filename
         self.message_counter = 1
-        self.session = datetime.now().strftime('%y-%m-%d_%H-%M-%S')
-        self.log_directory = os.path.join(
-            os.getcwd(), 'logs', 'llm', self.session)
+        self.session = datetime.now().strftime('%y-%m-%d_%H-%M')
+        self.log_directory = os.path.join(os.getcwd(), 'logs', 'llm', self.session)
         os.makedirs(self.log_directory, exist_ok=True)
-        self.baseFilename = os.path.join(
-            self.log_directory, f'{self.filename}_{self.message_counter:03}.log')
+        filename = f'{self.filename}_{self.message_counter:03}.log'
+        self.baseFilename = os.path.join(self.log_directory, filename)
         super().__init__(self.baseFilename, mode, encoding, delay)
 
     def emit(self, record):
@@ -109,8 +161,8 @@ class LlmFileHandler(logging.FileHandler):
         Args:
             record (logging.LogRecord): The log record to emit.
         """
-        self.baseFilename = os.path.join(
-            self.log_directory, f'{self.filename}_{self.message_counter:03}.log')
+        filename = f'{self.filename}_{self.message_counter:03}.log'
+        self.baseFilename = os.path.join(self.log_directory, filename)
         self.stream = self._open()
         super().emit(record)
         self.stream.close
@@ -122,9 +174,9 @@ def get_llm_prompt_file_handler():
     """
     Returns a file handler for LLM prompt logging.
     """
-    llm_prompt_file_handler = LlmFileHandler('prompt')
-    llm_prompt_file_handler.setLevel(logging.INFO)
+    llm_prompt_file_handler = LlmFileHandler('prompt', delay=True)
     llm_prompt_file_handler.setFormatter(llm_formatter)
+    llm_prompt_file_handler.setLevel(logging.DEBUG)
     return llm_prompt_file_handler
 
 
@@ -132,16 +184,18 @@ def get_llm_response_file_handler():
     """
     Returns a file handler for LLM response logging.
     """
-    llm_response_file_handler = LlmFileHandler('response')
-    llm_response_file_handler.setLevel(logging.INFO)
+    llm_response_file_handler = LlmFileHandler('response', delay=True)
     llm_response_file_handler.setFormatter(llm_formatter)
+    llm_response_file_handler.setLevel(logging.DEBUG)
     return llm_response_file_handler
 
 
 llm_prompt_logger = logging.getLogger('prompt')
 llm_prompt_logger.propagate = False
+llm_prompt_logger.setLevel(logging.DEBUG)
 llm_prompt_logger.addHandler(get_llm_prompt_file_handler())
 
 llm_response_logger = logging.getLogger('response')
 llm_response_logger.propagate = False
+llm_response_logger.setLevel(logging.DEBUG)
 llm_response_logger.addHandler(get_llm_response_file_handler())
