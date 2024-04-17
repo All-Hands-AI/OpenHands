@@ -66,7 +66,7 @@ const dispatchSettings = (updatedSettings: Record<string, string>) => {
   }
 };
 
-const initializeAgent = () => {
+export const initializeAgent = () => {
   const event = { action: ActionType.INIT, args: getCurrentSettings() };
   const eventString = JSON.stringify(event);
   store.dispatch(setInitialized(false));
