@@ -126,7 +126,7 @@ class MonologueAgent(Agent):
     def _initialize(self, task: str):
         """
         Utilizes the INITIAL_THOUGHTS list to give the agent a context for it's capabilities and how to navigate the /workspace.
-        Short circuted to return when already initialized.
+        Short circuited to return when already initialized.
 
         Parameters:
         - task (str): The initial goal statement provided by the user
