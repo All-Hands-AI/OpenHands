@@ -52,3 +52,17 @@ class ActionType(str, Enum):
     MODIFY_TASK = 'modify_task'
 
     NULL = 'null'
+
+    PAUSE = 'pause'
+    """Pauses the task.
+    """
+
+    RESUME = 'resume'
+    """Resumes the task.
+    """
+
+    STOP = 'stop'
+    """Stops the task. Must send a start action to restart a new task.
+    """
+
+    CHANGE_TASK_STATE = 'change_task_state'

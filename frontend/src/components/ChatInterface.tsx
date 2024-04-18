@@ -12,6 +12,7 @@ import { Message } from "../state/chatSlice";
 import { RootState } from "../store";
 import AgentStatusBar from "./AgentStatusBar";
 import Input from "./Input";
+import AgentControlBar from "./AgentControlBar";
 
 interface IChatBubbleProps {
   msg: Message;
@@ -113,8 +114,6 @@ function MessageList(): JSX.Element {
 }
 
 function ChatInterface(): JSX.Element {
-  const { initialized } = useSelector((state: RootState) => state.task);
-
   return (
     <div className="flex flex-col h-full p-0 bg-neutral-800">
       <div className="flex items-center gap-2 border-b border-neutral-600 text-sm px-4 py-2">
@@ -122,7 +121,8 @@ function ChatInterface(): JSX.Element {
         Chat
       </div>
       <MessageList />
-      {initialized ? null : <AgentStatusBar />}
+      <AgentStatusBar />
+      <AgentControlBar />
       <Input />
     </div>
   );
