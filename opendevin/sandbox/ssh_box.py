@@ -228,10 +228,9 @@ class DockerSSHBox(Sandbox):
         # logger.info('Jupyter Kernel Gateway initialized')
 
     def execute_python(self, code: str) -> str:
-        async def _async_execute():
-            print(f'ASYNC EXEC: {code}')
-            return await self.jupyter_kernel.execute(code)
-        return asyncio.run(_async_execute())
+        print(f'ASYNC EXEC: {code}')
+        loop = asyncio.get_event_loop()
+        return loop.run_until_complete(self.jupyter_kernel.execute(code))
 
     def execute_in_background(self, cmd: str) -> BackgroundCommand:
         result = self.container.exec_run(
