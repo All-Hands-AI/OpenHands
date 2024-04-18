@@ -4,7 +4,7 @@ set -eo pipefail
 image_name=$1
 org_name=$2
 push=0
-if [[ $2 == "--push" ]]; then
+if [[ $3 == "--push" ]]; then
   push=1
 fi
 
@@ -33,9 +33,9 @@ if [ ! -f $dir/config.sh ]; then
 fi
 source $dir/config.sh
 if [[ -n "$org_name" ]]; then
-  DOCKER_REPOSITORY="${DOCKER_REPOSITORY/\/*\//\/$org_name\/}"
-  echo "Using org name: $org_name"
+  DOCKER_ORG="$org_name"
 fi
+DOCKER_REPOSITORY=$DOCKER_REGISTRY/$DOCKER_ORG/$DOCKER_IMAGE
 echo "Repo: $DOCKER_REPOSITORY"
 echo "Base dir: $DOCKER_BASE_DIR"
 #docker pull $DOCKER_REPOSITORY:main || true # try to get any cached layers
