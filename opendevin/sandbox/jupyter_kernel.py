@@ -75,7 +75,7 @@ class JupyterKernel:
             return
         try:
             self.ws.ping()
-            logger.info('Heartbeat sent...')
+            logger.debug('Heartbeat sent...')
         except tornado.iostream.StreamClosedError:
             logger.info('Heartbeat failed, reconnecting...')
             try:
@@ -106,6 +106,7 @@ class JupyterKernel:
                 except Exception as e:
                     logger.error('Failed to connect to kernel')
                     logger.exception(e)
+                    logger.info('Retrying in 5 seconds...')
                     # kernels are not ready yet
                     n_tries -= 1
                     await asyncio.sleep(5)

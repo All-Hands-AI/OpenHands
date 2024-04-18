@@ -222,10 +222,12 @@ class DockerSSHBox(Sandbox):
         )
         logger.info(f'Jupyter Kernel Gateway started at {SSH_HOSTNAME}:{self._jupyter_port}: {self.jupyer_background_cmd.read_logs()}')
 
-        # # initialize the kernel
-        # logger.info('Initializing Jupyter Kernel Gateway...')
-        # asyncio.run(self.jupyter_kernel.initialize())
-        # logger.info('Jupyter Kernel Gateway initialized')
+        # initialize the kernel
+        logger.info('Initializing Jupyter Kernel Gateway...')
+        time.sleep(1)  # wait for the kernel to start
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self.jupyter_kernel.initialize())
+        logger.info('Jupyter Kernel Gateway initialized')
 
     def execute_python(self, code: str) -> str:
         loop = asyncio.get_event_loop()
