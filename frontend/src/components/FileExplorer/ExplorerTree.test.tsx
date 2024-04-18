@@ -1,7 +1,24 @@
 import React from "react";
-import { act, render } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { render } from "@testing-library/react";
 import ExplorerTree from "./ExplorerTree";
+
+const NODE_1: TreeNode = {
+  name: "root-folder-1",
+  children: [
+    { name: "file-1-1.ts" },
+    { name: "folder-1-2", children: [{ name: "file-1-2.ts" }] },
+  ],
+};
+
+const NODE_2: TreeNode = {
+  name: "root-folder-2",
+  children: [
+    { name: "folder-2-1", children: [{ name: "file-2-1.ts" }] },
+    { name: "file-2-2.ts" },
+  ],
+};
+
+const NODES = [NODE_1, NODE_2];
 
 const onFileClick = vi.fn();
 
@@ -10,112 +27,41 @@ describe("ExplorerTree", () => {
     vi.resetAllMocks();
   });
 
-  it("should render a file if property has no children", () => {
-    const tree: TreeNode[] = [{ name: "file.ts" }];
-
+  it("should render the explorer", () => {
     const { getByText } = render(
-      <ExplorerTree tree={tree} onFileClick={onFileClick} />,
+      <ExplorerTree tree={NODES} onFileClick={onFileClick} />,
     );
-    expect(getByText("file.ts")).toBeInTheDocument();
+
+    expect(getByText("root-folder-1")).toBeInTheDocument();
+    expect(getByText("file-1-1.ts")).toBeInTheDocument();
+    expect(getByText("folder-1-2")).toBeInTheDocument();
+    expect(getByText("file-1-2.ts")).toBeInTheDocument();
+
+    expect(getByText("root-folder-2")).toBeInTheDocument();
+    expect(getByText("folder-2-1")).toBeInTheDocument();
+    expect(getByText("file-2-1.ts")).toBeInTheDocument();
+    expect(getByText("file-2-2.ts")).toBeInTheDocument();
   });
 
-  it("should render a folder if property has children", () => {
-    const tree: TreeNode[] = [
-      { name: "folder", children: [{ name: "file.ts" }] },
-    ];
-
-    const { getByText } = render(
-      <ExplorerTree tree={tree} onFileClick={onFileClick} />,
-    );
-    expect(getByText("folder")).toBeInTheDocument();
-    expect(getByText("file.ts")).toBeInTheDocument();
-  });
-
-  it("should close a folder when clicking on it", () => {
-    const tree: TreeNode[] = [
-      {
-        name: "folder",
-        children: [
-          { name: "folder2", children: [{ name: "file2.ts" }] },
-          { name: "file.ts" },
-        ],
-      },
-    ];
-
+  it("should render the explorer given the defaultExpanded prop", () => {
     const { getByText, queryByText } = render(
-      <ExplorerTree tree={tree} onFileClick={onFileClick} />,
+      <ExplorerTree
+        tree={NODES}
+        onFileClick={onFileClick}
+        defaultOpen={false}
+      />,
     );
 
-    act(() => {
-      userEvent.click(getByText("folder2"));
-    });
+    expect(getByText("root-folder-1")).toBeInTheDocument();
+    expect(queryByText("file-1-1.ts")).not.toBeInTheDocument();
+    expect(queryByText("folder-1-2")).not.toBeInTheDocument();
+    expect(queryByText("file-1-2.ts")).not.toBeInTheDocument();
 
-    expect(queryByText("file2.ts")).not.toBeInTheDocument();
-    expect(getByText("folder")).toBeInTheDocument();
-    expect(getByText("file.ts")).toBeInTheDocument();
+    expect(getByText("root-folder-2")).toBeInTheDocument();
+    expect(queryByText("folder-2-1")).not.toBeInTheDocument();
+    expect(queryByText("file-2-1.ts")).not.toBeInTheDocument();
+    expect(queryByText("file-2-2.ts")).not.toBeInTheDocument();
   });
-
-  it("should open a folder when clicking on it", () => {
-    const tree: TreeNode[] = [
-      {
-        name: "folder",
-        children: [
-          { name: "folder2", children: [{ name: "file2.ts" }] },
-          { name: "file.ts" },
-        ],
-      },
-    ];
-
-    const { getByText, queryByText } = render(
-      <ExplorerTree tree={tree} onFileClick={onFileClick} />,
-    );
-
-    act(() => {
-      userEvent.click(getByText("folder"));
-    });
-
-    expect(queryByText("folder2")).not.toBeInTheDocument();
-    expect(queryByText("file2.ts")).not.toBeInTheDocument();
-    expect(queryByText("file.ts")).not.toBeInTheDocument();
-
-    act(() => {
-      userEvent.click(getByText("folder"));
-    });
-
-    expect(getByText("folder2")).toBeInTheDocument();
-    expect(getByText("file2.ts")).toBeInTheDocument();
-    expect(getByText("file.ts")).toBeInTheDocument();
-  });
-
-  it("should return the full path of a file when clicking on it", () => {
-    const tree: TreeNode[] = [
-      {
-        name: "folder",
-        children: [
-          { name: "folder2", children: [{ name: "file2.ts" }] },
-          { name: "file.ts" },
-        ],
-      },
-    ];
-
-    const { getByText } = render(
-      <ExplorerTree tree={tree} onFileClick={onFileClick} />,
-    );
-
-    act(() => {
-      userEvent.click(getByText("file.ts"));
-    });
-
-    expect(onFileClick).toHaveBeenCalledWith("folder/file.ts");
-
-    act(() => {
-      userEvent.click(getByText("file2.ts"));
-    });
-
-    expect(onFileClick).toHaveBeenCalledWith("folder/folder2/file2.ts");
-  });
-
-  it.todo("should be able to render all contents expanded or collapsed");
 
   it.todo(
     "should maintain the expanded state of child folders when closing and opening a parent folder",

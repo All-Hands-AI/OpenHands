@@ -4,10 +4,16 @@ interface TreeNodeProps {
   node: TreeNode;
   path: string;
   onFileClick: (path: string) => void;
+  defaultOpen?: boolean;
 }
 
-function TreeNode({ node, path, onFileClick }: TreeNodeProps) {
-  const [isOpen, setIsOpen] = React.useState(true);
+function TreeNode({
+  node,
+  path,
+  onFileClick,
+  defaultOpen = true,
+}: TreeNodeProps) {
+  const [isOpen, setIsOpen] = React.useState(defaultOpen);
 
   const handleClick = React.useCallback(() => {
     if (node.children) {
@@ -35,5 +41,9 @@ function TreeNode({ node, path, onFileClick }: TreeNodeProps) {
     </div>
   );
 }
+
+TreeNode.defaultProps = {
+  defaultOpen: true,
+};
 
 export default React.memo(TreeNode);
