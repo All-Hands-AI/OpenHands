@@ -1,3 +1,13 @@
 exclude = [
     "agenthub/monologue_agent/regression/",
 ]
+
+lint.select = [
+    "E",
+    "W",
+    "F",
+]
+
+lint.ignore = [
+    "E501",
+]
