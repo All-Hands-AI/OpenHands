@@ -37,7 +37,6 @@ class AgentController:
     state: State | None = None
 
     _task_state: TaskState = TaskState.INIT
-    _finished: bool = False
     _cur_step: int = 0
 
     def __init__(
@@ -89,25 +88,28 @@ class AgentController:
             raise ValueError('Task is not in running state')
 
         for i in range(self._cur_step, self.max_iterations):
+            self._cur_step = i
             try:
-                self._finished = await self.step(i)
+                finished = await self.step(i)
+                if finished:
+                    self._task_state = TaskState.FINISHED
             except Exception as e:
                 logger.error('Error in loop', exc_info=True)
                 raise e
 
-            match self._task_state:
-                case TaskState.FINISHED, TaskState.STOPPED:
-                    await self.reset_task()  # type: ignore[unreachable]
-                    break
-                case TaskState.PAUSED:
-                    # save current state for resuming
-                    self._cur_step = i + 1  # type: ignore[unreachable]
-                    await self.notify_task_state_changed()
-                    break
-
-        if not self._finished:
-            logger.info('Exited before finishing the task.')
-        self.agent.reset()
+            if self._task_state == TaskState.FINISHED:
+                logger.info('Task finished by agent')
+                await self.reset_task()
+                break
+            elif self._task_state == TaskState.STOPPED:
+                logger.info('Task stopped by user')
+                await self.reset_task()
+                break
+            elif self._task_state == TaskState.PAUSED:
+                logger.info('Task paused')
+                self._cur_step = i + 1
+                await self.notify_task_state_changed()
+                break
 
     async def start(self, task: str):
         """Starts the agent controller with a task.
@@ -133,6 +135,7 @@ class AgentController:
         self.state = None
         self._cur_step = 0
         self._task_state = TaskState.INIT
+        self.agent.reset()
         await self.notify_task_state_changed()
 
     async def set_task_state_to(self, state: TaskState):
