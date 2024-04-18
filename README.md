@@ -118,9 +118,6 @@ After completing the MVP, the team will focus on research in various areas, incl
 * Our default Agent is currently the MonologueAgent, which has limited capabilities, but is fairly stable. We're working on other Agent implementations, including [SWE Agent](https://swe-agent.com/). You can [read about our current set of agents here](./docs/documentation/Agents.md).
 
 ## 🚀 Get Started
-
-Getting started with the OpenDevin project is incredibly easy. Follow these simple steps to set up and run OpenDevin on your system:
-
 The easiest way to run OpenDevin is inside a Docker container.
 You can run:
 ```bash
