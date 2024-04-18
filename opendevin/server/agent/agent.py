@@ -91,13 +91,6 @@ class AgentUnit:
 
         match action:
             case ActionType.INIT:
-                # FIXME: the parameters need be compared, to confirm whether reinit is needed
-                if self.controller is not None:
-                    # Agent already started, no need to create a new one
-                    if data.get('args', {}).get('reconnect', 'false') != 'true':
-                        await self.controller.reset_task()
-                    await self.init_done()
-                    return
                 await self.create_controller(data)
             case ActionType.START:
                 await self.start_task(data)
@@ -149,6 +142,7 @@ class AgentUnit:
         max_iterations = self.get_arg_or_default(args, ConfigType.MAX_ITERATIONS)
         max_chars = self.get_arg_or_default(args, ConfigType.MAX_CHARS)
 
+        logger.info(f'Creating agent {agent_cls} using LLM {model}')
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
         try:
             self.controller = AgentController(
