@@ -188,7 +188,7 @@ class MonologueAgent(Agent):
                     output_type = ActionType.BROWSE
                 else:
                     action = AgentThinkAction(thought=thought)
-                self._add_event(action.to_dict())
+                self._add_event(action.to_memory())
         self._initialized = True
 
     def step(self, state: State) -> Action:
@@ -203,7 +203,7 @@ class MonologueAgent(Agent):
         """
         self._initialize(state.plan.main_goal)
         for prev_action, obs in state.updated_info:
-            self._add_event(prev_action.to_dict())
+            self._add_event(prev_action.to_memory())
             self._add_event(obs.to_dict())
 
         state.updated_info = []

@@ -32,17 +32,14 @@ export const chatSlice = createSlice({
     appendAssistantMessage: (state, action) => {
       state.messages.push({ content: action.payload, sender: "assistant" });
 
-      if (
-        state.assistantMessagesTypingQueue.length > 0 ||
-        state.typingActive === true
-      ) {
+      if (state.assistantMessagesTypingQueue.length > 0 || state.typingActive) {
         state.assistantMessagesTypingQueue.push({
           content: action.payload,
           sender: "assistant",
         });
       } else if (
         state.assistantMessagesTypingQueue.length === 0 &&
-        state.typingActive === false
+        !state.typingActive
       ) {
         state.typeThis = {
           content: action.payload,
