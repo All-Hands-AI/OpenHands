@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
 import { selectFile } from "../services/fileService";
 import { setCode } from "../state/codeSlice";
-import FileExplorer from "./FileExplorer/FileExplorer";
+import FileExplorer from "./file-explorer/FileExplorer";
 
 function CodeEditor(): JSX.Element {
   const [selectedFileName, setSelectedFileName] = useState("welcome");
