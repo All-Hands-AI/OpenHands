@@ -36,10 +36,10 @@ class FileReadAction(ExecutableAction):
     action: str = ActionType.READ
 
     async def run(self, controller) -> FileReadObservation:
-        path = resolve_path(self.path)
+        whole_path = resolve_path(self.path)
         self.start = max(self.start, 0)
         try:
-            with open(path, 'r', encoding='utf-8') as file:
+            with open(whole_path, 'r', encoding='utf-8') as file:
                 if self.end == -1:
                     if self.start == 0:
                         code_view = file.read()
