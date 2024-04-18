@@ -132,6 +132,10 @@ class Sandbox(ABC):
         pass
 
     @abstractmethod
+    def execute_python(self, code: str) -> str:
+        pass
+
+    @abstractmethod
     def execute_in_background(self, cmd: str):
         pass
 

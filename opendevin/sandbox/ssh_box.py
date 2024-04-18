@@ -4,6 +4,7 @@ import platform
 import sys
 import time
 import uuid
+import asyncio
 from collections import namedtuple
 from typing import Dict, List, Tuple, Union
 
@@ -16,6 +17,7 @@ from opendevin.sandbox.sandbox import Sandbox, BackgroundCommand
 from opendevin.schema import ConfigType
 from opendevin.utils import find_available_tcp_port
 from opendevin.exceptions import SandboxInvalidBackgroundCommandError
+from opendevin.sandbox.jupyter_kernel import JupyterKernel
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
@@ -51,6 +53,7 @@ class DockerSSHBox(Sandbox):
 
     _ssh_password: str
     _ssh_port: int
+    _jupyter_port: int
 
     cur_background_id = 0
     background_commands: Dict[int, BackgroundCommand] = {}
@@ -82,12 +85,14 @@ class DockerSSHBox(Sandbox):
         # set up random user password
         self._ssh_password = str(uuid.uuid4())
         self._ssh_port = find_available_tcp_port()
+        self._jupyter_port = find_available_tcp_port()
 
         # always restart the container, cuz the initial be regarded as a new session
         self.restart_docker_container()
 
         self.setup_user()
         self.start_ssh_session()
+        self.setup_jupyter()
         atexit.register(self.close)
 
     def setup_user(self):
@@ -206,6 +211,28 @@ class DockerSSHBox(Sandbox):
         exit_code = int(exit_code.lstrip('echo $?').strip())
         return exit_code, command_output
 
+    def setup_jupyter(self):
+        # Setup Jupyter
+        self.jupyer_background_cmd = self.execute_in_background(
+            f'jupyter kernelgateway --KernelGatewayApp.ip=0.0.0.0 --KernelGatewayApp.port={self._jupyter_port}'
+        )
+        self.jupyter_kernel = JupyterKernel(
+            url_suffix=f'{SSH_HOSTNAME}:{self._jupyter_port}',
+            convid=self.instance_id,
+        )
+        logger.info(f'Jupyter Kernel Gateway started at {SSH_HOSTNAME}:{self._jupyter_port}: {self.jupyer_background_cmd.read_logs()}')
+
+        # # initialize the kernel
+        # logger.info('Initializing Jupyter Kernel Gateway...')
+        # asyncio.run(self.jupyter_kernel.initialize())
+        # logger.info('Jupyter Kernel Gateway initialized')
+
+    def execute_python(self, code: str) -> str:
+        async def _async_execute():
+            print(f'ASYNC EXEC: {code}')
+            return await self.jupyter_kernel.execute(code)
+        return asyncio.run(_async_execute())
+
     def execute_in_background(self, cmd: str) -> BackgroundCommand:
         result = self.container.exec_run(
             self.get_exec_cmd(cmd), socket=True, workdir=SANDBOX_WORKSPACE_DIR
@@ -279,7 +306,11 @@ class DockerSSHBox(Sandbox):
                 network_kwargs['network_mode'] = 'host'
             else:
                 # FIXME: This is a temporary workaround for Mac OS
-                network_kwargs['ports'] = {f'{self._ssh_port}/tcp': self._ssh_port}
+
+                network_kwargs['ports'] = {
+                    f'{self._ssh_port}/tcp': self._ssh_port,
+                    f'{self._jupyter_port}/tcp': self._jupyter_port,
+                }
                 logger.warning(
                     ('Using port forwarding for Mac OS. '
                      'Server started by OpenDevin will not be accessible from the host machine at the moment. '
@@ -352,9 +383,9 @@ if __name__ == '__main__':
     logger.info(
         "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
 
-    bg_cmd = ssh_box.execute_in_background(
-        "while true; do echo 'dot ' && sleep 1; done"
-    )
+    # bg_cmd = ssh_box.execute_in_background(
+    #     "while true; do echo 'dot ' && sleep 1; done"
+    # )
 
     sys.stdout.flush()
     try:
@@ -368,15 +399,21 @@ if __name__ == '__main__':
                 logger.info('Exiting...')
                 break
             if user_input.lower() == 'kill':
-                ssh_box.kill_background(bg_cmd.id)
+                # ssh_box.kill_background(bg_cmd.id)
                 logger.info('Background process killed')
                 continue
+            if user_input.startswith('py:'):
+                output = ssh_box.execute_python(user_input[3:])
+                logger.info(output)
+                sys.stdout.flush()
+                continue
+            print('JUPYTER LOG:', ssh_box.jupyer_background_cmd.read_logs())
             exit_code, output = ssh_box.execute(user_input)
             logger.info('exit code: %d', exit_code)
             logger.info(output)
-            if bg_cmd.id in ssh_box.background_commands:
-                logs = ssh_box.read_logs(bg_cmd.id)
-                logger.info('background logs: %s', logs)
+            # if bg_cmd.id in ssh_box.background_commands:
+            #     logs = ssh_box.read_logs(bg_cmd.id)
+            #     logger.info('background logs: %s', logs)
             sys.stdout.flush()
     except KeyboardInterrupt:
         logger.info('Exiting...')

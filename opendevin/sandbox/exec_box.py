@@ -120,6 +120,9 @@ class DockerExecBox(Sandbox):
                 return -1, f'Command: "{cmd}" timed out'
         return exit_code, logs.decode('utf-8')
 
+    def execute_python(self, code: str) -> str:
+        raise NotImplementedError('execute_python is not supported in DockerExecBox')
+
     def execute_in_background(self, cmd: str) -> BackgroundCommand:
         result = self.container.exec_run(
             self.get_exec_cmd(cmd), socket=True, workdir=SANDBOX_WORKSPACE_DIR
