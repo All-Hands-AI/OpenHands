@@ -91,7 +91,7 @@ class FileWriteAction(ExecutableAction):
                 file.truncate()
         except FileNotFoundError:
             raise FileNotFoundError(f'File not found: {self.path}')
-        return FileWriteObservation(content=f'Wrote to the file {self.path}', path=self.path)
+        return FileWriteObservation(content='', path=self.path)
 
     @property
     def message(self) -> str:
