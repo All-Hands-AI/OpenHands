@@ -214,7 +214,7 @@ class DockerSSHBox(Sandbox):
     def setup_jupyter(self):
         # Setup Jupyter
         self.jupyer_background_cmd = self.execute_in_background(
-            f'jupyter kernelgateway --KernelGatewayApp.ip=0.0.0.0 --KernelGatewayApp.port={self._jupyter_port}'
+            'jupyter kernelgateway --KernelGatewayApp.ip=0.0.0.0 --KernelGatewayApp.port=8888'
         )
         self.jupyter_kernel = JupyterKernel(
             url_suffix=f'{SSH_HOSTNAME}:{self._jupyter_port}',
@@ -309,7 +309,7 @@ class DockerSSHBox(Sandbox):
 
                 network_kwargs['ports'] = {
                     f'{self._ssh_port}/tcp': self._ssh_port,
-                    f'{self._jupyter_port}/tcp': self._jupyter_port,
+                    '8888/tcp': self._jupyter_port,
                 }
                 logger.warning(
                     ('Using port forwarding for Mac OS. '
@@ -383,9 +383,9 @@ if __name__ == '__main__':
     logger.info(
         "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
 
-    # bg_cmd = ssh_box.execute_in_background(
-    #     "while true; do echo 'dot ' && sleep 1; done"
-    # )
+    bg_cmd = ssh_box.execute_in_background(
+        "while true; do echo 'dot ' && sleep 5; done"
+    )
 
     sys.stdout.flush()
     try:
@@ -411,9 +411,9 @@ if __name__ == '__main__':
             exit_code, output = ssh_box.execute(user_input)
             logger.info('exit code: %d', exit_code)
             logger.info(output)
-            # if bg_cmd.id in ssh_box.background_commands:
-            #     logs = ssh_box.read_logs(bg_cmd.id)
-            #     logger.info('background logs: %s', logs)
+            if bg_cmd.id in ssh_box.background_commands:
+                logs = ssh_box.read_logs(bg_cmd.id)
+                logger.info('background logs: %s', logs)
             sys.stdout.flush()
     except KeyboardInterrupt:
         logger.info('Exiting...')
