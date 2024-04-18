@@ -1,0 +1,6 @@
+name: PosgresAgent
+description: Writes and maintains PosgreSQL migrations
+generates: Action
+inputs:
+  - task: string
+outputs: []
