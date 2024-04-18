@@ -33,7 +33,7 @@ Short term memory is stored as a Monologue object and the model can condense it 
 
 `_initialize`: Utilizes the `INITIAL_THOUGHTS` list to give the agent a context for its capabilities and how to navigate the `/workspace`
 
-`step`: Modifies the current state by adding the most rescent actions and observations, then prompts the model to think about its next action to take.
+`step`: Modifies the current state by adding the most recent actions and observations, then prompts the model to think about its next action to take.
 
 `search_memory`: Uses `VectorIndexRetriever` to find related memories within the long term memory.
 
