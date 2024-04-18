@@ -77,20 +77,16 @@ class Socket {
 
   static send(message: string): void {
     if (!Socket.isConnected()) {
-      console.log("111111111");
       Socket.tryInitialize();
     }
     if (Socket.initializing) {
-      console.log("22222222");
       setTimeout(() => Socket.send(message), 1000);
       return;
     }
 
     if (Socket.isConnected()) {
-      console.log("44444444");
       Socket._socket?.send(message);
     } else {
-      console.log("5555555");
       const msg = "Connection failed. Retry...";
       toast.stickyError("ws", msg);
     }
