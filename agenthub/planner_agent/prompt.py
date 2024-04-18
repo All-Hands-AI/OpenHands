@@ -133,7 +133,7 @@ def get_hint(latest_action_id: str) -> str:
     ''' Returns action type hint based on given action_id '''
 
     hints = {
-        "": "You haven't taken any actions yet. Start by using `ls` to check out what files you're working with.",
+        '': "You haven't taken any actions yet. Start by using `ls` to check out what files you're working with.",
         ActionType.RUN: "You should think about the command you just ran, what output it gave, and how that affects your plan.",
         ActionType.READ: "You should think about the file you just read, what you learned from it, and how that affects your plan.",
         ActionType.WRITE: "You just changed a file. You should think about how it affects your plan.",
@@ -173,10 +173,10 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
         if not isinstance(observation, NullObservation):
             observation_dict = observation.to_dict()
             if (
-                "extras" in observation_dict 
-                and "screenshot" in observation_dict["extras"]
+                'extras' in observation_dict 
+                and 'screenshot' in observation_dict['extras']
             ):
-                del observation_dict["extras"]["screenshot"]
+                del observation_dict['extras']['screenshot']
                 
             history_dicts.append(observation_dict)
 
@@ -190,15 +190,15 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
     else:
         plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
 
-    hint = get_hint(latest_action.to_dict()["action"])
+    hint = get_hint(latest_action.to_dict()['action'])
 
     logger.info('HINT:\n' + hint, extra={'msg_type': 'INFO'})
     return prompt % {
-        "task": plan.main_goal,
-        "plan": plan_str,
-        "history": history_str,
-        "hint": hint,
-        "plan_status": plan_status,
+        'task': plan.main_goal,
+        'plan': plan_str,
+        'history': history_str,
+        'hint': hint,
+        'plan_status': plan_status,
     }
 
 
@@ -216,8 +216,8 @@ def parse_response(response: str) -> Action:
     json_end = response.rfind("}") + 1
     response = response[json_start:json_end]
     action_dict = json.loads(response)
-    if "contents" in action_dict:
+    if 'contents' in action_dict:
         # The LLM gets confused here. Might as well be robust
-        action_dict["content"] = action_dict.pop("contents")
+        action_dict['content'] = action_dict.pop('contents')
     action = action_from_dict(action_dict)
     return action
