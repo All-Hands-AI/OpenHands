@@ -1,5 +1,4 @@
 import asyncio
-import os
 from typing import Optional, Dict, List
 
 from opendevin import config
@@ -201,7 +200,7 @@ class AgentUnit:
                 self.controller.start(task), name='agent start task loop'
             )
         except Exception as e:
-            await self.send_error(f"Error during task loop: {e}")
+            await self.send_error(f'Error during task loop: {e}')
 
     async def set_task_state(self, new_state_action: TaskStateAction):
         """Sets the state of the agent task."""

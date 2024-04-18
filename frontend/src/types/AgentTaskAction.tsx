@@ -2,9 +2,6 @@ enum AgentTaskAction {
   // Starts the task.
   START = "start",
 
-  // Restarts the new task.
-  RESTART = "restart",
-
   // Pauses the task.
   PAUSE = "pause",
 

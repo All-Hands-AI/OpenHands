@@ -17,7 +17,8 @@ class AddTaskAction(ExecutableAction):
     action: str = ActionType.ADD_TASK
 
     async def run(self, controller: 'AgentController') -> NullObservation:  # type: ignore
-        controller.state.plan.add_subtask(self.parent, self.goal, self.subtasks)
+        if controller.state is not None:
+            controller.state.plan.add_subtask(self.parent, self.goal, self.subtasks)
         return NullObservation('')
 
     @property
@@ -32,7 +33,8 @@ class ModifyTaskAction(ExecutableAction):
     action: str = ActionType.MODIFY_TASK
 
     async def run(self, controller: 'AgentController') -> NullObservation:  # type: ignore
-        controller.state.plan.set_subtask_state(self.id, self.state)
+        if controller.state is not None:
+            controller.state.plan.set_subtask_state(self.id, self.state)
         return NullObservation('')
 
     @property

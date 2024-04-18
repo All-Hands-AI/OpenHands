@@ -7,7 +7,6 @@ import AgentTaskAction from "../types/AgentTaskAction";
 import { changeTaskState } from "../services/agentStateService";
 import store, { RootState } from "../store";
 import AgentTaskState from "../types/AgentTaskState";
-import toast from "../utils/toast";
 import ArrowIcon from "../assets/arrow";
 import { clearMsgs } from "../services/session";
 import { clearMessages } from "../state/chatSlice";
@@ -19,34 +18,74 @@ const TaskStateActionMap = {
   [AgentTaskAction.STOP]: AgentTaskState.STOPPED,
 };
 
+const IgnoreTaskStateMap: { [k: string]: AgentTaskState[] } = {
+  [AgentTaskAction.PAUSE]: [
+    AgentTaskState.INIT,
+    AgentTaskState.PAUSED,
+    AgentTaskState.STOPPED,
+    AgentTaskState.FINISHED,
+  ],
+  [AgentTaskAction.RESUME]: [
+    AgentTaskState.INIT,
+    AgentTaskState.RUNNING,
+    AgentTaskState.STOPPED,
+    AgentTaskState.FINISHED,
+  ],
+  [AgentTaskAction.STOP]: [
+    AgentTaskState.INIT,
+    AgentTaskState.STOPPED,
+    AgentTaskState.FINISHED,
+  ],
+};
+
+interface ButtonProps {
+  isLoading: boolean;
+  isDisabled: boolean;
+  content: string;
+  action: AgentTaskAction;
+  handleAction: (action: AgentTaskAction) => void;
+}
+
+function ActionButton({
+  isLoading = false,
+  isDisabled = false,
+  content,
+  action,
+  handleAction,
+  children,
+}: React.PropsWithChildren<ButtonProps>): React.ReactNode {
+  return (
+    <Tooltip content={content} closeDelay={100}>
+      <Button
+        isIconOnly
+        onClick={() => handleAction(action)}
+        isLoading={isLoading}
+        isDisabled={isDisabled}
+      >
+        {children}
+      </Button>
+    </Tooltip>
+  );
+}
+
 function AgentControlBar() {
   const { curTaskState } = useSelector((state: RootState) => state.agent);
   const [desiredState, setDesiredState] = React.useState(AgentTaskState.INIT);
-  const [isRestart, setIsRestart] = React.useState(false);
-
-  const Buttons = {
-    [AgentTaskAction.RESTART]: {
-      icon: <ArrowIcon />,
-      tooltip: "Restart a new agent task",
-    },
-    [AgentTaskAction.PAUSE]: {
-      icon: <PauseIcon />,
-      tooltip: "Pause the agent task",
-    },
-    [AgentTaskAction.RESUME]: {
-      icon: <PlayIcon />,
-      tooltip: "Resume the agent task",
-    },
-  };
+  const [isLoading, setIsLoading] = React.useState(false);
 
   const handleAction = (action: AgentTaskAction) => {
+    if (IgnoreTaskStateMap[action].includes(curTaskState)) {
+      return;
+    }
+
     let act = action;
 
-    if (act === AgentTaskAction.RESTART) {
-      setIsRestart(true);
+    if (act === AgentTaskAction.STOP) {
       act = AgentTaskAction.STOP;
       clearMsgs().then().catch();
       store.dispatch(clearMessages());
+    } else {
+      setIsLoading(true);
     }
 
     setDesiredState(TaskStateActionMap[act]);
@@ -55,12 +94,11 @@ function AgentControlBar() {
 
   useEffect(() => {
     if (curTaskState === desiredState) {
-      if (isRestart) {
-        setIsRestart(false);
+      if (curTaskState === AgentTaskState.STOPPED) {
         clearMsgs().then().catch();
         store.dispatch(clearMessages());
       }
-      toast.info(`Task state is ${curTaskState}.`);
+      setIsLoading(false);
     } else if (curTaskState === AgentTaskState.RUNNING) {
       setDesiredState(AgentTaskState.RUNNING);
     }
@@ -69,17 +107,43 @@ function AgentControlBar() {
   return (
     <div className="ml-5 mt-3">
       <ButtonGroup size="sm" variant="ghost">
-        {Object.entries(Buttons).map(([key, item]) => (
-          <Tooltip key={key} content={item.tooltip} closeDelay={100}>
-            <Button
-              isIconOnly
-              aria-label={item.tooltip}
-              onClick={() => handleAction(key as AgentTaskAction)}
-            >
-              {item.icon}
-            </Button>
-          </Tooltip>
-        ))}
+        <ActionButton
+          isLoading={false}
+          isDisabled={isLoading}
+          content="Restart a new agent task"
+          action={AgentTaskAction.STOP}
+          handleAction={handleAction}
+        >
+          <ArrowIcon />
+        </ActionButton>
+
+        {curTaskState === AgentTaskState.PAUSED ? (
+          <ActionButton
+            isLoading={isLoading}
+            isDisabled={
+              isLoading ||
+              IgnoreTaskStateMap[AgentTaskAction.RESUME].includes(curTaskState)
+            }
+            content="Resume the agent task"
+            action={AgentTaskAction.RESUME}
+            handleAction={handleAction}
+          >
+            <PlayIcon />
+          </ActionButton>
+        ) : (
+          <ActionButton
+            isLoading={isLoading}
+            isDisabled={
+              isLoading ||
+              IgnoreTaskStateMap[AgentTaskAction.PAUSE].includes(curTaskState)
+            }
+            content="Pause the agent task"
+            action={AgentTaskAction.PAUSE}
+            handleAction={handleAction}
+          >
+            <PauseIcon />
+          </ActionButton>
+        )}
       </ButtonGroup>
     </div>
   );
