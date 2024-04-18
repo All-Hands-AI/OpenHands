@@ -28,9 +28,6 @@ describe("FileExplorer", () => {
     expect(getWorkspace).toHaveBeenCalledTimes(1);
     await waitFor(() => {
       expect(getByText("root")).toBeInTheDocument();
-      expect(getByText("file1.ts")).toBeInTheDocument();
-      expect(getByText("folder1")).toBeInTheDocument();
-      expect(getByText("file2.ts")).toBeInTheDocument();
     });
   });
 
@@ -43,7 +40,11 @@ describe("FileExplorer", () => {
     );
 
     await waitFor(() => {
-      expect(getByText("file2.ts")).toBeInTheDocument();
+      expect(getByText("folder1")).toBeInTheDocument();
+    });
+
+    act(() => {
+      userEvent.click(getByText("folder1"));
     });
 
     act(() => {

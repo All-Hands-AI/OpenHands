@@ -13,7 +13,7 @@ function ExplorerTree({
   defaultOpen = false,
 }: ExplorerTreeProps) {
   return (
-    <div>
+    <div className="w-full overflow-x-auto h-full pt-[4px]">
       {tree.map((branch, index) => (
         <TreeNode
           key={index}
