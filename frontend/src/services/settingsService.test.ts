@@ -25,7 +25,7 @@ describe("getUpdatedSettings", () => {
 
     const result = getUpdatedSettings({}, oldSettings);
 
-    expect(result).toEqual({});
+    expect(result).toStrictEqual({});
   });
 
   it("should update settings", () => {
@@ -40,7 +40,7 @@ describe("getUpdatedSettings", () => {
 
     const result = getUpdatedSettings(newSettings, oldSettings);
 
-    expect(result).toEqual({
+    expect(result).toStrictEqual({
       [ArgConfigType.AGENT]: "OtherAgent",
     });
   });
@@ -56,7 +56,7 @@ describe("getUpdatedSettings", () => {
 
     const result = getUpdatedSettings(newSettings, oldSettings);
 
-    expect(result).toEqual({});
+    expect(result).toStrictEqual({});
   });
 
   it("should update all settings", () => {
@@ -74,7 +74,7 @@ describe("getUpdatedSettings", () => {
 
     const result = getUpdatedSettings(newSettings, oldSettings);
 
-    expect(result).toEqual({
+    expect(result).toStrictEqual({
       [ArgConfigType.AGENT]: "CodeActAgent",
       [ArgConfigType.LANGUAGE]: "es",
     });
@@ -94,7 +94,7 @@ describe("getUpdatedSettings", () => {
 
     const result = getUpdatedSettings(newSettings, oldSettings);
 
-    expect(result).toEqual({
+    expect(result).toStrictEqual({
       [ArgConfigType.AGENT]: "CodeActAgent",
     });
   });

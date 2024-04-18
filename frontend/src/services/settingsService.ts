@@ -50,7 +50,10 @@ export const getUpdatedSettings = (
 ) => {
   const updatedSettings: Settings = {};
   SupportedSettings.forEach((setting) => {
-    if (newSettings[setting] !== currentSettings[setting]) {
+    if (
+      newSettings[setting] !== currentSettings[setting] &&
+      !!newSettings[setting] // check if the value is not empty/undefined
+    ) {
       updatedSettings[setting] = newSettings[setting];
     }
   });
