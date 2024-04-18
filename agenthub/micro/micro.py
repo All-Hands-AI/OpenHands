@@ -1,9 +1,13 @@
+from typing import List
+
+from jinja2 import Environment, BaseLoader
+
 from opendevin.agent import Agent
 from opendevin.llm.llm import LLM
 from opendevin.state import State
 from opendevin.action import Action
-from typing import List
 
+from .instructions import instructions
 
 class MicroAgent(Agent):
     def __init__(self, llm: LLM):
@@ -15,10 +19,10 @@ class MicroAgent(Agent):
         self.inputs = agentDef['inputs']
         self.outputs = agentDef['outputs']
         self.examples = agentDef['examples']
-        self.prompt = prompt
+        self.prompt_template = Environment(loader=BaseLoader).from_string(prompt)
 
     def step(self, state: State) -> Action:
-        prompt = get_prompt(state)
+        prompt = self.prompt_template.render(state=state, instructions=all_instructions)
         messages = [{'content': prompt, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)
         action_resp = resp['choices'][0]['message']['content']
