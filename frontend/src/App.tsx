@@ -10,10 +10,9 @@ import SettingModal from "./components/SettingModal";
 import Terminal from "./components/Terminal";
 import Workspace from "./components/Workspace";
 import { fetchMsgTotal } from "./services/session";
-import { fetchConfigurations, saveSettings } from "./services/settingsService";
+import { initializeAgent } from "./services/settingsService";
 import Socket from "./services/socket";
-import { ResConfigurations, ResFetchMsgTotal } from "./types/ResponseType";
-import { getCachedConfig } from "./utils/storage";
+import { ResFetchMsgTotal } from "./types/ResponseType";
 
 interface Props {
   setSettingOpen: (isOpen: boolean) => void;
@@ -36,29 +35,9 @@ function LeftNav({ setSettingOpen }: Props): JSX.Element {
 let initOnce = false;
 
 function App(): JSX.Element {
-  const [isInitialized, setIsInitialized] = useState(false);
   const [settingOpen, setSettingOpen] = useState(false);
   const [isWarned, setIsWarned] = useState(false);
   const [loadMsgWarning, setLoadMsgWarning] = useState(false);
-
-  const getConfigurations = () => {
-    fetchConfigurations()
-      .then((data: ResConfigurations) => {
-        const settings = getCachedConfig();
-
-        saveSettings(
-          Object.fromEntries(
-            Object.entries(data).map(([key, value]) => [key, String(value)]),
-          ),
-          settings,
-          true,
-          isInitialized,
-        );
-
-        setIsInitialized(true);
-      })
-      .catch();
-  };
 
   const getMsgTotal = () => {
     if (isWarned) return;
@@ -76,9 +55,10 @@ function App(): JSX.Element {
     if (initOnce) return;
     initOnce = true;
 
-    Socket.registerCallback("open", [getConfigurations, getMsgTotal]);
+    initializeAgent();
 
-    getConfigurations();
+    Socket.registerCallback("open", [getMsgTotal]);
+
     getMsgTotal();
   }, []);
 

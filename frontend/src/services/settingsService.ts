@@ -1,23 +1,12 @@
 import { setInitialized } from "../state/taskSlice";
 import store from "../store";
 import ActionType from "../types/ActionType";
+import { SupportedSettings } from "../types/ConfigType";
 import Socket from "./socket";
-import { setAllSettings, setByKey } from "../state/settingsSlice";
-import { ResConfigurations } from "../types/ResponseType";
-import { ArgConfigType } from "../types/ConfigType";
+import { setByKey } from "../state/settingsSlice";
 import toast from "../utils/toast";
 
-export async function fetchConfigurations(): Promise<ResConfigurations> {
-  const headers = new Headers({
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-  });
-  const response = await fetch(`/api/configurations`, { headers });
-  if (response.status !== 200) {
-    throw new Error("Get configurations failed.");
-  }
-  return (await response.json()) as ResConfigurations;
-}
+export type Settings = { [key: string]: string };
 
 export async function fetchModels() {
   const response = await fetch(`/api/litellm-models`);
@@ -25,104 +14,78 @@ export async function fetchModels() {
 }
 
 export async function fetchAgents() {
-  const response = await fetch(`/api/litellm-agents`);
+  const response = await fetch(`/api/agents`);
   return response.json();
 }
 
-export const INITIAL_MODELS = [
-  "gpt-3.5-turbo-1106",
-  "gpt-4-0125-preview",
-  "claude-3-haiku-20240307",
-  "claude-3-opus-20240229",
-  "claude-3-sonnet-20240229",
-];
-
-export type Model = (typeof INITIAL_MODELS)[number];
-
-export const INITIAL_AGENTS = ["MonologueAgent", "CodeActAgent"];
-
-export type Agent = (typeof INITIAL_AGENTS)[number];
-
 // all available settings in the frontend
 // TODO: add the values to i18n to support multi languages
-const DISPLAY_MAP = new Map<string, string>([
-  [ArgConfigType.LLM_MODEL, "model"],
-  [ArgConfigType.AGENT, "agent"],
-  [ArgConfigType.WORKSPACE_DIR, "directory"],
-  [ArgConfigType.LANGUAGE, "language"],
-]);
+const DISPLAY_MAP: { [key: string]: string } = {
+  LLM_MODEL: "model",
+  AGENT: "agent",
+  LANGUAGE: "language",
+};
 
-// Send settings to the server
-export function saveSettings(
-  newSettings: { [key: string]: string },
-  oldSettings: { [key: string]: string },
-  isInit: boolean = false,
-  isReconnect: boolean = false,
-): void {
-  const { mergedSettings, updatedSettings, needToSend } = Object.keys(
-    newSettings,
-  ).reduce(
-    (acc, key) => {
-      const newValue = String(newSettings[key]);
-      const oldValue = oldSettings[key];
+const DEFAULT_SETTINGS: Settings = {
+  LLM_MODEL: "gpt-3.5-turbo",
+  AGENT: "MonologueAgent",
+  LANGUAGE: "en",
+};
 
-      // key doesn't exist in frontend settings will be overwritten by backend settings
-      if (oldValue === undefined) {
-        acc.mergedSettings[key] = newValue;
-        acc.updatedSettings[key] = newValue;
-        return acc;
-      }
-      if (!DISPLAY_MAP.has(key)) {
-        acc.mergedSettings[key] = newValue;
-        return acc;
-      }
+const getSettingOrDefault = (key: string): string => {
+  const value = localStorage.getItem(key);
+  return value || DEFAULT_SETTINGS[key];
+};
 
-      if (oldValue === newValue || (isInit && oldValue !== "")) {
-        acc.mergedSettings[key] = oldValue;
-        return acc;
-      }
+export const getCurrentSettings = (): Settings => ({
+  LLM_MODEL: getSettingOrDefault("LLM_MODEL"),
+  AGENT: getSettingOrDefault("AGENT"),
+  LANGUAGE: getSettingOrDefault("LANGUAGE"),
+});
 
-      acc.mergedSettings[key] = newValue;
-      acc.updatedSettings[key] = newValue;
-      acc.needToSend = true;
+// Function to merge and update settings
+export const getUpdatedSettings = (
+  newSettings: Settings,
+  currentSettings: Settings,
+) => {
+  const updatedSettings: Settings = {};
+  SupportedSettings.forEach((setting) => {
+    if (newSettings[setting] !== currentSettings[setting]) {
+      updatedSettings[setting] = newSettings[setting];
+    }
+  });
+  return updatedSettings;
+};
 
-      return acc;
-    },
-    {
-      mergedSettings: { ...oldSettings },
-      updatedSettings: {},
-      needToSend: false,
-    } as {
-      mergedSettings: { [key: string]: string };
-      updatedSettings: { [key: string]: string };
-      needToSend: boolean;
-    },
-  );
-
+const dispatchSettings = (updatedSettings: Record<string, string>) => {
   let i = 0;
   for (const [key, value] of Object.entries(updatedSettings)) {
-    if (DISPLAY_MAP.has(key)) {
-      store.dispatch(setByKey({ key, value }));
+    store.dispatch(setByKey({ key, value }));
+    if (key in DISPLAY_MAP) {
       setTimeout(() => {
-        toast.settingsChanged(`Set ${DISPLAY_MAP.get(key)} to "${value}"`);
+        toast.settingsChanged(`Set ${DISPLAY_MAP[key]} to "${value}"`);
       }, i * 500);
       i += 1;
     }
   }
+};
 
-  if (isInit) {
-    store.dispatch(setAllSettings(JSON.stringify(newSettings)));
+export const initializeAgent = () => {
+  const event = { action: ActionType.INIT, args: getCurrentSettings() };
+  const eventString = JSON.stringify(event);
+  store.dispatch(setInitialized(false));
+  Socket.send(eventString);
+};
+
+// Save and send settings to the server
+export function saveSettings(newSettings: Settings): void {
+  const currentSettings = getCurrentSettings();
+  const updatedSettings = getUpdatedSettings(newSettings, currentSettings);
+
+  if (Object.keys(updatedSettings).length === 0) {
+    return;
   }
 
-  delete mergedSettings.ALL_SETTINGS;
-  if (isReconnect) {
-    mergedSettings.reconnect = "true";
-  }
-
-  if (needToSend || isInit) {
-    const event = { action: ActionType.INIT, args: mergedSettings };
-    const eventString = JSON.stringify(event);
-    store.dispatch(setInitialized(false));
-    Socket.send(eventString);
-  }
+  dispatchSettings(updatedSettings);
+  initializeAgent();
 }

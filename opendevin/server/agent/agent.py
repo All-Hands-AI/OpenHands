@@ -142,7 +142,6 @@ class AgentUnit:
             for key, value in start_event.get('args', {}).items()
             if value != ''
         }  # remove empty values, prevent FE from sending empty strings
-        directory = self.get_arg_or_default(args, ConfigType.WORKSPACE_DIR)
         agent_cls = self.get_arg_or_default(args, ConfigType.AGENT)
         model = self.get_arg_or_default(args, ConfigType.LLM_MODEL)
         api_key = config.get(ConfigType.LLM_API_KEY)
@@ -151,18 +150,11 @@ class AgentUnit:
         max_iterations = self.get_arg_or_default(args, ConfigType.MAX_ITERATIONS)
         max_chars = self.get_arg_or_default(args, ConfigType.MAX_CHARS)
 
-        if not os.path.exists(directory):
-            logger.info(
-                'Workspace directory %s does not exist. Creating it...', directory
-            )
-            os.makedirs(directory)
-        directory = os.path.relpath(directory, os.getcwd())
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
         try:
             self.controller = AgentController(
                 sid=self.sid,
                 agent=Agent.get_cls(agent_cls)(llm),
-                workdir=directory,
                 max_iterations=int(max_iterations),
                 max_chars=int(max_chars),
                 container_image=container_image,
@@ -255,4 +247,4 @@ class AgentUnit:
         if self.agent_task:
             self.agent_task.cancel()
         if self.controller is not None:
-            self.controller.command_manager.shell.close()
+            self.controller.action_manager.shell.close()

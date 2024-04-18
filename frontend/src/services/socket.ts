@@ -19,10 +19,11 @@ class Socket {
     close: [],
   };
 
-  // prevent it failed in the first run, all related listen events never be called
-  private static isFirstRun = true;
+  private static initializing = false;
 
   public static tryInitialize(): void {
+    if (Socket.initializing) return;
+    Socket.initializing = true;
     getToken()
       .then((token) => {
         Socket._initialize(token);
@@ -31,11 +32,9 @@ class Socket {
         const msg = `Connection failed. Retry...`;
         toast.stickyError("ws", msg);
 
-        if (this.isFirstRun) {
-          setTimeout(() => {
-            this.tryInitialize();
-          }, 3000);
-        }
+        setTimeout(() => {
+          this.tryInitialize();
+        }, 1500);
       });
   }
 
@@ -47,6 +46,7 @@ class Socket {
 
     Socket._socket.onopen = (e) => {
       toast.stickySuccess("ws", "Connected to server.");
+      Socket.initializing = false;
       Socket.callbacks.open?.forEach((callback) => {
         callback(e);
       });
@@ -67,8 +67,6 @@ class Socket {
         Socket.tryInitialize();
       }, 3000); // Reconnect after 3 seconds
     };
-
-    this.isFirstRun = false;
   }
 
   static isConnected(): boolean {
@@ -78,11 +76,21 @@ class Socket {
   }
 
   static send(message: string): void {
-    if (!Socket.isConnected()) Socket.tryInitialize();
+    if (!Socket.isConnected()) {
+      console.log("111111111");
+      Socket.tryInitialize();
+    }
+    if (Socket.initializing) {
+      console.log("22222222");
+      setTimeout(() => Socket.send(message), 1000);
+      return;
+    }
 
     if (Socket.isConnected()) {
+      console.log("44444444");
       Socket._socket?.send(message);
     } else {
+      console.log("5555555");
       const msg = "Connection failed. Retry...";
       toast.stickyError("ws", msg);
     }

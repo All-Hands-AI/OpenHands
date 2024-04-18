@@ -19,11 +19,13 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react",
-    "types": ["vite/client"]
+    "types": ["vite/client", "vitest/globals"]
   },
   "include": [
-    "src", 
+    "src",
     "vite-env.d.ts",
-    "vite.config.ts"
+    "vite.config.ts",
+    "vitest.setup.ts",
+    "test-utils.tsx"
   ]
 }

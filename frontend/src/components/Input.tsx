@@ -37,7 +37,6 @@ function Input() {
         return;
       }
       e.preventDefault();
-      e.stopPropagation();
       handleSendMessage();
     }
   };

@@ -38,7 +38,7 @@
   "scripts": {
     "start": "vite",
     "build": "tsc && vite build",
-    "test": "jest",
+    "test": "vitest",
     "preview": "vite preview",
     "make-i18n": "node scripts/make-i18n-translations.cjs",
     "prelint": "npm run make-i18n",
@@ -56,18 +56,10 @@
       "prettier --write"
     ]
   },
-  "jest": {
-    "preset": "ts-jest/presets/js-with-ts",
-    "testEnvironment": "jest-environment-jsdom",
-    "modulePaths": [
-      "<rootDir>/src"
-    ]
-  },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
-    "@types/jest": "^29.5.12",
     "@types/node": "^18.0.0 ",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
@@ -85,14 +77,13 @@
     "eslint-plugin-react": "^7.34.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "husky": "^8.0.0",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
+    "jsdom": "^24.0.0",
     "lint-staged": "^15.2.2",
     "postcss": "^8.4.38",
     "prettier": "^3.2.5",
     "tailwindcss": "^3.4.2",
-    "ts-jest": "^29.1.2",
-    "typescript": "^5.4.3"
+    "typescript": "^5.4.3",
+    "vitest": "^1.5.0"
   },
   "packageManager": "npm@10.5.0",
   "volta": {
