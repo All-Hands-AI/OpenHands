@@ -22,6 +22,7 @@ class LLM:
                  num_retries=DEFAULT_LLM_NUM_RETRIES,
                  cooldown_time=DEFAULT_LLM_COOLDOWN_TIME,
                  ):
+        opendevin_logger.info(f'Initializing LLM with model: {model}')
         self.model_name = model if model else DEFAULT_MODEL_NAME
         self.api_key = api_key if api_key else DEFAULT_API_KEY
         self.base_url = base_url if base_url else DEFAULT_BASE_URL
@@ -33,7 +34,8 @@ class LLM:
 
         def my_wait(retry_state):
             seconds = (retry_state.attempt_number) * cooldown_time
-            opendevin_logger.info(f'Attempt #{retry_state.attempt_number} | Sleeping for {seconds}s for {retry_state.outcome.exception()}', )
+            opendevin_logger.warning(f'LLM error: {retry_state.outcome.exception()}')
+            opendevin_logger.info(f'Attempt #{retry_state.attempt_number} | Sleeping for {seconds}s')
             return seconds
 
         @retry(reraise=True,

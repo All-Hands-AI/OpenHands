@@ -2,13 +2,11 @@ import uuid
 from pathlib import Path
 
 import litellm
-from fastapi import Depends, FastAPI, WebSocket
+from fastapi import Depends, FastAPI, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
-from starlette import status
-from starlette.responses import JSONResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin import config, files
@@ -36,6 +34,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     sid = get_sid_from_token(websocket.query_params.get('token') or '')
     if sid == '':
+        logger.error('Failed to decode token')
         return
     session_manager.add_session(sid, websocket)
     # TODO: actually the agent_manager is created for each websocket connection, even if the session id is the same,
@@ -52,12 +51,13 @@ async def get_litellm_models():
     return list(set(litellm.model_list + list(litellm.model_cost.keys())))
 
 
-@app.get('/api/litellm-agents')
-async def get_litellm_agents():
+@app.get('/api/agents')
+async def get_agents():
     """
     Get all agents supported by LiteLLM.
     """
-    return Agent.list_agents()
+    agents = Agent.list_agents()
+    return agents
 
 
 @app.get('/api/auth')
@@ -65,11 +65,20 @@ async def get_token(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     """
-    Get token for authentication when starts a websocket connection.
+    Generate a JWT for authentication when starting a WebSocket connection. This endpoint checks if valid credentials
+    are provided and uses them to get a session ID. If no valid credentials are provided, it generates a new session ID.
     """
-    sid = get_sid_from_token(credentials.credentials) or str(uuid.uuid4())
+    if credentials and credentials.credentials:
+        sid = get_sid_from_token(credentials.credentials)
+        if not sid:
+            sid = str(uuid.uuid4())
+            logger.info(f'Invalid or missing credentials, generating new session ID: {sid}')
+    else:
+        sid = str(uuid.uuid4())
+        logger.info(f'No credentials provided, generating new session ID: {sid}')
+
     token = sign_token({'sid': sid})
-    return {'token': token}
+    return {'token': token, 'status': 'ok'}
 
 
 @app.get('/api/messages')
@@ -101,11 +110,6 @@ async def del_messages(
     return {'ok': True}
 
 
-@app.get('/api/configurations')
-def read_default_model():
-    return config.get_fe_config()
-
-
 @app.get('/api/refresh-files')
 def refresh_files():
     structure = files.get_folder_structure(Path(str(config.get('WORKSPACE_BASE'))))
@@ -117,6 +121,8 @@ def select_file(file: str):
     try:
         workspace_base = config.get('WORKSPACE_BASE')
         file_path = Path(workspace_base, file)
+        # The following will check if the file is within the workspace base and throw an exception if not
+        file_path.resolve().relative_to(Path(workspace_base).resolve())
         with open(file_path, 'r') as selected_file:
             content = selected_file.read()
     except Exception as e:

@@ -55,5 +55,20 @@ class ActionTypeSchema(BaseModel):
 
     MODIFY_TASK: str = Field(default='modify_task')
 
+    NULL: str = Field(default='null')
+
+    PAUSE: str = Field(default='pause')
+    """Pauses the task.
+    """
+
+    RESUME: str = Field(default='resume')
+    """Resumes the task.
+    """
+
+    STOP: str = Field(default='stop')
+    """Stops the task. Must send a start action to restart a new task.
+    """
+
+    CHANGE_TASK_STATE: str = Field(default='change_task_state')
 
 ActionType = ActionTypeSchema()
