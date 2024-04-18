@@ -56,7 +56,7 @@ class FileReadAction(ExecutableAction):
                     code_view = ''.join(code_slice)
         except FileNotFoundError:
             raise FileNotFoundError(f'File not found: {self.path}')
-        return FileReadObservation(path=path, content=code_view)
+        return FileReadObservation(path=self.path, content=code_view)
 
     @property
     def message(self) -> str:
