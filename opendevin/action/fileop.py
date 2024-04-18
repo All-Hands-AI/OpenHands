@@ -84,15 +84,14 @@ class FileWriteAction(ExecutableAction):
                     new_file += [i + '\n' for i in insert]
                     new_file += [''] if self.end == -1 else all_lines[self.end:]
                 else:
-                    new_file = insert
+                    new_file = [i + '\n' for i in insert]
 
                 file.seek(0)
                 file.writelines(new_file)
                 file.truncate()
-            obs = f'WRITE OPERATION:\nYou have written to "{self.path}" on these lines: {self.start}:{self.end}.'
         except FileNotFoundError:
             raise FileNotFoundError(f'File not found: {self.path}')
-        return FileWriteObservation(content=obs + ''.join(new_file), path=self.path)
+        return FileWriteObservation(content='', path=self.path)
 
     @property
     def message(self) -> str:
