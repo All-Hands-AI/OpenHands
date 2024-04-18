@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import viteTsconfigPaths from "vite-tsconfig-paths";
@@ -24,12 +25,16 @@ export default defineConfig({
       "/api": {
         target: `http://${BACKEND_HOST}/`,
         changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/api/, ""),
       },
       "/ws": {
         target: `ws://${BACKEND_HOST}/`,
         ws: true,
       },
     },
+  },
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["vitest.setup.ts"],
   },
 });

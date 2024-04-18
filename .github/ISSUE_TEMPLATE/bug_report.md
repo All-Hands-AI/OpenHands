@@ -16,9 +16,11 @@ assignees: ''
 ```bash
 ```
 
+**My operating system**:
+
 <!-- tell us everything about your environment -->
-**My config.toml and environment vars** (be sure to redact API keys):
-```toml
+**My environment vars and other configuration** (be sure to redact API keys):
+```bash
 ```
 
 **My model and agent** (you can see these settings in the UI):
@@ -37,4 +39,3 @@ assignees: ''
 **Logs, error messages, and screenshots**:
 
 #### Additional Context
-

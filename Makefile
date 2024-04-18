@@ -25,6 +25,7 @@ build:
 	@$(MAKE) -s install-python-dependencies
 	@$(MAKE) -s install-frontend-dependencies
 	@$(MAKE) -s install-precommit-hooks
+	@$(MAKE) -s build-frontend
 	@echo "$(GREEN)Build completed successfully.$(RESET)"
 
 check-dependencies:
@@ -37,10 +38,10 @@ check-dependencies:
 
 check-python:
 	@echo "$(YELLOW)Checking Python installation...$(RESET)"
-	@if command -v python3 > /dev/null; then \
-		echo "$(BLUE)$(shell python3 --version) is already installed.$(RESET)"; \
+	@if command -v python3.11 > /dev/null; then \
+		echo "$(BLUE)$(shell python3.11 --version) is already installed.$(RESET)"; \
 	else \
-		echo "$(RED)Python 3 is not installed. Please install Python 3 to continue.$(RESET)"; \
+		echo "$(RED)Python 3.11 is not installed. Please install Python 3.11 to continue.$(RESET)"; \
 		exit 1; \
 	fi
 
@@ -68,7 +69,7 @@ check-poetry:
 		echo "$(BLUE)$(shell poetry --version) is already installed.$(RESET)"; \
 	else \
 		echo "$(RED)Poetry is not installed. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
-		echo "$(RED) curl -sSL https://install.python-poetry.org | python3 -$(RESET)"; \
+		echo "$(RED) curl -sSL https://install.python-poetry.org | python3.11 -$(RESET)"; \
 		echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
 		exit 1; \
 	fi
@@ -104,6 +105,14 @@ install-precommit-hooks:
 	@git config --unset-all core.hooksPath || true
 	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
+
+lint:
+	@echo "$(YELLOW)Running linters...$(RESET)"
+	@poetry run pre-commit run --files opendevin/**/* agenthub/**/* --show-diff-on-failure --config $(PRECOMMIT_CONFIG_PATH)
+
+build-frontend:
+	@echo "$(YELLOW)Building frontend...$(RESET)"
+	@cd frontend && npm run build
 
 # Start backend
 start-backend:
@@ -166,13 +175,14 @@ setup-config-prompts:
 
 	@read -p "Enter your workspace directory [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
-	 echo "WORKSPACE_DIR=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
+	 echo "WORKSPACE_BASE=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
 
 # Help
 help:
 	@echo "$(BLUE)Usage: make [target]$(RESET)"
 	@echo "Targets:"
 	@echo "  $(GREEN)build$(RESET)               - Build project, including environment setup and dependencies."
+	@echo "  $(GREEN)lint$(RESET)                - Run linters on the project."
 	@echo "  $(GREEN)setup-config$(RESET)        - Setup the configuration for OpenDevin by providing LLM API key,"
 	@echo "                        LLM Model name, and workspace directory."
 	@echo "  $(GREEN)start-backend$(RESET)       - Start the backend server for the OpenDevin project."
@@ -182,4 +192,4 @@ help:
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-precommit-hooks start-backend start-frontend run setup-config setup-config-prompts help
+.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-precommit-hooks lint start-backend start-frontend run setup-config setup-config-prompts help

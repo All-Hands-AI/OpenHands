@@ -13,23 +13,17 @@ jobs:
   open-devin:
     if: github.event.label.name == 'dogfood-this'
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/opendevin/opendevin
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
 
     steps:
+    - name: install git, github cli
+      run: apt-get install -y git gh
+
     - name: Checkout Repository
       uses: actions/checkout@v4
-
-    - name: Install poetry 
-      run: pipx install poetry 
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
-        cache: 'poetry'
-    
-    - name: Install Dependencies
-      run: |
-        make build
 
     - name: Write Task File
       env:
@@ -47,12 +41,15 @@ jobs:
         ISSUE_TITLE: ${{ github.event.issue.title }}
         ISSUE_BODY: ${{ github.event.issue.body }}
         LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        SANDBOX_TYPE: exec
       run: |
-        poetry run python ./opendevin/main.py -d "./" -i 50 -f task.txt
+        python ./opendevin/main.py -d "./" -i 50 -f task.txt -d $GITHUB_WORKSPACE
+        rm task.txt
 
     - name: Setup Git, Create Branch, and Commit Changes
       run: |
         # Setup Git configuration
+        git config --global --add safe.directory $PWD
         git config --global user.name 'OpenDevin'
         git config --global user.email 'OpenDevin@users.noreply.github.com'
 
@@ -75,10 +72,6 @@ jobs:
         # Push changes
         git push --set-upstream origin $BRANCH_NAME
 
-    - name: Install GitHub CLI
-      run: |
-        sudo apt-get install gh
-
     - name: Fetch Default Branch
       env:
         GH_TOKEN: ${{ github.token }}
@@ -100,10 +93,10 @@ jobs:
           --head "${{ github.head_ref }}" \
           --base "${{ env.DEFAULT_BRANCH }}" \
           | grep -o 'https://github.com/[^ ]*')
-        
+
         # Extract PR number from URL
         PR_NUMBER=$(echo "$PR_URL" | grep -o '[0-9]\+$')
-        
+
         # Set environment vars
         echo "PR_URL=$PR_URL" >> $GITHUB_ENV
         echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV

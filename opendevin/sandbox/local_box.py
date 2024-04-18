@@ -1,9 +1,8 @@
 import subprocess
 import atexit
-import os
-from typing import Tuple, Dict, Optional
+from typing import Tuple, Dict
 from opendevin.sandbox.sandbox import Sandbox, BackgroundCommand
-
+from opendevin import config
 
 # ===============================================================================
 #  ** WARNING **
@@ -20,9 +19,9 @@ from opendevin.sandbox.sandbox import Sandbox, BackgroundCommand
 #  DO NOT USE THIS SANDBOX IN A PRODUCTION ENVIRONMENT
 # ===============================================================================
 
+
 class LocalBox(Sandbox):
-    def __init__(self, workspace_dir: Optional[str] = None, timeout: int = 120):
-        self.workspace_dir = workspace_dir or os.getcwd()
+    def __init__(self, timeout: int = 120):
         self.timeout = timeout
         self.background_commands: Dict[int, BackgroundCommand] = {}
         self.cur_background_id = 0
@@ -32,7 +31,7 @@ class LocalBox(Sandbox):
         try:
             completed_process = subprocess.run(
                 cmd, shell=True, text=True, capture_output=True,
-                timeout=self.timeout, cwd=self.workspace_dir
+                timeout=self.timeout, cwd=config.get('WORKSPACE_BASE')
             )
             return completed_process.returncode, completed_process.stdout
         except subprocess.TimeoutExpired:
@@ -41,7 +40,7 @@ class LocalBox(Sandbox):
     def execute_in_background(self, cmd: str) -> BackgroundCommand:
         process = subprocess.Popen(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            text=True, cwd=self.workspace_dir
+            text=True, cwd=config.get('WORKSPACE_BASE')
         )
         bg_cmd = BackgroundCommand(
             id=self.cur_background_id, command=cmd, result=process, pid=process.pid

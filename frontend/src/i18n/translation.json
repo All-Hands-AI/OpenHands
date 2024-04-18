@@ -23,7 +23,8 @@
     "pt": "Terminal",
     "es": "Terminal",
     "ar": "الطرفية",
-    "fr": "Terminal"
+    "fr": "Terminal",
+    "tr": "Terminal"
   },
   "WORKSPACE$PLANNER_TAB_LABEL": {
     "en": "Planner",
@@ -62,7 +63,8 @@
     "pt": "Navegador",
     "es": "Navegador",
     "ar": "المتصفح",
-    "fr": "Navigateur"
+    "fr": "Navigateur",
+    "tr": "Tarayıcı"
   },
   "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_LABEL": {
     "en": "OpenDevin Workspace directory",
@@ -75,7 +77,8 @@
     "pt": "Diretório do espaço de trabalho OpenDevin",
     "es": "Directorio del espacio de trabajo de OpenDevin",
     "ar": "مجلد مساحة عمل أوبنديفين",
-    "fr": "Répertoire de l'espace de travail OpenDevin"
+    "fr": "Répertoire de l'espace de travail OpenDevin",
+    "tr": "OpenDevin çalışma alanı dizini"
   },
   "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER": {
     "en": "Default: ./workspace",
@@ -101,7 +104,20 @@
     "pt": "Configuração",
     "es": "Configuración",
     "ar": "التكوين",
-    "fr": "Configuration"
+    "fr": "Configuration",
+    "tr": "Konfigürasyon"
+  },
+  "CONFIGURATION$MODAL_SUB_TITLE": {
+    "en": "Adjust settings to your liking",
+    "zh-CN": "根据您的喜好调整设置",
+    "de": "Passen Sie die Einstellungen nach Ihren Wünschen an ",
+    "ko-KR": "원하는 대로 설정 조정",
+    "no": "Juster innstillinger etter dine ønsker ",
+    "zh-TW": "調整設定以符合您的喜好",
+    "it": "Regola le impostazioni in base alle tue preferenze",
+    "pt": "Ajuste as configurações de acordo com sua preferência",
+    "es": "Ajusta la configuración a tu gusto",
+    "tr": "Ayarları isteğinize göre ayarlayın"
   },
   "CONFIGURATION$MODEL_SELECT_LABEL": {
     "en": "Model",
@@ -114,7 +130,8 @@
     "pt": "Modelo",
     "es": "Modelo",
     "ar": "النموذج",
-    "fr": "Modèle"
+    "fr": "Modèle",
+    "tr": "Model"
   },
   "CONFIGURATION$MODEL_SELECT_PLACEHOLDER": {
     "en": "Select a model",
@@ -127,7 +144,8 @@
     "pt": "Selecione um modelo",
     "es": "Seleccionar un modelo",
     "ar": "حدد نموذج",
-    "fr": "Sélectionner un modèle"
+    "fr": "Sélectionner un modèle",
+    "tr": "Model Seç"
   },
   "CONFIGURATION$AGENT_SELECT_LABEL": {
     "en": "Agent",
@@ -140,7 +158,8 @@
     "pt": "Agente",
     "es": "Agente",
     "ar": "الوكيل",
-    "fr": "Agent"
+    "fr": "Agent",
+    "tr": "Ajan"
   },
   "CONFIGURATION$AGENT_SELECT_PLACEHOLDER": {
     "en": "Select an agent",
@@ -153,7 +172,8 @@
     "pt": "Selecione um agente",
     "es": "Seleccionar un agente",
     "ar": "حدد وكيلا",
-    "fr": "Sélectionner un agent"
+    "fr": "Sélectionner un agent",
+    "tr": "Ajan Seç"
   },
   "CONFIGURATION$LANGUAGE_SELECT_LABEL": {
     "en": "Language",
@@ -179,7 +199,8 @@
     "pt": "Fechar",
     "es": "Cerrar",
     "ar": "إغلاق",
-    "fr": "Fermer"
+    "fr": "Fermer",
+    "tr": "Kapat"
   },
   "CONFIGURATION$MODAL_SAVE_BUTTON_LABEL": {
     "en": "Save",
@@ -205,7 +226,8 @@
     "pt": "Inicializando o agente (pode levar até 10 segundos)...",
     "es": "Inicializando el agente (puede tardar hasta 10 segundos)...",
     "ar": "جاري تهيئة الوكيل (قد يستغرق حتى 10 ثواني)...",
-    "fr": "Initialisation de l'agent (peut prendre jusqu'à 10 secondes)..."
+    "fr": "Initialisation de l'agent (peut prendre jusqu'à 10 secondes)...",
+    "tr": "Ajan başlatılıyor (bu işlem 10 saniye kadar sürebilir)..."
   },
   "CHAT_INTERFACE$INPUT_PLACEHOLDER": {
     "en": "Send a message (won't interrupt the Assistant)",
@@ -218,7 +240,8 @@
     "pt": "Envie uma mensagem (não interromperá o Assistente)",
     "es": "Enviar un mensaje (no interrumpirá al Asistente)",
     "ar": "إرسال رسالة (لن يقاطع المساعد)",
-    "fr": "Envoyer un message (ne pas interrompre l'Assistant)"
+    "fr": "Envoyer un message (ne pas interrompre l'Assistant)",
+    "tr": "Bir mesaj gönderin (Asistan Kesilmeyecek)"
   },
   "CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT": {
     "en": "Send",
@@ -257,6 +280,7 @@
     "pt": "Assistant",
     "es": "Assistant",
     "ar": "مساعد",
-    "fr": "Assistant"
+    "fr": "Assistant",
+    "tr": "Gönder"
   }
 }
