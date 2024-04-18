@@ -10,9 +10,10 @@ import SettingModal from "./components/SettingModal";
 import Terminal from "./components/Terminal";
 import Workspace from "./components/Workspace";
 import { fetchMsgTotal } from "./services/session";
-import { fetchConfigurations, saveSettings } from "./services/settingsService";
+import { initializeAgent } from "./services/settingsService";
 import Socket from "./services/socket";
 import { ResConfigurations, ResFetchMsgTotal } from "./types/ResponseType";
+import ActionType from "./types/ActionType";
 import { getCachedConfig } from "./utils/storage";
 
 interface Props {
@@ -39,22 +40,6 @@ function App(): JSX.Element {
   const [settingOpen, setSettingOpen] = useState(false);
   const [loadMsgWarning, setLoadMsgWarning] = useState(false);
 
-  const getConfigurations = () => {
-    fetchConfigurations()
-      .then((data: ResConfigurations) => {
-        const settings = getCachedConfig();
-
-        saveSettings(
-          Object.fromEntries(
-            Object.entries(data).map(([key, value]) => [key, String(value)]),
-          ),
-          settings,
-          true,
-        );
-      })
-      .catch();
-  };
-
   const getMsgTotal = () => {
     fetchMsgTotal()
       .then((data: ResFetchMsgTotal) => {
@@ -69,9 +54,10 @@ function App(): JSX.Element {
     if (initOnce) return;
     initOnce = true;
 
-    Socket.registerCallback("open", [getConfigurations, getMsgTotal]);
+    initializeAgent();
 
-    getConfigurations();
+    Socket.registerCallback("open", [getMsgTotal]);
+
     getMsgTotal();
   }, []);
 

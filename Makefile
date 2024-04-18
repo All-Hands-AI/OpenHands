@@ -38,10 +38,10 @@ check-dependencies:
 
 check-python:
 	@echo "$(YELLOW)Checking Python installation...$(RESET)"
-	@if command -v python3 > /dev/null; then \
-		echo "$(BLUE)$(shell python3 --version) is already installed.$(RESET)"; \
+	@if command -v python3.11 > /dev/null; then \
+		echo "$(BLUE)$(shell python3.11 --version) is already installed.$(RESET)"; \
 	else \
-		echo "$(RED)Python 3 is not installed. Please install Python 3 to continue.$(RESET)"; \
+		echo "$(RED)Python 3.11 is not installed. Please install Python 3.11 to continue.$(RESET)"; \
 		exit 1; \
 	fi
 
@@ -69,7 +69,7 @@ check-poetry:
 		echo "$(BLUE)$(shell poetry --version) is already installed.$(RESET)"; \
 	else \
 		echo "$(RED)Poetry is not installed. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
-		echo "$(RED) curl -sSL https://install.python-poetry.org | python3 -$(RESET)"; \
+		echo "$(RED) curl -sSL https://install.python-poetry.org | python3.11 -$(RESET)"; \
 		echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
 		exit 1; \
 	fi

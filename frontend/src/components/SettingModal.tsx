@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
 import {
   Autocomplete,
   AutocompleteItem,
@@ -12,11 +11,10 @@ import { useTranslation } from "react-i18next";
 import {
   fetchAgents,
   fetchModels,
-  INITIAL_AGENTS,
-  INITIAL_MODELS,
   saveSettings,
+  getCurrentSettings,
+  Settings,
 } from "../services/settingsService";
-import { RootState } from "../store";
 import { I18nKey } from "../i18n/declaration";
 import { AvailableLanguages } from "../i18n";
 import { ArgConfigType } from "../types/ConfigType";
@@ -27,56 +25,39 @@ interface Props {
   onClose: () => void;
 }
 
-const cachedModels = JSON.parse(
-  localStorage.getItem("supportedModels") || "[]",
-);
-const cachedAgents = JSON.parse(
-  localStorage.getItem("supportedAgents") || "[]",
-);
-
 function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
-  const settings = useSelector((state: RootState) => state.settings);
-  const [model, setModel] = useState(settings[ArgConfigType.LLM_MODEL]);
+  const currentSettings: Settings = getCurrentSettings();
+  const [model, setModel] = useState(currentSettings[ArgConfigType.LLM_MODEL]);
   const [inputModel, setInputModel] = useState(
-    settings[ArgConfigType.LLM_MODEL],
+    currentSettings[ArgConfigType.LLM_MODEL],
   );
-  const [agent, setAgent] = useState(settings[ArgConfigType.AGENT]);
-  const [language, setLanguage] = useState(settings[ArgConfigType.LANGUAGE]);
+  const [agent, setAgent] = useState(currentSettings[ArgConfigType.AGENT]);
+  const [language, setLanguage] = useState(
+    currentSettings[ArgConfigType.LANGUAGE],
+  );
 
   const { t } = useTranslation();
 
-  const [supportedModels, setSupportedModels] = useState(
-    cachedModels.length > 0 ? cachedModels : INITIAL_MODELS,
-  );
-  const [supportedAgents, setSupportedAgents] = useState(
-    cachedAgents.length > 0 ? cachedAgents : INITIAL_AGENTS,
-  );
+  const [supportedModels, setSupportedModels] = useState([]);
+  const [supportedAgents, setSupportedAgents] = useState([]);
 
   useEffect(() => {
     fetchModels().then((fetchedModels) => {
       const sortedModels = fetchedModels.sort(); // Sorting the models alphabetically
       setSupportedModels(sortedModels);
-      localStorage.setItem("supportedModels", JSON.stringify(sortedModels));
     });
 
     fetchAgents().then((fetchedAgents) => {
       setSupportedAgents(fetchedAgents);
-      localStorage.setItem("supportedAgents", JSON.stringify(fetchedAgents));
     });
   }, []);
 
   const handleSaveCfg = () => {
-    saveSettings(
-      {
-        [ArgConfigType.LLM_MODEL]: model ?? inputModel,
-        [ArgConfigType.AGENT]: agent,
-        [ArgConfigType.LANGUAGE]: language,
-      },
-      Object.fromEntries(
-        Object.entries(settings).map(([key, value]) => [key, value]),
-      ),
-      false,
-    );
+    saveSettings({
+      [ArgConfigType.LLM_MODEL]: model ?? inputModel,
+      [ArgConfigType.AGENT]: agent,
+      [ArgConfigType.LANGUAGE]: language,
+    });
     onClose();
   };
 
@@ -150,7 +131,7 @@ function InnerSettingModal({ isOpen, onClose }: Props): JSX.Element {
         <Select
           selectionMode="single"
           onChange={(e) => setLanguage(e.target.value)}
-          selectedKeys={[language]}
+          selectedKeys={[language || ""]}
           label={t(I18nKey.CONFIGURATION$LANGUAGE_SELECT_LABEL)}
         >
           {AvailableLanguages.map((lang) => (
