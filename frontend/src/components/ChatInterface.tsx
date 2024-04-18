@@ -13,6 +13,7 @@ import { Message } from "../state/chatSlice";
 import { RootState } from "../store";
 import AgentStatusBar from "./AgentStatusBar";
 import ChatInput from "./ChatInput";
+import AgentControlBar from "./AgentControlBar";
 
 interface IChatBubbleProps {
   msg: Message;
@@ -123,7 +124,8 @@ function ChatInterface(): JSX.Element {
         Chat
       </div>
       <MessageList />
-      {initialized ? null : <AgentStatusBar />}
+      <AgentStatusBar />
+      <AgentControlBar />
       <ChatInput disabled={!initialized} onSendMessage={sendChatMessage} />
     </div>
   );

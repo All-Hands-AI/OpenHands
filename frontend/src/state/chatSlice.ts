@@ -32,17 +32,14 @@ export const chatSlice = createSlice({
     appendAssistantMessage: (state, action) => {
       state.messages.push({ content: action.payload, sender: "assistant" });
 
-      if (
-        state.assistantMessagesTypingQueue.length > 0 ||
-        state.typingActive === true
-      ) {
+      if (state.assistantMessagesTypingQueue.length > 0 || state.typingActive) {
         state.assistantMessagesTypingQueue.push({
           content: action.payload,
           sender: "assistant",
         });
       } else if (
         state.assistantMessagesTypingQueue.length === 0 &&
-        state.typingActive === false
+        !state.typingActive
       ) {
         state.typeThis = {
           content: action.payload,
@@ -65,6 +62,15 @@ export const chatSlice = createSlice({
         state.typeThis = state.assistantMessagesTypingQueue.shift() as Message;
       }
     },
+    clearMessages: (state) => {
+      state.messages = initialMessages;
+      state.userMessages = initialMessages;
+      state.assistantMessages = initialMessages;
+      state.newChatSequence = initialMessages;
+      state.assistantMessagesTypingQueue = [];
+      state.typingActive = false;
+      state.typeThis = { content: "", sender: "assistant" };
+    },
   },
 });
 
@@ -74,6 +80,7 @@ export const {
   toggleTypingActive,
   appendToNewChatSequence,
   takeOneTypeIt,
+  clearMessages,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

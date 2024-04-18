@@ -41,7 +41,7 @@ function ChatInput({ disabled, onSendMessage }: ChatInputProps) {
         onCompositionStart={() => setIsComposing(true)}
         onCompositionEnd={() => setIsComposing(false)}
         placeholder={t(I18nKey.CHAT_INTERFACE$INPUT_PLACEHOLDER)}
-        className="py-4 px-4"
+        className="pt-2 pb-4 px-4"
         classNames={{
           inputWrapper: "bg-neutral-700",
           input: "pr-16 py-2",

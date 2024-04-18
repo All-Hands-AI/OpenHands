@@ -8,6 +8,7 @@ import { ActionMessage } from "../types/Message";
 import { SocketMessage } from "../types/ResponseType";
 import { handleObservationMessage } from "./observations";
 import ActionType from "../types/ActionType";
+import { changeTaskState } from "../state/agentSlice";
 
 const messageActions = {
   [ActionType.INIT]: () => {
@@ -31,6 +32,9 @@ const messageActions = {
   },
   [ActionType.RUN]: (message: ActionMessage) => {
     store.dispatch(appendInput(message.args.command));
+  },
+  [ActionType.CHANGE_TASK_STATE]: (message: ActionMessage) => {
+    store.dispatch(changeTaskState(message.args.task_state));
   },
 };
 
