@@ -6,7 +6,7 @@ from fastapi import Depends, FastAPI, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import Response, RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin import config, files
