@@ -399,7 +399,7 @@ if __name__ == '__main__':
                 logger.info('Exiting...')
                 break
             if user_input.lower() == 'kill':
-                # ssh_box.kill_background(bg_cmd.id)
+                ssh_box.kill_background(bg_cmd.id)
                 logger.info('Background process killed')
                 continue
             if user_input.startswith('py:'):
