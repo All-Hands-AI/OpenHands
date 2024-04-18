@@ -114,6 +114,8 @@ def select_file(file: str):
     try:
         workspace_base = config.get('WORKSPACE_BASE')
         file_path = Path(workspace_base, file)
+        # The following will check if the file is within the workspace base and throw an exception if not
+        file_path.resolve().relative_to(Path(workspace_base).resolve())
         with open(file_path, 'r') as selected_file:
             content = selected_file.read()
     except Exception as e:
