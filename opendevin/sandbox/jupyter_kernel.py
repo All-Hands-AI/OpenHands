@@ -130,7 +130,7 @@ class JupyterKernel:
         self.heartbeat_callback.start()
 
     async def execute(self, code, timeout=60):
-        if not self.ws:
+        if not hasattr(self, 'ws') or not self.ws:
             await self._connect()
 
         msg_id = uuid4().hex
