@@ -2,11 +2,11 @@ import uuid
 from pathlib import Path
 
 import litellm
-from fastapi import Depends, FastAPI, WebSocket, HTTPException, Query, status
+from fastapi import Depends, FastAPI, HTTPException, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse, JSONResponse
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin import config, files
@@ -72,7 +72,9 @@ async def get_token(
         sid = get_sid_from_token(credentials.credentials)
         if not sid:
             sid = str(uuid.uuid4())
-            logger.info(f'Invalid or missing credentials, generating new session ID: {sid}')
+            logger.info(
+                f'Invalid or missing credentials, generating new session ID: {sid}'
+            )
     else:
         sid = str(uuid.uuid4())
         logger.info(f'No credentials provided, generating new session ID: {sid}')
@@ -110,24 +112,22 @@ async def del_messages(
     return {'ok': True}
 
 
-@app.get('/api/refresh-files')
-def refresh_files():
-    structure = files.get_folder_structure(Path(str(config.get('WORKSPACE_BASE'))))
-    return structure.to_dict()
-
-
 @app.get('/api/list-files')
-def list_files(relpath: str = Query(None, description='Relative path from workspace base')):
+def list_files(relpath: str):
     """Refreshes and returns the files and directories from a specified subdirectory or the base directory if no subdirectory is specified, limited to one level deep."""
     base_path = Path(config.get('WORKSPACE_BASE')).resolve()
-    full_path = (base_path / relpath).resolve() if relpath is not None else base_path
+    full_path = (base_path / relpath).resolve() if relpath != '' else base_path
 
     logger.debug(f'Listing files at {full_path}')
 
     # Ensure path exists, is a directory,
     # And is within the workspace base directory - to prevent directory traversal attacks
     # https://owasp.org/www-community/attacks/Path_Traversal
-    if not full_path.exists() or not full_path.is_dir() or not str(full_path).startswith(str(base_path)):
+    if (
+        not full_path.exists()
+        or not full_path.is_dir()
+        or not str(full_path).startswith(str(base_path))
+    ):
         raise HTTPException(status_code=400, detail='Invalid path provided.')
 
     structure = files.get_single_level_folder_structure(base_path, full_path)

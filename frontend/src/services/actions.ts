@@ -1,14 +1,14 @@
+import { changeTaskState } from "../state/agentSlice";
 import { setScreenshotSrc, setUrl } from "../state/browserSlice";
 import { appendAssistantMessage } from "../state/chatSlice";
-import { setCode, updatePath } from "../state/codeSlice";
+import { setCode } from "../state/codeSlice";
 import { appendInput } from "../state/commandSlice";
 import { setInitialized } from "../state/taskSlice";
 import store from "../store";
+import ActionType from "../types/ActionType";
 import { ActionMessage } from "../types/Message";
 import { SocketMessage } from "../types/ResponseType";
 import { handleObservationMessage } from "./observations";
-import ActionType from "../types/ActionType";
-import { changeTaskState } from "../state/agentSlice";
 
 const messageActions = {
   [ActionType.INIT]: () => {
@@ -20,8 +20,7 @@ const messageActions = {
     store.dispatch(setScreenshotSrc(screenshotSrc));
   },
   [ActionType.WRITE]: (message: ActionMessage) => {
-    const { path, content } = message.args;
-    store.dispatch(updatePath(path));
+    const { content } = message.args;
     store.dispatch(setCode(content));
   },
   [ActionType.THINK]: (message: ActionMessage) => {

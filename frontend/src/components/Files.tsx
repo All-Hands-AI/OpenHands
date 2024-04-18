@@ -1,8 +1,8 @@
 import { Accordion, AccordionItem } from "@nextui-org/react";
 import React, { useEffect } from "react";
 import TreeView, {
+  ITreeViewOnExpandProps,
   ITreeViewOnNodeSelectProps,
-  flattenTree,
 } from "react-accessible-treeview";
 import { AiOutlineFolder } from "react-icons/ai";
 
@@ -14,8 +14,13 @@ import {
 } from "react-icons/io";
 
 import { useDispatch, useSelector } from "react-redux";
-import { getWorkspace, selectFile } from "../services/fileService";
-import { setCode, updateWorkspace } from "../state/codeSlice";
+import { getWorkspaceDepthOne, selectFile } from "../services/fileService";
+import {
+  pruneWorkspace,
+  resetWorkspace,
+  setCode,
+  updateWorkspace,
+} from "../state/codeSlice";
 import { RootState } from "../store";
 import FileIcon from "./FileIcons";
 import FolderIcon from "./FolderIcon";
@@ -69,15 +74,14 @@ function Files({
   explorerOpen,
 }: FilesProps): JSX.Element {
   const dispatch = useDispatch();
-  const workspaceFolder = useSelector(
+  const workspaceTree = useSelector(
     (state: RootState) => state.code.workspaceFolder,
   );
 
   const selectedIds = useSelector((state: RootState) => state.code.selectedIds);
-  const workspaceTree = flattenTree(workspaceFolder);
 
   useEffect(() => {
-    getWorkspace().then((file) => dispatch(updateWorkspace(file)));
+    getWorkspaceDepthOne("").then((file) => dispatch(updateWorkspace(file)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -102,7 +106,7 @@ function Files({
   }
 
   const handleNodeSelect = (node: ITreeViewOnNodeSelectProps) => {
-    if (!node.isBranch) {
+    if (!node.element.isBranch) {
       let fullPath = node.element.name;
       setSelectedFileName(fullPath);
       let currentNode = workspaceTree.find(
@@ -120,6 +124,23 @@ function Files({
     }
   };
 
+  const handleNodeExpand = (node: ITreeViewOnExpandProps) => {
+    if (node.isExpanded) {
+      const currentNode = workspaceTree.find(
+        (treeNode) => treeNode.id === node.element.id,
+      );
+      if (!currentNode) return;
+      getWorkspaceDepthOne(currentNode.relativePath).then((files) => {
+        dispatch(updateWorkspace(files));
+      });
+    } else {
+      const currentNode = workspaceTree.find(
+        (treeNode) => treeNode.id === node.element.id,
+      );
+      dispatch(pruneWorkspace(currentNode));
+    }
+  };
+
   return (
     <div className="bg-neutral-800 min-w-[228px] h-full border-r-1 border-r-neutral-600 flex flex-col transition-all ease-soft-spring">
       <div className="flex p-2 items-center justify-between relative">
@@ -131,12 +152,10 @@ function Files({
             }}
             hideIndicator
             key="1"
-            aria-label={workspaceFolder.name}
+            aria-label=""
             title={
               <div className="group flex items-center justify-between">
-                <span className="text-neutral-400 text-sm">
-                  {workspaceFolder.name}
-                </span>
+                <span className="text-neutral-400 text-sm" />
               </div>
             }
             className="editor-accordion"
@@ -152,8 +171,11 @@ function Files({
                 className="text-sm text-neutral-400"
                 data={workspaceTree}
                 selectedIds={selectedIds}
-                expandedIds={workspaceTree.map((node) => node.id)}
+                expandedIds={workspaceTree
+                  .filter((node) => node.children.length > 0)
+                  .map((node) => node.id)}
                 onNodeSelect={handleNodeSelect}
+                onExpand={handleNodeExpand}
                 // eslint-disable-next-line react/no-unstable-nested-components
                 nodeRenderer={({
                   element,
@@ -184,9 +206,12 @@ function Files({
         </Accordion>
         <div className="transform flex h-[24px] items-center gap-1 absolute top-2 right-2">
           <RefreshButton
-            onClick={() =>
-              getWorkspace().then((file) => dispatch(updateWorkspace(file)))
-            }
+            onClick={() => {
+              dispatch(resetWorkspace());
+              getWorkspaceDepthOne("").then((file) =>
+                dispatch(updateWorkspace(file)),
+              );
+            }}
             ariaLabel="Refresh"
           />
           <CloseButton

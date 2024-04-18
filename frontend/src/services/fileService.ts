@@ -12,12 +12,6 @@ export async function selectFile(file: string): Promise<string> {
   return data.code as string;
 }
 
-export async function getWorkspace(): Promise<WorkspaceFile> {
-  const res = await fetch("/api/refresh-files");
-  const data = await res.json();
-  return data as WorkspaceFile;
-}
-
 export type WorkspaceItem = {
   name: string;
   isBranch: boolean;
