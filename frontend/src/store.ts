@@ -6,6 +6,7 @@ import commandReducer from "./state/commandSlice";
 import taskReducer from "./state/taskSlice";
 import errorsReducer from "./state/errorsSlice";
 import settingsReducer from "./state/settingsSlice";
+import agentReducer from "./state/agentSlice";
 
 export const rootReducer = combineReducers({
   browser: browserReducer,
@@ -15,6 +16,7 @@ export const rootReducer = combineReducers({
   task: taskReducer,
   errors: errorsReducer,
   settings: settingsReducer,
+  agent: agentReducer,
 });
 
 const store = configureStore({

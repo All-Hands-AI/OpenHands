@@ -29,6 +29,8 @@ enum ActionType {
   // If you're absolutely certain that you've completed your task and have tested your work,
   // use the finish action to stop working.
   FINISH = "finish",
+
+  CHANGE_TASK_STATE = "change_task_state",
 }
 
 export default ActionType;

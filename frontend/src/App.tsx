@@ -12,9 +12,7 @@ import Workspace from "./components/Workspace";
 import { fetchMsgTotal } from "./services/session";
 import { initializeAgent } from "./services/settingsService";
 import Socket from "./services/socket";
-import { ResConfigurations, ResFetchMsgTotal } from "./types/ResponseType";
-import ActionType from "./types/ActionType";
-import { getCachedConfig } from "./utils/storage";
+import { ResFetchMsgTotal } from "./types/ResponseType";
 
 interface Props {
   setSettingOpen: (isOpen: boolean) => void;
@@ -38,13 +36,16 @@ let initOnce = false;
 
 function App(): JSX.Element {
   const [settingOpen, setSettingOpen] = useState(false);
+  const [isWarned, setIsWarned] = useState(false);
   const [loadMsgWarning, setLoadMsgWarning] = useState(false);
 
   const getMsgTotal = () => {
+    if (isWarned) return;
     fetchMsgTotal()
       .then((data: ResFetchMsgTotal) => {
         if (data.msg_total > 0) {
           setLoadMsgWarning(true);
+          setIsWarned(true);
         }
       })
       .catch();

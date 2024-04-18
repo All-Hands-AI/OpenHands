@@ -49,19 +49,21 @@ class FileReadAction(ExecutableAction):
             return all_lines[begin:end]
 
     async def run(self, controller) -> FileReadObservation:
-        code_view: str
         if isinstance(controller.command_manager.sandbox, E2BBox):
             content = controller.command_manager.sandbox.filesystem.read(
                 self.path)
             read_lines = self._read_lines(content.split('\n'))
             code_view = ''.join(read_lines)
         else:
-            path = resolve_path(self.path)
+            whole_path = resolve_path(self.path)
             self.start = max(self.start, 0)
-            with open(path, 'r', encoding='utf-8') as file:
-                read_lines = self._read_lines(file.readlines())
-                code_view = ''.join(read_lines)
-        return FileReadObservation(path=path, content=code_view)
+            try:
+                with open(whole_path, 'r', encoding='utf-8') as file:
+                    read_lines = self._read_lines(file.readlines())
+                    code_view = ''.join(read_lines)
+            except FileNotFoundError:
+                raise FileNotFoundError(f'File not found: {self.path}')
+        return FileReadObservation(path=self.path, content=code_view)
 
     @property
     def message(self) -> str:
@@ -87,9 +89,7 @@ class FileWriteAction(ExecutableAction):
         return new_lines
 
     async def run(self, controller) -> FileWriteObservation:
-        obs = f'WRITE OPERATION:\nYou have written to "{self.path}" on these lines: {self.start}:{self.end}.'
         insert = self.content.split('\n')
-        new_file: list[str]
 
         if isinstance(controller.command_manager.sandbox, E2BBox):
             files = controller.command_manager.sandbox.filesystem.list(self.path)
@@ -98,23 +98,24 @@ class FileWriteAction(ExecutableAction):
                 new_file = self._insert_lines(self.content.split('\n'), all_lines)
                 controller.command_manager.sandbox.filesystem.write(self.path, ''.join(new_file))
             else:
-                new_file = insert
-                controller.command_manager.sandbox.filesystem.write(self.path, ''.join(new_file))
+                raise FileNotFoundError(f'File not found: {self.path}')
         else:
             whole_path = resolve_path(self.path)
             mode = 'w' if not os.path.exists(whole_path) else 'r+'
-            with open(whole_path, mode, encoding='utf-8') as file:
-                if mode != 'w':
-                    all_lines = file.readlines()
-                    new_file = self._insert_lines(insert, all_lines)
-                else:
-                    new_file = insert
+            try:
+                with open(whole_path, mode, encoding='utf-8') as file:
+                    if mode != 'w':
+                        all_lines = file.readlines()
+                        new_file = self._insert_lines(insert, all_lines)
+                    else:
+                        new_file = [i + '\n' for i in insert]
 
-                file.seek(0)
-                file.writelines(new_file)
-                file.truncate()
-
-        return FileWriteObservation(content=obs + ''.join(new_file), path=self.path)
+                    file.seek(0)
+                    file.writelines(new_file)
+                    file.truncate()
+            except FileNotFoundError:
+                raise FileNotFoundError(f'File not found: {self.path}')
+        return FileWriteObservation(content='', path=self.path)
 
     @property
     def message(self) -> str:
