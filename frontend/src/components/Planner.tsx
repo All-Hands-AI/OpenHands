@@ -16,21 +16,23 @@ function StatusIcon({ status }: { status: TaskState }): JSX.Element {
     case TaskState.OPEN_STATE:
       return <FaRegCircle />;
     case TaskState.COMPLETED_STATE:
-      return <FaRegCheckCircle />;
+      return <FaRegCheckCircle className="text-green-200" />;
     case TaskState.ABANDONED_STATE:
-      return <FaRegTimesCircle />;
+      return <FaRegTimesCircle className="text-red-200" />;
     case TaskState.IN_PROGRESS_STATE:
-      return <FaRegClock />;
+      return <FaRegClock className="text-yellow-200" />;
     case TaskState.VERIFIED_STATE:
-      return <FaCheckCircle />;
+      return <FaCheckCircle className="text-green-200" />;
     default:
       return <FaQuestionCircle />;
   }
 }
 
-function TaskCard({ task }: { task: Task }): JSX.Element {
+function TaskCard({ task, level }: { task: Task; level: number }): JSX.Element {
   return (
-    <div className="flex flex-col rounded bg-neutral-700 p-2 border-neutral-600 border">
+    <div
+      className={`flex flex-col rounded-r bg-neutral-700 p-2 border-neutral-600 ${level < 2 ? "border-l-3" : ""}`}
+    >
       <div className="flex items-center">
         <div className="px-2">
           <StatusIcon status={task.state} />
@@ -38,9 +40,9 @@ function TaskCard({ task }: { task: Task }): JSX.Element {
         <div>{task.goal}</div>
       </div>
       {task.subtasks.length > 0 && (
-        <div className="flex flex-col gap-2 pt-2">
+        <div className="flex flex-col pt-2 pl-2">
           {task.subtasks.map((subtask) => (
-            <TaskCard key={subtask.id} task={subtask} />
+            <TaskCard key={subtask.id} task={subtask} level={level + 1} />
           ))}
         </div>
       )}
@@ -61,8 +63,8 @@ function PlanContainer({ plan }: PlanProps): JSX.Element {
     );
   }
   return (
-    <div className="p-2">
-      <TaskCard task={plan.task} />
+    <div className="p-2 overflow-y-auto h-full flex flex-col gap-2">
+      <TaskCard task={plan.task} level={0} />
     </div>
   );
 }
