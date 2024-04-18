@@ -63,7 +63,7 @@ class MessageStack:
         cnt = 0
         for msg in self._messages[sid]:
             # Ignore assistant init message for now.
-            if 'action' in msg.payload and msg.payload['action'] == ActionType.INIT:
+            if 'action' in msg.payload and msg.payload['action'] in [ActionType.INIT, ActionType.CHANGE_TASK_STATE]:
                 continue
             cnt += 1
         return cnt

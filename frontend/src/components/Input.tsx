@@ -44,7 +44,7 @@ function Input() {
   return (
     <div className="w-full relative text-base">
       <Textarea
-        className="py-4 px-4"
+        className="pt-2 pb-4 px-4"
         classNames={{
           inputWrapper: "bg-neutral-700",
           input: "pr-16 py-2",
