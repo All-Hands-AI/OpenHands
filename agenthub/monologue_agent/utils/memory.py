@@ -84,7 +84,7 @@ class LongTermMemory:
             },
         )
         self.thought_idx += 1
-        logger.debug("Adding %s event to memory: %d", t, self.thought_idx)
+        logger.debug('Adding %s event to memory: %d', t, self.thought_idx)
         self.index.insert(doc)
 
     def search(self, query: str, k: int = 10):
