@@ -195,8 +195,16 @@ class AgentController:
 
         finished = isinstance(action, AgentFinishAction)
         if finished:
-            logger.info(action, extra={'msg_type': 'INFO'})
-            return True
+            # check the code using pytest
+            if config.get('AUTO_TEST'):
+                observation = self.action_manager._run_immediately('python3 -m pytest')
+                if observation.exit_code == 0:
+                    logger.info(action, extra={'msg_type': 'INFO'})
+                    return True
+                observation.content = 'pytest exited with error. You next task is to fix it.\n' + observation.content
+            else:
+                logger.info(action, extra={'msg_type': 'INFO'})
+                return True
 
         if isinstance(observation, NullObservation):
             observation = await self.action_manager.run_action(action, self)
