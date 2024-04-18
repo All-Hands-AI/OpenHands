@@ -45,10 +45,11 @@ def get_folder_structure(workdir: Path) -> WorkspaceFile:
 
 class WorkspaceItem(BaseModel):
     name: str
-    is_directory: bool
-    relative_path: str
+    isBranch: bool
+    relativePath: str
     id: str
     parent: str | None
+    children: List['WorkspaceItem'] = []
 
 
 def get_single_level_folder_structure(base_path: Path, workdir: Path) -> List[WorkspaceItem]:
@@ -60,8 +61,8 @@ def get_single_level_folder_structure(base_path: Path, workdir: Path) -> List[Wo
         parent_path = workdir.relative_to(base_path).as_posix() if workdir != base_path else 'root'
         entries.append(WorkspaceItem(
             name=item.name,
-            is_directory=item.is_dir(),
-            relative_path=item_relative_path,
+            isBranch=item.is_dir(),
+            relativePath=item_relative_path,
             id=item_relative_path,
             parent=parent_path
         ))
