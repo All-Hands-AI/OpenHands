@@ -20,36 +20,39 @@ describe("TreeNode", () => {
 
   it("should render a file if property has no children", () => {
     const { getByText } = render(
-      <TreeNode node={NODE} path={NODE.name} onFileClick={onFileClick} />,
+      <TreeNode
+        node={NODE}
+        path={NODE.name}
+        onFileClick={onFileClick}
+        defaultOpen
+      />,
     );
+
     expect(getByText("file.ts")).toBeInTheDocument();
   });
 
   it("should render a folder if property has children", () => {
     const { getByText } = render(
-      <TreeNode node={NODE} path={NODE.name} onFileClick={onFileClick} />,
+      <TreeNode
+        node={NODE}
+        path={NODE.name}
+        onFileClick={onFileClick}
+        defaultOpen
+      />,
     );
+
     expect(getByText("folder")).toBeInTheDocument();
     expect(getByText("file.ts")).toBeInTheDocument();
   });
 
   it("should close a folder when clicking on it", () => {
     const { getByText, queryByText } = render(
-      <TreeNode node={NODE} path={NODE.name} onFileClick={onFileClick} />,
-    );
-
-    act(() => {
-      userEvent.click(getByText("folder2"));
-    });
-
-    expect(queryByText("file2.ts")).not.toBeInTheDocument();
-    expect(getByText("folder")).toBeInTheDocument();
-    expect(getByText("file.ts")).toBeInTheDocument();
-  });
-
-  it("should open a folder when clicking on it", () => {
-    const { getByText, queryByText } = render(
-      <TreeNode node={NODE} path={NODE.name} onFileClick={onFileClick} />,
+      <TreeNode
+        node={NODE}
+        path={NODE.name}
+        onFileClick={onFileClick}
+        defaultOpen
+      />,
     );
 
     act(() => {
@@ -59,19 +62,29 @@ describe("TreeNode", () => {
     expect(queryByText("folder2")).not.toBeInTheDocument();
     expect(queryByText("file2.ts")).not.toBeInTheDocument();
     expect(queryByText("file.ts")).not.toBeInTheDocument();
+  });
+
+  it("should open a folder when clicking on it", () => {
+    const { getByText } = render(
+      <TreeNode node={NODE} path={NODE.name} onFileClick={onFileClick} />,
+    );
 
     act(() => {
       userEvent.click(getByText("folder"));
     });
 
     expect(getByText("folder2")).toBeInTheDocument();
-    expect(getByText("file2.ts")).toBeInTheDocument();
     expect(getByText("file.ts")).toBeInTheDocument();
   });
 
-  it("should return the full path of a file when clicking on it", () => {
+  it("should call a fn and return the full path of a file when clicking on it", () => {
     const { getByText } = render(
-      <TreeNode node={NODE} path={NODE.name} onFileClick={onFileClick} />,
+      <TreeNode
+        node={NODE}
+        path={NODE.name}
+        onFileClick={onFileClick}
+        defaultOpen
+      />,
     );
 
     act(() => {
@@ -79,6 +92,10 @@ describe("TreeNode", () => {
     });
 
     expect(onFileClick).toHaveBeenCalledWith("folder/file.ts");
+
+    act(() => {
+      userEvent.click(getByText("folder2"));
+    });
 
     act(() => {
       userEvent.click(getByText("file2.ts"));
@@ -89,12 +106,7 @@ describe("TreeNode", () => {
 
   it("should render the explorer given the defaultExpanded prop", () => {
     const { getByText, queryByText } = render(
-      <TreeNode
-        node={NODE}
-        path={NODE.name}
-        onFileClick={onFileClick}
-        defaultOpen={false}
-      />,
+      <TreeNode node={NODE} path={NODE.name} onFileClick={onFileClick} />,
     );
 
     expect(getByText("folder")).toBeInTheDocument();
@@ -107,8 +119,26 @@ describe("TreeNode", () => {
     });
 
     expect(getByText("folder2")).toBeInTheDocument();
-    expect(getByText("file2.ts")).toBeInTheDocument();
     expect(getByText("file.ts")).toBeInTheDocument();
+  });
+
+  it("should render all children as collapsed when defaultOpen is false", () => {
+    const { getByText, queryByText } = render(
+      <TreeNode node={NODE} path={NODE.name} onFileClick={onFileClick} />,
+    );
+
+    expect(getByText("folder")).toBeInTheDocument();
+    expect(queryByText("folder2")).not.toBeInTheDocument();
+    expect(queryByText("file2.ts")).not.toBeInTheDocument();
+    expect(queryByText("file.ts")).not.toBeInTheDocument();
+
+    act(() => {
+      userEvent.click(getByText("folder"));
+    });
+
+    expect(getByText("folder2")).toBeInTheDocument();
+    expect(getByText("file.ts")).toBeInTheDocument();
+    expect(queryByText("file2.ts")).not.toBeInTheDocument();
   });
 
   it.todo(

@@ -10,7 +10,7 @@ interface ExplorerTreeProps {
 function ExplorerTree({
   tree,
   onFileClick,
-  defaultOpen = true,
+  defaultOpen = false,
 }: ExplorerTreeProps) {
   return (
     <div>
@@ -28,7 +28,7 @@ function ExplorerTree({
 }
 
 ExplorerTree.defaultProps = {
-  defaultOpen: true,
+  defaultOpen: false,
 };
 
 export default ExplorerTree;

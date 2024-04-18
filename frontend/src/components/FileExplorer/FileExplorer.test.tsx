@@ -34,6 +34,8 @@ describe("FileExplorer", () => {
     });
   });
 
+  it.todo("should render an empty workspace");
+
   it("calls the onFileClick function when a file is clicked", async () => {
     const onFileClickMock = vi.fn();
     const { getByText } = render(

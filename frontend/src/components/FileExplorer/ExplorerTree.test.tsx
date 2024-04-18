@@ -28,28 +28,24 @@ describe("ExplorerTree", () => {
   });
 
   it("should render the explorer", () => {
-    const { getByText } = render(
-      <ExplorerTree tree={NODES} onFileClick={onFileClick} />,
+    const { getByText, queryByText } = render(
+      <ExplorerTree tree={NODES} onFileClick={onFileClick} defaultOpen />,
     );
 
     expect(getByText("root-folder-1")).toBeInTheDocument();
     expect(getByText("file-1-1.ts")).toBeInTheDocument();
     expect(getByText("folder-1-2")).toBeInTheDocument();
-    expect(getByText("file-1-2.ts")).toBeInTheDocument();
+    expect(queryByText("file-1-2.ts")).not.toBeInTheDocument();
 
     expect(getByText("root-folder-2")).toBeInTheDocument();
     expect(getByText("folder-2-1")).toBeInTheDocument();
-    expect(getByText("file-2-1.ts")).toBeInTheDocument();
+    expect(queryByText("file-2-1.ts")).not.toBeInTheDocument();
     expect(getByText("file-2-2.ts")).toBeInTheDocument();
   });
 
   it("should render the explorer given the defaultExpanded prop", () => {
     const { getByText, queryByText } = render(
-      <ExplorerTree
-        tree={NODES}
-        onFileClick={onFileClick}
-        defaultOpen={false}
-      />,
+      <ExplorerTree tree={NODES} onFileClick={onFileClick} />,
     );
 
     expect(getByText("root-folder-1")).toBeInTheDocument();
@@ -62,6 +58,8 @@ describe("ExplorerTree", () => {
     expect(queryByText("file-2-1.ts")).not.toBeInTheDocument();
     expect(queryByText("file-2-2.ts")).not.toBeInTheDocument();
   });
+
+  it.todo("should render all children as collapsed when defaultOpen is false");
 
   it.todo(
     "should maintain the expanded state of child folders when closing and opening a parent folder",

@@ -1,6 +1,7 @@
 import React from "react";
 import { getWorkspace } from "../../services/fileService";
 import ExplorerTree from "./ExplorerTree";
+import { removeEmptyNodes } from "./utils";
 
 interface FileExplorerProps {
   onFileClick: (path: string) => void;
@@ -12,7 +13,7 @@ function FileExplorer({ onFileClick }: FileExplorerProps) {
 
   const getWorkspaceData = async () => {
     const wsFile = await getWorkspace();
-    setWorkspace([wsFile]);
+    setWorkspace(removeEmptyNodes([wsFile]));
   };
 
   React.useEffect(() => {

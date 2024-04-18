@@ -11,7 +11,7 @@ function TreeNode({
   node,
   path,
   onFileClick,
-  defaultOpen = true,
+  defaultOpen = false,
 }: TreeNodeProps) {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
 
@@ -43,7 +43,7 @@ function TreeNode({
 }
 
 TreeNode.defaultProps = {
-  defaultOpen: true,
+  defaultOpen: false,
 };
 
 export default React.memo(TreeNode);
