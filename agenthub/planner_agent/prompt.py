@@ -133,19 +133,19 @@ def get_hint(latest_action_id: str) -> str:
     ''' Returns action type hint based on given action_id '''
 
     hints = {
-        '': "You haven't taken any actions yet. Start by using `ls` to check out what files you're working with.",
-        ActionType.RUN: "You should think about the command you just ran, what output it gave, and how that affects your plan.",
-        ActionType.READ: "You should think about the file you just read, what you learned from it, and how that affects your plan.",
-        ActionType.WRITE: "You just changed a file. You should think about how it affects your plan.",
-        ActionType.BROWSE: "You should think about the page you just visited, and what you learned from it.",
-        ActionType.THINK: "Look at your last thought in the history above. What does it suggest? Don't think anymore--take action.",
-        ActionType.RECALL: "You should think about the information you just recalled, and how it should affect your plan.",
-        ActionType.ADD_TASK: "You should think about the next action to take.",
-        ActionType.MODIFY_TASK: "You should think about the next action to take.",
-        ActionType.SUMMARIZE: "",
-        ActionType.FINISH: "",
+        '': 'You haven\'t taken any actions yet. Start by using `ls` to check out what files you\'re working with.',
+        ActionType.RUN: 'You should think about the command you just ran, what output it gave, and how that affects your plan.',
+        ActionType.READ: 'You should think about the file you just read, what you learned from it, and how that affects your plan.',
+        ActionType.WRITE: 'You just changed a file. You should think about how it affects your plan.',
+        ActionType.BROWSE: 'You should think about the page you just visited, and what you learned from it.',
+        ActionType.THINK: 'Look at your last thought in the history above. What does it suggest? Don\'t think anymore--take action.',
+        ActionType.RECALL: 'You should think about the information you just recalled, and how it should affect your plan.',
+        ActionType.ADD_TASK: 'You should think about the next action to take.',
+        ActionType.MODIFY_TASK: 'You should think about the next action to take.',
+        ActionType.SUMMARIZE: '',
+        ActionType.FINISH: '',
     }
-    return hints.get(latest_action_id, "")
+    return hints.get(latest_action_id, '')
 
 
 def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
@@ -212,8 +212,8 @@ def parse_response(response: str) -> Action:
     Returns:
     - Action: A valid next action to perform from model output
     """
-    json_start = response.find("{")
-    json_end = response.rfind("}") + 1
+    json_start = response.find('{')
+    json_end = response.rfind('}') + 1
     response = response[json_start:json_end]
     action_dict = json.loads(response)
     if 'contents' in action_dict:
