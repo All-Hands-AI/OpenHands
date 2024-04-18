@@ -1,4 +1,5 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
+import agentReducer from "./state/agentSlice";
 import browserReducer from "./state/browserSlice";
 import chatReducer from "./state/chatSlice";
 import codeReducer from "./state/codeSlice";
@@ -17,6 +18,7 @@ export const rootReducer = combineReducers({
   errors: errorsReducer,
   settings: settingsReducer,
   plan: planReducer,
+  agent: agentReducer,
 });
 
 const store = configureStore({

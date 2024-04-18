@@ -35,6 +35,8 @@ enum ActionType {
 
   // Updates a task in the plan.
   MODIFY_TASK = "modify_task",
+
+  CHANGE_TASK_STATE = "change_task_state",
 }
 
 export default ActionType;

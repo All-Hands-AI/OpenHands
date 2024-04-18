@@ -62,6 +62,15 @@ export const chatSlice = createSlice({
         state.typeThis = state.assistantMessagesTypingQueue.shift() as Message;
       }
     },
+    clearMessages: (state) => {
+      state.messages = initialMessages;
+      state.userMessages = initialMessages;
+      state.assistantMessages = initialMessages;
+      state.newChatSequence = initialMessages;
+      state.assistantMessagesTypingQueue = [];
+      state.typingActive = false;
+      state.typeThis = { content: "", sender: "assistant" };
+    },
   },
 });
 
@@ -71,6 +80,7 @@ export const {
   toggleTypingActive,
   appendToNewChatSequence,
   takeOneTypeIt,
+  clearMessages,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;

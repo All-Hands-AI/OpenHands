@@ -5,9 +5,9 @@ from pathlib import Path
 import litellm
 from fastapi import Depends, FastAPI, Response, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse, JSONResponse
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin import config, files
@@ -73,7 +73,9 @@ async def get_token(
         sid = get_sid_from_token(credentials.credentials)
         if not sid:
             sid = str(uuid.uuid4())
-            logger.info(f'Invalid or missing credentials, generating new session ID: {sid}')
+            logger.info(
+                f'Invalid or missing credentials, generating new session ID: {sid}'
+            )
     else:
         sid = str(uuid.uuid4())
         logger.info(f'No credentials provided, generating new session ID: {sid}')
@@ -150,8 +152,8 @@ def get_plan(
                 status_code=status.HTTP_200_OK,
                 content=json.dumps(
                     {
-                        'mainGoal': controller.state.plan.main_goal,
-                        'task': controller.state.plan.task.to_dict(),
+                        'mainGoal': state.plan.main_goal,
+                        'task': state.plan.task.to_dict(),
                     }
                 ),
             )
