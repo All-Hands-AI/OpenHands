@@ -26,6 +26,6 @@ You need the correct deployment name for this model in your Azure account.
 When running OpenDevin in Docker, set the following environment variables using `-e`:
 ```
 LLM_EMBEDDING_MODEL="azureopenai"
-DEPLOYMENT_NAME = "<your-embedding-deployment-name>"        # e.g. "TextEmbedding...<etc>"
+LLM_EMBEDDING_DEPLOYMENT_NAME = "<your-embedding-deployment-name>"        # e.g. "TextEmbedding...<etc>"
 LLM_API_VERSION = "<api-version>"         # e.g. "2024-02-15-preview"
 ```
