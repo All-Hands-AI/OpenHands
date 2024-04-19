@@ -31,13 +31,17 @@ body:
       label: Current Version
       description: What version are you using? If you're running in docker, tell us the tag you're using (e.g. ghcr.io/opendevin/opendevin:0.3.1).
       render: bash
+    validations:
+      required: true
 
   - type: textarea
     id: config
     attributes:
-      label: Configuration
+      label: Installation and Configuration
       description: Please provide the command you ran to start OpenDevin, and any configuration
       render: bash
+    validations:
+      required: true
 
   - type: textarea
     id: model-agent
