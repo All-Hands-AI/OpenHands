@@ -36,10 +36,10 @@ class FileReadAction(ExecutableAction):
     action: str = ActionType.READ
 
     async def run(self, controller) -> FileReadObservation:
-        path = resolve_path(self.path)
+        whole_path = resolve_path(self.path)
         self.start = max(self.start, 0)
         try:
-            with open(path, 'r', encoding='utf-8') as file:
+            with open(whole_path, 'r', encoding='utf-8') as file:
                 if self.end == -1:
                     if self.start == 0:
                         code_view = file.read()
@@ -56,7 +56,7 @@ class FileReadAction(ExecutableAction):
                     code_view = ''.join(code_slice)
         except FileNotFoundError:
             raise FileNotFoundError(f'File not found: {self.path}')
-        return FileReadObservation(path=path, content=code_view)
+        return FileReadObservation(path=self.path, content=code_view)
 
     @property
     def message(self) -> str:
@@ -84,15 +84,14 @@ class FileWriteAction(ExecutableAction):
                     new_file += [i + '\n' for i in insert]
                     new_file += [''] if self.end == -1 else all_lines[self.end:]
                 else:
-                    new_file = insert
+                    new_file = [i + '\n' for i in insert]
 
                 file.seek(0)
                 file.writelines(new_file)
                 file.truncate()
-            obs = f'WRITE OPERATION:\nYou have written to "{self.path}" on these lines: {self.start}:{self.end}.'
         except FileNotFoundError:
             raise FileNotFoundError(f'File not found: {self.path}')
-        return FileWriteObservation(content=obs + ''.join(new_file), path=self.path)
+        return FileWriteObservation(content='', path=self.path)
 
     @property
     def message(self) -> str:
