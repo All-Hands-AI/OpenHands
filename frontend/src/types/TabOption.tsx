@@ -6,6 +6,6 @@ enum TabOption {
 
 type TabType = TabOption.PLANNER | TabOption.CODE | TabOption.BROWSER;
 
-const AllTabs = [TabOption.CODE, TabOption.BROWSER];
+const AllTabs = [TabOption.CODE, TabOption.BROWSER, TabOption.PLANNER];
 
 export { AllTabs, TabOption, type TabType };

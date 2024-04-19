@@ -36,11 +36,11 @@ starcoder2:latest               f67ae0f64584    1.7 GB  19 hours ago
 ## 3. Start OpenDevin
 
 Use the instructions in [README.md](/README.md) to start OpenDevin using Docker.
-When running `docker run`, add the following environment variables using `-e`:
-
+But when running `docker run`, you'll need to add a few more arguments:
 ```bash
-LLM_API_KEY="ollama"
-LLM_BASE_URL="http://localhost:11434"
+--add-host host.docker.internal=host-gateway \
+-e LLM_API_KEY="ollama" \
+-e LLM_BASE_URL="http://localhost:11434" \
 ```
 
 For example:
@@ -49,8 +49,9 @@ For example:
 export WORKSPACE_DIR=$(pwd)/workspace
 
 docker run \
+    --add-host host.docker.internal=host-gateway \
     -e LLM_API_KEY="ollama" \
-    -e LLM_BASE_URL="http://localhost:11434"
+    -e LLM_BASE_URL="http://localhost:11434" \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_DIR \
     -v $WORKSPACE_DIR:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
@@ -62,6 +63,6 @@ You should now be able to connect to `http://localhost:3001/`
 
 ## 4. Select your Model
 In the OpenDevin UI, click on the Settings wheel in the bottom-left corner.
-Then in the `Model` input, enter `codellama:7b`, or the name of the model you pulled earlier, and click Save.
+Then in the `Model` input, enter `ollama/codellama:7b`, or the name of the model you pulled earlier, and click Save.
 
 And now you're ready to go!
