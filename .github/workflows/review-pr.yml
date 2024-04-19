@@ -51,11 +51,13 @@ jobs:
     - name: Write Task File
       run: |
         echo "Your coworker wants to apply a pull request to this project. Read and review it, and write your concise comments and suggestions to review-${{ github.event.pull_request.number }}.txt" > task.txt
-        echo "TITLE:" > task.txt
+        echo "TITLE:" >> task.txt
         echo "${{ github.event.pull_request.title }}" >> task.txt
-        echo "BODY:" > task.txt
+        echo "" >> task.txt
+        echo "BODY:" >> task.txt
         echo "${{ github.event.pull_request.body }}" >> task.txt
-        echo "\nThe diff is:\n" >> task.txt
+        echo "" >> task.txt
+        echo "The diff is:" >> task.txt
         cat ${{ github.event.pull_request.number }}.diff >> task.txt
         rm ${{ github.event.pull_request.number }}.diff
 
