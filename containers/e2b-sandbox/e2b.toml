@@ -1,0 +1,14 @@
+# This is a config for E2B sandbox template.
+# You can use 'template_id' (785n69crgahmz0lkdw9h) or 'template_name (open-devin) from this config to spawn a sandbox:
+
+# Python SDK
+# from e2b import Sandbox
+# sandbox = Sandbox(template='open-devin')
+
+# JS SDK
+# import { Sandbox } from 'e2b'
+# const sandbox = await Sandbox.create({ template: 'open-devin' })
+
+dockerfile = "Dockerfile"
+template_name = "open-devin"
+template_id = "785n69crgahmz0lkdw9h"
