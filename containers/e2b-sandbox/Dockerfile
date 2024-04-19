@@ -17,5 +17,3 @@ RUN apt-get update && apt-get install -y \
     openssh-server \
     sudo \
     && rm -rf /var/lib/apt/lists/*
-
-RUN service ssh start

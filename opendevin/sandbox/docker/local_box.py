@@ -1,7 +1,9 @@
 import subprocess
 import atexit
 from typing import Tuple, Dict
-from opendevin.sandbox.sandbox import Sandbox, BackgroundCommand
+from opendevin.sandbox.sandbox import Sandbox
+from opendevin.sandbox.process import Process
+from opendevin.sandbox.docker.process import DockerProcess
 from opendevin import config
 
 # ===============================================================================
@@ -23,7 +25,7 @@ from opendevin import config
 class LocalBox(Sandbox):
     def __init__(self, timeout: int = 120):
         self.timeout = timeout
-        self.background_commands: Dict[int, BackgroundCommand] = {}
+        self.background_commands: Dict[int, Process] = {}
         self.cur_background_id = 0
         atexit.register(self.cleanup)
 
@@ -37,15 +39,12 @@ class LocalBox(Sandbox):
         except subprocess.TimeoutExpired:
             return -1, 'Command timed out'
 
-    def execute_python(self, code: str) -> str:
-        raise NotImplementedError('execute_python is not supported in LocalBox')
-
-    def execute_in_background(self, cmd: str) -> BackgroundCommand:
+    def execute_in_background(self, cmd: str) -> Process:
         process = subprocess.Popen(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, cwd=config.get('WORKSPACE_BASE')
         )
-        bg_cmd = BackgroundCommand(
+        bg_cmd = DockerProcess(
             id=self.cur_background_id, command=cmd, result=process, pid=process.pid
         )
         self.background_commands[self.cur_background_id] = bg_cmd
@@ -56,6 +55,7 @@ class LocalBox(Sandbox):
         if id not in self.background_commands:
             raise ValueError('Invalid background command id')
         bg_cmd = self.background_commands[id]
+        assert isinstance(bg_cmd, DockerProcess)
         bg_cmd.result.terminate()  # terminate the process
         bg_cmd.result.wait()  # wait for process to terminate
         self.background_commands.pop(id)
@@ -64,6 +64,7 @@ class LocalBox(Sandbox):
         if id not in self.background_commands:
             raise ValueError('Invalid background command id')
         bg_cmd = self.background_commands[id]
+        assert isinstance(bg_cmd, DockerProcess)
         output = bg_cmd.result.stdout.read()
         return output.decode('utf-8')
 
