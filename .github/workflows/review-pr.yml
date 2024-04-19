@@ -44,16 +44,20 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.base.ref }} # check out the target branch
 
-    - name: Download Patch
+    - name: Download Diff
       run: |
-        curl -O "${{ github.event.pull_request.patch_url }}" -L
+        curl -O "${{ github.event.pull_request.diff_url }}" -L
 
     - name: Write Task File
       run: |
-        echo "Your coworker wants to apply a patch to this project. Read and review it, and write your concise comments and suggestions to review-${{ github.event.pull_request.number }}.txt" > task.txt
-        echo "\nThe patch is:\n" >> task.txt
-        cat ${{ github.event.pull_request.number }}.patch >> task.txt
-        rm ${{ github.event.pull_request.number }}.patch
+        echo "Your coworker wants to apply a pull request to this project. Read and review it, and write your concise comments and suggestions to review-${{ github.event.pull_request.number }}.txt" > task.txt
+        echo "TITLE:" > task.txt
+        echo "${{ github.event.pull_request.title }}" >> task.txt
+        echo "BODY:" > task.txt
+        echo "${{ github.event.pull_request.body }}" >> task.txt
+        echo "\nThe diff is:\n" >> task.txt
+        cat ${{ github.event.pull_request.number }}.diff >> task.txt
+        rm ${{ github.event.pull_request.number }}.diff
 
     - name: Run OpenDevin
       env:
