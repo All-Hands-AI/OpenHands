@@ -39,7 +39,6 @@ Use the instructions in [README.md](/README.md) to start OpenDevin using Docker.
 But when running `docker run`, you'll need to add a few more arguments:
 ```bash
 --add-host host.docker.internal=host-gateway \
---net=host \
 -e LLM_API_KEY="ollama" \
 -e LLM_BASE_URL="http://localhost:11434" \
 ```
