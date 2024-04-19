@@ -11,11 +11,17 @@ from opendevin.action import Action, action_from_dict
 from .instructions import instructions
 
 
-def parse_response(response: str) -> Action:
-    json_start = response.find('{')
-    json_end = response.rfind('}') + 1
-    response = response[json_start:json_end]
-    action_dict = json.loads(response)
+def parse_response(orig_response: str) -> Action:
+    json_start = orig_response.find('{')
+    json_end = orig_response.rfind('}') + 1
+    response = orig_response[json_start:json_end]
+    try:
+        action_dict = json.loads(response)
+    except json.JSONDecodeError:
+        # TODO: remove this debug stuff
+        print('Invalid JSON in response')
+        print(orig_response)
+        raise ValueError('Invalid JSON in response')
     action = action_from_dict(action_dict)
     return action
 

@@ -67,6 +67,7 @@ class AgentSummarizeAction(NotExecutableAction):
 
 @dataclass
 class AgentFinishAction(NotExecutableAction):
+    output: str = ''
     action: str = ActionType.FINISH
 
     async def run(self, controller: 'AgentController') -> 'Observation':
