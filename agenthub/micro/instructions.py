@@ -1,5 +1,4 @@
 import os
-import sys
 
 instructions = {}
 
@@ -19,5 +18,3 @@ for root, dirs, files in os.walk(base_dir):
         without_ext = os.path.splitext(file)[0]
         with open(os.path.join(root, file), "r") as f:
             obj[without_ext] = f.read()
-
-print(instructions)

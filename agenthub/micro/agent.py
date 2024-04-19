@@ -7,7 +7,6 @@ from opendevin.llm.llm import LLM
 from opendevin.state import State
 from opendevin.action import Action
 
-from .instructions import instructions
 
 class MicroAgent(Agent):
     def __init__(self, llm: LLM):

@@ -1,4 +1,4 @@
-from .micro import MicroAgent
+from .micro.agent import MicroAgent
 from opendevin.agent import Agent
 from opendevin.llm.llm import LLM
 import os
@@ -20,6 +20,10 @@ __all__ = ['monologue_agent', 'codeact_agent',
 # list all dirs in ./micro
 for dir in os.listdir(os.path.dirname(__file__) + "/micro"):
     base = os.path.dirname(__file__) + "/micro/" + dir
+    if os.path.isfile(base):
+        continue
+    if dir.startswith("_"):
+        continue
     promptFile = base + "/prompt.md"
     agentFile = base + "/agent.yaml"
     if not os.path.isfile(promptFile) or not os.path.isfile(agentFile):
