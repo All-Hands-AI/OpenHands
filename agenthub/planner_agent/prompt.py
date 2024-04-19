@@ -169,7 +169,6 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
         if not isinstance(action, NullAction):
             history_dicts.append(action.to_memory())
             latest_action = action
-            
         if not isinstance(observation, NullObservation):
             observation_dict = observation.to_dict()
             if (
@@ -177,11 +176,9 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
                 and 'screenshot' in observation_dict['extras']
             ):
                 del observation_dict['extras']['screenshot']
-                
             history_dicts.append(observation_dict)
-
+            
     history_str = json.dumps(history_dicts, indent=2)
-
     current_task = plan.get_current_task()
     if current_task is not None:
         plan_status = f"You're currently working on this task:\n{current_task.goal}."
