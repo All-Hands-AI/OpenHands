@@ -2,10 +2,11 @@ import React from "react";
 import { act, render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import TreeNode from "./TreeNode";
+import { WorkspaceFile } from "../../services/fileService";
 
 const onFileClick = vi.fn();
 
-const NODE: TreeNode = {
+const NODE: WorkspaceFile = {
   name: "folder",
   children: [
     { name: "file.ts" },

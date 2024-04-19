@@ -5,7 +5,7 @@ import {
   IoIosRefresh,
 } from "react-icons/io";
 import { twMerge } from "tailwind-merge";
-import { getWorkspace } from "../../services/fileService";
+import { WorkspaceFile, getWorkspace } from "../../services/fileService";
 import ExplorerTree from "./ExplorerTree";
 import { removeEmptyNodes } from "./utils";
 import IconButton from "../IconButton";
@@ -69,7 +69,7 @@ interface FileExplorerProps {
 }
 
 function FileExplorer({ onFileClick }: FileExplorerProps) {
-  const [workspace, setWorkspace] = React.useState<TreeNode[]>([]);
+  const [workspace, setWorkspace] = React.useState<WorkspaceFile[]>([]);
   const [isHidden, setIsHidden] = React.useState(false);
 
   const getWorkspaceData = async () => {

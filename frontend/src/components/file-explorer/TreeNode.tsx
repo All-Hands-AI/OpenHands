@@ -1,6 +1,7 @@
 import React from "react";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
+import { WorkspaceFile } from "../../services/fileService";
 
 interface TitleProps {
   name: string;
@@ -23,7 +24,7 @@ function Title({ name, type, isOpen, onClick }: TitleProps) {
 }
 
 interface TreeNodeProps {
-  node: TreeNode;
+  node: WorkspaceFile;
   path: string;
   onFileClick: (path: string) => void;
   defaultOpen?: boolean;

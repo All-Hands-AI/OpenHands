@@ -1,8 +1,9 @@
 import React from "react";
 import TreeNode from "./TreeNode";
+import { WorkspaceFile } from "../../services/fileService";
 
 interface ExplorerTreeProps {
-  tree: TreeNode[];
+  tree: WorkspaceFile[];
   onFileClick: (path: string) => void;
   defaultOpen?: boolean;
 }

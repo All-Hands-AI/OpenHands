@@ -1,8 +1,9 @@
 import React from "react";
 import { render } from "@testing-library/react";
 import ExplorerTree from "./ExplorerTree";
+import { WorkspaceFile } from "../../services/fileService";
 
-const NODE_1: TreeNode = {
+const NODE_1: WorkspaceFile = {
   name: "root-folder-1",
   children: [
     { name: "file-1-1.ts" },
@@ -10,7 +11,7 @@ const NODE_1: TreeNode = {
   ],
 };
 
-const NODE_2: TreeNode = {
+const NODE_2: WorkspaceFile = {
   name: "root-folder-2",
   children: [
     { name: "folder-2-1", children: [{ name: "file-2-1.ts" }] },
