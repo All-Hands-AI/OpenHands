@@ -117,7 +117,7 @@ After completing the MVP, the team will focus on research in various areas, incl
 * OpenDevin is still an alpha project. It is changing very quickly and is unstable. We are working on getting a stable release out in the coming weeks.
 * OpenDevin will issue many prompts to the LLM you configure. Most of these LLMs cost money--be sure to set spending limits and monitor usage.
 * OpenDevin runs `bash` commands within a Docker sandbox, so it should not affect your machine. But your workspace directory will be attached to that sandbox, and files in the directory may be modified or deleted.
-* Our default Agent is currently the MonologueAgent, which has limited capabilities, but is fairly stable. We're working on other Agent implementations, including [SWE Agent](https://swe-agent.com/). You can [read about our current set of agents here](./docs/documentation/Agents.md).
+* Our default Agent is currently the MonologueAgent, which has limited capabilities, but is fairly stable. We're working on other Agent implementations, including [SWE Agent](https://swe-agent.com/). You can [read about our current set of agents here](./docs/Agents.md).
 
 ## 🚀 Get Started
 The easiest way to run OpenDevin is inside a Docker container.
@@ -144,6 +144,8 @@ If you want to use the (unstable!) bleeding edge, you can use `ghcr.io/opendevin
 
 See [Development.md](Development.md) for instructions on running OpenDevin without Docker.
 
+If you're running on Windows and having trouble, check out our [guide for Windows users](./docs/guides/Windows.md)
+
 ## 🤖 LLM Backends
 OpenDevin can work with any LLM backend.
 For a full list of the LM providers and models available, please consult the
@@ -159,13 +161,20 @@ The following environment variables might be necessary for some LLMs:
 * `LLM_DEPLOYMENT_NAME`
 * `LLM_API_VERSION`
 
-**Note on Alternative Models:**
-Some alternative models may prove more challenging to tame than others.
-Fear not, brave adventurer! We shall soon unveil LLM-specific documentation to guide you on your quest.
-And if you've already mastered the art of wielding a model other than OpenAI's GPT,
-we encourage you to [share your setup instructions with us](https://github.com/OpenDevin/OpenDevin/issues/417).
+We have a few guides for running OpenDevin with specific model providers:
+* [ollama](./docs/guides/LocalLLMs.md)
+* [Azure](./docs/guides/AzureLLMs.md)
 
-There is also [documentation for running with local models using ollama](./docs/documentation/LOCAL_LLM_GUIDE.md).
+If you're using another provider, we encourage you to open a PR to share your setup!
+
+**Note on Alternative Models:**
+The best models are GPT-4 and Claude 3. Current local and open source models are
+not nearly as powerful. When using an alternative model,
+you may see long wait times between messages,
+poor responses, or errors about malformed JSON. OpenDevin
+can only be as powerful as the models driving it--fortunately folks on our team
+are actively working on building better open source models!
+
 
 ## ⭐️ Research Strategy
 
