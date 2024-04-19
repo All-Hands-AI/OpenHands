@@ -169,9 +169,9 @@ class AgentController:
         observation: Observation = NullObservation('')
         try:
             action = self.agent.step(self.state)
+            logger.info(action, extra={'msg_type': 'ACTION'})
             if action is None:
                 raise AgentNoActionError()
-            logger.info(action, extra={'msg_type': 'ACTION'})
         except Exception as e:
             observation = AgentErrorObservation(str(e))
             logger.error(e)
