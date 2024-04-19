@@ -32,7 +32,7 @@ elif embedding_strategy == 'azureopenai':
     from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
     embed_model = AzureOpenAIEmbedding(
         model='text-embedding-ada-002',
-        deployment_name=config.get('LLM_DEPLOYMENT_NAME', required=True),
+        deployment_name=config.get('LLM_EMBEDDING_DEPLOYMENT_NAME', required=True),
         api_key=config.get('LLM_API_KEY', required=True),
         azure_endpoint=config.get('LLM_BASE_URL', required=True),
         api_version=config.get('LLM_API_VERSION', required=True),

@@ -169,6 +169,8 @@ setup-config-prompts:
 				echo "LLM_BASE_URL=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; \
 			read -p "Enter the Azure LLM Deployment Name: " llm_deployment_name; \
 				echo "LLM_DEPLOYMENT_NAME=\"$$llm_deployment_name\"" >> $(CONFIG_FILE).tmp; \
+			read -p "Enter the Azure LLM Embedding Deployment Name: " llm_embedding_deployment_name; \
+				echo "LLM_EMBEDDING_DEPLOYMENT_NAME=\"$$llm_embedding_deployment_name\"" >> $(CONFIG_FILE).tmp; \
 			read -p "Enter the Azure API Version: " llm_api_version; \
 				echo "LLM_API_VERSION=\"$$llm_api_version\"" >> $(CONFIG_FILE).tmp; \
 		fi
