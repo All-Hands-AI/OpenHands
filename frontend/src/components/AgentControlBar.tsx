@@ -1,15 +1,15 @@
-import React, { useEffect } from "react";
 import { Button, ButtonGroup, Tooltip } from "@nextui-org/react";
+import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
+import ArrowIcon from "../assets/arrow";
 import PauseIcon from "../assets/pause";
 import PlayIcon from "../assets/play";
-import AgentTaskAction from "../types/AgentTaskAction";
 import { changeTaskState } from "../services/agentStateService";
-import store, { RootState } from "../store";
-import AgentTaskState from "../types/AgentTaskState";
-import ArrowIcon from "../assets/arrow";
 import { clearMsgs } from "../services/session";
 import { clearMessages } from "../state/chatSlice";
+import store, { RootState } from "../store";
+import AgentTaskAction from "../types/AgentTaskAction";
+import AgentTaskState from "../types/AgentTaskState";
 
 const TaskStateActionMap = {
   [AgentTaskAction.START]: AgentTaskState.RUNNING,
@@ -102,6 +102,8 @@ function AgentControlBar() {
     } else if (curTaskState === AgentTaskState.RUNNING) {
       setDesiredState(AgentTaskState.RUNNING);
     }
+    // We only want to run this effect when curTaskState changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [curTaskState]);
 
   return (
