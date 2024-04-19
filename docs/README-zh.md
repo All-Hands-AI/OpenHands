@@ -35,7 +35,7 @@
 
 <!-- PROJECT LOGO -->
 <div align="center">
-  <img src="./logo.png" alt="Logo" width="200" height="200">
+  <img src="../logo.png" alt="Logo" width="200" height="200">
   <h1 align="center">OpenDevin：少写代码，多创作</h1>
 </div>
 
