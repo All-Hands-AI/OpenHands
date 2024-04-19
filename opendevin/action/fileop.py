@@ -8,6 +8,7 @@ from opendevin.observation import (
 )
 
 from opendevin.schema import ActionType
+from opendevin.sandbox import E2BBox
 from opendevin import config
 
 from .base import ExecutableAction
@@ -35,25 +36,34 @@ class FileReadAction(ExecutableAction):
     thoughts: str = ''
     action: str = ActionType.READ
 
-    async def run(self, controller) -> FileReadObservation:
-        path = resolve_path(self.path)
-        self.start = max(self.start, 0)
-        with open(path, 'r', encoding='utf-8') as file:
-            if self.end == -1:
-                if self.start == 0:
-                    code_view = file.read()
-                else:
-                    all_lines = file.readlines()
-                    code_slice = all_lines[self.start:]
-                    code_view = ''.join(code_slice)
+    def _read_lines(self, all_lines: list[str]):
+        if self.end == -1:
+            if self.start == 0:
+                return all_lines
             else:
-                all_lines = file.readlines()
-                num_lines = len(all_lines)
-                begin = max(0, min(self.start, num_lines - 2))
-                end = -1 if self.end > num_lines else max(begin + 1, self.end)
-                code_slice = all_lines[begin:end]
-                code_view = ''.join(code_slice)
-        return FileReadObservation(path=path, content=code_view)
+                return all_lines[self.start:]
+        else:
+            num_lines = len(all_lines)
+            begin = max(0, min(self.start, num_lines - 2))
+            end = -1 if self.end > num_lines else max(begin + 1, self.end)
+            return all_lines[begin:end]
+
+    async def run(self, controller) -> FileReadObservation:
+        if isinstance(controller.action_manager.sandbox, E2BBox):
+            content = controller.action_manager.sandbox.filesystem.read(
+                self.path)
+            read_lines = self._read_lines(content.split('\n'))
+            code_view = ''.join(read_lines)
+        else:
+            whole_path = resolve_path(self.path)
+            self.start = max(self.start, 0)
+            try:
+                with open(whole_path, 'r', encoding='utf-8') as file:
+                    read_lines = self._read_lines(file.readlines())
+                    code_view = ''.join(read_lines)
+            except FileNotFoundError:
+                raise FileNotFoundError(f'File not found: {self.path}')
+        return FileReadObservation(path=self.path, content=code_view)
 
     @property
     def message(self) -> str:
@@ -69,24 +79,43 @@ class FileWriteAction(ExecutableAction):
     thoughts: str = ''
     action: str = ActionType.WRITE
 
-    async def run(self, controller) -> FileWriteObservation:
-        whole_path = resolve_path(self.path)
-        mode = 'w' if not os.path.exists(whole_path) else 'r+'
-        insert = self.content.split('\n')
-        with open(whole_path, mode, encoding='utf-8') as file:
-            if mode != 'w':
-                all_lines = file.readlines()
-                new_file = [''] if self.start == 0 else all_lines[:self.start]
-                new_file += [i + '\n' for i in insert]
-                new_file += [''] if self.end == -1 else all_lines[self.end:]
-            else:
-                new_file = insert
+    def _insert_lines(self, to_insert: list[str], original: list[str]):
+        """
+        Insert the new conent to the original content based on self.start and self.end
+        """
+        new_lines = [''] if self.start == 0 else original[:self.start]
+        new_lines += [i + '\n' for i in to_insert]
+        new_lines += [''] if self.end == -1 else original[self.end:]
+        return new_lines
 
-            file.seek(0)
-            file.writelines(new_file)
-            file.truncate()
-        obs = f'WRITE OPERATION:\nYou have written to "{self.path}" on these lines: {self.start}:{self.end}.'
-        return FileWriteObservation(content=obs + ''.join(new_file), path=self.path)
+    async def run(self, controller) -> FileWriteObservation:
+        insert = self.content.split('\n')
+
+        if isinstance(controller.action_manager.sandbox, E2BBox):
+            files = controller.action_manager.sandbox.filesystem.list(self.path)
+            if self.path in files:
+                all_lines = controller.action_manager.sandbox.filesystem.read(self.path)
+                new_file = self._insert_lines(self.content.split('\n'), all_lines)
+                controller.action_manager.sandbox.filesystem.write(self.path, ''.join(new_file))
+            else:
+                raise FileNotFoundError(f'File not found: {self.path}')
+        else:
+            whole_path = resolve_path(self.path)
+            mode = 'w' if not os.path.exists(whole_path) else 'r+'
+            try:
+                with open(whole_path, mode, encoding='utf-8') as file:
+                    if mode != 'w':
+                        all_lines = file.readlines()
+                        new_file = self._insert_lines(insert, all_lines)
+                    else:
+                        new_file = [i + '\n' for i in insert]
+
+                    file.seek(0)
+                    file.writelines(new_file)
+                    file.truncate()
+            except FileNotFoundError:
+                raise FileNotFoundError(f'File not found: {self.path}')
+        return FileWriteObservation(content='', path=self.path)
 
     @property
     def message(self) -> str:
