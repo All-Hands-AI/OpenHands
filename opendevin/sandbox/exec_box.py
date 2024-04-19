@@ -11,7 +11,7 @@ import docker
 
 from opendevin import config
 from opendevin.logger import opendevin_logger as logger
-from opendevin.sandbox.sandbox import Sandbox, BackgroundCommand
+from opendevin.sandbox.sandbox import Sandbox, BackgroundCommand, ExecutionLanguage
 from opendevin.schema import ConfigType
 from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 
@@ -98,8 +98,20 @@ class DockerExecBox(Sandbox):
         bg_cmd = self.background_commands[id]
         return bg_cmd.read_logs()
 
-    def execute(self, cmd: str) -> Tuple[int, str]:
+    def _check_and_update_cmd(self, cmd: str, language: ExecutionLanguage):
+        if language == ExecutionLanguage.PYTHON:
+            logger.warning(
+                'Python execution will be implemented using `python -c`. '
+                'Please use `DockerSSHBox` for interactive (Jupyer notebook style) Python execution '
+                '(e.g., variables defined in previous turn will be available in the next turn).'
+            )
+            cmd = f'python -c "{cmd}"'
+        return cmd
+
+    def execute(self, cmd: str, language: ExecutionLanguage = ExecutionLanguage.BASH) -> Tuple[int, str]:
+        cmd = self._check_and_update_cmd(cmd, language)
         # TODO: each execute is not stateful! We need to keep track of the current working directory
+
         def run_command(container, command):
             return container.exec_run(command, workdir=SANDBOX_WORKSPACE_DIR)
 
@@ -120,10 +132,9 @@ class DockerExecBox(Sandbox):
                 return -1, f'Command: "{cmd}" timed out'
         return exit_code, logs.decode('utf-8')
 
-    def execute_python(self, code: str) -> str:
-        raise NotImplementedError('execute_python is not supported in DockerExecBox')
+    def execute_in_background(self, cmd: str, language: ExecutionLanguage = ExecutionLanguage.BASH) -> BackgroundCommand:
+        cmd = self._check_and_update_cmd(cmd, language)
 
-    def execute_in_background(self, cmd: str) -> BackgroundCommand:
         result = self.container.exec_run(
             self.get_exec_cmd(cmd), socket=True, workdir=SANDBOX_WORKSPACE_DIR
         )

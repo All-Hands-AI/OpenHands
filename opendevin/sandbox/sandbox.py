@@ -1,5 +1,6 @@
 import select
 import sys
+from enum import Enum
 from abc import ABC, abstractmethod
 from typing import Dict
 from typing import Tuple
@@ -124,19 +125,20 @@ class BackgroundCommand:
         return (logs + last_remains).decode('utf-8', errors='replace')
 
 
+class ExecutionLanguage(Enum):
+    BASH = 'bash'
+    PYTHON = 'python'  # 'python -c' OR interactive Python if supported (DockerSSHBox)
+
+
 class Sandbox(ABC):
     background_commands: Dict[int, BackgroundCommand] = {}
 
     @abstractmethod
-    def execute(self, cmd: str) -> Tuple[int, str]:
+    def execute(self, cmd: str, language: ExecutionLanguage = ExecutionLanguage.BASH) -> Tuple[int, str]:
         pass
 
     @abstractmethod
-    def execute_python(self, code: str) -> str:
-        pass
-
-    @abstractmethod
-    def execute_in_background(self, cmd: str):
+    def execute_in_background(self, cmd: str, language: ExecutionLanguage = ExecutionLanguage.BASH):
         pass
 
     @abstractmethod

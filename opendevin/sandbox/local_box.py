@@ -1,7 +1,8 @@
 import subprocess
 import atexit
 from typing import Tuple, Dict
-from opendevin.sandbox.sandbox import Sandbox, BackgroundCommand
+from opendevin.logger import opendevin_logger as logger
+from opendevin.sandbox.sandbox import Sandbox, BackgroundCommand, ExecutionLanguage
 from opendevin import config
 
 # ===============================================================================
@@ -27,7 +28,18 @@ class LocalBox(Sandbox):
         self.cur_background_id = 0
         atexit.register(self.cleanup)
 
-    def execute(self, cmd: str) -> Tuple[int, str]:
+    def _check_and_update_cmd(self, cmd: str, language: ExecutionLanguage):
+        if language == ExecutionLanguage.PYTHON:
+            logger.warning(
+                'Python execution will be implemented using `python -c`. '
+                'Please use `DockerSSHBox` for interactive (Jupyer notebook style) Python execution '
+                '(e.g., variables defined in previous turn will be available in the next turn).'
+            )
+            cmd = f'python -c "{cmd}"'
+        return cmd
+
+    def execute(self, cmd: str, language: ExecutionLanguage = ExecutionLanguage.BASH) -> Tuple[int, str]:
+        cmd = self._check_and_update_cmd(cmd, language)
         try:
             completed_process = subprocess.run(
                 cmd, shell=True, text=True, capture_output=True,
@@ -37,10 +49,8 @@ class LocalBox(Sandbox):
         except subprocess.TimeoutExpired:
             return -1, 'Command timed out'
 
-    def execute_python(self, code: str) -> str:
-        raise NotImplementedError('execute_python is not supported in LocalBox')
-
-    def execute_in_background(self, cmd: str) -> BackgroundCommand:
+    def execute_in_background(self, cmd: str, language: ExecutionLanguage = ExecutionLanguage.BASH) -> BackgroundCommand:
+        cmd = self._check_and_update_cmd(cmd, language)
         process = subprocess.Popen(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, cwd=config.get('WORKSPACE_BASE')
