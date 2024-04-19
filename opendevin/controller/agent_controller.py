@@ -1,5 +1,6 @@
 import asyncio
 import time
+import traceback
 from typing import Callable, List
 
 from litellm.exceptions import APIConnectionError
@@ -175,6 +176,7 @@ class AgentController:
         except Exception as e:
             observation = AgentErrorObservation(str(e))
             logger.error(e)
+            logger.debug(traceback.format_exc())
 
             if isinstance(e, APIConnectionError):
                 time.sleep(3)
