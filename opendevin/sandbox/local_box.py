@@ -37,9 +37,6 @@ class LocalBox(Sandbox):
         except subprocess.TimeoutExpired:
             return -1, 'Command timed out'
 
-    def execute_python(self, code: str) -> str:
-        raise NotImplementedError('execute_python is not supported in LocalBox')
-
     def execute_in_background(self, cmd: str) -> BackgroundCommand:
         process = subprocess.Popen(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,

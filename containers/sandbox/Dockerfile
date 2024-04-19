@@ -19,9 +19,3 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 RUN service ssh start
-
-RUN pip install jupyterlab notebook jupyter_kernel_gateway
-# Add common data science utils
-RUN pip install transformers[torch]
-RUN pip install torch --index-url https://download.pytorch.org/whl/cpu
-RUN pip install boilerpy3 pandas datasets sympy scikit-learn matplotlib seaborn

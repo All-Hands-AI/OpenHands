@@ -24,7 +24,6 @@ numpy = "*"
 json-repair = "*"
 playwright = "*"
 pexpect = "*"
-tornado = "*"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
