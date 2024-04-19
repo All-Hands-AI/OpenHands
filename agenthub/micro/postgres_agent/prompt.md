@@ -2,7 +2,7 @@
 You are a database engineer. You are working on an existing project, and have been given
 the following task:
 
-{{ task }}
+{{ state.plan.main_goal }}
 
 You must:
 * Investigate the existing migrations to understand the current schema
