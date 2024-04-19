@@ -130,7 +130,7 @@ What is your next thought or action? Again, you must reply with JSON, and only w
 """
 
 def get_hint(latest_action_id: str) -> str:
-    ''' Returns action type hint based on given action_id '''
+    """ Returns action type hint based on given action_id """
 
     hints = {
         '': 'You haven\'t taken any actions yet. Start by using `ls` to check out what files you\'re working with.',
@@ -177,7 +177,6 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
             ):
                 del observation_dict['extras']['screenshot']
             history_dicts.append(observation_dict)
-            
     history_str = json.dumps(history_dicts, indent=2)
     current_task = plan.get_current_task()
     if current_task is not None:
@@ -186,9 +185,7 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
             plan_status += "\nIf it's not achievable AND verifiable with a SINGLE action, you MUST break it down into subtasks NOW."
     else:
         plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
-
     hint = get_hint(latest_action.to_dict()['action'])
-
     logger.info('HINT:\n' + hint, extra={'msg_type': 'INFO'})
     return prompt % {
         'task': plan.main_goal,
