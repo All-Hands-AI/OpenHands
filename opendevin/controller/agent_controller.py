@@ -1,4 +1,5 @@
 import asyncio
+import time
 import traceback
 from typing import Callable, List
 
@@ -176,6 +177,8 @@ class AgentController:
             observation = AgentErrorObservation(str(e))
             logger.error(e)
             logger.debug(traceback.format_exc())
+            if isinstance(e, APIConnectionError):
+                time.sleep(3)
 
             # raise specific exceptions that need to be handled outside
             # note: we are using classes from openai rather than litellm because:
