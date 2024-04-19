@@ -75,7 +75,6 @@ jobs:
       run: |
         ls -la
         if [[ -s review-${{ github.event.pull_request.number }}.txt ]]; then
-          echo "file_content=$(<review-${{ github.event.pull_request.number }}.txt)" >> $GITHUB_ENV
           echo "non_empty=true" >> $GITHUB_OUTPUT
         fi
       shell: bash
