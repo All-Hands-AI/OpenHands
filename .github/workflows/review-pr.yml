@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   open-devin:
+    if: contains(github.event.pull_request.labels.*.name, 'dogfood-this')
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/opendevin/opendevin
@@ -17,24 +18,6 @@ jobs:
         - /var/run/docker.sock:/var/run/docker.sock
 
     steps:
-    - name: Check if 'dogfood-this' label is present
-      id: check-label
-      run: |
-        LABEL_FOUND="false"
-        for label in ${{ join(github.event.pull_request.labels.*.name, ' ') }}
-        do
-          if [[ "$label" == "dogfood-this" ]]; then
-            LABEL_FOUND="true"
-            break
-          fi
-        done
-        if [[ "$LABEL_FOUND" == "true" ]]; then
-          echo "Label 'dogfood-this' found."
-        else
-          echo "Label 'dogfood-this' not found."
-          exit 0
-        fi
-
     - name: install git, github cli
       run: |
         apt-get install -y git gh
