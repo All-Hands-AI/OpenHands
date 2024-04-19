@@ -69,12 +69,12 @@ interface FileExplorerProps {
 }
 
 function FileExplorer({ onFileClick }: FileExplorerProps) {
-  const [workspace, setWorkspace] = React.useState<WorkspaceFile[]>([]);
+  const [workspace, setWorkspace] = React.useState<WorkspaceFile>();
   const [isHidden, setIsHidden] = React.useState(false);
 
   const getWorkspaceData = async () => {
     const wsFile = await getWorkspace();
-    setWorkspace(removeEmptyNodes([wsFile]));
+    setWorkspace(removeEmptyNodes(wsFile));
   };
 
   React.useEffect(() => {
@@ -92,11 +92,13 @@ function FileExplorer({ onFileClick }: FileExplorerProps) {
     >
       <div className="flex p-2 items-center justify-between relative">
         <div style={{ display: isHidden ? "none" : "block" }}>
-          <ExplorerTree
-            tree={workspace}
-            onFileClick={onFileClick}
-            defaultOpen
-          />
+          {workspace && (
+            <ExplorerTree
+              root={workspace}
+              onFileClick={onFileClick}
+              defaultOpen
+            />
+          )}
         </div>
 
         <ExplorerActions

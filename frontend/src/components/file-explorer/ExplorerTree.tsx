@@ -3,27 +3,24 @@ import TreeNode from "./TreeNode";
 import { WorkspaceFile } from "../../services/fileService";
 
 interface ExplorerTreeProps {
-  tree: WorkspaceFile[];
+  root: WorkspaceFile;
   onFileClick: (path: string) => void;
   defaultOpen?: boolean;
 }
 
 function ExplorerTree({
-  tree,
+  root,
   onFileClick,
   defaultOpen = false,
 }: ExplorerTreeProps) {
   return (
     <div className="w-full overflow-x-auto h-full pt-[4px]">
-      {tree.map((branch, index) => (
-        <TreeNode
-          key={index}
-          node={branch}
-          path={branch.name}
-          onFileClick={onFileClick}
-          defaultOpen={defaultOpen}
-        />
-      ))}
+      <TreeNode
+        node={root}
+        path={root.name}
+        onFileClick={onFileClick}
+        defaultOpen={defaultOpen}
+      />
     </div>
   );
 }

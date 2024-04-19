@@ -1,13 +1,14 @@
 import { WorkspaceFile } from "../../services/fileService";
 
-export const removeEmptyNodes = (tree: WorkspaceFile[]): WorkspaceFile[] =>
-  tree.map((node) => {
-    if (node.children) {
-      const children = removeEmptyNodes(node.children);
-      return {
-        ...node,
-        children: children.length ? children : undefined,
-      };
-    }
-    return node;
-  });
+export const removeEmptyNodes = (root: WorkspaceFile): WorkspaceFile => {
+  if (root.children) {
+    const children = root.children
+      .map(removeEmptyNodes)
+      .filter((node) => node !== undefined);
+    return {
+      ...root,
+      children: children.length ? children : undefined,
+    };
+  }
+  return root;
+};
