@@ -51,3 +51,23 @@ especially Windows, this seems to fail.
 * Be sure to have the latest versions of WSL and Docker
 * Try [this reinstallation guide](https://github.com/OpenDevin/OpenDevin/issues/1156#issuecomment-2064549427)
 * Set `-e SANDBOX_TYPE=exec` to switch to the ExecBox docker container
+
+## Unable to connect to LLM
+https://github.com/OpenDevin/OpenDevin/issues/1208
+
+### Symptoms
+```
+  File "/app/.venv/lib/python3.12/site-packages/openai/_exceptions.py", line 81, in __init__
+    super().__init__(message, response.request, body=body)
+                              ^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'request'
+```
+
+### Details
+This usually happens with local LLM setups, when OpenDevin can't connect to the LLM server.
+See our guide for [local LLMs](./LocalLLMs.md) for more information.
+
+### Workarounds
+* Check your `LLM_BASE_URL`
+* Check that ollama is running OK
+* Make sure you're using `--add-host host.docker.internal=host-gateway` when running in docker
