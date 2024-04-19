@@ -11,6 +11,8 @@ You should then run the python script, and call the `finish` action with the ans
 {{ instructions.history_truncated }}
 {{ to_json(state.history[-10:]) }}
 
+If the last item in the history is an error, you should try to fix it.
+
 ## Available Actions
 {{ instructions.actions.write }}
 {{ instructions.actions.run }}
