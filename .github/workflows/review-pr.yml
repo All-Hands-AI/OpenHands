@@ -32,6 +32,7 @@ jobs:
           echo "Label 'dogfood-this' found."
         else
           echo "Label 'dogfood-this' not found."
+          exit 0
         fi
 
     - name: install git, github cli
