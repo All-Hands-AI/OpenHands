@@ -33,15 +33,9 @@ for dir in os.listdir(os.path.dirname(__file__) + '/micro'):
     with open(agentFile, 'r') as f:
         agent = yaml.safe_load(f)
 
-    class AnonMicroAgent(MicroAgent):
-        def __init__(self, llm):
-            super().__init__(llm)
-            super().initialize(agent, prompt)
+    anon_class = type(agent['name'], (MicroAgent,), {
+        'prompt': prompt,
+        'agentDefinition': agent,
+    })
 
-        def step(self, state):
-            return super().step(state)
-
-        def seach_memory(self, query):
-            return super().search_memory(query)
-
-    Agent.register(agent['name'], AnonMicroAgent)
+    Agent.register(agent['name'], anon_class)

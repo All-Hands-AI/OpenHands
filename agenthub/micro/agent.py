@@ -1,5 +1,5 @@
 import json
-from typing import List
+from typing import List, Dict
 
 from jinja2 import Environment, BaseLoader
 
@@ -42,18 +42,19 @@ def dumps(obj, **kwargs):
 
 
 class MicroAgent(Agent):
+    prompt = ''
+    agentDefinition: Dict = {}
+
     def __init__(self, llm: LLM):
         super().__init__(llm)
-
-    def initialize(self, agentDef, prompt):
-        if 'name' not in agentDef:
+        if 'name' not in self.agentDefinition:
             raise ValueError('Agent definition must contain a name')
-        self.name = agentDef['name']
-        self.description = agentDef['description'] if 'description' in agentDef else ''
-        self.inputs = agentDef['inputs'] if 'inputs' in agentDef else []
-        self.outputs = agentDef['outputs'] if 'outputs' in agentDef else []
-        self.examples = agentDef['examples'] if 'examples' in agentDef else []
-        self.prompt_template = Environment(loader=BaseLoader).from_string(prompt)
+        self.name = self.agentDefinition['name']
+        self.description = self.agentDefinition['description'] if 'description' in self.agentDefinition else ''
+        self.inputs = self.agentDefinition['inputs'] if 'inputs' in self.agentDefinition else []
+        self.outputs = self.agentDefinition['outputs'] if 'outputs' in self.agentDefinition else []
+        self.examples = self.agentDefinition['examples'] if 'examples' in self.agentDefinition else []
+        self.prompt_template = Environment(loader=BaseLoader).from_string(self.prompt)
 
     def step(self, state: State) -> Action:
         prompt = self.prompt_template.render(state=state, instructions=instructions, to_json=dumps)

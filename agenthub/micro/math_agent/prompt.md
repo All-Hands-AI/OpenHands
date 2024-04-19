@@ -17,4 +17,4 @@ You should then run the python script, and call the `finish` action with the ans
 {{ instructions.actions.finish }}
 
 ## Format
-{{ instructions.formats.action }}
+{{ instructions.format.action }}

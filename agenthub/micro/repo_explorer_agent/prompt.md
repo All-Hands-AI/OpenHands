@@ -18,4 +18,4 @@ Do NOT finish until you have a complete understanding of the codebase.
 {{ instructions.history }}
 
 ## Format
-{{ instructions.formats.action }}
+{{ instructions.format.action }}
