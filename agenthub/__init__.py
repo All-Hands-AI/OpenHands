@@ -36,8 +36,7 @@ for dir in os.listdir(os.path.dirname(__file__) + '/micro'):
     class AnonMicroAgent(MicroAgent):
         def __init__(self, llm):
             super().__init__(llm)
-            self.agent = agent
-            self.prompt = prompt
+            super().initialize(agent, prompt)
 
         def step(self, state):
             return super().step(state)

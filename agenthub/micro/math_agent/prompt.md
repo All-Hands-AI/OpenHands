@@ -9,7 +9,7 @@ You should then run the python script, and call the `finish` action with the ans
 
 ## History
 {{ instructions.history_truncated }}
-{{ history[-10:] | tojson }}
+{{ to_json(state.history[-10:]) }}
 
 ## Available Actions
 {{ instructions.actions.write }}
