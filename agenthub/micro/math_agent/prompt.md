@@ -8,7 +8,8 @@ You MUST do all your work in the `/scratch` directory. You must not modify any f
 You should then run the python script, and call the `finish` action with the answer as the argument.
 
 ## History
-{{ instructions.history }}
+{{ instructions.history_truncated }}
+{{ history[-10:] | tojson }}
 
 ## Available Actions
 {{ instructions.actions.write }}

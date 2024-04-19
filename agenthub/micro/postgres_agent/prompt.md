@@ -17,7 +17,8 @@ You may take any of the following actions:
 {{ instructions.actions.run }}
 
 ## History
-{{ instructions.history }}
+{{ instructions.history_truncated }}
+{{ history[-10:] | tojson }}
 
 ## Format
 {{ instructions.format.action }}
