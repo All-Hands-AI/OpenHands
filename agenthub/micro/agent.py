@@ -1,3 +1,4 @@
+import json
 from typing import List
 
 from jinja2 import Environment, BaseLoader
@@ -5,7 +6,18 @@ from jinja2 import Environment, BaseLoader
 from opendevin.agent import Agent
 from opendevin.llm.llm import LLM
 from opendevin.state import State
-from opendevin.action import Action
+from opendevin.action import Action, action_from_dict
+
+from .instructions import instructions
+
+
+def parse_response(response: str) -> Action:
+    json_start = response.find('{')
+    json_end = response.rfind('}') + 1
+    response = response[json_start:json_end]
+    action_dict = json.loads(response)
+    action = action_from_dict(action_dict)
+    return action
 
 
 class MicroAgent(Agent):
@@ -21,7 +33,7 @@ class MicroAgent(Agent):
         self.prompt_template = Environment(loader=BaseLoader).from_string(prompt)
 
     def step(self, state: State) -> Action:
-        prompt = self.prompt_template.render(state=state, instructions=all_instructions)
+        prompt = self.prompt_template.render(state=state, instructions=instructions)
         messages = [{'content': prompt, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)
         action_resp = resp['choices'][0]['message']['content']

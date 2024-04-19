@@ -1,6 +1,7 @@
+from typing import Dict
 import os
 
-instructions = {}
+instructions: Dict = {}
 
 base_dir = os.path.dirname(os.path.abspath(__file__)) + "/_instructions"
 print(base_dir)
