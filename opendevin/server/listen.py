@@ -3,7 +3,7 @@ import uuid
 from pathlib import Path
 
 import litellm
-from fastapi import Depends, FastAPI, HTTPException, Query, Response, WebSocket, status
+from fastapi import Depends, FastAPI, Response, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -117,30 +117,6 @@ async def del_messages(
 def refresh_files():
     structure = files.get_folder_structure(Path(str(config.get('WORKSPACE_BASE'))))
     return structure.to_dict()
-
-
-@app.get('/api/list-files')
-def list_files(
-    relpath: str = Query(None, description='Relative path from workspace base')
-):
-    """Refreshes and returns the files and directories from a specified subdirectory or the base directory if no subdirectory is specified, limited to one level deep."""
-    base_path = Path(config.get('WORKSPACE_BASE')).resolve()
-    full_path = (base_path / relpath).resolve() if relpath is not None else base_path
-
-    logger.debug(f'Listing files at {full_path}')
-
-    # Ensure path exists, is a directory,
-    # And is within the workspace base directory - to prevent directory traversal attacks
-    # https://owasp.org/www-community/attacks/Path_Traversal
-    if (
-        not full_path.exists()
-        or not full_path.is_dir()
-        or not str(full_path).startswith(str(base_path))
-    ):
-        raise HTTPException(status_code=400, detail='Invalid path provided.')
-
-    structure = files.get_single_level_folder_structure(base_path, full_path)
-    return {'files': structure}
 
 
 @app.get('/api/select-file')
