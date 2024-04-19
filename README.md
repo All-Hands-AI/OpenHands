@@ -121,7 +121,8 @@ After completing the MVP, the team will focus on research in various areas, incl
 
 ## 🚀 Get Started
 The easiest way to run OpenDevin is inside a Docker container.
-You can run:
+
+To start the app, run these commands, replacing `$(pwd)/workspace` with the path to the code you want OpenDevin to work with.
 ```bash
 # Your OpenAI API key, or any other LLM API key
 export LLM_API_KEY="sk-..."
@@ -135,11 +136,11 @@ docker run \
     -v $WORKSPACE_DIR:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
-    ghcr.io/opendevin/opendevin:main
+    ghcr.io/opendevin/opendevin:0.3.1
 ```
-Replace `$(pwd)/workspace` with the path to the code you want OpenDevin to work with.
+You'll find opendevin running at `http://localhost:3000`.
 
-You can find opendevin running at `http://localhost:3000`.
+If you want to use the (unstable!) bleeding edge, you can use `ghcr.io/opendevin/opendevin:main` as the image.
 
 See [Development.md](Development.md) for instructions on running OpenDevin without Docker.
 
