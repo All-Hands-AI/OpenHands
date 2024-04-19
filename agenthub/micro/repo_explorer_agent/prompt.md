@@ -8,9 +8,12 @@ of the codebase, including:
 * How the components fit together
 
 ## Available Actions
+{{ instructions.actions.run }}
 {{ instructions.actions.read }}
 {{ instructions.actions.think }}
 {{ instructions.actions.finish }}
+
+You should ONLY `run` commands that have no side-effects, like `ls` and `grep`.
 
 Do NOT finish until you have a complete understanding of the codebase.
 When you're done, put your summary into the output of the `finish` action.
