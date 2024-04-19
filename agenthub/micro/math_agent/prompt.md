@@ -1,7 +1,7 @@
 # Task
 You are a brilliant mathematician and programmer. You've been given the follwoing problem to solve:
 
-{{ task }}
+{{ state.plan.main_goal }}
 
 Please write a python script that solves this problem, and prints the answer to stdout.
 You should then run the python script, and call the `finish` action with the answer as the argument.
