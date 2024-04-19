@@ -41,11 +41,11 @@ function AgentStatusBar() {
   // - Agent is ready
   // - Agent is not available
   return (
-    <div className="flex items-center space-x-3 ml-6">
+    <div className="flex items-center">
       {initialized ? (
         <>
           <div
-            className={`w-3 h-3 rounded-full animate-pulse ${AgentStatusMap[curTaskState].indicator}`}
+            className={`w-3 h-3 mr-2 rounded-full animate-pulse ${AgentStatusMap[curTaskState].indicator}`}
           />
           <span className="text-sm text-stone-400">
             {AgentStatusMap[curTaskState].message}
@@ -53,7 +53,7 @@ function AgentStatusBar() {
         </>
       ) : (
         <>
-          <div className="w-3 h-3 bg-orange-800 rounded-full animate-pulse" />
+          <div className="w-3 h-3 mr-3 bg-orange-800 rounded-full animate-pulse" />
           <span className="text-sm text-stone-400">
             {t(I18nKey.CHAT_INTERFACE$INITIALZING_AGENT_LOADING_MESSAGE)}
           </span>
