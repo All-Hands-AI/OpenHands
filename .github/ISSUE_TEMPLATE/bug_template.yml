@@ -13,6 +13,7 @@ body:
       description: Please check if an issue already exists for the bug you encountered.
       options:
       - label: I have checked the troubleshooting document at https://github.com/OpenDevin/OpenDevin/blob/main/docs/Troubleshooting.md
+        required: true
       - label: I have checked the existing issues.
         required: true
 
