@@ -1,6 +1,5 @@
 from .micro.agent import MicroAgent
 from opendevin.agent import Agent
-from opendevin.llm.llm import LLM
 import os
 import yaml
 
@@ -18,20 +17,20 @@ __all__ = ['monologue_agent', 'codeact_agent',
            'planner_agent', 'SWE_agent']
 
 # list all dirs in ./micro
-for dir in os.listdir(os.path.dirname(__file__) + "/micro"):
-    base = os.path.dirname(__file__) + "/micro/" + dir
+for dir in os.listdir(os.path.dirname(__file__) + '/micro'):
+    base = os.path.dirname(__file__) + '/micro/' + dir
     if os.path.isfile(base):
         continue
-    if dir.startswith("_"):
+    if dir.startswith('_'):
         continue
-    promptFile = base + "/prompt.md"
-    agentFile = base + "/agent.yaml"
+    promptFile = base + '/prompt.md'
+    agentFile = base + '/agent.yaml'
     if not os.path.isfile(promptFile) or not os.path.isfile(agentFile):
         raise Exception(
-            f"Missing prompt or agent file in {base}. Please create them.")
-    with open(promptFile, "r") as f:
+            f'Missing prompt or agent file in {base}. Please create them.')
+    with open(promptFile, 'r') as f:
         prompt = f.read()
-    with open(agentFile, "r") as f:
+    with open(agentFile, 'r') as f:
         agent = yaml.safe_load(f)
 
     class AnonMicroAgent(MicroAgent):
@@ -46,4 +45,4 @@ for dir in os.listdir(os.path.dirname(__file__) + "/micro"):
         def seach_memory(self, query):
             return super().search_memory(query)
 
-    Agent.register(agent["name"], AnonMicroAgent)
+    Agent.register(agent['name'], AnonMicroAgent)
