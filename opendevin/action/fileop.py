@@ -49,8 +49,8 @@ class FileReadAction(ExecutableAction):
             return all_lines[begin:end]
 
     async def run(self, controller) -> FileReadObservation:
-        if isinstance(controller.command_manager.sandbox, E2BBox):
-            content = controller.command_manager.sandbox.filesystem.read(
+        if isinstance(controller.action_manager.sandbox, E2BBox):
+            content = controller.action_manager.sandbox.filesystem.read(
                 self.path)
             read_lines = self._read_lines(content.split('\n'))
             code_view = ''.join(read_lines)
@@ -91,12 +91,12 @@ class FileWriteAction(ExecutableAction):
     async def run(self, controller) -> FileWriteObservation:
         insert = self.content.split('\n')
 
-        if isinstance(controller.command_manager.sandbox, E2BBox):
-            files = controller.command_manager.sandbox.filesystem.list(self.path)
+        if isinstance(controller.action_manager.sandbox, E2BBox):
+            files = controller.action_manager.sandbox.filesystem.list(self.path)
             if self.path in files:
-                all_lines = controller.command_manager.sandbox.filesystem.read(self.path)
+                all_lines = controller.action_manager.sandbox.filesystem.read(self.path)
                 new_file = self._insert_lines(self.content.split('\n'), all_lines)
-                controller.command_manager.sandbox.filesystem.write(self.path, ''.join(new_file))
+                controller.action_manager.sandbox.filesystem.write(self.path, ''.join(new_file))
             else:
                 raise FileNotFoundError(f'File not found: {self.path}')
         else:
