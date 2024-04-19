@@ -156,7 +156,7 @@ The following environment variables might be necessary for some LLMs:
 * `LLM_API_KEY`
 * `LLM_BASE_URL`
 * `LLM_EMBEDDING_MODEL`
-* `LLM_DEPLOYMENT_NAME`
+* `LLM_EMBEDDING_DEPLOYMENT_NAME`
 * `LLM_API_VERSION`
 
 **Note on Alternative Models:**

@@ -167,8 +167,6 @@ setup-config-prompts:
 		elif [ "$$llm_embedding_model" = "azureopenai" ]; then \
 			read -p "Enter the Azure endpoint URL (will overwrite LLM_BASE_URL): " llm_base_url; \
 				echo "LLM_BASE_URL=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; \
-			read -p "Enter the Azure LLM Deployment Name: " llm_deployment_name; \
-				echo "LLM_DEPLOYMENT_NAME=\"$$llm_deployment_name\"" >> $(CONFIG_FILE).tmp; \
 			read -p "Enter the Azure LLM Embedding Deployment Name: " llm_embedding_deployment_name; \
 				echo "LLM_EMBEDDING_DEPLOYMENT_NAME=\"$$llm_embedding_deployment_name\"" >> $(CONFIG_FILE).tmp; \
 			read -p "Enter the Azure API Version: " llm_api_version; \

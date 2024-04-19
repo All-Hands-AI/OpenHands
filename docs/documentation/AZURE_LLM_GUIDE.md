@@ -11,7 +11,7 @@ When running the OpenDevin Docker image, you'll need to set the following enviro
 LLM_BASE_URL="<azure-api-base-url>"          # e.g. "https://openai-gpt-4-test-v-1.openai.azure.com/"
 LLM_API_KEY="<azure-api-key>"
 LLM_MODEL="azure/<your-gpt-deployment-name>"
-AZURE_API_VERSION = "<api-version>"          # e.g. "2024-02-15-preview"
+LLM_API_VERSION = "<api-version>"          # e.g. "2024-02-15-preview"
 ```
 
 # 2. Embeddings
