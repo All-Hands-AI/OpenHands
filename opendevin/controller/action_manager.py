@@ -48,7 +48,7 @@ class ActionManager:
         except Exception as e:
             observation = AgentErrorObservation(str(e))
             logger.error(e)
-            traceback.print_exc()
+            logger.debug(traceback.format_exc())
         return observation
 
     def run_command(self, command: str, background=False) -> CmdOutputObservation:
