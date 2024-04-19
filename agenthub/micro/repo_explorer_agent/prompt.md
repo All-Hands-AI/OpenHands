@@ -13,9 +13,11 @@ of the codebase, including:
 {{ instructions.actions.finish }}
 
 Do NOT finish until you have a complete understanding of the codebase.
+When you're done, put your summary into the output of the `finish` action.
 
 ## History
-{{ instructions.history }}
+{{ instructions.history_truncated }}
+{{ to_json(state.history[-10:]) }}
 
 ## Format
 {{ instructions.format.action }}
