@@ -21,5 +21,5 @@ class PluginMixin:
         for requirement in requirements:
             self.plugins[requirement.name] = requirement.bash_script_path
             # Execute the bash script
-            logger.info(f"Initalizing plugin {requirement.name} by executing [{requirement.bash_script_path}]")
+            logger.info(f'Initalizing plugin {requirement.name} by executing [{requirement.bash_script_path}]')
             self.execute(requirement.bash_script_path)
