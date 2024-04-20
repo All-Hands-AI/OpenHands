@@ -6,12 +6,12 @@ import {
   fetchAgents,
   fetchModels,
   getCurrentSettings,
-} from "../services/settingsService";
+} from "../../services/settingsService";
 import SettingsForm from "./SettingsForm";
-import { AvailableLanguages } from "../i18n";
+import { AvailableLanguages } from "../../i18n";
 
-vi.mock("../services/settingsService", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../services/settingsService")>()),
+vi.mock("../../services/settingsService", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../services/settingsService")>()),
   getCurrentSettings: vi.fn().mockReturnValue({}),
   fetchModels: vi
     .fn()
@@ -63,38 +63,6 @@ describe("SettingsForm", () => {
 
     expect(modelInput).toHaveValue("model2");
     expect(agentInput).toHaveValue("agent2");
-  });
-
-  it("should open a dropdown with the available models", async () => {
-    await act(async () => render(<SettingsForm />));
-
-    const modelInput = screen.getByRole("combobox", { name: "model" });
-
-    expect(screen.queryByText("model2")).not.toBeInTheDocument();
-    expect(screen.queryByText("model3")).not.toBeInTheDocument();
-
-    act(() => {
-      userEvent.click(modelInput);
-    });
-
-    expect(screen.getByText("model2")).toBeInTheDocument();
-    expect(screen.getByText("model3")).toBeInTheDocument();
-  });
-
-  it("should open a dropdown with the available agents", async () => {
-    await act(async () => render(<SettingsForm />));
-
-    const input = screen.getByRole("combobox", { name: "agent" });
-
-    expect(screen.queryByText("agent2")).not.toBeInTheDocument();
-    expect(screen.queryByText("agent3")).not.toBeInTheDocument();
-
-    act(() => {
-      userEvent.click(input);
-    });
-
-    expect(screen.getByText("agent2")).toBeInTheDocument();
-    expect(screen.getByText("agent3")).toBeInTheDocument();
   });
 
   it("should display the language selector", async () => {

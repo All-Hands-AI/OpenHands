@@ -1,16 +1,12 @@
 import React from "react";
-import {
-  Autocomplete,
-  AutocompleteItem,
-  Select,
-  SelectItem,
-} from "@nextui-org/react";
+import { Select, SelectItem } from "@nextui-org/react";
 import {
   fetchAgents,
   fetchModels,
   getCurrentSettings,
-} from "../services/settingsService";
-import { AvailableLanguages } from "../i18n";
+} from "../../services/settingsService";
+import { AvailableLanguages } from "../../i18n";
+import { AutocompleteCombobox } from "./AutocompleteCombobox";
 
 type Settings = {
   LLM_MODEL: string;
@@ -46,26 +42,18 @@ const SettingsForm: React.FC<SettingsFormProps> = () => {
   return (
     <div>
       {models.length > 0 && (
-        <Autocomplete
-          aria-label="model"
-          defaultItems={models.map((model) => ({ value: model, label: model }))}
-          defaultSelectedKey={currentSettings.LLM_MODEL || models[0]}
-        >
-          {(model) => (
-            <AutocompleteItem key={model.value}>{model.label}</AutocompleteItem>
-          )}
-        </Autocomplete>
+        <AutocompleteCombobox
+          ariaLabel="model"
+          items={models.map((model) => ({ value: model, label: model }))}
+          defaultKey={currentSettings.LLM_MODEL || models[0]}
+        />
       )}
       {agents.length > 0 && (
-        <Autocomplete
-          aria-label="agent"
-          defaultItems={agents.map((agent) => ({ value: agent, label: agent }))}
-          defaultSelectedKey={currentSettings.AGENT || agents[0]}
-        >
-          {(agent) => (
-            <AutocompleteItem key={agent.value}>{agent.label}</AutocompleteItem>
-          )}
-        </Autocomplete>
+        <AutocompleteCombobox
+          ariaLabel="agent"
+          items={agents.map((agent) => ({ value: agent, label: agent }))}
+          defaultKey={currentSettings.AGENT || agents[0]}
+        />
       )}
       <Select
         aria-label="language"
