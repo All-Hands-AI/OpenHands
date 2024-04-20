@@ -128,3 +128,6 @@ def get(key: str, required: bool = False):
     if not value and required:
         raise KeyError(f"Please set '{key}' in `config.toml` or `.env`.")
     return value
+
+
+LIB_ROOT = os.path.dirname(os.path.abspath(__file__))
