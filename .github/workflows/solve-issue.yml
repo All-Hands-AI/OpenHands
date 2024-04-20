@@ -10,8 +10,8 @@ permissions:
   issues: write
 
 jobs:
-  open-devin:
-    if: github.event.label.name == 'dogfood-this'
+  dogfood:
+    if: github.event.label.name == 'solve-this'
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/opendevin/opendevin
@@ -43,7 +43,7 @@ jobs:
         LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         SANDBOX_TYPE: exec
       run: |
-        python ./opendevin/main.py -d "./" -i 50 -f task.txt -d $GITHUB_WORKSPACE
+        python ./opendevin/main.py -i 50 -f task.txt -d $GITHUB_WORKSPACE
         rm task.txt
 
     - name: Setup Git, Create Branch, and Commit Changes
