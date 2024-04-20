@@ -10,8 +10,8 @@ permissions:
   issues: write
 
 jobs:
-  open-devin:
-    if: github.event.label.name == 'dogfood-this'
+  dogfood:
+    if: github.event.label.name == 'solve-this'
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/opendevin/opendevin

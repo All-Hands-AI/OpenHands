@@ -9,8 +9,8 @@ permissions:
   pull-requests: write
 
 jobs:
-  open-devin:
-    if: contains(github.event.pull_request.labels.*.name, 'dogfood-this')
+  dogfood:
+    if: contains(github.event.pull_request.labels.*.name, 'review-this')
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/opendevin/opendevin
