@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Spinner } from "@nextui-org/react";
-import BaseModal from "../BaseModal";
+import BaseModal from "../base-modal/BaseModal";
 import SettingsForm from "./SettingsForm";
 import {
   fetchAgents,

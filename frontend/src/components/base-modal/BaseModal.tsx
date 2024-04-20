@@ -1,19 +1,13 @@
 import React from "react";
 import {
-  Button,
   Modal,
   ModalBody,
   ModalContent,
   ModalFooter,
   ModalHeader,
 } from "@nextui-org/react";
-
-interface Action {
-  action: () => void;
-  label: string;
-  className?: string;
-  closeAfterAction?: boolean;
-}
+import { Action, FooterContent } from "./FooterContent";
+import { HeaderContent } from "./HeaderContent";
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -45,31 +39,14 @@ const BaseModal: React.FC<BaseModalProps> = ({
       {(closeModal) => (
         <>
           <ModalHeader className="flex flex-col p-0">
-            <h3>{title}</h3>
-            {subtitle && (
-              <span className="text-neutral-400 text-sm font-light">
-                {subtitle}
-              </span>
-            )}
+            <HeaderContent title={title} subtitle={subtitle} />
           </ModalHeader>
 
           <ModalBody className="px-0 py-[20px]">{children}</ModalBody>
 
           {actions && actions.length > 0 && (
             <ModalFooter className="flex-col flex justify-start p-0">
-              {actions.map(({ action, label, className, closeAfterAction }) => (
-                <Button
-                  key={label}
-                  type="button"
-                  onClick={() => {
-                    action();
-                    if (closeAfterAction) closeModal();
-                  }}
-                  className={className}
-                >
-                  {label}
-                </Button>
-              ))}
+              <FooterContent actions={actions} closeModal={closeModal} />
             </ModalFooter>
           )}
         </>

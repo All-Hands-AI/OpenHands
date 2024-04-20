@@ -21,22 +21,18 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
   onLanguageChange,
 }) => (
   <>
-    {models.length > 0 && (
-      <AutocompleteCombobox
-        ariaLabel="model"
-        items={models.map((model) => ({ value: model, label: model }))}
-        defaultKey={settings.LLM_MODEL || models[0]}
-        onChange={onModelChange}
-      />
-    )}
-    {agents.length > 0 && (
-      <AutocompleteCombobox
-        ariaLabel="agent"
-        items={agents.map((agent) => ({ value: agent, label: agent }))}
-        defaultKey={settings.AGENT || agents[0]}
-        onChange={onAgentChange}
-      />
-    )}
+    <AutocompleteCombobox
+      ariaLabel="model"
+      items={models.map((model) => ({ value: model, label: model }))}
+      defaultKey={settings.LLM_MODEL || models[0]}
+      onChange={onModelChange}
+    />
+    <AutocompleteCombobox
+      ariaLabel="agent"
+      items={agents.map((agent) => ({ value: agent, label: agent }))}
+      defaultKey={settings.AGENT || agents[0]}
+      onChange={onAgentChange}
+    />
     <AutocompleteCombobox
       ariaLabel="language"
       items={AvailableLanguages}
