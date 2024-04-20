@@ -3,6 +3,8 @@
 Ensure that you have the Ollama server up and running.
 For detailed startup instructions, refer to the [here](https://github.com/ollama/ollama)
 
+This guide assumes you've started ollama with `ollama serve`. If you're running ollama differently (e.g. inside docker), the instructions might need to be modified.
+
 ## 1. Pull Models
 
 Ollama model names can be found [here](https://ollama.com/library). For a small example, you can use
