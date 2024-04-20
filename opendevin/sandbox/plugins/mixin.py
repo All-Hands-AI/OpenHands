@@ -27,3 +27,8 @@ class PluginMixin:
             if exit_code != 0:
                 raise RuntimeError(f'Failed to initialize plugin {requirement.name} with exit code {exit_code} and output {output}')
             logger.info(f'Plugin {requirement.name} initialized successfully\n:{output}')
+
+        exit_code, output = self.execute('source ~/.bashrc')
+        if exit_code != 0:
+            raise RuntimeError(f'Failed to source ~/.bashrc with exit code {exit_code} and output {output}')
+        logger.info('Sourced ~/.bashrc successfully')

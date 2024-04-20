@@ -1,12 +1,12 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 pip install jupyterlab notebook jupyter_kernel_gateway
 
 # ADD /opendevin/plugins to PATH to make `jupyter_cli` available
 echo 'export PATH=$PATH:/opendevin/plugins/jupyter' >> ~/.bashrc
-export PATH=$PATH:/opendevin/plugins/jupyter
+export PATH=/opendevin/plugins/jupyter:$PATH
 
 # if user name is `opendevin`, add '/home/opendevin/.local/bin' to PATH
 if [ "$USER" = "opendevin" ]; then
