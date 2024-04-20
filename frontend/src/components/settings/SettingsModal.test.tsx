@@ -36,13 +36,19 @@ describe("SettingsModal", () => {
     });
   });
 
+  it.todo(
+    "should display a loading spinner when fetching the models and agents",
+  );
+
   it("should close the modal when the cancel button is clicked", async () => {
     const onOpenChange = vi.fn();
     await act(async () =>
       render(<SettingsModal isOpen onOpenChange={onOpenChange} />),
     );
 
-    const cancelButton = screen.getByRole("button", { name: /cancel/i });
+    const cancelButton = screen.getByRole("button", {
+      name: /MODAL_CLOSE_BUTTON_LABEL/i, // i18n key
+    });
 
     act(() => {
       userEvent.click(cancelButton);

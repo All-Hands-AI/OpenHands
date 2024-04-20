@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { Spinner } from "@nextui-org/react";
 import BaseModal from "../BaseModal";
 import SettingsForm from "./SettingsForm";
 import {
@@ -24,10 +25,18 @@ const SettingsModal: React.FC<SettingsProps> = ({ isOpen, onOpenChange }) => {
   const [settings, setSettings] =
     React.useState<Partial<Settings>>(currentSettings);
 
+  const [loading, setLoading] = React.useState(true);
+
   React.useEffect(() => {
     (async () => {
-      setModels(await fetchModels());
-      setAgents(await fetchAgents());
+      try {
+        setModels(await fetchModels());
+        setAgents(await fetchAgents());
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -68,14 +77,17 @@ const SettingsModal: React.FC<SettingsProps> = ({ isOpen, onOpenChange }) => {
         },
       ]}
     >
-      <SettingsForm
-        settings={settings}
-        models={models}
-        agents={agents}
-        onModelChange={handleModelChange}
-        onAgentChange={handleAgentChange}
-        onLanguageChange={handleLanguageChange}
-      />
+      {loading && <Spinner />}
+      {!loading && (
+        <SettingsForm
+          settings={settings}
+          models={models}
+          agents={agents}
+          onModelChange={handleModelChange}
+          onAgentChange={handleAgentChange}
+          onLanguageChange={handleLanguageChange}
+        />
+      )}
     </BaseModal>
   );
 };
