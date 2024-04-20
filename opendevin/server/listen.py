@@ -38,17 +38,15 @@ async def websocket_endpoint(websocket: WebSocket):
         logger.error('Failed to decode token')
         return
     session_manager.add_session(sid, websocket)
-    # TODO: actually the agent_manager is created for each websocket connection, even if the session id is the same,
-    # we need to manage the agent in memory for reconnecting the same session id to the same agent
     agent_manager.register_agent(sid)
     await session_manager.loop_recv(sid, agent_manager.dispatch)
 
 
 @app.get('/api/litellm-models')
 async def get_litellm_models():
-    '''
+    """
     Get all models supported by LiteLLM.
-    '''
+    """
     return list(set(litellm.model_list + list(litellm.model_cost.keys())))
 
 
