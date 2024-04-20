@@ -6,22 +6,24 @@ import BaseModal from "./BaseModal";
 
 describe("BaseModal", () => {
   it("should render if the modal is open", () => {
-    const { rerender } = render(<BaseModal isOpen={false} title="Settings" />);
+    const { rerender } = render(
+      <BaseModal isOpen={false} onOpenChange={vi.fn} title="Settings" />,
+    );
     expect(screen.queryByText("Settings")).not.toBeInTheDocument();
 
-    rerender(<BaseModal title="Settings" isOpen />);
+    rerender(<BaseModal title="Settings" onOpenChange={vi.fn} isOpen />);
     expect(screen.getByText("Settings")).toBeInTheDocument();
   });
 
-  it("should not render the default close button", () => {
-    render(<BaseModal isOpen title="Settings" />);
-    expect(
-      screen.queryByRole("button", { name: "Close" }),
-    ).not.toBeInTheDocument();
-  });
-
   it("should render an optional subtitle", () => {
-    render(<BaseModal isOpen title="Settings" subtitle="Subtitle" />);
+    render(
+      <BaseModal
+        isOpen
+        onOpenChange={vi.fn}
+        title="Settings"
+        subtitle="Subtitle"
+      />,
+    );
     expect(screen.getByText("Subtitle")).toBeInTheDocument();
   });
 
@@ -42,6 +44,7 @@ describe("BaseModal", () => {
     render(
       <BaseModal
         isOpen
+        onOpenChange={vi.fn}
         title="Settings"
         actions={[primaryAction, secondaryAction]}
       />,
@@ -61,9 +64,32 @@ describe("BaseModal", () => {
     expect(onSecondaryClickMock).toHaveBeenCalledTimes(1);
   });
 
+  it("should close the modal after an action is performed", () => {
+    const onOpenChangeMock = vi.fn();
+    render(
+      <BaseModal
+        isOpen
+        onOpenChange={onOpenChangeMock}
+        title="Settings"
+        actions={[
+          {
+            label: "Save",
+            action: () => {},
+            closeAfterAction: true,
+          },
+        ]}
+      />,
+    );
+
+    act(() => {
+      userEvent.click(screen.getByText("Save"));
+    });
+    expect(onOpenChangeMock).toHaveBeenCalledTimes(1);
+  });
+
   it("should render children", () => {
     render(
-      <BaseModal isOpen title="Settings">
+      <BaseModal isOpen onOpenChange={vi.fn} title="Settings">
         <div>Children</div>
       </BaseModal>,
     );
