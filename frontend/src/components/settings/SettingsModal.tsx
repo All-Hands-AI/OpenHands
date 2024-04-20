@@ -14,10 +14,12 @@ interface SettingsProps {
 }
 
 const SettingsModal: React.FC<SettingsProps> = ({ isOpen, onOpenChange }) => {
+  const currentSettings = React.useMemo(() => getCurrentSettings(), []);
+
   const [models, setModels] = React.useState<string[]>([]);
   const [agents, setAgents] = React.useState<string[]>([]);
   const [settings, setSettings] =
-    React.useState<Partial<Settings>>(getCurrentSettings());
+    React.useState<Partial<Settings>>(currentSettings);
 
   React.useEffect(() => {
     (async () => {
@@ -55,7 +57,9 @@ const SettingsModal: React.FC<SettingsProps> = ({ isOpen, onOpenChange }) => {
         },
         {
           label: "Cancel",
-          action: () => {},
+          action: () => {
+            setSettings(currentSettings);
+          },
           closeAfterAction: true,
           className: "bg-neutral-500 rounded-small",
         },

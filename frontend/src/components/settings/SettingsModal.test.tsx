@@ -1,10 +1,12 @@
 import { waitFor, screen, act, render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
+import { Mock } from "vitest";
 import {
   fetchModels,
   fetchAgents,
   saveSettings,
+  getCurrentSettings,
 } from "../../services/settingsService";
 import SettingsModal from "./SettingsModal";
 
@@ -49,24 +51,80 @@ describe("SettingsModal", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it.todo("should reset state when the cancel button is clicked");
-
   it("should call saveSettings (and close) with the new values", async () => {
     const onOpenChangeMock = vi.fn();
     await act(async () =>
       render(<SettingsModal isOpen onOpenChange={onOpenChangeMock} />),
     );
 
-    // due to the way the custom combobox is setup with nextui, the save button after selecting a value is "covered" by the dropdown
-    // so we are directly checking that saveSettings executes, without testing the actual selection of values
-
     const saveButton = screen.getByRole("button", { name: /save/i });
+
+    const modelInput = screen.getByRole("combobox", { name: "model" });
+
+    act(() => {
+      userEvent.click(modelInput);
+    });
+
+    const model3 = screen.getByText("model3");
+
+    act(() => {
+      userEvent.click(model3);
+    });
 
     act(() => {
       userEvent.click(saveButton);
     });
 
-    expect(saveSettings).toHaveBeenCalledWith({});
+    expect(saveSettings).toHaveBeenCalledWith({
+      LLM_MODEL: "model3",
+    });
     expect(onOpenChangeMock).toHaveBeenCalledWith(false);
+  });
+
+  // This test does not seem to rerender the component correctly
+  // Therefore, we cannot test the reset of the state
+  it.skip("should reset state when the cancel button is clicked", async () => {
+    (getCurrentSettings as Mock).mockReturnValue({
+      LLM_MODEL: "model1",
+      AGENT: "agent1",
+      LANGUAGE: "English",
+    });
+
+    const onOpenChange = vi.fn();
+    const { rerender } = render(
+      <SettingsModal isOpen onOpenChange={onOpenChange} />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("combobox", { name: "model" })).toHaveValue(
+        "model1",
+      );
+    });
+
+    const cancelButton = screen.getByRole("button", { name: /cancel/i });
+
+    const modelInput = screen.getByRole("combobox", { name: "model" });
+    act(() => {
+      userEvent.click(modelInput);
+    });
+
+    const model3 = screen.getByText("model3");
+    act(() => {
+      userEvent.click(model3);
+    });
+
+    expect(modelInput).toHaveValue("model3");
+
+    act(() => {
+      userEvent.click(cancelButton);
+    });
+
+    rerender(<SettingsModal isOpen onOpenChange={onOpenChange} />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("combobox", { name: "model" })).toHaveValue(
+        "model1",
+      );
+    });
   });
 });
