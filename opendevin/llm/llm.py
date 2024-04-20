@@ -60,13 +60,13 @@ class LLM:
 
         completion_unwrapped = self._completion
 
-        def rate_limited_attempt(retry_state):
+        def attempt_on_error(retry_state):
             logger.error(f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize these settings in the configuration.', exc_info=False)
             return True
 
         @retry(reraise=True,
                stop=stop_after_attempt(num_retries),
-               wait=wait_random_exponential(min=min_wait, max=max_wait), retry=retry_if_exception_type((RateLimitError, APIConnectionError, ServiceUnavailableError)), after=rate_limited_attempt)
+               wait=wait_random_exponential(min=min_wait, max=max_wait), retry=retry_if_exception_type((RateLimitError, APIConnectionError, ServiceUnavailableError)), after=attempt_on_error)
         def wrapper(*args, **kwargs):
             if 'messages' in kwargs:
                 messages = kwargs['messages']

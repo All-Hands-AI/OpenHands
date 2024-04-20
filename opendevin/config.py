@@ -46,6 +46,7 @@ if os.path.exists('config.toml'):
 
 
 def int_value(value, default, config_key):
+    # FIXME use a library
     try:
         return int(value)
     except ValueError:
