@@ -5,6 +5,9 @@ import toml
 from dotenv import load_dotenv
 
 from opendevin.schema import ConfigType
+import logging
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -41,6 +44,15 @@ if os.path.exists('config.toml'):
     with open('config.toml', 'rb') as f:
         config_str = f.read().decode('utf-8')
 
+
+def int_value(value, default, config_key):
+    try:
+        return int(value)
+    except ValueError:
+        logger.warning(f'Invalid value for {config_key}: {value} not applied. Using default value {default}')
+        return default
+
+
 tomlConfig = toml.loads(config_str)
 config = DEFAULT_CONFIG.copy()
 for k, v in config.items():
@@ -48,6 +60,8 @@ for k, v in config.items():
         config[k] = os.environ[k]
     elif k in tomlConfig:
         config[k] = tomlConfig[k]
+    if k in [ConfigType.LLM_NUM_RETRIES, ConfigType.LLM_MIN_WAIT, ConfigType.LLM_MAX_WAIT]:
+        config[k] = int_value(config[k], v, config_key=k)
 
 
 def parse_arguments():

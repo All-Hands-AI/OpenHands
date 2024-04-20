@@ -5,7 +5,9 @@ from litellm.exceptions import APIConnectionError, RateLimitError, ServiceUnavai
 from functools import partial
 
 from opendevin import config
-from opendevin.logger import llm_prompt_logger, llm_response_logger, opendevin_logger
+from opendevin.logger import llm_prompt_logger, llm_response_logger
+from opendevin.logger import opendevin_logger as logger
+
 
 DEFAULT_API_KEY = config.get('LLM_API_KEY')
 DEFAULT_BASE_URL = config.get('LLM_BASE_URL')
@@ -47,7 +49,7 @@ class LLM:
             api_version (str): The version of the API to use.
             completion (function): A decorator for the litellm completion function.
         """
-        opendevin_logger.info(f'Initializing LLM with model: {model}')
+        logger.info(f'Initializing LLM with model: {model}')
         self.model_name = model
         self.api_key = api_key
         self.base_url = base_url
@@ -59,7 +61,7 @@ class LLM:
         completion_unwrapped = self._completion
 
         def rate_limited_attempt(retry_state):
-            opendevin_logger.info(f'{retry_state.outcome.exception}. Attempt #{retry_state.attempt_number} | You can customize these settings in the configuration.')
+            logger.error(f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize these settings in the configuration.', exc_info=False)
             return True
 
         @retry(reraise=True,
