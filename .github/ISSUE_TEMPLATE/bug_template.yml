@@ -38,7 +38,7 @@ body:
     id: config
     attributes:
       label: Installation and Configuration
-      description: Please provide the command you ran to start OpenDevin, and any configuration
+      description: Please provide any commands you ran and any configuration (redacting API keys)
       render: bash
     validations:
       required: true
