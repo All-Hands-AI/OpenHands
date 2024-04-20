@@ -49,7 +49,7 @@ for k, v in config.items():
         config[k] = tomlConfig[k]
 
 
-def parse_arguments():
+def get_parser():
     parser = argparse.ArgumentParser(
         description='Run an agent with a specific task')
     parser.add_argument(
@@ -95,6 +95,11 @@ def parse_arguments():
         type=int,
         help='The maximum number of characters to send to and receive from LLM per task',
     )
+    return parser
+
+
+def parse_arguments():
+    parser = get_parser()
     args, _ = parser.parse_known_args()
     if args.directory:
         config[ConfigType.WORKSPACE_BASE] = os.path.abspath(args.directory)
