@@ -1,10 +1,16 @@
 import React from "react";
-import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
+import {
+  Autocomplete,
+  AutocompleteItem,
+  Select,
+  SelectItem,
+} from "@nextui-org/react";
 import {
   fetchAgents,
   fetchModels,
   getCurrentSettings,
 } from "../services/settingsService";
+import { AvailableLanguages } from "../i18n";
 
 type Settings = {
   LLM_MODEL: string;
@@ -61,6 +67,16 @@ const SettingsForm: React.FC<SettingsFormProps> = () => {
           )}
         </Autocomplete>
       )}
+      <Select
+        aria-label="language"
+        defaultSelectedKeys={[currentSettings.LANGUAGE || "en"]}
+      >
+        {AvailableLanguages.map((language) => (
+          <SelectItem key={language.value} value={language.value}>
+            {language.label}
+          </SelectItem>
+        ))}
+      </Select>
     </div>
   );
 };

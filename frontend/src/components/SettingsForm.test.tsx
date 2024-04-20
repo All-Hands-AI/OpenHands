@@ -1,5 +1,5 @@
 import React from "react";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import { Mock } from "vitest";
 import userEvent from "@testing-library/user-event";
 import {
@@ -8,6 +8,7 @@ import {
   getCurrentSettings,
 } from "../services/settingsService";
 import SettingsForm from "./SettingsForm";
+import { AvailableLanguages } from "../i18n";
 
 vi.mock("../services/settingsService", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../services/settingsService")>()),
@@ -107,5 +108,21 @@ describe("SettingsForm", () => {
 
     expect(screen.getByText("agent2")).toBeInTheDocument();
     expect(screen.getByText("agent3")).toBeInTheDocument();
+  });
+
+  it("should display the language selector", async () => {
+    await act(async () => render(<SettingsForm />));
+
+    const languageInput = screen.getByRole("button", { name: /language/i });
+
+    expect(languageInput).toBeInTheDocument();
+    within(languageInput).getByText(/english/i);
+
+    act(() => {
+      userEvent.click(languageInput);
+    });
+
+    const options = screen.getAllByRole("option");
+    expect(options).toHaveLength(AvailableLanguages.length);
   });
 });
