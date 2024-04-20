@@ -131,3 +131,5 @@ def get(key: str, required: bool = False):
 
 
 LIB_ROOT = os.path.dirname(os.path.abspath(__file__))
+CACHE_DIR = os.path.join(LIB_ROOT, '.cache')
+os.makedirs(CACHE_DIR, exist_ok=True)
