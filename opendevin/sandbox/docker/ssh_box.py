@@ -380,7 +380,7 @@ if __name__ == '__main__':
     ssh_box.init_plugins([JupyterRequirement()])
 
     bg_cmd = ssh_box.execute_in_background(
-        "while true; do echo 'dot ' && sleep 1; done"
+        "while true; do echo 'dot ' && sleep 10; done"
     )
 
     sys.stdout.flush()
