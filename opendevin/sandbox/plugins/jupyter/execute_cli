@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Read the Python code from STDIN
+code=$(cat)
+
+# Set the default kernel ID
+kernel_id=default
+
+# Send a POST request to the REST server
+response=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"kernel_id\": \"$kernel_id\", \"code\": \"$code\"}" http://localhost:$JUPYTER_EXEC_SERVER_PORT/execute)
+
+# Print the response
+echo "$response"
