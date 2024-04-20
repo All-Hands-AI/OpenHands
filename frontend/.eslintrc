@@ -43,8 +43,9 @@
           "required": {
               "some": [ "nesting", "id" ]
           }
-        }],        
-        "react/no-array-index-key": "off"
+        }],
+        "react/no-array-index-key": "off",
+        "react/function-component-definition": "off"
       },"parserOptions": {
         "project": ["**/tsconfig.json"]
       }
