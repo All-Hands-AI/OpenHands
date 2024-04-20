@@ -20,7 +20,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
   onAgentChange,
   onLanguageChange,
 }) => (
-  <div>
+  <>
     {models.length > 0 && (
       <AutocompleteCombobox
         ariaLabel="model"
@@ -43,7 +43,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
       defaultKey={settings.LANGUAGE || "en"}
       onChange={onLanguageChange}
     />
-  </div>
+  </>
 );
 
 export default SettingsForm;

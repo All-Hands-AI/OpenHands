@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import BaseModal from "../BaseModal";
 import SettingsForm from "./SettingsForm";
 import {
@@ -7,6 +8,7 @@ import {
   getCurrentSettings,
   saveSettings,
 } from "../../services/settingsService";
+import { I18nKey } from "../../i18n/declaration";
 
 interface SettingsProps {
   isOpen: boolean;
@@ -14,6 +16,7 @@ interface SettingsProps {
 }
 
 const SettingsModal: React.FC<SettingsProps> = ({ isOpen, onOpenChange }) => {
+  const { t } = useTranslation();
   const currentSettings = React.useMemo(() => getCurrentSettings(), []);
 
   const [models, setModels] = React.useState<string[]>([]);
@@ -44,11 +47,11 @@ const SettingsModal: React.FC<SettingsProps> = ({ isOpen, onOpenChange }) => {
     <BaseModal
       isOpen={isOpen}
       onOpenChange={onOpenChange}
-      title="Configuration"
-      subtitle="Adjust settings to your liking"
+      title={t(I18nKey.CONFIGURATION$MODAL_TITLE)}
+      subtitle={t(I18nKey.CONFIGURATION$MODAL_SUB_TITLE)}
       actions={[
         {
-          label: "Save",
+          label: t(I18nKey.CONFIGURATION$MODAL_SAVE_BUTTON_LABEL),
           action: () => {
             saveSettings(settings);
           },
@@ -56,9 +59,9 @@ const SettingsModal: React.FC<SettingsProps> = ({ isOpen, onOpenChange }) => {
           className: "bg-primary rounded-small",
         },
         {
-          label: "Cancel",
+          label: t(I18nKey.CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL),
           action: () => {
-            setSettings(currentSettings);
+            setSettings(currentSettings); // reset settings from any changes
           },
           closeAfterAction: true,
           className: "bg-neutral-500 rounded-small",

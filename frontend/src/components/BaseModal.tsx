@@ -42,7 +42,7 @@ const BaseModal: React.FC<BaseModalProps> = ({
     className="bg-neutral-900 rounded-large"
   >
     <ModalContent className="max-w-[24rem] p-[40px]">
-      {(onClose) => (
+      {(closeModal) => (
         <>
           <ModalHeader className="flex flex-col p-0">
             <h3>{title}</h3>
@@ -63,7 +63,7 @@ const BaseModal: React.FC<BaseModalProps> = ({
                   type="button"
                   onClick={() => {
                     action();
-                    if (closeAfterAction) onClose();
+                    if (closeAfterAction) closeModal();
                   }}
                   className={className}
                 >

@@ -13,7 +13,7 @@ import { fetchMsgTotal } from "./services/session";
 import { initializeAgent } from "./services/settingsService";
 import Socket from "./services/socket";
 import { ResFetchMsgTotal } from "./types/ResponseType";
-import Settings from "./components/settings/SettingsModal";
+import SettingsModal from "./components/settings/SettingsModal";
 
 interface Props {
   setSettingOpen: (isOpen: boolean) => void;
@@ -91,7 +91,7 @@ function App(): JSX.Element {
       {/* This div is for the footer that will be added later
       <div className="h-8 w-full border-t border-border px-2" />
       */}
-      <Settings isOpen={isOpen} onOpenChange={onOpenChange} />
+      <SettingsModal isOpen={isOpen} onOpenChange={onOpenChange} />
       <LoadMessageModal
         isOpen={loadMsgWarning}
         onClose={() => setLoadMsgWarning(false)}
