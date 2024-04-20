@@ -2,13 +2,16 @@ import Editor, { Monaco } from "@monaco-editor/react";
 import { Tab, Tabs } from "@nextui-org/react";
 import type { editor } from "monaco-editor";
 import React, { useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../store";
-import Files from "./Files";
+import { selectFile } from "../services/fileService";
+import { setCode } from "../state/codeSlice";
+import FileExplorer from "./file-explorer/FileExplorer";
 
 function CodeEditor(): JSX.Element {
   const [selectedFileName, setSelectedFileName] = useState("welcome");
-  const [explorerOpen, setExplorerOpen] = useState(true);
+
+  const dispatch = useDispatch();
   const code = useSelector((state: RootState) => state.code.code);
 
   const handleEditorDidMount = (
@@ -29,13 +32,20 @@ function CodeEditor(): JSX.Element {
     monaco.editor.setTheme("my-theme");
   };
 
+  const onSelectFile = async (absolutePath: string) => {
+    const paths = absolutePath.split("/");
+    const fileName = paths[paths.length - 1];
+    const rootlessPath = paths.slice(1).join("/");
+
+    setSelectedFileName(fileName);
+
+    const newCode = await selectFile(rootlessPath);
+    dispatch(setCode(newCode));
+  };
+
   return (
     <div className="flex h-full w-full bg-neutral-900 transition-all duration-500 ease-in-out">
-      <Files
-        setSelectedFileName={setSelectedFileName}
-        setExplorerOpen={setExplorerOpen}
-        explorerOpen={explorerOpen}
-      />
+      <FileExplorer onFileClick={onSelectFile} />
       <div className="flex flex-col min-h-0 w-full">
         <Tabs
           disableCursorAnimation
@@ -61,7 +71,11 @@ function CodeEditor(): JSX.Element {
         <div className="flex grow">
           <Editor
             height="100%"
-            defaultLanguage="python"
+            path={
+              selectedFileName === ""
+                ? "welcome.txt"
+                : selectedFileName.toLocaleLowerCase()
+            }
             defaultValue="# Welcome to OpenDevin!"
             value={code}
             onMount={handleEditorDidMount}

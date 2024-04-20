@@ -12,7 +12,9 @@ from pexpect import pxssh
 
 from opendevin import config
 from opendevin.logger import opendevin_logger as logger
-from opendevin.sandbox.sandbox import Sandbox, BackgroundCommand
+from opendevin.sandbox.sandbox import Sandbox
+from opendevin.sandbox.process import Process
+from opendevin.sandbox.docker.process import DockerProcess
 from opendevin.schema import ConfigType
 from opendevin.utils import find_available_tcp_port
 from opendevin.exceptions import SandboxInvalidBackgroundCommandError
@@ -53,7 +55,7 @@ class DockerSSHBox(Sandbox):
     _ssh_port: int
 
     cur_background_id = 0
-    background_commands: Dict[int, BackgroundCommand] = {}
+    background_commands: Dict[int, Process] = {}
 
     def __init__(
             self,
@@ -206,14 +208,14 @@ class DockerSSHBox(Sandbox):
         exit_code = int(exit_code.lstrip('echo $?').strip())
         return exit_code, command_output
 
-    def execute_in_background(self, cmd: str) -> BackgroundCommand:
+    def execute_in_background(self, cmd: str) -> Process:
         result = self.container.exec_run(
             self.get_exec_cmd(cmd), socket=True, workdir=SANDBOX_WORKSPACE_DIR
         )
         result.output._sock.setblocking(0)
         pid = self.get_pid(cmd)
-        bg_cmd = BackgroundCommand(self.cur_background_id, cmd, result, pid)
-        self.background_commands[bg_cmd.id] = bg_cmd
+        bg_cmd = DockerProcess(self.cur_background_id, cmd, result, pid)
+        self.background_commands[bg_cmd.pid] = bg_cmd
         self.cur_background_id += 1
         return bg_cmd
 
@@ -228,13 +230,14 @@ class DockerSSHBox(Sandbox):
                 return pid
         return None
 
-    def kill_background(self, id: int) -> BackgroundCommand:
+    def kill_background(self, id: int) -> Process:
         if id not in self.background_commands:
             raise SandboxInvalidBackgroundCommandError()
         bg_cmd = self.background_commands[id]
         if bg_cmd.pid is not None:
             self.container.exec_run(
                 f'kill -9 {bg_cmd.pid}', workdir=SANDBOX_WORKSPACE_DIR)
+        assert isinstance(bg_cmd, DockerProcess)
         bg_cmd.result.output.close()
         self.background_commands.pop(id)
         return bg_cmd
@@ -368,14 +371,14 @@ if __name__ == '__main__':
                 logger.info('Exiting...')
                 break
             if user_input.lower() == 'kill':
-                ssh_box.kill_background(bg_cmd.id)
+                ssh_box.kill_background(bg_cmd.pid)
                 logger.info('Background process killed')
                 continue
             exit_code, output = ssh_box.execute(user_input)
             logger.info('exit code: %d', exit_code)
             logger.info(output)
-            if bg_cmd.id in ssh_box.background_commands:
-                logs = ssh_box.read_logs(bg_cmd.id)
+            if bg_cmd.pid in ssh_box.background_commands:
+                logs = ssh_box.read_logs(bg_cmd.pid)
                 logger.info('background logs: %s', logs)
             sys.stdout.flush()
     except KeyboardInterrupt:
