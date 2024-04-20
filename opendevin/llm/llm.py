@@ -10,6 +10,7 @@ from opendevin.logger import llm_prompt_logger, llm_response_logger, opendevin_l
 DEFAULT_API_KEY = config.get('LLM_API_KEY')
 DEFAULT_BASE_URL = config.get('LLM_BASE_URL')
 DEFAULT_MODEL_NAME = config.get('LLM_MODEL')
+DEFAULT_API_VERSION = config.get('LLM_API_VERSION')
 LLM_NUM_RETRIES = config.get('LLM_NUM_RETRIES')
 LLM_MIN_WAIT = config.get('LLM_MIN_WAIT')
 LLM_MAX_WAIT = config.get('LLM_MAX_WAIT')
@@ -24,6 +25,7 @@ class LLM:
                  model=DEFAULT_MODEL_NAME,
                  api_key=DEFAULT_API_KEY,
                  base_url=DEFAULT_BASE_URL,
+                 api_version=DEFAULT_API_VERSION,
                  num_retries=LLM_NUM_RETRIES,
                  min_wait=LLM_MIN_WAIT,
                  max_wait=LLM_MAX_WAIT,
@@ -33,6 +35,7 @@ class LLM:
             model (str, optional): The name of the language model. Defaults to LLM_MODEL.
             api_key (str, optional): The API key for accessing the language model. Defaults to LLM_API_KEY.
             base_url (str, optional): The base URL for the language model API. Defaults to LLM_BASE_URL. Not necessary for OpenAI.
+            api_version (str, optional): The version of the API to use. Defaults to LLM_API_VERSION. Not necessary for OpenAI.
             num_retries (int, optional): The number of retries for API calls. Defaults to LLM_NUM_RETRIES.
             min_wait (int, optional): The minimum time to wait between retries in seconds. Defaults to LLM_MIN_TIME.
             max_wait (int, optional): The maximum time to wait between retries in seconds. Defaults to LLM_MAX_TIME.
@@ -41,15 +44,17 @@ class LLM:
             model_name (str): The name of the language model.
             api_key (str): The API key for accessing the language model.
             base_url (str): The base URL for the language model API.
+            api_version (str): The version of the API to use.
             completion (function): A decorator for the litellm completion function.
         """
         opendevin_logger.info(f'Initializing LLM with model: {model}')
-        self.model_name = model if model else DEFAULT_MODEL_NAME
-        self.api_key = api_key if api_key else DEFAULT_API_KEY
-        self.base_url = base_url if base_url else DEFAULT_BASE_URL
+        self.model_name = model
+        self.api_key = api_key
+        self.base_url = base_url
+        self.api_version = api_version
 
         self._completion = partial(
-            litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url)
+            litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url, api_version=self.api_version)
 
         completion_unwrapped = self._completion
 
@@ -83,4 +88,8 @@ class LLM:
         return self._completion
 
     def __str__(self):
-        return f'LLM(model={self.model_name}, base_url={self.base_url})'
+        if self.api_version:
+            return f'LLM(model={self.model_name}, api_version={self.api_version}, base_url={self.base_url})'
+        elif self.base_url:
+            return f'LLM(model={self.model_name}, base_url={self.base_url})'
+        return f'LLM(model={self.model_name})'
