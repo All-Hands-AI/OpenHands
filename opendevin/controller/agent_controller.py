@@ -1,27 +1,27 @@
 import asyncio
 import time
-from typing import List, Callable
-from opendevin.plan import Plan
-from opendevin.state import State
-from opendevin.agent import Agent
-from opendevin.observation import Observation, AgentErrorObservation, NullObservation
+import traceback
+from typing import Callable, List
+
 from litellm.exceptions import APIConnectionError
 from openai import AuthenticationError
 
 from opendevin import config
-from opendevin.logger import opendevin_logger as logger
-
-from opendevin.exceptions import MaxCharsExceedError
-from .action_manager import ActionManager
-
 from opendevin.action import (
     Action,
-    NullAction,
     AgentFinishAction,
+    NullAction,
 )
-from opendevin.exceptions import AgentNoActionError
+from opendevin.agent import Agent
+from opendevin.exceptions import AgentNoActionError, MaxCharsExceedError
+from opendevin.logger import opendevin_logger as logger
+from opendevin.observation import AgentErrorObservation, NullObservation, Observation
+from opendevin.plan import Plan
+from opendevin.state import State
+
 from ..action.tasks import TaskStateChangedAction
 from ..schema import TaskState
+from .action_manager import ActionManager
 
 MAX_ITERATIONS = config.get('MAX_ITERATIONS')
 MAX_CHARS = config.get('MAX_CHARS')
@@ -170,12 +170,13 @@ class AgentController:
         observation: Observation = NullObservation('')
         try:
             action = self.agent.step(self.state)
+            logger.info(action, extra={'msg_type': 'ACTION'})
             if action is None:
                 raise AgentNoActionError()
-            logger.info(action, extra={'msg_type': 'ACTION'})
         except Exception as e:
             observation = AgentErrorObservation(str(e))
             logger.error(e)
+            logger.debug(traceback.format_exc())
 
             if isinstance(e, APIConnectionError):
                 time.sleep(3)
@@ -219,3 +220,6 @@ class AgentController:
         await asyncio.sleep(
             0.001
         )  # Give back control for a tick, so we can await in callbacks
+
+    def get_state(self):
+        return self.state

@@ -144,7 +144,7 @@ If you want to use the (unstable!) bleeding edge, you can use `ghcr.io/opendevin
 
 See [Development.md](Development.md) for instructions on running OpenDevin without Docker.
 
-If you're running on Windows and having trouble, check out our [guide for Windows users](./docs/guides/Windows.md)
+Having trouble? Check out our [Troubleshooting Guide](./docs/guides/Troubleshooting.md).
 
 ## 🤖 LLM Backends
 OpenDevin can work with any LLM backend.
@@ -158,7 +158,7 @@ The following environment variables might be necessary for some LLMs:
 * `LLM_API_KEY`
 * `LLM_BASE_URL`
 * `LLM_EMBEDDING_MODEL`
-* `LLM_DEPLOYMENT_NAME`
+* `LLM_EMBEDDING_DEPLOYMENT_NAME`
 * `LLM_API_VERSION`
 
 We have a few guides for running OpenDevin with specific model providers:

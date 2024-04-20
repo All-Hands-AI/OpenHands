@@ -1,15 +1,15 @@
-import React, { useEffect } from "react";
 import { Button, ButtonGroup, Tooltip } from "@nextui-org/react";
+import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
+import ArrowIcon from "../assets/arrow";
 import PauseIcon from "../assets/pause";
 import PlayIcon from "../assets/play";
-import AgentTaskAction from "../types/AgentTaskAction";
 import { changeTaskState } from "../services/agentStateService";
-import store, { RootState } from "../store";
-import AgentTaskState from "../types/AgentTaskState";
-import ArrowIcon from "../assets/arrow";
 import { clearMsgs } from "../services/session";
 import { clearMessages } from "../state/chatSlice";
+import store, { RootState } from "../store";
+import AgentTaskAction from "../types/AgentTaskAction";
+import AgentTaskState from "../types/AgentTaskState";
 
 const TaskStateActionMap = {
   [AgentTaskAction.START]: AgentTaskState.RUNNING,
@@ -102,50 +102,50 @@ function AgentControlBar() {
     } else if (curTaskState === AgentTaskState.RUNNING) {
       setDesiredState(AgentTaskState.RUNNING);
     }
+    // We only want to run this effect when curTaskState changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [curTaskState]);
 
   return (
-    <div className="ml-5 mt-3">
-      <ButtonGroup size="sm" variant="ghost">
+    <ButtonGroup size="sm" variant="ghost">
+      <ActionButton
+        isLoading={false}
+        isDisabled={isLoading}
+        content="Restart a new agent task"
+        action={AgentTaskAction.STOP}
+        handleAction={handleAction}
+      >
+        <ArrowIcon />
+      </ActionButton>
+
+      {curTaskState === AgentTaskState.PAUSED ? (
         <ActionButton
-          isLoading={false}
-          isDisabled={isLoading}
-          content="Restart a new agent task"
-          action={AgentTaskAction.STOP}
+          isLoading={isLoading}
+          isDisabled={
+            isLoading ||
+            IgnoreTaskStateMap[AgentTaskAction.RESUME].includes(curTaskState)
+          }
+          content="Resume the agent task"
+          action={AgentTaskAction.RESUME}
           handleAction={handleAction}
         >
-          <ArrowIcon />
+          <PlayIcon />
         </ActionButton>
-
-        {curTaskState === AgentTaskState.PAUSED ? (
-          <ActionButton
-            isLoading={isLoading}
-            isDisabled={
-              isLoading ||
-              IgnoreTaskStateMap[AgentTaskAction.RESUME].includes(curTaskState)
-            }
-            content="Resume the agent task"
-            action={AgentTaskAction.RESUME}
-            handleAction={handleAction}
-          >
-            <PlayIcon />
-          </ActionButton>
-        ) : (
-          <ActionButton
-            isLoading={isLoading}
-            isDisabled={
-              isLoading ||
-              IgnoreTaskStateMap[AgentTaskAction.PAUSE].includes(curTaskState)
-            }
-            content="Pause the agent task"
-            action={AgentTaskAction.PAUSE}
-            handleAction={handleAction}
-          >
-            <PauseIcon />
-          </ActionButton>
-        )}
-      </ButtonGroup>
-    </div>
+      ) : (
+        <ActionButton
+          isLoading={isLoading}
+          isDisabled={
+            isLoading ||
+            IgnoreTaskStateMap[AgentTaskAction.PAUSE].includes(curTaskState)
+          }
+          content="Pause the agent task"
+          action={AgentTaskAction.PAUSE}
+          handleAction={handleAction}
+        >
+          <PauseIcon />
+        </ActionButton>
+      )}
+    </ButtonGroup>
   );
 }
 

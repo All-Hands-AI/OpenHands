@@ -1,33 +1,48 @@
-import { getUpdatedSettings } from "./settingsService";
+import { getSettingOrDefault, getUpdatedSettings } from "./settingsService";
 import { ArgConfigType } from "../types/ConfigType";
 
-describe("mergeAndUpdateSettings", () => {
+Storage.prototype.getItem = vi.fn();
+
+describe("getSettingOrDefault", () => {
+  it("should return the value from localStorage if it exists", () => {
+    (localStorage.getItem as jest.Mock).mockReturnValue("value");
+    const result = getSettingOrDefault("some_key");
+
+    expect(result).toEqual("value");
+  });
+
+  it("should return the default value if localStorage does not exist", () => {
+    (localStorage.getItem as jest.Mock).mockReturnValue(null);
+    const result = getSettingOrDefault("LLM_MODEL");
+
+    expect(result).toEqual("gpt-3.5-turbo");
+  });
+});
+
+describe("getUpdatedSettings", () => {
   it("should return initial settings if newSettings is empty", () => {
     const oldSettings = { key1: "value1" };
 
     const result = getUpdatedSettings({}, oldSettings);
 
-    expect(result).toEqual({});
+    expect(result).toStrictEqual({});
   });
 
-  it("should add new keys to updatedSettings", () => {
-    const oldSettings = { key1: "value1" };
-    const newSettings = { key2: "value2" };
+  it("should update settings", () => {
+    const oldSettings = {
+      [ArgConfigType.LLM_MODEL]: "gpt-4-0125-preview",
+      [ArgConfigType.AGENT]: "MonologueAgent",
+      [ArgConfigType.LANGUAGE]: "en",
+    };
+    const newSettings = {
+      [ArgConfigType.AGENT]: "OtherAgent",
+    };
 
     const result = getUpdatedSettings(newSettings, oldSettings);
 
-    expect(result).toEqual({
-      key2: "value2", // New key
+    expect(result).toStrictEqual({
+      [ArgConfigType.AGENT]: "OtherAgent",
     });
-  });
-
-  it("should overwrite non-DISPLAY_MAP keys in mergedSettings", () => {
-    const oldSettings = { key1: "value1" };
-    const newSettings = { key1: "newvalue1" };
-
-    const result = getUpdatedSettings(newSettings, oldSettings);
-
-    expect(result).toEqual({});
   });
 
   it("should show no values if they are equal", () => {
@@ -41,7 +56,7 @@ describe("mergeAndUpdateSettings", () => {
 
     const result = getUpdatedSettings(newSettings, oldSettings);
 
-    expect(result).toEqual({});
+    expect(result).toStrictEqual({});
   });
 
   it("should update all settings", () => {
@@ -59,10 +74,28 @@ describe("mergeAndUpdateSettings", () => {
 
     const result = getUpdatedSettings(newSettings, oldSettings);
 
-    expect(result).toEqual({
+    expect(result).toStrictEqual({
       [ArgConfigType.AGENT]: "CodeActAgent",
       [ArgConfigType.LANGUAGE]: "es",
+    });
+  });
+
+  it("should not update settings that are not supported", () => {
+    const oldSettings = {
+      [ArgConfigType.LLM_MODEL]: "gpt-4-0125-preview",
+      [ArgConfigType.AGENT]: "MonologueAgent",
+    };
+    const newSettings = {
+      [ArgConfigType.LLM_MODEL]: "gpt-4-0125-preview",
+      [ArgConfigType.AGENT]: "CodeActAgent",
+      key1: "newvalue1",
       key2: "value2",
+    };
+
+    const result = getUpdatedSettings(newSettings, oldSettings);
+
+    expect(result).toStrictEqual({
+      [ArgConfigType.AGENT]: "CodeActAgent",
     });
   });
 });
