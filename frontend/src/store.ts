@@ -1,12 +1,13 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
+import agentReducer from "./state/agentSlice";
 import browserReducer from "./state/browserSlice";
 import chatReducer from "./state/chatSlice";
 import codeReducer from "./state/codeSlice";
 import commandReducer from "./state/commandSlice";
-import taskReducer from "./state/taskSlice";
 import errorsReducer from "./state/errorsSlice";
+import planReducer from "./state/planSlice";
 import settingsReducer from "./state/settingsSlice";
-import agentReducer from "./state/agentSlice";
+import taskReducer from "./state/taskSlice";
 
 export const rootReducer = combineReducers({
   browser: browserReducer,
@@ -16,6 +17,7 @@ export const rootReducer = combineReducers({
   task: taskReducer,
   errors: errorsReducer,
   settings: settingsReducer,
+  plan: planReducer,
   agent: agentReducer,
 });
 
