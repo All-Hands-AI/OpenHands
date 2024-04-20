@@ -1,0 +1,1 @@
+Please add a --help option to the CLI, with a detailed description of each command
