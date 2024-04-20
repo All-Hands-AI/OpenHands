@@ -177,6 +177,12 @@ setup-config-prompts:
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
 	 echo "WORKSPACE_BASE=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
 
+# Clean up all caches
+clean:
+	@echo "$(YELLOW)Cleaning up caches...$(RESET)"
+	@rm -rf opendevin/.cache
+	@echo "$(GREEN)Caches cleaned up successfully.$(RESET)"
+
 # Help
 help:
 	@echo "$(BLUE)Usage: make [target]$(RESET)"
