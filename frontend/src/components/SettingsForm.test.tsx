@@ -13,8 +13,12 @@ import { AvailableLanguages } from "../i18n";
 vi.mock("../services/settingsService", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../services/settingsService")>()),
   getCurrentSettings: vi.fn().mockReturnValue({}),
-  fetchModels: vi.fn().mockResolvedValue(Promise.resolve([])),
-  fetchAgents: vi.fn().mockResolvedValue(Promise.resolve([])),
+  fetchModels: vi
+    .fn()
+    .mockResolvedValue(Promise.resolve(["model1", "model2", "model3"])),
+  fetchAgents: vi
+    .fn()
+    .mockResolvedValue(Promise.resolve(["agent1", "agent2", "agent3"])),
 }));
 
 describe("SettingsForm", () => {
@@ -36,59 +40,41 @@ describe("SettingsForm", () => {
     });
   });
 
-  it("should display the first model by default", async () => {
-    (fetchModels as Mock).mockResolvedValue(["model1", "model2"]);
-
+  it("should display the first values by default", async () => {
     await act(async () => render(<SettingsForm />));
 
-    expect(screen.getByRole("combobox", { name: "model" })).toHaveValue(
-      "model1",
-    );
+    const modelInput = screen.getByRole("combobox", { name: "model" });
+    const agentInput = screen.getByRole("combobox", { name: "agent" });
+
+    expect(modelInput).toHaveValue("model1");
+    expect(agentInput).toHaveValue("agent1");
   });
 
-  it("should display the first agent by default", async () => {
-    (fetchAgents as Mock).mockResolvedValue(["agent1", "agent2"]);
-
-    await act(async () => render(<SettingsForm />));
-
-    expect(screen.getByRole("combobox", { name: "agent" })).toHaveValue(
-      "agent1",
-    );
-  });
-
-  it("should display the model if it already exists in the settings", async () => {
-    (fetchModels as Mock).mockResolvedValue(["model1", "model2"]);
+  it("should display the selected values if it they already exist", async () => {
     (getCurrentSettings as Mock).mockReturnValueOnce({
       LLM_MODEL: "model2",
-    });
-
-    await act(async () => render(<SettingsForm />));
-
-    const input = screen.getByRole("combobox", { name: "model" });
-    expect(input).toHaveValue("model2");
-  });
-
-  it("should display the agent if it already exists in the settings", async () => {
-    (fetchAgents as Mock).mockResolvedValue(["agent1", "agent2"]);
-    (getCurrentSettings as Mock).mockReturnValue({
       AGENT: "agent2",
     });
 
     await act(async () => render(<SettingsForm />));
 
-    const input = screen.getByRole("combobox", { name: "agent" });
-    expect(input).toHaveValue("agent2");
+    const modelInput = screen.getByRole("combobox", { name: "model" });
+    const agentInput = screen.getByRole("combobox", { name: "agent" });
+
+    expect(modelInput).toHaveValue("model2");
+    expect(agentInput).toHaveValue("agent2");
   });
 
   it("should open a dropdown with the available models", async () => {
-    (fetchModels as Mock).mockResolvedValue(["model1", "model2", "model3"]);
-
     await act(async () => render(<SettingsForm />));
 
-    const input = screen.getByRole("combobox", { name: "model" });
+    const modelInput = screen.getByRole("combobox", { name: "model" });
+
+    expect(screen.queryByText("model2")).not.toBeInTheDocument();
+    expect(screen.queryByText("model3")).not.toBeInTheDocument();
 
     act(() => {
-      userEvent.click(input);
+      userEvent.click(modelInput);
     });
 
     expect(screen.getByText("model2")).toBeInTheDocument();
@@ -96,11 +82,12 @@ describe("SettingsForm", () => {
   });
 
   it("should open a dropdown with the available agents", async () => {
-    (fetchAgents as Mock).mockResolvedValue(["agent1", "agent2", "agent3"]);
-
     await act(async () => render(<SettingsForm />));
 
     const input = screen.getByRole("combobox", { name: "agent" });
+
+    expect(screen.queryByText("agent2")).not.toBeInTheDocument();
+    expect(screen.queryByText("agent3")).not.toBeInTheDocument();
 
     act(() => {
       userEvent.click(input);
