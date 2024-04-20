@@ -15,6 +15,8 @@ from opendevin.logger import opendevin_logger as logger
 from opendevin.sandbox.sandbox import Sandbox
 from opendevin.sandbox.process import Process
 from opendevin.sandbox.docker.process import DockerProcess
+from opendevin.sandbox.plugins.mixin import PluginMixin
+from opendevin.sandbox.plugins.jupyter import JupyterRequirement
 from opendevin.schema import ConfigType
 from opendevin.utils import find_available_tcp_port
 from opendevin.exceptions import SandboxInvalidBackgroundCommandError
@@ -43,7 +45,7 @@ elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
 
 
-class DockerSSHBox(Sandbox):
+class DockerSSHBox(Sandbox, PluginMixin):
     instance_id: str
     container_image: str
     container_name_prefix = 'opendevin-sandbox-'
@@ -58,10 +60,10 @@ class DockerSSHBox(Sandbox):
     background_commands: Dict[int, Process] = {}
 
     def __init__(
-            self,
-            container_image: str | None = None,
-            timeout: int = 120,
-            sid: str | None = None,
+        self,
+        container_image: str | None = None,
+        timeout: int = 120,
+        sid: str | None = None,
     ):
         # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
@@ -137,6 +139,15 @@ class DockerSSHBox(Sandbox):
             )
             if exit_code != 0:
                 raise Exception(f'Failed to set password in sandbox: {logs}')
+
+            # chown the home directory
+            exit_code, logs = self.container.exec_run(
+                ['/bin/bash', '-c', 'chown opendevin:root /home/opendevin'],
+                workdir=SANDBOX_WORKSPACE_DIR,
+            )
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to chown home directory for opendevin in sandbox: {logs}')
         else:
             exit_code, logs = self.container.exec_run(
                 # change password for root
@@ -307,6 +318,16 @@ class DockerSSHBox(Sandbox):
                         'bind': SANDBOX_WORKSPACE_DIR,
                         'mode': 'rw'
                     },
+                    # mount plugins directory to /opendevin/plugins
+                    os.path.join(config.LIB_ROOT, 'sandbox', 'plugins'): {
+                        'bind': '/opendevin/plugins',
+                        'mode': 'ro'
+                    },
+                    # mount cache directory to /home/opendevin/.cache for pip cache reuse
+                    config.CACHE_DIR: {
+                        'bind': '/home/opendevin/.cache' if RUN_AS_DEVIN else '/root/.cache',
+                        'mode': 'rw'
+                    },
                 },
             )
             logger.info('Container started')
@@ -354,6 +375,9 @@ if __name__ == '__main__':
 
     logger.info(
         "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
+
+    # Initialize required plugins
+    ssh_box.init_plugins([JupyterRequirement()])
 
     bg_cmd = ssh_box.execute_in_background(
         "while true; do echo 'dot ' && sleep 1; done"
