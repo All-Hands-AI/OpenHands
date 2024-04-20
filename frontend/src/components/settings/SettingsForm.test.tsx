@@ -6,6 +6,7 @@ import {
   fetchAgents,
   fetchModels,
   getCurrentSettings,
+  saveSettings,
 } from "../../services/settingsService";
 import SettingsForm from "./SettingsForm";
 import { AvailableLanguages } from "../../i18n";
@@ -13,6 +14,7 @@ import { AvailableLanguages } from "../../i18n";
 vi.mock("../../services/settingsService", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../services/settingsService")>()),
   getCurrentSettings: vi.fn().mockReturnValue({}),
+  saveSettings: vi.fn(),
   fetchModels: vi
     .fn()
     .mockResolvedValue(Promise.resolve(["model1", "model2", "model3"])),
@@ -63,6 +65,45 @@ describe("SettingsForm", () => {
 
     expect(modelInput).toHaveValue("model2");
     expect(agentInput).toHaveValue("agent2");
+  });
+
+  it("should not call saveSettings if no values have been changed", async () => {
+    await act(async () => render(<SettingsForm />));
+
+    const saveButton = screen.getByTestId("save");
+
+    act(() => {
+      userEvent.click(saveButton);
+    });
+
+    expect(saveButton).toBeDisabled();
+    expect(saveSettings).not.toHaveBeenCalled();
+  });
+
+  it("should call saveSettings with the new values", async () => {
+    await act(async () => render(<SettingsForm />));
+
+    const modelInput = screen.getByRole("combobox", { name: "model" });
+
+    act(() => {
+      userEvent.click(modelInput);
+    });
+
+    const model3 = screen.getByText("model3");
+
+    act(() => {
+      userEvent.click(model3);
+    });
+
+    const saveButton = screen.getByTestId("save");
+
+    act(() => {
+      userEvent.click(saveButton);
+    });
+
+    expect(saveSettings).toHaveBeenCalledWith({
+      LLM_MODEL: "model3",
+    });
   });
 
   it("should display the language selector", async () => {

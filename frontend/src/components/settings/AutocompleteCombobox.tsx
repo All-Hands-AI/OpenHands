@@ -10,17 +10,22 @@ interface AutocompleteComboboxProps {
   ariaLabel: "model" | "agent";
   items: AutocompleteItemType[];
   defaultKey: string;
+  onChange: (key: string) => void;
 }
 
 export const AutocompleteCombobox: React.FC<AutocompleteComboboxProps> = ({
   ariaLabel,
   items,
   defaultKey,
+  onChange,
 }) => (
   <Autocomplete
     aria-label={ariaLabel}
     defaultItems={items}
     defaultSelectedKey={defaultKey}
+    onSelectionChange={(key) => {
+      if (typeof key === "string") onChange(key);
+    }}
   >
     {(item) => (
       <AutocompleteItem key={item.value}>{item.label}</AutocompleteItem>

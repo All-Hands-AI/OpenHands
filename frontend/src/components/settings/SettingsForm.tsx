@@ -4,9 +4,11 @@ import {
   fetchAgents,
   fetchModels,
   getCurrentSettings,
+  saveSettings,
 } from "../../services/settingsService";
 import { AvailableLanguages } from "../../i18n";
 import { AutocompleteCombobox } from "./AutocompleteCombobox";
+import { isDifferent } from "./utils";
 
 type Settings = {
   LLM_MODEL: string;
@@ -23,6 +25,7 @@ const SettingsForm: React.FC<SettingsFormProps> = () => {
   const [currentSettings, setCurrentSettings] = React.useState<
     Partial<Settings>
   >({});
+  const [newSettings, setNewSettings] = React.useState<Partial<Settings>>({});
 
   React.useEffect(() => {
     const settings = getCurrentSettings();
@@ -39,6 +42,10 @@ const SettingsForm: React.FC<SettingsFormProps> = () => {
     })();
   }, []);
 
+  const onSave = () => {
+    saveSettings(newSettings);
+  };
+
   return (
     <div>
       {models.length > 0 && (
@@ -46,6 +53,7 @@ const SettingsForm: React.FC<SettingsFormProps> = () => {
           ariaLabel="model"
           items={models.map((model) => ({ value: model, label: model }))}
           defaultKey={currentSettings.LLM_MODEL || models[0]}
+          onChange={(key) => setNewSettings({ ...newSettings, LLM_MODEL: key })}
         />
       )}
       {agents.length > 0 && (
@@ -53,6 +61,7 @@ const SettingsForm: React.FC<SettingsFormProps> = () => {
           ariaLabel="agent"
           items={agents.map((agent) => ({ value: agent, label: agent }))}
           defaultKey={currentSettings.AGENT || agents[0]}
+          onChange={(key) => setNewSettings({ ...newSettings, AGENT: key })}
         />
       )}
       <Select
@@ -65,6 +74,15 @@ const SettingsForm: React.FC<SettingsFormProps> = () => {
           </SelectItem>
         ))}
       </Select>
+
+      <button
+        data-testid="save"
+        type="button"
+        disabled={!isDifferent(currentSettings, newSettings)}
+        onClick={onSave}
+      >
+        Save
+      </button>
     </div>
   );
 };
