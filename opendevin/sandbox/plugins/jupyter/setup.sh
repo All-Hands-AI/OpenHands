@@ -22,11 +22,20 @@ fi
 # Run background process to start jupyter kernel gateway
 export JUPYTER_GATEWAY_PORT=18888
 jupyter kernelgateway --KernelGatewayApp.ip=0.0.0.0 --KernelGatewayApp.port=$JUPYTER_GATEWAY_PORT &
+
 export JUPYTER_GATEWAY_PID=$!
+echo "export JUPYTER_GATEWAY_PID=$JUPYTER_GATEWAY_PID" >> ~/.bashrc
 export JUPYTER_GATEWAY_KERNEL_ID="default"
+echo "export JUPYTER_GATEWAY_KERNEL_ID=$JUPYTER_GATEWAY_KERNEL_ID" >> ~/.bashrc
+
 echo "JupyterKernelGateway started with PID: $JUPYTER_GATEWAY_PID"
 
 # Start the jupyter_server
+export JUPYTER_EXEC_SERVER_PORT=18889
+echo "export JUPYTER_EXEC_SERVER_PORT=$JUPYTER_EXEC_SERVER_PORT" >> ~/.bashrc
 /opendevin/plugins/jupyter/execute_server &
+
 export JUPYTER_EXEC_SERVER_PID=$!
+echo "export JUPYTER_EXEC_SERVER_PID=$JUPYTER_EXEC_SERVER_PID" >> ~/.bashrc
+
 echo "Execution server started with PID: $JUPYTER_EXEC_SERVER_PID"
