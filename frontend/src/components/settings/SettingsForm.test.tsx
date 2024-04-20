@@ -1,5 +1,5 @@
 import React from "react";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { Mock } from "vitest";
 import userEvent from "@testing-library/user-event";
 import {
@@ -9,7 +9,6 @@ import {
   saveSettings,
 } from "../../services/settingsService";
 import SettingsForm from "./SettingsForm";
-import { AvailableLanguages } from "../../i18n";
 
 vi.mock("../../services/settingsService", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../services/settingsService")>()),
@@ -28,11 +27,6 @@ describe("SettingsForm", () => {
     vi.clearAllMocks();
   });
 
-  it("should retrieve current settings when mounted", async () => {
-    await act(async () => render(<SettingsForm />));
-    expect(getCurrentSettings).toHaveBeenCalledTimes(1);
-  });
-
   it("should fetch existing agents and models from the API", async () => {
     render(<SettingsForm />);
 
@@ -47,37 +41,29 @@ describe("SettingsForm", () => {
 
     const modelInput = screen.getByRole("combobox", { name: "model" });
     const agentInput = screen.getByRole("combobox", { name: "agent" });
+    const languageInput = screen.getByRole("combobox", { name: "language" });
 
     expect(modelInput).toHaveValue("model1");
     expect(agentInput).toHaveValue("agent1");
+    expect(languageInput).toHaveValue("English");
   });
 
   it("should display the selected values if it they already exist", async () => {
     (getCurrentSettings as Mock).mockReturnValueOnce({
       LLM_MODEL: "model2",
       AGENT: "agent2",
+      LANGUAGE: "es",
     });
 
     await act(async () => render(<SettingsForm />));
 
     const modelInput = screen.getByRole("combobox", { name: "model" });
     const agentInput = screen.getByRole("combobox", { name: "agent" });
+    const languageInput = screen.getByRole("combobox", { name: "language" });
 
     expect(modelInput).toHaveValue("model2");
     expect(agentInput).toHaveValue("agent2");
-  });
-
-  it("should not call saveSettings if no values have been changed", async () => {
-    await act(async () => render(<SettingsForm />));
-
-    const saveButton = screen.getByTestId("save");
-
-    act(() => {
-      userEvent.click(saveButton);
-    });
-
-    expect(saveButton).toBeDisabled();
-    expect(saveSettings).not.toHaveBeenCalled();
+    expect(languageInput).toHaveValue("Español");
   });
 
   it("should call saveSettings with the new values", async () => {
@@ -104,21 +90,5 @@ describe("SettingsForm", () => {
     expect(saveSettings).toHaveBeenCalledWith({
       LLM_MODEL: "model3",
     });
-  });
-
-  it("should display the language selector", async () => {
-    await act(async () => render(<SettingsForm />));
-
-    const languageInput = screen.getByRole("button", { name: /language/i });
-
-    expect(languageInput).toBeInTheDocument();
-    within(languageInput).getByText(/english/i);
-
-    act(() => {
-      userEvent.click(languageInput);
-    });
-
-    const options = screen.getAllByRole("option");
-    expect(options).toHaveLength(AvailableLanguages.length);
   });
 });

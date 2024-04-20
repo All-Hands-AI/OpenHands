@@ -7,7 +7,7 @@ type AutocompleteItemType = {
 };
 
 interface AutocompleteComboboxProps {
-  ariaLabel: "model" | "agent";
+  ariaLabel: "model" | "agent" | "language";
   items: AutocompleteItemType[];
   defaultKey: string;
   onChange: (key: string) => void;
