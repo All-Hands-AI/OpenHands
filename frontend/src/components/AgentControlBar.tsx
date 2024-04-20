@@ -102,6 +102,8 @@ function AgentControlBar() {
     } else if (curTaskState === AgentTaskState.RUNNING) {
       setDesiredState(AgentTaskState.RUNNING);
     }
+    // We only want to run this effect when curTaskState changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [curTaskState]);
 
   return (

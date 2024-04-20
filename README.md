@@ -136,6 +136,7 @@ docker run \
     -v $WORKSPACE_DIR:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
+    --add-host host.docker.internal=host-gateway \
     ghcr.io/opendevin/opendevin:0.3.1
 ```
 You'll find opendevin running at `http://localhost:3000`.
@@ -144,7 +145,7 @@ If you want to use the (unstable!) bleeding edge, you can use `ghcr.io/opendevin
 
 See [Development.md](Development.md) for instructions on running OpenDevin without Docker.
 
-If you're running on Windows and having trouble, check out our [guide for Windows users](./docs/guides/Windows.md)
+Having trouble? Check out our [Troubleshooting Guide](./docs/guides/Troubleshooting.md).
 
 ## 🤖 LLM Backends
 OpenDevin can work with any LLM backend.
