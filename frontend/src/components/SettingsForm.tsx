@@ -1,4 +1,5 @@
 import React from "react";
+import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
 import {
   fetchAgents,
   fetchModels,
@@ -38,8 +39,28 @@ const SettingsForm: React.FC<SettingsFormProps> = () => {
 
   return (
     <div>
-      <span>{currentSettings.LLM_MODEL || models[0]}</span>
-      <span>{currentSettings.AGENT || agents[0]}</span>
+      {models.length > 0 && (
+        <Autocomplete
+          aria-label="model"
+          defaultItems={models.map((model) => ({ value: model, label: model }))}
+          defaultSelectedKey={currentSettings.LLM_MODEL || models[0]}
+        >
+          {(model) => (
+            <AutocompleteItem key={model.value}>{model.label}</AutocompleteItem>
+          )}
+        </Autocomplete>
+      )}
+      {agents.length > 0 && (
+        <Autocomplete
+          aria-label="agent"
+          defaultItems={agents.map((agent) => ({ value: agent, label: agent }))}
+          defaultSelectedKey={currentSettings.AGENT || agents[0]}
+        >
+          {(agent) => (
+            <AutocompleteItem key={agent.value}>{agent.label}</AutocompleteItem>
+          )}
+        </Autocomplete>
+      )}
     </div>
   );
 };
