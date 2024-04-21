@@ -69,7 +69,7 @@ WORKSPACE_DIR="$(pwd)/workspace"
 ```
 Replace `LLM_MODEL` of your choice.
 
-As a walkaround to avoid `OpenAI Exception: 404` error, we use `litellm` to route the traffic from `ollama`:
+As a walkaround to avoid `OpenAIException: 404 page not found` error (inspired by #1052), we use `litellm` to route the traffic from `ollama`:
 ```
 pip3 install litellm[proxy]
 litellm --model ollama/codellama:7b --api_base http://localhost:11434
