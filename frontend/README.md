@@ -25,7 +25,7 @@ You can set the environment variables in `frontend/.env` to configure the fronte
 ```javascript
 VITE_BACKEND_HOST="127.0.0.1:3000" // The host of the backend
 VITE_USE_TLS="false"               // Whether to use TLS for the backend(includes HTTPS and WSS) 
-VITE_INSECURE_SKIP_VERIFY="false"  // Whether to skip verifying the backend's certificate. Don't use this in production!
+VITE_INSECURE_SKIP_VERIFY="false"  // Whether to skip verifying the backend's certificate. Only takes effect if `VITE_USE_TLS` is true. Don't use this in production!
 VITE_FRONTEND_PORT="3001"          // The port of the frontend
 ```
 You can also set the environment variables from outside the project, like `exporter VITE_BACKEND_HOST="127.0.0.1:3000"`.
