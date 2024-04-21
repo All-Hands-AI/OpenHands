@@ -39,8 +39,8 @@ class LLM:
             base_url (str, optional): The base URL for the language model API. Defaults to LLM_BASE_URL. Not necessary for OpenAI.
             api_version (str, optional): The version of the API to use. Defaults to LLM_API_VERSION. Not necessary for OpenAI.
             num_retries (int, optional): The number of retries for API calls. Defaults to LLM_NUM_RETRIES.
-            min_wait (int, optional): The minimum time to wait between retries in seconds. Defaults to LLM_MIN_TIME.
-            max_wait (int, optional): The maximum time to wait between retries in seconds. Defaults to LLM_MAX_TIME.
+            retry_min_wait (int, optional): The minimum time to wait between retries in seconds. Defaults to LLM_RETRY_MIN_TIME.
+            retry_max_wait (int, optional): The maximum time to wait between retries in seconds. Defaults to LLM_RETRY_MAX_TIME.
 
         Attributes:
             model_name (str): The name of the language model.
