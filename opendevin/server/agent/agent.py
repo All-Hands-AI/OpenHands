@@ -135,7 +135,7 @@ class AgentUnit:
             if value != ''
         }  # remove empty values, prevent FE from sending empty strings
         agent_cls = self.get_arg_or_default(args, ConfigType.AGENT)
-        model = self.get_arg_or_default(args, ConfigType.LLM_MODEL)
+        model = config.get(ConfigType.LLM_MODEL)
         api_key = config.get(ConfigType.LLM_API_KEY)
         api_base = config.get(ConfigType.LLM_BASE_URL)
         container_image = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
