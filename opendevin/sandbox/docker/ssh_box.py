@@ -147,6 +147,13 @@ class DockerSSHBox(Sandbox):
             if exit_code != 0:
                 raise Exception(
                     f'Failed to chown home directory for opendevin in sandbox: {logs}')
+            exit_code, logs = self.container.exec_run(
+                ['/bin/bash', '-c', f'chown opendevin:root {SANDBOX_WORKSPACE_DIR}'],
+                workdir=SANDBOX_WORKSPACE_DIR,
+            )
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to chown workspace directory for opendevin in sandbox: {logs}')
         else:
             exit_code, logs = self.container.exec_run(
                 # change password for root
