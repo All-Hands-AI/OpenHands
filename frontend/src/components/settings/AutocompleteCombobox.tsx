@@ -30,13 +30,13 @@ interface AutocompleteComboboxProps {
   allowCustomValue?: boolean;
 }
 
-export const AutocompleteCombobox: React.FC<AutocompleteComboboxProps> = ({
+export function AutocompleteCombobox({
   ariaLabel,
   items,
   defaultKey,
   onChange,
   allowCustomValue = false,
-}) => {
+}: AutocompleteComboboxProps) {
   const { t } = useTranslation();
 
   return (
@@ -56,7 +56,7 @@ export const AutocompleteCombobox: React.FC<AutocompleteComboboxProps> = ({
       )}
     </Autocomplete>
   );
-};
+}
 
 AutocompleteCombobox.defaultProps = {
   allowCustomValue: false,

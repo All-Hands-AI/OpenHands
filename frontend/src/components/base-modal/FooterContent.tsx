@@ -13,23 +13,22 @@ interface FooterContentProps {
   closeModal: () => void;
 }
 
-export const FooterContent: React.FC<FooterContentProps> = ({
-  actions,
-  closeModal,
-}) => (
-  <>
-    {actions.map(({ action, label, className, closeAfterAction }) => (
-      <Button
-        key={label}
-        type="button"
-        onClick={() => {
-          action();
-          if (closeAfterAction) closeModal();
-        }}
-        className={className}
-      >
-        {label}
-      </Button>
-    ))}
-  </>
-);
+export function FooterContent({ actions, closeModal }: FooterContentProps) {
+  return (
+    <>
+      {actions.map(({ action, label, className, closeAfterAction }) => (
+        <Button
+          key={label}
+          type="button"
+          onClick={() => {
+            action();
+            if (closeAfterAction) closeModal();
+          }}
+          className={className}
+        >
+          {label}
+        </Button>
+      ))}
+    </>
+  );
+}

@@ -18,42 +18,44 @@ interface BaseModalProps {
   children?: React.ReactNode;
 }
 
-const BaseModal: React.FC<BaseModalProps> = ({
+function BaseModal({
   isOpen,
   onOpenChange,
   title,
   subtitle,
   actions,
   children,
-}) => (
-  <Modal
-    isOpen={isOpen}
-    onOpenChange={onOpenChange}
-    title={title}
-    backdrop="blur"
-    hideCloseButton
-    size="sm"
-    className="bg-neutral-900 rounded-large"
-  >
-    <ModalContent className="max-w-[24rem] p-[40px]">
-      {(closeModal) => (
-        <>
-          <ModalHeader className="flex flex-col p-0">
-            <HeaderContent title={title} subtitle={subtitle} />
-          </ModalHeader>
+}: BaseModalProps) {
+  return (
+    <Modal
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      title={title}
+      backdrop="blur"
+      hideCloseButton
+      size="sm"
+      className="bg-neutral-900 rounded-large"
+    >
+      <ModalContent className="max-w-[24rem] p-[40px]">
+        {(closeModal) => (
+          <>
+            <ModalHeader className="flex flex-col p-0">
+              <HeaderContent title={title} subtitle={subtitle} />
+            </ModalHeader>
 
-          <ModalBody className="px-0 py-[20px]">{children}</ModalBody>
+            <ModalBody className="px-0 py-[20px]">{children}</ModalBody>
 
-          {actions && actions.length > 0 && (
-            <ModalFooter className="flex-col flex justify-start p-0">
-              <FooterContent actions={actions} closeModal={closeModal} />
-            </ModalFooter>
-          )}
-        </>
-      )}
-    </ModalContent>
-  </Modal>
-);
+            {actions && actions.length > 0 && (
+              <ModalFooter className="flex-col flex justify-start p-0">
+                <FooterContent actions={actions} closeModal={closeModal} />
+              </ModalFooter>
+            )}
+          </>
+        )}
+      </ModalContent>
+    </Modal>
+  );
+}
 
 BaseModal.defaultProps = {
   subtitle: undefined,

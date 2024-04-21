@@ -17,7 +17,7 @@ interface SettingsProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
-const SettingsModal: React.FC<SettingsProps> = ({ isOpen, onOpenChange }) => {
+function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const { t } = useTranslation();
   const currentSettings = React.useMemo(() => getCurrentSettings(), []);
 
@@ -95,6 +95,6 @@ const SettingsModal: React.FC<SettingsProps> = ({ isOpen, onOpenChange }) => {
       )}
     </BaseModal>
   );
-};
+}
 
 export default SettingsModal;
