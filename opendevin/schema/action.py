@@ -55,8 +55,6 @@ class ActionTypeSchema(BaseModel):
 
     MODIFY_TASK: str = Field(default='modify_task')
 
-    NULL: str = Field(default='null')
-
     PAUSE: str = Field(default='pause')
     """Pauses the task.
     """
