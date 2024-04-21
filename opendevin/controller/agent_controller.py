@@ -185,7 +185,6 @@ class AgentController:
             #    from different providers, and OpenAI is one of these.
             if isinstance(e, (AuthenticationError, ContextWindowExceededError, APIConnectionError)):
                 raise
-        logger.info(action, extra={'msg_type': 'ACTION'})
 
         self.update_state_after_step()
 
