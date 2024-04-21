@@ -1,5 +1,5 @@
 from .base import Action, NullAction
-from .bash import CmdRunAction, CmdKillAction
+from .bash import CmdRunAction, CmdKillAction, IPythonRunCellAction
 from .browse import BrowseURLAction
 from .fileop import FileReadAction, FileWriteAction
 from .agent import (
@@ -14,6 +14,7 @@ from .tasks import AddTaskAction, ModifyTaskAction
 actions = (
     CmdKillAction,
     CmdRunAction,
+    IPythonRunCellAction,
     BrowseURLAction,
     FileReadAction,
     FileWriteAction,
@@ -57,4 +58,5 @@ __all__ = [
     'AgentSummarizeAction',
     'AddTaskAction',
     'ModifyTaskAction',
+    'IPythonRunCellAction'
 ]
