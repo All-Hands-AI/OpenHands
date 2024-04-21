@@ -125,7 +125,6 @@ class LongTermMemory:
         logger.debug('Adding %s event to memory: %d', t, self.thought_idx)
         thread = Thread(target=self._add_doc, args=(doc,))
         thread.start()  # We add the doc concurrently so we don't have to wait ~500ms for the insert
-        self._add_doc(doc)
 
     def _add_doc(self, doc):
         self.index.insert(doc)
