@@ -5,7 +5,7 @@ from opendevin.sandbox.plugins.requirement import PluginRequirement
 
 
 class HasExecuteProtocol(Protocol):
-    # https://stackoverflow.com/questions/51930339/ how-do-i-correctly-add-type-hints-to-mixin-classes
+    # https://stackoverflow.com/questions/51930339/how-do-i-correctly-add-type-hints-to-mixin-classes
 
     def execute(self, cmd: str) -> Tuple[int, str]:
         ...
