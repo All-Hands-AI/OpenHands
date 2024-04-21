@@ -4,10 +4,10 @@
 
 In the project directory, you can run:
 
-### `npm start`
+### `npm run start -- --port 3001`
 
 Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Open [http://localhost:3001](http://localhost:3001) to view it in the browser.
 
 The page will reload if you make edits.\
 You will also see any lint errors in the console.
@@ -20,16 +20,20 @@ It correctly bundles React in production mode and optimizes the build for the be
 The build is minified and the filenames include the hashes.\
 Your app is ready to be deployed!
 
+## Environment Variables
+You can set the environment variables in `frontend/.env` to configure the frontend. The following variables are available:
+```javascript
+VITE_BACKEND_HOST="127.0.0.1:3000" // The host of the backend
+VITE_USE_TLS="false"               // Whether to use TLS for the backend(includes HTTPS and WSS) 
+VITE_INSECURE_SKIP_VERIFY="false"  // Whether to skip verifying the backend's certificate. Only takes effect if `VITE_USE_TLS` is true. Don't use this in production!
+VITE_FRONTEND_PORT="3001"          // The port of the frontend
+```
+You can also set the environment variables from outside the project, like `exporter VITE_BACKEND_HOST="127.0.0.1:3000"`.
+
+The outside environment variables will override the ones in the `.env` file.
+
 ## Learn More
 
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
-
-## Terminal
-
-The OpenDevin terminal is powered by [Xterm.js](https://github.com/xtermjs/xterm.js).
-
-The terminal listens for events over a WebSocket connection. The WebSocket URL is specified by the environment variable `VITE_WS_URL` (prepending `VITE_` to environment variable names is necessary to expose them).
-
-A simple websocket server can be found in the `/server` directory.
