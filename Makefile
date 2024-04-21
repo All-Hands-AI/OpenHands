@@ -1,3 +1,4 @@
+SHELL=/bin/bash
 # Makefile for OpenDevin project
 
 # Variables
@@ -11,11 +12,11 @@ CONFIG_FILE = config.toml
 PRECOMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
 
 # ANSI color codes
-GREEN=\033[0;32m
-YELLOW=\033[0;33m
-RED=\033[0;31m
-BLUE=\033[0;34m
-RESET=\033[0m
+GREEN=$(shell tput -Txterm setaf 2)
+YELLOW=$(shell tput -Txterm setaf 3)
+RED=$(shell tput -Txterm setaf 1)
+BLUE=$(shell tput -Txterm setaf 6)
+RESET=$(shell tput -Txterm sgr0)
 
 # Build
 build:
@@ -122,7 +123,7 @@ start-backend:
 # Start frontend
 start-frontend:
 	@echo "$(YELLOW)Starting frontend...$(RESET)"
-	@cd frontend && BACKEND_HOST=$(BACKEND_HOST) FRONTEND_PORT=$(FRONTEND_PORT) npm run start
+	@cd frontend && VITE_BACKEND_HOST=$(BACKEND_HOST) VITE_FRONTEND_PORT=$(FRONTEND_PORT) npm run start
 
 # Run the app
 run:

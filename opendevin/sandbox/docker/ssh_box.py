@@ -22,7 +22,7 @@ from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
-SANDBOX_WORKSPACE_DIR = '/workspace'
+SANDBOX_WORKSPACE_DIR = config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX)
 
 CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
 
@@ -170,7 +170,7 @@ class DockerSSHBox(Sandbox):
         self.ssh.sendline("bind 'set enable-bracketed-paste off'")
         self.ssh.prompt()
         # cd to workspace
-        self.ssh.sendline('cd /workspace')
+        self.ssh.sendline(f'cd {SANDBOX_WORKSPACE_DIR}')
         self.ssh.prompt()
 
     def get_exec_cmd(self, cmd: str) -> List[str]:
