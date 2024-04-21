@@ -125,7 +125,8 @@ class MonologueAgent(Agent):
 
     def _initialize(self, task: str):
         """
-        Utilizes the INITIAL_THOUGHTS list to give the agent a context for it's capabilities and how to navigate the /workspace.
+        Utilizes the INITIAL_THOUGHTS list to give the agent a context for it's capabilities
+        and how to navigate the WORKSPACE_MOUNT_PATH_IN_SANDBOX in `config` (e.g., /workspace by default).
         Short circuited to return when already initialized.
 
         Parameters:
