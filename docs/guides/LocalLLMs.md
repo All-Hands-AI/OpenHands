@@ -60,7 +60,7 @@ Use the instructions in [Development.md](/Development.md) to build OpenDevin.
 Make sure `config.toml` is there by running `make setup-config` which will create one for you. In `config.toml`, enter the followings:
 
 ```
-LLM_MODEL="ollama/llama3:8b"
+LLM_MODEL="ollama/codellama:7b"
 LLM_API_KEY="ollama"
 LLM_EMBEDDING_MODEL="local"
 LLM_BASE_URL="http://localhost:4000"
@@ -69,13 +69,13 @@ WORKSPACE_DIR="$(pwd)/workspace"
 ```
 Replace `LLM_MODEL` of your choice.
 
-To avoid buggy `OpenAI Exception: 404` error, we use `litellm` to route the traffic from `ollama`:
+As a walkaround to avoid `OpenAI Exception: 404` error, we use `litellm` to route the traffic from `ollama`:
 ```
 pip3 install litellm[proxy]
-litellm --model ollama/llama3:8b --api_base http://localhost:11434
+litellm --model ollama/codellama:7b --api_base http://localhost:11434
 ```
 
-Done! Now you can start Devin by: `make run` to avoid using Docker.
+Done! Now you can start Devin by: `make run` to avoid using Docker. You now should be able to connect to `http://localhost:3000/`
 
 ## 3. Select your Model
 
