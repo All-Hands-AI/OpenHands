@@ -13,6 +13,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.LLM_BASE_URL: None,
     ConfigType.WORKSPACE_BASE: os.getcwd(),
     ConfigType.WORKSPACE_MOUNT_PATH: None,
+    ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX: '/workspace',
     ConfigType.WORKSPACE_MOUNT_REWRITE: None,
     ConfigType.LIB_ROOT_PATH: os.path.dirname(os.path.abspath(__file__)),
     ConfigType.CACHE_DIR: os.path.join(os.path.dirname(os.path.abspath(__file__)), '.cache'),

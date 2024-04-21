@@ -23,7 +23,7 @@ from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
-SANDBOX_WORKSPACE_DIR = '/workspace'
+SANDBOX_WORKSPACE_DIR = config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX)
 
 CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
 
