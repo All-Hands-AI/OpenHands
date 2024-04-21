@@ -69,4 +69,5 @@ class ActionTypeSchema(BaseModel):
 
     CHANGE_TASK_STATE: str = Field(default='change_task_state')
 
+
 ActionType = ActionTypeSchema()
