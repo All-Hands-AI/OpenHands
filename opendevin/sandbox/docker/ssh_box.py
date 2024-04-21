@@ -180,7 +180,7 @@ class DockerSSHBox(Sandbox):
         self.ssh.sendline("bind 'set enable-bracketed-paste off'")
         self.ssh.prompt()
         # cd to workspace
-        self.ssh.sendline('cd /workspace')
+        self.ssh.sendline(f'cd {SANDBOX_WORKSPACE_DIR}')
         self.ssh.prompt()
 
     def get_exec_cmd(self, cmd: str) -> List[str]:
