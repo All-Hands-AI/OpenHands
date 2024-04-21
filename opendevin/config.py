@@ -24,8 +24,8 @@ DEFAULT_CONFIG: dict = {
     ConfigType.LLM_EMBEDDING_DEPLOYMENT_NAME: None,
     ConfigType.LLM_API_VERSION: None,
     ConfigType.LLM_NUM_RETRIES: 5,
-    ConfigType.LLM_MIN_WAIT: 3,
-    ConfigType.LLM_MAX_WAIT: 60,
+    ConfigType.LLM_RETRY_MIN_WAIT: 3,
+    ConfigType.LLM_RETRY_MAX_WAIT: 60,
     ConfigType.MAX_ITERATIONS: 100,
     # GPT-4 pricing is $10 per 1M input tokens. Since tokenization happens on LLM side,
     # we cannot easily count number of tokens, but we can count characters.
@@ -61,7 +61,7 @@ for k, v in config.items():
         config[k] = os.environ[k]
     elif k in tomlConfig:
         config[k] = tomlConfig[k]
-    if k in [ConfigType.LLM_NUM_RETRIES, ConfigType.LLM_MIN_WAIT, ConfigType.LLM_MAX_WAIT]:
+    if k in [ConfigType.LLM_NUM_RETRIES, ConfigType.LLM_RETRY_MIN_WAIT, ConfigType.LLM_RETRY_MAX_WAIT]:
         config[k] = int_value(config[k], v, config_key=k)
 
 

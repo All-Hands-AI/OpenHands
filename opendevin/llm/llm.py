@@ -14,8 +14,8 @@ DEFAULT_BASE_URL = config.get('LLM_BASE_URL')
 DEFAULT_MODEL_NAME = config.get('LLM_MODEL')
 DEFAULT_API_VERSION = config.get('LLM_API_VERSION')
 LLM_NUM_RETRIES = config.get('LLM_NUM_RETRIES')
-LLM_MIN_WAIT = config.get('LLM_MIN_WAIT')
-LLM_MAX_WAIT = config.get('LLM_MAX_WAIT')
+LLM_RETRY_MIN_WAIT = config.get('LLM_RETRY_MIN_WAIT')
+LLM_RETRY_MAX_WAIT = config.get('LLM_RETRY_MAX_WAIT')
 
 
 class LLM:
@@ -29,8 +29,8 @@ class LLM:
                  base_url=DEFAULT_BASE_URL,
                  api_version=DEFAULT_API_VERSION,
                  num_retries=LLM_NUM_RETRIES,
-                 min_wait=LLM_MIN_WAIT,
-                 max_wait=LLM_MAX_WAIT,
+                 retry_min_wait=LLM_RETRY_MIN_WAIT,
+                 retry_max_wait=LLM_RETRY_MAX_WAIT,
                  ):
         """
         Args:
@@ -66,7 +66,7 @@ class LLM:
 
         @retry(reraise=True,
                stop=stop_after_attempt(num_retries),
-               wait=wait_random_exponential(min=min_wait, max=max_wait), retry=retry_if_exception_type((RateLimitError, APIConnectionError, ServiceUnavailableError)), after=attempt_on_error)
+               wait=wait_random_exponential(min=retry_min_wait, max=retry_max_wait), retry=retry_if_exception_type((RateLimitError, APIConnectionError, ServiceUnavailableError)), after=attempt_on_error)
         def wrapper(*args, **kwargs):
             if 'messages' in kwargs:
                 messages = kwargs['messages']

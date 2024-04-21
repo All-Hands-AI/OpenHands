@@ -14,8 +14,8 @@ from opendevin.logger import opendevin_logger as logger
 from . import json
 
 num_retries = config.get('LLM_NUM_RETRIES')
-min_wait = config.get('LLM_MIN_WAIT')
-max_wait = config.get('LLM_MAX_WAIT')
+retry_min_wait = config.get('LLM_RETRY_MIN_WAIT')
+retry_max_wait = config.get('LLM_RETRY_MAX_WAIT')
 
 # llama-index includes a retry decorator around openai.get_embeddings() function
 # it is initialized with hard-coded values and errors
@@ -37,7 +37,7 @@ def attempt_on_error(retry_state):
 
 @retry(reraise=True,
        stop=stop_after_attempt(num_retries),
-       wait=wait_random_exponential(min=min_wait, max=max_wait),
+       wait=wait_random_exponential(min=retry_min_wait, max=retry_max_wait),
        retry=retry_if_exception_type((RateLimitError, APIConnectionError, InternalServerError)),
        after=attempt_on_error)
 def wrapper_get_embeddings(*args, **kwargs):
