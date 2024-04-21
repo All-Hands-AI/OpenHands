@@ -26,6 +26,7 @@ starcoder2:latest               f67ae0f64584    1.7 GB  19 hours ago
 
 ## 2. Start OpenDevin
 
+### 2.1 Docker
 Use the instructions in [README.md](/README.md) to start OpenDevin using Docker.
 But when running `docker run`, you'll need to add a few more arguments:
 
@@ -53,6 +54,28 @@ docker run \
 ```
 
 You should now be able to connect to `http://localhost:3000/`
+
+### 2.2 Build from Source
+Use the instructions in [Development.md](/Development.md) to build OpenDevin.
+Make sure `config.toml` is there by running `make setup-config` which will create one for you. In `config.toml`, enter the followings:
+
+```
+LLM_MODEL="ollama/llama3:8b"
+LLM_API_KEY="ollama"
+LLM_EMBEDDING_MODEL="local"
+LLM_BASE_URL="http://localhost:4000"
+WORKSPACE_BASE="./workspace"
+WORKSPACE_DIR="$(pwd)/workspace"
+```
+Replace `LLM_MODEL` of your choice.
+
+To avoid buggy `OpenAI Exception: 404` error, we use `litellm` to route the traffic from `ollama`:
+```
+pip3 install litellm[proxy]
+litellm --model ollama/llama3:8b --api_base http://localhost:11434
+```
+
+Done! Now you can start Devin by: `make run` to avoid using Docker.
 
 ## 3. Select your Model
 
