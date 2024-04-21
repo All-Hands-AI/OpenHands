@@ -10,6 +10,7 @@ import {
   saveSettings,
 } from "../../services/settingsService";
 import { I18nKey } from "../../i18n/declaration";
+import { AvailableLanguages } from "../../i18n";
 
 interface SettingsProps {
   isOpen: boolean;
@@ -49,7 +50,11 @@ const SettingsModal: React.FC<SettingsProps> = ({ isOpen, onOpenChange }) => {
   };
 
   const handleLanguageChange = (language: string) => {
-    setSettings((prev) => ({ ...prev, LANGUAGE: language }));
+    const key = AvailableLanguages.find(
+      (lang) => lang.label === language,
+    )?.value;
+
+    if (key) setSettings((prev) => ({ ...prev, LANGUAGE: key }));
   };
 
   return (

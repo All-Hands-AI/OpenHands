@@ -27,6 +27,7 @@ interface AutocompleteComboboxProps {
   items: AutocompleteItemType[];
   defaultKey: string;
   onChange: (key: string) => void;
+  allowCustomValue?: boolean;
 }
 
 export const AutocompleteCombobox: React.FC<AutocompleteComboboxProps> = ({
@@ -34,6 +35,7 @@ export const AutocompleteCombobox: React.FC<AutocompleteComboboxProps> = ({
   items,
   defaultKey,
   onChange,
+  allowCustomValue = false,
 }) => {
   const { t } = useTranslation();
 
@@ -44,8 +46,9 @@ export const AutocompleteCombobox: React.FC<AutocompleteComboboxProps> = ({
       placeholder={t(PLACEHOLDERS[ariaLabel])}
       defaultItems={items}
       defaultSelectedKey={defaultKey}
-      onSelectionChange={(key) => {
-        if (typeof key === "string") onChange(key);
+      allowsCustomValue={allowCustomValue}
+      onInputChange={(value) => {
+        onChange(value);
       }}
     >
       {(item) => (
@@ -53,4 +56,8 @@ export const AutocompleteCombobox: React.FC<AutocompleteComboboxProps> = ({
       )}
     </Autocomplete>
   );
+};
+
+AutocompleteCombobox.defaultProps = {
+  allowCustomValue: false,
 };

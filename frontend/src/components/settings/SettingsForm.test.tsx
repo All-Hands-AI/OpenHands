@@ -95,7 +95,7 @@ describe("SettingsForm", () => {
         userEvent.click(french);
       });
 
-      expect(onLanguageChangeMock).toHaveBeenCalledWith("fr");
+      expect(onLanguageChangeMock).toHaveBeenCalledWith("Français");
     });
   });
 });

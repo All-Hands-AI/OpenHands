@@ -26,6 +26,7 @@ const SettingsForm: React.FC<SettingsFormProps> = ({
       items={models.map((model) => ({ value: model, label: model }))}
       defaultKey={settings.LLM_MODEL || models[0]}
       onChange={onModelChange}
+      allowCustomValue // user can type in a custom LLM model that is not in the list
     />
     <AutocompleteCombobox
       ariaLabel="agent"
