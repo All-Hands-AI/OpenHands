@@ -15,7 +15,6 @@ from opendevin.logger import opendevin_logger as logger
 from opendevin.sandbox.sandbox import Sandbox
 from opendevin.sandbox.process import Process
 from opendevin.sandbox.docker.process import DockerProcess
-from opendevin.sandbox.plugins.mixin import PluginMixin
 from opendevin.sandbox.plugins.jupyter import JupyterRequirement
 from opendevin.schema import ConfigType
 from opendevin.utils import find_available_tcp_port
@@ -45,7 +44,7 @@ elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
 
 
-class DockerSSHBox(Sandbox, PluginMixin):
+class DockerSSHBox(Sandbox):
     instance_id: str
     container_image: str
     container_name_prefix = 'opendevin-sandbox-'
