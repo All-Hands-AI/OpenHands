@@ -1,13 +1,25 @@
-#!/bin/bash
+#!/usr/bin/env python3
+import os
+import sys
+import time
+import requests
 
 # Read the Python code from STDIN
-code=$(cat)
+code = sys.stdin.read()
 
 # Set the default kernel ID
-kernel_id=default
+kernel_id = 'default'
 
-# Send a POST request to the REST server
-response=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"kernel_id\": \"$kernel_id\", \"code\": \"$code\"}" http://localhost:$JUPYTER_EXEC_SERVER_PORT/execute)
+# try 5 times until success
+PORT = os.environ.get('JUPYTER_EXEC_SERVER_PORT')
+POST_URL = f'http://localhost:{PORT}/execute'
+
+for i in range(5):
+    response = requests.post(POST_URL, json={'kernel_id': kernel_id, 'code': code})
+    # if "500: Internal Server Error" is not in the response, break the loop
+    if '500: Internal Server Error' not in response.text:
+        break
+    time.sleep(1)
 
 # Print the response
-echo "$response"
+print(str(response.text))
