@@ -161,7 +161,7 @@ class MonologueAgent(Agent):
                     observation = BrowserOutputObservation(
                         content=thought, url='', screenshot=''
                     )
-                self._add_event(observation.to_dict())
+                self._add_event(observation.to_memory())
                 output_type = ''
             else:
                 action: Action = NullAction()
@@ -204,7 +204,7 @@ class MonologueAgent(Agent):
         self._initialize(state.plan.main_goal)
         for prev_action, obs in state.updated_info:
             self._add_event(prev_action.to_memory())
-            self._add_event(obs.to_dict())
+            self._add_event(obs.to_memory())
 
         state.updated_info = []
 
