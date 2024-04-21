@@ -6,10 +6,11 @@
     "ko-KR": "OpenDevin 워크스페이스",
     "no": "OpenDevin Arbeidsområde",
     "zh-TW": "OpenDevin 工作區",
+    "ar": "مساحة عمل أوبنديفين",
+    "fr": "OpenDevin Espace de travail",
     "it": "Area di lavoro OpenDevin",
     "pt": "Espaço de trabalho OpenDevin",
-    "es": "Espacio de trabajo de OpenDevin",
-    "tr": "OpenDevin Çalışma Alanı"
+    "es": "Espacio de trabajo de OpenDevin"
   },
   "WORKSPACE$TERMINAL_TAB_LABEL": {
     "en": "Terminal",
@@ -21,6 +22,8 @@
     "it": "Terminale",
     "pt": "Terminal",
     "es": "Terminal",
+    "ar": "الطرفية",
+    "fr": "Terminal",
     "tr": "Terminal"
   },
   "WORKSPACE$PLANNER_TAB_LABEL": {
@@ -30,10 +33,11 @@
     "ko-KR": "플래너",
     "no": "Planlegger",
     "zh-TW": "計畫器",
+    "ar": "المخطط",
+    "fr": "Planificateur",
     "it": "Pianificatore",
     "pt": "Planejador",
-    "es": "Planificador",
-    "tr": "Planlayıcı"
+    "es": "Planificador"
   },
   "WORKSPACE$CODE_EDITOR_TAB_LABEL": {
     "en": "Code Editor",
@@ -42,10 +46,11 @@
     "ko-KR": "코드 편집기",
     "no": "Kode editor",
     "zh-TW": "程式碼編輯器",
+    "ar": "محرر الكود",
+    "fr": "Éditeur de code",
     "it": "Editor di codice",
     "pt": "Editor de código",
-    "es": "Editor de código",
-    "tr": "Kod editörü"
+    "es": "Editor de código"
   },
   "WORKSPACE$BROWSER_TAB_LABEL": {
     "en": "Browser",
@@ -57,6 +62,8 @@
     "it": "Browser",
     "pt": "Navegador",
     "es": "Navegador",
+    "ar": "المتصفح",
+    "fr": "Navigateur",
     "tr": "Tarayıcı"
   },
   "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_LABEL": {
@@ -69,6 +76,8 @@
     "it": "Directory dell'area di lavoro OpenDevin",
     "pt": "Diretório do espaço de trabalho OpenDevin",
     "es": "Directorio del espacio de trabajo de OpenDevin",
+    "ar": "مجلد مساحة عمل أوبنديفين",
+    "fr": "Répertoire de l'espace de travail OpenDevin",
     "tr": "OpenDevin çalışma alanı dizini"
   },
   "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER": {
@@ -78,10 +87,11 @@
     "ko-KR": "기본: ./workspace",
     "no": "Standard: ./workspace",
     "zh-TW": "默认：./workspace",
+    "ar": "الافتراضي: ./workspace",
+    "fr": "Par défaut: ./workspace",
     "it": "Predefinito: ./workspace",
     "pt": "Padrão: ./workspace",
-    "es": "Predeterminado: ./workspace",
-    "tr":"Standart: ./workspace"
+    "es": "Predeterminado: ./workspace"
   },
   "CONFIGURATION$MODAL_TITLE": {
     "en": "Configuration",
@@ -93,6 +103,8 @@
     "it": "Configurazione",
     "pt": "Configuração",
     "es": "Configuración",
+    "ar": "التكوين",
+    "fr": "Configuration",
     "tr": "Konfigürasyon"
   },
   "CONFIGURATION$MODAL_SUB_TITLE": {
@@ -117,6 +129,8 @@
     "it": "Modello",
     "pt": "Modelo",
     "es": "Modelo",
+    "ar": "النموذج",
+    "fr": "Modèle",
     "tr": "Model"
   },
   "CONFIGURATION$MODEL_SELECT_PLACEHOLDER": {
@@ -129,6 +143,8 @@
     "it": "Seleziona un modello",
     "pt": "Selecione um modelo",
     "es": "Seleccionar un modelo",
+    "ar": "حدد نموذج",
+    "fr": "Sélectionner un modèle",
     "tr": "Model Seç"
   },
   "CONFIGURATION$AGENT_SELECT_LABEL": {
@@ -141,6 +157,8 @@
     "it": "Agente",
     "pt": "Agente",
     "es": "Agente",
+    "ar": "الوكيل",
+    "fr": "Agent",
     "tr": "Ajan"
   },
   "CONFIGURATION$AGENT_SELECT_PLACEHOLDER": {
@@ -153,6 +171,8 @@
     "it": "Seleziona un agente",
     "pt": "Selecione um agente",
     "es": "Seleccionar un agente",
+    "ar": "حدد وكيلا",
+    "fr": "Sélectionner un agent",
     "tr": "Ajan Seç"
   },
   "CONFIGURATION$LANGUAGE_SELECT_LABEL": {
@@ -162,10 +182,11 @@
     "ko-KR": "언어",
     "no": "Språk",
     "zh-TW": "語言",
+    "ar": "اللغة",
+    "fr": "Langue",
     "it": "Lingua",
     "pt": "Idioma",
-    "es": "Idioma",
-    "tr": "Dil"
+    "es": "Idioma"
   },
   "CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL": {
     "en": "Close",
@@ -177,6 +198,8 @@
     "it": "Chiudi",
     "pt": "Fechar",
     "es": "Cerrar",
+    "ar": "إغلاق",
+    "fr": "Fermer",
     "tr": "Kapat"
   },
   "CONFIGURATION$MODAL_SAVE_BUTTON_LABEL": {
@@ -186,10 +209,11 @@
     "ko-KR": "저장",
     "no": "Lagre",
     "zh-TW": "儲存",
+    "ar": "حفظ",
+    "fr": "Enregistrer",
     "it": "Salva",
     "pt": "Salvar",
-    "es": "Guardar",
-    "tr": "Kaydet"
+    "es": "Guardar"
   },
   "CHAT_INTERFACE$INITIALZING_AGENT_LOADING_MESSAGE": {
     "en": "Initializing agent (may take up to 10 seconds)...",
@@ -201,6 +225,8 @@
     "it": "Inizializzazione dell'agente (può richiedere fino a 10 secondi)...",
     "pt": "Inicializando o agente (pode levar até 10 segundos)...",
     "es": "Inicializando el agente (puede tardar hasta 10 segundos)...",
+    "ar": "جاري تهيئة الوكيل (قد يستغرق حتى 10 ثواني)...",
+    "fr": "Initialisation de l'agent (peut prendre jusqu'à 10 secondes)...",
     "tr": "Ajan başlatılıyor (bu işlem 10 saniye kadar sürebilir)..."
   },
   "CHAT_INTERFACE$INPUT_PLACEHOLDER": {
@@ -213,6 +239,8 @@
     "it": "Invia un messaggio (non interromperà l'Assistente)",
     "pt": "Envie uma mensagem (não interromperá o Assistente)",
     "es": "Enviar un mensaje (no interrumpirá al Asistente)",
+    "ar": "إرسال رسالة (لن يقاطع المساعد)",
+    "fr": "Envoyer un message (ne pas interrompre l'Assistant)",
     "tr": "Bir mesaj gönderin (Asistan Kesilmeyecek)"
   },
   "CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT": {
@@ -225,6 +253,34 @@
     "it": "Invia",
     "pt": "Enviar",
     "es": "Enviar",
+    "ar": "إرسال",
+    "fr": "Envoyer"
+  },
+  "CHAT_INTERFACE$INITIAL_MESSAGE": {
+    "en": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "zh-CN": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "de": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "ko-KR": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "no": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "zh-TW": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "it": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "pt": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "es": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "ar": "مرحبا! أنا OpenDevin، مهندس برمجيات AI. ماذا تود أن تبني معي اليوم؟",
+    "fr": "Salut! Je suis OpenDevin, un ingénieur logiciel en IA. Que voudriez-vous construire avec moi aujourd'hui?"
+  },
+  "CHAT_INTERFACE$ASSISTANT": {
+    "en": "Assistant",
+    "zh-CN": "Assistant",
+    "ko-KR": "Assistant",
+    "de": "Assistant",
+    "no": "Assistant",
+    "zh-TW": "Assistant",
+    "it": "Assistant",
+    "pt": "Assistant",
+    "es": "Assistant",
+    "ar": "مساعد",
+    "fr": "Assistant",
     "tr": "Gönder"
   }
- }
+}

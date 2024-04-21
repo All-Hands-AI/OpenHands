@@ -1,3 +1,5 @@
+from threading import Thread
+
 import chromadb
 from llama_index.core import Document
 from llama_index.core.retrievers import VectorIndexRetriever
@@ -30,7 +32,7 @@ elif embedding_strategy == 'azureopenai':
     from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
     embed_model = AzureOpenAIEmbedding(
         model='text-embedding-ada-002',
-        deployment_name=config.get('LLM_DEPLOYMENT_NAME', required=True),
+        deployment_name=config.get('LLM_EMBEDDING_DEPLOYMENT_NAME', required=True),
         api_key=config.get('LLM_API_KEY', required=True),
         azure_endpoint=config.get('LLM_BASE_URL', required=True),
         api_version=config.get('LLM_API_VERSION', required=True),
@@ -84,7 +86,11 @@ class LongTermMemory:
             },
         )
         self.thought_idx += 1
-        logger.debug("Adding %s event to memory: %d", t, self.thought_idx)
+        logger.debug('Adding %s event to memory: %d', t, self.thought_idx)
+        thread = Thread(target=self._add_doc, args=(doc,))
+        thread.start()  # We add the doc concurrently so we don't have to wait ~500ms for the insert
+
+    def _add_doc(self, doc):
         self.index.insert(doc)
 
     def search(self, query: str, k: int = 10):

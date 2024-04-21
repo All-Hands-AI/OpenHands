@@ -3,13 +3,15 @@ import { INode, flattenTree } from "react-accessible-treeview";
 import { IFlatMetadata } from "react-accessible-treeview/dist/TreeView/utils";
 import { WorkspaceFile } from "../services/fileService";
 
+export const initialState = {
+  code: "# Welcome to OpenDevin!",
+  selectedIds: [] as number[],
+  workspaceFolder: { name: "" } as WorkspaceFile,
+};
+
 export const codeSlice = createSlice({
   name: "code",
-  initialState: {
-    code: "# Welcome to OpenDevin!",
-    selectedIds: [] as number[],
-    workspaceFolder: { name: "" } as WorkspaceFile,
-  },
+  initialState,
   reducers: {
     setCode: (state, action) => {
       state.code = action.payload;

@@ -13,12 +13,13 @@ DEFAULT_CONFIG: dict = {
     ConfigType.LLM_BASE_URL: None,
     ConfigType.WORKSPACE_BASE: os.getcwd(),
     ConfigType.WORKSPACE_MOUNT_PATH: None,
+    ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX: '/workspace',
     ConfigType.WORKSPACE_MOUNT_REWRITE: None,
     ConfigType.LLM_MODEL: 'gpt-3.5-turbo-1106',
     ConfigType.SANDBOX_CONTAINER_IMAGE: 'ghcr.io/opendevin/sandbox',
     ConfigType.RUN_AS_DEVIN: 'true',
     ConfigType.LLM_EMBEDDING_MODEL: 'local',
-    ConfigType.LLM_DEPLOYMENT_NAME: None,
+    ConfigType.LLM_EMBEDDING_DEPLOYMENT_NAME: None,
     ConfigType.LLM_API_VERSION: None,
     ConfigType.LLM_NUM_RETRIES: 1,
     ConfigType.LLM_COOLDOWN_TIME: 1,
@@ -28,7 +29,8 @@ DEFAULT_CONFIG: dict = {
     # Assuming 5 characters per token, 5 million is a reasonable default limit.
     ConfigType.MAX_CHARS: 5_000_000,
     ConfigType.AGENT: 'MonologueAgent',
-    ConfigType.SANDBOX_TYPE: 'ssh',
+    ConfigType.E2B_API_KEY: '',
+    ConfigType.SANDBOX_TYPE: 'ssh',  # Can be 'ssh', 'exec', or 'e2b'
     ConfigType.USE_HOST_NETWORK: 'false',
     ConfigType.SSH_HOSTNAME: 'localhost',
     ConfigType.DISABLE_COLOR: 'false',
@@ -48,7 +50,7 @@ for k, v in config.items():
         config[k] = tomlConfig[k]
 
 
-def parse_arguments():
+def get_parser():
     parser = argparse.ArgumentParser(
         description='Run an agent with a specific task')
     parser.add_argument(
@@ -57,13 +59,56 @@ def parse_arguments():
         type=str,
         help='The working directory for the agent',
     )
+    parser.add_argument(
+        '-t', '--task', type=str, default='', help='The task for the agent to perform'
+    )
+    parser.add_argument(
+        '-f',
+        '--file',
+        type=str,
+        help='Path to a file containing the task. Overrides -t if both are provided.',
+    )
+    parser.add_argument(
+        '-c',
+        '--agent-cls',
+        default='MonologueAgent',
+        type=str,
+        help='The agent class to use',
+    )
+    parser.add_argument(
+        '-m',
+        '--model-name',
+        default=config.get(ConfigType.LLM_MODEL),
+        type=str,
+        help='The (litellm) model name to use',
+    )
+    parser.add_argument(
+        '-i',
+        '--max-iterations',
+        default=config.get(ConfigType.MAX_ITERATIONS),
+        type=int,
+        help='The maximum number of iterations to run the agent',
+    )
+    parser.add_argument(
+        '-n',
+        '--max-chars',
+        default=config.get(ConfigType.MAX_CHARS),
+        type=int,
+        help='The maximum number of characters to send to and receive from LLM per task',
+    )
+    return parser
+
+
+def parse_arguments():
+    parser = get_parser()
     args, _ = parser.parse_known_args()
     if args.directory:
         config[ConfigType.WORKSPACE_BASE] = os.path.abspath(args.directory)
         print(f'Setting workspace base to {config[ConfigType.WORKSPACE_BASE]}')
+    return args
 
 
-parse_arguments()
+args = parse_arguments()
 
 
 def finalize_config():

@@ -12,6 +12,7 @@ DEFAULT_BASE_URL = config.get('LLM_BASE_URL')
 DEFAULT_MODEL_NAME = config.get('LLM_MODEL')
 DEFAULT_LLM_NUM_RETRIES = config.get('LLM_NUM_RETRIES')
 DEFAULT_LLM_COOLDOWN_TIME = config.get('LLM_COOLDOWN_TIME')
+DEFAULT_API_VERSION = config.get('LLM_API_VERSION')
 
 
 class LLM:
@@ -21,14 +22,16 @@ class LLM:
                  base_url=DEFAULT_BASE_URL,
                  num_retries=DEFAULT_LLM_NUM_RETRIES,
                  cooldown_time=DEFAULT_LLM_COOLDOWN_TIME,
+                 api_version=DEFAULT_API_VERSION,
                  ):
         opendevin_logger.info(f'Initializing LLM with model: {model}')
-        self.model_name = model if model else DEFAULT_MODEL_NAME
-        self.api_key = api_key if api_key else DEFAULT_API_KEY
-        self.base_url = base_url if base_url else DEFAULT_BASE_URL
+        self.model_name = model
+        self.api_key = api_key
+        self.base_url = base_url
+        self.api_version = api_version
 
         self._completion = partial(
-            litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url)
+            litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url, api_version=self.api_version)
 
         completion_unwrapped = self._completion
 
@@ -46,7 +49,10 @@ class LLM:
                 messages = kwargs['messages']
             else:
                 messages = args[1]
-            llm_prompt_logger.debug(messages)
+            debug_message = ''
+            for message in messages:
+                debug_message += '\n\n----------\n\n' + message['content']
+            llm_prompt_logger.debug(debug_message)
             resp = completion_unwrapped(*args, **kwargs)
             message_back = resp['choices'][0]['message']['content']
             llm_response_logger.debug(message_back)
@@ -61,4 +67,8 @@ class LLM:
         return self._completion
 
     def __str__(self):
-        return f'LLM(model={self.model_name}, base_url={self.base_url})'
+        if self.api_version:
+            return f'LLM(model={self.model_name}, api_version={self.api_version}, base_url={self.base_url})'
+        elif self.base_url:
+            return f'LLM(model={self.model_name}, base_url={self.base_url})'
+        return f'LLM(model={self.model_name})'
