@@ -318,12 +318,12 @@ class DockerSSHBox(Sandbox):
                         'mode': 'rw'
                     },
                     # mount plugins directory to /opendevin/plugins
-                    os.path.join(config.LIB_ROOT, 'sandbox', 'plugins'): {
+                    os.path.join(config.get('LIB_ROOT_PATH'), 'sandbox', 'plugins'): {
                         'bind': '/opendevin/plugins',
                         'mode': 'ro'
                     },
                     # mount cache directory to /home/opendevin/.cache for pip cache reuse
-                    config.CACHE_DIR: {
+                    config.get('CACHE_DIR'): {
                         'bind': '/home/opendevin/.cache' if RUN_AS_DEVIN else '/root/.cache',
                         'mode': 'rw'
                     },

@@ -1,7 +1,7 @@
 import os
-
 import argparse
 import toml
+import pathlib
 from dotenv import load_dotenv
 
 from opendevin.schema import ConfigType
@@ -14,6 +14,8 @@ DEFAULT_CONFIG: dict = {
     ConfigType.WORKSPACE_BASE: os.getcwd(),
     ConfigType.WORKSPACE_MOUNT_PATH: None,
     ConfigType.WORKSPACE_MOUNT_REWRITE: None,
+    ConfigType.LIB_ROOT_PATH: os.path.dirname(os.path.abspath(__file__)),
+    ConfigType.CACHE_DIR: os.path.join(os.path.dirname(os.path.abspath(__file__)), '.cache'),
     ConfigType.LLM_MODEL: 'gpt-3.5-turbo-1106',
     ConfigType.SANDBOX_CONTAINER_IMAGE: 'ghcr.io/opendevin/sandbox',
     ConfigType.RUN_AS_DEVIN: 'true',
@@ -130,6 +132,6 @@ def get(key: str, required: bool = False):
     return value
 
 
-LIB_ROOT = os.path.dirname(os.path.abspath(__file__))
-CACHE_DIR = os.path.join(LIB_ROOT, '.cache')
-os.makedirs(CACHE_DIR, exist_ok=True)
+_cache_dir = config.get('CACHE_DIR')
+if _cache_dir:
+    pathlib.Path(_cache_dir).mkdir(parents=True, exist_ok=True)
