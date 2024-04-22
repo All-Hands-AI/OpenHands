@@ -177,6 +177,11 @@ can only be as powerful as the models driving it--fortunately folks on our team
 are actively working on building better open source models!
 
 
+**Note on API retries and rate limits:**
+Some LLMs have rate limits and may require retries. OpenDevin will automatically retry requests if it receives a 429 error or API connection error.
+You can set LLM_NUM_RETRIES, LLM_RETRY_MIN_WAIT, LLM_RETRY_MAX_WAIT environment variables to control the number of retries and the time between retries.
+By default, LLM_NUM_RETRIES is 5 and LLM_RETRY_MIN_WAIT, LLM_RETRY_MAX_WAIT are 3 seconds and respectively 60 seconds.
+
 ## ⭐️ Research Strategy
 
 Achieving full replication of production-grade applications with LLMs is a complex endeavor. Our strategy involves:
