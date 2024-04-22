@@ -28,3 +28,7 @@ class Sandbox(ABC, PluginMixin):
     @abstractmethod
     def close(self):
         pass
+
+    @abstractmethod
+    def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+        pass

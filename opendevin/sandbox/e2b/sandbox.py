@@ -61,6 +61,10 @@ class E2BBox(Sandbox):
         assert process_output.exit_code is not None
         return process_output.exit_code, logs_str
 
+    def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+        # FIXME
+        raise NotImplementedError('Copying files to E2B sandbox is not implemented yet')
+
     def execute_in_background(self, cmd: str) -> Process:
         process = self.sandbox.process.start(cmd)
         e2b_process = E2BProcess(process, cmd)

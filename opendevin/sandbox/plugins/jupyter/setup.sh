@@ -39,3 +39,13 @@ echo "export JUPYTER_EXEC_SERVER_PORT=$JUPYTER_EXEC_SERVER_PORT" >> ~/.bashrc
 export JUPYTER_EXEC_SERVER_PID=$!
 echo "export JUPYTER_EXEC_SERVER_PID=$JUPYTER_EXEC_SERVER_PID" >> ~/.bashrc
 echo "Execution server started with PID: $JUPYTER_EXEC_SERVER_PID"
+
+# Wait until /opendevin/logs/jupyter_kernel_gateway.log contains "is available"
+while ! grep -q "is available" /opendevin/logs/jupyter_kernel_gateway.log; do
+    sleep 1
+done
+# Wait until /opendevin/logs/jupyter_execute_server.log contains "Jupyter kernel created for conversation"
+while ! grep -q "Jupyter kernel created for conversation" /opendevin/logs/jupyter_execute_server.log; do
+    sleep 1
+done
+echo "Jupyter kernel ready."
