@@ -9,12 +9,13 @@ from opendevin import config
 from opendevin.action import (
     Action,
     AgentFinishAction,
+    AgentTalkAction,
     NullAction,
 )
 from opendevin.agent import Agent
 from opendevin.exceptions import AgentNoActionError, MaxCharsExceedError
 from opendevin.logger import opendevin_logger as logger
-from opendevin.observation import AgentErrorObservation, NullObservation, Observation
+from opendevin.observation import AgentErrorObservation, NullObservation, Observation, UserMessageObservation
 from opendevin.plan import Plan
 from opendevin.state import State
 
@@ -55,6 +56,8 @@ class AgentController:
         self.callbacks = callbacks
         # Initialize agent-required plugins for sandbox (if any)
         self.action_manager.init_sandbox_plugins(agent.sandbox_plugins)
+
+        self._await_user_message_queue: asyncio.Queue = asyncio.Queue()
 
     def update_state_for_step(self, i):
         if self.state is None:
@@ -152,6 +155,36 @@ class AgentController:
     async def notify_task_state_changed(self):
         await self._run_callbacks(TaskStateChangedAction(self._task_state))
 
+    async def add_user_message(self, message: UserMessageObservation):
+        if self.state is None:
+            return
+
+        if self._task_state == TaskState.AWAITING_USER_INPUT:
+            self._await_user_message_queue.put_nowait(message)
+
+            # set the task state to running
+            self._task_state = TaskState.RUNNING
+            await self.notify_task_state_changed()
+
+        elif self._task_state == TaskState.RUNNING:
+            self.add_history(NullAction(), message)
+
+        else:
+            raise ValueError(f'Task (state: {self._task_state}) is not in a state to add user message')
+
+    async def wait_for_user_input(self) -> UserMessageObservation:
+        self._task_state = TaskState.AWAITING_USER_INPUT
+        await self.notify_task_state_changed()
+        # wait for the next user message
+        if len(self.callbacks) == 0:
+            logger.info('Use STDIN to request user message as no callbacks are registered', extra={'msg_type': 'INFO'})
+            message = input('Request user input >> ')
+            user_message_observation = UserMessageObservation(message)
+        else:
+            user_message_observation = await self._await_user_message_queue.get()
+            self._await_user_message_queue.task_done()
+        return user_message_observation
+
     async def step(self, i: int):
         if self.state is None:
             return
@@ -191,6 +224,15 @@ class AgentController:
         self.update_state_after_step()
 
         await self._run_callbacks(action)
+
+        # whether to await for user messages
+        if isinstance(action, AgentTalkAction):
+            # await for the next user messages
+            user_message_observation = await self.wait_for_user_input()
+            logger.info(user_message_observation, extra={'msg_type': 'OBSERVATION'})
+            self.add_history(action, user_message_observation)
+            await self._run_callbacks(user_message_observation)
+            return False
 
         finished = isinstance(action, AgentFinishAction)
         if finished:

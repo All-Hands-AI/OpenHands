@@ -93,7 +93,7 @@ class AgentUnit:
             case ActionType.INIT:
                 await self.create_controller(data)
             case ActionType.START:
-                await self.start_task(data)
+                await self.start_task_or_chat(data)
             case ActionType.CHANGE_TASK_STATE:
                 task_state_action = data.get('args', {}).get('task_state_action', None)
                 if task_state_action is None:
@@ -173,7 +173,7 @@ class AgentUnit:
         )
         await self.controller.notify_task_state_changed()
 
-    async def start_task(self, start_event):
+    async def start_task_or_chat(self, start_event):
         """Starts a task for the agent.
 
         Args:
@@ -182,14 +182,19 @@ class AgentUnit:
         if 'task' not in start_event['args']:
             await self.send_error('No task specified')
             return
+        # if agent task is already running, send chat
+        if self.agent_task and self.controller:
+            await self.controller.add_user_message(
+                UserMessageObservation(start_event['args']['task'])
+            )
+            return
         await self.send_message('Starting new task...')
         task = start_event['args']['task']
         if self.controller is None:
             await self.send_error('No agent started. Please wait a second...')
             return
         try:
-            if self.agent_task:
-                self.agent_task.cancel()
+            assert not self.agent_task, 'Agent task already running'
             self.agent_task = asyncio.create_task(
                 self.controller.start(task), name='agent start task loop'
             )

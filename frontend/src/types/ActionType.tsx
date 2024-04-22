@@ -2,7 +2,7 @@ enum ActionType {
   // Initializes the agent. Only sent by client.
   INIT = "initialize",
 
-  // Starts a new development task. Only sent by the client.
+  // Starts a new development task OR provide follow-up language feedback (chat) to the agent. Only sent by the client.
   START = "start",
 
   // Reads the contents of a file.
@@ -26,7 +26,7 @@ enum ActionType {
   // Allows the agent to make a plan, set a goal, or record thoughts.
   THINK = "think",
 
-  // Allows the agent to respond to the user.
+  // Allows the agent to respond to the user. Only sent by the agent.
   TALK = "talk",
 
   // If you're absolutely certain that you've completed your task and have tested your work,

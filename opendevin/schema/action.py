@@ -11,7 +11,7 @@ class ActionTypeSchema(BaseModel):
     """
 
     START: str = Field(default='start')
-    """Starts a new development task. Only sent by the client.
+    """Starts a new development task OR send chat from the user. Only sent by the client.
     """
 
     READ: str = Field(default='read')
