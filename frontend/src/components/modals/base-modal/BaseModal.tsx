@@ -13,6 +13,7 @@ interface BaseModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   title: string;
+  isDismissable?: boolean;
   subtitle?: string;
   actions?: Action[];
   children?: React.ReactNode;
@@ -22,6 +23,7 @@ function BaseModal({
   isOpen,
   onOpenChange,
   title,
+  isDismissable = true,
   subtitle,
   actions,
   children,
@@ -31,6 +33,7 @@ function BaseModal({
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       title={title}
+      isDismissable={isDismissable}
       backdrop="blur"
       hideCloseButton
       size="sm"
@@ -58,6 +61,7 @@ function BaseModal({
 }
 
 BaseModal.defaultProps = {
+  isDismissable: true,
   subtitle: undefined,
   actions: [],
   children: null,
