@@ -188,6 +188,20 @@
     "pt": "Idioma",
     "es": "Idioma"
   },
+  "CONFIGURATION$LANGUAGE_SELECT_PLACEHOLDER": {
+    "en": "Select a language",
+    "zh-CN": "选择一种语言",
+    "de": "Wähle eine Sprache",
+    "ko-KR": "언어 선택",
+    "no": "Velg et språk",
+    "zh-TW": "選擇一種語言",
+    "it": "Seleziona una lingua",
+    "pt": "Selecione um idioma",
+    "es": "Seleccionar un idioma",
+    "ar": "حدد لغة",
+    "fr": "Sélectionner une langue",
+    "tr": "Dil Seç"
+  },
   "CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL": {
     "en": "Close",
     "zh-CN": "关闭",
