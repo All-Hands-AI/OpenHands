@@ -7,7 +7,7 @@ import {
   fetchAgents,
   saveSettings,
   getCurrentSettings,
-} from "../../services/settingsService";
+} from "../../../services/settingsService";
 import SettingsModal from "./SettingsModal";
 
 vi.mock("../../services/settingsService", async (importOriginal) => ({
