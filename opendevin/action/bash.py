@@ -25,6 +25,9 @@ class CmdRunAction(ExecutableAction):
     def message(self) -> str:
         return f'Running command: {self.command}'
 
+    def __str__(self) -> str:
+        return f'**CmdRunAction**\n{self.command}'
+
 
 @dataclass
 class CmdKillAction(ExecutableAction):
@@ -37,6 +40,9 @@ class CmdKillAction(ExecutableAction):
     @property
     def message(self) -> str:
         return f'Killing command: {self.id}'
+
+    def __str__(self) -> str:
+        return f'**CmdKillAction**\n{self.id}'
 
 
 @dataclass
@@ -63,6 +69,9 @@ class IPythonRunCellAction(ExecutableAction):
             f'execute_cli < {tmp_filepath_inside_sandbox}',
             background=False
         )
+
+    def __str__(self) -> str:
+        return f'**IPythonRunCellAction**\n{self.code}'
 
     @property
     def message(self) -> str:

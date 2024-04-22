@@ -54,6 +54,9 @@ class AgentTalkAction(NotExecutableAction):
     def message(self) -> str:
         return self.content
 
+    def __str__(self) -> str:
+        return self.content
+
 
 @dataclass
 class AgentEchoAction(ExecutableAction):
