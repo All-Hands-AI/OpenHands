@@ -1,16 +1,16 @@
-import React from "react";
-import { useTranslation } from "react-i18next";
-import { Spinner } from "@nextui-org/react";
-import BaseModal from "../base-modal/BaseModal";
-import SettingsForm from "./SettingsForm";
+import { AvailableLanguages } from "#/i18n";
+import { I18nKey } from "#/i18n/declaration";
 import {
   fetchAgents,
   fetchModels,
   getCurrentSettings,
   saveSettings,
 } from "#/services/settingsService";
-import { I18nKey } from "#/i18n/declaration";
-import { AvailableLanguages } from "#/i18n";
+import { Spinner } from "@nextui-org/react";
+import React from "react";
+import { useTranslation } from "react-i18next";
+import BaseModal from "../base-modal/BaseModal";
+import SettingsForm from "./SettingsForm";
 
 interface SettingsProps {
   isOpen: boolean;
@@ -22,6 +22,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const currentSettings = React.useMemo(() => getCurrentSettings(), []);
 
   const [models, setModels] = React.useState<string[]>([]);
+  const [apiKey, setApiKey] = React.useState<string>("");
   const [agents, setAgents] = React.useState<string[]>([]);
   const [settings, setSettings] =
     React.useState<Partial<Settings>>(currentSettings);
@@ -67,6 +68,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
         {
           label: t(I18nKey.CONFIGURATION$MODAL_SAVE_BUTTON_LABEL),
           action: () => {
+            setSettings((prev) => ({ ...prev, API_KEY: apiKey }));
             saveSettings(settings);
           },
           closeAfterAction: true,
@@ -87,10 +89,12 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
         <SettingsForm
           settings={settings}
           models={models}
+          apiKey={apiKey}
           agents={agents}
           onModelChange={handleModelChange}
           onAgentChange={handleAgentChange}
           onLanguageChange={handleLanguageChange}
+          onAPIKeyChange={(key) => setApiKey(key)}
         />
       )}
     </BaseModal>

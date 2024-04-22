@@ -8,6 +8,7 @@ import SettingsForm from "./SettingsForm";
 const onModelChangeMock = vi.fn();
 const onAgentChangeMock = vi.fn();
 const onLanguageChangeMock = vi.fn();
+const onAPIKeyChangeMock = vi.fn();
 
 const renderSettingsForm = (settings: Partial<Settings>) => {
   renderWithProviders(
@@ -15,9 +16,11 @@ const renderSettingsForm = (settings: Partial<Settings>) => {
       settings={settings}
       models={["model1", "model2", "model3"]}
       agents={["agent1", "agent2", "agent3"]}
+      apiKey="sk-..."
       onModelChange={onModelChangeMock}
       onAgentChange={onAgentChangeMock}
       onLanguageChange={onLanguageChangeMock}
+      onAPIKeyChange={onAPIKeyChangeMock}
     />,
   );
 };
