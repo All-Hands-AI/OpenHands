@@ -11,3 +11,6 @@ lint.select = [
 lint.ignore = [
     "E501",
 ]
+
+[format]
+quote-style = "single"
