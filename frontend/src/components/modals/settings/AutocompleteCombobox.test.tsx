@@ -62,4 +62,6 @@ describe("AutocompleteCombobox", () => {
     expect(modelInput).toHaveValue("model2");
     expect(onChangeMock).toHaveBeenCalledWith("model2");
   });
+
+  it.todo("should show a tooltip after 0.5 seconds of focus");
 });

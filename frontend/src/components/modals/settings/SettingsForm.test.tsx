@@ -1,6 +1,7 @@
-import React from "react";
-import { act, render, screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import React from "react";
+import { renderWithProviders } from "test-utils";
 import SettingsForm from "./SettingsForm";
 
 const onModelChangeMock = vi.fn();
@@ -8,7 +9,7 @@ const onAgentChangeMock = vi.fn();
 const onLanguageChangeMock = vi.fn();
 
 const renderSettingsForm = (settings: Partial<Settings>) => {
-  render(
+  renderWithProviders(
     <SettingsForm
       settings={settings}
       models={["model1", "model2", "model3"]}
@@ -97,5 +98,7 @@ describe("SettingsForm", () => {
 
       expect(onLanguageChangeMock).toHaveBeenCalledWith("Français");
     });
+
+    it.todo("should disable settings while task is running");
   });
 });
