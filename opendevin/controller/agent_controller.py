@@ -189,7 +189,8 @@ class AgentController:
         if self.state is None:
             return
         logger.info(f'STEP {i}', extra={'msg_type': 'STEP'})
-        logger.info(self.state.plan.main_goal, extra={'msg_type': 'PLAN'})
+        if i == 0:
+            logger.info(self.state.plan.main_goal, extra={'msg_type': 'PLAN'})
         if self.state.num_of_chars > self.max_chars:
             raise MaxCharsExceedError(self.state.num_of_chars, self.max_chars)
 
