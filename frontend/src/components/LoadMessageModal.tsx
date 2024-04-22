@@ -1,11 +1,11 @@
 import React from "react";
 import { Button } from "@nextui-org/react";
-import { fetchMsgs, clearMsgs } from "../services/session";
-import { sendChatMessageFromEvent } from "../services/chatService";
-import { handleAssistantMessage } from "../services/actions";
-import { ResFetchMsg } from "../types/ResponseType";
+import { fetchMsgs, clearMsgs } from "src/services/session";
+import { sendChatMessageFromEvent } from "src/services/chatService";
+import { handleAssistantMessage } from "src/services/actions";
+import { ResFetchMsg } from "src/types/ResponseType";
+import toast from "src/utils/toast";
 import ODModal from "./ODModal";
-import toast from "../utils/toast";
 
 interface LoadMessageModalProps {
   isOpen: boolean;

@@ -3,7 +3,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { twMerge } from "tailwind-merge";
 import { VscSend } from "react-icons/vsc";
-import { I18nKey } from "../i18n/declaration";
+import { I18nKey } from "src/i18n/declaration";
 
 interface ChatInputProps {
   disabled?: boolean;

@@ -1,6 +1,6 @@
-import ActionType from "../types/ActionType";
+import ActionType from "src/types/ActionType";
+import AgentTaskAction from "src/types/AgentTaskAction";
 import Socket from "./socket";
-import AgentTaskAction from "../types/AgentTaskAction";
 
 export function changeTaskState(message: AgentTaskAction): void {
   const eventString = JSON.stringify({

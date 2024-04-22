@@ -1,6 +1,6 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { RootState } from "../store";
+import { RootState } from "src/store";
 
 function Browser(): JSX.Element {
   const { url, screenshotSrc } = useSelector(

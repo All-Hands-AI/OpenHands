@@ -5,7 +5,7 @@ import {
   IoIosRefresh,
 } from "react-icons/io";
 import { twMerge } from "tailwind-merge";
-import { WorkspaceFile, getWorkspace } from "../../services/fileService";
+import { WorkspaceFile, getWorkspace } from "src/services/fileService";
 import ExplorerTree from "./ExplorerTree";
 import { removeEmptyNodes } from "./utils";
 import IconButton from "../IconButton";
