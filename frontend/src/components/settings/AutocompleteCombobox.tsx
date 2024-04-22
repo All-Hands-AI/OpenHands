@@ -1,7 +1,7 @@
 import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { I18nKey } from "src/i18n/declaration";
+import { I18nKey } from "#/i18n/declaration";
 
 type Label = "model" | "agent" | "language";
 

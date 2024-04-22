@@ -8,8 +8,8 @@ import {
   FaRegTimesCircle,
 } from "react-icons/fa";
 import { useSelector } from "react-redux";
-import { Plan, Task, TaskState } from "src/services/planService";
-import { RootState } from "src/store";
+import { Plan, Task, TaskState } from "#/services/planService";
+import { RootState } from "#/store";
 
 function StatusIcon({ status }: { status: TaskState }): JSX.Element {
   switch (status) {

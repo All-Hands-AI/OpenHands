@@ -1,9 +1,9 @@
-import { appendAssistantMessage } from "src/state/chatSlice";
-import { setUrl, setScreenshotSrc } from "src/state/browserSlice";
-import store from "src/store";
-import { ObservationMessage } from "src/types/Message";
-import { appendOutput } from "src/state/commandSlice";
-import ObservationType from "src/types/ObservationType";
+import { appendAssistantMessage } from "#/state/chatSlice";
+import { setUrl, setScreenshotSrc } from "#/state/browserSlice";
+import store from "#/store";
+import { ObservationMessage } from "#/types/Message";
+import { appendOutput } from "#/state/commandSlice";
+import ObservationType from "#/types/ObservationType";
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {

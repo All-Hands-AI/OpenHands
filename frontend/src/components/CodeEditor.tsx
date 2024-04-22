@@ -3,9 +3,9 @@ import { Tab, Tabs } from "@nextui-org/react";
 import type { editor } from "monaco-editor";
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "src/store";
-import { selectFile } from "src/services/fileService";
-import { setCode } from "src/state/codeSlice";
+import { RootState } from "#/store";
+import { selectFile } from "#/services/fileService";
+import { setCode } from "#/state/codeSlice";
 import FileExplorer from "./file-explorer/FileExplorer";
 
 function CodeEditor(): JSX.Element {

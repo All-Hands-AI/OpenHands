@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 import i18next from "i18next";
-import { ArgConfigType } from "src/types/ConfigType";
+import { ArgConfigType } from "#/types/ConfigType";
 
 export const settingsSlice = createSlice({
   name: "settings",

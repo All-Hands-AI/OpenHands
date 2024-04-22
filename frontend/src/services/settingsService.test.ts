@@ -1,4 +1,4 @@
-import { ArgConfigType } from "src/types/ConfigType";
+import { ArgConfigType } from "#/types/ConfigType";
 import { getSettingOrDefault, getUpdatedSettings } from "./settingsService";
 
 Storage.prototype.getItem = vi.fn();

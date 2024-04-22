@@ -3,7 +3,7 @@ import { render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { act } from "react-dom/test-utils";
 import FileExplorer from "./FileExplorer";
-import { getWorkspace } from "src/services/fileService";
+import { getWorkspace } from "#/services/fileService";
 
 vi.mock("../../services/fileService", async () => ({
   getWorkspace: vi.fn(async () => ({

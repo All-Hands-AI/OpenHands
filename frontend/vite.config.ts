@@ -2,6 +2,7 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import viteTsconfigPaths from "vite-tsconfig-paths";
+import path from "path";
 
 export default defineConfig(({ mode }) => {
   const {
@@ -52,11 +53,6 @@ export default defineConfig(({ mode }) => {
       environment: "jsdom",
       globals: true,
       setupFiles: ["vitest.setup.ts"],
-    },
-    resolve: {
-      alias: {
-        src: "/src",
-      },
     },
   };
 });
