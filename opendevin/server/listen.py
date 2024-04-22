@@ -1,14 +1,13 @@
+import json
 import uuid
 from pathlib import Path
 
 import litellm
-from fastapi import Depends, FastAPI, WebSocket
+from fastapi import Depends, FastAPI, HTTPException, Query, Response, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
-from starlette import status
-from starlette.responses import JSONResponse
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin import config, files
@@ -47,9 +46,9 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.get('/api/litellm-models')
 async def get_litellm_models():
-    """
+    '''
     Get all models supported by LiteLLM.
-    """
+    '''
     return list(set(litellm.model_list + list(litellm.model_cost.keys())))
 
 
@@ -67,11 +66,22 @@ async def get_token(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     """
-    Get token for authentication when starts a websocket connection.
+    Generate a JWT for authentication when starting a WebSocket connection. This endpoint checks if valid credentials
+    are provided and uses them to get a session ID. If no valid credentials are provided, it generates a new session ID.
     """
-    sid = get_sid_from_token(credentials.credentials) or str(uuid.uuid4())
+    if credentials and credentials.credentials:
+        sid = get_sid_from_token(credentials.credentials)
+        if not sid:
+            sid = str(uuid.uuid4())
+            logger.info(
+                f'Invalid or missing credentials, generating new session ID: {sid}'
+            )
+    else:
+        sid = str(uuid.uuid4())
+        logger.info(f'No credentials provided, generating new session ID: {sid}')
+
     token = sign_token({'sid': sid})
-    return {'token': token}
+    return {'token': token, 'status': 'ok'}
 
 
 @app.get('/api/messages')
@@ -109,11 +119,37 @@ def refresh_files():
     return structure.to_dict()
 
 
+@app.get('/api/list-files')
+def list_files(
+    relpath: str = Query(None, description='Relative path from workspace base')
+):
+    """Refreshes and returns the files and directories from a specified subdirectory or the base directory if no subdirectory is specified, limited to one level deep."""
+    base_path = Path(config.get('WORKSPACE_BASE')).resolve()
+    full_path = (base_path / relpath).resolve() if relpath is not None else base_path
+
+    logger.debug(f'Listing files at {full_path}')
+
+    # Ensure path exists, is a directory,
+    # And is within the workspace base directory - to prevent directory traversal attacks
+    # https://owasp.org/www-community/attacks/Path_Traversal
+    if (
+        not full_path.exists()
+        or not full_path.is_dir()
+        or not str(full_path).startswith(str(base_path))
+    ):
+        raise HTTPException(status_code=400, detail='Invalid path provided.')
+
+    structure = files.get_single_level_folder_structure(base_path, full_path)
+    return {'files': structure}
+
+
 @app.get('/api/select-file')
 def select_file(file: str):
     try:
         workspace_base = config.get('WORKSPACE_BASE')
         file_path = Path(workspace_base, file)
+        # The following will check if the file is within the workspace base and throw an exception if not
+        file_path.resolve().relative_to(Path(workspace_base).resolve())
         with open(file_path, 'r') as selected_file:
             content = selected_file.read()
     except Exception as e:
@@ -124,6 +160,28 @@ def select_file(file: str):
             content={'error': error_msg},
         )
     return {'code': content}
+
+
+@app.get('/api/plan')
+def get_plan(
+    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+):
+    sid = get_sid_from_token(credentials.credentials)
+    agent = agent_manager.sid_to_agent[sid]
+    controller = agent.controller
+    if controller is not None:
+        state = controller.get_state()
+        if state is not None:
+            return JSONResponse(
+                status_code=status.HTTP_200_OK,
+                content=json.dumps(
+                    {
+                        'mainGoal': state.plan.main_goal,
+                        'task': state.plan.task.to_dict(),
+                    }
+                ),
+            )
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @app.get('/')

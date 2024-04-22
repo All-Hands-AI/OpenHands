@@ -5,13 +5,15 @@ import { useSelector } from "react-redux";
 import { useTypingEffect } from "../hooks/useTypingEffect";
 import {
   addAssistantMessageToChat,
+  sendChatMessage,
   setTypingActive,
   takeOneAndType,
 } from "../services/chatService";
 import { Message } from "../state/chatSlice";
 import { RootState } from "../store";
 import AgentStatusBar from "./AgentStatusBar";
-import Input from "./Input";
+import ChatInput from "./ChatInput";
+import AgentControlBar from "./AgentControlBar";
 
 interface IChatBubbleProps {
   msg: Message;
@@ -122,8 +124,9 @@ function ChatInterface(): JSX.Element {
         Chat
       </div>
       <MessageList />
-      {initialized ? null : <AgentStatusBar />}
-      <Input />
+      <AgentStatusBar />
+      <AgentControlBar />
+      <ChatInput disabled={!initialized} onSendMessage={sendChatMessage} />
     </div>
   );
 }
