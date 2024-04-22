@@ -6,7 +6,7 @@ You are a brilliant mathematician and programmer. You've been given the follwoin
 Please write a python script that solves this problem, and prints the answer to stdout.
 ONLY print the answer to stdout, nothing else.
 You should then run the python script with `python3`,
-and call the `finish` action with the answer as the argument.
+and call the `finish` action with `outputs.answer` set to the answer.
 
 ## History
 {{ instructions.history_truncated }}

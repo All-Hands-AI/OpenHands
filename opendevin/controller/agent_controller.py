@@ -176,8 +176,8 @@ class AgentController:
         if self.delegate is not None:
             delegate_done = await self.delegate.step(i)
             if delegate_done:
-                result = self.delegate.state.result if self.delegate.state else ''
-                obs: Observation = AgentDelegateObservation(result)
+                result = self.delegate.state.results if self.delegate.state else {}
+                obs: Observation = AgentDelegateObservation(content='', outputs=result)
                 self.add_history(NullAction(), obs)
                 self.delegate = None
                 self.delegateAction = None
@@ -222,7 +222,7 @@ class AgentController:
 
         finished = isinstance(action, AgentFinishAction)
         if finished:
-            self.state.result = action.output  # type: ignore[attr-defined]
+            self.state.result = action.outputs  # type: ignore[attr-defined]
             logger.info(action, extra={'msg_type': 'INFO'})
             return True
 

@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Dict
 
 from opendevin.observation import (
     AgentRecallObservation,
@@ -68,7 +68,7 @@ class AgentSummarizeAction(NotExecutableAction):
 
 @dataclass
 class AgentFinishAction(NotExecutableAction):
-    output: str = ''
+    outputs: Dict = field(default_factory=dict)
     action: str = ActionType.FINISH
 
     async def run(self, controller: 'AgentController') -> 'Observation':

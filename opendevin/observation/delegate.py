@@ -11,6 +11,7 @@ class AgentDelegateObservation(Observation):
     This is used when the produced action is NOT executable.
     """
 
+    outputs: dict
     observation: str = ObservationType.DELEGATE
 
     @property
