@@ -21,6 +21,7 @@ provide the correct inputs for the delegate you select.
 
 ## Available Actions
 {{ instructions.actions.delegate }}
+{{ instructions.actions.finish }}
 
 ## Format
 {{ instructions.format.action }}

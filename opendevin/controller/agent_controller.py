@@ -39,7 +39,7 @@ class AgentController:
     action_manager: ActionManager
     callbacks: List[Callable]
 
-    delegate: 'AgentController' | None = None
+    delegate: 'AgentController | None' = None
     state: State | None = None
 
     _task_state: TaskState = TaskState.INIT
