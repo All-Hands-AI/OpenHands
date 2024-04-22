@@ -188,6 +188,20 @@
     "pt": "Idioma",
     "es": "Idioma"
   },
+  "CONFIGURATION$LANGUAGE_SELECT_PLACEHOLDER": {
+    "en": "Select a language",
+    "zh-CN": "选择一种语言",
+    "de": "Wähle eine Sprache",
+    "ko-KR": "언어 선택",
+    "no": "Velg et språk",
+    "zh-TW": "選擇一種語言",
+    "it": "Seleziona una lingua",
+    "pt": "Selecione um idioma",
+    "es": "Seleccionar un idioma",
+    "ar": "حدد لغة",
+    "fr": "Sélectionner une langue",
+    "tr": "Dil Seç"
+  },
   "CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL": {
     "en": "Close",
     "zh-CN": "关闭",
@@ -214,6 +228,18 @@
     "it": "Salva",
     "pt": "Salvar",
     "es": "Guardar"
+  },
+  "LOAD_SESSION$MODAL_TITLE": {
+    "en": "Unfinished Session Detected"
+  },
+  "LOAD_SESSION$MODAL_CONTENT": {
+    "en": "You seem to have an unfinished task. Would you like to pick up where you left off or start fresh?"
+  },
+  "LOAD_SESSION$RESUME_SESSION_MODAL_ACTION_LABEL": {
+    "en": "Resume Session"
+  },
+  "LOAD_SESSION$START_NEW_SESSION_MODAL_ACTION_LABEL": {
+    "en": "Start New Session"
   },
   "CHAT_INTERFACE$INITIALZING_AGENT_LOADING_MESSAGE": {
     "en": "Initializing agent (may take up to 10 seconds)...",
@@ -260,7 +286,7 @@
     "en": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "zh-CN": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "de": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
-    "ko-KR": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "ko-KR": "안녕하세요! 저는 오픈데빈(OpenDevin), AI 소프트웨어 엔지니어입니다. 오늘은 저와 함께 무엇을 만들어 볼까요?",
     "no": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "zh-TW": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "it": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
@@ -272,7 +298,7 @@
   "CHAT_INTERFACE$ASSISTANT": {
     "en": "Assistant",
     "zh-CN": "Assistant",
-    "ko-KR": "Assistant",
+    "ko-KR": "어시스턴트",
     "de": "Assistant",
     "no": "Assistant",
     "zh-TW": "Assistant",

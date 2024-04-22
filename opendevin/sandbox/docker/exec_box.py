@@ -11,7 +11,9 @@ import docker
 
 from opendevin import config
 from opendevin.logger import opendevin_logger as logger
-from opendevin.sandbox.sandbox import Sandbox, BackgroundCommand
+from opendevin.sandbox.sandbox import Sandbox
+from opendevin.sandbox.process import Process
+from opendevin.sandbox.docker.process import DockerProcess
 from opendevin.schema import ConfigType
 from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 
@@ -19,7 +21,7 @@ InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
 CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
-SANDBOX_WORKSPACE_DIR = '/workspace'
+SANDBOX_WORKSPACE_DIR = config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX)
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
@@ -40,7 +42,7 @@ class DockerExecBox(Sandbox):
     docker_client: docker.DockerClient
 
     cur_background_id = 0
-    background_commands: Dict[int, BackgroundCommand] = {}
+    background_commands: Dict[int, Process] = {}
 
     def __init__(
             self,
@@ -120,14 +122,14 @@ class DockerExecBox(Sandbox):
                 return -1, f'Command: "{cmd}" timed out'
         return exit_code, logs.decode('utf-8')
 
-    def execute_in_background(self, cmd: str) -> BackgroundCommand:
+    def execute_in_background(self, cmd: str) -> Process:
         result = self.container.exec_run(
             self.get_exec_cmd(cmd), socket=True, workdir=SANDBOX_WORKSPACE_DIR
         )
         result.output._sock.setblocking(0)
         pid = self.get_pid(cmd)
-        bg_cmd = BackgroundCommand(self.cur_background_id, cmd, result, pid)
-        self.background_commands[bg_cmd.id] = bg_cmd
+        bg_cmd = DockerProcess(self.cur_background_id, cmd, result, pid)
+        self.background_commands[bg_cmd.pid] = bg_cmd
         self.cur_background_id += 1
         return bg_cmd
 
@@ -142,13 +144,14 @@ class DockerExecBox(Sandbox):
                 return pid
         return None
 
-    def kill_background(self, id: int) -> BackgroundCommand:
+    def kill_background(self, id: int) -> Process:
         if id not in self.background_commands:
             raise SandboxInvalidBackgroundCommandError()
         bg_cmd = self.background_commands[id]
         if bg_cmd.pid is not None:
             self.container.exec_run(
                 f'kill -9 {bg_cmd.pid}', workdir=SANDBOX_WORKSPACE_DIR)
+        assert isinstance(bg_cmd, DockerProcess)
         bg_cmd.result.output.close()
         self.background_commands.pop(id)
         return bg_cmd
@@ -259,14 +262,14 @@ if __name__ == '__main__':
                 logger.info('Exiting...')
                 break
             if user_input.lower() == 'kill':
-                exec_box.kill_background(bg_cmd.id)
+                exec_box.kill_background(bg_cmd.pid)
                 logger.info('Background process killed')
                 continue
             exit_code, output = exec_box.execute(user_input)
             logger.info('exit code: %d', exit_code)
             logger.info(output)
-            if bg_cmd.id in exec_box.background_commands:
-                logs = exec_box.read_logs(bg_cmd.id)
+            if bg_cmd.pid in exec_box.background_commands:
+                logs = exec_box.read_logs(bg_cmd.pid)
                 logger.info('background logs: %s', logs)
             sys.stdout.flush()
     except KeyboardInterrupt:

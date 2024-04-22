@@ -1,10 +1,10 @@
-import { setInitialized } from "../state/taskSlice";
-import store from "../store";
-import ActionType from "../types/ActionType";
-import { SupportedSettings } from "../types/ConfigType";
+import { setInitialized } from "#/state/taskSlice";
+import store from "#/store";
+import ActionType from "#/types/ActionType";
+import { SupportedSettings } from "#/types/ConfigType";
+import { setByKey } from "#/state/settingsSlice";
+import toast from "#/utils/toast";
 import Socket from "./socket";
-import { setByKey } from "../state/settingsSlice";
-import toast from "../utils/toast";
 
 export type Settings = { [key: string]: string };
 

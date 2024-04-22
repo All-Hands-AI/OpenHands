@@ -13,6 +13,7 @@ from opendevin.observation import (
     CmdOutputObservation,
 )
 from opendevin.exceptions import LLMOutputError
+from opendevin import config
 
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is this:
@@ -58,7 +59,7 @@ actions are all "think" actions, you should consider taking a different action.
 
 Notes:
 * your environment is Debian Linux. You can install software with `apt`
-* your working directory will not change, even if you run `cd`. All commands will be run in the `/workspace` directory.
+* your working directory will not change, even if you run `cd`. All commands will be run in the `%(WORKSPACE_MOUNT_PATH_IN_SANDBOX)s` directory.
 * don't run interactive commands, or commands that don't return (e.g. `node server.js`). You may run commands in the background (e.g. `node server.js &`)
 
 What is your next thought or action? Again, you must reply with JSON, and only with JSON.
@@ -145,6 +146,7 @@ def get_request_action_prompt(
         'monologue': json.dumps(thoughts, indent=2),
         'background_commands': bg_commands_message,
         'hint': hint,
+        'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.get('WORKSPACE_MOUNT_PATH_IN_SANDBOX'),
     }
 
 

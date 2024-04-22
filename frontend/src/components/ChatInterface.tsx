@@ -2,18 +2,18 @@ import { Card, CardBody } from "@nextui-org/react";
 import React, { useEffect, useRef } from "react";
 import { IoMdChatbubbles } from "react-icons/io";
 import { useSelector } from "react-redux";
-import { useTypingEffect } from "../hooks/useTypingEffect";
+import { useTypingEffect } from "#/hooks/useTypingEffect";
 import {
   addAssistantMessageToChat,
   sendChatMessage,
   setTypingActive,
   takeOneAndType,
-} from "../services/chatService";
-import { Message } from "../state/chatSlice";
-import { RootState } from "../store";
+} from "#/services/chatService";
+import { Message } from "#/state/chatSlice";
+import { RootState } from "#/store";
+import AgentControlBar from "./AgentControlBar";
 import AgentStatusBar from "./AgentStatusBar";
 import ChatInput from "./ChatInput";
-import AgentControlBar from "./AgentControlBar";
 
 interface IChatBubbleProps {
   msg: Message;
@@ -124,8 +124,10 @@ function ChatInterface(): JSX.Element {
         Chat
       </div>
       <MessageList />
-      <AgentStatusBar />
-      <AgentControlBar />
+      <div className="flex justify-between items-center px-4">
+        <AgentStatusBar />
+        <AgentControlBar />
+      </div>
       <ChatInput disabled={!initialized} onSendMessage={sendChatMessage} />
     </div>
   );

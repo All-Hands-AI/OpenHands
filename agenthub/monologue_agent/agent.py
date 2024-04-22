@@ -125,7 +125,8 @@ class MonologueAgent(Agent):
 
     def _initialize(self, task: str):
         """
-        Utilizes the INITIAL_THOUGHTS list to give the agent a context for it's capabilities and how to navigate the /workspace.
+        Utilizes the INITIAL_THOUGHTS list to give the agent a context for it's capabilities
+        and how to navigate the WORKSPACE_MOUNT_PATH_IN_SANDBOX in `config` (e.g., /workspace by default).
         Short circuited to return when already initialized.
 
         Parameters:
@@ -161,7 +162,7 @@ class MonologueAgent(Agent):
                     observation = BrowserOutputObservation(
                         content=thought, url='', screenshot=''
                     )
-                self._add_event(observation.to_dict())
+                self._add_event(observation.to_memory())
                 output_type = ''
             else:
                 action: Action = NullAction()
@@ -204,7 +205,7 @@ class MonologueAgent(Agent):
         self._initialize(state.plan.main_goal)
         for prev_action, obs in state.updated_info:
             self._add_event(prev_action.to_memory())
-            self._add_event(obs.to_dict())
+            self._add_event(obs.to_memory())
 
         state.updated_info = []
 

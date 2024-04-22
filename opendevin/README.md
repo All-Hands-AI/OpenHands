@@ -6,7 +6,7 @@ See the [main README](../README.md) for instructions on how to run OpenDevin fro
 
 ## Sandbox Image
 ```bash
-docker build -f opendevin/sandbox/Dockerfile -t opendevin/sandbox:v0.1 .
+docker build -f opendevin/sandbox/docker/Dockerfile -t opendevin/sandbox:v0.1 .
 ```
 
 ## Sandbox Runner
@@ -15,7 +15,7 @@ Run the docker-based interactive sandbox:
 
 ```bash
 mkdir workspace
-python3 opendevin/sandbox/sandbox.py -d workspace
+python3 opendevin/sandbox/docker/sandbox.py -d workspace
 ```
 
 It will map `./workspace` into the docker container with the folder permission correctly adjusted for current user.
