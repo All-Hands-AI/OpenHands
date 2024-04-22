@@ -188,7 +188,6 @@ class AgentUnit:
                 UserMessageObservation(start_event['args']['task'])
             )
             return
-        await self.send_message('Starting new task...')
         task = start_event['args']['task']
         if self.controller is None:
             await self.send_error('No agent started. Please wait a second...')
