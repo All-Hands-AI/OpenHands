@@ -2,15 +2,15 @@ import { Card, CardBody } from "@nextui-org/react";
 import React, { useEffect, useRef } from "react";
 import { IoMdChatbubbles } from "react-icons/io";
 import { useSelector } from "react-redux";
-import { useTypingEffect } from "../hooks/useTypingEffect";
+import { useTypingEffect } from "#/hooks/useTypingEffect";
 import {
   addAssistantMessageToChat,
   sendChatMessage,
   setTypingActive,
   takeOneAndType,
-} from "../services/chatService";
-import { Message } from "../state/chatSlice";
-import { RootState } from "../store";
+} from "#/services/chatService";
+import { Message } from "#/state/chatSlice";
+import { RootState } from "#/store";
 import AgentControlBar from "./AgentControlBar";
 import AgentStatusBar from "./AgentStatusBar";
 import ChatInput from "./ChatInput";

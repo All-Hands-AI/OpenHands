@@ -8,9 +8,9 @@ import {
   fetchModels,
   getCurrentSettings,
   saveSettings,
-} from "../../../services/settingsService";
-import { I18nKey } from "../../../i18n/declaration";
-import { AvailableLanguages } from "../../../i18n";
+} from "#/services/settingsService";
+import { I18nKey } from "#/i18n/declaration";
+import { AvailableLanguages } from "#/i18n";
 
 interface SettingsProps {
   isOpen: boolean;
