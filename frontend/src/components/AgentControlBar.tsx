@@ -1,15 +1,15 @@
 import { Button, ButtonGroup, Tooltip } from "@nextui-org/react";
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
-import ArrowIcon from "../assets/arrow";
-import PauseIcon from "../assets/pause";
-import PlayIcon from "../assets/play";
-import { changeTaskState } from "../services/agentStateService";
-import { clearMsgs } from "../services/session";
-import { clearMessages } from "../state/chatSlice";
-import store, { RootState } from "../store";
-import AgentTaskAction from "../types/AgentTaskAction";
-import AgentTaskState from "../types/AgentTaskState";
+import ArrowIcon from "src/assets/arrow";
+import PauseIcon from "src/assets/pause";
+import PlayIcon from "src/assets/play";
+import { changeTaskState } from "src/services/agentStateService";
+import { clearMsgs } from "src/services/session";
+import { clearMessages } from "src/state/chatSlice";
+import store, { RootState } from "src/store";
+import AgentTaskAction from "src/types/AgentTaskAction";
+import AgentTaskState from "src/types/AgentTaskState";
 
 const TaskStateActionMap = {
   [AgentTaskAction.START]: AgentTaskState.RUNNING,

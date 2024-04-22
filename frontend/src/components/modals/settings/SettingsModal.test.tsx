@@ -10,10 +10,8 @@ import {
 } from "../../../services/settingsService";
 import SettingsModal from "./SettingsModal";
 
-vi.mock("../../../services/settingsService", async (importOriginal) => ({
-  ...(await importOriginal<
-    typeof import("../../../services/settingsService")
-  >()),
+vi.mock("../../services/settingsService", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("src/services/settingsService")>()),
   getCurrentSettings: vi.fn().mockReturnValue({}),
   saveSettings: vi.fn(),
   fetchModels: vi

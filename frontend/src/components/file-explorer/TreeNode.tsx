@@ -1,7 +1,7 @@
 import React from "react";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
-import { WorkspaceFile } from "../../services/fileService";
+import { WorkspaceFile } from "src/services/fileService";
 
 interface TitleProps {
   name: string;

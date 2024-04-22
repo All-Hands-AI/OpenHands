@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { Plan, TaskState } from "../services/planService";
+import { Plan, TaskState } from "src/services/planService";
 
 export const planSlice = createSlice({
   name: "plan",

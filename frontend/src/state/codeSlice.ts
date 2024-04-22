@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { INode, flattenTree } from "react-accessible-treeview";
 import { IFlatMetadata } from "react-accessible-treeview/dist/TreeView/utils";
-import { WorkspaceFile } from "../services/fileService";
+import { WorkspaceFile } from "src/services/fileService";
 
 export const initialState = {
   code: "# Welcome to OpenDevin!",

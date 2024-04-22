@@ -53,5 +53,10 @@ export default defineConfig(({ mode }) => {
       globals: true,
       setupFiles: ["vitest.setup.ts"],
     },
+    resolve: {
+      alias: {
+        src: "/src",
+      },
+    },
   };
 });
