@@ -179,7 +179,6 @@ def parse_action_response(response: str) -> Action:
     if 'content' in action_dict:
         # The LLM gets confused here. Might as well be robust
         action_dict['contents'] = action_dict.pop('content')
-
     return action_from_dict(action_dict)
 
 
