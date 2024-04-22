@@ -129,6 +129,7 @@ What is your next thought or action? Again, you must reply with JSON, and only w
 %(hint)s
 """
 
+
 def get_hint(latest_action_id: str) -> str:
     """ Returns action type hint based on given action_id """
 
@@ -172,7 +173,7 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
         if not isinstance(observation, NullObservation):
             observation_dict = observation.to_dict()
             if (
-                'extras' in observation_dict 
+                'extras' in observation_dict
                 and 'screenshot' in observation_dict['extras']
             ):
                 del observation_dict['extras']['screenshot']
