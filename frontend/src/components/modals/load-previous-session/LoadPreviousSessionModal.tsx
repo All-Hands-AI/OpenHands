@@ -45,7 +45,7 @@ function LoadPreviousSessionModal({
       isOpen={isOpen}
       title={t(I18nKey.LOAD_SESSION$MODAL_TITLE)}
       onOpenChange={onOpenChange}
-      isDismissable={false} // prevent unnecessary messages from being stored
+      isDismissable={false} // prevent unnecessary messages from being stored (issue #1285)
       actions={[
         {
           label: t(I18nKey.LOAD_SESSION$RESUME_SESSION_MODAL_ACTION_LABEL),
