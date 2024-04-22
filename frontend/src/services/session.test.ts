@@ -62,7 +62,7 @@ describe("Session Service", () => {
         messages: [
           {
             id: "1",
-            role: "admin",
+            role: "user",
             payload: {} as ResFetchMsg["payload"],
           },
         ],
