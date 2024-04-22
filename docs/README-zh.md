@@ -3,6 +3,7 @@
 [English](../README.md) | [中文](README-zh.md)
 
 <a name="readme-top"></a>
+
 <!--
 *** Thanks for checking out the Best-README-Template. If you have a suggestion
 *** that would make this better, please fork the repo and create a pull request
@@ -10,8 +11,6 @@
 *** Don't forget to give the project a star!
 *** Thanks again! Now go create something AMAZING! :D
 -->
-
-
 
 <!-- PROJECT SHIELDS -->
 <!--
@@ -38,9 +37,6 @@
   <img src="../logo.png" alt="Logo" width="200" height="200">
   <h1 align="center">OpenDevin：少写代码，多创作</h1>
 </div>
-
-
-
 
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -71,7 +67,6 @@
 
 [Project Demo Video](https://github.com/OpenDevin/OpenDevin/assets/38853559/71a472cc-df34-430c-8b1d-4d7286c807c9)
 
-
 欢迎来到 OpenDevin，一个开源项目，旨在复制 Devin，一款自主的 AI 软件工程师，能够执行复杂的工程任务，并与用户积极合作，共同进行软件开发项目。该项目立志通过开源社区的力量复制、增强和创新 Devin。
 
 <p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
@@ -81,6 +76,7 @@
 </p>
 
 ## 🤔 Devin 是什么？
+
 Devin 代表着一种尖端的自主代理程序，旨在应对软件工程的复杂性。它利用诸如 shell、代码编辑器和 Web 浏览器等工具的组合，展示了在软件开发中利用 LLMs（大型语言模型）的未开发潜力。我们的目标是探索和拓展 Devin 的能力，找出其优势和改进空间，以指导开源代码模型的进展。
 
 <p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
@@ -90,6 +86,7 @@ Devin 代表着一种尖端的自主代理程序，旨在应对软件工程的�
 </p>
 
 ## 🐚 为什么选择 OpenDevin？
+
 OpenDevin 项目源于对复制、增强和超越原始 Devin 模型的愿望。通过与开源社区的互动，我们旨在解决 Code LLMs 在实际场景中面临的挑战，创作出对社区有重大贡献并为未来进步铺平道路的作品。
 
 <p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
@@ -116,10 +113,11 @@ OpenDevin 目前仍在进行中，但您已经可以运行 alpha 版本来查看
 </p>
 
 ## ⚠️ 注意事项和警告
-* OpenDevin 仍然是一个 alpha 项目。它变化很快且不稳定。我们正在努力在未来几周发布稳定版本。
-* OpenDevin 会向您配置的 LLM 发出许多提示。大多数 LLM 都需要花费金钱，请务必设置花费限制并监控使用情况。
-* OpenDevin 在 Docker 沙箱中运行 `bash` 命令，因此不应影响您的计算机。但您的工作区目录将附加到该沙箱，并且目录中的文件可能会被修改或删除。
-* 我们默认的代理目前是 MonologueAgent，具有有限的功能，但相当稳定。我们正在开发其他代理实现，包括 [SWE 代理](https://swe-agent.com/)。您可以[在这里阅读我们当前的代理集合](./docs/documentation/Agents.md)。
+
+- OpenDevin 仍然是一个 alpha 项目。它变化很快且不稳定。我们正在努力在未来几周发布稳定版本。
+- OpenDevin 会向您配置的 LLM 发出许多提示。大多数 LLM 都需要花费金钱，请务必设置花费限制并监控使用情况。
+- OpenDevin 在 Docker 沙箱中运行 `bash` 命令，因此不应影响您的计算机。但您的工作区目录将附加到该沙箱，并且目录中的文件可能会被修改或删除。
+- 我们默认的代理目前是 MonologueAgent，具有有限的功能，但相当稳定。我们正在开发其他代理实现，包括 [SWE 代理](https://swe-agent.com/)。您可以[在这里阅读我们当前的代理集合](./docs/documentation/Agents.md)。
 
 ## 🚀 开始
 
@@ -127,21 +125,23 @@ OpenDevin 目前仍在进行中，但您已经可以运行 alpha 版本来查看
 
 运行 OpenDevin 最简单的方法是在 Docker 容器中。
 您可以运行：
+
 ```bash
 # 您的 OpenAI API 密钥，或任何其他 LLM API 密钥
 export LLM_API_KEY="sk-..."
 
 # 您想要 OpenDevin 修改的目录。必须是绝对路径！
-export WORKSPACE_DIR=$(pwd)/workspace
+export WORKSPACE_BASE=$(pwd)/workspace
 
 docker run \
     -e LLM_API_KEY \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_DIR \
-    -v $WORKSPACE_DIR:/opt/workspace_base \
+    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+    -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
     ghcr.io/opendevin/opendevin:latest
 ```
+
 将 `$(pwd)/workspace` 替换为您希望 OpenDevin 使用的代码路径。
 
 您可以在 `http://localhost:3000` 找到正在运行的 OpenDevin。
@@ -149,6 +149,7 @@ docker run \
 请参阅[Development.md](Development.md)以获取在没有 Docker 的情况下运行 OpenDevin 的说明。
 
 ## 🤖 LLM 后端
+
 OpenDevin 可以与任何 LLM 后端配合使用。
 要获取提供的 LM 提供商和模型的完整列表，请参阅
 [litellm 文档](https://docs.litellm.ai/docs/providers)。
@@ -157,11 +158,12 @@ OpenDevin 可以与任何 LLM 后端配合使用。
 但在 OpenDevin UI 中选择模型将覆盖此设置。
 
 对于某些 LLM，可能需要以下环境变量：
-* `LLM_API_KEY`
-* `LLM_BASE_URL`
-* `LLM_EMBEDDING_MODEL`
-* `LLM_EMBEDDING_DEPLOYMENT_NAME`
-* `LLM_API_VERSION`
+
+- `LLM_API_KEY`
+- `LLM_BASE_URL`
+- `LLM_EMBEDDING_MODEL`
+- `LLM_EMBEDDING_DEPLOYMENT_NAME`
+- `LLM_API_VERSION`
 
 **关于替代模型的说明：**
 某些替代模型可能比其他模型更具挑战性。
@@ -206,12 +208,12 @@ OpenDevin 是一个社区驱动的项目，我们欢迎所有人的贡献。无�
 
 现在我们既有 Slack 工作空间用于协作构建 OpenDevin，也有 Discord 服务器用于讨论与项目、LLM、Agent 等相关的任何事情。
 
-* [Slack 工作空间](https://join.slack.com/t/opendevin/shared_invite/zt-2etftj1dd-X1fDL2PYIVpsmJZkqEYANw)
-* [Discord 服务器](https://discord.gg/mBuDGRzzES)
+- [Slack 工作空间](https://join.slack.com/t/opendevin/shared_invite/zt-2etftj1dd-X1fDL2PYIVpsmJZkqEYANw)
+- [Discord 服务器](https://discord.gg/mBuDGRzzES)
 
 如果你愿意贡献，欢迎加入我们的社区（请注意，现在无需填写[表格](https://forms.gle/758d5p6Ve8r2nxxq6)）。让我们一起简化软件工程！
 
-🐚 **少写代码，用OpenDevin创造更多。**
+🐚 **少写代码，用 OpenDevin 创造更多。**
 
 [![Star History Chart](https://api.star-history.com/svg?repos=OpenDevin/OpenDevin&type=Date)](https://star-history.com/#OpenDevin/OpenDevin&Date)
 
