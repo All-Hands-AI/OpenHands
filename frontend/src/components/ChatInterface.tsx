@@ -125,8 +125,8 @@ function ChatInterface(): JSX.Element {
       </div>
       <MessageList />
       <div className="flex justify-between items-center px-4">
-        <AgentControlBar />
         <AgentStatusBar />
+        <AgentControlBar />
       </div>
       <ChatInput disabled={!initialized} onSendMessage={sendChatMessage} />
     </div>
