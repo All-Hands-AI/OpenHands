@@ -76,3 +76,17 @@ class AgentFinishAction(NotExecutableAction):
     @property
     def message(self) -> str:
         return "All done! What's next on the agenda?"
+
+
+@dataclass
+class AgentDelegateAction(NotExecutableAction):
+    agent: str
+    inputs: dict
+    action: str = ActionType.DELEGATE
+
+    async def run(self, controller: 'AgentController') -> 'Observation':
+        raise NotImplementedError
+
+    @property
+    def message(self) -> str:
+        return "I'm delegating this task to a human. They'll get back to you soon."
