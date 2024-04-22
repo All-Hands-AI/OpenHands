@@ -152,8 +152,9 @@ OpenDevin can work with any LLM backend.
 For a full list of the LM providers and models available, please consult the
 [litellm documentation](https://docs.litellm.ai/docs/providers).
 
-The `LLM_MODEL` environment variable controls which model is used in programmatic interactions,
-but choosing a model in the OpenDevin UI will override this setting.
+The `LLM_MODEL` environment variable controls which model is used in programmatic interactions.
+But when using the OpenDevin UI, you'll need to choose your model in the settings window (the gear
+wheel on the bottom left).
 
 The following environment variables might be necessary for some LLMs:
 * `LLM_API_KEY`
