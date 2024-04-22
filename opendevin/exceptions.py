@@ -22,6 +22,11 @@ class AgentEventTypeError(Exception):
         super().__init__(message)
 
 
+class AgentMalformedActionError(Exception):
+    def __init__(self, message='Malformed response'):
+        super().__init__(message)
+
+
 class AgentAlreadyRegisteredError(Exception):
     def __init__(self, name=None):
         if name is not None:
