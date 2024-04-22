@@ -1,6 +1,6 @@
-import { render, screen, act } from "@testing-library/react";
-import React from "react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import React from "react";
 import { AutocompleteCombobox } from "./AutocompleteCombobox";
 
 const onChangeMock = vi.fn();
@@ -15,6 +15,7 @@ const renderComponent = () =>
         { value: "m3", label: "model3" },
       ]}
       defaultKey="m1"
+      tooltip="tooltip"
       onChange={onChangeMock}
     />,
   );

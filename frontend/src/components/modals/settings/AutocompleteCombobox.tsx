@@ -1,4 +1,4 @@
-import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
+import { Autocomplete, AutocompleteItem, Tooltip } from "@nextui-org/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "../../../i18n/declaration";
@@ -27,7 +27,9 @@ interface AutocompleteComboboxProps {
   items: AutocompleteItemType[];
   defaultKey: string;
   onChange: (key: string) => void;
+  tooltip: string;
   allowCustomValue?: boolean;
+  disabled?: boolean;
 }
 
 export function AutocompleteCombobox({
@@ -35,29 +37,43 @@ export function AutocompleteCombobox({
   items,
   defaultKey,
   onChange,
+  tooltip,
   allowCustomValue = false,
+  disabled = false,
 }: AutocompleteComboboxProps) {
   const { t } = useTranslation();
 
   return (
-    <Autocomplete
-      aria-label={ariaLabel}
-      label={t(LABELS[ariaLabel])}
-      placeholder={t(PLACEHOLDERS[ariaLabel])}
-      defaultItems={items}
-      defaultSelectedKey={defaultKey}
-      allowsCustomValue={allowCustomValue}
-      onInputChange={(value) => {
-        onChange(value);
-      }}
+    <Tooltip
+      content={
+        disabled
+          ? `${tooltip} ${t(I18nKey.SETTINGS$DISABLED_RUNNING)}`
+          : tooltip
+      }
+      closeDelay={100}
+      delay={500}
     >
-      {(item) => (
-        <AutocompleteItem key={item.value}>{item.label}</AutocompleteItem>
-      )}
-    </Autocomplete>
+      <Autocomplete
+        aria-label={ariaLabel}
+        label={t(LABELS[ariaLabel])}
+        placeholder={t(PLACEHOLDERS[ariaLabel])}
+        defaultItems={items}
+        defaultSelectedKey={defaultKey}
+        isDisabled={disabled}
+        allowsCustomValue={allowCustomValue}
+        onInputChange={(value) => {
+          onChange(value);
+        }}
+      >
+        {(item) => (
+          <AutocompleteItem key={item.value}>{item.label}</AutocompleteItem>
+        )}
+      </Autocomplete>
+    </Tooltip>
   );
 }
 
 AutocompleteCombobox.defaultProps = {
   allowCustomValue: false,
+  disabled: false,
 };
