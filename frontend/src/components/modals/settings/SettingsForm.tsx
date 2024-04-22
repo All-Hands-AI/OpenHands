@@ -1,5 +1,5 @@
 import React from "react";
-import { AvailableLanguages } from "../../../i18n";
+import { AvailableLanguages } from "#/i18n";
 import { AutocompleteCombobox } from "./AutocompleteCombobox";
 
 interface SettingsFormProps {

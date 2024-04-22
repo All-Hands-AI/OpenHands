@@ -1,7 +1,7 @@
 // import { toast } from "sonner";
+import toast from "#/utils/toast";
 import { handleAssistantMessage } from "./actions";
 import { getToken } from "./auth";
-import toast from "../utils/toast";
 
 class Socket {
   private static _socket: WebSocket | null = null;
