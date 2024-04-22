@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 @dataclass
 class CmdRunAction(ExecutableAction):
     command: str
+    thought: str = ''
     background: bool = False
     action: str = ActionType.RUN
 
@@ -26,7 +27,11 @@ class CmdRunAction(ExecutableAction):
         return f'Running command: {self.command}'
 
     def __str__(self) -> str:
-        return f'**CmdRunAction**\n{self.command}'
+        ret = '**CmdRunAction**\n'
+        if self.thought:
+            ret += f'THOUGHT:{self.thought}\n'
+        ret += f'COMMAND:\n{self.command}'
+        return ret
 
 
 @dataclass
@@ -48,6 +53,7 @@ class CmdKillAction(ExecutableAction):
 @dataclass
 class IPythonRunCellAction(ExecutableAction):
     code: str
+    thought: str = ''
     action: str = ActionType.RUN
 
     async def run(self, controller: 'AgentController') -> 'CmdOutputObservation':
@@ -71,7 +77,11 @@ class IPythonRunCellAction(ExecutableAction):
         )
 
     def __str__(self) -> str:
-        return f'**IPythonRunCellAction**\n{self.code}'
+        ret = '**IPythonRunCellAction**\n'
+        if self.thought:
+            ret += f'THOUGHT:{self.thought}\n'
+        ret += f'CODE:\n{self.code}'
+        return ret
 
     @property
     def message(self) -> str:

@@ -6,6 +6,7 @@ from opendevin.action import (
     AgentEchoAction,
     AgentFinishAction,
     AgentTalkAction,
+    NullAction,
     IPythonRunCellAction,
     CmdRunAction,
 )
@@ -51,8 +52,60 @@ The assistant should attempt fewer things at a time instead of putting too much 
 The assistant can install Python packages through bash by <execute_bash> pip install [package needed] </execute_bash> and should always import packages and define variables before starting to use them.
 The assistant should stop <execute> and provide an answer when they have already obtained the answer from the execution result. Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
 The assistant's response should be concise, but do express their thoughts.
-When you are done with your task, you can <execute_bash> exit </execute_bash> to complete the task.
+When the assistant is done with the task, it should output <execute_bash> exit </execute_bash> to end the conversation.
 """
+
+# EXAMPLES = """
+# --- EXAMPLES ---
+# USER: Can you create a list of numbers from 1 to 10, and create a web page to display them at port 5000?
+
+# ASSISTANT:
+# Sure! Let me write the Python code for starting a web server and save it to a file `app.py`:
+# <execute_ipython>
+# CODE='''
+# from flask import Flask
+# app = Flask(__name__)
+
+# @app.route('/')
+# def index():
+#     numbers = list(range(1, 11))
+#     return str(numbers)
+
+# if __name__ == '__main__':
+#     app.run(port=5000)
+# '''
+# with open('app.py', 'w') as f:
+#     f.write(CODE)
+# </execute_ipython>
+
+# USER:
+# [Code executed successfully with no output]
+
+# ASSISTANT:
+# I have created a Python file `app.py` that will display a list of numbers from 1 to 10 when you run it. Let me run the Python file for you:
+# <execute_bash>
+# python3 app.py > server.log &
+# </execute_bash>
+
+# USER:
+# [1] 121
+
+# ASSISTANT: Looks like the server is running with PID 121. Let me check if the log:
+# <execute_bash>
+# cat server.log
+# </execute_bash>
+
+# USER:
+# PID of the server: 124
+# * Serving Flask app 'app'
+#  * Debug mode: off
+# WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+#  * Running on http://127.0.0.1:5000
+# Press CTRL+C to quit
+
+# ASSISTANT:
+# The server is running on port 5000 with PID 124. You can access the list of numbers by visiting http://127.0.0.1:5000. If you have any further questions, feel free to ask!
+# """
 
 INVALID_INPUT_MESSAGE = (
     "I don't understand your input. \n"
@@ -81,6 +134,7 @@ class CodeActAgent(Agent):
         IPythonRunCellAction,
         AgentEchoAction,
         AgentTalkAction,
+        NullAction
     )
     SUPPORTED_OBSERVATIONS = (
         AgentMessageObservation,
@@ -177,17 +231,20 @@ class CodeActAgent(Agent):
         bash_command = re.search(r'<execute_bash>(.*)</execute_bash>', action_str, re.DOTALL)
         python_code = re.search(r'<execute_ipython>(.*)</execute_ipython>', action_str, re.DOTALL)
         if bash_command is not None:
+            # remove the command from the action string to get thought
+            thought = action_str.replace(bash_command.group(0), '').strip()
             # a command was found
             command_group = bash_command.group(1)
-            # print("BASH COMMAND: ", command_group)
+            # print(f"BASH COMMAND: '{command_group}'")
             if command_group.strip() == 'exit':
                 return AgentFinishAction()
-            return CmdRunAction(command=command_group)
+            return CmdRunAction(command=command_group, thought=thought)
         elif python_code is not None:
             # a code block was found
             code_group = python_code.group(1)
-            # print("PYTHON CODE: ", code_group)
-            return IPythonRunCellAction(code=code_group.strip())
+            thought = action_str.replace(python_code.group(0), '').strip()
+            # print(f"PYTHON CODE: '{code_group}'")
+            return IPythonRunCellAction(code=code_group.strip(), thought=thought)
         else:
             # return AgentEchoAction(
             #     content=INVALID_INPUT_MESSAGE
