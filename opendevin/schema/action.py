@@ -1,68 +1,73 @@
-from enum import Enum
+from pydantic import BaseModel, Field
+
+__all__ = [
+    'ActionType'
+]
 
 
-class ActionType(str, Enum):
-    INIT = 'initialize'
+class ActionTypeSchema(BaseModel):
+    INIT: str = Field(default='initialize')
     """Initializes the agent. Only sent by client.
     """
 
-    START = 'start'
+    START: str = Field(default='start')
     """Starts a new development task. Only sent by the client.
     """
 
-    READ = 'read'
+    READ: str = Field(default='read')
     """Reads the content of a file.
     """
 
-    WRITE = 'write'
+    WRITE: str = Field(default='write')
     """Writes the content to a file.
     """
 
-    RUN = 'run'
+    RUN: str = Field(default='run')
     """Runs a command.
     """
 
-    KILL = 'kill'
+    KILL: str = Field(default='kill')
     """Kills a background command.
     """
 
-    BROWSE = 'browse'
+    BROWSE: str = Field(default='browse')
     """Opens a web page.
     """
 
-    RECALL = 'recall'
+    RECALL: str = Field(default='recall')
     """Searches long-term memory
     """
 
-    THINK = 'think'
+    THINK: str = Field(default='think')
     """Allows the agent to make a plan, set a goal, or record thoughts
     """
 
-    FINISH = 'finish'
+    FINISH: str = Field(default='finish')
     """If you're absolutely certain that you've completed your task and have tested your work,
     use the finish action to stop working.
     """
 
-    CHAT = 'chat'
+    NULL: str = Field(default='null')
 
-    SUMMARIZE = 'summarize'
+    SUMMARIZE: str = Field(default='summarize')
 
-    ADD_TASK = 'add_task'
+    ADD_TASK: str = Field(default='add_task')
 
-    MODIFY_TASK = 'modify_task'
+    MODIFY_TASK: str = Field(default='modify_task')
 
-    NULL = 'null'
-
-    PAUSE = 'pause'
+    PAUSE: str = Field(default='pause')
     """Pauses the task.
     """
 
-    RESUME = 'resume'
+    RESUME: str = Field(default='resume')
     """Resumes the task.
     """
 
-    STOP = 'stop'
+    STOP: str = Field(default='stop')
     """Stops the task. Must send a start action to restart a new task.
     """
 
-    CHANGE_TASK_STATE = 'change_task_state'
+    CHANGE_TASK_STATE: str = Field(default='change_task_state')
+
+
+ActionType = ActionTypeSchema()
