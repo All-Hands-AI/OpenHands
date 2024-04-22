@@ -22,7 +22,7 @@ for agent in all_microagents.values():
 
     anon_class = type(name, (MicroAgent,), {
         'prompt': prompt,
-        'agentDefinition': agent,
+        'agent_definition': agent,
     })
 
     Agent.register(name, anon_class)

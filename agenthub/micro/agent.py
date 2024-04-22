@@ -50,23 +50,27 @@ def to_json(obj, **kwargs):
 
 class MicroAgent(Agent):
     prompt = ''
-    agentDefinition: Dict = {}
+    agent_definition: Dict = {}
 
     def __init__(self, llm: LLM):
         super().__init__(llm)
-        if 'name' not in self.agentDefinition:
+        if 'name' not in self.agent_definition:
             raise ValueError('Agent definition must contain a name')
-        self.name = self.agentDefinition['name']
-        self.description = self.agentDefinition['description'] if 'description' in self.agentDefinition else ''
-        self.inputs = self.agentDefinition['inputs'] if 'inputs' in self.agentDefinition else []
-        self.outputs = self.agentDefinition['outputs'] if 'outputs' in self.agentDefinition else []
-        self.examples = self.agentDefinition['examples'] if 'examples' in self.agentDefinition else []
+        self.name = self.agent_definition['name']
+        self.description = self.agent_definition['description'] if 'description' in self.agent_definition else ''
+        self.inputs = self.agent_definition['inputs'] if 'inputs' in self.agent_definition else []
+        self.outputs = self.agent_definition['outputs'] if 'outputs' in self.agent_definition else []
+        self.examples = self.agent_definition['examples'] if 'examples' in self.agent_definition else []
         self.prompt_template = Environment(loader=BaseLoader).from_string(self.prompt)
         self.delegates = all_microagents.copy()
         del self.delegates[self.name]
 
     def step(self, state: State) -> Action:
-        prompt = self.prompt_template.render(state=state, instructions=instructions, to_json=to_json, delegates=self.delegates)
+        prompt = self.prompt_template.render(
+            state=state,
+            instructions=instructions,
+            to_json=to_json,
+            delegates=self.delegates)
         messages = [{'content': prompt, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)
         action_resp = resp['choices'][0]['message']['content']
