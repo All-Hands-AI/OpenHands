@@ -2,17 +2,17 @@ import React from "react";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import LoadPreviousSessionModal from "./LoadPreviousSessionModal";
-import { clearMsgs, fetchMsgs } from "../../services/session";
-import { sendChatMessageFromEvent } from "../../services/chatService";
-import { handleAssistantMessage } from "../../services/actions";
-import toast from "../../utils/toast";
+import { clearMsgs, fetchMsgs } from "../../../services/session";
+import { sendChatMessageFromEvent } from "../../../services/chatService";
+import { handleAssistantMessage } from "../../../services/actions";
+import toast from "../../../utils/toast";
 
 const mocks = vi.hoisted(() => ({
   fetchMsgsMock: vi.fn(),
 }));
 
-vi.mock("../../services/session", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../services/session")>()),
+vi.mock("../../../services/session", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../services/session")>()),
   clearMsgs: vi.fn(),
   fetchMsgs: mocks.fetchMsgsMock.mockResolvedValue({
     messages: [
@@ -30,17 +30,17 @@ vi.mock("../../services/session", async (importOriginal) => ({
   }),
 }));
 
-vi.mock("../../services/chatService", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../services/chatService")>()),
+vi.mock("../../../services/chatService", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../services/chatService")>()),
   sendChatMessageFromEvent: vi.fn(),
 }));
 
-vi.mock("../../services/actions", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../services/actions")>()),
+vi.mock("../../../services/actions", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../services/actions")>()),
   handleAssistantMessage: vi.fn(),
 }));
 
-vi.mock("../../utils/toast", () => ({
+vi.mock("../../../utils/toast", () => ({
   default: {
     stickyError: vi.fn(),
   },

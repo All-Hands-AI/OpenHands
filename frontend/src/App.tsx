@@ -12,8 +12,8 @@ import { fetchMsgTotal } from "./services/session";
 import { initializeAgent } from "./services/settingsService";
 import Socket from "./services/socket";
 import { ResFetchMsgTotal } from "./types/ResponseType";
-import SettingsModal from "./components/settings/SettingsModal";
-import LoadPreviousSessionModal from "./components/load-previous-session/LoadPreviousSessionModal";
+import SettingsModal from "./components/modals/settings/SettingsModal";
+import LoadPreviousSessionModal from "./components/modals/load-previous-session/LoadPreviousSessionModal";
 
 interface Props {
   setSettingOpen: (isOpen: boolean) => void;

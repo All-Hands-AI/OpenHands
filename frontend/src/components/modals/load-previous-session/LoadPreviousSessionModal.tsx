@@ -1,9 +1,9 @@
 import React from "react";
 import BaseModal from "../base-modal/BaseModal";
-import { clearMsgs, fetchMsgs } from "../../services/session";
-import { sendChatMessageFromEvent } from "../../services/chatService";
-import { handleAssistantMessage } from "../../services/actions";
-import toast from "../../utils/toast";
+import { clearMsgs, fetchMsgs } from "../../../services/session";
+import { sendChatMessageFromEvent } from "../../../services/chatService";
+import { handleAssistantMessage } from "../../../services/actions";
+import toast from "../../../utils/toast";
 
 interface LoadPreviousSessionModalProps {
   isOpen: boolean;
