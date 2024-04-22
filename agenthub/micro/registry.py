@@ -1,7 +1,7 @@
 import os
 import yaml
 
-all_agents = {}
+all_microagents = {}
 
 for dir in os.listdir(os.path.dirname(__file__)):
     base = os.path.dirname(__file__) + '/' + dir
@@ -21,4 +21,4 @@ for dir in os.listdir(os.path.dirname(__file__)):
     if 'name' not in agent:
         raise Exception(f'Missing name in {agentFile}')
     agent['prompt'] = prompt
-    all_agents[agent['name']] = agent
+    all_microagents[agent['name']] = agent

@@ -9,7 +9,7 @@ from opendevin.state import State
 from opendevin.action import Action, action_from_dict
 
 from .instructions import instructions
-from .registry import all_agents
+from .registry import all_microagents
 
 
 def parse_response(orig_response: str) -> Action:
@@ -62,7 +62,7 @@ class MicroAgent(Agent):
         self.outputs = self.agentDefinition['outputs'] if 'outputs' in self.agentDefinition else []
         self.examples = self.agentDefinition['examples'] if 'examples' in self.agentDefinition else []
         self.prompt_template = Environment(loader=BaseLoader).from_string(self.prompt)
-        self.delegates = all_agents.copy()
+        self.delegates = all_microagents.copy()
         del self.delegates[self.name]
 
     def step(self, state: State) -> Action:
