@@ -1,4 +1,4 @@
-import { WorkspaceFile } from "src/services/fileService";
+import { WorkspaceFile } from "#/services/fileService";
 
 export const removeEmptyNodes = (root: WorkspaceFile): WorkspaceFile => {
   if (root.children) {

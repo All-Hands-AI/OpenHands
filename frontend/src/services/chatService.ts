@@ -4,11 +4,11 @@ import {
   appendUserMessage,
   takeOneTypeIt,
   toggleTypingActive,
-} from "src/state/chatSlice";
-import store from "src/store";
-import ActionType from "src/types/ActionType";
-import { SocketMessage } from "src/types/ResponseType";
-import { ActionMessage } from "src/types/Message";
+} from "#/state/chatSlice";
+import store from "#/store";
+import ActionType from "#/types/ActionType";
+import { SocketMessage } from "#/types/ResponseType";
+import { ActionMessage } from "#/types/Message";
 import Socket from "./socket";
 
 export function sendChatMessage(message: string): void {

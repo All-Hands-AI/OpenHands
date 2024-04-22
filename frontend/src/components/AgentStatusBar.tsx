@@ -1,9 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { I18nKey } from "src/i18n/declaration";
-import { RootState } from "src/store";
-import AgentTaskState from "src/types/AgentTaskState";
+import { I18nKey } from "#/i18n/declaration";
+import { RootState } from "#/store";
+import AgentTaskState from "#/types/AgentTaskState";
 
 const AgentStatusMap: { [k: string]: { message: string; indicator: string } } =
   {

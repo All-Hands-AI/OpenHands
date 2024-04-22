@@ -1,7 +1,7 @@
 import React from "react";
 import { render } from "@testing-library/react";
 import ExplorerTree from "./ExplorerTree";
-import { WorkspaceFile } from "src/services/fileService";
+import { WorkspaceFile } from "#/services/fileService";
 
 const NODE: WorkspaceFile = {
   name: "root-folder-1",

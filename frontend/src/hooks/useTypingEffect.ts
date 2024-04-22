@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Message } from "src/state/chatSlice";
+import { Message } from "#/state/chatSlice";
 /**
  * hook to be used for typing chat effect
  */

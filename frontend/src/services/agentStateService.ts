@@ -1,5 +1,5 @@
-import ActionType from "src/types/ActionType";
-import AgentTaskAction from "src/types/AgentTaskAction";
+import ActionType from "#/types/ActionType";
+import AgentTaskAction from "#/types/AgentTaskAction";
 import Socket from "./socket";
 
 export function changeTaskState(message: AgentTaskAction): void {
