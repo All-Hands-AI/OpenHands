@@ -5,6 +5,9 @@ import toml
 from dotenv import load_dotenv
 
 from opendevin.schema import ConfigType
+import logging
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -21,8 +24,9 @@ DEFAULT_CONFIG: dict = {
     ConfigType.LLM_EMBEDDING_MODEL: 'local',
     ConfigType.LLM_EMBEDDING_DEPLOYMENT_NAME: None,
     ConfigType.LLM_API_VERSION: None,
-    ConfigType.LLM_NUM_RETRIES: 1,
-    ConfigType.LLM_COOLDOWN_TIME: 1,
+    ConfigType.LLM_NUM_RETRIES: 5,
+    ConfigType.LLM_RETRY_MIN_WAIT: 3,
+    ConfigType.LLM_RETRY_MAX_WAIT: 60,
     ConfigType.MAX_ITERATIONS: 100,
     # GPT-4 pricing is $10 per 1M input tokens. Since tokenization happens on LLM side,
     # we cannot easily count number of tokens, but we can count characters.
@@ -41,6 +45,16 @@ if os.path.exists('config.toml'):
     with open('config.toml', 'rb') as f:
         config_str = f.read().decode('utf-8')
 
+
+def int_value(value, default, config_key):
+    # FIXME use a library
+    try:
+        return int(value)
+    except ValueError:
+        logger.warning(f'Invalid value for {config_key}: {value} not applied. Using default value {default}')
+        return default
+
+
 tomlConfig = toml.loads(config_str)
 config = DEFAULT_CONFIG.copy()
 for k, v in config.items():
@@ -48,6 +62,8 @@ for k, v in config.items():
         config[k] = os.environ[k]
     elif k in tomlConfig:
         config[k] = tomlConfig[k]
+    if k in [ConfigType.LLM_NUM_RETRIES, ConfigType.LLM_RETRY_MIN_WAIT, ConfigType.LLM_RETRY_MAX_WAIT]:
+        config[k] = int_value(config[k], v, config_key=k)
 
 
 def get_parser():
