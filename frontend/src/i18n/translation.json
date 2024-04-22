@@ -274,7 +274,7 @@
     "en": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "zh-CN": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "de": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
-    "ko-KR": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "ko-KR": "안녕하세요! 저는 오픈데빈(OpenDevin), AI 소프트웨어 엔지니어입니다. 오늘은 저와 함께 무엇을 만들어 볼까요?",
     "no": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "zh-TW": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "it": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
@@ -286,7 +286,7 @@
   "CHAT_INTERFACE$ASSISTANT": {
     "en": "Assistant",
     "zh-CN": "Assistant",
-    "ko-KR": "Assistant",
+    "ko-KR": "어시스턴트",
     "de": "Assistant",
     "no": "Assistant",
     "zh-TW": "Assistant",
