@@ -25,7 +25,6 @@ RUN apt-get update -y \
 COPY ./pyproject.toml ./poetry.lock ./
 RUN touch README.md
 RUN poetry install --without evaluation --no-root && rm -rf $POETRY_CACHE_DIR
-RUN poetry run playwright install --with-deps chromium
 
 FROM python:3.12-slim as runtime
 
@@ -49,6 +48,7 @@ COPY --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY ./opendevin ./opendevin
 COPY ./agenthub ./agenthub
 RUN python opendevin/download.py # No-op to download assets
+RUN playwright install --with-deps chromium
 
 COPY --from=frontend-builder /app/dist ./frontend/dist
 
