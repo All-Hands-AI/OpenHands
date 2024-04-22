@@ -23,3 +23,4 @@ class State:
     history: List[Tuple[Action, Observation]] = field(default_factory=list)
     updated_info: List[Tuple[Action, Observation]
                        ] = field(default_factory=list)
+    result: str = ''

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from opendevin.observation import (
     AgentRecallObservation,
     AgentMessageObservation,
+    NullObservation,
     Observation,
 )
 from opendevin.schema import ActionType
@@ -79,13 +80,14 @@ class AgentFinishAction(NotExecutableAction):
 
 
 @dataclass
-class AgentDelegateAction(NotExecutableAction):
+class AgentDelegateAction(ExecutableAction):
     agent: str
     inputs: dict
     action: str = ActionType.DELEGATE
 
     async def run(self, controller: 'AgentController') -> 'Observation':
-        raise NotImplementedError
+        await controller.start_delegate(self)
+        return NullObservation('')
 
     @property
     def message(self) -> str:

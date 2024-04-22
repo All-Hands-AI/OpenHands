@@ -4,6 +4,7 @@ from .browse import BrowserOutputObservation
 from .files import FileReadObservation, FileWriteObservation
 from .message import UserMessageObservation, AgentMessageObservation
 from .recall import AgentRecallObservation
+from .delegate import AgentDelegateObservation
 from .error import AgentErrorObservation
 
 observations = (
@@ -14,6 +15,7 @@ observations = (
     UserMessageObservation,
     AgentMessageObservation,
     AgentRecallObservation,
+    AgentDelegateObservation,
     AgentErrorObservation,
 )
 

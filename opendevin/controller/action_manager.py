@@ -23,18 +23,17 @@ class ActionManager:
     def __init__(
             self,
             sid: str,
-            container_image: str | None = None,
     ):
         sandbox_type = config.get(ConfigType.SANDBOX_TYPE).lower()
         if sandbox_type == 'exec':
             self.sandbox = DockerExecBox(
-                sid=(sid or 'default'), container_image=container_image
+                sid=(sid or 'default'),
             )
         elif sandbox_type == 'local':
             self.sandbox = LocalBox()
         elif sandbox_type == 'ssh':
             self.sandbox = DockerSSHBox(
-                sid=(sid or 'default'), container_image=container_image
+                sid=(sid or 'default')
             )
         elif sandbox_type == 'e2b':
             self.sandbox = E2BBox()
