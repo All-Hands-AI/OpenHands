@@ -1,3 +1,4 @@
+SHELL=/bin/bash
 # Makefile for OpenDevin project
 
 # Variables
@@ -11,11 +12,11 @@ CONFIG_FILE = config.toml
 PRECOMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
 
 # ANSI color codes
-GREEN=\033[0;32m
-YELLOW=\033[0;33m
-RED=\033[0;31m
-BLUE=\033[0;34m
-RESET=\033[0m
+GREEN=$(shell tput -Txterm setaf 2)
+YELLOW=$(shell tput -Txterm setaf 3)
+RED=$(shell tput -Txterm setaf 1)
+BLUE=$(shell tput -Txterm setaf 6)
+RESET=$(shell tput -Txterm sgr0)
 
 # Build
 build:
@@ -30,12 +31,27 @@ build:
 
 check-dependencies:
 	@echo "$(YELLOW)Checking dependencies...$(RESET)"
+	@$(MAKE) -s check-system
 	@$(MAKE) -s check-python
 	@$(MAKE) -s check-npm
+	@$(MAKE) -s check-nodejs
 	@$(MAKE) -s check-docker
 	@$(MAKE) -s check-poetry
 	@echo "$(GREEN)Dependencies checked successfully.$(RESET)"
 
+check-system:
+	@echo "$(YELLOW)Checking system...$(RESET)"
+	@if [ "$(shell uname)" = "Darwin" ]; then \
+		echo "$(BLUE)macOS detected.$(RESET)"; \
+	elif [ "$(shell uname)" = "Linux" ]; then \
+		echo "$(BLUE)Linux detected.$(RESET)"; \
+	elif [ "$$(uname -r | grep -i microsoft)" ]; then \
+		echo "$(BLUE)Windows Subsystem for Linux detected.$(RESET)"; \
+	else \
+		echo "$(RED)Unsupported system detected. Please use macOS, Linux, or Windows Subsystem for Linux (WSL).$(RESET)"; \
+		exit 1; \
+	fi
+		
 check-python:
 	@echo "$(YELLOW)Checking Python installation...$(RESET)"
 	@if command -v python3.11 > /dev/null; then \
@@ -54,6 +70,22 @@ check-npm:
 		exit 1; \
 	fi
 
+check-nodejs:
+	@echo "$(YELLOW)Checking Node.js installation...$(RESET)"
+	@if command -v node > /dev/null; then \
+		NODE_VERSION=$(shell node --version | sed -E 's/v//g'); \
+		IFS='.' read -r -a NODE_VERSION_ARRAY <<< "$$NODE_VERSION"; \
+		if [ "$${NODE_VERSION_ARRAY[0]}" -gt 18 ] || ([ "$${NODE_VERSION_ARRAY[0]}" -eq 18 ] && [ "$${NODE_VERSION_ARRAY[1]}" -gt 17 ]) || ([ "$${NODE_VERSION_ARRAY[0]}" -eq 18 ] && [ "$${NODE_VERSION_ARRAY[1]}" -eq 17 ] && [ "$${NODE_VERSION_ARRAY[2]}" -ge 1 ]); then \
+			echo "$(BLUE)Node.js $$NODE_VERSION is already installed.$(RESET)"; \
+		else \
+			echo "$(RED)Node.js 18.17.1 or later is required. Please install Node.js 18.17.1 or later to continue.$(RESET)"; \
+			exit 1; \
+		fi; \
+	else \
+		echo "$(RED)Node.js is not installed. Please install Node.js to continue.$(RESET)"; \
+		exit 1; \
+	fi
+
 check-docker:
 	@echo "$(YELLOW)Checking Docker installation...$(RESET)"
 	@if command -v docker > /dev/null; then \
@@ -66,7 +98,16 @@ check-docker:
 check-poetry:
 	@echo "$(YELLOW)Checking Poetry installation...$(RESET)"
 	@if command -v poetry > /dev/null; then \
-		echo "$(BLUE)$(shell poetry --version) is already installed.$(RESET)"; \
+		POETRY_VERSION=$(shell poetry --version 2>&1 | sed -E 's/Poetry \(version ([0-9]+\.[0-9]+\.[0-9]+)\)/\1/'); \
+		IFS='.' read -r -a POETRY_VERSION_ARRAY <<< "$$POETRY_VERSION"; \
+		if [ $${POETRY_VERSION_ARRAY[0]} -ge 1 ] && [ $${POETRY_VERSION_ARRAY[1]} -ge 8 ]; then \
+			echo "$(BLUE)$(shell poetry --version) is already installed.$(RESET)"; \
+		else \
+			echo "$(RED)Poetry 1.8 or later is required. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
+			echo "$(RED) curl -sSL https://install.python-poetry.org | python3 -$(RESET)"; \
+			echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
+			exit 1; \
+		fi; \
 	else \
 		echo "$(RED)Poetry is not installed. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
 		echo "$(RED) curl -sSL https://install.python-poetry.org | python3.11 -$(RESET)"; \

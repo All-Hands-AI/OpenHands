@@ -33,7 +33,7 @@ But when running `docker run`, you'll need to add a few more arguments:
 ```bash
 --add-host host.docker.internal=host-gateway \
 -e LLM_API_KEY="ollama" \
--e LLM_BASE_URL="http://localhost:11434" \
+-e LLM_BASE_URL="http://host.docker.internal:11434" \
 ```
 
 For example:
@@ -45,7 +45,7 @@ export WORKSPACE_DIR=$(pwd)/workspace
 docker run \
     --add-host host.docker.internal=host-gateway \
     -e LLM_API_KEY="ollama" \
-    -e LLM_BASE_URL="http://localhost:11434" \
+    -e LLM_BASE_URL="http://host.docker.internal:11434" \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_DIR \
     -v $WORKSPACE_DIR:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
