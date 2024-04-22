@@ -41,7 +41,7 @@ def my_encoder(obj):
         return obj.to_dict()
 
 
-def dumps(obj, **kwargs):
+def to_json(obj, **kwargs):
     """
     Serialize an object to str format
     """
@@ -66,7 +66,7 @@ class MicroAgent(Agent):
         del self.delegates[self.name]
 
     def step(self, state: State) -> Action:
-        prompt = self.prompt_template.render(state=state, instructions=instructions, to_json=dumps, delegates=self.delegates)
+        prompt = self.prompt_template.render(state=state, instructions=instructions, to_json=to_json, delegates=self.delegates)
         messages = [{'content': prompt, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)
         action_resp = resp['choices'][0]['message']['content']
