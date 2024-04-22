@@ -4,6 +4,10 @@ need to modify to complete this task:
 
 {{ state.plan.main_goal }}
 
+Here's a summary of the codebase, as it relates to this task:
+
+{{ state.inputs.summary }}
+
 ## Available Actions
 {{ instructions.actions.run }}
 {{ instructions.actions.write }}

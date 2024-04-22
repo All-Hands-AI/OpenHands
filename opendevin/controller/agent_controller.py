@@ -48,6 +48,7 @@ class AgentController:
     def __init__(
         self,
         agent: Agent,
+        inputs: dict = {},
         sid: str = 'default',
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
@@ -116,10 +117,11 @@ class AgentController:
                 await self.notify_task_state_changed()
                 break
 
-    async def setup_task(self, task: str):
+    async def setup_task(self, task: str, inputs: dict = {}):
         self._task_state = TaskState.RUNNING
         await self.notify_task_state_changed()
         self.state = State(Plan(task))
+        self.state.inputs = inputs
 
     async def start(self, task: str):
         """Starts the agent controller with a task.
@@ -168,7 +170,7 @@ class AgentController:
             callbacks=self.callbacks,
         )
         task = action.inputs.get('task') or ''
-        await self.delegate.setup_task(task)
+        await self.delegate.setup_task(task, action.inputs)
 
     async def step(self, i: int) -> bool:
         if self.state is None:
@@ -176,8 +178,8 @@ class AgentController:
         if self.delegate is not None:
             delegate_done = await self.delegate.step(i)
             if delegate_done:
-                result = self.delegate.state.results if self.delegate.state else {}
-                obs: Observation = AgentDelegateObservation(content='', outputs=result)
+                outputs = self.delegate.state.outputs if self.delegate.state else {}
+                obs: Observation = AgentDelegateObservation(content='', outputs=outputs)
                 self.add_history(NullAction(), obs)
                 self.delegate = None
                 self.delegateAction = None
@@ -222,7 +224,7 @@ class AgentController:
 
         finished = isinstance(action, AgentFinishAction)
         if finished:
-            self.state.result = action.outputs  # type: ignore[attr-defined]
+            self.state.outputs = action.outputs  # type: ignore[attr-defined]
             logger.info(action, extra={'msg_type': 'INFO'})
             return True
 

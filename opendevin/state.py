@@ -23,4 +23,5 @@ class State:
     history: List[Tuple[Action, Observation]] = field(default_factory=list)
     updated_info: List[Tuple[Action, Observation]
                        ] = field(default_factory=list)
-    results: Dict = field(default_factory=dict)
+    inputs: Dict = field(default_factory=dict)
+    outputs: Dict = field(default_factory=dict)
