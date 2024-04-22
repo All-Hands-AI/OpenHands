@@ -91,4 +91,4 @@ class AgentDelegateAction(ExecutableAction):
 
     @property
     def message(self) -> str:
-        return "I'm delegating this task to a human. They'll get back to you soon."
+        return f"I'm asking {self.agent} for help with this task."
