@@ -136,6 +136,7 @@ docker run \
     -v $WORKSPACE_DIR:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
+    --add-host host.docker.internal=host-gateway \
     ghcr.io/opendevin/opendevin:0.3.1
 ```
 You'll find opendevin running at `http://localhost:3000`.
@@ -144,21 +145,22 @@ If you want to use the (unstable!) bleeding edge, you can use `ghcr.io/opendevin
 
 See [Development.md](Development.md) for instructions on running OpenDevin without Docker.
 
-If you're running on Windows and having trouble, check out our [guide for Windows users](./docs/guides/Windows.md)
+Having trouble? Check out our [Troubleshooting Guide](./docs/guides/Troubleshooting.md).
 
 ## 🤖 LLM Backends
 OpenDevin can work with any LLM backend.
 For a full list of the LM providers and models available, please consult the
 [litellm documentation](https://docs.litellm.ai/docs/providers).
 
-The `LLM_MODEL` environment variable controls which model is used in programmatic interactions,
-but choosing a model in the OpenDevin UI will override this setting.
+The `LLM_MODEL` environment variable controls which model is used in programmatic interactions.
+But when using the OpenDevin UI, you'll need to choose your model in the settings window (the gear
+wheel on the bottom left).
 
 The following environment variables might be necessary for some LLMs:
 * `LLM_API_KEY`
 * `LLM_BASE_URL`
 * `LLM_EMBEDDING_MODEL`
-* `LLM_DEPLOYMENT_NAME`
+* `LLM_EMBEDDING_DEPLOYMENT_NAME`
 * `LLM_API_VERSION`
 
 We have a few guides for running OpenDevin with specific model providers:
@@ -175,6 +177,11 @@ poor responses, or errors about malformed JSON. OpenDevin
 can only be as powerful as the models driving it--fortunately folks on our team
 are actively working on building better open source models!
 
+
+**Note on API retries and rate limits:**
+Some LLMs have rate limits and may require retries. OpenDevin will automatically retry requests if it receives a 429 error or API connection error.
+You can set LLM_NUM_RETRIES, LLM_RETRY_MIN_WAIT, LLM_RETRY_MAX_WAIT environment variables to control the number of retries and the time between retries.
+By default, LLM_NUM_RETRIES is 5 and LLM_RETRY_MIN_WAIT, LLM_RETRY_MAX_WAIT are 3 seconds and respectively 60 seconds.
 
 ## ⭐️ Research Strategy
 

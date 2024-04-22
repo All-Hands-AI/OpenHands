@@ -1,3 +1,4 @@
+SHELL=/bin/bash
 # Makefile for OpenDevin project
 
 # Variables
@@ -11,11 +12,11 @@ CONFIG_FILE = config.toml
 PRECOMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
 
 # ANSI color codes
-GREEN=\033[0;32m
-YELLOW=\033[0;33m
-RED=\033[0;31m
-BLUE=\033[0;34m
-RESET=\033[0m
+GREEN=$(shell tput -Txterm setaf 2)
+YELLOW=$(shell tput -Txterm setaf 3)
+RED=$(shell tput -Txterm setaf 1)
+BLUE=$(shell tput -Txterm setaf 6)
+RESET=$(shell tput -Txterm sgr0)
 
 # Build
 build:
@@ -122,7 +123,7 @@ start-backend:
 # Start frontend
 start-frontend:
 	@echo "$(YELLOW)Starting frontend...$(RESET)"
-	@cd frontend && BACKEND_HOST=$(BACKEND_HOST) FRONTEND_PORT=$(FRONTEND_PORT) npm run start
+	@cd frontend && VITE_BACKEND_HOST=$(BACKEND_HOST) VITE_FRONTEND_PORT=$(FRONTEND_PORT) npm run start
 
 # Run the app
 run:
@@ -167,8 +168,8 @@ setup-config-prompts:
 		elif [ "$$llm_embedding_model" = "azureopenai" ]; then \
 			read -p "Enter the Azure endpoint URL (will overwrite LLM_BASE_URL): " llm_base_url; \
 				echo "LLM_BASE_URL=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; \
-			read -p "Enter the Azure LLM Deployment Name: " llm_deployment_name; \
-				echo "LLM_DEPLOYMENT_NAME=\"$$llm_deployment_name\"" >> $(CONFIG_FILE).tmp; \
+			read -p "Enter the Azure LLM Embedding Deployment Name: " llm_embedding_deployment_name; \
+				echo "LLM_EMBEDDING_DEPLOYMENT_NAME=\"$$llm_embedding_deployment_name\"" >> $(CONFIG_FILE).tmp; \
 			read -p "Enter the Azure API Version: " llm_api_version; \
 				echo "LLM_API_VERSION=\"$$llm_api_version\"" >> $(CONFIG_FILE).tmp; \
 		fi

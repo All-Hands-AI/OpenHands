@@ -1,3 +1,4 @@
+import llama_index.embeddings.openai.base as llama_openai
 from threading import Thread
 
 import chromadb
@@ -5,10 +6,45 @@ from llama_index.core import Document
 from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.core import VectorStoreIndex
 from llama_index.vector_stores.chroma import ChromaVectorStore
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_random_exponential
+from openai._exceptions import APIConnectionError, RateLimitError, InternalServerError
 
 from opendevin import config
 from opendevin.logger import opendevin_logger as logger
 from . import json
+
+num_retries = config.get('LLM_NUM_RETRIES')
+retry_min_wait = config.get('LLM_RETRY_MIN_WAIT')
+retry_max_wait = config.get('LLM_RETRY_MAX_WAIT')
+
+# llama-index includes a retry decorator around openai.get_embeddings() function
+# it is initialized with hard-coded values and errors
+# this non-customizable behavior is creating issues when it's retrying faster than providers' rate limits
+# this block attempts to banish it and replace it with our decorator, to allow users to set their own limits
+
+if hasattr(llama_openai.get_embeddings, '__wrapped__'):
+    original_get_embeddings = llama_openai.get_embeddings.__wrapped__
+else:
+    logger.warning('Cannot set custom retry limits.')  # warn
+    num_retries = 1
+    original_get_embeddings = llama_openai.get_embeddings
+
+
+def attempt_on_error(retry_state):
+    logger.error(f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize these settings in the configuration.', exc_info=False)
+    return True
+
+
+@retry(reraise=True,
+       stop=stop_after_attempt(num_retries),
+       wait=wait_random_exponential(min=retry_min_wait, max=retry_max_wait),
+       retry=retry_if_exception_type((RateLimitError, APIConnectionError, InternalServerError)),
+       after=attempt_on_error)
+def wrapper_get_embeddings(*args, **kwargs):
+    return original_get_embeddings(*args, **kwargs)
+
+
+llama_openai.get_embeddings = wrapper_get_embeddings
 
 embedding_strategy = config.get('LLM_EMBEDDING_MODEL')
 
@@ -32,7 +68,7 @@ elif embedding_strategy == 'azureopenai':
     from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
     embed_model = AzureOpenAIEmbedding(
         model='text-embedding-ada-002',
-        deployment_name=config.get('LLM_DEPLOYMENT_NAME', required=True),
+        deployment_name=config.get('LLM_EMBEDDING_DEPLOYMENT_NAME', required=True),
         api_key=config.get('LLM_API_KEY', required=True),
         azure_endpoint=config.get('LLM_BASE_URL', required=True),
         api_version=config.get('LLM_API_VERSION', required=True),
