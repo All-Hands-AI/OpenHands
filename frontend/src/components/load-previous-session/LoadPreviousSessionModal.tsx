@@ -44,16 +44,23 @@ function LoadPreviousSessionModal({
       actions={[
         {
           label: "Resume Session",
+          className: "bg-primary rounded-small",
           action: onResumeSession,
           closeAfterAction: true,
         },
         {
           label: "Start New Session",
+          className: "bg-neutral-500 rounded-small",
           action: onStartNewSession,
           closeAfterAction: true,
         },
       ]}
-    />
+    >
+      <p>
+        You seem to have an unfinished task. Would you like to pick up where you
+        left off or start fresh?
+      </p>
+    </BaseModal>
   );
 }
 
