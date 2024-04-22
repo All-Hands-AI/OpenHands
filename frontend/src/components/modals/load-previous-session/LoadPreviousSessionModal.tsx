@@ -1,9 +1,11 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import BaseModal from "../base-modal/BaseModal";
 import { clearMsgs, fetchMsgs } from "../../../services/session";
 import { sendChatMessageFromEvent } from "../../../services/chatService";
 import { handleAssistantMessage } from "../../../services/actions";
 import toast from "../../../utils/toast";
+import { I18nKey } from "../../../i18n/declaration";
 
 interface LoadPreviousSessionModalProps {
   isOpen: boolean;
@@ -14,6 +16,8 @@ function LoadPreviousSessionModal({
   isOpen,
   onOpenChange,
 }: LoadPreviousSessionModalProps) {
+  const { t } = useTranslation();
+
   const onStartNewSession = async () => {
     await clearMsgs();
   };
@@ -39,27 +43,24 @@ function LoadPreviousSessionModal({
   return (
     <BaseModal
       isOpen={isOpen}
-      title="Unfinished Session Detected"
+      title={t(I18nKey.LOAD_SESSION$MODAL_TITLE)}
       onOpenChange={onOpenChange}
       actions={[
         {
-          label: "Resume Session",
+          label: t(I18nKey.LOAD_SESSION$RESUME_SESSION_MODAL_ACTION_LABEL),
           className: "bg-primary rounded-small",
           action: onResumeSession,
           closeAfterAction: true,
         },
         {
-          label: "Start New Session",
+          label: t(I18nKey.LOAD_SESSION$START_NEW_SESSION_MODAL_ACTION_LABEL),
           className: "bg-neutral-500 rounded-small",
           action: onStartNewSession,
           closeAfterAction: true,
         },
       ]}
     >
-      <p>
-        You seem to have an unfinished task. Would you like to pick up where you
-        left off or start fresh?
-      </p>
+      <p>{t(I18nKey.LOAD_SESSION$MODAL_CONTENT)}</p>
     </BaseModal>
   );
 }

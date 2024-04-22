@@ -7,6 +7,11 @@ import { sendChatMessageFromEvent } from "../../../services/chatService";
 import { handleAssistantMessage } from "../../../services/actions";
 import toast from "../../../utils/toast";
 
+const RESUME_SESSION_BUTTON_LABEL_KEY =
+  "LOAD_SESSION$RESUME_SESSION_MODAL_ACTION_LABEL";
+const START_NEW_SESSION_BUTTON_LABEL_KEY =
+  "LOAD_SESSION$START_NEW_SESSION_MODAL_ACTION_LABEL";
+
 const mocks = vi.hoisted(() => ({
   fetchMsgsMock: vi.fn(),
 }));
@@ -54,8 +59,8 @@ describe("LoadPreviousSession", () => {
   it("should render two buttons", () => {
     render(<LoadPreviousSessionModal isOpen onOpenChange={vi.fn} />);
 
-    screen.getByRole("button", { name: /start new session/i });
-    screen.getByRole("button", { name: /resume session/i });
+    screen.getByRole("button", { name: START_NEW_SESSION_BUTTON_LABEL_KEY });
+    screen.getByRole("button", { name: RESUME_SESSION_BUTTON_LABEL_KEY });
   });
 
   it("should clear messages if user chooses to start a new session", () => {
@@ -63,7 +68,7 @@ describe("LoadPreviousSession", () => {
     render(<LoadPreviousSessionModal isOpen onOpenChange={onOpenChangeMock} />);
 
     const startNewSessionButton = screen.getByRole("button", {
-      name: /start new session/i,
+      name: START_NEW_SESSION_BUTTON_LABEL_KEY,
     });
 
     act(() => {
@@ -80,7 +85,7 @@ describe("LoadPreviousSession", () => {
     render(<LoadPreviousSessionModal isOpen onOpenChange={onOpenChangeMock} />);
 
     const resumeSessionButton = screen.getByRole("button", {
-      name: /resume session/i,
+      name: RESUME_SESSION_BUTTON_LABEL_KEY,
     });
 
     act(() => {
@@ -102,7 +107,7 @@ describe("LoadPreviousSession", () => {
     render(<LoadPreviousSessionModal isOpen onOpenChange={vi.fn} />);
 
     const resumeSessionButton = screen.getByRole("button", {
-      name: /resume session/i,
+      name: RESUME_SESSION_BUTTON_LABEL_KEY,
     });
 
     act(() => {
