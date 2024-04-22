@@ -42,6 +42,10 @@ class ActionTypeSchema(BaseModel):
     """Allows the agent to make a plan, set a goal, or record thoughts
     """
 
+    TALK: str = Field(default='talk')
+    """Allows the agent to respond to the user.
+    """
+
     FINISH: str = Field(default='finish')
     """If you're absolutely certain that you've completed your task and have tested your work,
     use the finish action to stop working.

@@ -43,6 +43,19 @@ class AgentThinkAction(NotExecutableAction):
 
 
 @dataclass
+class AgentTalkAction(NotExecutableAction):
+    content: str
+    action: str = ActionType.TALK
+
+    async def run(self, controller: 'AgentController') -> 'Observation':
+        raise NotImplementedError
+
+    @property
+    def message(self) -> str:
+        return self.content
+
+
+@dataclass
 class AgentEchoAction(ExecutableAction):
     content: str
     action: str = 'echo'

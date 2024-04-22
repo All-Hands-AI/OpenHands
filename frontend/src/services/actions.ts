@@ -29,6 +29,9 @@ const messageActions = {
   [ActionType.THINK]: (message: ActionMessage) => {
     store.dispatch(appendAssistantMessage(message.args.thought));
   },
+  [ActionType.TALK]: (message: ActionMessage) => {
+    store.dispatch(appendAssistantMessage(message.args.content));
+  },
   [ActionType.FINISH]: (message: ActionMessage) => {
     store.dispatch(appendAssistantMessage(message.message));
   },

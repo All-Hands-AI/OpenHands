@@ -26,6 +26,9 @@ enum ActionType {
   // Allows the agent to make a plan, set a goal, or record thoughts.
   THINK = "think",
 
+  // Allows the agent to respond to the user.
+  TALK = "talk",
+
   // If you're absolutely certain that you've completed your task and have tested your work,
   // use the finish action to stop working.
   FINISH = "finish",

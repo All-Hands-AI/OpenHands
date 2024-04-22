@@ -5,6 +5,7 @@ from .fileop import FileReadAction, FileWriteAction
 from .agent import (
     AgentRecallAction,
     AgentThinkAction,
+    AgentTalkAction,
     AgentFinishAction,
     AgentEchoAction,
     AgentSummarizeAction,
@@ -20,6 +21,7 @@ actions = (
     FileWriteAction,
     AgentRecallAction,
     AgentThinkAction,
+    AgentTalkAction,
     AgentFinishAction,
     AddTaskAction,
     ModifyTaskAction,
@@ -53,6 +55,7 @@ __all__ = [
     'FileWriteAction',
     'AgentRecallAction',
     'AgentThinkAction',
+    'AgentTalkAction',
     'AgentFinishAction',
     'AgentEchoAction',
     'AgentSummarizeAction',
