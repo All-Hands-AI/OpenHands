@@ -4,7 +4,6 @@ import os
 instructions: Dict = {}
 
 base_dir = os.path.dirname(os.path.abspath(__file__)) + '/_instructions'
-print(base_dir)
 for root, dirs, files in os.walk(base_dir):
     if len(files) == 0:
         continue
