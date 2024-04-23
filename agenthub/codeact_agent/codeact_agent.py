@@ -15,6 +15,7 @@ from opendevin.observation import (
 )
 from opendevin.parse_commands import parse_command_file
 from opendevin.state import State
+from opendevin.sandbox.plugins import PluginRequirement, JupyterRequirement
 
 COMMAND_DOCS = parse_command_file()
 COMMAND_SEGMENT = (
@@ -68,6 +69,8 @@ class CodeActAgent(Agent):
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
     """
+
+    sandbox_plugins: List[PluginRequirement] = [JupyterRequirement()]
 
     def __init__(
         self,
