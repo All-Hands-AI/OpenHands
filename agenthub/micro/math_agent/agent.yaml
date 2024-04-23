@@ -21,4 +21,5 @@ examples:
       answer: "Saturday"
   - input:
       task: "What is the integral of sin(x^2) evaluated from -1 to 1?"
+    output:
       answer: "0.603848"
