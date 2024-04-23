@@ -235,21 +235,24 @@ class AgentController:
 
         # if the last three (Action, Observation) tuples are too repetitive
         # the agent got stuck in a loop
-        if (all(isinstance(self.state.history[-i][0], NullAction) for i in range(1, 4))) and all(
-            [self.state.history[-i][1] == self.state.history[-3][1] for i in range(1, 3)]
+        if (
+            all(isinstance(self.state.history[-i][0], NullAction) for i in range(1, 4))
+            and all(isinstance(self.state.history[-i][1], AgentErrorObservation) for i in range(1, 4))
+            and all([self.state.history[-i][1] == self.state.history[-3][1] for i in range(1, 3)])
         ):
-            # same (NullAction, Observation): the same error coming from an exception
+            # same (NullAction, error Observation): the same error coming from an exception
             logger.debug('NullAction, Observation loop detected')
             return True
         elif all(
-            [self.state.history[-i][0] == self.state.history[-3][0] for i in range(1, 3)]
-        ):
+                [self.state.history[-i][0] == self.state.history[-3][0] for i in range(1, 3)]):
             # it repeats same action, give it a chance, but not if:
-            if (all(isinstance(self.state.history[-i][1], NullObservation) for i in range(1, 4))):
+            if (
+                    all(isinstance(self.state.history[-i][1], NullObservation) for i in range(1, 4))):
                 # same (Action, NullObservation): like 'think' the same thought over and over
                 logger.debug('Action, NullObservation loop detected')
                 return True
-            elif (all(isinstance(self.state.history[-i][1], AgentErrorObservation) for i in range(1, 4))):
+            elif (
+                    all(isinstance(self.state.history[-i][1], AgentErrorObservation) for i in range(1, 4))):
                 # (Action, AgentErrorObservation): the same action getting an error, even if not necessarily the same error
                 logger.debug('Action, AgentErrorObservation loop detected')
                 return True
