@@ -32,10 +32,12 @@ describe("SettingsForm", () => {
     const modelInput = screen.getByRole("combobox", { name: "model" });
     const agentInput = screen.getByRole("combobox", { name: "agent" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
+    const apiKeyInput = screen.getByTestId("apikey");
 
     expect(modelInput).toHaveValue("model1");
     expect(agentInput).toHaveValue("agent1");
     expect(languageInput).toHaveValue("English");
+    expect(apiKeyInput).toHaveValue("sk-...");
   });
 
   it("should display the existing values if it they are present", () => {
@@ -60,9 +62,11 @@ describe("SettingsForm", () => {
         settings={{}}
         models={["model1", "model2", "model3"]}
         agents={["agent1", "agent2", "agent3"]}
+        apiKey="sk-..."
         onModelChange={onModelChangeMock}
         onAgentChange={onAgentChangeMock}
         onLanguageChange={onLanguageChangeMock}
+        onAPIKeyChange={onAPIKeyChangeMock}
       />,
       { preloadedState: { agent: { curTaskState: AgentTaskState.RUNNING } } },
     );
@@ -90,6 +94,7 @@ describe("SettingsForm", () => {
       });
 
       expect(onModelChangeMock).toHaveBeenCalledWith("model3");
+      expect(onAPIKeyChangeMock).toHaveBeenCalledWith("");
     });
 
     it("should call the onAgentChange handler when the agent changes", () => {
@@ -122,6 +127,17 @@ describe("SettingsForm", () => {
       });
 
       expect(onLanguageChangeMock).toHaveBeenCalledWith("Français");
+    });
+
+    it("should call the onAPIKeyChange handler when the API key changes", () => {
+      renderSettingsForm({});
+
+      const apiKeyInput = screen.getByTestId("apikey");
+      act(() => {
+        userEvent.type(apiKeyInput, "x");
+      });
+
+      expect(onAPIKeyChangeMock).toHaveBeenCalledWith("sk-...x");
     });
   });
 });

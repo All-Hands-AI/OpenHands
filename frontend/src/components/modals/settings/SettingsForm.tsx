@@ -66,6 +66,8 @@ function SettingsForm({
       />
       <Input
         label="API Key"
+        aria-label="apikey"
+        data-testid="apikey"
         placeholder="Enter your API Key."
         type={isVisible ? "text" : "password"}
         value={apiKey}
