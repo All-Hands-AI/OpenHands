@@ -222,7 +222,7 @@ class DockerSSHBox(Sandbox):
 
         # NOTE: there's some weird behavior with the prompt (it may come AFTER the command output)
         # so we need to check if the command is in the output
-        n_trires = 5
+        n_tries = 5
         while not command_output.startswith(cmd) and n_trires > 0:
             self.ssh.prompt()
             command_output = self.ssh.before.decode('utf-8').strip()
