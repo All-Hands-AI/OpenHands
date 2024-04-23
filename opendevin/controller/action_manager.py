@@ -14,6 +14,7 @@ from opendevin.observation import (
     AgentErrorObservation,
     NullObservation,
 )
+from opendevin.sandbox.plugins import PluginRequirement
 
 
 class ActionManager:
@@ -40,6 +41,9 @@ class ActionManager:
             self.sandbox = E2BBox()
         else:
             raise ValueError(f'Invalid sandbox type: {sandbox_type}')
+
+    def init_sandbox_plugins(self, plugins: List[PluginRequirement]):
+        self.sandbox.init_plugins(plugins)
 
     async def run_action(self, action: Action, agent_controller) -> Observation:
         observation: Observation = NullObservation('')

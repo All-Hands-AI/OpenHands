@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from opendevin.state import State
 from opendevin.llm.llm import LLM
 from opendevin.exceptions import AgentAlreadyRegisteredError, AgentNotRegisteredError
+from opendevin.sandbox.plugins import PluginRequirement
 
 
 class Agent(ABC):
@@ -17,6 +18,7 @@ class Agent(ABC):
     """
 
     _registry: Dict[str, Type['Agent']] = {}
+    sandbox_plugins: List[PluginRequirement] = []
 
     def __init__(
             self,
