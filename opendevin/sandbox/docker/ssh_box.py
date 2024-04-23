@@ -445,6 +445,11 @@ if __name__ == '__main__':
 
     # Initialize required plugins
     ssh_box.init_plugins([JupyterRequirement(), SWEAgentCommandsRequirement()])
+    logger.info(
+        '--- SWE-AGENT COMMAND DOCUMENTATION ---\n'
+        f'{SWEAgentCommandsRequirement().documentation}\n'
+        '---'
+    )
 
     bg_cmd = ssh_box.execute_in_background(
         "while true; do echo 'dot ' && sleep 10; done"
