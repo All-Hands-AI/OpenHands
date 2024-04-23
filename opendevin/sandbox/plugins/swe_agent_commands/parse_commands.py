@@ -11,10 +11,10 @@ class Command:
     signature: str | None = None
 
 
-def parse_command_file() -> str | None:
-    if not os.path.exists('commands.sh'):
+def parse_command_file(filepath: str) -> str | None:
+    if not os.path.exists(filepath):
         return None
-    content = open('commands.sh', 'r').read()
+    content = open(filepath, 'r').read()
     lines = content.split('\n')
     commands: list[Command] = []
     idx = 0
@@ -50,3 +50,18 @@ def parse_command_file() -> str | None:
         if cmd.docstring is not None:
             function_docs += f'{cmd.signature or cmd.name} - {cmd.docstring}\n'
     return function_docs
+
+
+if __name__ == '__main__':
+    import sys
+    if len(sys.argv) < 2:
+        print('Usage: python parse_commands.py <file>')
+        sys.exit(1)
+    filepath = sys.argv[1]
+    filepaths = filepath.split(',')
+    for filepath in filepaths:
+        docs = parse_command_file(filepath)
+        if docs is None:
+            print('File not found:', filepath)
+        else:
+            print(docs)
