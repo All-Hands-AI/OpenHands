@@ -1,14 +1,14 @@
-import { changeTaskState } from "../state/agentSlice";
-import { setScreenshotSrc, setUrl } from "../state/browserSlice";
-import { appendAssistantMessage } from "../state/chatSlice";
-import { setCode, updatePath } from "../state/codeSlice";
-import { appendInput } from "../state/commandSlice";
-import { setPlan } from "../state/planSlice";
-import { setInitialized } from "../state/taskSlice";
-import store from "../store";
-import ActionType from "../types/ActionType";
-import { ActionMessage } from "../types/Message";
-import { SocketMessage } from "../types/ResponseType";
+import { changeTaskState } from "#/state/agentSlice";
+import { setScreenshotSrc, setUrl } from "#/state/browserSlice";
+import { appendAssistantMessage } from "#/state/chatSlice";
+import { setCode, updatePath } from "#/state/codeSlice";
+import { appendInput } from "#/state/commandSlice";
+import { setPlan } from "#/state/planSlice";
+import { setInitialized } from "#/state/taskSlice";
+import store from "#/store";
+import ActionType from "#/types/ActionType";
+import { ActionMessage } from "#/types/Message";
+import { SocketMessage } from "#/types/ResponseType";
 import { handleObservationMessage } from "./observations";
 import { getPlan } from "./planService";
 
