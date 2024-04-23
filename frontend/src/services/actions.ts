@@ -36,6 +36,9 @@ const messageActions = {
     store.dispatch(appendAssistantMessage(message.message));
   },
   [ActionType.RUN]: (message: ActionMessage) => {
+    if (message.args.thought) {
+      store.dispatch(appendAssistantMessage(message.args.thought));
+    }
     store.dispatch(appendInput(message.args.command));
   },
   [ActionType.ADD_TASK]: () => {
