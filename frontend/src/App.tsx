@@ -5,7 +5,6 @@ import CogTooth from "#/assets/cog-tooth";
 import ChatInterface from "#/components/ChatInterface";
 import Errors from "#/components/Errors";
 import { Container, Orientation } from "#/components/Resizable";
-import Terminal from "#/components/Terminal";
 import Workspace from "#/components/Workspace";
 import LoadPreviousSessionModal from "#/components/modals/load-previous-session/LoadPreviousSessionModal";
 import SettingsModal from "#/components/modals/settings/SettingsModal";
@@ -16,6 +15,7 @@ import { ResFetchMsgTotal } from "#/types/ResponseType";
 import "./App.css";
 import AgentControlBar from "./components/AgentControlBar";
 import AgentStatusBar from "./components/AgentStatusBar";
+import Terminal from "./components/Terminal";
 
 interface Props {
   setSettingOpen: (isOpen: boolean) => void;
@@ -84,23 +84,23 @@ function App(): JSX.Element {
     <div className="h-screen w-screen flex flex-col">
       <div className="flex grow bg-neutral-900 text-white min-h-0">
         <Container
-          orientation={Orientation.VERTICAL}
-          className="grow px-3 pt-3 min-w-0"
-          initialSize={window.innerHeight - 300}
-          firstChild={
+          orientation={Orientation.HORIZONTAL}
+          className="grow h-full min-h-0 min-w-0 px-3 pt-3"
+          initialSize={500}
+          firstChild={<ChatInterface />}
+          firstClassName="min-w-[500px] rounded-xl overflow-hidden border border-neutral-600"
+          secondChild={
             <Container
-              orientation={Orientation.HORIZONTAL}
+              orientation={Orientation.VERTICAL}
               className="grow h-full min-h-0 min-w-0"
-              initialSize={500}
-              firstChild={<ChatInterface />}
-              firstClassName="min-w-[500px] rounded-xl overflow-hidden border border-neutral-600"
-              secondChild={<Workspace />}
-              secondClassName="flex flex-col overflow-hidden rounded-xl bg-neutral-800 border border-neutral-600 grow min-w-[500px] min-w-[500px]"
+              initialSize={window.innerHeight - 300}
+              firstChild={<Workspace />}
+              firstClassName="min-h-72 rounded-xl border border-neutral-600 bg-neutral-800 flex flex-col overflow-hidden"
+              secondChild={<Terminal />}
+              secondClassName="min-h-72 rounded-xl border border-neutral-600 bg-neutral-800"
             />
           }
-          firstClassName="min-h-72"
-          secondChild={<Terminal key="terminal" />}
-          secondClassName="min-h-72 bg-neutral-800 rounded-xl border border-neutral-600 flex flex-col"
+          secondClassName="flex flex-col overflow-hidden grow min-w-[500px]"
         />
       </div>
       <Controls setSettingOpen={onSettingsModalOpen} />
