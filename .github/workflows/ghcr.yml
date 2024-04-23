@@ -34,4 +34,6 @@ jobs:
       - name: Build and push ${{ matrix.image }}
         run: |
           ORG_NAME=$(echo "${{ github.repository }}" | tr '[A-Z]' '[a-z]' | cut -d '/' -f 1)
+          echo "building container..."
           ./containers/build.sh ${{ matrix.image }} $ORG_NAME --push
+          echo "DONE building container"
