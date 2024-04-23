@@ -114,6 +114,8 @@ class AgentController:
 
             if self._is_stuck():
                 logger.info('Loop detected, stopping task')
+                observation = AgentErrorObservation('I got stuck into a loop, the task has stopped.')
+                await self._run_callbacks(observation)
                 await self.set_task_state_to(TaskState.STOPPED)
                 break
 
