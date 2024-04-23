@@ -1,3 +1,4 @@
+ARG OPEN_DEVIN_BUILD_VERSION=dev
 FROM node:21.7.2-bookworm-slim as frontend-builder
 
 WORKDIR /app
@@ -34,6 +35,7 @@ ENV RUN_AS_DEVIN=false
 ENV USE_HOST_NETWORK=false
 ENV SSH_HOSTNAME=host.docker.internal
 ENV WORKSPACE_BASE=/opt/workspace_base
+ENV OPEN_DEVIN_BUILD_VERSION=$OPEN_DEVIN_BUILD_VERSION
 RUN mkdir -p $WORKSPACE_BASE
 
 RUN apt-get update -y \
