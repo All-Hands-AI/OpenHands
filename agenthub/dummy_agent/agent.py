@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, TypedDict
 
 from opendevin.agent import Agent
 from opendevin.llm.llm import LLM
@@ -15,6 +15,12 @@ from opendevin.action import (
     AgentRecallAction,
     BrowseURLAction,
 )
+from opendevin.observation import (
+    Observation,
+    NullObservation,
+)
+
+ActionObs = TypedDict('ActionObs', {'action': Action, 'observations': List[Observation]})
 
 
 class DummyAgent(Agent):
@@ -25,23 +31,55 @@ class DummyAgent(Agent):
 
     def __init__(self, llm: LLM):
         super().__init__(llm)
-        self.steps = [
-            AddTaskAction(parent='0', goal='check the current directory'),
-            AddTaskAction(parent='0.0', goal='run ls'),
-            ModifyTaskAction(id='0.0', state='in_progress'),
-            AgentThinkAction(thought='Time to get started!'),
-            CmdRunAction(command='ls'),
-            FileWriteAction(content='echo "Hello, World!"', path='hello.sh'),
-            FileReadAction(path='hello.sh'),
-            CmdRunAction(command='bash hello.sh'),
-            CmdRunAction(command='echo "This is in the background"', background=True),
-            AgentRecallAction(query='who am I?'),
-            BrowseURLAction(url='https://google.com'),
-            AgentFinishAction(),
-        ]
+        self.steps: List[ActionObs] = [{
+            'action': AddTaskAction(parent='0', goal='check the current directory'),
+            'observations': [NullObservation('')],
+        }, {
+            'action': AddTaskAction(parent='0.0', goal='run ls'),
+            'observations': [],
+        }, {
+            'action': ModifyTaskAction(id='0.0', state='in_progress'),
+            'observations': [],
+        }, {
+            'action': AgentThinkAction(thought='Time to get started!'),
+            'observations': [],
+        }, {
+            'action': CmdRunAction(command='ls'),
+            'observations': [],
+        }, {
+            'action': FileWriteAction(content='echo "Hello, World!"', path='hello.sh'),
+            'observations': [],
+        }, {
+            'action': FileReadAction(path='hello.sh'),
+            'observations': [],
+        }, {
+            'action': CmdRunAction(command='bash hello.sh'),
+            'observations': [],
+        }, {
+            'action': CmdRunAction(command='echo "This is in the background"', background=True),
+            'observations': [],
+        }, {
+            'action': AgentRecallAction(query='who am I?'),
+            'observations': [],
+        }, {
+            'action': BrowseURLAction(url='https://google.com'),
+            'observations': [],
+        }, {
+            'action': AgentFinishAction(),
+            'observations': [],
+        }]
 
     def step(self, state: State) -> Action:
-        return self.steps[state.iteration]
+        if state.iteration > 0:
+            prev_step = self.steps[state.iteration - 1]
+            if 'observations' in prev_step:
+                expected_observations = prev_step['observations']
+                hist_start = len(state.history) - len(expected_observations)
+                for i in range(len(expected_observations)):
+                    hist_obs = state.history[hist_start + i][1]
+                    expected_obs = expected_observations[i]
+                    assert hist_obs == expected_obs, f'Expected observation {expected_obs}, got {hist_obs}'
+        return self.steps[state.iteration]['action']
 
     def search_memory(self, query: str) -> List[str]:
         return ['I am a computer.']
