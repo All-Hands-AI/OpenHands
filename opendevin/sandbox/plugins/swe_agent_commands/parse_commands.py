@@ -1,4 +1,3 @@
-import os
 from dataclasses import dataclass
 
 import yaml
@@ -11,9 +10,7 @@ class Command:
     signature: str | None = None
 
 
-def parse_command_file(filepath: str) -> str | None:
-    if not os.path.exists(filepath):
-        return None
+def parse_command_file(filepath: str) -> str:
     content = open(filepath, 'r').read()
     lines = content.split('\n')
     commands: list[Command] = []
@@ -61,7 +58,4 @@ if __name__ == '__main__':
     filepaths = filepath.split(',')
     for filepath in filepaths:
         docs = parse_command_file(filepath)
-        if docs is None:
-            print('File not found:', filepath)
-        else:
-            print(docs)
+        print(docs)
