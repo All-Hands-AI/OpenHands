@@ -2,7 +2,7 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { VscTerminal } from "react-icons/vsc";
 import { RootState } from "#/store";
-import useXTerm from "./useXTerm";
+import useXTerm from "../../hooks/useXTerm";
 
 function Terminal() {
   const { commands } = useSelector((state: RootState) => state.cmd);
