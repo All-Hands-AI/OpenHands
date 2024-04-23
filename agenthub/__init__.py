@@ -12,9 +12,12 @@ from . import codeact_agent    # noqa: E402
 from . import planner_agent    # noqa: E402
 from . import SWE_agent        # noqa: E402
 from . import delegator_agent  # noqa: E402
+from . import dummy_agent      # noqa: E402
 
 __all__ = ['monologue_agent', 'codeact_agent',
-           'planner_agent', 'SWE_agent', 'delegator_agent']
+           'planner_agent', 'SWE_agent',
+           'delegator_agent',
+           'dummy_agent']
 
 for agent in all_microagents.values():
     name = agent['name']
