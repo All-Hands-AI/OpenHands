@@ -39,6 +39,25 @@ class LocalBox(Sandbox):
         except subprocess.TimeoutExpired:
             return -1, 'Command timed out'
 
+    def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+        # mkdir -p sandbox_dest if it doesn't exist
+        res = subprocess.run(f'mkdir -p {sandbox_dest}', shell=True, text=True, cwd=config.get('WORKSPACE_BASE'))
+        if res.returncode != 0:
+            raise RuntimeError(f'Failed to create directory {sandbox_dest} in sandbox')
+
+        if recursive:
+            res = subprocess.run(
+                f'cp -r {host_src} {sandbox_dest}', shell=True, text=True, cwd=config.get('WORKSPACE_BASE')
+            )
+            if res.returncode != 0:
+                raise RuntimeError(f'Failed to copy {host_src} to {sandbox_dest} in sandbox')
+        else:
+            res = subprocess.run(
+                f'cp {host_src} {sandbox_dest}', shell=True, text=True, cwd=config.get('WORKSPACE_BASE')
+            )
+            if res.returncode != 0:
+                raise RuntimeError(f'Failed to copy {host_src} to {sandbox_dest} in sandbox')
+
     def execute_in_background(self, cmd: str) -> Process:
         process = subprocess.Popen(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
