@@ -1,5 +1,7 @@
 import { ActionMessage, ObservationMessage } from "./Message";
 
+type Role = "user" | "assistant";
+
 interface ResConfigurations {
   [key: string]: string | boolean | number;
 }
@@ -14,7 +16,7 @@ interface ResFetchMsgTotal {
 
 interface ResFetchMsg {
   id: string;
-  role: string;
+  role: Role;
   payload: SocketMessage;
 }
 

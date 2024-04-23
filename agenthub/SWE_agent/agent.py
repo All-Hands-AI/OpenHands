@@ -38,7 +38,7 @@ class SWEAgent(Agent):
 
     def _remember(self, action: Action, observation: Observation) -> None:
         """Agent has a limited memory of the few steps implemented as a queue"""
-        memory = MEMORY_FORMAT(action.to_dict(), observation.to_dict())
+        memory = MEMORY_FORMAT(action.to_memory(), observation.to_memory())
         self.running_memory.append(memory)
 
     def _think_act(self, messages: List[dict]) -> tuple[Action, str]:

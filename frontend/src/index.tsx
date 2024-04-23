@@ -6,8 +6,8 @@ import { Provider } from "react-redux";
 import { NextUIProvider } from "@nextui-org/react";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
-import store from "./store";
-import "./i18n";
+import store from "#/store";
+import "#/i18n";
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement,

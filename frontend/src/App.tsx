@@ -2,18 +2,18 @@ import React, { useEffect, useState } from "react";
 import "./App.css";
 import { Toaster } from "react-hot-toast";
 import { useDisclosure } from "@nextui-org/react";
-import CogTooth from "./assets/cog-tooth";
-import ChatInterface from "./components/ChatInterface";
-import Errors from "./components/Errors";
-import LoadMessageModal from "./components/LoadMessageModal";
-import { Container, Orientation } from "./components/Resizable";
-import Terminal from "./components/Terminal";
-import Workspace from "./components/Workspace";
-import { fetchMsgTotal } from "./services/session";
-import { initializeAgent } from "./services/settingsService";
-import Socket from "./services/socket";
-import { ResFetchMsgTotal } from "./types/ResponseType";
-import SettingsModal from "./components/settings/SettingsModal";
+import CogTooth from "#/assets/cog-tooth";
+import ChatInterface from "#/components/ChatInterface";
+import Errors from "#/components/Errors";
+import { Container, Orientation } from "#/components/Resizable";
+import Terminal from "#/components/Terminal";
+import Workspace from "#/components/Workspace";
+import { fetchMsgTotal } from "#/services/session";
+import { initializeAgent } from "#/services/settingsService";
+import Socket from "#/services/socket";
+import { ResFetchMsgTotal } from "#/types/ResponseType";
+import SettingsModal from "#/components/modals/settings/SettingsModal";
+import LoadPreviousSessionModal from "#/components/modals/load-previous-session/LoadPreviousSessionModal";
 
 interface Props {
   setSettingOpen: (isOpen: boolean) => void;
@@ -37,16 +37,25 @@ let initOnce = false;
 
 function App(): JSX.Element {
   const [isWarned, setIsWarned] = useState(false);
-  const [loadMsgWarning, setLoadMsgWarning] = useState(false);
 
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const {
+    isOpen: settingsModalIsOpen,
+    onOpen: onSettingsModalOpen,
+    onOpenChange: onSettingsModalOpenChange,
+  } = useDisclosure();
+
+  const {
+    isOpen: loadPreviousSessionModalIsOpen,
+    onOpen: onLoadPreviousSessionModalOpen,
+    onOpenChange: onLoadPreviousSessionModalOpenChange,
+  } = useDisclosure();
 
   const getMsgTotal = () => {
     if (isWarned) return;
     fetchMsgTotal()
       .then((data: ResFetchMsgTotal) => {
         if (data.msg_total > 0) {
-          setLoadMsgWarning(true);
+          onLoadPreviousSessionModalOpen();
           setIsWarned(true);
         }
       })
@@ -67,7 +76,7 @@ function App(): JSX.Element {
   return (
     <div className="h-screen w-screen flex flex-col">
       <div className="flex grow bg-neutral-900 text-white min-h-0">
-        <LeftNav setSettingOpen={onOpen} />
+        <LeftNav setSettingOpen={onSettingsModalOpen} />
         <Container
           orientation={Orientation.VERTICAL}
           className="grow p-3 py-3 pr-3 min-w-0"
@@ -91,10 +100,13 @@ function App(): JSX.Element {
       {/* This div is for the footer that will be added later
       <div className="h-8 w-full border-t border-border px-2" />
       */}
-      <SettingsModal isOpen={isOpen} onOpenChange={onOpenChange} />
-      <LoadMessageModal
-        isOpen={loadMsgWarning}
-        onClose={() => setLoadMsgWarning(false)}
+      <SettingsModal
+        isOpen={settingsModalIsOpen}
+        onOpenChange={onSettingsModalOpenChange}
+      />
+      <LoadPreviousSessionModal
+        isOpen={loadPreviousSessionModalIsOpen}
+        onOpenChange={onLoadPreviousSessionModalOpenChange}
       />
       <Errors />
       <Toaster />

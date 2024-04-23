@@ -4,10 +4,10 @@ import React, { useEffect, useRef } from "react";
 import { VscTerminal } from "react-icons/vsc";
 import { useSelector } from "react-redux";
 import { FitAddon } from "xterm-addon-fit";
-import Socket from "../services/socket";
-import { RootState } from "../store";
-import ActionType from "../types/ActionType";
-import ObservationType from "../types/ObservationType";
+import Socket from "#/services/socket";
+import { RootState } from "#/store";
+import ActionType from "#/types/ActionType";
+import ObservationType from "#/types/ObservationType";
 
 class JsonWebsocketAddon {
   _disposables: IDisposable[];

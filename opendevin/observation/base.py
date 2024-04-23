@@ -15,6 +15,12 @@ class Observation:
         return self.content
 
     def to_dict(self) -> dict:
+        """Converts the observation to a dictionary and adds user message."""
+        memory_dict = self.to_memory()
+        memory_dict['message'] = self.message
+        return memory_dict
+
+    def to_memory(self) -> dict:
         """Converts the observation to a dictionary."""
         extras = copy.deepcopy(self.__dict__)
         content = extras.pop('content', '')
@@ -23,7 +29,6 @@ class Observation:
             'observation': observation,
             'content': content,
             'extras': extras,
-            'message': self.message,
         }
 
     @property
