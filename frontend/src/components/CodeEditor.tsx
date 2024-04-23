@@ -1,15 +1,15 @@
+import { selectFile } from "#/services/fileService";
+import { setCode } from "#/state/codeSlice";
+import { RootState } from "#/store";
 import Editor, { Monaco } from "@monaco-editor/react";
 import { Tab, Tabs } from "@nextui-org/react";
 import type { editor } from "monaco-editor";
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "#/store";
-import { selectFile } from "#/services/fileService";
-import { setCode } from "#/state/codeSlice";
 import FileExplorer from "./file-explorer/FileExplorer";
 
 function CodeEditor(): JSX.Element {
-  const [selectedFileName, setSelectedFileName] = useState("welcome");
+  const [selectedFileName, setSelectedFileName] = useState("");
 
   const dispatch = useDispatch();
   const code = useSelector((state: RootState) => state.code.code);
@@ -62,10 +62,10 @@ function CodeEditor(): JSX.Element {
           <Tab
             key={
               selectedFileName === ""
-                ? "Welcome"
+                ? ""
                 : selectedFileName.toLocaleLowerCase()
             }
-            title={!selectedFileName ? "Welcome" : selectedFileName}
+            title={!selectedFileName ? "" : selectedFileName}
           />
         </Tabs>
         <div className="flex grow">
@@ -73,10 +73,10 @@ function CodeEditor(): JSX.Element {
             height="100%"
             path={
               selectedFileName === ""
-                ? "welcome.txt"
+                ? ""
                 : selectedFileName.toLocaleLowerCase()
             }
-            defaultValue="# Welcome to OpenDevin!"
+            defaultValue=""
             value={code}
             onMount={handleEditorDidMount}
           />
