@@ -66,9 +66,10 @@ function SettingsForm({
       />
       <Input
         label="API Key"
+        disabled={disabled}
         aria-label="apikey"
         data-testid="apikey"
-        placeholder="Enter your API Key."
+        placeholder={t(I18nKey.SETTINGS$API_KEY_PLACEHOLDER)}
         type={isVisible ? "text" : "password"}
         value={apiKey}
         onChange={(e) => {

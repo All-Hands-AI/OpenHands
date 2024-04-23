@@ -42,7 +42,9 @@ export const getCurrentSettings = (): Settings => ({
   LLM_MODEL: getSettingOrDefault("LLM_MODEL"),
   AGENT: getSettingOrDefault("AGENT"),
   LANGUAGE: getSettingOrDefault("LANGUAGE"),
-  LLM_API_KEY: getSettingOrDefault("LLM_API_KEY"),
+  LLM_API_KEY:
+    localStorage.getItem(`API_KEY_${getSettingOrDefault("LLM_MODEL")}`) ||
+    DEFAULT_SETTINGS.LLM_API_KEY,
 });
 
 // Function to merge and update settings

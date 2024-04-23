@@ -1,6 +1,3 @@
-import { Spinner } from "@nextui-org/react";
-import React from "react";
-import { useTranslation } from "react-i18next";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import {
@@ -9,6 +6,9 @@ import {
   getCurrentSettings,
   saveSettings,
 } from "#/services/settingsService";
+import { Spinner } from "@nextui-org/react";
+import React from "react";
+import { useTranslation } from "react-i18next";
 import BaseModal from "../base-modal/BaseModal";
 import SettingsForm from "./SettingsForm";
 
@@ -22,10 +22,12 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const currentSettings = React.useMemo(() => getCurrentSettings(), []);
 
   const [models, setModels] = React.useState<string[]>([]);
-  const [apiKey, setApiKey] = React.useState<string>("");
   const [agents, setAgents] = React.useState<string[]>([]);
   const [settings, setSettings] =
     React.useState<Partial<Settings>>(currentSettings);
+  const [apiKey, setApiKey] = React.useState<string>(
+    localStorage.getItem(`API_KEY_${settings.LLM_MODEL}`) || "",
+  );
 
   const [loading, setLoading] = React.useState(true);
 
