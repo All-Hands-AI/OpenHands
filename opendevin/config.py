@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_CONTAINER_IMAGE = 'ghcr.io/opendevin/sandbox'
 if os.getenv('OPEN_DEVIN_BUILD_VERSION'):
-    DEFAULT_CONTAINER_IMAGE += os.getenv('OPEN_DEVIN_BUILD_VERSION') or ''
+    DEFAULT_CONTAINER_IMAGE += ':' + (os.getenv('OPEN_DEVIN_BUILD_VERSION') or '')
 else:
     DEFAULT_CONTAINER_IMAGE += ':main'
 
