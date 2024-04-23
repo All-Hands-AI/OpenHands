@@ -1,8 +1,8 @@
+import { setByKey } from "#/state/settingsSlice";
 import { setInitialized } from "#/state/taskSlice";
 import store from "#/store";
 import ActionType from "#/types/ActionType";
 import { SupportedSettings } from "#/types/ConfigType";
-import { setByKey } from "#/state/settingsSlice";
 import toast from "#/utils/toast";
 import Socket from "./socket";
 
@@ -30,6 +30,7 @@ const DEFAULT_SETTINGS: Settings = {
   LLM_MODEL: "gpt-3.5-turbo",
   AGENT: "MonologueAgent",
   LANGUAGE: "en",
+  LLM_API_KEY: "",
 };
 
 export const getSettingOrDefault = (key: string): string => {
@@ -41,6 +42,7 @@ export const getCurrentSettings = (): Settings => ({
   LLM_MODEL: getSettingOrDefault("LLM_MODEL"),
   AGENT: getSettingOrDefault("AGENT"),
   LANGUAGE: getSettingOrDefault("LANGUAGE"),
+  LLM_API_KEY: getSettingOrDefault("LLM_API_KEY"),
 });
 
 // Function to merge and update settings

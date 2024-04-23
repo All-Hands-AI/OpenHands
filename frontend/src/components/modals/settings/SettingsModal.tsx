@@ -1,3 +1,6 @@
+import { Spinner } from "@nextui-org/react";
+import React from "react";
+import { useTranslation } from "react-i18next";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import {
@@ -6,9 +9,6 @@ import {
   getCurrentSettings,
   saveSettings,
 } from "#/services/settingsService";
-import { Spinner } from "@nextui-org/react";
-import React from "react";
-import { useTranslation } from "react-i18next";
 import BaseModal from "../base-modal/BaseModal";
 import SettingsForm from "./SettingsForm";
 
@@ -68,7 +68,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
         {
           label: t(I18nKey.CONFIGURATION$MODAL_SAVE_BUTTON_LABEL),
           action: () => {
-            setSettings((prev) => ({ ...prev, API_KEY: apiKey }));
+            setSettings((prev) => ({ ...prev, LLM_API_KEY: apiKey }));
             saveSettings(settings);
           },
           closeAfterAction: true,
