@@ -6,7 +6,6 @@ import CogTooth from "#/assets/cog-tooth";
 import ChatInterface from "#/components/ChatInterface";
 import Errors from "#/components/Errors";
 import { Container, Orientation } from "#/components/Resizable";
-import Terminal from "#/components/Terminal";
 import Workspace from "#/components/Workspace";
 import { fetchMsgTotal } from "#/services/session";
 import { initializeAgent } from "#/services/settingsService";
@@ -14,6 +13,7 @@ import Socket from "#/services/socket";
 import { ResFetchMsgTotal } from "#/types/ResponseType";
 import SettingsModal from "#/components/modals/settings/SettingsModal";
 import LoadPreviousSessionModal from "#/components/modals/load-previous-session/LoadPreviousSessionModal";
+import Terminal from "./components/terminal/Terminal";
 
 interface Props {
   setSettingOpen: (isOpen: boolean) => void;
