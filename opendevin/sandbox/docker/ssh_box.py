@@ -17,7 +17,7 @@ from opendevin.logger import opendevin_logger as logger
 from opendevin.sandbox.sandbox import Sandbox
 from opendevin.sandbox.process import Process
 from opendevin.sandbox.docker.process import DockerProcess
-from opendevin.sandbox.plugins.jupyter import JupyterRequirement
+from opendevin.sandbox.plugins import JupyterRequirement, SWEAgentCommandsRequirement
 from opendevin.schema import ConfigType
 from opendevin.utils import find_available_tcp_port
 from opendevin.exceptions import SandboxInvalidBackgroundCommandError
@@ -411,7 +411,7 @@ if __name__ == '__main__':
         "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
 
     # Initialize required plugins
-    ssh_box.init_plugins([JupyterRequirement()])
+    ssh_box.init_plugins([JupyterRequirement(), SWEAgentCommandsRequirement()])
 
     bg_cmd = ssh_box.execute_in_background(
         "while true; do echo 'dot ' && sleep 10; done"
