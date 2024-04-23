@@ -88,7 +88,7 @@ def get_parser():
     parser.add_argument(
         '-c',
         '--agent-cls',
-        default='MonologueAgent',
+        default=config.get(ConfigType.AGENT),
         type=str,
         help='The agent class to use',
     )

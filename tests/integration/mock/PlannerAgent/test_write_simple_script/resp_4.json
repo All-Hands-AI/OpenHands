@@ -1,0 +1,1 @@
+"{\n  \"action\": \"modify_task\",\n  \"args\": {\n    \"id\": \"0\",\n    \"state\": \"verified\"\n  }\n}"

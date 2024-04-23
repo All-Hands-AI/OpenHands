@@ -1,0 +1,41 @@
+name: Run Integration Tests
+
+on: [push, pull_request]
+
+jobs:
+  on-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: SWEAgent-py311
+            python-version: "3.11"
+            agent: "SWEAgent"
+          - name: PlannerAgent-py311
+            python-version: "3.11"
+            agent: "PlannerAgent"
+          - name: MonologueAgent-py311
+            python-version: "3.11"
+            agent: "MonologueAgent"
+          - name: CodeActAgent-py311
+            python-version: "3.11"
+            agent: "CodeActAgent"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Poetry
+        run: curl -sSL https://install.python-poetry.org | python3 -
+      - name: Build Environment
+        run: make build
+      - name: Run Integration Tests
+        env:
+          SANDBOX_TYPE: exec
+          AGENT: ${{ matrix.agent }}
+          MAX_ITERATIONS: 10
+        run: |
+          rm -rf workspace
+          mkdir workspace
+          WORKSPACE_BASE="$GITHUB_WORKSPACE/workspace" WORKSPACE_MOUNT_PATH="$GITHUB_WORKSPACE/workspace" poetry run pytest -s ./tests/integration
