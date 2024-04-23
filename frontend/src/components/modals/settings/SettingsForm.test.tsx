@@ -1,3 +1,4 @@
+import AgentTaskState from "#/types/AgentTaskState";
 import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
@@ -99,6 +100,25 @@ describe("SettingsForm", () => {
       expect(onLanguageChangeMock).toHaveBeenCalledWith("Français");
     });
 
-    it.todo("should disable settings while task is running");
+    it("should disable settings while task is running", () => {
+      renderWithProviders(
+        <SettingsForm
+          settings={{}}
+          models={["model1", "model2", "model3"]}
+          agents={["agent1", "agent2", "agent3"]}
+          onModelChange={onModelChangeMock}
+          onAgentChange={onAgentChangeMock}
+          onLanguageChange={onLanguageChangeMock}
+        />,
+        { preloadedState: { agent: { curTaskState: AgentTaskState.RUNNING } } },
+      );
+      const modelInput = screen.getByRole("combobox", { name: "model" });
+      const agentInput = screen.getByRole("combobox", { name: "agent" });
+      const languageInput = screen.getByRole("combobox", { name: "language" });
+
+      expect(modelInput).toBeDisabled();
+      expect(agentInput).toBeDisabled();
+      expect(languageInput).toBeDisabled();
+    });
   });
 });

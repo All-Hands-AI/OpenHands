@@ -63,5 +63,26 @@ describe("AutocompleteCombobox", () => {
     expect(onChangeMock).toHaveBeenCalledWith("model2");
   });
 
-  it.todo("should show a tooltip after 0.5 seconds of focus");
+  it("should show a tooltip after 0.5 seconds of focus", () => {
+    jest.useFakeTimers();
+    renderComponent();
+
+    const modelInput = screen.getByRole("combobox", { name: "model" });
+
+    expect(
+      screen.queryByText("Select the language model to use."),
+    ).not.toBeInTheDocument();
+
+    act(() => {
+      userEvent.hover(modelInput);
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(500);
+    });
+
+    expect(
+      screen.getByText("Select the language model to use."),
+    ).toBeInTheDocument();
+  });
 });
