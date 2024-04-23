@@ -1,3 +1,4 @@
+import time
 from typing import List, TypedDict
 
 from opendevin.agent import Agent
@@ -18,9 +19,23 @@ from opendevin.action import (
 from opendevin.observation import (
     Observation,
     NullObservation,
+    CmdOutputObservation,
+    FileWriteObservation,
+    FileReadObservation,
+    AgentRecallObservation,
 )
 
+"""
+FIXME: There are a few problems this surfaced
+* FileWrites seem to add an unintended newline at the end of the file
+* command_id is sometimes a number, sometimes a string
+* Why isn't the output of the background command split between two steps?
+* Browser not working
+"""
+
 ActionObs = TypedDict('ActionObs', {'action': Action, 'observations': List[Observation]})
+
+BACKGROUND_CMD = 'echo "This is in the background" && sleep .1 && echo "This too"'
 
 
 class DummyAgent(Agent):
@@ -36,48 +51,66 @@ class DummyAgent(Agent):
             'observations': [NullObservation('')],
         }, {
             'action': AddTaskAction(parent='0.0', goal='run ls'),
-            'observations': [],
+            'observations': [NullObservation('')],
         }, {
             'action': ModifyTaskAction(id='0.0', state='in_progress'),
-            'observations': [],
+            'observations': [NullObservation('')],
         }, {
             'action': AgentThinkAction(thought='Time to get started!'),
-            'observations': [],
+            'observations': [NullObservation('')],
         }, {
-            'action': CmdRunAction(command='ls'),
-            'observations': [],
+            'action': CmdRunAction(command='echo "foo"'),
+            'observations': [CmdOutputObservation('foo\n', command_id=-1, command='echo "foo"')],
         }, {
             'action': FileWriteAction(content='echo "Hello, World!"', path='hello.sh'),
-            'observations': [],
+            'observations': [FileWriteObservation('', path='hello.sh')],
         }, {
             'action': FileReadAction(path='hello.sh'),
-            'observations': [],
+            'observations': [FileReadObservation('echo "Hello, World!"\n', path='hello.sh')],
         }, {
             'action': CmdRunAction(command='bash hello.sh'),
-            'observations': [],
+            'observations': [CmdOutputObservation('Hello, World!\n', command_id=-1, command='bash hello.sh')],
         }, {
-            'action': CmdRunAction(command='echo "This is in the background"', background=True),
-            'observations': [],
+            'action': CmdRunAction(command=BACKGROUND_CMD, background=True),
+            'observations': [
+                CmdOutputObservation('Background command started. To stop it, send a `kill` action with id 42', command_id='42', command=BACKGROUND_CMD),  # type: ignore[arg-type]
+                CmdOutputObservation('This is in the background\nThis too\n', command_id='42', command=BACKGROUND_CMD),  # type: ignore[arg-type]
+            ]
         }, {
             'action': AgentRecallAction(query='who am I?'),
-            'observations': [],
+            'observations': [
+                AgentRecallObservation('', memories=['I am a computer.']),
+                # CmdOutputObservation('This too\n', command_id='42', command=BACKGROUND_CMD),
+            ],
         }, {
             'action': BrowseURLAction(url='https://google.com'),
-            'observations': [],
+            'observations': [
+                # BrowserOutputObservation('<html></html>', url='https://google.com', screenshot=""),
+            ],
         }, {
             'action': AgentFinishAction(),
             'observations': [],
         }]
 
     def step(self, state: State) -> Action:
+        time.sleep(0.1)
         if state.iteration > 0:
             prev_step = self.steps[state.iteration - 1]
             if 'observations' in prev_step:
                 expected_observations = prev_step['observations']
                 hist_start = len(state.history) - len(expected_observations)
                 for i in range(len(expected_observations)):
-                    hist_obs = state.history[hist_start + i][1]
-                    expected_obs = expected_observations[i]
+                    hist_obs = state.history[hist_start + i][1].to_dict()
+                    expected_obs = expected_observations[i].to_dict()
+                    if 'command_id' in hist_obs['extras'] and hist_obs['extras']['command_id'] != -1:
+                        del hist_obs['extras']['command_id']
+                        hist_obs['content'] = ''
+                    if 'command_id' in expected_obs['extras'] and expected_obs['extras']['command_id'] != -1:
+                        del expected_obs['extras']['command_id']
+                        expected_obs['content'] = ''
+                    if hist_obs != expected_obs:
+                        print('\nactual', hist_obs)
+                        print('\nexpect', expected_obs)
                     assert hist_obs == expected_obs, f'Expected observation {expected_obs}, got {hist_obs}'
         return self.steps[state.iteration]['action']
 
