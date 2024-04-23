@@ -4,6 +4,8 @@ import platform
 import sys
 import time
 import uuid
+import tarfile
+from glob import glob
 from collections import namedtuple
 from typing import Dict, List, Tuple, Union
 
@@ -15,6 +17,7 @@ from opendevin.logger import opendevin_logger as logger
 from opendevin.sandbox.sandbox import Sandbox
 from opendevin.sandbox.process import Process
 from opendevin.sandbox.docker.process import DockerProcess
+from opendevin.sandbox.plugins.jupyter import JupyterRequirement
 from opendevin.schema import ConfigType
 from opendevin.utils import find_available_tcp_port
 from opendevin.exceptions import SandboxInvalidBackgroundCommandError
@@ -58,10 +61,10 @@ class DockerSSHBox(Sandbox):
     background_commands: Dict[int, Process] = {}
 
     def __init__(
-            self,
-            container_image: str | None = None,
-            timeout: int = 120,
-            sid: str | None = None,
+        self,
+        container_image: str | None = None,
+        timeout: int = 120,
+        sid: str | None = None,
     ):
         # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
@@ -137,6 +140,22 @@ class DockerSSHBox(Sandbox):
             )
             if exit_code != 0:
                 raise Exception(f'Failed to set password in sandbox: {logs}')
+
+            # chown the home directory
+            exit_code, logs = self.container.exec_run(
+                ['/bin/bash', '-c', 'chown opendevin:root /home/opendevin'],
+                workdir=SANDBOX_WORKSPACE_DIR,
+            )
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to chown home directory for opendevin in sandbox: {logs}')
+            exit_code, logs = self.container.exec_run(
+                ['/bin/bash', '-c', f'chown opendevin:root {SANDBOX_WORKSPACE_DIR}'],
+                workdir=SANDBOX_WORKSPACE_DIR,
+            )
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to chown workspace directory for opendevin in sandbox: {logs}')
         else:
             exit_code, logs = self.container.exec_run(
                 # change password for root
@@ -207,6 +226,37 @@ class DockerSSHBox(Sandbox):
         # remove the echo $? itself
         exit_code = int(exit_code.lstrip('echo $?').strip())
         return exit_code, command_output
+
+    def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+        # mkdir -p sandbox_dest if it doesn't exist
+        exit_code, logs = self.container.exec_run(
+            ['/bin/bash', '-c', f'mkdir -p {sandbox_dest}'],
+            workdir=SANDBOX_WORKSPACE_DIR,
+        )
+        if exit_code != 0:
+            raise Exception(
+                f'Failed to create directory {sandbox_dest} in sandbox: {logs}')
+
+        if recursive:
+            assert os.path.isdir(host_src), 'Source must be a directory when recursive is True'
+            files = glob(host_src + '/**/*', recursive=True)
+            srcname = os.path.basename(host_src)
+            tar_filename = os.path.join(os.path.dirname(host_src), srcname + '.tar')
+            with tarfile.open(tar_filename, mode='w') as tar:
+                for file in files:
+                    tar.add(file, arcname=os.path.relpath(file, os.path.dirname(host_src)))
+        else:
+            assert os.path.isfile(host_src), 'Source must be a file when recursive is False'
+            srcname = os.path.basename(host_src)
+            tar_filename = os.path.join(os.path.dirname(host_src), srcname + '.tar')
+            with tarfile.open(tar_filename, mode='w') as tar:
+                tar.add(host_src, arcname=srcname)
+
+        with open(tar_filename, 'rb') as f:
+            data = f.read()
+
+        self.container.put_archive(os.path.dirname(sandbox_dest), data)
+        os.remove(tar_filename)
 
     def execute_in_background(self, cmd: str) -> Process:
         result = self.container.exec_run(
@@ -307,6 +357,11 @@ class DockerSSHBox(Sandbox):
                         'bind': SANDBOX_WORKSPACE_DIR,
                         'mode': 'rw'
                     },
+                    # mount cache directory to /home/opendevin/.cache for pip cache reuse
+                    config.get('CACHE_DIR'): {
+                        'bind': '/home/opendevin/.cache' if RUN_AS_DEVIN else '/root/.cache',
+                        'mode': 'rw'
+                    },
                 },
             )
             logger.info('Container started')
@@ -355,8 +410,11 @@ if __name__ == '__main__':
     logger.info(
         "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
 
+    # Initialize required plugins
+    ssh_box.init_plugins([JupyterRequirement()])
+
     bg_cmd = ssh_box.execute_in_background(
-        "while true; do echo 'dot ' && sleep 1; done"
+        "while true; do echo 'dot ' && sleep 10; done"
     )
 
     sys.stdout.flush()
