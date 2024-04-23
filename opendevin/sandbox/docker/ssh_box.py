@@ -232,12 +232,31 @@ class DockerSSHBox(Sandbox):
             raise Exception(
                 f'Something went wrong with the SSH sanbox, cannot get output for command [{cmd}] after 5 retries'
             )
+        logger.debug(f'Command output GOT SO FAR: {command_output}')
+        # once out, make sure that we have *every* output, we while loop until we get an empty output
+        while True:
+            logger.debug('WAITING FOR .prompt()')
+            self.ssh.sendline('\n')
+            timeout_not_reached = self.ssh.prompt(timeout=1)
+            if not timeout_not_reached:
+                logger.debug('TIMEOUT REACHED')
+                break
+            logger.debug('WAITING FOR .before')
+            output = self.ssh.before.decode('utf-8').strip()
+            logger.debug(f'WAITING FOR END OF command output ({bool(output)}): {output}')
+            if output == '':
+                break
+            command_output += output
         command_output = command_output.lstrip(cmd).strip()
 
         # get the exit code
         self.ssh.sendline('echo $?')
         self.ssh.prompt()
         exit_code = self.ssh.before.decode('utf-8')
+        while not exit_code.startswith('echo $?'):
+            self.ssh.prompt()
+            exit_code = self.ssh.before.decode('utf-8')
+            logger.debug(f'WAITING FOR exit code: {exit_code}')
         exit_code = int(exit_code.lstrip('echo $?').strip())
         return exit_code, command_output
 
