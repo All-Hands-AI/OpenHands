@@ -81,7 +81,7 @@ class FileWriteAction(ExecutableAction):
 
     def _insert_lines(self, to_insert: list[str], original: list[str]):
         """
-        Insert the new conent to the original content based on self.start and self.end
+        Insert the new content to the original content based on self.start and self.end
         """
         new_lines = [''] if self.start == 0 else original[:self.start]
         new_lines += [i + '\n' for i in to_insert]
