@@ -60,6 +60,8 @@ class AgentController:
         self.action_manager = ActionManager(self.id)
         self.max_chars = max_chars
         self.callbacks = callbacks
+        # Initialize agent-required plugins for sandbox (if any)
+        self.action_manager.init_sandbox_plugins(agent.sandbox_plugins)
 
     def update_state_for_step(self, i):
         if self.state is None:

@@ -51,7 +51,7 @@ check-system:
 		echo "$(RED)Unsupported system detected. Please use macOS, Linux, or Windows Subsystem for Linux (WSL).$(RESET)"; \
 		exit 1; \
 	fi
-		
+
 check-python:
 	@echo "$(YELLOW)Checking Python installation...$(RESET)"
 	@if command -v python3.11 > /dev/null; then \
@@ -217,6 +217,12 @@ setup-config-prompts:
 	@read -p "Enter your workspace directory [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
 	 echo "WORKSPACE_BASE=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
+
+# Clean up all caches
+clean:
+	@echo "$(YELLOW)Cleaning up caches...$(RESET)"
+	@rm -rf opendevin/.cache
+	@echo "$(GREEN)Caches cleaned up successfully.$(RESET)"
 
 # Help
 help:

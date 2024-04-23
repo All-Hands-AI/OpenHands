@@ -30,7 +30,7 @@ To configure the LM of your choice, follow these steps:
    ```bash
    make setup-config
    ```
-   This command will prompt you to enter the LLM API key and model name, ensuring that OpenDevin is tailored to your specific needs.
+   This command will prompt you to enter the LLM API key, model name, and other variables ensuring that OpenDevin is tailored to your specific needs. Note that the model name will apply only when you run headless. If you use the UI, please set the model in the UI.
 
 **Note on Alternative Models:**
 Some alternative models may prove more challenging to tame than others. Fear not, brave adventurer! We shall soon unveil LLM-specific documentation to guide you on your quest. And if you've already mastered the art of wielding a model other than OpenAI's GPT, we encourage you to [share your setup instructions with us](https://github.com/OpenDevin/OpenDevin/issues/417).

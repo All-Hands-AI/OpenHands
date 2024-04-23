@@ -3,9 +3,10 @@ from typing import Dict
 from typing import Tuple
 
 from opendevin.sandbox.process import Process
+from opendevin.sandbox.plugins.mixin import PluginMixin
 
 
-class Sandbox(ABC):
+class Sandbox(ABC, PluginMixin):
     background_commands: Dict[int, Process] = {}
 
     @abstractmethod
@@ -26,4 +27,8 @@ class Sandbox(ABC):
 
     @abstractmethod
     def close(self):
+        pass
+
+    @abstractmethod
+    def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         pass
