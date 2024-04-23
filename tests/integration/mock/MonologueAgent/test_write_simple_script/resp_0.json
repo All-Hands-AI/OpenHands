@@ -1,1 +1,1 @@
-"```json\n{\n  \"action\": \"run\",\n  \"args\": {\n    \"command\": \"ls\",\n    \"background\": false\n  }\n}\n```"
+"{\n  \"action\": \"run\",\n  \"args\": {\n    \"command\": \"ls\",\n    \"background\": false\n  }\n}"
