@@ -40,7 +40,11 @@ def action_from_dict(action: dict) -> Action:
             f"'{action['action']=}' is not defined. Available actions: {ACTION_TYPE_TO_CLASS.keys()}"
         )
     args = action.get('args', {})
-    return action_class(**args)
+    try:
+        decoded_action = action_class(**args)
+    except TypeError:
+        raise AgentMalformedActionError(f"action={action} has the wrong arguments")
+    return decoded_action
 
 
 __all__ = [
