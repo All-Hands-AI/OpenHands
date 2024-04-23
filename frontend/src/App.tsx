@@ -1,29 +1,35 @@
-import React, { useEffect, useState } from "react";
-import "./App.css";
-import { Toaster } from "react-hot-toast";
 import { useDisclosure } from "@nextui-org/react";
+import React, { useEffect, useState } from "react";
+import { Toaster } from "react-hot-toast";
 import CogTooth from "#/assets/cog-tooth";
 import ChatInterface from "#/components/ChatInterface";
 import Errors from "#/components/Errors";
 import { Container, Orientation } from "#/components/Resizable";
 import Terminal from "#/components/Terminal";
 import Workspace from "#/components/Workspace";
+import LoadPreviousSessionModal from "#/components/modals/load-previous-session/LoadPreviousSessionModal";
+import SettingsModal from "#/components/modals/settings/SettingsModal";
 import { fetchMsgTotal } from "#/services/session";
 import { initializeAgent } from "#/services/settingsService";
 import Socket from "#/services/socket";
 import { ResFetchMsgTotal } from "#/types/ResponseType";
-import SettingsModal from "#/components/modals/settings/SettingsModal";
-import LoadPreviousSessionModal from "#/components/modals/load-previous-session/LoadPreviousSessionModal";
+import "./App.css";
+import AgentControlBar from "./components/AgentControlBar";
+import AgentStatusBar from "./components/AgentStatusBar";
 
 interface Props {
   setSettingOpen: (isOpen: boolean) => void;
 }
 
-function LeftNav({ setSettingOpen }: Props): JSX.Element {
+function Controls({ setSettingOpen }: Props): JSX.Element {
   return (
-    <div className="flex flex-col h-full p-4 bg-neutral-900 w-16 items-center shrink-0">
+    <div className="flex w-full p-4 bg-neutral-900 items-center shrink-0 justify-between">
+      <div className="flex items-center gap-4">
+        <AgentControlBar />
+      </div>
+      <AgentStatusBar />
       <div
-        className="mt-auto cursor-pointer hover:opacity-80"
+        className="cursor-pointer hover:opacity-80 transition-all"
         onClick={() => setSettingOpen(true)}
       >
         <CogTooth />
@@ -71,15 +77,15 @@ function App(): JSX.Element {
     Socket.registerCallback("open", [getMsgTotal]);
 
     getMsgTotal();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="h-screen w-screen flex flex-col">
       <div className="flex grow bg-neutral-900 text-white min-h-0">
-        <LeftNav setSettingOpen={onSettingsModalOpen} />
         <Container
           orientation={Orientation.VERTICAL}
-          className="grow p-3 py-3 pr-3 min-w-0"
+          className="grow px-3 pt-3 min-w-0"
           initialSize={window.innerHeight - 300}
           firstChild={
             <Container
@@ -97,9 +103,7 @@ function App(): JSX.Element {
           secondClassName="min-h-72 bg-neutral-800 rounded-xl border border-neutral-600 flex flex-col"
         />
       </div>
-      {/* This div is for the footer that will be added later
-      <div className="h-8 w-full border-t border-border px-2" />
-      */}
+      <Controls setSettingOpen={onSettingsModalOpen} />
       <SettingsModal
         isOpen={settingsModalIsOpen}
         onOpenChange={onSettingsModalOpenChange}
