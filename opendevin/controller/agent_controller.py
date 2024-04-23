@@ -246,7 +246,7 @@ class AgentController:
                 return True
             elif (all
                   (isinstance(self.state.history[-i][1], AgentErrorObservation) for i in range(1, 4))):
-                # (NullAction, AgentErrorObservation): the same error coming from an exception
+                # (NullAction, AgentErrorObservation): errors coming from an exception
                 # (Action, AgentErrorObservation): the same action getting an error, even if not necessarily the same error
                 logger.debug('Action, AgentErrorObservation loop detected')
                 return True
