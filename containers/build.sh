@@ -38,7 +38,9 @@ fi
 DOCKER_REPOSITORY=$DOCKER_REGISTRY/$DOCKER_ORG/$DOCKER_IMAGE
 echo "Repo: $DOCKER_REPOSITORY"
 echo "Base dir: $DOCKER_BASE_DIR"
-#docker pull $DOCKER_REPOSITORY:main || true # try to get any cached layers
+
+docker pull $DOCKER_REPOSITORY:main || true # try to get any cached layers
+
 args=""
 for tag in ${tags[@]}; do
   args+=" -t $DOCKER_REPOSITORY:$tag"
