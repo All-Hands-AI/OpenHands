@@ -1,9 +1,6 @@
 import asyncio
-import traceback
 from typing import Callable, List
 
-from openai import AuthenticationError, APIConnectionError
-from litellm import ContextWindowExceededError
 
 from opendevin import config
 from opendevin.action import (
@@ -12,15 +9,15 @@ from opendevin.action import (
     NullAction,
 )
 from opendevin.agent import Agent
-from opendevin.exceptions import AgentNoActionError, MaxCharsExceedError
+from opendevin.exceptions import AgentMalformedActionError, AgentNoActionError, MaxCharsExceedError
 from opendevin.logger import opendevin_logger as logger
 from opendevin.observation import AgentErrorObservation, NullObservation, Observation
 from opendevin.plan import Plan
 from opendevin.state import State
 
-from ..action.tasks import TaskStateChangedAction
-from ..schema import TaskState
-from .action_manager import ActionManager
+from opendevin.action.tasks import TaskStateChangedAction
+from opendevin.schema import TaskState
+from opendevin.controller.action_manager import ActionManager
 
 MAX_ITERATIONS = config.get('MAX_ITERATIONS')
 MAX_CHARS = config.get('MAX_CHARS')
@@ -112,6 +109,13 @@ class AgentController:
                 await self.notify_task_state_changed()
                 break
 
+            if self._is_stuck():
+                logger.info('Loop detected, stopping task')
+                observation = AgentErrorObservation('I got stuck into a loop, the task has stopped.')
+                await self._run_callbacks(observation)
+                await self.set_task_state_to(TaskState.STOPPED)
+                break
+
     async def start(self, task: str):
         """Starts the agent controller with a task.
         If task already run before, it will continue from the last step.
@@ -172,21 +176,10 @@ class AgentController:
         try:
             action = self.agent.step(self.state)
             if action is None:
-                raise AgentNoActionError()
-            logger.info(action, extra={'msg_type': 'ACTION'})
-        except Exception as e:
+                raise AgentNoActionError('No action was returned')
+        except (AgentMalformedActionError, AgentNoActionError) as e:
             observation = AgentErrorObservation(str(e))
-            logger.error(e)
-            logger.debug(traceback.format_exc())
-
-            # raise specific exceptions that need to be handled outside
-            # note: we are using classes from openai rather than litellm because:
-            # 1) litellm.exceptions.AuthenticationError is a subclass of openai.AuthenticationError
-            # 2) embeddings call, initiated by llama-index, has no wrapper for errors.
-            #    This means we have to catch individual authentication errors
-            #    from different providers, and OpenAI is one of these.
-            if isinstance(e, (AuthenticationError, ContextWindowExceededError, APIConnectionError)):
-                raise
+        logger.info(action, extra={'msg_type': 'ACTION'})
 
         self.update_state_after_step()
 
@@ -221,3 +214,27 @@ class AgentController:
 
     def get_state(self):
         return self.state
+
+    def _is_stuck(self):
+        if self.state is None or self.state.history is None or len(self.state.history) < 3:
+            return False
+
+        # if the last three (Action, Observation) tuples are too repetitive
+        # the agent got stuck in a loop
+        if all(
+            [self.state.history[-i][0] == self.state.history[-3][0] for i in range(1, 3)]
+        ):
+            # it repeats same action, give it a chance, but not if:
+            if (all
+                    (isinstance(self.state.history[-i][1], NullObservation) for i in range(1, 4))):
+                # same (Action, NullObservation): like 'think' the same thought over and over
+                logger.debug('Action, NullObservation loop detected')
+                return True
+            elif (all
+                  (isinstance(self.state.history[-i][1], AgentErrorObservation) for i in range(1, 4))):
+                # (NullAction, AgentErrorObservation): errors coming from an exception
+                # (Action, AgentErrorObservation): the same action getting an error, even if not necessarily the same error
+                logger.debug('Action, AgentErrorObservation loop detected')
+                return True
+
+        return False

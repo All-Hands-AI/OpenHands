@@ -4,6 +4,7 @@ FROM node:21.7.2-bookworm-slim as frontend-builder
 WORKDIR /app
 
 COPY ./frontend/package.json frontend/package-lock.json ./
+RUN npm install -g npm@10.5.1
 RUN npm install
 
 COPY ./frontend ./
