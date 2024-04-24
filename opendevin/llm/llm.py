@@ -1,5 +1,3 @@
-import json
-
 from litellm import completion as litellm_completion
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_random_exponential
 from litellm.exceptions import APIConnectionError, RateLimitError, ServiceUnavailableError
@@ -17,23 +15,6 @@ DEFAULT_API_VERSION = config.get('LLM_API_VERSION')
 LLM_NUM_RETRIES = config.get('LLM_NUM_RETRIES')
 LLM_RETRY_MIN_WAIT = config.get('LLM_RETRY_MIN_WAIT')
 LLM_RETRY_MAX_WAIT = config.get('LLM_RETRY_MAX_WAIT')
-
-i = 0
-
-
-def write_prompt_to_json(**kwargs):
-    global i
-    json_data = json.dumps(kwargs)
-    with open(f'prompt_{i}.json', 'w') as file:
-        file.write(json_data)
-
-
-def write_resp_to_json(resp):
-    global i
-    json_data = json.dumps(resp)
-    with open(f'resp_{i}.json', 'w') as file:
-        file.write(json_data)
-    i += 1
 
 
 class LLM:
@@ -94,10 +75,8 @@ class LLM:
             for message in messages:
                 debug_message += '\n\n----------\n\n' + message['content']
             llm_prompt_logger.debug(debug_message)
-            write_prompt_to_json(**kwargs)
             resp = completion_unwrapped(*args, **kwargs)
             message_back = resp['choices'][0]['message']['content']
-            write_resp_to_json(message_back)
             llm_response_logger.debug(message_back)
             return resp
         self._completion = wrapper  # type: ignore
