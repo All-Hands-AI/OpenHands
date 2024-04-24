@@ -39,7 +39,10 @@ def action_from_dict(action: dict) -> Action:
             f"'{action['action']=}' is not defined. Available actions: {ACTION_TYPE_TO_CLASS.keys()}"
         )
     args = action.get('args', {})
-    return action_class(**args)
+    result = action_class()
+    for key, value in args.items():
+        setattr(result, key, value)
+    return result
 
 
 __all__ = [
