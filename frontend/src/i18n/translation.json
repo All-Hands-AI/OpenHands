@@ -308,5 +308,21 @@
     "ar": "مساعد",
     "fr": "Assistant",
     "tr": "Gönder"
+  },
+  "SETTINGS$MODEL_TOOLTIP": {
+    "en": "Select the language model to use.",
+    "de": "Wähle das zu verwendende Model."
+  },
+  "SETTINGS$AGENT_TOOLTIP": {
+    "en": "Select the agent to use.",
+    "de": "Wähle den zu verwendenden Agent."
+  },
+  "SETTINGS$LANGUAGE_TOOLTIP": {
+    "en": "Select the language for the UI.",
+    "de": "Wähle die Sprache für das Interface."
+  },
+  "SETTINGS$DISABLED_RUNNING": {
+    "en": "Cannot be changed while the agent is running.",
+    "de": "Kann nicht geändert werden während ein Task ausgeführt wird."
   }
 }

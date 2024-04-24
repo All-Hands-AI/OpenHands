@@ -1,6 +1,7 @@
-import { render, screen, act } from "@testing-library/react";
-import React from "react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import React from "react";
+import { vi } from "vitest";
 import { AutocompleteCombobox } from "./AutocompleteCombobox";
 
 const onChangeMock = vi.fn();
@@ -15,6 +16,7 @@ const renderComponent = () =>
         { value: "m3", label: "model3" },
       ]}
       defaultKey="m1"
+      tooltip="tooltip"
       onChange={onChangeMock}
     />,
   );
@@ -61,4 +63,6 @@ describe("AutocompleteCombobox", () => {
     expect(modelInput).toHaveValue("model2");
     expect(onChangeMock).toHaveBeenCalledWith("model2");
   });
+
+  it.todo("should show a tooltip after 0.5 seconds of focus");
 });
