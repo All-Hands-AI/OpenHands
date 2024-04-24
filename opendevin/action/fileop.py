@@ -4,8 +4,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from opendevin.observation import (
+    Observation,
     FileReadObservation,
-    FileWriteObservation
+    FileWriteObservation,
+    AgentErrorObservation,
 )
 
 from opendevin.schema import ActionType
@@ -60,7 +62,7 @@ class FileReadAction(ExecutableAction):
             end = -1 if self.end > num_lines else max(begin + 1, self.end)
             return all_lines[begin:end]
 
-    async def run(self, controller) -> FileReadObservation:
+    async def run(self, controller) -> Observation:
         if isinstance(controller.action_manager.sandbox, E2BBox):
             content = controller.action_manager.sandbox.filesystem.read(
                 self.path)
@@ -74,7 +76,7 @@ class FileReadAction(ExecutableAction):
                     read_lines = self._read_lines(file.readlines())
                     code_view = ''.join(read_lines)
             except FileNotFoundError:
-                raise FileNotFoundError(f'File not found: {self.path}')
+                return AgentErrorObservation(f'File not found: {self.path}')
         return FileReadObservation(path=self.path, content=code_view)
 
     @property
@@ -100,7 +102,7 @@ class FileWriteAction(ExecutableAction):
         new_lines += [''] if self.end == -1 else original[self.end:]
         return new_lines
 
-    async def run(self, controller) -> FileWriteObservation:
+    async def run(self, controller) -> Observation:
         insert = self.content.split('\n')
 
         if isinstance(controller.action_manager.sandbox, E2BBox):
@@ -110,7 +112,7 @@ class FileWriteAction(ExecutableAction):
                 new_file = self._insert_lines(self.content.split('\n'), all_lines)
                 controller.action_manager.sandbox.filesystem.write(self.path, ''.join(new_file))
             else:
-                raise FileNotFoundError(f'File not found: {self.path}')
+                return AgentErrorObservation(f'File not found: {self.path}')
         else:
             whole_path = resolve_path(self.path)
             mode = 'w' if not os.path.exists(whole_path) else 'r+'
@@ -126,7 +128,7 @@ class FileWriteAction(ExecutableAction):
                     file.writelines(new_file)
                     file.truncate()
             except FileNotFoundError:
-                raise FileNotFoundError(f'File not found: {self.path}')
+                return AgentErrorObservation(f'File not found: {self.path}')
         return FileWriteObservation(content='', path=self.path)
 
     @property
