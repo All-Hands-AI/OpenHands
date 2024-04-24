@@ -81,7 +81,7 @@ class CodeActAgent(Agent):
 
         if len(self.messages) == 0:
             assert state.plan.main_goal, 'Expecting instruction to be set'
-            print(SYSTEM_MESSAGE)
+            # print(SYSTEM_MESSAGE)
             self.messages = [
                 {'role': 'system', 'content': SYSTEM_MESSAGE},
                 {
