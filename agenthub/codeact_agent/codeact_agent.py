@@ -81,7 +81,6 @@ class CodeActAgent(Agent):
 
         if len(self.messages) == 0:
             assert state.plan.main_goal, 'Expecting instruction to be set'
-            # print(SYSTEM_MESSAGE)
             self.messages = [
                 {'role': 'system', 'content': SYSTEM_MESSAGE},
                 {
@@ -95,8 +94,6 @@ class CodeActAgent(Agent):
         updated_info = state.updated_info
         if updated_info:
             for prev_action, obs in updated_info:
-                # print("PREV ACTION: ", prev_action.__class__, prev_action)
-                # print("PREV OBS: ", obs.__class__, obs)
                 assert isinstance(
                     prev_action, self.SUPPORTED_ACTIONS
                 ), f'{prev_action.__class__} is not supported (supported: {self.SUPPORTED_ACTIONS})'
@@ -118,13 +115,6 @@ class CodeActAgent(Agent):
                         f'Unknown observation type: {obs.__class__}'
                     )
 
-        # print("-----------------")
-        # for msg in self.messages:
-        #     role = msg['role']
-        #     content = msg['content']
-        #     print(f"{role.upper()}:\n{content}")
-        #     print('---')
-        # print("-----------------")
         response = self.llm.completion(
             messages=self.messages,
             stop=[
@@ -140,7 +130,6 @@ class CodeActAgent(Agent):
         state.num_of_chars += sum(
             len(message['content']) for message in self.messages
         ) + len(action_str)
-        # print("ACTION STR: ", action_str)
         self.messages.append({'role': 'assistant', 'content': action_str})
 
         bash_command = re.search(r'<execute_bash>(.*)</execute_bash>', action_str, re.DOTALL)
@@ -150,7 +139,6 @@ class CodeActAgent(Agent):
             thought = action_str.replace(bash_command.group(0), '').strip()
             # a command was found
             command_group = bash_command.group(1)
-            # print(f"BASH COMMAND: '{command_group}'")
             if command_group.strip() == 'exit':
                 return AgentFinishAction()
             return CmdRunAction(command=command_group, thought=thought)
@@ -161,10 +149,6 @@ class CodeActAgent(Agent):
             # print(f"PYTHON CODE: '{code_group}'")
             return IPythonRunCellAction(code=code_group.strip(), thought=thought)
         else:
-            # return AgentEchoAction(
-            #     content=INVALID_INPUT_MESSAGE
-            # )  # warning message to itself
-
             # We assume the agent is GOOD enough that when it returns pure NL,
             # it want to talk to the user
             return AgentTalkAction(content=action_str)
