@@ -32,7 +32,7 @@ FROM python:3.12-slim as runtime
 WORKDIR /app
 
 ENV RUN_AS_DEVIN=false
-ENV USE_HOST_NETWORK=false
+ENV USE_HOST_NETWORK=true
 ENV SSH_HOSTNAME=host.docker.internal
 ENV WORKSPACE_BASE=/opt/workspace_base
 RUN mkdir -p $WORKSPACE_BASE
