@@ -30,6 +30,9 @@ jobs:
 
       - name: Log-in to ghcr.io
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        
+      - name: Delete huge unnecessary tools folder
+        run: rm -rf /opt/hostedtoolcache
 
       - name: Build and push ${{ matrix.image }}
         run: |

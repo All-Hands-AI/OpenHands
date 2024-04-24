@@ -1,17 +1,17 @@
+import { act, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import React from "react";
+import { renderWithProviders } from "test-utils";
+import { Mock } from "vitest";
 import {
   fetchAgents,
   fetchModels,
   getCurrentSettings,
   saveSettings,
 } from "#/services/settingsService";
-import { act, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import React from "react";
-import { renderWithProviders } from "test-utils";
-import { Mock } from "vitest";
 import SettingsModal from "./SettingsModal";
 
-vi.mock("../../services/settingsService", async (importOriginal) => ({
+vi.mock("#/services/settingsService", async (importOriginal) => ({
   ...(await importOriginal<typeof import("#/services/settingsService")>()),
   getCurrentSettings: vi.fn().mockReturnValue({}),
   saveSettings: vi.fn(),
