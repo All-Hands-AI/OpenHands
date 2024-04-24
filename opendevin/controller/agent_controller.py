@@ -1,5 +1,4 @@
 import asyncio
-import traceback
 from typing import Callable, List, Type
 
 
@@ -116,7 +115,7 @@ class AgentController:
                 self._cur_step = i + 1
                 await self.notify_task_state_changed()
                 break
-                
+
             if self._is_stuck():
                 logger.info('Loop detected, stopping task')
                 observation = AgentErrorObservation('I got stuck into a loop, the task has stopped.')
