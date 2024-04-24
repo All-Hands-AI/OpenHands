@@ -8,6 +8,7 @@ from .agent import (
     AgentFinishAction,
     AgentEchoAction,
     AgentSummarizeAction,
+    AgentDelegateAction,
 )
 from .tasks import AddTaskAction, ModifyTaskAction
 from ..exceptions import AgentMalformedActionError
@@ -21,6 +22,7 @@ actions = (
     AgentRecallAction,
     AgentThinkAction,
     AgentFinishAction,
+    AgentDelegateAction,
     AddTaskAction,
     ModifyTaskAction,
 )
@@ -58,6 +60,7 @@ __all__ = [
     'AgentRecallAction',
     'AgentThinkAction',
     'AgentFinishAction',
+    'AgentDelegateAction',
     'AgentEchoAction',
     'AgentSummarizeAction',
     'AddTaskAction',
