@@ -293,9 +293,9 @@ submit() {
     cd $ROOT
 
     # Check if the patch file exists and is non-empty
-    if [ -s "/root/test.patch" ]; then
+    if [ -s "$SWE_CMD_WORK_DIR/test.patch" ]; then
         # Apply the patch in reverse
-        git apply -R < "/root/test.patch"
+        git apply -R < "$SWE_CMD_WORK_DIR/test.patch"
     fi
 
     git add -A

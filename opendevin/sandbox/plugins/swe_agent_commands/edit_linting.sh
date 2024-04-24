@@ -59,7 +59,7 @@ edit() {
     done
 
     # Create a backup of the current file
-    cp "$CURRENT_FILE" "/root/$(basename "$CURRENT_FILE")_backup"
+    cp "$CURRENT_FILE" "$SWE_CMD_WORK_DIR/$(basename "$CURRENT_FILE")_backup"
 
     # Read the file line by line into an array
     mapfile -t lines < "$CURRENT_FILE"
@@ -105,7 +105,7 @@ edit() {
         echo ""
 
         # Restoring CURRENT_FILE to original contents.
-        cp "/root/$(basename "$CURRENT_FILE")_backup" "$CURRENT_FILE"
+        cp "$SWE_CMD_WORK_DIR/$(basename "$CURRENT_FILE")_backup" "$CURRENT_FILE"
 
         export CURRENT_LINE=$(( ((end_line - start_line + 1) / 2) + start_line ))
         export WINDOW=$((end_line - start_line + 10))
@@ -126,5 +126,5 @@ edit() {
     fi
 
     # Remove backup file
-    rm -f "/root/$(basename "$CURRENT_FILE")_backup"
+    rm -f "$SWE_CMD_WORK_DIR/$(basename "$CURRENT_FILE")_backup"
 }
