@@ -1,1 +1,0 @@
-"{\n  \"action\": \"write\",\n  \"args\": {\n    \"path\": \"hello.sh\",\n    \"content\": \"#!/bin/bash\\necho 'hello'\"\n  }\n}"
