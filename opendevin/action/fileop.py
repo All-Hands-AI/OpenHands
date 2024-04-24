@@ -80,6 +80,7 @@ class FileReadAction(ExecutableAction):
                     return AgentErrorObservation(f'File not found: {self.path}')
             except PermissionError:
                 return AgentErrorObservation(f'Malformed paths not permitted: {self.path}')
+
         return FileReadObservation(path=self.path, content=code_view)
 
     @property
