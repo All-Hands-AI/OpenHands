@@ -26,7 +26,7 @@ COPY ./pyproject.toml ./poetry.lock ./
 RUN touch README.md
 RUN poetry install --without evaluation --no-root && rm -rf $POETRY_CACHE_DIR
 
-FROM python:3.12-bookworm as runtime
+FROM python:3.12-slim as runtime
 
 WORKDIR /app
 

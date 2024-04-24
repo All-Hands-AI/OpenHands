@@ -9,6 +9,9 @@ on:
         required: true
         default: ''
 
+env:
+  ACTIONS_STEP_DEBUG: "true"
+
 jobs:
   ghcr_build_and_push:
     runs-on: ubuntu-latest
