@@ -4,7 +4,7 @@ import { IFlatMetadata } from "react-accessible-treeview/dist/TreeView/utils";
 import { WorkspaceFile } from "#/services/fileService";
 
 export const initialState = {
-  code: "# Welcome to OpenDevin!",
+  code: "",
   selectedIds: [] as number[],
   workspaceFolder: { name: "" } as WorkspaceFile,
 };
