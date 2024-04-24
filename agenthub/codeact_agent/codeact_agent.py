@@ -13,20 +13,10 @@ from opendevin.observation import (
     AgentMessageObservation,
     CmdOutputObservation,
 )
-from opendevin.parse_commands import parse_command_file
 from opendevin.state import State
+from opendevin.sandbox.plugins import PluginRequirement, JupyterRequirement
 
-COMMAND_DOCS = parse_command_file()
-COMMAND_SEGMENT = (
-    f"""
-
-Apart from the standard bash commands, you can also use the following special commands:
-{COMMAND_DOCS}
-"""
-    if COMMAND_DOCS is not None
-    else ''
-)
-SYSTEM_MESSAGE = f"""You are a helpful assistant. You will be provided access (as root) to a bash shell to complete user-provided tasks.
+SYSTEM_MESSAGE = """You are a helpful assistant. You will be provided access (as root) to a bash shell to complete user-provided tasks.
 You will be able to execute commands in the bash shell, interact with the file system, install packages, and receive the output of your commands.
 
 DO NOT provide code in ```triple backticks```. Instead, you should execute bash command on behalf of the user by wrapping them with <execute> and </execute>.
@@ -43,7 +33,6 @@ You can also write a block of code to a file:
 echo "import math
 print(math.pi)" > math.py
 </execute>
-{COMMAND_SEGMENT}
 
 When you are done, execute the following to close the shell and end the conversation:
 <execute>exit</execute>
@@ -68,6 +57,8 @@ class CodeActAgent(Agent):
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
     """
+
+    sandbox_plugins: List[PluginRequirement] = [JupyterRequirement()]
 
     def __init__(
         self,

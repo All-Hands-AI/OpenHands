@@ -4,6 +4,8 @@ import platform
 import sys
 import time
 import uuid
+import tarfile
+from glob import glob
 from collections import namedtuple
 from typing import Dict, List, Tuple, Union
 
@@ -15,6 +17,7 @@ from opendevin.logger import opendevin_logger as logger
 from opendevin.sandbox.sandbox import Sandbox
 from opendevin.sandbox.process import Process
 from opendevin.sandbox.docker.process import DockerProcess
+from opendevin.sandbox.plugins import JupyterRequirement, SWEAgentCommandsRequirement
 from opendevin.schema import ConfigType
 from opendevin.utils import find_available_tcp_port
 from opendevin.exceptions import SandboxInvalidBackgroundCommandError
@@ -58,10 +61,10 @@ class DockerSSHBox(Sandbox):
     background_commands: Dict[int, Process] = {}
 
     def __init__(
-            self,
-            container_image: str | None = None,
-            timeout: int = 120,
-            sid: str | None = None,
+        self,
+        container_image: str | None = None,
+        timeout: int = 120,
+        sid: str | None = None,
     ):
         # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
@@ -137,6 +140,22 @@ class DockerSSHBox(Sandbox):
             )
             if exit_code != 0:
                 raise Exception(f'Failed to set password in sandbox: {logs}')
+
+            # chown the home directory
+            exit_code, logs = self.container.exec_run(
+                ['/bin/bash', '-c', 'chown opendevin:root /home/opendevin'],
+                workdir=SANDBOX_WORKSPACE_DIR,
+            )
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to chown home directory for opendevin in sandbox: {logs}')
+            exit_code, logs = self.container.exec_run(
+                ['/bin/bash', '-c', f'chown opendevin:root {SANDBOX_WORKSPACE_DIR}'],
+                workdir=SANDBOX_WORKSPACE_DIR,
+            )
+            if exit_code != 0:
+                raise Exception(
+                    f'Failed to chown workspace directory for opendevin in sandbox: {logs}')
         else:
             exit_code, logs = self.container.exec_run(
                 # change password for root
@@ -186,6 +205,7 @@ class DockerSSHBox(Sandbox):
         return bg_cmd.read_logs()
 
     def execute(self, cmd: str) -> Tuple[int, str]:
+        cmd = cmd.strip()
         # use self.ssh
         self.ssh.sendline(cmd)
         success = self.ssh.prompt(timeout=self.timeout)
@@ -198,15 +218,78 @@ class DockerSSHBox(Sandbox):
             command_output = self.ssh.before.decode(
                 'utf-8').lstrip(cmd).strip()
             return -1, f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}'
-        command_output = self.ssh.before.decode('utf-8').lstrip(cmd).strip()
+        command_output = self.ssh.before.decode('utf-8').strip()
+
+        # NOTE: there's some weird behavior with the prompt (it may come AFTER the command output)
+        # so we need to check if the command is in the output
+        n_tries = 5
+        while not command_output.startswith(cmd) and n_tries > 0:
+            self.ssh.prompt()
+            command_output = self.ssh.before.decode('utf-8').strip()
+            time.sleep(0.5)
+            n_tries -= 1
+        if n_tries == 0 and not command_output.startswith(cmd):
+            raise Exception(
+                f'Something went wrong with the SSH sanbox, cannot get output for command [{cmd}] after 5 retries'
+            )
+        logger.debug(f'Command output GOT SO FAR: {command_output}')
+        # once out, make sure that we have *every* output, we while loop until we get an empty output
+        while True:
+            logger.debug('WAITING FOR .prompt()')
+            self.ssh.sendline('\n')
+            timeout_not_reached = self.ssh.prompt(timeout=1)
+            if not timeout_not_reached:
+                logger.debug('TIMEOUT REACHED')
+                break
+            logger.debug('WAITING FOR .before')
+            output = self.ssh.before.decode('utf-8').strip()
+            logger.debug(f'WAITING FOR END OF command output ({bool(output)}): {output}')
+            if output == '':
+                break
+            command_output += output
+        command_output = command_output.lstrip(cmd).strip()
 
         # get the exit code
         self.ssh.sendline('echo $?')
         self.ssh.prompt()
         exit_code = self.ssh.before.decode('utf-8')
-        # remove the echo $? itself
+        while not exit_code.startswith('echo $?'):
+            self.ssh.prompt()
+            exit_code = self.ssh.before.decode('utf-8')
+            logger.debug(f'WAITING FOR exit code: {exit_code}')
         exit_code = int(exit_code.lstrip('echo $?').strip())
         return exit_code, command_output
+
+    def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+        # mkdir -p sandbox_dest if it doesn't exist
+        exit_code, logs = self.container.exec_run(
+            ['/bin/bash', '-c', f'mkdir -p {sandbox_dest}'],
+            workdir=SANDBOX_WORKSPACE_DIR,
+        )
+        if exit_code != 0:
+            raise Exception(
+                f'Failed to create directory {sandbox_dest} in sandbox: {logs}')
+
+        if recursive:
+            assert os.path.isdir(host_src), 'Source must be a directory when recursive is True'
+            files = glob(host_src + '/**/*', recursive=True)
+            srcname = os.path.basename(host_src)
+            tar_filename = os.path.join(os.path.dirname(host_src), srcname + '.tar')
+            with tarfile.open(tar_filename, mode='w') as tar:
+                for file in files:
+                    tar.add(file, arcname=os.path.relpath(file, os.path.dirname(host_src)))
+        else:
+            assert os.path.isfile(host_src), 'Source must be a file when recursive is False'
+            srcname = os.path.basename(host_src)
+            tar_filename = os.path.join(os.path.dirname(host_src), srcname + '.tar')
+            with tarfile.open(tar_filename, mode='w') as tar:
+                tar.add(host_src, arcname=srcname)
+
+        with open(tar_filename, 'rb') as f:
+            data = f.read()
+
+        self.container.put_archive(os.path.dirname(sandbox_dest), data)
+        os.remove(tar_filename)
 
     def execute_in_background(self, cmd: str) -> Process:
         result = self.container.exec_run(
@@ -290,8 +373,8 @@ class DockerSSHBox(Sandbox):
                      )
                 )
 
-            mount_dir = config.get('WORKSPACE_MOUNT_PATH')
-            print('Mounting workspace directory: ', mount_dir)
+            mount_dir = config.get(ConfigType.WORKSPACE_MOUNT_PATH)
+            logger.info(f'Mounting workspace directory: {mount_dir}')
             # start the container
             self.container = self.docker_client.containers.run(
                 self.container_image,
@@ -305,6 +388,11 @@ class DockerSSHBox(Sandbox):
                 volumes={
                     mount_dir: {
                         'bind': SANDBOX_WORKSPACE_DIR,
+                        'mode': 'rw'
+                    },
+                    # mount cache directory to /home/opendevin/.cache for pip cache reuse
+                    config.get('CACHE_DIR'): {
+                        'bind': '/home/opendevin/.cache' if RUN_AS_DEVIN else '/root/.cache',
                         'mode': 'rw'
                     },
                 },
@@ -355,8 +443,16 @@ if __name__ == '__main__':
     logger.info(
         "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
 
+    # Initialize required plugins
+    ssh_box.init_plugins([JupyterRequirement(), SWEAgentCommandsRequirement()])
+    logger.info(
+        '--- SWE-AGENT COMMAND DOCUMENTATION ---\n'
+        f'{SWEAgentCommandsRequirement().documentation}\n'
+        '---'
+    )
+
     bg_cmd = ssh_box.execute_in_background(
-        "while true; do echo 'dot ' && sleep 1; done"
+        "while true; do echo 'dot ' && sleep 10; done"
     )
 
     sys.stdout.flush()

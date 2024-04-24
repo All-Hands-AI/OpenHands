@@ -16,7 +16,14 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     openssh-server \
     sudo \
+    bash \
+    gcc \
+    jq \
+    g++ \
+    make \
     && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p -m0755 /var/run/sshd
 
 # symlink python3 to python
 RUN ln -s /usr/bin/python3 /usr/bin/python
