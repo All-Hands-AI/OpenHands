@@ -16,6 +16,8 @@ DEFAULT_API_VERSION = config.get('LLM_API_VERSION')
 LLM_NUM_RETRIES = config.get('LLM_NUM_RETRIES')
 LLM_RETRY_MIN_WAIT = config.get('LLM_RETRY_MIN_WAIT')
 LLM_RETRY_MAX_WAIT = config.get('LLM_RETRY_MAX_WAIT')
+LLM_TIMEOUT = config.get('LLM_TIMEOUT')
+LLM_MAX_RETURN_TOKENS = config.get('LLM_MAX_RETURN_TOKENS')
 
 
 class LLM:
@@ -31,6 +33,8 @@ class LLM:
                  num_retries=LLM_NUM_RETRIES,
                  retry_min_wait=LLM_RETRY_MIN_WAIT,
                  retry_max_wait=LLM_RETRY_MAX_WAIT,
+                 llm_timeout=LLM_TIMEOUT,
+                 llm_max_return_tokens=LLM_MAX_RETURN_TOKENS
                  ):
         """
         Args:
@@ -41,6 +45,8 @@ class LLM:
             num_retries (int, optional): The number of retries for API calls. Defaults to LLM_NUM_RETRIES.
             retry_min_wait (int, optional): The minimum time to wait between retries in seconds. Defaults to LLM_RETRY_MIN_TIME.
             retry_max_wait (int, optional): The maximum time to wait between retries in seconds. Defaults to LLM_RETRY_MAX_TIME.
+            llm_timeout (int, optional): The maximum time to wait for a response in seconds. Defaults to LLM_TIMEOUT.
+            llm_max_return_tokens (int, optional): The maximum number of tokens to return. Defaults to LLM_MAX_RETURN_TOKENS.
 
         Attributes:
             model_name (str): The name of the language model.
@@ -54,9 +60,11 @@ class LLM:
         self.api_key = api_key
         self.base_url = base_url
         self.api_version = api_version
+        self.llm_timeout = llm_timeout
+        self.llm_max_return_tokens = llm_max_return_tokens
 
         self._completion = partial(
-            litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url, api_version=self.api_version)
+            litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url, api_version=self.api_version, max_tokens=self.llm_max_return_tokens, timeout=self.llm_timeout)
 
         completion_unwrapped = self._completion
 

@@ -27,16 +27,16 @@ This is your internal monologue, in JSON format:
 
 
 Your most recent thought is at the bottom of that monologue. Continue your train of thought.
-What is your next thought or action? Your response must be in JSON format.
-It must be an object, and it must contain two fields:
+What is your next single thought or action? Your response must be in JSON format.
+It must be a single object, and it must contain two fields:
 * `action`, which is one of the actions below
 * `args`, which is a map of key-value pairs, specifying the arguments for that action
 
 Here are the possible actions:
 * `read` - reads the content of a file. Arguments:
-  * `path` - the path of the file to read
+  * `path` - the absolute path of the file to read
 * `write` - writes the content to a file. Arguments:
-  * `path` - the path of the file to write
+  * `path` - the absolute path of the file to write
   * `content` - the content to write to the file
 * `run` - runs a command. Arguments:
   * `command` - the command to run
@@ -58,11 +58,14 @@ You should never act twice in a row without thinking. But if your last several
 actions are all "think" actions, you should consider taking a different action.
 
 Notes:
-* your environment is Debian Linux. You can install software with `apt`
-* your working directory will not change, even if you run `cd`. All commands will be run in the `%(WORKSPACE_MOUNT_PATH_IN_SANDBOX)s` directory.
+* you are logged in as "opendevin", but sudo will always work without a password.
+* your environment is Debian Linux. You can install software with `sudo apt`, but remember to use -y.
 * don't run interactive commands, or commands that don't return (e.g. `node server.js`). You may run commands in the background (e.g. `node server.js &`)
+* don't run interactive text editors (e.g. `nano` or 'vim'), instead use the 'write' or 'read' action.
+* whenever using the 'write' or 'read' action, always use an absolute path.
+* whenever an action fails, always `think` about why it may have happened before acting again.
 
-What is your next thought or action? Again, you must reply with JSON, and only with JSON.
+What is your next single thought or action? Again, you must reply with JSON, and only with JSON. You must respond with exactly one 'action' object.
 
 %(hint)s
 """
