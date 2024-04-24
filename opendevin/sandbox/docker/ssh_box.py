@@ -386,11 +386,6 @@ class DockerSSHBox(Sandbox):
                         'bind': SANDBOX_WORKSPACE_DIR,
                         'mode': 'rw'
                     },
-                    # mount cache directory to /home/opendevin/.cache for pip cache reuse
-                    config.get('CACHE_DIR'): {
-                        'bind': '/home/opendevin/.cache' if RUN_AS_DEVIN else '/root/.cache',
-                        'mode': 'rw'
-                    },
                 },
             )
             logger.info('Container started')
