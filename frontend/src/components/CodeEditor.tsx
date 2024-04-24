@@ -60,22 +60,14 @@ function CodeEditor(): JSX.Element {
           aria-label="Options"
         >
           <Tab
-            key={
-              selectedFileName === ""
-                ? ""
-                : selectedFileName.toLocaleLowerCase()
-            }
-            title={!selectedFileName ? "" : selectedFileName}
+            key={selectedFileName.toLocaleLowerCase()}
+            title={selectedFileName}
           />
         </Tabs>
         <div className="flex grow">
           <Editor
             height="100%"
-            path={
-              selectedFileName === ""
-                ? ""
-                : selectedFileName.toLocaleLowerCase()
-            }
+            path={selectedFileName.toLocaleLowerCase()}
             defaultValue=""
             value={code}
             onMount={handleEditorDidMount}
