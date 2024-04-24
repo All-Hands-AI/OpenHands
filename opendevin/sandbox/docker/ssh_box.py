@@ -1,6 +1,5 @@
 import atexit
 import os
-import platform
 import sys
 import time
 import uuid
@@ -31,11 +30,7 @@ CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
 
 SSH_HOSTNAME = config.get(ConfigType.SSH_HOSTNAME)
 
-USE_HOST_NETWORK = config.get(ConfigType.USE_HOST_NETWORK).lower() != 'false'
-if USE_HOST_NETWORK and platform.system() != 'Linux':
-    logger.warning(
-        'Host network is not supported on non-Linux platforms. Using port forwarding instead.')
-    USE_HOST_NETWORK = False
+USE_HOST_NETWORK = config.get(ConfigType.USE_HOST_NETWORK)
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
