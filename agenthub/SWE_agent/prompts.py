@@ -1,4 +1,3 @@
-from opendevin.parse_commands import parse_command_file
 
 DEFAULT_COMMANDS_DICT = {
     'exit': 'Executed when task is complete',
@@ -29,7 +28,9 @@ COMMAND_USAGE = {
 DEFAULT_COMMANDS = '\n'.join(
     [k + ' - ' + v for k, v in DEFAULT_COMMANDS_DICT.items()])
 
-CUSTOM_DOCS = parse_command_file()
+# from opendevin.parse_commands import parse_command_file
+# USE parse_command_file(filepath) to get the custom commands
+CUSTOM_DOCS = None
 
 CUSTOM_COMMANDS = f"""Custom bash commands:
 {CUSTOM_DOCS}
