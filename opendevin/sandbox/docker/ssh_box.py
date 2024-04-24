@@ -374,8 +374,6 @@ class DockerSSHBox(Sandbox):
                 )
 
             mount_dir = config.get(ConfigType.WORKSPACE_MOUNT_PATH)
-            if not mount_dir:
-                mount_dir = os.path.abspath(config.get(ConfigType.WORKSPACE_BASE))
             logger.info(f'Mounting workspace directory: {mount_dir}')
             # start the container
             self.container = self.docker_client.containers.run(
