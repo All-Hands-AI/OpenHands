@@ -172,11 +172,11 @@ def parse_action_response(response: str) -> Action:
             return len(match[2]) if match[1] == 'think' else 130  # Crudely rank multiple responses by length
         try:
             action_dict = json.loads(max(response_json_matches, key=rank)[0])  # Use the highest ranked response
-        except Exception:
+        except (ValueError, JSONDecodeError):
             raise LLMOutputError(
                 'Invalid JSON, the response must be well-formed JSON as specified in the prompt.'
             )
-    except Exception:
+    except ValueError:
         raise LLMOutputError(
             'Invalid JSON, the response must be well-formed JSON as specified in the prompt.'
         )
