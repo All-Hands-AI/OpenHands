@@ -1,1 +1,0 @@
-"{\n  \"action\": \"run\",\n  \"args\": {\n    \"command\": \"bash hello.sh\",\n    \"background\": false\n  }\n}"
