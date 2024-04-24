@@ -12,6 +12,7 @@
     "@react-types/shared": "^3.22.1",
     "@reduxjs/toolkit": "^2.2.2",
     "@vitejs/plugin-react": "^4.2.1",
+    "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.4.0",
     "clsx": "^2.1.0",
     "eslint-config-airbnb-typescript": "^18.0.0",
@@ -31,8 +32,7 @@
     "react-syntax-highlighter": "^15.5.0",
     "tailwind-merge": "^2.2.2",
     "vite": "^5.1.6",
-    "web-vitals": "^2.1.4",
-    "xterm-addon-fit": "^0.8.0"
+    "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "vite",

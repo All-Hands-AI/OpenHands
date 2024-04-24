@@ -68,7 +68,7 @@ def model(request):
 
     Returns:
         The model name, defaulting to "gpt-3.5-turbo-1106".
-    ""
+    """
     return request.config.getoption("model", default="gpt-3.5-turbo-1106")
 
 @pytest.fixture
