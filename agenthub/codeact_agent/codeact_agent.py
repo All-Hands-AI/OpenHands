@@ -17,35 +17,16 @@ from opendevin.observation import (
     AgentMessageObservation,
     CmdOutputObservation,
 )
-from opendevin.parse_commands import parse_command_file
 from opendevin.state import State
-from opendevin.sandbox.plugins import PluginRequirement, JupyterRequirement
+from opendevin.sandbox.plugins import PluginRequirement, JupyterRequirement, SWEAgentCommandsRequirement
 
-COMMAND_DOCS = parse_command_file()
 COMMAND_SEGMENT = (
-    f"""
-
-Apart from the standard bash commands, you can also use the following special commands:
-{COMMAND_DOCS}
-"""
-    if COMMAND_DOCS is not None
-    else ''
+    '\nApart from the standard bash commands, you can also use the following special commands in bash:\n'
+    f'{SWEAgentCommandsRequirement.documentation}'
+    "Please note that THE EDIT COMMAND REQUIRES PROPER INDENTATION. If you'd like to add the line '        print(x)' you must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run."
 )
-# SYSTEM_MESSAGE = f"""A multi-turn interaction between a curious user and an artificial intelligence assistant.
-# The assistant gives helpful, detailed, and polite answers to the user's questions.
 
-# ## Python Interaction
-# The assistant can interact with an interactive Python (Jupyter Notebook) environment and receive the corresponding output when needed. The code should be enclosed using "<execute_ipython>" tag, for example: <execute_ipython> print("Hello World!") </execute_ipython>.
-
-# ## Bash Commands
-# The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>. For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
-
-# ## General Guidelines
-# The assistant should attempt fewer things at a time instead of putting too much code in one <execute> block.
-# The assistant should stop "execute" and provide an answer when they have already obtained the answer from the execution result. Whenever possible, execute the command or code for the user using <execute_bash> or <execute_ipython> instead of providing it as a response.
-# The assistant's response should be concise, but do express their thoughts."""
-
-SYSTEM_MESSAGE = """A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
+SYSTEM_MESSAGE = f"""A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
 The assistant can interact with an interactive Python (Jupyter Notebook) environment and receive the corresponding output when needed. The code should be enclosed using "<execute_ipython>" tag, for example: <execute_ipython> print("Hello World!") </execute_ipython>.
 The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>. For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
 The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
@@ -53,59 +34,114 @@ The assistant can install Python packages through bash by <execute_bash> pip ins
 The assistant should stop <execute> and provide an answer when they have already obtained the answer from the execution result. Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
 The assistant's response should be concise, but do express their thoughts.
 When the assistant is done with the task, it should output <execute_bash> exit </execute_bash> to end the conversation.
+{COMMAND_SEGMENT}
+
+
 """
 
-# EXAMPLES = """
-# --- EXAMPLES ---
-# USER: Can you create a list of numbers from 1 to 10, and create a web page to display them at port 5000?
+EXAMPLES = """
+--- START OF EXAMPLE ---
 
-# ASSISTANT:
-# Sure! Let me write the Python code for starting a web server and save it to a file `app.py`:
-# <execute_ipython>
-# CODE='''
-# from flask import Flask
-# app = Flask(__name__)
+USER: Can you create a list of numbers from 1 to 10, and create a web page to display them at port 5000?
 
-# @app.route('/')
-# def index():
-#     numbers = list(range(1, 11))
-#     return str(numbers)
+ASSISTANT:
+Sure! Let me write the Python code for starting a web server and save it to a file `app.py`:
+<execute_ipython>
+CODE='''
+from flask import Flask
+app = Flask(__name__)
 
-# if __name__ == '__main__':
-#     app.run(port=5000)
-# '''
-# with open('app.py', 'w') as f:
-#     f.write(CODE)
-# </execute_ipython>
+@app.route('/')
+def index():
+    numbers = list(range(1, 11))
+    return str(numbers)
 
-# USER:
-# [Code executed successfully with no output]
+if __name__ == '__main__':
+    app.run(port=5000)
+'''
+with open('app.py', 'w') as f:
+    f.write(CODE)
+</execute_ipython>
 
-# ASSISTANT:
-# I have created a Python file `app.py` that will display a list of numbers from 1 to 10 when you run it. Let me run the Python file for you:
-# <execute_bash>
-# python3 app.py > server.log &
-# </execute_bash>
+USER:
+Observation:
+[Code executed successfully with no output]
 
-# USER:
-# [1] 121
+ASSISTANT:
+I have created a Python file `app.py` that will display a list of numbers from 1 to 10 when you run it. Let me run the Python file for you:
+<execute_bash>
+python3 app.py > server.log 2>&1 &
+</execute_bash>
 
-# ASSISTANT: Looks like the server is running with PID 121. Let me check if the log:
-# <execute_bash>
-# cat server.log
-# </execute_bash>
+USER:
+Observation:
+[1] 121[1]+  Exit 1                  python3 app.py > server.log 2>&1
 
-# USER:
-# PID of the server: 124
-# * Serving Flask app 'app'
-#  * Debug mode: off
-# WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
-#  * Running on http://127.0.0.1:5000
-# Press CTRL+C to quit
+ASSISTANT: Looks like the server is running with PID 121 then crashed. Let me check the server log:
+<execute_bash>
+cat server.log
+</execute_bash>
 
-# ASSISTANT:
-# The server is running on port 5000 with PID 124. You can access the list of numbers by visiting http://127.0.0.1:5000. If you have any further questions, feel free to ask!
-# """
+USER:
+Observation:
+Traceback (most recent call last):
+  File "/workspace/app.py", line 2, in <module>
+    from flask import Flask
+ModuleNotFoundError: No module named 'flask'
+
+ASSISTANT:
+It seems that Flask is not installed. Let me install Flask for you:
+<execute_bash>
+pip install flask
+</execute_bash>
+
+USER:
+Observation:
+Defaulting to user installation because normal site-packages is not writeable
+Collecting flask
+  Using cached flask-3.0.3-py3-none-any.whl (101 kB)
+Collecting blinker>=1.6.2
+  Using cached blinker-1.7.0-py3-none-any.whl (13 kB)
+Collecting Werkzeug>=3.0.0
+  Using cached werkzeug-3.0.2-py3-none-any.whl (226 kB)
+Collecting click>=8.1.3
+  Using cached click-8.1.7-py3-none-any.whl (97 kB)
+Collecting itsdangerous>=2.1.2
+  Using cached itsdangerous-2.2.0-py3-none-any.whl (16 kB)
+Requirement already satisfied: Jinja2>=3.1.2 in /home/opendevin/.local/lib/python3.10/site-packages (from flask) (3.1.3)
+Requirement already satisfied: MarkupSafe>=2.0 in /home/opendevin/.local/lib/python3.10/site-packages (from Jinja2>=3.1.2->flask) (2.1.5)
+Installing collected packages: Werkzeug, itsdangerous, click, blinker, flask
+Successfully installed Werkzeug-3.0.2 blinker-1.7.0 click-8.1.7 flask-3.0.3 itsdangerous-2.2.0
+
+ASSISTANT:
+Now that Flask is installed, let me run the Python file again:
+<execute_bash>
+python3 app.py > server.log 2>&1 &
+</execute_bash>
+
+USER:
+Observation:
+[1] 124
+
+ASSISTANT:
+Let me check the server log again:
+<execute_bash>
+cat server.log
+</execute_bash>
+
+USER:
+Observation:
+* Serving Flask app 'app'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+
+ASSISTANT:
+The server is running on port 5000 with PID 124. You can access the list of numbers by visiting http://127.0.0.1:5000. If you have any further questions, feel free to ask!
+
+--- END OF EXAMPLE ---
+"""
 
 INVALID_INPUT_MESSAGE = (
     "I don't understand your input. \n"
@@ -173,9 +209,16 @@ class CodeActAgent(Agent):
 
         if len(self.messages) == 0:
             assert state.plan.main_goal, 'Expecting instruction to be set'
+            print(SYSTEM_MESSAGE)
             self.messages = [
                 {'role': 'system', 'content': SYSTEM_MESSAGE},
-                {'role': 'user', 'content': state.plan.main_goal},
+                {
+                    'role': 'user',
+                    'content': (
+                        f'Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\n'
+                        f"NOW, LET'S START!\n\n{state.plan.main_goal}{COMMAND_SEGMENT}"
+                    )
+                },
             ]
         updated_info = state.updated_info
         if updated_info:
