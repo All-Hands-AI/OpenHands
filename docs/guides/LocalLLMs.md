@@ -26,6 +26,7 @@ starcoder2:latest               f67ae0f64584    1.7 GB  19 hours ago
 
 ## 2. Start OpenDevin
 
+### 2.1 Docker
 Use the instructions in [README.md](/README.md) to start OpenDevin using Docker.
 But when running `docker run`, you'll need to add a few more arguments:
 
@@ -53,6 +54,22 @@ docker run \
 ```
 
 You should now be able to connect to `http://localhost:3000/`
+
+### 2.2 Build from Source
+Use the instructions in [Development.md](/Development.md) to build OpenDevin.
+Make sure `config.toml` is there by running `make setup-config` which will create one for you. In `config.toml`, enter the followings:
+
+```
+LLM_MODEL="ollama/codellama:7b"
+LLM_API_KEY="ollama"
+LLM_EMBEDDING_MODEL="local"
+LLM_BASE_URL="http://localhost:11434"
+WORKSPACE_BASE="./workspace"
+WORKSPACE_DIR="$(pwd)/workspace"
+```
+Replace `LLM_MODEL` of your choice if you need to.
+
+Done! Now you can start Devin by: `make run` without Docker. You now should be able to connect to `http://localhost:3000/`
 
 ## 3. Select your Model
 

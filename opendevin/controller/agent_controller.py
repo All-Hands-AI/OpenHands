@@ -2,8 +2,6 @@ import asyncio
 import traceback
 from typing import Callable, List, Type
 
-from openai import AuthenticationError, APIConnectionError
-from litellm import ContextWindowExceededError
 
 from opendevin import config
 from opendevin.action import (
@@ -19,7 +17,7 @@ from opendevin.observation import (
     NullObservation,
 )
 from opendevin.agent import Agent
-from opendevin.exceptions import AgentNoActionError, MaxCharsExceedError
+from opendevin.exceptions import AgentMalformedActionError, AgentNoActionError, MaxCharsExceedError
 from opendevin.logger import opendevin_logger as logger
 from opendevin.plan import Plan
 from opendevin.state import State
@@ -213,21 +211,10 @@ class AgentController:
         try:
             action = self.agent.step(self.state)
             if action is None:
-                raise AgentNoActionError()
-            logger.info(action, extra={'msg_type': 'ACTION'})
-        except Exception as e:
+                raise AgentNoActionError('No action was returned')
+        except (AgentMalformedActionError, AgentNoActionError) as e:
             observation = AgentErrorObservation(str(e))
-            logger.error(e)
-            logger.debug(traceback.format_exc())
-
-            # raise specific exceptions that need to be handled outside
-            # note: we are using classes from openai rather than litellm because:
-            # 1) litellm.exceptions.AuthenticationError is a subclass of openai.AuthenticationError
-            # 2) embeddings call, initiated by llama-index, has no wrapper for errors.
-            #    This means we have to catch individual authentication errors
-            #    from different providers, and OpenAI is one of these.
-            if isinstance(e, (AuthenticationError, ContextWindowExceededError, APIConnectionError)):
-                raise
+        logger.info(action, extra={'msg_type': 'ACTION'})
 
         self.update_state_after_step()
 
