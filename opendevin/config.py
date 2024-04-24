@@ -2,6 +2,7 @@ import os
 import argparse
 import toml
 import pathlib
+import platform
 from dotenv import load_dotenv
 
 from opendevin.schema import ConfigType
@@ -133,6 +134,14 @@ def finalize_config():
         base = config.get(ConfigType.WORKSPACE_BASE) or os.getcwd()
         parts = config[ConfigType.WORKSPACE_MOUNT_REWRITE].split(':')
         config[ConfigType.WORKSPACE_MOUNT_PATH] = base.replace(parts[0], parts[1])
+
+    USE_HOST_NETWORK = config[ConfigType.USE_HOST_NETWORK].lower() != 'false'
+    if USE_HOST_NETWORK and platform.system() == 'Darwin':
+        logger.warning(
+            'Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. '
+            'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'
+        )
+    config[ConfigType.USE_HOST_NETWORK] = USE_HOST_NETWORK
 
 
 finalize_config()
