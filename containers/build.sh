@@ -10,7 +10,8 @@ fi
 
 echo -e "Building: $image_name"
 tags=()
-cache_tag="buildcache"
+cache_tag_base="buildcache"
+cache_tag="$cache_tag_base"
 if [[ -n $GITHUB_REF_NAME ]]; then
   # check if ref name is a version number
   if [[ $GITHUB_REF_NAME =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -53,6 +54,7 @@ docker buildx build \
   $args \
   --cache-to=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag,mode=max \
   --cache-from=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag \
+  --cache-from=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag_base-main \
   --platform linux/amd64,linux/arm64 \
   --provenance=false \
   -f $dir/Dockerfile $DOCKER_BASE_DIR
