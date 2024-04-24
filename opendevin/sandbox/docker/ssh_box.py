@@ -201,7 +201,6 @@ class DockerSSHBox(Sandbox):
         return bg_cmd.read_logs()
 
     def execute(self, cmd: str) -> Tuple[int, str]:
-        cmd = cmd.strip()
         # use self.ssh
         self.ssh.sendline(cmd)
         success = self.ssh.prompt(timeout=self.timeout)
@@ -214,45 +213,13 @@ class DockerSSHBox(Sandbox):
             command_output = self.ssh.before.decode(
                 'utf-8').lstrip(cmd).strip()
             return -1, f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}'
-        command_output = self.ssh.before.decode('utf-8').strip()
-
-        # NOTE: there's some weird behavior with the prompt (it may come AFTER the command output)
-        # so we need to check if the command is in the output
-        n_tries = 5
-        while not command_output.startswith(cmd) and n_tries > 0:
-            self.ssh.prompt()
-            command_output = self.ssh.before.decode('utf-8').strip()
-            time.sleep(0.5)
-            n_tries -= 1
-        if n_tries == 0 and not command_output.startswith(cmd):
-            raise Exception(
-                f'Something went wrong with the SSH sanbox, cannot get output for command [{cmd}] after 5 retries'
-            )
-        logger.debug(f'Command output GOT SO FAR: {command_output}')
-        # once out, make sure that we have *every* output, we while loop until we get an empty output
-        while True:
-            logger.debug('WAITING FOR .prompt()')
-            self.ssh.sendline('\n')
-            timeout_not_reached = self.ssh.prompt(timeout=1)
-            if not timeout_not_reached:
-                logger.debug('TIMEOUT REACHED')
-                break
-            logger.debug('WAITING FOR .before')
-            output = self.ssh.before.decode('utf-8').strip()
-            logger.debug(f'WAITING FOR END OF command output ({bool(output)}): {output}')
-            if output == '':
-                break
-            command_output += output
-        command_output = command_output.lstrip(cmd).strip()
+        command_output = self.ssh.before.decode('utf-8').lstrip(cmd).strip()
 
         # get the exit code
         self.ssh.sendline('echo $?')
         self.ssh.prompt()
         exit_code = self.ssh.before.decode('utf-8')
-        while not exit_code.startswith('echo $?'):
-            self.ssh.prompt()
-            exit_code = self.ssh.before.decode('utf-8')
-            logger.debug(f'WAITING FOR exit code: {exit_code}')
+        # remove the echo $? itself
         exit_code = int(exit_code.lstrip('echo $?').strip())
         return exit_code, command_output
 
