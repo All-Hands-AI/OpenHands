@@ -1,6 +1,7 @@
 import os
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from opendevin.observation import (
     FileReadObservation,
@@ -17,10 +18,21 @@ SANDBOX_PATH_PREFIX = '/workspace/'
 
 
 def resolve_path(file_path):
-    if file_path.startswith(SANDBOX_PATH_PREFIX):
-        # Sometimes LLMs include the absolute path of the file inside the sandbox
-        file_path = file_path[len(SANDBOX_PATH_PREFIX):]
-    return os.path.join(config.get('WORKSPACE_BASE'), file_path)
+    # Sanitize the path with respect to the root of the full sandbox
+    # (deny any .. path traversal to parent directories of this)
+    abs_path_in_sandbox = (Path(SANDBOX_PATH_PREFIX) / Path(file_path)).resolve()
+
+    # If the path is outside the workspace, deny it
+    if not abs_path_in_sandbox.is_relative_to(SANDBOX_PATH_PREFIX):
+        raise PermissionError(f'File access not permitted: {file_path}')
+
+    # Get path relative to the root of the workspace inside the sandbox
+    path_in_workspace = abs_path_in_sandbox.relative_to(Path(SANDBOX_PATH_PREFIX))
+
+    # Get path relative to host
+    path_in_host_workspace = Path(config.get('WORKSPACE_BASE')) / path_in_workspace
+
+    return path_in_host_workspace
 
 
 @dataclass
