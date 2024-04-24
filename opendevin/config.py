@@ -143,6 +143,9 @@ def finalize_config():
         )
     config[ConfigType.USE_HOST_NETWORK] = USE_HOST_NETWORK
 
+    if config.get(ConfigType.WORKSPACE_MOUNT_PATH) is None:
+        config[ConfigType.WORKSPACE_MOUNT_PATH] = config.get(ConfigType.WORKSPACE_BASE)
+
 
 finalize_config()
 

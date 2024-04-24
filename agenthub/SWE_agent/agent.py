@@ -75,7 +75,7 @@ class SWEAgent(Agent):
         )
 
         msgs = [
-            {'content': SYSTEM_MESSAGE, 'role': 'user'},
+            {'content': SYSTEM_MESSAGE, 'role': 'system'},
             {'content': prompt, 'role': 'user'}
         ]
 
