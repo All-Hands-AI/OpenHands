@@ -7,6 +7,7 @@ from opendevin.agent import Agent
 from opendevin.llm.llm import LLM
 from opendevin.state import State
 from opendevin.action import Action, action_from_dict
+from opendevin.exceptions import LLMOutputError
 
 from .instructions import instructions
 from .registry import all_microagents
@@ -18,11 +19,10 @@ def parse_response(orig_response: str) -> Action:
     response = orig_response[json_start:json_end]
     try:
         action_dict = json.loads(response)
-    except json.JSONDecodeError:
-        # TODO: remove this debug stuff
-        print('Invalid JSON in response')
-        print(orig_response)
-        raise ValueError('Invalid JSON in response')
+    except json.JSONDecodeError as e:
+        raise LLMOutputError(
+            'Invalid JSON in response. Please make sure the response is a valid JSON object'
+        ) from e
     action = action_from_dict(action_dict)
     return action
 
