@@ -158,7 +158,7 @@ build-frontend:
 # Start backend
 start-backend:
 	@echo "$(YELLOW)Starting backend...$(RESET)"
-	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT)
+	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) --reload --reload-dir opendevin --reload-dir agenthub --reload-dir evaluation
 
 # Start frontend
 start-frontend:
