@@ -9,7 +9,8 @@ if [[ $3 == "--push" ]]; then
 fi
 
 echo -e "Building: $image_name"
-tags=(latest)
+tags=()
+cache_tag="buildcache"
 if [[ -n $GITHUB_REF_NAME ]]; then
   # check if ref name is a version number
   if [[ $GITHUB_REF_NAME =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -18,6 +19,7 @@ if [[ -n $GITHUB_REF_NAME ]]; then
     tags+=($major_version $minor_version)
   fi
   sanitized=$(echo $GITHUB_REF_NAME | sed 's/[^a-zA-Z0-9.-]\+/-/g')
+  cache_tag+="-${sanitized}"
   tags+=($sanitized)
 fi
 echo "Tags: ${tags[@]}"
@@ -49,8 +51,8 @@ fi
 
 docker buildx build \
   $args \
-  --cache-to=type=registry,ref=$DOCKER_REPOSITORY:buildcache,mode=max \
-  --cache-from=type=registry,ref=$DOCKER_REPOSITORY:buildcache \
+  --cache-to=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag,mode=max \
+  --cache-from=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag \
   --platform linux/amd64,linux/arm64 \
   --provenance=false \
   -f $dir/Dockerfile $DOCKER_BASE_DIR
