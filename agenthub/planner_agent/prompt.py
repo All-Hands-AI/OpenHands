@@ -171,7 +171,7 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
             history_dicts.append(action.to_memory())
             latest_action = action
         if not isinstance(observation, NullObservation):
-            observation_dict = observation.to_dict()
+            observation_dict = observation.to_memory()
             if (
                 'extras' in observation_dict
                 and 'screenshot' in observation_dict['extras']

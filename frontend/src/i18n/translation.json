@@ -229,6 +229,18 @@
     "pt": "Salvar",
     "es": "Guardar"
   },
+  "LOAD_SESSION$MODAL_TITLE": {
+    "en": "Unfinished Session Detected"
+  },
+  "LOAD_SESSION$MODAL_CONTENT": {
+    "en": "You seem to have an unfinished task. Would you like to pick up where you left off or start fresh?"
+  },
+  "LOAD_SESSION$RESUME_SESSION_MODAL_ACTION_LABEL": {
+    "en": "Resume Session"
+  },
+  "LOAD_SESSION$START_NEW_SESSION_MODAL_ACTION_LABEL": {
+    "en": "Start New Session"
+  },
   "CHAT_INTERFACE$INITIALZING_AGENT_LOADING_MESSAGE": {
     "en": "Initializing agent (may take up to 10 seconds)...",
     "zh-CN": "初始化智能体（可能需要 10 秒以上时间）",
@@ -296,5 +308,21 @@
     "ar": "مساعد",
     "fr": "Assistant",
     "tr": "Gönder"
+  },
+  "SETTINGS$MODEL_TOOLTIP": {
+    "en": "Select the language model to use.",
+    "de": "Wähle das zu verwendende Model."
+  },
+  "SETTINGS$AGENT_TOOLTIP": {
+    "en": "Select the agent to use.",
+    "de": "Wähle den zu verwendenden Agent."
+  },
+  "SETTINGS$LANGUAGE_TOOLTIP": {
+    "en": "Select the language for the UI.",
+    "de": "Wähle die Sprache für das Interface."
+  },
+  "SETTINGS$DISABLED_RUNNING": {
+    "en": "Cannot be changed while the agent is running.",
+    "de": "Kann nicht geändert werden während ein Task ausgeführt wird."
   }
 }

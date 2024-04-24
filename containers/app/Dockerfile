@@ -48,6 +48,7 @@ COPY --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY ./opendevin ./opendevin
 COPY ./agenthub ./agenthub
 RUN python opendevin/download.py # No-op to download assets
+RUN playwright install --with-deps chromium
 
 COPY --from=frontend-builder /app/dist ./frontend/dist
 

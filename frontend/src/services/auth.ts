@@ -1,5 +1,5 @@
 import * as jose from "jose";
-import { ResFetchToken } from "../types/ResponseType";
+import { ResFetchToken } from "#/types/ResponseType";
 
 const fetchToken = async (): Promise<ResFetchToken> => {
   const headers = new Headers({

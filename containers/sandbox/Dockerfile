@@ -18,4 +18,7 @@ RUN apt-get update && apt-get install -y \
     sudo \
     && rm -rf /var/lib/apt/lists/*
 
-RUN service ssh start
+RUN mkdir -p -m0755 /var/run/sshd
+
+# symlink python3 to python
+RUN ln -s /usr/bin/python3 /usr/bin/python

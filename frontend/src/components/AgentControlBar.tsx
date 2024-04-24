@@ -1,15 +1,15 @@
-import { Button, ButtonGroup, Tooltip } from "@nextui-org/react";
+import { Tooltip } from "@nextui-org/react";
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
-import ArrowIcon from "../assets/arrow";
-import PauseIcon from "../assets/pause";
-import PlayIcon from "../assets/play";
-import { changeTaskState } from "../services/agentStateService";
-import { clearMsgs } from "../services/session";
-import { clearMessages } from "../state/chatSlice";
-import store, { RootState } from "../store";
-import AgentTaskAction from "../types/AgentTaskAction";
-import AgentTaskState from "../types/AgentTaskState";
+import ArrowIcon from "#/assets/arrow";
+import PauseIcon from "#/assets/pause";
+import PlayIcon from "#/assets/play";
+import { changeTaskState } from "#/services/agentStateService";
+import { clearMsgs } from "#/services/session";
+import { clearMessages } from "#/state/chatSlice";
+import store, { RootState } from "#/store";
+import AgentTaskAction from "#/types/AgentTaskAction";
+import AgentTaskState from "#/types/AgentTaskState";
 
 const TaskStateActionMap = {
   [AgentTaskAction.START]: AgentTaskState.RUNNING,
@@ -39,34 +39,38 @@ const IgnoreTaskStateMap: { [k: string]: AgentTaskState[] } = {
 };
 
 interface ButtonProps {
-  isLoading: boolean;
   isDisabled: boolean;
   content: string;
   action: AgentTaskAction;
   handleAction: (action: AgentTaskAction) => void;
+  large?: boolean;
 }
 
 function ActionButton({
-  isLoading = false,
   isDisabled = false,
   content,
   action,
   handleAction,
   children,
+  large,
 }: React.PropsWithChildren<ButtonProps>): React.ReactNode {
   return (
     <Tooltip content={content} closeDelay={100}>
-      <Button
-        isIconOnly
+      <button
         onClick={() => handleAction(action)}
-        isLoading={isLoading}
-        isDisabled={isDisabled}
+        disabled={isDisabled}
+        className={`${large ? "rounded-full bg-neutral-800 p-3" : ""} hover:opacity-80 transition-all`}
+        type="button"
       >
         {children}
-      </Button>
+      </button>
     </Tooltip>
   );
 }
+
+ActionButton.defaultProps = {
+  large: false,
+};
 
 function AgentControlBar() {
   const { curTaskState } = useSelector((state: RootState) => state.agent);
@@ -107,20 +111,9 @@ function AgentControlBar() {
   }, [curTaskState]);
 
   return (
-    <ButtonGroup size="sm" variant="ghost">
-      <ActionButton
-        isLoading={false}
-        isDisabled={isLoading}
-        content="Restart a new agent task"
-        action={AgentTaskAction.STOP}
-        handleAction={handleAction}
-      >
-        <ArrowIcon />
-      </ActionButton>
-
+    <div className="flex items-center gap-3">
       {curTaskState === AgentTaskState.PAUSED ? (
         <ActionButton
-          isLoading={isLoading}
           isDisabled={
             isLoading ||
             IgnoreTaskStateMap[AgentTaskAction.RESUME].includes(curTaskState)
@@ -128,12 +121,12 @@ function AgentControlBar() {
           content="Resume the agent task"
           action={AgentTaskAction.RESUME}
           handleAction={handleAction}
+          large
         >
           <PlayIcon />
         </ActionButton>
       ) : (
         <ActionButton
-          isLoading={isLoading}
           isDisabled={
             isLoading ||
             IgnoreTaskStateMap[AgentTaskAction.PAUSE].includes(curTaskState)
@@ -141,11 +134,20 @@ function AgentControlBar() {
           content="Pause the agent task"
           action={AgentTaskAction.PAUSE}
           handleAction={handleAction}
+          large
         >
           <PauseIcon />
         </ActionButton>
       )}
-    </ButtonGroup>
+      <ActionButton
+        isDisabled={isLoading}
+        content="Restart a new agent task"
+        action={AgentTaskAction.STOP}
+        handleAction={handleAction}
+      >
+        <ArrowIcon />
+      </ActionButton>
+    </div>
   );
 }
 

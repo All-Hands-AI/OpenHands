@@ -1,17 +1,18 @@
-import { waitFor, screen, act, render } from "@testing-library/react";
+import {
+  fetchAgents,
+  fetchModels,
+  getCurrentSettings,
+  saveSettings,
+} from "#/services/settingsService";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
+import { renderWithProviders } from "test-utils";
 import { Mock } from "vitest";
-import {
-  fetchModels,
-  fetchAgents,
-  saveSettings,
-  getCurrentSettings,
-} from "../../services/settingsService";
 import SettingsModal from "./SettingsModal";
 
 vi.mock("../../services/settingsService", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../services/settingsService")>()),
+  ...(await importOriginal<typeof import("#/services/settingsService")>()),
   getCurrentSettings: vi.fn().mockReturnValue({}),
   saveSettings: vi.fn(),
   fetchModels: vi
@@ -28,7 +29,7 @@ describe("SettingsModal", () => {
   });
 
   it("should fetch existing agents and models from the API", async () => {
-    render(<SettingsModal isOpen onOpenChange={vi.fn()} />);
+    renderWithProviders(<SettingsModal isOpen onOpenChange={vi.fn()} />);
 
     await waitFor(() => {
       expect(fetchModels).toHaveBeenCalledTimes(1);
@@ -43,7 +44,7 @@ describe("SettingsModal", () => {
   it("should close the modal when the cancel button is clicked", async () => {
     const onOpenChange = vi.fn();
     await act(async () =>
-      render(<SettingsModal isOpen onOpenChange={onOpenChange} />),
+      renderWithProviders(<SettingsModal isOpen onOpenChange={onOpenChange} />),
     );
 
     const cancelButton = screen.getByRole("button", {
@@ -60,7 +61,9 @@ describe("SettingsModal", () => {
   it("should call saveSettings (and close) with the new values", async () => {
     const onOpenChangeMock = vi.fn();
     await act(async () =>
-      render(<SettingsModal isOpen onOpenChange={onOpenChangeMock} />),
+      renderWithProviders(
+        <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
+      ),
     );
 
     const saveButton = screen.getByRole("button", { name: /save/i });
@@ -97,7 +100,7 @@ describe("SettingsModal", () => {
     });
 
     const onOpenChange = vi.fn();
-    const { rerender } = render(
+    const { rerender } = renderWithProviders(
       <SettingsModal isOpen onOpenChange={onOpenChange} />,
     );
 

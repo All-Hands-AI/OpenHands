@@ -95,4 +95,22 @@ describe("BaseModal", () => {
     );
     expect(screen.getByText("Children")).toBeInTheDocument();
   });
+
+  it.skip("should not close if the backdrop or escape key is pressed", () => {
+    const onOpenChangeMock = vi.fn();
+    render(
+      <BaseModal
+        isOpen
+        onOpenChange={onOpenChangeMock}
+        title="Settings"
+        isDismissable={false}
+      />,
+    );
+
+    act(() => {
+      userEvent.keyboard("{esc}");
+    });
+    // fails because the nextui component wraps the modal content in an aria-hidden div
+    expect(screen.getByRole("dialog")).toBeVisible();
+  });
 });
