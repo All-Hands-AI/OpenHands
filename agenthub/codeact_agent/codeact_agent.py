@@ -20,9 +20,16 @@ from opendevin.observation import (
 from opendevin.state import State
 from opendevin.sandbox.plugins import PluginRequirement, JupyterRequirement, SWEAgentCommandsRequirement
 
-COMMAND_SEGMENT = (
+
+_SWEAGENT_BASH_DOCS = '\n'.join(
+    filter(
+        lambda x: not x.startswith('submit'),
+        SWEAgentCommandsRequirement.documentation.split('\n')
+    )
+)
+COMMAND_DOCS = (
     '\nApart from the standard bash commands, you can also use the following special commands in bash:\n'
-    f'{SWEAgentCommandsRequirement.documentation}'
+    f'{_SWEAGENT_BASH_DOCS}'
     "Please note that THE EDIT COMMAND REQUIRES PROPER INDENTATION. If you'd like to add the line '        print(x)' you must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run."
 )
 
@@ -33,10 +40,9 @@ The assistant should attempt fewer things at a time instead of putting too much 
 The assistant can install Python packages through bash by <execute_bash> pip install [package needed] </execute_bash> and should always import packages and define variables before starting to use them.
 The assistant should stop <execute> and provide an answer when they have already obtained the answer from the execution result. Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
 The assistant's response should be concise, but do express their thoughts.
-When the assistant is done with the task, it should output <execute_bash> exit </execute_bash> to end the conversation.
-{COMMAND_SEGMENT}
+The assistant should start working on the task as soon as possible unless they require more information from the user.
 
-
+{COMMAND_DOCS}
 """
 
 EXAMPLES = """
@@ -164,7 +170,7 @@ class CodeActAgent(Agent):
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
     """
 
-    sandbox_plugins: List[PluginRequirement] = [JupyterRequirement()]
+    sandbox_plugins: List[PluginRequirement] = [JupyterRequirement(), SWEAgentCommandsRequirement()]
     SUPPORTED_ACTIONS = (
         CmdRunAction,
         IPythonRunCellAction,
@@ -216,7 +222,7 @@ class CodeActAgent(Agent):
                     'role': 'user',
                     'content': (
                         f'Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\n'
-                        f"NOW, LET'S START!\n\n{state.plan.main_goal}{COMMAND_SEGMENT}"
+                        f"NOW, LET'S START!\n\n{state.plan.main_goal}"
                     )
                 },
             ]
