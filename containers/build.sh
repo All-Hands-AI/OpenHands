@@ -39,8 +39,6 @@ DOCKER_REPOSITORY=$DOCKER_REGISTRY/$DOCKER_ORG/$DOCKER_IMAGE
 echo "Repo: $DOCKER_REPOSITORY"
 echo "Base dir: $DOCKER_BASE_DIR"
 
-docker pull $DOCKER_REPOSITORY:main || true # try to get any cached layers
-
 args=""
 for tag in ${tags[@]}; do
   args+=" -t $DOCKER_REPOSITORY:$tag"
@@ -51,6 +49,8 @@ fi
 
 docker buildx build \
   $args \
+  --cache-to=type=registry,ref=$DOCKER_REPOSITORY:buildcache,mode=max \
+  --cache-from=type=registry,ref=$DOCKER_REPOSITORY:buildcache \
   --platform linux/amd64,linux/arm64 \
   --provenance=false \
   -f $dir/Dockerfile $DOCKER_BASE_DIR
