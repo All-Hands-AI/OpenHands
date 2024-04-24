@@ -53,14 +53,14 @@ INITIAL_THOUGHTS = [
     'RUN echo "hello world"',
     'hello world',
     'Cool! I bet I can write files too using the write action.',
-    "WRITE echo \"console.log('hello world')\" > test.js",
+    "WRITE echo \"console.log('hello world')\" > /workspace/test.js",
     '',
     "I just created test.js. I'll try and run it now.",
     'RUN node test.js',
     'hello world',
     'It works!',
     "I'm going to try reading it now using the read action.",
-    'READ test.js',
+    'READ /workspace/test.js',
     "console.log('hello world')",
     'Nice! I can read files too!',
     'And if I want to use the browser, I just need to use the browse action and include the url I want to visit in the url argument',
@@ -74,7 +74,7 @@ INITIAL_THOUGHTS = [
     "I'll need a strategy. And as I make progress, I'll need to keep refining that strategy. I'll need to set goals, and break them into sub-goals.",
     'In between actions, I must always take some time to think, strategize, and set new goals. I should never take two actions in a row.',
     "OK so my task is to $TASK. I haven't made any progress yet. Where should I start?",
-    "It seems like there might be an existing project here. I should probably start by running `ls` to see what's here.",
+    'It seems like there might be an existing project here. I should probably start by running `pwd` and `ls` to orient myself.',
 ]
 
 
