@@ -43,7 +43,7 @@ def action_from_dict(action: dict) -> Action:
     try:
         decoded_action = action_class(**args)
     except TypeError:
-        raise AgentMalformedActionError(f"action={action} has the wrong arguments")
+        raise AgentMalformedActionError(f'action={action} has the wrong arguments')
     return decoded_action
 
 
