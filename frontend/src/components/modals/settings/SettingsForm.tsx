@@ -32,7 +32,8 @@ function SettingsForm({
   useEffect(() => {
     if (
       curTaskState === AgentTaskState.RUNNING ||
-      curTaskState === AgentTaskState.PAUSED
+      curTaskState === AgentTaskState.PAUSED ||
+      curTaskState === AgentTaskState.AWAITING_USER_INPUT
     ) {
       setDisabled(true);
     } else {
