@@ -17,7 +17,7 @@ from opendevin.logger import opendevin_logger as logger
 from opendevin.sandbox.sandbox import Sandbox
 from opendevin.sandbox.process import Process
 from opendevin.sandbox.docker.process import DockerProcess
-from opendevin.sandbox.plugins.jupyter import JupyterRequirement
+from opendevin.sandbox.plugins import JupyterRequirement, SWEAgentCommandsRequirement
 from opendevin.schema import ConfigType
 from opendevin.utils import find_available_tcp_port
 from opendevin.exceptions import SandboxInvalidBackgroundCommandError
@@ -373,8 +373,8 @@ class DockerSSHBox(Sandbox):
                      )
                 )
 
-            mount_dir = config.get('WORKSPACE_MOUNT_PATH')
-            print('Mounting workspace directory: ', mount_dir)
+            mount_dir = config.get(ConfigType.WORKSPACE_MOUNT_PATH)
+            logger.info(f'Mounting workspace directory: {mount_dir}')
             # start the container
             self.container = self.docker_client.containers.run(
                 self.container_image,
@@ -444,7 +444,12 @@ if __name__ == '__main__':
         "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
 
     # Initialize required plugins
-    ssh_box.init_plugins([JupyterRequirement()])
+    ssh_box.init_plugins([JupyterRequirement(), SWEAgentCommandsRequirement()])
+    logger.info(
+        '--- SWE-AGENT COMMAND DOCUMENTATION ---\n'
+        f'{SWEAgentCommandsRequirement().documentation}\n'
+        '---'
+    )
 
     bg_cmd = ssh_box.execute_in_background(
         "while true; do echo 'dot ' && sleep 10; done"
