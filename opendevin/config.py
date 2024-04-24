@@ -10,6 +10,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_CONTAINER_IMAGE = 'ghcr.io/opendevin/sandbox'
+if os.getenv('OPEN_DEVIN_BUILD_VERSION'):
+    DEFAULT_CONTAINER_IMAGE += ':' + (os.getenv('OPEN_DEVIN_BUILD_VERSION') or '')
+else:
+    DEFAULT_CONTAINER_IMAGE += ':main'
+
 load_dotenv()
 
 DEFAULT_CONFIG: dict = {
@@ -21,7 +27,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.WORKSPACE_MOUNT_REWRITE: None,
     ConfigType.CACHE_DIR: os.path.join(os.path.dirname(os.path.abspath(__file__)), '.cache'),
     ConfigType.LLM_MODEL: 'gpt-3.5-turbo-1106',
-    ConfigType.SANDBOX_CONTAINER_IMAGE: 'ghcr.io/opendevin/sandbox',
+    ConfigType.SANDBOX_CONTAINER_IMAGE: DEFAULT_CONTAINER_IMAGE,
     ConfigType.RUN_AS_DEVIN: 'true',
     ConfigType.LLM_EMBEDDING_MODEL: 'local',
     ConfigType.LLM_EMBEDDING_DEPLOYMENT_NAME: None,
