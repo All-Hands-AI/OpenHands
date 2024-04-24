@@ -239,7 +239,6 @@ class AgentController:
             user_message_observation = await self.wait_for_user_input()
             logger.info(user_message_observation, extra={'msg_type': 'OBSERVATION'})
             self.add_history(action, user_message_observation)
-            await self._run_callbacks(user_message_observation)
             return False
 
         finished = isinstance(action, AgentFinishAction)
