@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Modal,
   ModalBody,
@@ -6,6 +5,7 @@ import {
   ModalFooter,
   ModalHeader,
 } from "@nextui-org/react";
+import React from "react";
 import { Action, FooterContent } from "./FooterContent";
 import { HeaderContent } from "./HeaderContent";
 
@@ -37,7 +37,7 @@ function BaseModal({
       backdrop="blur"
       hideCloseButton
       size="sm"
-      className="bg-neutral-900 rounded-large"
+      className="bg-neutral-900 rounded-lg"
     >
       <ModalContent className="max-w-[24rem] p-[40px]">
         {(closeModal) => (
