@@ -4,7 +4,7 @@ import { renderWithProviders } from "../../test-utils";
 
 describe("Browser", () => {
   it("renders a message if no screenshotSrc is provided", () => {
-    const { getByText } = renderWithProviders(<Browser />, {
+    const { getByText, getByAltText } = renderWithProviders(<Browser />, {
       preloadedState: {
         browser: {
           url: "https://example.com",
@@ -13,7 +13,8 @@ describe("Browser", () => {
       },
     });
 
-    expect(getByText(/no screenshot available/i)).toBeInTheDocument();
+    expect(getByText(/OpenDevin: Code Less, Make More./i)).toBeInTheDocument();
+    expect(getByAltText(/Blank Page/i)).toBeInTheDocument();
   });
 
   it("renders the url and a screenshot", () => {
