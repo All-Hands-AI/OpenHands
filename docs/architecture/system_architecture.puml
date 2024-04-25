@@ -2,13 +2,13 @@
 
 
 node frontend as frontend{
-    
+
     component App
 
     package components{
-        
+
         component Terminal
-        
+
         component ChatInterface
 
         component BannerSettings
@@ -37,8 +37,8 @@ node frontend as frontend{
 
     Terminal -[hidden]u-> ChatInterface
     ChatInterface -[hidden]u-> BannerSettings
-    
-    
+
+
 
     interface "HTTP (:3001)" as HTTP
     HTTP - App
@@ -50,13 +50,13 @@ node backend{
         component Server
 
         'defined in server/server.py, port is defined at startup with uvicorn
-        interface "Client WS\n(:3000/ws)" as client_socket 
+        interface "Client WS\n(:3000/ws)" as client_socket
         client_socket - Server
 
-        
+
     }
-    node AgentController{        
-        
+    node AgentController{
+
     }
     Server -d-> AgentController
 }
