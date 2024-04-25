@@ -1,8 +1,10 @@
+ARG OPEN_DEVIN_BUILD_VERSION=dev
 FROM node:21.7.2-bookworm-slim as frontend-builder
 
 WORKDIR /app
 
 COPY ./frontend/package.json frontend/package-lock.json ./
+RUN npm install -g npm@10.5.1
 RUN npm install
 
 COPY ./frontend ./
@@ -34,6 +36,7 @@ ENV RUN_AS_DEVIN=false
 ENV USE_HOST_NETWORK=true
 ENV SSH_HOSTNAME=host.docker.internal
 ENV WORKSPACE_BASE=/opt/workspace_base
+ENV OPEN_DEVIN_BUILD_VERSION=$OPEN_DEVIN_BUILD_VERSION
 RUN mkdir -p $WORKSPACE_BASE
 
 RUN apt-get update -y \

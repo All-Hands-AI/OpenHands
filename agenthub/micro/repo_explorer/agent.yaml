@@ -1,0 +1,5 @@
+name: RepoExplorer
+description: Generates a detailed summary of an existing codebase
+inputs: []
+outputs:
+  - summary: string

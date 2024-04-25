@@ -12,9 +12,15 @@ Open [http://localhost:3001](http://localhost:3001) to view it in the browser.
 The page will reload if you make edits.\
 You will also see any lint errors in the console.
 
-### `npm test`
+### `npm run make-i18n`
 
-This command runs the available test suites for the application. It launches the test runner in the interactive watch mode, allowing you to see the results of your tests in real time.
+This command is used to generate the i18n declaration file.\
+It should be run when first setting up the repository or when updating translations.
+
+### `npm run test`
+
+This command runs the available test suites for the application.\
+It launches the test runner in the interactive watch mode, allowing you to see the results of your tests in real time.
 
 ### `npm run build`
 

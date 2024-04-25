@@ -50,6 +50,10 @@ class ActionTypeSchema(BaseModel):
     """Allows the agent to respond to the user.
     """
 
+    DELEGATE: str = Field(default='delegate')
+    """Delegates a task to another agent.
+    """
+
     FINISH: str = Field(default='finish')
     """If you're absolutely certain that you've completed your task and have tested your work,
     use the finish action to stop working.
