@@ -9,7 +9,7 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 def filter_out_symbols(input):
-    return ' '.join([char for char in input if char.isalnum()])
+    return ' '.join([char for char in input if char.isalpha()])
 
 
 def get_log_id(prompt_log_name):
