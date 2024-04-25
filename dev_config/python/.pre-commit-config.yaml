@@ -4,6 +4,7 @@ repos:
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
+      - id: double-quote-string-fixer
       - id: check-yaml
       - id: debug-statements
 
