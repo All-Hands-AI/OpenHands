@@ -14,6 +14,9 @@ enum ActionType {
   // Runs a command.
   RUN = "run",
 
+  // Runs a IPython command.
+  RUN_IPYTHON = "run_ipython",
+
   // Kills a background command.
   KILL = "kill",
 
