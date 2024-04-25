@@ -137,7 +137,7 @@ docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
     --add-host host.docker.internal=host-gateway \
-    ghcr.io/opendevin/opendevin:0.3.1
+    ghcr.io/opendevin/opendevin:0.4.0
 ```
 
 You'll find opendevin running at `http://localhost:3000`.
