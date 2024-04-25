@@ -34,9 +34,9 @@ It must be a single object, and it must contain two fields:
 
 Here are the possible actions:
 * `read` - reads the content of a file. Arguments:
-  * `path` - the absolute path of the file to read
+  * `path` - the path of the file to read
 * `write` - writes the content to a file. Arguments:
-  * `path` - the absolute path of the file to write
+  * `path` - the path of the file to write
   * `content` - the content to write to the file
 * `run` - runs a command. Arguments:
   * `command` - the command to run
@@ -59,10 +59,10 @@ actions are all "think" actions, you should consider taking a different action.
 
 Notes:
 * you are logged in as %(user)s, but sudo will always work without a password.
+* all non-background commands will be forcibly stopped if they remain running for over %(timeout)s seconds.
 * your environment is Debian Linux. You can install software with `sudo apt`, but remember to use -y.
 * don't run interactive commands, or commands that don't return (e.g. `node server.js`). You may run commands in the background (e.g. `node server.js &`)
 * don't run interactive text editors (e.g. `nano` or 'vim'), instead use the 'write' or 'read' action.
-* whenever using the 'write' or 'read' action, always use an absolute path.
 * whenever an action fails, always `think` about why it may have happened before acting again.
 
 What is your next single thought or action? Again, you must reply with JSON, and only with JSON. You must respond with exactly one 'action' object.
@@ -152,6 +152,7 @@ def get_request_action_prompt(
         'background_commands': bg_commands_message,
         'hint': hint,
         'user': user,
+        'timeout': config.get('SANDBOX_TIMEOUT'),
         'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.get('WORKSPACE_MOUNT_PATH_IN_SANDBOX'),
     }
 

@@ -337,6 +337,11 @@ class DockerSSHBox(Sandbox):
         except docker.errors.NotFound:
             pass
 
+    def get_working_directory(self):
+        exec_result = self.container.exec_run('pwd')
+        path = exec_result.output.decode('utf-8').strip()
+        return path
+
     def is_container_running(self):
         try:
             container = self.docker_client.containers.get(self.container_name)

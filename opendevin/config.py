@@ -48,6 +48,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.USE_HOST_NETWORK: 'true',
     ConfigType.SSH_HOSTNAME: 'localhost',
     ConfigType.DISABLE_COLOR: 'false',
+    ConfigType.SANDBOX_TIMEOUT: 120
 }
 
 config_str = ''
