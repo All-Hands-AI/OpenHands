@@ -1,11 +1,11 @@
+import { selectFile } from "#/services/fileService";
+import { setCode } from "#/state/codeSlice";
+import { RootState } from "#/store";
 import Editor, { Monaco } from "@monaco-editor/react";
 import { Tab, Tabs } from "@nextui-org/react";
 import type { editor } from "monaco-editor";
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { selectFile } from "#/services/fileService";
-import { setCode } from "#/state/codeSlice";
-import { RootState } from "#/store";
 import FileExplorer from "./file-explorer/FileExplorer";
 
 function CodeEditor(): JSX.Element {
@@ -50,12 +50,12 @@ function CodeEditor(): JSX.Element {
         <Tabs
           disableCursorAnimation
           classNames={{
-            base: "border-b border-divider",
+            base: "border-b border-divider border-neutral-600 mb-4",
             tabList:
               "w-full relative rounded-none bg-neutral-900 p-0 border-divider",
             cursor: "w-full bg-neutral-600 rounded-none",
             tab: "max-w-fit px-4 h-[36px]",
-            tabContent: "group-data-[selected=true]:text-white ",
+            tabContent: "group-data-[selected=true]:text-white",
           }}
           aria-label="Options"
         >

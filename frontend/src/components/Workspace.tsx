@@ -1,15 +1,14 @@
-import { Tab, Tabs } from "@nextui-org/react";
-import React, { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { IoIosGlobe } from "react-icons/io";
-import { VscCode } from "react-icons/vsc";
-import { useSelector } from "react-redux";
-import Calendar from "#/assets/calendar";
 import { I18nKey } from "#/i18n/declaration";
 import { initialState as initialBrowserState } from "#/state/browserSlice";
 import { initialState as initialCodeState } from "#/state/codeSlice";
 import { RootState } from "#/store";
 import { AllTabs, TabOption, TabType } from "#/types/TabOption";
+import { Tab, Tabs } from "@nextui-org/react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { IoIosGlobe } from "react-icons/io";
+import { VscCode, VscListOrdered } from "react-icons/vsc";
+import { useSelector } from "react-redux";
 import Browser from "./Browser";
 import CodeEditor from "./CodeEditor";
 import Planner from "./Planner";
@@ -33,7 +32,7 @@ function Workspace() {
     () => ({
       [TabOption.PLANNER]: {
         name: t(I18nKey.WORKSPACE$PLANNER_TAB_LABEL),
-        icon: <Calendar />,
+        icon: <VscListOrdered size={18} />,
         component: <Planner key="planner" />,
       },
       [TabOption.CODE]: {
