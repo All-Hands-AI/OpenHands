@@ -74,7 +74,7 @@ elif embedding_strategy == 'azureopenai':
         api_version=config.get('LLM_API_VERSION', required=True),
     )
 elif (embedding_strategy is not None) and (embedding_strategy.lower() == 'none'):
-    # TODO: this is a workaround and currently only for testing purpose. When
+    # TODO: this works but is not elegant enough. The incentive is when
     # monologue agent is not used, there is no reason we need to initialize an
     # embedding model
     embed_model = None
