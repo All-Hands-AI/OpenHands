@@ -2,12 +2,19 @@ import os
 import argparse
 import toml
 import pathlib
+import platform
 from dotenv import load_dotenv
 
 from opendevin.schema import ConfigType
 import logging
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_CONTAINER_IMAGE = 'ghcr.io/opendevin/sandbox'
+if os.getenv('OPEN_DEVIN_BUILD_VERSION'):
+    DEFAULT_CONTAINER_IMAGE += ':' + (os.getenv('OPEN_DEVIN_BUILD_VERSION') or '')
+else:
+    DEFAULT_CONTAINER_IMAGE += ':main'
 
 load_dotenv()
 
@@ -18,9 +25,9 @@ DEFAULT_CONFIG: dict = {
     ConfigType.WORKSPACE_MOUNT_PATH: None,
     ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX: '/workspace',
     ConfigType.WORKSPACE_MOUNT_REWRITE: None,
-    ConfigType.CACHE_DIR: os.path.join(os.path.dirname(os.path.abspath(__file__)), '.cache'),
+    ConfigType.CACHE_DIR: '/tmp/cache',  # '/tmp/cache' is the default cache directory
     ConfigType.LLM_MODEL: 'gpt-3.5-turbo-1106',
-    ConfigType.SANDBOX_CONTAINER_IMAGE: 'ghcr.io/opendevin/sandbox',
+    ConfigType.SANDBOX_CONTAINER_IMAGE: DEFAULT_CONTAINER_IMAGE,
     ConfigType.RUN_AS_DEVIN: 'true',
     ConfigType.LLM_EMBEDDING_MODEL: 'local',
     ConfigType.LLM_EMBEDDING_DEPLOYMENT_NAME: None,
@@ -88,7 +95,7 @@ def get_parser():
     parser.add_argument(
         '-c',
         '--agent-cls',
-        default='MonologueAgent',
+        default=config.get(ConfigType.AGENT),
         type=str,
         help='The agent class to use',
     )
@@ -135,6 +142,17 @@ def finalize_config():
         config[ConfigType.WORKSPACE_MOUNT_PATH] = base.replace(parts[0], parts[1])
 
     if config.get(ConfigType.WORKSPACE_MOUNT_PATH) is None:
+        config[ConfigType.WORKSPACE_MOUNT_PATH] = os.path.abspath(config[ConfigType.WORKSPACE_BASE])
+
+    USE_HOST_NETWORK = config[ConfigType.USE_HOST_NETWORK].lower() != 'false'
+    if USE_HOST_NETWORK and platform.system() == 'Darwin':
+        logger.warning(
+            'Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. '
+            'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'
+        )
+    config[ConfigType.USE_HOST_NETWORK] = USE_HOST_NETWORK
+
+    if config.get(ConfigType.WORKSPACE_MOUNT_PATH) is None:
         config[ConfigType.WORKSPACE_MOUNT_PATH] = config.get(ConfigType.WORKSPACE_BASE)
 
 
@@ -151,6 +169,6 @@ def get(key: str, required: bool = False):
     return value
 
 
-_cache_dir = config.get('CACHE_DIR')
+_cache_dir = config.get(ConfigType.CACHE_DIR)
 if _cache_dir:
     pathlib.Path(_cache_dir).mkdir(parents=True, exist_ok=True)

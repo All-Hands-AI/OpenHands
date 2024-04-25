@@ -32,7 +32,7 @@
 
 <!-- PROJECT LOGO -->
 <div align="center">
-  <img src="./logo.png" alt="Logo" width="200" height="200">
+  <img src="./docs/static/img/logo.png" alt="Logo" width="200" height="200">
   <h1 align="center">OpenDevin: Code Less, Make More</h1>
 </div>
 
@@ -63,7 +63,7 @@
 
 ## 🎯 Mission
 
-[Project Demo Video](https://github.com/OpenDevin/OpenDevin/assets/38853559/71a472cc-df34-430c-8b1d-4d7286c807c9)
+[Project Demo Video](./docs/static/img/teaser.mp4)
 
 Welcome to OpenDevin, an open-source project aiming to replicate Devin, an autonomous AI software engineer who is capable of executing complex engineering tasks and collaborating actively with users on software development projects. This project aspires to replicate, enhance, and innovate upon Devin through the power of the open-source community.
 
@@ -137,7 +137,7 @@ docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
     --add-host host.docker.internal=host-gateway \
-    ghcr.io/opendevin/opendevin:0.3.1
+    ghcr.io/opendevin/opendevin:0.4.0
 ```
 
 You'll find opendevin running at `http://localhost:3000`.

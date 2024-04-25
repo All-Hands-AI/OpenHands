@@ -2,11 +2,8 @@ import { useDisclosure } from "@nextui-org/react";
 import React, { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 import CogTooth from "#/assets/cog-tooth";
-import AgentControlBar from "#/components/AgentControlBar";
-import AgentStatusBar from "#/components/AgentStatusBar";
 import ChatInterface from "#/components/ChatInterface";
 import Errors from "#/components/Errors";
-import Terminal from "#/components/terminal/Terminal";
 import { Container, Orientation } from "#/components/Resizable";
 import Workspace from "#/components/Workspace";
 import LoadPreviousSessionModal from "#/components/modals/load-previous-session/LoadPreviousSessionModal";
@@ -16,6 +13,9 @@ import { initializeAgent } from "#/services/settingsService";
 import Socket from "#/services/socket";
 import { ResFetchMsgTotal } from "#/types/ResponseType";
 import "./App.css";
+import AgentControlBar from "./components/AgentControlBar";
+import AgentStatusBar from "./components/AgentStatusBar";
+import Terminal from "./components/Terminal";
 
 interface Props {
   setSettingOpen: (isOpen: boolean) => void;

@@ -1,43 +1,33 @@
-import clsx from 'clsx';
-import Link from '@docusaurus/Link';
-import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import Layout from '@theme/Layout';
-import HomepageFeatures from '@site/src/components/HomepageFeatures';
-import Heading from '@theme/Heading';
+import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
+import Layout from "@theme/Layout";
 
-import styles from './index.module.css';
+import { Code } from "../components/Code/Code";
+import { HomepageHeader } from "../components/HomepageHeader/HomepageHeader";
+import { Welcome } from "../components/Welcome/Welcome";
 
-function HomepageHeader() {
-  const {siteConfig} = useDocusaurusContext();
+export function Header({ title, summary, description }): JSX.Element {
   return (
-    <header className={clsx('hero hero--primary', styles.heroBanner)}>
-      <div className="container">
-        <Heading as="h1" className="hero__title">
-          {siteConfig.title}
-        </Heading>
-        <p className="hero__subtitle">{siteConfig.tagline}</p>
-        <div className={styles.buttons}>
-          <Link
-            className="button button--secondary button--lg"
-            to="/docs/intro">
-            Docusaurus Tutorial - 5min ⏱️
-          </Link>
-        </div>
-      </div>
-    </header>
+    <div>
+      <h2 style={{ fontSize: "40px" }}>{summary}</h2>
+      <h3 className="headerDescription">{description}</h3>
+    </div>
   );
 }
 
 export default function Home(): JSX.Element {
-  const {siteConfig} = useDocusaurusContext();
+  const { siteConfig } = useDocusaurusContext();
   return (
     <Layout
       title={`Hello from ${siteConfig.title}`}
-      description="Description will go into a meta tag in <head />">
-      <HomepageHeader />
-      <main>
-        <HomepageFeatures />
-      </main>
+      description="AI-powered code generation for software engineering."
+    >
+      <div>
+        <HomepageHeader />
+        <div>
+          <Welcome />
+          <Code />
+        </div>
+      </div>
     </Layout>
   );
 }
