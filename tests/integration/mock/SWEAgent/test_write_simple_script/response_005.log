@@ -1,0 +1,7 @@
+Thoughts:
+The shell script 'hello.sh' has been successfully created and contains the necessary code to print "hello". The next logical step is to test the script to ensure it functions as expected. This involves executing the script and observing the output. If the script runs correctly and prints "hello", then the task is completed successfully.
+
+Action:
+```
+bash hello.sh
+```
