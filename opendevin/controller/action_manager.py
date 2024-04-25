@@ -20,23 +20,20 @@ class ActionManager:
 
     def __init__(
             self,
-            sid: str,
+            sid: str = 'default',
     ):
         sandbox_type = config.get(ConfigType.SANDBOX_TYPE).lower()
-        if sandbox_type == 'exec':
-            self.sandbox = DockerExecBox(
-                sid=(sid or 'default'),
-            )
-        elif sandbox_type == 'local':
-            self.sandbox = LocalBox()
-        elif sandbox_type == 'ssh':
-            self.sandbox = DockerSSHBox(
-                sid=(sid or 'default')
-            )
-        elif sandbox_type == 'e2b':
-            self.sandbox = E2BBox()
-        else:
-            raise ValueError(f'Invalid sandbox type: {sandbox_type}')
+        match sandbox_type:
+            case 'exec':
+                self.sandbox = DockerExecBox(sid=sid)
+            case 'ssh':
+                self.sandbox = DockerSSHBox(sid=sid)
+            case 'local':
+                self.sandbox = LocalBox()
+            case 'e2b':
+                self.sandbox = E2BBox()
+            case _:
+                raise ValueError(f'Invalid sandbox type: {sandbox_type}')
 
     def init_sandbox_plugins(self, plugins: List[PluginRequirement]):
         self.sandbox.init_plugins(plugins)

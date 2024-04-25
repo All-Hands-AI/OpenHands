@@ -45,12 +45,20 @@ class AgentController:
     def __init__(
         self,
         agent: Agent,
-        inputs: dict = {},
         sid: str = 'default',
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
         callbacks: List[Callable] = [],
     ):
+        """Initializes a new instance of the AgentController class.
+
+        Args:
+            agent: The agent instance to control.
+            sid: The session ID of the agent.
+            max_iterations: The maximum number of iterations the agent can run.
+            max_chars: The maximum number of characters the agent can output.
+            callbacks: A list of callback functions to run after each action.
+        """
         self.id = sid
         self.agent = agent
         self.max_iterations = max_iterations

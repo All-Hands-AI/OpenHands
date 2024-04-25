@@ -147,9 +147,20 @@ install-precommit-hooks:
 	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 
-lint:
+lint-backend:
 	@echo "$(YELLOW)Running linters...$(RESET)"
 	@poetry run pre-commit run --files opendevin/**/* agenthub/**/* --show-diff-on-failure --config $(PRECOMMIT_CONFIG_PATH)
+
+lint-frontend:
+	@echo "$(YELLOW)Running linters for frontend...$(RESET)"
+	@cd frontend && npm run lint
+
+lint-all:
+	@$(MAKE) -s lint-frontend
+	@$(MAKE) -s lint-backend
+
+lint:
+	@$(MAKE) -s lint-all
 
 build-frontend:
 	@echo "$(YELLOW)Building frontend...$(RESET)"

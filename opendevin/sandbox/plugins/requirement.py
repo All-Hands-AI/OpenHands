@@ -8,5 +8,5 @@ class PluginRequirement:
     # FOLDER/FILES to be copied to the sandbox
     host_src: str
     sandbox_dest: str
-    # NOTE: bash_script_path shoulds be relative to the `sandbox_dest` path
+    # NOTE: bash_script_path should be relative to the `sandbox_dest` path
     bash_script_path: str
