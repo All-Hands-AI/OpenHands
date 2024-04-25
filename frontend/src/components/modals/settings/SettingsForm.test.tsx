@@ -16,7 +16,6 @@ const renderSettingsForm = (settings: Partial<Settings>) => {
       settings={settings}
       models={["model1", "model2", "model3"]}
       agents={["agent1", "agent2", "agent3"]}
-      apiKey="sk-..."
       onModelChange={onModelChangeMock}
       onAgentChange={onAgentChangeMock}
       onLanguageChange={onLanguageChangeMock}
@@ -27,7 +26,7 @@ const renderSettingsForm = (settings: Partial<Settings>) => {
 
 describe("SettingsForm", () => {
   it("should display the first values in the array by default", () => {
-    renderSettingsForm({});
+    renderSettingsForm({ LLM_API_KEY: "sk-..." });
 
     const modelInput = screen.getByRole("combobox", { name: "model" });
     const agentInput = screen.getByRole("combobox", { name: "agent" });
@@ -62,7 +61,6 @@ describe("SettingsForm", () => {
         settings={{}}
         models={["model1", "model2", "model3"]}
         agents={["agent1", "agent2", "agent3"]}
-        apiKey="sk-..."
         onModelChange={onModelChangeMock}
         onAgentChange={onAgentChangeMock}
         onLanguageChange={onLanguageChangeMock}
@@ -130,7 +128,7 @@ describe("SettingsForm", () => {
     });
 
     it("should call the onAPIKeyChange handler when the API key changes", () => {
-      renderSettingsForm({});
+      renderSettingsForm({ LLM_API_KEY: "sk-..." });
 
       const apiKeyInput = screen.getByTestId("apikey");
       act(() => {
