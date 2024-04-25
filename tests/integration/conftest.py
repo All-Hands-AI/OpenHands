@@ -9,6 +9,9 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 def filter_out_symbols(input):
+    # TODO: this is a hack due to discrepancy between ssh and exec sandboxes
+    # somehow, exec sandbox captures \n as part of run result while ssh sandbox doesn't
+    input = input.replace('\\n', '')
     return ' '.join([char for char in input if char.isalpha()])
 
 
@@ -35,7 +38,6 @@ def get_mock_response(test_name, messages):
     we start from the end of the file, but again, that is unnecessary and only
     makes test code harder to understand.
     """
-
     mock_dir = os.path.join(script_dir, 'mock', os.environ.get('AGENT'), test_name)
     prompt = filter_out_symbols(messages)
     for root, _, files in os.walk(mock_dir):
