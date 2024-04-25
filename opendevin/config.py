@@ -45,7 +45,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.AGENT: 'MonologueAgent',
     ConfigType.E2B_API_KEY: '',
     ConfigType.SANDBOX_TYPE: 'ssh',  # Can be 'ssh', 'exec', or 'e2b'
-    ConfigType.USE_HOST_NETWORK: 'true',
+    ConfigType.USE_HOST_NETWORK: 'false',
     ConfigType.SSH_HOSTNAME: 'localhost',
     ConfigType.DISABLE_COLOR: 'false',
     ConfigType.SANDBOX_TIMEOUT: 120
