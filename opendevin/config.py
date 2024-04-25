@@ -143,6 +143,9 @@ def finalize_config():
         parts = config[ConfigType.WORKSPACE_MOUNT_REWRITE].split(':')
         config[ConfigType.WORKSPACE_MOUNT_PATH] = base.replace(parts[0], parts[1])
 
+    if config.get(ConfigType.WORKSPACE_MOUNT_PATH) is None:
+        config[ConfigType.WORKSPACE_MOUNT_PATH] = os.path.abspath(config[ConfigType.WORKSPACE_BASE])
+
     USE_HOST_NETWORK = config[ConfigType.USE_HOST_NETWORK].lower() != 'false'
     if USE_HOST_NETWORK and platform.system() == 'Darwin':
         logger.warning(
