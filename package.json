@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "react-highlight": "^0.15.0"
+  },
+  "devDependencies": {
+    "@types/react-highlight": "^0.12.8"
+  }
+}

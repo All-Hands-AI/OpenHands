@@ -1,0 +1,106 @@
+/**
+ * nnfx - a theme inspired by Netscape Navigator/Firefox
+ *
+ * @version 1.0.0
+ * @author (c) 2020 Jim Mason <jmason@ibinx.com>
+ * @license https://creativecommons.org/licenses/by-sa/4.0  CC BY-SA 4.0
+ */
+
+.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 0.5em;
+  background: #fff;
+  color: #000;
+}
+
+.xml .hljs-meta {
+  font-weight: bold;
+  font-style: italic;
+  color: #48b;
+}
+
+.hljs-comment,
+.hljs-quote {
+  font-style: italic;
+  color: #070;
+}
+
+.hljs-name,
+.hljs-keyword {
+  color: #808;
+}
+
+.hljs-name,
+.hljs-attr {
+  font-weight: bold;
+}
+
+.hljs-string {
+  font-weight: normal;
+}
+
+.hljs-variable,
+.hljs-template-variable {
+  color: #477;
+}
+
+.hljs-code,
+.hljs-string,
+.hljs-meta-string,
+.hljs-number,
+.hljs-regexp,
+.hljs-link {
+  color: #00f;
+}
+
+.hljs-title,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-built_in,
+.hljs-builtin-name {
+  color: #f40;
+}
+
+.hljs-section,
+.hljs-meta {
+  color: #642;
+}
+
+.hljs-class .hljs-title,
+.hljs-type {
+  color: #639;
+}
+
+.hljs-function .hljs-title,
+.hljs-attr,
+.hljs-subst {
+  color: #000;
+}
+
+.hljs-formula {
+  background-color: #eee;
+  font-style: italic;
+}
+
+.hljs-addition {
+  background-color: #beb;
+}
+
+.hljs-deletion {
+  background-color: #fbb;
+}
+
+.hljs-selector-id,
+.hljs-selector-class {
+  color: #964;
+}
+
+.hljs-doctag,
+.hljs-strong {
+  font-weight: bold;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}

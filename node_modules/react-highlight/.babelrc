@@ -1,0 +1,6 @@
+{
+  "presets": [
+    "env",
+    "react"
+  ]
+}

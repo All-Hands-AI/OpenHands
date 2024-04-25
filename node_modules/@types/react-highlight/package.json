@@ -1,0 +1,27 @@
+{
+    "name": "@types/react-highlight",
+    "version": "0.12.8",
+    "description": "TypeScript definitions for react-highlight",
+    "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-highlight",
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "JP Lew",
+            "githubUsername": "jplew",
+            "url": "https://github.com/jplew"
+        }
+    ],
+    "main": "",
+    "types": "index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/react-highlight"
+    },
+    "scripts": {},
+    "dependencies": {
+        "@types/react": "*"
+    },
+    "typesPublisherContentHash": "b8601890bff056baf7a677947d61df9bb631ecb36801bb813e8a4d82a75ed78b",
+    "typeScriptVersion": "4.5"
+}

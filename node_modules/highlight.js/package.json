@@ -1,0 +1,86 @@
+{
+  "name": "highlight.js",
+  "description": "Syntax highlighting with language autodetection.",
+  "keywords": [
+    "highlight",
+    "syntax"
+  ],
+  "homepage": "https://highlightjs.org/",
+  "version": "10.7.3",
+  "author": {
+    "name": "Ivan Sagalaev",
+    "email": "maniac@softwaremaniacs.org"
+  },
+  "contributors": [
+    "Josh Goebel <hello@joshgoebel.com>",
+    "Egor Rogov <e.rogov@postgrespro.ru>",
+    "Vladimir Jimenez <me@allejo.io>",
+    "Ivan Sagalaev <maniac@softwaremaniacs.org>",
+    "Jeremy Hull <sourdrums@gmail.com>",
+    "Oleg Efimov <efimovov@gmail.com>",
+    "Gidi Meir Morris <gidi@gidi.io>",
+    "Jan T. Sott <git@idleberg.com>",
+    "Li Xuanji <xuanji@gmail.com>",
+    "Marcos Cáceres <marcos@marcosc.com>",
+    "Sang Dang <sang.dang@polku.io>"
+  ],
+  "bugs": {
+    "url": "https://github.com/highlightjs/highlight.js/issues"
+  },
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/highlightjs/highlight.js.git"
+  },
+  "main": "./lib/index.js",
+  "types": "./types/index.d.ts",
+  "scripts": {
+    "mocha": "mocha",
+    "lint": "eslint src/*.js src/lib/*.js src/plugins/*.js demo/*.js",
+    "lint-languages": "eslint --no-eslintrc -c .eslintrc.lang.js src/languages/**/*.js",
+    "build_and_test": "npm run build && npm run test",
+    "build": "node ./tools/build.js -t node",
+    "build-cdn": "node ./tools/build.js -t cdn",
+    "build-browser": "node ./tools/build.js -t browser :common",
+    "test": "mocha test",
+    "test-markup": "mocha test/markup",
+    "test-detect": "mocha test/detect",
+    "test-browser": "mocha test/browser",
+    "test-parser": "mocha test/parser"
+  },
+  "engines": {
+    "node": "*"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^17.0.0",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^11.1.0",
+    "@types/mocha": "^8.2.2",
+    "@typescript-eslint/eslint-plugin": "^4.6.1",
+    "@typescript-eslint/parser": "^4.6.1",
+    "clean-css": "^5.0.1",
+    "cli-table": "^0.3.1",
+    "colors": "^1.1.2",
+    "commander": "^7.0.0",
+    "deep-freeze-es6": "^1.4.1",
+    "del": "^6.0.0",
+    "dependency-resolver": "^2.0.1",
+    "eslint": "^7.12.1",
+    "eslint-config-standard": "^16.0.1",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "glob": "^7.1.6",
+    "glob-promise": "^4.0.1",
+    "handlebars": "^4.7.6",
+    "jsdom": "^16.4.0",
+    "lodash": "^4.17.20",
+    "mocha": "^8.2.1",
+    "refa": "^0.4.1",
+    "rollup": "^2.33.1",
+    "should": "^13.2.3",
+    "terser": "^5.3.8",
+    "tiny-worker": "^2.3.0",
+    "typescript": "^4.0.5"
+  }
+}

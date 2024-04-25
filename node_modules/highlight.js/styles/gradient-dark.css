@@ -1,0 +1,122 @@
+/*
+
+Gradient Dark (c) Samia Ali <samiaab1990@gmail.com>
+
+*/
+
+.hljs
+{
+display: block;
+overflow-x: auto;
+padding: 0.5em;
+background: rgb(80,31,122);
+background: linear-gradient(166deg, rgba(80,31,122,1) 0%, rgba(40,32,179,1) 80%);
+color:#e7e4eb;
+}
+
+.hljs-subtr{
+  color:#e7e4eb;
+}
+
+.hljs-doctag,
+.hljs-meta,
+.hljs-comment,
+.hljs-quote
+{
+  color:#af8dd9;
+}
+
+.hljs-selector-tag,
+.hljs-selector-id,
+.hljs-template-tag,
+.hljs-regexp,
+.hljs-attr,
+.hljs-tag
+{
+  color:#AEFBFF;
+}
+
+.hljs-params,
+.hljs-selector-class,
+.hljs-bullet
+
+{
+  color:#F19FFF;
+
+}
+
+.hljs-keyword,
+.hljs-section,
+.hljs-meta-keyword,
+.hljs-symbol,
+.hljs-type
+
+{
+
+  color:#17fc95;
+}
+
+.hljs-addition,
+.hljs-number,
+.hljs-link
+{
+  color:#C5FE00;
+}
+
+
+.hljs-string
+{
+  color: #38c0ff;
+}
+
+
+.hljs-attribute,
+.hljs-addition
+{
+  color:#E7FF9F;
+}
+
+.hljs-variable,
+.hljs-template-variable
+
+{
+  color:#E447FF;
+}
+
+.hljs-builtin-name,
+.hljs-built_in,
+.hljs-formula,
+.hljs-name,
+.hljs-title,
+.hljs-class,
+.hljs-function
+{
+  color: #FFC800;
+
+}
+
+.hljs-selector-pseudo,
+.hljs-deletion,
+.hljs-literal
+{
+  color:#FF9E44;
+
+}
+
+.hljs-emphasis,
+.hljs-quote
+{
+  font-style:italic;
+}
+
+.hljs-params,
+.hljs-selector-class,
+.hljs-strong,
+.hljs-selector-tag,
+.hljs-selector-id,
+.hljs-template-tag,
+.hljs-section,
+.hljs-keyword
+{
+  font-weight:bold;
+}
