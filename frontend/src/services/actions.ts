@@ -3,6 +3,7 @@ import { setScreenshotSrc, setUrl } from "#/state/browserSlice";
 import { appendAssistantMessage } from "#/state/chatSlice";
 import { setCode, updatePath } from "#/state/codeSlice";
 import { appendInput } from "#/state/commandSlice";
+import { appendJupyterInput } from "#/state/jupyterSlice";
 import { setPlan } from "#/state/planSlice";
 import { setInitialized } from "#/state/taskSlice";
 import store from "#/store";
@@ -45,10 +46,7 @@ const messageActions = {
     if (message.args.thought) {
       store.dispatch(appendAssistantMessage(message.args.thought));
     }
-    // wrap the code with ```python in a new variable
-    // FIXME: make this with syntax highlighting
-    const code = "```python\n" + message.args.code + "\n```";
-    store.dispatch(appendInput(code));
+    store.dispatch(appendJupyterInput(message.args.code));
 
   },
   [ActionType.ADD_TASK]: () => {

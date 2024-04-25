@@ -13,6 +13,7 @@ import { AllTabs, TabOption, TabType } from "#/types/TabOption";
 import Browser from "./Browser";
 import CodeEditor from "./CodeEditor";
 import Planner from "./Planner";
+import Jupyter from "./Jupyter";
 
 function Workspace() {
   const { t } = useTranslation();
@@ -27,6 +28,7 @@ function Workspace() {
     [TabOption.PLANNER]: false,
     [TabOption.CODE]: false,
     [TabOption.BROWSER]: false,
+    [TabOption.JUPYTER]: false,
   });
 
   const tabData = useMemo(
@@ -45,6 +47,11 @@ function Workspace() {
         name: t(I18nKey.WORKSPACE$BROWSER_TAB_LABEL),
         icon: <IoIosGlobe size={18} />,
         component: <Browser key="browser" />,
+      },
+      [TabOption.JUPYTER]: {
+        name: t(I18nKey.WORKSPACE$JUPYTER_TAB_LABEL),
+        icon: <VscCode size={18} />,
+        component: <Jupyter key="jupyter" />,
       },
     }),
     [t],
