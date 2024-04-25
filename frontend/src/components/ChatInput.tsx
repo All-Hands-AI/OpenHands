@@ -24,10 +24,11 @@ function ChatInput({ disabled, onSendMessage }: ChatInputProps) {
   };
 
   const onKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (disabled) return;
     if (event.key === "Enter" && !event.shiftKey && !isComposing) {
       event.preventDefault(); // prevent a new line
-      handleSendChatMessage();
+      if (!disabled) {
+        handleSendChatMessage();
+      }
     }
   };
 
