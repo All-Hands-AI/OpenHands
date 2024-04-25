@@ -1,5 +1,5 @@
 from .base import Observation, NullObservation
-from .run import CmdOutputObservation
+from .run import CmdOutputObservation, IPythonRunCellObservation
 from .browse import BrowserOutputObservation
 from .files import FileReadObservation, FileWriteObservation
 from .message import UserMessageObservation, AgentMessageObservation
@@ -38,6 +38,7 @@ __all__ = [
     'Observation',
     'NullObservation',
     'CmdOutputObservation',
+    'IPythonRunCellObservation',
     'BrowserOutputObservation',
     'FileReadObservation',
     'FileWriteObservation',

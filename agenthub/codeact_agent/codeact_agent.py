@@ -16,6 +16,7 @@ from opendevin.observation import (
     UserMessageObservation,
     AgentMessageObservation,
     CmdOutputObservation,
+    IPythonRunCellObservation
 )
 from opendevin.state import State
 from opendevin.sandbox.plugins import PluginRequirement, JupyterRequirement, SWEAgentCommandsRequirement
@@ -47,7 +48,8 @@ class CodeActAgent(Agent):
     SUPPORTED_OBSERVATIONS = (
         AgentMessageObservation,
         UserMessageObservation,
-        CmdOutputObservation
+        CmdOutputObservation,
+        IPythonRunCellObservation
     )
 
     def __init__(
@@ -110,6 +112,9 @@ class CodeActAgent(Agent):
                     content = 'OBSERVATION:\n' + obs.content
                     content += f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
                     self.messages.append({'role': 'user', 'content': content})
+                elif isinstance(obs, IPythonRunCellObservation):
+                    content = 'OBSERVATION:\n' + obs.content
+                    self.messages.append({'role': 'user', 'content': content})
                 else:
                     raise NotImplementedError(
                         f'Unknown observation type: {obs.__class__}'
@@ -138,16 +143,16 @@ class CodeActAgent(Agent):
             # remove the command from the action string to get thought
             thought = action_str.replace(bash_command.group(0), '').strip()
             # a command was found
-            command_group = bash_command.group(1)
+            command_group = bash_command.group(1).strip()
             if command_group.strip() == 'exit':
                 return AgentFinishAction()
             return CmdRunAction(command=command_group, thought=thought)
         elif python_code is not None:
             # a code block was found
-            code_group = python_code.group(1)
+            code_group = python_code.group(1).strip()
             thought = action_str.replace(python_code.group(0), '').strip()
             # print(f"PYTHON CODE: '{code_group}'")
-            return IPythonRunCellAction(code=code_group.strip(), thought=thought)
+            return IPythonRunCellAction(code=code_group, thought=thought)
         else:
             # We assume the agent is GOOD enough that when it returns pure NL,
             # it want to talk to the user

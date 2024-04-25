@@ -26,6 +26,10 @@ class ActionTypeSchema(BaseModel):
     """Runs a command.
     """
 
+    RUN_IPYTHON: str = Field(default='run_ipython')
+    """Runs a IPython cell.
+    """
+
     KILL: str = Field(default='kill')
     """Kills a background command.
     """
