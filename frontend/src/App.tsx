@@ -15,7 +15,7 @@ import { ResFetchMsgTotal } from "#/types/ResponseType";
 import "./App.css";
 import AgentControlBar from "./components/AgentControlBar";
 import AgentStatusBar from "./components/AgentStatusBar";
-import Terminal from "./components/Terminal";
+import Terminal from "./components/terminal/Terminal";
 
 interface Props {
   setSettingOpen: (isOpen: boolean) => void;
