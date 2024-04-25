@@ -35,6 +35,7 @@ jobs:
           SANDBOX_TYPE: exec
           AGENT: ${{ matrix.agent }}
           MAX_ITERATIONS: 10
+          LLM_EMBEDDING_MODEL: none
         run: |
           rm -rf workspace
           mkdir workspace
