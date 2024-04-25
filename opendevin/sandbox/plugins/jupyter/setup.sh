@@ -22,8 +22,6 @@ pip install jupyterlab notebook jupyter_kernel_gateway
 
 # Create logs directory
 sudo mkdir -p /opendevin/logs && sudo chmod 777 /opendevin/logs
-# Create tmp directory
-sudo mkdir -p /tmp && sudo chmod 777 /tmp
 
 # Run background process to start jupyter kernel gateway
 export JUPYTER_GATEWAY_PORT=18888
