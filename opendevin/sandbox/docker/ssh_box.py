@@ -1,6 +1,5 @@
 import atexit
 import os
-import platform
 import sys
 import time
 import uuid
@@ -17,7 +16,7 @@ from opendevin.logger import opendevin_logger as logger
 from opendevin.sandbox.sandbox import Sandbox
 from opendevin.sandbox.process import Process
 from opendevin.sandbox.docker.process import DockerProcess
-from opendevin.sandbox.plugins.jupyter import JupyterRequirement
+from opendevin.sandbox.plugins import JupyterRequirement, SWEAgentCommandsRequirement
 from opendevin.schema import ConfigType
 from opendevin.utils import find_available_tcp_port
 from opendevin.exceptions import SandboxInvalidBackgroundCommandError
@@ -31,10 +30,7 @@ CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
 
 SSH_HOSTNAME = config.get(ConfigType.SSH_HOSTNAME)
 
-USE_HOST_NETWORK = platform.system() == 'Linux'
-if config.get(ConfigType.USE_HOST_NETWORK) is not None:
-    USE_HOST_NETWORK = config.get(
-        ConfigType.USE_HOST_NETWORK).lower() != 'false'
+USE_HOST_NETWORK = config.get(ConfigType.USE_HOST_NETWORK)
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
@@ -373,8 +369,8 @@ class DockerSSHBox(Sandbox):
                      )
                 )
 
-            mount_dir = config.get('WORKSPACE_MOUNT_PATH')
-            print('Mounting workspace directory: ', mount_dir)
+            mount_dir = config.get(ConfigType.WORKSPACE_MOUNT_PATH)
+            logger.info(f'Mounting workspace directory: {mount_dir}')
             # start the container
             self.container = self.docker_client.containers.run(
                 self.container_image,
@@ -388,11 +384,6 @@ class DockerSSHBox(Sandbox):
                 volumes={
                     mount_dir: {
                         'bind': SANDBOX_WORKSPACE_DIR,
-                        'mode': 'rw'
-                    },
-                    # mount cache directory to /home/opendevin/.cache for pip cache reuse
-                    config.get('CACHE_DIR'): {
-                        'bind': '/home/opendevin/.cache' if RUN_AS_DEVIN else '/root/.cache',
                         'mode': 'rw'
                     },
                 },
@@ -444,7 +435,12 @@ if __name__ == '__main__':
         "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
 
     # Initialize required plugins
-    ssh_box.init_plugins([JupyterRequirement()])
+    ssh_box.init_plugins([JupyterRequirement(), SWEAgentCommandsRequirement()])
+    logger.info(
+        '--- SWE-AGENT COMMAND DOCUMENTATION ---\n'
+        f'{SWEAgentCommandsRequirement().documentation}\n'
+        '---'
+    )
 
     bg_cmd = ssh_box.execute_in_background(
         "while true; do echo 'dot ' && sleep 10; done"

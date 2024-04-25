@@ -1,9 +1,10 @@
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Dict
 
 from opendevin.observation import (
     AgentRecallObservation,
     AgentMessageObservation,
+    NullObservation,
     Observation,
 )
 from opendevin.schema import ActionType
@@ -67,6 +68,7 @@ class AgentSummarizeAction(NotExecutableAction):
 
 @dataclass
 class AgentFinishAction(NotExecutableAction):
+    outputs: Dict = field(default_factory=dict)
     action: str = ActionType.FINISH
 
     async def run(self, controller: 'AgentController') -> 'Observation':
@@ -75,3 +77,18 @@ class AgentFinishAction(NotExecutableAction):
     @property
     def message(self) -> str:
         return "All done! What's next on the agenda?"
+
+
+@dataclass
+class AgentDelegateAction(ExecutableAction):
+    agent: str
+    inputs: dict
+    action: str = ActionType.DELEGATE
+
+    async def run(self, controller: 'AgentController') -> 'Observation':
+        await controller.start_delegate(self)
+        return NullObservation('')
+
+    @property
+    def message(self) -> str:
+        return f"I'm asking {self.agent} for help with this task."

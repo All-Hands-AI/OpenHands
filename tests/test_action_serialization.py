@@ -46,7 +46,7 @@ def test_agent_recall_action_serialization_deserialization():
 def test_agent_finish_action_serialization_deserialization():
     original_action_dict = {
         'action': 'finish',
-        'args': {}
+        'args': {'outputs': {}},
     }
     serialization_deserialization(original_action_dict, AgentFinishAction)
 
