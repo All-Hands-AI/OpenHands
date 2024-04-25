@@ -1,4 +1,63 @@
-In order to run integration tests, please ensure your workspace is empty.
+## Introduction
+
+This folder contains backend integration tests that rely on a mock LLM. It serves
+two purposes:
+1. Ensure the quality of development, including OpenDevin framework and agents.
+2. Help contributors learn the workflow of OpenDevin, and examples of real interactions
+with (powerful) LLM, without spending real money.
+
+Why don't we launch an open-source model, e.g. LLAMA3? There are two reasons:
+1. LLMs cannot guarantee determinism, meaning the test behavior might change.
+2. CI machines are not powerful enough to run any LLM that is sophisticated enough
+to finish the tasks defined in tests.
+
+Note: integration tests are orthogonal to evaluations/benchmarks
+as they serve different purposes. Although benchmarks could also
+capture bugs, some of which may not be caught by tests, benchmarks
+require real LLMs which are non-deterministic and costly.
+We run integration test suite for every single commit, which is
+not possible with benchmarks.
+
+The folder is organised as follows:
+
+```
+├── README.md
+├── conftest.py
+├── mock
+│   ├── [AgentName]
+│   │   └── [TestName]
+│   │       ├── prompt_*.log
+│   │       ├── response_*.log
+└── [TestFiles].py
+```
+
+where `conftest.py` defines the infrastructure needed to load real-world LLM prompts
+and responses for mocking purpose. Prompts and responses generated during real runs
+of agents with real LLMs are stored under `mock/AgentName/TestName` folders.
+
+## Run Integration Tests
+
+Take a look at `run-integration-tests.yml` to learn how integration tests are
+launched in CI environment. Assuming you want to use `workspace` for testing, an
+example is as follows:
+
+```bash
+rm -rf workspace; AGENT=PlannerAgent \
+WORKSPACE_BASE="/Users/admin/OpenDevin/workspace" WORKSPACE_MOUNT_PATH="/Users/admin/OpenDevin/workspace" MAX_ITERATIONS=10 \
+poetry run pytest -s ./tests/integration
+```
+
+Note: in order to run integration tests correctly, please ensure your workspace is empty.
+
+
+## Write Integration Tests
+
+To write an integraion test, there are essentially two steps:
+
+1. Decide your task prompt, and the result you want to verify.
+2. Either construct LLM responses by yourself, or run OpenDevin with a real LLM. The system prompts and
+LLM responses are recorded as logs, which you could then copy to test folder.
+The following paragraphs describe how to do it.
 
 Your `config.toml` should look like this:
 
@@ -23,7 +82,12 @@ poetry run python ./opendevin/main.py -i 10 -t "Write a shell script 'hello.sh' 
 ```
 
 After running the above commands, you should be able to locate the real prompts
-and responses logged. The log folder follows `logs/llm/%y-%m-%d_%H-%M` format.
+and responses logged. The log folder follows `logs/llm/%y-%m-%d_%H-%M.log` format.
 
-Now, move all files under that folder to `tests/integration/mock/<AGENT>/<test-name>` folder. For example, moving all files from `logs/llm/24-04-23_21-55/` folder to
+Now, move all files under that folder to `tests/integration/mock/<AgentName>/<TestName>` folder. For example, moving all files from `logs/llm/24-04-23_21-55/` folder to
 `tests/integration/mock/MonologueAgent/test_write_simple_script` folder.
+
+That's it, you are good to go! When you launch an integration test, mock
+responses are loaded and used to replace a real LLM, so that we get
+deterministic and consistent behavior, and most importantly, without spending real
+money.
