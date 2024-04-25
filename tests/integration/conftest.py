@@ -9,8 +9,7 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 def filter_out_symbols(input):
-    # TODO: this is a hack due to discrepancy between ssh and exec sandboxes
-    # somehow, exec sandbox captures \n as part of run result while ssh sandbox doesn't
+    # TODO: remove this hack after #1355 is merged
     input = input.replace('\\n', '')
     return ' '.join([char for char in input if char.isalpha()])
 

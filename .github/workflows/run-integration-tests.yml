@@ -8,22 +8,45 @@ jobs:
     strategy:
       matrix:
         include:
-          - name: SWEAgent-py311
+          - name: SWEAgent-py311-ssh
             python-version: "3.11"
             agent: "SWEAgent"
             embedding-model: "none"
-          - name: PlannerAgent-py311
+          - name: PlannerAgent-py311-ssh
             python-version: "3.11"
             agent: "PlannerAgent"
             embedding-model: "none"
-          - name: MonologueAgent-py311
+            sandbox: "ssh"
+          - name: MonologueAgent-py311-ssh
             python-version: "3.11"
             agent: "MonologueAgent"
             embedding-model: "local"
-          - name: CodeActAgent-py311
+            sandbox: "ssh"
+          - name: CodeActAgent-py311-ssh
             python-version: "3.11"
             agent: "CodeActAgent"
             embedding-model: "none"
+            sandbox: "ssh"
+          - name: SWEAgent-py311-exec
+            python-version: "3.11"
+            agent: "SWEAgent"
+            embedding-model: "none"
+            sandbox: "exec"
+          - name: PlannerAgent-py311-exec
+            python-version: "3.11"
+            agent: "PlannerAgent"
+            embedding-model: "none"
+            sandbox: "exec"
+          - name: MonologueAgent-py311-exec
+            python-version: "3.11"
+            agent: "MonologueAgent"
+            embedding-model: "local"
+            sandbox: "exec"
+          - name: CodeActAgent-py311-exec
+            python-version: "3.11"
+            agent: "CodeActAgent"
+            embedding-model: "none"
+            sandbox: "exec"
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -36,7 +59,7 @@ jobs:
         run: make build
       - name: Run Integration Tests
         env:
-          SANDBOX_TYPE: exec
+          SANDBOX_TYPE: ${{ matrix.sandbox }}
           AGENT: ${{ matrix.agent }}
           MAX_ITERATIONS: 10
           LLM_EMBEDDING_MODEL: ${{ matrix.embedding-model }}
