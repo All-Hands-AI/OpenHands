@@ -78,6 +78,8 @@ class FileReadAction(ExecutableAction):
                         code_view = ''.join(read_lines)
                 except FileNotFoundError:
                     return AgentErrorObservation(f'File not found: {self.path}')
+                except IsADirectoryError:
+                    return AgentErrorObservation(f'Path is a directory: {self.path}. You can only read files')
             except PermissionError:
                 return AgentErrorObservation(f'Malformed paths not permitted: {self.path}')
         return FileReadObservation(path=self.path, content=code_view)
@@ -133,6 +135,8 @@ class FileWriteAction(ExecutableAction):
                         file.truncate()
                 except FileNotFoundError:
                     return AgentErrorObservation(f'File not found: {self.path}')
+                except IsADirectoryError:
+                    return AgentErrorObservation(f'Path is a directory: {self.path}. You can only write to files')
             except PermissionError:
                 return AgentErrorObservation(f'Malformed paths not permitted: {self.path}')
         return FileWriteObservation(content='', path=self.path)
