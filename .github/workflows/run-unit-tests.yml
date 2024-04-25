@@ -1,4 +1,4 @@
-name: Build & Run Tests
+name: Run Unit Tests
 
 on: [push, pull_request]
 
@@ -26,7 +26,7 @@ jobs:
       - name: Build Environment
         run: make build
       - name: Run Tests
-        run: poetry run pytest ./tests
+        run: poetry run pytest ./tests/unit
   on-linux:
     runs-on: ubuntu-latest
     strategy:
@@ -44,4 +44,4 @@ jobs:
       - name: Build Environment
         run: make build
       - name: Run Tests
-        run: poetry run pytest ./tests
+        run: poetry run pytest ./tests/unit
