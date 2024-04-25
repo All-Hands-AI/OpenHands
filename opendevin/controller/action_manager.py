@@ -1,17 +1,14 @@
 from typing import List
-import traceback
 
 from opendevin import config
 from opendevin.observation import CmdOutputObservation
 from opendevin.sandbox import DockerExecBox, DockerSSHBox, Sandbox, LocalBox, E2BBox
 from opendevin.schema import ConfigType
-from opendevin.logger import opendevin_logger as logger
 from opendevin.action import (
     Action,
 )
 from opendevin.observation import (
     Observation,
-    AgentErrorObservation,
     NullObservation,
 )
 from opendevin.sandbox.plugins import PluginRequirement
@@ -24,18 +21,17 @@ class ActionManager:
     def __init__(
             self,
             sid: str,
-            container_image: str | None = None,
     ):
         sandbox_type = config.get(ConfigType.SANDBOX_TYPE).lower()
         if sandbox_type == 'exec':
             self.sandbox = DockerExecBox(
-                sid=(sid or 'default'), container_image=container_image
+                sid=(sid or 'default'),
             )
         elif sandbox_type == 'local':
             self.sandbox = LocalBox()
         elif sandbox_type == 'ssh':
             self.sandbox = DockerSSHBox(
-                sid=(sid or 'default'), container_image=container_image
+                sid=(sid or 'default')
             )
         elif sandbox_type == 'e2b':
             self.sandbox = E2BBox()
@@ -49,12 +45,7 @@ class ActionManager:
         observation: Observation = NullObservation('')
         if not action.executable:
             return observation
-        try:
-            observation = await action.run(agent_controller)
-        except Exception as e:
-            observation = AgentErrorObservation(str(e))
-            logger.error(e)
-            logger.debug(traceback.format_exc())
+        observation = await action.run(agent_controller)
         return observation
 
     def run_command(self, command: str, background=False) -> CmdOutputObservation:

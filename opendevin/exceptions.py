@@ -7,11 +7,6 @@ class MaxCharsExceedError(Exception):
         super().__init__(message)
 
 
-class AgentNoActionError(Exception):
-    def __init__(self, message='Agent must return an action'):
-        super().__init__(message)
-
-
 class AgentNoInstructionError(Exception):
     def __init__(self, message='Instruction must be provided'):
         super().__init__(message)
@@ -60,4 +55,15 @@ class PlanInvalidStateError(Exception):
             message = f'Invalid state {state}'
         else:
             message = 'Invalid state'
+        super().__init__(message)
+
+
+# These exceptions get sent back to the LLM
+class AgentMalformedActionError(Exception):
+    def __init__(self, message='Malformed response'):
+        super().__init__(message)
+
+
+class AgentNoActionError(Exception):
+    def __init__(self, message='Agent must return an action'):
         super().__init__(message)

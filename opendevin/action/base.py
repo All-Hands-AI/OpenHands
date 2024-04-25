@@ -51,7 +51,6 @@ class NotExecutableAction(Action):
 @dataclass
 class NullAction(NotExecutableAction):
     """An action that does nothing.
-    This is used when the agent need to receive user follow-up messages from the frontend.
     """
 
     action: str = ActionType.NULL

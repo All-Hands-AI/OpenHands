@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   on-macos:
-    runs-on: macos-latest
+    runs-on: macos-13
     strategy:
       matrix:
         python-version: ["3.11"]

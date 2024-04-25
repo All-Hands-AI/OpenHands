@@ -2,12 +2,19 @@ import os
 import argparse
 import toml
 import pathlib
+import platform
 from dotenv import load_dotenv
 
 from opendevin.schema import ConfigType
 import logging
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_CONTAINER_IMAGE = 'ghcr.io/opendevin/sandbox'
+if os.getenv('OPEN_DEVIN_BUILD_VERSION'):
+    DEFAULT_CONTAINER_IMAGE += ':' + (os.getenv('OPEN_DEVIN_BUILD_VERSION') or '')
+else:
+    DEFAULT_CONTAINER_IMAGE += ':main'
 
 load_dotenv()
 
@@ -20,7 +27,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.WORKSPACE_MOUNT_REWRITE: None,
     ConfigType.CACHE_DIR: os.path.join(os.path.dirname(os.path.abspath(__file__)), '.cache'),
     ConfigType.LLM_MODEL: 'gpt-3.5-turbo-1106',
-    ConfigType.SANDBOX_CONTAINER_IMAGE: 'ghcr.io/opendevin/sandbox',
+    ConfigType.SANDBOX_CONTAINER_IMAGE: DEFAULT_CONTAINER_IMAGE,
     ConfigType.RUN_AS_DEVIN: 'true',
     ConfigType.LLM_EMBEDDING_MODEL: 'local',
     ConfigType.LLM_EMBEDDING_DEPLOYMENT_NAME: None,
@@ -133,6 +140,17 @@ def finalize_config():
         base = config.get(ConfigType.WORKSPACE_BASE) or os.getcwd()
         parts = config[ConfigType.WORKSPACE_MOUNT_REWRITE].split(':')
         config[ConfigType.WORKSPACE_MOUNT_PATH] = base.replace(parts[0], parts[1])
+
+    USE_HOST_NETWORK = config[ConfigType.USE_HOST_NETWORK].lower() != 'false'
+    if USE_HOST_NETWORK and platform.system() == 'Darwin':
+        logger.warning(
+            'Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. '
+            'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'
+        )
+    config[ConfigType.USE_HOST_NETWORK] = USE_HOST_NETWORK
+
+    if config.get(ConfigType.WORKSPACE_MOUNT_PATH) is None:
+        config[ConfigType.WORKSPACE_MOUNT_PATH] = config.get(ConfigType.WORKSPACE_BASE)
 
 
 finalize_config()
