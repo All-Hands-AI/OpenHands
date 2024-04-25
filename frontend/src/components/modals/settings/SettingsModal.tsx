@@ -76,7 +76,6 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
         {
           label: t(I18nKey.CONFIGURATION$MODAL_SAVE_BUTTON_LABEL),
           action: () => {
-            setSettings((prev) => ({ ...prev, LLM_API_KEY: apiKey }));
             saveSettings(settings);
           },
           closeAfterAction: true,
