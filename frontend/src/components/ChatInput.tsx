@@ -1,9 +1,9 @@
-import { I18nKey } from "#/i18n/declaration";
 import { Textarea } from "@nextui-org/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { VscArrowUp } from "react-icons/vsc";
 import { twMerge } from "tailwind-merge";
+import { I18nKey } from "#/i18n/declaration";
 
 interface ChatInputProps {
   disabled?: boolean;

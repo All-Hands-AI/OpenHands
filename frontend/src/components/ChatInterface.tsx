@@ -1,3 +1,6 @@
+import React, { useEffect, useRef } from "react";
+import { IoMdChatbubbles } from "react-icons/io";
+import { useSelector } from "react-redux";
 import { useTypingEffect } from "#/hooks/useTypingEffect";
 import {
   addAssistantMessageToChat,
@@ -7,9 +10,6 @@ import {
 } from "#/services/chatService";
 import { Message } from "#/state/chatSlice";
 import { RootState } from "#/store";
-import React, { useEffect, useRef } from "react";
-import { IoMdChatbubbles } from "react-icons/io";
-import { useSelector } from "react-redux";
 import ChatInput from "./ChatInput";
 
 interface IChatBubbleProps {
