@@ -60,7 +60,7 @@ class DummyAgent(Agent):
             'observations': [NullObservation('')],
         }, {
             'action': CmdRunAction(command='echo "foo"'),
-            'observations': [CmdOutputObservation('foo\n', command_id=-1, command='echo "foo"')],
+            'observations': [CmdOutputObservation('foo', command_id=-1, command='echo "foo"')],
         }, {
             'action': FileWriteAction(content='echo "Hello, World!"', path='hello.sh'),
             'observations': [FileWriteObservation('', path='hello.sh')],
@@ -69,7 +69,7 @@ class DummyAgent(Agent):
             'observations': [FileReadObservation('echo "Hello, World!"\n', path='hello.sh')],
         }, {
             'action': CmdRunAction(command='bash hello.sh'),
-            'observations': [CmdOutputObservation('Hello, World!\n', command_id=-1, command='bash hello.sh')],
+            'observations': [CmdOutputObservation('Hello, World!', command_id=-1, command='bash hello.sh')],
         }, {
             'action': CmdRunAction(command=BACKGROUND_CMD, background=True),
             'observations': [
