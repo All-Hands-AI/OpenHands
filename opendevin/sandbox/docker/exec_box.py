@@ -122,7 +122,7 @@ class DockerExecBox(Sandbox):
                     self.container.exec_run(
                         f'kill -9 {pid}', workdir=SANDBOX_WORKSPACE_DIR)
                 return -1, f'Command: "{cmd}" timed out'
-        return exit_code, logs.decode('utf-8')
+        return exit_code, logs.decode('utf-8').strip()
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         # mkdir -p sandbox_dest if it doesn't exist

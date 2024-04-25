@@ -35,7 +35,7 @@ class LocalBox(Sandbox):
                 cmd, shell=True, text=True, capture_output=True,
                 timeout=self.timeout, cwd=config.get('WORKSPACE_BASE')
             )
-            return completed_process.returncode, completed_process.stdout
+            return completed_process.returncode, completed_process.stdout.strip()
         except subprocess.TimeoutExpired:
             return -1, 'Command timed out'
 

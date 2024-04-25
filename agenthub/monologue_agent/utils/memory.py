@@ -73,6 +73,11 @@ elif embedding_strategy == 'azureopenai':
         azure_endpoint=config.get('LLM_BASE_URL', required=True),
         api_version=config.get('LLM_API_VERSION', required=True),
     )
+elif (embedding_strategy is not None) and (embedding_strategy.lower() == 'none'):
+    # TODO: this works but is not elegant enough. The incentive is when
+    # monologue agent is not used, there is no reason we need to initialize an
+    # embedding model
+    embed_model = None
 else:
     from llama_index.embeddings.huggingface import HuggingFaceEmbedding
     embed_model = HuggingFaceEmbedding(
