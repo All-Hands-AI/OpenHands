@@ -19,9 +19,23 @@ def get_log_id(prompt_log_name):
 
 
 def get_mock_response(test_name, messages):
-    # Find mock response based on prompt. Prompts are stored under nested
-    # folders under mock folder. If prompt_{id}.log matches,
-    # then the mock response we're looking for is at response_{id}.log.
+    """
+    Find mock response based on prompt. Prompts are stored under nested
+    folders under mock folder. If prompt_{id}.log matches,
+    then the mock response we're looking for is at response_{id}.log.
+
+    Note: we filter out all non alpha-numerical characters, otherwise we would
+    see surprising mismatches caused by linters and minor discrepancies between
+    different platforms.
+
+    We could have done a slightly more efficient string match with the same time
+    complexity (early-out upon first character mismatch), but it is unnecessary
+    for tests. Empirically, different prompts of the same task usually only
+    differ near the end of file, so the comparison would be more efficient if
+    we start from the end of the file, but again, that is unnecessary and only
+    makes test code harder to understand.
+    """
+
     mock_dir = os.path.join(script_dir, 'mock', os.environ.get('AGENT'), test_name)
     prompt = filter_out_symbols(messages)
     for root, _, files in os.walk(mock_dir):
