@@ -5,16 +5,19 @@ on: [push]
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - name: Install poetry
+        run: pipx install poetry
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      - name: Set up environment
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          poetry install --without evaluation
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+      - run: poetry install --without evaluation
       - name: Run tests
-        run: |
-          poetry run pytest ./tests
+        run: poetry run pytest ./tests
