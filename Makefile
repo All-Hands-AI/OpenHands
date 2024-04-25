@@ -155,12 +155,9 @@ lint-frontend:
 	@echo "$(YELLOW)Running linters for frontend...$(RESET)"
 	@cd frontend && npm run lint
 
-lint-all:
+lint:
 	@$(MAKE) -s lint-frontend
 	@$(MAKE) -s lint-backend
-
-lint:
-	@$(MAKE) -s lint-all
 
 build-frontend:
 	@echo "$(YELLOW)Building frontend...$(RESET)"
