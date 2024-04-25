@@ -11,15 +11,19 @@ jobs:
           - name: SWEAgent-py311
             python-version: "3.11"
             agent: "SWEAgent"
+            embedding-model: "none"
           - name: PlannerAgent-py311
             python-version: "3.11"
             agent: "PlannerAgent"
+            embedding-model: "none"
           - name: MonologueAgent-py311
             python-version: "3.11"
             agent: "MonologueAgent"
+            embedding-model: "local"
           - name: CodeActAgent-py311
             python-version: "3.11"
             agent: "CodeActAgent"
+            embedding-model: "none"
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -35,7 +39,7 @@ jobs:
           SANDBOX_TYPE: exec
           AGENT: ${{ matrix.agent }}
           MAX_ITERATIONS: 10
-          LLM_EMBEDDING_MODEL: none
+          LLM_EMBEDDING_MODEL: ${{ matrix.embedding-model }}
         run: |
           rm -rf workspace
           mkdir workspace
