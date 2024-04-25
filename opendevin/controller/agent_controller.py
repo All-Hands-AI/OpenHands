@@ -16,7 +16,7 @@ from opendevin.observation import (
     NullObservation,
 )
 from opendevin.agent import Agent
-from opendevin.exceptions import AgentMalformedActionError, AgentNoActionError, MaxCharsExceedError
+from opendevin.exceptions import AgentMalformedActionError, AgentNoActionError, MaxCharsExceedError, LLMOutputError
 from opendevin.logger import opendevin_logger as logger
 from opendevin.plan import Plan
 from opendevin.state import State
@@ -211,7 +211,7 @@ class AgentController:
             action = self.agent.step(self.state)
             if action is None:
                 raise AgentNoActionError('No action was returned')
-        except (AgentMalformedActionError, AgentNoActionError) as e:
+        except (AgentMalformedActionError, AgentNoActionError, LLMOutputError) as e:
             observation = AgentErrorObservation(str(e))
         logger.info(action, extra={'msg_type': 'ACTION'})
 

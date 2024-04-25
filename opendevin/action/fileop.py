@@ -69,14 +69,19 @@ class FileReadAction(ExecutableAction):
             read_lines = self._read_lines(content.split('\n'))
             code_view = ''.join(read_lines)
         else:
-            whole_path = resolve_path(self.path)
-            self.start = max(self.start, 0)
             try:
-                with open(whole_path, 'r', encoding='utf-8') as file:
-                    read_lines = self._read_lines(file.readlines())
-                    code_view = ''.join(read_lines)
-            except FileNotFoundError:
-                return AgentErrorObservation(f'File not found: {self.path}')
+                whole_path = resolve_path(self.path)
+                self.start = max(self.start, 0)
+                try:
+                    with open(whole_path, 'r', encoding='utf-8') as file:
+                        read_lines = self._read_lines(file.readlines())
+                        code_view = ''.join(read_lines)
+                except FileNotFoundError:
+                    return AgentErrorObservation(f'File not found: {self.path}')
+                except IsADirectoryError:
+                    return AgentErrorObservation(f'Path is a directory: {self.path}. You can only read files')
+            except PermissionError:
+                return AgentErrorObservation(f'Malformed paths not permitted: {self.path}')
         return FileReadObservation(path=self.path, content=code_view)
 
     @property
@@ -114,21 +119,26 @@ class FileWriteAction(ExecutableAction):
             else:
                 return AgentErrorObservation(f'File not found: {self.path}')
         else:
-            whole_path = resolve_path(self.path)
-            mode = 'w' if not os.path.exists(whole_path) else 'r+'
             try:
-                with open(whole_path, mode, encoding='utf-8') as file:
-                    if mode != 'w':
-                        all_lines = file.readlines()
-                        new_file = self._insert_lines(insert, all_lines)
-                    else:
-                        new_file = [i + '\n' for i in insert]
+                whole_path = resolve_path(self.path)
+                mode = 'w' if not os.path.exists(whole_path) else 'r+'
+                try:
+                    with open(whole_path, mode, encoding='utf-8') as file:
+                        if mode != 'w':
+                            all_lines = file.readlines()
+                            new_file = self._insert_lines(insert, all_lines)
+                        else:
+                            new_file = [i + '\n' for i in insert]
 
-                    file.seek(0)
-                    file.writelines(new_file)
-                    file.truncate()
-            except FileNotFoundError:
-                return AgentErrorObservation(f'File not found: {self.path}')
+                        file.seek(0)
+                        file.writelines(new_file)
+                        file.truncate()
+                except FileNotFoundError:
+                    return AgentErrorObservation(f'File not found: {self.path}')
+                except IsADirectoryError:
+                    return AgentErrorObservation(f'Path is a directory: {self.path}. You can only write to files')
+            except PermissionError:
+                return AgentErrorObservation(f'Malformed paths not permitted: {self.path}')
         return FileWriteObservation(content='', path=self.path)
 
     @property

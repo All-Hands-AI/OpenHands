@@ -387,7 +387,7 @@ class DockerSSHBox(Sandbox):
                         'mode': 'rw'
                     },
                     # mount cache directory to /home/opendevin/.cache for pip cache reuse
-                    config.get('CACHE_DIR'): {
+                    config.get(ConfigType.CACHE_DIR): {
                         'bind': '/home/opendevin/.cache' if RUN_AS_DEVIN else '/root/.cache',
                         'mode': 'rw'
                     },

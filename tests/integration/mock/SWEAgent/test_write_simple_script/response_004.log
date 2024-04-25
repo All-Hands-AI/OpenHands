@@ -1,0 +1,7 @@
+Thoughts:
+I have created the file 'hello.sh' but have not yet confirmed the content of the script. The next step is to read the content of 'hello.sh' to ensure that it contains the correct shell script code that prints "hello". This will help verify that the previous write actions were successful and the file is ready for execution.
+
+Action:
+```
+read hello.sh
+```

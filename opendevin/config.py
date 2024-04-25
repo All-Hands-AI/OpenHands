@@ -10,6 +10,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_CONTAINER_IMAGE = 'ghcr.io/opendevin/sandbox'
+if os.getenv('OPEN_DEVIN_BUILD_VERSION'):
+    DEFAULT_CONTAINER_IMAGE += ':' + (os.getenv('OPEN_DEVIN_BUILD_VERSION') or '')
+else:
+    DEFAULT_CONTAINER_IMAGE += ':main'
+
 load_dotenv()
 
 DEFAULT_CONFIG: dict = {
@@ -19,9 +25,9 @@ DEFAULT_CONFIG: dict = {
     ConfigType.WORKSPACE_MOUNT_PATH: None,
     ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX: '/workspace',
     ConfigType.WORKSPACE_MOUNT_REWRITE: None,
-    ConfigType.CACHE_DIR: os.path.join(os.path.dirname(os.path.abspath(__file__)), '.cache'),
+    ConfigType.CACHE_DIR: '/tmp/cache',  # '/tmp/cache' is the default cache directory
     ConfigType.LLM_MODEL: 'gpt-3.5-turbo-1106',
-    ConfigType.SANDBOX_CONTAINER_IMAGE: 'ghcr.io/opendevin/sandbox',
+    ConfigType.SANDBOX_CONTAINER_IMAGE: DEFAULT_CONTAINER_IMAGE,
     ConfigType.RUN_AS_DEVIN: 'true',
     ConfigType.LLM_EMBEDDING_MODEL: 'local',
     ConfigType.LLM_EMBEDDING_DEPLOYMENT_NAME: None,
@@ -37,7 +43,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.AGENT: 'MonologueAgent',
     ConfigType.E2B_API_KEY: '',
     ConfigType.SANDBOX_TYPE: 'ssh',  # Can be 'ssh', 'exec', or 'e2b'
-    ConfigType.USE_HOST_NETWORK: 'true',
+    ConfigType.USE_HOST_NETWORK: 'false',
     ConfigType.SSH_HOSTNAME: 'localhost',
     ConfigType.DISABLE_COLOR: 'false',
 }
@@ -89,7 +95,7 @@ def get_parser():
     parser.add_argument(
         '-c',
         '--agent-cls',
-        default='MonologueAgent',
+        default=config.get(ConfigType.AGENT),
         type=str,
         help='The agent class to use',
     )
@@ -135,6 +141,9 @@ def finalize_config():
         parts = config[ConfigType.WORKSPACE_MOUNT_REWRITE].split(':')
         config[ConfigType.WORKSPACE_MOUNT_PATH] = base.replace(parts[0], parts[1])
 
+    if config.get(ConfigType.WORKSPACE_MOUNT_PATH) is None:
+        config[ConfigType.WORKSPACE_MOUNT_PATH] = os.path.abspath(config[ConfigType.WORKSPACE_BASE])
+
     USE_HOST_NETWORK = config[ConfigType.USE_HOST_NETWORK].lower() != 'false'
     if USE_HOST_NETWORK and platform.system() == 'Darwin':
         logger.warning(
@@ -160,6 +169,6 @@ def get(key: str, required: bool = False):
     return value
 
 
-_cache_dir = config.get('CACHE_DIR')
+_cache_dir = config.get(ConfigType.CACHE_DIR)
 if _cache_dir:
     pathlib.Path(_cache_dir).mkdir(parents=True, exist_ok=True)

@@ -14,7 +14,7 @@ Your goal is to verify that the changes are correct and bug-free.
 
 You must ONLY `run` commands that have no side-effects, like `ls`, `grep`, and test scripts.
 
-Do NOT finish until you know whether the task is complete.
+Do NOT finish until you know whether the task is complete and correct.
 When you're done, add a `completed` boolean to the `outputs` of the `finish` action.
 If `completed` is `false`, you MUST also provide a `summary` in the `outputs` of the `finish` action
 explaining what the problem is.
