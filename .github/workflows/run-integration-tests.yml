@@ -12,6 +12,7 @@ jobs:
             python-version: "3.11"
             agent: "SWEAgent"
             embedding-model: "none"
+            sandbox: "ssh"
           - name: PlannerAgent-py311-ssh
             python-version: "3.11"
             agent: "PlannerAgent"
