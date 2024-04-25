@@ -1,3 +1,6 @@
+import { Spinner } from "@nextui-org/react";
+import React from "react";
+import { useTranslation } from "react-i18next";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import {
@@ -6,9 +9,6 @@ import {
   getCurrentSettings,
   saveSettings,
 } from "#/services/settingsService";
-import { Spinner } from "@nextui-org/react";
-import React from "react";
-import { useTranslation } from "react-i18next";
 import BaseModal from "../base-modal/BaseModal";
 import SettingsForm from "./SettingsForm";
 
@@ -25,10 +25,6 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const [agents, setAgents] = React.useState<string[]>([]);
   const [settings, setSettings] =
     React.useState<Partial<Settings>>(currentSettings);
-  const [apiKey, setApiKey] = React.useState<string>(
-    localStorage.getItem(`API_KEY_${settings.LLM_MODEL}`) || "",
-  );
-
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -46,6 +42,11 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
 
   const handleModelChange = (model: string) => {
     setSettings((prev) => ({ ...prev, LLM_MODEL: model }));
+    // Needs to also reset the API key.
+    const key = localStorage.getItem(
+      `API_KEY_${settings.LLM_MODEL || models[0]}`,
+    );
+    setSettings((prev) => ({ ...prev, LLM_API_KEY: key || "" }));
   };
 
   const handleAgentChange = (agent: string) => {
@@ -58,6 +59,11 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     )?.value;
 
     if (key) setSettings((prev) => ({ ...prev, LANGUAGE: key }));
+  };
+
+  const handleAPIKeyChange = (key: string) => {
+    localStorage.setItem(`API_KEY_${settings.LLM_MODEL || models[0]}`, key);
+    setSettings((prev) => ({ ...prev, LLM_API_KEY: key || "" }));
   };
 
   return (
@@ -91,12 +97,11 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
         <SettingsForm
           settings={settings}
           models={models}
-          apiKey={apiKey}
           agents={agents}
           onModelChange={handleModelChange}
           onAgentChange={handleAgentChange}
           onLanguageChange={handleLanguageChange}
-          onAPIKeyChange={(key) => setApiKey(key)}
+          onAPIKeyChange={handleAPIKeyChange}
         />
       )}
     </BaseModal>

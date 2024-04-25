@@ -12,7 +12,6 @@ import { AutocompleteCombobox } from "./AutocompleteCombobox";
 interface SettingsFormProps {
   settings: Partial<Settings>;
   models: string[];
-  apiKey: string;
   agents: string[];
 
   onModelChange: (model: string) => void;
@@ -24,7 +23,6 @@ interface SettingsFormProps {
 function SettingsForm({
   settings,
   models,
-  apiKey,
   agents,
   onModelChange,
   onAPIKeyChange,
@@ -54,10 +52,6 @@ function SettingsForm({
         items={models.map((model) => ({ value: model, label: model }))}
         defaultKey={settings.LLM_MODEL || models[0]}
         onChange={(e) => {
-          const key = localStorage.getItem(
-            `API_KEY_${settings.LLM_MODEL || models[0]}`,
-          );
-          onAPIKeyChange(key || "");
           onModelChange(e);
         }}
         tooltip={t(I18nKey.SETTINGS$MODEL_TOOLTIP)}
@@ -71,12 +65,8 @@ function SettingsForm({
         data-testid="apikey"
         placeholder={t(I18nKey.SETTINGS$API_KEY_PLACEHOLDER)}
         type={isVisible ? "text" : "password"}
-        value={apiKey}
+        value={settings.LLM_API_KEY || ""}
         onChange={(e) => {
-          localStorage.setItem(
-            `API_KEY_${settings.LLM_MODEL || models[0]}`,
-            e.target.value,
-          );
           onAPIKeyChange(e.target.value);
         }}
         endContent={
