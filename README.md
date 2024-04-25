@@ -1,6 +1,7 @@
 [English](README.md) | [中文](docs/README-zh.md)
 
 <a name="readme-top"></a>
+
 <!--
 *** Thanks for checking out the Best-README-Template. If you have a suggestion
 *** that would make this better, please fork the repo and create a pull request
@@ -8,8 +9,6 @@
 *** Don't forget to give the project a star!
 *** Thanks again! Now go create something AMAZING! :D
 -->
-
-
 
 <!-- PROJECT SHIELDS -->
 <!--
@@ -36,9 +35,6 @@
   <img src="./logo.png" alt="Logo" width="200" height="200">
   <h1 align="center">OpenDevin: Code Less, Make More</h1>
 </div>
-
-
-
 
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -69,7 +65,6 @@
 
 [Project Demo Video](https://github.com/OpenDevin/OpenDevin/assets/38853559/71a472cc-df34-430c-8b1d-4d7286c807c9)
 
-
 Welcome to OpenDevin, an open-source project aiming to replicate Devin, an autonomous AI software engineer who is capable of executing complex engineering tasks and collaborating actively with users on software development projects. This project aspires to replicate, enhance, and innovate upon Devin through the power of the open-source community.
 
 <p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
@@ -79,6 +74,7 @@ Welcome to OpenDevin, an open-source project aiming to replicate Devin, an auton
 </p>
 
 ## 🤔 What is Devin?
+
 Devin represents a cutting-edge autonomous agent designed to navigate the complexities of software engineering. It leverages a combination of tools such as a shell, code editor, and web browser, showcasing the untapped potential of LLMs in software development. Our goal is to explore and expand upon Devin's capabilities, identifying both its strengths and areas for improvement, to guide the progress of open code models.
 
 <p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
@@ -88,6 +84,7 @@ Devin represents a cutting-edge autonomous agent designed to navigate the comple
 </p>
 
 ## 🐚 Why OpenDevin?
+
 The OpenDevin project is born out of a desire to replicate, enhance, and innovate beyond the original Devin model. By engaging the open-source community, we aim to tackle the challenges faced by Code LLMs in practical scenarios, producing works that significantly contribute to the community and pave the way for future advancements.
 
 <p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
@@ -114,56 +111,65 @@ After completing the MVP, the team will focus on research in various areas, incl
 </p>
 
 ## ⚠️ Caveats and Warnings
-* OpenDevin is still an alpha project. It is changing very quickly and is unstable. We are working on getting a stable release out in the coming weeks.
-* OpenDevin will issue many prompts to the LLM you configure. Most of these LLMs cost money--be sure to set spending limits and monitor usage.
-* OpenDevin runs `bash` commands within a Docker sandbox, so it should not affect your machine. But your workspace directory will be attached to that sandbox, and files in the directory may be modified or deleted.
-* Our default Agent is currently the MonologueAgent, which has limited capabilities, but is fairly stable. We're working on other Agent implementations, including [SWE Agent](https://swe-agent.com/). You can [read about our current set of agents here](./docs/Agents.md).
+
+- OpenDevin is still an alpha project. It is changing very quickly and is unstable. We are working on getting a stable release out in the coming weeks.
+- OpenDevin will issue many prompts to the LLM you configure. Most of these LLMs cost money--be sure to set spending limits and monitor usage.
+- OpenDevin runs `bash` commands within a Docker sandbox, so it should not affect your machine. But your workspace directory will be attached to that sandbox, and files in the directory may be modified or deleted.
+- Our default Agent is currently the MonologueAgent, which has limited capabilities, but is fairly stable. We're working on other Agent implementations, including [SWE Agent](https://swe-agent.com/). You can [read about our current set of agents here](./docs/Agents.md).
 
 ## 🚀 Get Started
+
 The easiest way to run OpenDevin is inside a Docker container.
 
 To start the app, run these commands, replacing `$(pwd)/workspace` with the path to the code you want OpenDevin to work with.
+
 ```bash
 # Your OpenAI API key, or any other LLM API key
 export LLM_API_KEY="sk-..."
 
 # The directory you want OpenDevin to modify. MUST be an absolute path!
-export WORKSPACE_DIR=$(pwd)/workspace
+export WORKSPACE_BASE=$(pwd)/workspace
 
 docker run \
     -e LLM_API_KEY \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_DIR \
-    -v $WORKSPACE_DIR:/opt/workspace_base \
+    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+    -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
+    --add-host host.docker.internal=host-gateway \
     ghcr.io/opendevin/opendevin:0.3.1
 ```
+
 You'll find opendevin running at `http://localhost:3000`.
 
 If you want to use the (unstable!) bleeding edge, you can use `ghcr.io/opendevin/opendevin:main` as the image.
 
 See [Development.md](Development.md) for instructions on running OpenDevin without Docker.
 
-If you're running on Windows and having trouble, check out our [guide for Windows users](./docs/guides/Windows.md)
+Having trouble? Check out our [Troubleshooting Guide](./docs/guides/Troubleshooting.md).
 
 ## 🤖 LLM Backends
+
 OpenDevin can work with any LLM backend.
 For a full list of the LM providers and models available, please consult the
 [litellm documentation](https://docs.litellm.ai/docs/providers).
 
-The `LLM_MODEL` environment variable controls which model is used in programmatic interactions,
-but choosing a model in the OpenDevin UI will override this setting.
+The `LLM_MODEL` environment variable controls which model is used in programmatic interactions.
+But when using the OpenDevin UI, you'll need to choose your model in the settings window (the gear
+wheel on the bottom left).
 
 The following environment variables might be necessary for some LLMs:
-* `LLM_API_KEY`
-* `LLM_BASE_URL`
-* `LLM_EMBEDDING_MODEL`
-* `LLM_DEPLOYMENT_NAME`
-* `LLM_API_VERSION`
+
+- `LLM_API_KEY`
+- `LLM_BASE_URL`
+- `LLM_EMBEDDING_MODEL`
+- `LLM_EMBEDDING_DEPLOYMENT_NAME`
+- `LLM_API_VERSION`
 
 We have a few guides for running OpenDevin with specific model providers:
-* [ollama](./docs/guides/LocalLLMs.md)
-* [Azure](./docs/guides/AzureLLMs.md)
+
+- [ollama](./docs/guides/LocalLLMs.md)
+- [Azure](./docs/guides/AzureLLMs.md)
 
 If you're using another provider, we encourage you to open a PR to share your setup!
 
@@ -175,6 +181,10 @@ poor responses, or errors about malformed JSON. OpenDevin
 can only be as powerful as the models driving it--fortunately folks on our team
 are actively working on building better open source models!
 
+**Note on API retries and rate limits:**
+Some LLMs have rate limits and may require retries. OpenDevin will automatically retry requests if it receives a 429 error or API connection error.
+You can set LLM_NUM_RETRIES, LLM_RETRY_MIN_WAIT, LLM_RETRY_MAX_WAIT environment variables to control the number of retries and the time between retries.
+By default, LLM_NUM_RETRIES is 5 and LLM_RETRY_MIN_WAIT, LLM_RETRY_MAX_WAIT are 3 seconds and respectively 60 seconds.
 
 ## ⭐️ Research Strategy
 
@@ -211,8 +221,8 @@ For details, please check [this document](./CONTRIBUTING.md).
 
 Now we have both Slack workspace for the collaboration on building OpenDevin and Discord server for discussion about anything related, e.g., this project, LLM, agent, etc.
 
-* [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2etftj1dd-X1fDL2PYIVpsmJZkqEYANw)
-* [Discord server](https://discord.gg/mBuDGRzzES)
+- [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2etftj1dd-X1fDL2PYIVpsmJZkqEYANw)
+- [Discord server](https://discord.gg/mBuDGRzzES)
 
 If you would love to contribute, feel free to join our community (note that now there is no need to fill in the [form](https://forms.gle/758d5p6Ve8r2nxxq6)). Let's simplify software engineering together!
 

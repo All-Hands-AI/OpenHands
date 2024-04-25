@@ -1,35 +1,29 @@
 import atexit
+import concurrent.futures
 import os
-import platform
 import sys
 import time
 import uuid
+import tarfile
+from glob import glob
 from collections import namedtuple
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple
 
 import docker
-from pexpect import pxssh
 
 from opendevin import config
 from opendevin.logger import opendevin_logger as logger
-from opendevin.sandbox.sandbox import Sandbox, BackgroundCommand
+from opendevin.sandbox.sandbox import Sandbox
+from opendevin.sandbox.process import Process
+from opendevin.sandbox.docker.process import DockerProcess
 from opendevin.schema import ConfigType
-from opendevin.utils import find_available_tcp_port
 from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
-SANDBOX_WORKSPACE_DIR = '/workspace'
-
 CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
-
-SSH_HOSTNAME = config.get(ConfigType.SSH_HOSTNAME)
-
-USE_HOST_NETWORK = platform.system() == 'Linux'
-if config.get(ConfigType.USE_HOST_NETWORK) is not None:
-    USE_HOST_NETWORK = config.get(
-        ConfigType.USE_HOST_NETWORK).lower() != 'false'
+SANDBOX_WORKSPACE_DIR = config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX)
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
@@ -41,7 +35,7 @@ elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
 
 
-class DockerSSHBox(Sandbox):
+class DockerExecBox(Sandbox):
     instance_id: str
     container_image: str
     container_name_prefix = 'opendevin-sandbox-'
@@ -49,11 +43,8 @@ class DockerSSHBox(Sandbox):
     container: docker.models.containers.Container
     docker_client: docker.DockerClient
 
-    _ssh_password: str
-    _ssh_port: int
-
     cur_background_id = 0
-    background_commands: Dict[int, BackgroundCommand] = {}
+    background_commands: Dict[int, Process] = {}
 
     def __init__(
             self,
@@ -79,101 +70,29 @@ class DockerSSHBox(Sandbox):
         self.container_image = CONTAINER_IMAGE if container_image is None else container_image
         self.container_name = self.container_name_prefix + self.instance_id
 
-        # set up random user password
-        self._ssh_password = str(uuid.uuid4())
-        self._ssh_port = find_available_tcp_port()
-
         # always restart the container, cuz the initial be regarded as a new session
         self.restart_docker_container()
 
-        self.setup_user()
-        self.start_ssh_session()
+        if RUN_AS_DEVIN:
+            self.setup_devin_user()
         atexit.register(self.close)
 
-    def setup_user(self):
-
-        # Make users sudoers passwordless
-        # TODO(sandbox): add this line in the Dockerfile for next minor version of docker image
-        exit_code, logs = self.container.exec_run(
-            ['/bin/bash', '-c',
-             r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"],
-            workdir=SANDBOX_WORKSPACE_DIR,
-        )
-        if exit_code != 0:
-            raise Exception(
-                f'Failed to make all users passwordless sudoers in sandbox: {logs}')
-
-        # Check if the opendevin user exists
-        exit_code, logs = self.container.exec_run(
-            ['/bin/bash', '-c', 'id -u opendevin'],
-            workdir=SANDBOX_WORKSPACE_DIR,
-        )
-        if exit_code == 0:
-            # User exists, delete it
+    def setup_devin_user(self):
+        cmds = [
+            f'useradd --shell /bin/bash -u {USER_ID} -o -c "" -m devin',
+            r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers",
+            'sudo adduser devin sudo',
+        ]
+        for cmd in cmds:
             exit_code, logs = self.container.exec_run(
-                ['/bin/bash', '-c', 'userdel -r opendevin'],
-                workdir=SANDBOX_WORKSPACE_DIR,
+                ['/bin/bash', '-c', cmd], workdir=SANDBOX_WORKSPACE_DIR
             )
             if exit_code != 0:
-                raise Exception(
-                    f'Failed to remove opendevin user in sandbox: {logs}')
-
-        if RUN_AS_DEVIN:
-            # Create the opendevin user
-            exit_code, logs = self.container.exec_run(
-                ['/bin/bash', '-c',
-                 f'useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {USER_ID} opendevin'],
-                workdir=SANDBOX_WORKSPACE_DIR,
-            )
-            if exit_code != 0:
-                raise Exception(
-                    f'Failed to create opendevin user in sandbox: {logs}')
-            exit_code, logs = self.container.exec_run(
-                ['/bin/bash', '-c',
-                 f"echo 'opendevin:{self._ssh_password}' | chpasswd"],
-                workdir=SANDBOX_WORKSPACE_DIR,
-            )
-            if exit_code != 0:
-                raise Exception(f'Failed to set password in sandbox: {logs}')
-        else:
-            exit_code, logs = self.container.exec_run(
-                # change password for root
-                ['/bin/bash', '-c',
-                 f"echo 'root:{self._ssh_password}' | chpasswd"],
-                workdir=SANDBOX_WORKSPACE_DIR,
-            )
-            if exit_code != 0:
-                raise Exception(
-                    f'Failed to set password for root in sandbox: {logs}')
-        exit_code, logs = self.container.exec_run(
-            ['/bin/bash', '-c', "echo 'opendevin-sandbox' > /etc/hostname"],
-            workdir=SANDBOX_WORKSPACE_DIR,
-        )
-
-    def start_ssh_session(self):
-        # start ssh session at the background
-        self.ssh = pxssh.pxssh()
-        hostname = SSH_HOSTNAME
-        if RUN_AS_DEVIN:
-            username = 'opendevin'
-        else:
-            username = 'root'
-        logger.info(
-            f"Connecting to {username}@{hostname} via ssh. If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub."
-        )
-        self.ssh.login(hostname, username, self._ssh_password,
-                       port=self._ssh_port)
-
-        # Fix: https://github.com/pexpect/pexpect/issues/669
-        self.ssh.sendline("bind 'set enable-bracketed-paste off'")
-        self.ssh.prompt()
-        # cd to workspace
-        self.ssh.sendline('cd /workspace')
-        self.ssh.prompt()
+                raise Exception(f'Failed to setup devin user: {logs}')
 
     def get_exec_cmd(self, cmd: str) -> List[str]:
         if RUN_AS_DEVIN:
-            return ['su', 'opendevin', '-c', cmd]
+            return ['su', 'devin', '-c', cmd]
         else:
             return ['/bin/bash', '-c', cmd]
 
@@ -184,36 +103,66 @@ class DockerSSHBox(Sandbox):
         return bg_cmd.read_logs()
 
     def execute(self, cmd: str) -> Tuple[int, str]:
-        # use self.ssh
-        self.ssh.sendline(cmd)
-        success = self.ssh.prompt(timeout=self.timeout)
-        if not success:
-            logger.exception(
-                'Command timed out, killing process...', exc_info=False)
-            # send a SIGINT to the process
-            self.ssh.sendintr()
-            self.ssh.prompt()
-            command_output = self.ssh.before.decode(
-                'utf-8').lstrip(cmd).strip()
-            return -1, f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}'
-        command_output = self.ssh.before.decode('utf-8').lstrip(cmd).strip()
+        # TODO: each execute is not stateful! We need to keep track of the current working directory
+        def run_command(container, command):
+            return container.exec_run(command, workdir=SANDBOX_WORKSPACE_DIR)
 
-        # get the exit code
-        self.ssh.sendline('echo $?')
-        self.ssh.prompt()
-        exit_code = self.ssh.before.decode('utf-8')
-        # remove the echo $? itself
-        exit_code = int(exit_code.lstrip('echo $?').strip())
-        return exit_code, command_output
+        # Use ThreadPoolExecutor to control command and set timeout
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(
+                run_command, self.container, self.get_exec_cmd(cmd)
+            )
+            try:
+                exit_code, logs = future.result(timeout=self.timeout)
+            except concurrent.futures.TimeoutError:
+                logger.exception(
+                    'Command timed out, killing process...', exc_info=False)
+                pid = self.get_pid(cmd)
+                if pid is not None:
+                    self.container.exec_run(
+                        f'kill -9 {pid}', workdir=SANDBOX_WORKSPACE_DIR)
+                return -1, f'Command: "{cmd}" timed out'
+        return exit_code, logs.decode('utf-8')
 
-    def execute_in_background(self, cmd: str) -> BackgroundCommand:
+    def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+        # mkdir -p sandbox_dest if it doesn't exist
+        exit_code, logs = self.container.exec_run(
+            ['/bin/bash', '-c', f'mkdir -p {sandbox_dest}'],
+            workdir=SANDBOX_WORKSPACE_DIR,
+        )
+        if exit_code != 0:
+            raise Exception(
+                f'Failed to create directory {sandbox_dest} in sandbox: {logs}')
+
+        if recursive:
+            assert os.path.isdir(host_src), 'Source must be a directory when recursive is True'
+            files = glob(host_src + '/**/*', recursive=True)
+            srcname = os.path.basename(host_src)
+            tar_filename = os.path.join(os.path.dirname(host_src), srcname + '.tar')
+            with tarfile.open(tar_filename, mode='w') as tar:
+                for file in files:
+                    tar.add(file, arcname=os.path.relpath(file, os.path.dirname(host_src)))
+        else:
+            assert os.path.isfile(host_src), 'Source must be a file when recursive is False'
+            srcname = os.path.basename(host_src)
+            tar_filename = os.path.join(os.path.dirname(host_src), srcname + '.tar')
+            with tarfile.open(tar_filename, mode='w') as tar:
+                tar.add(host_src, arcname=srcname)
+
+        with open(tar_filename, 'rb') as f:
+            data = f.read()
+
+        self.container.put_archive(os.path.dirname(sandbox_dest), data)
+        os.remove(tar_filename)
+
+    def execute_in_background(self, cmd: str) -> Process:
         result = self.container.exec_run(
             self.get_exec_cmd(cmd), socket=True, workdir=SANDBOX_WORKSPACE_DIR
         )
         result.output._sock.setblocking(0)
         pid = self.get_pid(cmd)
-        bg_cmd = BackgroundCommand(self.cur_background_id, cmd, result, pid)
-        self.background_commands[bg_cmd.id] = bg_cmd
+        bg_cmd = DockerProcess(self.cur_background_id, cmd, result, pid)
+        self.background_commands[bg_cmd.pid] = bg_cmd
         self.cur_background_id += 1
         return bg_cmd
 
@@ -228,13 +177,14 @@ class DockerSSHBox(Sandbox):
                 return pid
         return None
 
-    def kill_background(self, id: int) -> BackgroundCommand:
+    def kill_background(self, id: int) -> Process:
         if id not in self.background_commands:
             raise SandboxInvalidBackgroundCommandError()
         bg_cmd = self.background_commands[id]
         if bg_cmd.pid is not None:
             self.container.exec_run(
                 f'kill -9 {bg_cmd.pid}', workdir=SANDBOX_WORKSPACE_DIR)
+        assert isinstance(bg_cmd, DockerProcess)
         bg_cmd.result.output.close()
         self.background_commands.pop(id)
         return bg_cmd
@@ -269,42 +219,22 @@ class DockerSSHBox(Sandbox):
         try:
             self.stop_docker_container()
             logger.info('Container stopped')
-        except docker.errors.DockerException as ex:
+        except docker.errors.DockerException as e:
             logger.exception('Failed to stop container', exc_info=False)
-            raise ex
+            raise e
 
         try:
-            network_kwargs: Dict[str, Union[str, Dict[str, int]]] = {}
-            if USE_HOST_NETWORK:
-                network_kwargs['network_mode'] = 'host'
-            else:
-                # FIXME: This is a temporary workaround for Mac OS
-                network_kwargs['ports'] = {f'{self._ssh_port}/tcp': self._ssh_port}
-                logger.warning(
-                    ('Using port forwarding for Mac OS. '
-                     'Server started by OpenDevin will not be accessible from the host machine at the moment. '
-                     'See https://github.com/OpenDevin/OpenDevin/issues/897 for more information.'
-                     )
-                )
-
-            mount_dir = config.get('WORKSPACE_MOUNT_PATH')
-            print('Mounting workspace directory: ', mount_dir)
             # start the container
+            mount_dir = config.get('WORKSPACE_MOUNT_PATH')
             self.container = self.docker_client.containers.run(
                 self.container_image,
-                # allow root login
-                command=f"/usr/sbin/sshd -D -p {self._ssh_port} -o 'PermitRootLogin=yes'",
-                **network_kwargs,
+                command='tail -f /dev/null',
+                network_mode='host',
                 working_dir=SANDBOX_WORKSPACE_DIR,
                 name=self.container_name,
-                hostname='opendevin_sandbox',
                 detach=True,
-                volumes={
-                    mount_dir: {
-                        'bind': SANDBOX_WORKSPACE_DIR,
-                        'mode': 'rw'
-                    },
-                },
+                volumes={mount_dir: {
+                    'bind': SANDBOX_WORKSPACE_DIR, 'mode': 'rw'}},
             )
             logger.info('Container started')
         except Exception as ex:
@@ -323,8 +253,6 @@ class DockerSSHBox(Sandbox):
             elapsed += 1
             self.container = self.docker_client.containers.get(
                 self.container_name)
-            logger.info(
-                f'waiting for container to start: {elapsed}, container status: {self.container.status}')
             if elapsed > self.timeout:
                 break
         if self.container.status != 'running':
@@ -342,9 +270,8 @@ class DockerSSHBox(Sandbox):
 
 
 if __name__ == '__main__':
-
     try:
-        ssh_box = DockerSSHBox()
+        exec_box = DockerExecBox()
     except Exception as e:
         logger.exception('Failed to start Docker container: %s', e)
         sys.exit(1)
@@ -352,8 +279,8 @@ if __name__ == '__main__':
     logger.info(
         "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
 
-    bg_cmd = ssh_box.execute_in_background(
-        "while true; do echo 'dot ' && sleep 1; done"
+    bg_cmd = exec_box.execute_in_background(
+        "while true; do echo -n '.' && sleep 1; done"
     )
 
     sys.stdout.flush()
@@ -368,16 +295,16 @@ if __name__ == '__main__':
                 logger.info('Exiting...')
                 break
             if user_input.lower() == 'kill':
-                ssh_box.kill_background(bg_cmd.id)
+                exec_box.kill_background(bg_cmd.pid)
                 logger.info('Background process killed')
                 continue
-            exit_code, output = ssh_box.execute(user_input)
+            exit_code, output = exec_box.execute(user_input)
             logger.info('exit code: %d', exit_code)
             logger.info(output)
-            if bg_cmd.id in ssh_box.background_commands:
-                logs = ssh_box.read_logs(bg_cmd.id)
+            if bg_cmd.pid in exec_box.background_commands:
+                logs = exec_box.read_logs(bg_cmd.pid)
                 logger.info('background logs: %s', logs)
             sys.stdout.flush()
     except KeyboardInterrupt:
         logger.info('Exiting...')
-    ssh_box.close()
+    exec_box.close()

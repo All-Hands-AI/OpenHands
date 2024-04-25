@@ -1,15 +1,15 @@
+import { Tooltip } from "@nextui-org/react";
 import React, { useEffect } from "react";
-import { Button, ButtonGroup, Tooltip } from "@nextui-org/react";
 import { useSelector } from "react-redux";
-import PauseIcon from "../assets/pause";
-import PlayIcon from "../assets/play";
-import AgentTaskAction from "../types/AgentTaskAction";
-import { changeTaskState } from "../services/agentStateService";
-import store, { RootState } from "../store";
-import AgentTaskState from "../types/AgentTaskState";
-import ArrowIcon from "../assets/arrow";
-import { clearMsgs } from "../services/session";
-import { clearMessages } from "../state/chatSlice";
+import ArrowIcon from "#/assets/arrow";
+import PauseIcon from "#/assets/pause";
+import PlayIcon from "#/assets/play";
+import { changeTaskState } from "#/services/agentStateService";
+import { clearMsgs } from "#/services/session";
+import { clearMessages } from "#/state/chatSlice";
+import store, { RootState } from "#/store";
+import AgentTaskAction from "#/types/AgentTaskAction";
+import AgentTaskState from "#/types/AgentTaskState";
 
 const TaskStateActionMap = {
   [AgentTaskAction.START]: AgentTaskState.RUNNING,
@@ -39,34 +39,38 @@ const IgnoreTaskStateMap: { [k: string]: AgentTaskState[] } = {
 };
 
 interface ButtonProps {
-  isLoading: boolean;
   isDisabled: boolean;
   content: string;
   action: AgentTaskAction;
   handleAction: (action: AgentTaskAction) => void;
+  large?: boolean;
 }
 
 function ActionButton({
-  isLoading = false,
   isDisabled = false,
   content,
   action,
   handleAction,
   children,
+  large,
 }: React.PropsWithChildren<ButtonProps>): React.ReactNode {
   return (
     <Tooltip content={content} closeDelay={100}>
-      <Button
-        isIconOnly
+      <button
         onClick={() => handleAction(action)}
-        isLoading={isLoading}
-        isDisabled={isDisabled}
+        disabled={isDisabled}
+        className={`${large ? "rounded-full bg-neutral-800 p-3" : ""} hover:opacity-80 transition-all`}
+        type="button"
       >
         {children}
-      </Button>
+      </button>
     </Tooltip>
   );
 }
+
+ActionButton.defaultProps = {
+  large: false,
+};
 
 function AgentControlBar() {
   const { curTaskState } = useSelector((state: RootState) => state.agent);
@@ -102,49 +106,47 @@ function AgentControlBar() {
     } else if (curTaskState === AgentTaskState.RUNNING) {
       setDesiredState(AgentTaskState.RUNNING);
     }
+    // We only want to run this effect when curTaskState changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [curTaskState]);
 
   return (
-    <div className="ml-5 mt-3">
-      <ButtonGroup size="sm" variant="ghost">
+    <div className="flex items-center gap-3">
+      {curTaskState === AgentTaskState.PAUSED ? (
         <ActionButton
-          isLoading={false}
-          isDisabled={isLoading}
-          content="Restart a new agent task"
-          action={AgentTaskAction.STOP}
+          isDisabled={
+            isLoading ||
+            IgnoreTaskStateMap[AgentTaskAction.RESUME].includes(curTaskState)
+          }
+          content="Resume the agent task"
+          action={AgentTaskAction.RESUME}
           handleAction={handleAction}
+          large
         >
-          <ArrowIcon />
+          <PlayIcon />
         </ActionButton>
-
-        {curTaskState === AgentTaskState.PAUSED ? (
-          <ActionButton
-            isLoading={isLoading}
-            isDisabled={
-              isLoading ||
-              IgnoreTaskStateMap[AgentTaskAction.RESUME].includes(curTaskState)
-            }
-            content="Resume the agent task"
-            action={AgentTaskAction.RESUME}
-            handleAction={handleAction}
-          >
-            <PlayIcon />
-          </ActionButton>
-        ) : (
-          <ActionButton
-            isLoading={isLoading}
-            isDisabled={
-              isLoading ||
-              IgnoreTaskStateMap[AgentTaskAction.PAUSE].includes(curTaskState)
-            }
-            content="Pause the agent task"
-            action={AgentTaskAction.PAUSE}
-            handleAction={handleAction}
-          >
-            <PauseIcon />
-          </ActionButton>
-        )}
-      </ButtonGroup>
+      ) : (
+        <ActionButton
+          isDisabled={
+            isLoading ||
+            IgnoreTaskStateMap[AgentTaskAction.PAUSE].includes(curTaskState)
+          }
+          content="Pause the agent task"
+          action={AgentTaskAction.PAUSE}
+          handleAction={handleAction}
+          large
+        >
+          <PauseIcon />
+        </ActionButton>
+      )}
+      <ActionButton
+        isDisabled={isLoading}
+        content="Restart a new agent task"
+        action={AgentTaskAction.STOP}
+        handleAction={handleAction}
+      >
+        <ArrowIcon />
+      </ActionButton>
     </div>
   );
 }

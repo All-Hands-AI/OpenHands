@@ -21,7 +21,7 @@ def agents():
             agents.append(agent)
     return agents
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def test_cases_dir():
     """Fixture that provides the directory path for test cases.
 
@@ -69,7 +69,7 @@ def model(request):
     Returns:
         The model name, defaulting to "gpt-3.5-turbo-1106".
     """
-    return request.config.getoption('model', default='gpt-3.5-turbo-1106')
+    return request.config.getoption("model", default="gpt-3.5-turbo-1106")
 
 @pytest.fixture
 def run_test_case(test_cases_dir, workspace_dir, request):
@@ -112,13 +112,13 @@ def run_test_case(test_cases_dir, workspace_dir, request):
         else:
             os.makedirs(os.path.join(agent_dir, 'workspace'))
         agents_ref = {
-            'monologue_agent':'MonologueAgent',
-            'codeact_agent':'CodeActAgent'
+            "monologue_agent":"MonologueAgent",
+            "codeact_agent":"CodeActAgent"
         }
-        process = subprocess.Popen(['python3', f'{SCRIPT_DIR}/../../opendevin/main.py', '-d', f"{os.path.join(agent_dir, 'workspace')}", '-c', f'{agents_ref[agent]}', '-t', f'{task}', '-m', 'gpt-3.5-turbo-1106'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        process = subprocess.Popen(["python3", f"{SCRIPT_DIR}/../../opendevin/main.py", "-d", f"{os.path.join(agent_dir, 'workspace')}", "-c", f"{agents_ref[agent]}", "-t", f"{task}", "-m", "gpt-3.5-turbo-1106"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         stdout, stderr = process.communicate()
-        logging.info(f'Stdout: {stdout}')
-        logging.error(f'Stderr: {stderr}')
+        logging.info(f"Stdout: {stdout}")
+        logging.error(f"Stderr: {stderr}")
 
         assert process.returncode == 0
         return os.path.join(agent_dir, 'workspace')
@@ -134,7 +134,7 @@ def pytest_configure(config):
     now = datetime.datetime.now()
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s [%(levelname)s] %(message)s',
+        format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
             logging.FileHandler(f"test_results_{now.strftime('%Y%m%d_%H%M%S')}.log"),
             logging.StreamHandler()

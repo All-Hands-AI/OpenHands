@@ -1,6 +1,6 @@
 import React from "react";
 import TreeNode from "./TreeNode";
-import { WorkspaceFile } from "../../services/fileService";
+import { WorkspaceFile } from "#/services/fileService";
 
 interface ExplorerTreeProps {
   root: WorkspaceFile;
