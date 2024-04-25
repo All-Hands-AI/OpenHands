@@ -9,8 +9,6 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 def filter_out_symbols(input):
-    # TODO: remove this hack after #1355 is merged
-    input = input.replace('\\n', '')
     return ' '.join([char for char in input if char.isalpha()])
 
 
