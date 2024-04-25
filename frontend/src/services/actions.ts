@@ -45,10 +45,7 @@ const messageActions = {
     if (message.args.thought) {
       store.dispatch(appendAssistantMessage(message.args.thought));
     }
-    // wrap the code with ```python in a new variable
-    // FIXME: make this with syntax highlighting
-    const code = "```python\n" + message.args.code + "\n```";
-    store.dispatch(appendInput(code));
+    store.dispatch(appendInput(message.args.code));
 
   },
   [ActionType.ADD_TASK]: () => {
