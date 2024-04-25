@@ -138,7 +138,6 @@ class AgentUnit:
         model = self.get_arg_or_default(args, ConfigType.LLM_MODEL)
         api_key = self.get_arg_or_default(args, ConfigType.LLM_API_KEY)
         api_base = config.get(ConfigType.LLM_BASE_URL)
-        container_image = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
         max_iterations = self.get_arg_or_default(args, ConfigType.MAX_ITERATIONS)
         max_chars = self.get_arg_or_default(args, ConfigType.MAX_CHARS)
 
@@ -150,7 +149,6 @@ class AgentUnit:
                 agent=Agent.get_cls(agent_cls)(llm),
                 max_iterations=int(max_iterations),
                 max_chars=int(max_chars),
-                container_image=container_image,
                 callbacks=[self.on_agent_event],
             )
         except Exception as e:

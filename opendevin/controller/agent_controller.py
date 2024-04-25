@@ -1,20 +1,23 @@
 import asyncio
-import traceback
-from typing import Callable, List
+from typing import Callable, List, Type
 
-from openai import AuthenticationError, APIConnectionError
-from litellm import ContextWindowExceededError
 
 from opendevin import config
 from opendevin.action import (
     Action,
     AgentFinishAction,
+    AgentDelegateAction,
     NullAction,
 )
+from opendevin.observation import (
+    Observation,
+    AgentErrorObservation,
+    AgentDelegateObservation,
+    NullObservation,
+)
 from opendevin.agent import Agent
-from opendevin.exceptions import AgentNoActionError, MaxCharsExceedError
+from opendevin.exceptions import AgentMalformedActionError, AgentNoActionError, MaxCharsExceedError, LLMOutputError
 from opendevin.logger import opendevin_logger as logger
-from opendevin.observation import AgentErrorObservation, NullObservation, Observation
 from opendevin.plan import Plan
 from opendevin.state import State
 
@@ -33,6 +36,7 @@ class AgentController:
     action_manager: ActionManager
     callbacks: List[Callable]
 
+    delegate: 'AgentController | None' = None
     state: State | None = None
 
     _task_state: TaskState = TaskState.INIT
@@ -41,16 +45,16 @@ class AgentController:
     def __init__(
         self,
         agent: Agent,
-        sid: str = '',
+        inputs: dict = {},
+        sid: str = 'default',
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
-        container_image: str | None = None,
         callbacks: List[Callable] = [],
     ):
         self.id = sid
         self.agent = agent
         self.max_iterations = max_iterations
-        self.action_manager = ActionManager(self.id, container_image)
+        self.action_manager = ActionManager(self.id)
         self.max_chars = max_chars
         self.callbacks = callbacks
         # Initialize agent-required plugins for sandbox (if any)
@@ -119,15 +123,19 @@ class AgentController:
                 await self.set_task_state_to(TaskState.STOPPED)
                 break
 
+    async def setup_task(self, task: str, inputs: dict = {}):
+        """Sets up the agent controller with a task.
+        """
+        self._task_state = TaskState.RUNNING
+        await self.notify_task_state_changed()
+        self.state = State(Plan(task))
+        self.state.inputs = inputs
+
     async def start(self, task: str):
         """Starts the agent controller with a task.
         If task already run before, it will continue from the last step.
         """
-        self._task_state = TaskState.RUNNING
-        await self.notify_task_state_changed()
-
-        self.state = State(Plan(task))
-
+        await self.setup_task(task)
         await self._run()
 
     async def resume(self):
@@ -159,9 +167,32 @@ class AgentController:
     async def notify_task_state_changed(self):
         await self._run_callbacks(TaskStateChangedAction(self._task_state))
 
-    async def step(self, i: int):
+    async def start_delegate(self, action: AgentDelegateAction):
+        AgentCls: Type[Agent] = Agent.get_cls(action.agent)
+        agent = AgentCls(llm=self.agent.llm)
+        self.delegate = AgentController(
+            sid=self.id + '-delegate',
+            agent=agent,
+            max_iterations=self.max_iterations,
+            max_chars=self.max_chars,
+            callbacks=self.callbacks,
+        )
+        task = action.inputs.get('task') or ''
+        await self.delegate.setup_task(task, action.inputs)
+
+    async def step(self, i: int) -> bool:
         if self.state is None:
-            return
+            raise ValueError('No task to run')
+        if self.delegate is not None:
+            delegate_done = await self.delegate.step(i)
+            if delegate_done:
+                outputs = self.delegate.state.outputs if self.delegate.state else {}
+                obs: Observation = AgentDelegateObservation(content='', outputs=outputs)
+                self.add_history(NullAction(), obs)
+                self.delegate = None
+                self.delegateAction = None
+            return False
+
         logger.info(f'STEP {i}', extra={'msg_type': 'STEP'})
         logger.info(self.state.plan.main_goal, extra={'msg_type': 'PLAN'})
         if self.state.num_of_chars > self.max_chars:
@@ -179,21 +210,10 @@ class AgentController:
         try:
             action = self.agent.step(self.state)
             if action is None:
-                raise AgentNoActionError()
-            logger.info(action, extra={'msg_type': 'ACTION'})
-        except Exception as e:
+                raise AgentNoActionError('No action was returned')
+        except (AgentMalformedActionError, AgentNoActionError, LLMOutputError) as e:
             observation = AgentErrorObservation(str(e))
-            logger.error(e)
-            logger.debug(traceback.format_exc())
-
-            # raise specific exceptions that need to be handled outside
-            # note: we are using classes from openai rather than litellm because:
-            # 1) litellm.exceptions.AuthenticationError is a subclass of openai.AuthenticationError
-            # 2) embeddings call, initiated by llama-index, has no wrapper for errors.
-            #    This means we have to catch individual authentication errors
-            #    from different providers, and OpenAI is one of these.
-            if isinstance(e, (AuthenticationError, ContextWindowExceededError, APIConnectionError)):
-                raise
+        logger.info(action, extra={'msg_type': 'ACTION'})
 
         self.update_state_after_step()
 
@@ -201,6 +221,7 @@ class AgentController:
 
         finished = isinstance(action, AgentFinishAction)
         if finished:
+            self.state.outputs = action.outputs  # type: ignore[attr-defined]
             logger.info(action, extra={'msg_type': 'INFO'})
             return True
 
@@ -212,6 +233,7 @@ class AgentController:
 
         self.add_history(action, observation)
         await self._run_callbacks(observation)
+        return False
 
     async def _run_callbacks(self, event):
         if event is None:

@@ -28,6 +28,10 @@ class ObservationTypeSchema(BaseModel):
     """A message from the user
     """
 
+    DELEGATE: str = Field(default='delegate')
+    """The result of a task delegated to another agent
+    """
+
     MESSAGE: str = Field(default='message')
 
     ERROR: str = Field(default='error')

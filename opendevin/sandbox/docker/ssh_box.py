@@ -1,6 +1,5 @@
 import atexit
 import os
-import platform
 import sys
 import time
 import uuid
@@ -31,10 +30,7 @@ CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
 
 SSH_HOSTNAME = config.get(ConfigType.SSH_HOSTNAME)
 
-USE_HOST_NETWORK = platform.system() == 'Linux'
-if config.get(ConfigType.USE_HOST_NETWORK) is not None:
-    USE_HOST_NETWORK = config.get(
-        ConfigType.USE_HOST_NETWORK).lower() != 'false'
+USE_HOST_NETWORK = config.get(ConfigType.USE_HOST_NETWORK)
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
@@ -373,8 +369,8 @@ class DockerSSHBox(Sandbox):
                      )
                 )
 
-            mount_dir = config.get('WORKSPACE_MOUNT_PATH')
-            print('Mounting workspace directory: ', mount_dir)
+            mount_dir = config.get(ConfigType.WORKSPACE_MOUNT_PATH)
+            logger.info(f'Mounting workspace directory: {mount_dir}')
             # start the container
             self.container = self.docker_client.containers.run(
                 self.container_image,
@@ -391,7 +387,7 @@ class DockerSSHBox(Sandbox):
                         'mode': 'rw'
                     },
                     # mount cache directory to /home/opendevin/.cache for pip cache reuse
-                    config.get('CACHE_DIR'): {
+                    config.get(ConfigType.CACHE_DIR): {
                         'bind': '/home/opendevin/.cache' if RUN_AS_DEVIN else '/root/.cache',
                         'mode': 'rw'
                     },

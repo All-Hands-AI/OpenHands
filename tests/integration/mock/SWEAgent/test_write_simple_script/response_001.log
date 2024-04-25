@@ -1,0 +1,8 @@
+Thoughts:
+To begin solving the task, I need to create a new shell script file named 'hello.sh'. This file should contain a script that prints the message 'hello' when executed. I will start by writing the initial content of this script.
+
+Action:
+```
+write hello.sh #!/bin/bash
+echo 'hello'
+```
