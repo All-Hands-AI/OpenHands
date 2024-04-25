@@ -1,7 +1,6 @@
 import { Textarea } from "@nextui-org/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { twMerge } from "tailwind-merge";
 import { VscSend } from "react-icons/vsc";
 import { I18nKey } from "#/i18n/declaration";
 
@@ -25,6 +24,7 @@ function ChatInput({ disabled, onSendMessage }: ChatInputProps) {
   };
 
   const onKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (disabled) return;
     if (event.key === "Enter" && !event.shiftKey && !isComposing) {
       event.preventDefault(); // prevent a new line
       handleSendChatMessage();
@@ -36,7 +36,6 @@ function ChatInput({ disabled, onSendMessage }: ChatInputProps) {
       <Textarea
         value={message}
         onChange={(e) => setMessage(e.target.value)}
-        disabled={disabled}
         onKeyDown={onKeyPress}
         onCompositionStart={() => setIsComposing(true)}
         onCompositionEnd={() => setIsComposing(false)}
@@ -54,10 +53,8 @@ function ChatInput({ disabled, onSendMessage }: ChatInputProps) {
       <button
         type="button"
         onClick={handleSendChatMessage}
-        className={twMerge(
-          "bg-transparent border-none rounded py-2.5 px-5 hover:opacity-80 cursor-pointer select-none absolute right-5 bottom-6",
-          disabled && "cursor-not-allowed opacity-80",
-        )}
+        disabled={disabled}
+        className="bg-transparent border-none rounded py-2.5 px-5 hover:opacity-80 cursor-pointer select-none absolute right-5 bottom-6 disabled:cursor-not-allowed disabled:opacity-80"
         aria-label="Send message"
       >
         <VscSend />
