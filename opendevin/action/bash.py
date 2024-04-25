@@ -1,11 +1,11 @@
 import os
-import pathlib
+import tempfile
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from .base import ExecutableAction
-from opendevin import config
-from opendevin.schema import ActionType, ConfigType
+from opendevin.schema import ActionType
+from opendevin.logger import opendevin_logger as logger
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
@@ -57,24 +57,30 @@ class IPythonRunCellAction(ExecutableAction):
     action: str = ActionType.RUN
 
     async def run(self, controller: 'AgentController') -> 'CmdOutputObservation':
-        # echo "import math" | execute_cli
-        # write code to a temporary file and pass it to `execute_cli` via stdin
-        tmp_filepath = os.path.join(
-            config.get(ConfigType.WORKSPACE_BASE),
-            '.tmp', '.execution_tmp.py'
-        )
-        pathlib.Path(os.path.dirname(tmp_filepath)).mkdir(parents=True, exist_ok=True)
-        with open(tmp_filepath, 'w') as tmp_file:
-            tmp_file.write(self.code)
+        # create a temporary file
+        tmp_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
+        tmp_filepath = tmp_file.name
+        tmp_file.write(self.code)
+        tmp_file.close()
 
-        tmp_filepath_inside_sandbox = os.path.join(
-            config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX),
-            '.tmp', '.execution_tmp.py'
+        # move the file to the sandbox
+        controller.action_manager.sandbox.copy_to(
+            tmp_filepath,
+            '/tmp/.execution_tmp.py'
         )
-        return controller.action_manager.run_command(
-            f'execute_cli < {tmp_filepath_inside_sandbox}',
+        ret = controller.action_manager.run_command(
+            'execute_cli < /tmp/.execution_tmp.py',
             background=False
         )
+        _delete_res = controller.action_manager.run_command(
+            'rm /tmp/.execution_tmp.py',
+            background=False
+        )
+        if _delete_res.exit_code != 0:
+            logger.warning(f'Failed to delete temporary file for Jupyter: {_delete_res.content}')
+        # remove the temporary file on the host
+        os.remove(tmp_filepath)
+        return ret
 
     def __str__(self) -> str:
         ret = '**IPythonRunCellAction**\n'
