@@ -1,10 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { I18nKey } from "../../../i18n/declaration";
-import { handleAssistantMessage } from "../../../services/actions";
-import { sendChatMessageFromEvent } from "../../../services/chatService";
-import { clearMsgs, fetchMsgs } from "../../../services/session";
-import toast from "../../../utils/toast";
+import { I18nKey } from "#/i18n/declaration";
+import { handleAssistantMessage } from "#/services/actions";
+import { sendChatMessageFromEvent } from "#/services/chatService";
+import { clearMsgs, fetchMsgs } from "#/services/session";
+import toast from "#/utils/toast";
 import BaseModal from "../base-modal/BaseModal";
 
 interface LoadPreviousSessionModalProps {
