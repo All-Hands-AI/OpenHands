@@ -1,8 +1,8 @@
 import { Textarea } from "@nextui-org/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { VscArrowUp } from "react-icons/vsc";
 import { twMerge } from "tailwind-merge";
-import { VscSend } from "react-icons/vsc";
 import { I18nKey } from "#/i18n/declaration";
 
 interface ChatInputProps {
@@ -32,7 +32,7 @@ function ChatInput({ disabled, onSendMessage }: ChatInputProps) {
   };
 
   return (
-    <div className="w-full relative text-base">
+    <div className="w-full relative text-base flex">
       <Textarea
         value={message}
         onChange={(e) => setMessage(e.target.value)}
@@ -41,10 +41,10 @@ function ChatInput({ disabled, onSendMessage }: ChatInputProps) {
         onCompositionStart={() => setIsComposing(true)}
         onCompositionEnd={() => setIsComposing(false)}
         placeholder={t(I18nKey.CHAT_INTERFACE$INPUT_PLACEHOLDER)}
-        className="pt-2 pb-4 px-4"
+        className="pt-2 pb-3 px-3"
         classNames={{
-          inputWrapper: "bg-neutral-700",
-          input: "pr-16 py-2",
+          inputWrapper: "bg-neutral-700 border border-neutral-600 rounded-lg",
+          input: "pr-16 text-neutral-400",
         }}
         maxRows={10}
         minRows={1}
@@ -55,12 +55,14 @@ function ChatInput({ disabled, onSendMessage }: ChatInputProps) {
         type="button"
         onClick={handleSendChatMessage}
         className={twMerge(
-          "bg-transparent border-none rounded py-2.5 px-5 hover:opacity-80 cursor-pointer select-none absolute right-5 bottom-6",
-          disabled && "cursor-not-allowed opacity-80",
+          "bg-transparent border rounded-lg p-1 border-white hover:opacity-80 cursor-pointer select-none absolute right-5 bottom-[19px] transition active:bg-white active:text-black",
+          disabled
+            ? "cursor-not-allowed border-neutral-400 text-neutral-400"
+            : "hover:bg-neutral-500 ",
         )}
         aria-label="Send message"
       >
-        <VscSend />
+        <VscArrowUp />
       </button>
     </div>
   );
