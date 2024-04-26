@@ -1,3 +1,4 @@
+import { WorkspaceFile, getWorkspace } from "#/services/fileService";
 import React from "react";
 import {
   IoIosArrowBack,
@@ -5,10 +6,9 @@ import {
   IoIosRefresh,
 } from "react-icons/io";
 import { twMerge } from "tailwind-merge";
-import { WorkspaceFile, getWorkspace } from "#/services/fileService";
+import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
 import { removeEmptyNodes } from "./utils";
-import IconButton from "../IconButton";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
@@ -32,7 +32,7 @@ function ExplorerActions({
         <IconButton
           icon={
             <IoIosRefresh
-              size={20}
+              size={16}
               className="text-neutral-400 hover:text-neutral-100 transition"
             />
           }
