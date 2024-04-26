@@ -4,7 +4,6 @@ from litellm.exceptions import APIConnectionError, RateLimitError, ServiceUnavai
 from functools import partial
 
 from opendevin import config
-from opendevin.schema.config import ConfigType
 from opendevin.logger import llm_prompt_logger, llm_response_logger
 from opendevin.logger import opendevin_logger as logger
 from opendevin.schema import ConfigType
