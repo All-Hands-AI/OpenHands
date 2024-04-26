@@ -77,14 +77,14 @@ class LLM:
             logger.warning(f'Could not get model info for {self.model_name}')
 
         if self.max_input_tokens is None:
-            if self.model_info is not None and "max_input_tokens" in self.model_info:
-                self.max_input_tokens = self.model_info["max_input_tokens"]
+            if self.model_info is not None and 'max_input_tokens' in self.model_info:
+                self.max_input_tokens = self.model_info['max_input_tokens']
             else:
                 self.max_input_tokens = 4096
 
         if self.max_output_tokens is None:
-            if self.model_info is not None and "max_output_tokens" in self.model_info:
-                self.max_output_tokens = self.model_info["max_output_tokens"]
+            if self.model_info is not None and 'max_output_tokens' in self.model_info:
+                self.max_output_tokens = self.model_info['max_output_tokens']
             else:
                 self.max_output_tokens = 1024
 
