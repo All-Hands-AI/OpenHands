@@ -39,9 +39,21 @@ function JupyterCell({ cell }: IJupyterCell): JSX.Element {
           {/* split code by newline and render each line as a plaintext, except it starts with `![image]` so we render it as markdown */}
           {code.split("\n").map((line, index) => {
             if (line.startsWith("![image](data:image/png;base64,")) {
-              return <Markdown key={index}>{line.slice(2, -1)}</Markdown>;
+              // return <Markdown key={index}>{line.slice(2, -1)}</Markdown>;
+              // add new line before and after the image
+              return (
+                <div key={index}>
+                  <Markdown>{line}</Markdown>
+                  <br />
+                </div>
+              );
             }
-            return <SyntaxHighlighter key={index} language="plaintext" style={atomOneDark}>{line}</SyntaxHighlighter>;
+            return (
+              <div key={index}>
+                <SyntaxHighlighter language="plaintext" style={atomOneDark}>{line}</SyntaxHighlighter>
+                <br />
+              </div>
+            )
           })}
         </pre>
       </div>
