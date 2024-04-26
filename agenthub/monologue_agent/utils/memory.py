@@ -106,8 +106,6 @@ class LongTermMemory:
         self._add_threads = []
 
     def add_event(self, event: dict):
-        if not config.get('AGENT_MEMORY_ENABLED'):
-            return
         """
         Adds a new event to the long term memory with a unique id.
 
