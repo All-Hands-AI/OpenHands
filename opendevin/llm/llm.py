@@ -4,17 +4,18 @@ from litellm.exceptions import APIConnectionError, RateLimitError, ServiceUnavai
 from functools import partial
 
 from opendevin import config
+from opendevin.schema.config import ConfigType
 from opendevin.logger import llm_prompt_logger, llm_response_logger
 from opendevin.logger import opendevin_logger as logger
 
 
-DEFAULT_API_KEY = config.get('LLM_API_KEY')
-DEFAULT_BASE_URL = config.get('LLM_BASE_URL')
-DEFAULT_MODEL_NAME = config.get('LLM_MODEL')
-DEFAULT_API_VERSION = config.get('LLM_API_VERSION')
-LLM_NUM_RETRIES = config.get('LLM_NUM_RETRIES')
-LLM_RETRY_MIN_WAIT = config.get('LLM_RETRY_MIN_WAIT')
-LLM_RETRY_MAX_WAIT = config.get('LLM_RETRY_MAX_WAIT')
+DEFAULT_API_KEY = config.get(ConfigType.LLM_API_KEY)
+DEFAULT_BASE_URL = config.get(ConfigType.LLM_BASE_URL)
+DEFAULT_MODEL_NAME = config.get(ConfigType.LLM_MODEL)
+DEFAULT_API_VERSION = config.get(ConfigType.LLM_API_VERSION)
+LLM_NUM_RETRIES = config.get(ConfigType.LLM_NUM_RETRIES)
+LLM_RETRY_MIN_WAIT = config.get(ConfigType.LLM_RETRY_MIN_WAIT)
+LLM_RETRY_MAX_WAIT = config.get(ConfigType.LLM_RETRY_MAX_WAIT)
 
 
 class LLM:

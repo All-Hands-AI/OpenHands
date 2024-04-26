@@ -159,10 +159,12 @@ def finalize_config():
 finalize_config()
 
 
-def get(key: str, required: bool = False):
+def get(key: ConfigType, required: bool = False):
     """
     Get a key from the environment variables or config.toml or default configs.
     """
+    if not isinstance(key, ConfigType):
+        raise ValueError(f"key '{key}' must be an instance of ConfigType Enum")
     value = config.get(key)
     if not value and required:
         raise KeyError(f"Please set '{key}' in `config.toml` or `.env`.")

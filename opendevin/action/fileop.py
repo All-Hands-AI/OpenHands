@@ -13,6 +13,7 @@ from opendevin.observation import (
 from opendevin.schema import ActionType
 from opendevin.sandbox import E2BBox
 from opendevin import config
+from opendevin.schema.config import ConfigType
 
 from .base import ExecutableAction
 
@@ -32,7 +33,7 @@ def resolve_path(file_path):
     path_in_workspace = abs_path_in_sandbox.relative_to(Path(SANDBOX_PATH_PREFIX))
 
     # Get path relative to host
-    path_in_host_workspace = Path(config.get('WORKSPACE_BASE')) / path_in_workspace
+    path_in_host_workspace = Path(config.get(ConfigType.WORKSPACE_BASE)) / path_in_workspace
 
     return path_in_host_workspace
 
@@ -80,6 +81,8 @@ class FileReadAction(ExecutableAction):
                     return AgentErrorObservation(f'File not found: {self.path}')
                 except UnicodeDecodeError:
                     return AgentErrorObservation(f'File could not be decoded as utf-8: {self.path}')
+                except IsADirectoryError:
+                    return AgentErrorObservation(f'Path is a directory: {self.path}. You can only read files')
             except PermissionError:
                 return AgentErrorObservation(f'Malformed paths not permitted: {self.path}')
         return FileReadObservation(path=self.path, content=code_view)
@@ -135,6 +138,8 @@ class FileWriteAction(ExecutableAction):
                         file.truncate()
                 except FileNotFoundError:
                     return AgentErrorObservation(f'File not found: {self.path}')
+                except IsADirectoryError:
+                    return AgentErrorObservation(f'Path is a directory: {self.path}. You can only write to files')
                 except UnicodeDecodeError:
                     return AgentErrorObservation(f'File could not be decoded as utf-8: {self.path}')
             except PermissionError:
