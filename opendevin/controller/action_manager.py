@@ -57,8 +57,6 @@ class ActionManager:
     def _run_immediately(self, command: str) -> Observation:
         try:
             exit_code, output = self.sandbox.execute(command)
-            if len(output) > 10000:
-                output = output[:10000] + '...'
             return CmdOutputObservation(
                 command_id=-1, content=output, command=command, exit_code=exit_code
             )
