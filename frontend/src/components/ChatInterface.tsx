@@ -11,6 +11,8 @@ import {
 import { Message } from "#/state/chatSlice";
 import { RootState } from "#/store";
 import ChatInput from "./ChatInput";
+import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface IChatBubbleProps {
   msg: Message;
@@ -58,7 +60,7 @@ function ChatBubble({ msg }: IChatBubbleProps): JSX.Element {
         <div
           className={`${msg?.sender === "user" ? "bg-neutral-700" : "bg-neutral-500"} rounded-lg`}
         >
-          <div className="p-3">{msg?.content}</div>
+          <div className="p-3"><Markdown remarkPlugins={[remarkGfm]}>{msg?.content}</Markdown></div>
         </div>
       </div>
     </div>
