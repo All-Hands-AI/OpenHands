@@ -14,6 +14,10 @@ LLM_MODEL="azure/<your-gpt-deployment-name>"
 LLM_API_VERSION = "<api-version>"          # e.g. "2024-02-15-preview"
 ```
 
+## Important Note:
+
+You can find your ChatGPT deployment name on the deployments page in Azure. It could be the same with the chat model name (e.g. 'GPT4-1106-preview'), by default or initially set, but it doesn't have to be the same. Run opendevin, and when you load it in the browser, go to Settings and set model as above: "azure/&lt;your-actual-gpt-deployment-name&gt;". If it's not in the list, enter your own text and save it.
+
 # 2. Embeddings
 
 OpenDevin uses llama-index for embeddings. You can find their documentation on Azure [here](https://docs.llamaindex.ai/en/stable/api_reference/embeddings/azure_openai/)
