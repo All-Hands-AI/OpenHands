@@ -78,6 +78,8 @@ class FileReadAction(ExecutableAction):
                         code_view = ''.join(read_lines)
                 except FileNotFoundError:
                     return AgentErrorObservation(f'File not found: {self.path}')
+                except UnicodeDecodeError:
+                    return AgentErrorObservation(f'File could not be decoded as utf-8: {self.path}')
             except PermissionError:
                 return AgentErrorObservation(f'Malformed paths not permitted: {self.path}')
         return FileReadObservation(path=self.path, content=code_view)
@@ -133,6 +135,8 @@ class FileWriteAction(ExecutableAction):
                         file.truncate()
                 except FileNotFoundError:
                     return AgentErrorObservation(f'File not found: {self.path}')
+                except UnicodeDecodeError:
+                    return AgentErrorObservation(f'File could not be decoded as utf-8: {self.path}')
             except PermissionError:
                 return AgentErrorObservation(f'Malformed paths not permitted: {self.path}')
         return FileWriteObservation(content='', path=self.path)
