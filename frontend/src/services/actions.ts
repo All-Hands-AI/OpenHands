@@ -46,7 +46,6 @@ const messageActions = {
       store.dispatch(appendAssistantMessage(message.args.thought));
     }
     store.dispatch(appendInput(message.args.code));
-
   },
   [ActionType.ADD_TASK]: () => {
     getPlan().then((fetchedPlan) => store.dispatch(setPlan(fetchedPlan)));
