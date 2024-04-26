@@ -35,6 +35,12 @@ const config: Config = {
       {
         docs: {
           sidebarPath: "./sidebars.ts",
+          exclude: [
+            // '**/_*.{js,jsx,ts,tsx,md,mdx}',
+            // '**/_*/**',
+            "**/*.test.{js,jsx,ts,tsx}",
+            "**/__tests__/**",
+          ],
         },
         blog: {
           showReadingTime: true,
@@ -60,6 +66,12 @@ const config: Config = {
           sidebarId: "docsSidebar",
           position: "left",
           label: "Docs",
+        },
+        {
+          type: "docSidebar",
+          sidebarId: "apiSidebar",
+          position: "left",
+          label: "Codebase",
         },
         { to: "/faq", label: "FAQ", position: "left" },
         {

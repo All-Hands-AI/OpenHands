@@ -1,0 +1,199 @@
+{
+  "items": [
+    {
+      "items": [
+        {
+          "items": [
+            "python/agenthub/SWE_agent/agent",
+            "python/agenthub/SWE_agent/parser"
+          ],
+          "label": "agenthub.SWE_agent",
+          "type": "category"
+        },
+        {
+          "items": [
+            "python/agenthub/codeact_agent/codeact_agent"
+          ],
+          "label": "agenthub.codeact_agent",
+          "type": "category"
+        },
+        {
+          "items": [
+            "python/agenthub/delegator_agent/agent"
+          ],
+          "label": "agenthub.delegator_agent",
+          "type": "category"
+        },
+        {
+          "items": [
+            "python/agenthub/micro/agent"
+          ],
+          "label": "agenthub.micro",
+          "type": "category"
+        },
+        {
+          "items": [
+            {
+              "items": [
+                "python/agenthub/monologue_agent/utils/json",
+                "python/agenthub/monologue_agent/utils/memory",
+                "python/agenthub/monologue_agent/utils/monologue",
+                "python/agenthub/monologue_agent/utils/prompts"
+              ],
+              "label": "agenthub.monologue_agent.utils",
+              "type": "category"
+            },
+            "python/agenthub/monologue_agent/agent"
+          ],
+          "label": "agenthub.monologue_agent",
+          "type": "category"
+        },
+        {
+          "items": [
+            "python/agenthub/planner_agent/agent",
+            "python/agenthub/planner_agent/prompt"
+          ],
+          "label": "agenthub.planner_agent",
+          "type": "category"
+        }
+      ],
+      "label": "agenthub",
+      "type": "category"
+    },
+    {
+      "items": [
+        {
+          "items": [
+            "python/opendevin/action/__init__",
+            "python/opendevin/action/base",
+            "python/opendevin/action/fileop",
+            "python/opendevin/action/tasks"
+          ],
+          "label": "opendevin.action",
+          "type": "category"
+        },
+        {
+          "items": [
+            "python/opendevin/controller/agent_controller"
+          ],
+          "label": "opendevin.controller",
+          "type": "category"
+        },
+        {
+          "items": [
+            "python/opendevin/llm/llm"
+          ],
+          "label": "opendevin.llm",
+          "type": "category"
+        },
+        {
+          "items": [
+            "python/opendevin/observation/__init__",
+            "python/opendevin/observation/base",
+            "python/opendevin/observation/browse",
+            "python/opendevin/observation/delegate",
+            "python/opendevin/observation/error",
+            "python/opendevin/observation/files",
+            "python/opendevin/observation/message",
+            "python/opendevin/observation/recall",
+            "python/opendevin/observation/run"
+          ],
+          "label": "opendevin.observation",
+          "type": "category"
+        },
+        {
+          "items": [
+            {
+              "items": [
+                "python/opendevin/sandbox/docker/process"
+              ],
+              "label": "opendevin.sandbox.docker",
+              "type": "category"
+            },
+            {
+              "items": [
+                "python/opendevin/sandbox/e2b/sandbox"
+              ],
+              "label": "opendevin.sandbox.e2b",
+              "type": "category"
+            },
+            {
+              "items": [
+                {
+                  "items": [
+                    "python/opendevin/sandbox/plugins/jupyter/__init__"
+                  ],
+                  "label": "opendevin.sandbox.plugins.jupyter",
+                  "type": "category"
+                },
+                "python/opendevin/sandbox/plugins/mixin",
+                "python/opendevin/sandbox/plugins/requirement"
+              ],
+              "label": "opendevin.sandbox.plugins",
+              "type": "category"
+            }
+          ],
+          "label": "opendevin.sandbox",
+          "type": "category"
+        },
+        {
+          "items": [
+            "python/opendevin/schema/action",
+            "python/opendevin/schema/observation",
+            "python/opendevin/schema/task"
+          ],
+          "label": "opendevin.schema",
+          "type": "category"
+        },
+        {
+          "items": [
+            {
+              "items": [
+                "python/opendevin/server/agent/agent",
+                "python/opendevin/server/agent/manager"
+              ],
+              "label": "opendevin.server.agent",
+              "type": "category"
+            },
+            {
+              "items": [
+                "python/opendevin/server/auth/auth"
+              ],
+              "label": "opendevin.server.auth",
+              "type": "category"
+            },
+            {
+              "items": [
+                "python/opendevin/server/session/manager",
+                "python/opendevin/server/session/msg_stack",
+                "python/opendevin/server/session/session"
+              ],
+              "label": "opendevin.server.session",
+              "type": "category"
+            },
+            "python/opendevin/server/listen"
+          ],
+          "label": "opendevin.server",
+          "type": "category"
+        },
+        {
+          "items": [
+            "python/opendevin/utils/system"
+          ],
+          "label": "opendevin.utils",
+          "type": "category"
+        },
+        "python/opendevin/agent",
+        "python/opendevin/config",
+        "python/opendevin/files",
+        "python/opendevin/logger",
+        "python/opendevin/main",
+        "python/opendevin/plan"
+      ],
+      "label": "opendevin",
+      "type": "category"
+    }
+  ],
+  "label": "Backend",
+  "type": "category"
+}
