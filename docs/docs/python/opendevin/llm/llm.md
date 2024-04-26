@@ -40,7 +40,6 @@ def __init__(model=DEFAULT_MODEL_NAME,
 - `api_key` _str_ - The API key for accessing the language model.
 - `base_url` _str_ - The base URL for the language model API.
 - `api_version` _str_ - The version of the API to use.
-- `api_key`1 _function_ - A decorator for the litellm completion function.
 
 #### completion
 
