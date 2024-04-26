@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { IoMdChatbubbles } from "react-icons/io";
+import Markdown from "react-markdown";
 import { useSelector } from "react-redux";
 import { useTypingEffect } from "#/hooks/useTypingEffect";
 import {
@@ -58,7 +59,9 @@ function ChatBubble({ msg }: IChatBubbleProps): JSX.Element {
         <div
           className={`${msg?.sender === "user" ? "bg-neutral-700" : "bg-neutral-500"} rounded-lg`}
         >
-          <div className="p-3">{msg?.content}</div>
+          <div className="p-3 prose prose-invert text-white">
+            <Markdown>{msg?.content}</Markdown>
+          </div>
         </div>
       </div>
     </div>
