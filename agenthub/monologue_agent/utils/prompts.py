@@ -146,7 +146,7 @@ def get_request_action_prompt(
             )
         bg_commands_message += '\nYou can end any process by sending a `kill` action with the numerical `id` above.'
 
-    user = 'opendevin' if config.get('RUN_AS_DEVIN') else 'root'
+    user = 'opendevin' if config.get(ConfigType.RUN_AS_DEVIN) else 'root'
 
     return ACTION_PROMPT % {
         'task': task,

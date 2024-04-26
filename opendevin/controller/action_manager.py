@@ -26,20 +26,20 @@ class ActionManager:
         if sandbox_type == 'exec':
             self.sandbox = DockerExecBox(
                 sid=(sid or 'default'),
-                timeout=config.get('SANDBOX_TIMEOUT')
+                timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
             )
         elif sandbox_type == 'local':
             self.sandbox = LocalBox(
-                timeout=config.get('SANDBOX_TIMEOUT')
+                timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
             )
         elif sandbox_type == 'ssh':
             self.sandbox = DockerSSHBox(
                 sid=(sid or 'default'),
-                timeout=config.get('SANDBOX_TIMEOUT')
+                timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
             )
         elif sandbox_type == 'e2b':
             self.sandbox = E2BBox(
-                timeout=config.get('SANDBOX_TIMEOUT')
+                timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
             )
         else:
             raise ValueError(f'Invalid sandbox type: {sandbox_type}')

@@ -96,4 +96,4 @@ class LocalBox(Sandbox):
         self.close()
 
     def get_working_directory(self):
-        return config.get('WORKSPACE_BASE')
+        return config.get(ConfigType.WORKSPACE_BASE)
