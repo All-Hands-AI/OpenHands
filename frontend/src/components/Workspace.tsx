@@ -21,7 +21,7 @@ function Workspace() {
   const screenshotSrc = useSelector(
     (state: RootState) => state.browser.screenshotSrc,
   );
-
+  const jupyterCells = useSelector((state: RootState) => state.jupyter.cells);
   const [activeTab, setActiveTab] = useState<TabType>(TabOption.CODE);
   const [changes, setChanges] = useState<Record<TabType, boolean>>({
     [TabOption.PLANNER]: false,
@@ -79,6 +79,17 @@ function Workspace() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screenshotSrc]);
+
+  useEffect(() => {
+    if (
+      activeTab !== TabOption.JUPYTER &&
+      jupyterCells.length > 0
+    ) {
+      // FIXME: This is a temporary solution to show the jupyter tab when the first cell is added
+      // Only need to show the tab only when a cell is added
+      setChanges((prev) => ({ ...prev, [TabOption.JUPYTER]: true }));
+    }
+  }, [jupyterCells]);
 
   return (
     <div className="flex flex-col min-h-0 grow">
