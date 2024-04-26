@@ -26,6 +26,7 @@ playwright = "*"
 e2b = "^0.14.13"
 pexpect = "*"
 jinja2 = "^3.1.3"
+python-multipart = "*"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"

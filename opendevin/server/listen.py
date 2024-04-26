@@ -3,11 +3,12 @@ import uuid
 from pathlib import Path
 
 import litellm
-from fastapi import Depends, FastAPI, Response, WebSocket, status
+from fastapi import Depends, FastAPI, Response, WebSocket, status, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
+import shutil
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin import config, files
@@ -135,6 +136,22 @@ def select_file(file: str):
             content={'error': error_msg},
         )
     return {'code': content}
+
+
+@app.post('/api/upload-file')
+async def upload_file(file: UploadFile):
+    try:
+        workspace_base = config.get(ConfigType.WORKSPACE_BASE)
+        file_path = Path(workspace_base) / file.filename
+        with open(file_path, 'wb') as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        logger.error(f'Error saving file {file.filename}: {e}', exc_info=True)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': f'Error saving file: {e}'}
+        )
+    return {'filename': file.filename, 'location': str(file_path)}
 
 
 @app.get('/api/plan')
