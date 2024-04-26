@@ -1,13 +1,17 @@
-# Agents and Capabilities
+# Agents
+
+Different agents have different capabilities. The capabilities of each agent are documented here.
 
 ## Monologue Agent:
 
 ### Description:
+
 The Monologue Agent utilizes long and short term memory to complete tasks.
 Long term memory is stored as a LongTermMemory object and the model uses it to search for examples from the past.
 Short term memory is stored as a Monologue object and the model can condense it as necessary.
 
 ### Actions:
+
 `Action`,
 `NullAction`,
 `CmdRunAction`,
@@ -18,6 +22,7 @@ Short term memory is stored as a Monologue object and the model can condense it 
 `AgentThinkAction`
 
 ### Observations:
+
 `Observation`,
 `NullObservation`,
 `CmdOutputObservation`,
@@ -25,8 +30,8 @@ Short term memory is stored as a Monologue object and the model can condense it 
 `AgentRecallObservation`,
 `BrowserOutputObservation`
 
-
 ### Methods:
+
 `__init__`: Initializes the agent with a long term memory, and an internal monologue
 
 `_add_event`: Appends events to the monologue of the agent and condenses with summary automatically if the monologue is too long
@@ -40,10 +45,12 @@ Short term memory is stored as a Monologue object and the model can condense it 
 ## Planner Agent:
 
 ### Description:
+
 The planner agent utilizes a special prompting strategy to create long term plans for solving problems.
 The agent is given its previous action-observation pairs, current task, and hint based on last action taken at every step.
 
 ### Actions:
+
 `NullAction`,
 `CmdRunAction`,
 `CmdKillAction`,
@@ -57,8 +64,8 @@ The agent is given its previous action-observation pairs, current task, and hint
 `AddTaskAction`,
 `ModifyTaskAction`,
 
-
 ### Observations:
+
 `Observation`,
 `NullObservation`,
 `CmdOutputObservation`,
@@ -67,6 +74,7 @@ The agent is given its previous action-observation pairs, current task, and hint
 `BrowserOutputObservation`
 
 ### Methods:
+
 `__init__`: Initializes an agent with `llm`
 
 `step`: Checks to see if current step is completed, returns `AgentFinishAction` if True. Otherwise, creates a plan prompt and sends to model for inference, adding the result as the next action.
@@ -76,19 +84,23 @@ The agent is given its previous action-observation pairs, current task, and hint
 ## CodeAct Agent:
 
 ### Description:
+
 The Code Act Agent is a minimalist agent. The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
 
 ### Actions:
+
 `Action`,
 `CmdRunAction`,
 `AgentEchoAction`,
 `AgentFinishAction`,
 
 ### Observations:
+
 `CmdOutputObservation`,
 `AgentMessageObservation`,
 
 ### Methods:
+
 `__init__`: Initializes an agent with `llm` and a list of messages `List[Mapping[str, str]]`
 
 `step`: First, gets messages from state and then compiles them into a list for context. Next, pass the context list with the prompt to get the next command to execute. Finally, Execute command if valid, else return `AgentEchoAction(INVALID_INPUT_MESSAGE)`
