@@ -138,9 +138,8 @@ class LongTermMemory:
         thread.start()  # We add the doc concurrently so we don't have to wait ~500ms for the insert
 
     def _add_doc(self, doc):
-        sema.acquire()
-        self.index.insert(doc)
-        sema.release()
+        with sema:
+            self.index.insert(doc)
 
     def search(self, query: str, k: int = 10):
         """
