@@ -25,7 +25,7 @@ OpenDevin is a community-driven project, and we welcome contributions from every
 - **Research and Evaluation:** Contribute to our understanding of LLMs in software engineering, participate in evaluating the models, or suggest improvements.
 - **Feedback and Testing:** Use the OpenDevin toolset, report bugs, suggest features, or provide feedback on usability.
 
-For details, please check [this document](./CONTRIBUTING.md).
+For details, please check [this document](https://github.com/OpenDevin/OpenDevin/blob/main/CONTRIBUTING.md).
 
 ## 🤖 Join Our Community
 

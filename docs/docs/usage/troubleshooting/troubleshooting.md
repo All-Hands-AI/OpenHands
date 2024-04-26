@@ -16,7 +16,7 @@ If you find more information or a workaround for one of these issues, please
 open a PR to add details to this file.
 
 :::tip
-If you're running on Windows and having trouble, check out our [guide for Windows users](./windows)
+If you're running on Windows and having trouble, check out our [guide for Windows users](troubleshooting/windows)
 :::
 
 ## [Unable to connect to docker](https://github.com/OpenDevin/OpenDevin/issues/1226)
@@ -76,7 +76,7 @@ AttributeError: 'NoneType' object has no attribute 'request'
 ### Details
 
 This usually happens with local LLM setups, when OpenDevin can't connect to the LLM server.
-See our guide for [local LLMs](./localLLMs) for more information.
+See our guide for [local LLMs](llms/localLLMs) for more information.
 
 ### Workarounds
 

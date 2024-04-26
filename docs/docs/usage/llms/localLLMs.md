@@ -28,7 +28,7 @@ starcoder2:latest               f67ae0f64584    1.7 GB  19 hours ago
 
 ### Docker
 
-Use the instructions in [README.md](/README.md) to start OpenDevin using Docker.
+Use the instructions [here](../intro) to start OpenDevin using Docker.
 But when running `docker run`, you'll need to add a few more arguments:
 
 ```bash
@@ -58,7 +58,7 @@ You should now be able to connect to `http://localhost:3000/`
 
 ### Build from Source
 
-Use the instructions in [Development.md](/Development.md) to build OpenDevin.
+Use the instructions in [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to build OpenDevin.
 Make sure `config.toml` is there by running `make setup-config` which will create one for you. In `config.toml`, enter the followings:
 
 ```

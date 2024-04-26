@@ -8,15 +8,13 @@ const config: Config = {
   favicon: "img/logo.png",
 
   // Set the production url of your site here
-  url: "https://your-docusaurus-site.example.com",
-  // Set the /<baseUrl>/ pathname under which your site is served
-  // For GitHub pages deployment, it is often '/<projectName>/'
+  url: "https://OpenDevin.github.io",
   baseUrl: "/",
 
   // GitHub pages deployment config.
-  // If you aren't using GitHub pages, you don't need these.
-  organizationName: "OpenDevin", // Usually your GitHub org/user name.
-  projectName: "OpenDevin", // Usually your repo name.
+  organizationName: "OpenDevin",
+  projectName: "OpenDevin",
+  trailingSlash: false,
 
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
@@ -89,7 +87,7 @@ const config: Config = {
           items: [
             {
               label: "Docs",
-              to: "/docs/intro",
+              to: "/docs/usage/intro",
             },
           ],
         },
