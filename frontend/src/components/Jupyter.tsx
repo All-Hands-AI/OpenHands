@@ -24,7 +24,7 @@ function JupyterCell({ cell }: IJupyterCell): JSX.Element {
           <SyntaxHighlighter language="python" style={atomOneDark}>
             {code}
           </SyntaxHighlighter>
-      </pre>
+        </pre>
       </div >
     );
   }
@@ -43,7 +43,9 @@ function JupyterCell({ cell }: IJupyterCell): JSX.Element {
               // add new line before and after the image
               return (
                 <div key={index}>
-                  <Markdown>{line}</Markdown>
+                  <Markdown urlTransform={(value: string) => value}>
+                    {line}
+                  </Markdown>
                   <br />
                 </div>
               );
