@@ -1,6 +1,6 @@
 loaders:
   - type: python
-    search_path: [..]
+    search_path: [.]
 processors:
   - type: filter
     skip_empty_modules: true
@@ -8,7 +8,7 @@ processors:
   - type: crossref
 renderer:
   type: docusaurus
-  docs_base_path: docs
+  docs_base_path: docs/docs
   relative_output_path: python
   relative_sidebar_path: sidebar.json
   sidebar_top_level_label: Backend
