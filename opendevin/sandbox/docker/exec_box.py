@@ -27,9 +27,9 @@ SANDBOX_WORKSPACE_DIR = config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX)
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
-RUN_AS_DEVIN = config.get('RUN_AS_DEVIN').lower() != 'false'
+RUN_AS_DEVIN = config.get(ConfigType.RUN_AS_DEVIN).lower() != 'false'
 USER_ID = 1000
-if SANDBOX_USER_ID := config.get('SANDBOX_USER_ID'):
+if SANDBOX_USER_ID := config.get(ConfigType.SANDBOX_USER_ID):
     USER_ID = int(SANDBOX_USER_ID)
 elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
@@ -225,7 +225,7 @@ class DockerExecBox(Sandbox):
 
         try:
             # start the container
-            mount_dir = config.get('WORKSPACE_MOUNT_PATH')
+            mount_dir = config.get(ConfigType.WORKSPACE_MOUNT_PATH)
             self.container = self.docker_client.containers.run(
                 self.container_image,
                 command='tail -f /dev/null',

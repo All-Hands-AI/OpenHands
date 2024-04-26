@@ -1,16 +1,16 @@
-import React from "react";
-import { useTranslation } from "react-i18next";
-import { Spinner } from "@nextui-org/react";
-import BaseModal from "../base-modal/BaseModal";
-import SettingsForm from "./SettingsForm";
+import { AvailableLanguages } from "#/i18n";
+import { I18nKey } from "#/i18n/declaration";
 import {
   fetchAgents,
   fetchModels,
   getCurrentSettings,
   saveSettings,
 } from "#/services/settingsService";
-import { I18nKey } from "#/i18n/declaration";
-import { AvailableLanguages } from "#/i18n";
+import { Spinner } from "@nextui-org/react";
+import React from "react";
+import { useTranslation } from "react-i18next";
+import BaseModal from "../base-modal/BaseModal";
+import SettingsForm from "./SettingsForm";
 
 interface SettingsProps {
   isOpen: boolean;
@@ -70,7 +70,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
             saveSettings(settings);
           },
           closeAfterAction: true,
-          className: "bg-primary rounded-small",
+          className: "bg-primary rounded-lg",
         },
         {
           label: t(I18nKey.CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL),
@@ -78,7 +78,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
             setSettings(currentSettings); // reset settings from any changes
           },
           closeAfterAction: true,
-          className: "bg-neutral-500 rounded-small",
+          className: "bg-neutral-500 rounded-lg",
         },
       ]}
     >
