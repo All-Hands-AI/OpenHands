@@ -41,6 +41,9 @@ flake8 = "7.0.0"
 ruff = "0.3.7"
 mypy = "1.9.0"
 pre-commit = "3.7.0"
+sphinx = "^7.3.7"
+sphinx-book-theme = "^1.1.2"
+myst-parser = "^3.0.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
