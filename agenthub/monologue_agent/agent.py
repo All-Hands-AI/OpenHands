@@ -90,7 +90,7 @@ class MonologueAgent(Agent):
 
     _initialized = False
     monologue: Monologue
-    memory: LongTermMemory | None
+    memory: 'LongTermMemory | None'
 
     def __init__(self, llm: LLM):
         """
