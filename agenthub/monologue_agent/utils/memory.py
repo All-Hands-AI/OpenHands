@@ -11,11 +11,12 @@ from openai._exceptions import APIConnectionError, RateLimitError, InternalServe
 
 from opendevin import config
 from opendevin.logger import opendevin_logger as logger
+from opendevin.schema.config import ConfigType
 from . import json
 
-num_retries = config.get('LLM_NUM_RETRIES')
-retry_min_wait = config.get('LLM_RETRY_MIN_WAIT')
-retry_max_wait = config.get('LLM_RETRY_MAX_WAIT')
+num_retries = config.get(ConfigType.LLM_NUM_RETRIES)
+retry_min_wait = config.get(ConfigType.LLM_RETRY_MIN_WAIT)
+retry_max_wait = config.get(ConfigType.LLM_RETRY_MAX_WAIT)
 
 # llama-index includes a retry decorator around openai.get_embeddings() function
 # it is initialized with hard-coded values and errors
@@ -46,7 +47,7 @@ def wrapper_get_embeddings(*args, **kwargs):
 
 llama_openai.get_embeddings = wrapper_get_embeddings
 
-embedding_strategy = config.get('LLM_EMBEDDING_MODEL')
+embedding_strategy = config.get(ConfigType.LLM_EMBEDDING_MODEL)
 
 # TODO: More embeddings: https://docs.llamaindex.ai/en/stable/examples/embeddings/OpenAI/
 # There's probably a more programmatic way to do this.
@@ -54,24 +55,24 @@ if embedding_strategy == 'llama2':
     from llama_index.embeddings.ollama import OllamaEmbedding
     embed_model = OllamaEmbedding(
         model_name='llama2',
-        base_url=config.get('LLM_BASE_URL', required=True),
+        base_url=config.get(ConfigType.LLM_BASE_URL, required=True),
         ollama_additional_kwargs={'mirostat': 0},
     )
 elif embedding_strategy == 'openai':
     from llama_index.embeddings.openai import OpenAIEmbedding
     embed_model = OpenAIEmbedding(
         model='text-embedding-ada-002',
-        api_key=config.get('LLM_API_KEY', required=True)
+        api_key=config.get(ConfigType.LLM_API_KEY, required=True)
     )
 elif embedding_strategy == 'azureopenai':
     # Need to instruct to set these env variables in documentation
     from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
     embed_model = AzureOpenAIEmbedding(
         model='text-embedding-ada-002',
-        deployment_name=config.get('LLM_EMBEDDING_DEPLOYMENT_NAME', required=True),
-        api_key=config.get('LLM_API_KEY', required=True),
-        azure_endpoint=config.get('LLM_BASE_URL', required=True),
-        api_version=config.get('LLM_API_VERSION', required=True),
+        deployment_name=config.get(ConfigType.LLM_EMBEDDING_DEPLOYMENT_NAME, required=True),
+        api_key=config.get(ConfigType.LLM_API_KEY, required=True),
+        azure_endpoint=config.get(ConfigType.LLM_BASE_URL, required=True),
+        api_version=config.get(ConfigType.LLM_API_VERSION, required=True),
     )
 elif (embedding_strategy is not None) and (embedding_strategy.lower() == 'none'):
     # TODO: this works but is not elegant enough. The incentive is when
