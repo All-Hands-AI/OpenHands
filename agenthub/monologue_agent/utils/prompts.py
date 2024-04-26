@@ -14,6 +14,7 @@ from opendevin.observation import (
 )
 from opendevin.exceptions import LLMOutputError
 from opendevin import config
+from opendevin.schema.config import ConfigType
 
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is this:
@@ -146,7 +147,7 @@ def get_request_action_prompt(
         'monologue': json.dumps(thoughts, indent=2),
         'background_commands': bg_commands_message,
         'hint': hint,
-        'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.get('WORKSPACE_MOUNT_PATH_IN_SANDBOX'),
+        'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX),
     }
 
 

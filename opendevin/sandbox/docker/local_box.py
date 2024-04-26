@@ -36,7 +36,7 @@ class LocalBox(Sandbox):
         try:
             completed_process = subprocess.run(
                 cmd, shell=True, text=True, capture_output=True,
-                timeout=self.timeout, cwd=config.get('WORKSPACE_BASE')
+                timeout=self.timeout, cwd=config.get(ConfigType.WORKSPACE_BASE)
             )
             return completed_process.returncode, completed_process.stdout.strip()
         except subprocess.TimeoutExpired:
@@ -44,19 +44,19 @@ class LocalBox(Sandbox):
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         # mkdir -p sandbox_dest if it doesn't exist
-        res = subprocess.run(f'mkdir -p {sandbox_dest}', shell=True, text=True, cwd=config.get('WORKSPACE_BASE'))
+        res = subprocess.run(f'mkdir -p {sandbox_dest}', shell=True, text=True, cwd=config.get(ConfigType.WORKSPACE_BASE))
         if res.returncode != 0:
             raise RuntimeError(f'Failed to create directory {sandbox_dest} in sandbox')
 
         if recursive:
             res = subprocess.run(
-                f'cp -r {host_src} {sandbox_dest}', shell=True, text=True, cwd=config.get('WORKSPACE_BASE')
+                f'cp -r {host_src} {sandbox_dest}', shell=True, text=True, cwd=config.get(ConfigType.WORKSPACE_BASE)
             )
             if res.returncode != 0:
                 raise RuntimeError(f'Failed to copy {host_src} to {sandbox_dest} in sandbox')
         else:
             res = subprocess.run(
-                f'cp {host_src} {sandbox_dest}', shell=True, text=True, cwd=config.get('WORKSPACE_BASE')
+                f'cp {host_src} {sandbox_dest}', shell=True, text=True, cwd=config.get(ConfigType.WORKSPACE_BASE)
             )
             if res.returncode != 0:
                 raise RuntimeError(f'Failed to copy {host_src} to {sandbox_dest} in sandbox')
@@ -64,7 +64,7 @@ class LocalBox(Sandbox):
     def execute_in_background(self, cmd: str) -> Process:
         process = subprocess.Popen(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            text=True, cwd=config.get('WORKSPACE_BASE')
+            text=True, cwd=config.get(ConfigType.WORKSPACE_BASE)
         )
         bg_cmd = DockerProcess(
             id=self.cur_background_id, command=cmd, result=process, pid=process.pid
