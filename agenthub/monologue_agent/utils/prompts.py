@@ -61,9 +61,10 @@ actions are all "think" actions, you should consider taking a different action.
 Notes:
 * you are logged in as %(user)s, but sudo will always work without a password.
 * all non-background commands will be forcibly stopped if they remain running for over %(timeout)s seconds.
-* your environment is Debian Linux. You can install software with `sudo apt`, but remember to use -y.
+* your environment is Debian Linux. You can install software with `sudo apt-get`, but remember to use -y.
 * don't run interactive commands, or commands that don't return (e.g. `node server.js`). You may run commands in the background (e.g. `node server.js &`)
 * don't run interactive text editors (e.g. `nano` or 'vim'), instead use the 'write' or 'read' action.
+* don't run gui applications (e.g. software IDEs (like vs code or codium), web browsers (like firefox or chromium), or other complex software packages). Use non-interactive cli applications, or special actions instead.
 * whenever an action fails, always `think` about why it may have happened before acting again.
 
 What is your next single thought or action? Again, you must reply with JSON, and only with JSON. You must respond with exactly one 'action' object.
@@ -185,6 +186,10 @@ def parse_action_response(response: str) -> Action:
                 'Invalid JSON, the response must be well-formed JSON as specified in the prompt.'
             )
     except ValueError:
+        raise LLMOutputError(
+            'Invalid JSON, the response must be well-formed JSON as specified in the prompt.'
+        )
+    except TypeError:
         raise LLMOutputError(
             'Invalid JSON, the response must be well-formed JSON as specified in the prompt.'
         )
