@@ -9,7 +9,7 @@ const config: Config = {
 
   // Set the production url of your site here
   url: "https://OpenDevin.github.io",
-  baseUrl: "/",
+  baseUrl: "/OpenDevin/",
 
   // GitHub pages deployment config.
   organizationName: "OpenDevin",
