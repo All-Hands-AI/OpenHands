@@ -29,7 +29,7 @@ import agenthub.monologue_agent.utils.prompts as prompts
 from agenthub.monologue_agent.utils.monologue import Monologue
 from agenthub.monologue_agent.utils.memory import LongTermMemory
 
-MAX_MONOLOGUE_LENGTH = 20000
+MAX_TOKEN_COUNT_PADDING = 512
 MAX_OUTPUT_LENGTH = 5000
 
 INITIAL_THOUGHTS = [
@@ -120,7 +120,17 @@ class MonologueAgent(Agent):
 
         self.monologue.add_event(event)
         self.memory.add_event(event)
-        if self.monologue.get_total_length() > MAX_MONOLOGUE_LENGTH:
+
+        # Test monologue token length
+        prompt = prompts.get_request_action_prompt(
+            '',
+            self.monologue.get_thoughts(),
+            [],
+        )
+        messages = [{'content': prompt, 'role': 'user'}]
+        token_count = self.llm.get_token_count(messages)
+
+        if token_count + MAX_TOKEN_COUNT_PADDING > self.llm.max_input_tokens:
             self.monologue.condense(self.llm)
 
     def _initialize(self, task: str):

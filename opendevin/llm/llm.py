@@ -1,4 +1,5 @@
 from litellm import completion as litellm_completion
+import litellm
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_random_exponential
 from litellm.exceptions import APIConnectionError, RateLimitError, ServiceUnavailableError
 from functools import partial
@@ -16,6 +17,9 @@ DEFAULT_API_VERSION = config.get(ConfigType.LLM_API_VERSION)
 LLM_NUM_RETRIES = config.get(ConfigType.LLM_NUM_RETRIES)
 LLM_RETRY_MIN_WAIT = config.get(ConfigType.LLM_RETRY_MIN_WAIT)
 LLM_RETRY_MAX_WAIT = config.get(ConfigType.LLM_RETRY_MAX_WAIT)
+LLM_MAX_INPUT_TOKENS = config.get(ConfigType.LLM_MAX_INPUT_TOKENS)
+LLM_MAX_OUTPUT_TOKENS = config.get(ConfigType.LLM_MAX_OUTPUT_TOKENS)
+LLM_CUSTOM_LLM_PROVIDER = config.get(ConfigType.LLM_CUSTOM_LLM_PROVIDER)
 
 
 class LLM:
@@ -31,6 +35,9 @@ class LLM:
                  num_retries=LLM_NUM_RETRIES,
                  retry_min_wait=LLM_RETRY_MIN_WAIT,
                  retry_max_wait=LLM_RETRY_MAX_WAIT,
+                 max_input_tokens=LLM_MAX_INPUT_TOKENS,
+                 max_output_tokens=LLM_MAX_OUTPUT_TOKENS,
+                 custom_llm_provider=LLM_CUSTOM_LLM_PROVIDER
                  ):
         """
         Args:
@@ -41,6 +48,9 @@ class LLM:
             num_retries (int, optional): The number of retries for API calls. Defaults to LLM_NUM_RETRIES.
             retry_min_wait (int, optional): The minimum time to wait between retries in seconds. Defaults to LLM_RETRY_MIN_TIME.
             retry_max_wait (int, optional): The maximum time to wait between retries in seconds. Defaults to LLM_RETRY_MAX_TIME.
+            max_input_tokens (int, optional): The maximum number of tokens to send to and receive from LLM per task. Defaults to LLM_MAX_INPUT_TOKENS.
+            max_output_tokens (int, optional): The maximum number of tokens to send to and receive from LLM per task. Defaults to LLM_MAX_OUTPUT_TOKENS.
+            custom_llm_provider (function, optional): A custom LLM provider. Defaults to LLM_CUSTOM_LLM_PROVIDER.
 
         Attributes:
             model_name (str): The name of the language model.
@@ -54,9 +64,32 @@ class LLM:
         self.api_key = api_key
         self.base_url = base_url
         self.api_version = api_version
+        self.max_input_tokens = max_input_tokens
+        self.max_output_tokens = max_output_tokens
+        self.custom_llm_provider = custom_llm_provider
+
+        # litellm actually uses base Exception here for unknown model
+        self.model_info = None
+        try:
+            self.model_info = litellm.get_model_info(self.model_name)
+        # noinspection PyBroadException
+        except Exception:
+            logger.warning(f'Could not get model info for {self.model_name}')
+
+        if self.max_input_tokens is None:
+            if self.model_info is not None and "max_input_tokens" in self.model_info:
+                self.max_input_tokens = self.model_info["max_input_tokens"]
+            else:
+                self.max_input_tokens = 4096
+
+        if self.max_output_tokens is None:
+            if self.model_info is not None and "max_output_tokens" in self.model_info:
+                self.max_output_tokens = self.model_info["max_output_tokens"]
+            else:
+                self.max_output_tokens = 1024
 
         self._completion = partial(
-            litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url, api_version=self.api_version)
+            litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url, api_version=self.api_version, max_tokens=max_output_tokens, custom_llm_provider=custom_llm_provider)
 
         completion_unwrapped = self._completion
 
@@ -88,6 +121,18 @@ class LLM:
         Decorator for the litellm completion function.
         """
         return self._completion
+
+    def get_token_count(self, messages):
+        """
+        Get the number of tokens in a list of messages.
+
+        Args:
+            messages (list): A list of messages.
+
+        Returns:
+            int: The number of tokens.
+        """
+        return litellm.token_counter(self.model_name, messages)
 
     def __str__(self):
         if self.api_version:

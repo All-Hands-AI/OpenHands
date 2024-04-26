@@ -21,6 +21,7 @@ load_dotenv()
 DEFAULT_CONFIG: dict = {
     ConfigType.LLM_API_KEY: None,
     ConfigType.LLM_BASE_URL: None,
+    ConfigType.LLM_CUSTOM_LLM_PROVIDER: 'openai',
     ConfigType.WORKSPACE_BASE: os.getcwd(),
     ConfigType.WORKSPACE_MOUNT_PATH: None,
     ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX: '/workspace',
@@ -36,6 +37,8 @@ DEFAULT_CONFIG: dict = {
     ConfigType.LLM_RETRY_MIN_WAIT: 3,
     ConfigType.LLM_RETRY_MAX_WAIT: 60,
     ConfigType.MAX_ITERATIONS: 100,
+    ConfigType.LLM_MAX_INPUT_TOKENS: None,
+    ConfigType.LLM_MAX_OUTPUT_TOKENS: None,
     # GPT-4 pricing is $10 per 1M input tokens. Since tokenization happens on LLM side,
     # we cannot easily count number of tokens, but we can count characters.
     # Assuming 5 characters per token, 5 million is a reasonable default limit.
