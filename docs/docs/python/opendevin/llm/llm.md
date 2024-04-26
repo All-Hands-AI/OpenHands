@@ -32,6 +32,7 @@ def __init__(model=DEFAULT_MODEL_NAME,
 - `num_retries` _int, optional_ - The number of retries for API calls. Defaults to LLM_NUM_RETRIES.
 - `retry_min_wait` _int, optional_ - The minimum time to wait between retries in seconds. Defaults to LLM_RETRY_MIN_TIME.
 - `retry_max_wait` _int, optional_ - The maximum time to wait between retries in seconds. Defaults to LLM_RETRY_MAX_TIME.
+  
 
 **Attributes**:
 
@@ -39,7 +40,7 @@ def __init__(model=DEFAULT_MODEL_NAME,
 - `api_key` _str_ - The API key for accessing the language model.
 - `base_url` _str_ - The base URL for the language model API.
 - `api_version` _str_ - The version of the API to use.
-- `completion` _function_ - A decorator for the litellm completion function.
+- `api_key`1 _function_ - A decorator for the litellm completion function.
 
 #### completion
 
@@ -49,3 +50,4 @@ def completion()
 ```
 
 Decorator for the litellm completion function.
+
