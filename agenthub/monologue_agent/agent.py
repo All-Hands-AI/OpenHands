@@ -4,6 +4,8 @@ from opendevin.state import State
 from opendevin.llm.llm import LLM
 from opendevin.schema import ActionType, ObservationType
 from opendevin.exceptions import AgentNoInstructionError
+from opendevin.schema.config import ConfigType
+from opendevin import config
 
 from opendevin.action import (
     Action,
@@ -27,7 +29,7 @@ from opendevin.observation import (
 
 import agenthub.monologue_agent.utils.prompts as prompts
 from agenthub.monologue_agent.utils.monologue import Monologue
-if config.get('AGENT_MEMORY_ENABLED'):
+if config.get(ConfigType.AGENT_MEMORY_ENABLED):
     from agenthub.monologue_agent.utils.memory import LongTermMemory
 
 MAX_MONOLOGUE_LENGTH = 20000
@@ -87,6 +89,8 @@ class MonologueAgent(Agent):
     """
 
     _initialized = False
+    monologue: Monologue
+    memory: LongTermMemory | None
 
     def __init__(self, llm: LLM):
         """
@@ -96,7 +100,6 @@ class MonologueAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
-
 
     def _add_event(self, event: dict):
         """
@@ -144,7 +147,7 @@ class MonologueAgent(Agent):
             raise AgentNoInstructionError()
 
         self.monologue = Monologue()
-        if config.get('AGENT_MEMORY_ENABLED'):
+        if config.get(ConfigType.AGENT_MEMORY_ENABLED):
             self.memory = LongTermMemory()
         else:
             self.memory = None
@@ -245,7 +248,7 @@ class MonologueAgent(Agent):
     def reset(self) -> None:
         super().reset()
         self.monologue = Monologue()
-        if config.get('AGENT_MEMORY_ENABLED'):
+        if config.get(ConfigType.AGENT_MEMORY_ENABLED):
             self.memory = LongTermMemory()
         else:
             self.memory = None

@@ -86,7 +86,8 @@ else:
     )
 
 
-sema = threading.Semaphore(value=config.get('AGENT_MEMORY_MAX_THREADS'))
+sema = threading.Semaphore(value=config.get(ConfigType.AGENT_MEMORY_MAX_THREADS))
+
 
 class LongTermMemory:
     """
