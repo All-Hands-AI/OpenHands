@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 @dataclass
 class AgentRecallAction(ExecutableAction):
     query: str
+    thought: str = ''
     action: str = ActionType.RECALL
 
     async def run(self, controller: 'AgentController') -> AgentRecallObservation:
@@ -85,6 +86,7 @@ class AgentSummarizeAction(NotExecutableAction):
 @dataclass
 class AgentFinishAction(NotExecutableAction):
     outputs: Dict = field(default_factory=dict)
+    thought: str = ''
     action: str = ActionType.FINISH
 
     async def run(self, controller: 'AgentController') -> 'Observation':
@@ -99,6 +101,7 @@ class AgentFinishAction(NotExecutableAction):
 class AgentDelegateAction(ExecutableAction):
     agent: str
     inputs: dict
+    thought: str = ''
     action: str = ActionType.DELEGATE
 
     async def run(self, controller: 'AgentController') -> 'Observation':

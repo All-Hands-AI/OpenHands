@@ -17,8 +17,8 @@ from opendevin.observation import IPythonRunCellObservation
 @dataclass
 class CmdRunAction(ExecutableAction):
     command: str
-    thought: str = ''
     background: bool = False
+    thought: str = ''
     action: str = ActionType.RUN
 
     async def run(self, controller: 'AgentController') -> 'CmdOutputObservation':
@@ -39,6 +39,7 @@ class CmdRunAction(ExecutableAction):
 @dataclass
 class CmdKillAction(ExecutableAction):
     id: int
+    thought: str = ''
     action: str = ActionType.KILL
 
     async def run(self, controller: 'AgentController') -> 'CmdOutputObservation':

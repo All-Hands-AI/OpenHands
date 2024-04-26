@@ -14,6 +14,7 @@ class AddTaskAction(ExecutableAction):
     parent: str
     goal: str
     subtasks: list = field(default_factory=list)
+    thought: str = ''
     action: str = ActionType.ADD_TASK
 
     async def run(self, controller: 'AgentController') -> NullObservation:  # type: ignore
@@ -30,6 +31,7 @@ class AddTaskAction(ExecutableAction):
 class ModifyTaskAction(ExecutableAction):
     id: str
     state: str
+    thought: str = ''
     action: str = ActionType.MODIFY_TASK
 
     async def run(self, controller: 'AgentController') -> NullObservation:  # type: ignore
@@ -46,6 +48,7 @@ class ModifyTaskAction(ExecutableAction):
 class TaskStateChangedAction(NotExecutableAction):
     """Fake action, just to notify the client that a task state has changed."""
     task_state: str
+    thought: str = ''
     action: str = ActionType.CHANGE_TASK_STATE
 
     @property
