@@ -1,0 +1,28 @@
+name: Test deployment
+
+on:
+  pull_request:
+    branches:
+      - main
+
+defaults:
+  run:
+    working-directory: docs
+
+jobs:
+  test-deploy:
+    name: Test deployment
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+      - name: Test build website
+        run: npm run build
