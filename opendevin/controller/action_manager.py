@@ -48,7 +48,7 @@ class ActionManager:
         observation = await action.run(agent_controller)
         return observation
 
-    def run_command(self, command: str, background=False) -> CmdOutputObservation:
+    def run_command(self, command: str, background=False) -> Observation:
         if background:
             return self._run_background(command)
         else:
@@ -63,7 +63,7 @@ class ActionManager:
                 command_id=-1, content=output, command=command, exit_code=exit_code
             )
         except UnicodeDecodeError:
-            return AgentErrorObservation(f'Command output could not be decoded as utf-8')
+            return AgentErrorObservation('Command output could not be decoded as utf-8')
 
     def _run_background(self, command: str) -> CmdOutputObservation:
         bg_cmd = self.sandbox.execute_in_background(command)
