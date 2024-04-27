@@ -60,7 +60,7 @@ class GithubPushAction(ExecutableAction):
             return set_url_result
 
         # Push the branch to the temporary remote
-        command = f'git push opendevin_temp_remote {self.branch}'
+        command = f'git push {random_remote} {self.branch}'
         push_result = controller.action_manager.run_command(command, background=False)
 
         # Delete the temporary remote

@@ -1,36 +1,46 @@
 import os
+
+from opendevin import config
+from agenthub.dummy_agent.agent import DummyAgent
+from opendevin.action.github import GithubPushAction, GithubSendPRAction
 from opendevin.controller.agent_controller import AgentController
+from opendevin.llm.llm import LLM
 from opendevin.observation.error import AgentErrorObservation
+from opendevin.observation.message import AgentMessageObservation
 from opendevin.observation.run import CmdOutputObservation
+
+from opendevin.schema.config import ConfigType
 import pytest
-from unittest.mock import patch
+from unittest.mock import MagicMock, call, patch
 
 
 @pytest.fixture
 def agent_controller():
     # Setup the environment variable
-    os.environ['OPENDEVIN_GITHUB_TOKEN'] = 'fake_token'
-    controller = AgentController()  # Adjust according to your actual instantiation
+    config.config[ConfigType.SANDBOX_TYPE] = 'local'
+    llm = LLM()
+    agent = DummyAgent(llm=llm)
+    controller = AgentController(agent)
     yield controller
-    # Cleanup the environment variable
-    del os.environ['OPENDEVIN_GITHUB_TOKEN']
 
 
 @pytest.mark.asyncio
-@patch('your_module.random.choices')
-@patch('your_module.ActionManager.run_command')
-async def test_run_successful(mock_run_command, mock_random_choices, agent_controller):
+@patch.dict(os.environ, {'OPENDEVIN_GITHUB_TOKEN': 'fake_token'}, clear=True)
+@patch('random.choices')
+@patch('opendevin.controller.action_manager.ActionManager.run_command')
+async def test_run_push_successful(mock_run_command, mock_random_choices, agent_controller):
     # Setup mock for random.choices
     mock_random_choices.return_value = ['a', 'b', 'c', 'd', 'e']
 
     # Create a CmdOutputObservation instance for successful command execution
-    successful_output = CmdOutputObservation(exit_code=0)
+    successful_output = CmdOutputObservation(content='', command_id=1, command='', exit_code=0)
 
     # Setup the mock for run_command to return successful output
     mock_run_command.return_value = successful_output
 
     # Run the method
-    result = await agent_controller.run(agent_controller)
+    push_action = GithubPushAction(owner='owner', repo='repo', branch='branch')
+    result = await push_action.run(agent_controller)
 
     # Verify the result is successful
     assert isinstance(result, CmdOutputObservation)
@@ -38,31 +48,81 @@ async def test_run_successful(mock_run_command, mock_random_choices, agent_contr
 
     # Verify that the correct remote commands were sent
     expected_calls = [
-        (
+        call(
             'git remote add opendevin_temp_abcde https://fake_token@github.com/owner/repo.git',
-            False,
+            background=False,
         ),
-        ('git push opendevin_temp_remote branch', False),
-        ('git remote remove opendevin_temp_abcde', False),
+        call('git push opendevin_temp_abcde branch', background=False),
+        call('git remote remove opendevin_temp_abcde', background=False),
     ]
     mock_run_command.assert_has_calls(expected_calls)
 
 
 @pytest.mark.asyncio
-@patch('your_module.random.choices')
-@patch('your_module.ActionManager.run_command')
-async def test_run_error_missing_token(
+@patch('random.choices')
+@patch('opendevin.controller.action_manager.ActionManager.run_command')
+async def test_run_push_error_missing_token(
     mock_run_command, mock_random_choices, agent_controller
 ):
-    # Clear the environment variable for this test
-    del os.environ['OPENDEVIN_GITHUB_TOKEN']
 
     # Run the method
-    result = await agent_controller.run(agent_controller)
+    push_action = GithubPushAction(owner='owner', repo='repo', branch='branch')
+    result = await push_action.run(agent_controller)
 
     # Verify the result is an error due to missing token
     assert isinstance(result, AgentErrorObservation)
     assert (
         result.message
-        == 'OPENDEVIN_GITHUB_TOKEN is not set in the environment variables'
+        == 'Oops. Something went wrong: OPENDEVIN_GITHUB_TOKEN is not set in the environment variables'
     )
+
+
+@pytest.mark.asyncio
+@patch.dict(os.environ, {'OPENDEVIN_GITHUB_TOKEN': 'fake_token'}, clear=True)
+@patch('requests.post')
+async def test_run_pull_request_created_successfully(mock_post, agent_controller):
+    # Set up the mock for the requests.post call to simulate a successful pull request creation
+    mock_response = MagicMock()
+    mock_response.status_code = 201
+    mock_response.json.return_value = {'html_url': 'https://github.com/example/pull/1'}
+    mock_post.return_value = mock_response
+
+    # Run the method
+    pr_action = GithubSendPRAction(owner='owner', repo='repo', title='title', head='head', head_repo='head_repo', base='base', body='body')
+    result = await pr_action.run(agent_controller)
+
+    # Verify the result is a success observation
+    assert isinstance(result, AgentMessageObservation)
+    assert 'Pull request created successfully' in result.content
+    assert 'https://github.com/example/pull/1' in result.content
+
+@pytest.mark.asyncio
+@patch('requests.post')
+@patch.dict(os.environ, {'OPENDEVIN_GITHUB_TOKEN': 'fake_token'}, clear=True)
+async def test_run_pull_request_creation_failed(mock_post, agent_controller):
+    # Set up the mock for the requests.post call to simulate a failed pull request creation
+    mock_response = MagicMock()
+    mock_response.status_code = 400
+    mock_response.text = 'Bad Request'
+    mock_post.return_value = mock_response
+
+    # Run the method
+    pr_action = GithubSendPRAction(owner='owner', repo='repo', title='title', head='head', head_repo='head_repo', base='base', body='body')
+    result = await pr_action.run(agent_controller)
+
+    # Verify the result is an error observation
+    assert isinstance(result, AgentErrorObservation)
+    assert 'Failed to create pull request' in result.content
+    assert 'Status code: 400' in result.content
+    assert 'Bad Request' in result.content
+
+@pytest.mark.asyncio
+async def test_run_error_missing_token(agent_controller):
+
+    # Run the method
+    pr_action = GithubSendPRAction(owner='owner', repo='repo', title='title', head='head', head_repo='head_repo', base='base', body='body')
+    result = await pr_action.run(agent_controller)
+
+    # Verify the result is an error due to missing token
+    assert isinstance(result, AgentErrorObservation)
+    assert 'OPENDEVIN_GITHUB_TOKEN is not set in the environment variables' in result.message
