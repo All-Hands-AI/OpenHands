@@ -6,6 +6,7 @@ from opendevin.server.data_models.feedback import FeedbackDataModel, store_feedb
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
+
 from fastapi import FastAPI, Request, Response, UploadFile, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -61,7 +62,6 @@ async def attach_session(request: Request, call_next):
             content={'error': 'Invalid token'},
         )
         return response
-
     request.state.session = session_manager.get_session(request.state.sid)
     if request.state.session is None:
         response = JSONResponse(
@@ -208,7 +208,7 @@ async def get_agents():
 
 
 @app.get('/api/list-files')
-def list_files(request: Request, path: str = '/'):
+def list_files(request: Request, path: str = '/', only_dirs: bool = False):
     """
     List files.
 
@@ -222,9 +222,13 @@ def list_files(request: Request, path: str = '/'):
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Runtime not yet initialized'},
         )
-
     try:
-        return request.state.session.agent_session.runtime.file_store.list(path)
+        files: list[str] = request.state.session.agent_session.runtime.file_store.list(
+            path
+        )
+        if only_dirs:
+            return list(filter(lambda f: f.endswith('/'), files))
+        return files
     except Exception as e:
         logger.error(f'Error refreshing files: {e}', exc_info=False)
         error_msg = f'Error refreshing files: {e}'
@@ -237,7 +241,7 @@ def list_files(request: Request, path: str = '/'):
 @app.get('/api/select-file')
 def select_file(file: str, request: Request):
     """
-    Select a file.
+    Reads the content of the file under the given path, relative to the runtime's workspace.
 
     To select a file:
     ```sh
@@ -268,7 +272,7 @@ async def upload_file(request: Request, files: list[UploadFile]):
     """
     try:
         for file in files:
-            file_contents = await file.read()
+            file_contents = (await file.read()).decode()
             request.state.session.agent_session.runtime.file_store.write(
                 file.filename, file_contents
             )

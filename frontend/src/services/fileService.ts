@@ -10,14 +10,18 @@ export async function uploadFiles(files: FileList) {
   for (let i = 0; i < files.length; i += 1) {
     formData.append("files", files[i]);
   }
-
   await request("/api/upload-files", {
     method: "POST",
     body: formData,
   });
 }
 
-export async function listFiles(path: string = "/"): Promise<string[]> {
-  const data = await request(`/api/list-files?path=${path}`);
+export async function listFiles(
+  path: string = "/",
+  onlyDirs: boolean = false,
+): Promise<string[]> {
+  const data = await request(
+    `/api/list-files?${new URLSearchParams({ path, only_dirs: onlyDirs.toString() })}`,
+  );
   return data as string[];
 }

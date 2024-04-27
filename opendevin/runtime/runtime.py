@@ -37,13 +37,17 @@ from opendevin.runtime.tools import RuntimeTool
 from opendevin.storage import FileStore, InMemoryFileStore
 
 
-def create_sandbox(sid: str = 'default', sandbox_type: str = 'exec') -> Sandbox:
+def create_sandbox(
+    sid: str = 'default',
+    sandbox_type: str = 'exec',
+    workspace_subdir: str = '',
+) -> Sandbox:
     if sandbox_type == 'exec':
-        return DockerExecBox(sid=sid)
+        return DockerExecBox(sid=sid, workspace_subdir=workspace_subdir)
     elif sandbox_type == 'local':
-        return LocalBox()
+        return LocalBox(workspace_subdir=workspace_subdir)
     elif sandbox_type == 'ssh':
-        return DockerSSHBox(sid=sid)
+        return DockerSSHBox(sid=sid, workspace_subdir=workspace_subdir)
     elif sandbox_type == 'e2b':
         return E2BBox()
     else:
@@ -66,10 +70,14 @@ class Runtime:
         event_stream: EventStream,
         sid: str = 'default',
         sandbox: Sandbox | None = None,
+        workspace_subdir: str = '',
     ):
         self.sid = sid
+        self.workspace_subdir = ''
         if sandbox is None:
-            self.sandbox = create_sandbox(sid, config.sandbox_type)
+            self.sandbox = create_sandbox(
+                sid, config.sandbox_type, workspace_subdir=workspace_subdir
+            )
             self._is_external_sandbox = False
         else:
             self.sandbox = sandbox
@@ -79,6 +87,9 @@ class Runtime:
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
         self._bg_task = asyncio.create_task(self._start_background_observation_loop())
+
+    def set_workspace_subdir(self, workspace_subdir: str):
+        self.workspace_subdir = workspace_subdir
 
     def close(self):
         if not self._is_external_sandbox:

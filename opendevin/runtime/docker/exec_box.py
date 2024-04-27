@@ -7,6 +7,7 @@ import time
 import uuid
 from collections import namedtuple
 from glob import glob
+from pathlib import Path
 
 import docker
 
@@ -109,6 +110,7 @@ class DockerExecBox(Sandbox):
         container_image: str | None = None,
         timeout: int = config.sandbox_timeout,
         sid: str | None = None,
+        workspace_subdir: str = '',
     ):
         # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
@@ -122,6 +124,9 @@ class DockerExecBox(Sandbox):
 
         self.instance_id = (
             sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
+        )
+        self.mount_dir = str(
+            Path(config.workspace_mount_path or config.workspace_base, workspace_subdir)
         )
 
         # TODO: this timeout is actually essential - need a better way to set it
@@ -313,7 +318,6 @@ class DockerExecBox(Sandbox):
 
         try:
             # start the container
-            mount_dir = config.workspace_mount_path
             self.container = self.docker_client.containers.run(
                 self.container_image,
                 command='tail -f /dev/null',
@@ -321,7 +325,9 @@ class DockerExecBox(Sandbox):
                 working_dir=self.sandbox_workspace_dir,
                 name=self.container_name,
                 detach=True,
-                volumes={mount_dir: {'bind': self.sandbox_workspace_dir, 'mode': 'rw'}},
+                volumes={
+                    self.mount_dir: {'bind': self.sandbox_workspace_dir, 'mode': 'rw'}
+                },
             )
             logger.info('Container started')
         except Exception as ex:

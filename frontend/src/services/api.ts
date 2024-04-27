@@ -15,7 +15,6 @@ export async function request(
     }
     throw new Error(msg);
   };
-
   const needsAuth = !url.startsWith("/api/options/");
   const token = getToken();
   if (!token && needsAuth) {
@@ -25,6 +24,7 @@ export async function request(
       }, WAIT_FOR_AUTH_DELAY_MS);
     });
   }
+  options.headers = {};
   if (token) {
     // eslint-disable-next-line no-param-reassign
     options.headers = {

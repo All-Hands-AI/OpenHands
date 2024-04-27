@@ -11,27 +11,30 @@ interface SettingsFormProps {
   settings: Settings;
   models: string[];
   agents: string[];
+  workspaceSubdirs: string[];
   disabled: boolean;
 
   onModelChange: (model: string) => void;
   onAPIKeyChange: (apiKey: string) => void;
   onAgentChange: (agent: string) => void;
   onLanguageChange: (language: string) => void;
+  onWorkspaceChange: (workspace: string) => void;
 }
 
 function SettingsForm({
   settings,
   models,
   agents,
+  workspaceSubdirs,
   disabled,
   onModelChange,
   onAPIKeyChange,
   onAgentChange,
   onLanguageChange,
+  onWorkspaceChange,
 }: SettingsFormProps) {
   const { t } = useTranslation();
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
-
   return (
     <>
       <AutocompleteCombobox
@@ -84,6 +87,17 @@ function SettingsForm({
         defaultKey={settings.LANGUAGE}
         onChange={onLanguageChange}
         tooltip={t(I18nKey.SETTINGS$LANGUAGE_TOOLTIP)}
+        disabled={disabled}
+      />
+      <AutocompleteCombobox
+        ariaLabel="workspace"
+        items={[
+          { value: "", label: `Workspace Root` },
+          ...workspaceSubdirs.map((d) => ({ value: d, label: d })),
+        ]}
+        defaultKey={settings.WORKSPACE_SUBDIR || ""}
+        onChange={onWorkspaceChange}
+        tooltip={t(I18nKey.SETTINGS$WORKSPACE_TOOLTIP)}
         disabled={disabled}
       />
     </>

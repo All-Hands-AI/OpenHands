@@ -14,6 +14,7 @@ import {
 import Session from "#/services/session";
 import { fetchAgents, fetchModels } from "#/services/options";
 import SettingsModal from "./SettingsModal";
+import { listFiles } from "#/services/fileService";
 
 const toastSpy = vi.spyOn(toast, "settingsChanged");
 const i18nSpy = vi.spyOn(i18next, "changeLanguage");
@@ -26,15 +27,22 @@ vi.mock("#/services/settings", async (importOriginal) => ({
     LLM_MODEL: "gpt-4o",
     AGENT: "MonologueAgent",
     LANGUAGE: "en",
+    WORKSPACE_SUBDIR: "",
   }),
   getDefaultSettings: vi.fn().mockReturnValue({
     LLM_MODEL: "gpt-4o",
     AGENT: "CodeActAgent",
     LANGUAGE: "en",
     LLM_API_KEY: "",
+    WORKSPACE_SUBDIR: "",
   }),
   settingsAreUpToDate: vi.fn().mockReturnValue(true),
   saveSettings: vi.fn(),
+}));
+
+vi.mock("#/services/fileService", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("#/services/options")>()),
+  listFiles: vi.fn().mockResolvedValue(Promise.resolve(["dir1", "dir2"])),
 }));
 
 vi.mock("#/services/options", async (importOriginal) => ({
@@ -58,6 +66,7 @@ describe("SettingsModal", () => {
     await waitFor(() => {
       expect(fetchModels).toHaveBeenCalledTimes(1);
       expect(fetchAgents).toHaveBeenCalledTimes(1);
+      expect(listFiles).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -101,6 +110,7 @@ describe("SettingsModal", () => {
       AGENT: "MonologueAgent",
       LANGUAGE: "en",
       LLM_API_KEY: "sk-...",
+      WORKSPACE_SUBDIR: "",
     };
 
     it("should save the settings", async () => {

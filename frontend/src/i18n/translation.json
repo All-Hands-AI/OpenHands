@@ -79,7 +79,7 @@
     "fr": "Navigateur",
     "tr": "Tarayıcı"
   },
-  "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_LABEL": {
+  "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_SELECT_LABEL": {
     "en": "OpenDevin Workspace directory",
     "zh-CN": "OpenDevin 工作区目录",
     "de": "OpenDevin Arbeitsbereichsverzeichnis",
@@ -93,18 +93,19 @@
     "fr": "Répertoire de l'espace de travail OpenDevin",
     "tr": "OpenDevin çalışma alanı dizini"
   },
-  "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER": {
-    "en": "Default: ./workspace",
-    "zh-CN": "默认：./workspace",
-    "de": "Standard: ./workspace",
-    "ko-KR": "기본: ./workspace",
-    "no": "Standard: ./workspace",
-    "zh-TW": "默认：./workspace",
-    "ar": "الافتراضي: ./workspace",
-    "fr": "Par défaut: ./workspace",
-    "it": "Predefinito: ./workspace",
-    "pt": "Padrão: ./workspace",
-    "es": "Predeterminado: ./workspace"
+  "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_SELECT_PLACEHOLDER": {
+    "en": "OpenDevin Workspace directory",
+    "zh-CN": "OpenDevin 工作区目录",
+    "de": "OpenDevin Arbeitsbereichsverzeichnis",
+    "ko-KR": "OpenDevin 워크스페이스 폴더",
+    "no": "OpenDevin arbeidsmappe",
+    "zh-TW": "OpenDevin 工作區目錄",
+    "it": "Directory dell'area di lavoro OpenDevin",
+    "pt": "Diretório do espaço de trabalho OpenDevin",
+    "es": "Directorio del espacio de trabajo de OpenDevin",
+    "ar": "مجلد مساحة عمل أوبنديفين",
+    "fr": "Répertoire de l'espace de travail OpenDevin",
+    "tr": "OpenDevin çalışma alanı dizini"
   },
   "CONFIGURATION$MODAL_TITLE": {
     "en": "Configuration",
@@ -407,6 +408,11 @@
     "zh-TW": "選擇 UI 的語言。",
     "de": "Wähle die Sprache für das Interface."
   },
+
+  "SETTINGS$WORKSPACE_TOOLTIP": {
+    "en": "The directory OpenDevin will operate in."
+  },
+
   "SETTINGS$DISABLED_RUNNING": {
     "en": "Cannot be changed while the agent is running.",
     "zh-CN": "在智能体运行时无法更改",

@@ -9,6 +9,7 @@ const onModelChangeMock = vi.fn();
 const onAgentChangeMock = vi.fn();
 const onLanguageChangeMock = vi.fn();
 const onAPIKeyChangeMock = vi.fn();
+const onWorkspaceChangeMock = vi.fn();
 
 const renderSettingsForm = (settings?: Settings) => {
   renderWithProviders(
@@ -20,14 +21,17 @@ const renderSettingsForm = (settings?: Settings) => {
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
+          WORKSPACE_SUBDIR: "my_workspace",
         }
       }
       models={["model1", "model2", "model3"]}
       agents={["agent1", "agent2", "agent3"]}
+      workspaceSubdirs={["dir1", "dir2"]}
       onModelChange={onModelChangeMock}
       onAgentChange={onAgentChangeMock}
       onLanguageChange={onLanguageChangeMock}
       onAPIKeyChange={onAPIKeyChangeMock}
+      onWorkspaceChange={onWorkspaceChangeMock}
     />,
   );
 };
@@ -53,6 +57,7 @@ describe("SettingsForm", () => {
       AGENT: "agent2",
       LANGUAGE: "es",
       LLM_API_KEY: "sk-...",
+      WORKSPACE_SUBDIR: "",
     });
 
     const modelInput = screen.getByRole("combobox", { name: "model" });
@@ -72,14 +77,17 @@ describe("SettingsForm", () => {
           AGENT: "agent1",
           LANGUAGE: "en",
           LLM_API_KEY: "sk-...",
+          WORKSPACE_SUBDIR: "my_workspace",
         }}
         models={["model1", "model2", "model3"]}
         agents={["agent1", "agent2", "agent3"]}
+        workspaceSubdirs={["dir1", "dir2"]}
         disabled
         onModelChange={onModelChangeMock}
         onAgentChange={onAgentChangeMock}
         onLanguageChange={onLanguageChangeMock}
         onAPIKeyChange={onAPIKeyChangeMock}
+        onWorkspaceChange={onWorkspaceChangeMock}
       />,
     );
     const modelInput = screen.getByRole("combobox", { name: "model" });
@@ -137,7 +145,7 @@ describe("SettingsForm", () => {
         userEvent.click(french);
       });
 
-      expect(onLanguageChangeMock).toHaveBeenCalledWith("Français");
+      expect(onLanguageChangeMock).toHaveBeenCalledWith("fr");
     });
 
     it("should call the onAPIKeyChange handler when the API key changes", () => {

@@ -3,6 +3,7 @@ enum ArgConfigType {
   AGENT = "AGENT",
   LANGUAGE = "LANGUAGE",
   LLM_API_KEY = "LLM_API_KEY",
+  WORKSPACE = "WORKSPACE",
 }
 
 const SupportedSettings: string[] = [
@@ -10,6 +11,7 @@ const SupportedSettings: string[] = [
   ArgConfigType.AGENT,
   ArgConfigType.LANGUAGE,
   ArgConfigType.LLM_API_KEY,
+  ArgConfigType.WORKSPACE,
 ];
 
 export { ArgConfigType, SupportedSettings };

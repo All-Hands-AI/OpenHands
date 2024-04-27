@@ -43,8 +43,14 @@ class AgentSession:
             raise Exception(
                 'Session already started. You need to close this session and start a new one.'
             )
-        await self._create_runtime()
-        await self._create_controller(start_event)
+        args = {
+            key: value
+            for key, value in start_event.get('args', {}).items()
+            if value != ''
+        }  # remove empty values, prevent FE from sending empty strings
+
+        await self._create_runtime(args)
+        await self._create_controller(args)
 
     async def close(self):
         if self._closed:
@@ -57,12 +63,16 @@ class AgentSession:
             self.runtime.close()
         self._closed = True
 
-    async def _create_runtime(self):
+    async def _create_runtime(self, args: dict):
         if self.runtime is not None:
             raise Exception('Runtime already created')
         if config.runtime == 'server':
             logger.info('Using server runtime')
-            self.runtime = ServerRuntime(self.event_stream, self.sid)
+            self.runtime = ServerRuntime(
+                self.event_stream,
+                self.sid,
+                workspace_subdir=args.get('WORKSPACE_SUBDIR', ''),
+            )
         elif config.runtime == 'e2b':
             logger.info('Using E2B runtime')
             self.runtime = E2BRuntime(self.event_stream, self.sid)
@@ -71,7 +81,7 @@ class AgentSession:
                 f'Runtime not defined in config, or is invalid: {config.runtime}'
             )
 
-    async def _create_controller(self, start_event: dict):
+    async def _create_controller(self, args: dict):
         """Creates an AgentController instance.
 
         Args:
@@ -81,11 +91,6 @@ class AgentSession:
             raise Exception('Controller already created')
         if self.runtime is None:
             raise Exception('Runtime must be initialized before the agent controller')
-        args = {
-            key: value
-            for key, value in start_event.get('args', {}).items()
-            if value != ''
-        }  # remove empty values, prevent FE from sending empty strings
         agent_cls = args.get(ConfigType.AGENT, config.agent.name)
         model = args.get(ConfigType.LLM_MODEL, config.llm.model)
         api_key = args.get(ConfigType.LLM_API_KEY, config.llm.api_key)

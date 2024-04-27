@@ -20,7 +20,8 @@ describe("getSettings", () => {
       .mockReturnValueOnce("llm_value")
       .mockReturnValueOnce("agent_value")
       .mockReturnValueOnce("language_value")
-      .mockReturnValueOnce("api_key");
+      .mockReturnValueOnce("api_key")
+      .mockReturnValueOnce("workspace");
 
     const settings = getSettings();
 
@@ -29,6 +30,7 @@ describe("getSettings", () => {
       AGENT: "agent_value",
       LANGUAGE: "language_value",
       LLM_API_KEY: "api_key",
+      WORKSPACE_SUBDIR: "workspace",
     });
   });
 
@@ -46,6 +48,7 @@ describe("getSettings", () => {
       AGENT: DEFAULT_SETTINGS.AGENT,
       LANGUAGE: DEFAULT_SETTINGS.LANGUAGE,
       LLM_API_KEY: "",
+      WORKSPACE_SUBDIR: "",
     });
   });
 });
@@ -57,6 +60,7 @@ describe("saveSettings", () => {
       AGENT: "agent_value",
       LANGUAGE: "language_value",
       LLM_API_KEY: "some_key",
+      WORKSPACE_SUBDIR: "my_workspace",
     };
 
     saveSettings(settings);
@@ -123,7 +127,7 @@ describe("getSettingsDifference", () => {
       LANGUAGE: "language_value",
     };
 
-    const updatedSettings = getSettingsDifference(settings);
+    const updatedSettings = getSettingsDifference(getSettings(), settings);
 
     expect(updatedSettings).toEqual({
       LLM_MODEL: "new_llm_value",
@@ -138,7 +142,7 @@ describe("getSettingsDifference", () => {
       INVALID: "invalid_value",
     };
 
-    const updatedSettings = getSettingsDifference(settings);
+    const updatedSettings = getSettingsDifference(getSettings(), settings);
 
     expect(updatedSettings).toEqual({
       LLM_MODEL: "new_llm_value",

@@ -8,6 +8,7 @@ import time
 import uuid
 from collections import namedtuple
 from glob import glob
+from pathlib import Path
 
 import docker
 from pexpect import exceptions, pxssh
@@ -202,6 +203,7 @@ class DockerSSHBox(Sandbox):
         container_image: str | None = None,
         timeout: int = config.sandbox_timeout,
         sid: str | None = None,
+        workspace_subdir: str = '',
     ):
         logger.info(
             f'SSHBox is running as {"opendevin" if self.run_as_devin else "root"} user with USER_ID={self.user_id} in the sandbox'
@@ -225,6 +227,9 @@ class DockerSSHBox(Sandbox):
         else:
             self.instance_id = (sid or '') + str(uuid.uuid4())
 
+        self.mount_dir = str(
+            Path(config.workspace_mount_path or config.workspace_base, workspace_subdir)
+        )
         self.timeout = timeout
         self.container_image = container_image or config.sandbox_container_image
         self.container_name = self.container_name_prefix + self.instance_id
@@ -670,10 +675,9 @@ class DockerSSHBox(Sandbox):
 
     @property
     def volumes(self):
-        mount_dir = config.workspace_mount_path
-        logger.info(f'Mounting workspace directory: {mount_dir}')
+        logger.info(f'Mounting workspace directory: {self.mount_dir}')
         return {
-            mount_dir: {'bind': self.sandbox_workspace_dir, 'mode': 'rw'},
+            self.mount_dir: {'bind': self.sandbox_workspace_dir, 'mode': 'rw'},
             # mount cache directory to /home/opendevin/.cache for pip cache reuse
             config.cache_dir: {
                 'bind': (
@@ -704,7 +708,6 @@ class DockerSSHBox(Sandbox):
                         'See https://github.com/OpenDevin/OpenDevin/issues/897 for more information.'
                     )
                 )
-
             # start the container
             logger.info(f'Mounting volumes: {self.volumes}')
             self.container = self.docker_client.containers.run(

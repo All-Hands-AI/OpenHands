@@ -1,9 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { getSettings } from "#/services/settings";
 
 export const initialState = {
   code: "",
   path: "",
   refreshID: 0,
+  workspaceFolder: getSettings().WORKSPACE_SUBDIR,
 };
 
 export const codeSlice = createSlice({
@@ -18,6 +20,9 @@ export const codeSlice = createSlice({
     },
     setRefreshID: (state, action) => {
       state.refreshID = action.payload;
+    },
+    updateWorkspace: (state, action) => {
+      state.workspaceFolder = action.payload;
     },
   },
 });

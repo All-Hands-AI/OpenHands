@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from opendevin.core.config import config
 from opendevin.events.action import (
     AgentRecallAction,
@@ -31,9 +33,12 @@ class ServerRuntime(Runtime):
         event_stream: EventStream,
         sid: str = 'default',
         sandbox: Sandbox | None = None,
+        workspace_subdir: str = '',
     ):
-        super().__init__(event_stream, sid, sandbox)
-        self.file_store = LocalFileStore(config.workspace_base)
+        super().__init__(event_stream, sid, sandbox, workspace_subdir=workspace_subdir)
+        self.file_store = LocalFileStore(
+            str(Path(config.workspace_base, workspace_subdir))
+        )
 
     async def run(self, action: CmdRunAction) -> Observation:
         return self._run_command(action.command, background=action.background)

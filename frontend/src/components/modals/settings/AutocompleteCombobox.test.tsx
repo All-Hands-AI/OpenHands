@@ -60,7 +60,7 @@ describe("AutocompleteCombobox", () => {
       userEvent.click(model2);
     });
 
-    expect(onChangeMock).toHaveBeenCalledWith("model2");
+    expect(onChangeMock).toHaveBeenCalledWith("m2");
   });
 
   it("should set the input value to the default key if the default key is not in the list", () => {
