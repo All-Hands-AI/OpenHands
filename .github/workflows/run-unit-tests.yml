@@ -24,9 +24,25 @@ jobs:
       - name: Install Python dependencies using Poetry
         run: poetry install
 
-      - name: Install & Start Docker
+      - name: Set up Homebrew cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/Homebrew
+            /usr/local/Cellar
+            /usr/local/Caskroom
+            ~/Library/Caches/Homebrew
+          key: ${{ runner.os }}-homebrew-${{ hashFiles('**/*.rb') }}
+          restore-keys: |
+            ${{ runner.os }}-homebrew-
+
+      - name: Install Docker CLI and Colima
         run: |
-          brew install colima docker
+          brew install docker
+          brew install colima
+
+      - name: Start Colima
+        run: |
           colima start
 
       - name: Build Environment
