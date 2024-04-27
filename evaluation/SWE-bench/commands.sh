@@ -42,7 +42,7 @@ search_dir() {
         echo "More than $num_files files matched for \"$search_term\" in $dir. Please narrow your search."
         return
     fi
-    
+
     echo "Found $num_matches matches for \"$search_term\" in $dir:"
     echo "$matches" | awk '{$2=$2; gsub(/^\.+\/+/, "./", $2); print $2 " ("$1" matches)"}'
     echo "End of matches for \"$search_term\" in $dir"
@@ -95,7 +95,7 @@ search_file() {
     fi
     # Calculate total number of matches
     local num_matches=$(echo "$matches" | wc -l | awk '{$1=$1; print $0}')
-    
+
     # calculate total number of lines matched
     local num_lines=$(echo "$matches" | cut -d: -f1 | sort | uniq | wc -l | awk '{$1=$1; print $0}')
     # if num_lines is > 100, print an error

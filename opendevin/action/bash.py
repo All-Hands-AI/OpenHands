@@ -9,7 +9,7 @@ from opendevin.schema import ActionType, ConfigType
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
-    from opendevin.observation import CmdOutputObservation
+    from opendevin.observation import CmdOutputObservation, Observation
 
 from opendevin.observation import IPythonRunCellObservation
 
@@ -21,7 +21,7 @@ class CmdRunAction(ExecutableAction):
     thought: str = ''
     action: str = ActionType.RUN
 
-    async def run(self, controller: 'AgentController') -> 'CmdOutputObservation':
+    async def run(self, controller: 'AgentController') -> 'Observation':
         return controller.action_manager.run_command(self.command, self.background)
 
     @property
