@@ -36,4 +36,8 @@ jobs:
       - name: Install pre-commit
         run: pip install pre-commit==3.7.0
       - name: Run pre-commit hooks
-        run: pre-commit run --files opendevin/**/* agenthub/**/* --show-diff-on-failure --config ./dev_config/python/.pre-commit-config.yaml
+        run: |
+          pre-commit run \
+            --all-files \
+            --show-diff-on-failure \
+            --config ./dev_config/python/.pre-commit-config.yaml
