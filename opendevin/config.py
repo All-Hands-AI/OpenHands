@@ -38,6 +38,8 @@ DEFAULT_CONFIG: dict = {
     ConfigType.MAX_ITERATIONS: 100,
     ConfigType.LLM_TIMEOUT: None,
     ConfigType.LLM_MAX_RETURN_TOKENS: None,
+    ConfigType.AGENT_MEMORY_MAX_THREADS: 2,
+    ConfigType.AGENT_MEMORY_ENABLED: False,
     # GPT-4 pricing is $10 per 1M input tokens. Since tokenization happens on LLM side,
     # we cannot easily count number of tokens, but we can count characters.
     # Assuming 5 characters per token, 5 million is a reasonable default limit.
