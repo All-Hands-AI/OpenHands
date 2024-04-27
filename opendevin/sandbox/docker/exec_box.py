@@ -2,22 +2,22 @@ import atexit
 import concurrent.futures
 import os
 import sys
+import tarfile
 import time
 import uuid
-import tarfile
-from glob import glob
 from collections import namedtuple
+from glob import glob
 from typing import Dict, List, Tuple
 
 import docker
 
 from opendevin import config
-from opendevin.logger import opendevin_logger as logger
-from opendevin.sandbox.sandbox import Sandbox
-from opendevin.sandbox.process import Process
-from opendevin.sandbox.docker.process import DockerProcess
-from opendevin.schema import ConfigType
 from opendevin.exceptions import SandboxInvalidBackgroundCommandError
+from opendevin.logger import opendevin_logger as logger
+from opendevin.sandbox.docker.process import DockerProcess
+from opendevin.sandbox.process import Process
+from opendevin.sandbox.sandbox import Sandbox
+from opendevin.schema import ConfigType
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])

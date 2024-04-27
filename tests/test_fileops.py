@@ -3,8 +3,8 @@ from pathlib import Path
 import pytest
 
 from opendevin import config
-from opendevin.schema.config import ConfigType
 from opendevin.action import fileop
+from opendevin.schema.config import ConfigType
 
 
 def test_resolve_path():

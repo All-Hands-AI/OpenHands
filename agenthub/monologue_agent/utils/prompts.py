@@ -1,20 +1,19 @@
+import re
+from json import JSONDecodeError
 from typing import List
 
-from . import json
-from json import JSONDecodeError
-
-import re
-
+from opendevin import config
 from opendevin.action import (
-    action_from_dict,
     Action,
+    action_from_dict,
 )
+from opendevin.exceptions import LLMOutputError
 from opendevin.observation import (
     CmdOutputObservation,
 )
-from opendevin.exceptions import LLMOutputError
-from opendevin import config
 from opendevin.schema.config import ConfigType
+
+from . import json
 
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is this:

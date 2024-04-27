@@ -1,5 +1,6 @@
 import sys
 
+
 def print_help():
     help_text = """
 Usage: python string_cli.py <command> <string>

@@ -1,5 +1,5 @@
 import asyncio
-from typing import Optional, Dict, List
+from typing import Dict, List, Optional
 
 from opendevin import config
 from opendevin.action import (

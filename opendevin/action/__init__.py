@@ -1,17 +1,17 @@
+from ..exceptions import AgentMalformedActionError
+from .agent import (
+    AgentDelegateAction,
+    AgentEchoAction,
+    AgentFinishAction,
+    AgentRecallAction,
+    AgentSummarizeAction,
+    AgentThinkAction,
+)
 from .base import Action, NullAction
-from .bash import CmdRunAction, CmdKillAction
+from .bash import CmdKillAction, CmdRunAction
 from .browse import BrowseURLAction
 from .fileop import FileReadAction, FileWriteAction
-from .agent import (
-    AgentRecallAction,
-    AgentThinkAction,
-    AgentFinishAction,
-    AgentEchoAction,
-    AgentSummarizeAction,
-    AgentDelegateAction,
-)
 from .tasks import AddTaskAction, ModifyTaskAction
-from ..exceptions import AgentMalformedActionError
 
 actions = (
     CmdKillAction,

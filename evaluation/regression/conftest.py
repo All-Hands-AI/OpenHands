@@ -1,9 +1,10 @@
-import os
-import pytest
-import subprocess
-import logging
-import shutil
 import datetime
+import logging
+import os
+import shutil
+import subprocess
+
+import pytest
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CASES_DIR = os.path.join(SCRIPT_DIR, 'cases')
