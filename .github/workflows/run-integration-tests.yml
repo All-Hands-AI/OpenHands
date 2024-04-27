@@ -43,11 +43,6 @@ jobs:
             agent: "MonologueAgent"
             embedding-model: "local"
             sandbox: "exec"
-          - name: CodeActAgent-py311-exec
-            python-version: "3.11"
-            agent: "CodeActAgent"
-            embedding-model: "none"
-            sandbox: "exec"
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
