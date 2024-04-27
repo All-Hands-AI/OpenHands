@@ -108,6 +108,10 @@ class CodeActAgent(Agent):
                 if isinstance(obs, (AgentMessageObservation, UserMessageObservation)):
                     self.messages.append(
                         {'role': 'user', 'content': obs.content})
+
+                    # User wants to exit
+                    if obs.content.strip() == '/exit':
+                        return AgentFinishAction()
                 elif isinstance(obs, CmdOutputObservation):
                     content = 'OBSERVATION:\n' + obs.content
                     content += f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'

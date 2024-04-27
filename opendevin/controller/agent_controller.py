@@ -195,7 +195,7 @@ class AgentController:
         # wait for the next user message
         if len(self.callbacks) == 0:
             logger.info('Use STDIN to request user message as no callbacks are registered', extra={'msg_type': 'INFO'})
-            message = input('Request user input >> ')
+            message = input('Request user input [type /exit to stop interaction] >> ')
             user_message_observation = UserMessageObservation(message)
         else:
             user_message_observation = await self._await_user_message_queue.get()
