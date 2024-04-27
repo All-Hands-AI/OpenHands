@@ -12,6 +12,7 @@ import {
 import { Message } from "#/state/chatSlice";
 import { RootState } from "#/store";
 import ChatInput from "./ChatInput";
+import { code } from "./markdown/code";
 
 interface IChatBubbleProps {
   msg: Message;
@@ -57,10 +58,10 @@ function ChatBubble({ msg }: IChatBubbleProps): JSX.Element {
         className={`flex mb-0 min-w-0 ${msg?.sender === "user" && "flex-row-reverse ml-auto"}`}
       >
         <div
-          className={`${msg?.sender === "user" ? "bg-neutral-700" : "bg-neutral-500"} rounded-lg`}
+          className={`overflow-y-auto ${msg?.sender === "user" ? "bg-neutral-700" : "bg-neutral-500"} rounded-lg`}
         >
           <div className="p-3 prose prose-invert text-white">
-            <Markdown>{msg?.content}</Markdown>
+            <Markdown components={{ code }}>{msg?.content}</Markdown>
           </div>
         </div>
       </div>
@@ -102,7 +103,7 @@ function MessageList(): JSX.Element {
 
   return (
     <div className="flex-1 flex flex-col gap-3 pt-3 px-3 relative min-h-0">
-      <div className="overflow-y-auto flex flex-col h-full gap-3">
+      <div className="flex overflow-x-auto flex-col h-full gap-3">
         {newChatSequence.map((msg, index) => (
           <ChatBubble key={index} msg={msg} />
         ))}
