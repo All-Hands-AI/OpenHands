@@ -142,7 +142,9 @@ def select_file(file: str):
 async def upload_file(file: UploadFile):
     try:
         workspace_base = config.get(ConfigType.WORKSPACE_BASE)
-        file_path = Path(workspace_base) / file.filename
+        file_path = Path(workspace_base, file.filename)
+        # The following will check if the file is within the workspace base and throw an exception if not
+        file_path.resolve().relative_to(Path(workspace_base).resolve())
         with open(file_path, 'wb') as buffer:
             shutil.copyfileobj(file.file, buffer)
     except Exception as e:
