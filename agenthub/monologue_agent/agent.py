@@ -13,6 +13,7 @@ from opendevin.action import (
     FileReadAction,
     AgentRecallAction,
     BrowseURLAction,
+    GithubPushAction,
     AgentThinkAction,
 )
 
@@ -68,6 +69,10 @@ INITIAL_THOUGHTS = [
     'BROWSE google.com',
     '<form><input type="text"></input><button type="submit"></button></form>',
     'I can browse the web too!',
+    'If I have done some work and I want to push it to github, I can do that also!',
+    "Let's do it.",
+    'PUSH owner/repo branch',
+    'The repo was successfully pushed to https://github.com/owner/repo/branch',
     'And once I have completed my task, I can use the finish action to stop working.',
     "But I should only use the finish action when I'm absolutely certain that I've completed my task and have tested my work.",
     'Very cool. Now to accomplish my task.',
@@ -187,6 +192,11 @@ class MonologueAgent(Agent):
                     url = thought.split('BROWSE ')[1]
                     action = BrowseURLAction(url=url)
                     output_type = ActionType.BROWSE
+                elif thought.startswith('PUSH'):
+                    owner_repo, branch = thought.split('PUSH ')[1].split(' ')
+                    owner, repo = owner_repo.split('/')
+                    action = GithubPushAction(owner=owner, repo=repo, branch=branch)
+                    output_type = ActionType.PUSH
                 else:
                     action = AgentThinkAction(thought=thought)
                 self._add_event(action.to_memory())

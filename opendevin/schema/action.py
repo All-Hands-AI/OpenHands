@@ -73,5 +73,8 @@ class ActionTypeSchema(BaseModel):
 
     CHANGE_TASK_STATE: str = Field(default='change_task_state')
 
+    PUSH: str = Field(default='push')
+    """Push a branch to github."""
+
 
 ActionType = ActionTypeSchema()
