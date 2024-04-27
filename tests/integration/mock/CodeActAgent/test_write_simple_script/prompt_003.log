@@ -3,14 +3,18 @@
 ----------
 
 A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
-The assistant can interact with an interactive Python (Jupyter Notebook) environment and receive the corresponding output when needed. The code should be enclosed using "<execute_ipython>" tag, for example: <execute_ipython> print("Hello World!") </execute_ipython>.
-The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>. For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
+The assistant can interact with an interactive Python (Jupyter Notebook) environment and receive the corresponding output when needed. The code should be enclosed using "<execute_ipython>" tag, for example:
+<execute_ipython>
+print("Hello World!")
+</execute_ipython>
+The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>.
+For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
 The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
 The assistant can install Python packages through bash by <execute_bash> pip install [package needed] </execute_bash> and should always import packages and define variables before starting to use them.
 The assistant should stop <execute> and provide an answer when they have already obtained the answer from the execution result.
 
 
-Apart from the standard bash commands, you can also use the following special commands in bash:
+Apart from the standard bash commands, you can also use the following special commands in <execute_bash> environment:
 open <path> [<line_number>] - opens the file at the given path in the editor. If line_number is provided, the window will be move to include that line
 goto <line_number> - moves the window to show <line_number>
 scroll_down - moves the window down {WINDOW} lines
@@ -212,7 +216,7 @@ Write a shell script 'hello.sh' that prints 'hello'.
 
 ----------
 
-Let's create the shell script `hello.sh` that prints "hello". I'll write the script and save it to a file.
+Let's start by creating the shell script `hello.sh` that prints "hello". I'll write the script and save it to a file.
 
 <execute_bash>
 echo "echo 'hello'" > hello.sh
@@ -226,7 +230,7 @@ OBSERVATION:
 
 ----------
 
-The shell script `hello.sh` has been successfully created. If you need to run this script or modify it further, just let me know!
+The shell script `hello.sh` has been successfully created. Would you like to run the script to see the output, or is there anything else you'd like to do with it?
 
 ----------
 

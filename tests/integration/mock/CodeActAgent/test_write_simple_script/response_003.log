@@ -1,4 +1,4 @@
-Sure, I'll run the `hello.sh` script to ensure it's working correctly.
+Sure, let's run the script `hello.sh` to ensure it's working correctly.
 
 <execute_bash>
 bash hello.sh

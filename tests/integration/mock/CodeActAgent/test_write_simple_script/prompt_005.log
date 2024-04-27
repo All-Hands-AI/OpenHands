@@ -249,3 +249,11 @@ bash hello.sh
 OBSERVATION:
 hello
 [Command -1 finished with exit code 0]]
+
+----------
+
+The script `hello.sh` is working correctly as it printed "hello". If you have any more tasks or need further modifications, feel free to let me know!
+
+----------
+
+can you run it to make sure it is working?
