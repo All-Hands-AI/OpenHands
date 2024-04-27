@@ -29,6 +29,8 @@ jobs:
         run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   on-linux:
     runs-on: ubuntu-latest
     strategy:
@@ -48,4 +50,6 @@ jobs:
       - name: Run Tests
         run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
