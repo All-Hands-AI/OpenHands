@@ -132,7 +132,7 @@ class LLM:
         Returns:
             int: The number of tokens.
         """
-        return litellm.token_counter(self.model_name, messages)
+        return litellm.token_counter(model=self.model_name, messages=messages)
 
     def __str__(self):
         if self.api_version:
