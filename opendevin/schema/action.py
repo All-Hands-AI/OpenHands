@@ -76,5 +76,8 @@ class ActionTypeSchema(BaseModel):
     PUSH: str = Field(default='push')
     """Push a branch to github."""
 
+    SEND_PR: str = Field(default='send_pr')
+    """Send a PR to github."""
+
 
 ActionType = ActionTypeSchema()

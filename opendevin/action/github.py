@@ -27,11 +27,13 @@ class GithubPushAction(ExecutableAction):
         owner: The owner of the source repo
         repo: The name of the source repo
         branch: The branch to push
+        action: The action identifier
     """
 
     owner: str
     repo: str
     branch: str
+    action: str = ActionType.PUSH
 
     async def run(self, controller: 'AgentController') -> Observation:
         github_token = os.environ.get('OPENDEVIN_GITHUB_TOKEN')
