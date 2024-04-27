@@ -129,9 +129,6 @@ class CodeActAgent(Agent):
             stop=[
                 '</execute_ipython>',
                 '</execute_bash>',
-                # chatML in case ollama does not stop
-                '<|im_end|>',
-                '<|im_start|>'
             ],
             temperature=0.0
         )
