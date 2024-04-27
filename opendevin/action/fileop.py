@@ -20,10 +20,16 @@ from .base import ExecutableAction
 SANDBOX_PATH_PREFIX = '/workspace/'
 
 
-def resolve_path(file_path):
+def resolve_path(file_path, working_directory):
+    path_in_sandbox = Path(file_path)
+
+    # Apply working directory
+    if not path_in_sandbox.is_absolute():
+        path_in_sandbox = Path(working_directory) / path_in_sandbox
+
     # Sanitize the path with respect to the root of the full sandbox
-    # (deny any .. path traversal to parent directories of this)
-    abs_path_in_sandbox = (Path(SANDBOX_PATH_PREFIX) / Path(file_path)).resolve()
+    # (deny any .. path traversal to parent directories of the sandbox)
+    abs_path_in_sandbox = path_in_sandbox.resolve()
 
     # If the path is outside the workspace, deny it
     if not abs_path_in_sandbox.is_relative_to(SANDBOX_PATH_PREFIX):
@@ -71,7 +77,7 @@ class FileReadAction(ExecutableAction):
             code_view = ''.join(read_lines)
         else:
             try:
-                whole_path = resolve_path(self.path)
+                whole_path = resolve_path(self.path, controller.action_manager.sandbox.get_working_directory())
                 self.start = max(self.start, 0)
                 try:
                     with open(whole_path, 'r', encoding='utf-8') as file:
@@ -121,7 +127,7 @@ class FileWriteAction(ExecutableAction):
                 return AgentErrorObservation(f'File not found: {self.path}')
         else:
             try:
-                whole_path = resolve_path(self.path)
+                whole_path = resolve_path(self.path, controller.action_manager.sandbox.get_working_directory())
                 mode = 'w' if not os.path.exists(whole_path) else 'r+'
                 try:
                     with open(whole_path, mode, encoding='utf-8') as file:
