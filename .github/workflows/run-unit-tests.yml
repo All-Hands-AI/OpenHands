@@ -36,13 +36,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-homebrew-
 
-      - name: Install Docker CLI and Colima
+      - name: Install and link Docker CLI
         run: |
-          brew install docker
-          brew install colima
+          if ! brew list docker &>/dev/null; then
+            brew install docker
+          fi
+          brew link docker
 
-      - name: Start Colima
+      - name: Install and start Colima
         run: |
+          if ! brew list colima &>/dev/null; then
+            brew install colima
+          fi
+          brew link colima
           colima start
 
       - name: Build Environment
