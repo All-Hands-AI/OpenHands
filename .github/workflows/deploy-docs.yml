@@ -31,6 +31,7 @@ jobs:
         run: npm run build
 
       - name: Upload Build Artifact
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
           path: build

@@ -3,7 +3,9 @@ repos:
     rev: v4.5.0
     hooks:
       - id: trailing-whitespace
+        exclude: docs/modules/python
       - id: end-of-file-fixer
+        exclude: docs/modules/python
       - id: check-yaml
       - id: debug-statements
 
