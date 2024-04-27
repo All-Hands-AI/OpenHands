@@ -32,6 +32,8 @@ const config: Config = {
       "classic",
       {
         docs: {
+          path: "modules",
+          routeBasePath: "modules",
           sidebarPath: "./sidebars.ts",
           exclude: [
             // '**/_*.{js,jsx,ts,tsx,md,mdx}',
@@ -87,7 +89,7 @@ const config: Config = {
           items: [
             {
               label: "Docs",
-              to: "/docs/usage/intro",
+              to: "/modules/usage/intro",
             },
           ],
         },

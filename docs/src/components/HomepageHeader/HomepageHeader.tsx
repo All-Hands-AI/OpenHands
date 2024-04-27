@@ -16,7 +16,7 @@ export function HomepageHeader() {
         <div className={styles.buttons}>
           <Link
             className="button button--secondary button--lg"
-            to="/docs/usage/intro"
+            to="/modules/usage/intro"
           >
             Get Started
           </Link>
