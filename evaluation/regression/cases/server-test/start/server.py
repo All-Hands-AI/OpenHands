@@ -13,6 +13,6 @@ def run(server_class=HTTPServer, handler_class=HelloWorldHandler, port=8000):
     print(f'Starting httpd on port {port}...')
     httpd.serve_forever()
 
-if __name__ == "__main__":
-    print("starting server...")
+if __name__ == '__main__':
+    print('starting server...')
     run()
