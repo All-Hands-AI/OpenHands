@@ -50,12 +50,12 @@ function CodeEditor(): JSX.Element {
         <Tabs
           disableCursorAnimation
           classNames={{
-            base: "border-b border-divider",
+            base: "border-b border-divider border-neutral-600 mb-4",
             tabList:
               "w-full relative rounded-none bg-neutral-900 p-0 border-divider",
             cursor: "w-full bg-neutral-600 rounded-none",
             tab: "max-w-fit px-4 h-[36px]",
-            tabContent: "group-data-[selected=true]:text-white ",
+            tabContent: "group-data-[selected=true]:text-white",
           }}
           aria-label="Options"
         >
