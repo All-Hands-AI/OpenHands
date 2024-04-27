@@ -45,3 +45,9 @@ jobs:
         run: make build
       - name: Run Tests
         run: poetry run pytest ./tests/unit
+
+  test_matrix_success:
+    runs-on: ubuntu-latest
+    needs: [on-macos, on-linux]
+    steps:
+    - run: echo Done!

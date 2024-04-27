@@ -3,7 +3,7 @@ name: Run Integration Tests
 on: [push, pull_request]
 
 jobs:
-  on-linux:
+  integration-tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -74,3 +74,9 @@ jobs:
           rm -rf workspace
           mkdir workspace
           WORKSPACE_BASE="$GITHUB_WORKSPACE/workspace" WORKSPACE_MOUNT_PATH="$GITHUB_WORKSPACE/workspace" poetry run pytest -s ./tests/integration
+
+  test_matrix_success:
+    runs-on: ubuntu-latest
+    needs: [integration-tests]
+    steps:
+    - run: echo Done!

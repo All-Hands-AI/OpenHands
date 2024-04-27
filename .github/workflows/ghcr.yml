@@ -38,3 +38,9 @@ jobs:
         run: |
           ORG_NAME=$(echo "${{ github.repository }}" | tr '[A-Z]' '[a-z]' | cut -d '/' -f 1)
           ./containers/build.sh ${{ matrix.image }} $ORG_NAME --push
+
+  docker_build_success:
+    runs-on: ubuntu-latest
+    needs: ghcr_build_and_push
+    steps:
+    - run: echo Done!
