@@ -52,14 +52,14 @@ class GitHubPushAction(ExecutableAction):
         # Set the temporary remote
         new_url = f'https://{github_token}@github.com/{self.owner}/{self.repo}.git'
         command = f'git remote add {random_remote} {new_url}'
-        set_url_result = controller.action_manager.run_command(
+        remote_add_result = controller.action_manager.run_command(
             command, background=False
         )
         if (
-            not isinstance(set_url_result, CmdOutputObservation)
-            or set_url_result.exit_code != 0
+            not isinstance(remote_add_result, CmdOutputObservation)
+            or remote_add_result.exit_code != 0
         ):
-            return set_url_result
+            return remote_add_result
 
         # Push the branch to the temporary remote
         command = f'git push {random_remote} {self.branch}'
@@ -67,14 +67,14 @@ class GitHubPushAction(ExecutableAction):
 
         # Delete the temporary remote
         command = f'git remote remove {random_remote}'
-        set_url_result = controller.action_manager.run_command(
+        remote_remove_result = controller.action_manager.run_command(
             command, background=False
         )
         if (
-            not isinstance(set_url_result, CmdOutputObservation)
-            or set_url_result.exit_code != 0
+            not isinstance(remote_remove_result, CmdOutputObservation)
+            or remote_remove_result.exit_code != 0
         ):
-            return set_url_result
+            return remote_remove_result
 
         return push_result
 
