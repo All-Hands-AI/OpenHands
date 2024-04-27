@@ -11,8 +11,11 @@ jobs:
         python-version: ["3.11"]
         agent: ["SWEAgent", "PlannerAgent", "MonologueAgent", "CodeActAgent"]
         sandbox: ["ssh", "exec"]
-        include:
           - agent: "MonologueAgent"
+            embedding-model: "local"
+          - agent: "MonologueAgent"
+            # sufficient to have one agent testing against local sandbox
+            sandbox: "local"
             embedding-model: "local"
           - agent: "SWEAgent"
             embedding-model: "none"
