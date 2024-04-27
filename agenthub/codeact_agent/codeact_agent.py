@@ -108,6 +108,10 @@ class CodeActAgent(Agent):
                 if isinstance(obs, (AgentMessageObservation, UserMessageObservation)):
                     self.messages.append(
                         {'role': 'user', 'content': obs.content})
+
+                    # User wants to exit
+                    if obs.content.strip() == '/exit':
+                        return AgentFinishAction()
                 elif isinstance(obs, CmdOutputObservation):
                     content = 'OBSERVATION:\n' + obs.content
                     content += f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
@@ -131,9 +135,6 @@ class CodeActAgent(Agent):
             stop=[
                 '</execute_ipython>',
                 '</execute_bash>',
-                # chatML in case ollama does not stop
-                '<|im_end|>',
-                '<|im_start|>'
             ],
             temperature=0.0
         )
@@ -143,9 +144,7 @@ class CodeActAgent(Agent):
         ) + len(action_str)
         self.messages.append({'role': 'assistant', 'content': action_str})
 
-        bash_command = re.search(r'<execute_bash>(.*)</execute_bash>', action_str, re.DOTALL)
-        python_code = re.search(r'<execute_ipython>(.*)</execute_ipython>', action_str, re.DOTALL)
-        if bash_command is not None:
+        if bash_command := re.search(r'<execute_bash>(.*)</execute_bash>', action_str, re.DOTALL):
             # remove the command from the action string to get thought
             thought = action_str.replace(bash_command.group(0), '').strip()
             # a command was found
@@ -153,14 +152,13 @@ class CodeActAgent(Agent):
             if command_group.strip() == 'exit':
                 return AgentFinishAction()
             return CmdRunAction(command=command_group, thought=thought)
-        elif python_code is not None:
+        elif python_code := re.search(r'<execute_ipython>(.*)</execute_ipython>', action_str, re.DOTALL):
             # a code block was found
             code_group = python_code.group(1).strip()
             thought = action_str.replace(python_code.group(0), '').strip()
-            # print(f"PYTHON CODE: '{code_group}'")
             return IPythonRunCellAction(code=code_group, thought=thought)
         else:
-            # We assume the agent is GOOD enough that when it returns pure NL,
+            # We assume the LLM is GOOD enough that when it returns pure natural language
             # it want to talk to the user
             return AgentTalkAction(content=action_str)
 

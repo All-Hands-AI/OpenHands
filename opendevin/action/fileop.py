@@ -13,6 +13,7 @@ from opendevin.observation import (
 from opendevin.schema import ActionType
 from opendevin.sandbox import E2BBox
 from opendevin import config
+from opendevin.schema.config import ConfigType
 
 from .base import ExecutableAction
 
@@ -32,7 +33,7 @@ def resolve_path(file_path):
     path_in_workspace = abs_path_in_sandbox.relative_to(Path(SANDBOX_PATH_PREFIX))
 
     # Get path relative to host
-    path_in_host_workspace = Path(config.get('WORKSPACE_BASE')) / path_in_workspace
+    path_in_host_workspace = Path(config.get(ConfigType.WORKSPACE_BASE)) / path_in_workspace
 
     return path_in_host_workspace
 
@@ -47,7 +48,7 @@ class FileReadAction(ExecutableAction):
     path: str
     start: int = 0
     end: int = -1
-    thoughts: str = ''
+    thought: str = ''
     action: str = ActionType.READ
 
     def _read_lines(self, all_lines: list[str]):
@@ -95,7 +96,7 @@ class FileWriteAction(ExecutableAction):
     content: str
     start: int = 0
     end: int = -1
-    thoughts: str = ''
+    thought: str = ''
     action: str = ActionType.WRITE
 
     def _insert_lines(self, to_insert: list[str], original: list[str]):

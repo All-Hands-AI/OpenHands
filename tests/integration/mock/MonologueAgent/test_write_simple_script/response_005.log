@@ -1,7 +1,8 @@
+```json
 {
-  "action": "run",
+  "action": "think",
   "args": {
-    "command": "./hello.sh",
-    "background": false
+    "thought": "The script 'hello.sh' has been written and tested successfully. It prints 'hello' as required. I should now finalize my task."
   }
 }
+```

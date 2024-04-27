@@ -1,8 +1,7 @@
-```json
 {
-  "action": "think",
+  "action": "write",
   "args": {
-    "thought": "I have written the file 'hello.sh'. I should now make sure it is executable and test running it."
+    "path": "hello.sh",
+    "content": "#!/bin/bash\necho 'hello'"
   }
 }
-```

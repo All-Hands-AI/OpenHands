@@ -2,12 +2,10 @@ import os
 import asyncio
 import subprocess
 
-import pytest
 
 from opendevin.main import main
 
 
-@pytest.mark.skipif(os.environ.get('AGENT') == 'CodeActAgent', reason='CodeActAgent requires task to be in a special format')
 def test_write_simple_script():
     task = "Write a shell script 'hello.sh' that prints 'hello'."
     asyncio.run(main(task))

@@ -1,7 +1,9 @@
+```json
 {
-  "action": "run",
+  "action": "write",
   "args": {
-    "command": "bash hello.sh",
-    "background": false
+    "path": "hello.sh",
+    "content": "#!/bin/bash\necho 'hello'"
   }
 }
+```

@@ -1,5 +1,5 @@
 Thoughts:
-Since the file 'hello.sh' has been created, the next step is to write the shell script code that prints "hello". This involves adding a shebang line to specify the shell interpreter and a print command. I will add these lines to the 'hello.sh' file.
+The task is to write a shell script named 'hello.sh' that prints 'hello'. I have already created the file 'hello.sh' in a previous step. Now, I need to write the shell script code into this file. The script should include the shebang line to specify the shell interpreter and a command to print 'hello'.
 
 Action:
 ```
