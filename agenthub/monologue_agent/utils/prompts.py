@@ -14,6 +14,7 @@ from opendevin.observation import (
 )
 from opendevin.exceptions import LLMOutputError
 from opendevin import config
+from opendevin.schema.config import ConfigType
 
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is this:
@@ -27,8 +28,8 @@ This is your internal monologue, in JSON format:
 
 
 Your most recent thought is at the bottom of that monologue. Continue your train of thought.
-What is your next thought or action? Your response must be in JSON format.
-It must be an object, and it must contain two fields:
+What is your next single thought or action? Your response must be in JSON format.
+It must be a single object, and it must contain two fields:
 * `action`, which is one of the actions below
 * `args`, which is a map of key-value pairs, specifying the arguments for that action
 
@@ -58,11 +59,15 @@ You should never act twice in a row without thinking. But if your last several
 actions are all "think" actions, you should consider taking a different action.
 
 Notes:
-* your environment is Debian Linux. You can install software with `apt`
-* your working directory will not change, even if you run `cd`. All commands will be run in the `%(WORKSPACE_MOUNT_PATH_IN_SANDBOX)s` directory.
+* you are logged in as %(user)s, but sudo will always work without a password.
+* all non-background commands will be forcibly stopped if they remain running for over %(timeout)s seconds.
+* your environment is Debian Linux. You can install software with `sudo apt-get`, but remember to use -y.
 * don't run interactive commands, or commands that don't return (e.g. `node server.js`). You may run commands in the background (e.g. `node server.js &`)
+* don't run interactive text editors (e.g. `nano` or 'vim'), instead use the 'write' or 'read' action.
+* don't run gui applications (e.g. software IDEs (like vs code or codium), web browsers (like firefox or chromium), or other complex software packages). Use non-interactive cli applications, or special actions instead.
+* whenever an action fails, always `think` about why it may have happened before acting again.
 
-What is your next thought or action? Again, you must reply with JSON, and only with JSON.
+What is your next single thought or action? Again, you must reply with JSON, and only with JSON. You must respond with exactly one 'action' object.
 
 %(hint)s
 """
@@ -141,12 +146,16 @@ def get_request_action_prompt(
             )
         bg_commands_message += '\nYou can end any process by sending a `kill` action with the numerical `id` above.'
 
+    user = 'opendevin' if config.get(ConfigType.RUN_AS_DEVIN) else 'root'
+
     return ACTION_PROMPT % {
         'task': task,
         'monologue': json.dumps(thoughts, indent=2),
         'background_commands': bg_commands_message,
         'hint': hint,
-        'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.get('WORKSPACE_MOUNT_PATH_IN_SANDBOX'),
+        'user': user,
+        'timeout': config.get(ConfigType.SANDBOX_TIMEOUT),
+        'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX),
     }
 
 
@@ -177,6 +186,10 @@ def parse_action_response(response: str) -> Action:
                 'Invalid JSON, the response must be well-formed JSON as specified in the prompt.'
             )
     except ValueError:
+        raise LLMOutputError(
+            'Invalid JSON, the response must be well-formed JSON as specified in the prompt.'
+        )
+    except TypeError:
         raise LLMOutputError(
             'Invalid JSON, the response must be well-formed JSON as specified in the prompt.'
         )

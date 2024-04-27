@@ -36,6 +36,10 @@ DEFAULT_CONFIG: dict = {
     ConfigType.LLM_RETRY_MIN_WAIT: 3,
     ConfigType.LLM_RETRY_MAX_WAIT: 60,
     ConfigType.MAX_ITERATIONS: 100,
+    ConfigType.LLM_TIMEOUT: None,
+    ConfigType.LLM_MAX_RETURN_TOKENS: None,
+    ConfigType.AGENT_MEMORY_MAX_THREADS: 2,
+    ConfigType.AGENT_MEMORY_ENABLED: False,
     # GPT-4 pricing is $10 per 1M input tokens. Since tokenization happens on LLM side,
     # we cannot easily count number of tokens, but we can count characters.
     # Assuming 5 characters per token, 5 million is a reasonable default limit.
@@ -46,6 +50,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.USE_HOST_NETWORK: 'false',
     ConfigType.SSH_HOSTNAME: 'localhost',
     ConfigType.DISABLE_COLOR: 'false',
+    ConfigType.SANDBOX_TIMEOUT: 120
 }
 
 config_str = ''
@@ -159,10 +164,12 @@ def finalize_config():
 finalize_config()
 
 
-def get(key: str, required: bool = False):
+def get(key: ConfigType, required: bool = False):
     """
     Get a key from the environment variables or config.toml or default configs.
     """
+    if not isinstance(key, ConfigType):
+        raise ValueError(f"key '{key}' must be an instance of ConfigType Enum")
     value = config.get(key)
     if not value and required:
         raise KeyError(f"Please set '{key}' in `config.toml` or `.env`.")

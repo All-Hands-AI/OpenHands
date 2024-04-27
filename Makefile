@@ -149,7 +149,7 @@ install-precommit-hooks:
 
 lint:
 	@echo "$(YELLOW)Running linters...$(RESET)"
-	@poetry run pre-commit run --files opendevin/**/* agenthub/**/* --show-diff-on-failure --config $(PRECOMMIT_CONFIG_PATH)
+	@poetry run pre-commit run --all-files --show-diff-on-failure --config $(PRECOMMIT_CONFIG_PATH)
 
 build-frontend:
 	@echo "$(YELLOW)Building frontend...$(RESET)"
@@ -158,7 +158,7 @@ build-frontend:
 # Start backend
 start-backend:
 	@echo "$(YELLOW)Starting backend...$(RESET)"
-	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) --reload --reload-dir opendevin --reload-dir agenthub --reload-dir evaluation
+	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) --reload --reload-exclude workspace/*
 
 # Start frontend
 start-frontend:
