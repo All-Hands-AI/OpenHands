@@ -1,7 +1,9 @@
+```json
 {
   "action": "run",
   "args": {
-    "command": "ls",
+    "command": "./hello.sh",
     "background": false
   }
 }
+```

@@ -245,6 +245,31 @@ This is your internal monologue, in JSON format:
   {
     "action": "think",
     "args": {
+      "thought": "If I have done some work and I want to push it to github, I can do that also!"
+    }
+  },
+  {
+    "action": "think",
+    "args": {
+      "thought": "Let's do it."
+    }
+  },
+  {
+    "action": "push",
+    "args": {
+      "owner": "owner",
+      "repo": "repo",
+      "branch": "branch"
+    }
+  },
+  {
+    "observation": "null",
+    "content": "",
+    "extras": {}
+  },
+  {
+    "action": "think",
+    "args": {
       "thought": "And once I have completed my task, I can use the finish action to stop working."
     }
   },
