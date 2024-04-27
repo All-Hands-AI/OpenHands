@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { renderWithProviders } from "test-utils";
 import { Mock } from "vitest";
+import i18next from "i18next";
 import SettingsModal from "./SettingsModal";
 import { Settings, getSettings, saveSettings } from "#/services/settings";
 import { initializeAgent } from "#/services/agent";
@@ -10,6 +11,7 @@ import toast from "#/utils/toast";
 import { fetchAgents, fetchModels } from "#/api";
 
 const toastSpy = vi.spyOn(toast, "settingsChanged");
+const i18nSpy = vi.spyOn(i18next, "changeLanguage");
 
 vi.mock("#/services/settings", async (importOriginal) => ({
   ...(await importOriginal<typeof import("#/services/settings")>()),
@@ -186,6 +188,34 @@ describe("SettingsModal", () => {
       });
 
       expect(toastSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("should change the language", async () => {
+      const onOpenChangeMock = vi.fn();
+      await act(async () =>
+        renderWithProviders(
+          <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
+        ),
+      );
+
+      const saveButton = screen.getByRole("button", { name: /save/i });
+      const languageInput = screen.getByRole("combobox", { name: "language" });
+
+      act(() => {
+        userEvent.click(languageInput);
+      });
+
+      const spanish = screen.getByText("Español");
+
+      act(() => {
+        userEvent.click(spanish);
+      });
+
+      act(() => {
+        userEvent.click(saveButton);
+      });
+
+      expect(i18nSpy).toHaveBeenCalledWith("es");
     });
 
     it("should close the modal", async () => {

@@ -1,6 +1,7 @@
 import { Spinner } from "@nextui-org/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import { fetchAgents, fetchModels } from "#/api";
@@ -62,6 +63,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const handleSaveSettings = () => {
     const updatedSettings = getSettingsDifference(settings);
     saveSettings(settings);
+    i18next.changeLanguage(settings.LANGUAGE);
     initializeAgent(settings); // reinitialize the agent with the new settings
 
     Object.entries(updatedSettings).forEach(([key, value]) => {
