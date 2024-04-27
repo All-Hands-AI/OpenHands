@@ -72,7 +72,7 @@ swe-bench@2f3a6b9fcab2:/swe-bench$ ./harness/run_evaluation.sh
 2024-03-20 09:24:54,970 - INFO - [matplotlib__matplotlib__3.6] [matplotlib__matplotlib-24362] Apply patch successful (test)
 2024-03-20 09:24:54,974 - INFO - [matplotlib__matplotlib__3.6] [matplotlib__matplotlib-24362] Apply patch successful (pred)
 2024-03-20 09:25:04,775 - INFO - [matplotlib__matplotlib__3.6] [matplotlib__matplotlib-24362] Test script run successful
-swe-bench@2f3a6b9fcab2:/swe-bench$ 
+swe-bench@2f3a6b9fcab2:/swe-bench$
 ```
 
 ### Interpret Results
