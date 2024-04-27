@@ -2,7 +2,7 @@ import os
 
 from opendevin import config
 from agenthub.dummy_agent.agent import DummyAgent
-from opendevin.action.github import GithubPushAction, GithubSendPRAction
+from opendevin.action.github import GitHubPushAction, GitHubSendPRAction
 from opendevin.controller.agent_controller import AgentController
 from opendevin.llm.llm import LLM
 from opendevin.observation.error import AgentErrorObservation
@@ -39,7 +39,7 @@ async def test_run_push_successful(mock_run_command, mock_random_choices, agent_
     mock_run_command.return_value = successful_output
 
     # Run the method
-    push_action = GithubPushAction(owner='owner', repo='repo', branch='branch')
+    push_action = GitHubPushAction(owner='owner', repo='repo', branch='branch')
     result = await push_action.run(agent_controller)
 
     # Verify the result is successful
@@ -66,7 +66,7 @@ async def test_run_push_error_missing_token(
 ):
 
     # Run the method
-    push_action = GithubPushAction(owner='owner', repo='repo', branch='branch')
+    push_action = GitHubPushAction(owner='owner', repo='repo', branch='branch')
     result = await push_action.run(agent_controller)
 
     # Verify the result is an error due to missing token
@@ -88,7 +88,7 @@ async def test_run_pull_request_created_successfully(mock_post, agent_controller
     mock_post.return_value = mock_response
 
     # Run the method
-    pr_action = GithubSendPRAction(owner='owner', repo='repo', title='title', head='head', head_repo='head_repo', base='base', body='body')
+    pr_action = GitHubSendPRAction(owner='owner', repo='repo', title='title', head='head', head_repo='head_repo', base='base', body='body')
     result = await pr_action.run(agent_controller)
 
     # Verify the result is a success observation
@@ -107,7 +107,7 @@ async def test_run_pull_request_creation_failed(mock_post, agent_controller):
     mock_post.return_value = mock_response
 
     # Run the method
-    pr_action = GithubSendPRAction(owner='owner', repo='repo', title='title', head='head', head_repo='head_repo', base='base', body='body')
+    pr_action = GitHubSendPRAction(owner='owner', repo='repo', title='title', head='head', head_repo='head_repo', base='base', body='body')
     result = await pr_action.run(agent_controller)
 
     # Verify the result is an error observation
@@ -120,7 +120,7 @@ async def test_run_pull_request_creation_failed(mock_post, agent_controller):
 async def test_run_error_missing_token(agent_controller):
 
     # Run the method
-    pr_action = GithubSendPRAction(owner='owner', repo='repo', title='title', head='head', head_repo='head_repo', base='base', body='body')
+    pr_action = GitHubSendPRAction(owner='owner', repo='repo', title='title', head='head', head_repo='head_repo', base='base', body='body')
     result = await pr_action.run(agent_controller)
 
     # Verify the result is an error due to missing token

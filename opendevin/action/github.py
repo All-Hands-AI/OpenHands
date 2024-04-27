@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class GithubPushAction(ExecutableAction):
+class GitHubPushAction(ExecutableAction):
     """This pushes the current branch to github.
 
     To use this, you need to set the OPENDEVIN_GITHUB_TOKEN environment variable.
@@ -82,7 +82,7 @@ class GithubPushAction(ExecutableAction):
 
 
 @dataclass
-class GithubSendPRAction(ExecutableAction):
+class GitHubSendPRAction(ExecutableAction):
     """An action to send a github PR.
 
     To use this, you need to set the OPENDEVIN_GITHUB_TOKEN environment variable.

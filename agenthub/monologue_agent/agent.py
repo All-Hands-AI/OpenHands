@@ -15,7 +15,7 @@ from opendevin.action import (
     FileReadAction,
     AgentRecallAction,
     BrowseURLAction,
-    GithubPushAction,
+    GitHubPushAction,
     AgentThinkAction,
 )
 
@@ -203,7 +203,7 @@ class MonologueAgent(Agent):
                 elif thought.startswith('PUSH'):
                     owner_repo, branch = thought.split('PUSH ')[1].split(' ')
                     owner, repo = owner_repo.split('/')
-                    action = GithubPushAction(owner=owner, repo=repo, branch=branch)
+                    action = GitHubPushAction(owner=owner, repo=repo, branch=branch)
                     output_type = ActionType.PUSH
                 else:
                     action = AgentThinkAction(thought=thought)

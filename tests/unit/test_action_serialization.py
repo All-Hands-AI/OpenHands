@@ -5,7 +5,7 @@ from opendevin.action import (
     CmdKillAction,
     CmdRunAction,
     BrowseURLAction,
-    GithubPushAction,
+    GitHubPushAction,
     FileReadAction,
     FileWriteAction,
     AgentRecallAction,
@@ -81,7 +81,7 @@ def test_github_push_action_serialization_deserialization():
         'action': 'push',
         'args': {'owner': 'myname', 'repo': 'myrepo', 'branch': 'main'}
     }
-    serialization_deserialization(original_action_dict, GithubPushAction)
+    serialization_deserialization(original_action_dict, GitHubPushAction)
 
 
 def test_file_read_action_serialization_deserialization():
