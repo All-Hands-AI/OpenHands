@@ -68,6 +68,8 @@ def mock_user_response(*args, test_name, **kwargs):
         test_name,
         'user_responses.log'
     )
+    if not os.path.exists(user_response_file):
+        return ''
     with open(user_response_file, 'r') as f:
         ret = f.read().rstrip()
     ret += '\n'
@@ -91,6 +93,8 @@ def patch_completion(monkeypatch, request):
     # Mock LLM completion
     monkeypatch.setattr('opendevin.llm.llm.litellm_completion', partial(mock_completion, test_name=test_name))
 
-    # Mock user input
-    user_responses = io.StringIO(mock_user_response(test_name=test_name))
-    monkeypatch.setattr('sys.stdin', user_responses)
+    # Mock user input (only for tests that have user_responses.log)
+    user_responses_str = mock_user_response(test_name=test_name)
+    if user_responses_str:
+        user_responses = io.StringIO(user_responses_str)
+        monkeypatch.setattr('sys.stdin', user_responses)
