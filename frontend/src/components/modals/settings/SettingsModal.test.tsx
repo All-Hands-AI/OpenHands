@@ -2,8 +2,9 @@ import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { renderWithProviders } from "test-utils";
+import { Mock } from "vitest";
 import SettingsModal from "./SettingsModal";
-import { Settings, saveSettings } from "#/services/settings";
+import { Settings, getSettings, saveSettings } from "#/services/settings";
 import { initializeAgent } from "#/services/agent";
 import toast from "#/utils/toast";
 import { fetchAgents, fetchModels } from "#/api";
@@ -12,6 +13,11 @@ const toastSpy = vi.spyOn(toast, "settingsChanged");
 
 vi.mock("#/services/settings", async (importOriginal) => ({
   ...(await importOriginal<typeof import("#/services/settings")>()),
+  getSettings: vi.fn().mockReturnValue({
+    LLM_MODEL: "gpt-3.5-turbo",
+    AGENT: "MonologueAgent",
+    LANGUAGE: "en",
+  }),
   saveSettings: vi.fn(),
 }));
 
@@ -58,6 +64,31 @@ describe("SettingsModal", () => {
     });
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("should disable the save button if the settings are the same as the initial settings", async () => {
+    await act(async () =>
+      renderWithProviders(<SettingsModal isOpen onOpenChange={vi.fn()} />),
+    );
+
+    const saveButton = screen.getByRole("button", { name: /save/i });
+
+    expect(saveButton).toBeDisabled();
+  });
+
+  it("should disabled the save button if the settings contain a missing value", () => {
+    const onOpenChangeMock = vi.fn();
+    (getSettings as Mock).mockReturnValueOnce({
+      LLM_MODEL: "gpt-3.5-turbo",
+      AGENT: "",
+    });
+    renderWithProviders(
+      <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
+    );
+
+    const saveButton = screen.getByRole("button", { name: /save/i });
+
+    expect(saveButton).toBeDisabled();
   });
 
   describe("onHandleSave", () => {

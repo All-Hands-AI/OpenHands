@@ -22,7 +22,7 @@ interface SettingsProps {
 
 function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const { t } = useTranslation();
-  const currentSettings = React.useMemo(() => getSettings(), []);
+  const currentSettings = getSettings();
 
   const [models, setModels] = React.useState<string[]>([]);
   const [agents, setAgents] = React.useState<string[]>([]);
@@ -79,6 +79,9 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
         {
           label: t(I18nKey.CONFIGURATION$MODAL_SAVE_BUTTON_LABEL),
           action: handleSaveSettings,
+          isDisabled:
+            Object.values(settings).some((value) => !value) ||
+            JSON.stringify(settings) === JSON.stringify(currentSettings),
           closeAfterAction: true,
           className: "bg-primary rounded-lg",
         },
