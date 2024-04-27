@@ -44,6 +44,7 @@ pre-commit = "3.7.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
+pytest-cov = "*"
 
 [tool.poetry.group.evaluation.dependencies]
 torch = "*"
