@@ -1,8 +1,7 @@
 import sys
-import commands
 
 def print_help():
-    help_text = '''
+    help_text = """
 Usage: python string_cli.py <command> <string>
 
 Commands:
@@ -12,7 +11,7 @@ Commands:
     spongebob - Converts the input string to spongebob case.
     length - Returns the length of the input string.
     scramble - Randomly scrambles the characters in the input string.
-'''
+"""
     print(help_text)
 
 if __name__ == '__main__':
