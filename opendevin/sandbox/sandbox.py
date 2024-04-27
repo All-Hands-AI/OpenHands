@@ -32,7 +32,3 @@ class Sandbox(ABC, PluginMixin):
     @abstractmethod
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         pass
-
-    @abstractmethod
-    def get_working_directory(self):
-        pass
