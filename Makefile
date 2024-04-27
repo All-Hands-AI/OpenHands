@@ -189,7 +189,7 @@ setup-config:
 	@echo "$(GREEN)Config.toml setup completed.$(RESET)"
 
 setup-config-prompts:
-	@read -p "Enter your LLM Model name (see https://docs.litellm.ai/docs/providers for full list) [default: $(DEFAULT_MODEL)]: " llm_model; \
+	@read -p "Enter your LLM Model name, used for running without UI. Set the model in the UI after you start the app. (see https://docs.litellm.ai/docs/providers for full list) [default: $(DEFAULT_MODEL)]: " llm_model; \
 	 llm_model=$${llm_model:-$(DEFAULT_MODEL)}; \
 	 echo "LLM_MODEL=\"$$llm_model\"" > $(CONFIG_FILE).tmp
 
