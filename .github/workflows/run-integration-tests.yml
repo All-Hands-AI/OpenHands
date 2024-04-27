@@ -1,9 +1,14 @@
 name: Run Integration Tests
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+    - main
+  pull_request:
 
 jobs:
-  on-linux:
+  integration-tests:
+    name: Integration Tests
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -81,3 +86,9 @@ jobs:
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  test_matrix_success:
+    name: All Integration Tests Passed
+    runs-on: ubuntu-latest
+    needs: [integration-tests]
+    steps:
+    - run: echo Done!

@@ -1,9 +1,14 @@
 name: Run Unit Tests
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+    - main
+  pull_request:
 
 jobs:
-  on-macos:
+  test-on-macos:
+    name: Test on macOS
     runs-on: macos-13
     strategy:
       matrix:
@@ -31,7 +36,8 @@ jobs:
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-  on-linux:
+  test-on-linux:
+    name: Test on Linux
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -53,3 +59,9 @@ jobs:
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  test_matrix_success:
+    name: All Mac/Linux Tests Passed
+    runs-on: ubuntu-latest
+    needs: [test-on-macos, test-on-linux]
+    steps:
+    - run: echo Done!
