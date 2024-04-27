@@ -1,4 +1,3 @@
-import os
 
 from opendevin import config
 from agenthub.dummy_agent.agent import DummyAgent
@@ -25,7 +24,7 @@ def agent_controller():
 
 
 @pytest.mark.asyncio
-@patch.dict(os.environ, {'OPENDEVIN_GITHUB_TOKEN': 'fake_token'}, clear=True)
+@patch.dict(config.config, {'GITHUB_TOKEN': 'fake_token'}, clear=True)
 @patch('random.choices')
 @patch('opendevin.controller.action_manager.ActionManager.run_command')
 async def test_run_push_successful(mock_run_command, mock_random_choices, agent_controller):
@@ -73,12 +72,12 @@ async def test_run_push_error_missing_token(
     assert isinstance(result, AgentErrorObservation)
     assert (
         result.message
-        == 'Oops. Something went wrong: OPENDEVIN_GITHUB_TOKEN is not set in the environment variables'
+        == 'Oops. Something went wrong: GITHUB_TOKEN is not set'
     )
 
 
 @pytest.mark.asyncio
-@patch.dict(os.environ, {'OPENDEVIN_GITHUB_TOKEN': 'fake_token'}, clear=True)
+@patch.dict(config.config, {'GITHUB_TOKEN': 'fake_token'}, clear=True)
 @patch('requests.post')
 async def test_run_pull_request_created_successfully(mock_post, agent_controller):
     # Set up the mock for the requests.post call to simulate a successful pull request creation
@@ -98,7 +97,7 @@ async def test_run_pull_request_created_successfully(mock_post, agent_controller
 
 @pytest.mark.asyncio
 @patch('requests.post')
-@patch.dict(os.environ, {'OPENDEVIN_GITHUB_TOKEN': 'fake_token'}, clear=True)
+@patch.dict(config.config, {'GITHUB_TOKEN': 'fake_token'}, clear=True)
 async def test_run_pull_request_creation_failed(mock_post, agent_controller):
     # Set up the mock for the requests.post call to simulate a failed pull request creation
     mock_response = MagicMock()
@@ -125,4 +124,4 @@ async def test_run_error_missing_token(agent_controller):
 
     # Verify the result is an error due to missing token
     assert isinstance(result, AgentErrorObservation)
-    assert 'OPENDEVIN_GITHUB_TOKEN is not set in the environment variables' in result.message
+    assert 'GITHUB_TOKEN is not set' in result.message

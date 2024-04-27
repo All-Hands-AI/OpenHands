@@ -1,13 +1,15 @@
-import os
 from dataclasses import dataclass
 from opendevin.observation import Observation, AgentErrorObservation
 from opendevin.observation.message import AgentMessageObservation
 from opendevin.observation.run import CmdOutputObservation
 from opendevin.schema import ActionType
+from opendevin import config
 from typing import TYPE_CHECKING
 import requests
 import random
 import string
+
+from opendevin.schema.config import ConfigType
 
 from .base import ExecutableAction
 
@@ -19,7 +21,7 @@ if TYPE_CHECKING:
 class GitHubPushAction(ExecutableAction):
     """This pushes the current branch to github.
 
-    To use this, you need to set the OPENDEVIN_GITHUB_TOKEN environment variable.
+    To use this, you need to set the GITHUB_TOKEN environment variable.
     The agent will return a message with a URL that you can click to make a pull
     request.
 
@@ -36,10 +38,10 @@ class GitHubPushAction(ExecutableAction):
     action: str = ActionType.PUSH
 
     async def run(self, controller: 'AgentController') -> Observation:
-        github_token = os.environ.get('OPENDEVIN_GITHUB_TOKEN')
+        github_token = config.get(ConfigType.GITHUB_TOKEN)
         if not github_token:
             return AgentErrorObservation(
-                'OPENDEVIN_GITHUB_TOKEN is not set in the environment variables'
+                'GITHUB_TOKEN is not set'
             )
 
         # Create a random short string to use as a temporary remote
@@ -85,7 +87,7 @@ class GitHubPushAction(ExecutableAction):
 class GitHubSendPRAction(ExecutableAction):
     """An action to send a github PR.
 
-    To use this, you need to set the OPENDEVIN_GITHUB_TOKEN environment variable.
+    To use this, you need to set the GITHUB_TOKEN environment variable.
 
     Attributes:
         owner: The owner of the source repo
@@ -107,10 +109,10 @@ class GitHubSendPRAction(ExecutableAction):
     action: str = ActionType.SEND_PR
 
     async def run(self, controller: 'AgentController') -> Observation:
-        github_token = os.environ.get('OPENDEVIN_GITHUB_TOKEN')
+        github_token = config.get(ConfigType.GITHUB_TOKEN)
         if not github_token:
             return AgentErrorObservation(
-                'OPENDEVIN_GITHUB_TOKEN is not set in the environment variables'
+                'GITHUB_TOKEN is not set'
             )
 
         # API URL to create the pull request
