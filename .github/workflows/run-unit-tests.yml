@@ -55,6 +55,6 @@ jobs:
   test_matrix_success:
     name: All Mac/Linux Tests Passed
     runs-on: ubuntu-latest
-    needs: [on-macos, on-linux]
+    needs: [test-on-macos, test-on-linux]
     steps:
     - run: echo Done!
