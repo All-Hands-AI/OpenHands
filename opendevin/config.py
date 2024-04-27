@@ -36,6 +36,8 @@ DEFAULT_CONFIG: dict = {
     ConfigType.LLM_RETRY_MIN_WAIT: 3,
     ConfigType.LLM_RETRY_MAX_WAIT: 60,
     ConfigType.MAX_ITERATIONS: 100,
+    ConfigType.AGENT_MEMORY_MAX_THREADS: 2,
+    ConfigType.AGENT_MEMORY_ENABLED: False,
     ConfigType.LLM_TIMEOUT: None,
     ConfigType.LLM_MAX_RETURN_TOKENS: None,
     # GPT-4 pricing is $10 per 1M input tokens. Since tokenization happens on LLM side,

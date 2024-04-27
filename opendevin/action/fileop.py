@@ -85,6 +85,8 @@ class FileReadAction(ExecutableAction):
                         code_view = ''.join(read_lines)
                 except FileNotFoundError:
                     return AgentErrorObservation(f'File not found: {self.path}')
+                except UnicodeDecodeError:
+                    return AgentErrorObservation(f'File could not be decoded as utf-8: {self.path}')
                 except IsADirectoryError:
                     return AgentErrorObservation(f'Path is a directory: {self.path}. You can only read files')
             except PermissionError:
@@ -144,6 +146,8 @@ class FileWriteAction(ExecutableAction):
                     return AgentErrorObservation(f'File not found: {self.path}')
                 except IsADirectoryError:
                     return AgentErrorObservation(f'Path is a directory: {self.path}. You can only write to files')
+                except UnicodeDecodeError:
+                    return AgentErrorObservation(f'File could not be decoded as utf-8: {self.path}')
             except PermissionError:
                 return AgentErrorObservation(f'Malformed paths not permitted: {self.path}')
         return FileWriteObservation(content='', path=self.path)

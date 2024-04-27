@@ -1,5 +1,6 @@
 import subprocess
 import atexit
+import os
 from typing import Tuple, Dict
 from opendevin.sandbox.sandbox import Sandbox
 from opendevin.sandbox.process import Process
@@ -25,6 +26,7 @@ from opendevin.schema.config import ConfigType
 
 class LocalBox(Sandbox):
     def __init__(self, timeout: int = 120):
+        os.makedirs(config.get(ConfigType.WORKSPACE_BASE), exist_ok=True)
         self.timeout = timeout
         self.background_commands: Dict[int, Process] = {}
         self.cur_background_id = 0
