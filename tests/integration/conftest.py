@@ -1,5 +1,6 @@
 import re
 import os
+import io
 from functools import partial
 
 import pytest
@@ -53,6 +54,26 @@ def get_mock_response(test_name, messages):
                             return resp_file.read()
 
 
+def mock_user_response(*args, test_name, **kwargs):
+    """The agent will ask for user input using `input()` when calling `asyncio.run(main(task))`.
+    This function mocks the user input by providing the response from the mock response file.
+
+    It will read the `user_responses.log` file in the test directory and set as
+    STDIN input for the agent to read.
+    """
+    user_response_file = os.path.join(
+        script_dir,
+        'mock',
+        os.environ.get('AGENT'),
+        test_name,
+        'user_responses.log'
+    )
+    with open(user_response_file, 'r') as f:
+        ret = f.read().rstrip()
+    ret += '\n'
+    return ret
+
+
 def mock_completion(*args, test_name, **kwargs):
     messages = kwargs['messages']
     message_str = ''
@@ -67,4 +88,9 @@ def mock_completion(*args, test_name, **kwargs):
 @pytest.fixture(autouse=True)
 def patch_completion(monkeypatch, request):
     test_name = request.node.name
+    # Mock LLM completion
     monkeypatch.setattr('opendevin.llm.llm.litellm_completion', partial(mock_completion, test_name=test_name))
+
+    # Mock user input
+    user_responses = io.StringIO(mock_user_response(test_name=test_name))
+    monkeypatch.setattr('sys.stdin', user_responses)
