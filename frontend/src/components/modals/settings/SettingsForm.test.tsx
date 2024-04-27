@@ -4,6 +4,7 @@ import React from "react";
 import { renderWithProviders } from "test-utils";
 import AgentTaskState from "#/types/AgentTaskState";
 import SettingsForm from "./SettingsForm";
+import { Settings } from "#/services/settings";
 
 const onModelChangeMock = vi.fn();
 const onAgentChangeMock = vi.fn();
