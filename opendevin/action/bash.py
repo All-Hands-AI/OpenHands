@@ -74,7 +74,7 @@ class IPythonRunCellAction(ExecutableAction):
             config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX),
             '.tmp', '.ipython_execution_tmp.py'
         )
-        obs: 'CmdOutputObservation' = controller.action_manager.run_command(
+        obs = controller.action_manager.run_command(
             f'execute_cli < {tmp_filepath_inside_sandbox}',
             background=False
         )
