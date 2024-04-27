@@ -3,7 +3,7 @@ name: Run Unit Tests
 on: [push, pull_request]
 
 jobs:
-  on-macos:
+  test-on-macos:
     runs-on: macos-13
     strategy:
       matrix:
@@ -27,7 +27,7 @@ jobs:
         run: make build
       - name: Run Tests
         run: poetry run pytest ./tests/unit
-  on-linux:
+  test-on-linux:
     runs-on: ubuntu-latest
     strategy:
       matrix:
