@@ -58,3 +58,31 @@ def test_ssh_box_multi_line_cmd_run_as_devin():
     # cleanup the environment variables
     del os.environ['WORKSPACE_BASE']
     del os.environ['SANDBOX_TYPE']
+
+
+def test_ssh_box_stateful_cmd_run_as_devin():
+    # get a temporary directory
+    with tempfile.TemporaryDirectory() as temp_dir:
+        pathlib.Path().mkdir(parents=True, exist_ok=True)
+        os.environ['WORKSPACE_BASE'] = temp_dir
+        os.environ['RUN_AS_DEVIN'] = 'true'
+        os.environ['SANDBOX_TYPE'] = 'ssh'
+        from opendevin.sandbox.docker.ssh_box import DockerSSHBox
+        ssh_box = DockerSSHBox()
+
+        # test the ssh box
+        exit_code, output = ssh_box.execute('mkdir test')
+        assert exit_code == 0, 'The exit code should be 0.'
+        assert output.strip() == ''
+
+        exit_code, output = ssh_box.execute('cd test')
+        assert exit_code == 0, 'The exit code should be 0.'
+        assert output.strip() == ''
+
+        exit_code, output = ssh_box.execute('pwd')
+        assert exit_code == 0, 'The exit code should be 0.'
+        assert output.strip() == '/workspace/test'
+
+    # cleanup the environment variables
+    del os.environ['WORKSPACE_BASE']
+    del os.environ['SANDBOX_TYPE']
