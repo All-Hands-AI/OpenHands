@@ -78,6 +78,9 @@ for k, v in config.items():
     if k in [ConfigType.LLM_NUM_RETRIES, ConfigType.LLM_RETRY_MIN_WAIT, ConfigType.LLM_RETRY_MAX_WAIT]:
         config[k] = int_value(config[k], v, config_key=k)
 
+# In local there is no sandbox, the workspace will have the same pwd as the host
+if config[ConfigType.SANDBOX_TYPE] == 'local':
+    config[ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX] = config[ConfigType.WORKSPACE_MOUNT_PATH]
 
 def get_parser():
     parser = argparse.ArgumentParser(

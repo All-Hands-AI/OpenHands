@@ -185,11 +185,7 @@ def parse_action_response(response: str) -> Action:
             raise LLMOutputError(
                 'Invalid JSON, the response must be well-formed JSON as specified in the prompt.'
             )
-    except ValueError:
-        raise LLMOutputError(
-            'Invalid JSON, the response must be well-formed JSON as specified in the prompt.'
-        )
-    except TypeError:
+    except (ValueError, TypeError):
         raise LLMOutputError(
             'Invalid JSON, the response must be well-formed JSON as specified in the prompt.'
         )
