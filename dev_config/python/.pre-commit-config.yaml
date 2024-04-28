@@ -7,19 +7,6 @@ repos:
       - id: check-yaml
       - id: debug-statements
 
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.0.0
-    hooks:
-      - id: flake8
-        args: ['--select=Q000']  # Q000 is the error code for single quote enforcement
-        additional_dependencies:
-          - flake8-quotes
-
-  - repo: https://github.com/hhatto/autopep8
-    rev: v2.1.0
-    hooks:
-      - id: autopep8
-
   - repo: https://github.com/asottile/setup-cfg-fmt
     rev: v2.5.0
     hooks:

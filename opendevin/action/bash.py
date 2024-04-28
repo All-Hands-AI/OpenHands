@@ -9,7 +9,7 @@ from opendevin.schema import ActionType, ConfigType
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
-    from opendevin.observation import CmdOutputObservation
+    from opendevin.observation import CmdOutputObservation, Observation
 
 from opendevin.observation import IPythonRunCellObservation
 
@@ -21,7 +21,7 @@ class CmdRunAction(ExecutableAction):
     thought: str = ''
     action: str = ActionType.RUN
 
-    async def run(self, controller: 'AgentController') -> 'CmdOutputObservation':
+    async def run(self, controller: 'AgentController') -> 'Observation':
         return controller.action_manager.run_command(self.command, self.background)
 
     @property
@@ -74,7 +74,7 @@ class IPythonRunCellAction(ExecutableAction):
             config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX),
             '.tmp', '.ipython_execution_tmp.py'
         )
-        obs: 'CmdOutputObservation' = controller.action_manager.run_command(
+        obs = controller.action_manager.run_command(
             f'execute_cli < {tmp_filepath_inside_sandbox}',
             background=False
         )

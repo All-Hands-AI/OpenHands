@@ -41,7 +41,6 @@ if SANDBOX_USER_ID := config.get(ConfigType.SANDBOX_USER_ID):
 elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
 
-
 class DockerSSHBox(Sandbox):
     instance_id: str
     container_image: str
@@ -62,6 +61,7 @@ class DockerSSHBox(Sandbox):
         timeout: int = 120,
         sid: str | None = None,
     ):
+        logger.info(f'SSHBox is running as {"opendevin" if RUN_AS_DEVIN else "root"} user with USER_ID={USER_ID} in the sandbox')
         # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
             self.docker_client = docker.from_env()
@@ -150,8 +150,10 @@ class DockerSSHBox(Sandbox):
                 workdir=SANDBOX_WORKSPACE_DIR,
             )
             if exit_code != 0:
-                raise Exception(
-                    f'Failed to chown workspace directory for opendevin in sandbox: {logs}')
+                # This is not a fatal error, just a warning
+                logger.warning(
+                    f'Failed to chown workspace directory for opendevin in sandbox: {logs}. But this should be fine if the {SANDBOX_WORKSPACE_DIR=} is mounted by the app docker container.'
+                )
         else:
             exit_code, logs = self.container.exec_run(
                 # change password for root
@@ -176,7 +178,9 @@ class DockerSSHBox(Sandbox):
         else:
             username = 'root'
         logger.info(
-            f"Connecting to {username}@{hostname} via ssh. If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub."
+            f"Connecting to {username}@{hostname} via ssh. "
+            f"If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub. "
+            f"If you started OpenDevin with `docker run`, you should try `ssh -v -p {self._ssh_port} {username}@localhost` with the password '{self._ssh_password} on the host machine (where you started the container)."
         )
         self.ssh.login(hostname, username, self._ssh_password,
                        port=self._ssh_port)
