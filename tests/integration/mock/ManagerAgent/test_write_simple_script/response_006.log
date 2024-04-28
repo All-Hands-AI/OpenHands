@@ -1,7 +1,0 @@
-{
-  "action": "run",
-  "args": {
-    "command": "ls -la",
-    "background": false
-  }
-}
