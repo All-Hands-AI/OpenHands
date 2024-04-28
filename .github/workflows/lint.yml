@@ -1,9 +1,14 @@
 name: Lint
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+    - main
+  pull_request:
 
 jobs:
   lint-frontend:
+    name: Lint frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -1,7 +1,7 @@
 from typing import List
 
 from opendevin import config
-from opendevin.observation import CmdOutputObservation
+from opendevin.observation import CmdOutputObservation, AgentErrorObservation
 from opendevin.sandbox import DockerExecBox, DockerSSHBox, Sandbox, LocalBox, E2BBox
 from opendevin.schema import ConfigType
 from opendevin.action import (
@@ -26,21 +26,15 @@ class ActionManager:
         if sandbox_type == 'exec':
             self.sandbox = DockerExecBox(
                 sid=(sid or 'default'),
-                timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
             )
         elif sandbox_type == 'local':
-            self.sandbox = LocalBox(
-                timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
-            )
+            self.sandbox = LocalBox()
         elif sandbox_type == 'ssh':
             self.sandbox = DockerSSHBox(
-                sid=(sid or 'default'),
-                timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
+                sid=(sid or 'default')
             )
         elif sandbox_type == 'e2b':
-            self.sandbox = E2BBox(
-                timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
-            )
+            self.sandbox = E2BBox()
         else:
             raise ValueError(f'Invalid sandbox type: {sandbox_type}')
 
@@ -54,17 +48,20 @@ class ActionManager:
         observation = await action.run(agent_controller)
         return observation
 
-    def run_command(self, command: str, background=False) -> CmdOutputObservation:
+    def run_command(self, command: str, background=False) -> Observation:
         if background:
             return self._run_background(command)
         else:
             return self._run_immediately(command)
 
-    def _run_immediately(self, command: str) -> CmdOutputObservation:
-        exit_code, output = self.sandbox.execute(command)
-        return CmdOutputObservation(
-            command_id=-1, content=output, command=command, exit_code=exit_code
-        )
+    def _run_immediately(self, command: str) -> Observation:
+        try:
+            exit_code, output = self.sandbox.execute(command)
+            return CmdOutputObservation(
+                command_id=-1, content=output, command=command, exit_code=exit_code
+            )
+        except UnicodeDecodeError:
+            return AgentErrorObservation('Command output could not be decoded as utf-8')
 
     def _run_background(self, command: str) -> CmdOutputObservation:
         bg_cmd = self.sandbox.execute_in_background(command)

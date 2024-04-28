@@ -20,16 +20,10 @@ from .base import ExecutableAction
 SANDBOX_PATH_PREFIX = '/workspace/'
 
 
-def resolve_path(file_path, working_directory):
-    path_in_sandbox = Path(file_path)
-
-    # Apply working directory
-    if not path_in_sandbox.is_absolute():
-        path_in_sandbox = Path(working_directory) / path_in_sandbox
-
+def resolve_path(file_path):
     # Sanitize the path with respect to the root of the full sandbox
-    # (deny any .. path traversal to parent directories of the sandbox)
-    abs_path_in_sandbox = path_in_sandbox.resolve()
+    # (deny any .. path traversal to parent directories of this)
+    abs_path_in_sandbox = (Path(SANDBOX_PATH_PREFIX) / Path(file_path)).resolve()
 
     # If the path is outside the workspace, deny it
     if not abs_path_in_sandbox.is_relative_to(SANDBOX_PATH_PREFIX):
@@ -77,7 +71,7 @@ class FileReadAction(ExecutableAction):
             code_view = ''.join(read_lines)
         else:
             try:
-                whole_path = resolve_path(self.path, controller.action_manager.sandbox.get_working_directory())
+                whole_path = resolve_path(self.path)
                 self.start = max(self.start, 0)
                 try:
                     with open(whole_path, 'r', encoding='utf-8') as file:
@@ -85,6 +79,8 @@ class FileReadAction(ExecutableAction):
                         code_view = ''.join(read_lines)
                 except FileNotFoundError:
                     return AgentErrorObservation(f'File not found: {self.path}')
+                except UnicodeDecodeError:
+                    return AgentErrorObservation(f'File could not be decoded as utf-8: {self.path}')
                 except IsADirectoryError:
                     return AgentErrorObservation(f'Path is a directory: {self.path}. You can only read files')
             except PermissionError:
@@ -127,7 +123,7 @@ class FileWriteAction(ExecutableAction):
                 return AgentErrorObservation(f'File not found: {self.path}')
         else:
             try:
-                whole_path = resolve_path(self.path, controller.action_manager.sandbox.get_working_directory())
+                whole_path = resolve_path(self.path)
                 mode = 'w' if not os.path.exists(whole_path) else 'r+'
                 try:
                     with open(whole_path, mode, encoding='utf-8') as file:
@@ -144,6 +140,8 @@ class FileWriteAction(ExecutableAction):
                     return AgentErrorObservation(f'File not found: {self.path}')
                 except IsADirectoryError:
                     return AgentErrorObservation(f'Path is a directory: {self.path}. You can only write to files')
+                except UnicodeDecodeError:
+                    return AgentErrorObservation(f'File could not be decoded as utf-8: {self.path}')
             except PermissionError:
                 return AgentErrorObservation(f'Malformed paths not permitted: {self.path}')
         return FileWriteObservation(content='', path=self.path)
