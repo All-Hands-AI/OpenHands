@@ -1,8 +1,7 @@
-```json
 {
-  "action": "think",
+  "action": "write",
   "args": {
-    "thought": "The content of 'hello.sh' has been written. Next, I should check if the script has been correctly written and contains the expected output command."
+    "path": "hello.sh",
+    "content": "#!/bin/bash\necho \"hello\""
   }
 }
-```
