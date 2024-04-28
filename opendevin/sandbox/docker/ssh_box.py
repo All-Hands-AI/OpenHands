@@ -177,7 +177,9 @@ class DockerSSHBox(Sandbox):
         else:
             username = 'root'
         logger.info(
-            f"Connecting to {username}@{hostname} via ssh. If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub."
+            f"Connecting to {username}@{hostname} via ssh. "
+            f"If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub. "
+            f"If you started OpenDevin with `docker run`, you should try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password} on the host machine (where you started the container)."
         )
         self.ssh.login(hostname, username, self._ssh_password,
                        port=self._ssh_port)
