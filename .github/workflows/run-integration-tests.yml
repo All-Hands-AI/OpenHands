@@ -33,6 +33,11 @@ jobs:
             agent: "CodeActAgent"
             embedding-model: "none"
             sandbox: "ssh"
+          - name: ManagerAgent-py311-ssh
+            python-version: "3.11"
+            agent: "ManagerAgent"
+            embedding-model: "none"
+            sandbox: "ssh"
           - name: SWEAgent-py311-exec
             python-version: "3.11"
             agent: "SWEAgent"
@@ -51,6 +56,11 @@ jobs:
           - name: CodeActAgent-py311-exec
             python-version: "3.11"
             agent: "CodeActAgent"
+            embedding-model: "none"
+            sandbox: "exec"
+          - name: ManagerAgent-py311-exec
+            python-version: "3.11"
+            agent: "ManagerAgent"
             embedding-model: "none"
             sandbox: "exec"
           - name: MonologueAgent-py311-local
