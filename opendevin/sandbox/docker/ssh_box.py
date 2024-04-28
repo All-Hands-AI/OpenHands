@@ -152,7 +152,8 @@ class DockerSSHBox(Sandbox):
             if exit_code != 0:
                 # This is not a fatal error, just a warning
                 logger.warning(
-                    f'Failed to chown workspace directory for opendevin in sandbox: {logs}')
+                    f'Failed to chown workspace directory for opendevin in sandbox: {logs}. But this should be fine if the {SANDBOX_WORKSPACE_DIR=} is mounted by the app docker container.'
+                )
         else:
             exit_code, logs = self.container.exec_run(
                 # change password for root
