@@ -4,6 +4,8 @@ from opendevin.state import State
 from opendevin.llm.llm import LLM
 from opendevin.schema import ActionType, ObservationType
 from opendevin.exceptions import AgentNoInstructionError
+from opendevin.schema.config import ConfigType
+from opendevin import config
 
 from opendevin.action import (
     Action,
@@ -27,7 +29,8 @@ from opendevin.observation import (
 
 import agenthub.monologue_agent.utils.prompts as prompts
 from agenthub.monologue_agent.utils.monologue import Monologue
-from agenthub.monologue_agent.utils.memory import LongTermMemory
+if config.get(ConfigType.AGENT_MEMORY_ENABLED):
+    from agenthub.monologue_agent.utils.memory import LongTermMemory
 
 MAX_TOKEN_COUNT_PADDING = 512
 MAX_OUTPUT_LENGTH = 5000
@@ -86,6 +89,8 @@ class MonologueAgent(Agent):
     """
 
     _initialized = False
+    monologue: Monologue
+    memory: 'LongTermMemory | None'
 
     def __init__(self, llm: LLM):
         """
@@ -95,8 +100,6 @@ class MonologueAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
-        self.monologue = Monologue()
-        self.memory = LongTermMemory()
 
     def _add_event(self, event: dict):
         """
@@ -119,7 +122,8 @@ class MonologueAgent(Agent):
             )
 
         self.monologue.add_event(event)
-        self.memory.add_event(event)
+        if self.memory is not None:
+            self.memory.add_event(event)
 
         # Test monologue token length
         prompt = prompts.get_request_action_prompt(
@@ -151,8 +155,12 @@ class MonologueAgent(Agent):
 
         if task is None or task == '':
             raise AgentNoInstructionError()
+
         self.monologue = Monologue()
-        self.memory = LongTermMemory()
+        if config.get(ConfigType.AGENT_MEMORY_ENABLED):
+            self.memory = LongTermMemory()
+        else:
+            self.memory = None
 
         output_type = ''
         for thought in INITIAL_THOUGHTS:
@@ -243,8 +251,14 @@ class MonologueAgent(Agent):
         Returns:
         - List[str]: A list of top 10 text results that matched the query
         """
+        if self.memory is None:
+            return []
         return self.memory.search(query)
 
     def reset(self) -> None:
         super().reset()
         self.monologue = Monologue()
+        if config.get(ConfigType.AGENT_MEMORY_ENABLED):
+            self.memory = LongTermMemory()
+        else:
+            self.memory = None

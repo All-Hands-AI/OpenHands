@@ -33,7 +33,7 @@ def read_root():
     return {'message': 'This is a mock server'}
 
 
-@app.get('/litellm-models')
+@app.get('/api/litellm-models')
 def read_llm_models():
     return [
         'gpt-4',
@@ -43,13 +43,33 @@ def read_llm_models():
     ]
 
 
-@app.get('/agents')
+@app.get('/api/agents')
 def read_llm_agents():
     return [
         'MonologueAgent',
         'CodeActAgent',
         'PlannerAgent',
     ]
+
+
+@app.get('/api/messages')
+async def get_messages():
+    return {'messages': []}
+
+
+@app.get('/api/messages/total')
+async def get_message_total():
+    return {'msg_total': 0}
+
+
+@app.get('/api/refresh-files')
+def refresh_files():
+    return {
+        'name': 'workspace',
+        'children': [
+            {'name': 'hello_world.py', 'children': []},
+        ],
+    }
 
 
 if __name__ == '__main__':
