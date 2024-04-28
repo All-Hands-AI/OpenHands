@@ -1,0 +1,11 @@
+{
+  "action": "finish",
+  "args": {
+    "outputs": {
+      "overall_purpose": "Unable to determine as the directory is empty.",
+      "directory_structure": "There are no files or subdirectories in '/workspace'.",
+      "main_components": "No components found.",
+      "component_interaction": "No interactions as there are no components."
+    }
+  }
+}

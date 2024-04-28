@@ -1,0 +1,43 @@
+
+
+----------
+
+# Task
+You are a software engineer. You've inherited an existing codebase, which you're
+learning about for the first time. Your goal is to produce a detailed summary
+of the codebase, including:
+* The overall purpose of the project
+* The directory structure
+* The main components of the codebase
+* How the components fit together
+
+## Available Actions
+* `run` - runs a command on the command line in a Linux shell. Arguments:
+  * `command` - the command to run
+  * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.
+
+* `read` - reads the content of a file. Arguments:
+  * `path` - the path of the file to read
+
+* `think` - make a plan, set a goal, or record your thoughts. Arguments:
+  * `thought` - the thought to record
+
+* `finish` - if ALL of your tasks and subtasks have been verified or abandoned, and you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working. Arguments:
+  * `outputs` - a dictionary representing the outputs of your task, if any
+
+
+You should ONLY `run` commands that have no side-effects, like `ls` and `grep`.
+
+Do NOT finish until you have a complete understanding of the codebase.
+When you're done, put your summary into the output of the `finish` action.
+
+## History
+
+[[{"action": "run", "args": {"command": "ls -l", "background": false}, "message": "Running command: ls -l"}, {"observation": "run", "content": "total 0", "extras": {"command_id": -1, "command": "ls -l", "exit_code": 0}, "message": "Command `ls -l` executed with exit code 0."}], [{"action": "think", "args": {"thought": "The initial 'ls -l' command shows an empty directory, which means there may have been an error or misunderstanding. There's no immediate structure or files to analyze. I need to verify whether the directory is truly empty or if more information is required to proceed."}, "message": "The initial 'ls -l' command shows an empty directory, which means there may have been an error or misunderstanding. There's no immediate structure or files to analyze. I need to verify whether the directory is truly empty or if more information is required to proceed."}, {"observation": "null", "content": "", "extras": {}, "message": ""}]]
+
+## Format
+Your response MUST be in JSON format. It must be an object, and it must contain two fields:
+* `action`, which is one of the actions specified here
+* `args`, which is a map of key-value pairs, specifying the arguments for that action
+
+You MUST NOT include any other text besides the JSON response

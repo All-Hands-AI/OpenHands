@@ -1,0 +1,10 @@
+{
+  "action": "delegate",
+  "args": {
+    "agent": "CoderAgent",
+    "inputs": {
+      "task": "Write a shell script 'hello.sh' that prints 'hello'.",
+      "codebase_summary": "Unable to determine as the directory is empty. There are no files or subdirectories in '/workspace'. No components found. No interactions as there are no components."
+    }
+  }
+}
