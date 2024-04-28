@@ -2,7 +2,7 @@ from typing import List
 from opendevin.agent import Agent
 from opendevin.state import State
 from opendevin.llm.llm import LLM
-from opendevin.schema import ActionType, ObservationType
+from opendevin.schema import ActionType
 from opendevin.exceptions import AgentNoInstructionError
 from opendevin.schema.config import ConfigType
 from opendevin import config
@@ -157,32 +157,32 @@ class MonologueAgent(Agent):
         else:
             self.memory = None
 
-        output_type = ''
+        previous_action = ''
         for thought in INITIAL_THOUGHTS:
             thought = thought.replace('$TASK', task)
-            if output_type != '':
+            if previous_action != '':
                 observation: Observation = NullObservation(content='')
-                if output_type == ObservationType.RUN:
+                if previous_action in {ActionType.RUN, ActionType.PUSH}:
                     observation = CmdOutputObservation(
                         content=thought, command_id=0, command=''
                     )
-                elif output_type == ObservationType.READ:
+                elif previous_action == ActionType.READ:
                     observation = FileReadObservation(content=thought, path='')
-                elif output_type == ObservationType.RECALL:
+                elif previous_action == ActionType.RECALL:
                     observation = AgentRecallObservation(
                         content=thought, memories=[])
-                elif output_type == ObservationType.BROWSE:
+                elif previous_action == ActionType.BROWSE:
                     observation = BrowserOutputObservation(
                         content=thought, url='', screenshot=''
                     )
                 self._add_event(observation.to_memory())
-                output_type = ''
+                previous_action = ''
             else:
                 action: Action = NullAction()
                 if thought.startswith('RUN'):
                     command = thought.split('RUN ')[1]
                     action = CmdRunAction(command)
-                    output_type = ActionType.RUN
+                    previous_action = ActionType.RUN
                 elif thought.startswith('WRITE'):
                     parts = thought.split('WRITE ')[1].split(' > ')
                     path = parts[1]
@@ -191,20 +191,20 @@ class MonologueAgent(Agent):
                 elif thought.startswith('READ'):
                     path = thought.split('READ ')[1]
                     action = FileReadAction(path=path)
-                    output_type = ActionType.READ
+                    previous_action = ActionType.READ
                 elif thought.startswith('RECALL'):
                     query = thought.split('RECALL ')[1]
                     action = AgentRecallAction(query=query)
-                    output_type = ActionType.RECALL
+                    previous_action = ActionType.RECALL
                 elif thought.startswith('BROWSE'):
                     url = thought.split('BROWSE ')[1]
                     action = BrowseURLAction(url=url)
-                    output_type = ActionType.BROWSE
+                    previous_action = ActionType.BROWSE
                 elif thought.startswith('PUSH'):
                     owner_repo, branch = thought.split('PUSH ')[1].split(' ')
                     owner, repo = owner_repo.split('/')
                     action = GitHubPushAction(owner=owner, repo=repo, branch=branch)
-                    output_type = ActionType.PUSH
+                    previous_action = ActionType.PUSH
                 else:
                     action = AgentThinkAction(thought=thought)
                 self._add_event(action.to_memory())
