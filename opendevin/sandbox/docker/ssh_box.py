@@ -216,19 +216,6 @@ class DockerSSHBox(Sandbox):
             return -1, f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}'
         command_output = self.ssh.before.decode('utf-8').strip()
 
-        # NOTE: there's some weird behavior with the prompt (it may come AFTER the command output)
-        # so we need to check if the command is in the output
-        n_tries = 5
-        while not command_output.startswith(cmd) and n_tries > 0:
-            self.ssh.prompt()
-            command_output = self.ssh.before.decode('utf-8').strip()
-            time.sleep(0.5)
-            n_tries -= 1
-        if n_tries == 0 and not command_output.startswith(cmd):
-            raise Exception(
-                f'Something went wrong with the SSH sanbox, cannot get output for command [{cmd}] after 5 retries'
-            )
-        logger.debug(f'Command output GOT SO FAR: {command_output}')
         # once out, make sure that we have *every* output, we while loop until we get an empty output
         while True:
             logger.debug('WAITING FOR .prompt()')
