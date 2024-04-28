@@ -1739,13 +1739,13 @@ files = [
 
 [[package]]
 name = "json-repair"
-version = "0.15.3"
+version = "0.15.5"
 description = "A package to repair broken json strings"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "json_repair-0.15.3-py3-none-any.whl", hash = "sha256:2af4e68d0b5afce070fb8269ce7d7bc198f383e07ce3ec336e154aa192258048"},
-    {file = "json_repair-0.15.3.tar.gz", hash = "sha256:5702113bfdde44a5345c40b88882b1375aaa511a81165e01c9ddcf66584c344c"},
+    {file = "json_repair-0.15.5-py3-none-any.whl", hash = "sha256:20b89ee31eae727aad409d33300048a39b58e65288dea0b64e5a3c56180d1f5a"},
+    {file = "json_repair-0.15.5.tar.gz", hash = "sha256:fd059185dd42af33cd7c9448f4783c039b120901ae5044e7047ef304badc4453"},
 ]
 
 [[package]]
@@ -1902,13 +1902,13 @@ adal = ["adal (>=1.0.2)"]
 
 [[package]]
 name = "litellm"
-version = "1.35.30"
+version = "1.35.31"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.35.30-py3-none-any.whl", hash = "sha256:a2f0a800504cac90ce7c4d511656acf1d502fb8a32e0c0f83c573ae34dcb8ee1"},
-    {file = "litellm-1.35.30.tar.gz", hash = "sha256:b9c422a7d69c0946453a0562fbaceb756db7c60fcdefb0574aed82b82925c90c"},
+    {file = "litellm-1.35.31-py3-none-any.whl", hash = "sha256:bf8b437201bbcde50f8508f8712dd7ac7f323a1cdc2628aba0d35a4c312a801d"},
+    {file = "litellm-1.35.31.tar.gz", hash = "sha256:8691fddef3c14733dfef2f34c11daf47a317790a258c5315eabe7d1eafbfeb24"},
 ]
 
 [package.dependencies]
@@ -1928,13 +1928,13 @@ proxy = ["PyJWT (>=2.8.0,<3.0.0)", "apscheduler (>=3.10.4,<4.0.0)", "backoff", "
 
 [[package]]
 name = "llama-index"
-version = "0.10.32"
+version = "0.10.33"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index-0.10.32-py3-none-any.whl", hash = "sha256:2a344f30120c3bb9f6c24c14056e3098288e7e2607ac18c5cabe2f1ec01f370c"},
-    {file = "llama_index-0.10.32.tar.gz", hash = "sha256:857f2e40fdf58d6be27826706f40028cdc8bdcb4b208295debb408fef89ae5ac"},
+    {file = "llama_index-0.10.33-py3-none-any.whl", hash = "sha256:d39b8f55491e51fdcf610e277580089a6e00f73669c9fd7dd78c5264e9c9c584"},
+    {file = "llama_index-0.10.33.tar.gz", hash = "sha256:d77ab29883b05cc57adfa50fa44ababf2b7bc62a988fb6ed0b6460179e67a10b"},
 ]
 
 [package.dependencies]
@@ -1985,13 +1985,13 @@ llama-index-llms-openai = ">=0.1.1,<0.2.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.10.32"
+version = "0.10.33"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.10.32-py3-none-any.whl", hash = "sha256:215f7389dadb78f2df13c20312a3e1e03c41f23e3063907469c4bae67bfd458c"},
-    {file = "llama_index_core-0.10.32.tar.gz", hash = "sha256:0078c06d9143390e14c86a40e69716c88c7828533341559edd15e52249ede65a"},
+    {file = "llama_index_core-0.10.33-py3-none-any.whl", hash = "sha256:943114fb02dfe62fec5d882d749ad8adf113081aadcb0d4cb2c083b2c9052ed0"},
+    {file = "llama_index_core-0.10.33.tar.gz", hash = "sha256:21b98b2c45e0c6b673aa505c7add1e8b730f472ad58d4572b909a34f4a22c36c"},
 ]
 
 [package.dependencies]
@@ -4123,23 +4123,23 @@ files = [
 
 [[package]]
 name = "pytest"
-version = "8.1.2"
+version = "8.2.0"
 description = "pytest: simple powerful testing with Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pytest-8.1.2-py3-none-any.whl", hash = "sha256:6c06dc309ff46a05721e6fd48e492a775ed8165d2ecdf57f156a80c7e95bb142"},
-    {file = "pytest-8.1.2.tar.gz", hash = "sha256:f3c45d1d5eed96b01a2aea70dee6a4a366d51d38f9957768083e4fecfc77f3ef"},
+    {file = "pytest-8.2.0-py3-none-any.whl", hash = "sha256:1733f0620f6cda4095bbf0d9ff8022486e91892245bb9e7d5542c018f612f233"},
+    {file = "pytest-8.2.0.tar.gz", hash = "sha256:d507d4482197eac0ba2bae2e9babf0672eb333017bcedaa5fb1a3d42c1174b3f"},
 ]
 
 [package.dependencies]
 colorama = {version = "*", markers = "sys_platform == \"win32\""}
 iniconfig = "*"
 packaging = "*"
-pluggy = ">=1.4,<2.0"
+pluggy = ">=1.5,<2.0"
 
 [package.extras]
-testing = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
+dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments (>=2.7.2)", "requests", "setuptools", "xmlschema"]
 
 [[package]]
 name = "python-dateutil"
@@ -5997,4 +5997,3 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 lock-version = "2.0"
 python-versions = "^3.11"
 content-hash = "c96715d71d4e140f6336fa815f16cacf75334ff9cfa00a7fd54f36425326db3f"
-
