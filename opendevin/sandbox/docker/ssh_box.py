@@ -381,7 +381,6 @@ class DockerSSHBox(Sandbox):
                 **network_kwargs,
                 working_dir=SANDBOX_WORKSPACE_DIR,
                 name=self.container_name,
-                hostname='opendevin_sandbox',
                 detach=True,
                 volumes={
                     mount_dir: {
