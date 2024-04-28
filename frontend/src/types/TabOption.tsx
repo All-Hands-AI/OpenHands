@@ -5,8 +5,17 @@ enum TabOption {
   JUPYTER = "jupyter",
 }
 
-type TabType = TabOption.PLANNER | TabOption.CODE | TabOption.BROWSER | TabOption.JUPYTER;
+type TabType =
+  | TabOption.PLANNER
+  | TabOption.CODE
+  | TabOption.BROWSER
+  | TabOption.JUPYTER;
 
-const AllTabs = [TabOption.CODE, TabOption.BROWSER, TabOption.PLANNER, TabOption.JUPYTER];
+const AllTabs = [
+  TabOption.CODE,
+  TabOption.BROWSER,
+  TabOption.PLANNER,
+  TabOption.JUPYTER,
+];
 
 export { AllTabs, TabOption, type TabType };
