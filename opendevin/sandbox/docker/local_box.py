@@ -1,10 +1,12 @@
 import subprocess
 import atexit
 import os
+import sys
 from typing import Tuple, Dict
 from opendevin.sandbox.sandbox import Sandbox
 from opendevin.sandbox.process import Process
 from opendevin.sandbox.docker.process import DockerProcess
+from opendevin.logger import opendevin_logger as logger
 from opendevin import config
 from opendevin.schema.config import ConfigType
 
@@ -96,3 +98,37 @@ class LocalBox(Sandbox):
 
     def cleanup(self):
         self.close()
+
+
+if __name__ == '__main__':
+
+    local_box = LocalBox()
+    bg_cmd = local_box.execute_in_background(
+        "while true; do echo 'dot ' && sleep 10; done"
+    )
+
+    sys.stdout.flush()
+    try:
+        while True:
+            try:
+                user_input = input('>>> ')
+            except EOFError:
+                logger.info('Exiting...')
+                break
+            if user_input.lower() == 'exit':
+                logger.info('Exiting...')
+                break
+            if user_input.lower() == 'kill':
+                local_box.kill_background(bg_cmd.pid)
+                logger.info('Background process killed')
+                continue
+            exit_code, output = local_box.execute(user_input)
+            logger.info('exit code: %d', exit_code)
+            logger.info(output)
+            if bg_cmd.pid in local_box.background_commands:
+                logs = local_box.read_logs(bg_cmd.pid)
+                logger.info('background logs: %s', logs)
+            sys.stdout.flush()
+    except KeyboardInterrupt:
+        logger.info('Exiting...')
+    local_box.close()
