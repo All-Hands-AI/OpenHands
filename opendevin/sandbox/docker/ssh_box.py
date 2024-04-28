@@ -40,7 +40,6 @@ if SANDBOX_USER_ID := config.get(ConfigType.SANDBOX_USER_ID):
     USER_ID = int(SANDBOX_USER_ID)
 elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
-logger.info(f'Will wunning as {"opendevin" if RUN_AS_DEVIN else "root"} with USER_ID={USER_ID} in the sandbox')
 
 class DockerSSHBox(Sandbox):
     instance_id: str
