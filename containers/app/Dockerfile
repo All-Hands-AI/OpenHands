@@ -32,8 +32,10 @@ FROM python:3.12-slim as runtime
 
 WORKDIR /app
 
-ENV RUN_AS_DEVIN=false
-ENV USE_HOST_NETWORK=false
+ENV RUN_AS_DEVIN=true
+# Default user id for the sandbox 'opendevin' user
+ENV SANDBOX_USER_ID=1000
+ENV USE_HOST_NETWORK=true
 ENV SSH_HOSTNAME=host.docker.internal
 ENV WORKSPACE_BASE=/opt/workspace_base
 ENV OPEN_DEVIN_BUILD_VERSION=$OPEN_DEVIN_BUILD_VERSION
