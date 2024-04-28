@@ -1,6 +1,8 @@
+import logging
 import subprocess
 import atexit
 import os
+import pexpect
 from typing import Tuple, Dict
 from opendevin.sandbox.sandbox import Sandbox
 from opendevin.sandbox.process import Process
@@ -25,22 +27,36 @@ from opendevin.schema.config import ConfigType
 
 
 class LocalBox(Sandbox):
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger(__name__)
+
     def __init__(self, timeout: int = 120):
-        os.makedirs(config.get(ConfigType.WORKSPACE_BASE), exist_ok=True)
-        self.timeout = timeout
-        self.background_commands: Dict[int, Process] = {}
-        self.cur_background_id = 0
-        atexit.register(self.cleanup)
+        self.logger.debug("Initializing LocalBox with timeout: {}".format(timeout))
+        try:
+            os.makedirs(config.get(ConfigType.WORKSPACE_BASE), exist_ok=True)
+            self.timeout = timeout
+            self.background_commands: Dict[int, Process] = {}
+            self.cur_background_id = 0
+            self.shell = pexpect.spawn('/bin/bash', timeout=self.timeout, cwd=config.get(ConfigType.WORKSPACE_BASE))
+            self.shell.expect_exact(config.get(ConfigType.COMMAND_PROMPT))
+            self.logger.debug("Bash shell spawned successfully.")
+            atexit.register(self.cleanup)
+        except Exception as e:
+            self.logger.error(f"Exception encountered: {str(e)}")
+            raise RuntimeError(f"Failed to initialize LocalBox: {str(e)}")
 
     def execute(self, cmd: str) -> Tuple[int, str]:
         try:
-            completed_process = subprocess.run(
-                cmd, shell=True, text=True, capture_output=True,
-                timeout=self.timeout, cwd=config.get(ConfigType.WORKSPACE_BASE)
-            )
-            return completed_process.returncode, completed_process.stdout.strip()
-        except subprocess.TimeoutExpired:
+            self.logger.debug(f"Command {cmd} sent.")
+            self.shell.sendline(cmd)
+            self.shell.expect_exact(config.get(ConfigType.COMMAND_PROMPT))
+            output = self.shell.before.decode().strip()
+            self.logger.debug(f"Command output: {output}")
+            return self.shell.exitstatus, output
+        except pexpect.TIMEOUT:
             return -1, 'Command timed out'
+        except pexpect.EOF:
+            return -1, 'Command caused shell to close'
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         # mkdir -p sandbox_dest if it doesn't exist
@@ -95,4 +111,10 @@ class LocalBox(Sandbox):
             self.kill_background(id)
 
     def cleanup(self):
-        self.close()
+        try:
+            if self.shell.isalive():
+                self.shell.terminate(force=True)
+            self.close()
+        except Exception as e:
+            self.logger.error(f"Failed to terminate bash shell cleanly: {e}")
+            print(f"Failed to terminate bash shell cleanly: {e}")
