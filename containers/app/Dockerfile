@@ -40,8 +40,7 @@ ENV OPEN_DEVIN_BUILD_VERSION=$OPEN_DEVIN_BUILD_VERSION
 RUN mkdir -p $WORKSPACE_BASE
 
 RUN apt-get update -y \
-    && apt-get install -y curl ssh
-
+    && apt-get install -y curl ssh sudo
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH='/app'
@@ -55,4 +54,5 @@ RUN playwright install --with-deps chromium
 
 COPY --from=frontend-builder /app/dist ./frontend/dist
 
-CMD ["uvicorn", "opendevin.server.listen:app", "--host", "0.0.0.0", "--port", "3000"]
+COPY ./containers/app/entrypoint.sh /app/entrypoint.sh
+CMD ["/app/entrypoint.sh"]
