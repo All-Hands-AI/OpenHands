@@ -38,9 +38,6 @@ ENV SSH_HOSTNAME=host.docker.internal
 ENV WORKSPACE_BASE=/opt/workspace_base
 ENV OPEN_DEVIN_BUILD_VERSION=$OPEN_DEVIN_BUILD_VERSION
 RUN mkdir -p $WORKSPACE_BASE
-# Fix permission of mounted $WORKSPACE_BASE https://github.com/moby/moby/issues/2259#issuecomment-51535443
-RUN chown -R 1000:1000 $WORKSPACE_BASE
-VOLUME $WORKSPACE_BASE
 
 RUN apt-get update -y \
     && apt-get install -y curl ssh
