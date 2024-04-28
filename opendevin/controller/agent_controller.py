@@ -28,6 +28,9 @@ from opendevin.action.tasks import TaskStateChangedAction
 from opendevin.schema import TaskState
 from opendevin.controller.action_manager import ActionManager
 
+from agenthub.codeact_agent.codeact_agent import CodeActAgent
+from opendevin.sandbox import DockerSSHBox
+
 MAX_ITERATIONS = config.get(ConfigType.MAX_ITERATIONS)
 MAX_CHARS = config.get(ConfigType.MAX_CHARS)
 
@@ -62,6 +65,9 @@ class AgentController:
         self.callbacks = callbacks
         # Initialize agent-required plugins for sandbox (if any)
         self.action_manager.init_sandbox_plugins(agent.sandbox_plugins)
+
+        if isinstance(agent, CodeActAgent) and not isinstance(self.action_manager.sandbox, DockerSSHBox):
+            logger.warning('CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful (LocalBox, DockerExecBox) will not work properly.')
 
         self._await_user_message_queue: asyncio.Queue = asyncio.Queue()
 
