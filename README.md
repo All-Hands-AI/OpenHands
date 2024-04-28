@@ -134,6 +134,7 @@ docker run \
     -e LLM_API_KEY \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
     -v $WORKSPACE_BASE:/opt/workspace_base \
+    -e SANDBOX_USER_ID=$(id -u) \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
     --add-host host.docker.internal=host-gateway \
