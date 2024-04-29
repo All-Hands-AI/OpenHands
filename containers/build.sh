@@ -4,6 +4,7 @@ set -eo pipefail
 image_name=$1
 org_name=$2
 tag_prefix="$3-"
+tag_prefix=${tag_prefix,,}
 push=0
 if [[ $3 == "--push" ]]; then
   push=1
