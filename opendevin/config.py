@@ -48,6 +48,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.USE_HOST_NETWORK: 'false',
     ConfigType.SSH_HOSTNAME: 'localhost',
     ConfigType.DISABLE_COLOR: 'false',
+    ConfigType.GITHUB_TOKEN: None,
 }
 
 config_str = ''
