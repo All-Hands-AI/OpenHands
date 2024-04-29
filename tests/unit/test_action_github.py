@@ -1,16 +1,17 @@
 
-from opendevin import config
+from unittest.mock import MagicMock, call, patch
+
+import pytest
+
 from agenthub.dummy_agent.agent import DummyAgent
+from opendevin import config
 from opendevin.action.github import GitHubPushAction, GitHubSendPRAction
 from opendevin.controller.agent_controller import AgentController
 from opendevin.llm.llm import LLM
 from opendevin.observation.error import AgentErrorObservation
 from opendevin.observation.message import AgentMessageObservation
 from opendevin.observation.run import CmdOutputObservation
-
 from opendevin.schema.config import ConfigType
-import pytest
-from unittest.mock import MagicMock, call, patch
 
 
 @pytest.fixture

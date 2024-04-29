@@ -1,12 +1,14 @@
 """Module for a Dummy agent."""
 
-from opendevin.action.base import NullAction
-from opendevin.state import State
-from opendevin.action import Action
 from typing import List
+
+from opendevin.action import Action
+from opendevin.action.base import NullAction
 from opendevin.agent import Agent
 from opendevin.controller.agent_controller import AgentController
 from opendevin.observation.base import NullObservation, Observation
+from opendevin.state import State
+
 
 class DummyAgent(Agent):
     """A dummy agent that does nothing but can be used in testing."""
