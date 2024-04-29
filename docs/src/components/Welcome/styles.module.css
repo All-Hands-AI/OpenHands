@@ -1,0 +1,27 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  padding-top: 25px;
+  padding-bottom: 25px;
+  width: 100%;
+}
+
+.innerContainer {
+  padding: 50px;
+  width: 100%;
+  max-width: 1300px;
+  padding-top: 30px;
+  margin: auto;
+  display: flex;
+  align-items: center;
+}
+
+.sidebarImage {
+  max-width: 400px;
+  padding-right: 30px;
+}
+
+.welcomeText {
+  text-align: justify;
+  font-size: larger;
+}
