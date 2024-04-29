@@ -43,9 +43,10 @@ pre-commit = "3.7.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
+pytest-asyncio = "*"
 
 [tool.poetry.group.evaluation.dependencies]
-torch = "*"
+torch = "2.2.2"
 
 [build-system]
 requires = ["poetry-core"]
