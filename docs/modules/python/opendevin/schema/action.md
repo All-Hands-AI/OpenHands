@@ -66,3 +66,11 @@ Resumes the task.
 
 Stops the task. Must send a start action to restart a new task.
 
+#### PUSH
+
+Push a branch to github.
+
+#### SEND\_PR
+
+Send a PR to github.
+

@@ -26,6 +26,13 @@
         },
         {
           "items": [
+            "python/agenthub/dummy_agent/agent"
+          ],
+          "label": "agenthub.dummy_agent",
+          "type": "category"
+        },
+        {
+          "items": [
             "python/agenthub/micro/agent"
           ],
           "label": "agenthub.micro",
@@ -67,6 +74,7 @@
             "python/opendevin/action/__init__",
             "python/opendevin/action/base",
             "python/opendevin/action/fileop",
+            "python/opendevin/action/github",
             "python/opendevin/action/tasks"
           ],
           "label": "opendevin.action",

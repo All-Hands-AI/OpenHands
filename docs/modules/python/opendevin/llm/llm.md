@@ -20,7 +20,9 @@ def __init__(model=DEFAULT_MODEL_NAME,
              api_version=DEFAULT_API_VERSION,
              num_retries=LLM_NUM_RETRIES,
              retry_min_wait=LLM_RETRY_MIN_WAIT,
-             retry_max_wait=LLM_RETRY_MAX_WAIT)
+             retry_max_wait=LLM_RETRY_MAX_WAIT,
+             llm_timeout=LLM_TIMEOUT,
+             llm_max_return_tokens=LLM_MAX_RETURN_TOKENS)
 ```
 
 **Arguments**:
@@ -32,6 +34,8 @@ def __init__(model=DEFAULT_MODEL_NAME,
 - `num_retries` _int, optional_ - The number of retries for API calls. Defaults to LLM_NUM_RETRIES.
 - `retry_min_wait` _int, optional_ - The minimum time to wait between retries in seconds. Defaults to LLM_RETRY_MIN_TIME.
 - `retry_max_wait` _int, optional_ - The maximum time to wait between retries in seconds. Defaults to LLM_RETRY_MAX_TIME.
+- `llm_timeout` _int, optional_ - The maximum time to wait for a response in seconds. Defaults to LLM_TIMEOUT.
+- `llm_max_return_tokens` _int, optional_ - The maximum number of tokens to return. Defaults to LLM_MAX_RETURN_TOKENS.
   
 
 **Attributes**:

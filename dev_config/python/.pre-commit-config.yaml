@@ -9,25 +9,14 @@ repos:
       - id: check-yaml
       - id: debug-statements
 
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.0.0
+  - repo: https://github.com/tox-dev/pyproject-fmt
+    rev: 1.7.0
     hooks:
-      - id: flake8
-        args: ["--select=Q000"] # Q000 is the error code for single quote enforcement
-        additional_dependencies:
-          - flake8-quotes
-
-  - repo: https://github.com/hhatto/autopep8
-    rev: v2.1.0
+      - id: pyproject-fmt
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.16
     hooks:
-      - id: autopep8
-
-  - repo: https://github.com/asottile/setup-cfg-fmt
-    rev: v2.5.0
-    hooks:
-      - id: setup-cfg-fmt
-        always_run: true
-        pass_filenames: false
+      - id: validate-pyproject
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
