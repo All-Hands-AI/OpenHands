@@ -44,15 +44,7 @@
     <li><a href="#-what-is-devin">🤔 What is Devin?</a></li>
     <li><a href="#-why-opendevin">🐚 Why OpenDevin?</a></li>
     <li><a href="#-project-status">🚧 Project Status</a></li>
-      <a href="#-get-started">🚀 Get Started</a>
-      <ul>
-        <li><a href="#1-requirements">1. Requirements</a></li>
-        <li><a href="#2-build-and-setup">2. Build and Setup</a></li>
-        <li><a href="#3-run-the-application">3. Run the Application</a></li>
-        <li><a href="#4-individual-server-startup">4. Individual Server Startup</a></li>
-        <li><a href="#5-help">5. Help</a></li>
-      </ul>
-    </li>
+    <li><a href="#-get-started">🚀 Get Started</a></li>
     <li><a href="#%EF%B8%8F-research-strategy">⭐️ Research Strategy</a></li>
     <li><a href="#-how-to-contribute">🤝 How to Contribute</a></li>
     <li><a href="#-join-our-community">🤖 Join Our Community</a></li>
