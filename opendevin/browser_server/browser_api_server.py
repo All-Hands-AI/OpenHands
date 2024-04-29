@@ -1,5 +1,7 @@
 from flask import Flask, request, jsonify
 import gymnasium as gym
+import browsergym.core  # register the openended task as a gym environment
+
 
 from utils import image_to_png_base64_url
 
@@ -14,7 +16,12 @@ env = gym.make(
 )
 obs, info = env.reset()
 
-@app.route('/heartbeat', methods=['POST'])
+@app.route('/version', methods=['GET'])
+def version():
+    return jsonify({'version': browsergym.core.__version__})
+
+
+@app.route('/heartbeat', methods=['GET'])
 def heartbeat():
     return jsonify({'status': 'alive'})
 
