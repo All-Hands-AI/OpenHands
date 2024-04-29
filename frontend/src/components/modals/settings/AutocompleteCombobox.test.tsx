@@ -64,5 +64,21 @@ describe("AutocompleteCombobox", () => {
     expect(onChangeMock).toHaveBeenCalledWith("model2");
   });
 
+  it("should set the input value to the default key if the default key is not in the list", () => {
+    render(
+      <AutocompleteCombobox
+        ariaLabel="model"
+        items={[{ value: "m1", label: "model1" }]}
+        defaultKey="m2"
+        tooltip="tooltip"
+        onChange={onChangeMock}
+      />,
+    );
+
+    const modelInput = screen.getByRole("combobox", { name: "model" });
+
+    expect(modelInput).toHaveValue("m2");
+  });
+
   it.todo("should show a tooltip after 0.5 seconds of focus");
 });
