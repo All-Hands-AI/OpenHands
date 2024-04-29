@@ -11,64 +11,42 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
+        python-version: ["3.11"]
+        agent: ["SWEAgent", "PlannerAgent", "MonologueAgent", "CodeActAgent"]
+        sandbox: ["ssh", "exec"]
         include:
-          - name: SWEAgent-py311-ssh
-            python-version: "3.11"
-            agent: "SWEAgent"
-            embedding-model: "none"
-            sandbox: "ssh"
-          - name: PlannerAgent-py311-ssh
-            python-version: "3.11"
-            agent: "PlannerAgent"
-            embedding-model: "none"
-            sandbox: "ssh"
-          - name: MonologueAgent-py311-ssh
-            python-version: "3.11"
-            agent: "MonologueAgent"
+          - agent: "MonologueAgent"
             embedding-model: "local"
-            sandbox: "ssh"
-          - name: CodeActAgent-py311-ssh
-            python-version: "3.11"
-            agent: "CodeActAgent"
-            embedding-model: "none"
-            sandbox: "ssh"
-          - name: SWEAgent-py311-exec
-            python-version: "3.11"
-            agent: "SWEAgent"
-            embedding-model: "none"
-            sandbox: "exec"
-          - name: PlannerAgent-py311-exec
-            python-version: "3.11"
-            agent: "PlannerAgent"
-            embedding-model: "none"
-            sandbox: "exec"
-          - name: MonologueAgent-py311-exec
-            python-version: "3.11"
-            agent: "MonologueAgent"
-            embedding-model: "local"
-            sandbox: "exec"
-          - name: CodeActAgent-py311-exec
-            python-version: "3.11"
-            agent: "CodeActAgent"
-            embedding-model: "none"
-            sandbox: "exec"
-          - name: MonologueAgent-py311-local
-            python-version: "3.11"
-            agent: "MonologueAgent"
-            embedding-model: "local"
+          - agent: "MonologueAgent"
             # sufficient to have one agent testing against local sandbox
             sandbox: "local"
+            embedding-model: "local"
+          - agent: "SWEAgent"
+            embedding-model: "none"
+          - agent: "PlannerAgent"
+            embedding-model: "none"
+          - agent: "CodeActAgent"
+            embedding-model: "none"
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+
+      - name: Install poetry via pipx
+        run: pipx install poetry
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install Poetry
-        run: curl -sSL https://install.python-poetry.org | python3 -
+          python-version: '3.11'
+          cache: 'poetry'
+
+      - name: Install Python dependencies using Poetry
+        run: poetry install
+
       - name: Build Environment
         run: make build
+
       - name: Run Integration Tests
         env:
           SANDBOX_TYPE: ${{ matrix.sandbox }}
