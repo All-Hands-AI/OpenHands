@@ -9,13 +9,14 @@ import Workspace from "#/components/Workspace";
 import LoadPreviousSessionModal from "#/components/modals/load-previous-session/LoadPreviousSessionModal";
 import SettingsModal from "#/components/modals/settings/SettingsModal";
 import { fetchMsgTotal } from "#/services/session";
-import { initializeAgent } from "#/services/settingsService";
 import Socket from "#/services/socket";
 import { ResFetchMsgTotal } from "#/types/ResponseType";
 import "./App.css";
 import AgentControlBar from "./components/AgentControlBar";
 import AgentStatusBar from "./components/AgentStatusBar";
 import Terminal from "./components/terminal/Terminal";
+import { initializeAgent } from "./services/agent";
+import { getSettings } from "./services/settings";
 
 interface Props {
   setSettingOpen: (isOpen: boolean) => void;
@@ -72,7 +73,7 @@ function App(): JSX.Element {
     if (initOnce) return;
     initOnce = true;
 
-    initializeAgent();
+    initializeAgent(getSettings());
 
     Socket.registerCallback("open", [getMsgTotal]);
 
