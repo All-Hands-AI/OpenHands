@@ -47,7 +47,7 @@ jobs:
 
       - name: Build and push ${{ matrix.image }}
         run: |
-          ./containers/build.sh ${{ matrix.image }} OpenDevin ${{ github.actor }} --push
+          ./containers/build.sh ${{ matrix.image }} opendevin ${{ github.actor }} --push
 
   docker_build_success:
     name: Docker Build Success
