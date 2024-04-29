@@ -101,7 +101,10 @@ class AgentController:
                     self._task_state = TaskState.FINISHED
             except Exception as e:
                 logger.error('Error in loop', exc_info=True)
-                raise e
+                await self._run_callbacks(
+                    AgentErrorObservation(f'I got an error, detail info: {str(e)}. The task has stopped.'))
+                await self.set_task_state_to(TaskState.STOPPED)
+                break
 
             if self._task_state == TaskState.FINISHED:
                 logger.info('Task finished by agent')
