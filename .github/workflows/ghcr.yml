@@ -15,7 +15,6 @@ on:
 jobs:
   ghcr_build_and_push:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event.inputs.reason != ''
     strategy:
       matrix:
         image: ["app", "evaluation", "sandbox"]
