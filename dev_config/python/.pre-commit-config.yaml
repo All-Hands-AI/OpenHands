@@ -16,12 +16,6 @@ repos:
     hooks:
       - id: validate-pyproject
 
-  - repo: https://github.com/asottile/setup-cfg-fmt
-    rev: v2.5.0
-    hooks:
-      - id: setup-cfg-fmt
-        always_run: true
-        pass_filenames: false
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
