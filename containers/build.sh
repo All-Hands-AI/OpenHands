@@ -44,6 +44,7 @@ if [[ -n "$org_name" ]]; then
   DOCKER_ORG="$org_name"
 fi
 DOCKER_REPOSITORY=$DOCKER_REGISTRY/$DOCKER_ORG/$DOCKER_IMAGE
+DOCKER_REPOSITORY=${DOCKER_REPOSITORY,,} # lowercase
 echo "Repo: $DOCKER_REPOSITORY"
 echo "Base dir: $DOCKER_BASE_DIR"
 
