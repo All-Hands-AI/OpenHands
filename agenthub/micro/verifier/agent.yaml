@@ -1,7 +1,7 @@
-name: Verifier
+name: VerifierAgent
 description: Given a particular task, verifies that the task has been completed
 inputs:
-  - task: string
+  task: string
 outputs:
-  - completed: boolean
-  - summary: string
+  completed: boolean
+  summary: string
