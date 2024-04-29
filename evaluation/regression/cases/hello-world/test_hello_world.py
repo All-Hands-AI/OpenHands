@@ -2,6 +2,7 @@ import os
 import pytest
 from conftest import agents
 
+
 @pytest.mark.parametrize('agent', agents())
 def test_hello_world(task_file, run_test_case, agent):
     """
