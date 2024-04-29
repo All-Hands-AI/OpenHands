@@ -1,4 +1,8 @@
+import { I18nKey } from "#/i18n/declaration";
+import { Plan, Task, TaskState } from "#/services/planService";
+import { RootState } from "#/store";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   FaCheckCircle,
   FaQuestionCircle,
@@ -7,9 +11,8 @@ import {
   FaRegClock,
   FaRegTimesCircle,
 } from "react-icons/fa";
+import { VscListOrdered } from "react-icons/vsc";
 import { useSelector } from "react-redux";
-import { Plan, Task, TaskState } from "#/services/planService";
-import { RootState } from "#/store";
 
 function StatusIcon({ status }: { status: TaskState }): JSX.Element {
   switch (status) {
@@ -55,10 +58,13 @@ interface PlanProps {
 }
 
 function PlanContainer({ plan }: PlanProps): JSX.Element {
+  const { t } = useTranslation();
+
   if (plan.mainGoal === undefined) {
     return (
-      <div className="p-2">
-        Nothing is currently planned. Start a task for this to change.
+      <div className="w-full h-full flex flex-col text-neutral-400 items-center justify-center">
+        <VscListOrdered size={100} />
+        {t(I18nKey.PLANNER$EMPTY_MESSAGE)}
       </div>
     );
   }

@@ -1,25 +1,13 @@
-import React from "react";
-import { useSelector } from "react-redux";
-import { HiOutlineMagnifyingGlass } from "react-icons/hi2";
-import { HiCursorClick } from "react-icons/hi";
+import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
-
-import logo from "../assets/logo.png";
-
-function BlankPage(): JSX.Element {
-  return (
-    <div className="h-full bg-slate-200 flex flex-col items-center justify-center">
-      <img src={logo} alt="Blank Page" className="w-28 h-28" />
-      <div className="h-8 flex items-center bg-slate-900 px-2 rounded-3xl ml-3 space-x-2">
-        <HiOutlineMagnifyingGlass size={20} />
-        <span>OpenDevin: Code Less, Make More.</span>
-        <HiCursorClick size={20} />
-      </div>
-    </div>
-  );
-}
+import React from "react";
+import { useTranslation } from "react-i18next";
+import { IoIosGlobe } from "react-icons/io";
+import { useSelector } from "react-redux";
 
 function Browser(): JSX.Element {
+  const { t } = useTranslation();
+
   const { url, screenshotSrc } = useSelector(
     (state: RootState) => state.browser,
   );
@@ -30,15 +18,18 @@ function Browser(): JSX.Element {
       : `data:image/png;base64,${screenshotSrc || ""}`;
 
   return (
-    <div className="h-full w-full flex flex-col justify-evenly p-2 space-y-2">
-      <div className="w-full py-2 px-5 rounded-3xl bg-neutral-700 text-gray-200 truncate">
+    <div className="h-full w-full flex flex-col text-neutral-400">
+      <div className="w-full p-2 truncate border-b border-neutral-600">
         {url}
       </div>
-      <div className="overflow-y-auto h-4/5 scrollbar-hide rounded-xl">
+      <div className="overflow-y-auto grow scrollbar-hide rounded-xl">
         {screenshotSrc ? (
           <img src={imgSrc} className="rounded-xl" alt="Browser Screenshot" />
         ) : (
-          <BlankPage />
+          <div className="flex flex-col items-center h-full justify-center">
+            <IoIosGlobe size={100} />
+            {t(I18nKey.BROWSER$EMPTY_MESSAGE)}
+          </div>
         )}
       </div>
     </div>
