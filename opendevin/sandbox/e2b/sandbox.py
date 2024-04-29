@@ -124,3 +124,6 @@ class E2BBox(Sandbox):
 
     def close(self):
         self.sandbox.close()
+
+    def get_working_directory(self):
+        return self.sandbox.cwd
