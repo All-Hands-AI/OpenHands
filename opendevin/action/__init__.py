@@ -2,6 +2,7 @@ from .base import Action, NullAction
 from .bash import CmdRunAction, CmdKillAction
 from .browse import BrowseURLAction
 from .fileop import FileReadAction, FileWriteAction
+from .github import GitHubPushAction
 from .agent import (
     AgentRecallAction,
     AgentThinkAction,
@@ -25,6 +26,7 @@ actions = (
     AgentDelegateAction,
     AddTaskAction,
     ModifyTaskAction,
+    GitHubPushAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]

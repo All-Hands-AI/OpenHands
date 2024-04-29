@@ -268,6 +268,9 @@ class DockerExecBox(Sandbox):
             except docker.errors.NotFound:
                 pass
 
+    def get_working_directory(self):
+        return SANDBOX_WORKSPACE_DIR
+
 
 if __name__ == '__main__':
     try:
