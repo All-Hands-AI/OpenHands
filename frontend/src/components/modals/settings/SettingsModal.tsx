@@ -1,13 +1,13 @@
+import { fetchAgents, fetchModels } from "#/api";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import { initializeAgent } from "#/services/agent";
-import { getSettings, getSettingsDifference } from "#/services/settings";
 import {
   Settings,
-  fetchAgents,
-  fetchModels,
+  getSettings,
+  getSettingsDifference,
   saveSettings,
-} from "#/services/settingsService";
+} from "#/services/settings";
 import toast from "#/utils/toast";
 import { Spinner } from "@nextui-org/react";
 import i18next from "i18next";
