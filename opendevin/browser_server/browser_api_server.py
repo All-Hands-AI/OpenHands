@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 import gymnasium as gym
 
-from utils import image_to_jpg_base64_url
+from utils import image_to_png_base64_url
 
 app = Flask(__name__)
 
@@ -24,7 +24,7 @@ def step():
     action = action_data['action']
     obs, reward, terminated, truncated, info = env.step(action)
     # make observation serializable
-    obs['screenshot'] = image_to_jpg_base64_url(obs['screenshot'])
+    obs['screenshot'] = image_to_png_base64_url(obs['screenshot'])
     obs['active_page_index'] = int(obs['active_page_index'])
     obs['elapsed_time'] = float(obs['elapsed_time'])
     return jsonify(obs)

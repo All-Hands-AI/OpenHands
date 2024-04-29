@@ -4,8 +4,8 @@ import io
 import base64
 
 
-def image_to_jpg_base64_url(image: np.ndarray | Image.Image):
-    """Convert a numpy array to a base64 encoded image url."""
+def image_to_png_base64_url(image: np.ndarray | Image.Image):
+    """Convert a numpy array to a base64 encoded png image url."""
 
     if isinstance(image, np.ndarray):
         image = Image.fromarray(image)
