@@ -3,10 +3,8 @@ set -eo pipefail
 
 image_name=$1
 org_name=$2
-tag_prefix="$3-"
-tag_prefix=${tag_prefix,,}
 push=0
-if [[ $4 == "--push" ]]; then
+if [[ $3 == "--push" ]]; then
   push=1
 fi
 
@@ -24,10 +22,6 @@ if [[ -n $GITHUB_REF_NAME ]]; then
     major_version=$(echo $GITHUB_REF_NAME | cut -d. -f1)
     minor_version=$(echo $GITHUB_REF_NAME | cut -d. -f1,2)
     tags+=($major_version $minor_version)
-    tag_prefix="" # don't prefix version tags
-  fi
-  if [[ $GITHUB_REF_NAME == "main" ]]; then
-    tag_prefix="" # don't prefix main tag
   fi
   sanitized=$(echo $GITHUB_REF_NAME | sed 's/[^a-zA-Z0-9.-]\+/-/g')
   OPEN_DEVIN_BUILD_VERSION=$sanitized
@@ -55,7 +49,7 @@ echo "Base dir: $DOCKER_BASE_DIR"
 
 args=""
 for tag in ${tags[@]}; do
-  args+=" -t $DOCKER_REPOSITORY:$tag_prefix$tag"
+  args+=" -t $DOCKER_REPOSITORY:$tag"
 done
 if [[ $push -eq 1 ]]; then
   args+=" --push"
