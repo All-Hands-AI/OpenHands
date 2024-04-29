@@ -27,7 +27,16 @@ describe("ChatInput", () => {
       <ChatInput disabled onSendMessage={onSendMessage} />,
     );
     const textarea = getByRole("textbox");
-    expect(textarea).toBeDisabled();
+    const button = getByRole("button");
+
+    expect(textarea).not.toBeDisabled(); // user can still type
+    expect(button).toBeDisabled(); // user cannot submit
+
+    act(() => {
+      userEvent.type(textarea, "Hello, world!{enter}");
+    });
+
+    expect(onSendMessage).not.toHaveBeenCalled();
   });
 
   // Note that this test only checks that the placeholder is rendered, not the actual value
