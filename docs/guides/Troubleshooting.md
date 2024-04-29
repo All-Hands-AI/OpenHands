@@ -18,7 +18,7 @@ https://github.com/OpenDevin/OpenDevin/issues/1226
 
 ### Symptoms
 ```
-Error creating controller. Please check Docker is running using docker ps
+Error creating controller. Please check Docker is running and visit `https://github.com/OpenDevin/OpenDevin/blob/main/docs/guides/Troubleshooting.md` for more debugging information.
 ```
 ```
 docker.errors.DockerException: Error while fetching server API version: ('Connection aborted.', FileNotFoundError(2, 'No such file or directory'))
@@ -30,6 +30,7 @@ OpenDevin uses a docker container to do its work safely, without potentially bre
 ### Workarounds
 * Run `docker ps` to ensure that docker is running
 * Make sure you don't need `sudo` to run docker [see here](https://www.baeldung.com/linux/docker-run-without-sudo)
+* If you are on a mac, check the [permissions requirements](https://docs.docker.com/desktop/mac/permission-requirements/) and in particular consider enabling the "Allow the default Docker socket to be used" under "Settings > Advanced" in Docker Desktop.
 
 
 ## Unable to connect to SSH box
