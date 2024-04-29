@@ -5,10 +5,9 @@ from litellm.exceptions import APIConnectionError, RateLimitError, ServiceUnavai
 from functools import partial
 
 from opendevin import config
-from opendevin.schema.config import ConfigType
 from opendevin.logger import llm_prompt_logger, llm_response_logger
 from opendevin.logger import opendevin_logger as logger
-
+from opendevin.schema import ConfigType
 
 DEFAULT_API_KEY = config.get(ConfigType.LLM_API_KEY)
 DEFAULT_BASE_URL = config.get(ConfigType.LLM_BASE_URL)
@@ -20,6 +19,7 @@ LLM_RETRY_MAX_WAIT = config.get(ConfigType.LLM_RETRY_MAX_WAIT)
 LLM_MAX_INPUT_TOKENS = config.get(ConfigType.LLM_MAX_INPUT_TOKENS)
 LLM_MAX_OUTPUT_TOKENS = config.get(ConfigType.LLM_MAX_OUTPUT_TOKENS)
 LLM_CUSTOM_LLM_PROVIDER = config.get(ConfigType.LLM_CUSTOM_LLM_PROVIDER)
+LLM_TIMEOUT = config.get(ConfigType.LLM_TIMEOUT)
 
 
 class LLM:
@@ -37,7 +37,8 @@ class LLM:
                  retry_max_wait=LLM_RETRY_MAX_WAIT,
                  max_input_tokens=LLM_MAX_INPUT_TOKENS,
                  max_output_tokens=LLM_MAX_OUTPUT_TOKENS,
-                 custom_llm_provider=LLM_CUSTOM_LLM_PROVIDER
+                 custom_llm_provider=LLM_CUSTOM_LLM_PROVIDER,
+                 llm_timeout=LLM_TIMEOUT
                  ):
         """
         Args:
@@ -51,6 +52,7 @@ class LLM:
             max_input_tokens (int, optional): The maximum number of tokens to send to and receive from LLM per task. Defaults to LLM_MAX_INPUT_TOKENS.
             max_output_tokens (int, optional): The maximum number of tokens to send to and receive from LLM per task. Defaults to LLM_MAX_OUTPUT_TOKENS.
             custom_llm_provider (function, optional): A custom LLM provider. Defaults to LLM_CUSTOM_LLM_PROVIDER.
+            llm_timeout (int, optional): The maximum time to wait for a response in seconds. Defaults to LLM_TIMEOUT.
 
         Attributes:
             model_name (str): The name of the language model.
@@ -66,6 +68,7 @@ class LLM:
         self.api_version = api_version
         self.max_input_tokens = max_input_tokens
         self.max_output_tokens = max_output_tokens
+        self.llm_timeout = llm_timeout
         self.custom_llm_provider = custom_llm_provider
 
         # litellm actually uses base Exception here for unknown model
@@ -89,7 +92,7 @@ class LLM:
                 self.max_output_tokens = 1024
 
         self._completion = partial(
-            litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url, api_version=self.api_version, max_tokens=max_output_tokens, custom_llm_provider=custom_llm_provider)
+            litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url, api_version=self.api_version, max_tokens=max_output_tokens, custom_llm_provider=custom_llm_provider, timeout=self.llm_timeout)
 
         completion_unwrapped = self._completion
 
