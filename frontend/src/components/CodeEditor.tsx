@@ -1,7 +1,3 @@
-import { I18nKey } from "#/i18n/declaration";
-import { selectFile } from "#/services/fileService";
-import { setCode } from "#/state/codeSlice";
-import { RootState } from "#/store";
 import Editor, { Monaco } from "@monaco-editor/react";
 import { Tab, Tabs } from "@nextui-org/react";
 import type { editor } from "monaco-editor";
@@ -9,6 +5,10 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { VscCode } from "react-icons/vsc";
 import { useDispatch, useSelector } from "react-redux";
+import { I18nKey } from "#/i18n/declaration";
+import { selectFile } from "#/services/fileService";
+import { setCode } from "#/state/codeSlice";
+import { RootState } from "#/store";
 import FileExplorer from "./file-explorer/FileExplorer";
 
 function CodeEditor(): JSX.Element {

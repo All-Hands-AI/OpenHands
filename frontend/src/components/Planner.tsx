@@ -1,6 +1,3 @@
-import { I18nKey } from "#/i18n/declaration";
-import { Plan, Task, TaskState } from "#/services/planService";
-import { RootState } from "#/store";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -13,6 +10,9 @@ import {
 } from "react-icons/fa";
 import { VscListOrdered } from "react-icons/vsc";
 import { useSelector } from "react-redux";
+import { I18nKey } from "#/i18n/declaration";
+import { Plan, Task, TaskState } from "#/services/planService";
+import { RootState } from "#/store";
 
 function StatusIcon({ status }: { status: TaskState }): JSX.Element {
   switch (status) {

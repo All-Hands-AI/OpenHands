@@ -1,9 +1,9 @@
-import { I18nKey } from "#/i18n/declaration";
-import { RootState } from "#/store";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { IoIosGlobe } from "react-icons/io";
 import { useSelector } from "react-redux";
+import { I18nKey } from "#/i18n/declaration";
+import { RootState } from "#/store";
 
 function Browser(): JSX.Element {
   const { t } = useTranslation();
