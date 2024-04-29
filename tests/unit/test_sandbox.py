@@ -52,7 +52,6 @@ def test_ssh_box_multi_line_cmd_run_as_devin():
         # test the ssh box
         exit_code, output = ssh_box.execute('pwd\nls -l')
         assert exit_code == 0, 'The exit code should be 0.'
-        print(output)
         expected_lines = ['/workspacels -l', 'total 0']
         assert output.strip().splitlines() == expected_lines
 
