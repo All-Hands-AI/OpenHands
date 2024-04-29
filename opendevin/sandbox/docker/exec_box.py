@@ -57,7 +57,7 @@ class DockerExecBox(Sandbox):
             self.docker_client = docker.from_env()
         except Exception as ex:
             logger.exception(
-                'Please check Docker is running using `docker ps`.', exc_info=False)
+                'Error creating controller. Please check Docker is running and visit `https://github.com/OpenDevin/OpenDevin/blob/main/docs/guides/Troubleshooting.md` for more debugging information.', exc_info=False)
             raise ex
 
         self.instance_id = sid if sid is not None else str(uuid.uuid4())

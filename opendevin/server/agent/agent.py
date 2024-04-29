@@ -154,7 +154,7 @@ class AgentUnit:
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
             await self.send_error(
-                'Error creating controller. Please check Docker is running using `docker ps`.'
+                'Error creating controller. Please check Docker is running and visit `https://github.com/OpenDevin/OpenDevin/blob/main/docs/guides/Troubleshooting.md` for more debugging information..'
             )
             return
         await self.init_done()

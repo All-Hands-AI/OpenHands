@@ -18,6 +18,6 @@ if __name__ == '__main__':
 
     parser_args = parser.parse_args()
     config.config['OPENAI_API_KEY'] = parser_args.OPENAI_API_KEY
-    args = ['-v', 'evaluation/regression/cases',f'-o model={parser_args.model}']
+    args = ['-v', 'evaluation/regression/cases', f'-o model={parser_args.model}']
 
     pytest.main(args)
