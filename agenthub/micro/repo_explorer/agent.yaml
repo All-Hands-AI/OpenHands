@@ -1,5 +1,5 @@
-name: RepoExplorer
+name: RepoExplorerAgent
 description: Generates a detailed summary of an existing codebase
-inputs: []
+inputs: {}
 outputs:
-  - summary: string
+  summary: string
