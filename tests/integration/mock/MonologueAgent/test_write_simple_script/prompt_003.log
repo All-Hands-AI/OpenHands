@@ -245,6 +245,35 @@ This is your internal monologue, in JSON format:
   {
     "action": "think",
     "args": {
+      "thought": "If I have done some work and I want to push it to github, I can do that also!"
+    }
+  },
+  {
+    "action": "think",
+    "args": {
+      "thought": "Let's do it."
+    }
+  },
+  {
+    "action": "push",
+    "args": {
+      "owner": "owner",
+      "repo": "repo",
+      "branch": "branch"
+    }
+  },
+  {
+    "observation": "run",
+    "content": "The repo was successfully pushed to https://github.com/owner/repo/branch",
+    "extras": {
+      "command_id": 0,
+      "command": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "action": "think",
+    "args": {
       "thought": "And once I have completed my task, I can use the finish action to stop working."
     }
   },
@@ -301,21 +330,15 @@ This is your internal monologue, in JSON format:
     }
   },
   {
-    "action": "write",
+    "action": "think",
     "args": {
-      "path": "hello.sh",
-      "content": "#!/bin/bash\necho \"hello\"",
-      "start": 0,
-      "end": -1,
-      "thoughts": ""
+      "thought": "Before I create the 'hello.sh' file, I need to think about the content. It should contain a shebang line to specify the shell interpreter and the command to print 'hello'."
     }
   },
   {
-    "observation": "write",
+    "observation": "null",
     "content": "",
-    "extras": {
-      "path": "hello.sh"
-    }
+    "extras": {}
   }
 ]
 
@@ -339,6 +362,10 @@ Here are the possible actions:
   * `id` - the ID of the background command to kill
 * `browse` - opens a web page. Arguments:
   * `url` - the URL to open
+* `push` - Push a branch from the current repo to github:
+  * `owner` - the owner of the repo to push to
+  * `repo` - the name of the repo to push to
+  * `branch` - the name of the branch to push
 * `recall` - recalls a past memory. Arguments:
   * `query` - the query to search for
 * `think` - make a plan, set a goal, or record your thoughts. Arguments:
@@ -347,7 +374,7 @@ Here are the possible actions:
 
 
 
-You MUST take time to think in between read, write, run, browse, and recall actions.
+You MUST take time to think in between read, write, run, browse, push, and recall actions.
 You should never act twice in a row without thinking. But if your last several
 actions are all "think" actions, you should consider taking a different action.
 
