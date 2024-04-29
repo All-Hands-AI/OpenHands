@@ -66,8 +66,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   };
 
   const handleAPIKeyChange = (key: string) => {
-    localStorage.setItem(`API_KEY_${settings.LLM_MODEL || models[0]}`, key);
-    setSettings((prev) => ({ ...prev, LLM_API_KEY: key || "" }));
+    setSettings((prev) => ({ ...prev, LLM_API_KEY: key }));
   };
 
   const handleSaveSettings = () => {
@@ -79,6 +78,11 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     Object.entries(updatedSettings).forEach(([key, value]) => {
       toast.settingsChanged(`${key} set to "${value}"`);
     });
+
+    localStorage.setItem(
+      `API_KEY_${settings.LLM_MODEL || models[0]}`,
+      settings.LLM_API_KEY,
+    );
   };
 
   return (
