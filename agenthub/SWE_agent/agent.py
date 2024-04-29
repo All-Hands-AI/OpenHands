@@ -1,23 +1,23 @@
 from typing import List
-from opendevin.agent import Agent
-from opendevin.llm.llm import LLM
-from opendevin.state import State
+
 from opendevin.action import (
     Action,
     AgentThinkAction,
     FileReadAction,
     FileWriteAction,
 )
+from opendevin.agent import Agent
+from opendevin.llm.llm import LLM
 from opendevin.observation import Observation
+from opendevin.state import State
 
 from .parser import parse_command
-
 from .prompts import (
-    SYSTEM_MESSAGE,
-    STEP_PROMPT,
+    CONTEXT_PROMPT,
     MEMORY_FORMAT,
     NO_ACTION,
-    CONTEXT_PROMPT
+    STEP_PROMPT,
+    SYSTEM_MESSAGE,
 )
 
 

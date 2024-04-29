@@ -1,8 +1,10 @@
 import os
-import jwt
 from typing import Dict
-from opendevin.logger import opendevin_logger as logger
+
+import jwt
 from jwt.exceptions import InvalidTokenError
+
+from opendevin.logger import opendevin_logger as logger
 
 JWT_SECRET = os.getenv('JWT_SECRET', '5ecRe7')
 

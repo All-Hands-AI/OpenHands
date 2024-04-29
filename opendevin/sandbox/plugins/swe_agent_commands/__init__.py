@@ -1,8 +1,11 @@
 import os
-from typing import List
 from dataclasses import dataclass, field
+from typing import List
+
 from opendevin.sandbox.plugins.requirement import PluginRequirement
-from opendevin.sandbox.plugins.swe_agent_commands.parse_commands import parse_command_file
+from opendevin.sandbox.plugins.swe_agent_commands.parse_commands import (
+    parse_command_file,
+)
 
 
 def _resolve_to_cur_dir(filename):

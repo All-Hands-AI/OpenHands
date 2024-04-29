@@ -1,5 +1,5 @@
-from typing import Dict
 import os
+from typing import Dict
 
 instructions: Dict = {}
 
