@@ -46,6 +46,8 @@ jobs:
         run: rm -rf /opt/hostedtoolcache
 
       - name: Build and push ${{ matrix.image }}
+        env:
+          BUILDKIT_NO_CLIENT_TOKEN: "true"
         run: |
           ./containers/build.sh ${{ matrix.image }} opendevin ${{ github.actor }} --push
 
