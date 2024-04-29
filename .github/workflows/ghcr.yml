@@ -47,8 +47,7 @@ jobs:
 
       - name: Build and push ${{ matrix.image }}
         run: |
-          ORG_NAME=$(echo "${{ github.repository }}" | tr '[A-Z]' '[a-z]' | cut -d '/' -f 1)
-          ./containers/build.sh ${{ matrix.image }} $ORG_NAME ${{ github.actor }} --push
+          ./containers/build.sh ${{ matrix.image }} OpenDevin ${{ github.actor }} --push
 
   docker_build_success:
     name: Docker Build Success
