@@ -48,12 +48,14 @@ jobs:
       - name: Build and push ${{ matrix.image }}
         if: github.event.pull_request.head.repo.full_name == github.repository
         run: |
-          ./containers/build.sh ${{ matrix.image }} opendevin ${{ github.actor }} --push
+          ORG_NAME=$(echo "${{ github.repository }}" | tr '[A-Z]' '[a-z]' | cut -d '/' -f 1)
+          ./containers/build.sh ${{ matrix.image }} $ORG_NAME ${{ github.actor }} --push
 
       - name: Build ${{ matrix.image }}
         if: github.event.pull_request.head.repo.full_name != github.repository
         run: |
-          ./containers/build.sh ${{ matrix.image }} opendevin ${{ github.actor }}
+          ORG_NAME=$(echo "${{ github.repository }}" | tr '[A-Z]' '[a-z]' | cut -d '/' -f 1)
+          ./containers/build.sh ${{ matrix.image }} $ORG_NAME ${{ github.actor }}
 
   docker_build_success:
     name: Docker Build Success
