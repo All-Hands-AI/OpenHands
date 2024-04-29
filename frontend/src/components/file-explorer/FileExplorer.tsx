@@ -1,4 +1,3 @@
-import { WorkspaceFile, getWorkspace } from "#/services/fileService";
 import React from "react";
 import {
   IoIosArrowBack,
@@ -6,6 +5,7 @@ import {
   IoIosRefresh,
 } from "react-icons/io";
 import { twMerge } from "tailwind-merge";
+import { WorkspaceFile, getWorkspace } from "#/services/fileService";
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
 import { removeEmptyNodes } from "./utils";

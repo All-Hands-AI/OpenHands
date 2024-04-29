@@ -1,5 +1,5 @@
 import asyncio
-from typing import Optional, Dict, List
+from typing import Dict, List, Optional
 
 from opendevin import config
 from opendevin.action import (
@@ -136,7 +136,7 @@ class AgentUnit:
         }  # remove empty values, prevent FE from sending empty strings
         agent_cls = self.get_arg_or_default(args, ConfigType.AGENT)
         model = self.get_arg_or_default(args, ConfigType.LLM_MODEL)
-        api_key = config.get(ConfigType.LLM_API_KEY)
+        api_key = self.get_arg_or_default(args, ConfigType.LLM_API_KEY)
         api_base = config.get(ConfigType.LLM_BASE_URL)
         max_iterations = self.get_arg_or_default(args, ConfigType.MAX_ITERATIONS)
         max_chars = self.get_arg_or_default(args, ConfigType.MAX_CHARS)

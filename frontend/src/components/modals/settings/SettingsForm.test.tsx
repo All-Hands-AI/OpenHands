@@ -1,14 +1,15 @@
+import { Settings } from "#/services/settings";
+import AgentTaskState from "#/types/AgentTaskState";
 import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { renderWithProviders } from "test-utils";
-import AgentTaskState from "#/types/AgentTaskState";
 import SettingsForm from "./SettingsForm";
-import { Settings } from "#/services/settings";
 
 const onModelChangeMock = vi.fn();
 const onAgentChangeMock = vi.fn();
 const onLanguageChangeMock = vi.fn();
+const onAPIKeyChangeMock = vi.fn();
 
 const renderSettingsForm = (settings?: Settings) => {
   renderWithProviders(
@@ -18,6 +19,7 @@ const renderSettingsForm = (settings?: Settings) => {
           LLM_MODEL: "model1",
           AGENT: "agent1",
           LANGUAGE: "en",
+          LLM_API_KEY: "sk-...",
         }
       }
       models={["model1", "model2", "model3"]}
@@ -25,6 +27,7 @@ const renderSettingsForm = (settings?: Settings) => {
       onModelChange={onModelChangeMock}
       onAgentChange={onAgentChangeMock}
       onLanguageChange={onLanguageChangeMock}
+      onAPIKeyChange={onAPIKeyChangeMock}
     />,
   );
 };
@@ -36,10 +39,12 @@ describe("SettingsForm", () => {
     const modelInput = screen.getByRole("combobox", { name: "model" });
     const agentInput = screen.getByRole("combobox", { name: "agent" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
+    const apiKeyInput = screen.getByTestId("apikey");
 
     expect(modelInput).toHaveValue("model1");
     expect(agentInput).toHaveValue("agent1");
     expect(languageInput).toHaveValue("English");
+    expect(apiKeyInput).toHaveValue("sk-...");
   });
 
   it("should display the existing values if it they are present", () => {
@@ -47,6 +52,7 @@ describe("SettingsForm", () => {
       LLM_MODEL: "model2",
       AGENT: "agent2",
       LANGUAGE: "es",
+      LLM_API_KEY: "sk-...",
     });
 
     const modelInput = screen.getByRole("combobox", { name: "model" });
@@ -65,12 +71,14 @@ describe("SettingsForm", () => {
           LLM_MODEL: "model1",
           AGENT: "agent1",
           LANGUAGE: "en",
+          LLM_API_KEY: "sk-...",
         }}
         models={["model1", "model2", "model3"]}
         agents={["agent1", "agent2", "agent3"]}
         onModelChange={onModelChangeMock}
         onAgentChange={onAgentChangeMock}
         onLanguageChange={onLanguageChangeMock}
+        onAPIKeyChange={onAPIKeyChangeMock}
       />,
       { preloadedState: { agent: { curTaskState: AgentTaskState.RUNNING } } },
     );
@@ -98,6 +106,7 @@ describe("SettingsForm", () => {
       });
 
       expect(onModelChangeMock).toHaveBeenCalledWith("model3");
+      expect(onAPIKeyChangeMock).toHaveBeenCalledWith("");
     });
 
     it("should call the onAgentChange handler when the agent changes", () => {
@@ -130,6 +139,17 @@ describe("SettingsForm", () => {
       });
 
       expect(onLanguageChangeMock).toHaveBeenCalledWith("Français");
+    });
+
+    it("should call the onAPIKeyChange handler when the API key changes", () => {
+      renderSettingsForm();
+
+      const apiKeyInput = screen.getByTestId("apikey");
+      act(() => {
+        userEvent.type(apiKeyInput, "x");
+      });
+
+      expect(onAPIKeyChangeMock).toHaveBeenCalledWith("sk-...x");
     });
   });
 });
