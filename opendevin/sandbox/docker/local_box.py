@@ -99,6 +99,9 @@ class LocalBox(Sandbox):
     def cleanup(self):
         self.close()
 
+    def get_working_directory(self):
+        return config.get(ConfigType.WORKSPACE_BASE)
+
 
 if __name__ == '__main__':
 

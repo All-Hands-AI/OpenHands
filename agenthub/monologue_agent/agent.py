@@ -82,7 +82,7 @@ INITIAL_THOUGHTS = [
     "I'll need a strategy. And as I make progress, I'll need to keep refining that strategy. I'll need to set goals, and break them into sub-goals.",
     'In between actions, I must always take some time to think, strategize, and set new goals. I should never take two actions in a row.',
     "OK so my task is to $TASK. I haven't made any progress yet. Where should I start?",
-    "It seems like there might be an existing project here. I should probably start by running `ls` to see what's here.",
+    'It seems like there might be an existing project here. I should probably start by running `pwd` and `ls` to orient myself.',
 ]
 
 
