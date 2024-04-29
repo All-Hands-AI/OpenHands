@@ -2,12 +2,14 @@ export type Settings = {
   LLM_MODEL: string;
   AGENT: string;
   LANGUAGE: string;
+  LLM_API_KEY: string;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
   LLM_MODEL: "gpt-3.5-turbo",
   AGENT: "MonologueAgent",
   LANGUAGE: "en",
+  LLM_API_KEY: "",
 };
 
 const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[];
@@ -19,6 +21,10 @@ export const getSettings = (): Settings => ({
   LLM_MODEL: localStorage.getItem("LLM_MODEL") || DEFAULT_SETTINGS.LLM_MODEL,
   AGENT: localStorage.getItem("AGENT") || DEFAULT_SETTINGS.AGENT,
   LANGUAGE: localStorage.getItem("LANGUAGE") || DEFAULT_SETTINGS.LANGUAGE,
+  LLM_API_KEY:
+    localStorage.getItem(
+      `API_KEY_${localStorage.getItem("LLM_MODEL") || DEFAULT_SETTINGS.LLM_MODEL}`,
+    ) || DEFAULT_SETTINGS.LLM_API_KEY,
 });
 
 /**
