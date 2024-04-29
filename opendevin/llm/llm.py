@@ -83,12 +83,15 @@ class LLM:
             if self.model_info is not None and 'max_input_tokens' in self.model_info:
                 self.max_input_tokens = self.model_info['max_input_tokens']
             else:
+                # Max input tokens for gpt3.5, so this is a safe fallback for any potentially viable model
                 self.max_input_tokens = 4096
 
         if self.max_output_tokens is None:
             if self.model_info is not None and 'max_output_tokens' in self.model_info:
                 self.max_output_tokens = self.model_info['max_output_tokens']
             else:
+                # Enough tokens for most output actions, and not too many for a bad llm to get carried away responding
+                # with thousands of unwanted tokens
                 self.max_output_tokens = 1024
 
         self._completion = partial(
