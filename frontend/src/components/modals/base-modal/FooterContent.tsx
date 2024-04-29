@@ -3,7 +3,6 @@ import React from "react";
 
 export interface Action {
   action: () => void;
-  isDisabled?: boolean;
   label: string;
   className?: string;
   closeAfterAction?: boolean;
@@ -17,22 +16,19 @@ interface FooterContentProps {
 export function FooterContent({ actions, closeModal }: FooterContentProps) {
   return (
     <>
-      {actions.map(
-        ({ action, isDisabled, label, className, closeAfterAction }) => (
-          <Button
-            key={label}
-            type="button"
-            isDisabled={isDisabled}
-            onClick={() => {
-              action();
-              if (closeAfterAction) closeModal();
-            }}
-            className={className}
-          >
-            {label}
-          </Button>
-        ),
-      )}
+      {actions.map(({ action, label, className, closeAfterAction }) => (
+        <Button
+          key={label}
+          type="button"
+          onClick={() => {
+            action();
+            if (closeAfterAction) closeModal();
+          }}
+          className={className}
+        >
+          {label}
+        </Button>
+      ))}
     </>
   );
 }

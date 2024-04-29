@@ -96,42 +96,6 @@ describe("BaseModal", () => {
     expect(screen.getByText("Children")).toBeInTheDocument();
   });
 
-  it("should disable the action given the condition", () => {
-    const { rerender } = render(
-      <BaseModal
-        isOpen
-        onOpenChange={vi.fn}
-        title="Settings"
-        actions={[
-          {
-            label: "Save",
-            action: () => {},
-            isDisabled: true,
-          },
-        ]}
-      />,
-    );
-
-    expect(screen.getByText("Save")).toBeDisabled();
-
-    rerender(
-      <BaseModal
-        isOpen
-        onOpenChange={vi.fn}
-        title="Settings"
-        actions={[
-          {
-            label: "Save",
-            action: () => {},
-            isDisabled: false,
-          },
-        ]}
-      />,
-    );
-
-    expect(screen.getByText("Save")).not.toBeDisabled();
-  });
-
   it.skip("should not close if the backdrop or escape key is pressed", () => {
     const onOpenChangeMock = vi.fn();
     render(

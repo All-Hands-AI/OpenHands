@@ -4,22 +4,15 @@ import React from "react";
 import { renderWithProviders } from "test-utils";
 import AgentTaskState from "#/types/AgentTaskState";
 import SettingsForm from "./SettingsForm";
-import { Settings } from "#/services/settings";
 
 const onModelChangeMock = vi.fn();
 const onAgentChangeMock = vi.fn();
 const onLanguageChangeMock = vi.fn();
 
-const renderSettingsForm = (settings?: Settings) => {
+const renderSettingsForm = (settings: Partial<Settings>) => {
   renderWithProviders(
     <SettingsForm
-      settings={
-        settings || {
-          LLM_MODEL: "model1",
-          AGENT: "agent1",
-          LANGUAGE: "en",
-        }
-      }
+      settings={settings}
       models={["model1", "model2", "model3"]}
       agents={["agent1", "agent2", "agent3"]}
       onModelChange={onModelChangeMock}
@@ -31,7 +24,7 @@ const renderSettingsForm = (settings?: Settings) => {
 
 describe("SettingsForm", () => {
   it("should display the first values in the array by default", () => {
-    renderSettingsForm();
+    renderSettingsForm({});
 
     const modelInput = screen.getByRole("combobox", { name: "model" });
     const agentInput = screen.getByRole("combobox", { name: "agent" });
@@ -61,11 +54,7 @@ describe("SettingsForm", () => {
   it("should disable settings while task is running", () => {
     renderWithProviders(
       <SettingsForm
-        settings={{
-          LLM_MODEL: "model1",
-          AGENT: "agent1",
-          LANGUAGE: "en",
-        }}
+        settings={{}}
         models={["model1", "model2", "model3"]}
         agents={["agent1", "agent2", "agent3"]}
         onModelChange={onModelChangeMock}
@@ -85,7 +74,7 @@ describe("SettingsForm", () => {
 
   describe("onChange handlers", () => {
     it("should call the onModelChange handler when the model changes", () => {
-      renderSettingsForm();
+      renderSettingsForm({});
 
       const modelInput = screen.getByRole("combobox", { name: "model" });
       act(() => {
@@ -101,7 +90,7 @@ describe("SettingsForm", () => {
     });
 
     it("should call the onAgentChange handler when the agent changes", () => {
-      renderSettingsForm();
+      renderSettingsForm({});
 
       const agentInput = screen.getByRole("combobox", { name: "agent" });
       act(() => {
@@ -117,7 +106,7 @@ describe("SettingsForm", () => {
     });
 
     it("should call the onLanguageChange handler when the language changes", () => {
-      renderSettingsForm();
+      renderSettingsForm({});
 
       const languageInput = screen.getByRole("combobox", { name: "language" });
       act(() => {

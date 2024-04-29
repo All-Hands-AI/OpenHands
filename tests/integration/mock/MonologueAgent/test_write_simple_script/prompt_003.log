@@ -310,7 +310,7 @@ This is your internal monologue, in JSON format:
   {
     "action": "think",
     "args": {
-      "thought": "It seems like there might be an existing project here. I should probably start by running `pwd` and `ls` to orient myself."
+      "thought": "It seems like there might be an existing project here. I should probably start by running `ls` to see what's here."
     }
   },
   {
@@ -344,8 +344,8 @@ This is your internal monologue, in JSON format:
 
 
 Your most recent thought is at the bottom of that monologue. Continue your train of thought.
-What is your next single thought or action? Your response must be in JSON format.
-It must be a single object, and it must contain two fields:
+What is your next thought or action? Your response must be in JSON format.
+It must be an object, and it must contain two fields:
 * `action`, which is one of the actions below
 * `args`, which is a map of key-value pairs, specifying the arguments for that action
 
@@ -379,12 +379,8 @@ You should never act twice in a row without thinking. But if your last several
 actions are all "think" actions, you should consider taking a different action.
 
 Notes:
-* you are logged in as opendevin, but sudo will always work without a password.
-* all non-background commands will be forcibly stopped if they remain running for over 120 seconds.
-* your environment is Debian Linux. You can install software with `sudo apt-get`, but remember to use -y.
+* your environment is Debian Linux. You can install software with `apt`
+* your working directory will not change, even if you run `cd`. All commands will be run in the `/workspace` directory.
 * don't run interactive commands, or commands that don't return (e.g. `node server.js`). You may run commands in the background (e.g. `node server.js &`)
-* don't run interactive text editors (e.g. `nano` or 'vim'), instead use the 'write' or 'read' action.
-* don't run gui applications (e.g. software IDEs (like vs code or codium), web browsers (like firefox or chromium), or other complex software packages). Use non-interactive cli applications, or special actions instead.
-* whenever an action fails, always `think` about why it may have happened before acting again.
 
-What is your next single thought or action? Again, you must reply with JSON, and only with JSON. You must respond with exactly one 'action' object.
+What is your next thought or action? Again, you must reply with JSON, and only with JSON.
