@@ -44,7 +44,7 @@
     <li><a href="#-what-is-devin">🤔 What is Devin?</a></li>
     <li><a href="#-why-opendevin">🐚 Why OpenDevin?</a></li>
     <li><a href="#-project-status">🚧 Project Status</a></li>
-      <a href="#-get-started">🚀 Get Started</a>
+      <a href="#-get-started">[(🚀) Get Started](#get-started)</a>
       <ul>
         <li><a href="#1-requirements">1. Requirements</a></li>
         <li><a href="#2-build-and-setup">2. Build and Setup</a></li>
@@ -101,6 +101,7 @@ OpenDevin is currently a work in progress, but you can already run the alpha ver
 - **Architecture**: Building a stable agent framework with a robust backend that can read, write, and run simple commands.
 - **Agent Capabilities**: Enhancing the agent's abilities to generate bash scripts, run tests, and perform other software engineering tasks.
 - **Evaluation**: Establishing a minimal evaluation pipeline that is consistent with Devin's evaluation criteria.
+- [(🚀) Get Started](#get-started)
 
 After completing the MVP, the team will focus on research in various areas, including foundation models, specialist capabilities, evaluation, and agent studies.
 
@@ -117,7 +118,7 @@ After completing the MVP, the team will focus on research in various areas, incl
 - OpenDevin runs `bash` commands within a Docker sandbox, so it should not affect your machine. But your workspace directory will be attached to that sandbox, and files in the directory may be modified or deleted.
 - Our default Agent is currently the MonologueAgent, which has limited capabilities, but is fairly stable. We're working on other Agent implementations, including [SWE Agent](https://swe-agent.com/). You can [read about our current set of agents here](./docs/Agents.md).
 
-## 🚀 Get Started
+## [(🚀) Get Started](#get-started)
 
 The easiest way to run OpenDevin is inside a Docker container.
 
