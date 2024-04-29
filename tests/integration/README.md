@@ -99,4 +99,3 @@ That's it, you are good to go! When you launch an integration test, mock
 responses are loaded and used to replace a real LLM, so that we get
 deterministic and consistent behavior, and most importantly, without spending real
 money.
-
