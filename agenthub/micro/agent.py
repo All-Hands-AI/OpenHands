@@ -56,14 +56,9 @@ class MicroAgent(Agent):
         super().__init__(llm)
         if 'name' not in self.agent_definition:
             raise ValueError('Agent definition must contain a name')
-        self.name = self.agent_definition['name']
-        self.description = self.agent_definition['description'] if 'description' in self.agent_definition else ''
-        self.inputs = self.agent_definition['inputs'] if 'inputs' in self.agent_definition else []
-        self.outputs = self.agent_definition['outputs'] if 'outputs' in self.agent_definition else []
-        self.examples = self.agent_definition['examples'] if 'examples' in self.agent_definition else []
         self.prompt_template = Environment(loader=BaseLoader).from_string(self.prompt)
         self.delegates = all_microagents.copy()
-        del self.delegates[self.name]
+        del self.delegates[self.agent_definition['name']]
 
     def step(self, state: State) -> Action:
         prompt = self.prompt_template.render(

@@ -10,6 +10,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CASES_DIR = os.path.join(SCRIPT_DIR, 'cases')
 AGENTHUB_DIR = os.path.join(SCRIPT_DIR, '../../', 'agenthub')
 
+
 def agents():
     """Retrieves a list of available agents.
 
@@ -22,6 +23,7 @@ def agents():
             agents.append(agent)
     return agents
 
+
 @pytest.fixture(scope='session')
 def test_cases_dir():
     """Fixture that provides the directory path for test cases.
@@ -30,6 +32,7 @@ def test_cases_dir():
         The directory path for test cases.
     """
     return CASES_DIR
+
 
 @pytest.fixture
 def task_file(test_cases_dir, request):
@@ -46,6 +49,7 @@ def task_file(test_cases_dir, request):
     task_file_path = os.path.join(test_case_dir, 'task.txt')
     return task_file_path
 
+
 @pytest.fixture
 def workspace_dir(test_cases_dir, request):
     """Fixture that provides the workspace directory for a test case.
@@ -60,6 +64,8 @@ def workspace_dir(test_cases_dir, request):
     test_case_dir = os.path.dirname(request.module.__file__)
     workspace_dir = os.path.join(test_case_dir, 'workspace')
     return workspace_dir
+
+
 @pytest.fixture
 def model(request):
     """Fixture that provides the model name.
@@ -71,6 +77,7 @@ def model(request):
         The model name, defaulting to "gpt-3.5-turbo-1106".
     """
     return request.config.getoption('model', default='gpt-3.5-turbo-1106')
+
 
 @pytest.fixture
 def run_test_case(test_cases_dir, workspace_dir, request):
@@ -113,8 +120,8 @@ def run_test_case(test_cases_dir, workspace_dir, request):
         else:
             os.makedirs(os.path.join(agent_dir, 'workspace'))
         agents_ref = {
-            'monologue_agent':'MonologueAgent',
-            'codeact_agent':'CodeActAgent'
+            'monologue_agent': 'MonologueAgent',
+            'codeact_agent': 'CodeActAgent'
         }
         process = subprocess.Popen(['python3', f'{SCRIPT_DIR}/../../opendevin/main.py', '-d', f"{os.path.join(agent_dir, 'workspace')}", '-c', f'{agents_ref[agent]}', '-t', f'{task}', '-m', 'gpt-3.5-turbo-1106'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         stdout, stderr = process.communicate()
@@ -125,6 +132,7 @@ def run_test_case(test_cases_dir, workspace_dir, request):
         return os.path.join(agent_dir, 'workspace')
 
     return _run_test_case
+
 
 def pytest_configure(config):
     """Configuration hook for pytest.

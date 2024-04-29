@@ -15,6 +15,7 @@ Commands:
 """
     print(help_text)
 
+
 if __name__ == '__main__':
     if len(sys.argv) == 2 and sys.argv[1] == '--help':
         print_help()
