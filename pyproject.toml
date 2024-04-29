@@ -42,6 +42,7 @@ pre-commit = "3.7.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
+pytest-cov = "*"
 pytest-asyncio = "*"
 
 [tool.poetry.group.evaluation.dependencies]

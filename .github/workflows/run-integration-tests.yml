@@ -56,8 +56,14 @@ jobs:
         run: |
           rm -rf workspace
           mkdir workspace
-          WORKSPACE_BASE="$GITHUB_WORKSPACE/workspace" WORKSPACE_MOUNT_PATH="$GITHUB_WORKSPACE/workspace" poetry run pytest -s ./tests/integration
-
+          WORKSPACE_BASE="$GITHUB_WORKSPACE/workspace" \
+            WORKSPACE_MOUNT_PATH="$GITHUB_WORKSPACE/workspace" \
+            poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml \
+            -s ./tests/integration
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   test_matrix_success:
     name: All Integration Tests Passed
     runs-on: ubuntu-latest
