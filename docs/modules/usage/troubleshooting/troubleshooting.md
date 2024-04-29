@@ -24,7 +24,7 @@ If you're running on Windows and having trouble, check out our [guide for Window
 ### Symptoms
 
 ```
-Error creating controller. Please check Docker is running using docker ps
+Error creating controller. Please check Docker is running and visit `https://github.com/OpenDevin/OpenDevin/blob/main/docs/guides/Troubleshooting.md` for more debugging information.
 ```
 
 ```
@@ -37,8 +37,9 @@ OpenDevin uses a docker container to do its work safely, without potentially bre
 
 ### Workarounds
 
-- Run `docker ps` to ensure that docker is running
-- Make sure you don't need `sudo` to run docker [see here](https://www.baeldung.com/linux/docker-run-without-sudo)
+* Run `docker ps` to ensure that docker is running
+* Make sure you don't need `sudo` to run docker [see here](https://www.baeldung.com/linux/docker-run-without-sudo)
+* If you are on a mac, check the [permissions requirements](https://docs.docker.com/desktop/mac/permission-requirements/) and in particular consider enabling the "Allow the default Docker socket to be used" under "Settings > Advanced" in Docker Desktop.
 
 ## [Unable to connect to SSH box](https://github.com/OpenDevin/OpenDevin/issues/1156)
 

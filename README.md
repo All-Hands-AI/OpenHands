@@ -36,8 +36,6 @@
 
 ## 🎯 Mission
 
-[Project Demo Video](./docs/static/img/teaser.mp4)
-
 Welcome to OpenDevin, an open-source project aiming to replicate Devin, an autonomous AI software engineer who is capable of executing complex engineering tasks and collaborating actively with users on software development projects. This project aspires to replicate, enhance, and innovate upon Devin through the power of the open-source community.
 
 To learn more and to use OpenDevin, check out our [documentation](https://opendevin.github.io/OpenDevin/).
