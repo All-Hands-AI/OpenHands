@@ -60,7 +60,7 @@ Note: in order to run integration tests correctly, please ensure your workspace 
 
 ## Write Integration Tests
 
-To write an integraion test, there are essentially two steps:
+To write an integration test, there are essentially two steps:
 
 1. Decide your task prompt, and the result you want to verify.
 2. Either construct LLM responses by yourself, or run OpenDevin with a real LLM. The system prompts and
@@ -80,7 +80,7 @@ You can choose any model you'd like to generate the mock responses.
 You can even handcraft mock responses, especially when you would like to test the behaviour of agent for corner cases. If you use a very weak model (e.g. 8B params), chance is most agents won't be able to finish the task.
 
 ```bash
-# Remove logs iff you are okay to lose logs. This helps us locate the prompts and responses quickly, but is NOT a must.
+# Remove logs if you are okay to lose logs. This helps us locate the prompts and responses quickly, but is NOT a must.
 rm -rf logs
 # Clear the workspace, otherwise OpenDevin might not be able to reproduce your prompts in CI environment. Feel free to change the workspace name and path. Be sure to set `WORKSPACE_MOUNT_PATH` to the same absolute path.
 rm -rf workspace
