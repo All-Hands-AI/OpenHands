@@ -15,6 +15,11 @@ on:
 jobs:
   ghcr_build_and_push:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
     strategy:
       matrix:
         image: ["app", "evaluation", "sandbox"]
