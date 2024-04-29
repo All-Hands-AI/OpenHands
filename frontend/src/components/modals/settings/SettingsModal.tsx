@@ -1,14 +1,18 @@
-import { Spinner } from "@nextui-org/react";
-import React from "react";
-import { useTranslation } from "react-i18next";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
+import { initializeAgent } from "#/services/agent";
+import { getSettings, getSettingsDifference } from "#/services/settings";
 import {
+  Settings,
   fetchAgents,
   fetchModels,
-  getCurrentSettings,
   saveSettings,
 } from "#/services/settingsService";
+import toast from "#/utils/toast";
+import { Spinner } from "@nextui-org/react";
+import i18next from "i18next";
+import React from "react";
+import { useTranslation } from "react-i18next";
 import BaseModal from "../base-modal/BaseModal";
 import SettingsForm from "./SettingsForm";
 
@@ -19,12 +23,12 @@ interface SettingsProps {
 
 function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const { t } = useTranslation();
-  const currentSettings = React.useMemo(() => getCurrentSettings(), []);
+  const currentSettings = getSettings();
 
   const [models, setModels] = React.useState<string[]>([]);
   const [agents, setAgents] = React.useState<string[]>([]);
-  const [settings, setSettings] =
-    React.useState<Partial<Settings>>(currentSettings);
+  const [settings, setSettings] = React.useState<Settings>(currentSettings);
+
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -66,6 +70,17 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     setSettings((prev) => ({ ...prev, LLM_API_KEY: key || "" }));
   };
 
+  const handleSaveSettings = () => {
+    const updatedSettings = getSettingsDifference(settings);
+    saveSettings(settings);
+    i18next.changeLanguage(settings.LANGUAGE);
+    initializeAgent(settings); // reinitialize the agent with the new settings
+
+    Object.entries(updatedSettings).forEach(([key, value]) => {
+      toast.settingsChanged(`${key} set to "${value}"`);
+    });
+  };
+
   return (
     <BaseModal
       isOpen={isOpen}
@@ -75,9 +90,10 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
       actions={[
         {
           label: t(I18nKey.CONFIGURATION$MODAL_SAVE_BUTTON_LABEL),
-          action: () => {
-            saveSettings(settings);
-          },
+          action: handleSaveSettings,
+          isDisabled:
+            Object.values(settings).some((value) => !value) ||
+            JSON.stringify(settings) === JSON.stringify(currentSettings),
           closeAfterAction: true,
           className: "bg-primary rounded-lg",
         },

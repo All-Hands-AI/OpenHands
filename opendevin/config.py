@@ -36,6 +36,10 @@ DEFAULT_CONFIG: dict = {
     ConfigType.LLM_RETRY_MIN_WAIT: 3,
     ConfigType.LLM_RETRY_MAX_WAIT: 60,
     ConfigType.MAX_ITERATIONS: 100,
+    ConfigType.AGENT_MEMORY_MAX_THREADS: 2,
+    ConfigType.AGENT_MEMORY_ENABLED: False,
+    ConfigType.LLM_TIMEOUT: None,
+    ConfigType.LLM_MAX_RETURN_TOKENS: None,
     # GPT-4 pricing is $10 per 1M input tokens. Since tokenization happens on LLM side,
     # we cannot easily count number of tokens, but we can count characters.
     # Assuming 5 characters per token, 5 million is a reasonable default limit.
@@ -46,6 +50,8 @@ DEFAULT_CONFIG: dict = {
     ConfigType.USE_HOST_NETWORK: 'false',
     ConfigType.SSH_HOSTNAME: 'localhost',
     ConfigType.DISABLE_COLOR: 'false',
+    ConfigType.SANDBOX_TIMEOUT: 120,
+    ConfigType.GITHUB_TOKEN: None
 }
 
 config_str = ''
@@ -73,6 +79,9 @@ for k, v in config.items():
     if k in [ConfigType.LLM_NUM_RETRIES, ConfigType.LLM_RETRY_MIN_WAIT, ConfigType.LLM_RETRY_MAX_WAIT]:
         config[k] = int_value(config[k], v, config_key=k)
 
+# In local there is no sandbox, the workspace will have the same pwd as the host
+if config[ConfigType.SANDBOX_TYPE] == 'local':
+    config[ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX] = config[ConfigType.WORKSPACE_MOUNT_PATH]
 
 def get_parser():
     parser = argparse.ArgumentParser(
@@ -159,10 +168,12 @@ def finalize_config():
 finalize_config()
 
 
-def get(key: str, required: bool = False):
+def get(key: ConfigType, required: bool = False):
     """
     Get a key from the environment variables or config.toml or default configs.
     """
+    if not isinstance(key, ConfigType):
+        raise ValueError(f"key '{key}' must be an instance of ConfigType Enum")
     value = config.get(key)
     if not value and required:
         raise KeyError(f"Please set '{key}' in `config.toml` or `.env`.")

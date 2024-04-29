@@ -8,9 +8,10 @@ import { I18nKey } from "../../../i18n/declaration";
 import { RootState } from "../../../store";
 import AgentTaskState from "../../../types/AgentTaskState";
 import { AutocompleteCombobox } from "./AutocompleteCombobox";
+import { Settings } from "#/services/settings";
 
 interface SettingsFormProps {
-  settings: Partial<Settings>;
+  settings: Settings;
   models: string[];
   agents: string[];
 

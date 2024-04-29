@@ -3,6 +3,7 @@ from typing import Callable, List, Type
 
 
 from opendevin import config
+from opendevin.schema.config import ConfigType
 from opendevin.action import (
     Action,
     AgentFinishAction,
@@ -25,8 +26,8 @@ from opendevin.action.tasks import TaskStateChangedAction
 from opendevin.schema import TaskState
 from opendevin.controller.action_manager import ActionManager
 
-MAX_ITERATIONS = config.get('MAX_ITERATIONS')
-MAX_CHARS = config.get('MAX_CHARS')
+MAX_ITERATIONS = config.get(ConfigType.MAX_ITERATIONS)
+MAX_CHARS = config.get(ConfigType.MAX_CHARS)
 
 
 class AgentController:

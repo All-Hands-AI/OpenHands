@@ -1,9 +1,14 @@
 name: Lint
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+    - main
+  pull_request:
 
 jobs:
   lint-frontend:
+    name: Lint frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,7 +37,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.11
+          cache: 'pip'
       - name: Install pre-commit
         run: pip install pre-commit==3.7.0
       - name: Run pre-commit hooks
-        run: pre-commit run --files opendevin/**/* agenthub/**/* --show-diff-on-failure --config ./dev_config/python/.pre-commit-config.yaml
+        run: |
+          pre-commit run \
+            --all-files \
+            --show-diff-on-failure \
+            --config ./dev_config/python/.pre-commit-config.yaml
