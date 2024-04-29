@@ -102,7 +102,7 @@ class AgentController:
             except Exception as e:
                 logger.error('Error in loop', exc_info=True)
                 await self._run_callbacks(
-                    AgentErrorObservation(f'Oops! Something went wrong while completing your task. You can check the logs for more info.'))
+                    AgentErrorObservation('Oops! Something went wrong while completing your task. You can check the logs for more info.'))
                 await self.set_task_state_to(TaskState.STOPPED)
                 break
 
