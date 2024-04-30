@@ -37,7 +37,9 @@ check-dependencies:
 	@$(MAKE) -s check-python
 	@$(MAKE) -s check-npm
 	@$(MAKE) -s check-nodejs
+ifeq ($(SKIP_DOCKER_PULL),)
 	@$(MAKE) -s check-docker
+endif
 	@$(MAKE) -s check-poetry
 	@echo "$(GREEN)Dependencies checked successfully.$(RESET)"
 
