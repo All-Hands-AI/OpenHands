@@ -53,7 +53,8 @@ DEFAULT_CONFIG: dict = {
     ConfigType.SSH_HOSTNAME: 'localhost',
     ConfigType.DISABLE_COLOR: 'false',
     ConfigType.SANDBOX_TIMEOUT: 120,
-    ConfigType.GITHUB_TOKEN: None
+    ConfigType.GITHUB_TOKEN: None,
+    ConfigType.SANDBOX_USER_ID: None
 }
 
 config_str = ''
