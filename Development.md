@@ -87,10 +87,7 @@ If you encounter any issues with the Language Model (LM) or you're simply curiou
 
 #### Unit tests
 
-**NOTE**: we need to run unit tests for `test_sandbox.py` separately. `test_sandbox.py` need to import OpenDevin modules in the fixture Running it together with other file will cause it to re-use the imported module and loaded config from other modules, hence causing errors.
-
 ```bash
-poetry run pytest ./tests/unit --ignore ./tests/unit/test_sandbox.py
 poetry run pytest ./tests/unit/test_sandbox.py
 ```
 
