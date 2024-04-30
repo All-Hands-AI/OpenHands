@@ -156,6 +156,10 @@ class MonologueAgent(Agent):
         else:
             self.memory = None
 
+        self._add_initial_thoughts(task)
+        self._initialized = True
+
+    def _add_initial_thoughts(self, task):
         previous_action = ''
         for thought in INITIAL_THOUGHTS:
             thought = thought.replace('$TASK', task)
@@ -207,7 +211,6 @@ class MonologueAgent(Agent):
                 else:
                     action = AgentThinkAction(thought=thought)
                 self._add_event(action.to_memory())
-        self._initialized = True
 
     def step(self, state: State) -> Action:
         """
@@ -261,3 +264,4 @@ class MonologueAgent(Agent):
             self.memory = LongTermMemory()
         else:
             self.memory = None
+        self._initialized = False
