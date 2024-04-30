@@ -136,6 +136,7 @@ class MonologueAgent(Agent):
         Utilizes the INITIAL_THOUGHTS list to give the agent a context for it's capabilities
         and how to navigate the WORKSPACE_MOUNT_PATH_IN_SANDBOX in `config` (e.g., /workspace by default).
         Short circuited to return when already initialized.
+        Will execute again when called after reset.
 
         Parameters:
         - task (str): The initial goal statement provided by the user
