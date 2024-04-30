@@ -17,38 +17,7 @@ jobs:
         agent: ["SWEAgent", "PlannerAgent", "MonologueAgent", "CodeActAgent"]
         sandbox: ["ssh", "exec"]
         include:
-          - name: SWEAgent-py311-ssh
-            python-version: "3.11"
-            agent: "SWEAgent"
-            embedding-model: "none"
-            sandbox: "ssh"
-          - name: PlannerAgent-py311-ssh
-            python-version: "3.11"
-            agent: "PlannerAgent"
-            embedding-model: "none"
-            sandbox: "ssh"
-          - name: MonologueAgent-py311-ssh
-            python-version: "3.11"
-            agent: "MonologueAgent"
-            embedding-model: "local"
-            sandbox: "ssh"
-          - name: CodeActAgent-py311-ssh
-            python-version: "3.11"
-            agent: "CodeActAgent"
-            embedding-model: "none"
-            sandbox: "ssh"
-          - name: SWEAgent-py311-exec
-            python-version: "3.11"
-            agent: "SWEAgent"
-            embedding-model: "none"
-            sandbox: "exec"
-          - name: PlannerAgent-py311-exec
-            python-version: "3.11"
-            agent: "PlannerAgent"
-            embedding-model: "none"
-            sandbox: "exec"
-          - name: MonologueAgent-py311-exec
-            python-version: "3.11"
+          - name: "MonologueAgent"
             agent: "MonologueAgent"
             embedding-model: "local"
             sandbox: "exec"

@@ -2,9 +2,16 @@ import asyncio
 import os
 import subprocess
 
+import pytest
+
 from opendevin.main import main
 
 
+# skip if
+@pytest.mark.skipif(
+    os.getenv('AGENT') == 'CodeActAgent' and os.getenv('SANDBOX_TYPE').lower() == 'exec',
+    reason='CodeActAgent does not support exec sandbox since exec sandbox is NOT stateful'
+)
 def test_write_simple_script():
     task = "Write a shell script 'hello.sh' that prints 'hello'."
     asyncio.run(main(task))
