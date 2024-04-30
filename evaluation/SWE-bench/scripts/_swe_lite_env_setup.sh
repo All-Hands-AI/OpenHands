@@ -13,6 +13,7 @@ fi
 # install if swe-util does NOT have conda
 if [ ! -d /swe_util/miniconda3 ]; then
     pushd /swe_util
+    echo "Downloading and installing Miniconda3"
     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O Miniconda3-latest-Linux-x86_64.sh
     bash Miniconda3-latest-Linux-x86_64.sh -b -p /swe_util/miniconda3
 fi
@@ -45,13 +46,14 @@ echo 'swe-bench-eval environment is ready.'
 INSTANCE_DATA_FILE=/swe_util/eval_data/instances/swe-bench-test-lite.json
 echo "Instace data file loaded: $INSTANCE_DATA_FILE"
 
+# =======================================================
 # generate testbed & conda environment for ALL instances in the test file
+echo "Generating testbed & conda environment for all instances in the test file"
 python3 /swe_util/OD-SWE-bench/swebench/harness/engine_testbed.py \
     --instances_path $INSTANCE_DATA_FILE \
-    --instance_id $INSTANCE_ID \
     --log_dir /swe_util/eval_data/testbed_logs \
     --conda_path /swe_util/miniconda3 \
-    --testbed eval_data/testbeds \
+    --testbed /swe_util/eval_data/testbeds \
     --timeout 1000
 
 # # Reset the testbed and install the repo
