@@ -1,41 +1,30 @@
-FROM ubuntu:20.04
+FROM ghcr.io/opendevin/sandbox:latest
 
-# https://github.com/princeton-nlp/SWE-bench/issues/15#issuecomment-1815392192
 RUN apt-get update && \
-    apt-get install -y bash gcc git jq wget && \
+    apt-get install -y libffi-dev bash gcc git jq wget && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+RUN ln -sfn /bin/bash /bin/sh
+RUN mkdir -p /opendevin/logs && chmod 777 /opendevin/logs
+
+# Setup Git
 RUN git config --global user.email "swebench@pnlp.org"
 RUN git config --global user.name "swebench"
 
-RUN apt update && apt install -y build-essential
+# # Install Mamba/Conda
+RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+# install to /opt/miniforge3
+RUN bash Miniforge3-$(uname)-$(uname -m).sh -b -p /opt/miniforge3
+RUN export PATH=/opt/miniforge3/bin:$PATH
+RUN /opt/miniforge3/bin/mamba init bash
 
-# Create new user
-RUN useradd -ms /bin/bash swe-bench
-USER swe-bench
-WORKDIR /home/swe-bench
-
-# Setup Conda
-ENV PATH="/home/swe-bench/miniconda3/bin:${PATH}"
-ARG PATH="/home/swe-bench/miniconda3/bin:${PATH}"
-RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-`uname -m`.sh -O miniconda.sh \
-    && mkdir ~/.conda \
-    && bash miniconda.sh -b \
-    && rm -f miniconda.sh
-RUN conda --version
-
-# Setup SWE-Bench Env
-COPY environment.yml .
-RUN conda env create -f environment.yml
-
-# Add commands
-COPY ./commands.sh .
-RUN . ./commands.sh
-
-# Some missing packages
-RUN pip install datasets python-dotenv gitpython
-
-RUN conda init bash
+# Setup SWE-Bench Eval Env
+RUN /bin/bash -c "/opt/miniforge3/bin/mamba create -n swe-bench-eval python==3.11.5 -y"
+RUN /bin/bash -c ". /opt/miniforge3/etc/profile.d/conda.sh && conda activate swe-bench-eval && \
+pip install requests python-dotenv GitPython datasets pandas beautifulsoup4 ghapi"
+RUN /bin/bash -c ". /opt/miniforge3/etc/profile.d/conda.sh
+&& conda config --set changeps1 False
+&& conda config --append channels conda-forge"
 
 CMD ["/bin/bash"]
