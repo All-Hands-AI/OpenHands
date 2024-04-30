@@ -205,6 +205,17 @@ class DockerSSHBox(Sandbox):
         return bg_cmd.read_logs()
 
     def execute(self, cmd: str) -> Tuple[int, str]:
+        commands = cmd.splitlines()
+        if len(commands) > 1:
+            all_output = ''
+            for command in commands:
+                exit_code, output = self.execute(command)
+                if all_output:
+                    all_output += '\r\n'
+                all_output += output
+                if exit_code != 0:
+                    return exit_code, all_output
+            return 0, all_output
         cmd = cmd.strip()
         # use self.ssh
         self.ssh.sendline(cmd)
