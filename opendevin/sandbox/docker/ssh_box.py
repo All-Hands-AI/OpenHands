@@ -41,7 +41,6 @@ if SANDBOX_USER_ID := config.get(ConfigType.SANDBOX_USER_ID):
 elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
 
-
 class DockerSSHBox(Sandbox):
     instance_id: str
     container_image: str
@@ -62,6 +61,7 @@ class DockerSSHBox(Sandbox):
         timeout: int = 120,
         sid: str | None = None,
     ):
+        logger.info(f'SSHBox is running as {"opendevin" if RUN_AS_DEVIN else "root"} user with USER_ID={USER_ID} in the sandbox')
         # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
             self.docker_client = docker.from_env()
@@ -150,8 +150,10 @@ class DockerSSHBox(Sandbox):
                 workdir=SANDBOX_WORKSPACE_DIR,
             )
             if exit_code != 0:
-                raise Exception(
-                    f'Failed to chown workspace directory for opendevin in sandbox: {logs}')
+                # This is not a fatal error, just a warning
+                logger.warning(
+                    f'Failed to chown workspace directory for opendevin in sandbox: {logs}. But this should be fine if the {SANDBOX_WORKSPACE_DIR=} is mounted by the app docker container.'
+                )
         else:
             exit_code, logs = self.container.exec_run(
                 # change password for root
@@ -351,7 +353,6 @@ class DockerSSHBox(Sandbox):
                 **network_kwargs,
                 working_dir=SANDBOX_WORKSPACE_DIR,
                 name=self.container_name,
-                hostname='opendevin_sandbox',
                 detach=True,
                 volumes={
                     mount_dir: {
