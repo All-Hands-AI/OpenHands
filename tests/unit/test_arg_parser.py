@@ -1,6 +1,6 @@
-from opendevin.config import get_parser
-
 import pytest
+
+from opendevin.config import get_parser
 
 
 def test_help_message(capsys):

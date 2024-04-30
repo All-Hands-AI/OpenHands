@@ -11,9 +11,9 @@ from fastapi.staticfiles import StaticFiles
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin import config, files
-from opendevin.schema.config import ConfigType
 from opendevin.agent import Agent
 from opendevin.logger import opendevin_logger as logger
+from opendevin.schema.config import ConfigType
 from opendevin.server.agent import agent_manager
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import message_stack, session_manager

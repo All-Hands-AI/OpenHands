@@ -1,17 +1,22 @@
-import llama_index.embeddings.openai.base as llama_openai
 import threading
 
 import chromadb
-from llama_index.core import Document
+import llama_index.embeddings.openai.base as llama_openai
+from llama_index.core import Document, VectorStoreIndex
 from llama_index.core.retrievers import VectorIndexRetriever
-from llama_index.core import VectorStoreIndex
 from llama_index.vector_stores.chroma import ChromaVectorStore
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_random_exponential
-from openai._exceptions import APIConnectionError, RateLimitError, InternalServerError
+from openai._exceptions import APIConnectionError, InternalServerError, RateLimitError
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_random_exponential,
+)
 
 from opendevin import config
 from opendevin.logger import opendevin_logger as logger
 from opendevin.schema.config import ConfigType
+
 from . import json
 
 num_retries = config.get(ConfigType.LLM_NUM_RETRIES)
@@ -51,11 +56,12 @@ embedding_strategy = config.get(ConfigType.LLM_EMBEDDING_MODEL)
 
 # TODO: More embeddings: https://docs.llamaindex.ai/en/stable/examples/embeddings/OpenAI/
 # There's probably a more programmatic way to do this.
-if embedding_strategy == 'llama2':
+supported_ollama_embed_models = ['llama2', 'mxbai-embed-large', 'nomic-embed-text', 'all-minilm', 'stable-code']
+if embedding_strategy in supported_ollama_embed_models:
     from llama_index.embeddings.ollama import OllamaEmbedding
     embed_model = OllamaEmbedding(
-        model_name='llama2',
-        base_url=config.get(ConfigType.LLM_BASE_URL, required=True),
+        model_name=embedding_strategy,
+        base_url=config.get(ConfigType.LLM_EMBEDDING_BASE_URL, required=True),
         ollama_additional_kwargs={'mirostat': 0},
     )
 elif embedding_strategy == 'openai':

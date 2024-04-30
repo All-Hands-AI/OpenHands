@@ -1,7 +1,7 @@
-import { I18nKey } from "#/i18n/declaration";
 import { Autocomplete, AutocompleteItem, Tooltip } from "@nextui-org/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 
 type Label = "model" | "agent" | "language";
 
@@ -58,7 +58,11 @@ export function AutocompleteCombobox({
         label={t(LABELS[ariaLabel])}
         placeholder={t(PLACEHOLDERS[ariaLabel])}
         defaultItems={items}
-        defaultSelectedKey={defaultKey}
+        defaultInputValue={
+          // Find the label for the default key, otherwise use the default key itself
+          // This is useful when the default key is not in the list of items, in the case of a custom LLM model
+          items.find((item) => item.value === defaultKey)?.label || defaultKey
+        }
         isDisabled={disabled}
         allowsCustomValue={allowCustomValue}
         onInputChange={(value) => {

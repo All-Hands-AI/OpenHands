@@ -1,8 +1,18 @@
-from litellm import completion as litellm_completion
-import litellm
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_random_exponential
-from litellm.exceptions import APIConnectionError, RateLimitError, ServiceUnavailableError
 from functools import partial
+
+import litellm
+from litellm import completion as litellm_completion
+from litellm.exceptions import (
+    APIConnectionError,
+    RateLimitError,
+    ServiceUnavailableError,
+)
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_random_exponential,
+)
 
 from opendevin import config
 from opendevin.logger import llm_prompt_logger, llm_response_logger
@@ -59,7 +69,6 @@ class LLM:
             api_key (str): The API key for accessing the language model.
             base_url (str): The base URL for the language model API.
             api_version (str): The version of the API to use.
-            completion (function): A decorator for the litellm completion function.
         """
         logger.info(f'Initializing LLM with model: {model}')
         self.model_name = model
@@ -95,17 +104,34 @@ class LLM:
                 self.max_output_tokens = 1024
 
         self._completion = partial(
-            litellm_completion, model=self.model_name, api_key=self.api_key, base_url=self.base_url, api_version=self.api_version, max_tokens=max_output_tokens, custom_llm_provider=custom_llm_provider, timeout=self.llm_timeout)
+            litellm_completion,
+            model=self.model_name,
+            api_key=self.api_key,
+            base_url=self.base_url,
+            api_version=self.api_version,
+            custom_llm_provider=custom_llm_provider,
+            max_tokens=self.max_output_tokens,
+            timeout=self.llm_timeout,
+        )
 
         completion_unwrapped = self._completion
 
         def attempt_on_error(retry_state):
-            logger.error(f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize these settings in the configuration.', exc_info=False)
+            logger.error(
+                f'{retry_state.outcome.exception()}. Attempt #{retry_state.attempt_number} | You can customize these settings in the configuration.',
+                exc_info=False,
+            )
             return True
 
-        @retry(reraise=True,
-               stop=stop_after_attempt(num_retries),
-               wait=wait_random_exponential(min=retry_min_wait, max=retry_max_wait), retry=retry_if_exception_type((RateLimitError, APIConnectionError, ServiceUnavailableError)), after=attempt_on_error)
+        @retry(
+            reraise=True,
+            stop=stop_after_attempt(num_retries),
+            wait=wait_random_exponential(min=retry_min_wait, max=retry_max_wait),
+            retry=retry_if_exception_type(
+                (RateLimitError, APIConnectionError, ServiceUnavailableError)
+            ),
+            after=attempt_on_error,
+        )
         def wrapper(*args, **kwargs):
             if 'messages' in kwargs:
                 messages = kwargs['messages']
@@ -119,6 +145,7 @@ class LLM:
             message_back = resp['choices'][0]['message']['content']
             llm_response_logger.debug(message_back)
             return resp
+
         self._completion = wrapper  # type: ignore
 
     @property

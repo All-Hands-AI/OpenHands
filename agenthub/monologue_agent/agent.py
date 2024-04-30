@@ -1,35 +1,34 @@
 from typing import List
-from opendevin.agent import Agent
-from opendevin.state import State
-from opendevin.llm.llm import LLM
-from opendevin.schema import ActionType
-from opendevin.exceptions import AgentNoInstructionError
-from opendevin.schema.config import ConfigType
-from opendevin import config
-
-from opendevin.action import (
-    Action,
-    NullAction,
-    CmdRunAction,
-    FileWriteAction,
-    FileReadAction,
-    AgentRecallAction,
-    BrowseURLAction,
-    GitHubPushAction,
-    AgentThinkAction,
-)
-
-from opendevin.observation import (
-    Observation,
-    NullObservation,
-    CmdOutputObservation,
-    FileReadObservation,
-    AgentRecallObservation,
-    BrowserOutputObservation,
-)
 
 import agenthub.monologue_agent.utils.prompts as prompts
 from agenthub.monologue_agent.utils.monologue import Monologue
+from opendevin import config
+from opendevin.action import (
+    Action,
+    AgentRecallAction,
+    AgentThinkAction,
+    BrowseURLAction,
+    CmdRunAction,
+    FileReadAction,
+    FileWriteAction,
+    GitHubPushAction,
+    NullAction,
+)
+from opendevin.agent import Agent
+from opendevin.exceptions import AgentNoInstructionError
+from opendevin.llm.llm import LLM
+from opendevin.observation import (
+    AgentRecallObservation,
+    BrowserOutputObservation,
+    CmdOutputObservation,
+    FileReadObservation,
+    NullObservation,
+    Observation,
+)
+from opendevin.schema import ActionType
+from opendevin.schema.config import ConfigType
+from opendevin.state import State
+
 if config.get(ConfigType.AGENT_MEMORY_ENABLED):
     from agenthub.monologue_agent.utils.memory import LongTermMemory
 
