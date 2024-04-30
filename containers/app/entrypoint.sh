@@ -14,8 +14,10 @@ fi
 # but the group id is not changed, so the user can still access everything under /app
 usermod -u $SANDBOX_USER_ID opendevin
 
-# make docker.sock accessible to the user
-chmod 777 /var/run/docker.sock
+# get the user group of /var/run/docker.sock and set opendevin to that group
+DOCKER_SOCKET_GID=$(stat -c '%g' /var/run/docker.sock)
+echo "Docker socket group id: $DOCKER_SOCKET_GID"
+usermod -aG $DOCKER_SOCKET_GID opendevin
 
 # switch to the user and start the server
 su opendevin -c "cd /app && uvicorn opendevin.server.listen:app --host 0.0.0.0 --port 3000"
