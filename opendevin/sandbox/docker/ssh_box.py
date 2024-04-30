@@ -171,7 +171,7 @@ class DockerSSHBox(Sandbox):
 
     def start_ssh_session(self):
         # start ssh session at the background
-        self.ssh = pxssh.pxssh(echo=False)
+        self.ssh = pxssh.pxssh()
         hostname = SSH_HOSTNAME
         if RUN_AS_DEVIN:
             username = 'opendevin'
@@ -209,18 +209,42 @@ class DockerSSHBox(Sandbox):
         # use self.ssh
         self.ssh.sendline(cmd)
         success = self.ssh.prompt(timeout=self.timeout)
-        command_output = self._gather_logs()
         if not success:
             logger.exception(
                 'Command timed out, killing process...', exc_info=False)
             # send a SIGINT to the process
             self.ssh.sendintr()
+            self.ssh.prompt()
+            command_output = self.ssh.before.decode(
+                'utf-8').lstrip(cmd).strip()
             return -1, f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}'
+        command_output = self.ssh.before.decode('utf-8').strip()
+
+        # once out, make sure that we have *every* output, we while loop until we get an empty output
+        while True:
+            logger.debug('WAITING FOR .prompt()')
+            self.ssh.sendline('\n')
+            timeout_not_reached = self.ssh.prompt(timeout=1)
+            if not timeout_not_reached:
+                logger.debug('TIMEOUT REACHED')
+                break
+            logger.debug('WAITING FOR .before')
+            output = self.ssh.before.decode('utf-8').strip()
+            logger.debug(f'WAITING FOR END OF command output ({bool(output)}): {output}')
+            if output == '':
+                break
+            command_output += output
+        command_output = command_output.lstrip(cmd).strip()
 
         # get the exit code
         self.ssh.sendline('echo $?')
-        exit_code_str = self._gather_logs()
-        exit_code = int(exit_code_str.strip())
+        self.ssh.prompt()
+        exit_code = self.ssh.before.decode('utf-8')
+        while not exit_code.startswith('echo $?'):
+            self.ssh.prompt()
+            exit_code = self.ssh.before.decode('utf-8')
+            logger.debug(f'WAITING FOR exit code: {exit_code}')
+        exit_code = int(exit_code.lstrip('echo $?').strip())
         return exit_code, command_output
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
@@ -388,20 +412,6 @@ class DockerSSHBox(Sandbox):
                 break
         if self.container.status != 'running':
             raise Exception('Failed to start container')
-
-    def _gather_logs(self) -> str:
-        output = self.ssh.before.decode('utf-8')
-        while True:
-            timeout_not_reached = self.ssh.prompt(timeout=1)
-            if not timeout_not_reached:
-                break
-            next_output = self.ssh.before.decode('utf-8')
-            if next_output == '':
-                break
-            output += next_output
-        if output.endswith('\r\n'):
-            output = output[:-2]
-        return output
 
     # clean up the container, cannot do it in __del__ because the python interpreter is already shutting down
     def close(self):
