@@ -1,6 +1,6 @@
 import asyncio
 from typing import Callable, List, Type
-
+from multiprocessing import Process, Pipe
 
 from opendevin import config
 from opendevin.schema.config import ConfigType
@@ -25,6 +25,7 @@ from opendevin.state import State
 from opendevin.action.tasks import TaskStateChangedAction
 from opendevin.schema import TaskState
 from opendevin.controller.action_manager import ActionManager
+from opendevin.browser_server.browser_process import start_browser
 
 MAX_ITERATIONS = config.get(ConfigType.MAX_ITERATIONS)
 MAX_CHARS = config.get(ConfigType.MAX_CHARS)
@@ -60,6 +61,11 @@ class AgentController:
         self.callbacks = callbacks
         # Initialize agent-required plugins for sandbox (if any)
         self.action_manager.init_sandbox_plugins(agent.sandbox_plugins)
+        self.browser_side, self.agent_side = Pipe()
+        self.process = Process(target=start_browser, args=(self.browser_side,))
+        self.process.start()
+        print('started browser service process...')
+
 
     def update_state_for_step(self, i):
         if self.state is None:
