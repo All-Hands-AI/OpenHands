@@ -37,8 +37,14 @@ jobs:
       - name: Build Environment
         run: make build
 
-      - name: Run Tests
-        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit
+      # Sandbox requires to import modules in fixture to change os.environ
+      # imports in other test files will cause issues, so we need to test sandbox separately
+      - name: Run Tests Except Sandbox
+        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit --ignore ./tests/unit/test_sandbox.py
+
+      - name: Run Tests For Sandbox
+        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml --cov-append ./tests/unit/test_sandbox.py
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
@@ -68,8 +74,14 @@ jobs:
       - name: Build Environment
         run: make build
 
-      - name: Run Tests
-        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit
+      # Sandbox requires to import modules in fixture to change os.environ
+      # imports in other test files will cause issues, so we need to test sandbox separately
+      - name: Run Tests Except Sandbox
+        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit --ignore ./tests/unit/test_sandbox.py
+
+      - name: Run Tests For Sandbox
+        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml --cov-append ./tests/unit/test_sandbox.py
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
