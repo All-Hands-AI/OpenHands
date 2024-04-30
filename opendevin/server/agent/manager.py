@@ -1,7 +1,8 @@
 import atexit
 
-from opendevin.server.session import session_manager
 from opendevin.logger import opendevin_logger as logger
+from opendevin.server.session import session_manager
+
 from .agent import AgentUnit
 
 

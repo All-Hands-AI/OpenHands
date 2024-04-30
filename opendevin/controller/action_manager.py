@@ -1,17 +1,18 @@
 from typing import List
 
 from opendevin import config
-from opendevin.observation import CmdOutputObservation, AgentErrorObservation
-from opendevin.sandbox import DockerExecBox, DockerSSHBox, Sandbox, LocalBox, E2BBox
-from opendevin.schema import ConfigType
 from opendevin.action import (
     Action,
 )
 from opendevin.observation import (
-    Observation,
+    AgentErrorObservation,
+    CmdOutputObservation,
     NullObservation,
+    Observation,
 )
+from opendevin.sandbox import DockerExecBox, DockerSSHBox, E2BBox, LocalBox, Sandbox
 from opendevin.sandbox.plugins import PluginRequirement
+from opendevin.schema import ConfigType
 
 
 class ActionManager:

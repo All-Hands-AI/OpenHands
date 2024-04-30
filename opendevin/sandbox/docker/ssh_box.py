@@ -1,25 +1,25 @@
 import atexit
 import os
 import sys
+import tarfile
 import time
 import uuid
-import tarfile
-from glob import glob
 from collections import namedtuple
+from glob import glob
 from typing import Dict, List, Tuple, Union
 
 import docker
 from pexpect import pxssh
 
 from opendevin import config
+from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.logger import opendevin_logger as logger
-from opendevin.sandbox.sandbox import Sandbox
-from opendevin.sandbox.process import Process
 from opendevin.sandbox.docker.process import DockerProcess
 from opendevin.sandbox.plugins import JupyterRequirement, SWEAgentCommandsRequirement
+from opendevin.sandbox.process import Process
+from opendevin.sandbox.sandbox import Sandbox
 from opendevin.schema import ConfigType
 from opendevin.utils import find_available_tcp_port
-from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
@@ -176,7 +176,9 @@ class DockerSSHBox(Sandbox):
         else:
             username = 'root'
         logger.info(
-            f"Connecting to {username}@{hostname} via ssh. If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub."
+            f"Connecting to {username}@{hostname} via ssh. "
+            f"If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub. "
+            f"If you started OpenDevin with `docker run`, you should try `ssh -v -p {self._ssh_port} {username}@localhost` with the password '{self._ssh_password} on the host machine (where you started the container)."
         )
         self.ssh.login(hostname, username, self._ssh_password,
                        port=self._ssh_port)

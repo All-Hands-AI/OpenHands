@@ -1,14 +1,15 @@
+import random
+import string
 from dataclasses import dataclass
-from opendevin.observation import Observation, AgentErrorObservation
+from typing import TYPE_CHECKING
+
+import requests
+
+from opendevin import config
+from opendevin.observation import AgentErrorObservation, Observation
 from opendevin.observation.message import AgentMessageObservation
 from opendevin.observation.run import CmdOutputObservation
 from opendevin.schema import ActionType
-from opendevin import config
-from typing import TYPE_CHECKING
-import requests
-import random
-import string
-
 from opendevin.schema.config import ConfigType
 
 from .base import ExecutableAction
