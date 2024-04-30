@@ -5,8 +5,8 @@ from unittest.mock import patch
 import pytest
 
 from opendevin import config
-from opendevin.sandbox.docker.ssh_box import DockerSSHBox
 from opendevin.sandbox.docker.exec_box import DockerExecBox
+from opendevin.sandbox.docker.ssh_box import DockerSSHBox
 
 
 @pytest.fixture
