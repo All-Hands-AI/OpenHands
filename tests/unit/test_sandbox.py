@@ -108,6 +108,24 @@ def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
             exit_code, output = box.execute('non_existing_command')
             assert exit_code != 0, 'The exit code should not be 0 for a failed command for ' + box.__class__.__name__
 
+def test_single_multiline_command(temp_dir):
+    with patch.dict(
+        config.config,
+        {
+            config.ConfigType.WORKSPACE_BASE: temp_dir,
+            config.ConfigType.RUN_AS_DEVIN: 'true',
+            config.ConfigType.SANDBOX_TYPE: 'ssh',
+        },
+        clear=True
+    ):
+        for box in [DockerSSHBox(), DockerExecBox()]:
+            exit_code, output = box.execute('echo \\\n -e "foo"')
+            assert exit_code == 0, 'The exit code should be 0 for ' + box.__class__.__name__
+            if isinstance(box, DockerExecBox):
+                assert output == 'foo', 'The output should be the same as the input for ' + box.__class__.__name__
+            else:
+                # FIXME: why is there a `>` in the output?
+                assert output == '> foo', 'The output should be the same as the input for ' + box.__class__.__name__
 
 def test_sandbox_whitespace(temp_dir):
     # get a temporary directory

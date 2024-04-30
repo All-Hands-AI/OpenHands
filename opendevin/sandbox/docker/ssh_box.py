@@ -1,5 +1,6 @@
 import atexit
 import os
+import re
 import sys
 import tarfile
 import time
@@ -40,6 +41,14 @@ if SANDBOX_USER_ID := config.get(ConfigType.SANDBOX_USER_ID):
     USER_ID = int(SANDBOX_USER_ID)
 elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
+
+def split_bash_commands(bash_string):
+    # This regex matches an escaped newline (i.e., a backslash followed by a newline)
+    # and avoids splitting on them. It splits on actual newlines that are not escaped.
+    commands = re.split(r'(?<!\\)\n', bash_string.replace('\\\n', '\\\n '))
+    # Restore the escaped newlines by removing the extra space added for splitting.
+    commands = [cmd.replace('\\\n ', '\\\n') for cmd in commands]
+    return commands
 
 class DockerSSHBox(Sandbox):
     instance_id: str
@@ -171,7 +180,7 @@ class DockerSSHBox(Sandbox):
 
     def start_ssh_session(self):
         # start ssh session at the background
-        self.ssh = pxssh.pxssh()
+        self.ssh = pxssh.pxssh(echo=False, timeout=self.timeout)
         hostname = SSH_HOSTNAME
         if RUN_AS_DEVIN:
             username = 'opendevin'
@@ -205,7 +214,7 @@ class DockerSSHBox(Sandbox):
         return bg_cmd.read_logs()
 
     def execute(self, cmd: str) -> Tuple[int, str]:
-        commands = cmd.splitlines()
+        commands = split_bash_commands(cmd)
         if len(commands) > 1:
             all_output = ''
             for command in commands:
@@ -224,7 +233,7 @@ class DockerSSHBox(Sandbox):
             # send a SIGINT to the process
             self.ssh.sendintr()
             self.ssh.prompt()
-            command_output = self.ssh.before.decode('utf-8').removeprefix(cmd).removeprefix('\r\n')
+            command_output = self.ssh.before.decode('utf-8')
             return -1, f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}'
         command_output = self.ssh.before.decode('utf-8')
 
@@ -239,20 +248,20 @@ class DockerSSHBox(Sandbox):
             logger.debug('WAITING FOR .before')
             output = self.ssh.before.decode('utf-8')
             logger.debug(f'WAITING FOR END OF command output ({bool(output)}): {output}')
-            if output == '\r\n':
+            if output == '':
                 break
             command_output += output
-        command_output = command_output.removeprefix(cmd).removeprefix('\r\n').removesuffix('\r\n')
+        command_output = command_output.removesuffix('\r\n')
 
         # get the exit code
         self.ssh.sendline('echo $?')
         self.ssh.prompt()
         exit_code = self.ssh.before.decode('utf-8')
-        while not exit_code.startswith('echo $?'):
+        while not exit_code:
             self.ssh.prompt()
             exit_code = self.ssh.before.decode('utf-8')
             logger.debug(f'WAITING FOR exit code: {exit_code}')
-        exit_code = int(exit_code.removeprefix('echo $?').strip())
+        exit_code = int(exit_code.strip())
         return exit_code, command_output
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
