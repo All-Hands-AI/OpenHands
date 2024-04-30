@@ -1,25 +1,25 @@
 import atexit
 import os
 import sys
+import tarfile
 import time
 import uuid
-import tarfile
-from glob import glob
 from collections import namedtuple
+from glob import glob
 from typing import Dict, List, Tuple, Union
 
 import docker
 from pexpect import pxssh
 
 from opendevin import config
+from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.logger import opendevin_logger as logger
-from opendevin.sandbox.sandbox import Sandbox
-from opendevin.sandbox.process import Process
 from opendevin.sandbox.docker.process import DockerProcess
 from opendevin.sandbox.plugins import JupyterRequirement, SWEAgentCommandsRequirement
+from opendevin.sandbox.process import Process
+from opendevin.sandbox.sandbox import Sandbox
 from opendevin.schema import ConfigType
 from opendevin.utils import find_available_tcp_port
-from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
@@ -41,7 +41,6 @@ if SANDBOX_USER_ID := config.get(ConfigType.SANDBOX_USER_ID):
 elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
 
-
 class DockerSSHBox(Sandbox):
     instance_id: str
     container_image: str
@@ -62,12 +61,13 @@ class DockerSSHBox(Sandbox):
         timeout: int = 120,
         sid: str | None = None,
     ):
+        logger.info(f'SSHBox is running as {"opendevin" if RUN_AS_DEVIN else "root"} user with USER_ID={USER_ID} in the sandbox')
         # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
             self.docker_client = docker.from_env()
         except Exception as ex:
             logger.exception(
-                'Please check Docker is running using `docker ps`.', exc_info=False)
+                'Error creating controller. Please check Docker is running and visit `https://github.com/OpenDevin/OpenDevin/blob/main/docs/guides/Troubleshooting.md` for more debugging information.', exc_info=False)
             raise ex
 
         self.instance_id = sid if sid is not None else str(uuid.uuid4())
@@ -150,8 +150,10 @@ class DockerSSHBox(Sandbox):
                 workdir=SANDBOX_WORKSPACE_DIR,
             )
             if exit_code != 0:
-                raise Exception(
-                    f'Failed to chown workspace directory for opendevin in sandbox: {logs}')
+                # This is not a fatal error, just a warning
+                logger.warning(
+                    f'Failed to chown workspace directory for opendevin in sandbox: {logs}. But this should be fine if the {SANDBOX_WORKSPACE_DIR=} is mounted by the app docker container.'
+                )
         else:
             exit_code, logs = self.container.exec_run(
                 # change password for root
@@ -169,14 +171,16 @@ class DockerSSHBox(Sandbox):
 
     def start_ssh_session(self):
         # start ssh session at the background
-        self.ssh = pxssh.pxssh(echo=False)
+        self.ssh = pxssh.pxssh()
         hostname = SSH_HOSTNAME
         if RUN_AS_DEVIN:
             username = 'opendevin'
         else:
             username = 'root'
         logger.info(
-            f"Connecting to {username}@{hostname} via ssh. If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub."
+            f"Connecting to {username}@{hostname} via ssh. "
+            f"If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub. "
+            f"If you started OpenDevin with `docker run`, you should try `ssh -v -p {self._ssh_port} {username}@localhost` with the password '{self._ssh_password} on the host machine (where you started the container)."
         )
         self.ssh.login(hostname, username, self._ssh_password,
                        port=self._ssh_port)
@@ -211,14 +215,36 @@ class DockerSSHBox(Sandbox):
             # send a SIGINT to the process
             self.ssh.sendintr()
             self.ssh.prompt()
-            command_output = self.ssh.before.decode('utf-8').strip()
+            command_output = self.ssh.before.decode(
+                'utf-8').lstrip(cmd).strip()
             return -1, f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}'
         command_output = self.ssh.before.decode('utf-8').strip()
 
+        # once out, make sure that we have *every* output, we while loop until we get an empty output
+        while True:
+            logger.debug('WAITING FOR .prompt()')
+            self.ssh.sendline('\n')
+            timeout_not_reached = self.ssh.prompt(timeout=1)
+            if not timeout_not_reached:
+                logger.debug('TIMEOUT REACHED')
+                break
+            logger.debug('WAITING FOR .before')
+            output = self.ssh.before.decode('utf-8').strip()
+            logger.debug(f'WAITING FOR END OF command output ({bool(output)}): {output}')
+            if output == '':
+                break
+            command_output += output
+        command_output = command_output.lstrip(cmd).strip()
+
         # get the exit code
         self.ssh.sendline('echo $?')
-        self.ssh.prompt(timeout=10)
-        exit_code = int(self.ssh.before.decode('utf-8').strip())
+        self.ssh.prompt()
+        exit_code = self.ssh.before.decode('utf-8')
+        while not exit_code.startswith('echo $?'):
+            self.ssh.prompt()
+            exit_code = self.ssh.before.decode('utf-8')
+            logger.debug(f'WAITING FOR exit code: {exit_code}')
+        exit_code = int(exit_code.lstrip('echo $?').strip())
         return exit_code, command_output
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
@@ -303,9 +329,10 @@ class DockerSSHBox(Sandbox):
             pass
 
     def get_working_directory(self):
-        self.ssh.sendline('pwd')
-        self.ssh.prompt(timeout=10)
-        return self.ssh.before.decode('utf-8').strip()
+        exit_code, result = self.execute('pwd')
+        if exit_code != 0:
+            raise Exception('Failed to get working directory')
+        return result.strip()
 
     def is_container_running(self):
         try:
@@ -349,7 +376,6 @@ class DockerSSHBox(Sandbox):
                 **network_kwargs,
                 working_dir=SANDBOX_WORKSPACE_DIR,
                 name=self.container_name,
-                hostname='opendevin_sandbox',
                 detach=True,
                 volumes={
                     mount_dir: {

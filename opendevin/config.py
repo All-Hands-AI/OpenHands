@@ -1,12 +1,13 @@
-import os
 import argparse
-import toml
+import logging
+import os
 import pathlib
 import platform
+
+import toml
 from dotenv import load_dotenv
 
 from opendevin.schema import ConfigType
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.SANDBOX_CONTAINER_IMAGE: DEFAULT_CONTAINER_IMAGE,
     ConfigType.RUN_AS_DEVIN: 'true',
     ConfigType.LLM_EMBEDDING_MODEL: 'local',
+    ConfigType.LLM_EMBEDDING_BASE_URL: None,
     ConfigType.LLM_EMBEDDING_DEPLOYMENT_NAME: None,
     ConfigType.LLM_API_VERSION: None,
     ConfigType.LLM_NUM_RETRIES: 5,
@@ -50,8 +52,10 @@ DEFAULT_CONFIG: dict = {
     ConfigType.USE_HOST_NETWORK: 'false',
     ConfigType.SSH_HOSTNAME: 'localhost',
     ConfigType.DISABLE_COLOR: 'false',
+    ConfigType.SANDBOX_USER_ID: os.getuid() if hasattr(os, 'getuid') else None,
     ConfigType.SANDBOX_TIMEOUT: 120,
-    ConfigType.GITHUB_TOKEN: None
+    ConfigType.GITHUB_TOKEN: None,
+    ConfigType.SANDBOX_USER_ID: None
 }
 
 config_str = ''
@@ -152,6 +156,9 @@ def finalize_config():
 
     if config.get(ConfigType.WORKSPACE_MOUNT_PATH) is None:
         config[ConfigType.WORKSPACE_MOUNT_PATH] = os.path.abspath(config[ConfigType.WORKSPACE_BASE])
+
+    if config.get(ConfigType.LLM_EMBEDDING_BASE_URL) is None:
+        config[ConfigType.LLM_EMBEDDING_BASE_URL] = config.get(ConfigType.LLM_BASE_URL)
 
     USE_HOST_NETWORK = config[ConfigType.USE_HOST_NETWORK].lower() != 'false'
     if USE_HOST_NETWORK and platform.system() == 'Darwin':
