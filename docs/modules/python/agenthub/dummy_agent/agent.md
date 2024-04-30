@@ -3,13 +3,12 @@ sidebar_label: agent
 title: agenthub.dummy_agent.agent
 ---
 
-Module for a Dummy agent.
-
 ## DummyAgent Objects
 
 ```python
 class DummyAgent(Agent)
 ```
 
-A dummy agent that does nothing but can be used in testing.
+The DummyAgent is used for e2e testing. It just sends the same set of actions deterministically,
+without making any LLM calls.
 
