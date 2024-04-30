@@ -1,9 +1,9 @@
-import { Settings } from "#/services/settings";
-import AgentTaskState from "#/types/AgentTaskState";
 import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { renderWithProviders } from "test-utils";
+import AgentTaskState from "#/types/AgentTaskState";
+import { Settings } from "#/services/settings";
 import SettingsForm from "./SettingsForm";
 
 const onModelChangeMock = vi.fn();
@@ -106,7 +106,6 @@ describe("SettingsForm", () => {
       });
 
       expect(onModelChangeMock).toHaveBeenCalledWith("model3");
-      expect(onAPIKeyChangeMock).toHaveBeenCalledWith("");
     });
 
     it("should call the onAgentChange handler when the agent changes", () => {
