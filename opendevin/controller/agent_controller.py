@@ -65,10 +65,10 @@ class AgentController:
         self.callbacks = callbacks
         # Initialize agent-required plugins for sandbox (if any)
         self.action_manager.init_sandbox_plugins(agent.sandbox_plugins)
+        # Initialize browser environment process
         self.browser_side, self.agent_side = Pipe()
         self.process = Process(target=start_browser, args=(self.browser_side,))
         self.process.start()
-        print('started browser service process...')
 
 
     def update_state_for_step(self, i):
