@@ -49,7 +49,7 @@ class LLM:
             num_retries (int, optional): The number of retries for API calls. Defaults to LLM_NUM_RETRIES.
             retry_min_wait (int, optional): The minimum time to wait between retries in seconds. Defaults to LLM_RETRY_MIN_TIME.
             retry_max_wait (int, optional): The maximum time to wait between retries in seconds. Defaults to LLM_RETRY_MAX_TIME.
-            max_input_tokens (int, optional): The maximum number of tokens to send to and receive from LLM per task. Defaults to LLM_MAX_INPUT_TOKENS.
+            max_input_tokens (int, optional): The maximum number of tokens to send to the LLM per task. Defaults to LLM_MAX_INPUT_TOKENS.
             max_output_tokens (int, optional): The maximum number of tokens to send to and receive from LLM per task. Defaults to LLM_MAX_OUTPUT_TOKENS.
             custom_llm_provider (function, optional): A custom LLM provider. Defaults to LLM_CUSTOM_LLM_PROVIDER.
             llm_timeout (int, optional): The maximum time to wait for a response in seconds. Defaults to LLM_TIMEOUT.
