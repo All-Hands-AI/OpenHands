@@ -69,23 +69,27 @@ check-npm:
 		echo "$(RED)npm is not installed. Please install Node.js to continue.$(RESET)"; \
 		exit 1; \
 	fi
-
 check-nodejs:
 	@echo "$(YELLOW)Checking Node.js installation...$(RESET)"
-	@if command -v node > /dev/null; then \
-		NODE_VERSION=$(shell node --version | sed -E 's/v//g'); \
-		IFS='.' read -r -a NODE_VERSION_ARRAY <<< "$$NODE_VERSION"; \
-		if [ "$${NODE_VERSION_ARRAY[0]}" -gt 18 ] || ([ "$${NODE_VERSION_ARRAY[0]}" -eq 18 ] && [ "$${NODE_VERSION_ARRAY[1]}" -gt 17 ]) || ([ "$${NODE_VERSION_ARRAY[0]}" -eq 18 ] && [ "$${NODE_VERSION_ARRAY[1]}" -eq 17 ] && [ "$${NODE_VERSION_ARRAY[2]}" -ge 1 ]); then \
+	@if command -v nvm > /dev/null; then \
+		NVM_VERSION=$(shell nvm --version); \
+		NODE_VERSION="18.13.0"; \
+		if nvm ls $$NODE_VERSION; then \
 			echo "$(BLUE)Node.js $$NODE_VERSION is already installed.$(RESET)"; \
 		else \
-			echo "$(RED)Node.js 18.17.1 or later is required. Please install Node.js 18.17.1 or later to continue.$(RESET)"; \
-			exit 1; \
+			echo "$(YELLOW)Node.js $$NODE_VERSION is not installed. Installing...$(RESET)"; \
+			nvm install $$NODE_VERSION; \
+			nvm use $$NODE_VERSION; \
 		fi; \
 	else \
-		echo "$(RED)Node.js is not installed. Please install Node.js to continue.$(RESET)"; \
-		exit 1; \
+		echo "$(RED)NVM is not installed. Installing NVM...$(RESET)"; \
+		curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash; \
+		export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"; \
+		[ -s "$$NVM_DIR/nvm.sh" ] && \. "$$NVM_DIR/nvm.sh"; \
+		echo "$(GREEN)NVM installed successfully.$(RESET)"; \
 	fi
-
+	
+	
 check-docker:
 	@echo "$(YELLOW)Checking Docker installation...$(RESET)"
 	@if command -v docker > /dev/null; then \
@@ -97,22 +101,28 @@ check-docker:
 
 check-poetry:
 	@echo "$(YELLOW)Checking Poetry installation...$(RESET)"
-	@if command -v poetry > /dev/null; then \
+	@if command -v poetry > /dev/null 2>&1; then \
 		POETRY_VERSION=$(shell poetry --version 2>&1 | sed -E 's/Poetry \(version ([0-9]+\.[0-9]+\.[0-9]+)\)/\1/'); \
 		IFS='.' read -r -a POETRY_VERSION_ARRAY <<< "$$POETRY_VERSION"; \
 		if [ $${POETRY_VERSION_ARRAY[0]} -ge 1 ] && [ $${POETRY_VERSION_ARRAY[1]} -ge 8 ]; then \
 			echo "$(BLUE)$(shell poetry --version) is already installed.$(RESET)"; \
 		else \
-			echo "$(RED)Poetry 1.8 or later is required. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
-			echo "$(RED) curl -sSL https://install.python-poetry.org | python3 -$(RESET)"; \
-			echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
-			exit 1; \
+			echo "$(RED)Poetry 1.8 or later is required. Installing Poetry...$(RESET)"; \
+			curl -sSL https://install.python-poetry.org | python3 -; \
+			echo "$(GREEN)Poetry installed successfully.$(RESET)"; \
+			echo "$(YELLOW)Adding Poetry to PATH...$(RESET)"; \
+			echo 'export PATH="$$HOME/.poetry/bin:$$PATH"' >> ~/.bashrc; \
+			source ~/.bashrc; \
+			echo "$(GREEN)Poetry added to PATH successfully.$(RESET)"; \
 		fi; \
 	else \
-		echo "$(RED)Poetry is not installed. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
-		echo "$(RED) curl -sSL https://install.python-poetry.org | python3.11 -$(RESET)"; \
-		echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
-		exit 1; \
+		echo "$(RED)Poetry is not installed. Installing Poetry...$(RESET)"; \
+		curl -sSL https://install.python-poetry.org | python3 -; \
+		echo "$(GREEN)Poetry installed successfully.$(RESET)"; \
+		echo "$(YELLOW)Adding Poetry to PATH...$(RESET)"; \
+		echo 'export PATH="$$HOME/.poetry/bin:$$PATH"' >> ~/.bashrc; \
+		source ~/.bashrc; \
+		echo "$(GREEN)Poetry added to PATH successfully.$(RESET)"; \
 	fi
 
 pull-docker-image:
@@ -165,7 +175,6 @@ start-backend:
 start-frontend:
 	@echo "$(YELLOW)Starting frontend...$(RESET)"
 	@cd frontend && VITE_BACKEND_HOST=$(BACKEND_HOST) VITE_FRONTEND_PORT=$(FRONTEND_PORT) npm run start
-
 # Run the app
 run:
 	@echo "$(YELLOW)Running the app...$(RESET)"
