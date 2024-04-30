@@ -1,0 +1,23 @@
+---
+sidebar_label: run
+title: opendevin.observation.run
+---
+
+## CmdOutputObservation Objects
+
+```python
+@dataclass
+class CmdOutputObservation(Observation)
+```
+
+This data class represents the output of a command.
+
+## IPythonRunCellObservation Objects
+
+```python
+@dataclass
+class IPythonRunCellObservation(Observation)
+```
+
+This data class represents the output of a IPythonRunCellAction.
+

@@ -1,25 +1,25 @@
 import atexit
 import os
 import sys
+import tarfile
 import time
 import uuid
-import tarfile
-from glob import glob
 from collections import namedtuple
+from glob import glob
 from typing import Dict, List, Tuple, Union
 
 import docker
 from pexpect import pxssh
 
 from opendevin import config
+from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.logger import opendevin_logger as logger
-from opendevin.sandbox.sandbox import Sandbox
-from opendevin.sandbox.process import Process
 from opendevin.sandbox.docker.process import DockerProcess
 from opendevin.sandbox.plugins import JupyterRequirement, SWEAgentCommandsRequirement
+from opendevin.sandbox.process import Process
+from opendevin.sandbox.sandbox import Sandbox
 from opendevin.schema import ConfigType
 from opendevin.utils import find_available_tcp_port
-from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
@@ -67,7 +67,7 @@ class DockerSSHBox(Sandbox):
             self.docker_client = docker.from_env()
         except Exception as ex:
             logger.exception(
-                'Please check Docker is running using `docker ps`.', exc_info=False)
+                'Error creating controller. Please check Docker is running and visit `https://github.com/OpenDevin/OpenDevin/blob/main/docs/guides/Troubleshooting.md` for more debugging information.', exc_info=False)
             raise ex
 
         self.instance_id = sid if sid is not None else str(uuid.uuid4())
@@ -220,19 +220,6 @@ class DockerSSHBox(Sandbox):
             return -1, f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}'
         command_output = self.ssh.before.decode('utf-8').strip()
 
-        # NOTE: there's some weird behavior with the prompt (it may come AFTER the command output)
-        # so we need to check if the command is in the output
-        n_tries = 5
-        while not command_output.startswith(cmd) and n_tries > 0:
-            self.ssh.prompt()
-            command_output = self.ssh.before.decode('utf-8').strip()
-            time.sleep(0.5)
-            n_tries -= 1
-        if n_tries == 0 and not command_output.startswith(cmd):
-            raise Exception(
-                f'Something went wrong with the SSH sanbox, cannot get output for command [{cmd}] after 5 retries'
-            )
-        logger.debug(f'Command output GOT SO FAR: {command_output}')
         # once out, make sure that we have *every* output, we while loop until we get an empty output
         while True:
             logger.debug('WAITING FOR .prompt()')
@@ -340,6 +327,12 @@ class DockerSSHBox(Sandbox):
                     self.container_name)
         except docker.errors.NotFound:
             pass
+
+    def get_working_directory(self):
+        exit_code, result = self.execute('pwd')
+        if exit_code != 0:
+            raise Exception('Failed to get working directory')
+        return result.strip()
 
     def is_container_running(self):
         try:

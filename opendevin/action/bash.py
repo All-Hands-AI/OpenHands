@@ -3,9 +3,10 @@ import pathlib
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from .base import ExecutableAction
 from opendevin import config
 from opendevin.schema import ActionType, ConfigType
+
+from .base import ExecutableAction
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController

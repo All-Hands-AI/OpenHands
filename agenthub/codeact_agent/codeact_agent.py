@@ -1,26 +1,30 @@
 import re
 from typing import List, Mapping
 
+from agenthub.codeact_agent.prompt import EXAMPLES, SYSTEM_MESSAGE
 from opendevin.action import (
     Action,
     AgentEchoAction,
     AgentFinishAction,
     AgentTalkAction,
-    NullAction,
-    IPythonRunCellAction,
     CmdRunAction,
+    IPythonRunCellAction,
+    NullAction,
 )
 from opendevin.agent import Agent
 from opendevin.llm.llm import LLM
 from opendevin.observation import (
-    UserMessageObservation,
     AgentMessageObservation,
     CmdOutputObservation,
-    IPythonRunCellObservation
+    IPythonRunCellObservation,
+    UserMessageObservation,
+)
+from opendevin.sandbox.plugins import (
+    JupyterRequirement,
+    PluginRequirement,
+    SWEAgentCommandsRequirement,
 )
 from opendevin.state import State
-from opendevin.sandbox.plugins import PluginRequirement, JupyterRequirement, SWEAgentCommandsRequirement
-from agenthub.codeact_agent.prompt import SYSTEM_MESSAGE, EXAMPLES
 
 
 def parse_response(response) -> str:

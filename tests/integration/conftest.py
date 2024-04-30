@@ -1,6 +1,6 @@
-import re
-import os
 import io
+import os
+import re
 from functools import partial
 
 import pytest

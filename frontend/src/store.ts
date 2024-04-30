@@ -6,7 +6,6 @@ import codeReducer from "./state/codeSlice";
 import commandReducer from "./state/commandSlice";
 import errorsReducer from "./state/errorsSlice";
 import planReducer from "./state/planSlice";
-import settingsReducer from "./state/settingsSlice";
 import taskReducer from "./state/taskSlice";
 import jupyterReducer from "./state/jupyterSlice";
 
@@ -17,7 +16,6 @@ export const rootReducer = combineReducers({
   cmd: commandReducer,
   task: taskReducer,
   errors: errorsReducer,
-  settings: settingsReducer,
   plan: planReducer,
   agent: agentReducer,
   jupyter: jupyterReducer,

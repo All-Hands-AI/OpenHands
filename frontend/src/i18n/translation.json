@@ -337,5 +337,9 @@
   "SETTINGS$DISABLED_RUNNING": {
     "en": "Cannot be changed while the agent is running.",
     "de": "Kann nicht geändert werden während ein Task ausgeführt wird."
+  },
+  "SETTINGS$API_KEY_PLACEHOLDER": {
+    "en": "Enter your API key.",
+    "de": "Model API key."
   }
 }

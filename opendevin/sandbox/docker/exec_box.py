@@ -2,22 +2,22 @@ import atexit
 import concurrent.futures
 import os
 import sys
+import tarfile
 import time
 import uuid
-import tarfile
-from glob import glob
 from collections import namedtuple
+from glob import glob
 from typing import Dict, List, Tuple
 
 import docker
 
 from opendevin import config
-from opendevin.logger import opendevin_logger as logger
-from opendevin.sandbox.sandbox import Sandbox
-from opendevin.sandbox.process import Process
-from opendevin.sandbox.docker.process import DockerProcess
-from opendevin.schema import ConfigType
 from opendevin.exceptions import SandboxInvalidBackgroundCommandError
+from opendevin.logger import opendevin_logger as logger
+from opendevin.sandbox.docker.process import DockerProcess
+from opendevin.sandbox.process import Process
+from opendevin.sandbox.sandbox import Sandbox
+from opendevin.schema import ConfigType
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
@@ -57,7 +57,7 @@ class DockerExecBox(Sandbox):
             self.docker_client = docker.from_env()
         except Exception as ex:
             logger.exception(
-                'Please check Docker is running using `docker ps`.', exc_info=False)
+                'Error creating controller. Please check Docker is running and visit `https://github.com/OpenDevin/OpenDevin/blob/main/docs/guides/Troubleshooting.md` for more debugging information.', exc_info=False)
             raise ex
 
         self.instance_id = sid if sid is not None else str(uuid.uuid4())
@@ -267,6 +267,9 @@ class DockerExecBox(Sandbox):
                     container.remove(force=True)
             except docker.errors.NotFound:
                 pass
+
+    def get_working_directory(self):
+        return SANDBOX_WORKSPACE_DIR
 
 
 if __name__ == '__main__':
