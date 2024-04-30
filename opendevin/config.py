@@ -31,6 +31,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.SANDBOX_CONTAINER_IMAGE: DEFAULT_CONTAINER_IMAGE,
     ConfigType.RUN_AS_DEVIN: 'true',
     ConfigType.LLM_EMBEDDING_MODEL: 'local',
+    ConfigType.LLM_EMBEDDING_BASE_URL: None,
     ConfigType.LLM_EMBEDDING_DEPLOYMENT_NAME: None,
     ConfigType.LLM_API_VERSION: None,
     ConfigType.LLM_NUM_RETRIES: 5,
@@ -153,6 +154,9 @@ def finalize_config():
 
     if config.get(ConfigType.WORKSPACE_MOUNT_PATH) is None:
         config[ConfigType.WORKSPACE_MOUNT_PATH] = os.path.abspath(config[ConfigType.WORKSPACE_BASE])
+
+    if config.get(ConfigType.LLM_EMBEDDING_BASE_URL) is None:
+        config[ConfigType.LLM_EMBEDDING_BASE_URL] = config.get(ConfigType.LLM_BASE_URL)
 
     USE_HOST_NETWORK = config[ConfigType.USE_HOST_NETWORK].lower() != 'false'
     if USE_HOST_NETWORK and platform.system() == 'Darwin':
