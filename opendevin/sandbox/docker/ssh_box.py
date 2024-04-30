@@ -215,8 +215,7 @@ class DockerSSHBox(Sandbox):
             # send a SIGINT to the process
             self.ssh.sendintr()
             self.ssh.prompt()
-            command_output = self.ssh.before.decode(
-                'utf-8').lstrip(cmd).strip()
+            command_output = self.ssh.before.decode('utf-8').removeprefix(cmd).strip()
             return -1, f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}'
         command_output = self.ssh.before.decode('utf-8').strip()
 
@@ -234,7 +233,7 @@ class DockerSSHBox(Sandbox):
             if output == '':
                 break
             command_output += output
-        command_output = command_output.lstrip(cmd).strip()
+        command_output = command_output.removeprefix(cmd).strip()
 
         # get the exit code
         self.ssh.sendline('echo $?')
