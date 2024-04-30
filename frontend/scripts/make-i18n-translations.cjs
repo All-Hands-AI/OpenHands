@@ -18,7 +18,7 @@ Object.entries(i18n).forEach(([key, transMap]) => {
 const localesPath = path.join(__dirname, "../public/locales");
 if (fs.existsSync(localesPath)) {
   fs.rmSync(localesPath, { recursive: true });
-} 
+}
 
 // write translation files
 Object.entries(translationMap).forEach(([lang, transMap]) => {

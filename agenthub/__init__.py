@@ -1,18 +1,24 @@
-from .micro.registry import all_microagents
-from .micro.agent import MicroAgent
+from dotenv import load_dotenv
+
 from opendevin.agent import Agent
 
-from dotenv import load_dotenv
+from .micro.agent import MicroAgent
+from .micro.registry import all_microagents
+
 load_dotenv()
 
 
-# Import agents after environment variables are loaded
-from . import monologue_agent  # noqa: E402
-from . import codeact_agent    # noqa: E402
-from . import planner_agent    # noqa: E402
-from . import SWE_agent        # noqa: E402
-from . import delegator_agent  # noqa: E402
-from . import dummy_agent      # noqa: E402
+
+from . import (  # noqa: E402
+    SWE_agent,
+    codeact_agent,
+    delegator_agent,
+    monologue_agent,
+    planner_agent,
+    delegator_agent,
+    dummy_agent,
+)
+
 
 __all__ = ['monologue_agent', 'codeact_agent',
            'planner_agent', 'SWE_agent',

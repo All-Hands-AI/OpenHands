@@ -1,29 +1,29 @@
 import json
-from typing import List, Tuple, Dict, Type
-from opendevin.plan import Plan
-from opendevin.action import Action, action_from_dict
-from opendevin.observation import Observation
-from opendevin.schema import ActionType
-from opendevin.logger import opendevin_logger as logger
+from typing import Dict, List, Tuple, Type
 
 from opendevin.action import (
-    NullAction,
-    CmdRunAction,
-    CmdKillAction,
+    Action,
+    AddTaskAction,
+    AgentFinishAction,
+    AgentRecallAction,
+    AgentSummarizeAction,
+    AgentThinkAction,
     BrowseURLAction,
+    CmdKillAction,
+    CmdRunAction,
     FileReadAction,
     FileWriteAction,
-    AgentRecallAction,
-    AgentThinkAction,
-    AgentFinishAction,
-    AgentSummarizeAction,
-    AddTaskAction,
     ModifyTaskAction,
+    NullAction,
+    action_from_dict,
 )
-
+from opendevin.logger import opendevin_logger as logger
 from opendevin.observation import (
     NullObservation,
+    Observation,
 )
+from opendevin.plan import Plan
+from opendevin.schema import ActionType
 
 ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
     ActionType.RUN: CmdRunAction,
@@ -134,12 +134,12 @@ def get_hint(latest_action_id: str) -> str:
     """ Returns action type hint based on given action_id """
 
     hints = {
-        '': 'You haven\'t taken any actions yet. Start by using `ls` to check out what files you\'re working with.',
+        '': "You haven't taken any actions yet. Start by using `ls` to check out what files you're working with.",
         ActionType.RUN: 'You should think about the command you just ran, what output it gave, and how that affects your plan.',
         ActionType.READ: 'You should think about the file you just read, what you learned from it, and how that affects your plan.',
         ActionType.WRITE: 'You just changed a file. You should think about how it affects your plan.',
         ActionType.BROWSE: 'You should think about the page you just visited, and what you learned from it.',
-        ActionType.THINK: 'Look at your last thought in the history above. What does it suggest? Don\'t think anymore--take action.',
+        ActionType.THINK: "Look at your last thought in the history above. What does it suggest? Don't think anymore--take action.",
         ActionType.RECALL: 'You should think about the information you just recalled, and how it should affect your plan.',
         ActionType.ADD_TASK: 'You should think about the next action to take.',
         ActionType.MODIFY_TASK: 'You should think about the next action to take.',

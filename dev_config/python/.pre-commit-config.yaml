@@ -3,29 +3,20 @@ repos:
     rev: v4.5.0
     hooks:
       - id: trailing-whitespace
+        exclude: docs/modules/python
       - id: end-of-file-fixer
+        exclude: docs/modules/python
       - id: check-yaml
       - id: debug-statements
 
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.0.0
+  - repo: https://github.com/tox-dev/pyproject-fmt
+    rev: 1.7.0
     hooks:
-      - id: flake8
-        args: ['--select=Q000']  # Q000 is the error code for single quote enforcement
-        additional_dependencies:
-          - flake8-quotes
-
-  - repo: https://github.com/hhatto/autopep8
-    rev: v2.1.0
+      - id: pyproject-fmt
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.16
     hooks:
-      - id: autopep8
-
-  - repo: https://github.com/asottile/setup-cfg-fmt
-    rev: v2.5.0
-    hooks:
-      - id: setup-cfg-fmt
-        always_run: true
-        pass_filenames: false
+      - id: validate-pyproject
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
@@ -34,18 +25,24 @@ repos:
       # Run the linter.
       - id: ruff
         entry: ruff check --config dev_config/python/ruff.toml opendevin/ agenthub/
-        types_or: [ python, pyi, jupyter ]
-        args: [ --fix ]
+        types_or: [python, pyi, jupyter]
+        args: [--fix]
       # Run the formatter.
       - id: ruff-format
         entry: ruff check --config dev_config/python/ruff.toml opendevin/ agenthub/
-        types_or: [ python, pyi, jupyter ]
+        types_or: [python, pyi, jupyter]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.9.0
     hooks:
       - id: mypy
-        additional_dependencies: [types-requests, types-setuptools, types-pyyaml, types-toml]
+        additional_dependencies:
+          [types-requests, types-setuptools, types-pyyaml, types-toml]
         entry: mypy --config-file dev_config/python/mypy.ini opendevin/ agenthub/
         always_run: true
         pass_filenames: false
+
+  - repo: https://github.com/NiklasRosenstein/pydoc-markdown
+    rev: develop
+    hooks:
+      - id: pydoc-markdown

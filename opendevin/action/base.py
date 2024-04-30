@@ -1,5 +1,6 @@
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING
+
 from opendevin.schema import ActionType
 
 if TYPE_CHECKING:

@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from typing import List
 
-from .base import Observation
 from opendevin.schema import ObservationType
+
+from .base import Observation
 
 
 @dataclass

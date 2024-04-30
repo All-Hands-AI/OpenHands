@@ -1,17 +1,22 @@
-import llama_index.embeddings.openai.base as llama_openai
-from threading import Thread
+import threading
 
 import chromadb
-from llama_index.core import Document
+import llama_index.embeddings.openai.base as llama_openai
+from llama_index.core import Document, VectorStoreIndex
 from llama_index.core.retrievers import VectorIndexRetriever
-from llama_index.core import VectorStoreIndex
 from llama_index.vector_stores.chroma import ChromaVectorStore
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_random_exponential
-from openai._exceptions import APIConnectionError, RateLimitError, InternalServerError
+from openai._exceptions import APIConnectionError, InternalServerError, RateLimitError
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_random_exponential,
+)
 
 from opendevin import config
 from opendevin.logger import opendevin_logger as logger
 from opendevin.schema.config import ConfigType
+
 from . import json
 
 num_retries = config.get(ConfigType.LLM_NUM_RETRIES)
@@ -86,6 +91,9 @@ else:
     )
 
 
+sema = threading.Semaphore(value=config.get(ConfigType.AGENT_MEMORY_MAX_THREADS))
+
+
 class LongTermMemory:
     """
     Responsible for storing information that the agent can call on later for better insights and context.
@@ -102,6 +110,7 @@ class LongTermMemory:
         self.index = VectorStoreIndex.from_vector_store(
             vector_store, embed_model=embed_model)
         self.thought_idx = 0
+        self._add_threads = []
 
     def add_event(self, event: dict):
         """
@@ -129,11 +138,13 @@ class LongTermMemory:
         )
         self.thought_idx += 1
         logger.debug('Adding %s event to memory: %d', t, self.thought_idx)
-        thread = Thread(target=self._add_doc, args=(doc,))
+        thread = threading.Thread(target=self._add_doc, args=(doc,))
+        self._add_threads.append(thread)
         thread.start()  # We add the doc concurrently so we don't have to wait ~500ms for the insert
 
     def _add_doc(self, doc):
-        self.index.insert(doc)
+        with sema:
+            self.index.insert(doc)
 
     def search(self, query: str, k: int = 10):
         """

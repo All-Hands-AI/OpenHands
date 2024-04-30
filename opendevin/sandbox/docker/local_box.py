@@ -1,10 +1,14 @@
-import subprocess
 import atexit
-from typing import Tuple, Dict
-from opendevin.sandbox.sandbox import Sandbox
-from opendevin.sandbox.process import Process
-from opendevin.sandbox.docker.process import DockerProcess
+import os
+import subprocess
+import sys
+from typing import Dict, Tuple
+
 from opendevin import config
+from opendevin.logger import opendevin_logger as logger
+from opendevin.sandbox.docker.process import DockerProcess
+from opendevin.sandbox.process import Process
+from opendevin.sandbox.sandbox import Sandbox
 from opendevin.schema.config import ConfigType
 
 # ===============================================================================
@@ -25,6 +29,7 @@ from opendevin.schema.config import ConfigType
 
 class LocalBox(Sandbox):
     def __init__(self, timeout: int = 120):
+        os.makedirs(config.get(ConfigType.WORKSPACE_BASE), exist_ok=True)
         self.timeout = timeout
         self.background_commands: Dict[int, Process] = {}
         self.cur_background_id = 0
@@ -94,3 +99,40 @@ class LocalBox(Sandbox):
 
     def cleanup(self):
         self.close()
+
+    def get_working_directory(self):
+        return config.get(ConfigType.WORKSPACE_BASE)
+
+
+if __name__ == '__main__':
+
+    local_box = LocalBox()
+    bg_cmd = local_box.execute_in_background(
+        "while true; do echo 'dot ' && sleep 10; done"
+    )
+
+    sys.stdout.flush()
+    try:
+        while True:
+            try:
+                user_input = input('>>> ')
+            except EOFError:
+                logger.info('Exiting...')
+                break
+            if user_input.lower() == 'exit':
+                logger.info('Exiting...')
+                break
+            if user_input.lower() == 'kill':
+                local_box.kill_background(bg_cmd.pid)
+                logger.info('Background process killed')
+                continue
+            exit_code, output = local_box.execute(user_input)
+            logger.info('exit code: %d', exit_code)
+            logger.info(output)
+            if bg_cmd.pid in local_box.background_commands:
+                logs = local_box.read_logs(bg_cmd.pid)
+                logger.info('background logs: %s', logs)
+            sys.stdout.flush()
+    except KeyboardInterrupt:
+        logger.info('Exiting...')
+    local_box.close()

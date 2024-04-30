@@ -2,12 +2,13 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Dict
 
 from opendevin.observation import (
-    AgentRecallObservation,
     AgentMessageObservation,
+    AgentRecallObservation,
     NullObservation,
     Observation,
 )
 from opendevin.schema import ActionType
+
 from .base import ExecutableAction, NotExecutableAction
 
 if TYPE_CHECKING:

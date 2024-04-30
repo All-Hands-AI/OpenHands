@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Dict
-from typing import Tuple
+from typing import Dict, Tuple
 
-from opendevin.sandbox.process import Process
 from opendevin.sandbox.plugins.mixin import PluginMixin
+from opendevin.sandbox.process import Process
 
 
 class Sandbox(ABC, PluginMixin):
@@ -31,4 +30,8 @@ class Sandbox(ABC, PluginMixin):
 
     @abstractmethod
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+        pass
+
+    @abstractmethod
+    def get_working_directory(self):
         pass
