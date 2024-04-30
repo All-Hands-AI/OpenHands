@@ -243,7 +243,7 @@ class DockerSSHBox(Sandbox):
             self.ssh.prompt()
             exit_code = self.ssh.before.decode('utf-8')
             logger.debug(f'WAITING FOR exit code: {exit_code}')
-        exit_code = int(exit_code.lstrip('echo $?').strip())
+        exit_code = int(exit_code.removeprefix('echo $?').strip())
         return exit_code, command_output
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):

@@ -89,7 +89,7 @@ class E2BBox(Sandbox):
         tar_filename = self._archive(host_src, recursive)
 
         # Prepend the sandbox destination with our sandbox cwd
-        sandbox_dest = os.path.join(self._cwd, sandbox_dest.lstrip('/'))
+        sandbox_dest = os.path.join(self._cwd, sandbox_dest.removeprefix('/'))
 
         with open(tar_filename, 'rb') as tar_file:
             # Upload the archive to /home/user (default destination that always exists)
