@@ -1,11 +1,10 @@
 from typing import List
 
+from opendevin.action import Action, AgentDelegateAction, AgentFinishAction
 from opendevin.agent import Agent
-from opendevin.action import AgentFinishAction, AgentDelegateAction
-from opendevin.observation import AgentDelegateObservation
 from opendevin.llm.llm import LLM
+from opendevin.observation import AgentDelegateObservation
 from opendevin.state import State
-from opendevin.action import Action
 
 
 class DelegatorAgent(Agent):

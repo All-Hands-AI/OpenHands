@@ -1,14 +1,14 @@
+import { fetchAgents, fetchModels } from "#/api";
+import { initializeAgent } from "#/services/agent";
+import { Settings, getSettings, saveSettings } from "#/services/settings";
+import toast from "#/utils/toast";
 import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import i18next from "i18next";
 import React from "react";
 import { renderWithProviders } from "test-utils";
 import { Mock } from "vitest";
-import i18next from "i18next";
 import SettingsModal from "./SettingsModal";
-import { Settings, getSettings, saveSettings } from "#/services/settings";
-import { initializeAgent } from "#/services/agent";
-import toast from "#/utils/toast";
-import { fetchAgents, fetchModels } from "#/api";
 
 const toastSpy = vi.spyOn(toast, "settingsChanged");
 const i18nSpy = vi.spyOn(i18next, "changeLanguage");
@@ -98,6 +98,7 @@ describe("SettingsModal", () => {
       LLM_MODEL: "gpt-3.5-turbo",
       AGENT: "MonologueAgent",
       LANGUAGE: "en",
+      LLM_API_KEY: "sk-...",
     };
 
     it("should save the settings", async () => {

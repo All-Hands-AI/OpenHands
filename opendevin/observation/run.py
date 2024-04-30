@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 
-from .base import Observation
 from opendevin.schema import ObservationType
+
+from .base import Observation
 
 
 @dataclass

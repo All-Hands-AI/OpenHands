@@ -1,13 +1,14 @@
 import os
 import uuid
-import html2text
-
-from multiprocessing.connection import Connection
 from dataclasses import dataclass
+from multiprocessing.connection import Connection
+from typing import TYPE_CHECKING
+
+import html2text
+from browsergym.utils.obs import flatten_dom_to_str
+
 from opendevin.observation import BrowserOutputObservation
 from opendevin.schema import ActionType
-from typing import TYPE_CHECKING
-from browsergym.utils.obs import flatten_dom_to_str
 
 from .base import ExecutableAction
 

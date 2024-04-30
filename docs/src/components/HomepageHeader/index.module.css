@@ -1,0 +1,37 @@
+.headerContainer {
+  background: radial-gradient(circle, var(--secondary), var(--secondary-light));
+  background-size: 200% 200%;
+  animation: gradientAnimation 10s linear infinite;
+  display: flex;
+  justify-content: center;
+}
+
+@media only screen and (max-width: 600px) {
+  .headerContainer {
+    flex-direction: column;
+  }
+}
+
+@keyframes gradientAnimation {
+  0% {
+    background-position: left center;
+  }
+  50% {
+    background-position: right center;
+  }
+  100% {
+    background-position: left center;
+  }
+}
+.header {
+  max-width: 1300px;
+  color: white;
+  display: flex;
+  margin-left: 100px;
+  margin-right: 100px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 70px 30px 30px;
+}

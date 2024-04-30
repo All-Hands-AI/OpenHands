@@ -1,9 +1,10 @@
-import gymnasium as gym
-import browsergym.core  # noqa F401 (we register the openended task as a gym environment)
-
 from multiprocessing.connection import Connection
 
+import browsergym.core  # noqa F401 (we register the openended task as a gym environment)
+import gymnasium as gym
+
 from opendevin.browser_server.utils import image_to_png_base64_url
+
 
 def start_browser(conn: Connection):
     env = gym.make(

@@ -1,7 +1,8 @@
+import base64
+import io
+
 import numpy as np
 from PIL import Image
-import io
-import base64
 
 
 def image_to_png_base64_url(image: np.ndarray | Image.Image):
