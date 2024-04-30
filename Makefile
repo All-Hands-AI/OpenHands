@@ -22,7 +22,9 @@ RESET=$(shell tput -Txterm sgr0)
 build:
 	@echo "$(GREEN)Building project...$(RESET)"
 	@$(MAKE) -s check-dependencies
+ifeq ($(SKIP_DOCKER_PULL),)
 	@$(MAKE) -s pull-docker-image
+endif
 	@$(MAKE) -s install-python-dependencies
 	@$(MAKE) -s install-frontend-dependencies
 	@$(MAKE) -s install-precommit-hooks

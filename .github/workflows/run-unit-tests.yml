@@ -36,6 +36,8 @@ jobs:
 
       - name: Build Environment
         run: make build
+        env:
+          SKIP_DOCKER_PULL: 1
 
       - name: Run Tests
         run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit
@@ -67,6 +69,8 @@ jobs:
 
       - name: Build Environment
         run: make build
+        env:
+          SKIP_DOCKER_PULL: 1
 
       - name: Run Tests
         run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit
