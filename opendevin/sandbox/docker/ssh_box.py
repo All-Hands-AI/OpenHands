@@ -171,7 +171,7 @@ class DockerSSHBox(Sandbox):
 
     def start_ssh_session(self):
         # start ssh session at the background
-        self.ssh = pxssh.pxssh(echo=False)
+        self.ssh = pxssh.pxssh()
         hostname = SSH_HOSTNAME
         if RUN_AS_DEVIN:
             username = 'opendevin'
@@ -215,14 +215,36 @@ class DockerSSHBox(Sandbox):
             # send a SIGINT to the process
             self.ssh.sendintr()
             self.ssh.prompt()
-            command_output = self.ssh.before.decode('utf-8').strip()
+            command_output = self.ssh.before.decode(
+                'utf-8').lstrip(cmd).strip()
             return -1, f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}'
         command_output = self.ssh.before.decode('utf-8').strip()
 
+        # once out, make sure that we have *every* output, we while loop until we get an empty output
+        while True:
+            logger.debug('WAITING FOR .prompt()')
+            self.ssh.sendline('\n')
+            timeout_not_reached = self.ssh.prompt(timeout=1)
+            if not timeout_not_reached:
+                logger.debug('TIMEOUT REACHED')
+                break
+            logger.debug('WAITING FOR .before')
+            output = self.ssh.before.decode('utf-8').strip()
+            logger.debug(f'WAITING FOR END OF command output ({bool(output)}): {output}')
+            if output == '':
+                break
+            command_output += output
+        command_output = command_output.lstrip(cmd).strip()
+
         # get the exit code
         self.ssh.sendline('echo $?')
-        self.ssh.prompt(timeout=10)
-        exit_code = int(self.ssh.before.decode('utf-8').strip())
+        self.ssh.prompt()
+        exit_code = self.ssh.before.decode('utf-8')
+        while not exit_code.startswith('echo $?'):
+            self.ssh.prompt()
+            exit_code = self.ssh.before.decode('utf-8')
+            logger.debug(f'WAITING FOR exit code: {exit_code}')
+        exit_code = int(exit_code.lstrip('echo $?').strip())
         return exit_code, command_output
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
@@ -307,9 +329,10 @@ class DockerSSHBox(Sandbox):
             pass
 
     def get_working_directory(self):
-        self.ssh.sendline('pwd')
-        self.ssh.prompt(timeout=10)
-        return self.ssh.before.decode('utf-8').strip()
+        exit_code, result = self.execute('pwd')
+        if exit_code != 0:
+            raise Exception('Failed to get working directory')
+        return result.strip()
 
     def is_container_running(self):
         try:
