@@ -54,7 +54,8 @@ DEFAULT_CONFIG: dict = {
     ConfigType.DISABLE_COLOR: 'false',
     ConfigType.SANDBOX_USER_ID: os.getuid() if hasattr(os, 'getuid') else None,
     ConfigType.SANDBOX_TIMEOUT: 120,
-    ConfigType.GITHUB_TOKEN: None
+    ConfigType.GITHUB_TOKEN: None,
+    ConfigType.SANDBOX_USER_ID: None
 }
 
 config_str = ''
