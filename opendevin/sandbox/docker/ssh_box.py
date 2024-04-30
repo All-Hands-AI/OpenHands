@@ -331,7 +331,7 @@ class DockerSSHBox(Sandbox):
                 'bind': '/home/opendevin/.cache' if RUN_AS_DEVIN else '/root/.cache',
                 'mode': 'rw'
             },
-        },
+        }
 
     def restart_docker_container(self):
         try:
