@@ -28,9 +28,7 @@ sudo ln -sfn /bin/bash /bin/sh
 # Create logs directory
 sudo mkdir -p /opendevin/logs && sudo chmod 777 /opendevin/logs
 
-# Create SWE-bench directories
 echo "SWEUTIL_DIR: $SWEUTIL_DIR"
-echo "PATH: $PATH"
 
 # Install miniconda3
 if [ ! -d $CACHE_DIR/miniconda3 ]; then
@@ -56,45 +54,45 @@ if [[ -z "$item" ]]; then
   exit 1
 fi
 
+# Get CONDA_ENV_NAME from the item
 CONDA_ENV_NAME=$(echo "$item" | jq -r '.repo + "__" + .version | gsub("/"; "__")')
 
 echo "CONDA_ENV_NAME: $CONDA_ENV_NAME"
 
-    # Dump test_patch to /workspace/test.patch
+# Dump test_patch to /workspace/test.patch
 echo "$item" | jq -r '.test_patch' > /workspace/test.patch
 
-    # Dump patch to /workspace/gold.patch
+# Dump gold patch to /workspace/gold.patch
 echo "$item" | jq -r '.patch' > /workspace/gold.patch
 
-    # Dump the item to /workspace/instance.json except for the "test_patch" and "patch" fields
+# Dump the item to /workspace/instance.json except for the "test_patch" and "patch" fields for further usage.
 echo "$item" | jq 'del(.test_patch, .patch)' > /workspace/instance.json
 
-
 # Clone instance-specific environment
-# CONDA_ENV_NAME=$(jq -r --arg id $SWE_INSTANCE_ID '.[$id].conda_env_name' $CACHE_DIR/swe_config.json)
-# echo "Code Env Name: $CONDA_ENV_NAME"
 if [ ! -d $CACHE_DIR/miniconda3/envs/$CONDA_ENV_NAME ]; then
     conda create --clone $SWEUTIL_DIR/conda_envs/$CONDA_ENV_NAME --name $CONDA_ENV_NAME
 fi
 
-# Copy repo to workspace
+# Copy instance-specific testbed (repo) to workspace
 if [ -d /workspace/$CONDA_ENV_NAME ]; then
     rm -rf /workspace/$CONDA_ENV_NAME
 fi
-cp -r $SWEUTIL_DIR/harness_materials/yizhou_testbeds/$CONDA_ENV_NAME /workspace
+cp -r $SWEUTIL_DIR/OD-SWE-bench/swebench/harness/eval_data/testbeds/$CONDA_ENV_NAME /workspace
 
-# Reset swe-bench testbed and install the repo
+# Reset the testbed and install the repo
 source ~/.bashrc
 conda init
 conda activate swe-bench-eval
 
+mkdir -p $SWEUTIL_DIR/eval_temp
+mkdir -p $SWEUTIL_DIR/eval_logs
 output=$(cd $SWEUTIL_DIR/OD-SWE-bench/swebench/harness && python reset_swe_env.py \
-    --swe_bench_tasks $SWEUTIL_DIR/harness_materials/processed/swe-bench-test.json \
-    --temp_dir $SWEUTIL_DIR/harness_materials/eval_temp_swe_env \
+    --swe_bench_tasks $SWEUTIL_DIR/OD-SWE-bench/swebench/harness/eval_data/instances/swe-bench-test.json \
+    --temp_dir $SWEUTIL_DIR/eval_temp \
     --testbed /workspace \
     --conda_path $CACHE_DIR/miniconda3 \
     --instance_id $SWE_INSTANCE_ID \
-    --log_dir $SWEUTIL_DIR/harness_materials/eval_logs_swe_env \
+    --log_dir $SWEUTIL_DIR/eval_logs \
     --timeout 900 \
     --verbose)
 
@@ -105,7 +103,6 @@ if [[ "$REPO_PATH" == "None" ]]; then
     echo "Error: Failed to retrieve repository path. Tests may not have passed or output was not as expected." >&2
     exit 1
 fi
-
 
 # Activate instance-specific environment
 source ~/.bashrc

@@ -43,7 +43,8 @@ class SWEEnvSSHBox(DockerSSHBox):
         timeout: int = 120,
         sid: str | None = None,
         swe_instance_id: str | None = None,
-        swe_bench_utils_dir: str | None = None,
+        od_swe_bench_dir: str | None = None,
+        conda_envs_dir: str | None = None,
     ):
         # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
@@ -67,8 +68,15 @@ class SWEEnvSSHBox(DockerSSHBox):
         self._ssh_password = str(uuid.uuid4())
         self._ssh_port = find_available_tcp_port()
 
+        if swe_instance_id is None:
+            raise ValueError("swe_instance_id cannot be None")
+        if od_swe_bench_dir is None:
+            raise ValueError("od_swe_bench_dir cannot be None")
+        if conda_envs_dir is None:
+            raise ValueError("conda_envs_dir cannot be None")
         self.swe_instance_id = swe_instance_id
-        self.swe_bench_utils_dir = swe_bench_utils_dir
+        self.od_swe_bench_dir = od_swe_bench_dir
+        self.conda_envs_dir = conda_envs_dir
 
         # always restart the container, cuz the initial be regarded as a new session
         self.restart_docker_container()
@@ -140,9 +148,13 @@ class SWEEnvSSHBox(DockerSSHBox):
                         'bind': self.tgt_cache_dir,
                         'mode': 'rw'
                     },
-                    self.swe_bench_utils_dir: {
-                        'bind': '/swe_util',
-                        'mode': 'rw'
+                    self.od_swe_bench_dir: {
+                        'bind': '/swe_util/OD-SWE-bench',
+                        'mode': 'ro'
+                    },
+                    self.conda_envs_dir: {
+                        'bind': '/swe_util/conda_envs',
+                        'mode': 'ro'
                     },
                 },
             )
@@ -175,7 +187,8 @@ if __name__ == '__main__':
 
     try:
         ssh_box = SWEEnvSSHBox(swe_instance_id="django__django-11099",
-                               swe_bench_utils_dir="/shared/bowen/codellm/swe/temp")
+                               od_swe_bench_dir="/shared/bowen/codellm/swe/OD-SWE-bench",
+                               conda_envs_dir="/shared/bowen/codellm/swe/temp/conda_envs")
     except Exception as e:
         logger.exception('Failed to start Docker container: %s', e)
         sys.exit(1)

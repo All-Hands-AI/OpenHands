@@ -1,34 +1,99 @@
-# SWE-bench Environment Integration
+# Use SWE-Bench Environment in the OpenDevin Sandbox
 
-This README provides a guide on the integration the SWE-bench environment into the OpenDevin agent pipeline. Please note that this integration is currently under active development and subject to change.
+This README provides guidance on how to use the SWE-Bench environment within the OpenDevin sandbox. Note that this integration is actively being developed and may undergo changes.
 
-Warning: we are in the process of dockerizing a stack of SWE-bench utility files, which are currently prepared and managed externally.
+Warning: we are in the process of dockerizing SWE-bench utility files, which are currently prepared and managed externally.
 
-## SWE-bench utilities
+## Prerequisites
 
-We have packaged all testbeds and conda environments into an archive folder. This folder is subsequently mounted within the sandbox.
+### Prepare SWE-Bench utilities
 
-For each instance, to prevent potential damage to saved testbeds or conda environments, we perform the following steps:
+To set up, please utilize our modified version at [OD-SWE-bench/tree/eval](https://github.com/OpenDevin/OD-SWE-bench/tree/eval). Follow the [instructions](https://github.com/OpenDevin/OD-SWE-bench/blob/eval/swebench/harness/OD_README.md) to prepare both the testbeds and necessary conda environments for OD-SWE-Bench and SWE-Bench test instances.
 
-- Environment Cloning: We first clone the target conda environment into the system conda inside the sandbox.
-- Testbed Copying: We copy the testbed into the workspace of the sandbox.
-- Reset and Install: We execute the reset code to revert the testbed to a base commit and install the target repository.
+To prevent any unintended modifications, the following components will be mounted in read-only (`ro`) mode in the sandbox:
 
-At this point, the testbed and conda environment are fully prepared for the agent to perform tasks.
+- Testbeds for SWE-bench intances: They are located in `OD-SWE-bench/swebench/harness/eval_data/testbeds`. Each instance-specific testbed will be copied to the sandbox's workspace.
+- Conda environments: Found in `YOUR_SYSTEM_CONDA_ENVS_DIR`, for example, `$HOME/miniconda3/envs`:
+  - `swe-bench-eval`: Resets the testbed for a specific instance in the sandbox on the fly. This environment is cached at `/tmp/cache` on the host.
+  - Instance specific environment (e.g., `django__django__3.0`): Each environment is where the agent operates to complete tasks within the sandbox. These are cloned directly into the sandbox using `conda create --clone`.
+- OD-SWE-Bench repo: Manages the reset of testbeds for specific instances in the sandbox.
 
+### Prepare cache
 
-## Interact with the sandbox
+Mount the `/tmp/cache` directory within the sandbox by preparing it on the host using the following commands:
 
-To interact with the sandbox and perform a sanity check, follow these steps:
+```shell
+sudo cp PATH_TO_OD_SWE_bench/swebench/harness/eval_data/instances/swe-bench-test.json /tmp/cache
+sudo wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/cache/Miniconda3-latest-Linux-x86_64.sh
+```
 
-- Start the sandbox and enter it interactively.
-- Activate the target conda environment and navigate to the target repository.
-- Apply the test patch and run the tests, which are expected to fail initially.
-- Apply the gold patch and then run the tests again. This time, the tests should pass.
+## How it works
 
-Example log for instance `django__django-11099` is shown below.
+The script `swe_env_box.py` initially creates a sandbox and mounts necessary directories as follows:
 
+```python
+volumes={
+    # mount workspace
+    mount_dir: {
+        'bind': SANDBOX_WORKSPACE_DIR,
+        'mode': 'rw'
+    },
+    # mount cache directory to $HOME/.cache for pip cache reuse
+    config.get(ConfigType.CACHE_DIR): {
+        'bind': '$HOME/.cache',
+        'mode': 'rw'
+    },
+    # mount OD-SWE-bench dir
+    self.od_swe_bench_dir: {
+        'bind': '/swe_util/OD-SWE-bench',
+        'mode': 'ro'
+    },
+    # mount conda envs dir
+    self.conda_envs_dir: {
+        'bind': '/swe_util/conda_envs',
+        'mode': 'ro'
+    },
+},
+```
 
+Subsequently, swe_env_setup.sh is run inside the sandbox to:
+
+1. Install miniconda3
+2. Clone `swe-bench-eval` environment
+3. Read the `swe-bench-lite-test.json` file and extract the required item based on instance_id
+4. Get instance-specific `CONDA_ENV_NAME` from the item
+    1. Dump test patch to `/workspace/test.patch`
+    2. Dump gold patch to `/workspace/gold.patch`
+    3. Dump the item to `/workspace/instance.json` for further usage
+5. Clone instance-specific environment
+6. Copy instance-specific testbed (repo) to workspace
+7. Reset the testbed and install the repo
+
+## Interact with the SWE-bench environment
+
+To interact within the SWE-Bench environment using `swe_env_box.py`, specify the following arguments:
+
+- `swe_instance_id`: instance id
+- `od_swe_bench_dir`: path to your OD-SWE-bench repo
+- `conda_envs_dir`: path to your system conda environments
+
+Follow the [document](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to run OpenDevin in the developer mode and execute the following commands:
+
+```shell
+cd opendevin/sandbox/docker
+python swe_env_box.py
+```
+
+When entering the sandbox interactively, execute these commands for a basic functionality check:
+
+1. `conda activate django__django__3.0`: activates the instance-specific environment.
+2. `cd /workspace/django__django__3.0`: navigate to the target repo.
+3. `git apply -v ../test.patch`: apply the test patch.
+4. `./tests/runtests.py --verbosity 2 auth_tests.test_validators`: run the tests, which are expected to fail initially.
+5. `git apply ../gold.patch`: apply the gold patch.
+6. `./tests/runtests.py --verbosity 2 auth_tests.test_validators`: run the tests again. This time, the tests should pass.
+
+An example log for instance `django__django-11099` is shown below.
 
 ```shell
 (opendevin-py3.11) (base) bowenl@iZt4n5pogo006xy6aozyylZ:/shared/bowen/codellm/swe/OpenDevin/opendevin/sandbox/docker$ python swe_env_box.py
@@ -123,87 +188,6 @@ dot
 20:57:26 - opendevin:INFO: swe_env_box.py:214 - exit code: 0
 20:57:26 - opendevin:INFO: swe_env_box.py:215 -
 20:57:26 - opendevin:INFO: swe_env_box.py:218 - background logs:
-
->>> ./tests/runtests.py --verbosity 2 auth_tests.test_validators
-
-20:57:40 - opendevin:INFO: swe_env_box.py:214 - exit code: 0
-20:57:40 - opendevin:INFO: swe_env_box.py:215 - Testing against Django installed in '/workspace/django__django__3.0/django' with up to 64 processes
-Importing application auth_tests
-Skipping setup of unused database(s): other.
-Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
-Operations to perform:
-  Synchronize unmigrated apps: auth, auth_tests, contenttypes, messages, sessions, staticfiles
-  Apply all migrations: admin, sites
-Synchronizing apps without migrations:
-  Creating tables...
-    Creating table django_content_type
-    Creating table auth_permission
-    Creating table auth_group
-    Creating table auth_user
-    Creating table django_session
-    Creating table auth_tests_customuser
-    Creating table auth_tests_customuserwithoutisactivefield
-    Creating table auth_tests_extensionuser
-    Creating table auth_tests_custompermissionsuser
-    Creating table auth_tests_customusernonuniqueusername
-    Creating table auth_tests_isactivetestuser1
-    Creating table auth_tests_minimaluser
-    Creating table auth_tests_nopassworduser
-    Creating table auth_tests_concrete
-    Creating table auth_tests_uuiduser
-    Creating table auth_tests_email
-    Creating table auth_tests_customuserwithfk
-    Creating table auth_tests_integerusernameuser
-    Creating table auth_tests_userwithdisabledlastloginfield
-    Running deferred SQL...
-Running migrations:
-  Applying admin.0001_initial... OK
-  Applying admin.0002_logentry_remove_auto_add... OK
-  Applying admin.0003_logentry_add_action_flag_choices... OK
-  Applying sites.0001_initial... OK
-  Applying sites.0002_alter_domain_unique... OK
-Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
-Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
-Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
-Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
-Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
-Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
-System check identified no issues (0 silenced).
-test_help_text (auth_tests.test_validators.NumericPasswordValidatorTest) ... ok
-test_validate (auth_tests.test_validators.NumericPasswordValidatorTest) ... ok
-test_help_text (auth_tests.test_validators.MinimumLengthValidatorTest) ... ok
-test_validate (auth_tests.test_validators.MinimumLengthValidatorTest) ... ok
-test_ascii_validator (auth_tests.test_validators.UsernameValidatorsTests) ... ok
-test_unicode_validator (auth_tests.test_validators.UsernameValidatorsTests) ... ok
-test_help_text (auth_tests.test_validators.UserAttributeSimilarityValidatorTest) ... ok
-test_validate (auth_tests.test_validators.UserAttributeSimilarityValidatorTest) ... ok
-test_validate_property (auth_tests.test_validators.UserAttributeSimilarityValidatorTest) ... ok
-test_empty_password_validator_help_text_html (auth_tests.test_validators.PasswordValidationTest) ... ok
-test_get_default_password_validators (auth_tests.test_validators.PasswordValidationTest) ... ok
-test_get_password_validators_custom (auth_tests.test_validators.PasswordValidationTest) ... ok
-test_password_changed (auth_tests.test_validators.PasswordValidationTest) ... ok
-test_password_changed_with_custom_validator (auth_tests.test_validators.PasswordValidationTest) ... ok
-test_password_validators_help_text_html (auth_tests.test_validators.PasswordValidationTest) ... ok
-test_password_validators_help_text_html_escaping (auth_tests.test_validators.PasswordValidationTest) ... ok
-test_password_validators_help_texts (auth_tests.test_validators.PasswordValidationTest) ... ok
-test_validate_password (auth_tests.test_validators.PasswordValidationTest) ... ok
-test_help_text (auth_tests.test_validators.CommonPasswordValidatorTest) ... ok
-test_validate (auth_tests.test_validators.CommonPasswordValidatorTest) ... ok
-test_validate_custom_list (auth_tests.test_validators.CommonPasswordValidatorTest) ... ok
-test_validate_django_supplied_file (auth_tests.test_validators.CommonPasswordValidatorTest) ... ok
-
-----------------------------------------------------------------------
-Ran 22 tests in 0.177s
-
-OK
-Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
-Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
-Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
-Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
-Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
-Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
-Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
-20:57:40 - opendevin:INFO: swe_env_box.py:218 - background logs: dot
 
 >>> git apply ../test.patch
 
