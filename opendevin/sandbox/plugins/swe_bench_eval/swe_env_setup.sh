@@ -2,10 +2,6 @@
 
 set -e
 
-# # ADD /opendevin/plugins to PATH to make `jupyter_cli` available
-# echo 'export PATH=$PATH:/opendevin/plugins/jupyter' >> ~/.bashrc
-# export PATH=/opendevin/plugins/jupyter:$PATH
-
 # if user name is `opendevin`, add '/home/opendevin/.local/bin' to PATH
 if [ "$USER" = "opendevin" ]; then
     echo 'export PATH=$PATH:/home/opendevin/.local/bin' >> ~/.bashrc
@@ -17,29 +13,21 @@ if [ "$USER" = "root" ]; then
 fi
 source ~/.bashrc
 
-# Install dependencies
-sudo apt-get update && \
-    sudo apt-get install -y libffi-dev python3.11 build-essential && \
-    sudo apt-get clean && \
-    sudo rm -rf /var/lib/apt/lists/*
-
-sudo ln -sfn /bin/bash /bin/sh
-
-# Create logs directory
-sudo mkdir -p /opendevin/logs && sudo chmod 777 /opendevin/logs
-
 echo "SWEUTIL_DIR: $SWEUTIL_DIR"
 
-# Install miniconda3
-if [ ! -d $CACHE_DIR/miniconda3 ]; then
-    bash $CACHE_DIR/Miniconda3-latest-Linux-x86_64.sh -b -p $CACHE_DIR/miniconda3
-fi
-echo 'export PATH=$CACHE_DIR/miniconda3/bin:${PATH}' >> ~/.bashrc
-source ~/.bashrc
-conda --version
-conda config --set changeps1 False
-conda config --append channels conda-forge
-conda init bash
+# # Install miniconda3
+# if [ ! -d $CACHE_DIR/miniconda3 ]; then
+#     bash $CACHE_DIR/Miniconda3-latest-Linux-x86_64.sh -b -p $CACHE_DIR/miniconda3
+# fi
+# echo 'export PATH=$CACHE_DIR/miniconda3/bin:${PATH}' >> ~/.bashrc
+# source ~/.bashrc
+# conda --version
+# conda config --set changeps1 False
+# conda config --append channels conda-forge
+# conda init bash
+
+CONDA_ENV_DIR=$CACHE_DIR/miniforge3/envs
+echo "export PATH=/opt/miniforge3/bin:$PATH" >> ~/.bashrc
 
 # Clone swe-bench-eval environment
 if [ ! -d $CACHE_DIR/miniconda3/envs/swe-bench-eval ]; then
