@@ -216,8 +216,6 @@ class DockerSSHBox(Sandbox):
                 if exit_code != 0:
                     return exit_code, all_output
             return 0, all_output
-        cmd = cmd.strip()
-        # use self.ssh
         self.ssh.sendline(cmd)
         success = self.ssh.prompt(timeout=self.timeout)
         if not success:
@@ -226,9 +224,9 @@ class DockerSSHBox(Sandbox):
             # send a SIGINT to the process
             self.ssh.sendintr()
             self.ssh.prompt()
-            command_output = self.ssh.before.decode('utf-8').removeprefix(cmd).strip()
+            command_output = self.ssh.before.decode('utf-8').removeprefix(cmd).removeprefix('\r\n')
             return -1, f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}'
-        command_output = self.ssh.before.decode('utf-8').strip()
+        command_output = self.ssh.before.decode('utf-8')
 
         # once out, make sure that we have *every* output, we while loop until we get an empty output
         while True:
@@ -239,12 +237,12 @@ class DockerSSHBox(Sandbox):
                 logger.debug('TIMEOUT REACHED')
                 break
             logger.debug('WAITING FOR .before')
-            output = self.ssh.before.decode('utf-8').strip()
+            output = self.ssh.before.decode('utf-8')
             logger.debug(f'WAITING FOR END OF command output ({bool(output)}): {output}')
-            if output == '':
+            if output == '\r\n':
                 break
             command_output += output
-        command_output = command_output.removeprefix(cmd).strip()
+        command_output = command_output.removeprefix(cmd).removeprefix('\r\n').removesuffix('\r\n')
 
         # get the exit code
         self.ssh.sendline('echo $?')

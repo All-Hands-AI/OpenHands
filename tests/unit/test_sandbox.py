@@ -128,5 +128,4 @@ def test_sandbox_whitespace(temp_dir):
             if isinstance(box, DockerExecBox):
                 assert output == '\n\n\n', 'The output should be the same as the input for ' + box.__class__.__name__
             else:
-                # FIXME: why are there extra '>' characters? Can we remove \r?
-                assert output == '> \r\n> \r\n> \r\n', 'The output should be the same as the input for ' + box.__class__.__name__
+                assert output == '\r\n\r\n\r\n', 'The output should be the same as the input for ' + box.__class__.__name__
