@@ -39,17 +39,21 @@ llama-index-embeddings-ollama = "*"
 ruff = "0.3.7"
 mypy = "1.9.0"
 pre-commit = "3.7.0"
+pydoc-markdown = "^4.8.2"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
+pytest-cov = "*"
 pytest-asyncio = "*"
 
 [tool.poetry.group.evaluation.dependencies]
 torch = "2.2.2"
 
 [build-system]
-requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+requires = [
+  "poetry-core",
+]
 
 [tool.autopep8]
 # autopep8 fights with mypy on line length issue

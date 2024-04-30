@@ -1,10 +1,12 @@
-import os
 import base64
+import os
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+from playwright.async_api import async_playwright
+
 from opendevin.observation import BrowserOutputObservation
 from opendevin.schema import ActionType
-from typing import TYPE_CHECKING
-from playwright.async_api import async_playwright
 
 from .base import ExecutableAction
 

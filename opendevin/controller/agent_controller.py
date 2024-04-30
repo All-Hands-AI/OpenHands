@@ -1,35 +1,37 @@
 import asyncio
 from typing import Callable, List, Type
 
-
+from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin import config
-from opendevin.schema.config import ConfigType
 from opendevin.action import (
     Action,
+    AgentDelegateAction,
     AgentFinishAction,
     AgentTalkAction,
-    AgentDelegateAction,
     NullAction,
 )
-from opendevin.observation import (
-    Observation,
-    AgentErrorObservation,
-    AgentDelegateObservation,
-    NullObservation,
-)
-from opendevin.agent import Agent
-from opendevin.exceptions import AgentMalformedActionError, AgentNoActionError, MaxCharsExceedError, LLMOutputError
-from opendevin.logger import opendevin_logger as logger
-from opendevin.observation import UserMessageObservation
-from opendevin.plan import Plan
-from opendevin.state import State
-
 from opendevin.action.tasks import TaskStateChangedAction
-from opendevin.schema import TaskState
+from opendevin.agent import Agent
 from opendevin.controller.action_manager import ActionManager
-
-from agenthub.codeact_agent.codeact_agent import CodeActAgent
+from opendevin.exceptions import (
+    AgentMalformedActionError,
+    AgentNoActionError,
+    LLMOutputError,
+    MaxCharsExceedError,
+)
+from opendevin.logger import opendevin_logger as logger
+from opendevin.observation import (
+    AgentDelegateObservation,
+    AgentErrorObservation,
+    NullObservation,
+    Observation,
+    UserMessageObservation,
+)
+from opendevin.plan import Plan
 from opendevin.sandbox import DockerSSHBox
+from opendevin.schema import TaskState
+from opendevin.schema.config import ConfigType
+from opendevin.state import State
 
 MAX_ITERATIONS = config.get(ConfigType.MAX_ITERATIONS)
 MAX_CHARS = config.get(ConfigType.MAX_CHARS)
@@ -109,9 +111,12 @@ class AgentController:
                 finished = await self.step(i)
                 if finished:
                     self._task_state = TaskState.FINISHED
-            except Exception as e:
+            except Exception:
                 logger.error('Error in loop', exc_info=True)
-                raise e
+                await self._run_callbacks(
+                    AgentErrorObservation('Oops! Something went wrong while completing your task. You can check the logs for more info.'))
+                await self.set_task_state_to(TaskState.STOPPED)
+                break
 
             if self._task_state == TaskState.FINISHED:
                 logger.info('Task finished by agent')

@@ -1,11 +1,13 @@
-import os
 import argparse
-import toml
+import logging
+import os
 import pathlib
+import platform
+
+import toml
 from dotenv import load_dotenv
 
 from opendevin.schema import ConfigType
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +31,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.SANDBOX_CONTAINER_IMAGE: DEFAULT_CONTAINER_IMAGE,
     ConfigType.RUN_AS_DEVIN: 'true',
     ConfigType.LLM_EMBEDDING_MODEL: 'local',
+    ConfigType.LLM_EMBEDDING_BASE_URL: None,
     ConfigType.LLM_EMBEDDING_DEPLOYMENT_NAME: None,
     ConfigType.LLM_API_VERSION: None,
     ConfigType.LLM_NUM_RETRIES: 5,
@@ -153,8 +156,16 @@ def finalize_config():
     if config.get(ConfigType.WORKSPACE_MOUNT_PATH) is None:
         config[ConfigType.WORKSPACE_MOUNT_PATH] = os.path.abspath(config[ConfigType.WORKSPACE_BASE])
 
-    config[ConfigType.USE_HOST_NETWORK] = config[ConfigType.USE_HOST_NETWORK].lower() == 'true'
+    if config.get(ConfigType.LLM_EMBEDDING_BASE_URL) is None:
+        config[ConfigType.LLM_EMBEDDING_BASE_URL] = config.get(ConfigType.LLM_BASE_URL)
 
+    USE_HOST_NETWORK = config[ConfigType.USE_HOST_NETWORK].lower() != 'false'
+    if USE_HOST_NETWORK and platform.system() == 'Darwin':
+        logger.warning(
+            'Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. '
+            'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'
+        )
+    config[ConfigType.USE_HOST_NETWORK] = USE_HOST_NETWORK
 
 finalize_config()
 

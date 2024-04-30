@@ -10,12 +10,14 @@ Outputs:
 
 '''
 
-#fetch devin's outputs into a json file for evaluation
+# fetch devin's outputs into a json file for evaluation
+import json
 import os
 import sys
-import json
+
 import requests
 from tqdm import tqdm
+
 
 def get_devin_eval_output(setting):
     repo_url = 'CognitionAI/devin-swebench-results'

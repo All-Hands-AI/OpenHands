@@ -1,11 +1,11 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import ActionType from "#/types/ActionType";
-import { Settings } from "./settings";
-import { initializeAgent } from "./agent";
-import Socket from "./socket";
-import store from "#/store";
 import { setInitialized } from "#/state/taskSlice";
+import store from "#/store";
+import ActionType from "#/types/ActionType";
+import { initializeAgent } from "./agent";
+import { Settings } from "./settings";
+import Socket from "./socket";
 
 const sendSpy = vi.spyOn(Socket, "send");
 const dispatchSpy = vi.spyOn(store, "dispatch");
@@ -16,6 +16,7 @@ describe("initializeAgent", () => {
       LLM_MODEL: "llm_value",
       AGENT: "agent_value",
       LANGUAGE: "language_value",
+      LLM_API_KEY: "sk-...",
     };
 
     const event = {

@@ -11,7 +11,11 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
+        python-version: ["3.11"]
+        agent: ["SWEAgent", "PlannerAgent", "MonologueAgent", "CodeActAgent"]
+        sandbox: ["ssh", "exec"]
         include:
           - name: SWEAgent-py311-ssh
             python-version: "3.11"
@@ -52,18 +56,34 @@ jobs:
             python-version: "3.11"
             agent: "MonologueAgent"
             embedding-model: "local"
+          - agent: "MonologueAgent"
             # sufficient to have one agent testing against local sandbox
             sandbox: "local"
+            embedding-model: "local"
+          - agent: "SWEAgent"
+            embedding-model: "none"
+          - agent: "PlannerAgent"
+            embedding-model: "none"
+          - agent: "CodeActAgent"
+            embedding-model: "none"
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+
+      - name: Install poetry via pipx
+        run: pipx install poetry
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install Poetry
-        run: curl -sSL https://install.python-poetry.org | python3 -
+          python-version: '3.11'
+          cache: 'poetry'
+
+      - name: Install Python dependencies using Poetry
+        run: poetry install
+
       - name: Build Environment
         run: make build
+
       - name: Run Integration Tests
         env:
           SANDBOX_TYPE: ${{ matrix.sandbox }}
@@ -73,8 +93,14 @@ jobs:
         run: |
           rm -rf workspace
           mkdir workspace
-          WORKSPACE_BASE="$GITHUB_WORKSPACE/workspace" WORKSPACE_MOUNT_PATH="$GITHUB_WORKSPACE/workspace" poetry run pytest -s ./tests/integration
-
+          WORKSPACE_BASE="$GITHUB_WORKSPACE/workspace" \
+            WORKSPACE_MOUNT_PATH="$GITHUB_WORKSPACE/workspace" \
+            poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml \
+            -s ./tests/integration
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   test_matrix_success:
     name: All Integration Tests Passed
     runs-on: ubuntu-latest

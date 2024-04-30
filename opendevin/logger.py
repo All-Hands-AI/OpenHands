@@ -3,10 +3,11 @@ import os
 import sys
 import traceback
 from datetime import datetime
-from opendevin import config
 from typing import Literal, Mapping
+
 from termcolor import colored
 
+from opendevin import config
 from opendevin.schema.config import ConfigType
 
 DISABLE_COLOR_PRINTING = (
