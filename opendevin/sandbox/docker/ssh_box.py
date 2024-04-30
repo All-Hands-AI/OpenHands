@@ -327,9 +327,10 @@ class DockerSSHBox(Sandbox):
             pass
 
     def get_working_directory(self):
-        self.ssh.sendline('pwd')
-        self.ssh.prompt(timeout=10)
-        return self.ssh.before.decode('utf-8').strip()
+        exit_code, result = self.execute('pwd')
+        if exit_code != 0:
+            raise Exception('Failed to get working directory')
+        return result.strip()
 
     def is_container_running(self):
         try:
