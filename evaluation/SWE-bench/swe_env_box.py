@@ -3,9 +3,8 @@ import os
 import sys
 import time
 import uuid
-from glob import glob
 from collections import namedtuple
-from typing import Dict, List, Tuple, Union
+from typing import Dict, Union
 
 import docker
 
@@ -36,7 +35,7 @@ elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
 
 class SWEEnvSSHBox(DockerSSHBox):
-    
+
     def __init__(
         self,
         container_image: str | None = None,
@@ -69,11 +68,11 @@ class SWEEnvSSHBox(DockerSSHBox):
         self._ssh_port = find_available_tcp_port()
 
         if swe_instance_id is None:
-            raise ValueError("swe_instance_id cannot be None")
+            raise ValueError('swe_instance_id cannot be None')
         if od_swe_bench_dir is None:
-            raise ValueError("od_swe_bench_dir cannot be None")
+            raise ValueError('od_swe_bench_dir cannot be None')
         if conda_envs_dir is None:
-            raise ValueError("conda_envs_dir cannot be None")
+            raise ValueError('conda_envs_dir cannot be None')
         self.swe_instance_id = swe_instance_id
         self.od_swe_bench_dir = od_swe_bench_dir
         self.conda_envs_dir = conda_envs_dir
@@ -83,14 +82,14 @@ class SWEEnvSSHBox(DockerSSHBox):
 
         self.setup_user()
         self.start_ssh_session()
-        
-        exit_code, output = self.execute(f"echo 'SWEUTIL_DIR=/swe_util' >> ~/.bashrc && " + \
+
+        exit_code, output = self.execute("echo 'SWEUTIL_DIR=/swe_util' >> ~/.bashrc && " + \
             f"echo 'export SWE_INSTANCE_ID={self.swe_instance_id}' >> ~/.bashrc && " + \
             f"echo 'export CACHE_DIR={self.tgt_cache_dir}' >> ~/.bashrc")
         logger.info('exit code: %d', exit_code)
         logger.info(output)
 
-        exit_code, output = self.execute(f"{SANDBOX_WORKSPACE_DIR}/swe_env_setup.sh")
+        exit_code, output = self.execute(f'{SANDBOX_WORKSPACE_DIR}/swe_env_setup.sh')
         logger.info('exit code: %d', exit_code)
         logger.info(output)
 
@@ -99,9 +98,9 @@ class SWEEnvSSHBox(DockerSSHBox):
         if exit_code != 0:
             raise RuntimeError(f'Failed to source ~/.bashrc with exit code {exit_code} and output {output}')
         logger.info('Sourced ~/.bashrc successfully')
-        
+
         atexit.register(self.close)
-        
+
 
     def restart_docker_container(self):
         try:
@@ -186,9 +185,9 @@ class SWEEnvSSHBox(DockerSSHBox):
 if __name__ == '__main__':
 
     try:
-        ssh_box = SWEEnvSSHBox(swe_instance_id="django__django-11099",
-                               od_swe_bench_dir="/shared/bowen/codellm/swe/OD-SWE-bench",
-                               conda_envs_dir="/shared/bowen/codellm/swe/temp/conda_envs")
+        ssh_box = SWEEnvSSHBox(swe_instance_id='django__django-11099',
+                               od_swe_bench_dir='/shared/bowen/codellm/swe/OD-SWE-bench',
+                               conda_envs_dir='/shared/bowen/codellm/swe/temp/conda_envs')
     except Exception as e:
         logger.exception('Failed to start Docker container: %s', e)
         sys.exit(1)
