@@ -317,6 +317,22 @@ class DockerSSHBox(Sandbox):
         except docker.errors.NotFound:
             return False
 
+    @property
+    def volumes(self):
+        mount_dir = config.get(ConfigType.WORKSPACE_MOUNT_PATH)
+        logger.info(f'Mounting workspace directory: {mount_dir}')
+        return {
+            mount_dir: {
+                'bind': SANDBOX_WORKSPACE_DIR,
+                'mode': 'rw'
+            },
+            # mount cache directory to /home/opendevin/.cache for pip cache reuse
+            config.get(ConfigType.CACHE_DIR): {
+                'bind': '/home/opendevin/.cache' if RUN_AS_DEVIN else '/root/.cache',
+                'mode': 'rw'
+            },
+        },
+
     def restart_docker_container(self):
         try:
             self.stop_docker_container()
@@ -339,8 +355,6 @@ class DockerSSHBox(Sandbox):
                      )
                 )
 
-            mount_dir = config.get(ConfigType.WORKSPACE_MOUNT_PATH)
-            logger.info(f'Mounting workspace directory: {mount_dir}')
             # start the container
             self.container = self.docker_client.containers.run(
                 self.container_image,
@@ -351,17 +365,7 @@ class DockerSSHBox(Sandbox):
                 name=self.container_name,
                 hostname='opendevin_sandbox',
                 detach=True,
-                volumes={
-                    mount_dir: {
-                        'bind': SANDBOX_WORKSPACE_DIR,
-                        'mode': 'rw'
-                    },
-                    # mount cache directory to /home/opendevin/.cache for pip cache reuse
-                    config.get(ConfigType.CACHE_DIR): {
-                        'bind': '/home/opendevin/.cache' if RUN_AS_DEVIN else '/root/.cache',
-                        'mode': 'rw'
-                    },
-                },
+                volumes=self.volumes,
             )
             logger.info('Container started')
         except Exception as ex:
