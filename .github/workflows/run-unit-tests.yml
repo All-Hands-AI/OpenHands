@@ -30,8 +30,13 @@ jobs:
           version: latest
       - name: Build Environment
         run: make build
-      - name: Run Tests
-        run: poetry run pytest ./tests/unit
+      # Sandbox requires to import modules in fixture to change os.environ
+      # imports in other test files will cause issues, so we need to test sandbox separately
+      - name: Run Tests Except Sandbox
+        run: poetry run pytest ./tests/unit --ignore ./tests/unit/test_sandbox.py
+      - name: Run Tests For Sandbox
+        run: poetry run pytest ./tests/unit/test_sandbox.py
+
   test-on-linux:
     name: Test on Linux
     runs-on: ubuntu-latest
@@ -49,8 +54,12 @@ jobs:
         run: curl -sSL https://install.python-poetry.org | python3 -
       - name: Build Environment
         run: make build
-      - name: Run Tests
-        run: poetry run pytest ./tests/unit
+      # Sandbox requires to import modules in fixture to change os.environ
+      # imports in other test files will cause issues, so we need to test sandbox separately
+      - name: Run Tests Except Sandbox
+        run: poetry run pytest ./tests/unit --ignore ./tests/unit/test_sandbox.py
+      - name: Run Tests For Sandbox
+        run: poetry run pytest ./tests/unit/test_sandbox.py
 
   test_matrix_success:
     name: All Mac/Linux Tests Passed
