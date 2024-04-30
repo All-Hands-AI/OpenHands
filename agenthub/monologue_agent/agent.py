@@ -1,34 +1,34 @@
 from typing import List
-from opendevin.agent import Agent
-from opendevin.state import State
-from opendevin.llm.llm import LLM
-from opendevin.schema import ActionType, ObservationType
-from opendevin.exceptions import AgentNoInstructionError
-from opendevin.schema.config import ConfigType
-from opendevin import config
-
-from opendevin.action import (
-    Action,
-    NullAction,
-    CmdRunAction,
-    FileWriteAction,
-    FileReadAction,
-    AgentRecallAction,
-    BrowseURLAction,
-    AgentThinkAction,
-)
-
-from opendevin.observation import (
-    Observation,
-    NullObservation,
-    CmdOutputObservation,
-    FileReadObservation,
-    AgentRecallObservation,
-    BrowserOutputObservation,
-)
 
 import agenthub.monologue_agent.utils.prompts as prompts
 from agenthub.monologue_agent.utils.monologue import Monologue
+from opendevin import config
+from opendevin.action import (
+    Action,
+    AgentRecallAction,
+    AgentThinkAction,
+    BrowseURLAction,
+    CmdRunAction,
+    FileReadAction,
+    FileWriteAction,
+    GitHubPushAction,
+    NullAction,
+)
+from opendevin.agent import Agent
+from opendevin.exceptions import AgentNoInstructionError
+from opendevin.llm.llm import LLM
+from opendevin.observation import (
+    AgentRecallObservation,
+    BrowserOutputObservation,
+    CmdOutputObservation,
+    FileReadObservation,
+    NullObservation,
+    Observation,
+)
+from opendevin.schema import ActionType
+from opendevin.schema.config import ConfigType
+from opendevin.state import State
+
 if config.get(ConfigType.AGENT_MEMORY_ENABLED):
     from agenthub.monologue_agent.utils.memory import LongTermMemory
 
@@ -71,13 +71,17 @@ INITIAL_THOUGHTS = [
     'BROWSE google.com',
     '<form><input type="text"></input><button type="submit"></button></form>',
     'I can browse the web too!',
+    'If I have done some work and I want to push it to github, I can do that also!',
+    "Let's do it.",
+    'PUSH owner/repo branch',
+    'The repo was successfully pushed to https://github.com/owner/repo/branch',
     'And once I have completed my task, I can use the finish action to stop working.',
     "But I should only use the finish action when I'm absolutely certain that I've completed my task and have tested my work.",
     'Very cool. Now to accomplish my task.',
     "I'll need a strategy. And as I make progress, I'll need to keep refining that strategy. I'll need to set goals, and break them into sub-goals.",
     'In between actions, I must always take some time to think, strategize, and set new goals. I should never take two actions in a row.',
     "OK so my task is to $TASK. I haven't made any progress yet. Where should I start?",
-    "It seems like there might be an existing project here. I should probably start by running `ls` to see what's here.",
+    'It seems like there might be an existing project here. I should probably start by running `pwd` and `ls` to orient myself.',
 ]
 
 
@@ -152,32 +156,32 @@ class MonologueAgent(Agent):
         else:
             self.memory = None
 
-        output_type = ''
+        previous_action = ''
         for thought in INITIAL_THOUGHTS:
             thought = thought.replace('$TASK', task)
-            if output_type != '':
+            if previous_action != '':
                 observation: Observation = NullObservation(content='')
-                if output_type == ObservationType.RUN:
+                if previous_action in {ActionType.RUN, ActionType.PUSH}:
                     observation = CmdOutputObservation(
                         content=thought, command_id=0, command=''
                     )
-                elif output_type == ObservationType.READ:
+                elif previous_action == ActionType.READ:
                     observation = FileReadObservation(content=thought, path='')
-                elif output_type == ObservationType.RECALL:
+                elif previous_action == ActionType.RECALL:
                     observation = AgentRecallObservation(
                         content=thought, memories=[])
-                elif output_type == ObservationType.BROWSE:
+                elif previous_action == ActionType.BROWSE:
                     observation = BrowserOutputObservation(
                         content=thought, url='', screenshot=''
                     )
                 self._add_event(observation.to_memory())
-                output_type = ''
+                previous_action = ''
             else:
                 action: Action = NullAction()
                 if thought.startswith('RUN'):
                     command = thought.split('RUN ')[1]
                     action = CmdRunAction(command)
-                    output_type = ActionType.RUN
+                    previous_action = ActionType.RUN
                 elif thought.startswith('WRITE'):
                     parts = thought.split('WRITE ')[1].split(' > ')
                     path = parts[1]
@@ -186,15 +190,20 @@ class MonologueAgent(Agent):
                 elif thought.startswith('READ'):
                     path = thought.split('READ ')[1]
                     action = FileReadAction(path=path)
-                    output_type = ActionType.READ
+                    previous_action = ActionType.READ
                 elif thought.startswith('RECALL'):
                     query = thought.split('RECALL ')[1]
                     action = AgentRecallAction(query=query)
-                    output_type = ActionType.RECALL
+                    previous_action = ActionType.RECALL
                 elif thought.startswith('BROWSE'):
                     url = thought.split('BROWSE ')[1]
                     action = BrowseURLAction(url=url)
-                    output_type = ActionType.BROWSE
+                    previous_action = ActionType.BROWSE
+                elif thought.startswith('PUSH'):
+                    owner_repo, branch = thought.split('PUSH ')[1].split(' ')
+                    owner, repo = owner_repo.split('/')
+                    action = GitHubPushAction(owner=owner, repo=repo, branch=branch)
+                    previous_action = ActionType.PUSH
                 else:
                     action = AgentThinkAction(thought=thought)
                 self._add_event(action.to_memory())

@@ -1,10 +1,11 @@
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+
+from opendevin.observation import NullObservation
+from opendevin.schema import ActionType
 
 from .base import ExecutableAction, NotExecutableAction
-from opendevin.schema import ActionType
-from opendevin.observation import NullObservation
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
 
