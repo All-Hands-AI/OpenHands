@@ -37,19 +37,20 @@ class LLM:
     The LLM class represents a Language Model instance.
     """
 
-    def __init__(self,
-                 model=DEFAULT_MODEL_NAME,
-                 api_key=DEFAULT_API_KEY,
-                 base_url=DEFAULT_BASE_URL,
-                 api_version=DEFAULT_API_VERSION,
-                 num_retries=LLM_NUM_RETRIES,
-                 retry_min_wait=LLM_RETRY_MIN_WAIT,
-                 retry_max_wait=LLM_RETRY_MAX_WAIT,
-                 max_input_tokens=LLM_MAX_INPUT_TOKENS,
-                 max_output_tokens=LLM_MAX_OUTPUT_TOKENS,
-                 custom_llm_provider=LLM_CUSTOM_LLM_PROVIDER,
-                 llm_timeout=LLM_TIMEOUT
-                 ):
+    def __init__(
+        self,
+        model=DEFAULT_MODEL_NAME,
+        api_key=DEFAULT_API_KEY,
+        base_url=DEFAULT_BASE_URL,
+        api_version=DEFAULT_API_VERSION,
+        num_retries=LLM_NUM_RETRIES,
+        retry_min_wait=LLM_RETRY_MIN_WAIT,
+        retry_max_wait=LLM_RETRY_MAX_WAIT,
+        max_input_tokens=LLM_MAX_INPUT_TOKENS,
+        max_output_tokens=LLM_MAX_OUTPUT_TOKENS,
+        custom_llm_provider=LLM_CUSTOM_LLM_PROVIDER,
+        llm_timeout=LLM_TIMEOUT
+    ):
         """
         Args:
             model (str, optional): The name of the language model. Defaults to LLM_MODEL.
