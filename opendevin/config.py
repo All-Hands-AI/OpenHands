@@ -49,7 +49,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.AGENT: 'MonologueAgent',
     ConfigType.E2B_API_KEY: '',
     ConfigType.SANDBOX_TYPE: 'ssh',  # Can be 'ssh', 'exec', or 'e2b'
-    ConfigType.USE_HOST_NETWORK: 'true',
+    ConfigType.USE_HOST_NETWORK: 'false',
     ConfigType.SSH_HOSTNAME: 'localhost',
     ConfigType.DISABLE_COLOR: 'false',
     ConfigType.SANDBOX_USER_ID: os.getuid() if hasattr(os, 'getuid') else None,
@@ -167,6 +167,9 @@ def finalize_config():
             'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'
         )
     config[ConfigType.USE_HOST_NETWORK] = USE_HOST_NETWORK
+
+    if config.get(ConfigType.WORKSPACE_MOUNT_PATH) is None:
+        config[ConfigType.WORKSPACE_MOUNT_PATH] = config.get(ConfigType.WORKSPACE_BASE)
 
 finalize_config()
 
