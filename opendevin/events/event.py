@@ -1,6 +1,6 @@
 class Event:
     def to_memory(self):
-        return asdict(self)
+        return self.__dict__
 
     def to_dict(self):
         d = self.to_memory()

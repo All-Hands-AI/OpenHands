@@ -1,4 +1,10 @@
+from typing import TYPE_CHECKING
+
 from opendevin.events import Event
+
+if TYPE_CHECKING:
+    from opendevin.controller import AgentController
+    from opendevin.events.observation import Observation
 
 
 class Action(Event):
