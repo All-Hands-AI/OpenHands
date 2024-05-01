@@ -122,6 +122,12 @@ class CodeActAgent(Agent):
                     self.messages.append({'role': 'user', 'content': content})
                 elif isinstance(obs, IPythonRunCellObservation):
                     content = 'OBSERVATION:\n' + obs.content
+                    # replace base64 images with a placeholder
+                    splited = content.split('\n')
+                    for i, line in enumerate(splited):
+                        if '![image](data:image/png;base64,' in line:
+                            splited[i] = '![image](data:image/png;base64, ...) already displayed to user'
+                    content = '\n'.join(splited)
                     self.messages.append({'role': 'user', 'content': content})
                 else:
                     raise NotImplementedError(

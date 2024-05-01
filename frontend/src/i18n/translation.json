@@ -39,6 +39,19 @@
     "pt": "Planejador",
     "es": "Planificador"
   },
+  "WORKSPACE$JUPYTER_TAB_LABEL": {
+    "en": "Jupyter IPython",
+    "zh-CN": "Jupyter IPython",
+    "de": "Jupyter IPython",
+    "ko-KR": "Jupyter IPython",
+    "no": "Jupyter IPython",
+    "zh-TW": "Jupyter IPython",
+    "ar": "Jupyter IPython",
+    "fr": "Jupyter IPython",
+    "it": "Jupyter IPython",
+    "pt": "Jupyter IPython",
+    "es": "Jupyter IPython"
+  },
   "WORKSPACE$CODE_EDITOR_TAB_LABEL": {
     "en": "Code Editor",
     "zh-CN": "代码编辑器",
