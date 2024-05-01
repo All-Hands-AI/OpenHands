@@ -67,6 +67,7 @@ RUN playwright install --with-deps chromium
 COPY --chown=opendevin --from=frontend-builder /app/dist ./frontend/dist
 
 # change ownership of the app directory to the sandbox user
-COPY --chown=opendevin ./containers/app/entrypoint.sh /app/entrypoint.sh
+COPY ./containers/app/entrypoint.sh /app/entrypoint.sh
 
+USER root
 CMD ["/app/entrypoint.sh"]
