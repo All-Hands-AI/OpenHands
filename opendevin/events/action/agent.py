@@ -89,7 +89,7 @@ class AgentDelegateAction(Action):
 
     async def run(self, controller: 'AgentController') -> 'Observation':
         await controller.start_delegate(self)
-        return NullObservation('')
+        return NullObservation()
 
     @property
     def message(self) -> str:
