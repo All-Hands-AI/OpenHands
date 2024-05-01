@@ -7,7 +7,9 @@ from multiprocessing import Pipe, Process
 
 import browsergym.core  # noqa F401 (we register the openended task as a gym environment)
 import gymnasium as gym
+import html2text
 import numpy as np
+from browsergym.utils.obs import flatten_dom_to_str
 from PIL import Image
 
 from opendevin.logger import opendevin_logger as logger
@@ -19,6 +21,11 @@ class BrowserException(Exception):
 class BrowserEnv:
 
     def __init__(self):
+        self.html_text_converter = html2text.HTML2Text()
+        self.html_text_converter.ignore_links = True
+        self.html_text_converter.ignore_images = True
+        self.html_text_converter.images_to_alt = True
+        self.html_text_converter.body_width = 0
         # Initialize browser environment process
         self.browser_side, self.agent_side = Pipe()
         self.process = Process(target=self.browser_process,)
@@ -45,6 +52,8 @@ class BrowserEnv:
                         return
                     action = action_data['action']
                     obs, reward, terminated, truncated, info = env.step(action)
+                    # add text content of the page
+                    obs['text_content'] = self.html_text_converter.handle(flatten_dom_to_str(obs['dom_object']))
                     # make observation serializable
                     obs['screenshot'] = self.image_to_png_base64_url(obs['screenshot'])
                     obs['active_page_index'] = obs['active_page_index'].item()
