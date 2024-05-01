@@ -13,6 +13,10 @@ class ActionTypeSchema(BaseModel)
 
 Initializes the agent. Only sent by client.
 
+#### USER\_MESSAGE
+
+Sends a message from the user. Only sent by the client.
+
 #### START
 
 Starts a new development task OR send chat from the user. Only sent by the client.

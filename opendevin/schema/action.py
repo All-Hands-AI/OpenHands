@@ -10,6 +10,10 @@ class ActionTypeSchema(BaseModel):
     """Initializes the agent. Only sent by client.
     """
 
+    USER_MESSAGE: str = Field(default='user_message')
+    """Sends a message from the user. Only sent by the client.
+    """
+
     START: str = Field(default='start')
     """Starts a new development task OR send chat from the user. Only sent by the client.
     """

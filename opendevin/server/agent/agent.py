@@ -93,7 +93,9 @@ class AgentUnit:
             case ActionType.INIT:
                 await self.create_controller(data)
             case ActionType.START:
-                await self.start_task_or_chat(data)
+                await self.start_task(data)
+            case ActionType.USER_MESSAGE:
+                await self.send_user_message(data)
             case ActionType.CHANGE_TASK_STATE:
                 task_state_action = data.get('args', {}).get('task_state_action', None)
                 if task_state_action is None:
@@ -171,21 +173,12 @@ class AgentUnit:
         )
         await self.controller.notify_task_state_changed()
 
-    async def start_task_or_chat(self, start_event):
+    async def start_task(self, start_event):
         """Starts a task for the agent.
 
         Args:
             start_event: The start event data.
         """
-        if 'task' not in start_event['args']:
-            await self.send_error('No task specified')
-            return
-        # if agent task is already running, send chat
-        if self.agent_task and self.controller:
-            await self.controller.add_user_message(
-                UserMessageObservation(start_event['args']['task'])
-            )
-            return
         task = start_event['args']['task']
         if self.controller is None:
             await self.send_error('No agent started. Please wait a second...')
@@ -197,6 +190,15 @@ class AgentUnit:
             )
         except Exception as e:
             await self.send_error(f'Error during task loop: {e}')
+
+    async def send_user_message(self, data: dict):
+        if not self.agent_task or not self.controller:
+            await self.send_error('No agent started.')
+            return
+
+        await self.controller.add_user_message(
+            UserMessageObservation(data['args']['message'])
+        )
 
     async def set_task_state(self, new_state_action: TaskStateAction):
         """Sets the state of the agent task."""
