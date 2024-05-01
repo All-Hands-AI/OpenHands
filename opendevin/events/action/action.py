@@ -18,6 +18,5 @@ class Action(Event):
         try:
             v = d.pop('action')
         except KeyError:
-            print("couldn't pop action from", d, self.__dict__, self.__class__)
             raise NotImplementedError(f'{self=} does not have action attribute set')
         return {'action': v, 'args': d}
