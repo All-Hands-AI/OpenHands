@@ -45,6 +45,7 @@ class BrowserEnv:
             disable_env_checker=True,
         )
         obs, info = env.reset()
+        logger.info('Browser env started.')
         while True:
             try:
                 if self.browser_side.poll(timeout=0.01):
