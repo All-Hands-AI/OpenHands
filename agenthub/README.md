@@ -26,6 +26,7 @@ The `state` contains:
 Here is a list of available Actions, which can be returned by `agent.step()`:
 - [`CmdRunAction`](../opendevin/action/bash.py) - Runs a command inside a sandboxed terminal
 - [`CmdKillAction`](../opendevin/action/bash.py) - Kills a background command
+- [`IPythonRunCellAction`](../opendevin/action/bash.py) - Execute a block of Python code interactively (in Jupyter notebook) and receives `CmdOutputObservation`. Requires setting up `jupyter` [plugin](../opendevin/sandbox/plugins) as a requirement.
 - [`FileReadAction`](../opendevin/action/fileop.py) - Reads the content of a file
 - [`FileWriteAction`](../opendevin/action/fileop.py) - Writes new content to a file
 - [`BrowseURLAction`](../opendevin/action/browse.py) - Gets the content of a URL
@@ -33,6 +34,7 @@ Here is a list of available Actions, which can be returned by `agent.step()`:
 - [`AddTaskAction`](../opendevin/action/tasks.py) - Adds a subtask to the plan
 - [`ModifyTaskAction`](../opendevin/action/tasks.py) - Changes the state of a subtask
 - [`AgentThinkAction`](../opendevin/action/agent.py) - A no-op that allows the agent to add plaintext to the history (as well as the chat log)
+- [`AgentTalkAction`](../opendevin/action/agent.py) - A no-op that allows the agent to add plaintext to the history and talk to the user.
 - [`AgentFinishAction`](../opendevin/action/agent.py) - Stops the control loop, allowing the user to enter a new task
 
 You can use `action.to_dict()` and `action_from_dict` to serialize and deserialize actions.

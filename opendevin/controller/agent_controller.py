@@ -1,11 +1,13 @@
 import asyncio
 from typing import Callable, List, Type
 
+from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin import config
 from opendevin.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
+    AgentTalkAction,
     NullAction,
 )
 from opendevin.action.tasks import TaskStateChangedAction
@@ -24,8 +26,10 @@ from opendevin.observation import (
     AgentErrorObservation,
     NullObservation,
     Observation,
+    UserMessageObservation,
 )
 from opendevin.plan import Plan
+from opendevin.sandbox import DockerSSHBox
 from opendevin.schema import TaskState
 from opendevin.schema.config import ConfigType
 from opendevin.state import State
@@ -68,6 +72,11 @@ class AgentController:
         # Initialize browser environment
         self.browser = BrowserEnv()
 
+
+        if isinstance(agent, CodeActAgent) and not isinstance(self.action_manager.sandbox, DockerSSHBox):
+            logger.warning('CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful (LocalBox, DockerExecBox) will not work properly.')
+
+        self._await_user_message_queue: asyncio.Queue = asyncio.Queue()
 
     def update_state_for_step(self, i):
         if self.state is None:
@@ -179,6 +188,36 @@ class AgentController:
     async def notify_task_state_changed(self):
         await self._run_callbacks(TaskStateChangedAction(self._task_state))
 
+    async def add_user_message(self, message: UserMessageObservation):
+        if self.state is None:
+            return
+
+        if self._task_state == TaskState.AWAITING_USER_INPUT:
+            self._await_user_message_queue.put_nowait(message)
+
+            # set the task state to running
+            self._task_state = TaskState.RUNNING
+            await self.notify_task_state_changed()
+
+        elif self._task_state == TaskState.RUNNING:
+            self.add_history(NullAction(), message)
+
+        else:
+            raise ValueError(f'Task (state: {self._task_state}) is not in a state to add user message')
+
+    async def wait_for_user_input(self) -> UserMessageObservation:
+        self._task_state = TaskState.AWAITING_USER_INPUT
+        await self.notify_task_state_changed()
+        # wait for the next user message
+        if len(self.callbacks) == 0:
+            logger.info('Use STDIN to request user message as no callbacks are registered', extra={'msg_type': 'INFO'})
+            message = input('Request user input [type /exit to stop interaction] >> ')
+            user_message_observation = UserMessageObservation(message)
+        else:
+            user_message_observation = await self._await_user_message_queue.get()
+            self._await_user_message_queue.task_done()
+        return user_message_observation
+
     async def start_delegate(self, action: AgentDelegateAction):
         AgentCls: Type[Agent] = Agent.get_cls(action.agent)
         agent = AgentCls(llm=self.agent.llm)
@@ -206,7 +245,8 @@ class AgentController:
             return False
 
         logger.info(f'STEP {i}', extra={'msg_type': 'STEP'})
-        logger.info(self.state.plan.main_goal, extra={'msg_type': 'PLAN'})
+        if i == 0:
+            logger.info(self.state.plan.main_goal, extra={'msg_type': 'PLAN'})
         if self.state.num_of_chars > self.max_chars:
             raise MaxCharsExceedError(self.state.num_of_chars, self.max_chars)
 
@@ -230,6 +270,14 @@ class AgentController:
         self.update_state_after_step()
 
         await self._run_callbacks(action)
+
+        # whether to await for user messages
+        if isinstance(action, AgentTalkAction):
+            # await for the next user messages
+            user_message_observation = await self.wait_for_user_input()
+            logger.info(user_message_observation, extra={'msg_type': 'OBSERVATION'})
+            self.add_history(action, user_message_observation)
+            return False
 
         finished = isinstance(action, AgentFinishAction)
         if finished:
