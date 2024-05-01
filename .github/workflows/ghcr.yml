@@ -59,12 +59,12 @@ jobs:
           swap-storage: true
 
       - name: Build and push ${{ matrix.image }}
-        if: github.event.pull_request.head.repo.full_name == github.repository
+        if: "!github.event.pull_request.head.repo.fork"
         run: |
           ./containers/build.sh ${{ matrix.image }} ${{ github.repository_owner }} --push
 
       - name: Build ${{ matrix.image }}
-        if: github.event.pull_request.head.repo.full_name != github.repository
+        if: "github.event.pull_request.head.repo.fork"
         run: |
           ./containers/build.sh ${{ matrix.image }} ${{ github.repository_owner }}
 
