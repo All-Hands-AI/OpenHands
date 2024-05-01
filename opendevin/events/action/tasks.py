@@ -20,7 +20,7 @@ class AddTaskAction(Action):
     async def run(self, controller: 'AgentController') -> NullObservation:  # type: ignore
         if controller.state is not None:
             controller.state.plan.add_subtask(self.parent, self.goal, self.subtasks)
-        return NullObservation()
+        return NullObservation('')
 
     @property
     def message(self) -> str:
@@ -36,7 +36,7 @@ class ModifyTaskAction(Action):
     async def run(self, controller: 'AgentController') -> NullObservation:  # type: ignore
         if controller.state is not None:
             controller.state.plan.set_subtask_state(self.id, self.state)
-        return NullObservation()
+        return NullObservation('')
 
     @property
     def message(self) -> str:

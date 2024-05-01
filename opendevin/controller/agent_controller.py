@@ -213,7 +213,7 @@ class AgentController:
 
         self.update_state_for_step(i)
         action: Action = NullAction()
-        observation: Observation = NullObservation()
+        observation: Observation = NullObservation('')
         try:
             action = self.agent.step(self.state)
             if action is None:

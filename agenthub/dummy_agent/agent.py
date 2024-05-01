@@ -48,16 +48,16 @@ class DummyAgent(Agent):
         super().__init__(llm)
         self.steps: List[ActionObs] = [{
             'action': AddTaskAction(parent='0', goal='check the current directory'),
-            'observations': [NullObservation()],
+            'observations': [NullObservation('')],
         }, {
             'action': AddTaskAction(parent='0.0', goal='run ls'),
-            'observations': [NullObservation()],
+            'observations': [NullObservation('')],
         }, {
             'action': ModifyTaskAction(id='0.0', state='in_progress'),
-            'observations': [NullObservation()],
+            'observations': [NullObservation('')],
         }, {
             'action': AgentThinkAction(thought='Time to get started!'),
-            'observations': [NullObservation()],
+            'observations': [NullObservation('')],
         }, {
             'action': CmdRunAction(command='echo "foo"'),
             'observations': [CmdOutputObservation('foo', command_id=-1, command='echo "foo"')],
