@@ -1,18 +1,19 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Dict
 
+from opendevin.events.observation import (
+    AgentMessageObservation,
+    AgentRecallObservation,
+    NullObservation,
+    Observation,
+)
+
 from opendevin.schema import ActionType
 
 from .action import Action
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
-    from opendevin.events.observation import (
-        AgentMessageObservation,
-        AgentRecallObservation,
-        NullObservation,
-        Observation,
-    )
 
 
 @dataclass
