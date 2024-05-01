@@ -260,9 +260,6 @@ class MonologueAgent(Agent):
 
     def reset(self) -> None:
         super().reset()
-        self.monologue = Monologue()
-        if config.get(ConfigType.AGENT_MEMORY_ENABLED):
-            self.memory = LongTermMemory()
-        else:
-            self.memory = None
+
+        # Reset the initial monologue and memory
         self._initialized = False
