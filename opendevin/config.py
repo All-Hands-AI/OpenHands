@@ -20,42 +20,47 @@ else:
 load_dotenv()
 
 DEFAULT_CONFIG: dict = {
-    ConfigType.LLM_API_KEY: None,
-    ConfigType.LLM_BASE_URL: None,
-    ConfigType.WORKSPACE_BASE: os.getcwd(),
-    ConfigType.WORKSPACE_MOUNT_PATH: None,
-    ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX: '/workspace',
-    ConfigType.WORKSPACE_MOUNT_REWRITE: None,
-    ConfigType.CACHE_DIR: '/tmp/cache',  # '/tmp/cache' is the default cache directory
-    ConfigType.LLM_MODEL: 'gpt-3.5-turbo-1106',
-    ConfigType.SANDBOX_CONTAINER_IMAGE: DEFAULT_CONTAINER_IMAGE,
-    ConfigType.RUN_AS_DEVIN: 'true',
-    ConfigType.LLM_EMBEDDING_MODEL: 'local',
-    ConfigType.LLM_EMBEDDING_BASE_URL: None,
-    ConfigType.LLM_EMBEDDING_DEPLOYMENT_NAME: None,
-    ConfigType.LLM_API_VERSION: None,
-    ConfigType.LLM_NUM_RETRIES: 5,
-    ConfigType.LLM_RETRY_MIN_WAIT: 3,
-    ConfigType.LLM_RETRY_MAX_WAIT: 60,
-    ConfigType.MAX_ITERATIONS: 100,
-    ConfigType.AGENT_MEMORY_MAX_THREADS: 2,
-    ConfigType.AGENT_MEMORY_ENABLED: False,
-    ConfigType.LLM_TIMEOUT: None,
-    ConfigType.LLM_MAX_RETURN_TOKENS: None,
-    # GPT-4 pricing is $10 per 1M input tokens. Since tokenization happens on LLM side,
-    # we cannot easily count number of tokens, but we can count characters.
-    # Assuming 5 characters per token, 5 million is a reasonable default limit.
-    ConfigType.MAX_CHARS: 5_000_000,
-    ConfigType.AGENT: 'MonologueAgent',
-    ConfigType.E2B_API_KEY: '',
-    ConfigType.SANDBOX_TYPE: 'ssh',  # Can be 'ssh', 'exec', or 'e2b'
-    ConfigType.USE_HOST_NETWORK: 'false',
-    ConfigType.SSH_HOSTNAME: 'localhost',
-    ConfigType.DISABLE_COLOR: 'false',
-    ConfigType.SANDBOX_USER_ID: os.getuid() if hasattr(os, 'getuid') else None,
-    ConfigType.SANDBOX_TIMEOUT: 120,
-    ConfigType.GITHUB_TOKEN: None,
-    ConfigType.SANDBOX_USER_ID: None
+    'llm': {
+        'api_key': None,
+        'base_url': None,
+        'model': 'gpt-3.5-turbo-1106',
+        'embedding': {
+            'model': 'local',
+            'base_url': None,
+            'deployment_name': None,
+            'api_version': None,
+        },
+        'num_retries': 5,
+        'retry_min_wait': 3,
+        'retry_max_wait': 60,
+        'timeout': None,
+        'max_return_tokens': None,
+        'max_chars': 5_000_000,
+    },
+    'agent': {
+        'name': 'MonologueAgent',
+        'memory': {
+            'enabled': False,
+            'max_threads': 2,
+        },
+    },
+    'workspace_base': os.getcwd(),
+    'workspace_mount_path': None,
+    'workspace_mount_path_in_sandbox': '/workspace',
+    'workspace_mount_rewrite': None,
+    'cache_dir': '/tmp/cache',
+    'sandbox_container_image': DEFAULT_CONTAINER_IMAGE,
+    'run_as_devin': 'true',
+    'max_iterations': 100,
+    'e2b_api_key': '',
+    'sandbox_type': 'ssh',
+    'use_host_network': 'false',
+    'ssh_hostname': 'localhost',
+    'disable_color': 'false',
+    'sandbox_user_id': os.getuid() if hasattr(os, 'getuid') else None,
+    'sandbox_timeout': 120,
+    'github_token': None,
+    'sandbox_user_id': None
 }
 
 config_str = ''
@@ -73,15 +78,39 @@ def int_value(value, default, config_key):
         return default
 
 
+# Read config from environment variables and config.toml
+def read_config(config, tomlConfig, env):
+    for k, v in config.items():
+        if isinstance(v, dict):
+            read_config(v, tomlConfig.get(k, None), env.get(k, None))
+        else:
+            if k in env:
+                config[k] = env[k]
+            elif k in tomlConfig:
+                config[k] = tomlConfig[k]
+            if k in [ConfigType.LLM_NUM_RETRIES, ConfigType.LLM_RETRY_MIN_WAIT, ConfigType.LLM_RETRY_MAX_WAIT]:
+                config[k] = int_value(config[k], v, config_key=k)
+
 tomlConfig = toml.loads(config_str)
 config = DEFAULT_CONFIG.copy()
-for k, v in config.items():
-    if k in os.environ:
-        config[k] = os.environ[k]
-    elif k in tomlConfig:
-        config[k] = tomlConfig[k]
-    if k in [ConfigType.LLM_NUM_RETRIES, ConfigType.LLM_RETRY_MIN_WAIT, ConfigType.LLM_RETRY_MAX_WAIT]:
-        config[k] = int_value(config[k], v, config_key=k)
+read_config(config, tomlConfig, os.environ)
+
+# TODO Compatibility
+def compat_env_to_config(config, env):
+    for k, v in env.items():
+        if k.isupper():
+            parts = k.lower().split('_')
+            if len(parts) > 1 and parts[0] in config:
+                sub_dict = config
+                for part in parts[:-1]:
+                    if part in sub_dict:
+                        sub_dict = sub_dict[part]
+                    else:
+                        break
+                else:
+                    sub_dict[parts[-1]] = v
+
+compat_env_to_config(config, os.environ)
 
 # In local there is no sandbox, the workspace will have the same pwd as the host
 if config[ConfigType.SANDBOX_TYPE] == 'local':
