@@ -30,9 +30,9 @@ class BrowserEnv:
         # disable auto text wrapping
         self.html_text_converter.body_width = 0
         # Initialize browser environment process
-        self.mp_ctx = multiprocessing.get_context('spawn')
-        self.browser_side, self.agent_side = self.mp_ctx.Pipe()
-        self.process = self.mp_ctx.Process(target=self.browser_process,)
+        multiprocessing.set_start_method('spawn', force=True)
+        self.browser_side, self.agent_side = multiprocessing.Pipe()
+        self.process = multiprocessing.Process(target=self.browser_process,)
         logger.info('Starting browser env...')
         self.process.start()
         atexit.register(self.close)
