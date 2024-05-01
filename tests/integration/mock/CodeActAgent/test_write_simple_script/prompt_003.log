@@ -28,9 +28,9 @@ edit <start_line>:<end_line>
 end_of_edit - replaces lines <start_line> through <end_line> (inclusive) with the given text in the open file. The replacement text is terminated by a line with only end_of_edit on it. All of the <replacement text> will be entered, so make sure your indentation is formatted properly. Python files will be checked for syntax errors after the edit. If the system detects a syntax error, the edit will not be executed. Simply try to edit the file again, but make sure to read the error message and modify the edit command you issue accordingly. Issuing the same command a second time will just lead to the same error message again.
 Please note that THE EDIT COMMAND REQUIRES PROPER INDENTATION. If you'd like to add the line '        print(x)' you must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
 
-Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
 The assistant's response should be concise, but do express their thoughts.
 Try to include one of <execute_ipython> or <execute_bash> in each of your responses, unless it is a direct answer to a question OR a message to the user.
+IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
 
 
 ----------
@@ -216,7 +216,7 @@ Write a shell script 'hello.sh' that prints 'hello'.
 
 ----------
 
-Let's start by creating the shell script `hello.sh` that prints "hello". I'll write the script and save it to a file.
+Sure, I'll create a shell script named `hello.sh` that prints "hello". Let's start by writing the script.
 
 <execute_bash>
 echo "echo 'hello'" > hello.sh
@@ -230,7 +230,7 @@ OBSERVATION:
 
 ----------
 
-The shell script `hello.sh` has been successfully created. Would you like to run the script to see the output, or is there anything else you'd like to do with it?
+The shell script `hello.sh` has been successfully created. If you'd like, I can run the script to show you the output. Would you like me to proceed with executing the script?
 
 ----------
 
