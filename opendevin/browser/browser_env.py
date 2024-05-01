@@ -22,9 +22,12 @@ class BrowserEnv:
 
     def __init__(self):
         self.html_text_converter = html2text.HTML2Text()
+        # ignore links and images
         self.html_text_converter.ignore_links = True
         self.html_text_converter.ignore_images = True
+        # use alt text for images
         self.html_text_converter.images_to_alt = True
+        # disable auto text wrapping
         self.html_text_converter.body_width = 0
         # Initialize browser environment process
         self.browser_side, self.agent_side = Pipe()
@@ -53,7 +56,8 @@ class BrowserEnv:
                     action = action_data['action']
                     obs, reward, terminated, truncated, info = env.step(action)
                     # add text content of the page
-                    obs['text_content'] = self.html_text_converter.handle(flatten_dom_to_str(obs['dom_object']))
+                    html_str = flatten_dom_to_str(obs['dom_object'])
+                    obs['text_content'] = self.html_text_converter.handle(html_str)
                     # make observation serializable
                     obs['screenshot'] = self.image_to_png_base64_url(obs['screenshot'])
                     obs['active_page_index'] = obs['active_page_index'].item()

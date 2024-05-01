@@ -21,7 +21,7 @@ class BrowserOutputObservation(Observation):
     active_page_index: int = -1
     dom_object: dict = field(default_factory=dict)
     axtree_object: dict = field(default_factory=dict)
-    last_action: str = ''
+    last_browser_action: str = ''
     focused_element_bid: str = ''
 
     def to_memory(self) -> dict:
@@ -32,7 +32,7 @@ class BrowserOutputObservation(Observation):
         memory_dict['extras'].pop('axtree_object', None)
         memory_dict['extras'].pop('open_pages_urls', None)
         memory_dict['extras'].pop('active_page_index', None)
-        memory_dict['extras'].pop('last_action', None)
+        memory_dict['extras'].pop('last_browser_action', None)
         memory_dict['extras'].pop('focused_element_bid', None)
         return memory_dict
 
