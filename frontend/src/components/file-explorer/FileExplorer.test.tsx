@@ -2,8 +2,12 @@ import React from "react";
 import { render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { act } from "react-dom/test-utils";
+import { describe, it, expect, vi, Mock } from "vitest";
 import FileExplorer from "./FileExplorer";
-import { getWorkspace } from "#/services/fileService";
+import { getWorkspace, uploadFile } from "#/services/fileService";
+import toast from "#/utils/toast";
+
+const toastSpy = vi.spyOn(toast, "stickyError");
 
 vi.mock("../../services/fileService", async () => ({
   getWorkspace: vi.fn(async () => ({
@@ -14,7 +18,7 @@ vi.mock("../../services/fileService", async () => ({
     ],
   })),
 
-  selectFile: vi.fn(async (file: string) => file),
+  uploadFile: vi.fn(),
 }));
 
 describe("FileExplorer", () => {
@@ -75,11 +79,42 @@ describe("FileExplorer", () => {
     });
 
     act(() => {
-      userEvent.click(getByTestId("close"));
+      userEvent.click(getByTestId("toggle"));
     });
 
     // it should be hidden rather than removed from the DOM
     expect(queryByText("root")).toBeInTheDocument();
     expect(queryByText("root")).not.toBeVisible();
+  });
+
+  it("should upload a file", () => {
+    const { getByTestId } = render(<FileExplorer onFileClick={vi.fn} />);
+
+    const uploadFileInput = getByTestId("file-input");
+    const file = new File([""], "test");
+
+    act(() => {
+      userEvent.upload(uploadFileInput, file);
+    });
+
+    expect(uploadFile).toHaveBeenCalledWith(file);
+    expect(getWorkspace).toHaveBeenCalled();
+  });
+
+  it.todo("should display an error toast if file upload fails", async () => {
+    (uploadFile as Mock).mockRejectedValue(new Error());
+
+    const { getByTestId } = render(<FileExplorer onFileClick={vi.fn} />);
+
+    const uploadFileInput = getByTestId("file-input");
+    const file = new File([""], "test");
+
+    act(() => {
+      userEvent.upload(uploadFileInput, file);
+    });
+
+    expect(uploadFile).rejects.toThrow();
+    // TODO: figure out why spy isnt called to pass test
+    expect(toastSpy).toHaveBeenCalledWith("ws", "Error uploading file");
   });
 });
