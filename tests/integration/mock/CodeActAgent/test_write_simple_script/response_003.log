@@ -1,0 +1,4 @@
+Sure, let's run the script `hello.sh` to ensure it's working correctly.
+
+<execute_bash>
+bash hello.sh

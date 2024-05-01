@@ -5,7 +5,7 @@ from .error import AgentErrorObservation
 from .files import FileReadObservation, FileWriteObservation
 from .message import AgentMessageObservation, UserMessageObservation
 from .recall import AgentRecallObservation
-from .run import CmdOutputObservation
+from .run import CmdOutputObservation, IPythonRunCellObservation
 
 observations = (
     CmdOutputObservation,
@@ -40,6 +40,7 @@ __all__ = [
     'Observation',
     'NullObservation',
     'CmdOutputObservation',
+    'IPythonRunCellObservation',
     'BrowserOutputObservation',
     'FileReadObservation',
     'FileWriteObservation',

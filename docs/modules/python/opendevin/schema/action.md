@@ -13,9 +13,13 @@ class ActionTypeSchema(BaseModel)
 
 Initializes the agent. Only sent by client.
 
+#### USER\_MESSAGE
+
+Sends a message from the user. Only sent by the client.
+
 #### START
 
-Starts a new development task. Only sent by the client.
+Starts a new development task OR send chat from the user. Only sent by the client.
 
 #### READ
 
@@ -28,6 +32,10 @@ Writes the content to a file.
 #### RUN
 
 Runs a command.
+
+#### RUN\_IPYTHON
+
+Runs a IPython cell.
 
 #### KILL
 
@@ -44,6 +52,10 @@ Searches long-term memory
 #### THINK
 
 Allows the agent to make a plan, set a goal, or record thoughts
+
+#### TALK
+
+Allows the agent to respond to the user.
 
 #### DELEGATE
 

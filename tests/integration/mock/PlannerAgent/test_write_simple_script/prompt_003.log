@@ -58,24 +58,14 @@ ten actions--more happened before that.
     "action": "modify_task",
     "args": {
       "id": "0",
-      "state": "in_progress"
+      "state": "in_progress",
+      "thought": ""
     }
   },
   {
-    "action": "write",
+    "action": "think",
     "args": {
-      "path": "hello.sh",
-      "content": "#!/bin/bash\necho 'hello'",
-      "start": 0,
-      "end": -1,
-      "thoughts": ""
-    }
-  },
-  {
-    "observation": "write",
-    "content": "",
-    "extras": {
-      "path": "hello.sh"
+      "thought": "I need to write a shell script called 'hello.sh' that contains the necessary command to print 'hello'. This will likely involve using echo or printf to output the text to the console when the script is run. I should start by creating and writing the content to the file."
     }
   }
 ]
@@ -119,4 +109,4 @@ actions are all `think` actions, you should consider taking a different action.
 
 What is your next thought or action? Again, you must reply with JSON, and only with JSON.
 
-You just changed a file. You should think about how it affects your plan.
+Look at your last thought in the history above. What does it suggest? Don't think anymore--take action.

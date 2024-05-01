@@ -12,6 +12,7 @@ import { AllTabs, TabOption, TabType } from "#/types/TabOption";
 import Browser from "./Browser";
 import CodeEditor from "./CodeEditor";
 import Planner from "./Planner";
+import Jupyter from "./Jupyter";
 
 function Workspace() {
   const { t } = useTranslation();
@@ -20,12 +21,13 @@ function Workspace() {
   const screenshotSrc = useSelector(
     (state: RootState) => state.browser.screenshotSrc,
   );
-
+  const jupyterCells = useSelector((state: RootState) => state.jupyter.cells);
   const [activeTab, setActiveTab] = useState<TabType>(TabOption.CODE);
   const [changes, setChanges] = useState<Record<TabType, boolean>>({
     [TabOption.PLANNER]: false,
     [TabOption.CODE]: false,
     [TabOption.BROWSER]: false,
+    [TabOption.JUPYTER]: false,
   });
 
   const tabData = useMemo(
@@ -44,6 +46,11 @@ function Workspace() {
         name: t(I18nKey.WORKSPACE$BROWSER_TAB_LABEL),
         icon: <IoIosGlobe size={18} />,
         component: <Browser key="browser" />,
+      },
+      [TabOption.JUPYTER]: {
+        name: t(I18nKey.WORKSPACE$JUPYTER_TAB_LABEL),
+        icon: <VscCode size={18} />,
+        component: <Jupyter key="jupyter" />,
       },
     }),
     [t],
@@ -72,6 +79,14 @@ function Workspace() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screenshotSrc]);
+
+  useEffect(() => {
+    if (activeTab !== TabOption.JUPYTER && jupyterCells.length > 0) {
+      // FIXME: This is a temporary solution to show the jupyter tab when the first cell is added
+      // Only need to show the tab only when a cell is added
+      setChanges((prev) => ({ ...prev, [TabOption.JUPYTER]: true }));
+    }
+  }, [jupyterCells]);
 
   return (
     <div className="flex flex-col min-h-0 grow">
