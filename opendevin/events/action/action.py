@@ -2,10 +2,10 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from opendevin.events.event import Event
+from opendevin.events.observation import Observation, NullObservation
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
-    from opendevin.events.observation import Observation
 
 
 @dataclass
@@ -21,6 +21,6 @@ class Action(Event):
             raise NotImplementedError(f'{self=} does not have action attribute set')
         return {'action': v, 'args': d}
 
-    @property
-    def executable(self) -> bool:
-        raise NotImplementedError
+    async def run(self, controller: 'AgentController') -> 'Observation':
+        return NullObservation('')
+

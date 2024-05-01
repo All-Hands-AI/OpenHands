@@ -49,9 +49,6 @@ class ActionManager:
         self.sandbox.init_plugins(plugins)
 
     async def run_action(self, action: Action, agent_controller) -> Observation:
-        observation: Observation = NullObservation('')
-        if not action.executable:
-            return observation
         observation = await action.run(agent_controller)
         return observation
 
