@@ -105,9 +105,9 @@ class CodeActAgent(Agent):
                     obs, AgentMessageObservation
                 ):  # warning message from itself
                     self.messages.append(
-                        {'role': 'user', 'content': obs.content})
+                        {'role': 'user', 'content': obs.content[0:10000]})
                 elif isinstance(obs, CmdOutputObservation):
-                    content = 'OBSERVATION:\n' + obs.content
+                    content = 'OBSERVATION:\n' + obs.content[0:10000]
                     content += f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
                     self.messages.append({'role': 'user', 'content': content})
                 else:
