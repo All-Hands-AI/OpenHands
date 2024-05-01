@@ -1,18 +1,18 @@
 import re
 from typing import List, Mapping
 
+from opendevin.agent import Agent
 from opendevin.events.action import (
     Action,
     AgentEchoAction,
     AgentFinishAction,
     CmdRunAction,
 )
-from opendevin.agent import Agent
-from opendevin.llm.llm import LLM
 from opendevin.events.observation import (
     AgentMessageObservation,
     CmdOutputObservation,
 )
+from opendevin.llm.llm import LLM
 from opendevin.sandbox.plugins import JupyterRequirement, PluginRequirement
 from opendevin.state import State
 

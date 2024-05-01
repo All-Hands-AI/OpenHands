@@ -3,6 +3,7 @@ from typing import List
 import agenthub.monologue_agent.utils.prompts as prompts
 from agenthub.monologue_agent.utils.monologue import Monologue
 from opendevin import config
+from opendevin.agent import Agent
 from opendevin.events.action import (
     Action,
     AgentRecallAction,
@@ -14,9 +15,6 @@ from opendevin.events.action import (
     GitHubPushAction,
     NullAction,
 )
-from opendevin.agent import Agent
-from opendevin.exceptions import AgentNoInstructionError
-from opendevin.llm.llm import LLM
 from opendevin.events.observation import (
     AgentRecallObservation,
     BrowserOutputObservation,
@@ -25,6 +23,8 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
+from opendevin.exceptions import AgentNoInstructionError
+from opendevin.llm.llm import LLM
 from opendevin.schema import ActionType
 from opendevin.schema.config import ConfigType
 from opendevin.state import State

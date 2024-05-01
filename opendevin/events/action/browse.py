@@ -10,8 +10,8 @@ from opendevin.schema import ActionType
 from .action import Action
 
 if TYPE_CHECKING:
-    from opendevin.events.observation import BrowserOutputObservation
     from opendevin.controller import AgentController
+    from opendevin.events.observation import BrowserOutputObservation
 
 
 @dataclass

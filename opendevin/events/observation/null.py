@@ -1,8 +1,7 @@
-import copy
-from dataclasses import dataclass
+
+from opendevin.schema import ObservationType
 
 from .observation import Observation
-from opendevin.schema import ObservationType
 
 
 class NullObservation(Observation):

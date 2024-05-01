@@ -1,6 +1,7 @@
 import time
 from typing import List, TypedDict
 
+from opendevin.agent import Agent
 from opendevin.events.action import (
     Action,
     AddTaskAction,
@@ -13,8 +14,6 @@ from opendevin.events.action import (
     FileWriteAction,
     ModifyTaskAction,
 )
-from opendevin.agent import Agent
-from opendevin.llm.llm import LLM
 from opendevin.events.observation import (
     AgentRecallObservation,
     CmdOutputObservation,
@@ -23,6 +22,7 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
+from opendevin.llm.llm import LLM
 from opendevin.state import State
 
 """

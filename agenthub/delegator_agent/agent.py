@@ -1,9 +1,9 @@
 from typing import List
 
-from opendevin.events.action import Action, AgentDelegateAction, AgentFinishAction
 from opendevin.agent import Agent
-from opendevin.llm.llm import LLM
+from opendevin.events.action import Action, AgentDelegateAction, AgentFinishAction
 from opendevin.events.observation import AgentDelegateObservation
+from opendevin.llm.llm import LLM
 from opendevin.state import State
 
 

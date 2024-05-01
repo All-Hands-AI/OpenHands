@@ -71,17 +71,6 @@
       "items": [
         {
           "items": [
-            "python/opendevin/action/__init__",
-            "python/opendevin/action/base",
-            "python/opendevin/action/fileop",
-            "python/opendevin/action/github",
-            "python/opendevin/action/tasks"
-          ],
-          "label": "opendevin.action",
-          "type": "category"
-        },
-        {
-          "items": [
             "python/opendevin/controller/agent_controller"
           ],
           "label": "opendevin.controller",
@@ -89,24 +78,42 @@
         },
         {
           "items": [
-            "python/opendevin/llm/llm"
+            {
+              "items": [
+                "python/opendevin/events/action/__init__",
+                "python/opendevin/events/action/files",
+                "python/opendevin/events/action/github",
+                "python/opendevin/events/action/null",
+                "python/opendevin/events/action/tasks"
+              ],
+              "label": "opendevin.events.action",
+              "type": "category"
+            },
+            {
+              "items": [
+                "python/opendevin/events/observation/__init__",
+                "python/opendevin/events/observation/browse",
+                "python/opendevin/events/observation/commands",
+                "python/opendevin/events/observation/delegate",
+                "python/opendevin/events/observation/error",
+                "python/opendevin/events/observation/files",
+                "python/opendevin/events/observation/message",
+                "python/opendevin/events/observation/null",
+                "python/opendevin/events/observation/observation",
+                "python/opendevin/events/observation/recall"
+              ],
+              "label": "opendevin.events.observation",
+              "type": "category"
+            }
           ],
-          "label": "opendevin.llm",
+          "label": "opendevin.events",
           "type": "category"
         },
         {
           "items": [
-            "python/opendevin/observation/__init__",
-            "python/opendevin/observation/base",
-            "python/opendevin/observation/browse",
-            "python/opendevin/observation/delegate",
-            "python/opendevin/observation/error",
-            "python/opendevin/observation/files",
-            "python/opendevin/observation/message",
-            "python/opendevin/observation/recall",
-            "python/opendevin/observation/run"
+            "python/opendevin/llm/llm"
           ],
-          "label": "opendevin.observation",
+          "label": "opendevin.llm",
           "type": "category"
         },
         {

@@ -17,11 +17,11 @@ from opendevin.events.action import (
     NullAction,
     action_from_dict,
 )
-from opendevin.logger import opendevin_logger as logger
 from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
+from opendevin.logger import opendevin_logger as logger
 from opendevin.plan import Plan
 from opendevin.schema import ActionType
 

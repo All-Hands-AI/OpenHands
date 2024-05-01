@@ -1,5 +1,6 @@
 from opendevin.events import Event
 
+
 class Action(Event):
     action: str
 

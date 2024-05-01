@@ -10,5 +10,3 @@ class Event:
     @property
     def message(self) -> str:
         return self.message
-
-

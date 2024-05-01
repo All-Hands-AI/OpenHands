@@ -2,6 +2,8 @@ import asyncio
 from typing import Callable, List, Type
 
 from opendevin import config
+from opendevin.agent import Agent
+from opendevin.controller.action_manager import ActionManager
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
@@ -9,8 +11,12 @@ from opendevin.events.action import (
     NullAction,
 )
 from opendevin.events.action.tasks import TaskStateChangedAction
-from opendevin.agent import Agent
-from opendevin.controller.action_manager import ActionManager
+from opendevin.events.observation import (
+    AgentDelegateObservation,
+    AgentErrorObservation,
+    NullObservation,
+    Observation,
+)
 from opendevin.exceptions import (
     AgentMalformedActionError,
     AgentNoActionError,
@@ -18,12 +24,6 @@ from opendevin.exceptions import (
     MaxCharsExceedError,
 )
 from opendevin.logger import opendevin_logger as logger
-from opendevin.events.observation import (
-    AgentDelegateObservation,
-    AgentErrorObservation,
-    NullObservation,
-    Observation,
-)
 from opendevin.plan import Plan
 from opendevin.schema import TaskState
 from opendevin.schema.config import ConfigType

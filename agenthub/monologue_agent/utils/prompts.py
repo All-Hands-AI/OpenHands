@@ -7,10 +7,10 @@ from opendevin.events.action import (
     Action,
     action_from_dict,
 )
-from opendevin.exceptions import LLMOutputError
 from opendevin.events.observation import (
     CmdOutputObservation,
 )
+from opendevin.exceptions import LLMOutputError
 from opendevin.schema.config import ConfigType
 
 from . import json

@@ -1,5 +1,7 @@
 from opendevin.schema import ActionType
+
 from .action import Action
+
 
 class NullAction(Action):
     """An action that does nothing.

@@ -1,20 +1,20 @@
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from opendevin import config
 from opendevin.events.observation import (
-    Observation,
     AgentErrorObservation,
     FileReadObservation,
     FileWriteObservation,
+    Observation,
 )
 from opendevin.sandbox import E2BBox
 from opendevin.schema import ActionType
 from opendevin.schema.config import ConfigType
 
 from .action import Action
+
 
 def resolve_path(file_path, working_directory):
     path_in_sandbox = Path(file_path)

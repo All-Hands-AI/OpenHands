@@ -7,7 +7,6 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
-
 from opendevin.schema import ActionType
 
 from .action import Action
