@@ -13,11 +13,12 @@ import Socket from "./socket";
 
 export function sendChatMessage(message: string, isTask: boolean = true): void {
   store.dispatch(appendUserMessage(message));
-  let event = { action: ActionType.START, args: { task: message } };
-  if (!isTask) {
-    event = { action: ActionType.USER_MESSAGE, args: { message } };
+  let event;
+  if (isTask) {
+    event = { action: ActionType.START, args: { task: message } };
+  } else {
+    event = { action: ActionType.USER_MESSAGE, args: { message: message } };
   }
-
   const eventString = JSON.stringify(event);
   Socket.send(eventString);
 }
