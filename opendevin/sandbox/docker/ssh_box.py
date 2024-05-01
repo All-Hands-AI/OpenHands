@@ -1,6 +1,5 @@
 import atexit
 import os
-import re
 import sys
 import tarfile
 import time
@@ -43,11 +42,38 @@ elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
 
 def split_bash_commands(bash_string):
-    # This regex matches an escaped newline (i.e., a backslash followed by a newline)
-    # and avoids splitting on them. It splits on actual newlines that are not escaped.
-    commands = re.split(r'(?<!\\)\n', bash_string.replace('\\\n', '\\\n '))
-    # Restore the escaped newlines by removing the extra space added for splitting.
-    commands = [cmd.replace('\\\n ', '\\\n') for cmd in commands]
+    commands = []
+    current_command = []
+    in_single_quote = False
+    in_double_quote = False
+    escape = False
+
+    for i, char in enumerate(bash_string):
+        if escape:
+            current_command.append(char)
+            escape = False
+        elif char == '\\':
+            escape = True
+            current_command.append(char)
+        elif char == "'":
+            current_command.append(char)
+            in_single_quote = not in_single_quote if not in_double_quote else in_single_quote
+        elif char == '"':
+            current_command.append(char)
+            in_double_quote = not in_double_quote if not in_single_quote else in_double_quote
+        elif char == '\n':
+            if in_single_quote or in_double_quote:
+                current_command.append(char)
+            else:
+                commands.append(''.join(current_command))
+                current_command = []
+        else:
+            current_command.append(char)
+
+    # Append the last command if not empty
+    if current_command:
+        commands.append(''.join(current_command))
+
     return commands
 
 class DockerSSHBox(Sandbox):
@@ -256,12 +282,12 @@ class DockerSSHBox(Sandbox):
         # get the exit code
         self.ssh.sendline('echo $?')
         self.ssh.prompt()
-        exit_code = self.ssh.before.decode('utf-8')
-        while not exit_code:
+        exit_code_str = self.ssh.before.decode('utf-8')
+        while not exit_code_str:
             self.ssh.prompt()
-            exit_code = self.ssh.before.decode('utf-8')
-            logger.debug(f'WAITING FOR exit code: {exit_code}')
-        exit_code = int(exit_code.strip())
+            exit_code_str = self.ssh.before.decode('utf-8')
+            logger.debug(f'WAITING FOR exit code: {exit_code_str}')
+        exit_code = int(exit_code_str.strip())
         return exit_code, command_output
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
