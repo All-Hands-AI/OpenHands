@@ -1,12 +1,14 @@
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from opendevin.events import Event
+from opendevin.events.event import Event
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
     from opendevin.events.observation import Observation
 
 
+@dataclass
 class Action(Event):
     action: str
 

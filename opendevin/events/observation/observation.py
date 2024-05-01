@@ -1,6 +1,9 @@
-from opendevin.events import Event
+from dataclasses import dataclass
+
+from opendevin.events.event import Event
 
 
+@dataclass
 class Observation(Event):
     observation: str
     content: str

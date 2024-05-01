@@ -1,3 +1,7 @@
+from dataclasses import dataclass
+
+
+@dataclass
 class Event:
     def to_memory(self):
         return self.__dict__

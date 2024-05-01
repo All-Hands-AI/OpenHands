@@ -6,6 +6,7 @@ title: opendevin.events.observation.observation
 ## Observation Objects
 
 ```python
+@dataclass
 class Observation(Event)
 ```
 
