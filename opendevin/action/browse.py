@@ -1,7 +1,5 @@
 import os
-import uuid
 from dataclasses import dataclass
-from multiprocessing.connection import Connection
 from typing import TYPE_CHECKING
 
 import html2text
@@ -16,16 +14,6 @@ if TYPE_CHECKING:
     from opendevin.controller import AgentController
 
 
-def browser_env_step(action_str: str, conn: Connection):
-    unique_request_id = str(uuid.uuid4())
-    conn.send((unique_request_id, {'action': action_str}))
-    while True:
-        if conn.poll():
-            response_id, response = conn.recv()
-            if response_id == unique_request_id:
-                return response
-
-
 @dataclass
 class BrowseURLAction(ExecutableAction):
     url: str
@@ -36,16 +24,19 @@ class BrowseURLAction(ExecutableAction):
         if not asked_url.startswith('http'):
             asked_url = os.path.abspath(os.curdir) + self.url
         try:
+            # action in BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/functions.py
             action_str = f'goto("{asked_url}")'
-            obs = browser_env_step(action_str, controller.agent_side)
-            if obs['last_action_error']:
-                return BrowserOutputObservation(
-                    content=obs['last_action_error'], screenshot='', error=True, url=asked_url
-                )
-
+            # obs provided by BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/env.py#L396
+            obs = controller.browser.step(action_str)
             text_content = html2text.html2text(flatten_dom_to_str(obs['dom_object']))
             return BrowserOutputObservation(
                 content=text_content,  # text content of the page
+                open_pages_urls=obs['open_pages_urls'],  # list of open pages
+                active_page_index=obs['active_page_index'],  # index of the active page
+                dom_object=obs['dom_object'],  # DOM object
+                axtree_object=obs['axtree_object'],  # accessibility tree object
+                last_action=obs['last_action'],  # last action performed
+                focused_element_bid=obs['focused_element_bid'],  # focused element bid
                 screenshot=obs['screenshot'],  # base64-encoded screenshot, png
                 url=asked_url,
             )

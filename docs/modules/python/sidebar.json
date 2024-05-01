@@ -82,9 +82,9 @@
         },
         {
           "items": [
-            "python/opendevin/browser_server/utils"
+            "python/opendevin/browser/browser_env"
           ],
-          "label": "opendevin.browser_server",
+          "label": "opendevin.browser",
           "type": "category"
         },
         {

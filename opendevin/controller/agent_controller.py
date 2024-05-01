@@ -1,5 +1,4 @@
 import asyncio
-from multiprocessing import Pipe, Process
 from typing import Callable, List, Type
 
 from opendevin import config
@@ -11,7 +10,7 @@ from opendevin.action import (
 )
 from opendevin.action.tasks import TaskStateChangedAction
 from opendevin.agent import Agent
-from opendevin.browser_server.browser_process import start_browser
+from opendevin.browser.browser_env import BrowserEnv
 from opendevin.controller.action_manager import ActionManager
 from opendevin.exceptions import (
     AgentMalformedActionError,
@@ -41,6 +40,7 @@ class AgentController:
     max_iterations: int
     action_manager: ActionManager
     callbacks: List[Callable]
+    browser: BrowserEnv
 
     delegate: 'AgentController | None' = None
     state: State | None = None
@@ -65,10 +65,8 @@ class AgentController:
         self.callbacks = callbacks
         # Initialize agent-required plugins for sandbox (if any)
         self.action_manager.init_sandbox_plugins(agent.sandbox_plugins)
-        # Initialize browser environment process
-        self.browser_side, self.agent_side = Pipe()
-        self.process = Process(target=start_browser, args=(self.browser_side,))
-        self.process.start()
+        # Initialize browser environment
+        self.browser = BrowserEnv()
 
 
     def update_state_for_step(self, i):
