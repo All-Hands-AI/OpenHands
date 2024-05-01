@@ -2,8 +2,8 @@ import os
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-import html2text
 from browsergym.utils.obs import flatten_dom_to_str
+from html2text import html2text
 
 from opendevin.observation import BrowserOutputObservation
 from opendevin.schema import ActionType
@@ -28,9 +28,9 @@ class BrowseURLAction(ExecutableAction):
             action_str = f'goto("{asked_url}")'
             # obs provided by BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/env.py#L396
             obs = controller.browser.step(action_str)
-            text_content = html2text.html2text(flatten_dom_to_str(obs['dom_object']))
+
             return BrowserOutputObservation(
-                content=text_content,  # text content of the page
+                content=html2text(flatten_dom_to_str(obs['dom_object'])),  # text content of the page
                 open_pages_urls=obs['open_pages_urls'],  # list of open pages
                 active_page_index=obs['active_page_index'],  # index of the active page
                 dom_object=obs['dom_object'],  # DOM object
