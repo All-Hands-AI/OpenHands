@@ -171,7 +171,6 @@ def finalize_config():
     if config.get(ConfigType.WORKSPACE_MOUNT_PATH) is None:
         config[ConfigType.WORKSPACE_MOUNT_PATH] = config.get(ConfigType.WORKSPACE_BASE)
 
-
 finalize_config()
 
 
