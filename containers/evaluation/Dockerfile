@@ -1,7 +1,7 @@
 FROM ghcr.io/opendevin/sandbox:latest
 
 RUN apt-get update && \
-    apt-get install -y libffi-dev bash gcc git jq wget && \
+    apt-get install -y libffi-dev bash gcc git jq wget rsync && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
