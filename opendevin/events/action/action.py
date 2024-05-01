@@ -10,8 +10,6 @@ if TYPE_CHECKING:
 
 @dataclass
 class Action(Event):
-    action: str
-
     async def run(self, controller: 'AgentController') -> 'Observation':
         raise NotImplementedError
 

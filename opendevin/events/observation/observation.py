@@ -5,7 +5,6 @@ from opendevin.events.event import Event
 
 @dataclass
 class Observation(Event):
-    observation: str
     content: str
 
     def to_memory(self) -> dict:
