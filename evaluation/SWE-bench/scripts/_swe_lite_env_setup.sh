@@ -56,6 +56,15 @@ python3 /swe_util/OD-SWE-bench/swebench/harness/engine_testbed.py \
     --testbed /swe_util/eval_data/testbeds \
     --timeout 1000
 
+# Check every log in /swe_util/eval_data/testbed_logs to see if they contains "Init Succeeded"
+# If not, print the log file name and exit
+for log_file in /swe_util/eval_data/testbed_logs/*; do
+    if ! grep -q "Init Succeeded" $log_file; then
+        echo "Error: $log_file does not contain 'Init Succeeded'"
+        exit 1
+    fi
+done
+
 # # Reset the testbed and install the repo
 # conda activate swe-bench-eval
 
