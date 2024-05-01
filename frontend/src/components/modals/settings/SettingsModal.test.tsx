@@ -1,13 +1,13 @@
-import { fetchAgents, fetchModels } from "#/api";
-import { initializeAgent } from "#/services/agent";
-import { Settings, getSettings, saveSettings } from "#/services/settings";
-import toast from "#/utils/toast";
 import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import i18next from "i18next";
 import React from "react";
 import { renderWithProviders } from "test-utils";
 import { Mock } from "vitest";
+import toast from "#/utils/toast";
+import { Settings, getSettings, saveSettings } from "#/services/settings";
+import { initializeAgent } from "#/services/agent";
+import { fetchAgents, fetchModels } from "#/api";
 import SettingsModal from "./SettingsModal";
 
 const toastSpy = vi.spyOn(toast, "settingsChanged");
@@ -129,6 +129,7 @@ describe("SettingsModal", () => {
       expect(saveSettings).toHaveBeenCalledWith({
         ...initialSettings,
         LLM_MODEL: "model3",
+        LLM_API_KEY: "", // reset after model change
       });
     });
 
@@ -160,6 +161,7 @@ describe("SettingsModal", () => {
       expect(initializeAgent).toHaveBeenCalledWith({
         ...initialSettings,
         LLM_MODEL: "model3",
+        LLM_API_KEY: "", // reset after model change
       });
     });
 
