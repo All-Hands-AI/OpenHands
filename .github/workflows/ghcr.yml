@@ -15,7 +15,7 @@ jobs:
     if: github.event_name == 'push' || github.event.inputs.reason != ''
     strategy:
       matrix:
-        image: ["app", "evaluation", "sandbox"]
+        image: ["app", "sandbox"]
 
     steps:
       - name: checkout
