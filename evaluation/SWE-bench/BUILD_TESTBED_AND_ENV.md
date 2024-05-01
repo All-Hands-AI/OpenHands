@@ -29,3 +29,9 @@ Run the following command to do the above two steps. The results will be saved t
 ```bash
 ./evaluation/SWE-bench/scripts/swe_lite_env_setup.sh
 ```
+
+### Build the pre-build conda env and testbed into ONE docker image
+
+```bash
+./evaluation/SWE-bench/scripts/docker/build_all_in_one.sh
+```
