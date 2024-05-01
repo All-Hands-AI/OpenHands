@@ -1,6 +1,7 @@
 import atexit
 import base64
 import io
+import multiprocessing
 import time
 import uuid
 from multiprocessing import Pipe, Process
@@ -30,6 +31,7 @@ class BrowserEnv:
         # disable auto text wrapping
         self.html_text_converter.body_width = 0
         # Initialize browser environment process
+        multiprocessing.set_start_method('spawn') # need spawn to avoid error with fastapi
         self.browser_side, self.agent_side = Pipe()
         self.process = Process(target=self.browser_process,)
         logger.info('Starting browser env...')
