@@ -30,15 +30,15 @@ function JupyterCell({ cell }: IJupyterCell): JSX.Element {
   }
 
   // aggregate all the NON-image lines into a single plaintext.
-  let lines: { type: "plaintext" | "image"; content: string }[] = [];
+  const lines: { type: "plaintext" | "image"; content: string }[] = [];
   let current = "";
-  for (let line of code.split("\n")) {
+  for (const line of code.split("\n")) {
     if (line.startsWith("![image](data:image/png;base64,")) {
       lines.push({ type: "plaintext", content: current });
       lines.push({ type: "image", content: line });
       current = "";
     } else {
-      current += line + "\n";
+      current += `${line}\n`;
     }
   }
   lines.push({ type: "plaintext", content: current });
