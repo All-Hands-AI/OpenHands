@@ -20,9 +20,6 @@ fi
 echo 'export PATH=/swe_util/miniconda3/bin:$PATH' >> ~/.bashrc
 eval "$(/swe_util/miniconda3/bin/conda shell.bash hook)"
 conda init bash
-
-echo 'export SWEUTIL_DIR=/swe_util' >> ~/.bashrc
-# SWE_INSTANCE_ID will be added by the SWEBenchSSHBox
 source ~/.bashrc
 conda config --set changeps1 False
 conda config --append channels conda-forge
@@ -64,29 +61,4 @@ for log_file in /swe_util/eval_data/testbed_logs/*; do
         exit 1
     fi
 done
-
-# # Reset the testbed and install the repo
-# conda activate swe-bench-eval
-
-# mkdir -p $SWEUTIL_DIR/eval_temp
-# mkdir -p $SWEUTIL_DIR/eval_logs
-# output=$(cd $SWEUTIL_DIR/OD-SWE-bench/swebench/harness && python reset_swe_env.py \
-#     --swe_bench_tasks $SWEUTIL_DIR/OD-SWE-bench/swebench/harness/eval_data/instances/swe-bench-test.json \
-#     --temp_dir $SWEUTIL_DIR/eval_temp \
-#     --testbed /workspace \
-#     --conda_path $CACHE_DIR/miniconda3 \
-#     --instance_id $SWE_INSTANCE_ID \
-#     --log_dir $SWEUTIL_DIR/eval_logs \
-#     --timeout 900 \
-#     --verbose)
-
-# REPO_PATH=$(echo "$output" | awk -F': ' '/repo_path:/ {print $2}')
-# echo "Repo Path: $REPO_PATH"
-
-# if [[ "$REPO_PATH" == "None" ]]; then
-#     echo "Error: Failed to retrieve repository path. Tests may not have passed or output was not as expected." >&2
-#     exit 1
-# fi
-
-# # Activate instance-specific environment
-# conda activate $CONDA_ENV_NAME
+echo "All logs contain 'Init Succeeded'. Testbed & conda environment setup is successful."
