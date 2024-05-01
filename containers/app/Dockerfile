@@ -54,7 +54,6 @@ ENV VIRTUAL_ENV=/app/.venv \
     PYTHONPATH='/app'
 
 COPY --chown=opendevin --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-# change ownership of the virtual environment to the sandbox user
 USER root
 RUN chown -R opendevin:opendevin ${VIRTUAL_ENV}
 USER opendevin
@@ -66,7 +65,6 @@ RUN playwright install --with-deps chromium
 
 COPY --chown=opendevin --from=frontend-builder /app/dist ./frontend/dist
 
-# change ownership of the app directory to the sandbox user
 COPY --chown=opendevin ./containers/app/entrypoint.sh /app/entrypoint.sh
 
 USER root
