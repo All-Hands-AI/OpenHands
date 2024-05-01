@@ -1,10 +1,10 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 
 
 @dataclass
 class Event:
     def to_memory(self):
-        return self.__dict__
+        return asdict(self)
 
     def to_dict(self):
         d = self.to_memory()
