@@ -1,14 +1,14 @@
 import json
+import shutil
 import uuid
 from pathlib import Path
 
 import litellm
-from fastapi import Depends, FastAPI, Response, WebSocket, status, UploadFile
+from fastapi import Depends, FastAPI, Response, UploadFile, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
-import shutil
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin import config, files
