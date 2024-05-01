@@ -18,12 +18,6 @@ jobs:
         sandbox: ["ssh", "exec"]
         include:
           - name: "MonologueAgent"
-            agent: "MonologueAgent"
-            embedding-model: "local"
-            sandbox: "exec"
-          - name: MonologueAgent-py311-local
-            python-version: "3.11"
-            agent: "MonologueAgent"
             embedding-model: "local"
           - agent: "MonologueAgent"
             # sufficient to have one agent testing against local sandbox
