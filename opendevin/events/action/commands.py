@@ -2,16 +2,15 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from opendevin.schema import ActionType
-
-from .base import ExecutableAction
+from .action import Action
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
-    from opendevin.observation import CmdOutputObservation, Observation
+    from opendevin.events.observation import CmdOutputObservation, Observation
 
 
 @dataclass
-class CmdRunAction(ExecutableAction):
+class CmdRunAction(Action):
     command: str
     background: bool = False
     action: str = ActionType.RUN
@@ -25,7 +24,7 @@ class CmdRunAction(ExecutableAction):
 
 
 @dataclass
-class CmdKillAction(ExecutableAction):
+class CmdKillAction(Action):
     id: int
     action: str = ActionType.KILL
 

@@ -1,7 +1,7 @@
 import re
 from typing import List, Mapping
 
-from opendevin.action import (
+from opendevin.events.action import (
     Action,
     AgentEchoAction,
     AgentFinishAction,
@@ -9,7 +9,7 @@ from opendevin.action import (
 )
 from opendevin.agent import Agent
 from opendevin.llm.llm import LLM
-from opendevin.observation import (
+from opendevin.events.observation import (
     AgentMessageObservation,
     CmdOutputObservation,
 )

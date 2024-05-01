@@ -3,7 +3,7 @@ from typing import Dict, List
 
 from jinja2 import BaseLoader, Environment
 
-from opendevin.action import Action, action_from_dict
+from opendevin.events.action import Action, action_from_dict
 from opendevin.agent import Agent
 from opendevin.exceptions import LLMOutputError
 from opendevin.llm.llm import LLM

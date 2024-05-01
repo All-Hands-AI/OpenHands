@@ -3,7 +3,7 @@ from typing import List
 
 from opendevin.schema import ObservationType
 
-from .base import Observation
+from .observation import Observation
 
 
 @dataclass

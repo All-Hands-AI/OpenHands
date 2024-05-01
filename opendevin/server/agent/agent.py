@@ -2,7 +2,7 @@ import asyncio
 from typing import Dict, List, Optional
 
 from opendevin import config
-from opendevin.action import (
+from opendevin.events.action import (
     Action,
     NullAction,
 )
@@ -10,7 +10,7 @@ from opendevin.agent import Agent
 from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
 from opendevin.logger import opendevin_logger as logger
-from opendevin.observation import NullObservation, Observation, UserMessageObservation
+from opendevin.events.observation import NullObservation, Observation, UserMessageObservation
 from opendevin.schema import ActionType, ConfigType, TaskState, TaskStateAction
 from opendevin.server.session import session_manager
 

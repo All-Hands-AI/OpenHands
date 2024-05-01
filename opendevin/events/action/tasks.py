@@ -1,17 +1,17 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from opendevin.observation import NullObservation
+from opendevin.events.observation import NullObservation
 from opendevin.schema import ActionType
 
-from .base import ExecutableAction, NotExecutableAction
+from .action import Action
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
 
 
 @dataclass
-class AddTaskAction(ExecutableAction):
+class AddTaskAction(Action):
     parent: str
     goal: str
     subtasks: list = field(default_factory=list)
@@ -28,7 +28,7 @@ class AddTaskAction(ExecutableAction):
 
 
 @dataclass
-class ModifyTaskAction(ExecutableAction):
+class ModifyTaskAction(Action):
     id: str
     state: str
     action: str = ActionType.MODIFY_TASK
@@ -44,7 +44,7 @@ class ModifyTaskAction(ExecutableAction):
 
 
 @dataclass
-class TaskStateChangedAction(NotExecutableAction):
+class TaskStateChangedAction(Action):
     """Fake action, just to notify the client that a task state has changed."""
     task_state: str
     action: str = ActionType.CHANGE_TASK_STATE

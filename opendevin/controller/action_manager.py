@@ -1,10 +1,10 @@
 from typing import List
 
 from opendevin import config
-from opendevin.action import (
+from opendevin.events.action import (
     Action,
 )
-from opendevin.observation import (
+from opendevin.events.observation import (
     AgentErrorObservation,
     CmdOutputObservation,
     NullObservation,

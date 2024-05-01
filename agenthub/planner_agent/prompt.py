@@ -1,7 +1,7 @@
 import json
 from typing import Dict, List, Tuple, Type
 
-from opendevin.action import (
+from opendevin.events.action import (
     Action,
     AddTaskAction,
     AgentFinishAction,
@@ -18,7 +18,7 @@ from opendevin.action import (
     action_from_dict,
 )
 from opendevin.logger import opendevin_logger as logger
-from opendevin.observation import (
+from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
