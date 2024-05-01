@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging
 import os
 import pathlib
@@ -149,6 +150,9 @@ args = parse_arguments()
 
 
 def finalize_config():
+    # Assuming external_db_config is already defined and available
+    config.update(external_db_config)
+
     if config.get(ConfigType.WORKSPACE_MOUNT_REWRITE) and not config.get(ConfigType.WORKSPACE_MOUNT_PATH):
         base = config.get(ConfigType.WORKSPACE_BASE) or os.getcwd()
         parts = config[ConfigType.WORKSPACE_MOUNT_REWRITE].split(':')
@@ -190,3 +194,20 @@ def get(key: ConfigType, required: bool = False):
 _cache_dir = config.get(ConfigType.CACHE_DIR)
 if _cache_dir:
     pathlib.Path(_cache_dir).mkdir(parents=True, exist_ok=True)
+def load_external_db_config():
+    # Load database configuration from a JSON file and return it as a dictionary
+    # This function reads the configuration from 'db_config.json' and parses it.
+    # If the file is not found or there is a decoding error, it handles these exceptions gracefully.
+    try:
+        with open('db_config.json', 'r') as file:
+            config = json.load(file)
+    except FileNotFoundError:
+        print("Database configuration file not found.")
+        config = {}
+    except json.JSONDecodeError:
+        print("Error decoding the database configuration file.")
+        config = {}
+    return config
+
+# Assuming load_external_db_config function is already defined above
+external_db_config = load_external_db_config()
