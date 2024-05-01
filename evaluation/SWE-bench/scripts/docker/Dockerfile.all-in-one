@@ -1,0 +1,57 @@
+# syntax=docker/dockerfile:1.7-labs
+FROM ghcr.io/opendevin/eval-swe-bench:latest
+
+# This Dockefile is used to build the Docker image for the evaluation of the SWE-Bench.
+# YOU SHOULD ENSURE ./eval_workspace CONTAINS THE EVALUATION WORKSPACE (testbed, conda)
+
+RUN mkdir -p /swe_util
+
+# ================== COPY Smaller things ==================
+# copy everything except the folder of `eval_data` or `miniconda3`
+COPY \
+    --exclude=./eval_workspace/eval_data \
+    --exclude=./eval_workspace/miniconda3 \
+    ./eval_workspace/ /swe_util/
+
+# ================== Prepare Eval Data ==================
+# Copy everything in eval_data except the "testbeds"
+COPY \
+    --exclude=./eval_workspace/testbeds \
+    ./eval_workspace/eval_data/ /swe_util/eval_data/
+
+RUN mkdir -p /swe_util/eval_data/testbeds
+
+# COPY testbeds except the larger ones
+COPY \
+    --exclude=./eval_workspace/eval_data/testbeds/matplotlib* \
+    --exclude=./eval_workspace/eval_data/testbeds/scikit-learn* \
+    ./eval_workspace/eval_data/testbeds/ /swe_util/eval_data/testbeds/
+
+# copy the larger ones in separate layers
+COPY ./eval_workspace/eval_data/testbeds/matplotlib* /swe_util/eval_data/testbeds/
+COPY ./eval_workspace/eval_data/testbeds/scikit-learn* /swe_util/eval_data/testbeds/
+
+# ================== Prepare Miniconda3 ==================
+# Copy the Miniconda3 environment
+# copy everything except the folder of `envs` & `pkgs` (two large folders)
+COPY \
+    --exclude=./eval_workspace/miniconda3/envs \
+    --exclude=./eval_workspace/miniconda3/pkgs \
+    ./eval_workspace/miniconda3/ /swe_util/miniconda3/
+
+# copy pkgs in separate layers (~9.4GB)
+COPY ./eval_workspace/miniconda3/pkgs/ /swe_util/miniconda3/pkgs/
+
+# copy envs in separate layers (except matplotlib & scikit-learn - larger ones)
+COPY \
+    --exclude=./eval_workspace/miniconda3/envs/matplotlib* \
+    --exclude=./eval_workspace/miniconda3/envs/scikit-learn* \
+    ./eval_workspace/miniconda3/envs/ /swe_util/miniconda3/envs/
+
+# copy the larger ones in separate layers
+COPY ./eval_workspace/miniconda3/envs/matplotlib* /swe_util/miniconda3/envs/
+COPY ./eval_workspace/miniconda3/envs/scikit-learn* /swe_util/miniconda3/envs/
+
+# BUILD COMMAND
+# cd evaluation/SWE-bench
+# docker build -t ghcr.io/opendevin/eval-swe-bench-all:lite-v1.0 -f ./scripts/docker/Dockerfile.all-in-one .
