@@ -82,7 +82,6 @@ class BrowserEnv:
                     return obs
 
     def close(self):
-        logger.info('Shutting down browser env...')
         self.agent_side.send(('SHUTDOWN', None))
         self.process.join()
 
