@@ -1,13 +1,21 @@
 import React from "react";
+import { useDispatch, useSelector } from "react-redux";
 import ChatInput from "../ChatInput";
 import Chat from "./Chat";
+import { RootState } from "#/store";
+import { addUserMessage } from "#/state/chat";
+import ActionType from "#/types/ActionType";
+import Socket from "#/services/socket";
 
 function ChatInterface() {
-  const [messages, setMessages] = React.useState<Message[]>([]);
+  const { messages } = useSelector((state: RootState) => state.tempChat);
+  const dispatch = useDispatch();
 
   const handleSendMessage = (content: string) => {
-    const message: Message = { sender: "user", content };
-    setMessages((prev) => [...prev, message]);
+    dispatch(addUserMessage(content));
+    const event = { action: ActionType.START, args: { task: content } };
+
+    Socket.send(JSON.stringify(event));
   };
 
   return (
