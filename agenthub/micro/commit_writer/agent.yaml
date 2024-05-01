@@ -1,0 +1,17 @@
+name: CommitWriterAgent
+description: "Write a git commit message for files in the git staging area"
+generates: Action
+inputs: {}
+outputs:
+  answer: string
+devnote: "This agent is special in the sense that it doesn't need a task. Once called,
+  it attempts to read all diff in the git staging area and write a good commit
+  message.
+
+  TODOs:
+  1. The commit message could be (optionally) shown to the customer or
+  other agents, so that CommitWriterAgent could gather feedback to further
+  improve the commit message.
+  2. When the agent cannot compile a commit message (e.g. not git repository, no
+  diff), it should escalate with an explanation.
+  "
