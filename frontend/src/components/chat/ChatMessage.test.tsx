@@ -28,7 +28,9 @@ describe("Message", () => {
       />,
     );
 
-    expect(screen.getByText("console.log('Hello')")).toBeInTheDocument();
-    expect(screen.getByText("console.log('Hello')")).toHaveClass("language-js");
+    // SyntaxHighlighter breaks the code blocks into "tokens"
+    expect(screen.getByText("console")).toBeInTheDocument();
+    expect(screen.getByText("log")).toBeInTheDocument();
+    expect(screen.getByText("'Hello'")).toBeInTheDocument();
   });
 });

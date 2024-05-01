@@ -7,7 +7,7 @@ interface ChatProps {
 
 function Chat({ messages }: ChatProps) {
   return (
-    <div>
+    <div className="flex flex-col gap-3">
       {messages.map((message, index) => (
         <ChatMessage key={index} message={message} />
       ))}
