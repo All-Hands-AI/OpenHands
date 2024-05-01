@@ -1,2 +1,2 @@
 #!/bin/bash
-rm -rf ./docs/modules/python && pydoc-markdown
+pip install pydoc-markdown && rm -rf ./docs/modules/python && pydoc-markdown
