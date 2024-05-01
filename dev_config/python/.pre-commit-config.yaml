@@ -42,7 +42,11 @@ repos:
         always_run: true
         pass_filenames: false
 
-  - repo: https://github.com/NiklasRosenstein/pydoc-markdown
-    rev: develop
+  - repo: local
     hooks:
-      - id: pydoc-markdown
+      - id: pydoc
+        name: pydoc
+        entry: ./dev_config/python/pydoc.sh
+        language: script
+        types: [python]
+        pass_filenames: false

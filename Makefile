@@ -225,6 +225,12 @@ clean:
 	@rm -rf opendevin/.cache
 	@echo "$(GREEN)Caches cleaned up successfully.$(RESET)"
 
+python-docs:
+	@echo "$(YELLOW)Generating documentation...$(RESET)"
+	@rm -rf docs/modules/python
+	@pydoc-markdown
+	@echo "$(GREEN)Documentation generated successfully.$(RESET)"
+
 # Help
 help:
 	@echo "$(BLUE)Usage: make [target]$(RESET)"
