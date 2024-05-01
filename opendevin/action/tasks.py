@@ -1,10 +1,11 @@
 from dataclasses import dataclass, field
-
-from .base import ExecutableAction
-from opendevin.schema import ActionType
-from opendevin.observation import NullObservation
-
 from typing import TYPE_CHECKING
+
+from opendevin.observation import NullObservation
+from opendevin.schema import ActionType
+
+from .base import ExecutableAction, NotExecutableAction
+
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
 
@@ -17,7 +18,8 @@ class AddTaskAction(ExecutableAction):
     action: str = ActionType.ADD_TASK
 
     async def run(self, controller: 'AgentController') -> NullObservation:  # type: ignore
-        controller.state.plan.add_subtask(self.parent, self.goal, self.subtasks)
+        if controller.state is not None:
+            controller.state.plan.add_subtask(self.parent, self.goal, self.subtasks)
         return NullObservation('')
 
     @property
@@ -32,9 +34,21 @@ class ModifyTaskAction(ExecutableAction):
     action: str = ActionType.MODIFY_TASK
 
     async def run(self, controller: 'AgentController') -> NullObservation:  # type: ignore
-        controller.state.plan.set_subtask_state(self.id, self.state)
+        if controller.state is not None:
+            controller.state.plan.set_subtask_state(self.id, self.state)
         return NullObservation('')
 
     @property
     def message(self) -> str:
         return f'Set task {self.id} to {self.state}'
+
+
+@dataclass
+class TaskStateChangedAction(NotExecutableAction):
+    """Fake action, just to notify the client that a task state has changed."""
+    task_state: str
+    action: str = ActionType.CHANGE_TASK_STATE
+
+    @property
+    def message(self) -> str:
+        return f'Task state changed to {self.task_state}'

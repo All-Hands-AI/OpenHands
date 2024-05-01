@@ -25,22 +25,3 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
-
-.editor-accordion h2 > button{
-  padding: 0;
-}
-
-.editor-accordion-title {
-  color: var(--bg-neutral-400) !important;
-}
-
-.editor-accordion-content {
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-}
-
-.editor-accordion-content ul {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}

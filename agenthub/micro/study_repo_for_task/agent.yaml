@@ -1,0 +1,6 @@
+name: StudyRepoForTaskAgent
+description: Given a particular task, finds and describes all relevant parts of the codebase
+inputs:
+  task: string
+outputs:
+  summary: string

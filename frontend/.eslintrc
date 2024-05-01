@@ -14,7 +14,17 @@
   ],
   "plugins": ["prettier"],
   "rules": {
-    "prettier/prettier": ["error"]
+    "prettier/prettier": ["error"],
+    // Resolves https://stackoverflow.com/questions/59265981/typescript-eslint-missing-file-extension-ts-import-extensions/59268871#59268871
+    "import/extensions": [
+      "error",
+      "ignorePackages",
+      {
+        "": "never",
+        "ts": "never",
+        "tsx": "never"
+      }
+    ]
   },
   "settings": {
     "react": {
@@ -47,11 +57,8 @@
               "some": [ "nesting", "id" ]
           }
         }],
-        "react/no-array-index-key": "off",
-        "react/jsx-no-undef": "warn",
-        "react-hooks/exhaustive-deps": "warn"
-      },
-      "parserOptions": {
+        "react/no-array-index-key": "off"
+      },"parserOptions": {
         "project": ["**/tsconfig.json"]
       }
     }

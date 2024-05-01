@@ -1,10 +1,11 @@
-from .base import Observation, NullObservation
-from .run import CmdOutputObservation
+from .base import NullObservation, Observation
 from .browse import BrowserOutputObservation
-from .files import FileReadObservation, FileWriteObservation
-from .message import UserMessageObservation, AgentMessageObservation
-from .recall import AgentRecallObservation
+from .delegate import AgentDelegateObservation
 from .error import AgentErrorObservation
+from .files import FileReadObservation, FileWriteObservation
+from .message import AgentMessageObservation, UserMessageObservation
+from .recall import AgentRecallObservation
+from .run import CmdOutputObservation
 
 observations = (
     CmdOutputObservation,
@@ -14,6 +15,7 @@ observations = (
     UserMessageObservation,
     AgentMessageObservation,
     AgentRecallObservation,
+    AgentDelegateObservation,
     AgentErrorObservation,
 )
 

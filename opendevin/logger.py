@@ -3,12 +3,15 @@ import os
 import sys
 import traceback
 from datetime import datetime
-from opendevin import config
 from typing import Literal, Mapping
+
 from termcolor import colored
 
+from opendevin import config
+from opendevin.schema.config import ConfigType
+
 DISABLE_COLOR_PRINTING = (
-    config.get('DISABLE_COLOR').lower() == 'true'
+    config.get(ConfigType.DISABLE_COLOR).lower() == 'true'
 )
 
 ColorType = Literal[
@@ -45,10 +48,12 @@ class ColoredFormatter(logging.Formatter):
         if msg_type in LOG_COLORS and not DISABLE_COLOR_PRINTING:
             msg_type_color = colored(msg_type, LOG_COLORS[msg_type])
             msg = colored(record.msg, LOG_COLORS[msg_type])
-            time_str = colored(self.formatTime(record, self.datefmt), 'green')
+            time_str = colored(self.formatTime(record, self.datefmt), LOG_COLORS[msg_type])
             name_str = colored(record.name, 'cyan')
             level_str = colored(record.levelname, 'yellow')
-            return f'{time_str} - {name_str}:{level_str}: {record.filename}:{record.lineno}\n{msg_type_color}\n{msg}'
+            if msg_type in ['ERROR', 'INFO']:
+                return f'{time_str} - {name_str}:{level_str}: {record.filename}:{record.lineno}\n{msg_type_color}\n{msg}'
+            return f'{time_str} - {msg_type_color}\n{msg}'
         elif msg_type == 'STEP':
             msg = '\n\n==============\n' + record.msg + '\n'
             return f'{msg}'

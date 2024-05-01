@@ -1,0 +1,6 @@
+name: CoderAgent
+description: Given a particular task, and a detailed description of the codebase, accomplishes the task
+inputs:
+  task: string
+  codebase_summary: string
+outputs: {}

@@ -12,6 +12,20 @@ This guide is for people working on OpenDevin and editing the source code.
 
 Make sure you have all these dependencies installed before moving on to `make build`.
 
+#### Develop without sudo access
+If you want to develop without system admin/sudo access to upgrade/install `Python` and/or `NodeJs`, you can use `conda` or `mamba` to manage the packages for you:
+
+```bash
+# Download and install Mamba (a faster version of conda)
+curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+bash Miniforge3-$(uname)-$(uname -m).sh
+
+# Install Python 3.11, nodejs, and poetry
+mamba install python=3.11
+mamba install conda-forge::nodejs
+mamba install conda-forge::poetry
+```
+
 ### 2. Build and Setup The Environment
 
 - **Build the Project:** Begin by building the project, which includes setting up the environment and installing dependencies. This step ensures that OpenDevin is ready to run smoothly on your system.
@@ -30,7 +44,7 @@ To configure the LM of your choice, follow these steps:
    ```bash
    make setup-config
    ```
-   This command will prompt you to enter the LLM API key and model name, ensuring that OpenDevin is tailored to your specific needs.
+   This command will prompt you to enter the LLM API key, model name, and other variables ensuring that OpenDevin is tailored to your specific needs. Note that the model name will apply only when you run headless. If you use the UI, please set the model in the UI.
 
 **Note on Alternative Models:**
 Some alternative models may prove more challenging to tame than others. Fear not, brave adventurer! We shall soon unveil LLM-specific documentation to guide you on your quest. And if you've already mastered the art of wielding a model other than OpenAI's GPT, we encourage you to [share your setup instructions with us](https://github.com/OpenDevin/OpenDevin/issues/417).
@@ -64,3 +78,15 @@ There is also [documentation for running with local models using ollama](./docs/
     ```bash
     make help
     ```
+
+### 8. Testing
+
+#### Unit tests
+
+```bash
+poetry run pytest ./tests/unit/test_sandbox.py
+```
+
+#### Integration tests
+
+Please refer to [this README](./tests/integration/README.md) for details.

@@ -1,31 +1,42 @@
-from enum import Enum
+from pydantic import BaseModel, Field
+
+__all__ = [
+    'ObservationType'
+]
 
 
-class ObservationType(str, Enum):
-    READ = 'read'
+class ObservationTypeSchema(BaseModel):
+    READ: str = Field(default='read')
     """The content of a file
     """
 
-    WRITE = 'write'
+    WRITE: str = Field(default='write')
 
-    BROWSE = 'browse'
+    BROWSE: str = Field(default='browse')
     """The HTML content of a URL
     """
 
-    RUN = 'run'
+    RUN: str = Field(default='run')
     """The output of a command
     """
 
-    RECALL = 'recall'
+    RECALL: str = Field(default='recall')
     """The result of a search
     """
 
-    CHAT = 'chat'
+    CHAT: str = Field(default='chat')
     """A message from the user
     """
 
-    MESSAGE = 'message'
+    DELEGATE: str = Field(default='delegate')
+    """The result of a task delegated to another agent
+    """
 
-    ERROR = 'error'
+    MESSAGE: str = Field(default='message')
 
-    NULL = 'null'
+    ERROR: str = Field(default='error')
+
+    NULL: str = Field(default='null')
+
+
+ObservationType = ObservationTypeSchema()

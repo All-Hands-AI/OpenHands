@@ -1,5 +1,6 @@
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING
+
 from opendevin.schema import ActionType
 
 if TYPE_CHECKING:
@@ -12,13 +13,18 @@ class Action:
     async def run(self, controller: 'AgentController') -> 'Observation':
         raise NotImplementedError
 
-    def to_dict(self):
+    def to_memory(self):
         d = asdict(self)
         try:
             v = d.pop('action')
         except KeyError:
             raise NotImplementedError(f'{self=} does not have action attribute set')
-        return {'action': v, 'args': d, 'message': self.message}
+        return {'action': v, 'args': d}
+
+    def to_dict(self):
+        d = self.to_memory()
+        d['message'] = self.message
+        return d
 
     @property
     def executable(self) -> bool:
@@ -46,7 +52,6 @@ class NotExecutableAction(Action):
 @dataclass
 class NullAction(NotExecutableAction):
     """An action that does nothing.
-    This is used when the agent need to receive user follow-up messages from the frontend.
     """
 
     action: str = ActionType.NULL

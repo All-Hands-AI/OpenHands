@@ -85,5 +85,6 @@ Please refer to the README in each module:
     - [mock server](./opendevin/mock/README.md)
 
 ## Tests
-TODO: make sure code pass the test before submit.
-
+Please navigate to `tests` folder to see existing test suites.
+At the moment, we have two kinds of tests: `unit` and `integration`. Please refer to the README for each test suite. These tests also run on CI to ensure quality of
+the project.

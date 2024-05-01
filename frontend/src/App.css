@@ -2,17 +2,3 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-.tab {
-  padding: 10px 20px;
-  cursor: pointer;
-  color: #ffffffb3;
-  font-weight: light;
-  position: relative;
-}
-
-.tab.active {
-  color: #fff;
-  font-weight: bolder;
-}
-

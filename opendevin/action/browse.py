@@ -1,10 +1,12 @@
-import os
 import base64
+import os
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+from playwright.async_api import async_playwright
+
 from opendevin.observation import BrowserOutputObservation
 from opendevin.schema import ActionType
-from typing import TYPE_CHECKING
-from playwright.async_api import async_playwright
 
 from .base import ExecutableAction
 
@@ -26,6 +28,13 @@ class BrowseURLAction(ExecutableAction):
                 browser = await p.chromium.launch()
                 page = await browser.new_page()
                 response = await page.goto(asked_url)
+                try:
+                    # domcontentloaded: Wait for the DOMContentLoaded event to be fired.
+                    # load: Wait for the load event to be fired.
+                    # networkidle: Wait until there are no more network connections
+                    await page.wait_for_load_state('networkidle', timeout=3000)
+                except TimeoutError:
+                    pass
                 # content = await page.content()
                 inner_text = await page.evaluate('() => document.body.innerText')
                 screenshot_bytes = await page.screenshot(full_page=True)
@@ -40,10 +49,7 @@ class BrowseURLAction(ExecutableAction):
                 )
         except Exception as e:
             return BrowserOutputObservation(
-                content=str(e),
-                screenshot='',
-                error=True,
-                url=asked_url
+                content=str(e), screenshot='', error=True, url=asked_url
             )
 
     @property

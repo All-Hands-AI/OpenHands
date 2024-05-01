@@ -1,7 +1,8 @@
 import atexit
 
-from opendevin.server.session import session_manager
 from opendevin.logger import opendevin_logger as logger
+from opendevin.server.session import session_manager
+
 from .agent import AgentUnit
 
 
@@ -27,6 +28,7 @@ class AgentManager:
         """Dispatches actions to the agent from the client."""
         if sid not in self.sid_to_agent:
             # self.register_agent(sid)  # auto-register agent, may be opened later
+            logger.error(f'Agent not registered: {sid}')
             await session_manager.send_error(sid, 'Agent not registered')
             return
 

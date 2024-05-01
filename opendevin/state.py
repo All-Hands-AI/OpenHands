@@ -1,15 +1,14 @@
 from dataclasses import dataclass, field
-from typing import List, Tuple
-
-from opendevin.plan import Plan
+from typing import Dict, List, Tuple
 
 from opendevin.action import (
     Action,
 )
 from opendevin.observation import (
-    Observation,
     CmdOutputObservation,
+    Observation,
 )
+from opendevin.plan import Plan
 
 
 @dataclass
@@ -23,3 +22,5 @@ class State:
     history: List[Tuple[Action, Observation]] = field(default_factory=list)
     updated_info: List[Tuple[Action, Observation]
                        ] = field(default_factory=list)
+    inputs: Dict = field(default_factory=dict)
+    outputs: Dict = field(default_factory=dict)

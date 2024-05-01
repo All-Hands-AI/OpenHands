@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from .base import ExecutableAction
 from opendevin.schema import ActionType
+
+from .base import ExecutableAction
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
-    from opendevin.observation import CmdOutputObservation
+    from opendevin.observation import CmdOutputObservation, Observation
 
 
 @dataclass
@@ -15,7 +16,7 @@ class CmdRunAction(ExecutableAction):
     background: bool = False
     action: str = ActionType.RUN
 
-    async def run(self, controller: 'AgentController') -> 'CmdOutputObservation':
+    async def run(self, controller: 'AgentController') -> 'Observation':
         return controller.action_manager.run_command(self.command, self.background)
 
     @property

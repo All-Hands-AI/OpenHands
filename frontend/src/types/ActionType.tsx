@@ -29,6 +29,14 @@ enum ActionType {
   // If you're absolutely certain that you've completed your task and have tested your work,
   // use the finish action to stop working.
   FINISH = "finish",
+
+  // Adds a task to the plan.
+  ADD_TASK = "add_task",
+
+  // Updates a task in the plan.
+  MODIFY_TASK = "modify_task",
+
+  CHANGE_TASK_STATE = "change_task_state",
 }
 
 export default ActionType;

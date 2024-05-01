@@ -1,0 +1,69 @@
+name: Use OpenDevin to Review Pull Request
+
+on:
+  pull_request:
+    types: [synchronize, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  dogfood:
+    if: contains(github.event.pull_request.labels.*.name, 'review-this')
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/opendevin/opendevin
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+
+    steps:
+    - name: install git, github cli
+      run: |
+        apt-get install -y git gh
+        git config --global --add safe.directory $PWD
+
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.base.ref }} # check out the target branch
+
+    - name: Download Diff
+      run: |
+        curl -O "${{ github.event.pull_request.diff_url }}" -L
+
+    - name: Write Task File
+      run: |
+        echo "Your coworker wants to apply a pull request to this project. Read and review ${{ github.event.pull_request.number }}.diff file. Create a review-${{ github.event.pull_request.number }}.txt and write your concise comments and suggestions there." > task.txt
+        echo "" >> task.txt
+        echo "Title" >> task.txt
+        echo "${{ github.event.pull_request.title }}" >> task.txt
+        echo "" >> task.txt
+        echo "Description" >> task.txt
+        echo "${{ github.event.pull_request.body }}" >> task.txt
+        echo "" >> task.txt
+        echo "Diff file is: ${{ github.event.pull_request.number }}.diff" >> task.txt
+
+    - name: Run OpenDevin
+      env:
+        LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        SANDBOX_TYPE: exec
+      run: |
+        WORKSPACE_MOUNT_PATH=$GITHUB_WORKSPACE python ./opendevin/main.py -i 50 -f task.txt -d $GITHUB_WORKSPACE
+        rm task.txt
+
+    - name: Check if review file is non-empty
+      id: check_file
+      run: |
+        ls -la
+        if [[ -s review-${{ github.event.pull_request.number }}.txt ]]; then
+          echo "non_empty=true" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
+
+    - name: Create PR review if file is non-empty
+      env:
+        GH_TOKEN: ${{ github.token }}
+      if: steps.check_file.outputs.non_empty == 'true'
+      run: |
+        gh pr review ${{ github.event.pull_request.number }} --comment --body-file "review-${{ github.event.pull_request.number }}.txt"
