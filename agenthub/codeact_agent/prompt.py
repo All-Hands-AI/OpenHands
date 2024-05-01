@@ -40,9 +40,9 @@ The assistant should stop <execute> and provide an answer when they have already
 
 {_COMMAND_DOCS}
 
-Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
 The assistant's response should be concise, but do express their thoughts.
 Try to include one of <execute_ipython> or <execute_bash> in each of your responses, unless it is a direct answer to a question OR a message to the user.
+IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
 """
 
 EXAMPLES = """

@@ -3,6 +3,14 @@ sidebar_label: codeact_agent
 title: agenthub.codeact_agent.codeact_agent
 ---
 
+#### truncate\_observation
+
+```python
+def truncate_observation(observation: str, max_chars: int = 5000) -> str
+```
+
+Truncate the middle of the observation if it is too long.
+
 ## CodeActAgent Objects
 
 ```python
