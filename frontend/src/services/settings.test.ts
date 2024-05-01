@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, Mock } from "vitest";
 import {
   DEFAULT_SETTINGS,
+  Settings,
   getSettings,
   getSettingsDifference,
   saveSettings,
@@ -18,7 +19,8 @@ describe("getSettings", () => {
     (localStorage.getItem as Mock)
       .mockReturnValueOnce("llm_value")
       .mockReturnValueOnce("agent_value")
-      .mockReturnValueOnce("language_value");
+      .mockReturnValueOnce("language_value")
+      .mockReturnValueOnce("api_key");
 
     const settings = getSettings();
 
@@ -26,11 +28,13 @@ describe("getSettings", () => {
       LLM_MODEL: "llm_value",
       AGENT: "agent_value",
       LANGUAGE: "language_value",
+      LLM_API_KEY: "api_key",
     });
   });
 
   it("should handle return defaults if localStorage key does not exist", () => {
     (localStorage.getItem as Mock)
+      .mockReturnValueOnce(null)
       .mockReturnValueOnce(null)
       .mockReturnValueOnce(null)
       .mockReturnValueOnce(null);
@@ -41,16 +45,18 @@ describe("getSettings", () => {
       LLM_MODEL: DEFAULT_SETTINGS.LLM_MODEL,
       AGENT: DEFAULT_SETTINGS.AGENT,
       LANGUAGE: DEFAULT_SETTINGS.LANGUAGE,
+      LLM_API_KEY: "",
     });
   });
 });
 
 describe("saveSettings", () => {
   it("should save the settings", () => {
-    const settings = {
+    const settings: Settings = {
       LLM_MODEL: "llm_value",
       AGENT: "agent_value",
       LANGUAGE: "language_value",
+      LLM_API_KEY: "some_key",
     };
 
     saveSettings(settings);
@@ -60,6 +66,10 @@ describe("saveSettings", () => {
     expect(localStorage.setItem).toHaveBeenCalledWith(
       "LANGUAGE",
       "language_value",
+    );
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      "LLM_API_KEY",
+      "some_key",
     );
   });
 

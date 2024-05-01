@@ -13,8 +13,8 @@ from opendevin.observation import (
     AgentMessageObservation,
     CmdOutputObservation,
 )
+from opendevin.sandbox.plugins import JupyterRequirement, PluginRequirement
 from opendevin.state import State
-from opendevin.sandbox.plugins import PluginRequirement, JupyterRequirement
 
 SYSTEM_MESSAGE = """You are a helpful assistant. You will be provided access (as root) to a bash shell to complete user-provided tasks.
 You will be able to execute commands in the bash shell, interact with the file system, install packages, and receive the output of your commands.

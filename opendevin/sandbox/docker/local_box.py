@@ -1,13 +1,14 @@
-import subprocess
 import atexit
 import os
+import subprocess
 import sys
-from typing import Tuple, Dict
-from opendevin.sandbox.sandbox import Sandbox
-from opendevin.sandbox.process import Process
-from opendevin.sandbox.docker.process import DockerProcess
-from opendevin.logger import opendevin_logger as logger
+from typing import Dict, Tuple
+
 from opendevin import config
+from opendevin.logger import opendevin_logger as logger
+from opendevin.sandbox.docker.process import DockerProcess
+from opendevin.sandbox.process import Process
+from opendevin.sandbox.sandbox import Sandbox
 from opendevin.schema.config import ConfigType
 
 # ===============================================================================

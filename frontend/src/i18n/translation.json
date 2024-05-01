@@ -324,5 +324,21 @@
   "SETTINGS$DISABLED_RUNNING": {
     "en": "Cannot be changed while the agent is running.",
     "de": "Kann nicht geändert werden während ein Task ausgeführt wird."
+  },
+  "SETTINGS$API_KEY_PLACEHOLDER": {
+    "en": "Enter your API key.",
+    "de": "Model API key."
+  },
+  "CODE_EDITOR$EMPTY_MESSAGE": {
+    "en": "No file selected.",
+    "de": "Keine Datei ausgewählt."
+  },
+  "BROWSER$EMPTY_MESSAGE": {
+    "en": "No page loaded.",
+    "de": "Keine Seite geladen."
+  },
+  "PLANNER$EMPTY_MESSAGE": {
+    "en": "No plan created.",
+    "de": "Kein Plan erstellt."
   }
 }
