@@ -17,6 +17,3 @@ class Observation(Event):
             'content': content,
             'extras': extras,
         }
-
-
-

@@ -24,4 +24,3 @@ class Action(Event):
     @property
     def executable(self) -> bool:
         raise NotImplementedError
-
