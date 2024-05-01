@@ -1131,16 +1131,6 @@ files = [
 test = ["black", "pytest"]
 
 [[package]]
-name = "dotenv"
-version = "0.0.5"
-description = "Handle .env files"
-optional = false
-python-versions = "*"
-files = [
-    {file = "dotenv-0.0.5.tar.gz", hash = "sha256:b58d2ab3f83dbd4f8a362b21158a606bee87317a9444485566b3c8f0af847091"},
-]
-
-[[package]]
 name = "e2b"
 version = "0.14.14"
 description = "E2B SDK that give agents cloud environments"
@@ -1969,6 +1959,19 @@ files = [
 
 [package.extras]
 qa = ["pytest", "pytest-cov", "tox"]
+
+[[package]]
+name = "jwt"
+version = "1.3.1"
+description = "JSON Web Token library for Python 3."
+optional = false
+python-versions = ">= 3.6"
+files = [
+    {file = "jwt-1.3.1-py3-none-any.whl", hash = "sha256:61c9170f92e736b530655e75374681d4fcca9cfa8763ab42be57353b2b203494"},
+]
+
+[package.dependencies]
+cryptography = ">=3.1,<3.4.0 || >3.4.0"
 
 [[package]]
 name = "kiwisolver"
@@ -6290,4 +6293,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "1c23e5e8987583d1a13198f62ad9a5fa340a2f9fa1ed9a0d107e7edd14b44b5b"
+content-hash = "54080a7a5f24b8d8010772ae67da034884361e52e07d09ff8c62b7b5004b07fc"
