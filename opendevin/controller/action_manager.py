@@ -7,7 +7,6 @@ from opendevin.events.action import (
 from opendevin.events.observation import (
     AgentErrorObservation,
     CmdOutputObservation,
-    NullObservation,
     Observation,
 )
 from opendevin.sandbox import DockerExecBox, DockerSSHBox, E2BBox, LocalBox, Sandbox

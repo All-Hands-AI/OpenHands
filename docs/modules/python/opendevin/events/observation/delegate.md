@@ -10,6 +10,5 @@ title: opendevin.events.observation.delegate
 class AgentDelegateObservation(Observation)
 ```
 
-This data class represents a delegate observation.
-This is used when the produced action is NOT executable.
+This data class represents the result from delegating to another agent
 
