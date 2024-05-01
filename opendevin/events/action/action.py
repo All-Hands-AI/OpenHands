@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 @dataclass
 class Action(Event):
     async def run(self, controller: 'AgentController') -> 'Observation':
-        raise NotImplementedError
+        return NullObservation('')
 
     def to_memory(self):
         d = super().to_memory()
@@ -20,6 +20,3 @@ class Action(Event):
         except KeyError:
             raise NotImplementedError(f'{self=} does not have action attribute set')
         return {'action': v, 'args': d}
-
-    async def run(self, controller: 'AgentController') -> 'Observation':
-        return NullObservation('')
