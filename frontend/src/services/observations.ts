@@ -10,6 +10,10 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.RUN:
       store.dispatch(appendOutput(message.content));
       break;
+    case ObservationType.RUN_IPYTHON:
+      // FIXME: render this as markdown
+      store.dispatch(appendOutput(message.content));
+      break;
     case ObservationType.BROWSE:
       if (message.extras?.screenshot) {
         store.dispatch(setScreenshotSrc(message.extras.screenshot));

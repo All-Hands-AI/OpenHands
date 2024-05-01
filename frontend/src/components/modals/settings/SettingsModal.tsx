@@ -76,8 +76,14 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     i18next.changeLanguage(settings.LANGUAGE);
     initializeAgent(settings); // reinitialize the agent with the new settings
 
+    const sensitiveKeys = ['LLM_API_KEY'];
+
     Object.entries(updatedSettings).forEach(([key, value]) => {
-      toast.settingsChanged(`${key} set to "${value}"`);
+        if (!sensitiveKeys.includes(key)) {
+            toast.settingsChanged(`${key} set to "${value}"`);
+        } else {
+            toast.settingsChanged(`${key} has been updated securely.`);
+        }
     });
 
     localStorage.setItem(
