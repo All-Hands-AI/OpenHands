@@ -19,3 +19,4 @@ docker run \
     -e UID=$(id -u) \
     --rm -it $EVAL_DOCKER_IMAGE \
     bash -c "useradd -rm -d /home/opendevin -s /bin/bash -u $(id -u) opendevin && su opendevin -c 'bash /swe_util/swe_lite_env_setup.sh'"
+#
