@@ -1,7 +1,6 @@
 from opendevin.events import Event
 
 class Observation(Event):
-    type_key: str = 'observation'
     observation: str
     content: str
 

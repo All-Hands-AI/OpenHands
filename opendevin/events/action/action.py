@@ -1,7 +1,6 @@
 from opendevin.events import Event
 
 class Action(Event):
-    type_key: str = 'action'
     action: str
 
     async def run(self, controller: 'AgentController') -> 'Observation':

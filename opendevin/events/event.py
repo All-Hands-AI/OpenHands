@@ -1,6 +1,4 @@
 class Event:
-    type_key: str
-
     def to_memory(self):
         return asdict(self)
 
