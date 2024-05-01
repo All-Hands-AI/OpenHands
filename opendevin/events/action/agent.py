@@ -36,9 +36,6 @@ class AgentThinkAction(Action):
     thought: str
     action: str = ActionType.THINK
 
-    async def run(self, controller: 'AgentController') -> 'Observation':
-        raise NotImplementedError
-
     @property
     def message(self) -> str:
         return self.thought
@@ -71,9 +68,6 @@ class AgentSummarizeAction(Action):
 class AgentFinishAction(Action):
     outputs: Dict = field(default_factory=dict)
     action: str = ActionType.FINISH
-
-    async def run(self, controller: 'AgentController') -> 'Observation':
-        raise NotImplementedError
 
     @property
     def message(self) -> str:
