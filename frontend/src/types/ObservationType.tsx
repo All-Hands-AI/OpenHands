@@ -8,6 +8,9 @@ enum ObservationType {
   // The output of a command
   RUN = "run",
 
+  // The output of an IPython command
+  RUN_IPYTHON = "run_ipython",
+
   // The result of a search
   RECALL = "recall",
 

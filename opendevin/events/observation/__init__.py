@@ -1,5 +1,5 @@
 from .browse import BrowserOutputObservation
-from .commands import CmdOutputObservation
+from .commands import CmdOutputObservation, IPythonRunCellObservation
 from .delegate import AgentDelegateObservation
 from .empty import NullObservation
 from .error import AgentErrorObservation
@@ -41,6 +41,7 @@ __all__ = [
     'Observation',
     'NullObservation',
     'CmdOutputObservation',
+    'IPythonRunCellObservation',
     'BrowserOutputObservation',
     'FileReadObservation',
     'FileWriteObservation',
