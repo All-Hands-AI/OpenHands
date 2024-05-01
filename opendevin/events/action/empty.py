@@ -1,8 +1,11 @@
+from dataclasses import dataclass
+
 from opendevin.schema import ActionType
 
 from .action import Action
 
 
+@dataclass
 class NullAction(Action):
     """An action that does nothing.
     """

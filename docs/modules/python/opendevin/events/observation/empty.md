@@ -6,6 +6,7 @@ title: opendevin.events.observation.empty
 ## NullObservation Objects
 
 ```python
+@dataclass
 class NullObservation(Observation)
 ```
 

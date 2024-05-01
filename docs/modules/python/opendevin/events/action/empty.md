@@ -6,6 +6,7 @@ title: opendevin.events.action.empty
 ## NullAction Objects
 
 ```python
+@dataclass
 class NullAction(Action)
 ```
 

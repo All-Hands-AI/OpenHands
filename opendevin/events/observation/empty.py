@@ -1,9 +1,11 @@
+from dataclasses import dataclass
 
 from opendevin.schema import ObservationType
 
 from .observation import Observation
 
 
+@dataclass
 class NullObservation(Observation):
     """
     This data class represents a null observation.
