@@ -10,6 +10,10 @@ class TaskState(str, Enum):
     """The task is running.
     """
 
+    AWAITING_USER_INPUT = 'awaiting_user_input'
+    """The task is awaiting user input.
+    """
+
     PAUSED = 'paused'
     """The task is paused.
     """

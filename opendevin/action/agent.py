@@ -2,12 +2,13 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Dict
 
 from opendevin.observation import (
-    AgentRecallObservation,
     AgentMessageObservation,
+    AgentRecallObservation,
     NullObservation,
     Observation,
 )
 from opendevin.schema import ActionType
+
 from .base import ExecutableAction, NotExecutableAction
 
 if TYPE_CHECKING:
@@ -17,11 +18,12 @@ if TYPE_CHECKING:
 @dataclass
 class AgentRecallAction(ExecutableAction):
     query: str
+    thought: str = ''
     action: str = ActionType.RECALL
 
     async def run(self, controller: 'AgentController') -> AgentRecallObservation:
         return AgentRecallObservation(
-            content='Recalling memories...',
+            content='',
             memories=controller.agent.search_memory(self.query),
         )
 
@@ -41,6 +43,22 @@ class AgentThinkAction(NotExecutableAction):
     @property
     def message(self) -> str:
         return self.thought
+
+
+@dataclass
+class AgentTalkAction(NotExecutableAction):
+    content: str
+    action: str = ActionType.TALK
+
+    async def run(self, controller: 'AgentController') -> 'Observation':
+        raise NotImplementedError
+
+    @property
+    def message(self) -> str:
+        return self.content
+
+    def __str__(self) -> str:
+        return self.content
 
 
 @dataclass
@@ -69,6 +87,7 @@ class AgentSummarizeAction(NotExecutableAction):
 @dataclass
 class AgentFinishAction(NotExecutableAction):
     outputs: Dict = field(default_factory=dict)
+    thought: str = ''
     action: str = ActionType.FINISH
 
     async def run(self, controller: 'AgentController') -> 'Observation':
@@ -83,6 +102,7 @@ class AgentFinishAction(NotExecutableAction):
 class AgentDelegateAction(ExecutableAction):
     agent: str
     inputs: dict
+    thought: str = ''
     action: str = ActionType.DELEGATE
 
     async def run(self, controller: 'AgentController') -> 'Observation':

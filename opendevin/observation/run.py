@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 
-from .base import Observation
 from opendevin.schema import ObservationType
+
+from .base import Observation
 
 
 @dataclass
@@ -22,3 +23,21 @@ class CmdOutputObservation(Observation):
     @property
     def message(self) -> str:
         return f'Command `{self.command}` executed with exit code {self.exit_code}.'
+
+
+@dataclass
+class IPythonRunCellObservation(Observation):
+    """
+    This data class represents the output of a IPythonRunCellAction.
+    """
+
+    code: str
+    observation: str = ObservationType.RUN_IPYTHON
+
+    @property
+    def error(self) -> bool:
+        return False  # IPython cells do not return exit codes
+
+    @property
+    def message(self) -> str:
+        return 'Coded executed in IPython cell.'

@@ -1,9 +1,10 @@
-from opendevin import config
-from opendevin.schema import ConfigType
-from opendevin.action import fileop
 from pathlib import Path
+
 import pytest
 
+from opendevin import config
+from opendevin.action import fileop
+from opendevin.schema import ConfigType
 
 
 def test_resolve_path():

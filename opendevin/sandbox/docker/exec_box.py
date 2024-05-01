@@ -2,22 +2,22 @@ import atexit
 import concurrent.futures
 import os
 import sys
+import tarfile
 import time
 import uuid
-import tarfile
-from glob import glob
 from collections import namedtuple
+from glob import glob
 from typing import Dict, List, Tuple
 
 import docker
 
 from opendevin import config
-from opendevin.logger import opendevin_logger as logger
-from opendevin.sandbox.sandbox import Sandbox
-from opendevin.sandbox.process import Process
-from opendevin.sandbox.docker.process import DockerProcess
-from opendevin.schema import ConfigType
 from opendevin.exceptions import SandboxInvalidBackgroundCommandError
+from opendevin.logger import opendevin_logger as logger
+from opendevin.sandbox.docker.process import DockerProcess
+from opendevin.sandbox.process import Process
+from opendevin.sandbox.sandbox import Sandbox
+from opendevin.schema import ConfigType
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
@@ -122,7 +122,10 @@ class DockerExecBox(Sandbox):
                     self.container.exec_run(
                         f'kill -9 {pid}', workdir=SANDBOX_WORKSPACE_DIR)
                 return -1, f'Command: "{cmd}" timed out'
-        return exit_code, logs.decode('utf-8').strip()
+        logs_out = logs.decode('utf-8')
+        if logs_out.endswith('\n'):
+            logs_out = logs_out[:-1]
+        return exit_code, logs_out
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         # mkdir -p sandbox_dest if it doesn't exist

@@ -1,27 +1,30 @@
+from ..exceptions import AgentMalformedActionError
+from .agent import (
+    AgentDelegateAction,
+    AgentEchoAction,
+    AgentFinishAction,
+    AgentRecallAction,
+    AgentSummarizeAction,
+    AgentTalkAction,
+    AgentThinkAction,
+)
 from .base import Action, NullAction
-from .bash import CmdRunAction, CmdKillAction
+from .bash import CmdKillAction, CmdRunAction, IPythonRunCellAction
 from .browse import BrowseURLAction
 from .fileop import FileReadAction, FileWriteAction
 from .github import GitHubPushAction
-from .agent import (
-    AgentRecallAction,
-    AgentThinkAction,
-    AgentFinishAction,
-    AgentEchoAction,
-    AgentSummarizeAction,
-    AgentDelegateAction,
-)
 from .tasks import AddTaskAction, ModifyTaskAction
-from ..exceptions import AgentMalformedActionError
 
 actions = (
     CmdKillAction,
     CmdRunAction,
+    IPythonRunCellAction,
     BrowseURLAction,
     FileReadAction,
     FileWriteAction,
     AgentRecallAction,
     AgentThinkAction,
+    AgentTalkAction,
     AgentFinishAction,
     AgentDelegateAction,
     AddTaskAction,
@@ -61,10 +64,12 @@ __all__ = [
     'FileWriteAction',
     'AgentRecallAction',
     'AgentThinkAction',
+    'AgentTalkAction',
     'AgentFinishAction',
     'AgentDelegateAction',
     'AgentEchoAction',
     'AgentSummarizeAction',
     'AddTaskAction',
     'ModifyTaskAction',
+    'IPythonRunCellAction'
 ]

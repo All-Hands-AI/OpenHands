@@ -1,18 +1,16 @@
 import os
-
 from dataclasses import dataclass
 from pathlib import Path
 
+from opendevin import config
 from opendevin.observation import (
-    Observation,
+    AgentErrorObservation,
     FileReadObservation,
     FileWriteObservation,
-    AgentErrorObservation,
+    Observation,
 )
-
-from opendevin.schema import ActionType
 from opendevin.sandbox import E2BBox
-from opendevin import config
+from opendevin.schema import ActionType
 from opendevin.schema.config import ConfigType
 
 from .base import ExecutableAction
@@ -52,7 +50,7 @@ class FileReadAction(ExecutableAction):
     path: str
     start: int = 0
     end: int = -1
-    thoughts: str = ''
+    thought: str = ''
     action: str = ActionType.READ
 
     def _read_lines(self, all_lines: list[str]):
@@ -102,7 +100,7 @@ class FileWriteAction(ExecutableAction):
     content: str
     start: int = 0
     end: int = -1
-    thoughts: str = ''
+    thought: str = ''
     action: str = ActionType.WRITE
 
     def _insert_lines(self, to_insert: list[str], original: list[str]):

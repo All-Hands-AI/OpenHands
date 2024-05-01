@@ -3,8 +3,8 @@ import sys
 from typing import Type
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
-from opendevin.config import args
 from opendevin.agent import Agent
+from opendevin.config import args
 from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
 

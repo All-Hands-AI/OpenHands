@@ -12,3 +12,12 @@ class CmdOutputObservation(Observation)
 
 This data class represents the output of a command.
 
+## IPythonRunCellObservation Objects
+
+```python
+@dataclass
+class IPythonRunCellObservation(Observation)
+```
+
+This data class represents the output of a IPythonRunCellAction.
+

@@ -1,54 +1,37 @@
 import re
 from typing import List, Mapping
 
+from agenthub.codeact_agent.prompt import EXAMPLES, SYSTEM_MESSAGE
 from opendevin.action import (
     Action,
     AgentEchoAction,
     AgentFinishAction,
+    AgentTalkAction,
     CmdRunAction,
+    IPythonRunCellAction,
+    NullAction,
 )
 from opendevin.agent import Agent
 from opendevin.llm.llm import LLM
 from opendevin.observation import (
     AgentMessageObservation,
     CmdOutputObservation,
+    IPythonRunCellObservation,
+    UserMessageObservation,
+)
+from opendevin.sandbox.plugins import (
+    JupyterRequirement,
+    PluginRequirement,
+    SWEAgentCommandsRequirement,
 )
 from opendevin.state import State
-from opendevin.sandbox.plugins import PluginRequirement, JupyterRequirement
-
-SYSTEM_MESSAGE = """You are a helpful assistant. You will be provided access (as root) to a bash shell to complete user-provided tasks.
-You will be able to execute commands in the bash shell, interact with the file system, install packages, and receive the output of your commands.
-
-DO NOT provide code in ```triple backticks```. Instead, you should execute bash command on behalf of the user by wrapping them with <execute> and </execute>.
-For example:
-
-You can list the files in the current directory by executing the following command:
-<execute>ls</execute>
-
-You can also install packages using pip:
-<execute> pip install numpy </execute>
-
-You can also write a block of code to a file:
-<execute>
-echo "import math
-print(math.pi)" > math.py
-</execute>
-
-When you are done, execute the following to close the shell and end the conversation:
-<execute>exit</execute>
-"""
-
-INVALID_INPUT_MESSAGE = (
-    "I don't understand your input. \n"
-    'If you want to execute command, please use <execute> YOUR_COMMAND_HERE </execute>.\n'
-    'If you already completed the task, please exit the shell by generating: <execute> exit </execute>.'
-)
 
 
 def parse_response(response) -> str:
     action = response.choices[0].message.content
-    if '<execute>' in action and '</execute>' not in action:
-        action += '</execute>'
+    for lang in ['bash', 'ipython']:
+        if f'<execute_{lang}>' in action and f'</execute_{lang}>' not in action:
+            action += f'</execute_{lang}>'
     return action
 
 
@@ -58,7 +41,20 @@ class CodeActAgent(Agent):
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
     """
 
-    sandbox_plugins: List[PluginRequirement] = [JupyterRequirement()]
+    sandbox_plugins: List[PluginRequirement] = [JupyterRequirement(), SWEAgentCommandsRequirement()]
+    SUPPORTED_ACTIONS = (
+        CmdRunAction,
+        IPythonRunCellAction,
+        AgentEchoAction,
+        AgentTalkAction,
+        NullAction
+    )
+    SUPPORTED_OBSERVATIONS = (
+        AgentMessageObservation,
+        UserMessageObservation,
+        CmdOutputObservation,
+        IPythonRunCellObservation
+    )
 
     def __init__(
         self,
@@ -93,56 +89,82 @@ class CodeActAgent(Agent):
             assert state.plan.main_goal, 'Expecting instruction to be set'
             self.messages = [
                 {'role': 'system', 'content': SYSTEM_MESSAGE},
-                {'role': 'user', 'content': state.plan.main_goal},
+                {
+                    'role': 'user',
+                    'content': (
+                        f'Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\n'
+                        f"NOW, LET'S START!\n\n{state.plan.main_goal}"
+                    )
+                },
             ]
         updated_info = state.updated_info
         if updated_info:
             for prev_action, obs in updated_info:
                 assert isinstance(
-                    prev_action, (CmdRunAction, AgentEchoAction)
-                ), 'Expecting CmdRunAction or AgentEchoAction for Action'
-                if isinstance(
-                    obs, AgentMessageObservation
-                ):  # warning message from itself
+                    prev_action, self.SUPPORTED_ACTIONS
+                ), f'{prev_action.__class__} is not supported (supported: {self.SUPPORTED_ACTIONS})'
+                # prev_action is already added to self.messages when returned
+
+                # handle observations
+                assert isinstance(
+                    obs, self.SUPPORTED_OBSERVATIONS
+                ), f'{obs.__class__} is not supported (supported: {self.SUPPORTED_OBSERVATIONS})'
+                if isinstance(obs, (AgentMessageObservation, UserMessageObservation)):
                     self.messages.append(
                         {'role': 'user', 'content': obs.content})
+
+                    # User wants to exit
+                    if obs.content.strip() == '/exit':
+                        return AgentFinishAction()
                 elif isinstance(obs, CmdOutputObservation):
                     content = 'OBSERVATION:\n' + obs.content
                     content += f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
+                    self.messages.append({'role': 'user', 'content': content})
+                elif isinstance(obs, IPythonRunCellObservation):
+                    content = 'OBSERVATION:\n' + obs.content
+                    # replace base64 images with a placeholder
+                    splited = content.split('\n')
+                    for i, line in enumerate(splited):
+                        if '![image](data:image/png;base64,' in line:
+                            splited[i] = '![image](data:image/png;base64, ...) already displayed to user'
+                    content = '\n'.join(splited)
                     self.messages.append({'role': 'user', 'content': content})
                 else:
                     raise NotImplementedError(
                         f'Unknown observation type: {obs.__class__}'
                     )
+
         response = self.llm.completion(
             messages=self.messages,
-            stop=['</execute>'],
+            stop=[
+                '</execute_ipython>',
+                '</execute_bash>',
+            ],
             temperature=0.0
         )
         action_str: str = parse_response(response)
-        state.num_of_chars += sum(len(message['content'])
-                                  for message in self.messages) + len(action_str)
+        state.num_of_chars += sum(
+            len(message['content']) for message in self.messages
+        ) + len(action_str)
         self.messages.append({'role': 'assistant', 'content': action_str})
 
-        command = re.search(r'<execute>(.*)</execute>', action_str, re.DOTALL)
-        if command is not None:
+        if bash_command := re.search(r'<execute_bash>(.*)</execute_bash>', action_str, re.DOTALL):
+            # remove the command from the action string to get thought
+            thought = action_str.replace(bash_command.group(0), '').strip()
             # a command was found
-            command_group = command.group(1)
+            command_group = bash_command.group(1).strip()
             if command_group.strip() == 'exit':
                 return AgentFinishAction()
-            return CmdRunAction(command=command_group)
-            # # execute the code
-            # # TODO: does exit_code get loaded into Message?
-            # exit_code, observation = self.env.execute(command_group)
-            # self._history.append(Message(Role.ASSISTANT, observation))
+            return CmdRunAction(command=command_group, thought=thought)
+        elif python_code := re.search(r'<execute_ipython>(.*)</execute_ipython>', action_str, re.DOTALL):
+            # a code block was found
+            code_group = python_code.group(1).strip()
+            thought = action_str.replace(python_code.group(0), '').strip()
+            return IPythonRunCellAction(code=code_group, thought=thought)
         else:
-            # we could provide a error message for the model to continue similar to
-            # https://github.com/xingyaoww/mint-bench/blob/main/mint/envs/general_env.py#L18-L23
-            # observation = INVALID_INPUT_MESSAGE
-            # self._history.append(Message(Role.ASSISTANT, observation))
-            return AgentEchoAction(
-                content=INVALID_INPUT_MESSAGE
-            )  # warning message to itself
+            # We assume the LLM is GOOD enough that when it returns pure natural language
+            # it want to talk to the user
+            return AgentTalkAction(content=action_str)
 
     def search_memory(self, query: str) -> List[str]:
         raise NotImplementedError('Implement this abstract method')

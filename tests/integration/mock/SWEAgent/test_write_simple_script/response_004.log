@@ -1,7 +1,7 @@
 Thoughts:
-I have created the file 'hello.sh' but have not yet confirmed the content of the script. The next step is to read the content of 'hello.sh' to ensure that it contains the correct shell script code that prints "hello". This will help verify that the previous write actions were successful and the file is ready for execution.
+The shell script 'hello.sh' has been written and contains the necessary commands to print 'hello'. The next step is to test the script to ensure it functions as expected. This involves running the script and checking the output. If the script runs successfully and prints 'hello', then the task is completed.
 
 Action:
 ```
-read hello.sh
+bash hello.sh
 ```

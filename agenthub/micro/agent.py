@@ -1,13 +1,13 @@
 import json
-from typing import List, Dict
+from typing import Dict, List
 
-from jinja2 import Environment, BaseLoader
+from jinja2 import BaseLoader, Environment
 
+from opendevin.action import Action, action_from_dict
 from opendevin.agent import Agent
+from opendevin.exceptions import LLMOutputError
 from opendevin.llm.llm import LLM
 from opendevin.state import State
-from opendevin.action import Action, action_from_dict
-from opendevin.exceptions import LLMOutputError
 
 from .instructions import instructions
 from .registry import all_microagents
