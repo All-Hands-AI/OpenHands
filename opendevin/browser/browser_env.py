@@ -4,7 +4,6 @@ import io
 import multiprocessing
 import time
 import uuid
-from multiprocessing import Pipe, Process
 
 import browsergym.core  # noqa F401 (we register the openended task as a gym environment)
 import gymnasium as gym
@@ -31,9 +30,9 @@ class BrowserEnv:
         # disable auto text wrapping
         self.html_text_converter.body_width = 0
         # Initialize browser environment process
-        multiprocessing.set_start_method('spawn') # need spawn to avoid error with fastapi
-        self.browser_side, self.agent_side = Pipe()
-        self.process = Process(target=self.browser_process,)
+        self.mp_ctx = multiprocessing.get_context('spawn')
+        self.browser_side, self.agent_side = self.mp_ctx.Pipe()
+        self.process = self.mp_ctx.Process(target=self.browser_process,)
         logger.info('Starting browser env...')
         self.process.start()
         atexit.register(self.close)
