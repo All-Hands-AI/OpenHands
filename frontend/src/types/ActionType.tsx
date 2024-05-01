@@ -2,7 +2,10 @@ enum ActionType {
   // Initializes the agent. Only sent by client.
   INIT = "initialize",
 
-  // Starts a new development task OR provide follow-up language feedback (chat) to the agent. Only sent by the client.
+  // Sends a message from the user
+  USER_MESSAGE = "user_message",
+
+  // Starts a new development task
   START = "start",
 
   // Reads the contents of a file.
