@@ -53,31 +53,20 @@ ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH='/app'
 
-COPY --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --chown=opendevin --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 # change ownership of the virtual environment to the sandbox user
 USER root
 RUN chown -R opendevin:opendevin ${VIRTUAL_ENV}
 USER opendevin
 
-COPY ./opendevin ./opendevin
-COPY ./agenthub ./agenthub
+COPY --chown=opendevin ./opendevin ./opendevin
+COPY --chown=opendevin ./agenthub ./agenthub
 RUN python opendevin/download.py # No-op to download assets
 RUN playwright install --with-deps chromium
 
-COPY --from=frontend-builder /app/dist ./frontend/dist
-
-# FIXME: this causes issues with push, and makes the build take forever
-#USER root
-#RUN chown -R opendevin:opendevin /app
-# make group permissions the same as user permissions
-#RUN chmod -R g=u /app
-#USER opendevin
+COPY --chown=opendevin --from=frontend-builder /app/dist ./frontend/dist
 
 # change ownership of the app directory to the sandbox user
-COPY ./containers/app/entrypoint.sh /app/entrypoint.sh
+COPY --chown=opendevin ./containers/app/entrypoint.sh /app/entrypoint.sh
 
-# run the script as root
-USER root
-RUN chown opendevin:opendevin /app/entrypoint.sh
-RUN chmod 777 /app/entrypoint.sh
 CMD ["/app/entrypoint.sh"]
