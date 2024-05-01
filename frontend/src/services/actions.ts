@@ -29,11 +29,23 @@ const messageActions = {
   [ActionType.THINK]: (message: ActionMessage) => {
     store.dispatch(addAssistantMessage(message.args.thought));
   },
+  [ActionType.TALK]: (message: ActionMessage) => {
+    store.dispatch(appendAssistantMessage(message.args.content));
+  },
   [ActionType.FINISH]: (message: ActionMessage) => {
     store.dispatch(addAssistantMessage(message.message));
   },
   [ActionType.RUN]: (message: ActionMessage) => {
+    if (message.args.thought) {
+      store.dispatch(appendAssistantMessage(message.args.thought));
+    }
     store.dispatch(appendInput(message.args.command));
+  },
+  [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
+    if (message.args.thought) {
+      store.dispatch(appendAssistantMessage(message.args.thought));
+    }
+    store.dispatch(appendInput(message.args.code));
   },
   [ActionType.ADD_TASK]: () => {
     getPlan().then((fetchedPlan) => store.dispatch(setPlan(fetchedPlan)));

@@ -17,6 +17,10 @@ Initial state of the task.
 
 The task is running.
 
+#### AWAITING\_USER\_INPUT
+
+The task is awaiting user input.
+
 #### PAUSED
 
 The task is paused.

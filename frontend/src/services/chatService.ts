@@ -12,14 +12,19 @@ import { ActionMessage } from "#/types/Message";
 import Socket from "./socket";
 import { addUserMessage } from "#/state/chat";
 
-export function sendChatMessage(message: string): void {
+export function sendChatMessage(message: string, isTask: boolean = true): void {
   store.dispatch(appendUserMessage(message));
-  const event = { action: ActionType.START, args: { task: message } };
+  let event;
+  if (isTask) {
+    event = { action: ActionType.START, args: { task: message } };
+  } else {
+    event = { action: ActionType.USER_MESSAGE, args: { message } };
+  }
   const eventString = JSON.stringify(event);
   Socket.send(eventString);
 }
 
-export function sendChatMessageFromEvent(event: string | SocketMessage): void {
+export function addChatMessageFromEvent(event: string | SocketMessage): void {
   try {
     let data: ActionMessage;
     if (typeof event === "string") {
