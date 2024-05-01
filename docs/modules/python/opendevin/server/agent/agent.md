@@ -98,10 +98,10 @@ Creates an AgentController instance.
 
 - `start_event` - The start event data (optional).
 
-#### start\_task\_or\_chat
+#### start\_task
 
 ```python
-async def start_task_or_chat(start_event)
+async def start_task(start_event)
 ```
 
 Starts a task for the agent.
