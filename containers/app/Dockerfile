@@ -5,7 +5,7 @@ WORKDIR /app
 
 COPY ./frontend/package.json frontend/package-lock.json ./
 RUN npm install -g npm@10.5.1
-RUN npm install
+RUN npm ci
 
 COPY ./frontend ./
 RUN npm run make-i18n && npm run build
@@ -43,7 +43,7 @@ RUN mkdir -p $WORKSPACE_BASE
 RUN apt-get update -y \
     && apt-get install -y curl ssh sudo
 
-RUN useradd -m -u $SANDBOX_USER_ID -s /bin/bash opendevin && \
+RUN useradd -l -m -u $SANDBOX_USER_ID -s /bin/bash opendevin && \
     usermod -aG sudo opendevin && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 RUN chown -R opendevin:opendevin /app
