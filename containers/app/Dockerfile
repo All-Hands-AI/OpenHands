@@ -66,11 +66,12 @@ RUN playwright install --with-deps chromium
 
 COPY --from=frontend-builder /app/dist ./frontend/dist
 
-USER root
-RUN chown -R opendevin:opendevin /app
+# FIXME: this causes issues with push, and makes the build take forever
+#USER root
+#RUN chown -R opendevin:opendevin /app
 # make group permissions the same as user permissions
-RUN chmod -R g=u /app
-USER opendevin
+#RUN chmod -R g=u /app
+#USER opendevin
 
 # change ownership of the app directory to the sandbox user
 COPY ./containers/app/entrypoint.sh /app/entrypoint.sh
