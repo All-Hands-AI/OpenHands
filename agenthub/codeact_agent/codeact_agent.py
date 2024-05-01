@@ -34,6 +34,14 @@ def parse_response(response) -> str:
             action += f'</execute_{lang}>'
     return action
 
+def truncate_observation(observation: str, max_chars: int=5000) -> str:
+    """
+    Truncate the middle of the observation if it is too long.
+    """
+    if len(observation) <= max_chars:
+        return observation
+    half = max_chars // 2
+    return observation[:half] + '\n[... Observation truncated due to length ...]\n' + observation[-half:]
 
 class CodeActAgent(Agent):
     """
@@ -117,11 +125,19 @@ class CodeActAgent(Agent):
                     if obs.content.strip() == '/exit':
                         return AgentFinishAction()
                 elif isinstance(obs, CmdOutputObservation):
-                    content = 'OBSERVATION:\n' + obs.content
+                    content = 'OBSERVATION:\n' + truncate_observation(obs.content)
                     content += f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
                     self.messages.append({'role': 'user', 'content': content})
+
                 elif isinstance(obs, IPythonRunCellObservation):
                     content = 'OBSERVATION:\n' + obs.content
+                    # replace base64 images with a placeholder
+                    splited = content.split('\n')
+                    for i, line in enumerate(splited):
+                        if '![image](data:image/png;base64,' in line:
+                            splited[i] = '![image](data:image/png;base64, ...) already displayed to user'
+                    content = '\n'.join(splited)
+                    content = truncate_observation(content)
                     self.messages.append({'role': 'user', 'content': content})
                 else:
                     raise NotImplementedError(

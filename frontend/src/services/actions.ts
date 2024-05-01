@@ -3,6 +3,7 @@ import { setScreenshotSrc, setUrl } from "#/state/browserSlice";
 import { addAssistantMessage } from "#/state/chat";
 import { setCode, updatePath } from "#/state/codeSlice";
 import { appendInput } from "#/state/commandSlice";
+import { appendJupyterInput } from "#/state/jupyterSlice";
 import { setPlan } from "#/state/planSlice";
 import { setInitialized } from "#/state/taskSlice";
 import store from "#/store";
@@ -45,7 +46,7 @@ const messageActions = {
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
-    store.dispatch(appendInput(message.args.code));
+    store.dispatch(appendJupyterInput(message.args.code));
   },
   [ActionType.ADD_TASK]: () => {
     getPlan().then((fetchedPlan) => store.dispatch(setPlan(fetchedPlan)));

@@ -8,6 +8,7 @@ import commandReducer from "./state/commandSlice";
 import errorsReducer from "./state/errorsSlice";
 import planReducer from "./state/planSlice";
 import taskReducer from "./state/taskSlice";
+import jupyterReducer from "./state/jupyterSlice";
 
 export const rootReducer = combineReducers({
   browser: browserReducer,
@@ -19,6 +20,7 @@ export const rootReducer = combineReducers({
   errors: errorsReducer,
   plan: planReducer,
   agent: agentReducer,
+  jupyter: jupyterReducer,
 });
 
 const store = configureStore({
