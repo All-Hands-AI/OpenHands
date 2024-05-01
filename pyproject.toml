@@ -40,7 +40,6 @@ llama-index-embeddings-ollama = "*"
 ruff = "0.3.7"
 mypy = "1.9.0"
 pre-commit = "3.7.0"
-pydoc-markdown = "^4.8.2"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"
