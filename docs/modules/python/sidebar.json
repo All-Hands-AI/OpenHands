@@ -81,9 +81,9 @@
             {
               "items": [
                 "python/opendevin/events/action/__init__",
+                "python/opendevin/events/action/empty",
                 "python/opendevin/events/action/files",
                 "python/opendevin/events/action/github",
-                "python/opendevin/events/action/null",
                 "python/opendevin/events/action/tasks"
               ],
               "label": "opendevin.events.action",
@@ -95,10 +95,10 @@
                 "python/opendevin/events/observation/browse",
                 "python/opendevin/events/observation/commands",
                 "python/opendevin/events/observation/delegate",
+                "python/opendevin/events/observation/empty",
                 "python/opendevin/events/observation/error",
                 "python/opendevin/events/observation/files",
                 "python/opendevin/events/observation/message",
-                "python/opendevin/events/observation/null",
                 "python/opendevin/events/observation/observation",
                 "python/opendevin/events/observation/recall"
               ],

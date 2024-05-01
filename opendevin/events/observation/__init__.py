@@ -1,10 +1,10 @@
 from .browse import BrowserOutputObservation
 from .commands import CmdOutputObservation
 from .delegate import AgentDelegateObservation
+from .empty import NullObservation
 from .error import AgentErrorObservation
 from .files import FileReadObservation, FileWriteObservation
 from .message import AgentMessageObservation, UserMessageObservation
-from .null import NullObservation
 from .observation import Observation
 from .recall import AgentRecallObservation
 
