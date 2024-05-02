@@ -5,7 +5,6 @@ import ChatInput from "../ChatInput";
 import Chat from "./Chat";
 import { RootState } from "#/store";
 import AgentTaskState from "#/types/AgentTaskState";
-import { sendChatMessage } from "#/services/chatService";
 import { addUserMessage } from "#/state/chat";
 import ActionType from "#/types/ActionType";
 import Socket from "#/services/socket";
