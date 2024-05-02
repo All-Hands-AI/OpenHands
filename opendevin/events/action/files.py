@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from opendevin import config
-from opendevin.observation import (
+from opendevin.events.observation import (
     AgentErrorObservation,
     FileReadObservation,
     FileWriteObservation,
@@ -13,7 +13,7 @@ from opendevin.sandbox import E2BBox
 from opendevin.schema import ActionType
 from opendevin.schema.config import ConfigType
 
-from .base import ExecutableAction
+from .action import Action
 
 
 def resolve_path(file_path, working_directory):
@@ -41,7 +41,7 @@ def resolve_path(file_path, working_directory):
 
 
 @dataclass
-class FileReadAction(ExecutableAction):
+class FileReadAction(Action):
     """
     Reads a file from a given path.
     Can be set to read specific lines using start and end
@@ -95,7 +95,7 @@ class FileReadAction(ExecutableAction):
 
 
 @dataclass
-class FileWriteAction(ExecutableAction):
+class FileWriteAction(Action):
     path: str
     content: str
     start: int = 0
