@@ -1,5 +1,5 @@
 import asyncio
-from typing import Callable, List, Type
+from typing import Type
 
 from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin.controller.action_manager import ActionManager
@@ -31,6 +31,7 @@ from opendevin.events.observation import (
     Observation,
     UserMessageObservation,
 )
+from opendevin.events.stream import get_event_stream
 from opendevin.runtime import DockerSSHBox
 from opendevin.runtime.browser.browser_env import BrowserEnv
 
@@ -43,7 +44,6 @@ class AgentController:
     agent: Agent
     max_iterations: int
     action_manager: ActionManager
-    callbacks: List[Callable]
     browser: BrowserEnv
 
     delegate: 'AgentController | None' = None
@@ -58,7 +58,6 @@ class AgentController:
         sid: str = 'default',
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
-        callbacks: List[Callable] = [],
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -67,14 +66,12 @@ class AgentController:
             sid: The session ID of the agent.
             max_iterations: The maximum number of iterations the agent can run.
             max_chars: The maximum number of characters the agent can output.
-            callbacks: A list of callback functions to run after each action.
         """
         self.id = sid
         self.agent = agent
         self.max_iterations = max_iterations
         self.action_manager = ActionManager(self.id)
         self.max_chars = max_chars
-        self.callbacks = callbacks
         # Initialize agent-required plugins for sandbox (if any)
         self.action_manager.init_sandbox_plugins(agent.sandbox_plugins)
         # Initialize browser environment
@@ -100,9 +97,12 @@ class AgentController:
             return
         self.state.updated_info = []
 
+    def add_error_to_history(self, message: str):
+        self.add_history(NullAction(), AgentErrorObservation(message))
+
     def add_history(self, action: Action, observation: Observation):
         if self.state is None:
-            return
+            raise ValueError('Added history while state was None')
         if not isinstance(action, Action):
             raise TypeError(
                 f'action must be an instance of Action, got {type(action).__name__} instead'
@@ -113,6 +113,8 @@ class AgentController:
             )
         self.state.history.append((action, observation))
         self.state.updated_info.append((action, observation))
+        get_event_stream().add_event(action)
+        get_event_stream().add_event(observation)
 
     async def _run(self):
         if self.state is None:
@@ -129,10 +131,8 @@ class AgentController:
                     self._task_state = TaskState.FINISHED
             except Exception:
                 logger.error('Error in loop', exc_info=True)
-                await self._run_callbacks(
-                    AgentErrorObservation(
-                        'Oops! Something went wrong while completing your task. You can check the logs for more info.'
-                    )
+                self.add_error_to_history(
+                    'Oops! Something went wrong while completing your task. You can check the logs for more info.'
                 )
                 await self.set_task_state_to(TaskState.STOPPED)
                 break
@@ -153,10 +153,9 @@ class AgentController:
 
             if self._is_stuck():
                 logger.info('Loop detected, stopping task')
-                observation = AgentErrorObservation(
+                self.add_error_to_history(
                     'I got stuck into a loop, the task has stopped.'
                 )
-                await self._run_callbacks(observation)
                 await self.set_task_state_to(TaskState.STOPPED)
                 break
 
@@ -201,7 +200,9 @@ class AgentController:
         return self._task_state
 
     async def notify_task_state_changed(self):
-        await self._run_callbacks(TaskStateChangedAction(self._task_state))
+        await self.add_history(
+            TaskStateChangedAction(self._task_state), NullObservation('')
+        )
 
     async def add_user_message(self, message: UserMessageObservation):
         if self.state is None:
@@ -225,17 +226,9 @@ class AgentController:
     async def wait_for_user_input(self) -> UserMessageObservation:
         self._task_state = TaskState.AWAITING_USER_INPUT
         await self.notify_task_state_changed()
-        # wait for the next user message
-        if len(self.callbacks) == 0:
-            logger.info(
-                'Use STDIN to request user message as no callbacks are registered',
-                extra={'msg_type': 'INFO'},
-            )
-            message = input('Request user input [type /exit to stop interaction] >> ')
-            user_message_observation = UserMessageObservation(message)
-        else:
-            user_message_observation = await self._await_user_message_queue.get()
-            self._await_user_message_queue.task_done()
+        # FIXME: need a way to handle CLI input
+        user_message_observation = await self._await_user_message_queue.get()
+        self._await_user_message_queue.task_done()
         return user_message_observation
 
     async def start_delegate(self, action: AgentDelegateAction):
@@ -246,7 +239,6 @@ class AgentController:
             agent=agent,
             max_iterations=self.max_iterations,
             max_chars=self.max_chars,
-            callbacks=self.callbacks,
         )
         task = action.inputs.get('task') or ''
         await self.delegate.setup_task(task, action.inputs)
@@ -273,7 +265,6 @@ class AgentController:
         log_obs = self.action_manager.get_background_obs()
         for obs in log_obs:
             self.add_history(NullAction(), obs)
-            await self._run_callbacks(obs)
             logger.info(obs, extra={'msg_type': 'BACKGROUND LOG'})
 
         self.update_state_for_step(i)
@@ -288,8 +279,6 @@ class AgentController:
         logger.info(action, extra={'msg_type': 'ACTION'})
 
         self.update_state_after_step()
-
-        await self._run_callbacks(action)
 
         # whether to await for user messages
         if isinstance(action, AgentTalkAction):
@@ -312,21 +301,7 @@ class AgentController:
             logger.info(observation, extra={'msg_type': 'OBSERVATION'})
 
         self.add_history(action, observation)
-        await self._run_callbacks(observation)
         return False
-
-    async def _run_callbacks(self, event):
-        if event is None:
-            return
-        for callback in self.callbacks:
-            idx = self.callbacks.index(callback)
-            try:
-                await callback(event)
-            except Exception as e:
-                logger.exception(f'Callback error: {e}, idx: {idx}')
-        await asyncio.sleep(
-            0.001
-        )  # Give back control for a tick, so we can await in callbacks
 
     def get_state(self):
         return self.state

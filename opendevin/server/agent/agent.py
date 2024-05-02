@@ -15,6 +15,7 @@ from opendevin.events.observation import (
     Observation,
     UserMessageObservation,
 )
+from opendevin.events.stream import get_event_stream
 from opendevin.llm.llm import LLM
 from opendevin.server.session import session_manager
 
@@ -155,13 +156,13 @@ class AgentUnit:
 
         logger.info(f'Creating agent {agent_cls} using LLM {model}')
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
+        get_event_stream().subscribe(self.on_agent_event)
         try:
             self.controller = AgentController(
                 sid=self.sid,
                 agent=Agent.get_cls(agent_cls)(llm),
                 max_iterations=int(max_iterations),
                 max_chars=int(max_chars),
-                callbacks=[self.on_agent_event],
             )
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
