@@ -30,7 +30,6 @@ class LLMConfig:
     embedding_model: str = 'local'
     embedding_base_url: str | None = None
     embedding_deployment_name: str | None = None
-    embedding_api_version: str | None = None
     num_retries: int = 5
     retry_min_wait: int = 3
     retry_max_wait: int = 60
@@ -51,8 +50,8 @@ class AppConfig:
     llm: LLMConfig = LLMConfig()
     agent: AgentConfig = AgentConfig()
     workspace_base: str = os.getcwd()
-    workspace_mount_path: str | None = None
-    workspace_mount_path_in_sandbox: str | None = '/workspace'
+    workspace_mount_path: str = os.path.abspath(workspace_base)
+    workspace_mount_path_in_sandbox: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
     sandbox_container_image: str = DEFAULT_CONTAINER_IMAGE
@@ -63,7 +62,7 @@ class AppConfig:
     use_host_network: bool = False
     ssh_hostname: str = 'localhost'
     disable_color: bool = False
-    sandbox_user_id: int | None = os.getuid() if hasattr(os, 'getuid') else None
+    sandbox_user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     sandbox_timeout: int = 120
     github_token: str | None = None
 
@@ -73,33 +72,21 @@ if os.path.exists('config.toml'):
     with open('config.toml', 'rb') as f:
         config_str = f.read().decode('utf-8')
 
-
-def int_value(value, default, config_key):
-    # FIXME use a library
-    try:
-        return int(value)
-    except ValueError:
-        logger.warning(f'Invalid value for {config_key}: {value} not applied. Using default value {default}')
-        return default
-
-
 # Read config from environment variables and config.toml
-def read_config(config, tomlConfig, env):
-    for k, v in config.items():
-        if isinstance(v, dict):
-            read_config(v, tomlConfig.get(k, None), env.get(k, None))
+def read_config(config, tomlConfig):
+    for k, v in config.__annotations__.items():
+        if isinstance(v, type) and issubclass(v, (LLMConfig, AgentConfig)):
+            read_config(getattr(config, k), tomlConfig.get(k, None))
         else:
-            if k in env:
-                config[k] = env[k]
+            if k in os.environ:
+                setattr(config, k, os.environ[k])
             elif k in tomlConfig:
-                config[k] = tomlConfig[k]
-            if k in [ConfigType.LLM_NUM_RETRIES, ConfigType.LLM_RETRY_MIN_WAIT, ConfigType.LLM_RETRY_MAX_WAIT]:
-                config[k] = int_value(config[k], v, config_key=k)
+                setattr(config, k, tomlConfig[k])
 
 
 tomlConfig = toml.loads(config_str)
 config = AppConfig()
-read_config(config, tomlConfig, os.environ)
+read_config(config, tomlConfig)
 
 
 # TODO Compatibility
@@ -107,15 +94,15 @@ def compat_env_to_config(config, env):
     for k, v in env.items():
         if k.isupper():
             parts = k.lower().split('_')
-            if len(parts) > 1 and parts[0] in config:
+            if len(parts) > 1:
                 sub_dict = config
                 for part in parts[:-1]:
-                    if part in sub_dict:
-                        sub_dict = sub_dict[part]
+                    if hasattr(sub_dict, part):
+                        sub_dict = getattr(sub_dict, part)
                     else:
                         break
                 else:
-                    sub_dict[parts[-1]] = v
+                    setattr(sub_dict, parts[-1], v)
 
 
 compat_env_to_config(config, os.environ)
@@ -189,13 +176,11 @@ args = parse_arguments()
 
 
 def finalize_config():
-    if config.workspace_mount_rewrite and not config.workspace_mount_path:
+    if config.workspace_mount_rewrite: # and not config.workspace_mount_path:
+        # TODO why do we need to check if workspace_mount_path is None?
         base = config.workspace_base or os.getcwd()
         parts = config.workspace_mount_rewrite.split(':')
         config.workspace_mount_path = base.replace(parts[0], parts[1])
-
-    if config.workspace_mount_path is None:
-        config.workspace_mount_path = os.path.abspath(config.workspace_base)
 
     if config.llm.embedding_base_url is None:
         config.llm.embedding_base_url = config.llm.base_url

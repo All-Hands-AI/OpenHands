@@ -1,9 +1,9 @@
 from typing import List
 
-from opendevin.config import config
 from opendevin.action import (
     Action,
 )
+from opendevin.config import config
 from opendevin.observation import (
     AgentErrorObservation,
     CmdOutputObservation,
@@ -12,7 +12,6 @@ from opendevin.observation import (
 )
 from opendevin.sandbox import DockerExecBox, DockerSSHBox, E2BBox, LocalBox, Sandbox
 from opendevin.sandbox.plugins import PluginRequirement
-from opendevin.schema import ConfigType
 
 
 class ActionManager:

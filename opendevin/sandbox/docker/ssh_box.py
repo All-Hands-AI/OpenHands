@@ -18,7 +18,6 @@ from opendevin.sandbox.docker.process import DockerProcess
 from opendevin.sandbox.plugins import JupyterRequirement, SWEAgentCommandsRequirement
 from opendevin.sandbox.process import Process
 from opendevin.sandbox.sandbox import Sandbox
-from opendevin.schema import ConfigType
 from opendevin.utils import find_available_tcp_port
 
 InputType = namedtuple('InputType', ['content'])

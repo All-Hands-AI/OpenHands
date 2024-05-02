@@ -68,24 +68,6 @@ async def dispatch(action: str | None, data: dict)
 
 Dispatches actions to the agent from the client.
 
-#### get\_arg\_or\_default
-
-```python
-def get_arg_or_default(_args: dict, key: ConfigType) -> str
-```
-
-Gets an argument from the args dictionary or the default value.
-
-**Arguments**:
-
-- `_args` - The args dictionary.
-- `key` - The key to get.
-  
-
-**Returns**:
-
-  The value of the key or the default value.
-
 #### create\_controller
 
 ```python

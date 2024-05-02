@@ -10,7 +10,6 @@ from opendevin.observation import AgentErrorObservation, Observation
 from opendevin.observation.message import AgentMessageObservation
 from opendevin.observation.run import CmdOutputObservation
 from opendevin.schema import ActionType
-from opendevin.schema.config import ConfigType
 
 from .base import ExecutableAction
 

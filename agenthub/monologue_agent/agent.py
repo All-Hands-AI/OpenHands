@@ -2,7 +2,6 @@ from typing import List
 
 import agenthub.monologue_agent.utils.prompts as prompts
 from agenthub.monologue_agent.utils.monologue import Monologue
-from opendevin.config import config
 from opendevin.action import (
     Action,
     AgentRecallAction,
@@ -15,6 +14,7 @@ from opendevin.action import (
     NullAction,
 )
 from opendevin.agent import Agent
+from opendevin.config import config
 from opendevin.exceptions import AgentNoInstructionError
 from opendevin.llm.llm import LLM
 from opendevin.observation import (
@@ -26,7 +26,6 @@ from opendevin.observation import (
     Observation,
 )
 from opendevin.schema import ActionType
-from opendevin.schema.config import ConfigType
 from opendevin.state import State
 
 if config.agent.memory_enabled:

@@ -11,7 +11,6 @@ from opendevin.observation import (
 )
 from opendevin.sandbox import E2BBox
 from opendevin.schema import ActionType
-from opendevin.schema.config import ConfigType
 
 from .base import ExecutableAction
 

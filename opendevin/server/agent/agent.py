@@ -1,12 +1,12 @@
 import asyncio
 from typing import Dict, List, Optional
 
-from opendevin.config import config
 from opendevin.action import (
     Action,
     NullAction,
 )
 from opendevin.agent import Agent
+from opendevin.config import config
 from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
 from opendevin.logger import opendevin_logger as logger

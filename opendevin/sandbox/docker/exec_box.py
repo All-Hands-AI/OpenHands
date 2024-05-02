@@ -17,7 +17,6 @@ from opendevin.logger import opendevin_logger as logger
 from opendevin.sandbox.docker.process import DockerProcess
 from opendevin.sandbox.process import Process
 from opendevin.sandbox.sandbox import Sandbox
-from opendevin.schema import ConfigType
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])

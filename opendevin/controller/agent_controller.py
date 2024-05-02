@@ -1,7 +1,6 @@
 import asyncio
 from typing import Callable, List, Type
 
-from opendevin.config import config
 from opendevin.action import (
     Action,
     AgentDelegateAction,
@@ -10,6 +9,7 @@ from opendevin.action import (
 )
 from opendevin.action.tasks import TaskStateChangedAction
 from opendevin.agent import Agent
+from opendevin.config import config
 from opendevin.controller.action_manager import ActionManager
 from opendevin.exceptions import (
     AgentMalformedActionError,
@@ -26,7 +26,6 @@ from opendevin.observation import (
 )
 from opendevin.plan import Plan
 from opendevin.schema import TaskState
-from opendevin.schema.config import ConfigType
 from opendevin.state import State
 
 MAX_ITERATIONS = config.max_iterations

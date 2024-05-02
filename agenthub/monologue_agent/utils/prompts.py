@@ -2,16 +2,15 @@ import re
 from json import JSONDecodeError
 from typing import List
 
-from opendevin.config import config
 from opendevin.action import (
     Action,
     action_from_dict,
 )
+from opendevin.config import config
 from opendevin.exceptions import LLMOutputError
 from opendevin.observation import (
     CmdOutputObservation,
 )
-from opendevin.schema.config import ConfigType
 
 from . import json
 
