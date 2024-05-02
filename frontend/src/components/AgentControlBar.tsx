@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import ArrowIcon from "#/assets/arrow";
 import PauseIcon from "#/assets/pause";
 import PlayIcon from "#/assets/play";
-import { changeTaskState } from "#/services/agentStateService";
+import { changeAgentState } from "#/services/agentStateService";
 import { clearMsgs } from "#/services/session";
 import { clearMessages } from "#/state/chatSlice";
 import store, { RootState } from "#/store";
@@ -95,7 +95,7 @@ function AgentControlBar() {
     }
 
     setDesiredState(TaskStateActionMap[act]);
-    changeTaskState(act);
+    changeAgentState(act);
   };
 
   useEffect(() => {

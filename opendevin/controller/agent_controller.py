@@ -14,15 +14,15 @@ from opendevin.core.exceptions import (
     MaxCharsExceedError,
 )
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.schema import TaskState
+from opendevin.core.schema import AgentState
 from opendevin.core.schema.config import ConfigType
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
     AgentTalkAction,
+    ChangeAgentStateAction,
     NullAction,
-    TaskStateChangedAction,
 )
 from opendevin.events.observation import (
     AgentDelegateObservation,
@@ -31,7 +31,7 @@ from opendevin.events.observation import (
     Observation,
     UserMessageObservation,
 )
-from opendevin.events.stream import get_event_stream
+from opendevin.events.stream import EventStream
 from opendevin.runtime import DockerSSHBox
 from opendevin.runtime.browser.browser_env import BrowserEnv
 
@@ -45,16 +45,16 @@ class AgentController:
     max_iterations: int
     action_manager: ActionManager
     browser: BrowserEnv
-
+    event_stream: EventStream
     delegate: 'AgentController | None' = None
     state: State | None = None
-
-    _task_state: TaskState = TaskState.INIT
+    _agent_state: AgentState = AgentState.INIT
     _cur_step: int = 0
 
     def __init__(
         self,
         agent: Agent,
+        event_stream: EventStream,
         sid: str = 'default',
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
@@ -97,10 +97,11 @@ class AgentController:
             return
         self.state.updated_info = []
 
-    def add_error_to_history(self, message: str):
-        self.add_history(NullAction(), AgentErrorObservation(message))
+    async def add_error_to_history(self, message: str):
+        await self.add_history(NullAction(), AgentErrorObservation(message))
 
-    def add_history(self, action: Action, observation: Observation):
+    async def add_history(self, action: Action, observation: Observation):
+        print('add history', action, observation)
         if self.state is None:
             raise ValueError('Added history while state was None')
         if not isinstance(action, Action):
@@ -113,14 +114,14 @@ class AgentController:
             )
         self.state.history.append((action, observation))
         self.state.updated_info.append((action, observation))
-        get_event_stream().add_event(action)
-        get_event_stream().add_event(observation)
+        await self.event_stream.add_event(action, 'agent')
+        await self.event_stream.add_event(observation, 'agent')
 
     async def _run(self):
         if self.state is None:
             return
 
-        if self._task_state != TaskState.RUNNING:
+        if self._agent_state != AgentState.RUNNING:
             raise ValueError('Task is not in running state')
 
         for i in range(self._cur_step, self.max_iterations):
@@ -128,41 +129,41 @@ class AgentController:
             try:
                 finished = await self.step(i)
                 if finished:
-                    self._task_state = TaskState.FINISHED
+                    self._agent_state = AgentState.FINISHED
             except Exception:
                 logger.error('Error in loop', exc_info=True)
-                self.add_error_to_history(
+                await self.add_error_to_history(
                     'Oops! Something went wrong while completing your task. You can check the logs for more info.'
                 )
-                await self.set_task_state_to(TaskState.STOPPED)
+                await self.set_agent_state_to(AgentState.STOPPED)
                 break
 
-            if self._task_state == TaskState.FINISHED:
+            if self._agent_state == AgentState.FINISHED:
                 logger.info('Task finished by agent')
                 await self.reset_task()
                 break
-            elif self._task_state == TaskState.STOPPED:
+            elif self._agent_state == AgentState.STOPPED:
                 logger.info('Task stopped by user')
                 await self.reset_task()
                 break
-            elif self._task_state == TaskState.PAUSED:
+            elif self._agent_state == AgentState.PAUSED:
                 logger.info('Task paused')
                 self._cur_step = i + 1
-                await self.notify_task_state_changed()
+                await self._on_agent_state_changed()
                 break
 
             if self._is_stuck():
                 logger.info('Loop detected, stopping task')
-                self.add_error_to_history(
+                await self.add_error_to_history(
                     'I got stuck into a loop, the task has stopped.'
                 )
-                await self.set_task_state_to(TaskState.STOPPED)
+                await self.set_agent_state_to(AgentState.STOPPED)
                 break
 
     async def setup_task(self, task: str, inputs: dict = {}):
         """Sets up the agent controller with a task."""
-        self._task_state = TaskState.RUNNING
-        await self.notify_task_state_changed()
+        self._agent_state = AgentState.RUNNING
+        await self._on_agent_state_changed()
         self.state = State(Plan(task))
         self.state.inputs = inputs
 
@@ -177,55 +178,55 @@ class AgentController:
         if self.state is None:
             raise ValueError('No task to resume')
 
-        self._task_state = TaskState.RUNNING
-        await self.notify_task_state_changed()
+        self._agent_state = AgentState.RUNNING
+        await self._on_agent_state_changed()
 
         await self._run()
 
     async def reset_task(self):
         self.state = None
         self._cur_step = 0
-        self._task_state = TaskState.INIT
+        self._agent_state = AgentState.INIT
         self.agent.reset()
-        await self.notify_task_state_changed()
+        await self._on_agent_state_changed()
 
-    async def set_task_state_to(self, state: TaskState):
-        self._task_state = state
-        if state == TaskState.STOPPED:
+    async def set_agent_state_to(self, state: AgentState):
+        self._agent_state = state
+        if state == AgentState.STOPPED:
             await self.reset_task()
         logger.info(f'Task state set to {state}')
 
-    def get_task_state(self):
+    def get_agent_state(self):
         """Returns the current state of the agent task."""
-        return self._task_state
+        return self._agent_state
 
-    async def notify_task_state_changed(self):
+    async def _on_agent_state_changed(self):
         await self.add_history(
-            TaskStateChangedAction(self._task_state), NullObservation('')
+            ChangeAgentStateAction(self._agent_state), NullObservation('')
         )
 
     async def add_user_message(self, message: UserMessageObservation):
         if self.state is None:
             return
 
-        if self._task_state == TaskState.AWAITING_USER_INPUT:
+        if self._agent_state == AgentState.AWAITING_USER_INPUT:
             self._await_user_message_queue.put_nowait(message)
 
             # set the task state to running
-            self._task_state = TaskState.RUNNING
-            await self.notify_task_state_changed()
+            self._agent_state = AgentState.RUNNING
+            await self._on_agent_state_changed()
 
-        elif self._task_state == TaskState.RUNNING:
-            self.add_history(NullAction(), message)
+        elif self._agent_state == AgentState.RUNNING:
+            await self.add_history(NullAction(), message)
 
         else:
             raise ValueError(
-                f'Task (state: {self._task_state}) is not in a state to add user message'
+                f'Task (state: {self._agent_state}) is not in a state to add user message'
             )
 
     async def wait_for_user_input(self) -> UserMessageObservation:
-        self._task_state = TaskState.AWAITING_USER_INPUT
-        await self.notify_task_state_changed()
+        self._agent_state = AgentState.AWAITING_USER_INPUT
+        await self._on_agent_state_changed()
         # FIXME: need a way to handle CLI input
         user_message_observation = await self._await_user_message_queue.get()
         self._await_user_message_queue.task_done()
@@ -237,6 +238,7 @@ class AgentController:
         self.delegate = AgentController(
             sid=self.id + '-delegate',
             agent=agent,
+            event_stream=self.event_stream,
             max_iterations=self.max_iterations,
             max_chars=self.max_chars,
         )
@@ -251,7 +253,7 @@ class AgentController:
             if delegate_done:
                 outputs = self.delegate.state.outputs if self.delegate.state else {}
                 obs: Observation = AgentDelegateObservation(content='', outputs=outputs)
-                self.add_history(NullAction(), obs)
+                await self.add_history(NullAction(), obs)
                 self.delegate = None
                 self.delegateAction = None
             return False
@@ -264,7 +266,7 @@ class AgentController:
 
         log_obs = self.action_manager.get_background_obs()
         for obs in log_obs:
-            self.add_history(NullAction(), obs)
+            await self.add_history(NullAction(), obs)
             logger.info(obs, extra={'msg_type': 'BACKGROUND LOG'})
 
         self.update_state_for_step(i)
@@ -285,7 +287,7 @@ class AgentController:
             # await for the next user messages
             user_message_observation = await self.wait_for_user_input()
             logger.info(user_message_observation, extra={'msg_type': 'OBSERVATION'})
-            self.add_history(action, user_message_observation)
+            await self.add_history(action, user_message_observation)
             return False
 
         finished = isinstance(action, AgentFinishAction)
@@ -300,7 +302,7 @@ class AgentController:
         if not isinstance(observation, NullObservation):
             logger.info(observation, extra={'msg_type': 'OBSERVATION'})
 
-        self.add_history(action, observation)
+        await self.add_history(action, observation)
         return False
 
     def get_state(self):

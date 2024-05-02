@@ -7,12 +7,12 @@ export const agentSlice = createSlice({
     curTaskState: AgentTaskState.INIT,
   },
   reducers: {
-    changeTaskState: (state, action) => {
+    changeAgentState: (state, action) => {
       state.curTaskState = action.payload;
     },
   },
 });
 
-export const { changeTaskState } = agentSlice.actions;
+export const { changeAgentState } = agentSlice.actions;
 
 export default agentSlice.reducer;

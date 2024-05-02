@@ -6,6 +6,7 @@ import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.core.config import args
+from opendevin.events.stream import EventStream
 from opendevin.llm.llm import LLM
 
 
@@ -42,7 +43,10 @@ async def main(task_str: str = ''):
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
     controller = AgentController(
-        agent=agent, max_iterations=args.max_iterations, max_chars=args.max_chars
+        agent=agent,
+        max_iterations=args.max_iterations,
+        max_chars=args.max_chars,
+        event_stream=EventStream(),
     )
 
     await controller.start(task)

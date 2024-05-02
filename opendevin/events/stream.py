@@ -1,4 +1,3 @@
-import asyncio
 from datetime import datetime
 from threading import Lock
 from typing import Callable, List
@@ -14,20 +13,15 @@ class EventStream:
     def subscribe(self, subscriber: Callable):
         self._subscribers.append(subscriber)
 
-    def add_event(self, event: Event):
+    # TODO: make this not async
+    async def add_event(self, event: Event, source: str):
         with self._lock:
-            event.id = len(self._events)  # type: ignore [attr-defined]
-            event.timestamp = datetime.now()  # type: ignore [attr-defined]
+            event._id = len(self._events)  # type: ignore [attr-defined]
+            event._timestamp = datetime.now()  # type: ignore [attr-defined]
+            event._source = source  # type: ignore [attr-defined]
             self._events.append(event)
             for subscriber in self._subscribers:
-                asyncio.create_task(self._notify(subscriber, event))
+                await subscriber(event)
 
     def _notify(self, subscriber: Callable, event: Event):
         subscriber(event)
-
-
-singleton = EventStream()
-
-
-def get_event_stream():
-    return singleton

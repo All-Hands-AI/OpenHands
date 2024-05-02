@@ -81,7 +81,7 @@ class ActionTypeSchema(BaseModel):
     """Stops the task. Must send a start action to restart a new task.
     """
 
-    CHANGE_TASK_STATE: str = Field(default='change_task_state')
+    CHANGE_AGENT_STATE: str = Field(default='change_agent_state')
 
     PUSH: str = Field(default='push')
     """Push a branch to github."""

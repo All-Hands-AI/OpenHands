@@ -1,4 +1,4 @@
-import { changeTaskState } from "#/state/agentSlice";
+import { changeAgentState } from "#/state/agentSlice";
 import { setScreenshotSrc, setUrl } from "#/state/browserSlice";
 import { appendAssistantMessage } from "#/state/chatSlice";
 import { setCode, updatePath } from "#/state/codeSlice";
@@ -54,8 +54,8 @@ const messageActions = {
   [ActionType.MODIFY_TASK]: () => {
     getPlan().then((fetchedPlan) => store.dispatch(setPlan(fetchedPlan)));
   },
-  [ActionType.CHANGE_TASK_STATE]: (message: ActionMessage) => {
-    store.dispatch(changeTaskState(message.args.task_state));
+  [ActionType.CHANGE_AGENT_STATE]: (message: ActionMessage) => {
+    store.dispatch(changeAgentState(message.args.task_state));
   },
 };
 

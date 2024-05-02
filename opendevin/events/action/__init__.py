@@ -9,13 +9,14 @@ from .agent import (
     AgentSummarizeAction,
     AgentTalkAction,
     AgentThinkAction,
+    ChangeAgentStateAction,
 )
 from .browse import BrowseURLAction
 from .commands import CmdKillAction, CmdRunAction, IPythonRunCellAction
 from .empty import NullAction
 from .files import FileReadAction, FileWriteAction
 from .github import GitHubPushAction
-from .tasks import AddTaskAction, ModifyTaskAction, TaskStateChangedAction
+from .tasks import AddTaskAction, ModifyTaskAction
 
 actions = (
     CmdKillAction,
@@ -31,7 +32,7 @@ actions = (
     AgentDelegateAction,
     AddTaskAction,
     ModifyTaskAction,
-    TaskStateChangedAction,
+    ChangeAgentStateAction,
     GitHubPushAction,
 )
 
@@ -74,6 +75,6 @@ __all__ = [
     'AgentSummarizeAction',
     'AddTaskAction',
     'ModifyTaskAction',
-    'TaskStateChangedAction',
+    'ChangeAgentStateAction',
     'IPythonRunCellAction',
 ]

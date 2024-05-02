@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class TaskState(str, Enum):
+class AgentState(str, Enum):
     INIT = 'init'
     """Initial state of the task.
     """
@@ -28,22 +28,4 @@ class TaskState(str, Enum):
 
     ERROR = 'error'
     """An error occurred during the task.
-    """
-
-
-class TaskStateAction(str, Enum):
-    START = 'start'
-    """Starts the task.
-    """
-
-    PAUSE = 'pause'
-    """Pauses the task.
-    """
-
-    RESUME = 'resume'
-    """Resumes the task.
-    """
-
-    STOP = 'stop'
-    """Stops the task.
     """
