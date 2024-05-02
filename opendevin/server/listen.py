@@ -10,7 +10,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
-from opendevin import config, files
+from opendevin.config import config
+from opendevin import files
 from opendevin.agent import Agent
 from opendevin.logger import opendevin_logger as logger
 from opendevin.schema.config import ConfigType
@@ -114,14 +115,14 @@ async def del_messages(
 
 @app.get('/api/refresh-files')
 def refresh_files():
-    structure = files.get_folder_structure(Path(str(config.get(ConfigType.WORKSPACE_BASE))))
+    structure = files.get_folder_structure(Path(str(config.workspace_base)))
     return structure.to_dict()
 
 
 @app.get('/api/select-file')
 def select_file(file: str):
     try:
-        workspace_base = config.get(ConfigType.WORKSPACE_BASE)
+        workspace_base = config.workspace_base
         file_path = Path(workspace_base, file)
         # The following will check if the file is within the workspace base and throw an exception if not
         file_path.resolve().relative_to(Path(workspace_base).resolve())

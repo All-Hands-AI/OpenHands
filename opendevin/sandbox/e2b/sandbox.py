@@ -8,12 +8,11 @@ from e2b.sandbox.exception import (
     TimeoutException,
 )
 
-from opendevin import config
+from opendevin.config import config
 from opendevin.logger import opendevin_logger as logger
 from opendevin.sandbox.e2b.process import E2BProcess
 from opendevin.sandbox.process import Process
 from opendevin.sandbox.sandbox import Sandbox
-from opendevin.schema.config import ConfigType
 
 
 class E2BBox(Sandbox):
@@ -28,7 +27,7 @@ class E2BBox(Sandbox):
         timeout: int = 120,
     ):
         self.sandbox = E2BSandbox(
-            api_key=config.get(ConfigType.E2B_API_KEY),
+            api_key=config.e2b_api_key,
             template=template,
             # It's possible to stream stdout and stderr from sandbox and from each process
             on_stderr=lambda x: logger.info(f'E2B sandbox stderr: {x}'),

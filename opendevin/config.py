@@ -3,6 +3,7 @@ import logging
 import os
 import pathlib
 import platform
+from dataclasses import dataclass
 
 import toml
 from dotenv import load_dotenv
@@ -19,49 +20,53 @@ else:
 
 load_dotenv()
 
-DEFAULT_CONFIG: dict = {
-    'llm': {
-        'api_key': None,
-        'base_url': None,
-        'model': 'gpt-3.5-turbo-1106',
-        'embedding': {
-            'model': 'local',
-            'base_url': None,
-            'deployment_name': None,
-            'api_version': None,
-        },
-        'num_retries': 5,
-        'retry_min_wait': 3,
-        'retry_max_wait': 60,
-        'timeout': None,
-        'max_return_tokens': None,
-        'max_chars': 5_000_000,
-    },
-    'agent': {
-        'name': 'MonologueAgent',
-        'memory': {
-            'enabled': False,
-            'max_threads': 2,
-        },
-    },
-    'workspace_base': os.getcwd(),
-    'workspace_mount_path': None,
-    'workspace_mount_path_in_sandbox': '/workspace',
-    'workspace_mount_rewrite': None,
-    'cache_dir': '/tmp/cache',
-    'sandbox_container_image': DEFAULT_CONTAINER_IMAGE,
-    'run_as_devin': 'true',
-    'max_iterations': 100,
-    'e2b_api_key': '',
-    'sandbox_type': 'ssh',
-    'use_host_network': 'false',
-    'ssh_hostname': 'localhost',
-    'disable_color': 'false',
-    'sandbox_user_id': os.getuid() if hasattr(os, 'getuid') else None,
-    'sandbox_timeout': 120,
-    'github_token': None,
-    'sandbox_user_id': None
-}
+
+@dataclass
+class LLMConfig:
+    api_key: str | None = None
+    base_url: str | None = None
+    model: str = 'gpt-3.5-turbo-1106'
+    api_version: str | None = None
+    embedding_model: str = 'local'
+    embedding_base_url: str | None = None
+    embedding_deployment_name: str | None = None
+    embedding_api_version: str | None = None
+    num_retries: int = 5
+    retry_min_wait: int = 3
+    retry_max_wait: int = 60
+    timeout: int | None = None
+    max_return_tokens: int | None = None
+    max_chars: int = 5_000_000
+
+
+@dataclass
+class AgentConfig:
+    name: str = 'MonologueAgent'
+    memory_enabled: bool = False
+    memory_max_threads: int = 2
+
+
+@dataclass
+class AppConfig:
+    llm: LLMConfig = LLMConfig()
+    agent: AgentConfig = AgentConfig()
+    workspace_base: str = os.getcwd()
+    workspace_mount_path: str | None = None
+    workspace_mount_path_in_sandbox: str | None = '/workspace'
+    workspace_mount_rewrite: str | None = None
+    cache_dir: str = '/tmp/cache'
+    sandbox_container_image: str = DEFAULT_CONTAINER_IMAGE
+    run_as_devin: bool = True
+    max_iterations: int = 100
+    e2b_api_key: str = ''
+    sandbox_type: str = 'ssh'
+    use_host_network: bool = False
+    ssh_hostname: str = 'localhost'
+    disable_color: bool = False
+    sandbox_user_id: int | None = os.getuid() if hasattr(os, 'getuid') else None
+    sandbox_timeout: int = 120
+    github_token: str | None = None
+
 
 config_str = ''
 if os.path.exists('config.toml'):
@@ -91,9 +96,11 @@ def read_config(config, tomlConfig, env):
             if k in [ConfigType.LLM_NUM_RETRIES, ConfigType.LLM_RETRY_MIN_WAIT, ConfigType.LLM_RETRY_MAX_WAIT]:
                 config[k] = int_value(config[k], v, config_key=k)
 
+
 tomlConfig = toml.loads(config_str)
-config = DEFAULT_CONFIG.copy()
+config = AppConfig()
 read_config(config, tomlConfig, os.environ)
+
 
 # TODO Compatibility
 def compat_env_to_config(config, env):
@@ -110,11 +117,15 @@ def compat_env_to_config(config, env):
                 else:
                     sub_dict[parts[-1]] = v
 
+
 compat_env_to_config(config, os.environ)
 
+
 # In local there is no sandbox, the workspace will have the same pwd as the host
-if config[ConfigType.SANDBOX_TYPE] == 'local':
-    config[ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX] = config[ConfigType.WORKSPACE_MOUNT_PATH]
+if config.sandbox_type == 'local':
+    # TODO why do we seem to need None for these paths?
+    config.workspace_mount_path_in_sandbox = config.workspace_mount_path
+
 
 def get_parser():
     parser = argparse.ArgumentParser(
@@ -137,28 +148,28 @@ def get_parser():
     parser.add_argument(
         '-c',
         '--agent-cls',
-        default=config.get(ConfigType.AGENT),
+        default=config.agent,
         type=str,
         help='The agent class to use',
     )
     parser.add_argument(
         '-m',
         '--model-name',
-        default=config.get(ConfigType.LLM_MODEL),
+        default=config.llm.model,
         type=str,
         help='The (litellm) model name to use',
     )
     parser.add_argument(
         '-i',
         '--max-iterations',
-        default=config.get(ConfigType.MAX_ITERATIONS),
+        default=config.max_iterations,
         type=int,
         help='The maximum number of iterations to run the agent',
     )
     parser.add_argument(
         '-n',
         '--max-chars',
-        default=config.get(ConfigType.MAX_CHARS),
+        default=config.llm.max_chars,
         type=int,
         help='The maximum number of characters to send to and receive from LLM per task',
     )
@@ -169,8 +180,8 @@ def parse_arguments():
     parser = get_parser()
     args, _ = parser.parse_known_args()
     if args.directory:
-        config[ConfigType.WORKSPACE_BASE] = os.path.abspath(args.directory)
-        print(f'Setting workspace base to {config[ConfigType.WORKSPACE_BASE]}')
+        config.workspace_base = os.path.abspath(args.directory)
+        print(f'Setting workspace base to {config.workspace_base}')
     return args
 
 
@@ -178,44 +189,30 @@ args = parse_arguments()
 
 
 def finalize_config():
-    if config.get(ConfigType.WORKSPACE_MOUNT_REWRITE) and not config.get(ConfigType.WORKSPACE_MOUNT_PATH):
-        base = config.get(ConfigType.WORKSPACE_BASE) or os.getcwd()
-        parts = config[ConfigType.WORKSPACE_MOUNT_REWRITE].split(':')
-        config[ConfigType.WORKSPACE_MOUNT_PATH] = base.replace(parts[0], parts[1])
+    if config.workspace_mount_rewrite and not config.workspace_mount_path:
+        base = config.workspace_base or os.getcwd()
+        parts = config.workspace_mount_rewrite.split(':')
+        config.workspace_mount_path = base.replace(parts[0], parts[1])
 
-    if config.get(ConfigType.WORKSPACE_MOUNT_PATH) is None:
-        config[ConfigType.WORKSPACE_MOUNT_PATH] = os.path.abspath(config[ConfigType.WORKSPACE_BASE])
+    if config.workspace_mount_path is None:
+        config.workspace_mount_path = os.path.abspath(config.workspace_base)
 
-    if config.get(ConfigType.LLM_EMBEDDING_BASE_URL) is None:
-        config[ConfigType.LLM_EMBEDDING_BASE_URL] = config.get(ConfigType.LLM_BASE_URL)
+    if config.llm.embedding_base_url is None:
+        config.llm.embedding_base_url = config.llm.base_url
 
-    USE_HOST_NETWORK = config[ConfigType.USE_HOST_NETWORK].lower() != 'false'
+    USE_HOST_NETWORK = config.use_host_network
     if USE_HOST_NETWORK and platform.system() == 'Darwin':
         logger.warning(
             'Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. '
             'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'
         )
-    config[ConfigType.USE_HOST_NETWORK] = USE_HOST_NETWORK
+    config.use_host_network = USE_HOST_NETWORK
 
-    if config.get(ConfigType.WORKSPACE_MOUNT_PATH) is None:
-        config[ConfigType.WORKSPACE_MOUNT_PATH] = config.get(ConfigType.WORKSPACE_BASE)
-
+    # TODO why was the last workspace_mount_path line unreachable?
 
 finalize_config()
 
 
-def get(key: ConfigType, required: bool = False):
-    """
-    Get a key from the environment variables or config.toml or default configs.
-    """
-    if not isinstance(key, ConfigType):
-        raise ValueError(f"key '{key}' must be an instance of ConfigType Enum")
-    value = config.get(key)
-    if not value and required:
-        raise KeyError(f"Please set '{key}' in `config.toml` or `.env`.")
-    return value
-
-
-_cache_dir = config.get(ConfigType.CACHE_DIR)
+_cache_dir = config.cache_dir
 if _cache_dir:
     pathlib.Path(_cache_dir).mkdir(parents=True, exist_ok=True)

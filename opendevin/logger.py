@@ -7,12 +7,9 @@ from typing import Literal, Mapping
 
 from termcolor import colored
 
-from opendevin import config
-from opendevin.schema.config import ConfigType
+from opendevin.config import config
 
-DISABLE_COLOR_PRINTING = (
-    config.get(ConfigType.DISABLE_COLOR).lower() == 'true'
-)
+DISABLE_COLOR_PRINTING = config.disable_color
 
 ColorType = Literal[
     'red',

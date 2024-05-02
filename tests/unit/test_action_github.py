@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, call, patch
 import pytest
 
 from agenthub.dummy_agent.agent import DummyAgent
-from opendevin import config
+from opendevin.config import config
 from opendevin.action.github import GitHubPushAction, GitHubSendPRAction
 from opendevin.controller.agent_controller import AgentController
 from opendevin.llm.llm import LLM

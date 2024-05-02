@@ -11,7 +11,7 @@ from typing import Dict, List, Tuple
 
 import docker
 
-from opendevin import config
+from opendevin.config import config
 from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.logger import opendevin_logger as logger
 from opendevin.sandbox.docker.process import DockerProcess
@@ -22,14 +22,15 @@ from opendevin.schema import ConfigType
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
-CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
-SANDBOX_WORKSPACE_DIR = config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX)
+CONTAINER_IMAGE = config.sandbox_container_image
+SANDBOX_WORKSPACE_DIR = config.workspace_mount_path_in_sandbox
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
-RUN_AS_DEVIN = config.get(ConfigType.RUN_AS_DEVIN).lower() != 'false'
+RUN_AS_DEVIN = config.run_as_devin
 USER_ID = 1000
-if SANDBOX_USER_ID := config.get(ConfigType.SANDBOX_USER_ID):
+if SANDBOX_USER_ID := config.sandbox_user_id:
+    # TODO not needed?
     USER_ID = int(SANDBOX_USER_ID)
 elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
@@ -228,7 +229,7 @@ class DockerExecBox(Sandbox):
 
         try:
             # start the container
-            mount_dir = config.get(ConfigType.WORKSPACE_MOUNT_PATH)
+            mount_dir = config.workspace_mount_path
             self.container = self.docker_client.containers.run(
                 self.container_image,
                 command='tail -f /dev/null',

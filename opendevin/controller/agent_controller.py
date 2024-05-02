@@ -1,7 +1,7 @@
 import asyncio
 from typing import Callable, List, Type
 
-from opendevin import config
+from opendevin.config import config
 from opendevin.action import (
     Action,
     AgentDelegateAction,
@@ -29,8 +29,8 @@ from opendevin.schema import TaskState
 from opendevin.schema.config import ConfigType
 from opendevin.state import State
 
-MAX_ITERATIONS = config.get(ConfigType.MAX_ITERATIONS)
-MAX_CHARS = config.get(ConfigType.MAX_CHARS)
+MAX_ITERATIONS = config.max_iterations
+MAX_CHARS = config.llm.max_chars
 
 
 class AgentController:

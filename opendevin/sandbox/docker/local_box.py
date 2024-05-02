@@ -4,7 +4,7 @@ import subprocess
 import sys
 from typing import Dict, Tuple
 
-from opendevin import config
+from opendevin.config import config
 from opendevin.logger import opendevin_logger as logger
 from opendevin.sandbox.docker.process import DockerProcess
 from opendevin.sandbox.process import Process
@@ -29,7 +29,7 @@ from opendevin.schema.config import ConfigType
 
 class LocalBox(Sandbox):
     def __init__(self, timeout: int = 120):
-        os.makedirs(config.get(ConfigType.WORKSPACE_BASE), exist_ok=True)
+        os.makedirs(config.workspace_base, exist_ok=True)
         self.timeout = timeout
         self.background_commands: Dict[int, Process] = {}
         self.cur_background_id = 0
@@ -39,7 +39,7 @@ class LocalBox(Sandbox):
         try:
             completed_process = subprocess.run(
                 cmd, shell=True, text=True, capture_output=True,
-                timeout=self.timeout, cwd=config.get(ConfigType.WORKSPACE_BASE)
+                timeout=self.timeout, cwd=config.workspace_base
             )
             return completed_process.returncode, completed_process.stdout.strip()
         except subprocess.TimeoutExpired:
@@ -47,19 +47,19 @@ class LocalBox(Sandbox):
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         # mkdir -p sandbox_dest if it doesn't exist
-        res = subprocess.run(f'mkdir -p {sandbox_dest}', shell=True, text=True, cwd=config.get(ConfigType.WORKSPACE_BASE))
+        res = subprocess.run(f'mkdir -p {sandbox_dest}', shell=True, text=True, cwd=config.workspace_base)
         if res.returncode != 0:
             raise RuntimeError(f'Failed to create directory {sandbox_dest} in sandbox')
 
         if recursive:
             res = subprocess.run(
-                f'cp -r {host_src} {sandbox_dest}', shell=True, text=True, cwd=config.get(ConfigType.WORKSPACE_BASE)
+                f'cp -r {host_src} {sandbox_dest}', shell=True, text=True, cwd=config.workspace_base
             )
             if res.returncode != 0:
                 raise RuntimeError(f'Failed to copy {host_src} to {sandbox_dest} in sandbox')
         else:
             res = subprocess.run(
-                f'cp {host_src} {sandbox_dest}', shell=True, text=True, cwd=config.get(ConfigType.WORKSPACE_BASE)
+                f'cp {host_src} {sandbox_dest}', shell=True, text=True, cwd=config.workspace_base
             )
             if res.returncode != 0:
                 raise RuntimeError(f'Failed to copy {host_src} to {sandbox_dest} in sandbox')
@@ -67,7 +67,7 @@ class LocalBox(Sandbox):
     def execute_in_background(self, cmd: str) -> Process:
         process = subprocess.Popen(
             cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            text=True, cwd=config.get(ConfigType.WORKSPACE_BASE)
+            text=True, cwd=config.workspace_base
         )
         bg_cmd = DockerProcess(
             id=self.cur_background_id, command=cmd, result=process, pid=process.pid
@@ -101,7 +101,7 @@ class LocalBox(Sandbox):
         self.close()
 
     def get_working_directory(self):
-        return config.get(ConfigType.WORKSPACE_BASE)
+        return config.workspace_base
 
 
 if __name__ == '__main__':

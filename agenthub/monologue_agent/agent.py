@@ -2,7 +2,7 @@ from typing import List
 
 import agenthub.monologue_agent.utils.prompts as prompts
 from agenthub.monologue_agent.utils.monologue import Monologue
-from opendevin import config
+from opendevin.config import config
 from opendevin.action import (
     Action,
     AgentRecallAction,
@@ -29,7 +29,7 @@ from opendevin.schema import ActionType
 from opendevin.schema.config import ConfigType
 from opendevin.state import State
 
-if config.get(ConfigType.AGENT_MEMORY_ENABLED):
+if config.agent.memory_enabled:
     from agenthub.monologue_agent.utils.memory import LongTermMemory
 
 MAX_MONOLOGUE_LENGTH = 20000
@@ -152,7 +152,7 @@ class MonologueAgent(Agent):
             raise AgentNoInstructionError()
 
         self.monologue = Monologue()
-        if config.get(ConfigType.AGENT_MEMORY_ENABLED):
+        if config.agent.memory_enabled:
             self.memory = LongTermMemory()
         else:
             self.memory = None

@@ -11,7 +11,7 @@ from typing import Dict, List, Tuple, Union
 import docker
 from pexpect import pxssh
 
-from opendevin import config
+from opendevin.config import config
 from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.logger import opendevin_logger as logger
 from opendevin.sandbox.docker.process import DockerProcess
@@ -24,19 +24,19 @@ from opendevin.utils import find_available_tcp_port
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
-SANDBOX_WORKSPACE_DIR = config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX)
+SANDBOX_WORKSPACE_DIR = config.workspace_mount_path_in_sandbox
 
-CONTAINER_IMAGE = config.get(ConfigType.SANDBOX_CONTAINER_IMAGE)
+CONTAINER_IMAGE = config.sandbox_container_image
 
-SSH_HOSTNAME = config.get(ConfigType.SSH_HOSTNAME)
+SSH_HOSTNAME = config.ssh_hostname
 
-USE_HOST_NETWORK = config.get(ConfigType.USE_HOST_NETWORK)
+USE_HOST_NETWORK = config.use_host_network
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
-RUN_AS_DEVIN = config.get(ConfigType.RUN_AS_DEVIN).lower() != 'false'
+RUN_AS_DEVIN = config.run_as_devin
 USER_ID = 1000
-if SANDBOX_USER_ID := config.get(ConfigType.SANDBOX_USER_ID):
+if SANDBOX_USER_ID := config.sandbox_user_id:
     USER_ID = int(SANDBOX_USER_ID)
 elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
@@ -366,7 +366,7 @@ class DockerSSHBox(Sandbox):
                      )
                 )
 
-            mount_dir = config.get(ConfigType.WORKSPACE_MOUNT_PATH)
+            mount_dir = config.workspace_mount_path
             logger.info(f'Mounting workspace directory: {mount_dir}')
             # start the container
             self.container = self.docker_client.containers.run(
@@ -383,7 +383,7 @@ class DockerSSHBox(Sandbox):
                         'mode': 'rw'
                     },
                     # mount cache directory to /home/opendevin/.cache for pip cache reuse
-                    config.get(ConfigType.CACHE_DIR): {
+                    config.cache_dir: {
                         'bind': '/home/opendevin/.cache' if RUN_AS_DEVIN else '/root/.cache',
                         'mode': 'rw'
                     },

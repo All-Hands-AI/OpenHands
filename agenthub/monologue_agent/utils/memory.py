@@ -14,7 +14,7 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from opendevin import config
+from opendevin.config import config
 from opendevin.logger import opendevin_logger as logger
 from opendevin.schema.config import ConfigType
 
@@ -66,7 +66,7 @@ class EmbeddingModelFactory(ABC):
         # If no embedding strategy is provided, use the one from the config
         # If that is also not provided, fall back to HuggingFace
         if embedding_strategy is None:
-            embedding_strategy = config.get(ConfigType.LLM_EMBEDDING_MODEL)
+            embedding_strategy = config.llm.embedding_model
 
         # Define a dict of factories for the embedding strategies we know
         factories = {
@@ -135,7 +135,7 @@ class LongTermMemory:
         """
         Initialize the chromadb and set up ChromaVectorStore for later use.
         """
-        embedding_strategy = config.get(ConfigType.LLM_EMBEDDING_MODEL)
+        embedding_strategy = config.llm.embedding_model
         embed_model = EmbeddingModelFactory.create(embedding_strategy=embedding_strategy)
 
         db = chromadb.Client()
@@ -145,7 +145,7 @@ class LongTermMemory:
             vector_store, embed_model=embed_model)
         self.thought_idx = 0
         self._add_threads = []
-        self.sema = threading.Semaphore(value=config.get(ConfigType.AGENT_MEMORY_MAX_THREADS))
+        self.sema = threading.Semaphore(value=config.agent.memory_max_threads)
 
 
     def add_event(self, event: dict):

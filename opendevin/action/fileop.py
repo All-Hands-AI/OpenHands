@@ -2,7 +2,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from opendevin import config
+from opendevin.config import config
 from opendevin.observation import (
     AgentErrorObservation,
     FileReadObservation,

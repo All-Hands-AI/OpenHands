@@ -1,6 +1,6 @@
 from typing import List
 
-from opendevin import config
+from opendevin.config import config
 from opendevin.action import (
     Action,
 )
@@ -23,24 +23,24 @@ class ActionManager:
             self,
             sid: str,
     ):
-        sandbox_type = config.get(ConfigType.SANDBOX_TYPE).lower()
+        sandbox_type = config.sandbox_type.lower()
         if sandbox_type == 'exec':
             self.sandbox = DockerExecBox(
                 sid=(sid or 'default'),
-                timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
+                timeout=config.sandbox_timeout
             )
         elif sandbox_type == 'local':
             self.sandbox = LocalBox(
-                timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
+                timeout=config.sandbox_timeout
             )
         elif sandbox_type == 'ssh':
             self.sandbox = DockerSSHBox(
                 sid=(sid or 'default'),
-                timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
+                timeout=config.sandbox_timeout
             )
         elif sandbox_type == 'e2b':
             self.sandbox = E2BBox(
-                timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
+                timeout=config.sandbox_timeout
             )
         else:
             raise ValueError(f'Invalid sandbox type: {sandbox_type}')

@@ -13,20 +13,19 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from opendevin import config
+from opendevin.config import config
 from opendevin.logger import llm_prompt_logger, llm_response_logger
 from opendevin.logger import opendevin_logger as logger
-from opendevin.schema import ConfigType
 
-DEFAULT_API_KEY = config.get(ConfigType.LLM_API_KEY)
-DEFAULT_BASE_URL = config.get(ConfigType.LLM_BASE_URL)
-DEFAULT_MODEL_NAME = config.get(ConfigType.LLM_MODEL)
-DEFAULT_API_VERSION = config.get(ConfigType.LLM_API_VERSION)
-LLM_NUM_RETRIES = config.get('llm.num_retries')
-LLM_RETRY_MIN_WAIT = config.get(ConfigType.LLM_RETRY_MIN_WAIT)
-LLM_RETRY_MAX_WAIT = config.get(ConfigType.LLM_RETRY_MAX_WAIT)
-LLM_TIMEOUT = config.get(ConfigType.LLM_TIMEOUT)
-LLM_MAX_RETURN_TOKENS = config.get(ConfigType.LLM_MAX_RETURN_TOKENS)
+DEFAULT_API_KEY = config.llm.api_key
+DEFAULT_BASE_URL = config.llm.base_url
+DEFAULT_MODEL_NAME = config.llm.model
+DEFAULT_API_VERSION = config.llm.api_version
+LLM_NUM_RETRIES = config.llm.num_retries
+LLM_RETRY_MIN_WAIT = config.llm.retry_min_wait
+LLM_RETRY_MAX_WAIT = config.llm.retry_max_wait
+LLM_TIMEOUT = config.llm.timeout
+LLM_MAX_RETURN_TOKENS = config.llm.max_return_tokens
 
 
 class LLM:

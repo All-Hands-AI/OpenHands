@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 import requests
 
-from opendevin import config
+from opendevin.config import config
 from opendevin.observation import AgentErrorObservation, Observation
 from opendevin.observation.message import AgentMessageObservation
 from opendevin.observation.run import CmdOutputObservation
@@ -39,7 +39,7 @@ class GitHubPushAction(ExecutableAction):
     action: str = ActionType.PUSH
 
     async def run(self, controller: 'AgentController') -> Observation:
-        github_token = config.get(ConfigType.GITHUB_TOKEN)
+        github_token = config.github_token
         if not github_token:
             return AgentErrorObservation(
                 'GITHUB_TOKEN is not set'
@@ -110,7 +110,7 @@ class GitHubSendPRAction(ExecutableAction):
     action: str = ActionType.SEND_PR
 
     async def run(self, controller: 'AgentController') -> Observation:
-        github_token = config.get(ConfigType.GITHUB_TOKEN)
+        github_token = config.github_token
         if not github_token:
             return AgentErrorObservation(
                 'GITHUB_TOKEN is not set'
