@@ -5,7 +5,7 @@ import Socket from "./socket";
 export function changeAgentState(message: AgentTaskAction): void {
   const eventString = JSON.stringify({
     action: ActionType.CHANGE_AGENT_STATE,
-    args: { task_state_action: message },
+    args: { agent_state: message },
   });
   Socket.send(eventString);
 }
