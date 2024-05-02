@@ -1,11 +1,14 @@
 import React from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { IoMdChatbubbles } from "react-icons/io";
 import ChatInput from "../ChatInput";
 import Chat from "./Chat";
 import { RootState } from "#/store";
 import AgentTaskState from "#/types/AgentTaskState";
 import { sendChatMessage } from "#/services/chatService";
+import { addUserMessage } from "#/state/chat";
+import ActionType from "#/types/ActionType";
+import Socket from "#/services/socket";
 
 function ActionBanner() {
   return (
@@ -23,9 +26,19 @@ function ChatInterface() {
   const { messages } = useSelector((state: RootState) => state.tempChat);
   const { curTaskState } = useSelector((state: RootState) => state.agent);
 
+  const dispatch = useDispatch();
+
   const handleSendMessage = (content: string) => {
-    const isNewTask = curTaskState === AgentTaskState.INIT;
-    sendChatMessage(content, isNewTask);
+    dispatch(addUserMessage(content));
+
+    let event;
+    if (curTaskState === AgentTaskState.INIT) {
+      event = { action: ActionType.START, args: { task: content } };
+    } else {
+      event = { action: ActionType.USER_MESSAGE, args: { content } };
+    }
+
+    Socket.send(JSON.stringify(event));
   };
 
   return (

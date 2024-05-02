@@ -1,5 +1,5 @@
 import React from "react";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { act } from "react-dom/test-utils";
 import userEvent from "@testing-library/user-event";
@@ -23,7 +23,7 @@ describe("ChatInterface", () => {
     expect(screen.queryAllByTestId("message")).toHaveLength(1); // initial welcome message only
   });
 
-  it("should render the new message the user has typed", () => {
+  it("should render the new message the user has typed", async () => {
     renderWithProviders(<ChatInterface />);
 
     const input = screen.getByRole("textbox");
