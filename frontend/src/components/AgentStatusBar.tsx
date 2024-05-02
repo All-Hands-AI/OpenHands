@@ -8,10 +8,6 @@ import AgentState from "#/types/AgentState";
 const AgentStatusMap: { [k: string]: { message: string; indicator: string } } =
   {
     [AgentState.INIT]: {
-      message: "Agent is loading...",
-      indicator: "bg-red-500",
-    },
-    [AgentState.INIT]: {
       message: "Agent is initialized, waiting for task...",
       indicator: "bg-blue-500",
     },
