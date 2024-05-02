@@ -133,6 +133,7 @@ class AgentController:
                 finished = await self.step(i)
                 if finished:
                     await self.set_agent_state_to(AgentState.FINISHED)
+                    break
             except Exception:
                 logger.error('Error in loop', exc_info=True)
                 await self.add_error_to_history(
