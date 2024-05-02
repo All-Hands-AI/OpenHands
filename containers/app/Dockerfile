@@ -60,7 +60,7 @@ USER opendevin
 
 COPY --chown=opendevin ./opendevin ./opendevin
 COPY --chown=opendevin ./agenthub ./agenthub
-RUN python opendevin/download.py # No-op to download assets
+RUN python opendevin/core/download.py # No-op to download assets
 RUN playwright install --with-deps chromium
 
 COPY --chown=opendevin --from=frontend-builder /app/dist ./frontend/dist
