@@ -1,3 +1,4 @@
+import { changeAgentState } from "#/state/agentSlice";
 import { appendAssistantMessage } from "#/state/chatSlice";
 import { setUrl, setScreenshotSrc } from "#/state/browserSlice";
 import store from "#/store";
@@ -22,6 +23,9 @@ export function handleObservationMessage(message: ObservationMessage) {
       if (message.extras?.url) {
         store.dispatch(setUrl(message.extras.url));
       }
+      break;
+    case ObservationType.AGENT_STATE_CHANGED:
+      store.dispatch(changeAgentState(message.extras.agent_state));
       break;
     default:
       store.dispatch(appendAssistantMessage(message.message));

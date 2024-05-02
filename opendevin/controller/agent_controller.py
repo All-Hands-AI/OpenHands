@@ -90,6 +90,9 @@ class AgentController:
 
         self._await_user_message_queue: asyncio.Queue = asyncio.Queue()
 
+    async def close(self):
+        self.event_stream.unsubscribe('agent_controller')
+
     def update_state_for_step(self, i):
         if self.state is None:
             return
@@ -169,9 +172,9 @@ class AgentController:
                 await self.set_agent_state_to(AgentState.FINISHED)
             else:
                 logger.warning(f'Unknown agent state: {event.agent_state}')
-        await self.event_stream.add_event(
-            AgentStateChangedObservation('', self._agent_state), 'agent'
-        )
+            await self.event_stream.add_event(
+                AgentStateChangedObservation('', self._agent_state), 'agent'
+            )
 
     async def reset_task(self):
         self.state = None

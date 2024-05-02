@@ -16,6 +16,11 @@ class EventStream:
             raise ValueError('Subscriber already exists: ' + id)
         self._subscribers[id] = subscriber
 
+    def unsubscribe(self, id: str):
+        if id not in self._subscribers:
+            raise ValueError('Subscriber does not exist: ' + id)
+        del self._subscribers[id]
+
     # TODO: make this not async
     async def add_event(self, event: Event, source: str):
         with self._lock:

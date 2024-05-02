@@ -114,6 +114,8 @@ class AgentUnit:
 
         logger.info(f'Creating agent {agent_cls} using LLM {model}')
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
+        if self.controller is not None:
+            self.controller.close()
         try:
             self.controller = AgentController(
                 sid=self.sid,
@@ -135,7 +137,7 @@ class AgentUnit:
             await self.send_error('No agent started.')
             return
         await self.event_stream.add_event(
-            AgentStateChangedObservation('', AgentState.INIT), 'user'
+            AgentStateChangedObservation('', AgentState.INIT), 'agent'
         )
 
     async def on_event(self, event: Event):
