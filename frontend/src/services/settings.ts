@@ -26,9 +26,9 @@ export const getCurrentSettingsVersion = () => {
   }
 };
 
-export const settingsAreUpToDate = () => {
-  return getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
-};
+export const settingsAreUpToDate = () => (
+  getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
+);
 
 export const maybeMigrateSettings = () => {
   // Sometimes we ship major changes, like a new default agent.
