@@ -21,7 +21,7 @@ class AgentRecallAction(Action):
     thought: str = ''
     action: str = ActionType.RECALL
 
-    async def run(self, controller: 'AgentController') -> 'AgentRecallObservation':
+    async def run(self, controller: 'AgentController') -> AgentRecallObservation:
         return AgentRecallObservation(
             content='',
             memories=controller.agent.search_memory(self.query),
@@ -47,7 +47,7 @@ class AgentTalkAction(Action):
     content: str
     action: str = ActionType.TALK
 
-    async def run(self, controller: 'AgentController') -> 'Observation':
+    async def run(self, controller: 'AgentController') -> Observation:
         raise NotImplementedError
 
     @property
@@ -63,7 +63,7 @@ class AgentEchoAction(Action):
     content: str
     action: str = 'echo'
 
-    async def run(self, controller: 'AgentController') -> 'Observation':
+    async def run(self, controller: 'AgentController') -> Observation:
         return AgentMessageObservation(self.content)
 
     @property
@@ -99,7 +99,7 @@ class AgentDelegateAction(Action):
     thought: str = ''
     action: str = ActionType.DELEGATE
 
-    async def run(self, controller: 'AgentController') -> 'Observation':
+    async def run(self, controller: 'AgentController') -> Observation:
         await controller.start_delegate(self)
         return NullObservation('')
 
