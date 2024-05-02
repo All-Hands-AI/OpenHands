@@ -82,6 +82,13 @@
         },
         {
           "items": [
+            "python/opendevin/browser/browser_env"
+          ],
+          "label": "opendevin.browser",
+          "type": "category"
+        },
+        {
+          "items": [
             "python/opendevin/controller/agent_controller"
           ],
           "label": "opendevin.controller",
