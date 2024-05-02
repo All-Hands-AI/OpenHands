@@ -78,7 +78,12 @@ output=$(export PYTHONPATH=/OD-SWE-bench && \
     --verbose)
 
 REPO_PATH=$(echo "$output" | awk -F': ' '/repo_path:/ {print $2}')
+TEST_CMD=$(echo "$output" | awk -F': ' '/test_cmd:/ {print $2}')
 echo "Repo Path: $REPO_PATH"
+echo "Test Command: $TEST_CMD"
+
+# write test command to ~/.bashrc
+echo "export TEST_CMD=\"$TEST_CMD\"" >> ~/.bashrc
 
 if [[ "$REPO_PATH" == "None" ]]; then
     echo "Error: Failed to retrieve repository path. Tests may not have passed or output was not as expected." >&2
