@@ -2,7 +2,6 @@ import os
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from playwright.async_api import async_playwright
 
 from opendevin.events.observation import BrowserOutputObservation
 from opendevin.schema import ActionType
