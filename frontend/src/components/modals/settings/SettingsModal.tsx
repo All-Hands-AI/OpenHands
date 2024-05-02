@@ -10,6 +10,7 @@ import {
   Settings,
   getSettings,
   getSettingsDifference,
+  maybeMigrateSettings,
   saveSettings,
 } from "#/services/settings";
 import toast from "#/utils/toast";
@@ -23,6 +24,7 @@ interface SettingsProps {
 
 function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const { t } = useTranslation();
+  maybeMigrateSettings();
   const currentSettings = getSettings();
 
   const [models, setModels] = React.useState<string[]>([]);
@@ -92,13 +94,6 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     );
   };
 
-  const isDisabled =
-    Object.entries(settings)
-      // filter api key
-      .filter(([key]) => key !== "LLM_API_KEY")
-      .some(([, value]) => !value) ||
-    JSON.stringify(settings) === JSON.stringify(currentSettings);
-
   return (
     <BaseModal
       isOpen={isOpen}
@@ -109,7 +104,6 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
         {
           label: t(I18nKey.CONFIGURATION$MODAL_SAVE_BUTTON_LABEL),
           action: handleSaveSettings,
-          isDisabled,
           closeAfterAction: true,
           className: "bg-primary rounded-lg",
         },
@@ -123,7 +117,12 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
         },
       ]}
     >
-      {loading && <Spinner />}
+      {loading && (
+        <>
+          <p className="text-small">Waiting for the agent to load. This may take a few seconds.</p>
+          <Spinner />
+        </>
+      )}
       {!loading && (
         <SettingsForm
           settings={settings}
