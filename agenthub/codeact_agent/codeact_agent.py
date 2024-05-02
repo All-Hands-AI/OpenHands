@@ -2,7 +2,9 @@ import re
 from typing import List, Mapping
 
 from agenthub.codeact_agent.prompt import EXAMPLES, SYSTEM_MESSAGE
-from opendevin.action import (
+from opendevin.controller.agent import Agent
+from opendevin.controller.state.state import State
+from opendevin.events.action import (
     Action,
     AgentEchoAction,
     AgentFinishAction,
@@ -11,20 +13,18 @@ from opendevin.action import (
     IPythonRunCellAction,
     NullAction,
 )
-from opendevin.agent import Agent
-from opendevin.llm.llm import LLM
-from opendevin.observation import (
+from opendevin.events.observation import (
     AgentMessageObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
     UserMessageObservation,
 )
-from opendevin.sandbox.plugins import (
+from opendevin.llm.llm import LLM
+from opendevin.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
     SWEAgentCommandsRequirement,
 )
-from opendevin.state import State
 
 
 def parse_response(response) -> str:
@@ -34,14 +34,20 @@ def parse_response(response) -> str:
             action += f'</execute_{lang}>'
     return action
 
-def truncate_observation(observation: str, max_chars: int=5000) -> str:
+
+def truncate_observation(observation: str, max_chars: int = 5000) -> str:
     """
     Truncate the middle of the observation if it is too long.
     """
     if len(observation) <= max_chars:
         return observation
     half = max_chars // 2
-    return observation[:half] + '\n[... Observation truncated due to length ...]\n' + observation[-half:]
+    return (
+        observation[:half]
+        + '\n[... Observation truncated due to length ...]\n'
+        + observation[-half:]
+    )
+
 
 class CodeActAgent(Agent):
     """
@@ -49,19 +55,22 @@ class CodeActAgent(Agent):
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
     """
 
-    sandbox_plugins: List[PluginRequirement] = [JupyterRequirement(), SWEAgentCommandsRequirement()]
+    sandbox_plugins: List[PluginRequirement] = [
+        JupyterRequirement(),
+        SWEAgentCommandsRequirement(),
+    ]
     SUPPORTED_ACTIONS = (
         CmdRunAction,
         IPythonRunCellAction,
         AgentEchoAction,
         AgentTalkAction,
-        NullAction
+        NullAction,
     )
     SUPPORTED_OBSERVATIONS = (
         AgentMessageObservation,
         UserMessageObservation,
         CmdOutputObservation,
-        IPythonRunCellObservation
+        IPythonRunCellObservation,
     )
 
     def __init__(
@@ -102,7 +111,7 @@ class CodeActAgent(Agent):
                     'content': (
                         f'Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\n'
                         f"NOW, LET'S START!\n\n{state.plan.main_goal}"
-                    )
+                    ),
                 },
             ]
         updated_info = state.updated_info
@@ -118,8 +127,7 @@ class CodeActAgent(Agent):
                     obs, self.SUPPORTED_OBSERVATIONS
                 ), f'{obs.__class__} is not supported (supported: {self.SUPPORTED_OBSERVATIONS})'
                 if isinstance(obs, (AgentMessageObservation, UserMessageObservation)):
-                    self.messages.append(
-                        {'role': 'user', 'content': obs.content})
+                    self.messages.append({'role': 'user', 'content': obs.content})
 
                     # User wants to exit
                     if obs.content.strip() == '/exit':
@@ -135,7 +143,9 @@ class CodeActAgent(Agent):
                     splited = content.split('\n')
                     for i, line in enumerate(splited):
                         if '![image](data:image/png;base64,' in line:
-                            splited[i] = '![image](data:image/png;base64, ...) already displayed to user'
+                            splited[i] = (
+                                '![image](data:image/png;base64, ...) already displayed to user'
+                            )
                     content = '\n'.join(splited)
                     content = truncate_observation(content)
                     self.messages.append({'role': 'user', 'content': content})
@@ -150,7 +160,7 @@ class CodeActAgent(Agent):
                 '</execute_ipython>',
                 '</execute_bash>',
             ],
-            temperature=0.0
+            temperature=0.0,
         )
         action_str: str = parse_response(response)
         state.num_of_chars += sum(
@@ -158,7 +168,9 @@ class CodeActAgent(Agent):
         ) + len(action_str)
         self.messages.append({'role': 'assistant', 'content': action_str})
 
-        if bash_command := re.search(r'<execute_bash>(.*)</execute_bash>', action_str, re.DOTALL):
+        if bash_command := re.search(
+            r'<execute_bash>(.*)</execute_bash>', action_str, re.DOTALL
+        ):
             # remove the command from the action string to get thought
             thought = action_str.replace(bash_command.group(0), '').strip()
             # a command was found
@@ -166,7 +178,9 @@ class CodeActAgent(Agent):
             if command_group.strip() == 'exit':
                 return AgentFinishAction()
             return CmdRunAction(command=command_group, thought=thought)
-        elif python_code := re.search(r'<execute_ipython>(.*)</execute_ipython>', action_str, re.DOTALL):
+        elif python_code := re.search(
+            r'<execute_ipython>(.*)</execute_ipython>', action_str, re.DOTALL
+        ):
             # a code block was found
             code_group = python_code.group(1).strip()
             thought = action_str.replace(python_code.group(0), '').strip()

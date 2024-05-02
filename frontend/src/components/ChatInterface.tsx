@@ -78,7 +78,7 @@ function MessageList(): JSX.Element {
 
   const messageScroll = () => {
     messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
+      behavior: "auto",
       block: "end",
     });
   };
@@ -89,7 +89,7 @@ function MessageList(): JSX.Element {
 
     const interval = setInterval(() => {
       messageScroll();
-    }, 1000);
+    }, 100);
 
     // eslint-disable-next-line consistent-return
     return () => clearInterval(interval);

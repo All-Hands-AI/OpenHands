@@ -9,7 +9,7 @@ This folder implements the [CodeAct idea](https://arxiv.org/abs/2402.13463) that
 
 ```bash
 mkdir workspace
-PYTHONPATH=`pwd`:$PYTHONPATH python3 opendevin/main.py -d ./workspace -c CodeActAgent -t "Please write a flask app that returns 'Hello, World\!' at the root URL, then start the app on port 5000. python3 has already been installed for you."
+PYTHONPATH=`pwd`:$PYTHONPATH python3 opendevin/core/main.py -d ./workspace -c CodeActAgent -t "Please write a flask app that returns 'Hello, World\!' at the root URL, then start the app on port 5000. python3 has already been installed for you."
 ```
 
 Example: prompts `gpt-4-0125-preview` to write a flask server, install `flask` library, and start the server.
