@@ -10,7 +10,6 @@ from opendevin.events.action.github import GitHubPushAction, GitHubSendPRAction
 from opendevin.events.observation.commands import CmdOutputObservation
 from opendevin.events.observation.error import AgentErrorObservation
 from opendevin.events.observation.message import AgentMessageObservation
-from opendevin.events.stream import EventStream
 from opendevin.llm.llm import LLM
 
 
@@ -20,8 +19,7 @@ def agent_controller():
     config.config[ConfigType.SANDBOX_TYPE] = 'local'
     llm = LLM()
     agent = DummyAgent(llm=llm)
-    event_stream = EventStream()
-    controller = AgentController(agent, event_stream)
+    controller = AgentController(agent)
     yield controller
 
 
