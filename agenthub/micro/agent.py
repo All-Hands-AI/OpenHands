@@ -3,11 +3,11 @@ from typing import Dict, List
 
 from jinja2 import BaseLoader, Environment
 
-from opendevin.agent import Agent
+from opendevin.controller.agent import Agent
+from opendevin.controller.state.state import State
+from opendevin.core.exceptions import LLMOutputError
 from opendevin.events.action import Action, action_from_dict
-from opendevin.exceptions import LLMOutputError
 from opendevin.llm.llm import LLM
-from opendevin.state import State
 
 from .instructions import instructions
 from .registry import all_microagents
@@ -65,7 +65,8 @@ class MicroAgent(Agent):
             state=state,
             instructions=instructions,
             to_json=to_json,
-            delegates=self.delegates)
+            delegates=self.delegates,
+        )
         messages = [{'content': prompt, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)
         action_resp = resp['choices'][0]['message']['content']

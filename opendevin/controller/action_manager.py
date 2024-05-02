@@ -1,6 +1,6 @@
 from typing import List
 
-from opendevin import config
+from opendevin.core import config
 from opendevin.events.action import (
     Action,
 )
@@ -9,8 +9,14 @@ from opendevin.events.observation import (
     CmdOutputObservation,
     Observation,
 )
-from opendevin.sandbox import DockerExecBox, DockerSSHBox, E2BBox, LocalBox, Sandbox
-from opendevin.sandbox.plugins import PluginRequirement
+from opendevin.runtime.sandbox import (
+    DockerExecBox,
+    DockerSSHBox,
+    E2BBox,
+    LocalBox,
+    Sandbox,
+)
+from opendevin.runtime.sandbox.plugins import PluginRequirement
 from opendevin.schema import ConfigType
 
 

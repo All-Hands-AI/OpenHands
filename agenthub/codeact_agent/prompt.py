@@ -1,9 +1,9 @@
-from opendevin.sandbox.plugins import SWEAgentCommandsRequirement
+from opendevin.runtime.sandbox.plugins import SWEAgentCommandsRequirement
 
 _SWEAGENT_BASH_DOCS = '\n'.join(
     filter(
         lambda x: not x.startswith('submit'),
-        SWEAgentCommandsRequirement.documentation.split('\n')
+        SWEAgentCommandsRequirement.documentation.split('\n'),
     )
 )
 # _SWEAGENT_BASH_DOCS content below:
