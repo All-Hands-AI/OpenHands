@@ -23,6 +23,11 @@ function ChatInput({ disabled, onSendMessage }: ChatInputProps) {
       setMessage("");
     }
   };
+  const handleSendContinueMsg = () => {
+    const continueMsg = t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE);
+    setMessage(continueMsg);
+    onSendMessage(continueMsg);
+  };
 
   const onKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter" && !event.shiftKey && !isComposing) {
@@ -34,39 +39,53 @@ function ChatInput({ disabled, onSendMessage }: ChatInputProps) {
   };
 
   return (
-    <div className="w-full relative text-base flex">
-      <Textarea
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        onKeyDown={onKeyPress}
-        onCompositionStart={() => setIsComposing(true)}
-        onCompositionEnd={() => setIsComposing(false)}
-        placeholder={t(I18nKey.CHAT_INTERFACE$INPUT_PLACEHOLDER)}
-        className="pb-3 px-3"
-        classNames={{
-          inputWrapper: "bg-neutral-700 border border-neutral-600 rounded-lg",
-          input: "pr-16 text-neutral-400",
-        }}
-        maxRows={10}
-        minRows={1}
-        variant="bordered"
-      />
+    <>
+      <div className="mx-3 pt-3 text-center">
+        <button
+          type="button"
+          className="w-full relative bg-transparent border rounded-lg p-1 border-white hover:opacity-80 cursor-pointer select-none bottom-[10px] transition active:bg-white active:text-black hover:bg-neutral-500"
+          onClick={handleSendContinueMsg}
+        >
+          <span className="m-2">
+            {">>> "}
+            {t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
+          </span>
+        </button>
+      </div>
+      <div className="w-full relative text-base flex">
+        <Textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={onKeyPress}
+          onCompositionStart={() => setIsComposing(true)}
+          onCompositionEnd={() => setIsComposing(false)}
+          placeholder={t(I18nKey.CHAT_INTERFACE$INPUT_PLACEHOLDER)}
+          className="pb-3 px-3"
+          classNames={{
+            inputWrapper: "bg-neutral-700 border border-neutral-600 rounded-lg",
+            input: "pr-16 text-neutral-400",
+          }}
+          maxRows={10}
+          minRows={1}
+          variant="bordered"
+        />
 
-      <button
-        type="button"
-        onClick={handleSendChatMessage}
-        disabled={disabled}
-        className={twMerge(
-          "bg-transparent border rounded-lg p-1 border-white hover:opacity-80 cursor-pointer select-none absolute right-5 bottom-[19px] transition active:bg-white active:text-black",
-          disabled
-            ? "cursor-not-allowed border-neutral-400 text-neutral-400"
-            : "hover:bg-neutral-500 ",
-        )}
-        aria-label="Send message"
-      >
-        <VscArrowUp />
-      </button>
-    </div>
+        <button
+          type="button"
+          onClick={handleSendChatMessage}
+          disabled={disabled}
+          className={twMerge(
+            "bg-transparent border rounded-lg p-1 border-white hover:opacity-80 cursor-pointer select-none absolute right-5 bottom-[19px] transition active:bg-white active:text-black",
+            disabled
+              ? "cursor-not-allowed border-neutral-400 text-neutral-400"
+              : "hover:bg-neutral-500 ",
+          )}
+          aria-label="Send message"
+        >
+          <VscArrowUp />
+        </button>
+      </div>
+    </>
   );
 }
 
