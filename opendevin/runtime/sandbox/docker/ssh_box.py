@@ -21,8 +21,8 @@ from opendevin.runtime.sandbox.plugins import (
 )
 from opendevin.runtime.sandbox.process import Process
 from opendevin.runtime.sandbox.sandbox import Sandbox
+from opendevin.runtime.utils import find_available_tcp_port
 from opendevin.schema import ConfigType
-from opendevin.utils import find_available_tcp_port
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])

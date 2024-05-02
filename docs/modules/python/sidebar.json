@@ -177,6 +177,13 @@
               "label": "opendevin.runtime.sandbox",
               "type": "category"
             },
+            {
+              "items": [
+                "python/opendevin/runtime/utils/system"
+              ],
+              "label": "opendevin.runtime.utils",
+              "type": "category"
+            },
             "python/opendevin/runtime/files"
           ],
           "label": "opendevin.runtime",
@@ -220,13 +227,6 @@
             "python/opendevin/server/listen"
           ],
           "label": "opendevin.server",
-          "type": "category"
-        },
-        {
-          "items": [
-            "python/opendevin/utils/system"
-          ],
-          "label": "opendevin.utils",
           "type": "category"
         }
       ],
