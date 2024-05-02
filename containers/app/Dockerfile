@@ -5,7 +5,7 @@ WORKDIR /app
 
 COPY ./frontend/package.json frontend/package-lock.json ./
 RUN npm install -g npm@10.5.1
-RUN npm install
+RUN npm ci
 
 COPY ./frontend ./
 RUN npm run make-i18n && npm run build
@@ -43,7 +43,7 @@ RUN mkdir -p $WORKSPACE_BASE
 RUN apt-get update -y \
     && apt-get install -y curl ssh sudo
 
-RUN useradd -m -u $SANDBOX_USER_ID -s /bin/bash opendevin && \
+RUN useradd -l -m -u $SANDBOX_USER_ID -s /bin/bash opendevin && \
     usermod -aG sudo opendevin && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 RUN chown -R opendevin:opendevin /app
@@ -53,30 +53,19 @@ ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH='/app'
 
-COPY --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-# change ownership of the virtual environment to the sandbox user
+COPY --chown=opendevin --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 USER root
 RUN chown -R opendevin:opendevin ${VIRTUAL_ENV}
 USER opendevin
 
-COPY ./opendevin ./opendevin
-COPY ./agenthub ./agenthub
+COPY --chown=opendevin ./opendevin ./opendevin
+COPY --chown=opendevin ./agenthub ./agenthub
 RUN python opendevin/download.py # No-op to download assets
 RUN playwright install --with-deps chromium
 
-COPY --from=frontend-builder /app/dist ./frontend/dist
+COPY --chown=opendevin --from=frontend-builder /app/dist ./frontend/dist
+
+COPY --chown=opendevin ./containers/app/entrypoint.sh /app/entrypoint.sh
 
 USER root
-RUN chown -R opendevin:opendevin /app
-# make group permissions the same as user permissions
-RUN chmod -R g=u /app
-USER opendevin
-
-# change ownership of the app directory to the sandbox user
-COPY ./containers/app/entrypoint.sh /app/entrypoint.sh
-
-# run the script as root
-USER root
-RUN chown opendevin:opendevin /app/entrypoint.sh
-RUN chmod 777 /app/entrypoint.sh
 CMD ["/app/entrypoint.sh"]
