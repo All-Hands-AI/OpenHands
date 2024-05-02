@@ -7,6 +7,7 @@ from opendevin.core import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ActionType, AgentState, ConfigType
 from opendevin.events.action import (
+    ChangeAgentStateAction,
     NullAction,
     action_from_dict,
 )
@@ -74,6 +75,16 @@ class AgentUnit:
 
         if action == ActionType.INIT:
             await self.create_controller(data)
+            return
+        elif action == ActionType.START:
+            if self.controller is None:
+                await self.send_error('No agent started.')
+                return
+            task = data['args']['task']
+            await self.controller.setup_task(task)
+            await self.event_stream.add_event(
+                ChangeAgentStateAction(agent_state=AgentState.RUNNING), 'user'
+            )
             return
 
         action_dict = data.copy()
