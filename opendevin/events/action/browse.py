@@ -4,14 +4,13 @@ from typing import TYPE_CHECKING
 
 from playwright.async_api import async_playwright
 
-from opendevin.observation import BrowserOutputObservation
+from opendevin.events.observation import BrowserOutputObservation
 from opendevin.schema import ActionType
 
 from .action import Action
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
-    from opendevin.events.observation import BrowserOutputObservation
 
 
 @dataclass
@@ -20,7 +19,7 @@ class BrowseURLAction(Action):
     thought: str = ''
     action: str = ActionType.BROWSE
 
-    async def run(self, controller: 'AgentController') -> 'BrowserOutputObservation':  # type: ignore
+    async def run(self, controller: 'AgentController') -> BrowserOutputObservation:  # type: ignore
         asked_url = self.url
         if not asked_url.startswith('http'):
             asked_url = os.path.abspath(os.curdir) + self.url
