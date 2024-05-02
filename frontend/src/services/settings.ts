@@ -31,7 +31,6 @@ export const settingsAreUpToDate = () => {
 };
 
 export const maybeMigrateSettings = () => {
-  console.log('migrate');
   // Sometimes we ship major changes, like a new default agent.
   // In this case, we may want to override a previous choice made by the user.
   const currentVersion = getCurrentSettingsVersion();
