@@ -11,7 +11,7 @@ export LLM_API_KEY="sk-..."`;
 export WORKSPACE_BASE=$(pwd)/workspace`;
 
   const dockerCode = `docker run \\
-    -e LLM_API_KEY \\
+    -e LLM_API_KEY=$LLM_API_KEY \\
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \\
     -v $WORKSPACE_BASE:/opt/workspace_base \\
     -v /var/run/docker.sock:/var/run/docker.sock \\
