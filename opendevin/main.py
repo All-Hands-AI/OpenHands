@@ -3,8 +3,8 @@ import sys
 from typing import Type
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
-from opendevin.config import args
 from opendevin.agent import Agent
+from opendevin.config import args
 from opendevin.controller import AgentController
 from opendevin.llm.llm import LLM
 
@@ -20,11 +20,13 @@ def read_task_from_stdin() -> str:
     return sys.stdin.read()
 
 
-async def main():
+async def main(task_str: str = ''):
     """Main coroutine to run the agent controller with task input flexibility."""
 
     # Determine the task source
-    if args.file:
+    if task_str:
+        task = task_str
+    elif args.file:
         task = read_task_from_file(args.file)
     elif args.task:
         task = args.task

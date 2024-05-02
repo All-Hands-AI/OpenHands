@@ -1,20 +1,34 @@
 import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import i18next from "i18next";
 import React from "react";
 import { renderWithProviders } from "test-utils";
 import { Mock } from "vitest";
-import {
-  fetchAgents,
-  fetchModels,
-  getCurrentSettings,
-  saveSettings,
-} from "#/services/settingsService";
+import toast from "#/utils/toast";
+import { Settings, getSettings, saveSettings } from "#/services/settings";
+import { initializeAgent } from "#/services/agent";
+import { fetchAgents, fetchModels } from "#/api";
 import SettingsModal from "./SettingsModal";
 
-vi.mock("#/services/settingsService", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("#/services/settingsService")>()),
-  getCurrentSettings: vi.fn().mockReturnValue({}),
+const toastSpy = vi.spyOn(toast, "settingsChanged");
+const i18nSpy = vi.spyOn(i18next, "changeLanguage");
+
+vi.mock("#/services/settings", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("#/services/settings")>()),
+  getSettings: vi.fn().mockReturnValue({
+    LLM_MODEL: "gpt-3.5-turbo",
+    AGENT: "MonologueAgent",
+    LANGUAGE: "en",
+  }),
   saveSettings: vi.fn(),
+}));
+
+vi.mock("#/services/agent", async () => ({
+  initializeAgent: vi.fn(),
+}));
+
+vi.mock("#/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("#/api")>()),
   fetchModels: vi
     .fn()
     .mockResolvedValue(Promise.resolve(["model1", "model2", "model3"])),
@@ -37,10 +51,6 @@ describe("SettingsModal", () => {
     });
   });
 
-  it.todo(
-    "should display a loading spinner when fetching the models and agents",
-  );
-
   it("should close the modal when the cancel button is clicked", async () => {
     const onOpenChange = vi.fn();
     await act(async () =>
@@ -58,82 +68,191 @@ describe("SettingsModal", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it("should call saveSettings (and close) with the new values", async () => {
-    const onOpenChangeMock = vi.fn();
+  it("should disable the save button if the settings are the same as the initial settings", async () => {
     await act(async () =>
-      renderWithProviders(
-        <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
-      ),
+      renderWithProviders(<SettingsModal isOpen onOpenChange={vi.fn()} />),
     );
 
     const saveButton = screen.getByRole("button", { name: /save/i });
 
-    const modelInput = screen.getByRole("combobox", { name: "model" });
-
-    act(() => {
-      userEvent.click(modelInput);
-    });
-
-    const model3 = screen.getByText("model3");
-
-    act(() => {
-      userEvent.click(model3);
-    });
-
-    act(() => {
-      userEvent.click(saveButton);
-    });
-
-    expect(saveSettings).toHaveBeenCalledWith({
-      LLM_MODEL: "model3",
-    });
-    expect(onOpenChangeMock).toHaveBeenCalledWith(false);
+    expect(saveButton).toBeDisabled();
   });
 
-  // This test does not seem to rerender the component correctly
-  // Therefore, we cannot test the reset of the state
-  it.skip("should reset state when the cancel button is clicked", async () => {
-    (getCurrentSettings as Mock).mockReturnValue({
-      LLM_MODEL: "model1",
-      AGENT: "agent1",
-      LANGUAGE: "English",
+  it("should disabled the save button if the settings contain a missing value", () => {
+    const onOpenChangeMock = vi.fn();
+    (getSettings as Mock).mockReturnValueOnce({
+      LLM_MODEL: "gpt-3.5-turbo",
+      AGENT: "",
     });
-
-    const onOpenChange = vi.fn();
-    const { rerender } = renderWithProviders(
-      <SettingsModal isOpen onOpenChange={onOpenChange} />,
+    renderWithProviders(
+      <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
     );
 
-    await waitFor(() => {
-      expect(screen.getByRole("combobox", { name: "model" })).toHaveValue(
-        "model1",
+    const saveButton = screen.getByRole("button", { name: /save/i });
+
+    expect(saveButton).toBeDisabled();
+  });
+
+  describe("onHandleSave", () => {
+    const initialSettings: Settings = {
+      LLM_MODEL: "gpt-3.5-turbo",
+      AGENT: "MonologueAgent",
+      LANGUAGE: "en",
+      LLM_API_KEY: "sk-...",
+    };
+
+    it("should save the settings", async () => {
+      const onOpenChangeMock = vi.fn();
+      await act(async () =>
+        renderWithProviders(
+          <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
+        ),
       );
+
+      const saveButton = screen.getByRole("button", { name: /save/i });
+      const modelInput = screen.getByRole("combobox", { name: "model" });
+
+      act(() => {
+        userEvent.click(modelInput);
+      });
+
+      const model3 = screen.getByText("model3");
+
+      act(() => {
+        userEvent.click(model3);
+      });
+
+      act(() => {
+        userEvent.click(saveButton);
+      });
+
+      expect(saveSettings).toHaveBeenCalledWith({
+        ...initialSettings,
+        LLM_MODEL: "model3",
+        LLM_API_KEY: "", // reset after model change
+      });
     });
 
-    const cancelButton = screen.getByRole("button", { name: /cancel/i });
-
-    const modelInput = screen.getByRole("combobox", { name: "model" });
-    act(() => {
-      userEvent.click(modelInput);
-    });
-
-    const model3 = screen.getByText("model3");
-    act(() => {
-      userEvent.click(model3);
-    });
-
-    expect(modelInput).toHaveValue("model3");
-
-    act(() => {
-      userEvent.click(cancelButton);
-    });
-
-    rerender(<SettingsModal isOpen onOpenChange={onOpenChange} />);
-
-    await waitFor(() => {
-      expect(screen.getByRole("combobox", { name: "model" })).toHaveValue(
-        "model1",
+    it("should reinitialize agent", async () => {
+      const onOpenChangeMock = vi.fn();
+      await act(async () =>
+        renderWithProviders(
+          <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
+        ),
       );
+
+      const saveButton = screen.getByRole("button", { name: /save/i });
+      const modelInput = screen.getByRole("combobox", { name: "model" });
+
+      act(() => {
+        userEvent.click(modelInput);
+      });
+
+      const model3 = screen.getByText("model3");
+
+      act(() => {
+        userEvent.click(model3);
+      });
+
+      act(() => {
+        userEvent.click(saveButton);
+      });
+
+      expect(initializeAgent).toHaveBeenCalledWith({
+        ...initialSettings,
+        LLM_MODEL: "model3",
+        LLM_API_KEY: "", // reset after model change
+      });
+    });
+
+    it("should display a toast for every change", async () => {
+      const onOpenChangeMock = vi.fn();
+      await act(async () =>
+        renderWithProviders(
+          <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
+        ),
+      );
+
+      const saveButton = screen.getByRole("button", { name: /save/i });
+      const modelInput = screen.getByRole("combobox", { name: "model" });
+
+      act(() => {
+        userEvent.click(modelInput);
+      });
+
+      const model3 = screen.getByText("model3");
+
+      act(() => {
+        userEvent.click(model3);
+      });
+
+      act(() => {
+        userEvent.click(saveButton);
+      });
+
+      expect(toastSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("should change the language", async () => {
+      const onOpenChangeMock = vi.fn();
+      await act(async () =>
+        renderWithProviders(
+          <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
+        ),
+      );
+
+      const saveButton = screen.getByRole("button", { name: /save/i });
+      const languageInput = screen.getByRole("combobox", { name: "language" });
+
+      act(() => {
+        userEvent.click(languageInput);
+      });
+
+      const spanish = screen.getByText("Español");
+
+      act(() => {
+        userEvent.click(spanish);
+      });
+
+      act(() => {
+        userEvent.click(saveButton);
+      });
+
+      expect(i18nSpy).toHaveBeenCalledWith("es");
+    });
+
+    it("should close the modal", async () => {
+      const onOpenChangeMock = vi.fn();
+      await act(async () =>
+        renderWithProviders(
+          <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
+        ),
+      );
+
+      const saveButton = screen.getByRole("button", { name: /save/i });
+      const modelInput = screen.getByRole("combobox", { name: "model" });
+
+      act(() => {
+        userEvent.click(modelInput);
+      });
+
+      const model3 = screen.getByText("model3");
+
+      act(() => {
+        userEvent.click(model3);
+      });
+
+      act(() => {
+        userEvent.click(saveButton);
+      });
+
+      expect(onOpenChangeMock).toHaveBeenCalledWith(false);
     });
   });
+
+  it.todo("should reset setting changes when the cancel button is clicked");
+
+  it.todo(
+    "should display a loading spinner when fetching the models and agents",
+  );
 });

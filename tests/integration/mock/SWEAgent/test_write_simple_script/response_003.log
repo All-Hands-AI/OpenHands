@@ -1,0 +1,7 @@
+Thoughts:
+I need to verify the contents of the 'hello.sh' script to ensure that it correctly contains the shell script code to print 'hello'. This involves checking if the shebang line is present and if the print command is correctly written. If the script is correct, I can then proceed to test it to confirm its functionality.
+
+Action:
+```
+read hello.sh
+```

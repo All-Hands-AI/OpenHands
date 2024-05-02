@@ -39,6 +39,19 @@
     "pt": "Planejador",
     "es": "Planificador"
   },
+  "WORKSPACE$JUPYTER_TAB_LABEL": {
+    "en": "Jupyter IPython",
+    "zh-CN": "Jupyter IPython",
+    "de": "Jupyter IPython",
+    "ko-KR": "Jupyter IPython",
+    "no": "Jupyter IPython",
+    "zh-TW": "Jupyter IPython",
+    "ar": "Jupyter IPython",
+    "fr": "Jupyter IPython",
+    "it": "Jupyter IPython",
+    "pt": "Jupyter IPython",
+    "es": "Jupyter IPython"
+  },
   "WORKSPACE$CODE_EDITOR_TAB_LABEL": {
     "en": "Code Editor",
     "zh-CN": "代码编辑器",
@@ -256,18 +269,18 @@
     "tr": "Ajan başlatılıyor (bu işlem 10 saniye kadar sürebilir)..."
   },
   "CHAT_INTERFACE$INPUT_PLACEHOLDER": {
-    "en": "Send a message (won't interrupt the Assistant)",
-    "zh-CN": "发送消息（不会打断助理）",
-    "de": "Sende eine Nachricht (unterbricht den Assistenten nicht)",
-    "ko-KR": "메시지 전송(어시스턴트를 방해하지 않음)",
-    "no": "Send en melding (det vil ikke avbryte assistenten)",
-    "zh-TW": "發送訊息（不會打擾到助理）",
-    "it": "Invia un messaggio (non interromperà l'Assistente)",
-    "pt": "Envie uma mensagem (não interromperá o Assistente)",
-    "es": "Enviar un mensaje (no interrumpirá al Asistente)",
-    "ar": "إرسال رسالة (لن يقاطع المساعد)",
-    "fr": "Envoyer un message (ne pas interrompre l'Assistant)",
-    "tr": "Bir mesaj gönderin (Asistan Kesilmeyecek)"
+    "en": "Message assistant...",
+    "zh-CN": "畀助手發消息",
+    "de": "Sende eine Nachricht an den Assistenten...",
+    "ko-KR": "어시스턴트에게 메시지 보내기",
+    "no": "Send melding til assistenten...",
+    "zh-TW": "给助理留言",
+    "it": "Invia un messaggio all'assistente...",
+    "pt": "Envie uma mensagem para o assistente...",
+    "es": "Mensaje al asistente...",
+    "ar": "مراسلة المساعد",
+    "fr": "Envoyez un message à l'assistant...",
+    "tr": "Asistana mesaj gönder..."
   },
   "CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT": {
     "en": "Send",
@@ -324,5 +337,21 @@
   "SETTINGS$DISABLED_RUNNING": {
     "en": "Cannot be changed while the agent is running.",
     "de": "Kann nicht geändert werden während ein Task ausgeführt wird."
+  },
+  "SETTINGS$API_KEY_PLACEHOLDER": {
+    "en": "Enter your API key.",
+    "de": "Model API key."
+  },
+  "CODE_EDITOR$EMPTY_MESSAGE": {
+    "en": "No file selected.",
+    "de": "Keine Datei ausgewählt."
+  },
+  "BROWSER$EMPTY_MESSAGE": {
+    "en": "No page loaded.",
+    "de": "Keine Seite geladen."
+  },
+  "PLANNER$EMPTY_MESSAGE": {
+    "en": "No plan created.",
+    "de": "Kein Plan erstellt."
   }
 }

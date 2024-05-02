@@ -1,30 +1,35 @@
+from ..exceptions import AgentMalformedActionError
+from .agent import (
+    AgentDelegateAction,
+    AgentEchoAction,
+    AgentFinishAction,
+    AgentRecallAction,
+    AgentSummarizeAction,
+    AgentTalkAction,
+    AgentThinkAction,
+)
 from .base import Action, NullAction
-from .bash import CmdRunAction, CmdKillAction
+from .bash import CmdKillAction, CmdRunAction, IPythonRunCellAction
 from .browse import BrowseURLAction
 from .fileop import FileReadAction, FileWriteAction
-from .agent import (
-    AgentRecallAction,
-    AgentThinkAction,
-    AgentFinishAction,
-    AgentEchoAction,
-    AgentSummarizeAction,
-    AgentDelegateAction,
-)
+from .github import GitHubPushAction
 from .tasks import AddTaskAction, ModifyTaskAction
-from ..exceptions import AgentMalformedActionError
 
 actions = (
     CmdKillAction,
     CmdRunAction,
+    IPythonRunCellAction,
     BrowseURLAction,
     FileReadAction,
     FileWriteAction,
     AgentRecallAction,
     AgentThinkAction,
+    AgentTalkAction,
     AgentFinishAction,
     AgentDelegateAction,
     AddTaskAction,
     ModifyTaskAction,
+    GitHubPushAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]
@@ -59,10 +64,12 @@ __all__ = [
     'FileWriteAction',
     'AgentRecallAction',
     'AgentThinkAction',
+    'AgentTalkAction',
     'AgentFinishAction',
     'AgentDelegateAction',
     'AgentEchoAction',
     'AgentSummarizeAction',
     'AddTaskAction',
     'ModifyTaskAction',
+    'IPythonRunCellAction'
 ]

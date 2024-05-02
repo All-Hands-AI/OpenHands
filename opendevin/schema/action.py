@@ -10,8 +10,12 @@ class ActionTypeSchema(BaseModel):
     """Initializes the agent. Only sent by client.
     """
 
+    USER_MESSAGE: str = Field(default='user_message')
+    """Sends a message from the user. Only sent by the client.
+    """
+
     START: str = Field(default='start')
-    """Starts a new development task. Only sent by the client.
+    """Starts a new development task OR send chat from the user. Only sent by the client.
     """
 
     READ: str = Field(default='read')
@@ -24,6 +28,10 @@ class ActionTypeSchema(BaseModel):
 
     RUN: str = Field(default='run')
     """Runs a command.
+    """
+
+    RUN_IPYTHON: str = Field(default='run_ipython')
+    """Runs a IPython cell.
     """
 
     KILL: str = Field(default='kill')
@@ -40,6 +48,10 @@ class ActionTypeSchema(BaseModel):
 
     THINK: str = Field(default='think')
     """Allows the agent to make a plan, set a goal, or record thoughts
+    """
+
+    TALK: str = Field(default='talk')
+    """Allows the agent to respond to the user.
     """
 
     DELEGATE: str = Field(default='delegate')
@@ -72,6 +84,12 @@ class ActionTypeSchema(BaseModel):
     """
 
     CHANGE_TASK_STATE: str = Field(default='change_task_state')
+
+    PUSH: str = Field(default='push')
+    """Push a branch to github."""
+
+    SEND_PR: str = Field(default='send_pr')
+    """Send a PR to github."""
 
 
 ActionType = ActionTypeSchema()

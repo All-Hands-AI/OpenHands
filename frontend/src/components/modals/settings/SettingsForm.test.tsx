@@ -3,36 +3,48 @@ import userEvent from "@testing-library/user-event";
 import React from "react";
 import { renderWithProviders } from "test-utils";
 import AgentTaskState from "#/types/AgentTaskState";
+import { Settings } from "#/services/settings";
 import SettingsForm from "./SettingsForm";
 
 const onModelChangeMock = vi.fn();
 const onAgentChangeMock = vi.fn();
 const onLanguageChangeMock = vi.fn();
+const onAPIKeyChangeMock = vi.fn();
 
-const renderSettingsForm = (settings: Partial<Settings>) => {
+const renderSettingsForm = (settings?: Settings) => {
   renderWithProviders(
     <SettingsForm
-      settings={settings}
+      settings={
+        settings || {
+          LLM_MODEL: "model1",
+          AGENT: "agent1",
+          LANGUAGE: "en",
+          LLM_API_KEY: "sk-...",
+        }
+      }
       models={["model1", "model2", "model3"]}
       agents={["agent1", "agent2", "agent3"]}
       onModelChange={onModelChangeMock}
       onAgentChange={onAgentChangeMock}
       onLanguageChange={onLanguageChangeMock}
+      onAPIKeyChange={onAPIKeyChangeMock}
     />,
   );
 };
 
 describe("SettingsForm", () => {
   it("should display the first values in the array by default", () => {
-    renderSettingsForm({});
+    renderSettingsForm();
 
     const modelInput = screen.getByRole("combobox", { name: "model" });
     const agentInput = screen.getByRole("combobox", { name: "agent" });
     const languageInput = screen.getByRole("combobox", { name: "language" });
+    const apiKeyInput = screen.getByTestId("apikey");
 
     expect(modelInput).toHaveValue("model1");
     expect(agentInput).toHaveValue("agent1");
     expect(languageInput).toHaveValue("English");
+    expect(apiKeyInput).toHaveValue("sk-...");
   });
 
   it("should display the existing values if it they are present", () => {
@@ -40,6 +52,7 @@ describe("SettingsForm", () => {
       LLM_MODEL: "model2",
       AGENT: "agent2",
       LANGUAGE: "es",
+      LLM_API_KEY: "sk-...",
     });
 
     const modelInput = screen.getByRole("combobox", { name: "model" });
@@ -54,12 +67,18 @@ describe("SettingsForm", () => {
   it("should disable settings while task is running", () => {
     renderWithProviders(
       <SettingsForm
-        settings={{}}
+        settings={{
+          LLM_MODEL: "model1",
+          AGENT: "agent1",
+          LANGUAGE: "en",
+          LLM_API_KEY: "sk-...",
+        }}
         models={["model1", "model2", "model3"]}
         agents={["agent1", "agent2", "agent3"]}
         onModelChange={onModelChangeMock}
         onAgentChange={onAgentChangeMock}
         onLanguageChange={onLanguageChangeMock}
+        onAPIKeyChange={onAPIKeyChangeMock}
       />,
       { preloadedState: { agent: { curTaskState: AgentTaskState.RUNNING } } },
     );
@@ -74,7 +93,7 @@ describe("SettingsForm", () => {
 
   describe("onChange handlers", () => {
     it("should call the onModelChange handler when the model changes", () => {
-      renderSettingsForm({});
+      renderSettingsForm();
 
       const modelInput = screen.getByRole("combobox", { name: "model" });
       act(() => {
@@ -90,7 +109,7 @@ describe("SettingsForm", () => {
     });
 
     it("should call the onAgentChange handler when the agent changes", () => {
-      renderSettingsForm({});
+      renderSettingsForm();
 
       const agentInput = screen.getByRole("combobox", { name: "agent" });
       act(() => {
@@ -106,7 +125,7 @@ describe("SettingsForm", () => {
     });
 
     it("should call the onLanguageChange handler when the language changes", () => {
-      renderSettingsForm({});
+      renderSettingsForm();
 
       const languageInput = screen.getByRole("combobox", { name: "language" });
       act(() => {
@@ -119,6 +138,17 @@ describe("SettingsForm", () => {
       });
 
       expect(onLanguageChangeMock).toHaveBeenCalledWith("Français");
+    });
+
+    it("should call the onAPIKeyChange handler when the API key changes", () => {
+      renderSettingsForm();
+
+      const apiKeyInput = screen.getByTestId("apikey");
+      act(() => {
+        userEvent.type(apiKeyInput, "x");
+      });
+
+      expect(onAPIKeyChangeMock).toHaveBeenCalledWith("sk-...x");
     });
   });
 });

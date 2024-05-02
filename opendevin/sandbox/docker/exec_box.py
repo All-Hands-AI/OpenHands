@@ -2,22 +2,22 @@ import atexit
 import concurrent.futures
 import os
 import sys
+import tarfile
 import time
 import uuid
-import tarfile
-from glob import glob
 from collections import namedtuple
+from glob import glob
 from typing import Dict, List, Tuple
 
 import docker
 
 from opendevin import config
-from opendevin.logger import opendevin_logger as logger
-from opendevin.sandbox.sandbox import Sandbox
-from opendevin.sandbox.process import Process
-from opendevin.sandbox.docker.process import DockerProcess
-from opendevin.schema import ConfigType
 from opendevin.exceptions import SandboxInvalidBackgroundCommandError
+from opendevin.logger import opendevin_logger as logger
+from opendevin.sandbox.docker.process import DockerProcess
+from opendevin.sandbox.process import Process
+from opendevin.sandbox.sandbox import Sandbox
+from opendevin.schema import ConfigType
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
@@ -27,9 +27,9 @@ SANDBOX_WORKSPACE_DIR = config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX)
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
-RUN_AS_DEVIN = config.get('RUN_AS_DEVIN').lower() != 'false'
+RUN_AS_DEVIN = config.get(ConfigType.RUN_AS_DEVIN).lower() != 'false'
 USER_ID = 1000
-if SANDBOX_USER_ID := config.get('SANDBOX_USER_ID'):
+if SANDBOX_USER_ID := config.get(ConfigType.SANDBOX_USER_ID):
     USER_ID = int(SANDBOX_USER_ID)
 elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
@@ -57,7 +57,7 @@ class DockerExecBox(Sandbox):
             self.docker_client = docker.from_env()
         except Exception as ex:
             logger.exception(
-                'Please check Docker is running using `docker ps`.', exc_info=False)
+                'Error creating controller. Please check Docker is running and visit `https://github.com/OpenDevin/OpenDevin/blob/main/docs/guides/Troubleshooting.md` for more debugging information.', exc_info=False)
             raise ex
 
         self.instance_id = sid if sid is not None else str(uuid.uuid4())
@@ -122,7 +122,10 @@ class DockerExecBox(Sandbox):
                     self.container.exec_run(
                         f'kill -9 {pid}', workdir=SANDBOX_WORKSPACE_DIR)
                 return -1, f'Command: "{cmd}" timed out'
-        return exit_code, logs.decode('utf-8')
+        logs_out = logs.decode('utf-8')
+        if logs_out.endswith('\n'):
+            logs_out = logs_out[:-1]
+        return exit_code, logs_out
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         # mkdir -p sandbox_dest if it doesn't exist
@@ -225,7 +228,7 @@ class DockerExecBox(Sandbox):
 
         try:
             # start the container
-            mount_dir = config.get('WORKSPACE_MOUNT_PATH')
+            mount_dir = config.get(ConfigType.WORKSPACE_MOUNT_PATH)
             self.container = self.docker_client.containers.run(
                 self.container_image,
                 command='tail -f /dev/null',
@@ -267,6 +270,9 @@ class DockerExecBox(Sandbox):
                     container.remove(force=True)
             except docker.errors.NotFound:
                 pass
+
+    def get_working_directory(self):
+        return SANDBOX_WORKSPACE_DIR
 
 
 if __name__ == '__main__':

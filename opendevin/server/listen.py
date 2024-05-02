@@ -1,9 +1,10 @@
 import json
+import shutil
 import uuid
 from pathlib import Path
 
 import litellm
-from fastapi import Depends, FastAPI, Response, WebSocket, status
+from fastapi import Depends, FastAPI, Response, UploadFile, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -13,6 +14,7 @@ import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin import config, files
 from opendevin.agent import Agent
 from opendevin.logger import opendevin_logger as logger
+from opendevin.schema.config import ConfigType
 from opendevin.server.agent import agent_manager
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import message_stack, session_manager
@@ -113,14 +115,14 @@ async def del_messages(
 
 @app.get('/api/refresh-files')
 def refresh_files():
-    structure = files.get_folder_structure(Path(str(config.get('WORKSPACE_BASE'))))
+    structure = files.get_folder_structure(Path(str(config.get(ConfigType.WORKSPACE_BASE))))
     return structure.to_dict()
 
 
 @app.get('/api/select-file')
 def select_file(file: str):
     try:
-        workspace_base = config.get('WORKSPACE_BASE')
+        workspace_base = config.get(ConfigType.WORKSPACE_BASE)
         file_path = Path(workspace_base, file)
         # The following will check if the file is within the workspace base and throw an exception if not
         file_path.resolve().relative_to(Path(workspace_base).resolve())
@@ -134,6 +136,24 @@ def select_file(file: str):
             content={'error': error_msg},
         )
     return {'code': content}
+
+
+@app.post('/api/upload-file')
+async def upload_file(file: UploadFile):
+    try:
+        workspace_base = config.get(ConfigType.WORKSPACE_BASE)
+        file_path = Path(workspace_base, file.filename)
+        # The following will check if the file is within the workspace base and throw an exception if not
+        file_path.resolve().relative_to(Path(workspace_base).resolve())
+        with open(file_path, 'wb') as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        logger.error(f'Error saving file {file.filename}: {e}', exc_info=True)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': f'Error saving file: {e}'}
+        )
+    return {'filename': file.filename, 'location': str(file_path)}
 
 
 @app.get('/api/plan')

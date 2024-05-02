@@ -1,8 +1,9 @@
-import { Card, CardBody } from "@nextui-org/react";
 import React, { useEffect, useRef } from "react";
 import { IoMdChatbubbles } from "react-icons/io";
+import Markdown from "react-markdown";
 import { useSelector } from "react-redux";
 import { useTypingEffect } from "#/hooks/useTypingEffect";
+import AgentTaskState from "../types/AgentTaskState";
 import {
   addAssistantMessageToChat,
   sendChatMessage,
@@ -12,6 +13,7 @@ import {
 import { Message } from "#/state/chatSlice";
 import { RootState } from "#/store";
 import ChatInput from "./ChatInput";
+import { code } from "./markdown/code";
 
 interface IChatBubbleProps {
   msg: Message;
@@ -38,25 +40,31 @@ function TypingChat() {
   });
 
   return (
-    <Card className="bg-neutral-500">
-      <CardBody>{messageContent}</CardBody>
-    </Card>
+    <div className="flex max-w-[90%]">
+      <div className="flex mb-0 min-w-0">
+        <div className="bg-neutral-500 rounded-lg">
+          <div className="p-3">{messageContent}</div>
+        </div>
+      </div>
+    </div>
   );
 }
 
 function ChatBubble({ msg }: IChatBubbleProps): JSX.Element {
   return (
     <div
-      className={`flex mb-2.5 pr-5 pl-5 max-w-[90%] ${msg?.sender === "user" ? "self-end" : ""}`}
+      className={`flex max-w-[90%] ${msg?.sender === "user" ? "self-end" : ""}`}
     >
       <div
-        className={`flex mt-2.5 mb-0 min-w-0 ${msg?.sender === "user" && "flex-row-reverse ml-auto"}`}
+        className={`flex mb-0 min-w-0 ${msg?.sender === "user" && "flex-row-reverse ml-auto"}`}
       >
-        <Card
-          className={`${msg?.sender === "user" ? "bg-neutral-700" : "bg-neutral-500"}`}
+        <div
+          className={`overflow-y-auto ${msg?.sender === "user" ? "bg-neutral-700" : "bg-neutral-500"} rounded-lg`}
         >
-          <CardBody>{msg?.content}</CardBody>
-        </Card>
+          <div className="p-3 prose prose-invert text-white">
+            <Markdown components={{ code }}>{msg?.content}</Markdown>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -95,25 +103,27 @@ function MessageList(): JSX.Element {
   }, [typeThis]);
 
   return (
-    <div className="flex-1 overflow-y-auto flex flex-col">
-      {newChatSequence.map((msg, index) => (
-        <ChatBubble key={index} msg={msg} />
-      ))}
-
-      {typingActive && (
-        <div className="flex mb-2.5 pr-5 pl-5 max-w-[90%]">
-          <div className="flex mt-2.5 mb-0 min-w-0 ">
-            <TypingChat />
-          </div>
-        </div>
-      )}
-      <div ref={messagesEndRef} />
+    <div className="flex-1 flex flex-col gap-3 pt-3 px-3 relative min-h-0">
+      <div className="flex overflow-x-auto flex-col h-full gap-3">
+        {newChatSequence.map((msg, index) => (
+          <ChatBubble key={index} msg={msg} />
+        ))}
+        {typingActive && <TypingChat />}
+        <div ref={messagesEndRef} />
+      </div>
+      <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-b from-transparent to-neutral-800" />
     </div>
   );
 }
 
 function ChatInterface(): JSX.Element {
   const { initialized } = useSelector((state: RootState) => state.task);
+  const { curTaskState } = useSelector((state: RootState) => state.agent);
+
+  const onUserMessage = (msg: string) => {
+    const isNewTask = curTaskState === AgentTaskState.INIT;
+    sendChatMessage(msg, isNewTask);
+  };
 
   return (
     <div className="flex flex-col h-full p-0 bg-neutral-800">
@@ -122,7 +132,7 @@ function ChatInterface(): JSX.Element {
         Chat
       </div>
       <MessageList />
-      <ChatInput disabled={!initialized} onSendMessage={sendChatMessage} />
+      <ChatInput disabled={!initialized} onSendMessage={onUserMessage} />
     </div>
   );
 }

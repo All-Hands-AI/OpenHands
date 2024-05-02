@@ -2,13 +2,17 @@ import Editor, { Monaco } from "@monaco-editor/react";
 import { Tab, Tabs } from "@nextui-org/react";
 import type { editor } from "monaco-editor";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { VscCode } from "react-icons/vsc";
 import { useDispatch, useSelector } from "react-redux";
+import { I18nKey } from "#/i18n/declaration";
 import { selectFile } from "#/services/fileService";
 import { setCode } from "#/state/codeSlice";
 import { RootState } from "#/store";
 import FileExplorer from "./file-explorer/FileExplorer";
 
 function CodeEditor(): JSX.Element {
+  const { t } = useTranslation();
   const [selectedFileName, setSelectedFileName] = useState("");
 
   const dispatch = useDispatch();
@@ -50,12 +54,12 @@ function CodeEditor(): JSX.Element {
         <Tabs
           disableCursorAnimation
           classNames={{
-            base: "border-b border-divider",
+            base: "border-b border-divider border-neutral-600 mb-4",
             tabList:
               "w-full relative rounded-none bg-neutral-900 p-0 border-divider",
             cursor: "w-full bg-neutral-600 rounded-none",
             tab: "max-w-fit px-4 h-[36px]",
-            tabContent: "group-data-[selected=true]:text-white ",
+            tabContent: "group-data-[selected=true]:text-white",
           }}
           aria-label="Options"
         >
@@ -64,14 +68,21 @@ function CodeEditor(): JSX.Element {
             title={selectedFileName}
           />
         </Tabs>
-        <div className="flex grow">
-          <Editor
-            height="100%"
-            path={selectedFileName.toLocaleLowerCase()}
-            defaultValue=""
-            value={code}
-            onMount={handleEditorDidMount}
-          />
+        <div className="flex grow items-center justify-center">
+          {selectedFileName === "" ? (
+            <div className="flex flex-col items-center text-neutral-400">
+              <VscCode size={100} />
+              {t(I18nKey.CODE_EDITOR$EMPTY_MESSAGE)}
+            </div>
+          ) : (
+            <Editor
+              height="100%"
+              path={selectedFileName.toLocaleLowerCase()}
+              defaultValue=""
+              value={code}
+              onMount={handleEditorDidMount}
+            />
+          )}
         </div>
       </div>
     </div>

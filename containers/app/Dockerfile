@@ -5,7 +5,7 @@ WORKDIR /app
 
 COPY ./frontend/package.json frontend/package-lock.json ./
 RUN npm install -g npm@10.5.1
-RUN npm install
+RUN npm ci
 
 COPY ./frontend ./
 RUN npm run make-i18n && npm run build
@@ -32,27 +32,40 @@ FROM python:3.12-slim as runtime
 
 WORKDIR /app
 
-ENV RUN_AS_DEVIN=false
-ENV USE_HOST_NETWORK=true
+ENV RUN_AS_DEVIN=true
+ENV SANDBOX_USER_ID=1000
+ENV USE_HOST_NETWORK=false
 ENV SSH_HOSTNAME=host.docker.internal
 ENV WORKSPACE_BASE=/opt/workspace_base
 ENV OPEN_DEVIN_BUILD_VERSION=$OPEN_DEVIN_BUILD_VERSION
 RUN mkdir -p $WORKSPACE_BASE
 
 RUN apt-get update -y \
-    && apt-get install -y curl ssh
+    && apt-get install -y curl ssh sudo
+
+RUN useradd -l -m -u $SANDBOX_USER_ID -s /bin/bash opendevin && \
+    usermod -aG sudo opendevin && \
+    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN chown -R opendevin:opendevin /app
+USER opendevin
 
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH='/app'
 
-COPY --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --chown=opendevin --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+USER root
+RUN chown -R opendevin:opendevin ${VIRTUAL_ENV}
+USER opendevin
 
-COPY ./opendevin ./opendevin
-COPY ./agenthub ./agenthub
+COPY --chown=opendevin ./opendevin ./opendevin
+COPY --chown=opendevin ./agenthub ./agenthub
 RUN python opendevin/download.py # No-op to download assets
 RUN playwright install --with-deps chromium
 
-COPY --from=frontend-builder /app/dist ./frontend/dist
+COPY --chown=opendevin --from=frontend-builder /app/dist ./frontend/dist
 
-CMD ["uvicorn", "opendevin.server.listen:app", "--host", "0.0.0.0", "--port", "3000"]
+COPY --chown=opendevin ./containers/app/entrypoint.sh /app/entrypoint.sh
+
+USER root
+CMD ["/app/entrypoint.sh"]

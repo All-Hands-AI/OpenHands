@@ -1,17 +1,17 @@
+import re
+
 from opendevin.action import (
     Action,
+    AgentEchoAction,
     AgentFinishAction,
+    AgentThinkAction,
+    BrowseURLAction,
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
-    BrowseURLAction,
-    AgentEchoAction,
-    AgentThinkAction,
 )
 
-import re
-
-from .prompts import CUSTOM_DOCS, COMMAND_USAGE
+from .prompts import COMMAND_USAGE, CUSTOM_DOCS
 
 # commands: exit, read, write, browse, kill, search_file, search_dir
 
@@ -20,7 +20,7 @@ no_open_file_error = AgentEchoAction(
 
 
 def invalid_error(cmd, docs):
-    return f'''ERROR:
+    return f"""ERROR:
 Invalid command structure for
 ```
 {cmd}
@@ -30,7 +30,7 @@ If so, try again by running only one of the commands:
 
 Try again using this format:
 {COMMAND_USAGE[docs]}
-'''
+"""
 
 
 def get_action_from_string(command_string: str, path: str, line: int, thoughts: str = '') -> Action | None:

@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
+import asyncio
+import logging
 import os
 import re
-import asyncio
-import tornado
-import logging
-
-from tornado.escape import json_encode, json_decode, url_escape
-from tornado.websocket import websocket_connect
-from tornado.ioloop import PeriodicCallback
-from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from uuid import uuid4
+
+import tornado
+from tornado.escape import json_decode, json_encode, url_escape
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest
+from tornado.ioloop import PeriodicCallback
+from tornado.websocket import websocket_connect
 
 logging.basicConfig(level=logging.INFO)
 
@@ -187,8 +187,7 @@ class JupyterKernel:
                     outputs.append(msg['content']['data']['text/plain'])
                     if 'image/png' in msg['content']['data']:
                         # use markdone to display image (in case of large image)
-                        # outputs.append(f"\n<img src=\'data:image/png;base64,{msg['content']['data']['image/png']}\'/>\n")
-                        outputs.append(f"![image](data:image/png;base64,{msg['content']['data']['image / png']})")
+                        outputs.append(f"\n![image](data:image/png;base64,{msg['content']['data']['image/png']})\n")
 
                 elif msg_type == 'execute_reply':
                     execution_done = True

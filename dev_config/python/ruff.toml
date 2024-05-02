@@ -1,3 +1,23 @@
 exclude = [
     "agenthub/monologue_agent/regression/",
 ]
+
+[lint]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "Q",
+]
+
+ignore = [
+    "E501",
+]
+
+[lint.flake8-quotes]
+docstring-quotes = "double"
+inline-quotes = "single"
+
+[format]
+quote-style = "single"

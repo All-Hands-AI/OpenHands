@@ -1,5 +1,5 @@
 import asyncio
-from typing import Optional, Dict, List
+from typing import Dict, List, Optional
 
 from opendevin import config
 from opendevin.action import (
@@ -94,6 +94,8 @@ class AgentUnit:
                 await self.create_controller(data)
             case ActionType.START:
                 await self.start_task(data)
+            case ActionType.USER_MESSAGE:
+                await self.send_user_message(data)
             case ActionType.CHANGE_TASK_STATE:
                 task_state_action = data.get('args', {}).get('task_state_action', None)
                 if task_state_action is None:
@@ -136,7 +138,7 @@ class AgentUnit:
         }  # remove empty values, prevent FE from sending empty strings
         agent_cls = self.get_arg_or_default(args, ConfigType.AGENT)
         model = self.get_arg_or_default(args, ConfigType.LLM_MODEL)
-        api_key = config.get(ConfigType.LLM_API_KEY)
+        api_key = self.get_arg_or_default(args, ConfigType.LLM_API_KEY)
         api_base = config.get(ConfigType.LLM_BASE_URL)
         max_iterations = self.get_arg_or_default(args, ConfigType.MAX_ITERATIONS)
         max_chars = self.get_arg_or_default(args, ConfigType.MAX_CHARS)
@@ -154,7 +156,7 @@ class AgentUnit:
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
             await self.send_error(
-                'Error creating controller. Please check Docker is running using `docker ps`.'
+                'Error creating controller. Please check Docker is running and visit `https://github.com/OpenDevin/OpenDevin/blob/main/docs/guides/Troubleshooting.md` for more debugging information..'
             )
             return
         await self.init_done()
@@ -177,22 +179,26 @@ class AgentUnit:
         Args:
             start_event: The start event data.
         """
-        if 'task' not in start_event['args']:
-            await self.send_error('No task specified')
-            return
-        await self.send_message('Starting new task...')
         task = start_event['args']['task']
         if self.controller is None:
             await self.send_error('No agent started. Please wait a second...')
             return
         try:
-            if self.agent_task:
-                self.agent_task.cancel()
+            assert not self.agent_task, 'Agent task already running'
             self.agent_task = asyncio.create_task(
                 self.controller.start(task), name='agent start task loop'
             )
         except Exception as e:
             await self.send_error(f'Error during task loop: {e}')
+
+    async def send_user_message(self, data: dict):
+        if not self.agent_task or not self.controller:
+            await self.send_error('No agent started.')
+            return
+
+        await self.controller.add_user_message(
+            UserMessageObservation(data['args']['message'])
+        )
 
     async def set_task_state(self, new_state_action: TaskStateAction):
         """Sets the state of the agent task."""

@@ -2,6 +2,7 @@ import os
 import tarfile
 from glob import glob
 from typing import Dict, Tuple
+
 from e2b import Sandbox as E2BSandbox
 from e2b.sandbox.exception import (
     TimeoutException,
@@ -9,9 +10,10 @@ from e2b.sandbox.exception import (
 
 from opendevin import config
 from opendevin.logger import opendevin_logger as logger
-from opendevin.sandbox.sandbox import Sandbox
 from opendevin.sandbox.e2b.process import E2BProcess
 from opendevin.sandbox.process import Process
+from opendevin.sandbox.sandbox import Sandbox
+from opendevin.schema.config import ConfigType
 
 
 class E2BBox(Sandbox):
@@ -26,7 +28,7 @@ class E2BBox(Sandbox):
         timeout: int = 120,
     ):
         self.sandbox = E2BSandbox(
-            api_key=config.get('E2B_API_KEY'),
+            api_key=config.get(ConfigType.E2B_API_KEY),
             template=template,
             # It's possible to stream stdout and stderr from sandbox and from each process
             on_stderr=lambda x: logger.info(f'E2B sandbox stderr: {x}'),
@@ -123,3 +125,6 @@ class E2BBox(Sandbox):
 
     def close(self):
         self.sandbox.close()
+
+    def get_working_directory(self):
+        return self.sandbox.cwd

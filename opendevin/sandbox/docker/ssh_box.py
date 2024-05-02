@@ -1,25 +1,25 @@
 import atexit
 import os
 import sys
+import tarfile
 import time
 import uuid
-import tarfile
-from glob import glob
 from collections import namedtuple
+from glob import glob
 from typing import Dict, List, Tuple, Union
 
 import docker
 from pexpect import pxssh
 
 from opendevin import config
+from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.logger import opendevin_logger as logger
-from opendevin.sandbox.sandbox import Sandbox
-from opendevin.sandbox.process import Process
 from opendevin.sandbox.docker.process import DockerProcess
 from opendevin.sandbox.plugins import JupyterRequirement, SWEAgentCommandsRequirement
+from opendevin.sandbox.process import Process
+from opendevin.sandbox.sandbox import Sandbox
 from opendevin.schema import ConfigType
 from opendevin.utils import find_available_tcp_port
-from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
@@ -34,13 +34,12 @@ USE_HOST_NETWORK = config.get(ConfigType.USE_HOST_NETWORK)
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
-RUN_AS_DEVIN = config.get('RUN_AS_DEVIN').lower() != 'false'
+RUN_AS_DEVIN = config.get(ConfigType.RUN_AS_DEVIN).lower() != 'false'
 USER_ID = 1000
-if SANDBOX_USER_ID := config.get('SANDBOX_USER_ID'):
+if SANDBOX_USER_ID := config.get(ConfigType.SANDBOX_USER_ID):
     USER_ID = int(SANDBOX_USER_ID)
 elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
-
 
 class DockerSSHBox(Sandbox):
     instance_id: str
@@ -62,12 +61,13 @@ class DockerSSHBox(Sandbox):
         timeout: int = 120,
         sid: str | None = None,
     ):
+        logger.info(f'SSHBox is running as {"opendevin" if RUN_AS_DEVIN else "root"} user with USER_ID={USER_ID} in the sandbox')
         # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
             self.docker_client = docker.from_env()
         except Exception as ex:
             logger.exception(
-                'Please check Docker is running using `docker ps`.', exc_info=False)
+                'Error creating controller. Please check Docker is running and visit `https://github.com/OpenDevin/OpenDevin/blob/main/docs/guides/Troubleshooting.md` for more debugging information.', exc_info=False)
             raise ex
 
         self.instance_id = sid if sid is not None else str(uuid.uuid4())
@@ -150,8 +150,10 @@ class DockerSSHBox(Sandbox):
                 workdir=SANDBOX_WORKSPACE_DIR,
             )
             if exit_code != 0:
-                raise Exception(
-                    f'Failed to chown workspace directory for opendevin in sandbox: {logs}')
+                # This is not a fatal error, just a warning
+                logger.warning(
+                    f'Failed to chown workspace directory for opendevin in sandbox: {logs}. But this should be fine if the {SANDBOX_WORKSPACE_DIR=} is mounted by the app docker container.'
+                )
         else:
             exit_code, logs = self.container.exec_run(
                 # change password for root
@@ -176,7 +178,9 @@ class DockerSSHBox(Sandbox):
         else:
             username = 'root'
         logger.info(
-            f"Connecting to {username}@{hostname} via ssh. If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub."
+            f"Connecting to {username}@{hostname} via ssh. "
+            f"If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub. "
+            f"If you started OpenDevin with `docker run`, you should try `ssh -v -p {self._ssh_port} {username}@localhost` with the password '{self._ssh_password} on the host machine (where you started the container)."
         )
         self.ssh.login(hostname, username, self._ssh_password,
                        port=self._ssh_port)
@@ -216,19 +220,6 @@ class DockerSSHBox(Sandbox):
             return -1, f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}'
         command_output = self.ssh.before.decode('utf-8').strip()
 
-        # NOTE: there's some weird behavior with the prompt (it may come AFTER the command output)
-        # so we need to check if the command is in the output
-        n_tries = 5
-        while not command_output.startswith(cmd) and n_tries > 0:
-            self.ssh.prompt()
-            command_output = self.ssh.before.decode('utf-8').strip()
-            time.sleep(0.5)
-            n_tries -= 1
-        if n_tries == 0 and not command_output.startswith(cmd):
-            raise Exception(
-                f'Something went wrong with the SSH sanbox, cannot get output for command [{cmd}] after 5 retries'
-            )
-        logger.debug(f'Command output GOT SO FAR: {command_output}')
         # once out, make sure that we have *every* output, we while loop until we get an empty output
         while True:
             logger.debug('WAITING FOR .prompt()')
@@ -337,6 +328,12 @@ class DockerSSHBox(Sandbox):
         except docker.errors.NotFound:
             pass
 
+    def get_working_directory(self):
+        exit_code, result = self.execute('pwd')
+        if exit_code != 0:
+            raise Exception('Failed to get working directory')
+        return result.strip()
+
     def is_container_running(self):
         try:
             container = self.docker_client.containers.get(self.container_name)
@@ -379,11 +376,15 @@ class DockerSSHBox(Sandbox):
                 **network_kwargs,
                 working_dir=SANDBOX_WORKSPACE_DIR,
                 name=self.container_name,
-                hostname='opendevin_sandbox',
                 detach=True,
                 volumes={
                     mount_dir: {
                         'bind': SANDBOX_WORKSPACE_DIR,
+                        'mode': 'rw'
+                    },
+                    # mount cache directory to /home/opendevin/.cache for pip cache reuse
+                    config.get(ConfigType.CACHE_DIR): {
+                        'bind': '/home/opendevin/.cache' if RUN_AS_DEVIN else '/root/.cache',
                         'mode': 'rw'
                     },
                 },

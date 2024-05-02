@@ -3,15 +3,21 @@ import {
   IoIosArrowBack,
   IoIosArrowForward,
   IoIosRefresh,
+  IoIosCloudUpload,
 } from "react-icons/io";
 import { twMerge } from "tailwind-merge";
-import { WorkspaceFile, getWorkspace } from "#/services/fileService";
+import {
+  WorkspaceFile,
+  getWorkspace,
+  uploadFile,
+} from "#/services/fileService";
+import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
 import { removeEmptyNodes } from "./utils";
-import IconButton from "../IconButton";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
+  onUpload: () => void;
   toggleHidden: () => void;
   isHidden: boolean;
 }
@@ -19,6 +25,7 @@ interface ExplorerActionsProps {
 function ExplorerActions({
   toggleHidden,
   onRefresh,
+  onUpload,
   isHidden,
 }: ExplorerActionsProps) {
   return (
@@ -29,17 +36,30 @@ function ExplorerActions({
       )}
     >
       {!isHidden && (
-        <IconButton
-          icon={
-            <IoIosRefresh
-              size={20}
-              className="text-neutral-400 hover:text-neutral-100 transition"
-            />
-          }
-          testId="refresh"
-          ariaLabel="Refresh workspace"
-          onClick={onRefresh}
-        />
+        <>
+          <IconButton
+            icon={
+              <IoIosRefresh
+                size={16}
+                className="text-neutral-400 hover:text-neutral-100 transition"
+              />
+            }
+            testId="refresh"
+            ariaLabel="Refresh workspace"
+            onClick={onRefresh}
+          />
+          <IconButton
+            icon={
+              <IoIosCloudUpload
+                size={16}
+                className="text-neutral-400 hover:text-neutral-100 transition"
+              />
+            }
+            testId="upload"
+            ariaLabel="Upload File"
+            onClick={onUpload}
+          />
+        </>
       )}
 
       <IconButton
@@ -56,8 +76,8 @@ function ExplorerActions({
             />
           )
         }
-        testId="close"
-        ariaLabel="Close workspace"
+        testId="toggle"
+        ariaLabel={isHidden ? "Open workspace" : "Close workspace"}
         onClick={toggleHidden}
       />
     </div>
@@ -71,10 +91,31 @@ interface FileExplorerProps {
 function FileExplorer({ onFileClick }: FileExplorerProps) {
   const [workspace, setWorkspace] = React.useState<WorkspaceFile>();
   const [isHidden, setIsHidden] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const getWorkspaceData = async () => {
     const wsFile = await getWorkspace();
     setWorkspace(removeEmptyNodes(wsFile));
+  };
+
+  const selectFileInput = () => {
+    fileInputRef.current?.click(); // Trigger the file browser
+  };
+
+  const uploadFileData = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files ? event.target.files[0] : null;
+    if (!file) {
+      console.log("No file selected.");
+      return;
+    }
+    console.log("File selected:", file);
+    try {
+      const response = await uploadFile(file);
+      console.log(response);
+      await getWorkspaceData(); // Refresh the workspace to show the new file
+    } catch (error) {
+      console.error("Error uploading file:", error);
+    }
   };
 
   React.useEffect(() => {
@@ -105,8 +146,15 @@ function FileExplorer({ onFileClick }: FileExplorerProps) {
           isHidden={isHidden}
           toggleHidden={() => setIsHidden((prev) => !prev)}
           onRefresh={getWorkspaceData}
+          onUpload={selectFileInput}
         />
       </div>
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: "none" }}
+        onChange={uploadFileData}
+      />
     </div>
   );
 }

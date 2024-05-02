@@ -1,15 +1,14 @@
 from dataclasses import dataclass, field
-from typing import List, Tuple, Dict
-
-from opendevin.plan import Plan
+from typing import Dict, List, Tuple
 
 from opendevin.action import (
     Action,
 )
 from opendevin.observation import (
-    Observation,
     CmdOutputObservation,
+    Observation,
 )
+from opendevin.plan import Plan
 
 
 @dataclass

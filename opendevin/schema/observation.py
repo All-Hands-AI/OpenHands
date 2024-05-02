@@ -20,6 +20,10 @@ class ObservationTypeSchema(BaseModel):
     """The output of a command
     """
 
+    RUN_IPYTHON: str = Field(default='run_ipython')
+    """Runs a IPython cell.
+    """
+
     RECALL: str = Field(default='recall')
     """The result of a search
     """

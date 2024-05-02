@@ -1,0 +1,88 @@
+name: Run Unit Tests
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+
+jobs:
+  test-on-macos:
+    name: Test on macOS
+    runs-on: macos-13
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install poetry via pipx
+        run: pipx install poetry
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+
+      - name: Install Python dependencies using Poetry
+        run: poetry install
+
+      - name: Install & Start Docker
+        run: |
+          brew install colima docker
+          colima start
+
+          # For testcontainers to find the Colima socket
+          # https://github.com/abiosoft/colima/blob/main/docs/FAQ.md#cannot-connect-to-the-docker-daemon-at-unixvarrundockersock-is-the-docker-daemon-running
+          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
+
+      - name: Build Environment
+        run: make build
+
+      - name: Run Tests
+        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  test-on-linux:
+    name: Test on Linux
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install poetry via pipx
+        run: pipx install poetry
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+
+      - name: Install Python dependencies using Poetry
+        run: poetry install --without evaluation
+
+      - name: Build Environment
+        run: make build
+
+      - name: Run Tests
+        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  test_matrix_success:
+    name: All Mac/Linux Tests Passed
+    runs-on: ubuntu-latest
+    needs: [test-on-macos, test-on-linux]
+    steps:
+    - run: echo Done!

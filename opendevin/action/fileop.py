@@ -1,38 +1,41 @@
 import os
-
 from dataclasses import dataclass
 from pathlib import Path
 
+from opendevin import config
 from opendevin.observation import (
-    Observation,
+    AgentErrorObservation,
     FileReadObservation,
     FileWriteObservation,
-    AgentErrorObservation,
+    Observation,
 )
-
-from opendevin.schema import ActionType
 from opendevin.sandbox import E2BBox
-from opendevin import config
+from opendevin.schema import ActionType
+from opendevin.schema.config import ConfigType
 
 from .base import ExecutableAction
 
-SANDBOX_PATH_PREFIX = '/workspace/'
 
+def resolve_path(file_path, working_directory):
+    path_in_sandbox = Path(file_path)
 
-def resolve_path(file_path):
+    # Apply working directory
+    if not path_in_sandbox.is_absolute():
+        path_in_sandbox = Path(working_directory) / path_in_sandbox
+
     # Sanitize the path with respect to the root of the full sandbox
-    # (deny any .. path traversal to parent directories of this)
-    abs_path_in_sandbox = (Path(SANDBOX_PATH_PREFIX) / Path(file_path)).resolve()
+    # (deny any .. path traversal to parent directories of the sandbox)
+    abs_path_in_sandbox = path_in_sandbox.resolve()
 
     # If the path is outside the workspace, deny it
-    if not abs_path_in_sandbox.is_relative_to(SANDBOX_PATH_PREFIX):
+    if not abs_path_in_sandbox.is_relative_to(config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX)):
         raise PermissionError(f'File access not permitted: {file_path}')
 
     # Get path relative to the root of the workspace inside the sandbox
-    path_in_workspace = abs_path_in_sandbox.relative_to(Path(SANDBOX_PATH_PREFIX))
+    path_in_workspace = abs_path_in_sandbox.relative_to(Path(config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX)))
 
     # Get path relative to host
-    path_in_host_workspace = Path(config.get('WORKSPACE_BASE')) / path_in_workspace
+    path_in_host_workspace = Path(config.get(ConfigType.WORKSPACE_BASE)) / path_in_workspace
 
     return path_in_host_workspace
 
@@ -47,7 +50,7 @@ class FileReadAction(ExecutableAction):
     path: str
     start: int = 0
     end: int = -1
-    thoughts: str = ''
+    thought: str = ''
     action: str = ActionType.READ
 
     def _read_lines(self, all_lines: list[str]):
@@ -70,7 +73,7 @@ class FileReadAction(ExecutableAction):
             code_view = ''.join(read_lines)
         else:
             try:
-                whole_path = resolve_path(self.path)
+                whole_path = resolve_path(self.path, controller.action_manager.sandbox.get_working_directory())
                 self.start = max(self.start, 0)
                 try:
                     with open(whole_path, 'r', encoding='utf-8') as file:
@@ -78,6 +81,10 @@ class FileReadAction(ExecutableAction):
                         code_view = ''.join(read_lines)
                 except FileNotFoundError:
                     return AgentErrorObservation(f'File not found: {self.path}')
+                except UnicodeDecodeError:
+                    return AgentErrorObservation(f'File could not be decoded as utf-8: {self.path}')
+                except IsADirectoryError:
+                    return AgentErrorObservation(f'Path is a directory: {self.path}. You can only read files')
             except PermissionError:
                 return AgentErrorObservation(f'Malformed paths not permitted: {self.path}')
         return FileReadObservation(path=self.path, content=code_view)
@@ -93,7 +100,7 @@ class FileWriteAction(ExecutableAction):
     content: str
     start: int = 0
     end: int = -1
-    thoughts: str = ''
+    thought: str = ''
     action: str = ActionType.WRITE
 
     def _insert_lines(self, to_insert: list[str], original: list[str]):
@@ -118,7 +125,7 @@ class FileWriteAction(ExecutableAction):
                 return AgentErrorObservation(f'File not found: {self.path}')
         else:
             try:
-                whole_path = resolve_path(self.path)
+                whole_path = resolve_path(self.path, controller.action_manager.sandbox.get_working_directory())
                 mode = 'w' if not os.path.exists(whole_path) else 'r+'
                 try:
                     with open(whole_path, mode, encoding='utf-8') as file:
@@ -133,6 +140,10 @@ class FileWriteAction(ExecutableAction):
                         file.truncate()
                 except FileNotFoundError:
                     return AgentErrorObservation(f'File not found: {self.path}')
+                except IsADirectoryError:
+                    return AgentErrorObservation(f'Path is a directory: {self.path}. You can only write to files')
+                except UnicodeDecodeError:
+                    return AgentErrorObservation(f'File could not be decoded as utf-8: {self.path}')
             except PermissionError:
                 return AgentErrorObservation(f'Malformed paths not permitted: {self.path}')
         return FileWriteObservation(content='', path=self.path)

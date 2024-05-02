@@ -1,0 +1,8 @@
+Thoughts:
+The task is to write a shell script named 'hello.sh' that prints 'hello'. I have already created the file 'hello.sh' in a previous step. Now, I need to write the shell script code into this file. The script should include the shebang line to specify the shell interpreter and a command to print 'hello'.
+
+Action:
+```
+write hello.sh #!/bin/bash
+echo "hello"
+```
