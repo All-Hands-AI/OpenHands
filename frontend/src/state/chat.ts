@@ -2,7 +2,15 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 type SliceState = { messages: Message[] };
 
-const initialState: SliceState = { messages: [] };
+const initialState: SliceState = {
+  messages: [
+    {
+      content:
+        "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+      sender: "assistant",
+    },
+  ],
+};
 
 export const chatSlice = createSlice({
   name: "chat",

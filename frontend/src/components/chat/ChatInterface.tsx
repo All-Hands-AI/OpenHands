@@ -7,9 +7,24 @@ import { RootState } from "#/store";
 import { addUserMessage } from "#/state/chat";
 import ActionType from "#/types/ActionType";
 import Socket from "#/services/socket";
+import AgentTaskState from "#/types/AgentTaskState";
+
+function ActionBanner() {
+  return (
+    <div
+      data-testid="typing"
+      className="flex items-center justify-center gap-2 bg-neutral-700 border-y border-neutral-500 py-1.5 px-4"
+    >
+      <div className="flex h-5 w-5 items-center justify-center" />
+      <p className="text-sm text-gray-200 dark:text-gray-200">Working...</p>
+    </div>
+  );
+}
 
 function ChatInterface() {
   const { messages } = useSelector((state: RootState) => state.tempChat);
+  const { curTaskState } = useSelector((state: RootState) => state.agent);
+
   const dispatch = useDispatch();
 
   const handleSendMessage = (content: string) => {
@@ -25,8 +40,13 @@ function ChatInterface() {
         <IoMdChatbubbles />
         Chat
       </div>
-      <div className="flex flex-1 flex-col overflow-x-auto p-3">
-        <Chat messages={messages} />
+      <div className="flex-1 flex flex-col relative min-h-0">
+        <div className="overflow-x-auto p-3">
+          <Chat messages={messages} />
+        </div>
+        {curTaskState === AgentTaskState.RUNNING && <ActionBanner />}
+        {/* Fade between messages and input */}
+        <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-b from-transparent to-neutral-800" />
       </div>
       <ChatInput onSendMessage={handleSendMessage} />
     </div>

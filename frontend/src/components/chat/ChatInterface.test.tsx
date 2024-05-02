@@ -8,6 +8,8 @@ import ChatInterface from "./ChatInterface";
 import Socket from "#/services/socket";
 import ActionType from "#/types/ActionType";
 import { addAssistantMessage } from "#/state/chat";
+import AgentTaskState from "#/types/AgentTaskState";
+import { changeTaskState } from "#/state/agentSlice";
 
 const socketSpy = vi.spyOn(Socket, "send");
 
@@ -18,7 +20,7 @@ HTMLElement.prototype.scrollIntoView = vi.fn();
 describe("ChatInterface", () => {
   it("should render the messages and input", () => {
     renderWithProviders(<ChatInterface />);
-    expect(screen.queryAllByTestId("message")).toHaveLength(0);
+    expect(screen.queryAllByTestId("message")).toHaveLength(1); // initial welcome message only
   });
 
   it("should render the new message the user has typed", () => {
@@ -62,5 +64,23 @@ describe("ChatInterface", () => {
 
     const event = { action: ActionType.START, args: { task: "my message" } };
     expect(socketSpy).toHaveBeenCalledWith(JSON.stringify(event));
+  });
+
+  it("should display a typing indicator when waiting for assistant response", () => {
+    const { store } = renderWithProviders(<ChatInterface />, {
+      preloadedState: {
+        tempChat: {
+          messages: [{ sender: "assistant", content: "Hello" }],
+        },
+      },
+    });
+
+    expect(screen.queryByTestId("typing")).not.toBeInTheDocument();
+
+    act(() => {
+      store.dispatch(changeTaskState(AgentTaskState.RUNNING));
+    });
+
+    expect(screen.getByTestId("typing")).toBeInTheDocument();
   });
 });
