@@ -16,9 +16,7 @@ export default function FAQ() {
         <h2 style={{ fontSize: "2rem" }}>Support</h2>
         <h3>How can I report an issue with OpenDevin?</h3>
         <p>
-          Please send us a message on our{" "}
-          <a href="https://discord.gg/mBuDGRzzES">Discord channel</a> or file a
-          bug on{" "}
+          Please file a bug on{" "}
           <a href="https://github.com/OpenDevin/OpenDevin/issues">GitHub</a> if
           you run into any issues!
         </p>
