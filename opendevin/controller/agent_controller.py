@@ -2,9 +2,20 @@ import asyncio
 from typing import Callable, List, Type
 
 from agenthub.codeact_agent.codeact_agent import CodeActAgent
-from opendevin import config
-from opendevin.agent import Agent
 from opendevin.controller.action_manager import ActionManager
+from opendevin.controller.agent import Agent
+from opendevin.controller.state.plan import Plan
+from opendevin.controller.state.state import State
+from opendevin.core import config
+from opendevin.core.exceptions import (
+    AgentMalformedActionError,
+    AgentNoActionError,
+    LLMOutputError,
+    MaxCharsExceedError,
+)
+from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema import TaskState
+from opendevin.core.schema.config import ConfigType
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
@@ -20,21 +31,8 @@ from opendevin.events.observation import (
     Observation,
     UserMessageObservation,
 )
-from opendevin.agent import Agent
-from opendevin.browser.browser_env import BrowserEnv
-from opendevin.controller.action_manager import ActionManager
-from opendevin.exceptions import (
-    AgentMalformedActionError,
-    AgentNoActionError,
-    LLMOutputError,
-    MaxCharsExceedError,
-)
-from opendevin.logger import opendevin_logger as logger
-from opendevin.plan import Plan
-from opendevin.sandbox import DockerSSHBox
-from opendevin.schema import TaskState
-from opendevin.schema.config import ConfigType
-from opendevin.state import State
+from opendevin.runtime import DockerSSHBox
+from opendevin.runtime.browser.browser_env import BrowserEnv
 
 MAX_ITERATIONS = config.get(ConfigType.MAX_ITERATIONS)
 MAX_CHARS = config.get(ConfigType.MAX_CHARS)
@@ -81,7 +79,6 @@ class AgentController:
         self.action_manager.init_sandbox_plugins(agent.sandbox_plugins)
         # Initialize browser environment
         self.browser = BrowserEnv()
-
 
         if isinstance(agent, CodeActAgent) and not isinstance(
             self.action_manager.sandbox, DockerSSHBox

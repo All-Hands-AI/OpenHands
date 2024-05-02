@@ -71,27 +71,68 @@
       "items": [
         {
           "items": [
-            "python/opendevin/action/__init__",
-            "python/opendevin/action/base",
-            "python/opendevin/action/fileop",
-            "python/opendevin/action/github",
-            "python/opendevin/action/tasks"
-          ],
-          "label": "opendevin.action",
-          "type": "category"
-        },
-        {
-          "items": [
-            "python/opendevin/browser/browser_env"
-          ],
-          "label": "opendevin.browser",
-          "type": "category"
-        },
-        {
-          "items": [
+            {
+              "items": [
+                "python/opendevin/controller/state/plan"
+              ],
+              "label": "opendevin.controller.state",
+              "type": "category"
+            },
+            "python/opendevin/controller/agent",
             "python/opendevin/controller/agent_controller"
           ],
           "label": "opendevin.controller",
+          "type": "category"
+        },
+        {
+          "items": [
+            {
+              "items": [
+                "python/opendevin/core/schema/action",
+                "python/opendevin/core/schema/observation",
+                "python/opendevin/core/schema/task"
+              ],
+              "label": "opendevin.core.schema",
+              "type": "category"
+            },
+            "python/opendevin/core/config",
+            "python/opendevin/core/logger",
+            "python/opendevin/core/main"
+          ],
+          "label": "opendevin.core",
+          "type": "category"
+        },
+        {
+          "items": [
+            {
+              "items": [
+                "python/opendevin/events/action/__init__",
+                "python/opendevin/events/action/empty",
+                "python/opendevin/events/action/files",
+                "python/opendevin/events/action/github",
+                "python/opendevin/events/action/tasks"
+              ],
+              "label": "opendevin.events.action",
+              "type": "category"
+            },
+            {
+              "items": [
+                "python/opendevin/events/observation/__init__",
+                "python/opendevin/events/observation/browse",
+                "python/opendevin/events/observation/commands",
+                "python/opendevin/events/observation/delegate",
+                "python/opendevin/events/observation/empty",
+                "python/opendevin/events/observation/error",
+                "python/opendevin/events/observation/files",
+                "python/opendevin/events/observation/message",
+                "python/opendevin/events/observation/observation",
+                "python/opendevin/events/observation/recall"
+              ],
+              "label": "opendevin.events.observation",
+              "type": "category"
+            }
+          ],
+          "label": "opendevin.events",
           "type": "category"
         },
         {
@@ -103,61 +144,52 @@
         },
         {
           "items": [
-            "python/opendevin/observation/__init__",
-            "python/opendevin/observation/base",
-            "python/opendevin/observation/browse",
-            "python/opendevin/observation/delegate",
-            "python/opendevin/observation/error",
-            "python/opendevin/observation/files",
-            "python/opendevin/observation/message",
-            "python/opendevin/observation/recall",
-            "python/opendevin/observation/run"
-          ],
-          "label": "opendevin.observation",
-          "type": "category"
-        },
-        {
-          "items": [
             {
               "items": [
-                "python/opendevin/sandbox/docker/process"
+                "python/opendevin/runtime/browser/browser_env"
               ],
-              "label": "opendevin.sandbox.docker",
+              "label": "opendevin.runtime.browser",
               "type": "category"
             },
             {
               "items": [
-                "python/opendevin/sandbox/e2b/sandbox"
+                "python/opendevin/runtime/docker/process"
               ],
-              "label": "opendevin.sandbox.e2b",
+              "label": "opendevin.runtime.docker",
+              "type": "category"
+            },
+            {
+              "items": [
+                "python/opendevin/runtime/e2b/sandbox"
+              ],
+              "label": "opendevin.runtime.e2b",
               "type": "category"
             },
             {
               "items": [
                 {
                   "items": [
-                    "python/opendevin/sandbox/plugins/jupyter/__init__"
+                    "python/opendevin/runtime/plugins/jupyter/__init__"
                   ],
-                  "label": "opendevin.sandbox.plugins.jupyter",
+                  "label": "opendevin.runtime.plugins.jupyter",
                   "type": "category"
                 },
-                "python/opendevin/sandbox/plugins/mixin",
-                "python/opendevin/sandbox/plugins/requirement"
+                "python/opendevin/runtime/plugins/mixin",
+                "python/opendevin/runtime/plugins/requirement"
               ],
-              "label": "opendevin.sandbox.plugins",
+              "label": "opendevin.runtime.plugins",
               "type": "category"
-            }
+            },
+            {
+              "items": [
+                "python/opendevin/runtime/utils/system"
+              ],
+              "label": "opendevin.runtime.utils",
+              "type": "category"
+            },
+            "python/opendevin/runtime/files"
           ],
-          "label": "opendevin.sandbox",
-          "type": "category"
-        },
-        {
-          "items": [
-            "python/opendevin/schema/action",
-            "python/opendevin/schema/observation",
-            "python/opendevin/schema/task"
-          ],
-          "label": "opendevin.schema",
+          "label": "opendevin.runtime",
           "type": "category"
         },
         {
@@ -190,20 +222,7 @@
           ],
           "label": "opendevin.server",
           "type": "category"
-        },
-        {
-          "items": [
-            "python/opendevin/utils/system"
-          ],
-          "label": "opendevin.utils",
-          "type": "category"
-        },
-        "python/opendevin/agent",
-        "python/opendevin/config",
-        "python/opendevin/files",
-        "python/opendevin/logger",
-        "python/opendevin/main",
-        "python/opendevin/plan"
+        }
       ],
       "label": "opendevin",
       "type": "category"

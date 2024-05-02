@@ -1,14 +1,14 @@
 from dataclasses import dataclass
 
-from opendevin.schema import ActionType
+from opendevin.core.schema import ActionType
 
 from .action import Action
 
 
 @dataclass
 class NullAction(Action):
-    """An action that does nothing.
-    """
+    """An action that does nothing."""
+
     action: str = ActionType.NULL
 
     @property
