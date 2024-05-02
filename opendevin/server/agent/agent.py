@@ -190,7 +190,8 @@ class AgentUnit:
             await self.send_error('No agent started. Please wait a second...')
             return
         try:
-            assert not self.agent_task, 'Agent task already running'
+            if self.agent_task:
+                self.agent_task.cancel()
             self.agent_task = asyncio.create_task(
                 self.controller.start(task), name='agent start task loop'
             )
