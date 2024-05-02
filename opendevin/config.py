@@ -54,8 +54,10 @@ DEFAULT_CONFIG: dict = {
     ConfigType.USE_HOST_NETWORK: 'false',
     ConfigType.SSH_HOSTNAME: 'localhost',
     ConfigType.DISABLE_COLOR: 'false',
+    ConfigType.SANDBOX_USER_ID: os.getuid() if hasattr(os, 'getuid') else None,
     ConfigType.SANDBOX_TIMEOUT: 120,
-    ConfigType.GITHUB_TOKEN: None
+    ConfigType.GITHUB_TOKEN: None,
+    ConfigType.SANDBOX_USER_ID: None
 }
 
 config_str = ''
@@ -170,7 +172,6 @@ def finalize_config():
 
     if config.get(ConfigType.WORKSPACE_MOUNT_PATH) is None:
         config[ConfigType.WORKSPACE_MOUNT_PATH] = config.get(ConfigType.WORKSPACE_BASE)
-
 
 finalize_config()
 

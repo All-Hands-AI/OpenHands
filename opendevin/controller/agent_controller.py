@@ -1,15 +1,18 @@
 import asyncio
 from typing import Callable, List, Type
 
+from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin import config
 from opendevin.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
+    AgentTalkAction,
     NullAction,
 )
 from opendevin.action.tasks import TaskStateChangedAction
 from opendevin.agent import Agent
+from opendevin.browser.browser_env import BrowserEnv
 from opendevin.controller.action_manager import ActionManager
 from opendevin.exceptions import (
     AgentMalformedActionError,
@@ -23,8 +26,10 @@ from opendevin.observation import (
     AgentErrorObservation,
     NullObservation,
     Observation,
+    UserMessageObservation,
 )
 from opendevin.plan import Plan
+from opendevin.sandbox import DockerSSHBox
 from opendevin.schema import TaskState
 from opendevin.schema.config import ConfigType
 from opendevin.state import State
@@ -39,6 +44,7 @@ class AgentController:
     max_iterations: int
     action_manager: ActionManager
     callbacks: List[Callable]
+    browser: BrowserEnv
 
     delegate: 'AgentController | None' = None
     state: State | None = None
@@ -49,12 +55,20 @@ class AgentController:
     def __init__(
         self,
         agent: Agent,
-        inputs: dict = {},
         sid: str = 'default',
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
         callbacks: List[Callable] = [],
     ):
+        """Initializes a new instance of the AgentController class.
+
+        Args:
+            agent: The agent instance to control.
+            sid: The session ID of the agent.
+            max_iterations: The maximum number of iterations the agent can run.
+            max_chars: The maximum number of characters the agent can output.
+            callbacks: A list of callback functions to run after each action.
+        """
         self.id = sid
         self.agent = agent
         self.max_iterations = max_iterations
@@ -63,6 +77,18 @@ class AgentController:
         self.callbacks = callbacks
         # Initialize agent-required plugins for sandbox (if any)
         self.action_manager.init_sandbox_plugins(agent.sandbox_plugins)
+        # Initialize browser environment
+        self.browser = BrowserEnv()
+
+
+        if isinstance(agent, CodeActAgent) and not isinstance(
+            self.action_manager.sandbox, DockerSSHBox
+        ):
+            logger.warning(
+                'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful (LocalBox, DockerExecBox) will not work properly.'
+            )
+
+        self._await_user_message_queue: asyncio.Queue = asyncio.Queue()
 
     def update_state_for_step(self, i):
         if self.state is None:
@@ -105,7 +131,10 @@ class AgentController:
             except Exception:
                 logger.error('Error in loop', exc_info=True)
                 await self._run_callbacks(
-                    AgentErrorObservation('Oops! Something went wrong while completing your task. You can check the logs for more info.'))
+                    AgentErrorObservation(
+                        'Oops! Something went wrong while completing your task. You can check the logs for more info.'
+                    )
+                )
                 await self.set_task_state_to(TaskState.STOPPED)
                 break
 
@@ -125,14 +154,15 @@ class AgentController:
 
             if self._is_stuck():
                 logger.info('Loop detected, stopping task')
-                observation = AgentErrorObservation('I got stuck into a loop, the task has stopped.')
+                observation = AgentErrorObservation(
+                    'I got stuck into a loop, the task has stopped.'
+                )
                 await self._run_callbacks(observation)
                 await self.set_task_state_to(TaskState.STOPPED)
                 break
 
     async def setup_task(self, task: str, inputs: dict = {}):
-        """Sets up the agent controller with a task.
-        """
+        """Sets up the agent controller with a task."""
         self._task_state = TaskState.RUNNING
         await self.notify_task_state_changed()
         self.state = State(Plan(task))
@@ -174,6 +204,41 @@ class AgentController:
     async def notify_task_state_changed(self):
         await self._run_callbacks(TaskStateChangedAction(self._task_state))
 
+    async def add_user_message(self, message: UserMessageObservation):
+        if self.state is None:
+            return
+
+        if self._task_state == TaskState.AWAITING_USER_INPUT:
+            self._await_user_message_queue.put_nowait(message)
+
+            # set the task state to running
+            self._task_state = TaskState.RUNNING
+            await self.notify_task_state_changed()
+
+        elif self._task_state == TaskState.RUNNING:
+            self.add_history(NullAction(), message)
+
+        else:
+            raise ValueError(
+                f'Task (state: {self._task_state}) is not in a state to add user message'
+            )
+
+    async def wait_for_user_input(self) -> UserMessageObservation:
+        self._task_state = TaskState.AWAITING_USER_INPUT
+        await self.notify_task_state_changed()
+        # wait for the next user message
+        if len(self.callbacks) == 0:
+            logger.info(
+                'Use STDIN to request user message as no callbacks are registered',
+                extra={'msg_type': 'INFO'},
+            )
+            message = input('Request user input [type /exit to stop interaction] >> ')
+            user_message_observation = UserMessageObservation(message)
+        else:
+            user_message_observation = await self._await_user_message_queue.get()
+            self._await_user_message_queue.task_done()
+        return user_message_observation
+
     async def start_delegate(self, action: AgentDelegateAction):
         AgentCls: Type[Agent] = Agent.get_cls(action.agent)
         agent = AgentCls(llm=self.agent.llm)
@@ -201,7 +266,8 @@ class AgentController:
             return False
 
         logger.info(f'STEP {i}', extra={'msg_type': 'STEP'})
-        logger.info(self.state.plan.main_goal, extra={'msg_type': 'PLAN'})
+        if i == 0:
+            logger.info(self.state.plan.main_goal, extra={'msg_type': 'PLAN'})
         if self.state.num_of_chars > self.max_chars:
             raise MaxCharsExceedError(self.state.num_of_chars, self.max_chars)
 
@@ -225,6 +291,14 @@ class AgentController:
         self.update_state_after_step()
 
         await self._run_callbacks(action)
+
+        # whether to await for user messages
+        if isinstance(action, AgentTalkAction):
+            # await for the next user messages
+            user_message_observation = await self.wait_for_user_input()
+            logger.info(user_message_observation, extra={'msg_type': 'OBSERVATION'})
+            self.add_history(action, user_message_observation)
+            return False
 
         finished = isinstance(action, AgentFinishAction)
         if finished:
@@ -259,22 +333,33 @@ class AgentController:
         return self.state
 
     def _is_stuck(self):
-        if self.state is None or self.state.history is None or len(self.state.history) < 3:
+        if (
+            self.state is None
+            or self.state.history is None
+            or len(self.state.history) < 3
+        ):
             return False
 
         # if the last three (Action, Observation) tuples are too repetitive
         # the agent got stuck in a loop
         if all(
-            [self.state.history[-i][0] == self.state.history[-3][0] for i in range(1, 3)]
+            [
+                self.state.history[-i][0] == self.state.history[-3][0]
+                for i in range(1, 3)
+            ]
         ):
             # it repeats same action, give it a chance, but not if:
-            if (all
-                    (isinstance(self.state.history[-i][1], NullObservation) for i in range(1, 4))):
+            if all(
+                isinstance(self.state.history[-i][1], NullObservation)
+                for i in range(1, 4)
+            ):
                 # same (Action, NullObservation): like 'think' the same thought over and over
                 logger.debug('Action, NullObservation loop detected')
                 return True
-            elif (all
-                  (isinstance(self.state.history[-i][1], AgentErrorObservation) for i in range(1, 4))):
+            elif all(
+                isinstance(self.state.history[-i][1], AgentErrorObservation)
+                for i in range(1, 4)
+            ):
                 # (NullAction, AgentErrorObservation): errors coming from an exception
                 # (Action, AgentErrorObservation): the same action getting an error, even if not necessarily the same error
                 logger.debug('Action, AgentErrorObservation loop detected')

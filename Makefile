@@ -148,9 +148,17 @@ install-precommit-hooks:
 	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 
-lint:
+lint-backend:
 	@echo "$(YELLOW)Running linters...$(RESET)"
-	@poetry run pre-commit run --all-files --show-diff-on-failure --config $(PRECOMMIT_CONFIG_PATH)
+	@poetry run pre-commit run --files $$(git diff --name-only $$(git merge-base main $$(git branch --show-current)) $$(git branch --show-current) | tr '\n' ' ') --show-diff-on-failure --config $(PRECOMMIT_CONFIG_PATH)
+
+lint-frontend:
+	@echo "$(YELLOW)Running linters for frontend...$(RESET)"
+	@cd frontend && npm run lint
+
+lint:
+	@$(MAKE) -s lint-frontend
+	@$(MAKE) -s lint-backend
 
 build-frontend:
 	@echo "$(YELLOW)Building frontend...$(RESET)"
@@ -159,7 +167,7 @@ build-frontend:
 # Start backend
 start-backend:
 	@echo "$(YELLOW)Starting backend...$(RESET)"
-	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) --reload --reload-exclude workspace/*
+	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) --reload --reload-exclude "workspace/*"
 
 # Start frontend
 start-frontend:

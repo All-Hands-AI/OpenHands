@@ -1,5 +1,9 @@
 name: Run Unit Tests
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 on:
   push:
     branches:
@@ -34,11 +38,16 @@ jobs:
           brew install colima docker
           colima start
 
+          # For testcontainers to find the Colima socket
+          # https://github.com/abiosoft/colima/blob/main/docs/FAQ.md#cannot-connect-to-the-docker-daemon-at-unixvarrundockersock-is-the-docker-daemon-running
+          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
+
       - name: Build Environment
         run: make build
 
       - name: Run Tests
         run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
@@ -70,6 +79,7 @@ jobs:
 
       - name: Run Tests
         run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:

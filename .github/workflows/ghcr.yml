@@ -1,5 +1,9 @@
 name: Publish Docker Image
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 on:
   push:
     branches:
@@ -28,6 +32,22 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
 
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: true
+
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+          swap-storage: true
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -42,16 +62,13 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Delete huge unnecessary tools folder
-        run: rm -rf /opt/hostedtoolcache
-
       - name: Build and push ${{ matrix.image }}
-        if: github.event.pull_request.head.repo.full_name == github.repository
+        if: "!github.event.pull_request.head.repo.fork"
         run: |
           ./containers/build.sh ${{ matrix.image }} ${{ github.repository_owner }} --push
 
       - name: Build ${{ matrix.image }}
-        if: github.event.pull_request.head.repo.full_name != github.repository
+        if: "github.event.pull_request.head.repo.fork"
         run: |
           ./containers/build.sh ${{ matrix.image }} ${{ github.repository_owner }}
 

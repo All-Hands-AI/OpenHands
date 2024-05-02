@@ -1,0 +1,10 @@
+```json
+{
+  "action": "modify_task",
+  "args": {
+    "id": "0",
+    "state": "verified",
+    "thought": "The shell script 'hello.sh' has been run and verified to successfully output 'hello'. This completes the primary task requirement."
+  }
+}
+```
