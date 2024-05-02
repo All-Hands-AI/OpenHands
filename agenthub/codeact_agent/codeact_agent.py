@@ -2,7 +2,8 @@ import re
 from typing import List, Mapping
 
 from agenthub.codeact_agent.prompt import EXAMPLES, SYSTEM_MESSAGE
-from opendevin.action import (
+from opendevin.agent import Agent
+from opendevin.events.action import (
     Action,
     AgentEchoAction,
     AgentFinishAction,
@@ -11,14 +12,13 @@ from opendevin.action import (
     IPythonRunCellAction,
     NullAction,
 )
-from opendevin.agent import Agent
-from opendevin.llm.llm import LLM
-from opendevin.observation import (
+from opendevin.events.observation import (
     AgentMessageObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
     UserMessageObservation,
 )
+from opendevin.llm.llm import LLM
 from opendevin.sandbox.plugins import (
     JupyterRequirement,
     PluginRequirement,

@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple
 
-from opendevin.action import (
+from opendevin.events.action import (
     Action,
 )
-from opendevin.observation import (
+from opendevin.events.observation import (
     CmdOutputObservation,
     Observation,
 )

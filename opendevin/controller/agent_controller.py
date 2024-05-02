@@ -3,14 +3,23 @@ from typing import Callable, List, Type
 
 from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin import config
-from opendevin.action import (
+from opendevin.agent import Agent
+from opendevin.controller.action_manager import ActionManager
+from opendevin.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
     AgentTalkAction,
     NullAction,
+    TaskStateChangedAction,
 )
-from opendevin.action.tasks import TaskStateChangedAction
+from opendevin.events.observation import (
+    AgentDelegateObservation,
+    AgentErrorObservation,
+    NullObservation,
+    Observation,
+    UserMessageObservation,
+)
 from opendevin.agent import Agent
 from opendevin.browser.browser_env import BrowserEnv
 from opendevin.controller.action_manager import ActionManager
@@ -21,13 +30,6 @@ from opendevin.exceptions import (
     MaxCharsExceedError,
 )
 from opendevin.logger import opendevin_logger as logger
-from opendevin.observation import (
-    AgentDelegateObservation,
-    AgentErrorObservation,
-    NullObservation,
-    Observation,
-    UserMessageObservation,
-)
 from opendevin.plan import Plan
 from opendevin.sandbox import DockerSSHBox
 from opendevin.schema import TaskState

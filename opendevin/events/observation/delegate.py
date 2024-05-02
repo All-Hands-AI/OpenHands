@@ -2,14 +2,13 @@ from dataclasses import dataclass
 
 from opendevin.schema import ObservationType
 
-from .base import Observation
+from .observation import Observation
 
 
 @dataclass
 class AgentDelegateObservation(Observation):
     """
-    This data class represents a delegate observation.
-    This is used when the produced action is NOT executable.
+    This data class represents the result from delegating to another agent
     """
 
     outputs: dict

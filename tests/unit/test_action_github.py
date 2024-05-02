@@ -5,12 +5,12 @@ import pytest
 
 from agenthub.dummy_agent.agent import DummyAgent
 from opendevin import config
-from opendevin.action.github import GitHubPushAction, GitHubSendPRAction
 from opendevin.controller.agent_controller import AgentController
+from opendevin.events.action.github import GitHubPushAction, GitHubSendPRAction
+from opendevin.events.observation.commands import CmdOutputObservation
+from opendevin.events.observation.error import AgentErrorObservation
+from opendevin.events.observation.message import AgentMessageObservation
 from opendevin.llm.llm import LLM
-from opendevin.observation.error import AgentErrorObservation
-from opendevin.observation.message import AgentMessageObservation
-from opendevin.observation.run import CmdOutputObservation
 from opendevin.schema.config import ConfigType
 
 

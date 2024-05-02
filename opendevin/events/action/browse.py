@@ -2,17 +2,18 @@ import os
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from opendevin.observation import BrowserOutputObservation
+
+from opendevin.events.observation import BrowserOutputObservation
 from opendevin.schema import ActionType
 
-from .base import ExecutableAction
+from .action import Action
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
 
 
 @dataclass
-class BrowseURLAction(ExecutableAction):
+class BrowseURLAction(Action):
     url: str
     thought: str = ''
     action: str = ActionType.BROWSE

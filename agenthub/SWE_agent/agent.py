@@ -1,14 +1,14 @@
 from typing import List
 
-from opendevin.action import (
+from opendevin.agent import Agent
+from opendevin.events.action import (
     Action,
     AgentThinkAction,
     FileReadAction,
     FileWriteAction,
 )
-from opendevin.agent import Agent
+from opendevin.events.observation import Observation
 from opendevin.llm.llm import LLM
-from opendevin.observation import Observation
 from opendevin.state import State
 
 from .parser import parse_command

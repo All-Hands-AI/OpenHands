@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 
 from opendevin.schema import ObservationType
 
-from .base import Observation
+from .observation import Observation
 
 
 @dataclass
