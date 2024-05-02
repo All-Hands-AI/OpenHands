@@ -3,6 +3,15 @@ This guide is for people working on OpenDevin and editing the source code.
 
 ## Start the server for development
 
+### 0. Validate Prerequisites
+Before starting to build the project, ensure all prerequisites are validated:
+
+```bash
+node frontend/scripts/validate-prerequisites.js
+```
+
+If any of the prerequisites are missing or incorrectly versioned, the script will halt the process and throw an error.
+
 ### 1. Requirements
 * Linux, Mac OS, or [WSL on Windows](https://learn.microsoft.com/en-us/windows/wsl/install)
 * [Docker](https://docs.docker.com/engine/install/)(For those on MacOS, make sure to allow the default Docker socket to be used from advanced settings!)
