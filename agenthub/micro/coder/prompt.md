@@ -4,9 +4,11 @@ need to modify to complete this task:
 
 {{ state.plan.main_goal }}
 
+{% if state.inputs.summary %}
 Here's a summary of the codebase, as it relates to this task:
 
 {{ state.inputs.summary }}
+{% endif %}
 
 ## Available Actions
 {{ instructions.actions.run }}

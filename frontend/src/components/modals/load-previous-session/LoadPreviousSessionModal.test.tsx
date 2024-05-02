@@ -3,7 +3,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import LoadPreviousSessionModal from "./LoadPreviousSessionModal";
 import { clearMsgs, fetchMsgs } from "../../../services/session";
-import { sendChatMessageFromEvent } from "../../../services/chatService";
+import { addChatMessageFromEvent } from "../../../services/chatService";
 import { handleAssistantMessage } from "../../../services/actions";
 import toast from "../../../utils/toast";
 
@@ -37,7 +37,7 @@ vi.mock("../../../services/session", async (importOriginal) => ({
 
 vi.mock("../../../services/chatService", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../services/chatService")>()),
-  sendChatMessageFromEvent: vi.fn(),
+  addChatMessageFromEvent: vi.fn(),
 }));
 
 vi.mock("../../../services/actions", async (importOriginal) => ({
@@ -94,7 +94,7 @@ describe("LoadPreviousSession", () => {
 
     await waitFor(() => {
       expect(fetchMsgs).toHaveBeenCalledTimes(1);
-      expect(sendChatMessageFromEvent).toHaveBeenCalledTimes(1);
+      expect(addChatMessageFromEvent).toHaveBeenCalledTimes(1);
       expect(handleAssistantMessage).toHaveBeenCalledTimes(1);
     });
     // modal should close right after fetching messages
@@ -117,7 +117,7 @@ describe("LoadPreviousSession", () => {
     await waitFor(async () => {
       await expect(() => fetchMsgs()).rejects.toThrow();
       expect(handleAssistantMessage).not.toHaveBeenCalled();
-      expect(sendChatMessageFromEvent).not.toHaveBeenCalled();
+      expect(addChatMessageFromEvent).not.toHaveBeenCalled();
       // error toast should be shown
       expect(toast.stickyError).toHaveBeenCalledWith(
         "ws",

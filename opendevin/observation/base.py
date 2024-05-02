@@ -1,5 +1,6 @@
 import copy
 from dataclasses import dataclass
+
 from opendevin.schema import ObservationType
 
 

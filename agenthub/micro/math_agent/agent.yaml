@@ -7,19 +7,19 @@ inputs:
 outputs:
   answer: string
 examples:
-  - input:
+  - inputs:
       task: "What is 2 + 2?"
-    output:
+    outputs:
       answer: "4"
-  - input:
+  - inputs:
       task: "What is the area of a circle with radius 7.324 inches?"
     output:
       answer: "168.518 square inches"
-  - input:
+  - inputs:
       task: "What day of the week is 2099-01-01?"
-    output:
+    outputs:
       answer: "Saturday"
-  - input:
+  - inputs:
       task: "What is the integral of sin(x^2) evaluated from -1 to 1?"
-    output:
+    outputs:
       answer: "0.603848"

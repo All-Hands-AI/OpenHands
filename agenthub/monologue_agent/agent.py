@@ -1,35 +1,34 @@
 from typing import List
-from opendevin.agent import Agent
-from opendevin.state import State
-from opendevin.llm.llm import LLM
-from opendevin.schema import ActionType
-from opendevin.exceptions import AgentNoInstructionError
-from opendevin.schema.config import ConfigType
-from opendevin import config
-
-from opendevin.action import (
-    Action,
-    NullAction,
-    CmdRunAction,
-    FileWriteAction,
-    FileReadAction,
-    AgentRecallAction,
-    BrowseURLAction,
-    GitHubPushAction,
-    AgentThinkAction,
-)
-
-from opendevin.observation import (
-    Observation,
-    NullObservation,
-    CmdOutputObservation,
-    FileReadObservation,
-    AgentRecallObservation,
-    BrowserOutputObservation,
-)
 
 import agenthub.monologue_agent.utils.prompts as prompts
 from agenthub.monologue_agent.utils.monologue import Monologue
+from opendevin import config
+from opendevin.action import (
+    Action,
+    AgentRecallAction,
+    AgentThinkAction,
+    BrowseURLAction,
+    CmdRunAction,
+    FileReadAction,
+    FileWriteAction,
+    GitHubPushAction,
+    NullAction,
+)
+from opendevin.agent import Agent
+from opendevin.exceptions import AgentNoInstructionError
+from opendevin.llm.llm import LLM
+from opendevin.observation import (
+    AgentRecallObservation,
+    BrowserOutputObservation,
+    CmdOutputObservation,
+    FileReadObservation,
+    NullObservation,
+    Observation,
+)
+from opendevin.schema import ActionType
+from opendevin.schema.config import ConfigType
+from opendevin.state import State
+
 if config.get(ConfigType.AGENT_MEMORY_ENABLED):
     from agenthub.monologue_agent.utils.memory import LongTermMemory
 
@@ -137,6 +136,7 @@ class MonologueAgent(Agent):
         Utilizes the INITIAL_THOUGHTS list to give the agent a context for it's capabilities
         and how to navigate the WORKSPACE_MOUNT_PATH_IN_SANDBOX in `config` (e.g., /workspace by default).
         Short circuited to return when already initialized.
+        Will execute again when called after reset.
 
         Parameters:
         - task (str): The initial goal statement provided by the user
@@ -157,6 +157,10 @@ class MonologueAgent(Agent):
         else:
             self.memory = None
 
+        self._add_initial_thoughts(task)
+        self._initialized = True
+
+    def _add_initial_thoughts(self, task):
         previous_action = ''
         for thought in INITIAL_THOUGHTS:
             thought = thought.replace('$TASK', task)
@@ -208,7 +212,6 @@ class MonologueAgent(Agent):
                 else:
                     action = AgentThinkAction(thought=thought)
                 self._add_event(action.to_memory())
-        self._initialized = True
 
     def step(self, state: State) -> Action:
         """
@@ -257,8 +260,6 @@ class MonologueAgent(Agent):
 
     def reset(self) -> None:
         super().reset()
-        self.monologue = Monologue()
-        if config.get(ConfigType.AGENT_MEMORY_ENABLED):
-            self.memory = LongTermMemory()
-        else:
-            self.memory = None
+
+        # Reset the initial monologue and memory
+        self._initialized = False

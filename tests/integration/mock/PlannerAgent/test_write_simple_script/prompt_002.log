@@ -58,7 +58,8 @@ ten actions--more happened before that.
     "action": "modify_task",
     "args": {
       "id": "0",
-      "state": "in_progress"
+      "state": "in_progress",
+      "thought": ""
     }
   }
 ]

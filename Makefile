@@ -148,9 +148,17 @@ install-precommit-hooks:
 	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 
-lint:
+lint-backend:
 	@echo "$(YELLOW)Running linters...$(RESET)"
-	@poetry run pre-commit run --all-files --show-diff-on-failure --config $(PRECOMMIT_CONFIG_PATH)
+	@poetry run pre-commit run --files $$(git diff --name-only $$(git merge-base main $$(git branch --show-current)) $$(git branch --show-current) | tr '\n' ' ') --show-diff-on-failure --config $(PRECOMMIT_CONFIG_PATH)
+
+lint-frontend:
+	@echo "$(YELLOW)Running linters for frontend...$(RESET)"
+	@cd frontend && npm run lint
+
+lint:
+	@$(MAKE) -s lint-frontend
+	@$(MAKE) -s lint-backend
 
 build-frontend:
 	@echo "$(YELLOW)Building frontend...$(RESET)"
@@ -159,7 +167,7 @@ build-frontend:
 # Start backend
 start-backend:
 	@echo "$(YELLOW)Starting backend...$(RESET)"
-	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) --reload --reload-exclude workspace/*
+	@poetry run uvicorn opendevin.server.listen:app --port $(BACKEND_PORT) --reload --reload-exclude "workspace/*"
 
 # Start frontend
 start-frontend:
@@ -200,12 +208,22 @@ setup-config-prompts:
 	@read -p "Enter your LLM Base URL [mostly used for local LLMs, leave blank if not needed - example: http://localhost:5001/v1/]: " llm_base_url; \
 	 if [[ ! -z "$$llm_base_url" ]]; then echo "LLM_BASE_URL=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; fi
 
-	@echo "Enter your LLM Embedding Model\nChoices are openai, azureopenai, llama2 or leave blank to default to 'BAAI/bge-small-en-v1.5' via huggingface"; \
-	 read -p "> " llm_embedding_model; \
-	 	echo "LLM_EMBEDDING_MODEL=\"$$llm_embedding_model\"" >> $(CONFIG_FILE).tmp; \
-		if [ "$$llm_embedding_model" = "llama2" ]; then \
-			read -p "Enter the local model URL (will overwrite LLM_BASE_URL): " llm_base_url; \
-				echo "LLM_BASE_URL=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; \
+	@echo "Enter your LLM Embedding Model"; \
+		echo "Choices are:"; \
+		echo "  - openai"; \
+		echo "  - azureopenai"; \
+		echo "  - Embeddings available only with OllamaEmbedding:"; \
+		echo "    - llama2"; \
+		echo "    - mxbai-embed-large"; \
+		echo "    - nomic-embed-text"; \
+		echo "    - all-minilm"; \
+		echo "    - stable-code"; \
+		echo "  - Leave blank to default to 'BAAI/bge-small-en-v1.5' via huggingface"; \
+		read -p "> " llm_embedding_model; \
+		echo "LLM_EMBEDDING_MODEL=\"$$llm_embedding_model\"" >> $(CONFIG_FILE).tmp; \
+		if [ "$$llm_embedding_model" = "llama2" ] || [ "$$llm_embedding_model" = "mxbai-embed-large" ] || [ "$$llm_embedding_model" = "nomic-embed-text" ] || [ "$$llm_embedding_model" = "all-minilm" ] || [ "$$llm_embedding_model" = "stable-code" ]; then \
+			read -p "Enter the local model URL for the embedding model (will set LLM_EMBEDDING_BASE_URL): " llm_embedding_base_url; \
+				echo "LLM_EMBEDDING_BASE_URL=\"$$llm_embedding_base_url\"" >> $(CONFIG_FILE).tmp; \
 		elif [ "$$llm_embedding_model" = "azureopenai" ]; then \
 			read -p "Enter the Azure endpoint URL (will overwrite LLM_BASE_URL): " llm_base_url; \
 				echo "LLM_BASE_URL=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; \

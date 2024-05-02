@@ -1,4 +1,8 @@
-from opendevin.observation import observation_from_dict, Observation, CmdOutputObservation
+from opendevin.observation import (
+    CmdOutputObservation,
+    Observation,
+    observation_from_dict,
+)
 
 
 def test_observation_serialization_deserialization():
