@@ -6,6 +6,8 @@ from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core import config
 from opendevin.core.exceptions import AgentNoInstructionError
+from opendevin.core.schema import ActionType
+from opendevin.core.schema.config import ConfigType
 from opendevin.events.action import (
     Action,
     AgentRecallAction,
@@ -26,8 +28,6 @@ from opendevin.events.observation import (
     Observation,
 )
 from opendevin.llm.llm import LLM
-from opendevin.schema import ActionType
-from opendevin.schema.config import ConfigType
 
 if config.get(ConfigType.AGENT_MEMORY_ENABLED):
     from agenthub.monologue_agent.utils.memory import LongTermMemory

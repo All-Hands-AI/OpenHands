@@ -3,6 +3,7 @@ from typing import Dict, List, Tuple, Type
 
 from opendevin.controller.state.plan import Plan
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema import ActionType
 from opendevin.events.action import (
     Action,
     AddTaskAction,
@@ -23,7 +24,6 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
-from opendevin.schema import ActionType
 
 ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
     ActionType.RUN: CmdRunAction,

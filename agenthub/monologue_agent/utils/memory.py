@@ -15,7 +15,7 @@ from tenacity import (
 
 from opendevin.core import config
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.schema.config import ConfigType
+from opendevin.core.schema.config import ConfigType
 
 from . import json
 
