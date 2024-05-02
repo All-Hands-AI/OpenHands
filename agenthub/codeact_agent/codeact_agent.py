@@ -20,7 +20,7 @@ from opendevin.events.observation import (
     UserMessageObservation,
 )
 from opendevin.llm.llm import LLM
-from opendevin.runtime.sandbox.plugins import (
+from opendevin.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
     SWEAgentCommandsRequirement,

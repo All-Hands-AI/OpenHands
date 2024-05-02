@@ -1,4 +1,4 @@
-from opendevin.runtime.sandbox.plugins import SWEAgentCommandsRequirement
+from opendevin.runtime.plugins import SWEAgentCommandsRequirement
 
 _SWEAGENT_BASH_DOCS = '\n'.join(
     filter(
