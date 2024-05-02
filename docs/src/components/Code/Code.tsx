@@ -35,7 +35,6 @@ export WORKSPACE_BASE=$(pwd)/workspace`;
           </div>
         </div>
         <br />
-        <CodeBlock language="python" code={keyCode} />
         <CodeBlock language="python" code={workspaceCode} />
         <CodeBlock language="python" code={dockerCode} />
       </div>
