@@ -1,7 +1,7 @@
 import os
 from dataclasses import dataclass
 
-from opendevin.sandbox.plugins.requirement import PluginRequirement
+from opendevin.runtime.plugins.requirement import PluginRequirement
 
 
 @dataclass
