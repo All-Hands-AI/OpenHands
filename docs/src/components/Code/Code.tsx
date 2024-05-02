@@ -12,12 +12,13 @@ export WORKSPACE_BASE=$(pwd)/workspace`;
 
   const dockerCode = `docker run \\
     -e LLM_API_KEY \\
+    -e SANDBOX_USER_ID=$(id -u) \\
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \\
     -v $WORKSPACE_BASE:/opt/workspace_base \\
     -v /var/run/docker.sock:/var/run/docker.sock \\
     -p 3000:3000 \\
     --add-host host.docker.internal=host-gateway \\
-    ghcr.io/opendevin/opendevin:0.3.1`;
+    ghcr.io/opendevin/opendevin:0.5.0`;
 
   return (
     <div className={styles.container}>
