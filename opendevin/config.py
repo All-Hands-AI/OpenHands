@@ -22,6 +22,9 @@ load_dotenv()
 DEFAULT_CONFIG: dict = {
     ConfigType.LLM_API_KEY: None,
     ConfigType.LLM_BASE_URL: None,
+    ConfigType.AWS_ACCESS_KEY_ID: None,
+    ConfigType.AWS_SECRET_ACCESS_KEY: None,
+    ConfigType.AWS_REGION_NAME: 'us-west-2',
     ConfigType.WORKSPACE_BASE: os.getcwd(),
     ConfigType.WORKSPACE_MOUNT_PATH: None,
     ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX: '/workspace',
