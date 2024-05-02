@@ -4,13 +4,19 @@ import { useTranslation } from "react-i18next";
 import { VscArrowUp } from "react-icons/vsc";
 import { twMerge } from "tailwind-merge";
 import { I18nKey } from "#/i18n/declaration";
+import AgentTaskState from "#/types/AgentTaskState";
 
 interface ChatInputProps {
   disabled?: boolean;
   onSendMessage: (message: string) => void;
+  currentTaskState: AgentTaskState;
 }
 
-function ChatInput({ disabled, onSendMessage }: ChatInputProps) {
+function ChatInput({
+  disabled,
+  onSendMessage,
+  currentTaskState,
+}: ChatInputProps) {
   const { t } = useTranslation();
 
   const [message, setMessage] = React.useState("");
@@ -40,18 +46,19 @@ function ChatInput({ disabled, onSendMessage }: ChatInputProps) {
 
   return (
     <>
-      <div className="mx-3 pt-3 text-center">
-        <button
-          type="button"
-          className="w-full relative bg-transparent border rounded-lg p-1 border-white hover:opacity-80 cursor-pointer select-none bottom-[10px] transition active:bg-white active:text-black hover:bg-neutral-500"
-          onClick={handleSendContinueMsg}
-        >
-          <span className="m-2">
-            {">>> "}
-            {t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
-          </span>
-        </button>
-      </div>
+      {currentTaskState === AgentTaskState.AWAITING_USER_INPUT && (
+        <div className="mx-3 pt-3 text-center">
+          <button
+            type="button"
+            className="w-full relative bg-transparent border rounded-lg p-1 border-white hover:opacity-80 cursor-pointer select-none bottom-[10px] transition active:bg-white active:text-black hover:bg-neutral-500"
+            onClick={handleSendContinueMsg}
+          >
+            <span className="m-2">
+              {`>>> ${t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)} `}
+            </span>
+          </button>
+        </div>
+      )}
       <div className="w-full relative text-base flex">
         <Textarea
           value={message}
