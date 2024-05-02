@@ -393,3 +393,30 @@ Destroying test database for alias 'default' ('file:memorydb_default?mode=memory
 Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
 20:57:57 - opendevin:INFO: swe_env_box.py:218 - background logs:
 ```
+
+## Evaluate in the sandbox
+
+1. Ensure the test command (`TEST_CMD`) is set in `~/.bashrc` as a system variable, which should have been obtained using the script `evaluation/SWE-bench/scripts/swe_entry.sh` in the previous steps.
+2. Run the test command in the testbed directory when the agent terminates and output the test logs to a file formatted as `{SWE_INSTANCE_ID}.{model/agent-name}.eval.log`.
+3. Run the instance report script:
+
+```shell
+SWE_BENCH_PATH=/swe_util/OD-SWE-bench
+export PYTHONPATH=$SWE_BENCH_PATH && cd $SWE_BENCH_PATH && python swebench/metrics/get_instance_report.py \
+    --swe_bench_task /workspace/instance.json \
+    --log_path path_to_`{SWE_INSTANCE_ID}.{model/agent name}.eval.log`
+```
+
+The expected output should be like:
+
+```shell
+- test_errored: 0
+- test_timeout: 0
+- resolved: 1
+```
+
+Example input files for Xingyao:
+```shell
+--swe_bench_task /shared/bowen/codellm/swe/OpenDevin/evaluation/SWE-bench/instance2.json \
+--log_path /shared/bowen/codellm/swe/OpenDevin/evaluation/SWE-bench/django__django-11099.od.eval.log
+```
