@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { setInitialized } from "#/state/taskSlice";
 import store from "#/store";
 import ActionType from "#/types/ActionType";
 import { initializeAgent } from "./agent";
@@ -27,6 +26,5 @@ describe("initializeAgent", () => {
     initializeAgent(settings);
 
     expect(sendSpy).toHaveBeenCalledWith(JSON.stringify(event));
-    expect(dispatchSpy).toHaveBeenCalledWith(setInitialized(false));
   });
 });

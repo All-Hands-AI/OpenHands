@@ -3,31 +3,35 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
-import AgentTaskState from "#/types/AgentTaskState";
+import AgentState from "#/types/AgentState";
 
 const AgentStatusMap: { [k: string]: { message: string; indicator: string } } =
   {
-    [AgentTaskState.INIT]: {
+    [AgentState.INIT]: {
+      message: "Agent is loading...",
+      indicator: "bg-red-500",
+    },
+    [AgentState.INIT]: {
       message: "Agent is initialized, waiting for task...",
       indicator: "bg-blue-500",
     },
-    [AgentTaskState.RUNNING]: {
+    [AgentState.RUNNING]: {
       message: "Agent is running task...",
       indicator: "bg-green-500",
     },
-    [AgentTaskState.AWAITING_USER_INPUT]: {
+    [AgentState.AWAITING_USER_INPUT]: {
       message: "Agent is awaiting user input...",
       indicator: "bg-orange-500",
     },
-    [AgentTaskState.PAUSED]: {
+    [AgentState.PAUSED]: {
       message: "Agent has paused.",
       indicator: "bg-yellow-500",
     },
-    [AgentTaskState.STOPPED]: {
+    [AgentState.STOPPED]: {
       message: "Agent has stopped.",
       indicator: "bg-red-500",
     },
-    [AgentTaskState.FINISHED]: {
+    [AgentState.FINISHED]: {
       message: "Agent has finished the task.",
       indicator: "bg-green-500",
     },
@@ -35,8 +39,7 @@ const AgentStatusMap: { [k: string]: { message: string; indicator: string } } =
 
 function AgentStatusBar() {
   const { t } = useTranslation();
-  const { initialized } = useSelector((state: RootState) => state.task);
-  const { curTaskState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   // TODO: Extend the agent status, e.g.:
   // - Agent is typing
@@ -44,15 +47,16 @@ function AgentStatusBar() {
   // - Agent is thinking
   // - Agent is ready
   // - Agent is not available
+  console.log('curAgentState', curAgentState);
   return (
     <div className="flex items-center">
-      {initialized ? (
+      {curAgentState != AgentState.LOADING ? (
         <>
           <div
-            className={`w-3 h-3 mr-2 rounded-full animate-pulse ${AgentStatusMap[curTaskState].indicator}`}
+            className={`w-3 h-3 mr-2 rounded-full animate-pulse ${AgentStatusMap[curAgentState].indicator}`}
           />
           <span className="text-sm text-stone-400">
-            {AgentStatusMap[curTaskState].message}
+            {AgentStatusMap[curAgentState].message}
           </span>
         </>
       ) : (

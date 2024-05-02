@@ -3,7 +3,7 @@ import { IoMdChatbubbles } from "react-icons/io";
 import Markdown from "react-markdown";
 import { useSelector } from "react-redux";
 import { useTypingEffect } from "#/hooks/useTypingEffect";
-import AgentTaskState from "../types/AgentTaskState";
+import AgentState from "../types/AgentState";
 import {
   addAssistantMessageToChat,
   sendChatMessage,
@@ -117,11 +117,10 @@ function MessageList(): JSX.Element {
 }
 
 function ChatInterface(): JSX.Element {
-  const { initialized } = useSelector((state: RootState) => state.task);
-  const { curTaskState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const onUserMessage = (msg: string) => {
-    const isNewTask = curTaskState === AgentTaskState.INIT;
+    const isNewTask = curAgentState === AgentState.INIT;
     sendChatMessage(msg, isNewTask);
   };
 
@@ -132,7 +131,7 @@ function ChatInterface(): JSX.Element {
         Chat
       </div>
       <MessageList />
-      <ChatInput disabled={!initialized} onSendMessage={onUserMessage} />
+      <ChatInput disabled={curAgentState == AgentState.LOADING} onSendMessage={onUserMessage} />
     </div>
   );
 }
