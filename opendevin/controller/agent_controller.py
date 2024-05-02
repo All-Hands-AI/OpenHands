@@ -72,7 +72,7 @@ class AgentController:
         self.id = sid
         self.agent = agent
         self.event_stream = event_stream
-        self.event_stream.subscribe(self.on_event)
+        self.event_stream.subscribe('agent_controller', self.on_event)
         self.max_iterations = max_iterations
         self.action_manager = ActionManager(self.id)
         self.max_chars = max_chars
@@ -105,7 +105,6 @@ class AgentController:
         await self.add_history(NullAction(), AgentErrorObservation(message))
 
     async def add_history(self, action: Action, observation: Observation):
-        print('add history', action, observation)
         if self.state is None:
             raise ValueError('Added history while state was None')
         if not isinstance(action, Action):

@@ -39,7 +39,7 @@ class AgentUnit:
         """Initializes a new instance of the Session class."""
         self.sid = sid
         self.event_stream = EventStream()
-        self.event_stream.subscribe(self.on_event)
+        self.event_stream.subscribe('server', self.on_event)
 
     async def send_error(self, message):
         """Sends an error message to the client.

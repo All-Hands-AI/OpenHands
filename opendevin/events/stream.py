@@ -1,17 +1,20 @@
+import asyncio
 from datetime import datetime
 from threading import Lock
-from typing import Callable, List
+from typing import Callable, Dict, List
 
 from .event import Event
 
 
 class EventStream:
-    _subscribers: List[Callable] = []
+    _subscribers: Dict[str, Callable] = {}
     _events: List[Event] = []
     _lock = Lock()
 
-    def subscribe(self, subscriber: Callable):
-        self._subscribers.append(subscriber)
+    def subscribe(self, id: str, subscriber: Callable):
+        if id in self._subscribers:
+            raise ValueError('Subscriber already exists: ' + id)
+        self._subscribers[id] = subscriber
 
     # TODO: make this not async
     async def add_event(self, event: Event, source: str):
@@ -20,8 +23,5 @@ class EventStream:
             event._timestamp = datetime.now()  # type: ignore [attr-defined]
             event._source = source  # type: ignore [attr-defined]
             self._events.append(event)
-            for subscriber in self._subscribers:
-                await subscriber(event)
-
-    def _notify(self, subscriber: Callable, event: Event):
-        subscriber(event)
+            for key, fn in self._subscribers.items():
+                asyncio.create_task(fn(event))
