@@ -1,5 +1,5 @@
 import asyncio
-from typing import Dict, List, Optional
+from typing import Optional
 
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
@@ -18,34 +18,6 @@ from opendevin.events.observation import (
 from opendevin.events.stream import EventStream
 from opendevin.llm.llm import LLM
 from opendevin.server.session import session_manager
-
-# new task state to valid old task states
-VALID_TASK_STATE_MAP: Dict[AgentState, List[AgentState]] = {
-    AgentState.PAUSED: [AgentState.RUNNING],
-    AgentState.RUNNING: [AgentState.PAUSED],
-    AgentState.STOPPED: [
-        AgentState.RUNNING,
-        AgentState.PAUSED,
-        AgentState.AWAITING_USER_INPUT,
-    ],
-}
-IGNORED_TASK_STATE_MAP: Dict[AgentState, List[AgentState]] = {
-    AgentState.PAUSED: [
-        AgentState.INIT,
-        AgentState.PAUSED,
-        AgentState.STOPPED,
-        AgentState.FINISHED,
-        AgentState.AWAITING_USER_INPUT,
-    ],
-    AgentState.RUNNING: [
-        AgentState.INIT,
-        AgentState.RUNNING,
-        AgentState.STOPPED,
-        AgentState.FINISHED,
-        AgentState.AWAITING_USER_INPUT,
-    ],
-    AgentState.STOPPED: [AgentState.INIT, AgentState.STOPPED, AgentState.FINISHED],
-}
 
 
 class AgentUnit:
@@ -165,26 +137,6 @@ class AgentUnit:
         await self.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.INIT), 'user'
         )
-
-    async def set_agent_state(self, new_state: AgentState):
-        """Sets the state of the agent task."""
-        if self.controller is None:
-            await self.send_error('No agent started.')
-            return
-
-        cur_state = self.controller.get_agent_state()
-        if cur_state in VALID_TASK_STATE_MAP.get(new_state, []):
-            await self.event_stream.add_event(
-                AgentStateChangedObservation('', new_state), 'user'
-            )
-        elif cur_state in IGNORED_TASK_STATE_MAP.get(new_state, []):
-            await self.event_stream.add_event(
-                AgentStateChangedObservation('', new_state), 'user'
-            )
-            return
-        else:
-            await self.send_error('Current task state not recognized.')
-            return
 
     async def on_event(self, event: Event):
         """Callback function for agent events.

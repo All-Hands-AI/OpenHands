@@ -24,9 +24,11 @@ from opendevin.events.action import (
     ChangeAgentStateAction,
     NullAction,
 )
+from opendevin.events.event import Event
 from opendevin.events.observation import (
     AgentDelegateObservation,
     AgentErrorObservation,
+    AgentStateChangedObservation,
     NullObservation,
     Observation,
     UserMessageObservation,
@@ -69,6 +71,8 @@ class AgentController:
         """
         self.id = sid
         self.agent = agent
+        self.event_stream = event_stream
+        self.event_stream.subscribe(self.on_event)
         self.max_iterations = max_iterations
         self.action_manager = ActionManager(self.id)
         self.max_chars = max_chars
@@ -129,27 +133,13 @@ class AgentController:
             try:
                 finished = await self.step(i)
                 if finished:
-                    self._agent_state = AgentState.FINISHED
+                    await self.set_agent_state_to(AgentState.FINISHED)
             except Exception:
                 logger.error('Error in loop', exc_info=True)
                 await self.add_error_to_history(
                     'Oops! Something went wrong while completing your task. You can check the logs for more info.'
                 )
                 await self.set_agent_state_to(AgentState.STOPPED)
-                break
-
-            if self._agent_state == AgentState.FINISHED:
-                logger.info('Task finished by agent')
-                await self.reset_task()
-                break
-            elif self._agent_state == AgentState.STOPPED:
-                logger.info('Task stopped by user')
-                await self.reset_task()
-                break
-            elif self._agent_state == AgentState.PAUSED:
-                logger.info('Task paused')
-                self._cur_step = i + 1
-                await self._on_agent_state_changed()
                 break
 
             if self._is_stuck():
@@ -162,48 +152,51 @@ class AgentController:
 
     async def setup_task(self, task: str, inputs: dict = {}):
         """Sets up the agent controller with a task."""
-        self._agent_state = AgentState.RUNNING
-        await self._on_agent_state_changed()
+        await self.set_agent_state_to(AgentState.INIT)
         self.state = State(Plan(task))
         self.state.inputs = inputs
 
-    async def start(self, task: str):
-        """Starts the agent controller with a task.
-        If task already run before, it will continue from the last step.
-        """
-        await self.setup_task(task)
-        await self._run()
-
-    async def resume(self):
-        if self.state is None:
-            raise ValueError('No task to resume')
-
-        self._agent_state = AgentState.RUNNING
-        await self._on_agent_state_changed()
-
-        await self._run()
+    async def on_event(self, event: Event):
+        print('controller got event', event)
+        if isinstance(event, ChangeAgentStateAction):
+            if event.agent_state == AgentState.RUNNING:
+                await self.set_agent_state_to(AgentState.RUNNING)
+            elif event.agent_state == AgentState.PAUSED:
+                await self.set_agent_state_to(AgentState.PAUSED)
+            elif event.agent_state == AgentState.STOPPED:
+                await self.set_agent_state_to(AgentState.STOPPED)
+            elif event.agent_state == AgentState.FINISHED:
+                await self.set_agent_state_to(AgentState.FINISHED)
+            else:
+                logger.warning(f'Unknown agent state: {event.agent_state}')
+        await self.event_stream.add_event(
+            AgentStateChangedObservation('', self._agent_state), 'agent'
+        )
 
     async def reset_task(self):
         self.state = None
         self._cur_step = 0
         self._agent_state = AgentState.INIT
         self.agent.reset()
-        await self._on_agent_state_changed()
 
-    async def set_agent_state_to(self, state: AgentState):
-        self._agent_state = state
-        if state == AgentState.STOPPED:
+    async def set_agent_state_to(self, new_state: AgentState):
+        logger.info(f'Setting agent state to {new_state}')
+        if new_state == self._agent_state:
+            return
+
+        self._agent_state = new_state
+        if new_state == AgentState.RUNNING:
+            await self._run()
+        elif new_state == AgentState.PAUSED:
+            pass
+        elif new_state == AgentState.STOPPED:
             await self.reset_task()
-        logger.info(f'Task state set to {state}')
+        elif new_state == AgentState.FINISHED:
+            await self.reset_task()
 
     def get_agent_state(self):
         """Returns the current state of the agent task."""
         return self._agent_state
-
-    async def _on_agent_state_changed(self):
-        await self.add_history(
-            ChangeAgentStateAction(self._agent_state), NullObservation('')
-        )
 
     async def add_user_message(self, message: UserMessageObservation):
         if self.state is None:
@@ -212,9 +205,7 @@ class AgentController:
         if self._agent_state == AgentState.AWAITING_USER_INPUT:
             self._await_user_message_queue.put_nowait(message)
 
-            # set the task state to running
-            self._agent_state = AgentState.RUNNING
-            await self._on_agent_state_changed()
+            await self.set_agent_state_to(AgentState.RUNNING)
 
         elif self._agent_state == AgentState.RUNNING:
             await self.add_history(NullAction(), message)
@@ -225,8 +216,7 @@ class AgentController:
             )
 
     async def wait_for_user_input(self) -> UserMessageObservation:
-        self._agent_state = AgentState.AWAITING_USER_INPUT
-        await self._on_agent_state_changed()
+        await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
         # FIXME: need a way to handle CLI input
         user_message_observation = await self._await_user_message_queue.get()
         self._await_user_message_queue.task_done()
