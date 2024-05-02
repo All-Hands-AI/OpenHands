@@ -134,7 +134,7 @@ function ChatInterface(): JSX.Element {
       <ChatInput
         disabled={curAgentState === AgentState.LOADING}
         onSendMessage={onUserMessage}
-        />
+      />
     </div>
   );
 }

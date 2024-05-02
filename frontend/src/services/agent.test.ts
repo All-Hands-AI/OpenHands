@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 
-import store from "#/store";
 import ActionType from "#/types/ActionType";
 import { initializeAgent } from "./agent";
 import { Settings } from "./settings";
