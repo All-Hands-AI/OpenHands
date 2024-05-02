@@ -9,7 +9,7 @@ from opendevin.core.exceptions import (
     AgentNotRegisteredError,
 )
 from opendevin.llm.llm import LLM
-from opendevin.runtime.docker.plugins import PluginRequirement
+from opendevin.runtime.plugins import PluginRequirement
 
 
 class Agent(ABC):

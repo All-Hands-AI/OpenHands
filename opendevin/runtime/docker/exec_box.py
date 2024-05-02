@@ -16,7 +16,7 @@ from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ConfigType
 from opendevin.runtime.docker.process import DockerProcess, Process
-from opendevin.runtime.docker.sandbox import Sandbox
+from opendevin.runtime.sandbox import Sandbox
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])

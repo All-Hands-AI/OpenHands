@@ -2,8 +2,8 @@ import os
 from dataclasses import dataclass, field
 from typing import List
 
-from opendevin.runtime.docker.plugins.requirement import PluginRequirement
-from opendevin.runtime.docker.plugins.swe_agent_commands.parse_commands import (
+from opendevin.runtime.plugins.requirement import PluginRequirement
+from opendevin.runtime.plugins.swe_agent_commands.parse_commands import (
     parse_command_file,
 )
 

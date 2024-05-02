@@ -17,7 +17,7 @@ from opendevin.runtime import (
     LocalBox,
     Sandbox,
 )
-from opendevin.runtime.docker.plugins import PluginRequirement
+from opendevin.runtime.plugins import PluginRequirement
 
 
 class ActionManager:
