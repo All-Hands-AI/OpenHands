@@ -117,12 +117,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
         },
       ]}
     >
-      {loading && (
-        <>
-          <p className="text-small">Waiting for the agent to load. This may take a few seconds.</p>
-          <Spinner />
-        </>
-      )}
+      {loading && <Spinner />}
       {!loading && (
         <SettingsForm
           settings={settings}
