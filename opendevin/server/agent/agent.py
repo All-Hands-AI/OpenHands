@@ -18,7 +18,11 @@ from opendevin.server.session import session_manager
 VALID_TASK_STATE_MAP: Dict[TaskStateAction, List[TaskState]] = {
     TaskStateAction.PAUSE: [TaskState.RUNNING],
     TaskStateAction.RESUME: [TaskState.PAUSED],
-    TaskStateAction.STOP: [TaskState.RUNNING, TaskState.PAUSED],
+    TaskStateAction.STOP: [
+        TaskState.RUNNING,
+        TaskState.PAUSED,
+        TaskState.AWAITING_USER_INPUT,
+    ],
 }
 IGNORED_TASK_STATE_MAP: Dict[TaskStateAction, List[TaskState]] = {
     TaskStateAction.PAUSE: [
