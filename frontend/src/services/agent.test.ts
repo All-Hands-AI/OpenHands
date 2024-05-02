@@ -7,7 +7,6 @@ import { Settings } from "./settings";
 import Socket from "./socket";
 
 const sendSpy = vi.spyOn(Socket, "send");
-const dispatchSpy = vi.spyOn(store, "dispatch");
 
 describe("initializeAgent", () => {
   it("Should initialize the agent with the current settings", () => {

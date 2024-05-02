@@ -45,7 +45,7 @@ function AgentStatusBar() {
   // - Agent is not available
   return (
     <div className="flex items-center">
-      {curAgentState != AgentState.LOADING ? (
+      {curAgentState !== AgentState.LOADING ? (
         <>
           <div
             className={`w-3 h-3 mr-2 rounded-full animate-pulse ${AgentStatusMap[curAgentState].indicator}`}

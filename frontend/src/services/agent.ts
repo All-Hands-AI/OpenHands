@@ -1,4 +1,3 @@
-import store from "#/store";
 import ActionType from "#/types/ActionType";
 import { Settings } from "./settings";
 import Socket from "./socket";
