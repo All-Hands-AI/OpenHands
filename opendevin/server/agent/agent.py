@@ -26,12 +26,14 @@ IGNORED_TASK_STATE_MAP: Dict[TaskStateAction, List[TaskState]] = {
         TaskState.PAUSED,
         TaskState.STOPPED,
         TaskState.FINISHED,
+        TaskState.AWAITING_USER_INPUT,
     ],
     TaskStateAction.RESUME: [
         TaskState.INIT,
         TaskState.RUNNING,
         TaskState.STOPPED,
         TaskState.FINISHED,
+        TaskState.AWAITING_USER_INPUT,
     ],
     TaskStateAction.STOP: [TaskState.INIT, TaskState.STOPPED, TaskState.FINISHED],
 }
