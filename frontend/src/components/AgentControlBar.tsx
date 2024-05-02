@@ -8,32 +8,31 @@ import { changeAgentState } from "#/services/agentStateService";
 import { clearMsgs } from "#/services/session";
 import { clearMessages } from "#/state/chatSlice";
 import store, { RootState } from "#/store";
-import AgentTaskAction from "#/types/AgentTaskAction";
 import AgentState from "#/types/AgentState";
 
 const TaskStateActionMap = {
-  [AgentTaskAction.START]: AgentState.RUNNING,
-  [AgentTaskAction.PAUSE]: AgentState.PAUSED,
-  [AgentTaskAction.RESUME]: AgentState.RUNNING,
-  [AgentTaskAction.STOP]: AgentState.STOPPED,
+  [AgentState.RUNNING]: AgentState.RUNNING,
+  [AgentState.PAUSED]: AgentState.PAUSED,
+  [AgentState.RUNNING]: AgentState.RUNNING,
+  [AgentState.STOPPED]: AgentState.STOPPED,
 };
 
 const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
-  [AgentTaskAction.PAUSE]: [
+  [AgentState.PAUSED]: [
     AgentState.INIT,
     AgentState.PAUSED,
     AgentState.STOPPED,
     AgentState.FINISHED,
     AgentState.AWAITING_USER_INPUT,
   ],
-  [AgentTaskAction.RESUME]: [
+  [AgentState.RUNNING]: [
     AgentState.INIT,
     AgentState.RUNNING,
     AgentState.STOPPED,
     AgentState.FINISHED,
     AgentState.AWAITING_USER_INPUT,
   ],
-  [AgentTaskAction.STOP]: [
+  [AgentState.STOPPED]: [
     AgentState.INIT,
     AgentState.STOPPED,
     AgentState.FINISHED,
@@ -43,8 +42,8 @@ const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
 interface ButtonProps {
   isDisabled: boolean;
   content: string;
-  action: AgentTaskAction;
-  handleAction: (action: AgentTaskAction) => void;
+  action: AgentState;
+  handleAction: (action: AgentState) => void;
   large?: boolean;
 }
 
@@ -79,15 +78,15 @@ function AgentControlBar() {
   const [desiredState, setDesiredState] = React.useState(AgentState.INIT);
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const handleAction = (action: AgentTaskAction) => {
+  const handleAction = (action: AgentState) => {
     if (IgnoreTaskStateMap[action].includes(curAgentState)) {
       return;
     }
 
     let act = action;
 
-    if (act === AgentTaskAction.STOP) {
-      act = AgentTaskAction.STOP;
+    if (act === AgentState.STOPPED) {
+      act = AgentState.STOPPED;
       clearMsgs().then().catch();
       store.dispatch(clearMessages());
     } else {
@@ -118,10 +117,10 @@ function AgentControlBar() {
         <ActionButton
           isDisabled={
             isLoading ||
-            IgnoreTaskStateMap[AgentTaskAction.RESUME].includes(curAgentState)
+            IgnoreTaskStateMap[AgentState.RUNNING].includes(curAgentState)
           }
           content="Resume the agent task"
-          action={AgentTaskAction.RESUME}
+          action={AgentState.RUNNING}
           handleAction={handleAction}
           large
         >
@@ -131,10 +130,10 @@ function AgentControlBar() {
         <ActionButton
           isDisabled={
             isLoading ||
-            IgnoreTaskStateMap[AgentTaskAction.PAUSE].includes(curAgentState)
+            IgnoreTaskStateMap[AgentState.PAUSED].includes(curAgentState)
           }
           content="Pause the agent task"
-          action={AgentTaskAction.PAUSE}
+          action={AgentState.PAUSED}
           handleAction={handleAction}
           large
         >
@@ -144,7 +143,7 @@ function AgentControlBar() {
       <ActionButton
         isDisabled={isLoading}
         content="Restart a new agent task"
-        action={AgentTaskAction.STOP}
+        action={AgentState.STOPPED}
         handleAction={handleAction}
       >
         <ArrowIcon />
