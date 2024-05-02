@@ -21,7 +21,7 @@ from opendevin.runtime.plugins import (
     SWEAgentCommandsRequirement,
 )
 from opendevin.runtime.sandbox import Sandbox
-from opendevin.utils import find_available_tcp_port
+from opendevin.runtime.utils import find_available_tcp_port
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
