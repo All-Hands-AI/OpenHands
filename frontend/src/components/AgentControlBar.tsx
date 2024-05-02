@@ -10,13 +10,6 @@ import { clearMessages } from "#/state/chatSlice";
 import store, { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 
-const TaskStateActionMap = {
-  [AgentState.RUNNING]: AgentState.RUNNING,
-  [AgentState.PAUSED]: AgentState.PAUSED,
-  [AgentState.RUNNING]: AgentState.RUNNING,
-  [AgentState.STOPPED]: AgentState.STOPPED,
-};
-
 const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
   [AgentState.PAUSED]: [
     AgentState.INIT,
@@ -93,7 +86,7 @@ function AgentControlBar() {
       setIsLoading(true);
     }
 
-    setDesiredState(TaskStateActionMap[act]);
+    setDesiredState(act);
     changeAgentState(act);
   };
 
