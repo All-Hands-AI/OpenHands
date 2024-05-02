@@ -46,6 +46,27 @@ To learn more and to use OpenDevin, check out our [documentation](https://opende
     </a>
 </p>
 
+## ⚡ Quick Start
+You can run OpenDevin with Docker. It works best with the most recent
+version of Docker, `26.0.0`.
+
+```bash
+#The directory you want OpenDevin to modify. MUST be an absolute path!
+export WORKSPACE_BASE=$(pwd)/workspace`;
+
+docker run \
+    -e SANDBOX_USER_ID=$(id -u) \
+    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+    -v $WORKSPACE_BASE:/opt/workspace_base \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -p 3000:3000 \
+    --add-host host.docker.internal=host-gateway \
+    ghcr.io/opendevin/opendevin:0.5.0
+```
+
+For troubleshooting and advanced configuration, see
+[the full documentation](https://opendevin.github.io/OpenDevin/).
+
 ## 🤝 How to Contribute
 
 OpenDevin is a community-driven project, and we welcome contributions from everyone. Whether you're a developer, a researcher, or simply enthusiastic about advancing the field of software engineering with AI, there are many ways to get involved:
