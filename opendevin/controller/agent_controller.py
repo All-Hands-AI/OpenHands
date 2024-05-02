@@ -92,7 +92,7 @@ class AgentController:
         self._await_user_message_queue: asyncio.Queue = asyncio.Queue()
 
     async def close(self):
-        if self.agent_task:
+        if self.agent_task is not None:
             self.agent_task.cancel()
         self.event_stream.unsubscribe('agent_controller')
         self.action_manager.sandbox.close()
@@ -183,6 +183,8 @@ class AgentController:
                 logger.warning(f'Unknown agent state: {event.agent_state}')
 
     async def reset_task(self):
+        if self.agent_task is not None:
+            self.agent_task.cancel()
         self.state = None
         self._cur_step = 0
         self._agent_state = AgentState.INIT
@@ -197,7 +199,9 @@ class AgentController:
         if new_state == AgentState.RUNNING:
             self.agent_task = asyncio.create_task(self._run())
         elif new_state == AgentState.PAUSED:
-            pass
+            self._cur_step += 1
+            if self.agent_task is not None:
+                self.agent_task.cancel()
         elif new_state == AgentState.STOPPED:
             await self.reset_task()
         elif new_state == AgentState.FINISHED:
