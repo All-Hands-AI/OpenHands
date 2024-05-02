@@ -17,6 +17,13 @@ if os.getenv('OPEN_DEVIN_BUILD_VERSION'):
 else:
     DEFAULT_CONTAINER_IMAGE += ':main'
 
+    # Define the default container image specifically for sandbox environment with a dynamic version option
+    SANDBOX_DEFAULT_IMAGE = 'node:21-bullseye'
+    if os.getenv('OPEN_DEVIN_BUILD_VERSION'):
+        SANDBOX_DEFAULT_IMAGE += ':' + (os.getenv('OPEN_DEVIN_BUILD_VERSION') or '')
+    else:
+        SANDBOX_DEFAULT_IMAGE += ':main'
+
 load_dotenv()
 
 DEFAULT_CONFIG: dict = {
