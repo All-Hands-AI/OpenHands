@@ -1,7 +1,15 @@
 import sys
 from opendevin.logger import opendevin_logger as logger
 from opendevin.sandbox.docker.ssh_box import DockerSSHBox, SANDBOX_WORKSPACE_DIR
-
+from opendevin import config
+from opendevin.logger import opendevin_logger as logger
+from opendevin.sandbox.sandbox import Sandbox
+from opendevin.sandbox.process import Process
+from opendevin.sandbox.docker.process import DockerProcess
+from opendevin.sandbox.plugins import JupyterRequirement, SWEAgentCommandsRequirement
+from opendevin.schema import ConfigType
+from opendevin.utils import find_available_tcp_port
+from opendevin.exceptions import SandboxInvalidBackgroundCommandError
 
 class SWEBenchSSHBox(DockerSSHBox):
 
@@ -11,20 +19,21 @@ class SWEBenchSSHBox(DockerSSHBox):
         timeout: int = 120,
         sid: str | None = None,
         swe_instance_id: str | None = None,
-        eval_utils_dir: str | None = None,
-        eval_utils_read_only: bool = True,
     ):
+        if container_image is None:
+            container_image = config.get(ConfigType.SWEBENCH_CONTAINER_IMAGE)
         super().__init__(container_image, timeout, sid)
-
+        if swe_instance_id is None:
+            raise ValueError('swe_instance_id must be provided!')
         self.swe_instance_id = swe_instance_id
-        self.eval_utils_dir = eval_utils_dir
-        self.eval_utils_read_only = eval_utils_read_only
+        # self.eval_utils_dir = eval_utils_dir
+        # self.eval_utils_read_only = eval_utils_read_only
 
         exit_code, output = self.execute(f"echo 'export SWE_INSTANCE_ID={self.swe_instance_id}' >> ~/.bashrc")
         logger.info('exit code: %d', exit_code)
         logger.info(output)
 
-        exit_code, output = self.execute(f'{SANDBOX_WORKSPACE_DIR}/swe_env_setup.sh')
+        exit_code, output = self.execute(f'{SANDBOX_WORKSPACE_DIR}/scripts/swe_entry.sh')
         logger.info('exit code: %d', exit_code)
         logger.info(output)
 
@@ -38,7 +47,8 @@ class SWEBenchSSHBox(DockerSSHBox):
     def volumes(self):
         return {
             **super().volumes,
-            self.eval_utils_dir: {'bind': '/swe_util', 'mode': 'ro' if self.eval_utils_read_only else 'rw'},
+            # self.eval_utils_dir: {'bind': '/swe_util', 'mode': 'ro' if self.eval_utils_read_only else 'rw'},
+            '/shared/bowen/codellm/swe/OD-SWE-bench': {'bind': '/OD-SWE-bench', 'mode': 'rw'},
         }
 
 
@@ -50,8 +60,8 @@ if __name__ == '__main__':
     try:
         ssh_box = SWEBenchSSHBox(
             swe_instance_id='django__django-11099',
-            od_swe_bench_dir='/shared/bowen/codellm/swe/OD-SWE-bench',
-            conda_envs_dir='/shared/bowen/codellm/swe/temp/conda_envs'
+            # od_swe_bench_dir='/shared/bowen/codellm/swe/OD-SWE-bench',
+            # conda_envs_dir='/shared/bowen/codellm/swe/temp/conda_envs'
         )
     except Exception as e:
         logger.exception('Failed to start Docker container: %s', e)
