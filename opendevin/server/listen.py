@@ -11,10 +11,11 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
-from opendevin import config, files
-from opendevin.agent import Agent
-from opendevin.logger import opendevin_logger as logger
-from opendevin.schema.config import ConfigType
+from opendevin.controller.agent import Agent
+from opendevin.core import config
+from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema.config import ConfigType
+from opendevin.runtime import files
 from opendevin.server.agent import agent_manager
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import message_stack, session_manager
@@ -115,7 +116,9 @@ async def del_messages(
 
 @app.get('/api/refresh-files')
 def refresh_files():
-    structure = files.get_folder_structure(Path(str(config.get(ConfigType.WORKSPACE_BASE))))
+    structure = files.get_folder_structure(
+        Path(str(config.get(ConfigType.WORKSPACE_BASE)))
+    )
     return structure.to_dict()
 
 
@@ -151,7 +154,7 @@ async def upload_file(file: UploadFile):
         logger.error(f'Error saving file {file.filename}: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': f'Error saving file: {e}'}
+            content={'error': f'Error saving file: {e}'},
         )
     return {'filename': file.filename, 'location': str(file_path)}
 

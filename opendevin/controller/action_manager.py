@@ -1,18 +1,23 @@
 from typing import List
 
-from opendevin import config
-from opendevin.action import (
+from opendevin.core import config
+from opendevin.core.schema import ConfigType
+from opendevin.events.action import (
     Action,
 )
-from opendevin.observation import (
+from opendevin.events.observation import (
     AgentErrorObservation,
     CmdOutputObservation,
-    NullObservation,
     Observation,
 )
-from opendevin.sandbox import DockerExecBox, DockerSSHBox, E2BBox, LocalBox, Sandbox
-from opendevin.sandbox.plugins import PluginRequirement
-from opendevin.schema import ConfigType
+from opendevin.runtime import (
+    DockerExecBox,
+    DockerSSHBox,
+    E2BBox,
+    LocalBox,
+    Sandbox,
+)
+from opendevin.runtime.plugins import PluginRequirement
 
 
 class ActionManager:
@@ -43,9 +48,6 @@ class ActionManager:
         self.sandbox.init_plugins(plugins)
 
     async def run_action(self, action: Action, agent_controller) -> Observation:
-        observation: Observation = NullObservation('')
-        if not action.executable:
-            return observation
         observation = await action.run(agent_controller)
         return observation
 
