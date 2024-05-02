@@ -1,6 +1,7 @@
 enum AgentTaskState {
   INIT = "init",
   RUNNING = "running",
+  AWAITING_USER_INPUT = "awaiting_user_input",
   PAUSED = "paused",
   STOPPED = "stopped",
   FINISHED = "finished",

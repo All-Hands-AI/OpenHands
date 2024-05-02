@@ -21,6 +21,10 @@ The HTML content of a URL
 
 The output of a command
 
+#### RUN\_IPYTHON
+
+Runs a IPython cell.
+
 #### RECALL
 
 The result of a search

@@ -15,6 +15,10 @@ const AgentStatusMap: { [k: string]: { message: string; indicator: string } } =
       message: "Agent is running task...",
       indicator: "bg-green-500",
     },
+    [AgentTaskState.AWAITING_USER_INPUT]: {
+      message: "Agent is awaiting user input...",
+      indicator: "bg-orange-500",
+    },
     [AgentTaskState.PAUSED]: {
       message: "Agent has paused.",
       indicator: "bg-yellow-500",
