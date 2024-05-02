@@ -98,7 +98,7 @@ const config: Config = {
           items: [
             {
               label: "Slack",
-              href: "https://join.slack.com/t/opendevin/shared_invite/zt-2etftj1dd-X1fDL2PYIVpsmJZkqEYANw",
+              href: "https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw"
             },
             {
               label: "Discord",
