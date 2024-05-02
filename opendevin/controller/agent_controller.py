@@ -90,8 +90,10 @@ class AgentController:
 
         self._await_user_message_queue: asyncio.Queue = asyncio.Queue()
 
-    def close(self):
+    async def close(self):
         self.event_stream.unsubscribe('agent_controller')
+        self.action_manager.sandbox.close()
+        await self.set_agent_state_to(AgentState.STOPPED)
 
     def update_state_for_step(self, i):
         if self.state is None:

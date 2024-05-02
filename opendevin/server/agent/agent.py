@@ -122,7 +122,7 @@ class AgentUnit:
         logger.info(f'Creating agent {agent_cls} using LLM {model}')
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
         if self.controller is not None:
-            self.controller.close()
+            await self.controller.close()
         try:
             self.controller = AgentController(
                 sid=self.sid,
@@ -163,4 +163,4 @@ class AgentUnit:
 
     def close(self):
         if self.controller is not None:
-            self.controller.action_manager.sandbox.close()
+            self.controller.close()
