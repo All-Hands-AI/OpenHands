@@ -14,7 +14,7 @@ the information needed to complete this task:
 You must ONLY `run` commands that have no side-effects, like `ls` and `grep`.
 
 Do NOT finish until you have a complete understanding of which parts of the
-codebase are relevant to the task, including particular files, function, functions, and classes.
+codebase are relevant to the task, including particular files, functions, and classes.
 When you're done, put your summary in `outputs.summary` in the `finish` action.
 
 ## History
