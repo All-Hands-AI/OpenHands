@@ -15,7 +15,9 @@ ignore = [
     "E501",
 ]
 
-flake8-quotes = {inline-quotes = "single"}
+[lint.flake8-quotes]
+docstring-quotes = "double"
+inline-quotes = "single"
 
 [format]
 quote-style = "single"
