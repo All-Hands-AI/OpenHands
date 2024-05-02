@@ -56,6 +56,8 @@ async def main(task_str: str = ''):
     await event_stream.add_event(
         ChangeAgentStateAction(agent_state=AgentState.RUNNING), 'user'
     )
+    while controller.get_agent_state() == AgentState.RUNNING:
+        await asyncio.sleep(0.001)  # Give back control for a tick, so the agent can run
 
 
 if __name__ == '__main__':
