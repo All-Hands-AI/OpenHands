@@ -43,6 +43,7 @@ jobs:
       - name: Install pre-commit
         run: pip install pre-commit==3.7.0
       - name: Run pre-commit hooks
+        if: github.ref != 'refs/heads/main'
         run: |
           git fetch https://github.com/OpenDevin/OpenDevin.git main:main && \
           pre-commit run \
