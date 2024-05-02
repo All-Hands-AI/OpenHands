@@ -27,7 +27,7 @@ export const getCurrentSettingsVersion = () => {
 };
 
 export const settingsAreUpToDate = () => (
-  getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
+  getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION
 );
 
 export const maybeMigrateSettings = () => {
