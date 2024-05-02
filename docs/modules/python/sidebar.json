@@ -86,6 +86,15 @@
         },
         {
           "items": [
+            {
+              "items": [
+                "python/opendevin/core/schema/action",
+                "python/opendevin/core/schema/observation",
+                "python/opendevin/core/schema/task"
+              ],
+              "label": "opendevin.core.schema",
+              "type": "category"
+            },
             "python/opendevin/core/config",
             "python/opendevin/core/logger",
             "python/opendevin/core/main"
@@ -187,15 +196,6 @@
             "python/opendevin/runtime/files"
           ],
           "label": "opendevin.runtime",
-          "type": "category"
-        },
-        {
-          "items": [
-            "python/opendevin/schema/action",
-            "python/opendevin/schema/observation",
-            "python/opendevin/schema/task"
-          ],
-          "label": "opendevin.schema",
           "type": "category"
         },
         {

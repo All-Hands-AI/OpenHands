@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from opendevin.core import config
+from opendevin.core.schema import ActionType
+from opendevin.core.schema.config import ConfigType
 from opendevin.events.observation import (
     AgentErrorObservation,
     FileReadObservation,
@@ -10,8 +12,6 @@ from opendevin.events.observation import (
     Observation,
 )
 from opendevin.runtime.sandbox import E2BBox
-from opendevin.schema import ActionType
-from opendevin.schema.config import ConfigType
 
 from .action import Action
 

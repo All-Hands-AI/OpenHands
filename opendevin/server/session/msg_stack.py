@@ -5,7 +5,7 @@ import uuid
 from typing import Dict, List
 
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.schema.action import ActionType
+from opendevin.core.schema.action import ActionType
 
 CACHE_DIR = os.getenv('CACHE_DIR', 'cache')
 MSG_CACHE_FILE = os.path.join(CACHE_DIR, 'messages.json')

@@ -14,6 +14,7 @@ from pexpect import pxssh
 from opendevin.core import config
 from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema import ConfigType
 from opendevin.runtime.sandbox.docker.process import DockerProcess
 from opendevin.runtime.sandbox.plugins import (
     JupyterRequirement,
@@ -22,7 +23,6 @@ from opendevin.runtime.sandbox.plugins import (
 from opendevin.runtime.sandbox.process import Process
 from opendevin.runtime.sandbox.sandbox import Sandbox
 from opendevin.runtime.utils import find_available_tcp_port
-from opendevin.schema import ConfigType
 
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])

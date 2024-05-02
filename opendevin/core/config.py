@@ -7,7 +7,7 @@ import platform
 import toml
 from dotenv import load_dotenv
 
-from opendevin.schema import ConfigType
+from opendevin.core.schema import ConfigType
 
 logger = logging.getLogger(__name__)
 

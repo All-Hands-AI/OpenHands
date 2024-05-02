@@ -1,8 +1,6 @@
 from pydantic import BaseModel, Field
 
-__all__ = [
-    'ActionType'
-]
+__all__ = ['ActionType']
 
 
 class ActionTypeSchema(BaseModel):

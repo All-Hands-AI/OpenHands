@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from opendevin.core import config
-from opendevin.schema import ActionType, ConfigType
+from opendevin.core.schema import ActionType, ConfigType
 
 from .action import Action
 

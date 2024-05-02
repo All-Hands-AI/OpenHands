@@ -1,7 +1,7 @@
 import uvicorn
 from fastapi import FastAPI, WebSocket
 
-from opendevin.schema import ActionType
+from opendevin.core.schema import ActionType
 
 app = FastAPI()
 

@@ -1,8 +1,6 @@
 from pydantic import BaseModel, Field
 
-__all__ = [
-    'ObservationType'
-]
+__all__ = ['ObservationType']
 
 
 class ObservationTypeSchema(BaseModel):

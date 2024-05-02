@@ -10,10 +10,10 @@ from e2b.sandbox.exception import (
 
 from opendevin.core import config
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema.config import ConfigType
 from opendevin.runtime.sandbox.e2b.process import E2BProcess
 from opendevin.runtime.sandbox.process import Process
 from opendevin.runtime.sandbox.sandbox import Sandbox
-from opendevin.schema.config import ConfigType
 
 
 class E2BBox(Sandbox):

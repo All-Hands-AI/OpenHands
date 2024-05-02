@@ -1,6 +1,7 @@
 from typing import List
 
 from opendevin.core import config
+from opendevin.core.schema import ConfigType
 from opendevin.events.action import (
     Action,
 )
@@ -17,7 +18,6 @@ from opendevin.runtime.sandbox import (
     Sandbox,
 )
 from opendevin.runtime.sandbox.plugins import PluginRequirement
-from opendevin.schema import ConfigType
 
 
 class ActionManager:

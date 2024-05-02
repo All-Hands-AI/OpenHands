@@ -6,14 +6,14 @@ from typing import TYPE_CHECKING
 import requests
 
 from opendevin.core import config
+from opendevin.core.schema import ActionType
+from opendevin.core.schema.config import ConfigType
 from opendevin.events.observation import (
     AgentErrorObservation,
     AgentMessageObservation,
     CmdOutputObservation,
     Observation,
 )
-from opendevin.schema import ActionType
-from opendevin.schema.config import ConfigType
 
 from .action import Action
 

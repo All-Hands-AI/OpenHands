@@ -6,10 +6,10 @@ from typing import Dict, Tuple
 
 from opendevin.core import config
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema.config import ConfigType
 from opendevin.runtime.sandbox.docker.process import DockerProcess
 from opendevin.runtime.sandbox.process import Process
 from opendevin.runtime.sandbox.sandbox import Sandbox
-from opendevin.schema.config import ConfigType
 
 # ===============================================================================
 #  ** WARNING **

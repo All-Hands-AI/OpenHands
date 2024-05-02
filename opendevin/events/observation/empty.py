@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from opendevin.schema import ObservationType
+from opendevin.core.schema import ObservationType
 
 from .observation import Observation
 

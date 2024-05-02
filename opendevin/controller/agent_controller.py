@@ -14,6 +14,8 @@ from opendevin.core.exceptions import (
     MaxCharsExceedError,
 )
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema import TaskState
+from opendevin.core.schema.config import ConfigType
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
@@ -31,8 +33,6 @@ from opendevin.events.observation import (
 )
 from opendevin.runtime.browser.browser_env import BrowserEnv
 from opendevin.runtime.sandbox import DockerSSHBox
-from opendevin.schema import TaskState
-from opendevin.schema.config import ConfigType
 
 MAX_ITERATIONS = config.get(ConfigType.MAX_ITERATIONS)
 MAX_CHARS = config.get(ConfigType.MAX_CHARS)

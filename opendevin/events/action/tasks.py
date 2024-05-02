@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from opendevin.core.schema import ActionType
 from opendevin.events.observation import NullObservation
-from opendevin.schema import ActionType
 
 from .action import Action
 
@@ -48,6 +48,7 @@ class ModifyTaskAction(Action):
 @dataclass
 class TaskStateChangedAction(Action):
     """Fake action, just to notify the client that a task state has changed."""
+
     task_state: str
     thought: str = ''
     action: str = ActionType.CHANGE_TASK_STATE

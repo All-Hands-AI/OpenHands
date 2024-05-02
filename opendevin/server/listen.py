@@ -14,8 +14,8 @@ import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller.agent import Agent
 from opendevin.core import config
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema.config import ConfigType
 from opendevin.runtime import files
-from opendevin.schema.config import ConfigType
 from opendevin.server.agent import agent_manager
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import message_stack, session_manager

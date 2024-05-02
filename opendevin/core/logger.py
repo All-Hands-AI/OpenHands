@@ -8,7 +8,7 @@ from typing import Literal, Mapping
 from termcolor import colored
 
 from opendevin.core import config
-from opendevin.schema.config import ConfigType
+from opendevin.core.schema.config import ConfigType
 
 DISABLE_COLOR_PRINTING = config.get(ConfigType.DISABLE_COLOR).lower() == 'true'
 
