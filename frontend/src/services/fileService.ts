@@ -12,7 +12,7 @@ export async function selectFile(file: string): Promise<string> {
   return data.code as string;
 }
 
-export async function uploadFile(file: File): Promise<string> {
+export async function uploadFile(file: File) {
   const formData = new FormData();
   formData.append("file", file);
 
@@ -26,8 +26,6 @@ export async function uploadFile(file: File): Promise<string> {
   if (res.status !== 200) {
     throw new Error(data.error || "Failed to upload file.");
   }
-
-  return `File uploaded: ${data.filename}, Location: ${data.location}`;
 }
 
 export async function getWorkspace(): Promise<WorkspaceFile> {

@@ -14,6 +14,7 @@ import {
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
 import { removeEmptyNodes } from "./utils";
+import toast from "#/utils/toast";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
@@ -104,17 +105,13 @@ function FileExplorer({ onFileClick }: FileExplorerProps) {
 
   const uploadFileData = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files ? event.target.files[0] : null;
-    if (!file) {
-      console.log("No file selected.");
-      return;
-    }
-    console.log("File selected:", file);
+    if (!file) return;
+
     try {
-      const response = await uploadFile(file);
-      console.log(response);
+      await uploadFile(file);
       await getWorkspaceData(); // Refresh the workspace to show the new file
     } catch (error) {
-      console.error("Error uploading file:", error);
+      toast.stickyError("ws", "Error uploading file");
     }
   };
 
@@ -150,6 +147,7 @@ function FileExplorer({ onFileClick }: FileExplorerProps) {
         />
       </div>
       <input
+        data-testid="file-input"
         type="file"
         ref={fileInputRef}
         style={{ display: "none" }}
