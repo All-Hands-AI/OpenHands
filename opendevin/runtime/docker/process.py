@@ -2,7 +2,7 @@ import select
 import sys
 from typing import Tuple
 
-from opendevin.runtime.sandbox.process import Process
+from opendevin.runtime.process import Process
 
 
 class DockerProcess(Process):
