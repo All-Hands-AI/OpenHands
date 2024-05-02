@@ -68,7 +68,6 @@ class AgentUnit:
 
     async def dispatch(self, action: str | None, data: dict):
         """Dispatches actions to the agent from the client."""
-        print('dispatching action', action)
         if action is None:
             await self.send_error('Invalid action')
             return

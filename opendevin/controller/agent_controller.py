@@ -160,7 +160,6 @@ class AgentController:
         self.state.inputs = inputs
 
     async def on_event(self, event: Event):
-        print('controller got event', event)
         if isinstance(event, ChangeAgentStateAction):
             if event.agent_state == AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
