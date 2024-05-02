@@ -6,17 +6,17 @@ from typing import TYPE_CHECKING
 from opendevin import config
 from opendevin.schema import ActionType, ConfigType
 
-from .base import ExecutableAction
+from .action import Action
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
-    from opendevin.observation import CmdOutputObservation, Observation
+    from opendevin.events.observation import CmdOutputObservation, Observation
 
-from opendevin.observation import IPythonRunCellObservation
+from opendevin.events.observation import IPythonRunCellObservation
 
 
 @dataclass
-class CmdRunAction(ExecutableAction):
+class CmdRunAction(Action):
     command: str
     background: bool = False
     thought: str = ''
@@ -38,7 +38,7 @@ class CmdRunAction(ExecutableAction):
 
 
 @dataclass
-class CmdKillAction(ExecutableAction):
+class CmdKillAction(Action):
     id: int
     thought: str = ''
     action: str = ActionType.KILL
@@ -55,7 +55,7 @@ class CmdKillAction(ExecutableAction):
 
 
 @dataclass
-class IPythonRunCellAction(ExecutableAction):
+class IPythonRunCellAction(Action):
     code: str
     thought: str = ''
     action: str = ActionType.RUN_IPYTHON

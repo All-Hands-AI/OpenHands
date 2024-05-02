@@ -6,20 +6,23 @@ from typing import TYPE_CHECKING
 import requests
 
 from opendevin import config
-from opendevin.observation import AgentErrorObservation, Observation
-from opendevin.observation.message import AgentMessageObservation
-from opendevin.observation.run import CmdOutputObservation
+from opendevin.events.observation import (
+    AgentErrorObservation,
+    AgentMessageObservation,
+    CmdOutputObservation,
+    Observation,
+)
 from opendevin.schema import ActionType
 from opendevin.schema.config import ConfigType
 
-from .base import ExecutableAction
+from .action import Action
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
 
 
 @dataclass
-class GitHubPushAction(ExecutableAction):
+class GitHubPushAction(Action):
     """This pushes the current branch to github.
 
     To use this, you need to set the GITHUB_TOKEN environment variable.
@@ -85,7 +88,7 @@ class GitHubPushAction(ExecutableAction):
 
 
 @dataclass
-class GitHubSendPRAction(ExecutableAction):
+class GitHubSendPRAction(Action):
     """An action to send a github PR.
 
     To use this, you need to set the GITHUB_TOKEN environment variable.

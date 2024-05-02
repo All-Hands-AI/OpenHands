@@ -1,6 +1,6 @@
 import re
 
-from opendevin.action import (
+from opendevin.events.action import (
     Action,
     AgentEchoAction,
     AgentFinishAction,

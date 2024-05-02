@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Dict
 
-from opendevin.observation import (
+from opendevin.events.observation import (
     AgentMessageObservation,
     AgentRecallObservation,
     NullObservation,
@@ -9,14 +9,14 @@ from opendevin.observation import (
 )
 from opendevin.schema import ActionType
 
-from .base import ExecutableAction, NotExecutableAction
+from .action import Action
 
 if TYPE_CHECKING:
     from opendevin.controller import AgentController
 
 
 @dataclass
-class AgentRecallAction(ExecutableAction):
+class AgentRecallAction(Action):
     query: str
     thought: str = ''
     action: str = ActionType.RECALL
@@ -33,12 +33,9 @@ class AgentRecallAction(ExecutableAction):
 
 
 @dataclass
-class AgentThinkAction(NotExecutableAction):
+class AgentThinkAction(Action):
     thought: str
     action: str = ActionType.THINK
-
-    async def run(self, controller: 'AgentController') -> 'Observation':
-        raise NotImplementedError
 
     @property
     def message(self) -> str:
@@ -46,11 +43,11 @@ class AgentThinkAction(NotExecutableAction):
 
 
 @dataclass
-class AgentTalkAction(NotExecutableAction):
+class AgentTalkAction(Action):
     content: str
     action: str = ActionType.TALK
 
-    async def run(self, controller: 'AgentController') -> 'Observation':
+    async def run(self, controller: 'AgentController') -> Observation:
         raise NotImplementedError
 
     @property
@@ -62,11 +59,11 @@ class AgentTalkAction(NotExecutableAction):
 
 
 @dataclass
-class AgentEchoAction(ExecutableAction):
+class AgentEchoAction(Action):
     content: str
     action: str = 'echo'
 
-    async def run(self, controller: 'AgentController') -> 'Observation':
+    async def run(self, controller: 'AgentController') -> Observation:
         return AgentMessageObservation(self.content)
 
     @property
@@ -75,7 +72,7 @@ class AgentEchoAction(ExecutableAction):
 
 
 @dataclass
-class AgentSummarizeAction(NotExecutableAction):
+class AgentSummarizeAction(Action):
     summary: str
     action: str = ActionType.SUMMARIZE
 
@@ -85,13 +82,10 @@ class AgentSummarizeAction(NotExecutableAction):
 
 
 @dataclass
-class AgentFinishAction(NotExecutableAction):
+class AgentFinishAction(Action):
     outputs: Dict = field(default_factory=dict)
     thought: str = ''
     action: str = ActionType.FINISH
-
-    async def run(self, controller: 'AgentController') -> 'Observation':
-        raise NotImplementedError
 
     @property
     def message(self) -> str:
@@ -99,13 +93,13 @@ class AgentFinishAction(NotExecutableAction):
 
 
 @dataclass
-class AgentDelegateAction(ExecutableAction):
+class AgentDelegateAction(Action):
     agent: str
     inputs: dict
     thought: str = ''
     action: str = ActionType.DELEGATE
 
-    async def run(self, controller: 'AgentController') -> 'Observation':
+    async def run(self, controller: 'AgentController') -> Observation:
         await controller.start_delegate(self)
         return NullObservation('')
 

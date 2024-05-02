@@ -1,11 +1,12 @@
-from .base import NullObservation, Observation
 from .browse import BrowserOutputObservation
+from .commands import CmdOutputObservation, IPythonRunCellObservation
 from .delegate import AgentDelegateObservation
+from .empty import NullObservation
 from .error import AgentErrorObservation
 from .files import FileReadObservation, FileWriteObservation
 from .message import AgentMessageObservation, UserMessageObservation
+from .observation import Observation
 from .recall import AgentRecallObservation
-from .run import CmdOutputObservation, IPythonRunCellObservation
 
 observations = (
     CmdOutputObservation,

@@ -1,4 +1,7 @@
-from ..exceptions import AgentMalformedActionError
+
+from opendevin.exceptions import AgentMalformedActionError
+
+from .action import Action
 from .agent import (
     AgentDelegateAction,
     AgentEchoAction,
@@ -8,12 +11,12 @@ from .agent import (
     AgentTalkAction,
     AgentThinkAction,
 )
-from .base import Action, NullAction
-from .bash import CmdKillAction, CmdRunAction, IPythonRunCellAction
 from .browse import BrowseURLAction
-from .fileop import FileReadAction, FileWriteAction
+from .commands import CmdKillAction, CmdRunAction, IPythonRunCellAction
+from .empty import NullAction
+from .files import FileReadAction, FileWriteAction
 from .github import GitHubPushAction
-from .tasks import AddTaskAction, ModifyTaskAction
+from .tasks import AddTaskAction, ModifyTaskAction, TaskStateChangedAction
 
 actions = (
     CmdKillAction,
@@ -29,6 +32,7 @@ actions = (
     AgentDelegateAction,
     AddTaskAction,
     ModifyTaskAction,
+    TaskStateChangedAction,
     GitHubPushAction,
 )
 
@@ -71,5 +75,6 @@ __all__ = [
     'AgentSummarizeAction',
     'AddTaskAction',
     'ModifyTaskAction',
+    'TaskStateChangedAction',
     'IPythonRunCellAction'
 ]
