@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Tuple
 
-from opendevin.runtime.docker.plugins.mixin import PluginMixin
 from opendevin.runtime.docker.process import Process
+from opendevin.runtime.plugins.mixin import PluginMixin
 
 
 class Sandbox(ABC, PluginMixin):
