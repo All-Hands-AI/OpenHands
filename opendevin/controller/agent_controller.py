@@ -157,6 +157,9 @@ class AgentController:
                 )
                 await self.set_agent_state_to(AgentState.STOPPED)
                 break
+            await asyncio.sleep(
+                0.001
+            )  # Give back control for a tick, so other async stuff can run
 
     async def setup_task(self, task: str, inputs: dict = {}):
         """Sets up the agent controller with a task."""
