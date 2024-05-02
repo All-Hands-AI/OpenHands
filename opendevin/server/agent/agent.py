@@ -1,4 +1,3 @@
-import asyncio
 from typing import Optional
 
 from opendevin.controller import AgentController
@@ -26,12 +25,10 @@ class AgentUnit:
 
     Attributes:
         controller: The AgentController instance for controlling the agent.
-        agent_task: The task representing the agent's execution.
     """
 
     sid: str
     event_stream: EventStream
-    agent_task: Optional[asyncio.Task] = None
     controller: Optional[AgentController] = None
     # TODO: we will add the runtime here
     # runtime: Optional[Runtime] = None
@@ -165,7 +162,5 @@ class AgentUnit:
             return
 
     def close(self):
-        if self.agent_task:
-            self.agent_task.cancel()
         if self.controller is not None:
             self.controller.action_manager.sandbox.close()
