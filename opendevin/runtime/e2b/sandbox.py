@@ -11,8 +11,8 @@ from e2b.sandbox.exception import (
 from opendevin.core import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema.config import ConfigType
-from opendevin.runtime.docker.e2b.process import E2BProcess
-from opendevin.runtime.docker.process import Process
+from opendevin.runtime.e2b.process import E2BProcess
+from opendevin.runtime.process import Process
 from opendevin.runtime.sandbox import Sandbox
 
 
