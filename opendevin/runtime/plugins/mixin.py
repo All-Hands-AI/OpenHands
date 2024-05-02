@@ -1,8 +1,8 @@
 import os
 from typing import List, Protocol, Tuple
 
-from opendevin.core.logger import opendevin_logger as logger
-from opendevin.runtime.plugins.requirement import PluginRequirement
+from opendevin.logger import opendevin_logger as logger
+from opendevin.sandbox.plugins.requirement import PluginRequirement
 
 
 class SandboxProtocol(Protocol):
