@@ -8,7 +8,6 @@ export const agentSlice = createSlice({
   },
   reducers: {
     changeAgentState: (state, action) => {
-      console.log('state change', state.curAgentState, action.payload);
       state.curAgentState = action.payload;
     },
   },
