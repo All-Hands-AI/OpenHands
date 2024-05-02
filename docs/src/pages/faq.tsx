@@ -18,7 +18,10 @@ export default function FAQ() {
         <p>
           Please file a bug on{" "}
           <a href="https://github.com/OpenDevin/OpenDevin/issues">GitHub</a> if
-          you run into any issues!
+          you notice a problem that likely affects others.
+          If you're having trouble installing, or have general questions, reach out on{" "}
+          <a href="https://discord.gg/mBuDGRzzES">Discord</a> or{" "}
+          <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw">Slack</a>.
         </p>
         <h2 style={{ fontSize: "2rem" }}>General</h2>
         <h3>What is Devin?</h3>
