@@ -1,13 +1,13 @@
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Dict
 
+from opendevin.core.schema import ActionType
 from opendevin.events.observation import (
     AgentMessageObservation,
     AgentRecallObservation,
     NullObservation,
     Observation,
 )
-from opendevin.schema import ActionType
 
 from .action import Action
 

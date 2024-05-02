@@ -1,9 +1,11 @@
 import asyncio
 from typing import Dict, List, Optional
 
-from opendevin import config
-from opendevin.agent import Agent
 from opendevin.controller import AgentController
+from opendevin.controller.agent import Agent
+from opendevin.core import config
+from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema import ActionType, ConfigType, TaskState, TaskStateAction
 from opendevin.events.action import (
     Action,
     NullAction,
@@ -14,8 +16,6 @@ from opendevin.events.observation import (
     UserMessageObservation,
 )
 from opendevin.llm.llm import LLM
-from opendevin.logger import opendevin_logger as logger
-from opendevin.schema import ActionType, ConfigType, TaskState, TaskStateAction
 from opendevin.server.session import session_manager
 
 # new task state to valid old task states

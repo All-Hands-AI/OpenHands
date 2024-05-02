@@ -1,5 +1,4 @@
-
-from opendevin.exceptions import AgentMalformedActionError
+from opendevin.core.exceptions import AgentMalformedActionError
 
 from .action import Action
 from .agent import (
@@ -76,5 +75,5 @@ __all__ = [
     'AddTaskAction',
     'ModifyTaskAction',
     'TaskStateChangedAction',
-    'IPythonRunCellAction'
+    'IPythonRunCellAction',
 ]

@@ -2,16 +2,16 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from opendevin import config
+from opendevin.core import config
+from opendevin.core.schema import ActionType
+from opendevin.core.schema.config import ConfigType
 from opendevin.events.observation import (
     AgentErrorObservation,
     FileReadObservation,
     FileWriteObservation,
     Observation,
 )
-from opendevin.sandbox import E2BBox
-from opendevin.schema import ActionType
-from opendevin.schema.config import ConfigType
+from opendevin.runtime import E2BBox
 
 from .action import Action
 
@@ -28,14 +28,20 @@ def resolve_path(file_path, working_directory):
     abs_path_in_sandbox = path_in_sandbox.resolve()
 
     # If the path is outside the workspace, deny it
-    if not abs_path_in_sandbox.is_relative_to(config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX)):
+    if not abs_path_in_sandbox.is_relative_to(
+        config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX)
+    ):
         raise PermissionError(f'File access not permitted: {file_path}')
 
     # Get path relative to the root of the workspace inside the sandbox
-    path_in_workspace = abs_path_in_sandbox.relative_to(Path(config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX)))
+    path_in_workspace = abs_path_in_sandbox.relative_to(
+        Path(config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX))
+    )
 
     # Get path relative to host
-    path_in_host_workspace = Path(config.get(ConfigType.WORKSPACE_BASE)) / path_in_workspace
+    path_in_host_workspace = (
+        Path(config.get(ConfigType.WORKSPACE_BASE)) / path_in_workspace
+    )
 
     return path_in_host_workspace
 
@@ -47,6 +53,7 @@ class FileReadAction(Action):
     Can be set to read specific lines using start and end
     Default lines 0:-1 (whole file)
     """
+
     path: str
     start: int = 0
     end: int = -1
@@ -58,7 +65,7 @@ class FileReadAction(Action):
             if self.start == 0:
                 return all_lines
             else:
-                return all_lines[self.start:]
+                return all_lines[self.start :]
         else:
             num_lines = len(all_lines)
             begin = max(0, min(self.start, num_lines - 2))
@@ -67,13 +74,14 @@ class FileReadAction(Action):
 
     async def run(self, controller) -> Observation:
         if isinstance(controller.action_manager.sandbox, E2BBox):
-            content = controller.action_manager.sandbox.filesystem.read(
-                self.path)
+            content = controller.action_manager.sandbox.filesystem.read(self.path)
             read_lines = self._read_lines(content.split('\n'))
             code_view = ''.join(read_lines)
         else:
             try:
-                whole_path = resolve_path(self.path, controller.action_manager.sandbox.get_working_directory())
+                whole_path = resolve_path(
+                    self.path, controller.action_manager.sandbox.get_working_directory()
+                )
                 self.start = max(self.start, 0)
                 try:
                     with open(whole_path, 'r', encoding='utf-8') as file:
@@ -82,11 +90,17 @@ class FileReadAction(Action):
                 except FileNotFoundError:
                     return AgentErrorObservation(f'File not found: {self.path}')
                 except UnicodeDecodeError:
-                    return AgentErrorObservation(f'File could not be decoded as utf-8: {self.path}')
+                    return AgentErrorObservation(
+                        f'File could not be decoded as utf-8: {self.path}'
+                    )
                 except IsADirectoryError:
-                    return AgentErrorObservation(f'Path is a directory: {self.path}. You can only read files')
+                    return AgentErrorObservation(
+                        f'Path is a directory: {self.path}. You can only read files'
+                    )
             except PermissionError:
-                return AgentErrorObservation(f'Malformed paths not permitted: {self.path}')
+                return AgentErrorObservation(
+                    f'Malformed paths not permitted: {self.path}'
+                )
         return FileReadObservation(path=self.path, content=code_view)
 
     @property
@@ -107,9 +121,9 @@ class FileWriteAction(Action):
         """
         Insert the new content to the original content based on self.start and self.end
         """
-        new_lines = [''] if self.start == 0 else original[:self.start]
+        new_lines = [''] if self.start == 0 else original[: self.start]
         new_lines += [i + '\n' for i in to_insert]
-        new_lines += [''] if self.end == -1 else original[self.end:]
+        new_lines += [''] if self.end == -1 else original[self.end :]
         return new_lines
 
     async def run(self, controller) -> Observation:
@@ -120,12 +134,16 @@ class FileWriteAction(Action):
             if self.path in files:
                 all_lines = controller.action_manager.sandbox.filesystem.read(self.path)
                 new_file = self._insert_lines(self.content.split('\n'), all_lines)
-                controller.action_manager.sandbox.filesystem.write(self.path, ''.join(new_file))
+                controller.action_manager.sandbox.filesystem.write(
+                    self.path, ''.join(new_file)
+                )
             else:
                 return AgentErrorObservation(f'File not found: {self.path}')
         else:
             try:
-                whole_path = resolve_path(self.path, controller.action_manager.sandbox.get_working_directory())
+                whole_path = resolve_path(
+                    self.path, controller.action_manager.sandbox.get_working_directory()
+                )
                 mode = 'w' if not os.path.exists(whole_path) else 'r+'
                 try:
                     with open(whole_path, mode, encoding='utf-8') as file:
@@ -141,11 +159,17 @@ class FileWriteAction(Action):
                 except FileNotFoundError:
                     return AgentErrorObservation(f'File not found: {self.path}')
                 except IsADirectoryError:
-                    return AgentErrorObservation(f'Path is a directory: {self.path}. You can only write to files')
+                    return AgentErrorObservation(
+                        f'Path is a directory: {self.path}. You can only write to files'
+                    )
                 except UnicodeDecodeError:
-                    return AgentErrorObservation(f'File could not be decoded as utf-8: {self.path}')
+                    return AgentErrorObservation(
+                        f'File could not be decoded as utf-8: {self.path}'
+                    )
             except PermissionError:
-                return AgentErrorObservation(f'Malformed paths not permitted: {self.path}')
+                return AgentErrorObservation(
+                    f'Malformed paths not permitted: {self.path}'
+                )
         return FileWriteObservation(content='', path=self.path)
 
     @property

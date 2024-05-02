@@ -2,9 +2,8 @@ import os
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-
+from opendevin.core.schema import ActionType
 from opendevin.events.observation import BrowserOutputObservation
-from opendevin.schema import ActionType
 
 from .action import Action
 
@@ -33,7 +32,9 @@ class BrowseURLAction(Action):
                 active_page_index=obs['active_page_index'],  # index of the active page
                 dom_object=obs['dom_object'],  # DOM object
                 axtree_object=obs['axtree_object'],  # accessibility tree object
-                last_browser_action=obs['last_action'],  # last browser env action performed
+                last_browser_action=obs[
+                    'last_action'
+                ],  # last browser env action performed
                 focused_element_bid=obs['focused_element_bid'],  # focused element bid
                 screenshot=obs['screenshot'],  # base64-encoded screenshot, png
                 url=asked_url,

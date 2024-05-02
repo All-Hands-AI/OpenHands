@@ -1,6 +1,9 @@
 import json
 from typing import Dict, List, Tuple, Type
 
+from opendevin.controller.state.plan import Plan
+from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema import ActionType
 from opendevin.events.action import (
     Action,
     AddTaskAction,
@@ -21,9 +24,6 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
-from opendevin.logger import opendevin_logger as logger
-from opendevin.plan import Plan
-from opendevin.schema import ActionType
 
 ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
     ActionType.RUN: CmdRunAction,
@@ -131,7 +131,7 @@ What is your next thought or action? Again, you must reply with JSON, and only w
 
 
 def get_hint(latest_action_id: str) -> str:
-    """ Returns action type hint based on given action_id """
+    """Returns action type hint based on given action_id"""
 
     hints = {
         '': "You haven't taken any actions yet. Start by using `ls` to check out what files you're working with.",
