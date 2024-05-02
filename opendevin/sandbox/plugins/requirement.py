@@ -4,6 +4,7 @@ from dataclasses import dataclass
 @dataclass
 class PluginRequirement:
     """Requirement for a plugin."""
+
     name: str
     # FOLDER/FILES to be copied to the sandbox
     host_src: str
