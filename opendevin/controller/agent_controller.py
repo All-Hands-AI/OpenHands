@@ -1,5 +1,5 @@
 import asyncio
-from typing import Type
+from typing import Optional, Type
 
 from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin.controller.action_manager import ActionManager
@@ -48,9 +48,10 @@ class AgentController:
     action_manager: ActionManager
     browser: BrowserEnv
     event_stream: EventStream
+    agent_task: Optional[asyncio.Task] = None
     delegate: 'AgentController | None' = None
     state: State | None = None
-    _agent_state: AgentState = AgentState.INIT
+    _agent_state: AgentState = AgentState.LOADING
     _cur_step: int = 0
 
     def __init__(
@@ -91,6 +92,8 @@ class AgentController:
         self._await_user_message_queue: asyncio.Queue = asyncio.Queue()
 
     async def close(self):
+        if self.agent_task:
+            self.agent_task.cancel()
         self.event_stream.unsubscribe('agent_controller')
         self.action_manager.sandbox.close()
         await self.set_agent_state_to(AgentState.STOPPED)
@@ -163,7 +166,9 @@ class AgentController:
 
     async def on_event(self, event: Event):
         if isinstance(event, ChangeAgentStateAction):
-            if event.agent_state == AgentState.RUNNING:
+            if event.agent_state == AgentState.INIT:
+                await self.set_agent_state_to(AgentState.INIT)
+            elif event.agent_state == AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
             elif event.agent_state == AgentState.PAUSED:
                 await self.set_agent_state_to(AgentState.PAUSED)
@@ -173,9 +178,6 @@ class AgentController:
                 await self.set_agent_state_to(AgentState.FINISHED)
             else:
                 logger.warning(f'Unknown agent state: {event.agent_state}')
-            await self.event_stream.add_event(
-                AgentStateChangedObservation('', self._agent_state), 'agent'
-            )
 
     async def reset_task(self):
         self.state = None
@@ -184,13 +186,13 @@ class AgentController:
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState):
-        logger.info(f'Setting agent state to {new_state}')
+        logger.info(f'Setting agent state from {self._agent_state} to {new_state}')
         if new_state == self._agent_state:
             return
 
         self._agent_state = new_state
         if new_state == AgentState.RUNNING:
-            await self._run()
+            self.agent_task = asyncio.create_task(self._run())
         elif new_state == AgentState.PAUSED:
             pass
         elif new_state == AgentState.STOPPED:
@@ -198,26 +200,13 @@ class AgentController:
         elif new_state == AgentState.FINISHED:
             await self.reset_task()
 
+        await self.event_stream.add_event(
+            AgentStateChangedObservation('', self._agent_state), 'agent'
+        )
+
     def get_agent_state(self):
         """Returns the current state of the agent task."""
         return self._agent_state
-
-    async def add_user_message(self, message: UserMessageObservation):
-        if self.state is None:
-            return
-
-        if self._agent_state == AgentState.AWAITING_USER_INPUT:
-            self._await_user_message_queue.put_nowait(message)
-
-            await self.set_agent_state_to(AgentState.RUNNING)
-
-        elif self._agent_state == AgentState.RUNNING:
-            await self.add_history(NullAction(), message)
-
-        else:
-            raise ValueError(
-                f'Task (state: {self._agent_state}) is not in a state to add user message'
-            )
 
     async def wait_for_user_input(self) -> UserMessageObservation:
         await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)

@@ -12,7 +12,6 @@ from opendevin.events.action import (
 )
 from opendevin.events.event import Event
 from opendevin.events.observation import (
-    AgentStateChangedObservation,
     NullObservation,
 )
 from opendevin.events.stream import EventStream
@@ -71,6 +70,9 @@ class AgentUnit:
 
         if action == ActionType.INIT:
             await self.create_controller(data)
+            await self.event_stream.add_event(
+                ChangeAgentStateAction(AgentState.INIT), 'user'
+            )
             return
         elif action == ActionType.START:
             if self.controller is None:
@@ -137,15 +139,6 @@ class AgentUnit:
                 'Error creating controller. Please check Docker is running and visit `https://opendevin.github.io/OpenDevin/modules/usage/troubleshooting` for more debugging information..'
             )
             return
-        await self.init_done()
-
-    async def init_done(self):
-        if self.controller is None:
-            await self.send_error('No agent started.')
-            return
-        await self.event_stream.add_event(
-            AgentStateChangedObservation('', AgentState.INIT), 'agent'
-        )
 
     async def on_event(self, event: Event):
         """Callback function for agent events.
