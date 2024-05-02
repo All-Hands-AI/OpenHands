@@ -43,7 +43,6 @@ function AgentStatusBar() {
   // - Agent is thinking
   // - Agent is ready
   // - Agent is not available
-  console.log('curAgentState', curAgentState);
   return (
     <div className="flex items-center">
       {curAgentState != AgentState.LOADING ? (
