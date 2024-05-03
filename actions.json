@@ -1,0 +1,146 @@
+[
+    {
+        "time": "2024-05-02 23:04:59,211",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "Initializing LLM with model: gpt-4-turbo-preview"
+    },
+    {
+        "time": "2024-05-02 23:04:59,212",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "SSHBox is running as opendevin user with USER_ID=501 in the sandbox"
+    },
+    {
+        "time": "2024-05-02 23:04:59,370",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "Container stopped"
+    },
+    {
+        "time": "2024-05-02 23:04:59,370",
+        "name": "opendevin",
+        "level": "WARNING",
+        "message": "Using port forwarding for Mac OS. Server started by OpenDevin will not be accessible from the host machine at the moment. See https://github.com/OpenDevin/OpenDevin/issues/897 for more information."
+    },
+    {
+        "time": "2024-05-02 23:04:59,370",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "Mounting workspace directory: /Users/jp/Documents/GitHub/OpenDevin-microagent/workspace"
+    },
+    {
+        "time": "2024-05-02 23:04:59,580",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "Container started"
+    },
+    {
+        "time": "2024-05-02 23:05:00,595",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "waiting for container to start: 1, container status: running"
+    },
+    {
+        "time": "2024-05-02 23:05:00,974",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "Connecting to opendevin@localhost via ssh. If you encounter any issues, you can try `ssh -v -p 54442 opendevin@localhost` with the password '11932b0c-9177-4674-99ba-3a12c008b54c' and report the issue on GitHub. If you started OpenDevin with `docker run`, you should try `ssh -v -p 54442 opendevin@localhost` with the password '11932b0c-9177-4674-99ba-3a12c008b54c on the host machine (where you started the container)."
+    },
+    {
+        "time": "2024-05-02 23:05:02,325",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "Starting browser env..."
+    },
+    {
+        "time": "2024-05-02 23:05:02,342",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "STEP 0"
+    },
+    {
+        "time": "2024-05-02 23:05:02,343",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "Write a shell script 'hello.sh' that prints 'hello'."
+    },
+    {
+        "time": "2024-05-02 23:05:04,355",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "FileWriteAction(path='hello.sh', content='#!/bin/sh\\necho \"hello\"', start=0, end=-1, thought='', action='write')"
+    },
+    {
+        "time": "2024-05-02 23:05:04,582",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "FileWriteObservation(content='', path='hello.sh', observation='write')"
+    },
+    {
+        "time": "2024-05-02 23:05:04,583",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "STEP 1"
+    },
+    {
+        "time": "2024-05-02 23:05:05,961",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "Browser env started."
+    },
+    {
+        "time": "2024-05-02 23:05:06,170",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "**CmdRunAction**\nCOMMAND:\nchmod +x hello.sh"
+    },
+    {
+        "time": "2024-05-02 23:05:06,372",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "CmdOutputObservation(content='', command_id=-1, command='chmod +x hello.sh', exit_code=0, observation='run')"
+    },
+    {
+        "time": "2024-05-02 23:05:06,374",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "STEP 2"
+    },
+    {
+        "time": "2024-05-02 23:05:11,409",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "**CmdRunAction**\nCOMMAND:\n./hello.sh"
+    },
+    {
+        "time": "2024-05-02 23:05:11,596",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "CmdOutputObservation(content='hello', command_id=-1, command='./hello.sh', exit_code=0, observation='run')"
+    },
+    {
+        "time": "2024-05-02 23:05:11,600",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "STEP 3"
+    },
+    {
+        "time": "2024-05-02 23:05:12,799",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "AgentFinishAction(outputs={}, thought='', action='finish')"
+    },
+    {
+        "time": "2024-05-02 23:05:12,801",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "AgentFinishAction(outputs={}, thought='', action='finish')"
+    },
+    {
+        "time": "2024-05-02 23:05:12,802",
+        "name": "opendevin",
+        "level": "INFO",
+        "message": "Task finished by agent"
+    }
+]

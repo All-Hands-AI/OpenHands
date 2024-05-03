@@ -1,0 +1,1 @@
+poetry run python ./opendevin/core/main.py -i 10 -t "Write a shell script 'hello.sh' that prints 'hello'." -c "MonologueAgent" -d "./workspace" 

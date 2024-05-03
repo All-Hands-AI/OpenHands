@@ -27,7 +27,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX: '/workspace',
     ConfigType.WORKSPACE_MOUNT_REWRITE: None,
     ConfigType.CACHE_DIR: '/tmp/cache',  # '/tmp/cache' is the default cache directory
-    ConfigType.LLM_MODEL: 'gpt-3.5-turbo-1106',
+    ConfigType.LLM_MODEL: 'together_ai/META-LLAMA/LLAMA-3-70B-CHAT-HF',
     ConfigType.SANDBOX_CONTAINER_IMAGE: DEFAULT_CONTAINER_IMAGE,
     ConfigType.RUN_AS_DEVIN: 'true',
     ConfigType.LLM_EMBEDDING_MODEL: 'local',

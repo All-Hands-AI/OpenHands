@@ -4,7 +4,7 @@ import sys
 import traceback
 from datetime import datetime
 from typing import Literal, Mapping
-
+import json
 from termcolor import colored
 
 from opendevin.core import config
@@ -172,6 +172,22 @@ class LlmFileHandler(logging.FileHandler):
         self.stream.close
         opendevin_logger.debug('Logging to %s', self.baseFilename)
         self.message_counter += 1
+        log_entry: dict = {
+            'time': datetime.now().strftime('%H:%M:%S'),
+            'name': record.name,
+            'level': record.levelname,
+            'message': record.getMessage(),
+            "all":record.__dict__
+        }
+        path = os.path.join(self.log_directory, 'actions.json')
+        if os.path.exists(path):
+            with open(path, 'r') as file:
+                data = json.load(file)
+        else:
+            data = []
+        data.append(log_entry)
+        with open(path, 'w') as file:
+            json.dump(data, file, indent=4)
 
 
 def get_llm_prompt_file_handler():
@@ -203,3 +219,54 @@ llm_response_logger = logging.getLogger('response')
 llm_response_logger.propagate = False
 llm_response_logger.setLevel(logging.DEBUG)
 llm_response_logger.addHandler(get_llm_response_file_handler())
+
+
+# ## Added
+# import json
+# import logging
+
+# class JsonFileHandler(logging.Handler):
+#     """
+#     A logging handler that logs records to a JSON file.
+#     """
+#     def __init__(self, filename):
+#         super().__init__()
+#         self.filename = filename
+#         self.formatter = logging.Formatter('%(asctime)s')  # Define a formatter for the time
+#         # Ensure the file exists and is a list
+#         try:
+#             with open(self.filename, 'r') as file:
+#                 json.load(file)
+#         except (FileNotFoundError, json.JSONDecodeError):
+#             with open(self.filename, 'w') as file:
+#                 json.dump([], file)
+
+#     def emit(self, record):
+#         """
+#         Emit a log record to the JSON file.
+#         """
+#         # Use the formatter to format the record
+#         self.format(record)  # This ensures the 'asctime' attribute is set
+#         log_entry = {
+#             'time': record.asctime,  # Use the formatted time
+#             'name': record.name,
+#             'level': record.levelname,
+#             'message': record.getMessage()
+#         }
+#         # Read the current data
+#         with open(self.filename, 'r') as file:
+#             data = json.load(file)
+#         # Append the new log entry
+#         data.append(log_entry)
+#         # Write the updated data back to the file
+#         with open(self.filename, 'w') as file:
+#             json.dump(data, file, indent=4)
+
+# # Add the JSON file handler to the logger
+# def setup_json_logging():
+#     json_handler = JsonFileHandler('actions.json')
+#     json_handler.setLevel(logging.INFO)
+#     opendevin_logger.addHandler(json_handler)
+
+# # Call this function somewhere in your setup or main execution block
+# setup_json_logging()

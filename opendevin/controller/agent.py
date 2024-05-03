@@ -71,6 +71,7 @@ class Agent(ABC):
 
     @classmethod
     def register(cls, name: str, agent_cls: Type['Agent']):
+        print("Registering agent", name, agent_cls)
         """
         Registers an agent class in the registry.
 

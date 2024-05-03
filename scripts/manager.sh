@@ -1,0 +1,1 @@
+poetry run python ./opendevin/core/main.py -i 10 -t "Output the dataset used in assignment 1 of CMU Undergraduate Advanced Data Analysis's Spring 2019 semester to data.csv." -c "MicroManagerAgent" -d "./workspace"
