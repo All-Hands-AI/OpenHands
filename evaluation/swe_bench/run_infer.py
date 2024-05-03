@@ -52,6 +52,12 @@ if __name__ == '__main__':
     with open(os.path.join(eval_output_dir, 'metadata.json'), 'w') as f:
         json.dump(metadata, f)
 
+    # LIMIT EVALUATION
+    eval_n_limit = args.eval_n_limit
+    if eval_n_limit:
+        swe_bench_lite_test = swe_bench_lite_test.head(eval_n_limit)
+        logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
+
     # OUTPUT FILE
     output_file = os.path.join(eval_output_dir, 'output.jsonl')
     logger.info(f'Writing evaluation output to {output_file}')
