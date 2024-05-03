@@ -29,8 +29,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.CACHE_DIR: '/tmp/cache',  # '/tmp/cache' is the default cache directory
     ConfigType.LLM_MODEL: 'gpt-3.5-turbo-1106',
     ConfigType.SANDBOX_CONTAINER_IMAGE: DEFAULT_CONTAINER_IMAGE,
-    ConfigType.SWEBENCH_CONTAINER_IMAGE: 'ghcr.io/opendevin/eval-swe-bench-all:lite-v1.0',
-    ConfigType.RUN_AS_DEVIN: 'false',
+    ConfigType.RUN_AS_DEVIN: 'true',
     ConfigType.LLM_EMBEDDING_MODEL: 'local',
     ConfigType.LLM_EMBEDDING_BASE_URL: None,
     ConfigType.LLM_EMBEDDING_DEPLOYMENT_NAME: None,
