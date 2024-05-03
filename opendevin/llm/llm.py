@@ -30,6 +30,7 @@ LLM_RETRY_MIN_WAIT = config.get(ConfigType.LLM_RETRY_MIN_WAIT)
 LLM_RETRY_MAX_WAIT = config.get(ConfigType.LLM_RETRY_MAX_WAIT)
 LLM_TIMEOUT = config.get(ConfigType.LLM_TIMEOUT)
 LLM_MAX_RETURN_TOKENS = config.get(ConfigType.LLM_MAX_RETURN_TOKENS)
+LLM_TEMPERATURE = config.get(ConfigType.LLM_TEMPERATURE)
 
 
 class LLM:
@@ -48,6 +49,7 @@ class LLM:
         retry_max_wait=LLM_RETRY_MAX_WAIT,
         llm_timeout=LLM_TIMEOUT,
         llm_max_return_tokens=LLM_MAX_RETURN_TOKENS,
+        llm_temperature=LLM_TEMPERATURE,
     ):
         """
         Args:
@@ -60,6 +62,7 @@ class LLM:
             retry_max_wait (int, optional): The maximum time to wait between retries in seconds. Defaults to LLM_RETRY_MAX_TIME.
             llm_timeout (int, optional): The maximum time to wait for a response in seconds. Defaults to LLM_TIMEOUT.
             llm_max_return_tokens (int, optional): The maximum number of tokens to return. Defaults to LLM_MAX_RETURN_TOKENS.
+            llm_temperature (float, optional): The temperature for LLM sampling. Defaults to LLM_TEMPERATURE.
 
         Attributes:
             model_name (str): The name of the language model.
@@ -83,6 +86,7 @@ class LLM:
             api_version=self.api_version,
             max_tokens=self.llm_max_return_tokens,
             timeout=self.llm_timeout,
+            temperature=llm_temperature,
         )
 
         completion_unwrapped = self._completion

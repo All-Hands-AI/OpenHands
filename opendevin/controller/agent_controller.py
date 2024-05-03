@@ -165,7 +165,7 @@ class AgentController:
                 await self._run_callbacks(observation)
                 await self.set_task_state_to(TaskState.STOPPED)
                 break
-        return None
+        return self.state
 
     async def setup_task(self, task: str, inputs: dict = {}):
         """Sets up the agent controller with a task."""

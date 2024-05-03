@@ -82,11 +82,10 @@ def get_console_handler():
     return console_handler
 
 
-def get_file_handler():
+def get_file_handler(log_dir=os.path.join(os.getcwd(), 'logs')):
     """
     Returns a file handler for logging.
     """
-    log_dir = os.path.join(os.getcwd(), 'logs')
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime('%Y-%m-%d')
     file_name = f'opendevin_{timestamp}.log'
