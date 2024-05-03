@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import Markdown from "react-markdown";
@@ -76,9 +76,23 @@ function JupyterCell({ cell }: IJupyterCell): JSX.Element {
 
 function Jupyter(): JSX.Element {
   const { cells } = useSelector((state: RootState) => state.jupyter);
+  const jupyterRef = useRef<HTMLDivElement>(null);
+
+  function scrollDomToBottom() {
+    const dom = jupyterRef.current;
+    if (dom) {
+      requestAnimationFrame(() => {
+        dom.scrollTo(0, dom.scrollHeight);
+      });
+    }
+  }
+
+  useEffect(() => {
+    scrollDomToBottom();
+  });
 
   return (
-    <div className="flex-1 overflow-y-auto flex flex-col">
+    <div className="flex-1 overflow-y-auto flex flex-col" ref={jupyterRef}>
       {cells.map((cell, index) => (
         <JupyterCell key={index} cell={cell} />
       ))}
