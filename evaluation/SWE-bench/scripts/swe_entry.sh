@@ -80,7 +80,8 @@ TEST_CMD=$(echo "$output" | awk -F': ' '/test_cmd:/ {print $2}')
 echo "Repo Path: $REPO_PATH"
 echo "Test Command: $TEST_CMD"
 
-# write test command to ~/.bashrc
+echo "export SWE_BENCH_DIR=\"$SWE_BENCH_DIR\"" >> ~/.bashrc
+echo "export REPO_PATH=\"$REPO_PATH\"" >> ~/.bashrc
 echo "export TEST_CMD=\"$TEST_CMD\"" >> ~/.bashrc
 
 if [[ "$REPO_PATH" == "None" ]]; then
@@ -91,3 +92,5 @@ fi
 # Activate instance-specific environment
 . $SWEUTIL_DIR/miniconda3/etc/profile.d/conda.sh
 conda activate $CONDA_ENV_NAME
+
+set +e
