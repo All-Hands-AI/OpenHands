@@ -76,7 +76,9 @@ class DockerSSHBox(Sandbox):
             )
             raise ex
 
-        self.instance_id = sid if sid is not None else str(uuid.uuid4())
+        self.instance_id = (
+            sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
+        )
 
         # TODO: this timeout is actually essential - need a better way to set it
         # if it is too short, the container may still waiting for previous
