@@ -16,7 +16,8 @@ from .prompts import COMMAND_USAGE, CUSTOM_DOCS
 # commands: exit, read, write, browse, kill, search_file, search_dir
 
 no_open_file_error = AgentEchoAction(
-    'You are not currently in a file. You can use the read command to open a file and then use goto to navigate through it.')
+    'You are not currently in a file. You can use the read command to open a file and then use goto to navigate through it.'
+)
 
 
 def invalid_error(cmd, docs):
@@ -33,7 +34,9 @@ Try again using this format:
 """
 
 
-def get_action_from_string(command_string: str, path: str, line: int, thoughts: str = '') -> Action | None:
+def get_action_from_string(
+    command_string: str, path: str, line: int, thoughts: str = ''
+) -> Action | None:
     """
     Parses the command string to find which command the agent wants to run
     Converts the command into a proper Action and returns
@@ -129,7 +132,9 @@ def get_action_from_string(command_string: str, path: str, line: int, thoughts: 
         if valid:
             return CmdRunAction(command_string)
         else:
-            return AgentEchoAction(f'Invalid command structure for\n ```\n{command_string}\n```.\nTry again using this format:\n{CUSTOM_DOCS}')
+            return AgentEchoAction(
+                f'Invalid command structure for\n ```\n{command_string}\n```.\nTry again using this format:\n{CUSTOM_DOCS}'
+            )
     else:
         # check bash command
         obs = str(CmdRunAction(f'type {cmd}'))
@@ -157,8 +162,7 @@ def parse_command(input_str: str, path: str, line: int):
         command_str = parts[1].strip()
         ind = 2 if len(parts) > 2 else 1
         accompanying_text = ''.join(parts[:-ind]).strip()
-        action = get_action_from_string(
-            command_str, path, line, accompanying_text)
+        action = get_action_from_string(command_str, path, line, accompanying_text)
         if action:
             return action, accompanying_text
     return None, input_str  # used for retry

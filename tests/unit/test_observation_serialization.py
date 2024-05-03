@@ -13,12 +13,21 @@ def test_observation_serialization_deserialization():
         'content': 'foo.txt',
     }
     observation_instance = observation_from_dict(original_observation_dict)
-    assert isinstance(observation_instance, Observation), 'The observation instance should be an instance of Action.'
-    assert isinstance(observation_instance, CmdOutputObservation), 'The observation instance should be an instance of AgentThinkAction.'
+    assert isinstance(
+        observation_instance, Observation
+    ), 'The observation instance should be an instance of Action.'
+    assert isinstance(
+        observation_instance, CmdOutputObservation
+    ), 'The observation instance should be an instance of AgentThinkAction.'
     serialized_observation_dict = observation_instance.to_dict()
     serialized_observation_memory = observation_instance.to_memory()
-    assert serialized_observation_dict == original_observation_dict, 'The serialized observation should match the original observation dict.'
+    assert (
+        serialized_observation_dict == original_observation_dict
+    ), 'The serialized observation should match the original observation dict.'
     original_observation_dict.pop('message')
-    assert serialized_observation_memory == original_observation_dict, 'The serialized observation in memory should match the original observation dict.'
+    assert (
+        serialized_observation_memory == original_observation_dict
+    ), 'The serialized observation in memory should match the original observation dict.'
+
 
 # Additional tests for various observation subclasses can be included here

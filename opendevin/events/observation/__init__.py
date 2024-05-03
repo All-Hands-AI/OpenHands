@@ -20,7 +20,10 @@ observations = (
     AgentErrorObservation,
 )
 
-OBSERVATION_TYPE_TO_CLASS = {observation_class.observation: observation_class for observation_class in observations}  # type: ignore[attr-defined]
+OBSERVATION_TYPE_TO_CLASS = {
+    observation_class.observation: observation_class  # type: ignore[attr-defined]
+    for observation_class in observations
+}
 
 
 def observation_from_dict(observation: dict) -> Observation:
@@ -29,7 +32,9 @@ def observation_from_dict(observation: dict) -> Observation:
         raise KeyError(f"'observation' key is not found in {observation=}")
     observation_class = OBSERVATION_TYPE_TO_CLASS.get(observation['observation'])
     if observation_class is None:
-        raise KeyError(f"'{observation['observation']=}' is not defined. Available observations: {OBSERVATION_TYPE_TO_CLASS.keys()}")
+        raise KeyError(
+            f"'{observation['observation']=}' is not defined. Available observations: {OBSERVATION_TYPE_TO_CLASS.keys()}"
+        )
     observation.pop('observation')
     observation.pop('message', None)
     content = observation.pop('content', '')
