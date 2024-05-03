@@ -50,6 +50,14 @@ function SettingsForm({
   return (
     <>
       <AutocompleteCombobox
+        ariaLabel="agent"
+        items={agents.map((agent) => ({ value: agent, label: agent }))}
+        defaultKey={settings.AGENT || agents[0]}
+        onChange={onAgentChange}
+        tooltip={t(I18nKey.SETTINGS$AGENT_TOOLTIP)}
+        disabled={disabled}
+      />
+      <AutocompleteCombobox
         ariaLabel="model"
         items={models.map((model) => ({ value: model, label: model }))}
         defaultKey={settings.LLM_MODEL || models[0]}
@@ -84,14 +92,6 @@ function SettingsForm({
             )}
           </button>
         }
-      />
-      <AutocompleteCombobox
-        ariaLabel="agent"
-        items={agents.map((agent) => ({ value: agent, label: agent }))}
-        defaultKey={settings.AGENT || agents[0]}
-        onChange={onAgentChange}
-        tooltip={t(I18nKey.SETTINGS$AGENT_TOOLTIP)}
-        disabled={disabled}
       />
       <AutocompleteCombobox
         ariaLabel="language"
