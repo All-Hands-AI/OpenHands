@@ -144,7 +144,7 @@ if __name__ == '__main__':
         # Save the output
         output = {
             'instance_id': instance.instance_id,
-            'swe_instance': instance,
+            'swe_instance': instance.to_dict(),
             'instruction': instruction,
             'git_patch': git_patch,
             'metadata': metadata,
