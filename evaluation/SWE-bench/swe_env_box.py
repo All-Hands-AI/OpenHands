@@ -29,21 +29,22 @@ class SWEBenchSSHBox(DockerSSHBox):
         )
         assert exit_code == 0, f'Failed to set SWE_INSTANCE_ID in ~/.bashrc: {output}'
 
-        # exit_code, output = self.execute(f'{SANDBOX_WORKSPACE_DIR}/scripts/swe_entry.sh')
-        # logger.info('exit code: %d', exit_code)
-        # logger.info(output)
-
-        # # source the bashrc
-        exit_code, output = self.execute('source ~/.bashrc')
-        assert exit_code == 0, f'Failed to source ~/.bashrc: {output}'
-        logger.info('Sourced ~/.bashrc successfully')
+        logger.info('Sourcing swe_entry.sh to set up environment variables')
+        exit_code, output = self.execute('source /swe_util/swe_entry.sh')
+        logger.info('exit code: %d', exit_code)
+        logger.info(output)
+        assert exit_code == 0, f'Failed to source swe_entry.sh: {output}'
+        logger.info('Sourced swe_entry.sh successfully')
 
     @property
     def volumes(self):
         return {
             **super().volumes,
             # self.eval_utils_dir: {'bind': '/swe_util', 'mode': 'ro' if self.eval_utils_read_only else 'rw'},
-            # '/shared/bowen/codellm/swe/OD-SWE-bench': {'bind': '/OD-SWE-bench', 'mode': 'rw'},
+            '/home/xingyaow/OpenDevin/evaluation/SWE-bench/eval_workspace': {
+                'bind': '/swe_util',
+                'mode': 'ro',
+            },
         }
 
 

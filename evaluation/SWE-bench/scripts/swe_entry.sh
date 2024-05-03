@@ -46,8 +46,11 @@ echo "$item" | jq 'del(.test_patch, .patch)' > $SWE_TASK_DIR/instance.json
 
 # Clear the workspace
 rm -rf /workspace/*
-# cp -r $SWEUTIL_DIR/eval_data/testbeds/$CONDA_ENV_NAME /workspace
-rsync -a $SWEUTIL_DIR/eval_data/testbeds/$CONDA_ENV_NAME/ /workspace
+# Copy repo to workspace
+if [ -d /workspace/$CONDA_ENV_NAME ]; then
+    rm -rf /workspace/$CONDA_ENV_NAME
+fi
+cp -r $SWEUTIL_DIR/eval_data/testbeds/$CONDA_ENV_NAME /workspace
 
 # Reset swe-bench testbed and install the repo
 . $SWEUTIL_DIR/miniconda3/etc/profile.d/conda.sh
