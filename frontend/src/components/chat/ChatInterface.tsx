@@ -5,7 +5,7 @@ import ChatInput from "../ChatInput";
 import Chat from "./Chat";
 import { RootState } from "#/store";
 import AgentTaskState from "#/types/AgentTaskState";
-import { addUserMessage } from "#/state/chat";
+import { addUserMessage } from "#/state/chatSlice";
 import ActionType from "#/types/ActionType";
 import Socket from "#/services/socket";
 
@@ -22,7 +22,7 @@ function ActionBanner() {
 }
 
 function ChatInterface() {
-  const { messages } = useSelector((state: RootState) => state.tempChat);
+  const { messages } = useSelector((state: RootState) => state.chat);
   const { curTaskState } = useSelector((state: RootState) => state.agent);
 
   const dispatch = useDispatch();

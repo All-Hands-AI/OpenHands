@@ -1,5 +1,5 @@
 import React from "react";
-import { screen, waitFor } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { act } from "react-dom/test-utils";
 import userEvent from "@testing-library/user-event";
@@ -7,7 +7,7 @@ import { renderWithProviders } from "test-utils";
 import ChatInterface from "./ChatInterface";
 import Socket from "#/services/socket";
 import ActionType from "#/types/ActionType";
-import { addAssistantMessage } from "#/state/chat";
+import { addAssistantMessage } from "#/state/chatSlice";
 import AgentTaskState from "#/types/AgentTaskState";
 import { changeTaskState } from "#/state/agentSlice";
 
@@ -38,7 +38,7 @@ describe("ChatInterface", () => {
   it("should render user and assistant messages", () => {
     const { store } = renderWithProviders(<ChatInterface />, {
       preloadedState: {
-        tempChat: {
+        chat: {
           messages: [{ sender: "user", content: "Hello" }],
         },
       },
@@ -69,7 +69,7 @@ describe("ChatInterface", () => {
   it("should display a typing indicator when waiting for assistant response", () => {
     const { store } = renderWithProviders(<ChatInterface />, {
       preloadedState: {
-        tempChat: {
+        chat: {
           messages: [{ sender: "assistant", content: "Hello" }],
         },
       },

@@ -1,6 +1,6 @@
 import { changeTaskState } from "#/state/agentSlice";
 import { setScreenshotSrc, setUrl } from "#/state/browserSlice";
-import { addAssistantMessage } from "#/state/chat";
+import { addAssistantMessage } from "#/state/chatSlice";
 import { setCode, updatePath } from "#/state/codeSlice";
 import { appendInput } from "#/state/commandSlice";
 import { appendJupyterInput } from "#/state/jupyterSlice";
