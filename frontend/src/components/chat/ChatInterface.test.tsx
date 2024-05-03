@@ -11,6 +11,11 @@ import { addAssistantMessage } from "#/state/chatSlice";
 import AgentTaskState from "#/types/AgentTaskState";
 import { changeTaskState } from "#/state/agentSlice";
 
+// avoid typing side-effect
+vi.mock("#/hooks/useTyping", () => ({
+  useTyping: vi.fn((text: string) => text),
+}));
+
 const socketSpy = vi.spyOn(Socket, "send");
 
 // This is for the scrollview ref in Chat.tsx

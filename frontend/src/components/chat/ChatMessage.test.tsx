@@ -3,6 +3,11 @@ import { describe, it, expect } from "vitest";
 import React from "react";
 import ChatMessage from "./ChatMessage";
 
+// avoid typing side-effect
+vi.mock("#/hooks/useTyping", () => ({
+  useTyping: vi.fn((text: string) => text),
+}));
+
 describe("Message", () => {
   it("should render a user message", () => {
     render(<ChatMessage message={{ sender: "user", content: "Hello" }} />);
