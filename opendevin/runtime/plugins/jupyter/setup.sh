@@ -2,6 +2,7 @@
 
 set -e
 
+
 # ADD /opendevin/plugins to PATH to make `jupyter_cli` available
 echo 'export PATH=$PATH:/opendevin/plugins/jupyter' >> ~/.bashrc
 export PATH=/opendevin/plugins/jupyter:$PATH
@@ -10,11 +11,14 @@ export PATH=/opendevin/plugins/jupyter:$PATH
 if [ "$USER" = "opendevin" ]; then
     echo 'export PATH=$PATH:/home/opendevin/.local/bin' >> ~/.bashrc
     export PATH=$PATH:/home/opendevin/.local/bin
+    export PIP_CACHE_DIR=$HOME/.cache/pip
 fi
 # if user name is `root`, add '/root/.local/bin' to PATH
 if [ "$USER" = "root" ]; then
     echo 'export PATH=$PATH:/root/.local/bin' >> ~/.bashrc
     export PATH=$PATH:/root/.local/bin
+    export PIP_CACHE_DIR=$HOME/.cache/pip
+
 fi
 
 # Install dependencies
@@ -41,11 +45,13 @@ echo "export JUPYTER_EXEC_SERVER_PID=$JUPYTER_EXEC_SERVER_PID" >> ~/.bashrc
 echo "Execution server started with PID: $JUPYTER_EXEC_SERVER_PID"
 
 # Wait until /opendevin/logs/jupyter_kernel_gateway.log contains "is available"
-while ! grep -q "is available" /opendevin/logs/jupyter_kernel_gateway.log; do
+while ! grep -q "at" /opendevin/logs/jupyter_kernel_gateway.log; do
+    echo "Waiting for Jupyter kernel gateway to be available..."
     sleep 1
 done
 # Wait until /opendevin/logs/jupyter_execute_server.log contains "Jupyter kernel created for conversation"
-while ! grep -q "Jupyter kernel created for conversation" /opendevin/logs/jupyter_execute_server.log; do
+while ! grep -q "kernel created" /opendevin/logs/jupyter_execute_server.log; do
+    echo "Waiting for Jupyter kernel to be created..."
     sleep 1
 done
 echo "Jupyter kernel ready."
