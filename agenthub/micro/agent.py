@@ -1,3 +1,4 @@
+import copy
 import json
 from typing import Dict, List
 
@@ -45,7 +46,11 @@ def to_json(obj, **kwargs):
     """
     Serialize an object to str format
     """
-    return json.dumps(obj, default=my_encoder, **kwargs)
+    # Remove things like screenshots that shouldn't be in a prompt
+    sanitized_obj = copy.deepcopy(obj)
+    if 'extras' in sanitized_obj and 'screenshot' in sanitized_obj['extras']:
+        del sanitized_obj['extras']['screenshot']
+    return json.dumps(sanitized_obj, default=my_encoder, **kwargs)
 
 
 class MicroAgent(Agent):
