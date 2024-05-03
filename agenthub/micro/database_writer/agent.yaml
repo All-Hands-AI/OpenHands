@@ -1,0 +1,5 @@
+name: DatabaseWriterAgent
+description: Finds a dataset based on a query
+inputs: {}
+outputs:
+  summary: string
