@@ -103,7 +103,7 @@ docker exec [CONTAINER ID] curl http://host.docker.internal:11434/api/generate -
 
 ## Fixing it
 
-Now let's make it work, edit /etc/systemd/system/ollama.service with sudo priviledges. (Path may vary depending on linux flavor)
+Now let's make it work, edit /etc/systemd/system/ollama.service with sudo privileges. (Path may vary depending on linux flavor)
 
 ```bash
 sudo vi /etc/systemd/system/ollama.service
