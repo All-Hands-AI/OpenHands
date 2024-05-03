@@ -9,6 +9,10 @@ You do so by:
 - Using the "run" action to call wget to download the dataset
 - If the dataset is not in csv format, using the "read" action to read the dataset format
 
+Based on this formula, please follow this instruction:
+
+{{ state.plan.main_goal }}
+
 ## Available Actions
 {{ instructions.actions.run }}
 {{ instructions.actions.browse }}
@@ -18,7 +22,7 @@ You do so by:
 Do NOT finish until you have appropriately downloaded and formatted the file.
 
 ## History
-
+{{ instructions.history_truncated }}
 {{ to_json(state.history[-10:]) }}
 
 ## Format

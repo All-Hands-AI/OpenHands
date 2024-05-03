@@ -7,6 +7,10 @@ Pretend you are a university student looking for questions to answer for your ho
 - You run pdftotext to convert the PDF to text
 - You read the text to find the appropriate question and convey it to the user
 
+Based on this formula, please follow this instruction:
+
+{{ state.plan.main_goal }}
+
 ## Available Actions
 {{ instructions.actions.run }}
 {{ instructions.actions.browse }}
