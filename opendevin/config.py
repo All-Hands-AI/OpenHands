@@ -52,7 +52,7 @@ class AppConfig:
     llm: LLMConfig = field(default_factory=LLMConfig)
     agent: AgentConfig = field(default_factory=AgentConfig)
     workspace_base: str = os.getcwd()
-    workspace_mount_path: str = os.path.abspath(workspace_base)
+    workspace_mount_path: str = os.path.abspath(workspace_base) # TODO this might not work, set at the end
     workspace_mount_path_in_sandbox: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
@@ -118,8 +118,20 @@ if os.path.exists('config.toml'):
 # load the toml config as a dict
 tomlConfig = toml.loads(config_str)
 
-# set the config object based on toml and env
-compat_env_to_config(config, tomlConfig)
+try:
+    # let's see if new-style toml is used
+    llm_config = LLMConfig(**tomlConfig['llm'])
+    agent_config = AgentConfig(**tomlConfig['agent'])
+    config = AppConfig(
+        llm=llm_config,
+        agent=agent_config,
+        **{k: v for k, v in tomlConfig.items() if k not in ['llm', 'agent']}
+    )
+except (TypeError, KeyError):
+    # if not, we'll use the old-style toml
+    compat_env_to_config(config, tomlConfig)
+
+# read the config from env
 compat_env_to_config(config, os.environ)
 
 
