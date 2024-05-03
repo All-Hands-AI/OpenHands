@@ -141,6 +141,12 @@ def get_parser():
         type=int,
         help='The maximum number of characters to send to and receive from LLM per task',
     )
+    parser.add_argument(
+        '--eval-output-dir',
+        default='evaluation/outputs',
+        type=str,
+        help='The directory to save evaluation output',
+    )
     return parser
 
 
