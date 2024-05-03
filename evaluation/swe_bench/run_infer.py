@@ -144,6 +144,8 @@ if __name__ == '__main__':
         # Save the output
         output = {
             'instance_id': instance.instance_id,
+            'swe_instance': instance,
+            'instruction': instruction,
             'git_patch': git_patch,
             'metadata': metadata,
             'history': [
