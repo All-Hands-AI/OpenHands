@@ -1,11 +1,10 @@
 from typing import List
 
-from opendevin.agent import Agent
-from opendevin.action import AgentFinishAction, AgentDelegateAction
-from opendevin.observation import AgentDelegateObservation
+from opendevin.controller.agent import Agent
+from opendevin.controller.state.state import State
+from opendevin.events.action import Action, AgentDelegateAction, AgentFinishAction
+from opendevin.events.observation import AgentDelegateObservation
 from opendevin.llm.llm import LLM
-from opendevin.state import State
-from opendevin.action import Action
 
 
 class DelegatorAgent(Agent):
@@ -13,6 +12,7 @@ class DelegatorAgent(Agent):
     The planner agent utilizes a special prompting strategy to create long term plans for solving problems.
     The agent is given its previous action-observation pairs, current task, and hint based on last action taken at every step.
     """
+
     current_delegate: str = ''
 
     def __init__(self, llm: LLM):
@@ -38,9 +38,9 @@ class DelegatorAgent(Agent):
         """
         if self.current_delegate == '':
             self.current_delegate = 'study'
-            return AgentDelegateAction(agent='StudyRepoForTaskAgent', inputs={
-                'task': state.plan.main_goal
-            })
+            return AgentDelegateAction(
+                agent='StudyRepoForTaskAgent', inputs={'task': state.plan.main_goal}
+            )
 
         lastObservation = state.history[-1][1]
         if not isinstance(lastObservation, AgentDelegateObservation):
@@ -48,24 +48,36 @@ class DelegatorAgent(Agent):
 
         if self.current_delegate == 'study':
             self.current_delegate = 'coder'
-            return AgentDelegateAction(agent='Coder', inputs={
-                'task': state.plan.main_goal,
-                'summary': lastObservation.outputs['summary'],
-            })
+            return AgentDelegateAction(
+                agent='Coder',
+                inputs={
+                    'task': state.plan.main_goal,
+                    'summary': lastObservation.outputs['summary'],
+                },
+            )
         elif self.current_delegate == 'coder':
             self.current_delegate = 'verifier'
-            return AgentDelegateAction(agent='Verifier', inputs={
-                'task': state.plan.main_goal,
-            })
+            return AgentDelegateAction(
+                agent='Verifier',
+                inputs={
+                    'task': state.plan.main_goal,
+                },
+            )
         elif self.current_delegate == 'verifier':
-            if 'completed' in lastObservation.outputs and lastObservation.outputs['completed']:
+            if (
+                'completed' in lastObservation.outputs
+                and lastObservation.outputs['completed']
+            ):
                 return AgentFinishAction()
             else:
                 self.current_delegate = 'coder'
-                return AgentDelegateAction(agent='Coder', inputs={
-                    'task': state.plan.main_goal,
-                    'summary': lastObservation.outputs['summary'],
-                })
+                return AgentDelegateAction(
+                    agent='Coder',
+                    inputs={
+                        'task': state.plan.main_goal,
+                        'summary': lastObservation.outputs['summary'],
+                    },
+                )
         else:
             raise Exception('Invalid delegate state')
 

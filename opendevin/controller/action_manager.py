@@ -1,17 +1,23 @@
 from typing import List
 
-from opendevin import config
-from opendevin.observation import CmdOutputObservation, AgentErrorObservation
-from opendevin.sandbox import DockerExecBox, DockerSSHBox, Sandbox, LocalBox, E2BBox
-from opendevin.schema import ConfigType
-from opendevin.action import (
+from opendevin.core import config
+from opendevin.core.schema import ConfigType
+from opendevin.events.action import (
     Action,
 )
-from opendevin.observation import (
+from opendevin.events.observation import (
+    AgentErrorObservation,
+    CmdOutputObservation,
     Observation,
-    NullObservation,
 )
-from opendevin.sandbox.plugins import PluginRequirement
+from opendevin.runtime import (
+    DockerExecBox,
+    DockerSSHBox,
+    E2BBox,
+    LocalBox,
+    Sandbox,
+)
+from opendevin.runtime.plugins import PluginRequirement
 
 
 class ActionManager:
@@ -19,28 +25,22 @@ class ActionManager:
     sandbox: Sandbox
 
     def __init__(
-            self,
-            sid: str,
+        self,
+        sid: str = 'default',
     ):
         sandbox_type = config.get(ConfigType.SANDBOX_TYPE).lower()
         if sandbox_type == 'exec':
             self.sandbox = DockerExecBox(
-                sid=(sid or 'default'),
-                timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
+                sid=(sid or 'default'), timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
             )
         elif sandbox_type == 'local':
-            self.sandbox = LocalBox(
-                timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
-            )
+            self.sandbox = LocalBox(timeout=config.get(ConfigType.SANDBOX_TIMEOUT))
         elif sandbox_type == 'ssh':
             self.sandbox = DockerSSHBox(
-                sid=(sid or 'default'),
-                timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
+                sid=(sid or 'default'), timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
             )
         elif sandbox_type == 'e2b':
-            self.sandbox = E2BBox(
-                timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
-            )
+            self.sandbox = E2BBox(timeout=config.get(ConfigType.SANDBOX_TIMEOUT))
         else:
             raise ValueError(f'Invalid sandbox type: {sandbox_type}')
 
@@ -48,9 +48,6 @@ class ActionManager:
         self.sandbox.init_plugins(plugins)
 
     async def run_action(self, action: Action, agent_controller) -> Observation:
-        observation: Observation = NullObservation('')
-        if not action.executable:
-            return observation
         observation = await action.run(agent_controller)
         return observation
 

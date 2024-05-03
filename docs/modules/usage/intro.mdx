@@ -1,0 +1,114 @@
+---
+sidebar_position: 1
+---
+
+# 💻 OpenDevin
+
+OpenDevin is an **autonomous AI software engineer** capable of executing complex engineering tasks and collaborating actively with users on software development projects.
+This project is fully open-source, so you can use and modify it however you like.
+
+:::tip
+Explore the codebase of OpenDevin on [GitHub](https://github.com/OpenDevin/OpenDevin) or join one of our communities!
+
+<a href="https://github.com/OpenDevin/OpenDevin/graphs/contributors">
+  <img
+    src="https://img.shields.io/github/contributors/opendevin/opendevin?style=for-the-badge"
+    alt="Contributors"
+  />
+</a>
+<a href="https://github.com/OpenDevin/OpenDevin/network/members">
+  <img
+    src="https://img.shields.io/github/forks/opendevin/opendevin?style=for-the-badge"
+    alt="Forks"
+  />
+</a>
+<a href="https://github.com/OpenDevin/OpenDevin/stargazers">
+  <img
+    src="https://img.shields.io/github/stars/opendevin/opendevin?style=for-the-badge"
+    alt="Stargazers"
+  />
+</a>
+<a href="https://github.com/OpenDevin/OpenDevin/issues">
+  <img
+    src="https://img.shields.io/github/issues/opendevin/opendevin?style=for-the-badge"
+    alt="Issues"
+  />
+</a>
+<br></br>
+<a href="https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE">
+  <img
+    src="https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge"
+    alt="MIT License"
+  />
+</a>
+<br></br>
+<a href="https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw">
+  <img
+    src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge"
+    alt="Join our Slack community"
+  />
+</a>
+<a href="https://discord.gg/ESHStjSjD4">
+  <img
+    src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge"
+    alt="Join our Discord community"
+  />
+</a>
+:::
+
+## 🛠️ Getting Started
+
+The easiest way to run OpenDevin is inside a Docker container.
+
+To start the app, run these commands, replacing `$(pwd)/workspace` with the path to the code you want OpenDevin to work with.
+
+```
+# Your OpenAI API key, or any other LLM API key
+export LLM_API_KEY="sk-..."
+```
+
+```
+# The directory you want OpenDevin to modify.
+# MUST be an absolute path!
+export WORKSPACE_BASE=$(pwd)/workspace
+```
+
+:::warning
+OpenDevin runs bash commands within a Docker sandbox, so it should not affect your machine. But your workspace directory will be attached to that sandbox, and files in the directory may be modified or deleted.
+:::
+
+```
+docker run \
+    -e LLM_API_KEY \
+    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+    -v $WORKSPACE_BASE:/opt/workspace_base \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -p 3000:3000 \
+    --add-host host.docker.internal=host-gateway \
+    ghcr.io/opendevin/opendevin:0.4.0
+```
+
+You'll find opendevin running at [http://localhost:3000](http://localhost:3000).
+
+:::tip
+If you want to use the **(unstable!)** bleeding edge, you can use `ghcr.io/opendevin/opendevin:main` as the image (last line).
+:::
+
+See Development.md for instructions on running OpenDevin without Docker.
+
+Having trouble? Check out our Troubleshooting Guide.
+
+:::warning
+OpenDevin is currently a work in progress, but you can already run the alpha version to see the end-to-end system in action.
+:::
+
+[contributors-shield]: https://img.shields.io/github/contributors/opendevin/opendevin?style=for-the-badge
+[contributors-url]: https://github.com/OpenDevin/OpenDevin/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/opendevin/opendevin?style=for-the-badge
+[forks-url]: https://github.com/OpenDevin/OpenDevin/network/members
+[stars-shield]: https://img.shields.io/github/stars/opendevin/opendevin?style=for-the-badge
+[stars-url]: https://github.com/OpenDevin/OpenDevin/stargazers
+[issues-shield]: https://img.shields.io/github/issues/opendevin/opendevin?style=for-the-badge
+[issues-url]: https://github.com/OpenDevin/OpenDevin/issues
+[license-shield]: https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge
+[license-url]: https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE

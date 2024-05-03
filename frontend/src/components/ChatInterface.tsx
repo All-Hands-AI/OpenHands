@@ -3,6 +3,7 @@ import { IoMdChatbubbles } from "react-icons/io";
 import Markdown from "react-markdown";
 import { useSelector } from "react-redux";
 import { useTypingEffect } from "#/hooks/useTypingEffect";
+import AgentTaskState from "../types/AgentTaskState";
 import {
   addAssistantMessageToChat,
   sendChatMessage,
@@ -77,7 +78,7 @@ function MessageList(): JSX.Element {
 
   const messageScroll = () => {
     messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
+      behavior: "auto",
       block: "end",
     });
   };
@@ -88,7 +89,7 @@ function MessageList(): JSX.Element {
 
     const interval = setInterval(() => {
       messageScroll();
-    }, 1000);
+    }, 100);
 
     // eslint-disable-next-line consistent-return
     return () => clearInterval(interval);
@@ -117,6 +118,12 @@ function MessageList(): JSX.Element {
 
 function ChatInterface(): JSX.Element {
   const { initialized } = useSelector((state: RootState) => state.task);
+  const { curTaskState } = useSelector((state: RootState) => state.agent);
+
+  const onUserMessage = (msg: string) => {
+    const isNewTask = curTaskState === AgentTaskState.INIT;
+    sendChatMessage(msg, isNewTask);
+  };
 
   return (
     <div className="flex flex-col h-full p-0 bg-neutral-800">
@@ -125,7 +132,7 @@ function ChatInterface(): JSX.Element {
         Chat
       </div>
       <MessageList />
-      <ChatInput disabled={!initialized} onSendMessage={sendChatMessage} />
+      <ChatInput disabled={!initialized} onSendMessage={onUserMessage} />
     </div>
   );
 }

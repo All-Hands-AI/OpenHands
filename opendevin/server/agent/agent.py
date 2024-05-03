@@ -1,24 +1,32 @@
 import asyncio
-from typing import Optional, Dict, List
+from typing import Dict, List, Optional
 
-from opendevin import config
-from opendevin.action import (
+from opendevin.controller import AgentController
+from opendevin.controller.agent import Agent
+from opendevin.core import config
+from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema import ActionType, ConfigType, TaskState, TaskStateAction
+from opendevin.events.action import (
     Action,
     NullAction,
 )
-from opendevin.agent import Agent
-from opendevin.controller import AgentController
+from opendevin.events.observation import (
+    NullObservation,
+    Observation,
+    UserMessageObservation,
+)
 from opendevin.llm.llm import LLM
-from opendevin.logger import opendevin_logger as logger
-from opendevin.observation import NullObservation, Observation, UserMessageObservation
-from opendevin.schema import ActionType, ConfigType, TaskState, TaskStateAction
 from opendevin.server.session import session_manager
 
 # new task state to valid old task states
 VALID_TASK_STATE_MAP: Dict[TaskStateAction, List[TaskState]] = {
     TaskStateAction.PAUSE: [TaskState.RUNNING],
     TaskStateAction.RESUME: [TaskState.PAUSED],
-    TaskStateAction.STOP: [TaskState.RUNNING, TaskState.PAUSED],
+    TaskStateAction.STOP: [
+        TaskState.RUNNING,
+        TaskState.PAUSED,
+        TaskState.AWAITING_USER_INPUT,
+    ],
 }
 IGNORED_TASK_STATE_MAP: Dict[TaskStateAction, List[TaskState]] = {
     TaskStateAction.PAUSE: [
@@ -26,12 +34,14 @@ IGNORED_TASK_STATE_MAP: Dict[TaskStateAction, List[TaskState]] = {
         TaskState.PAUSED,
         TaskState.STOPPED,
         TaskState.FINISHED,
+        TaskState.AWAITING_USER_INPUT,
     ],
     TaskStateAction.RESUME: [
         TaskState.INIT,
         TaskState.RUNNING,
         TaskState.STOPPED,
         TaskState.FINISHED,
+        TaskState.AWAITING_USER_INPUT,
     ],
     TaskStateAction.STOP: [TaskState.INIT, TaskState.STOPPED, TaskState.FINISHED],
 }
@@ -94,6 +104,8 @@ class AgentUnit:
                 await self.create_controller(data)
             case ActionType.START:
                 await self.start_task(data)
+            case ActionType.USER_MESSAGE:
+                await self.send_user_message(data)
             case ActionType.CHANGE_TASK_STATE:
                 task_state_action = data.get('args', {}).get('task_state_action', None)
                 if task_state_action is None:
@@ -136,7 +148,7 @@ class AgentUnit:
         }  # remove empty values, prevent FE from sending empty strings
         agent_cls = self.get_arg_or_default(args, ConfigType.AGENT)
         model = self.get_arg_or_default(args, ConfigType.LLM_MODEL)
-        api_key = config.get(ConfigType.LLM_API_KEY)
+        api_key = self.get_arg_or_default(args, ConfigType.LLM_API_KEY)
         api_base = config.get(ConfigType.LLM_BASE_URL)
         max_iterations = self.get_arg_or_default(args, ConfigType.MAX_ITERATIONS)
         max_chars = self.get_arg_or_default(args, ConfigType.MAX_CHARS)
@@ -154,7 +166,7 @@ class AgentUnit:
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
             await self.send_error(
-                'Error creating controller. Please check Docker is running using `docker ps`.'
+                'Error creating controller. Please check Docker is running and visit `https://opendevin.github.io/OpenDevin/modules/usage/troubleshooting` for more debugging information..'
             )
             return
         await self.init_done()
@@ -177,10 +189,6 @@ class AgentUnit:
         Args:
             start_event: The start event data.
         """
-        if 'task' not in start_event['args']:
-            await self.send_error('No task specified')
-            return
-        await self.send_message('Starting new task...')
         task = start_event['args']['task']
         if self.controller is None:
             await self.send_error('No agent started. Please wait a second...')
@@ -193,6 +201,15 @@ class AgentUnit:
             )
         except Exception as e:
             await self.send_error(f'Error during task loop: {e}')
+
+    async def send_user_message(self, data: dict):
+        if not self.agent_task or not self.controller:
+            await self.send_error('No agent started.')
+            return
+
+        await self.controller.add_user_message(
+            UserMessageObservation(data['args']['message'])
+        )
 
     async def set_task_state(self, new_state_action: TaskStateAction):
         """Sets the state of the agent task."""

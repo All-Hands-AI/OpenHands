@@ -1,13 +1,13 @@
 import json
-from typing import List, Dict
+from typing import Dict, List
 
-from jinja2 import Environment, BaseLoader
+from jinja2 import BaseLoader, Environment
 
-from opendevin.agent import Agent
+from opendevin.controller.agent import Agent
+from opendevin.controller.state.state import State
+from opendevin.core.exceptions import LLMOutputError
+from opendevin.events.action import Action, action_from_dict
 from opendevin.llm.llm import LLM
-from opendevin.state import State
-from opendevin.action import Action, action_from_dict
-from opendevin.exceptions import LLMOutputError
 
 from .instructions import instructions
 from .registry import all_microagents
@@ -56,21 +56,17 @@ class MicroAgent(Agent):
         super().__init__(llm)
         if 'name' not in self.agent_definition:
             raise ValueError('Agent definition must contain a name')
-        self.name = self.agent_definition['name']
-        self.description = self.agent_definition['description'] if 'description' in self.agent_definition else ''
-        self.inputs = self.agent_definition['inputs'] if 'inputs' in self.agent_definition else []
-        self.outputs = self.agent_definition['outputs'] if 'outputs' in self.agent_definition else []
-        self.examples = self.agent_definition['examples'] if 'examples' in self.agent_definition else []
         self.prompt_template = Environment(loader=BaseLoader).from_string(self.prompt)
         self.delegates = all_microagents.copy()
-        del self.delegates[self.name]
+        del self.delegates[self.agent_definition['name']]
 
     def step(self, state: State) -> Action:
         prompt = self.prompt_template.render(
             state=state,
             instructions=instructions,
             to_json=to_json,
-            delegates=self.delegates)
+            delegates=self.delegates,
+        )
         messages = [{'content': prompt, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)
         action_resp = resp['choices'][0]['message']['content']

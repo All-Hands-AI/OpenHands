@@ -1,23 +1,23 @@
 from typing import List
-from opendevin.agent import Agent
-from opendevin.llm.llm import LLM
-from opendevin.state import State
-from opendevin.action import (
+
+from opendevin.controller.agent import Agent
+from opendevin.controller.state.state import State
+from opendevin.events.action import (
     Action,
     AgentThinkAction,
     FileReadAction,
     FileWriteAction,
 )
-from opendevin.observation import Observation
+from opendevin.events.observation import Observation
+from opendevin.llm.llm import LLM
 
 from .parser import parse_command
-
 from .prompts import (
-    SYSTEM_MESSAGE,
-    STEP_PROMPT,
+    CONTEXT_PROMPT,
     MEMORY_FORMAT,
     NO_ACTION,
-    CONTEXT_PROMPT
+    STEP_PROMPT,
+    SYSTEM_MESSAGE,
 )
 
 
@@ -48,9 +48,12 @@ class SWEAgent(Agent):
         )
         action_resp = resp['choices'][0]['message']['content']
         print(f"\033[1m\033[91m{resp['usage']}\033[0m")
-        print('\n==== RAW OUTPUT ====',
-              f'\033[96m{action_resp}\033[0m',
-              '==== END RAW ====\n', sep='\n')
+        print(
+            '\n==== RAW OUTPUT ====',
+            f'\033[96m{action_resp}\033[0m',
+            '==== END RAW ====\n',
+            sep='\n',
+        )
         return parse_command(action_resp, self.cur_file, self.cur_line)
 
     def _update(self, action: Action) -> None:
@@ -68,22 +71,15 @@ class SWEAgent(Agent):
         for prev_action, obs in state.updated_info:
             self._remember(prev_action, obs)
 
-        prompt = STEP_PROMPT(
-            state.plan.main_goal,
-            self.cur_file,
-            self.cur_line
-        )
+        prompt = STEP_PROMPT(state.plan.main_goal, self.cur_file, self.cur_line)
 
         msgs = [
             {'content': SYSTEM_MESSAGE, 'role': 'system'},
-            {'content': prompt, 'role': 'user'}
+            {'content': prompt, 'role': 'user'},
         ]
 
         if len(self.running_memory) > 0:
-            context = CONTEXT_PROMPT(
-                self.running_memory,
-                self.memory_window
-            )
+            context = CONTEXT_PROMPT(self.running_memory, self.memory_window)
             msgs.insert(1, {'content': context, 'role': 'user'})
         # clrs = [''] * (len(msgs)-2) + ['\033[0;36m', '\033[0;35m']
         # print('\n\n'.join([c+m['content']+'\033[0m' for c, m in zip(clrs, msgs)]))

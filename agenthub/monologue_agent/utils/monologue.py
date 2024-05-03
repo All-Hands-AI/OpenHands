@@ -1,9 +1,8 @@
-
-from opendevin.llm.llm import LLM
-from opendevin.exceptions import AgentEventTypeError
 import agenthub.monologue_agent.utils.json as json
 import agenthub.monologue_agent.utils.prompts as prompts
-from opendevin.logger import opendevin_logger as logger
+from opendevin.core.exceptions import AgentEventTypeError
+from opendevin.core.logger import opendevin_logger as logger
+from opendevin.llm.llm import LLM
 
 
 class Monologue:

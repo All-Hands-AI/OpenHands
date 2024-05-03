@@ -1,12 +1,11 @@
-import os
-import json
 import atexit
+import json
+import os
 import uuid
 from typing import Dict, List
 
-from opendevin.schema.action import ActionType
-from opendevin.logger import opendevin_logger as logger
-
+from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema.action import ActionType
 
 CACHE_DIR = os.getenv('CACHE_DIR', 'cache')
 MSG_CACHE_FILE = os.path.join(CACHE_DIR, 'messages.json')
@@ -63,7 +62,10 @@ class MessageStack:
         cnt = 0
         for msg in self._messages[sid]:
             # Ignore assistant init message for now.
-            if 'action' in msg.payload and msg.payload['action'] in [ActionType.INIT, ActionType.CHANGE_TASK_STATE]:
+            if 'action' in msg.payload and msg.payload['action'] in [
+                ActionType.INIT,
+                ActionType.CHANGE_TASK_STATE,
+            ]:
                 continue
             cnt += 1
         return cnt
@@ -83,8 +85,7 @@ class MessageStack:
             with open(MSG_CACHE_FILE, 'r') as file:
                 data = json.load(file)
                 for sid, msgs in data.items():
-                    self._messages[sid] = [
-                        Message.from_dict(msg) for msg in msgs]
+                    self._messages[sid] = [Message.from_dict(msg) for msg in msgs]
         except FileNotFoundError:
             pass
         except json.decoder.JSONDecodeError:

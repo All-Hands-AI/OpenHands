@@ -1,5 +1,9 @@
 name: Run Unit Tests
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 on:
   push:
     branches:
@@ -16,22 +20,38 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install poetry via pipx
+        run: pipx install poetry
+
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+
+      - name: Install Python dependencies using Poetry
+        run: poetry install
+
       - name: Install & Start Docker
         run: |
           brew install colima docker
           colima start
-      - name: Install and configure Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: latest
+
+          # For testcontainers to find the Colima socket
+          # https://github.com/abiosoft/colima/blob/main/docs/FAQ.md#cannot-connect-to-the-docker-daemon-at-unixvarrundockersock-is-the-docker-daemon-running
+          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
+
       - name: Build Environment
         run: make build
+
       - name: Run Tests
-        run: poetry run pytest ./tests/unit
+        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   test-on-linux:
     name: Test on Linux
     runs-on: ubuntu-latest
@@ -41,17 +61,29 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+
+      - name: Install poetry via pipx
+        run: pipx install poetry
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Poetry
-        run: curl -sSL https://install.python-poetry.org | python3 -
+          cache: 'poetry'
+
+      - name: Install Python dependencies using Poetry
+        run: poetry install --without evaluation
+
       - name: Build Environment
         run: make build
-      - name: Run Tests
-        run: poetry run pytest ./tests/unit
 
+      - name: Run Tests
+        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   test_matrix_success:
     name: All Mac/Linux Tests Passed
     runs-on: ubuntu-latest
