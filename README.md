@@ -32,6 +32,7 @@
 <div align="center">
   <img src="./docs/static/img/logo.png" alt="Logo" width="200" height="200">
   <h1 align="center">OpenDevin: Code Less, Make More</h1>
+  <a href="https://opendevin.github.io/OpenDevin/"><img src="https://img.shields.io/badge/Documenation-OpenDevin-blue?logo=googledocs&logoColor=white&style=for-the-badge" alt="Check out the documentation"></a>
 </div>
 
 ## 🎯 Mission
