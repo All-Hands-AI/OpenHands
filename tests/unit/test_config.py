@@ -1,7 +1,9 @@
-import pytest
 import os
 
-from opendevin.config import compat_env_to_config, AppConfig, LLMConfig, AgentConfig
+import pytest
+
+from opendevin.config import AgentConfig, AppConfig, LLMConfig, load_from_env
+
 
 @pytest.fixture
 def setup_env():
@@ -23,7 +25,7 @@ def setup_env():
 
 def test_compat_env_to_config(setup_env):
     config = AppConfig()
-    compat_env_to_config(config, os.environ)
+    load_from_env(config, os.environ)
     assert config.workspace_base == '/Users/enyst/repos/devin/workspace'
     assert isinstance(config.llm, LLMConfig)
     assert config.llm.api_key == 'sk-proj-rgMV0...'

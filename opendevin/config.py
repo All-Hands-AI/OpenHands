@@ -14,12 +14,6 @@ from opendevin.utils import Singleton
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_CONTAINER_IMAGE = 'ghcr.io/opendevin/sandbox'
-if os.getenv('OPEN_DEVIN_BUILD_VERSION'):
-    DEFAULT_CONTAINER_IMAGE += ':' + (os.getenv('OPEN_DEVIN_BUILD_VERSION') or '')
-else:
-    DEFAULT_CONTAINER_IMAGE += ':main'
-
 load_dotenv()
 
 
@@ -68,8 +62,14 @@ class AppConfig(metaclass=Singleton):
     sandbox_timeout: int = 120
     github_token: str | None = None
 
+    def __post_init__(self):
+        """
+        Post-initialization hook to set some attributes based on other attributes.
+        """
+        pass
 
-def compat_env_to_config(config, env_or_toml_dict):
+
+def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
     """Reads the env-style vars and sets config attributes based on env vars or a config.toml dict.
     Compatibility with vars like LLM_BASE_URL, AGENT_MEMORY_ENABLED and others.
 
@@ -78,13 +78,13 @@ def compat_env_to_config(config, env_or_toml_dict):
         env_or_toml_dict: The environment variables or a config.toml dict.
     """
 
-    def get_optional_type(union_type):
+    def get_optional_type(union_type: UnionType):
         """Returns the non-None type from an Union."""
         types = get_args(union_type)
         return next((t for t in types if t is not type(None)), None)
 
     # helper function to set attributes based on env vars
-    def set_attr_from_env(sub_config, prefix=''):
+    def set_attr_from_env(sub_config: AppConfig | LLMConfig | AgentConfig, prefix=''):
         """Set attributes of a config dataclass based on environment variables."""
         for field_name, field_type in sub_config.__annotations__.items():
             # compute the expected env var name from the prefix and field name
@@ -111,41 +111,86 @@ def compat_env_to_config(config, env_or_toml_dict):
     # Start processing from the root of the config object
     set_attr_from_env(config)
 
-config = AppConfig()
+def load_from_toml(config: AppConfig):
+    """Load the config from the toml file. Supports both styles of config vars.
 
-# read the toml file
-config_str = ''
-if os.path.exists('config.toml'):
-    with open('config.toml', 'rb') as f:
-        config_str = f.read().decode('utf-8')
+    Args:
+        config: The AppConfig object to update attributes of.
+    """
 
-# load the toml config as a dict
-tomlConfig = toml.loads(config_str)
+    # read the config.toml file, if any
+    config_str = ''
+    if os.path.exists('config.toml'):
+        with open('config.toml', 'rb') as f:
+            config_str = f.read().decode('utf-8')
 
-try:
-    # let's see if new-style toml is used
-    llm_config = LLMConfig(**tomlConfig['llm'])
-    agent_config = AgentConfig(**tomlConfig['agent'])
+    # load the toml config as a dict
+    tomlConfig = toml.loads(config_str)
+
+    llm_config = config.llm
+    try:
+        # let's see if new-style toml is used
+        llm_config = LLMConfig(**tomlConfig['llm'])
+    except KeyError:
+        # use the old-style toml
+        load_from_env(config, tomlConfig)
+    except TypeError:
+        logger.error('Error parsing LLM config from toml, toml values have not been applied.', exc_info=False)
+
+    agent_config = config.agent
+    try:
+        agent_config = AgentConfig(**tomlConfig['agent'])
+    except (TypeError, KeyError):
+        logger.error('Error parsing Agent config from toml, toml values have not been applied.', exc_info=False)
+
     config = AppConfig(
         llm=llm_config,
         agent=agent_config,
         **{k: v for k, v in tomlConfig.items() if k not in ['llm', 'agent']}
     )
-except (TypeError, KeyError):
-    # if not, we'll use the old-style toml
-    compat_env_to_config(config, tomlConfig)
 
-# read the config from env
-compat_env_to_config(config, os.environ)
+def finalize_config(config: AppConfig):
+    """
+    More tweaks to the config after it's been loaded.
+    """
+
+    # In local there is no sandbox, the workspace will have the same pwd as the host
+    if config.sandbox_type == 'local':
+        # TODO why do we seem to need None for these paths?
+        config.workspace_mount_path_in_sandbox = config.workspace_mount_path
+
+    if config.workspace_mount_rewrite: # and not config.workspace_mount_path:
+     # TODO why do we need to check if workspace_mount_path is None?
+        base = config.workspace_base or os.getcwd()
+        parts = config.workspace_mount_rewrite.split(':')
+        config.workspace_mount_path = base.replace(parts[0], parts[1])
+
+    if config.llm.embedding_base_url is None:
+        config.llm.embedding_base_url = config.llm.base_url
+
+    if config.use_host_network and platform.system() == 'Darwin':
+        logger.warning(
+            'Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. '
+            'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'
+        )
+
+    # TODO why was the last workspace_mount_path line unreachable?
+
+    if config.cache_dir:
+        pathlib.Path(config.cache_dir).mkdir(parents=True, exist_ok=True)
 
 
-# In local there is no sandbox, the workspace will have the same pwd as the host
-if config.sandbox_type == 'local':
-    # TODO why do we seem to need None for these paths?
-    config.workspace_mount_path_in_sandbox = config.workspace_mount_path
+config = AppConfig()
+load_from_toml(config)
+load_from_env(config, os.environ)
+finalize_config(config)
 
 
+# Command line arguments
 def get_parser():
+    """
+    Get the parser for the command line arguments.
+    """
     parser = argparse.ArgumentParser(
         description='Run an agent with a specific task')
     parser.add_argument(
@@ -195,6 +240,9 @@ def get_parser():
 
 
 def parse_arguments():
+    """
+    Parse the command line arguments.
+    """
     parser = get_parser()
     args, _ = parser.parse_known_args()
     if args.directory:
@@ -204,31 +252,3 @@ def parse_arguments():
 
 
 args = parse_arguments()
-
-
-def finalize_config():
-    if config.workspace_mount_rewrite: # and not config.workspace_mount_path:
-        # TODO why do we need to check if workspace_mount_path is None?
-        base = config.workspace_base or os.getcwd()
-        parts = config.workspace_mount_rewrite.split(':')
-        config.workspace_mount_path = base.replace(parts[0], parts[1])
-
-    if config.llm.embedding_base_url is None:
-        config.llm.embedding_base_url = config.llm.base_url
-
-    USE_HOST_NETWORK = config.use_host_network
-    if USE_HOST_NETWORK and platform.system() == 'Darwin':
-        logger.warning(
-            'Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. '
-            'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'
-        )
-    config.use_host_network = USE_HOST_NETWORK
-
-    # TODO why was the last workspace_mount_path line unreachable?
-
-finalize_config()
-
-
-_cache_dir = config.cache_dir
-if _cache_dir:
-    pathlib.Path(_cache_dir).mkdir(parents=True, exist_ok=True)
