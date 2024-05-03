@@ -2,6 +2,7 @@ import sys
 
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
+from opendevin.runtime.plugins import JupyterRequirement, SWEAgentCommandsRequirement
 
 SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/xingyaoww/eval-swe-bench-all:lite-v1.0'
 
@@ -99,6 +100,9 @@ if __name__ == '__main__':
     }
 
     sandbox = SWEBenchSSHBox.get_box_for_instance(instance=EXAMPLE_INSTANCE)
+
+    # in actual eval, this will be initialized by the controller
+    sandbox.init_plugins([JupyterRequirement(), SWEAgentCommandsRequirement()])
 
     # PRE TEST
     exit_code, output = sandbox.execute('cd $REPO_PATH')

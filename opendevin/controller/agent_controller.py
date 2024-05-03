@@ -81,9 +81,7 @@ class AgentController:
         self.callbacks = callbacks
         self.fake_user_response_fn = fake_user_response_fn
         # Initialize agent-required plugins for sandbox (if any)
-        if not sandbox:
-            # only init plugins if sandbox is not provided
-            self.action_manager.init_sandbox_plugins(agent.sandbox_plugins)
+        self.action_manager.init_sandbox_plugins(agent.sandbox_plugins)
         # Initialize browser environment
         self.browser = BrowserEnv()
 
