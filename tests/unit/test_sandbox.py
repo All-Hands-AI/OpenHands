@@ -4,8 +4,8 @@ from unittest.mock import patch
 
 import pytest
 
-from opendevin import config
-from opendevin.sandbox.docker.ssh_box import DockerSSHBox
+from opendevin.core import config
+from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def test_ssh_box_run_as_devin(temp_dir):
             config.ConfigType.RUN_AS_DEVIN: 'true',
             config.ConfigType.SANDBOX_TYPE: 'ssh',
         },
-        clear=True
+        clear=True,
     ):
         ssh_box = DockerSSHBox()
 
@@ -61,7 +61,7 @@ def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
             config.ConfigType.RUN_AS_DEVIN: 'true',
             config.ConfigType.SANDBOX_TYPE: 'ssh',
         },
-        clear=True
+        clear=True,
     ):
         ssh_box = DockerSSHBox()
 
@@ -70,6 +70,7 @@ def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
         assert exit_code == 0, 'The exit code should be 0.'
         expected_lines = ['/workspacels -l', 'total 0']
         assert output.strip().splitlines() == expected_lines
+
 
 def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
     # get a temporary directory
@@ -80,7 +81,7 @@ def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
             config.ConfigType.RUN_AS_DEVIN: 'true',
             config.ConfigType.SANDBOX_TYPE: 'ssh',
         },
-        clear=True
+        clear=True,
     ):
         ssh_box = DockerSSHBox()
 
@@ -97,6 +98,7 @@ def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
         assert exit_code == 0, 'The exit code should be 0.'
         assert output.strip() == '/workspace/test'
 
+
 def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
     # get a temporary directory
     with patch.dict(
@@ -106,7 +108,7 @@ def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
             config.ConfigType.RUN_AS_DEVIN: 'true',
             config.ConfigType.SANDBOX_TYPE: 'ssh',
         },
-        clear=True
+        clear=True,
     ):
         ssh_box = DockerSSHBox()
 

@@ -13,10 +13,10 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from opendevin import config
-from opendevin.logger import llm_prompt_logger, llm_response_logger
-from opendevin.logger import opendevin_logger as logger
-from opendevin.schema import ConfigType
+from opendevin.core import config
+from opendevin.core.logger import llm_prompt_logger, llm_response_logger
+from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema import ConfigType
 
 DEFAULT_API_KEY = config.get(ConfigType.LLM_API_KEY)
 DEFAULT_BASE_URL = config.get(ConfigType.LLM_BASE_URL)

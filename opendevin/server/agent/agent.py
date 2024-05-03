@@ -1,24 +1,32 @@
 import asyncio
 from typing import Dict, List, Optional
 
-from opendevin import config
-from opendevin.action import (
+from opendevin.controller import AgentController
+from opendevin.controller.agent import Agent
+from opendevin.core import config
+from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema import ActionType, ConfigType, TaskState, TaskStateAction
+from opendevin.events.action import (
     Action,
     NullAction,
 )
-from opendevin.agent import Agent
-from opendevin.controller import AgentController
+from opendevin.events.observation import (
+    NullObservation,
+    Observation,
+    UserMessageObservation,
+)
 from opendevin.llm.llm import LLM
-from opendevin.logger import opendevin_logger as logger
-from opendevin.observation import NullObservation, Observation, UserMessageObservation
-from opendevin.schema import ActionType, ConfigType, TaskState, TaskStateAction
 from opendevin.server.session import session_manager
 
 # new task state to valid old task states
 VALID_TASK_STATE_MAP: Dict[TaskStateAction, List[TaskState]] = {
     TaskStateAction.PAUSE: [TaskState.RUNNING],
     TaskStateAction.RESUME: [TaskState.PAUSED],
-    TaskStateAction.STOP: [TaskState.RUNNING, TaskState.PAUSED],
+    TaskStateAction.STOP: [
+        TaskState.RUNNING,
+        TaskState.PAUSED,
+        TaskState.AWAITING_USER_INPUT,
+    ],
 }
 IGNORED_TASK_STATE_MAP: Dict[TaskStateAction, List[TaskState]] = {
     TaskStateAction.PAUSE: [
@@ -26,12 +34,14 @@ IGNORED_TASK_STATE_MAP: Dict[TaskStateAction, List[TaskState]] = {
         TaskState.PAUSED,
         TaskState.STOPPED,
         TaskState.FINISHED,
+        TaskState.AWAITING_USER_INPUT,
     ],
     TaskStateAction.RESUME: [
         TaskState.INIT,
         TaskState.RUNNING,
         TaskState.STOPPED,
         TaskState.FINISHED,
+        TaskState.AWAITING_USER_INPUT,
     ],
     TaskStateAction.STOP: [TaskState.INIT, TaskState.STOPPED, TaskState.FINISHED],
 }
@@ -184,7 +194,8 @@ class AgentUnit:
             await self.send_error('No agent started. Please wait a second...')
             return
         try:
-            assert not self.agent_task, 'Agent task already running'
+            if self.agent_task:
+                self.agent_task.cancel()
             self.agent_task = asyncio.create_task(
                 self.controller.start(task), name='agent start task loop'
             )
