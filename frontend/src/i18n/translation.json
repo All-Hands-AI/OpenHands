@@ -242,6 +242,9 @@
     "pt": "Salvar",
     "es": "Guardar"
   },
+  "CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE": {
+    "en": "We've changed some settings in the latest update. Take a minute to review."
+  },
   "LOAD_SESSION$MODAL_TITLE": {
     "en": "Unfinished Session Detected"
   },

@@ -10,6 +10,7 @@ import {
   Settings,
   getSettings,
   getSettingsDifference,
+  settingsAreUpToDate,
   maybeMigrateSettings,
   saveSettings,
 } from "#/services/settings";
@@ -26,6 +27,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const { t } = useTranslation();
   maybeMigrateSettings();
   const currentSettings = getSettings();
+  const settingsNeedUpdate = !settingsAreUpToDate();
 
   const [models, setModels] = React.useState<string[]>([]);
   const [agents, setAgents] = React.useState<string[]>([]);
@@ -99,7 +101,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       title={t(I18nKey.CONFIGURATION$MODAL_TITLE)}
-      subtitle={t(I18nKey.CONFIGURATION$MODAL_SUB_TITLE)}
+      subtitle={!settingsNeedUpdate ? t(I18nKey.CONFIGURATION$MODAL_SUB_TITLE) : t(I18nKey.CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE)}
       actions={[
         {
           label: t(I18nKey.CONFIGURATION$MODAL_SAVE_BUTTON_LABEL),
