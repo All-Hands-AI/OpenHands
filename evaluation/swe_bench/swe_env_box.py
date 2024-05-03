@@ -14,6 +14,7 @@ class SWEBenchSSHBox(DockerSSHBox):
         timeout: int = 120,
         sid: str | None = None,
         swe_instance_id: str | None = None,
+        swe_instance: dict | None = None,
     ):
         assert (
             container_image is not None
@@ -24,6 +25,7 @@ class SWEBenchSSHBox(DockerSSHBox):
         if swe_instance_id is None:
             raise ValueError('swe_instance_id must be provided!')
         self.swe_instance_id = swe_instance_id
+        self.swe_instance = swe_instance
 
         exit_code, output = self.execute('mv ~/.bashrc ~/.bashrc.bak')
         assert exit_code == 0, f'Failed to backup ~/.bashrc: {output}'
@@ -56,6 +58,7 @@ class SWEBenchSSHBox(DockerSSHBox):
             sandbox = cls(
                 container_image=SWE_BENCH_CONTAINER_IMAGE,
                 swe_instance_id=instance['instance_id'],
+                swe_instance=instance,
             )
         except Exception as e:
             logger.exception('Failed to start Docker container: %s', e)
@@ -81,6 +84,22 @@ class SWEBenchSSHBox(DockerSSHBox):
             logger.error(f'Failed to remove remote: {output}')
             sys.exit(1)
         return sandbox
+
+    def get_diff_patch(self):
+        # add everything to the index
+        exit_code, output = self.execute('git add --all')
+        if exit_code != 0:
+            logger.error('Failed to add everything to the index')
+            return ''
+
+        # get the git diff
+        exit_code, git_patch = self.execute(
+            f'git --no-pager diff {self.swe_instance["base_commit"]}'
+        )
+        if exit_code != 0:
+            logger.error('Failed to get git diff')
+            return ''
+        return git_patch
 
 
 if __name__ == '__main__':
