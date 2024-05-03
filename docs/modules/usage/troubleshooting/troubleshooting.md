@@ -5,7 +5,7 @@ sidebar_position: 5
 # 🚧 Troubleshooting
 
 There are some error messages that get reported over and over by users.
-We'll try and make the install process easier, and to make these error messages
+We'll try to make the install process easier, and to make these error messages
 better in the future. But for now, you can look for your error message below,
 and see if there are any workaround.
 
