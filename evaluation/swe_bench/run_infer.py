@@ -10,15 +10,31 @@ from tqdm import tqdm
 from evaluation.swe_bench.swe_env_box import SWEBenchSSHBox
 from opendevin.controller.state.state import State
 from opendevin.core.config import args
+from opendevin.core.logger import get_file_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
+from opendevin.events.observation import UserMessageObservation
 
-AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
-    'CodeActAgent': lambda state: (
+
+def codeact_user_response(state: State) -> str:
+    if state.history:
+        user_msg_obs = [
+            obs for _, obs in state.history if isinstance(obs, UserMessageObservation)
+        ]
+        if len(user_msg_obs) >= 3:
+            # let the agent know that it can give up when it has tried 3 times
+            return 'Please continue working on the task on whatever approach you think is suitable. If you think you have modified the code in a way that fixes the issue OR you want to give up, please run the following command: <execute_bash> exit </execute_bash>.\n'
+    return (
         'Please continue working on the task on whatever approach you think is suitable. '
         'If you think you have modified the code in a way that fixes the issue, please run the following command: <execute_bash> exit </execute_bash>.\n'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK. '
     )
+
+
+AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {'CodeActAgent': codeact_user_response}
+
+AGENT_CLS_TO_INST_SUFFIX = {
+    'CodeActAgent': 'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n'
 }
 
 if __name__ == '__main__':
@@ -39,6 +55,9 @@ if __name__ == '__main__':
         agent_class,
         model_name + '_maxiter_' + str(max_iterations),
     )
+
+    # logger save to eval_output_dir/infer.log
+    logger.addHandler(get_file_handler(eval_output_dir))
     pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
     logger.info(f'Using evaluation output directory: {eval_output_dir}')
 
@@ -110,8 +129,8 @@ if __name__ == '__main__':
         instruction += (
             'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK. \n'
             'You should ONLY interact with the environment provided to you.\n'
-            'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n'
         )
+        instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
         # Run the agent
         state: State = asyncio.run(
