@@ -1,13 +1,16 @@
 from pydantic import BaseModel, Field
 
-__all__ = [
-    'ActionType'
-]
+__all__ = ['ActionType']
 
 
 class ActionTypeSchema(BaseModel):
     INIT: str = Field(default='initialize')
     """Initializes the agent. Only sent by client.
+    """
+
+    RECONNECT: str = Field(default='reconnect')
+    """Reconnects to the already initialized agent. Only try to reconnect.
+    If the agent is not initialized, it behaves like INIT.
     """
 
     USER_MESSAGE: str = Field(default='user_message')

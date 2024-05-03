@@ -92,6 +92,11 @@ class AgentUnit:
         match action:
             case ActionType.INIT:
                 await self.create_controller(data)
+            case ActionType.RECONNECT:
+                if self.controller is None:
+                    await self.create_controller(data)
+                    return
+                await self.init_done()
             case ActionType.START:
                 await self.start_task(data)
             case ActionType.USER_MESSAGE:

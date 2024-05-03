@@ -61,8 +61,11 @@ class MessageStack:
             return 0
         cnt = 0
         for msg in self._messages[sid]:
-            # Ignore assistant init message for now.
-            if 'action' in msg.payload and msg.payload['action'] in [ActionType.INIT, ActionType.CHANGE_TASK_STATE]:
+            if 'action' in msg.payload and msg.payload['action'] in [
+                ActionType.INIT,
+                ActionType.RECONNECT,
+                ActionType.CHANGE_TASK_STATE,
+            ]:
                 continue
             cnt += 1
         return cnt
@@ -82,8 +85,7 @@ class MessageStack:
             with open(MSG_CACHE_FILE, 'r') as file:
                 data = json.load(file)
                 for sid, msgs in data.items():
-                    self._messages[sid] = [
-                        Message.from_dict(msg) for msg in msgs]
+                    self._messages[sid] = [Message.from_dict(msg) for msg in msgs]
         except FileNotFoundError:
             pass
         except json.decoder.JSONDecodeError:

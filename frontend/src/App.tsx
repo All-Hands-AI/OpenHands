@@ -15,7 +15,7 @@ import "./App.css";
 import AgentControlBar from "./components/AgentControlBar";
 import AgentStatusBar from "./components/AgentStatusBar";
 import Terminal from "./components/terminal/Terminal";
-import { initializeAgent } from "./services/agent";
+import { reconnectAgent } from "./services/agent";
 import { getSettings } from "./services/settings";
 
 interface Props {
@@ -73,7 +73,7 @@ function App(): JSX.Element {
     if (initOnce) return;
     initOnce = true;
 
-    initializeAgent(getSettings());
+    reconnectAgent(getSettings());
 
     Socket.registerCallback("open", [getMsgTotal]);
 

@@ -18,8 +18,8 @@ from opendevin.logger import opendevin_logger as logger
 class BrowserException(Exception):
     pass
 
-class BrowserEnv:
 
+class BrowserEnv:
     def __init__(self):
         self.html_text_converter = html2text.HTML2Text()
         # ignore links and images
@@ -32,7 +32,9 @@ class BrowserEnv:
         # Initialize browser environment process
         multiprocessing.set_start_method('spawn', force=True)
         self.browser_side, self.agent_side = multiprocessing.Pipe()
-        self.process = multiprocessing.Process(target=self.browser_process,)
+        self.process = multiprocessing.Process(
+            target=self.browser_process,
+        )
         logger.info('Starting browser env...')
         self.process.start()
         atexit.register(self.close)
@@ -50,7 +52,7 @@ class BrowserEnv:
         while True:
             try:
                 if self.browser_side.poll(timeout=0.01):
-                    unique_request_id , action_data = self.browser_side.recv()
+                    unique_request_id, action_data = self.browser_side.recv()
                     # shutdown the browser environment
                     if unique_request_id == 'SHUTDOWN':
                         env.close()

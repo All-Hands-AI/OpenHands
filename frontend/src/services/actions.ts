@@ -17,6 +17,9 @@ const messageActions = {
   [ActionType.INIT]: () => {
     store.dispatch(setInitialized(true));
   },
+  [ActionType.RECONNECT]: () => {
+    store.dispatch(setInitialized(true));
+  },
   [ActionType.BROWSE]: (message: ActionMessage) => {
     const { url, screenshotSrc } = message.args;
     store.dispatch(setUrl(url));

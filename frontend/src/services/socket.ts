@@ -92,26 +92,6 @@ class Socket {
     }
   }
 
-  static addEventListener(
-    event: string,
-    callback: (e: MessageEvent) => void,
-  ): void {
-    Socket._socket?.addEventListener(
-      event as keyof WebSocketEventMap,
-      callback as (
-        this: WebSocket,
-        ev: WebSocketEventMap[keyof WebSocketEventMap],
-      ) => never,
-    );
-  }
-
-  static removeEventListener(
-    event: string,
-    listener: (e: Event) => void,
-  ): void {
-    Socket._socket?.removeEventListener(event, listener);
-  }
-
   static registerCallback<K extends keyof WebSocketEventMap>(
     event: K,
     callbacks: ((data: WebSocketEventMap[K]) => void)[],

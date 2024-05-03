@@ -80,7 +80,6 @@ class AgentController:
         # Initialize browser environment
         self.browser = BrowserEnv()
 
-
         if isinstance(agent, CodeActAgent) and not isinstance(
             self.action_manager.sandbox, DockerSSHBox
         ):

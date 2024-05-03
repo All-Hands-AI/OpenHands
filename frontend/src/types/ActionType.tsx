@@ -2,6 +2,10 @@ enum ActionType {
   // Initializes the agent. Only sent by client.
   INIT = "initialize",
 
+  // Reconnects to the already initialized agent. Only try to reconnect.
+  // If the agent is not initialized, it behaves like INIT.
+  RECONNECT = "reconnect",
+
   // Sends a message from the user
   USER_MESSAGE = "user_message",
 
