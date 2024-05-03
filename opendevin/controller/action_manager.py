@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from opendevin.core import config
 from opendevin.core.schema import ConfigType
@@ -27,22 +27,28 @@ class ActionManager:
     def __init__(
         self,
         sid: str = 'default',
+        sandbox: Optional[Sandbox] = None,
     ):
-        sandbox_type = config.get(ConfigType.SANDBOX_TYPE).lower()
-        if sandbox_type == 'exec':
-            self.sandbox = DockerExecBox(
-                sid=(sid or 'default'), timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
-            )
-        elif sandbox_type == 'local':
-            self.sandbox = LocalBox(timeout=config.get(ConfigType.SANDBOX_TIMEOUT))
-        elif sandbox_type == 'ssh':
-            self.sandbox = DockerSSHBox(
-                sid=(sid or 'default'), timeout=config.get(ConfigType.SANDBOX_TIMEOUT)
-            )
-        elif sandbox_type == 'e2b':
-            self.sandbox = E2BBox(timeout=config.get(ConfigType.SANDBOX_TIMEOUT))
+        if sandbox is not None:
+            self.sandbox = sandbox
         else:
-            raise ValueError(f'Invalid sandbox type: {sandbox_type}')
+            sandbox_type = config.get(ConfigType.SANDBOX_TYPE).lower()
+            if sandbox_type == 'exec':
+                self.sandbox = DockerExecBox(
+                    sid=(sid or 'default'),
+                    timeout=config.get(ConfigType.SANDBOX_TIMEOUT),
+                )
+            elif sandbox_type == 'local':
+                self.sandbox = LocalBox(timeout=config.get(ConfigType.SANDBOX_TIMEOUT))
+            elif sandbox_type == 'ssh':
+                self.sandbox = DockerSSHBox(
+                    sid=(sid or 'default'),
+                    timeout=config.get(ConfigType.SANDBOX_TIMEOUT),
+                )
+            elif sandbox_type == 'e2b':
+                self.sandbox = E2BBox(timeout=config.get(ConfigType.SANDBOX_TIMEOUT))
+            else:
+                raise ValueError(f'Invalid sandbox type: {sandbox_type}')
 
     def init_sandbox_plugins(self, plugins: List[PluginRequirement]):
         self.sandbox.init_plugins(plugins)
