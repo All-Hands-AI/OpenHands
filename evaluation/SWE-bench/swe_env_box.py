@@ -1,46 +1,41 @@
 import sys
-from opendevin.logger import opendevin_logger as logger
-from opendevin.sandbox.docker.ssh_box import DockerSSHBox, SANDBOX_WORKSPACE_DIR
-from opendevin import config
-from opendevin.logger import opendevin_logger as logger
-from opendevin.sandbox.sandbox import Sandbox
-from opendevin.sandbox.process import Process
-from opendevin.sandbox.docker.process import DockerProcess
-from opendevin.sandbox.plugins import JupyterRequirement, SWEAgentCommandsRequirement
-from opendevin.schema import ConfigType
-from opendevin.utils import find_available_tcp_port
-from opendevin.exceptions import SandboxInvalidBackgroundCommandError
+
+from opendevin.core.logger import opendevin_logger as logger
+from opendevin.runtime.docker.ssh_box import DockerSSHBox
+
 
 class SWEBenchSSHBox(DockerSSHBox):
-
     def __init__(
         self,
-        container_image: str | None = None,
+        container_image: str,
         timeout: int = 120,
         sid: str | None = None,
         swe_instance_id: str | None = None,
     ):
-        if container_image is None:
-            container_image = config.get(ConfigType.SWEBENCH_CONTAINER_IMAGE)
-        super().__init__(container_image, timeout, sid)
+        assert (
+            container_image is not None
+        ), 'container_image is required for SWEBenchSSHBox!'
+        # Need to run as root to use SWEBench container
+        super().__init__(container_image, timeout, sid, run_as_devin=False)
+
         if swe_instance_id is None:
             raise ValueError('swe_instance_id must be provided!')
         self.swe_instance_id = swe_instance_id
-        # self.eval_utils_dir = eval_utils_dir
-        # self.eval_utils_read_only = eval_utils_read_only
 
-        exit_code, output = self.execute(f"echo 'export SWE_INSTANCE_ID={self.swe_instance_id}' >> ~/.bashrc")
-        logger.info('exit code: %d', exit_code)
-        logger.info(output)
+        exit_code, output = self.execute('mv ~/.bashrc ~/.bashrc.bak')
+        assert exit_code == 0, f'Failed to backup ~/.bashrc: {output}'
+        exit_code, output = self.execute(
+            f"echo 'export SWE_INSTANCE_ID={self.swe_instance_id}' >> ~/.bashrc"
+        )
+        assert exit_code == 0, f'Failed to set SWE_INSTANCE_ID in ~/.bashrc: {output}'
 
-        exit_code, output = self.execute(f'{SANDBOX_WORKSPACE_DIR}/scripts/swe_entry.sh')
-        logger.info('exit code: %d', exit_code)
-        logger.info(output)
+        # exit_code, output = self.execute(f'{SANDBOX_WORKSPACE_DIR}/scripts/swe_entry.sh')
+        # logger.info('exit code: %d', exit_code)
+        # logger.info(output)
 
-        # source the bashrc
+        # # source the bashrc
         exit_code, output = self.execute('source ~/.bashrc')
-        if exit_code != 0:
-            raise RuntimeError(f'Failed to source ~/.bashrc with exit code {exit_code} and output {output}')
+        assert exit_code == 0, f'Failed to source ~/.bashrc: {output}'
         logger.info('Sourced ~/.bashrc successfully')
 
     @property
@@ -48,27 +43,24 @@ class SWEBenchSSHBox(DockerSSHBox):
         return {
             **super().volumes,
             # self.eval_utils_dir: {'bind': '/swe_util', 'mode': 'ro' if self.eval_utils_read_only else 'rw'},
-            '/shared/bowen/codellm/swe/OD-SWE-bench': {'bind': '/OD-SWE-bench', 'mode': 'rw'},
+            # '/shared/bowen/codellm/swe/OD-SWE-bench': {'bind': '/OD-SWE-bench', 'mode': 'rw'},
         }
 
 
 if __name__ == '__main__':
-    EVAL_WORKSPACE = '/home/xingyaow/OpenDevin/evaluation/SWE-bench/eval_workspace'
-    od_swe_bench_dir = f'{EVAL_WORKSPACE}/OD-SWE-bench'
-    conda_envs_dir = f'{EVAL_WORKSPACE}/conda_envs'
-
+    CONTAINER_IMAGE = 'ghcr.io/xingyaoww/eval-swe-bench-all:lite-v1.0'
     try:
         ssh_box = SWEBenchSSHBox(
-            swe_instance_id='django__django-11099',
-            # od_swe_bench_dir='/shared/bowen/codellm/swe/OD-SWE-bench',
-            # conda_envs_dir='/shared/bowen/codellm/swe/temp/conda_envs'
+            container_image=CONTAINER_IMAGE, swe_instance_id='django__django-11099'
         )
     except Exception as e:
         logger.exception('Failed to start Docker container: %s', e)
         sys.exit(1)
+    # ssh_box.init_plugins([JupyterRequirement(), SWEAgentCommandsRequirement()])
 
     logger.info(
-        "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
+        "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit."
+    )
 
     bg_cmd = ssh_box.execute_in_background(
         "while true; do echo 'dot ' && sleep 10; done"
