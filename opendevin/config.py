@@ -3,7 +3,9 @@ import logging
 import os
 import pathlib
 import platform
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from types import UnionType
+from typing import Union, get_args, get_origin
 
 import toml
 from dotenv import load_dotenv
@@ -47,8 +49,8 @@ class AgentConfig:
 
 @dataclass
 class AppConfig:
-    llm: LLMConfig = LLMConfig()
-    agent: AgentConfig = AgentConfig()
+    llm: LLMConfig = field(default_factory=LLMConfig)
+    agent: AgentConfig = field(default_factory=AgentConfig)
     workspace_base: str = os.getcwd()
     workspace_mount_path: str = os.path.abspath(workspace_base)
     workspace_mount_path_in_sandbox: str = '/workspace'
@@ -67,44 +69,57 @@ class AppConfig:
     github_token: str | None = None
 
 
+# FIXME Compatibility
+def compat_env_to_config(config, env_or_toml_dict):
+
+    def get_optional_type(union_type):
+        """Returns the non-None type from an Union."""
+        types = get_args(union_type)
+        return next((t for t in types if t is not type(None)), None)
+
+    # helper function to set attributes based on env vars
+    def set_attr_from_env(sub_config, prefix=''):
+        """Set attributes of a config dataclass based on environment variables."""
+        for field_name, field_type in sub_config.__annotations__.items():
+            # compute the expected environment variable name from the prefix and field name
+            env_var_name = (prefix + field_name).upper()
+            
+            if hasattr(field_type, '__annotations__'):  # Check if this is a nested data class
+                # nested dataclass
+                nested_sub_config = getattr(sub_config, field_name)
+                set_attr_from_env(nested_sub_config, prefix=field_name + '_')
+            elif env_var_name in env_or_toml_dict:
+                # convert the env var to the correct type and set it
+                value = env_or_toml_dict[env_var_name]
+                try:
+                    # if it's an optional type, get the non-None type
+                    if get_origin(field_type) is UnionType:
+                        field_type = get_optional_type(field_type)
+                    
+                    # Attempt to cast the environment variable to the designated type
+                    cast_value = field_type(value)
+                    setattr(sub_config, field_name, cast_value)
+                except (ValueError, TypeError) as e:
+                    # Log an error if casting fails
+                    logger.error(f"Error setting env var {env_var_name}: check that the value is of the right type")
+
+    # Start processing from the root of the config object
+    set_attr_from_env(config)
+
+# FIXME make it a singleton
+config = AppConfig()
+
+# read the toml file
 config_str = ''
 if os.path.exists('config.toml'):
     with open('config.toml', 'rb') as f:
         config_str = f.read().decode('utf-8')
 
-# Read config from environment variables and config.toml
-def read_config(config, tomlConfig):
-    for k, v in config.__annotations__.items():
-        if isinstance(v, type) and issubclass(v, (LLMConfig, AgentConfig)):
-            read_config(getattr(config, k), tomlConfig.get(k, None))
-        else:
-            if k in os.environ:
-                setattr(config, k, os.environ[k])
-            elif k in tomlConfig:
-                setattr(config, k, tomlConfig[k])
-
-
+# load the toml config as a dict
 tomlConfig = toml.loads(config_str)
-config = AppConfig()
-read_config(config, tomlConfig)
 
-
-# TODO Compatibility
-def compat_env_to_config(config, env):
-    for k, v in env.items():
-        if k.isupper():
-            parts = k.lower().split('_')
-            if len(parts) > 1:
-                sub_dict = config
-                for part in parts[:-1]:
-                    if hasattr(sub_dict, part):
-                        sub_dict = getattr(sub_dict, part)
-                    else:
-                        break
-                else:
-                    setattr(sub_dict, parts[-1], v)
-
-
+# set the config object based on toml and env
+compat_env_to_config(config, tomlConfig)
 compat_env_to_config(config, os.environ)
 
 
@@ -135,7 +150,7 @@ def get_parser():
     parser.add_argument(
         '-c',
         '--agent-cls',
-        default=config.agent,
+        default=config.agent.name,
         type=str,
         help='The agent class to use',
     )
