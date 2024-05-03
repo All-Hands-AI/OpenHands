@@ -14,6 +14,8 @@ fi
 # but the group id is not changed, so the user can still access everything under /app
 useradd -l -m -u $SANDBOX_USER_ID -s /bin/bash enduser
 usermod -aG app enduser
+mkdir -p /home/enduser/.cache/ms-playwright/
+mv /home/opendevin/.cache/ms-playwright/ /home/enduser/.cache/
 
 # get the user group of /var/run/docker.sock and set opendevin to that group
 DOCKER_SOCKET_GID=$(stat -c '%g' /var/run/docker.sock)
