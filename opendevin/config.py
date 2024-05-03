@@ -5,12 +5,10 @@ import pathlib
 import platform
 from dataclasses import dataclass, field
 from types import UnionType
-from typing import Union, get_args, get_origin
+from typing import get_args, get_origin
 
 import toml
 from dotenv import load_dotenv
-
-from opendevin.schema import ConfigType
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +81,7 @@ def compat_env_to_config(config, env_or_toml_dict):
         for field_name, field_type in sub_config.__annotations__.items():
             # compute the expected environment variable name from the prefix and field name
             env_var_name = (prefix + field_name).upper()
-            
+
             if hasattr(field_type, '__annotations__'):  # Check if this is a nested data class
                 # nested dataclass
                 nested_sub_config = getattr(sub_config, field_name)
@@ -95,13 +93,13 @@ def compat_env_to_config(config, env_or_toml_dict):
                     # if it's an optional type, get the non-None type
                     if get_origin(field_type) is UnionType:
                         field_type = get_optional_type(field_type)
-                    
+
                     # Attempt to cast the environment variable to the designated type
                     cast_value = field_type(value)
                     setattr(sub_config, field_name, cast_value)
-                except (ValueError, TypeError) as e:
+                except (ValueError, TypeError):
                     # Log an error if casting fails
-                    logger.error(f"Error setting env var {env_var_name}: check that the value is of the right type")
+                    logger.error(f'Error setting env var {env_var_name}={value}: check that the value is of the right type')
 
     # Start processing from the root of the config object
     set_attr_from_env(config)
