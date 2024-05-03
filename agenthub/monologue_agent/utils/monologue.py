@@ -31,14 +31,23 @@ class Monologue:
             raise AgentEventTypeError()
         self.thoughts.append(t)
 
-    def get_thoughts(self):
+    def get_thoughts(self, task: str, iteration: int):
         """
         Get the current thoughts of the agent.
+        Add a thought to indicate, if start a new task.
+
+        Parameters:
+        - task (str): The initial goal statement provided by the user
+        - iteration (int): The step number of the current task
 
         Returns:
         - List: The list of thoughts that the agent has.
         """
-        return self.thoughts
+        if iteration != 0:
+            return self.thoughts
+        else:
+            self.thoughts.append(prompts.start_task(task))
+            return self.thoughts
 
     def get_total_length(self):
         """

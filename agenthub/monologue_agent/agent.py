@@ -231,7 +231,7 @@ class MonologueAgent(Agent):
 
         prompt = prompts.get_request_action_prompt(
             state.plan.main_goal,
-            self.monologue.get_thoughts(),
+            self.monologue.get_thoughts(state.plan.main_goal, state.iteration),
             state.background_commands_obs,
         )
         messages = [{'content': prompt, 'role': 'user'}]
@@ -261,4 +261,4 @@ class MonologueAgent(Agent):
         super().reset()
 
         # Reset the initial monologue and memory
-        self._initialized = False
+        # self._initialized = False
