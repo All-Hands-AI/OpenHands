@@ -4,6 +4,7 @@ from typing import List, Mapping
 from agenthub.codeact_agent.prompt import EXAMPLES, SYSTEM_MESSAGE
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
     AgentEchoAction,
@@ -19,7 +20,7 @@ from opendevin.events.observation import (
     IPythonRunCellObservation,
     UserMessageObservation,
 )
-from opendevin.llm.llm import LLM
+from opendevin.llm.llm import LLM, completion_cost
 from opendevin.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
@@ -116,6 +117,7 @@ class CodeActAgent(Agent):
         """
         super().__init__(llm)
         self.messages: List[Mapping[str, str]] = []
+        self.cost_accumulator = 0
 
     def step(self, state: State) -> Action:
         """
@@ -191,6 +193,11 @@ class CodeActAgent(Agent):
                 '</execute_bash>',
             ],
             temperature=0.0,
+        )
+        cur_cost = completion_cost(completion_response=response)
+        self.cost_accumulator += cur_cost
+        logger.info(
+            f'Cost: {cur_cost} USD | Accumulated cost: {self.cost_accumulator} USD'
         )
         action_str: str = parse_response(response)
         state.num_of_chars += sum(

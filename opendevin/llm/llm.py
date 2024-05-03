@@ -1,6 +1,7 @@
 from functools import partial
 
 from litellm import completion as litellm_completion
+from litellm import completion_cost
 from litellm.exceptions import (
     APIConnectionError,
     RateLimitError,
@@ -17,6 +18,8 @@ from opendevin.core import config
 from opendevin.core.logger import llm_prompt_logger, llm_response_logger
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ConfigType
+
+__all__ = ['LLM', 'completion_cost']
 
 DEFAULT_API_KEY = config.get(ConfigType.LLM_API_KEY)
 DEFAULT_BASE_URL = config.get(ConfigType.LLM_BASE_URL)
