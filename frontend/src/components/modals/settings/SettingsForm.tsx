@@ -1,12 +1,10 @@
 import { Input, useDisclosure } from "@nextui-org/react";
-import React, { useEffect } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { useSelector } from "react-redux";
 import { AvailableLanguages } from "../../../i18n";
 import { I18nKey } from "../../../i18n/declaration";
 import { RootState } from "../../../store";
-import AgentTaskState from "../../../types/AgentTaskState";
 import { AutocompleteCombobox } from "./AutocompleteCombobox";
 import { Settings } from "#/services/settings";
 
@@ -14,6 +12,7 @@ interface SettingsFormProps {
   settings: Settings;
   models: string[];
   agents: string[];
+  disabled: boolean;
 
   onModelChange: (model: string) => void;
   onAPIKeyChange: (apiKey: string) => void;
@@ -25,27 +24,14 @@ function SettingsForm({
   settings,
   models,
   agents,
+  disabled,
   onModelChange,
   onAPIKeyChange,
   onAgentChange,
   onLanguageChange,
 }: SettingsFormProps) {
   const { t } = useTranslation();
-  const { curTaskState } = useSelector((state: RootState) => state.agent);
-  const [disabled, setDisabled] = React.useState<boolean>(false);
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
-
-  useEffect(() => {
-    if (
-      curTaskState === AgentTaskState.RUNNING ||
-      curTaskState === AgentTaskState.PAUSED ||
-      curTaskState === AgentTaskState.AWAITING_USER_INPUT
-    ) {
-      setDisabled(true);
-    } else {
-      setDisabled(false);
-    }
-  }, [curTaskState, setDisabled]);
 
   return (
     <>
@@ -70,7 +56,7 @@ function SettingsForm({
       />
       <Input
         label="API Key"
-        disabled={disabled}
+        isDisabled={disabled}
         aria-label="apikey"
         data-testid="apikey"
         placeholder={t(I18nKey.SETTINGS$API_KEY_PLACEHOLDER)}

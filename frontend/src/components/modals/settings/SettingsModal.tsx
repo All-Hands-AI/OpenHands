@@ -1,11 +1,13 @@
 import { Spinner } from "@nextui-org/react";
 import i18next from "i18next";
-import React from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { fetchAgents, fetchModels } from "#/api";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import { initializeAgent } from "#/services/agent";
+import AgentTaskState from "../../../types/AgentTaskState";
 import {
   Settings,
   getSettings,
@@ -27,13 +29,22 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const { t } = useTranslation();
   maybeMigrateSettings();
   const currentSettings = getSettings();
-  const settingsNeedUpdate = !settingsAreUpToDate();
 
   const [models, setModels] = React.useState<string[]>([]);
   const [agents, setAgents] = React.useState<string[]>([]);
   const [settings, setSettings] = React.useState<Settings>(currentSettings);
-
+  const [agentIsRunning, setAgentIsRunning] = React.useState<boolean>(false);
   const [loading, setLoading] = React.useState(true);
+  const { curTaskState } = useSelector((state: RootState) => state.agent);
+
+  useEffect(() => {
+    setAgentIsRunning(
+      curTaskState === AgentTaskState.RUNNING ||
+      curTaskState === AgentTaskState.PAUSED ||
+      curTaskState === AgentTaskState.AWAITING_USER_INPUT
+    )
+  }, [curTaskState]);
+
 
   React.useEffect(() => {
     (async () => {
@@ -96,12 +107,20 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     );
   };
 
+  let subtitle = t(I18nKey.CONFIGURATION$MODAL_SUB_TITLE);
+  if (loading) {
+    subtitle = t(I18nKey.CONFIGURATION$AGENT_LOADING);
+  } else if (agentIsRunning) {
+    subtitle = t(I18nKey.CONFIGURATION$AGENT_RUNNING);
+  } else if (!settingsAreUpToDate()) {
+    subtitle = t(I18nKey.CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE);
+  }
   return (
     <BaseModal
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       title={t(I18nKey.CONFIGURATION$MODAL_TITLE)}
-      subtitle={!settingsNeedUpdate ? t(I18nKey.CONFIGURATION$MODAL_SUB_TITLE) : t(I18nKey.CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE)}
+      subtitle={subtitle}
       actions={[
         {
           label: t(I18nKey.CONFIGURATION$MODAL_SAVE_BUTTON_LABEL),
@@ -114,6 +133,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
           action: () => {
             setSettings(currentSettings); // reset settings from any changes
           },
+          isDisabled: !settingsAreUpToDate(),
           closeAfterAction: true,
           className: "bg-neutral-500 rounded-lg",
         },
@@ -122,6 +142,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
       {loading && <Spinner />}
       {!loading && (
         <SettingsForm
+          disabled={agentIsRunning}
           settings={settings}
           models={models}
           agents={agents}
