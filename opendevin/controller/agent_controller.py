@@ -33,7 +33,7 @@ from opendevin.events.observation import (
     Observation,
     UserMessageObservation,
 )
-from opendevin.events.stream import EventStream
+from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.runtime import DockerSSHBox
 from opendevin.runtime.browser.browser_env import BrowserEnv
 
@@ -73,7 +73,9 @@ class AgentController:
         self.id = sid
         self.agent = agent
         self.event_stream = event_stream
-        self.event_stream.subscribe('agent_controller', self.on_event)
+        self.event_stream.subscribe(
+            EventStreamSubscriber.AGENT_CONTROLLER, self.on_event
+        )
         self.max_iterations = max_iterations
         self.action_manager = ActionManager(self.id)
         self.max_chars = max_chars
@@ -94,7 +96,7 @@ class AgentController:
     async def close(self):
         if self.agent_task is not None:
             self.agent_task.cancel()
-        self.event_stream.unsubscribe('agent_controller')
+        self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
         self.action_manager.sandbox.close()
         await self.set_agent_state_to(AgentState.STOPPED)
 
@@ -125,8 +127,8 @@ class AgentController:
             )
         self.state.history.append((action, observation))
         self.state.updated_info.append((action, observation))
-        await self.event_stream.add_event(action, 'agent')
-        await self.event_stream.add_event(observation, 'agent')
+        await self.event_stream.add_event(action, EventSource.AGENT)
+        await self.event_stream.add_event(observation, EventSource.AGENT)
 
     async def _run(self):
         if self.state is None:
@@ -208,7 +210,7 @@ class AgentController:
             await self.reset_task()
 
         await self.event_stream.add_event(
-            AgentStateChangedObservation('', self._agent_state), 'agent'
+            AgentStateChangedObservation('', self._agent_state), EventSource.AGENT
         )
 
     def get_agent_state(self):

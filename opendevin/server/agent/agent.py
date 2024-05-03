@@ -14,7 +14,7 @@ from opendevin.events.event import Event
 from opendevin.events.observation import (
     NullObservation,
 )
-from opendevin.events.stream import EventStream
+from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.llm.llm import LLM
 from opendevin.server.session import session_manager
 
@@ -36,7 +36,7 @@ class AgentUnit:
         """Initializes a new instance of the Session class."""
         self.sid = sid
         self.event_stream = EventStream()
-        self.event_stream.subscribe('server', self.on_event)
+        self.event_stream.subscribe(EventStreamSubscriber.SERVER, self.on_event)
 
     async def send_error(self, message):
         """Sends an error message to the client.
@@ -71,7 +71,7 @@ class AgentUnit:
         if action == ActionType.INIT:
             await self.create_controller(data)
             await self.event_stream.add_event(
-                ChangeAgentStateAction(AgentState.INIT), 'user'
+                ChangeAgentStateAction(AgentState.INIT), EventSource.USER
             )
             return
         elif action == ActionType.START:
@@ -81,14 +81,14 @@ class AgentUnit:
             task = data['args']['task']
             await self.controller.setup_task(task)
             await self.event_stream.add_event(
-                ChangeAgentStateAction(agent_state=AgentState.RUNNING), 'user'
+                ChangeAgentStateAction(agent_state=AgentState.RUNNING), EventSource.USER
             )
             return
 
         action_dict = data.copy()
         action_dict['action'] = action
         action_obj = action_from_dict(action_dict)
-        await self.event_stream.add_event(action_obj, 'user')
+        await self.event_stream.add_event(action_obj, EventSource.USER)
 
     def get_arg_or_default(self, _args: dict, key: ConfigType) -> str:
         """Gets an argument from the args dictionary or the default value.

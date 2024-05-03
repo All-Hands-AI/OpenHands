@@ -8,7 +8,7 @@ from opendevin.controller.agent import Agent
 from opendevin.core.config import args
 from opendevin.core.schema import AgentState
 from opendevin.events.action import ChangeAgentStateAction
-from opendevin.events.stream import EventStream
+from opendevin.events.stream import EventSource, EventStream
 from opendevin.llm.llm import LLM
 
 
@@ -54,7 +54,7 @@ async def main(task_str: str = ''):
 
     await controller.setup_task(task)
     await event_stream.add_event(
-        ChangeAgentStateAction(agent_state=AgentState.RUNNING), 'user'
+        ChangeAgentStateAction(agent_state=AgentState.RUNNING), EventSource.USER
     )
     while controller.get_agent_state() == AgentState.RUNNING:
         await asyncio.sleep(0.001)  # Give back control for a tick, so the agent can run
