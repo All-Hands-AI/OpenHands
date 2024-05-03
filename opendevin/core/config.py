@@ -46,7 +46,7 @@ DEFAULT_CONFIG: dict = {
     # we cannot easily count number of tokens, but we can count characters.
     # Assuming 5 characters per token, 5 million is a reasonable default limit.
     ConfigType.MAX_CHARS: 5_000_000,
-    ConfigType.AGENT: 'MonologueAgent',
+    ConfigType.AGENT: 'CodeActAgent',
     ConfigType.E2B_API_KEY: '',
     ConfigType.SANDBOX_TYPE: 'ssh',  # Can be 'ssh', 'exec', or 'e2b'
     ConfigType.USE_HOST_NETWORK: 'false',
