@@ -26,12 +26,14 @@ const IgnoreTaskStateMap: { [k: string]: AgentTaskState[] } = {
     AgentTaskState.PAUSED,
     AgentTaskState.STOPPED,
     AgentTaskState.FINISHED,
+    AgentTaskState.AWAITING_USER_INPUT,
   ],
   [AgentTaskAction.RESUME]: [
     AgentTaskState.INIT,
     AgentTaskState.RUNNING,
     AgentTaskState.STOPPED,
     AgentTaskState.FINISHED,
+    AgentTaskState.AWAITING_USER_INPUT,
   ],
   [AgentTaskAction.STOP]: [
     AgentTaskState.INIT,
