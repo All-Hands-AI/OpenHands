@@ -383,7 +383,7 @@ def visualize_row(row_dict):
     history = row['history']
     st.markdown('### Interaction History')
 
-    st.code(row_dict['instruction'])
+    st.code(row_dict['instruction'], language='plaintext')
 
     for i, (action, observation) in enumerate(history):
         st.markdown(f'#### Turn {i + 1}')
