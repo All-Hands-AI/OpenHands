@@ -11,7 +11,8 @@ class SWEBenchSSHBox(DockerSSHBox):
     def __init__(
         self,
         container_image: str,
-        timeout: int = 120,
+        # larger timeout for SWEBench to account for long-running installations (e.g., require compilation)
+        timeout: int = 600,
         sid: str | None = None,
         swe_instance_id: str | None = None,
         swe_instance: dict | None = None,
@@ -20,6 +21,7 @@ class SWEBenchSSHBox(DockerSSHBox):
             container_image is not None
         ), 'container_image is required for SWEBenchSSHBox!'
         # Need to run as root to use SWEBench container
+        sid = f'swe_bench_{sid}'
         super().__init__(container_image, timeout, sid, run_as_devin=False)
 
         if swe_instance_id is None:
@@ -31,7 +33,7 @@ class SWEBenchSSHBox(DockerSSHBox):
         assert exit_code == 0, f'Failed to backup ~/.bashrc: {output}'
 
         exit_code, output = self.execute(
-            f"echo 'export SWE_INSTANCE_ID={self.swe_instance_id}' >> ~/.bashrc"
+            f"echo 'export SWE_INSTANCE_ID={self.swe_instance_id}' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc"
         )
         assert exit_code == 0, f'Failed to set SWE_INSTANCE_ID in ~/.bashrc: {output}'
 
