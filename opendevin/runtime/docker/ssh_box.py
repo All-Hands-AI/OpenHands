@@ -34,9 +34,6 @@ SSH_HOSTNAME = config.get(ConfigType.SSH_HOSTNAME)
 
 USE_HOST_NETWORK = config.get(ConfigType.USE_HOST_NETWORK)
 
-# FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
-# How do we make this more flexible?
-RUN_AS_DEVIN = config.get(ConfigType.RUN_AS_DEVIN).lower() != 'false'
 USER_ID = 1000
 if SANDBOX_USER_ID := config.get(ConfigType.SANDBOX_USER_ID):
     USER_ID = int(SANDBOX_USER_ID)
@@ -63,9 +60,11 @@ class DockerSSHBox(Sandbox):
         container_image: str | None = None,
         timeout: int = 120,
         sid: str | None = None,
+        run_as_devin: bool = config.get(ConfigType.RUN_AS_DEVIN).lower() != 'false',
     ):
+        self.run_as_devin = run_as_devin
         logger.info(
-            f'SSHBox is running as {"opendevin" if RUN_AS_DEVIN else "root"} user with USER_ID={USER_ID} in the sandbox'
+            f'SSHBox is running as {"opendevin" if self.run_as_devin else "root"} user with USER_ID={USER_ID} in the sandbox'
         )
         # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
@@ -126,7 +125,7 @@ class DockerSSHBox(Sandbox):
             if exit_code != 0:
                 raise Exception(f'Failed to remove opendevin user in sandbox: {logs}')
 
-        if RUN_AS_DEVIN:
+        if self.run_as_devin:
             # Create the opendevin user
             exit_code, logs = self.container.exec_run(
                 [
@@ -184,7 +183,7 @@ class DockerSSHBox(Sandbox):
         # start ssh session at the background
         self.ssh = pxssh.pxssh()
         hostname = SSH_HOSTNAME
-        if RUN_AS_DEVIN:
+        if self.run_as_devin:
             username = 'opendevin'
         else:
             username = 'root'
@@ -203,7 +202,7 @@ class DockerSSHBox(Sandbox):
         self.ssh.prompt()
 
     def get_exec_cmd(self, cmd: str) -> List[str]:
-        if RUN_AS_DEVIN:
+        if self.run_as_devin:
             return ['su', 'opendevin', '-c', cmd]
         else:
             return ['/bin/bash', '-c', cmd]
@@ -372,7 +371,9 @@ class DockerSSHBox(Sandbox):
             mount_dir: {'bind': SANDBOX_WORKSPACE_DIR, 'mode': 'rw'},
             # mount cache directory to /home/opendevin/.cache for pip cache reuse
             config.get(ConfigType.CACHE_DIR): {
-                'bind': '/home/opendevin/.cache' if RUN_AS_DEVIN else '/root/.cache',
+                'bind': '/home/opendevin/.cache'
+                if self.run_as_devin
+                else '/root/.cache',
                 'mode': 'rw',
             },
         }
