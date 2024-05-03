@@ -42,6 +42,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.AGENT_MEMORY_ENABLED: False,
     ConfigType.LLM_TIMEOUT: None,
     ConfigType.LLM_MAX_RETURN_TOKENS: None,
+    ConfigType.LLM_TEMPERATURE: 1.0,
     # GPT-4 pricing is $10 per 1M input tokens. Since tokenization happens on LLM side,
     # we cannot easily count number of tokens, but we can count characters.
     # Assuming 5 characters per token, 5 million is a reasonable default limit.
@@ -153,6 +154,12 @@ def get_parser():
         type=int,
         help='The number of instances to evaluate',
     )
+    parser.add_argument(
+        '--llm-temperature',
+        default=1.0,
+        type=float,
+        help='The temperature for LLM sampling',
+    )
     return parser
 
 
@@ -161,7 +168,13 @@ def parse_arguments():
     args, _ = parser.parse_known_args()
     if args.directory:
         config[ConfigType.WORKSPACE_BASE] = os.path.abspath(args.directory)
-        print(f'Setting workspace base to {config[ConfigType.WORKSPACE_BASE]}')
+        logger.info(f'Setting workspace base to {config[ConfigType.WORKSPACE_BASE]}')
+    if args.max_iterations is not None:
+        config[ConfigType.MAX_ITERATIONS] = args.max_iterations
+        logger.info(f'Setting max iterations to {config[ConfigType.MAX_ITERATIONS]}')
+    if args.llm_temperature is not None:
+        config[ConfigType.LLM_TEMPERATURE] = args.llm_temperature
+        logger.info(f'Setting LLM temperature to {config[ConfigType.LLM_TEMPERATURE]}')
     return args
 
 

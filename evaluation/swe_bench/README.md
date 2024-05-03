@@ -28,7 +28,8 @@ If you get to the interactive shell successfully, it means success!
 python3 evaluation/swe_bench/run_infer.py \
   --agent-cls CodeActAgent \
   --model-name gpt-4-turbo-2024-04-09 \
-  --max-iterations 50
+  --max-iterations 50 \
+  --llm-temperature 0.0
 ```
 
 ---
