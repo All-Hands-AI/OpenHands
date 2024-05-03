@@ -160,6 +160,13 @@ lint:
 	@$(MAKE) -s lint-frontend
 	@$(MAKE) -s lint-backend
 
+test-frontend:
+	@echo "$(YELLOW)Running tests for frontend...$(RESET)"
+	@cd frontend && npm run test
+
+test:
+	@$(MAKE) -s test-frontend
+
 build-frontend:
 	@echo "$(YELLOW)Building frontend...$(RESET)"
 	@cd frontend && npm run build
