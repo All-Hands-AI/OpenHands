@@ -9,15 +9,6 @@ RUN mkdir -p /swe_util
 # Use https://github.com/moby/moby/issues/15771#issuecomment-1762893340
 # to copy files from host to container with --exclude
 
-# ================== COPY Smaller things ==================
-# copy everything except the folder of `eval_data` or `miniconda3`
-
-RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
-    rsync -ar --progress \
-    --exclude='eval_data' \
-    --exclude='miniconda3' \
-    /eval_workspace/ /swe_util/
-
 # # ================== Prepare Eval Data ==================
 # Copy everything in eval_data except the "testbeds"
 RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
@@ -72,6 +63,12 @@ RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
     rsync -ar --progress \
     /eval_workspace/miniconda3/envs/scikit-learn* /swe_util/miniconda3/envs/
 
-# BUILD COMMAND
-# cd evaluation/SWE-bench
-# docker build -t ghcr.io/opendevin/eval-swe-bench-all:lite-v1.0 -f ./scripts/docker/Dockerfile.all-in-one .
+
+# ================== COPY Smaller things ==================
+# copy everything except the folder of `eval_data` or `miniconda3`
+# typically, this should be the OD codebase
+RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
+    rsync -ar --progress \
+    --exclude='eval_data' \
+    --exclude='miniconda3' \
+    /eval_workspace/ /swe_util/

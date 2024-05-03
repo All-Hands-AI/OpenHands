@@ -13,6 +13,7 @@ if [ -f $EVAL_WORKSPACE/swe_lite_env_setup.sh ]; then
     rm $EVAL_WORKSPACE/swe_lite_env_setup.sh
 fi
 cp evaluation/SWE-bench/scripts/_swe_lite_env_setup.sh $EVAL_WORKSPACE/swe_lite_env_setup.sh
+cp evaluation/SWE-bench/scripts/swe_entry.sh $EVAL_WORKSPACE/swe_entry.sh
 
 docker run \
     -v $EVAL_WORKSPACE:/swe_util \

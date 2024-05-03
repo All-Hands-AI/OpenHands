@@ -2,31 +2,26 @@
 
 set -e
 
-# if user name is `opendevin`, add '/home/opendevin/.local/bin' to PATH
-if [ "$USER" = "opendevin" ]; then
-    echo 'export PATH=$PATH:/home/opendevin/.local/bin' >> ~/.bashrc
+# assert user name is `root`
+if [ "$USER" != "root" ]; then
+    echo "Error: This script is intended to be run by the 'root' user only." >&2
+    exit 1
 fi
-# if user name is `root`, add '/root/.local/bin' to PATH
-if [ "$USER" = "root" ]; then
-    echo 'export PATH=$PATH:/root/.local/bin' >> ~/.bashrc
-    export PATH=$PATH:/root/.local/bin
-fi
+
 source ~/.bashrc
 
 SWEUTIL_DIR=/swe_util
 
-# # Install dependencies
-# sudo apt-get update && \
-#     sudo apt-get install -y libffi-dev python3.11 build-essential && \
-#     sudo apt-get clean && \
-#     sudo rm -rf /var/lib/apt/lists/*
-# sudo ln -sfn /bin/bash /bin/sh
-
 # Create logs directory
-sudo mkdir -p /opendevin/logs && sudo chmod 777 /opendevin/logs
+LOG_DIR=/opendevin/logs
+mkdir -p $LOG_DIR && chmod 777 $LOG_DIR
 
 # FIXME: Cannot read SWE_INSTANCE_ID from the environment variable
-SWE_INSTANCE_ID=django__django-11099
+# SWE_INSTANCE_ID=django__django-11099
+if [ -z "$SWE_INSTANCE_ID" ]; then
+    echo "Error: SWE_INSTANCE_ID is not set." >&2
+    exit 1
+fi
 
 # Read the swe-bench-test-lite.json file and extract the required item based on instance_id
 item=$(jq --arg INSTANCE_ID "$SWE_INSTANCE_ID" '.[] | select(.instance_id == $INSTANCE_ID)' $SWEUTIL_DIR/eval_data/instances/swe-bench-test-lite.json)
@@ -40,42 +35,42 @@ CONDA_ENV_NAME=$(echo "$item" | jq -r '.repo + "__" + .version | gsub("/"; "__")
 
 echo "CONDA_ENV_NAME: $CONDA_ENV_NAME"
 
-    # Dump test_patch to /workspace/test.patch
-echo "$item" | jq -r '.test_patch' > /workspace/test.patch
+SWE_TASK_DIR=/opendevin/swe_tasks
+mkdir -p $SWE_TASK_DIR
+# Dump test_patch to /workspace/test.patch
+echo "$item" | jq -r '.test_patch' > $SWE_TASK_DIR/test.patch
+# Dump patch to /workspace/gold.patch
+echo "$item" | jq -r '.patch' > $SWE_TASK_DIR/gold.patch
+# Dump the item to /workspace/instance.json except for the "test_patch" and "patch" fields
+echo "$item" | jq 'del(.test_patch, .patch)' > $SWE_TASK_DIR/instance.json
 
-    # Dump patch to /workspace/gold.patch
-echo "$item" | jq -r '.patch' > /workspace/gold.patch
-
-    # Dump the item to /workspace/instance.json except for the "test_patch" and "patch" fields
-echo "$item" | jq 'del(.test_patch, .patch)' > /workspace/instance.json
-
-
-# Copy repo to workspace
-if [ -d /workspace/$CONDA_ENV_NAME ]; then
-    rm -rf /workspace/$CONDA_ENV_NAME
-fi
-cp -r $SWEUTIL_DIR/eval_data/testbeds/$CONDA_ENV_NAME /workspace
+# Clear the workspace
+rm -rf /workspace/*
+# cp -r $SWEUTIL_DIR/eval_data/testbeds/$CONDA_ENV_NAME /workspace
+rsync -a $SWEUTIL_DIR/eval_data/testbeds/$CONDA_ENV_NAME/ /workspace
 
 # Reset swe-bench testbed and install the repo
-source ~/.bashrc
 . $SWEUTIL_DIR/miniconda3/etc/profile.d/conda.sh
 conda config --set changeps1 False
 conda config --append channels conda-forge
-conda init bash
 conda activate swe-bench-eval
 
-mkdir -p /workspace/reset_testbed_temp
-mkdir -p /workspace/reset_testbed_log_dir
-output=$(export PYTHONPATH=/OD-SWE-bench && \
-    cd /OD-SWE-bench && python swebench/harness/reset_swe_env.py \
+mkdir -p $SWE_TASK_DIR/reset_testbed_temp
+mkdir -p $SWE_TASK_DIR/reset_testbed_log_dir
+SWE_BENCH_DIR=/swe_util/OD-SWE-bench
+output=$(
+    export PYTHONPATH=$SWE_BENCH_DIR && \
+    cd $SWE_BENCH_DIR && \
+    python swebench/harness/reset_swe_env.py \
     --swe_bench_tasks $SWEUTIL_DIR/eval_data/instances/swe-bench-test.json \
-    --temp_dir /workspace/reset_testbed_temp \
+    --temp_dir $SWE_TASK_DIR/reset_testbed_temp \
     --testbed /workspace \
     --conda_path $SWEUTIL_DIR/miniconda3 \
     --instance_id $SWE_INSTANCE_ID \
-    --log_dir /workspace/reset_testbed_log_dir \
+    --log_dir $SWE_TASK_DIR/reset_testbed_log_dir \
     --timeout 900 \
-    --verbose)
+    --verbose
+)
 
 REPO_PATH=$(echo "$output" | awk -F': ' '/repo_path:/ {print $2}')
 TEST_CMD=$(echo "$output" | awk -F': ' '/test_cmd:/ {print $2}')
@@ -90,7 +85,6 @@ if [[ "$REPO_PATH" == "None" ]]; then
     exit 1
 fi
 
-# FIXME: It hangs here.
 # Activate instance-specific environment
 . $SWEUTIL_DIR/miniconda3/etc/profile.d/conda.sh
 conda activate $CONDA_ENV_NAME
