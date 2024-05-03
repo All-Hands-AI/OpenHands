@@ -10,6 +10,8 @@ from typing import get_args, get_origin
 import toml
 from dotenv import load_dotenv
 
+from opendevin.utils import Singleton
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_CONTAINER_IMAGE = 'ghcr.io/opendevin/sandbox'
@@ -22,7 +24,7 @@ load_dotenv()
 
 
 @dataclass
-class LLMConfig:
+class LLMConfig(metaclass=Singleton):
     api_key: str | None = None
     base_url: str | None = None
     model: str = 'gpt-3.5-turbo-1106'
@@ -39,14 +41,14 @@ class LLMConfig:
 
 
 @dataclass
-class AgentConfig:
+class AgentConfig(metaclass=Singleton):
     name: str = 'MonologueAgent'
     memory_enabled: bool = False
     memory_max_threads: int = 2
 
 
 @dataclass
-class AppConfig:
+class AppConfig(metaclass=Singleton):
     llm: LLMConfig = field(default_factory=LLMConfig)
     agent: AgentConfig = field(default_factory=AgentConfig)
     workspace_base: str = os.getcwd()
@@ -54,7 +56,7 @@ class AppConfig:
     workspace_mount_path_in_sandbox: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
-    sandbox_container_image: str = DEFAULT_CONTAINER_IMAGE
+    sandbox_container_image: str = 'ghcr.io/opendevin/sandbox' + (f':{os.getenv("OPEN_DEVIN_BUILD_VERSION")}' if os.getenv('OPEN_DEVIN_BUILD_VERSION') else ':main')
     run_as_devin: bool = True
     max_iterations: int = 100
     e2b_api_key: str = ''
@@ -67,8 +69,14 @@ class AppConfig:
     github_token: str | None = None
 
 
-# FIXME Compatibility
 def compat_env_to_config(config, env_or_toml_dict):
+    """Reads the env-style vars and sets config attributes based on env vars or a config.toml dict.
+    Compatibility with vars like LLM_BASE_URL, AGENT_MEMORY_ENABLED and others.
+
+    Args:
+        config: The AppConfig object to set attributes on.
+        env_or_toml_dict: The environment variables or a config.toml dict.
+    """
 
     def get_optional_type(union_type):
         """Returns the non-None type from an Union."""
@@ -79,10 +87,10 @@ def compat_env_to_config(config, env_or_toml_dict):
     def set_attr_from_env(sub_config, prefix=''):
         """Set attributes of a config dataclass based on environment variables."""
         for field_name, field_type in sub_config.__annotations__.items():
-            # compute the expected environment variable name from the prefix and field name
+            # compute the expected env var name from the prefix and field name
             env_var_name = (prefix + field_name).upper()
 
-            if hasattr(field_type, '__annotations__'):  # Check if this is a nested data class
+            if hasattr(field_type, '__annotations__'):
                 # nested dataclass
                 nested_sub_config = getattr(sub_config, field_name)
                 set_attr_from_env(nested_sub_config, prefix=field_name + '_')
@@ -94,17 +102,15 @@ def compat_env_to_config(config, env_or_toml_dict):
                     if get_origin(field_type) is UnionType:
                         field_type = get_optional_type(field_type)
 
-                    # Attempt to cast the environment variable to the designated type
+                    # Attempt to cast the env var to type hinted in the dataclass
                     cast_value = field_type(value)
                     setattr(sub_config, field_name, cast_value)
                 except (ValueError, TypeError):
-                    # Log an error if casting fails
                     logger.error(f'Error setting env var {env_var_name}={value}: check that the value is of the right type')
 
     # Start processing from the root of the config object
     set_attr_from_env(config)
 
-# FIXME make it a singleton
 config = AppConfig()
 
 # read the toml file
