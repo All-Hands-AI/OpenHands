@@ -12,9 +12,6 @@ jobs:
   build:
     name: Build Docusaurus
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: docs
     steps:
       - uses: actions/checkout@v4
         with:
@@ -24,11 +21,17 @@ jobs:
           node-version: 18
           cache: npm
           cache-dependency-path: docs/package-lock.json
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
+      - name: Generate Python Docs
+        run: rm -rf docs/modules/python && pip install pydoc-markdown && pydoc-markdown
       - name: Install dependencies
-        run: npm ci
+        run: cd docs && npm ci
       - name: Build website
-        run: npm run build
+        run: cd docs && npm run build
 
       - name: Upload Build Artifact
         if: github.ref == 'refs/heads/main'
