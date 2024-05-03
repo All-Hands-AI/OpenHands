@@ -24,6 +24,7 @@ class SWEBenchSSHBox(DockerSSHBox):
 
         exit_code, output = self.execute('mv ~/.bashrc ~/.bashrc.bak')
         assert exit_code == 0, f'Failed to backup ~/.bashrc: {output}'
+
         exit_code, output = self.execute(
             f"echo 'export SWE_INSTANCE_ID={self.swe_instance_id}' >> ~/.bashrc"
         )
@@ -55,6 +56,45 @@ if __name__ == '__main__':
     logger.info(
         "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit."
     )
+
+    # PRE TEST
+    exit_code, output = ssh_box.execute('cd $REPO_PATH')
+    logger.info('exit code: %d', exit_code)
+    logger.info(f'cd $REPO_PATH: {output}')
+
+    # apply test patch
+    exit_code, output = ssh_box.execute('git apply $SWE_TASK_DIR/test.patch')
+    logger.info('exit code: %d', exit_code)
+    logger.info(f'git apply $SWE_TASK_DIR/test.patch: {output}')
+
+    # TEST
+    exit_code, output = ssh_box.execute(
+        './tests/runtests.py --verbosity 2 auth_tests.test_validators'
+    )
+    logger.info('exit code: %d', exit_code)
+    logger.info(f'$TEST_CMD:\n{output}')
+
+    # Reset the repo
+    exit_code, output = ssh_box.execute('git reset --hard')
+    logger.info('exit code: %d', exit_code)
+    logger.info(f'git reset --hard: {output}')
+
+    # apply gold patch
+    exit_code, output = ssh_box.execute('git apply $SWE_TASK_DIR/gold.patch')
+    logger.info('exit code: %d', exit_code)
+    logger.info(f'git apply $SWE_TASK_DIR/gold.patch: {output}')
+
+    # TEST
+    exit_code, output = ssh_box.execute(
+        './tests/runtests.py --verbosity 2 auth_tests.test_validators'
+    )
+    logger.info('exit code: %d', exit_code)
+    logger.info(f'$TEST_CMD:\n{output}')
+
+    # Reset the repo
+    exit_code, output = ssh_box.execute('git reset --hard')
+    logger.info('exit code: %d', exit_code)
+    logger.info(f'git reset --hard: {output}')
 
     bg_cmd = ssh_box.execute_in_background(
         "while true; do echo 'dot ' && sleep 10; done"
