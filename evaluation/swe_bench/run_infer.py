@@ -113,12 +113,7 @@ if __name__ == '__main__':
         )
 
         # Get git patch
-        exit_code, git_patch = sandbox.execute(
-            f'cd /workspace/{workspace_dir_name} && git --no-pager diff'
-        )
-        if exit_code != 0:
-            logger.error(f'Failed to get git diff for instance {instance.instance_id}.')
-            git_patch = ''
+        git_patch = sandbox.get_diff_patch()
         logger.info(f'Got git diff for instance {instance.instance_id}')
 
         # Save the output
