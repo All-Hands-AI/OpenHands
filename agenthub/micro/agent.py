@@ -42,14 +42,32 @@ def my_encoder(obj):
         return obj.to_dict()
 
 
+def _remove_fields(obj, fields: set[str]):
+    """
+    Remove fields from an object
+
+    Parameters:
+    - obj (Object): The object to remove fields from
+    - fields (set[str]): A set of field names to remove from the object
+    """
+    if isinstance(obj, dict):
+        for field in fields:
+            if field in obj:
+                del obj[field]
+        for key, value in obj.items():
+            _remove_fields(value, fields)
+    elif isinstance(obj, list):
+        for item in obj:
+            _remove_fields(item, fields)
+
+
 def to_json(obj, **kwargs):
     """
     Serialize an object to str format
     """
     # Remove things like screenshots that shouldn't be in a prompt
     sanitized_obj = copy.deepcopy(obj)
-    if 'extras' in sanitized_obj and 'screenshot' in sanitized_obj['extras']:
-        del sanitized_obj['extras']['screenshot']
+    _remove_fields(sanitized_obj, {'screenshot'})
     return json.dumps(sanitized_obj, default=my_encoder, **kwargs)
 
 
