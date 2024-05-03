@@ -147,6 +147,12 @@ def get_parser():
         type=str,
         help='The directory to save evaluation output',
     )
+    parser.add_argument(
+        '--eval-n-limit',
+        default=None,
+        type=int,
+        help='The number of instances to evaluate',
+    )
     return parser
 
 
