@@ -48,7 +48,7 @@ pytest-cov = "*"
 pytest-asyncio = "*"
 
 [tool.poetry.group.evaluation.dependencies]
-torch = "2.2.2"
+streamlit = "*"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
