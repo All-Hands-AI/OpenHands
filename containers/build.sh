@@ -18,7 +18,7 @@ cache_tag="$cache_tag_base"
 
 if [[ -n $GITHUB_REF_NAME ]]; then
   # check if ref name is a version number
-  if [[ $GITHUB_REF_NAME =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  if [[ $GITHUB_REF_NAME =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     major_version=$(echo $GITHUB_REF_NAME | cut -d. -f1)
     minor_version=$(echo $GITHUB_REF_NAME | cut -d. -f1,2)
     tags+=($major_version $minor_version)
