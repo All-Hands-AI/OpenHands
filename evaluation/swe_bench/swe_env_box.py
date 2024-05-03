@@ -1,4 +1,5 @@
 import sys
+import uuid
 
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
@@ -21,7 +22,7 @@ class SWEBenchSSHBox(DockerSSHBox):
             container_image is not None
         ), 'container_image is required for SWEBenchSSHBox!'
         # Need to run as root to use SWEBench container
-        sid = f'swe_bench_{sid}'
+        sid = f'swe_bench_{sid}' + str(uuid.uuid4())
         super().__init__(container_image, timeout, sid, run_as_devin=False)
 
         if swe_instance_id is None:
