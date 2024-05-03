@@ -1,3 +1,28 @@
+# Easy SWE-Bench Evaluation in the OpenDevin SWE-Bench Docker Image
+
+## OpenDevin SWE-Bench Docker Image
+
+In [OpenDevin-SWE-Bench fork](https://github.com/OpenDevin/OD-SWE-bench.git), we try to pre-build the **testbed** (i.e., code of the repository we want the agent to edit) AND the **conda environment**, so that in evaluation (inference) time, we can directly leverage existing environments for effecienct evaluation.
+
+**We pack everything you need for SWE-Bench evaluation into one, gigantic, docker image.** To use it:
+
+```bash
+docker pull ghcr.io/xingyaoww/eval-swe-bench-all:lite-v1.0
+```
+
+To reproduce how we pack the image, check [this doc](./BUILD_TESTBED_AND_ENV.md).
+
+NOTE: We only support SWE-Bench lite for now. But modifying our existing scripts for full SWE-Bench should be quite straight forward.
+
+## Run Inference on SWE-Bench instances
+
+```bash
+python3 evaluation/swe_bench/run_infer.py \
+  --agent-cls CodeActAgent --model-name gpt-4-turbo-2024-04-09
+```
+
+---
+
 # Use SWE-Bench Environment in the OpenDevin Sandbox
 
 This README provides guidance on how to use the SWE-Bench environment within the OpenDevin sandbox. Note that this integration is actively being developed and may undergo changes.

@@ -6,7 +6,7 @@ In the original SWE-Bench implementation, conda environment for evaluation is ty
 - Stability: setup could failed due to bad internet connectivity
 - Reliability: it is possible that an instance is considered failed not because the agent did badly, but because the environment setup failed.
 
-In OpenDevin-SWE-Bench fork, we try to pre-build the **testbed** (i.e., code of the repository we want the agent to edit) AND the **conda environment**, so that in evaluation (inference) time, we can use `conda create --clone` to directly leverage existing environments ([conda use hardlink to save space from re-install packages](https://stackoverflow.com/questions/55566419/why-are-packages-installed-rather-than-just-linked-to-a-specific-environment))
+In OpenDevin-SWE-Bench fork, we try to pre-build the **testbed** (i.e., code of the repository we want the agent to edit) AND the **conda environment**, so that in evaluation (inference) time, we can directly leverage existing environments for effecienct evaluation.
 
 NOTE: We only support SWE-Bench lite for now. But modifying our existing scripts for full SWE-Bench should be quite straight forward.
 
