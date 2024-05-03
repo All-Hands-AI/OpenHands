@@ -38,14 +38,7 @@ class SWEBenchSSHBox(DockerSSHBox):
 
     @property
     def volumes(self):
-        return {
-            **super().volumes,
-            # self.eval_utils_dir: {'bind': '/swe_util', 'mode': 'ro' if self.eval_utils_read_only else 'rw'},
-            '/home/xingyaow/OpenDevin/evaluation/SWE-bench/eval_workspace': {
-                'bind': '/swe_util',
-                'mode': 'ro',
-            },
-        }
+        return {**super().volumes}
 
 
 if __name__ == '__main__':
