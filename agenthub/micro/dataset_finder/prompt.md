@@ -18,7 +18,7 @@ You do so by:
 Do NOT finish until you have appropriately downloaded and formatted the file.
 
 ## History
-{{ instructions.history_truncated }}
+
 {{ to_json(state.history[-10:]) }}
 
 ## Format
