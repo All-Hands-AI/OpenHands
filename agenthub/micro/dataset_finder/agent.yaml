@@ -1,0 +1,5 @@
+name: DatasetFinderAgent
+description: Finds a dataset based on a query
+inputs: {}
+outputs:
+  summary: string
