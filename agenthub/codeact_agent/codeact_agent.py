@@ -50,6 +50,41 @@ def truncate_observation(observation: str, max_chars: int = 5000) -> str:
     )
 
 
+def swe_agent_edit_hack(bash_command: str) -> str:
+    """
+    Hack to handle the SWE-agent edit command. The vanilla edit command will hang the SSHBox.
+
+    REPLACE THIS:
+    edit 683:693
+            try:
+                return list(urlsplit(url))
+            except ValueError:
+                raise ValidationError(self.error_messages['invalid'], code='invalid')
+    end_of_edit
+
+    WITH THIS:
+    edit 683:693 <<EOF
+            try:
+                return list(urlsplit(url))
+            except ValueError:
+                raise ValidationError(self.error_messages['invalid'], code='invalid')s
+    EOF
+    """
+    if 'edit' in bash_command:
+        # edit\s(\d+):(\d+)([\s\S]*)end_of_edit
+        # replace
+        bash_command_before = bash_command
+        bash_command = re.sub(
+            r'edit\s(\d+):(\d+)([\s\S]*)end_of_edit',
+            r'edit \1:\2 <<EOF\3EOF',
+            bash_command,
+        )
+        logger.info(
+            f'SWE-agent edit hack applied:\n- Before:\n{bash_command_before}\n- After:\n{bash_command}'
+        )
+    return bash_command
+
+
 class CodeActAgent(Agent):
     """
     The Code Act Agent is a minimalist agent.
@@ -197,7 +232,7 @@ class CodeActAgent(Agent):
         cur_cost = completion_cost(completion_response=response)
         self.cost_accumulator += cur_cost
         logger.info(
-            f'Cost: {cur_cost} USD | Accumulated cost: {self.cost_accumulator} USD'
+            f'Cost: {cur_cost:.2f} USD | Accumulated Cost: {self.cost_accumulator:.2f} USD'
         )
         action_str: str = parse_response(response)
         state.num_of_chars += sum(
@@ -212,6 +247,8 @@ class CodeActAgent(Agent):
             thought = action_str.replace(bash_command.group(0), '').strip()
             # a command was found
             command_group = bash_command.group(1).strip()
+            command_group = swe_agent_edit_hack(command_group)
+
             if command_group.strip() == 'exit':
                 return AgentFinishAction()
             return CmdRunAction(command=command_group, thought=thought)
