@@ -14,6 +14,14 @@ To reproduce how we pack the image, check [this doc](./BUILD_TESTBED_AND_ENV.md)
 
 NOTE: We only support SWE-Bench lite for now. But modifying our existing scripts for full SWE-Bench should be quite straight forward.
 
+## Test if your environment works
+
+```bash
+python3 evaluation/swe_bench/swe_env_box.py
+```
+
+If you get to the interactive shell successfully, it means success!
+
 ## Run Inference on SWE-Bench instances
 
 ```bash
