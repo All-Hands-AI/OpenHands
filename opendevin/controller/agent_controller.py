@@ -119,9 +119,9 @@ class AgentController:
         self.state.history.append((action, observation))
         self.state.updated_info.append((action, observation))
 
-    async def _run(self):
+    async def _run(self) -> Optional[State]:
         if self.state is None:
-            return
+            return None
 
         if self._task_state != TaskState.RUNNING:
             raise ValueError('Task is not in running state')
@@ -144,8 +144,9 @@ class AgentController:
 
             if self._task_state == TaskState.FINISHED:
                 logger.info('Task finished by agent')
+                finished_state = self.state
                 await self.reset_task()
-                break
+                return finished_state
             elif self._task_state == TaskState.STOPPED:
                 logger.info('Task stopped by user')
                 await self.reset_task()
@@ -164,6 +165,7 @@ class AgentController:
                 await self._run_callbacks(observation)
                 await self.set_task_state_to(TaskState.STOPPED)
                 break
+        return None
 
     async def setup_task(self, task: str, inputs: dict = {}):
         """Sets up the agent controller with a task."""
@@ -177,8 +179,8 @@ class AgentController:
         If task already run before, it will continue from the last step.
         """
         await self.setup_task(task)
-        await self._run()
-        return self.state
+        finished_state = await self._run()
+        return finished_state
 
     async def resume(self):
         if self.state is None:
