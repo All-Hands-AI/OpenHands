@@ -1,10 +1,11 @@
 import asyncio
 import sys
-from typing import Type
+from typing import Optional, Type
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
+from opendevin.controller.state.state import State
 from opendevin.core.config import args
 from opendevin.llm.llm import LLM
 
@@ -20,7 +21,7 @@ def read_task_from_stdin() -> str:
     return sys.stdin.read()
 
 
-async def main(task_str: str = ''):
+async def main(task_str: str = '', controller_kwargs: dict = {}) -> Optional[State]:
     """Main coroutine to run the agent controller with task input flexibility."""
 
     # Determine the task source
@@ -42,10 +43,13 @@ async def main(task_str: str = ''):
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
     controller = AgentController(
-        agent=agent, max_iterations=args.max_iterations, max_chars=args.max_chars
+        agent=agent,
+        max_iterations=args.max_iterations,
+        max_chars=args.max_chars,
+        **(controller_kwargs or {}),
     )
 
-    await controller.start(task)
+    return await controller.start(task)
 
 
 if __name__ == '__main__':
