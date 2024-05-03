@@ -1,0 +1,5 @@
+name: QuestionFinderAgent
+description: Finds a homework question
+inputs: {}
+outputs:
+  summary: string
