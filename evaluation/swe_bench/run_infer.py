@@ -242,8 +242,8 @@ if __name__ == '__main__':
         instruction += (
             'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK \n'
             'You should ONLY interact with the environment provided to you.\n'
-            'You should NOT modify any existing test case files. '
-            'If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
+            # 'You should NOT modify any existing test case files. '
+            # 'If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
         )
         instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
