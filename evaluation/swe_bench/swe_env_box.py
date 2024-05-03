@@ -94,7 +94,7 @@ class SWEBenchSSHBox(DockerSSHBox):
 
         # get the git diff
         exit_code, git_patch = self.execute(
-            f'git --no-pager diff {self.swe_instance["base_commit"]}'
+            f'git --no-pager --no-color diff {self.swe_instance["base_commit"]}'
         )
         if exit_code != 0:
             logger.error('Failed to get git diff')
