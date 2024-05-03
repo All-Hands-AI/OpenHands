@@ -201,4 +201,4 @@ cache
 
 # configuration
 config.toml
-evaluation/SWE-bench/eval_workspace
+evaluation/swe_bench/eval_workspace
