@@ -52,8 +52,7 @@ function SettingsForm({
       <AutocompleteCombobox
         ariaLabel="model"
         items={models.map((model) => ({ value: model, label: model }))}
-        key={settings.LLM_MODEL}
-        defaultKey={settings.LLM_MODEL}
+        defaultKey={settings.LLM_MODEL || models[0]}
         onChange={(e) => {
           onModelChange(e);
         }}
@@ -88,16 +87,14 @@ function SettingsForm({
       />
       <AutocompleteCombobox
         ariaLabel="agent"
-        key={settings.AGENT}
         items={agents.map((agent) => ({ value: agent, label: agent }))}
-        defaultKey={settings.AGENT}
+        defaultKey={settings.AGENT || agents[0]}
         onChange={onAgentChange}
         tooltip={t(I18nKey.SETTINGS$AGENT_TOOLTIP)}
         disabled={disabled}
       />
       <AutocompleteCombobox
         ariaLabel="language"
-        key={settings.LANGUAGE}
         items={AvailableLanguages}
         defaultKey={settings.LANGUAGE}
         onChange={onLanguageChange}

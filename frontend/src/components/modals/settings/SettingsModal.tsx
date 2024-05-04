@@ -25,7 +25,6 @@ interface SettingsProps {
 function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const { t } = useTranslation();
   const currentSettings = getSettings();
-  const defaultSettings = getDefaultSettings();
 
   const [models, setModels] = React.useState<string[]>([]);
   const [agents, setAgents] = React.useState<string[]>([]);
@@ -74,10 +73,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   };
 
   const handleResetSettings = () => {
-    handleModelChange(defaultSettings.LLM_MODEL);
-    handleAgentChange(defaultSettings.AGENT);
-    handleLanguageChange(defaultSettings.LANGUAGE);
-    handleAPIKeyChange(defaultSettings.LLM_API_KEY);
+    setSettings(getDefaultSettings());
   };
 
   const handleSaveSettings = () => {
@@ -135,7 +131,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
             setSettings(currentSettings); // reset settings from any changes
           },
           closeAfterAction: true,
-          className: "bg-neutral-500 rounded-lg",
+          className: "bg-rose-600 rounded-lg",
         },
       ]}
     >
