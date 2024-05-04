@@ -379,12 +379,13 @@ def visualize_obs(observation):
 
 
 def visualize_row(row_dict):
-    # 1. Visualize the state
-    history = row['history']
+    st.markdown('### Test Result')
+    test_result = row_dict['test_result']['result']
+    st.write(pd.DataFrame([test_result]))
+
     st.markdown('### Interaction History')
-
     st.code(row_dict['instruction'], language='plaintext')
-
+    history = row['history']
     for i, (action, observation) in enumerate(history):
         st.markdown(f'#### Turn {i + 1}')
         st.markdown('##### Action')
