@@ -216,6 +216,24 @@ def agg_stats(data):
     for idx, entry in enumerate(data):
         history = entry['history']
         test_result = entry['test_result']['result']
+
+        # additional metrircs:
+        empty_generation = bool(entry['git_patch'].strip() == '')
+        test_cmd_exit_error = bool(
+            not entry['test_result']['metadata']['4_run_test_command_success']
+        )
+
+        # resolved: if the test is successful and the agent has generated a non-empty patch
+        test_result['resolved_script'] = bool(test_result['resolved'])  # most loose
+        test_result['resolved'] = (
+            test_result['resolved_script'] and not empty_generation
+        )
+        test_result['resolved_strict'] = (
+            test_result['resolved_script']
+            and not empty_generation
+            and not test_cmd_exit_error
+        )
+
         stats.append(
             {
                 'idx': idx,
@@ -224,6 +242,8 @@ def agg_stats(data):
                 'model_name': entry['metadata']['model_name'],
                 'n_turns': len(history),
                 **test_result,
+                'empty_generation': empty_generation,
+                'test_cmd_exit_error': test_cmd_exit_error,
             }
         )
     return pd.DataFrame(stats)
@@ -235,27 +255,46 @@ stats_df = agg_stats(data)
 if len(stats_df) == 0:
     st.write('No data to visualize.')
     st.stop()
-success_count = stats_df['resolved'].sum()
+
+resolved_rate = stats_df['resolved'].sum() / len(stats_df)
+resolved_strict_rate = stats_df['resolved_strict'].sum() / len(stats_df)
+resolved_script_rate = stats_df['resolved_script'].sum() / len(stats_df)
+
+# visualize these number in a table
+agg_stat = pd.DataFrame(
+    {
+        'Resolved Rate': {
+            'Rate': resolved_rate,
+            'Count': stats_df['resolved'].sum(),
+            'Total': len(data),
+        },
+        'Strict Resolved Rate': {
+            'Rate': resolved_strict_rate,
+            'Count': stats_df['resolved_strict'].sum(),
+            'Total': len(data),
+        },
+        'Script Resolved Rate': {
+            'Rate': resolved_script_rate,
+            'Count': stats_df['resolved_script'].sum(),
+            'Total': len(data),
+        },
+    },
+).T
+st.dataframe(
+    agg_stat.style.format('{:.2%}', subset=['Rate'])
+    .format('{:.0f}', subset=['Count', 'Total'])
+    .set_caption('Resolved Rate (by different metrics)'),
+    width=400,
+)
 st.markdown(
-    f'**Resolved Rate: {success_count / len(data):2%}** : {success_count} / {len(data)}'
+    f'### Explanation of different resolved rate metrics:\n'
+    f'- **Resolved Rate**: **{resolved_rate:2%}** : {stats_df["resolved"].sum()} / {len(data)}\n'
+    f'- **Strict Resolved Rate** (*most strict*, any error in test command exit will be considered as unresolved): **{resolved_strict_rate:2%}** : {stats_df["resolved_strict"].sum()} / {len(data)}\n'
+    f'- **Script Resolved Rate** (*most loose*, solely based on log parsing script from SWE-Bench): **{resolved_script_rate:2%}** : {stats_df["resolved_script"].sum()} / {len(data)}\n'
 )
 
 
 def plot_stats(stats_df):
-    # # 1. Plot a distribution of n_turns
-    # st.write("### Distribution of Number of Turns")
-    # st.write(stats_df["n_turns"].describe().to_frame().T)
-    # chart = (
-    #     alt.Chart(stats_df, title="Distribution of Number of Turns")
-    #     .mark_bar()
-    #     .encode(
-    #         x=alt.X("n_turns", type="quantitative", title="Number of Turns"),
-    #         y=alt.Y("count()", type="quantitative", title="Count"),
-    #     )
-    #     .properties(width=400)
-    # )
-    # st.altair_chart(chart, use_container_width=True)
-
     st.write('### Distribution of Number of Turns (by Resolved)')
     _stat = stats_df.groupby('resolved')['n_turns'].describe()
     # append a row for the whole dataset
@@ -265,46 +304,15 @@ def plot_stats(stats_df):
         alt.Chart(stats_df, title='Distribution of Number of Turns by Resolved')
         .mark_bar()
         .encode(
-            x=alt.X('n_turns', type='quantitative', title='Number of Turns', bin=True),
+            x=alt.X(
+                'n_turns', type='quantitative', title='Number of Turns', bin={'step': 1}
+            ),
             y=alt.Y('count()', type='quantitative', title='Count'),
             color=alt.Color('resolved', type='nominal', title='Resolved'),
         )
         .properties(width=400)
     )
     st.altair_chart(chart, use_container_width=True)
-
-    # # 1. plot success rate changes over n_turns
-    # max_turns = stats_df["n_turns"].max()
-    # _df = []
-    # for turn_id in range(1, max_turns + 1):
-    #     _df.append(
-    #         {
-    #             "n_turns": turn_id,
-    #             "success_rate": stats_df[stats_df["n_turns"] <= turn_id][
-    #                 "success"
-    #             ].sum()
-    #             / len(stats_df),
-    #         }
-    #     )
-    # _df = pd.DataFrame(_df)
-    # # sns.lineplot(x="n_turns", y="success_rate", data=_df, ax=ax)
-    # # ax.set_title("Task Success Rate vs. Number of Turns")
-    # # ax.set_xlabel("Number of Turns")
-    # # ax.set_ylabel("Success Rate")
-    # # make xlabel integer
-    # # ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
-    # # st.pyplot(fig, use_container_width=False)
-
-    # chart = (
-    #     alt.Chart(_df, title="Task Success Rate vs. Number of Turns")
-    #     .mark_line()
-    #     .encode(
-    #         x=alt.X("n_turns", type="quantitative", title="Number of Turns"),
-    #         y=alt.Y("success_rate", type="quantitative", title="Success Rate"),
-    #     )
-    #     .properties(width=550)
-    # )
-    # st.altair_chart(chart, use_container_width=True)
 
 
 with st.expander('See stats', expanded=True):
