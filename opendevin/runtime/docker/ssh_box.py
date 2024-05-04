@@ -441,7 +441,9 @@ class DockerSSHBox(Sandbox):
         containers = self.docker_client.containers.list(all=True)
         for container in containers:
             try:
-                if container.name.startswith(self.container_name_prefix):
+                if (
+                    container.name == self.container_name
+                ):  # only remove the container we created
                     container.remove(force=True)
             except docker.errors.NotFound:
                 pass
