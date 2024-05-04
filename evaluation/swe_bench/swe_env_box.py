@@ -33,7 +33,7 @@ class SWEBenchSSHBox(DockerSSHBox):
         assert exit_code == 0, f'Failed to backup ~/.bashrc: {output}'
 
         exit_code, output = self.execute(
-            f"echo 'export SWE_INSTANCE_ID={self.swe_instance_id}' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc"
+            f"echo 'export SWE_INSTANCE_ID={self.swe_instance_id}' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo \"alias git='git --no-pager'\" >> ~/.bashrc"
         )
         assert exit_code == 0, f'Failed to set SWE_INSTANCE_ID in ~/.bashrc: {output}'
 
@@ -103,7 +103,7 @@ class SWEBenchSSHBox(DockerSSHBox):
 
         # get the git diff
         exit_code, git_patch = self.execute(
-            f'git --no-pager diff --no-color --cached {self.swe_instance["base_commit"]}'
+            f'git diff --no-color --cached {self.swe_instance["base_commit"]}'
         )
         if exit_code != 0:
             logger.error('Failed to get git diff')
