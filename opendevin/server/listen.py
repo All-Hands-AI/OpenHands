@@ -159,6 +159,11 @@ def get_plan(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
+@app.get('/api/defaults')
+async def appconfig_defaults():
+    return config.defaults_dict
+
+
 @app.get('/')
 async def docs_redirect():
     response = RedirectResponse(url='/index.html')

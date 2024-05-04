@@ -3,9 +3,9 @@ import logging
 import os
 import pathlib
 import platform
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from types import UnionType
-from typing import get_args, get_origin
+from typing import Any, ClassVar, get_args, get_origin
 
 import toml
 from dotenv import load_dotenv
@@ -19,9 +19,9 @@ load_dotenv()
 
 @dataclass
 class LLMConfig(metaclass=Singleton):
+    model: str = 'gpt-3.5-turbo-1106'
     api_key: str | None = None
     base_url: str | None = None
-    model: str = 'gpt-3.5-turbo-1106'
     api_version: str | None = None
     embedding_model: str = 'local'
     embedding_base_url: str | None = None
@@ -33,6 +33,15 @@ class LLMConfig(metaclass=Singleton):
     max_return_tokens: int | None = None
     max_chars: int = 5_000_000
 
+    def defaults_to_dict(self) -> dict:
+        """
+        Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional.
+        """
+        dict = {}
+        for field in fields(self):
+            dict[field.name] = get_field_info(field)
+        return dict
+
 
 @dataclass
 class AgentConfig(metaclass=Singleton):
@@ -40,13 +49,22 @@ class AgentConfig(metaclass=Singleton):
     memory_enabled: bool = False
     memory_max_threads: int = 2
 
+    def defaults_to_dict(self) -> dict:
+        """
+        Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional.
+        """
+        dict = {}
+        for field in fields(self):
+            dict[field.name] = get_field_info(field)
+        return dict
+
 
 @dataclass
 class AppConfig(metaclass=Singleton):
     llm: LLMConfig = field(default_factory=LLMConfig)
     agent: AgentConfig = field(default_factory=AgentConfig)
     workspace_base: str = os.getcwd()
-    workspace_mount_path: str = os.path.abspath(workspace_base) # TODO this might not work, set at the end
+    workspace_mount_path: str = os.getcwd()
     workspace_mount_path_in_sandbox: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
@@ -62,11 +80,55 @@ class AppConfig(metaclass=Singleton):
     sandbox_timeout: int = 120
     github_token: str | None = None
 
+    defaults_dict: ClassVar[dict] = {}
+
+
     def __post_init__(self):
         """
-        Post-initialization hook to set some attributes based on other attributes.
+        Post-initialization hook, called when the instance is created with only default values.
         """
-        pass
+        AppConfig.defaults_dict = self.defaults_to_dict()
+
+
+    def defaults_to_dict(self) -> dict:
+        """
+        Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional.
+        """
+        dict = {}
+        for field in fields(self):
+            field_value = getattr(self, field.name)
+            if isinstance(field_value, (LLMConfig, AgentConfig)):
+                dict[field.name] = field_value.defaults_to_dict()
+            else:
+                dict[field.name] = get_field_info(field)
+        return dict
+
+
+def get_field_info(field):
+    """
+    Extract information about a dataclass field: type, optional, and default value.
+    """
+    field_type = field.type
+    optional = False
+
+    # for types like str | None, find the non-None type and set optional to True
+    if get_origin(field_type) is UnionType:
+        types = get_args(field_type)
+        non_none_arg = next((t for t in types if t is not type(None)), None)
+        if non_none_arg is not None:
+            field_type = non_none_arg
+            optional = True
+
+    type_name = field_type.__name__ if hasattr(field_type, '__name__') else str(field_type)
+
+    # default is always present
+    default = field.default
+
+    return {
+        'type': type_name.lower(),
+        'optional': optional,
+        'default': default
+    }
 
 
 def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
@@ -78,13 +140,13 @@ def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
         env_or_toml_dict: The environment variables or a config.toml dict.
     """
 
-    def get_optional_type(union_type: UnionType):
+    def get_optional_type(union_type: UnionType) -> Any:
         """Returns the non-None type from an Union."""
         types = get_args(union_type)
         return next((t for t in types if t is not type(None)), None)
 
     # helper function to set attributes based on env vars
-    def set_attr_from_env(sub_config: AppConfig | LLMConfig | AgentConfig, prefix=''):
+    def set_attr_from_env(sub_config: Any, prefix=''):
         """Set attributes of a config dataclass based on environment variables."""
         for field_name, field_type in sub_config.__annotations__.items():
             # compute the expected env var name from the prefix and field name

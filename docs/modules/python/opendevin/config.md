@@ -3,6 +3,36 @@ sidebar_label: config
 title: opendevin.config
 ---
 
+## LLMConfig Objects
+
+```python
+@dataclass
+class LLMConfig(metaclass=Singleton)
+```
+
+#### defaults\_to\_dict
+
+```python
+def defaults_to_dict() -> dict
+```
+
+Serialize fields to a dict for the frontend, including type hints, defaults, and whether it&#x27;s optional.
+
+## AgentConfig Objects
+
+```python
+@dataclass
+class AgentConfig(metaclass=Singleton)
+```
+
+#### defaults\_to\_dict
+
+```python
+def defaults_to_dict() -> dict
+```
+
+Serialize fields to a dict for the frontend, including type hints, defaults, and whether it&#x27;s optional.
+
 ## AppConfig Objects
 
 ```python
@@ -10,17 +40,29 @@ title: opendevin.config
 class AppConfig(metaclass=Singleton)
 ```
 
-#### workspace\_mount\_path
-
-TODO this might not work, set at the end
-
 #### \_\_post\_init\_\_
 
 ```python
 def __post_init__()
 ```
 
-Post-initialization hook to set some attributes based on other attributes.
+Post-initialization hook, called when the instance is created with only default values.
+
+#### defaults\_to\_dict
+
+```python
+def defaults_to_dict() -> dict
+```
+
+Serialize fields to a dict for the frontend, including type hints, defaults, and whether it&#x27;s optional.
+
+#### get\_field\_info
+
+```python
+def get_field_info(field)
+```
+
+Extract information about a dataclass field: type, optional, and default value.
 
 #### load\_from\_env
 
