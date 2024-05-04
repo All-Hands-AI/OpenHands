@@ -197,7 +197,6 @@ selection = dataframe_with_selections(
 # st.write(selection)
 select_filepaths = selection['filepath'].tolist()
 # update query params
-st.query_params['glob_pattern'] = glob_pattern
 st.query_params['filepaths'] = select_filepaths
 
 data = []
