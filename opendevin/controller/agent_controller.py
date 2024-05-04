@@ -314,6 +314,7 @@ class AgentController:
         if finished:
             self.state.outputs = action.outputs  # type: ignore[attr-defined]
             logger.info(action, extra={'msg_type': 'INFO'})
+            self.add_history(action, NullObservation(''))
             return True
 
         if isinstance(observation, NullObservation):
