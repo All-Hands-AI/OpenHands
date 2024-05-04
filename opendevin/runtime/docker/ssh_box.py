@@ -2,6 +2,7 @@ import atexit
 import os
 import sys
 import tarfile
+import tempfile
 import time
 import uuid
 from collections import namedtuple
@@ -270,32 +271,32 @@ class DockerSSHBox(Sandbox):
                 f'Failed to create directory {sandbox_dest} in sandbox: {logs}'
             )
 
-        if recursive:
-            assert os.path.isdir(
-                host_src
-            ), 'Source must be a directory when recursive is True'
-            files = glob(host_src + '/**/*', recursive=True)
-            srcname = os.path.basename(host_src)
-            tar_filename = os.path.join(os.path.dirname(host_src), srcname + '.tar')
-            with tarfile.open(tar_filename, mode='w') as tar:
-                for file in files:
-                    tar.add(
-                        file, arcname=os.path.relpath(file, os.path.dirname(host_src))
-                    )
-        else:
-            assert os.path.isfile(
-                host_src
-            ), 'Source must be a file when recursive is False'
-            srcname = os.path.basename(host_src)
-            tar_filename = os.path.join(os.path.dirname(host_src), srcname + '.tar')
-            with tarfile.open(tar_filename, mode='w') as tar:
-                tar.add(host_src, arcname=srcname)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            if recursive:
+                assert os.path.isdir(
+                    host_src
+                ), 'Source must be a directory when recursive is True'
+                files = glob(host_src + '/**/*', recursive=True)
+                srcname = os.path.basename(host_src)
+                tar_filename = os.path.join(tmp_dir, srcname + '.tar')
+                with tarfile.open(tar_filename, mode='w') as tar:
+                    for file in files:
+                        tar.add(
+                            file,
+                            arcname=os.path.relpath(file, os.path.dirname(host_src)),
+                        )
+            else:
+                assert os.path.isfile(
+                    host_src
+                ), 'Source must be a file when recursive is False'
+                srcname = os.path.basename(host_src)
+                tar_filename = os.path.join(tmp_dir, srcname + '.tar')
+                with tarfile.open(tar_filename, mode='w') as tar:
+                    tar.add(host_src, arcname=srcname)
 
-        with open(tar_filename, 'rb') as f:
-            data = f.read()
-
-        self.container.put_archive(os.path.dirname(sandbox_dest), data)
-        os.remove(tar_filename)
+            with open(tar_filename, 'rb') as f:
+                data = f.read()
+            self.container.put_archive(os.path.dirname(sandbox_dest), data)
 
     def execute_in_background(self, cmd: str) -> Process:
         result = self.container.exec_run(
