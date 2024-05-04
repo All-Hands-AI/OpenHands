@@ -21,7 +21,7 @@ class SWEBenchSSHBox(DockerSSHBox):
             container_image is not None
         ), 'container_image is required for SWEBenchSSHBox!'
         # Need to run as root to use SWEBench container
-        sid = 'swe_bench' + str(uuid.uuid4())
+        sid = f'swe_bench_{swe_instance_id}' + str(uuid.uuid4())
         super().__init__(container_image, timeout, sid, run_as_devin=False)
 
         if swe_instance_id is None:
