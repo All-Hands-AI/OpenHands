@@ -29,7 +29,8 @@ python3 evaluation/swe_bench/run_infer.py \
   --agent-cls CodeActAgent \
   --model-name gpt-4-turbo-2024-04-09 \
   --max-iterations 50 \
-  --llm-temperature 0.0
+  --llm-temperature 0.0 \
+  --max-chars 10000000
 ```
 
 ---
