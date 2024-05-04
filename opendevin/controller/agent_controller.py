@@ -344,7 +344,7 @@ class AgentController:
         if not isinstance(observation, NullObservation):
             logger.info(observation, extra={'msg_type': 'OBSERVATION'})
 
-        self.add_iteration_reminder_when_needed(i, observation)
+        observation = self.add_iteration_reminder_when_needed(i, observation)
         self.add_history(action, observation)
         await self._run_callbacks(observation)
         return False
