@@ -8,8 +8,6 @@ import ChatInterface from "./ChatInterface";
 import Socket from "#/services/socket";
 import ActionType from "#/types/ActionType";
 import { addAssistantMessage } from "#/state/chatSlice";
-import AgentTaskState from "#/types/AgentTaskState";
-import { changeTaskState } from "#/state/agentSlice";
 
 // avoid typing side-effect
 vi.mock("#/hooks/useTyping", () => ({
@@ -22,14 +20,24 @@ const socketSpy = vi.spyOn(Socket, "send");
 // TODO: Move this into test setup
 HTMLElement.prototype.scrollIntoView = vi.fn();
 
+const renderChatInterface = () =>
+  renderWithProviders(<ChatInterface />, {
+    preloadedState: {
+      task: {
+        initialized: true,
+        completed: false,
+      },
+    },
+  });
+
 describe("ChatInterface", () => {
   it("should render the messages and input", () => {
-    renderWithProviders(<ChatInterface />);
+    renderChatInterface();
     expect(screen.queryAllByTestId("message")).toHaveLength(1); // initial welcome message only
   });
 
   it("should render the new message the user has typed", async () => {
-    renderWithProviders(<ChatInterface />);
+    renderChatInterface();
 
     const input = screen.getByRole("textbox");
 
@@ -61,7 +69,7 @@ describe("ChatInterface", () => {
   });
 
   it("should send the a user message event to the Socket", () => {
-    renderWithProviders(<ChatInterface />);
+    renderChatInterface();
     const input = screen.getByRole("textbox");
     act(() => {
       userEvent.type(input, "my message{enter}");
@@ -71,21 +79,18 @@ describe("ChatInterface", () => {
     expect(socketSpy).toHaveBeenCalledWith(JSON.stringify(event));
   });
 
-  it("should display a typing indicator when waiting for assistant response", () => {
-    const { store } = renderWithProviders(<ChatInterface />, {
+  it("should disable the user input if agent is not initialized", () => {
+    renderWithProviders(<ChatInterface />, {
       preloadedState: {
-        chat: {
-          messages: [{ sender: "assistant", content: "Hello" }],
+        task: {
+          initialized: false,
+          completed: false,
         },
       },
     });
 
-    expect(screen.queryByTestId("typing")).not.toBeInTheDocument();
+    const submitButton = screen.getByLabelText(/send message/i);
 
-    act(() => {
-      store.dispatch(changeTaskState(AgentTaskState.RUNNING));
-    });
-
-    expect(screen.getByTestId("typing")).toBeInTheDocument();
+    expect(submitButton).toBeDisabled();
   });
 });

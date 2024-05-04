@@ -1,7 +1,7 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { IoMdChatbubbles } from "react-icons/io";
-import ChatInput from "../ChatInput";
+import ChatInput from "./ChatInput";
 import Chat from "./Chat";
 import { RootState } from "#/store";
 import AgentTaskState from "#/types/AgentTaskState";
@@ -9,19 +9,8 @@ import { addUserMessage } from "#/state/chatSlice";
 import ActionType from "#/types/ActionType";
 import Socket from "#/services/socket";
 
-function ActionBanner() {
-  return (
-    <div
-      data-testid="typing"
-      className="flex items-center justify-center gap-2 bg-neutral-700 border-y border-neutral-500 py-1.5 px-4"
-    >
-      <div className="flex h-5 w-5 items-center justify-center" />
-      <p className="text-sm text-gray-200 dark:text-gray-200">Working...</p>
-    </div>
-  );
-}
-
 function ChatInterface() {
+  const { initialized } = useSelector((state: RootState) => state.task);
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curTaskState } = useSelector((state: RootState) => state.agent);
 
@@ -50,11 +39,10 @@ function ChatInterface() {
         <div className="overflow-x-auto p-3">
           <Chat messages={messages} />
         </div>
-        {curTaskState === AgentTaskState.RUNNING && <ActionBanner />}
         {/* Fade between messages and input */}
         <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-b from-transparent to-neutral-800" />
       </div>
-      <ChatInput onSendMessage={handleSendMessage} />
+      <ChatInput disabled={!initialized} onSendMessage={handleSendMessage} />
     </div>
   );
 }
