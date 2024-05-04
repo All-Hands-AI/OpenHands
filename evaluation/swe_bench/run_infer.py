@@ -277,5 +277,8 @@ if __name__ == '__main__':
         output_fp.write(json.dumps(output) + '\n')
         output_fp.flush()
 
+        # Close the sandbox
+        sandbox.close()
+
     output_fp.close()
     logger.info('Evaluation finished.')
