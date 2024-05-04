@@ -319,44 +319,47 @@ def plot_stats(stats_df):
     st.altair_chart(chart, use_container_width=True)
 
     if 'repo' in stats_df.columns:
-        st.write('### Count of Resolved by Repo')
-        resolved_by_repo = stats_df.groupby('repo')['resolved'].sum()
-        total_by_repo = stats_df.groupby('repo')['resolved'].count()
-        resolved_rate_by_repo = resolved_by_repo / total_by_repo
-        resolved_by_repo_df = pd.DataFrame(
-            {
-                'Resolved': resolved_by_repo,
-                'Total': total_by_repo,
-                'Resolved Rate': resolved_rate_by_repo,
-            }
-        ).sort_values('Resolved Rate', ascending=False)
-        st.dataframe(
-            resolved_by_repo_df.style.format('{:.2%}', subset=['Resolved Rate'])
-            .format('{:.0f}', subset=['Resolved', 'Total'])
-            .set_caption('Count of Resolved by Repo'),
-            width=400,
-        )
-        chart = (
-            alt.Chart(
-                resolved_by_repo_df.reset_index(), title='Count of Resolved by Repo'
+        st.markdown('### Count of Resolved by Repo')
+        col1, col2 = st.columns([0.2, 0.8])
+        with col1:
+            resolved_by_repo = stats_df.groupby('repo')['resolved'].sum()
+            total_by_repo = stats_df.groupby('repo')['resolved'].count()
+            resolved_rate_by_repo = resolved_by_repo / total_by_repo
+            resolved_by_repo_df = pd.DataFrame(
+                {
+                    'Resolved': resolved_by_repo,
+                    'Total': total_by_repo,
+                    'Resolved Rate': resolved_rate_by_repo,
+                }
+            ).sort_values('Resolved Rate', ascending=False)
+            st.dataframe(
+                resolved_by_repo_df.style.format('{:.2%}', subset=['Resolved Rate'])
+                .format('{:.0f}', subset=['Resolved', 'Total'])
+                .set_caption('Count of Resolved by Repo'),
+                height=300,
             )
-            .mark_bar()
-            .encode(
-                x=alt.X(
-                    'Resolved Rate',
-                    type='quantitative',
-                    title='Resolved Rate',
-                    axis=alt.Axis(format='%'),
-                    scale=alt.Scale(domain=(0, 1)),
-                ),
-                y=alt.Y('repo', type='nominal', title='Repo', sort='-x'),
-                color=alt.Color(
-                    'Resolved Rate', type='quantitative', title='Resolved Rate'
-                ),
+        with col2:
+            chart = (
+                alt.Chart(
+                    resolved_by_repo_df.reset_index(), title='Count of Resolved by Repo'
+                )
+                .mark_bar()
+                .encode(
+                    x=alt.X(
+                        'Resolved Rate',
+                        type='quantitative',
+                        title='Resolved Rate',
+                        axis=alt.Axis(format='%'),
+                        scale=alt.Scale(domain=(0, 1)),
+                    ),
+                    y=alt.Y('repo', type='nominal', title='Repo', sort='-x'),
+                    color=alt.Color(
+                        'Resolved Rate', type='quantitative', title='Resolved Rate'
+                    ),
+                )
+                .properties(width=400)
             )
-            .properties(width=400)
-        )
-        st.altair_chart(chart, use_container_width=True)
+            st.altair_chart(chart, use_container_width=True)
 
 
 with st.expander('See stats', expanded=True):
@@ -370,9 +373,20 @@ if st.button('Randomly Select a Row'):
     row_id = random.choice(stats_df['idx'].values)
     st.query_params['row_idx'] = str(row_id)
 
+if st.button('Clear Selection'):
+    st.query_params['row_idx'] = ''
+
 selected_row = dataframe_with_selections(
     stats_df,
-    list(map(int, st.query_params.get('row_idx', '0').split(','))),
+    list(
+        filter(
+            lambda x: x is not None,
+            map(
+                lambda x: int(x) if x else None,
+                st.query_params.get('row_idx', '').split(','),
+            ),
+        )
+    ),
     selected_col='idx',
 )
 if len(selected_row) == 0:
