@@ -1,5 +1,3 @@
-import os
-import tempfile
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -60,23 +58,16 @@ class IPythonRunCellAction(Action):
     action: str = ActionType.RUN_IPYTHON
 
     async def run(self, controller: 'AgentController') -> 'IPythonRunCellObservation':
-        # echo "import math" | execute_cli
-        # write code to a temporary file and pass it to `execute_cli` via stdin
+        obs = controller.action_manager.run_command(
+            ('cat > /tmp/opendevin_jupyter_temp.py <<EOL\n' f'{self.code}\n' 'EOL'),
+            background=False,
+        )
 
-        with tempfile.NamedTemporaryFile(mode='w', delete=True) as tmp_file:
-            tmp_file.write(self.code)
-            tmp_filepath = tmp_file.name
+        # run the code
+        obs = controller.action_manager.run_command(
+            ('cat /tmp/opendevin_jupyter_temp.py | execute_cli'), background=False
+        )
 
-            tmp_dir_inside_sandbox = '/tmp/opendevin_jupyter'
-            controller.action_manager.sandbox.copy_to(
-                tmp_filepath, tmp_dir_inside_sandbox, recursive=False
-            )
-            tmp_filepath_inside_sandbox = os.path.join(
-                tmp_dir_inside_sandbox, os.path.basename(tmp_filepath)
-            )
-            obs = controller.action_manager.run_command(
-                f'execute_cli < {tmp_filepath_inside_sandbox}', background=False
-            )
         return IPythonRunCellObservation(content=obs.content, code=self.code)
 
     def __str__(self) -> str:
