@@ -274,7 +274,7 @@
   },
   "CHAT_INTERFACE$INPUT_PLACEHOLDER": {
     "en": "Message assistant...",
-    "zh-CN": "畀助手發消息",
+    "zh-CN": "给助手发消息",
     "de": "Sende eine Nachricht an den Assistenten...",
     "ko-KR": "어시스턴트에게 메시지 보내기",
     "no": "Send melding til assistenten...",
@@ -301,7 +301,7 @@
   },
   "CHAT_INTERFACE$INITIAL_MESSAGE": {
     "en": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
-    "zh-CN": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "zh-CN": "你好！我是 OpenDevin，一名 AI 软件工程师。今天想和我一起编写什么程序呢?",
     "de": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "ko-KR": "안녕하세요! 저는 오픈데빈(OpenDevin), AI 소프트웨어 엔지니어입니다. 오늘은 저와 함께 무엇을 만들어 볼까요?",
     "no": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
@@ -314,7 +314,7 @@
   },
   "CHAT_INTERFACE$ASSISTANT": {
     "en": "Assistant",
-    "zh-CN": "Assistant",
+    "zh-CN": "助理",
     "ko-KR": "어시스턴트",
     "de": "Assistant",
     "no": "Assistant",
@@ -328,41 +328,49 @@
   },
   "SETTINGS$MODEL_TOOLTIP": {
     "en": "Select the language model to use.",
+    "zh-CN": "选择要使用的语言模型",
     "zh-TW": "選擇要使用的語言模型。",
     "de": "Wähle das zu verwendende Model."
   },
   "SETTINGS$AGENT_TOOLTIP": {
     "en": "Select the agent to use.",
+    "zh-CN": "选择要使用的智能体",
     "zh-TW": "選擇要使用的智能體。",
     "de": "Wähle den zu verwendenden Agent."
   },
   "SETTINGS$LANGUAGE_TOOLTIP": {
     "en": "Select the language for the UI.",
+    "zh-CN": "选择界面语言",
     "zh-TW": "選擇 UI 的語言。",
     "de": "Wähle die Sprache für das Interface."
   },
   "SETTINGS$DISABLED_RUNNING": {
     "en": "Cannot be changed while the agent is running.",
+    "zh-CN": "在智能体运行时无法更改",
     "zh-TW": "智能體正在執行時無法更改。",
     "de": "Kann nicht geändert werden während ein Task ausgeführt wird."
   },
   "SETTINGS$API_KEY_PLACEHOLDER": {
     "en": "Enter your API key.",
+    "zh-CN": "输入 API key",
     "zh-TW": "輸入您的 API 金鑰。",
     "de": "Model API key."
   },
   "CODE_EDITOR$EMPTY_MESSAGE": {
     "en": "No file selected.",
+    "zh-CN": "文件未选中",
     "zh-TW": "未選取任何文件。",
     "de": "Keine Datei ausgewählt."
   },
   "BROWSER$EMPTY_MESSAGE": {
     "en": "No page loaded.",
+    "zh-CN": "页面未加载",
     "zh-TW": "未加載任何頁面。",
     "de": "Keine Seite geladen."
   },
   "PLANNER$EMPTY_MESSAGE": {
     "en": "No plan created.",
+    "zh-CN": "计划未创建",
     "zh-TW": "未創建任何計劃。",
     "de": "Kein Plan erstellt."
   }
