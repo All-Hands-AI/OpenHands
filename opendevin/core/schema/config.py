@@ -2,6 +2,8 @@ from enum import Enum
 
 
 class ConfigType(str, Enum):
+    LLM_TOP_P = 'LLM_TOP_P'
+    LLM_TEMPERATURE = 'LLM_TEMPERATURE'
     LLM_MAX_RETURN_TOKENS = 'LLM_MAX_RETURN_TOKENS'
     LLM_TIMEOUT = 'LLM_TIMEOUT'
     LLM_API_KEY = 'LLM_API_KEY'
