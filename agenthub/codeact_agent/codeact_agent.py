@@ -36,7 +36,7 @@ def parse_response(response) -> str:
     return action
 
 
-def truncate_observation(observation: str, max_chars: int = 5000) -> str:
+def truncate_observation(observation: str, max_chars: int = 10_000) -> str:
     """
     Truncate the middle of the observation if it is too long.
     """
