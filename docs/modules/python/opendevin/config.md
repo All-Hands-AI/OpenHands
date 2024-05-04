@@ -62,7 +62,13 @@ Serialize fields to a dict for the frontend, including type hints, defaults, and
 def get_field_info(field)
 ```
 
-Extract information about a dataclass field: type, optional, and default value.
+Extract information about a dataclass field: type, optional, and default.
+
+**Arguments**:
+
+- `field` - The field to extract information from.
+  
+- `Returns` - A dict with the field&#x27;s type, whether it&#x27;s optional, and its default value.
 
 #### load\_from\_env
 

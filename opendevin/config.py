@@ -106,7 +106,12 @@ class AppConfig(metaclass=Singleton):
 
 def get_field_info(field):
     """
-    Extract information about a dataclass field: type, optional, and default value.
+    Extract information about a dataclass field: type, optional, and default.
+
+    Args:
+        field: The field to extract information from.
+
+    Returns: A dict with the field's type, whether it's optional, and its default value.
     """
     field_type = field.type
     optional = False
@@ -119,11 +124,13 @@ def get_field_info(field):
             field_type = non_none_arg
             optional = True
 
+    # type name in a pretty format
     type_name = field_type.__name__ if hasattr(field_type, '__name__') else str(field_type)
 
     # default is always present
     default = field.default
 
+    # return a schema with the useful info for the frontend
     return {
         'type': type_name.lower(),
         'optional': optional,
@@ -180,8 +187,6 @@ def load_from_toml(config: AppConfig):
         config: The AppConfig object to update attributes of.
     """
 
-    logger.warning(f'Entering load_from_toml...{config}')
-
     # try to read the config.toml file into the config object
     toml_config = {}
 
@@ -192,7 +197,7 @@ def load_from_toml(config: AppConfig):
         # the file is optional, we don't need to do anything
         return
     except toml.TomlDecodeError:
-        logger.warning('Cannot parse config from toml, toml values have not been applied.', exc_info=True)
+        logger.warning('Cannot parse config from toml, toml values have not been applied.', exc_info=False)
         return
 
     # if there was an exception or core is not in the toml, try to use the old-style toml
@@ -202,9 +207,6 @@ def load_from_toml(config: AppConfig):
         return
 
     core_config = toml_config['core']
-
-    # this prints: core_config: {'workspace_base': 'wroooooong'}
-    print(f'core_config: {core_config}')
 
     try:
         llm_config = config.llm
@@ -256,11 +258,8 @@ def finalize_config(config: AppConfig):
 
 
 config = AppConfig()
-logger.warning(f'First creation of config...\n{config}')
 load_from_toml(config)
-logger.warning(f'Config after loading from toml...\n{config}')
 load_from_env(config, os.environ)
-logger.warning(f'Config after loading from env...\n{config}')
 finalize_config(config)
 
 
