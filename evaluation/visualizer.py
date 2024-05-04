@@ -336,7 +336,7 @@ def plot_stats(stats_df):
                 resolved_by_repo_df.style.format('{:.2%}', subset=['Resolved Rate'])
                 .format('{:.0f}', subset=['Resolved', 'Total'])
                 .set_caption('Count of Resolved by Repo'),
-                height=300,
+                height=400,
             )
         with col2:
             chart = (
@@ -357,7 +357,7 @@ def plot_stats(stats_df):
                         'Resolved Rate', type='quantitative', title='Resolved Rate'
                     ),
                 )
-                .properties(width=400)
+                .properties(height=400)
             )
             st.altair_chart(chart, use_container_width=True)
 
