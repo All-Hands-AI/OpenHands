@@ -1,7 +1,7 @@
 """Streamlit visualizer for the evaluation model outputs.
 
 Run the following command to start the visualizer:
-    streamlit run evaluation/visualizer.py --server.port 80
+    streamlit run evaluation/visualizer.py --server.port 8571 --server.address 0.0.0.0
 NOTE: YOU SHOULD BE AT THE ROOT OF THE REPOSITORY TO RUN THIS COMMAND.
 
 Mostly borrow from: https://github.com/xingyaoww/mint-bench/blob/main/scripts/visualizer.py
