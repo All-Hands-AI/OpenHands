@@ -230,6 +230,7 @@ def agg_stats(data):
 
 
 st.markdown('---')
+st.markdown('## Aggregated Stats')
 stats_df = agg_stats(data)
 if len(stats_df) == 0:
     st.write('No data to visualize.')
@@ -311,7 +312,7 @@ with st.expander('See stats', expanded=True):
 
 # # ===== Select a row to visualize =====
 st.markdown('---')
-
+st.markdown('## Visualize a Row')
 # Add a button to randomly select a row
 if st.button('Randomly Select a Row'):
     row_id = random.choice(stats_df['idx'].values)
@@ -347,6 +348,7 @@ n_turns = len(row_dict['history'])
 st.write(f'Number of turns: {n_turns}')
 
 with st.expander('Raw JSON', expanded=False):
+    st.markdown('### Raw JSON')
     st.json(row_dict)
 
 
@@ -384,14 +386,38 @@ def visualize_row(row_dict):
     st.write(pd.DataFrame([test_result]))
 
     st.markdown('### Interaction History')
-    st.code(row_dict['instruction'], language='plaintext')
-    history = row['history']
-    for i, (action, observation) in enumerate(history):
-        st.markdown(f'#### Turn {i + 1}')
-        st.markdown('##### Action')
-        visualize_action(action)
-        st.markdown('##### Observation')
-        visualize_obs(observation)
+    with st.expander('Interaction History', expanded=True):
+        st.code(row_dict['instruction'], language='plaintext')
+        history = row['history']
+        for i, (action, observation) in enumerate(history):
+            st.markdown(f'#### Turn {i + 1}')
+            st.markdown('##### Action')
+            visualize_action(action)
+            st.markdown('##### Observation')
+            visualize_obs(observation)
+
+    st.markdown('### Agent Patch')
+    with st.expander('Agent Patch', expanded=False):
+        st.code(row_dict['git_patch'], language='diff')
+
+    st.markdown('### Test Output')
+    with st.expander('Test Output', expanded=False):
+        st.code(row_dict['test_result']['test_output'], language='plaintext')
 
 
 visualize_row(row_dict)
+
+with st.sidebar:
+    st.markdown(
+        """
+        ## Navigation
+        - [Home](#opendevin-swe-bench-output-visualizer)
+        - [Aggregated Stats](#aggregated-stats)
+        - [Visualize a Row](#visualize-a-row)
+            - [Raw JSON](#raw-json)
+            - [Test Result](#test-result)
+            - [Interaction History](#interaction-history)
+            - [Agent Patch](#agent-patch)
+            - [Test Output](#test-output)
+        """
+    )
