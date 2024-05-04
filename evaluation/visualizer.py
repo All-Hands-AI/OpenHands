@@ -43,17 +43,21 @@ def parse_filepath(filepath: str):
     try:
         benchmark = splited[0]
         agent_name = splited[1]
-        # gpt-4-turbo-2024-04-09_maxiter_50
+        # gpt-4-turbo-2024-04-09_maxiter_50(optional)_N_XXX
         # use regex to match the model name & maxiter
-        matched = re.match(r'(.+)_maxiter_(\d+)', splited[2])
+        matched = re.match(r'(.+)_maxiter_(\d+)(_.+)?', splited[2])
         model_name = matched.group(1)
         maxiter = matched.group(2)
+        note = ''
+        if matched.group(3):
+            note += matched.group(3).removeprefix('_N_')
         assert len(splited) == 3
         return {
             'benchmark': benchmark,
             'agent_name': agent_name,
             'model_name': model_name,
             'maxiter': maxiter,
+            'note': note,
             'filepath': filepath,
         }
     except Exception as e:
