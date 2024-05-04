@@ -377,3 +377,7 @@ class AgentController:
                 return True
 
         return False
+
+    # add destructor to cleanup resources
+    def __del__(self):
+        self.browser.close()
