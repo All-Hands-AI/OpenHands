@@ -38,6 +38,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.LLM_RETRY_MIN_WAIT: 3,
     ConfigType.LLM_RETRY_MAX_WAIT: 60,
     ConfigType.MAX_ITERATIONS: 100,
+    ConfigType.ITERATION_REMINDER: 'true',
     ConfigType.AGENT_MEMORY_MAX_THREADS: 2,
     ConfigType.AGENT_MEMORY_ENABLED: False,
     ConfigType.LLM_TIMEOUT: None,
@@ -213,6 +214,10 @@ def finalize_config():
 
     if config.get(ConfigType.WORKSPACE_MOUNT_PATH) is None:
         config[ConfigType.WORKSPACE_MOUNT_PATH] = config.get(ConfigType.WORKSPACE_BASE)
+
+    config[ConfigType.ITERATION_REMINDER] = (
+        config[ConfigType.ITERATION_REMINDER].lower() == 'true'
+    )
 
 
 finalize_config()

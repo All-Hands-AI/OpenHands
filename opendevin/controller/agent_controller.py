@@ -61,6 +61,7 @@ class AgentController:
         callbacks: List[Callable] = [],
         fake_user_response_fn: Optional[Callable[[Optional[State]], str]] = None,
         sandbox: Optional[Sandbox] = None,
+        iteration_reminder: bool = config.get(ConfigType.ITERATION_REMINDER),
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -72,10 +73,16 @@ class AgentController:
             callbacks: A list of callback functions to run after each action.
             fake_user_response_fn: A optional function that receives the current state (could be None) and returns a fake user response.
             sandbox: An optional initialized sandbox to run the agent in. If not provided, a default sandbox will be created based on config.
+            iteration_reminder: A boolean value indicating whether to remind the agent its remaining budget of interaction.
         """
         self.id = sid
         self.agent = agent
         self.max_iterations = max_iterations
+        self.iteration_reminder = iteration_reminder
+        if self.iteration_reminder:
+            logger.info(
+                'Iteration reminder is ENABLED: agent will be reminded of remaining turns.'
+            )
         self.action_manager = ActionManager(self.id, sandbox=sandbox)
         self.max_chars = max_chars
         self.callbacks = callbacks
@@ -262,6 +269,16 @@ class AgentController:
         task = action.inputs.get('task') or ''
         await self.delegate.setup_task(task, action.inputs)
 
+    def add_iteration_reminder_when_needed(self, i: int, obs: Observation):
+        """Add iteration reminder to the observation if needed.
+
+        Args:
+            i: The current iteration number (0-indexed).
+            obs: The observation to add the reminder to.
+        """
+        if self.iteration_reminder:
+            obs.content += f'\n\nENVIRONMENT REMINDER: You have {self.max_iterations - i - 1} turns left to complete the task.'
+
     async def step(self, i: int) -> bool:
         if self.state is None:
             raise ValueError('No task to run')
@@ -306,6 +323,9 @@ class AgentController:
         if isinstance(action, AgentTalkAction):
             # await for the next user messages
             user_message_observation = await self.wait_for_user_input()
+            user_message_observation = self.add_iteration_reminder_when_needed(
+                i, user_message_observation
+            )
             logger.info(user_message_observation, extra={'msg_type': 'OBSERVATION'})
             self.add_history(action, user_message_observation)
             return False
@@ -323,6 +343,7 @@ class AgentController:
         if not isinstance(observation, NullObservation):
             logger.info(observation, extra={'msg_type': 'OBSERVATION'})
 
+        self.add_iteration_reminder_when_needed(i, observation)
         self.add_history(action, observation)
         await self._run_callbacks(observation)
         return False
