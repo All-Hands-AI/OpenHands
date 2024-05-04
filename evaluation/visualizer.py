@@ -277,38 +277,46 @@ resolved_rate = stats_df['resolved'].sum() / len(stats_df)
 resolved_strict_rate = stats_df['resolved_strict'].sum() / len(stats_df)
 resolved_script_rate = stats_df['resolved_script'].sum() / len(stats_df)
 
-# visualize these number in a table
-agg_stat = pd.DataFrame(
-    {
-        'Resolved Rate': {
-            'Rate': resolved_rate,
-            'Count': stats_df['resolved'].sum(),
-            'Total': len(data),
-        },
-        'Strict Resolved Rate': {
-            'Rate': resolved_strict_rate,
-            'Count': stats_df['resolved_strict'].sum(),
-            'Total': len(data),
-        },
-        'Script Resolved Rate': {
-            'Rate': resolved_script_rate,
-            'Count': stats_df['resolved_script'].sum(),
-            'Total': len(data),
-        },
-    },
-).T
-st.dataframe(
-    agg_stat.style.format('{:.2%}', subset=['Rate'])
-    .format('{:.0f}', subset=['Count', 'Total'])
-    .set_caption('Resolved Rate (by different metrics)'),
-    width=400,
-)
 st.markdown(
-    f'### Explanation of different resolved rate metrics:\n'
     f'- **Resolved Rate**: **{resolved_rate:2%}** : {stats_df["resolved"].sum()} / {len(data)}\n'
-    f'- **Strict Resolved Rate** (*most strict*, any error in test command exit will be considered as unresolved): **{resolved_strict_rate:2%}** : {stats_df["resolved_strict"].sum()} / {len(data)}\n'
-    f'- **Script Resolved Rate** (*most loose*, solely based on log parsing script from SWE-Bench): **{resolved_script_rate:2%}** : {stats_df["resolved_script"].sum()} / {len(data)}\n'
 )
+if resolved_script_rate != resolved_rate:
+    st.markdown(
+        f'- **Script Resolved Rate** (not eq!!): **{resolved_script_rate:2%}** : {stats_df["resolved_script"].sum()} / {len(data)}\n'
+    )
+
+# # visualize these number in a table
+# agg_stat = pd.DataFrame(
+#     {
+#         'Resolved Rate': {
+#             'Rate': resolved_rate,
+#             'Count': stats_df['resolved'].sum(),
+#             'Total': len(data),
+#         },
+#         'Strict Resolved Rate': {
+#             'Rate': resolved_strict_rate,
+#             'Count': stats_df['resolved_strict'].sum(),
+#             'Total': len(data),
+#         },
+#         'Script Resolved Rate': {
+#             'Rate': resolved_script_rate,
+#             'Count': stats_df['resolved_script'].sum(),
+#             'Total': len(data),
+#         },
+#     },
+# ).T
+# st.dataframe(
+#     agg_stat.style.format('{:.2%}', subset=['Rate'])
+#     .format('{:.0f}', subset=['Count', 'Total'])
+#     .set_caption('Resolved Rate (by different metrics)'),
+#     width=400,
+# )
+# st.markdown(
+#     f'### Explanation of different resolved rate metrics:\n'
+#     f'- **Resolved Rate**: **{resolved_rate:2%}** : {stats_df["resolved"].sum()} / {len(data)}\n'
+#     f'- **Strict Resolved Rate** (*most strict*, any error in test command exit will be considered as unresolved): **{resolved_strict_rate:2%}** : {stats_df["resolved_strict"].sum()} / {len(data)}\n'
+#     f'- **Script Resolved Rate** (*most loose*, solely based on log parsing script from SWE-Bench): **{resolved_script_rate:2%}** : {stats_df["resolved_script"].sum()} / {len(data)}\n'
+# )
 
 
 def plot_stats(stats_df, data):
