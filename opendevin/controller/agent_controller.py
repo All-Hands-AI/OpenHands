@@ -278,6 +278,7 @@ class AgentController:
         """
         if self.iteration_reminder:
             obs.content += f'\n\nENVIRONMENT REMINDER: You have {self.max_iterations - i - 1} turns left to complete the task.'
+        return obs
 
     async def step(self, i: int) -> bool:
         if self.state is None:
