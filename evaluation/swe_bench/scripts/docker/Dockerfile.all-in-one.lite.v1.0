@@ -72,3 +72,6 @@ RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
     --exclude='eval_data' \
     --exclude='miniconda3' \
     /eval_workspace/ /swe_util/
+
+# pushd evaluation/SWE-bench
+# docker build -t ghcr.io/opendevin/eval-swe-bench-all:lite-v1.0 -f ./scripts/docker/Dockerfile.all-in-one.lite.v1.0 .

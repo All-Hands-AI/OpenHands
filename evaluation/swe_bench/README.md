@@ -7,7 +7,7 @@ In [OpenDevin-SWE-Bench fork](https://github.com/OpenDevin/OD-SWE-bench.git), we
 **We pack everything you need for SWE-Bench evaluation into one, gigantic, docker image.** To use it:
 
 ```bash
-docker pull ghcr.io/xingyaoww/eval-swe-bench-all:lite-v1.0
+docker pull ghcr.io/xingyaoww/eval-swe-bench-all:lite-v1.1
 ```
 
 To reproduce how we pack the image, check [this doc](./BUILD_TESTBED_AND_ENV.md).
