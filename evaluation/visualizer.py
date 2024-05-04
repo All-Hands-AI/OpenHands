@@ -500,6 +500,10 @@ def visualize_row(row_dict):
     with st.expander('Test Output', expanded=False):
         st.code(row_dict['test_result']['test_output'], language='plaintext')
 
+    st.markdown('### Gold Patch')
+    with st.expander('Gold Patch', expanded=False):
+        st.code(row_dict['swe_instance']['patch'], language='diff')
+
 
 visualize_row(row_dict)
 
