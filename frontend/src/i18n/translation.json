@@ -244,18 +244,22 @@
   },
   "LOAD_SESSION$MODAL_TITLE": {
     "en": "Unfinished Session Detected",
+    "zh-CN": "检测到有未完成的会话",
     "zh-TW": "偵測到未完成的會話"
   },
   "LOAD_SESSION$MODAL_CONTENT": {
     "en": "You seem to have an unfinished task. Would you like to pick up where you left off or start fresh?",
+    "zh-CN": "您似乎有一个未完成的任务。您想继续之前的工作还是重新开始？",
     "zh-TW": "您似乎有一個未完成的任務。您想從上次離開的地方繼續還是重新開始？"
   },
   "LOAD_SESSION$RESUME_SESSION_MODAL_ACTION_LABEL": {
     "en": "Resume Session",
+    "zh-CN": "恢复会话",
     "zh-TW": "恢復會話"
   },
   "LOAD_SESSION$START_NEW_SESSION_MODAL_ACTION_LABEL": {
     "en": "Start New Session",
+    "zh-CN": "开始新会话",
     "zh-TW": "開始新會話"
   },
   "CHAT_INTERFACE$INITIALZING_AGENT_LOADING_MESSAGE": {
@@ -274,7 +278,7 @@
   },
   "CHAT_INTERFACE$INPUT_PLACEHOLDER": {
     "en": "Message assistant...",
-    "zh-CN": "给助手发消息",
+    "zh-CN": "给助理发消息",
     "de": "Sende eine Nachricht an den Assistenten...",
     "ko-KR": "어시스턴트에게 메시지 보내기",
     "no": "Send melding til assistenten...",
@@ -352,7 +356,7 @@
   },
   "SETTINGS$API_KEY_PLACEHOLDER": {
     "en": "Enter your API key.",
-    "zh-CN": "输入 API key",
+    "zh-CN": "输入您的 API key",
     "zh-TW": "輸入您的 API 金鑰。",
     "de": "Model API key."
   },
