@@ -233,19 +233,23 @@ def agg_stats(data):
             and not empty_generation
             and not test_cmd_exit_error
         )
-
-        stats.append(
-            {
-                'idx': idx,
-                'instance_id': entry['instance_id'],
-                'agent_class': entry['metadata']['agent_class'],
-                'model_name': entry['metadata']['model_name'],
-                'n_turns': len(history),
-                **test_result,
-                'empty_generation': empty_generation,
-                'test_cmd_exit_error': test_cmd_exit_error,
-            }
-        )
+        d = {
+            'idx': idx,
+            'instance_id': entry['instance_id'],
+            'agent_class': entry['metadata']['agent_class'],
+            'model_name': entry['metadata']['model_name'],
+            'n_turns': len(history),
+            **test_result,
+            'empty_generation': empty_generation,
+            'test_cmd_exit_error': test_cmd_exit_error,
+        }
+        if 'swe_instance' in entry:
+            d.update(
+                {
+                    'repo': entry['swe_instance']['repo'],
+                }
+            )
+        stats.append(d)
     return pd.DataFrame(stats)
 
 
@@ -313,6 +317,46 @@ def plot_stats(stats_df):
         .properties(width=400)
     )
     st.altair_chart(chart, use_container_width=True)
+
+    if 'repo' in stats_df.columns:
+        st.write('### Count of Resolved by Repo')
+        resolved_by_repo = stats_df.groupby('repo')['resolved'].sum()
+        total_by_repo = stats_df.groupby('repo')['resolved'].count()
+        resolved_rate_by_repo = resolved_by_repo / total_by_repo
+        resolved_by_repo_df = pd.DataFrame(
+            {
+                'Resolved': resolved_by_repo,
+                'Total': total_by_repo,
+                'Resolved Rate': resolved_rate_by_repo,
+            }
+        ).sort_values('Resolved Rate', ascending=False)
+        st.dataframe(
+            resolved_by_repo_df.style.format('{:.2%}', subset=['Resolved Rate'])
+            .format('{:.0f}', subset=['Resolved', 'Total'])
+            .set_caption('Count of Resolved by Repo'),
+            width=400,
+        )
+        chart = (
+            alt.Chart(
+                resolved_by_repo_df.reset_index(), title='Count of Resolved by Repo'
+            )
+            .mark_bar()
+            .encode(
+                x=alt.X(
+                    'Resolved Rate',
+                    type='quantitative',
+                    title='Resolved Rate',
+                    axis=alt.Axis(format='%'),
+                    scale=alt.Scale(domain=(0, 1)),
+                ),
+                y=alt.Y('repo', type='nominal', title='Repo', sort='-x'),
+                color=alt.Color(
+                    'Resolved Rate', type='quantitative', title='Resolved Rate'
+                ),
+            )
+            .properties(width=400)
+        )
+        st.altair_chart(chart, use_container_width=True)
 
 
 with st.expander('See stats', expanded=True):
