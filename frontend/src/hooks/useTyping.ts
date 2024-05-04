@@ -16,6 +16,7 @@ export const useTyping = (text: string) => {
     return () => {
       clearTimeout(timeout);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [message]);
 
   return message;
