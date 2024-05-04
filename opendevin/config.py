@@ -38,8 +38,8 @@ class LLMConfig(metaclass=Singleton):
         Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional.
         """
         dict = {}
-        for field in fields(self):
-            dict[field.name] = get_field_info(field)
+        for f in fields(self):
+            dict[f.name] = get_field_info(f)
         return dict
 
 
@@ -54,8 +54,8 @@ class AgentConfig(metaclass=Singleton):
         Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional.
         """
         dict = {}
-        for field in fields(self):
-            dict[field.name] = get_field_info(field)
+        for f in fields(self):
+            dict[f.name] = get_field_info(f)
         return dict
 
 
@@ -95,12 +95,12 @@ class AppConfig(metaclass=Singleton):
         Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional.
         """
         dict = {}
-        for field in fields(self):
-            field_value = getattr(self, field.name)
+        for f in fields(self):
+            field_value = getattr(self, f.name)
             if isinstance(field_value, (LLMConfig, AgentConfig)):
-                dict[field.name] = field_value.defaults_to_dict()
+                dict[f.name] = field_value.defaults_to_dict()
             else:
-                dict[field.name] = get_field_info(field)
+                dict[f.name] = get_field_info(f)
         return dict
 
 
@@ -180,36 +180,49 @@ def load_from_toml(config: AppConfig):
         config: The AppConfig object to update attributes of.
     """
 
-    # read the config.toml file, if any
-    config_str = ''
-    if os.path.exists('config.toml'):
-        with open('config.toml', 'rb') as f:
-            config_str = f.read().decode('utf-8')
+    logger.warning(f'Entering load_from_toml...{config}')
 
-    # load the toml config as a dict
-    tomlConfig = toml.loads(config_str)
+    # try to read the config.toml file into the config object
+    toml_config = {}
 
-    llm_config = config.llm
     try:
-        # let's see if new-style toml is used
-        llm_config = LLMConfig(**tomlConfig['llm'])
-    except KeyError:
-        # use the old-style toml
-        load_from_env(config, tomlConfig)
-    except TypeError:
-        logger.error('Error parsing LLM config from toml, toml values have not been applied.', exc_info=False)
+        with open('config.toml', 'r', encoding='utf-8') as toml_file:
+            toml_config = toml.load(toml_file)
+    except FileNotFoundError:
+        # the file is optional, we don't need to do anything
+        return
+    except toml.TomlDecodeError:
+        logger.warning('Cannot parse config from toml, toml values have not been applied.', exc_info=True)
+        return
 
-    agent_config = config.agent
+    # if there was an exception or core is not in the toml, try to use the old-style toml
+    if 'core' not in toml_config:
+        # re-use the env loader to set the config from env-style vars
+        load_from_env(config, toml_config)
+        return
+
+    core_config = toml_config['core']
+
+    # this prints: core_config: {'workspace_base': 'wroooooong'}
+    print(f'core_config: {core_config}')
+
     try:
-        agent_config = AgentConfig(**tomlConfig['agent'])
+        llm_config = config.llm
+        if 'llm' in toml_config:
+            llm_config = LLMConfig(**toml_config['llm'])
+
+        agent_config = config.agent
+        if 'agent' in toml_config:
+            agent_config = AgentConfig(**toml_config['agent'])
+
+        config = AppConfig(
+            llm=llm_config,
+            agent=agent_config,
+            **core_config
+        )
     except (TypeError, KeyError):
-        logger.error('Error parsing Agent config from toml, toml values have not been applied.', exc_info=False)
+        logger.warning('Cannot parse config from toml, toml values have not been applied.', exc_info=False)
 
-    config = AppConfig(
-        llm=llm_config,
-        agent=agent_config,
-        **{k: v for k, v in tomlConfig.items() if k not in ['llm', 'agent']}
-    )
 
 def finalize_config(config: AppConfig):
     """
@@ -243,8 +256,11 @@ def finalize_config(config: AppConfig):
 
 
 config = AppConfig()
+logger.warning(f'First creation of config...\n{config}')
 load_from_toml(config)
+logger.warning(f'Config after loading from toml...\n{config}')
 load_from_env(config, os.environ)
+logger.warning(f'Config after loading from env...\n{config}')
 finalize_config(config)
 
 
