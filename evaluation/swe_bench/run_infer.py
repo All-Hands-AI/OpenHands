@@ -246,8 +246,12 @@ if __name__ == '__main__':
     ), f'Unsupported agent class: {agent_class}'
     model_name = args.model_name
     max_iterations = args.max_iterations
+    eval_note = args.eval_note
+    output_dir = args.eval_output_dir
+    if eval_note is not None:
+        output_dir += '_N_' + eval_note
     eval_output_dir = os.path.join(
-        args.eval_output_dir,
+        output_dir,
         'swe_bench',
         agent_class,
         model_name + '_maxiter_' + str(max_iterations),
