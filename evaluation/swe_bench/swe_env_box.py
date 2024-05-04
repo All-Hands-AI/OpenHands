@@ -166,6 +166,25 @@ if __name__ == '__main__':
     assert exit_code == 0, 'Failed to reset the repo'
     logger.info(f'git reset --hard: {output}')
 
+    exit_code, output = sandbox.execute("""cat > /tmp/opendevin_jupyter_temp.py <<EOL
+import sys
+
+def main():
+    print("Hello, World!")
+    print("This is multiline Python code.")
+    print("It's being redirected to execute_cli.")
+
+if __name__ == "__main__":
+    main()
+EOL""")
+    logger.info('exit code: %d', exit_code)
+    logger.info(output)
+    exit_code, output = sandbox.execute(
+        'cat /tmp/opendevin_jupyter_temp.py | execute_cli'
+    )
+    logger.info('exit code: %d', exit_code)
+    logger.info(output)
+
     bg_cmd = sandbox.execute_in_background(
         "while true; do echo 'dot ' && sleep 10; done"
     )
