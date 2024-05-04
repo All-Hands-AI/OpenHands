@@ -256,3 +256,4 @@ class AgentUnit:
             self.agent_task.cancel()
         if self.controller is not None:
             self.controller.action_manager.sandbox.close()
+            self.controller.browser.close()
