@@ -155,6 +155,12 @@ def get_parser():
         help='The number of instances to evaluate',
     )
     parser.add_argument(
+        '--eval-num-workers',
+        default=4,
+        type=int,
+        help='The number of workers to use for evaluation',
+    )
+    parser.add_argument(
         '--llm-temperature',
         default=1.0,
         type=float,
