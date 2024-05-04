@@ -242,6 +242,20 @@
     "pt": "Salvar",
     "es": "Guardar"
   },
+  "CONFIGURATION$MODAL_RESET_BUTTON_LABEL": {
+    "en": "Reset to Defaults",
+    "zh-CN": "重置为默认值",
+    "de": "Auf Standardwerte zurücksetzen",
+    "ko-KR": "기본값으로 재설정",
+    "no": "Tilbakestill til standardverdier",
+    "zh-TW": "重設為預設值",
+    "it": "Reimposta ai valori predefiniti",
+    "pt": "Redefinir para os padrões",
+    "es": "Restablecer valores predeterminados",
+    "ar": "إعادة التعيين إلى الإعدادات الافتراضية",
+    "fr": "Réinitialiser aux valeurs par défaut",
+    "tr": "Varsayılanlara Sıfırla"
+  },
   "LOAD_SESSION$MODAL_TITLE": {
     "en": "Unfinished Session Detected"
   },
