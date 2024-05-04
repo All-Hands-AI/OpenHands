@@ -366,7 +366,6 @@ class DockerSSHBox(Sandbox):
     @property
     def volumes(self):
         mount_dir = config.get(ConfigType.WORKSPACE_MOUNT_PATH)
-        logger.info(f'Mounting workspace directory: {mount_dir}')
         return {
             mount_dir: {'bind': SANDBOX_WORKSPACE_DIR, 'mode': 'rw'},
             # mount cache directory to /home/opendevin/.cache for pip cache reuse
@@ -402,6 +401,7 @@ class DockerSSHBox(Sandbox):
                 )
 
             # start the container
+            logger.info(f'Mounting volumes: {self.volumes}')
             self.container = self.docker_client.containers.run(
                 self.container_image,
                 # allow root login
