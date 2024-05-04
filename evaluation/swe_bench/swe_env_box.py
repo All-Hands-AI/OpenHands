@@ -2,18 +2,17 @@ import sys
 import uuid
 
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.runtime.docker.ssh_box import DockerSSHBox
+from opendevin.runtime.docker.ssh_box import SANDBOX_WORKSPACE_DIR, DockerSSHBox
 from opendevin.runtime.plugins import JupyterRequirement, SWEAgentCommandsRequirement
 
-SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/xingyaoww/eval-swe-bench-all:lite-v1.0'
+SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/xingyaoww/eval-swe-bench-all:lite-v1.1'
 
 
 class SWEBenchSSHBox(DockerSSHBox):
     def __init__(
         self,
         container_image: str,
-        # larger timeout for SWEBench to account for long-running installations (e.g., require compilation)
-        timeout: int = 600,
+        timeout: int = 120,
         sid: str | None = None,
         swe_instance_id: str | None = None,
         swe_instance: dict | None = None,
@@ -22,7 +21,7 @@ class SWEBenchSSHBox(DockerSSHBox):
             container_image is not None
         ), 'container_image is required for SWEBenchSSHBox!'
         # Need to run as root to use SWEBench container
-        sid = f'swe_bench_{sid}' + str(uuid.uuid4())
+        sid = f'swe_bench_{swe_instance_id}' + str(uuid.uuid4())
         super().__init__(container_image, timeout, sid, run_as_devin=False)
 
         if swe_instance_id is None:
@@ -39,7 +38,8 @@ class SWEBenchSSHBox(DockerSSHBox):
         assert exit_code == 0, f'Failed to set SWE_INSTANCE_ID in ~/.bashrc: {output}'
 
         logger.info('Sourcing swe_entry.sh to set up environment variables')
-        exit_code, output = self.execute('source /swe_util/swe_entry.sh')
+        # larger timeout for SWEBench init to account for long-running installations (e.g., require compilation)
+        exit_code, output = self.execute('source /swe_util/swe_entry.sh', timeout=600)
         logger.info('exit code: %d', exit_code)
         logger.info(output)
         assert exit_code == 0, f'Failed to source swe_entry.sh: {output}'
@@ -47,7 +47,13 @@ class SWEBenchSSHBox(DockerSSHBox):
 
     @property
     def volumes(self):
-        return {**super().volumes}
+        # remove the default workspace mounting SANDBOX_WORKSPACE_DIR
+        volumes = {
+            k: v
+            for k, v in super().volumes.items()
+            if not v['bind'] == SANDBOX_WORKSPACE_DIR
+        }
+        return volumes
 
     @classmethod
     def get_box_for_instance(
@@ -159,6 +165,25 @@ if __name__ == '__main__':
     exit_code, output = sandbox.execute('git reset --hard')
     assert exit_code == 0, 'Failed to reset the repo'
     logger.info(f'git reset --hard: {output}')
+
+    exit_code, output = sandbox.execute("""cat > /tmp/opendevin_jupyter_temp.py <<EOL
+import sys
+
+def main():
+    print("Hello, World!")
+    print("This is multiline Python code.")
+    print("It's being redirected to execute_cli.")
+
+if __name__ == "__main__":
+    main()
+EOL""")
+    logger.info('exit code: %d', exit_code)
+    logger.info(output)
+    exit_code, output = sandbox.execute(
+        'cat /tmp/opendevin_jupyter_temp.py | execute_cli'
+    )
+    logger.info('exit code: %d', exit_code)
+    logger.info(output)
 
     bg_cmd = sandbox.execute_in_background(
         "while true; do echo 'dot ' && sleep 10; done"

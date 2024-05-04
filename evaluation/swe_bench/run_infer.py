@@ -1,19 +1,31 @@
 import asyncio
 import json
+import logging
+import multiprocessing as mp
 import os
 import pathlib
 import time
+from concurrent.futures import ProcessPoolExecutor
 
+import pandas as pd
+import whatthepatch
 from datasets import load_dataset
 from tqdm import tqdm
 
 from evaluation.swe_bench.swe_env_box import SWEBenchSSHBox
 from opendevin.controller.state.state import State
 from opendevin.core.config import args
-from opendevin.core.logger import get_file_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.observation import UserMessageObservation
+
+
+def cleanup():
+    print('Cleaning up child processes...')
+    for process in mp.active_children():
+        print(f'Terminating child process: {process.name}')
+        process.terminate()
+        process.join()
 
 
 def codeact_user_response(state: State) -> str:
@@ -37,6 +49,188 @@ AGENT_CLS_TO_INST_SUFFIX = {
     'CodeActAgent': 'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n'
 }
 
+
+def get_test_result(instance, sandbox, workspace_dir_name):
+    test_result = {'result': {}, 'metadata': {}}
+    try:
+        test_patch_parsed = whatthepatch.parse_patch(instance.test_patch)
+        # get a list of filepaths that are involved in the patch
+        involved_filepaths = set()
+        for patch in test_patch_parsed:
+            involved_filepaths.add(patch.header.old_path.removeprefix('a/'))
+            involved_filepaths.add(patch.header.new_path.removeprefix('b/'))
+        involved_filepaths = list(involved_filepaths)
+        test_result['metadata']['1_test_patch_parse_success'] = True
+        test_result['metadata']['1_test_involved_filepaths'] = involved_filepaths
+    except Exception as e:
+        logger.error(
+            f'Error parsing test patch for instance {instance.instance_id}: {e}'
+        )
+        test_result['metadata']['1_test_patch_parse_success'] = False
+        test_result['metadata']['1_test_patch_parse_error'] = str(e)
+        test_result['metadata']['1_test_involved_filepaths'] = None
+        involved_filepaths = []
+
+    # Try to revert the changes for involved filepaths
+    err_code, output = sandbox.execute(f'cd /workspace/{workspace_dir_name}')
+    test_result['metadata']['2_revert_test_involved_filepaths_success'] = []
+    for filepath in involved_filepaths:
+        err_code, output = sandbox.execute(
+            f'git checkout {instance["base_commit"]} -- {filepath}'
+        )
+        if err_code != 0:
+            logger.error(f'Error reverting changes for {filepath}: {output}')
+            test_result['metadata']['2_revert_test_involved_filepaths_success'].append(
+                False
+            )
+        else:
+            test_result['metadata']['2_revert_test_involved_filepaths_success'].append(
+                True
+            )
+
+    # Apply the testcase
+    err_code, output = sandbox.execute('git apply $SWE_TASK_DIR/test.patch')
+    if err_code != 0:
+        logger.error(f'Error applying test patch: {output}')
+        test_result['metadata']['3_apply_test_patch_success'] = False
+        test_result['metadata']['3_apply_test_patch_error'] = output
+    else:
+        test_result['metadata']['3_apply_test_patch_success'] = True
+
+    # Run the test command
+    err_code, output = sandbox.execute(
+        '$TEST_CMD > /workspace/$SWE_INSTANCE_ID.log 2>&1'
+    )
+    if err_code != 0:
+        logger.error(f'Error running test command: {output}')
+        test_result['metadata']['4_run_test_command_success'] = False
+        test_result['metadata']['4_run_test_command_error'] = output
+    else:
+        test_result['metadata']['4_run_test_command_success'] = True
+
+    # Get the test output
+    err_code, output = sandbox.execute('cat /workspace/$SWE_INSTANCE_ID.log')
+    if err_code != 0:
+        logger.error(f'Error getting test output: {output}')
+        test_result['metadata']['4_get_test_output_success'] = False
+        test_result['metadata']['4_get_test_output_error'] = output
+    else:
+        test_result['metadata']['4_get_test_output_success'] = True
+        test_result['test_output'] = output
+
+    # Reformat instance.json
+    # $SWE_TASK_DIR/instance.json is a dict {"XXX": "YYY"}, add a [ before and a ] after
+    err_code, output = sandbox.execute(
+        (
+            'cat $SWE_TASK_DIR/instance.json | sed "s/^{/[{/" | sed "s/}$/}]/" > /workspace/instance.json'
+        )
+    )
+    if err_code != 0:
+        logger.error(f'Error creating instance.json: {output}')
+        test_result['metadata']['5_reformat_instance_json_success'] = False
+        test_result['metadata']['5_reformat_instance_json_error'] = output
+    else:
+        test_result['metadata']['5_reformat_instance_json_success'] = True
+
+    # Get the instance report
+    err_code, output = sandbox.execute(
+        (
+            'cd /swe_util/OD-SWE-bench '
+            '&& export PYTHONPATH=$(pwd):$PYTHONPATH '
+            '&& conda run -n swe-bench-eval python swebench/metrics/get_instance_report.py --swe_bench_task /workspace/instance.json --log_path /workspace/$SWE_INSTANCE_ID.log'
+        )
+    )
+    if err_code != 0:
+        logger.error(f'Error getting instance report: {output}')
+        test_result['metadata']['6_get_instance_report_success'] = False
+        test_result['metadata']['6_get_instance_report_error'] = output
+    else:
+        test_result['metadata']['6_get_instance_report_success'] = True
+        test_result['result_raw'] = output
+
+        # try to parse output
+        for line in output.strip().split('\n'):
+            line = line.strip('-')
+            key, value = line.split(':')
+            value = value.strip()
+            try:
+                value = int(value)
+            except ValueError:
+                pass
+            test_result['result'][key.strip()] = value
+    return test_result
+
+
+def process_instance(instance, agent_class, metadata):
+    # Set up logger
+    # Remove all existing handlers from logger
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+    log_file = os.path.join(
+        eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
+    )
+    logger.info(
+        f'Starting evaluation for instance {instance.instance_id}.\nLOG:   tail -f {log_file}'
+    )
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setFormatter(
+        logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    )
+    logger.addHandler(file_handler)
+
+    workspace_dir_name = f'{instance.repo}__{instance.version}'.replace('/', '__')
+    sandbox = SWEBenchSSHBox.get_box_for_instance(instance, workspace_dir_name)
+
+    # Prepare controller kwargs
+    controller_kwargs = {
+        'fake_user_response_fn': AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+        'sandbox': sandbox,
+    }
+
+    # Prepare instruction
+    instruction = (
+        f'Please fix the following issue for the repository in /workspace/{workspace_dir_name}.\n'
+        'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
+        '# Problem Statement\n'
+        f'{instance.problem_statement}\n\n'
+    )
+    if instance.hints_text:
+        instruction += f'# Hints\n{instance.hints_text}\n\n'
+    instruction += (
+        'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK \n'
+        'You should ONLY interact with the environment provided to you.\n'
+        # 'You should NOT modify any existing test case files. '
+        # 'If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
+    )
+    instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
+
+    # Run the agent
+    state: State = asyncio.run(main(instruction, controller_kwargs=controller_kwargs))
+
+    # Get git patch
+    git_patch = sandbox.get_diff_patch()
+    logger.info(f'Got git diff for instance {instance.instance_id}')
+
+    # ======= Attempt to evaluate the agent's edits =======
+    # Attempt to analyze the test patch to get involved filepaths
+    test_result = get_test_result(instance, sandbox, workspace_dir_name)
+
+    # Save the output
+    output = {
+        'instance_id': instance.instance_id,
+        'swe_instance': instance.to_dict(),
+        'instruction': instruction,
+        'git_patch': git_patch,
+        'metadata': metadata,
+        'history': [(action.to_dict(), obs.to_dict()) for action, obs in state.history],
+        'test_result': test_result,
+    }
+
+    # Close the sandbox
+    sandbox.close()
+    return output
+
+
 if __name__ == '__main__':
     # Load the dataset
     dataset = load_dataset('princeton-nlp/SWE-bench_Lite')
@@ -56,9 +250,10 @@ if __name__ == '__main__':
         model_name + '_maxiter_' + str(max_iterations),
     )
 
-    # logger save to eval_output_dir/infer.log
-    logger.addHandler(get_file_handler(eval_output_dir))
     pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(os.path.join(eval_output_dir, 'logs')).mkdir(
+        parents=True, exist_ok=True
+    )
     logger.info(f'Using evaluation output directory: {eval_output_dir}')
 
     metadata = {
@@ -95,65 +290,53 @@ if __name__ == '__main__':
         f'Evaluation started with Agent {agent_class}, model {model_name}, max iterations {max_iterations}.'
     )
 
-    pbar = tqdm(swe_bench_lite_test.iterrows(), total=len(swe_bench_lite_test))
-
-    for row_idx, instance in swe_bench_lite_test.iterrows():
+    # filter out finished instances
+    new_swe_bench_lite_test = []
+    for idx, instance in swe_bench_lite_test.iterrows():
         if instance.instance_id in finished_instance_ids:
             logger.info(
                 f'Skipping instance {instance.instance_id} as it is already finished.'
             )
-            pbar.update()
             continue
+        new_swe_bench_lite_test.append(instance)
 
-        workspace_dir_name = f'{instance.repo}__{instance.version}'.replace('/', '__')
-        pbar.set_description(f'Instance {instance.instance_id} | {workspace_dir_name}')
-        sandbox = SWEBenchSSHBox.get_box_for_instance(instance, workspace_dir_name)
+    swe_bench_lite_test = pd.DataFrame(new_swe_bench_lite_test)
+    logger.info(
+        f'Finished instances: {len(finished_instance_ids)}, Remaining instances: {len(swe_bench_lite_test)}'
+    )
 
-        # Prepare controller kwargs
-        controller_kwargs = {
-            'fake_user_response_fn': AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                agent_class
-            ),
-            'sandbox': sandbox,
-        }
+    pbar = tqdm(total=len(swe_bench_lite_test))
 
-        # Prepare instruction
-        instruction = (
-            f'Please fix the following issue for the repository in /workspace/{workspace_dir_name}.\n'
-            'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
-            '# Problem Statement\n'
-            f'{instance.problem_statement}\n\n'
+    def update_progress(future):
+        pbar.update(1)
+        output = future.result()
+        pbar.set_description(f'Instance {output["instance_id"]}')
+        pbar.set_postfix_str(f'Test Result: {output["test_result"]["result"]}')
+        logger.info(
+            f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]["result"]}'
         )
-        if instance.hints_text:
-            instruction += f'# Hints\n{instance.hints_text}\n\n'
-        instruction += (
-            'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK. \n'
-            'You should ONLY interact with the environment provided to you.\n'
-        )
-        instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
-
-        # Run the agent
-        state: State = asyncio.run(
-            main(instruction, controller_kwargs=controller_kwargs)
-        )
-
-        # Get git patch
-        git_patch = sandbox.get_diff_patch()
-        logger.info(f'Got git diff for instance {instance.instance_id}')
-
-        # Save the output
-        output = {
-            'instance_id': instance.instance_id,
-            'swe_instance': instance.to_dict(),
-            'instruction': instruction,
-            'git_patch': git_patch,
-            'metadata': metadata,
-            'history': [
-                (action.to_dict(), obs.to_dict()) for action, obs in state.history
-            ],
-        }
         output_fp.write(json.dumps(output) + '\n')
         output_fp.flush()
+
+    num_workers = args.eval_num_workers
+    logger.info(f'Using {num_workers} workers for evaluation.')
+
+    try:
+        with ProcessPoolExecutor(num_workers) as executor:
+            futures = []
+            for row_idx, instance in swe_bench_lite_test.iterrows():
+                future = executor.submit(
+                    process_instance, instance, agent_class, metadata
+                )
+                future.add_done_callback(update_progress)
+                futures.append(future)
+
+            # Wait for all futures to complete
+            for future in futures:
+                future.result()
+    except KeyboardInterrupt:
+        print('KeyboardInterrupt received. Cleaning up...')
+        cleanup()
 
     output_fp.close()
     logger.info('Evaluation finished.')
