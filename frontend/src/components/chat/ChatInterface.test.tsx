@@ -8,6 +8,7 @@ import ChatInterface from "./ChatInterface";
 import Socket from "#/services/socket";
 import ActionType from "#/types/ActionType";
 import { addAssistantMessage } from "#/state/chatSlice";
+import AgentTaskState from "#/types/AgentTaskState";
 
 // avoid typing side-effect
 vi.mock("#/hooks/useTyping", () => ({
@@ -68,14 +69,50 @@ describe("ChatInterface", () => {
     expect(screen.getByText("Hello to you!")).toBeInTheDocument();
   });
 
-  it("should send the a user message event to the Socket", () => {
-    renderChatInterface();
+  it("should send the a start event to the Socket", () => {
+    renderWithProviders(<ChatInterface />, {
+      preloadedState: {
+        task: {
+          initialized: true,
+          completed: false,
+        },
+        agent: {
+          curTaskState: AgentTaskState.INIT,
+        },
+      },
+    });
+
     const input = screen.getByRole("textbox");
     act(() => {
       userEvent.type(input, "my message{enter}");
     });
 
     const event = { action: ActionType.START, args: { task: "my message" } };
+    expect(socketSpy).toHaveBeenCalledWith(JSON.stringify(event));
+  });
+
+  it("should send the a user message event to the Socket", () => {
+    renderWithProviders(<ChatInterface />, {
+      preloadedState: {
+        task: {
+          initialized: true,
+          completed: false,
+        },
+        agent: {
+          curTaskState: AgentTaskState.AWAITING_USER_INPUT,
+        },
+      },
+    });
+
+    const input = screen.getByRole("textbox");
+    act(() => {
+      userEvent.type(input, "my message{enter}");
+    });
+
+    const event = {
+      action: ActionType.USER_MESSAGE,
+      args: { message: "my message" },
+    };
     expect(socketSpy).toHaveBeenCalledWith(JSON.stringify(event));
   });
 

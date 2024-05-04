@@ -23,7 +23,7 @@ function ChatInterface() {
     if (curTaskState === AgentTaskState.INIT) {
       event = { action: ActionType.START, args: { task: content } };
     } else {
-      event = { action: ActionType.USER_MESSAGE, args: { content } };
+      event = { action: ActionType.USER_MESSAGE, args: { message: content } };
     }
 
     Socket.send(JSON.stringify(event));
