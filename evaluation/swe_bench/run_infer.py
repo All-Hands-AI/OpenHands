@@ -202,8 +202,8 @@ def process_instance(instance, agent_class, metadata):
         instruction += f'# Hints\n{instance.hints_text}\n\n'
     instruction += (
         'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-        'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
         'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
+        'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
     )
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
