@@ -7,6 +7,7 @@ import pathlib
 import time
 from concurrent.futures import ProcessPoolExecutor
 
+import pandas as pd
 import whatthepatch
 from datasets import load_dataset
 from tqdm import tqdm
@@ -289,7 +290,22 @@ if __name__ == '__main__':
         f'Evaluation started with Agent {agent_class}, model {model_name}, max iterations {max_iterations}.'
     )
 
-    pbar = tqdm(swe_bench_lite_test.iterrows(), total=len(swe_bench_lite_test))
+    # filter out finished instances
+    new_swe_bench_lite_test = []
+    for idx, instance in swe_bench_lite_test.iterrows():
+        if instance.instance_id in finished_instance_ids:
+            logger.info(
+                f'Skipping instance {instance.instance_id} as it is already finished.'
+            )
+            continue
+        new_swe_bench_lite_test.append(instance)
+
+    swe_bench_lite_test = pd.DataFrame(new_swe_bench_lite_test)
+    logger.info(
+        f'Finished instances: {len(finished_instance_ids)}, Remaining instances: {len(swe_bench_lite_test)}'
+    )
+
+    pbar = tqdm(total=len(swe_bench_lite_test))
 
     def update_progress(future):
         pbar.update(1)
@@ -309,12 +325,6 @@ if __name__ == '__main__':
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
             for row_idx, instance in swe_bench_lite_test.iterrows():
-                if instance.instance_id in finished_instance_ids:
-                    logger.info(
-                        f'Skipping instance {instance.instance_id} as it is already finished.'
-                    )
-                    pbar.update(1)
-                    continue
                 future = executor.submit(
                     process_instance, instance, agent_class, metadata
                 )
