@@ -2,7 +2,7 @@ import sys
 import uuid
 
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.runtime.docker.ssh_box import DockerSSHBox
+from opendevin.runtime.docker.ssh_box import SANDBOX_WORKSPACE_DIR, DockerSSHBox
 from opendevin.runtime.plugins import JupyterRequirement, SWEAgentCommandsRequirement
 
 SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/xingyaoww/eval-swe-bench-all:lite-v1.0'
@@ -47,7 +47,13 @@ class SWEBenchSSHBox(DockerSSHBox):
 
     @property
     def volumes(self):
-        return {**super().volumes}
+        # remove the default workspace mounting SANDBOX_WORKSPACE_DIR
+        volumes = {
+            k: v
+            for k, v in super().volumes.items()
+            if not v['bind'] == SANDBOX_WORKSPACE_DIR
+        }
+        return volumes
 
     @classmethod
     def get_box_for_instance(
