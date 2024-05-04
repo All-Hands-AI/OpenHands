@@ -67,7 +67,7 @@ class IPythonRunCellAction(Action):
             tmp_file.write(self.code)
             tmp_filepath = tmp_file.name
 
-            tmp_dir_inside_sandbox = '/tmp/jupyter'
+            tmp_dir_inside_sandbox = '/tmp/opendevin_jupyter'
             controller.action_manager.sandbox.copy_to(
                 tmp_filepath, tmp_dir_inside_sandbox, recursive=False
             )
