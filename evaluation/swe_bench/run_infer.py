@@ -160,8 +160,11 @@ def get_test_result(instance, sandbox, workspace_dir_name):
     return test_result
 
 
-def process_instance(instance, agent_class):
-    # Ready logger
+def process_instance(instance, agent_class, metadata):
+    # Set up logger
+    # Remove all existing handlers from logger
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
     log_file = os.path.join(
         eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
     )
@@ -210,8 +213,6 @@ def process_instance(instance, agent_class):
     # ======= Attempt to evaluate the agent's edits =======
     # Attempt to analyze the test patch to get involved filepaths
     test_result = get_test_result(instance, sandbox, workspace_dir_name)
-    pbar.update()
-    pbar.set_postfix_str(f'Test Result: {test_result["result"]}')
 
     # Save the output
     output = {
@@ -219,6 +220,7 @@ def process_instance(instance, agent_class):
         'swe_instance': instance.to_dict(),
         'instruction': instruction,
         'git_patch': git_patch,
+        'metadata': metadata,
         'history': [(action.to_dict(), obs.to_dict()) for action, obs in state.history],
         'test_result': test_result,
     }
@@ -247,9 +249,6 @@ if __name__ == '__main__':
         model_name + '_maxiter_' + str(max_iterations),
     )
 
-    # Remove all existing handlers from logger
-    for handler in logger.handlers[:]:
-        logger.removeHandler(handler)
     pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
     pathlib.Path(os.path.join(eval_output_dir, 'logs')).mkdir(
         parents=True, exist_ok=True
@@ -305,22 +304,29 @@ if __name__ == '__main__':
 
     num_workers = args.eval_num_workers
     logger.info(f'Using {num_workers} workers for evaluation.')
-    with ProcessPoolExecutor(num_workers) as executor:
-        futures = []
-        for row_idx, instance in swe_bench_lite_test.iterrows():
-            if instance.instance_id in finished_instance_ids:
-                logger.info(
-                    f'Skipping instance {instance.instance_id} as it is already finished.'
-                )
-                pbar.update(1)
-                continue
-            future = executor.submit(process_instance, instance, agent_class)
-            future.add_done_callback(update_progress)
-            futures.append(future)
 
-        # Wait for all futures to complete
-        for future in futures:
-            future.result()
+    try:
+        with ProcessPoolExecutor(num_workers) as executor:
+            futures = []
+            for row_idx, instance in swe_bench_lite_test.iterrows():
+                if instance.instance_id in finished_instance_ids:
+                    logger.info(
+                        f'Skipping instance {instance.instance_id} as it is already finished.'
+                    )
+                    pbar.update(1)
+                    continue
+                future = executor.submit(
+                    process_instance, instance, agent_class, metadata
+                )
+                future.add_done_callback(update_progress)
+                futures.append(future)
+
+            # Wait for all futures to complete
+            for future in futures:
+                future.result()
+    except KeyboardInterrupt:
+        print('KeyboardInterrupt received. Cleaning up...')
+        cleanup()
 
     output_fp.close()
     logger.info('Evaluation finished.')
