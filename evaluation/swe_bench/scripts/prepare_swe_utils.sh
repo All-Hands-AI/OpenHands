@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+set -e
 EVAL_WORKSPACE="evaluation/swe_bench/eval_workspace"
 mkdir -p $EVAL_WORKSPACE
 
