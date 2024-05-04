@@ -232,6 +232,13 @@ def agg_stats(data):
             and not empty_generation
             and not test_cmd_exit_error
         )
+        # avg,std obs length
+        obs_lengths = []
+        for _, (_, obs) in enumerate(history):
+            if 'content' in obs:
+                obs_lengths.append(len(obs['content']))
+        obs_lengths = pd.Series(obs_lengths)
+
         d = {
             'idx': idx,
             'instance_id': entry['instance_id'],
@@ -241,6 +248,9 @@ def agg_stats(data):
             **test_result,
             'empty_generation': empty_generation,
             'test_cmd_exit_error': test_cmd_exit_error,
+            'obs_len_avg': obs_lengths.mean().round(0),
+            'obs_len_std': obs_lengths.std().round(0),
+            'obs_len_max': obs_lengths.max().round(0),
         }
         if 'swe_instance' in entry:
             d.update(
@@ -297,7 +307,7 @@ st.markdown(
 )
 
 
-def plot_stats(stats_df):
+def plot_stats(stats_df, data):
     st.write('### Distribution of Number of Turns (by Resolved)')
     _stat = stats_df.groupby('resolved')['n_turns'].describe()
     # append a row for the whole dataset
@@ -360,9 +370,27 @@ def plot_stats(stats_df):
             )
             st.altair_chart(chart, use_container_width=True)
 
+    # visualize a histogram of #char of observation content
+    obs_lengths = []
+    for entry in data:
+        for _, (_, obs) in enumerate(entry['history']):
+            if 'content' in obs:
+                obs_lengths.append(len(obs['content']))
+    st.write('### Distribution of #char of Observation Content')
+    obs_lengths = pd.Series(obs_lengths).to_frame().rename(columns={0: 'value'})
+    # st.dataframe(obs_lengths.describe())
+    # add more quantile stats 75%, 90%, 95%, 99%
+    quantiles = [0.7, 0.8, 0.9, 0.95, 0.97, 0.99]
+    quantile_stats = obs_lengths['value'].quantile(quantiles).to_frame()
+    # change name to %
+    quantile_stats.index = [f'{q*100:.0f}%' for q in quantiles]
+    # combine with .describe()
+    quantile_stats = pd.concat([obs_lengths.describe(), quantile_stats]).sort_index()
+    st.dataframe(quantile_stats.T, use_container_width=True)
+
 
 with st.expander('See stats', expanded=True):
-    plot_stats(stats_df)
+    plot_stats(stats_df, data)
 
 # # ===== Select a row to visualize =====
 st.markdown('---')
@@ -435,6 +463,9 @@ def visualize_action(action):
 
 
 def visualize_obs(observation):
+    if 'content' in observation:
+        num_char = len(observation['content'])
+        st.markdown(rf'\# characters: {num_char}')
     if observation['observation'] == 'run':
         st.code(observation['content'], language='plaintext')
     elif observation['observation'] == 'run_ipython':

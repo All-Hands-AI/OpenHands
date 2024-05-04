@@ -163,15 +163,15 @@ def get_test_result(instance, sandbox, workspace_dir_name):
 
 def process_instance(instance, agent_class, metadata):
     # Set up logger
-    # Remove all existing handlers from logger
-    for handler in logger.handlers[:]:
-        logger.removeHandler(handler)
     log_file = os.path.join(
         eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
     )
     logger.info(
         f'Starting evaluation for instance {instance.instance_id}.\nLOG:   tail -f {log_file}'
     )
+    # Remove all existing handlers from logger
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
     file_handler = logging.FileHandler(log_file)
     file_handler.setFormatter(
         logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
