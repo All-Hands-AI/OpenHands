@@ -6,7 +6,7 @@ import time
 import uuid
 from collections import namedtuple
 from glob import glob
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import docker
 from pexpect import pxssh
@@ -213,11 +213,11 @@ class DockerSSHBox(Sandbox):
         bg_cmd = self.background_commands[id]
         return bg_cmd.read_logs()
 
-    def execute(self, cmd: str) -> Tuple[int, str]:
+    def execute(self, cmd: str, timeout: Optional[int] = None) -> Tuple[int, str]:
         cmd = cmd.strip()
         # use self.ssh
         self.ssh.sendline(cmd)
-        success = self.ssh.prompt(timeout=self.timeout)
+        success = self.ssh.prompt(timeout=timeout or self.timeout)
         if not success:
             logger.exception('Command timed out, killing process...', exc_info=False)
             # send a SIGINT to the process
