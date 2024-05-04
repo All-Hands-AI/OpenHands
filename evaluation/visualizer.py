@@ -407,17 +407,38 @@ def visualize_row(row_dict):
 
 visualize_row(row_dict)
 
-with st.sidebar:
-    st.markdown(
-        """
-        ## Navigation
-        - [Home](#opendevin-swe-bench-output-visualizer)
-        - [Aggregated Stats](#aggregated-stats)
-        - [Visualize a Row](#visualize-a-row)
-            - [Raw JSON](#raw-json)
-            - [Test Result](#test-result)
-            - [Interaction History](#interaction-history)
-            - [Agent Patch](#agent-patch)
-            - [Test Output](#test-output)
-        """
+
+def visualize_swe_instance(row_dict):
+    st.markdown('### SWE Instance')
+    swe_instance = row_dict['swe_instance']
+    st.markdown(f'Repo: `{swe_instance["repo"]}`')
+    st.markdown(f'Instance ID: `{swe_instance["instance_id"]}`')
+    st.markdown(f'Base Commit: `{swe_instance["base_commit"]}`')
+    st.markdown('#### PASS_TO_PASS')
+    st.write(pd.Series(json.loads(swe_instance['PASS_TO_PASS'])))
+    st.markdown('#### FAIL_TO_PASS')
+    st.write(pd.Series(json.loads(swe_instance['FAIL_TO_PASS'])))
+
+
+NAV_MD = """
+## Navigation
+- [Home](#opendevin-swe-bench-output-visualizer)
+- [Aggregated Stats](#aggregated-stats)
+- [Visualize a Row](#visualize-a-row)
+    - [Raw JSON](#raw-json)
+    - [Test Result](#test-result)
+    - [Interaction History](#interaction-history)
+    - [Agent Patch](#agent-patch)
+    - [Test Output](#test-output)
+"""
+
+if 'swe_instance' in row_dict:
+    visualize_swe_instance(row_dict)
+    NAV_MD += (
+        '- [SWE Instance](#swe-instance)\n'
+        '  - [PASS_TO_PASS](#pass-to-pass)\n'
+        '  - [FAIL_TO_PASS](#fail-to-pass)\n'
     )
+
+with st.sidebar:
+    st.markdown(NAV_MD)
