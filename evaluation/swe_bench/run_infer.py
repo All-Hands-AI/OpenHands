@@ -29,18 +29,22 @@ def cleanup():
 
 
 def codeact_user_response(state: State) -> str:
+    msg = (
+        'Please continue working on the task on whatever approach you think is suitable.\n'
+        'If you think you have modified the code in a way that fixes the issue, please run the following command: <execute_bash> exit </execute_bash>.\n'
+        'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK.\n'
+    )
     if state.history:
         user_msg_obs = [
             obs for _, obs in state.history if isinstance(obs, UserMessageObservation)
         ]
-        if len(user_msg_obs) >= 3:
+        if len(user_msg_obs) >= 2:
             # let the agent know that it can give up when it has tried 3 times
-            return 'Please continue working on the task on whatever approach you think is suitable. If you think you have modified the code in a way that fixes the issue OR you want to give up, please run the following command: <execute_bash> exit </execute_bash>.\n'
-    return (
-        'Please continue working on the task on whatever approach you think is suitable. '
-        'If you think you have modified the code in a way that fixes the issue, please run the following command: <execute_bash> exit </execute_bash>.\n'
-        'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK. '
-    )
+            return (
+                msg
+                + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
+            )
+    return msg
 
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {'CodeActAgent': codeact_user_response}
