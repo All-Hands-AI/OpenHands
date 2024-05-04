@@ -9,6 +9,7 @@ on:
     branches:
     - main
     tags:
+      - '*'
   pull_request:
   workflow_dispatch:
     inputs:
