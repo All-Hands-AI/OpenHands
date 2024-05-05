@@ -288,10 +288,6 @@ resolved_script_rate = stats_df['resolved_script'].sum() / len(stats_df)
 st.markdown(
     f'- **Resolved Rate**: **{resolved_rate:2%}** : {stats_df["resolved"].sum()} / {len(data)}\n'
 )
-if resolved_script_rate != resolved_rate:
-    st.markdown(
-        f'- **Script Resolved Rate** (not eq!!): **{resolved_script_rate:2%}** : {stats_df["resolved_script"].sum()} / {len(data)}\n'
-    )
 
 # # visualize these number in a table
 # agg_stat = pd.DataFrame(
