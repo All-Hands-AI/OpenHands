@@ -196,7 +196,6 @@ class AgentController:
             return
 
         self._agent_state = new_state
-        print('set state to', self._agent_state)
         if new_state == AgentState.RUNNING:
             self.agent_task = asyncio.create_task(self._run())
         elif (
