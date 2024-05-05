@@ -21,10 +21,10 @@ if ! useradd -l -m -u $SANDBOX_USER_ID -s /bin/bash enduser; then
   echo "Failed to create user enduser with id $SANDBOX_USER_ID. Moving opendevin user."
   incremented_id=$(($SANDBOX_USER_ID + 1))
   usermod -u $incremented_id opendevin
-fi
-if ! useradd -l -m -u $SANDBOX_USER_ID -s /bin/bash enduser; then
-  echo "Failed to create user enduser with id $SANDBOX_USER_ID for a second time. Exiting."
-  exit 1
+  if ! useradd -l -m -u $SANDBOX_USER_ID -s /bin/bash enduser; then
+    echo "Failed to create user enduser with id $SANDBOX_USER_ID for a second time. Exiting."
+    exit 1
+  fi
 fi
 
 usermod -aG app enduser
