@@ -6,9 +6,11 @@ import PauseIcon from "#/assets/pause";
 import PlayIcon from "#/assets/play";
 import { changeAgentState } from "#/services/agentStateService";
 import { clearMsgs } from "#/services/session";
-import { clearMessages } from "#/state/chatSlice";
 import store, { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
+import AgentTaskAction from "#/types/AgentTaskAction";
+import AgentTaskState from "#/types/AgentTaskState";
+import { clearMessages } from "#/state/chatSlice";
 
 const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
   [AgentState.PAUSED]: [
