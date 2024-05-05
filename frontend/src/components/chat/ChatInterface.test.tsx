@@ -8,7 +8,7 @@ import ChatInterface from "./ChatInterface";
 import Socket from "#/services/socket";
 import ActionType from "#/types/ActionType";
 import { addAssistantMessage } from "#/state/chatSlice";
-import AgentTaskState from "#/types/AgentTaskState";
+import AgentState from "#/types/AgentState";
 
 // avoid typing side-effect
 vi.mock("#/hooks/useTyping", () => ({
@@ -25,7 +25,6 @@ const renderChatInterface = () =>
   renderWithProviders(<ChatInterface />, {
     preloadedState: {
       task: {
-        initialized: true,
         completed: false,
       },
     },
@@ -73,11 +72,10 @@ describe("ChatInterface", () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
         task: {
-          initialized: true,
           completed: false,
         },
         agent: {
-          curTaskState: AgentTaskState.INIT,
+          curAgentState: AgentState.INIT,
         },
       },
     });
@@ -95,11 +93,10 @@ describe("ChatInterface", () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
         task: {
-          initialized: true,
           completed: false,
         },
         agent: {
-          curTaskState: AgentTaskState.AWAITING_USER_INPUT,
+          curAgentState: AgentState.AWAITING_USER_INPUT,
         },
       },
     });
@@ -120,8 +117,10 @@ describe("ChatInterface", () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
         task: {
-          initialized: false,
           completed: false,
+        },
+        agent: {
+          curAgentState: AgentState.LOADING,
         },
       },
     });
