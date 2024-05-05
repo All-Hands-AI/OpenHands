@@ -228,6 +228,7 @@ class AgentController:
         # FIXME: need a way to handle CLI input
         user_message_observation = await self._await_user_message_queue.get()
         self._await_user_message_queue.task_done()
+        await self.set_agent_state_to(AgentState.RUNNING)
         return user_message_observation
 
     async def start_delegate(self, action: AgentDelegateAction):

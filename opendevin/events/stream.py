@@ -12,6 +12,7 @@ class EventStreamSubscriber(str, Enum):
     AGENT_CONTROLLER = 'agent_controller'
     SERVER = 'server'
     RUNTIME = 'runtime'
+    MAIN = 'main'
 
 
 class EventSource(str, Enum):
