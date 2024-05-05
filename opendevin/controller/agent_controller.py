@@ -148,18 +148,18 @@ class AgentController:
                     break
             except Exception:
                 logger.error('Error in loop', exc_info=True)
+                await self.set_agent_state_to(AgentState.ERROR)
                 await self.add_error_to_history(
                     'Oops! Something went wrong while completing your task. You can check the logs for more info.'
                 )
-                await self.set_agent_state_to(AgentState.STOPPED)
                 break
 
             if self._is_stuck():
                 logger.info('Loop detected, stopping task')
+                await self.set_agent_state_to(AgentState.ERROR)
                 await self.add_error_to_history(
                     'I got stuck into a loop, the task has stopped.'
                 )
-                await self.set_agent_state_to(AgentState.STOPPED)
                 break
             await asyncio.sleep(
                 0.001
@@ -188,7 +188,6 @@ class AgentController:
             self.agent_task.cancel()
         self.state = None
         self._cur_step = 0
-        self._agent_state = AgentState.INIT
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState):
@@ -197,6 +196,7 @@ class AgentController:
             return
 
         self._agent_state = new_state
+        print('set state to', self._agent_state)
         if new_state == AgentState.RUNNING:
             self.agent_task = asyncio.create_task(self._run())
         elif (

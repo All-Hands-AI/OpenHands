@@ -72,7 +72,7 @@ async def main(task_str: str = ''):
         AgentState.ERROR,
         AgentState.STOPPED,
     ]:
-        await asyncio.sleep(0.001)  # Give back control for a tick, so the agent can run
+        await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
 
 if __name__ == '__main__':
