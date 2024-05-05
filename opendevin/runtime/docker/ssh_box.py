@@ -216,21 +216,33 @@ class DockerSSHBox(Sandbox):
         bg_cmd = self.background_commands[id]
         return bg_cmd.read_logs()
 
-    def execute(self, cmd: str, timeout: Optional[int] = None) -> Tuple[int, str]:
-        cmd = cmd.strip()
-        # use self.ssh
-        self.ssh.sendline(cmd)
-        success = self.ssh.prompt(timeout=timeout or self.timeout)
-        if not success:
-            logger.exception('Command timed out, killing process...', exc_info=False)
-            # send a SIGINT to the process
-            self.ssh.sendintr()
-            self.ssh.prompt()
-            command_output = self.ssh.before.decode('utf-8').lstrip(cmd).strip()
-            return (
-                -1,
-                f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}',
+    def _send_interrupt(
+        self,
+        cmd: str,
+        prev_output: Optional[str] = '',
+        ignore_last_output: bool = False,
+    ) -> Tuple[int, str]:
+        logger.exception('Command timed out, killing process...', exc_info=False)
+        # send a SIGINT to the process
+        self.ssh.sendintr()
+        self.ssh.prompt()
+        command_output = prev_output
+        if not ignore_last_output:
+            command_output += (
+                '\n' + self.ssh.before.decode('utf-8').removeprefix(cmd).strip()
             )
+        return (
+            -1,
+            f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}',
+        )
+
+    def execute(self, cmd: str, timeout: Optional[int] = None) -> Tuple[int, str]:
+        timeout = timeout or self.timeout
+        cmd = cmd.strip()
+        self.ssh.sendline(cmd)
+        success = self.ssh.prompt(timeout=timeout)
+        if not success:
+            return self._send_interrupt(cmd)
         command_output = self.ssh.before.decode('utf-8').strip()
 
         # once out, make sure that we have *every* output, we while loop until we get an empty output
@@ -249,17 +261,22 @@ class DockerSSHBox(Sandbox):
             if output == '':
                 break
             command_output += output
-        command_output = command_output.lstrip(cmd).strip()
+        command_output = command_output.removeprefix(cmd).strip()
 
         # get the exit code
         self.ssh.sendline('echo $?')
         self.ssh.prompt()
+        _start_time = time.time()
         exit_code = self.ssh.before.decode('utf-8')
         while not exit_code.startswith('echo $?'):
             self.ssh.prompt()
             exit_code = self.ssh.before.decode('utf-8')
             logger.debug(f'WAITING FOR exit code: {exit_code}')
-        exit_code = int(exit_code.lstrip('echo $?').strip())
+            if time.time() - _start_time > timeout:
+                return self._send_interrupt(
+                    cmd, command_output, ignore_last_output=True
+                )
+        exit_code = int(exit_code.removeprefix('echo $?').strip())
         return exit_code, command_output
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
