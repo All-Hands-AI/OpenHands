@@ -4,7 +4,7 @@ import { IoMdChatbubbles } from "react-icons/io";
 import ChatInput from "./ChatInput";
 import Chat from "./Chat";
 import { RootState } from "#/store";
-import AgentTaskState from "#/types/AgentTaskState";
+import AgentState from "#/types/AgentState";
 import { addUserMessage } from "#/state/chatSlice";
 import ActionType from "#/types/ActionType";
 import Socket from "#/services/socket";
@@ -12,7 +12,7 @@ import Socket from "#/services/socket";
 function ChatInterface() {
   const { initialized } = useSelector((state: RootState) => state.task);
   const { messages } = useSelector((state: RootState) => state.chat);
-  const { curTaskState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const dispatch = useDispatch();
 
@@ -20,7 +20,7 @@ function ChatInterface() {
     dispatch(addUserMessage(content));
 
     let event;
-    if (curTaskState === AgentTaskState.INIT) {
+    if (curAgentState === AgentState.INIT) {
       event = { action: ActionType.START, args: { task: content } };
     } else {
       event = { action: ActionType.USER_MESSAGE, args: { message: content } };
@@ -42,7 +42,10 @@ function ChatInterface() {
         {/* Fade between messages and input */}
         <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-b from-transparent to-neutral-800" />
       </div>
-      <ChatInput disabled={!initialized} onSendMessage={handleSendMessage} />
+      <ChatInput
+        disabled={curAgentState === AgentState.LOADING}
+        onSendMessage={handleSendMessage}
+      />
     </div>
   );
 }
