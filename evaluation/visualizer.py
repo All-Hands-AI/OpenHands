@@ -209,9 +209,12 @@ for filepath in select_filepaths:
         for line in f.readlines():
             d = json.loads(line)
             # clear out git patch
-            if 'git_patch' in d and 'diff' in d['git_patch']:
-                # strip everything before the first `diff` (inclusive)
-                d['git_patch'] = d['git_patch'][d['git_patch'].index('diff') :]
+            if 'git_patch' in d:
+                if 'diff' in d['git_patch']:
+                    # strip everything before the first `diff` (inclusive)
+                    d['git_patch'] = d['git_patch'][d['git_patch'].index('diff') :]
+                else:
+                    d['git_patch'] = ''
             data.append(d)
 df = pd.DataFrame(data)
 st.write(f'{len(data)} rows found.')
@@ -513,13 +516,13 @@ def visualize_row(row_dict):
     with st.expander('Agent Patch', expanded=False):
         st.code(row_dict['git_patch'], language='diff')
 
-    st.markdown('### Test Output')
-    with st.expander('Test Output', expanded=False):
-        st.code(row_dict['test_result']['test_output'], language='plaintext')
-
     st.markdown('### Gold Patch')
     with st.expander('Gold Patch', expanded=False):
         st.code(row_dict['swe_instance']['patch'], language='diff')
+
+    st.markdown('### Test Output')
+    with st.expander('Test Output', expanded=False):
+        st.code(row_dict['test_result']['test_output'], language='plaintext')
 
 
 visualize_row(row_dict)
@@ -546,6 +549,7 @@ NAV_MD = """
     - [Test Result](#test-result)
     - [Interaction History](#interaction-history)
     - [Agent Patch](#agent-patch)
+    - [Gold Patch](#gold-patch)
     - [Test Output](#test-output)
 """
 
