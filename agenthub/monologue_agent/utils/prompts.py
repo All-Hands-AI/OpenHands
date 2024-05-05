@@ -2,13 +2,13 @@ import re
 from json import JSONDecodeError
 from typing import List
 
-from opendevin.action import (
+from opendevin.core.config import config
+from opendevin.core.exceptions import LLMOutputError
+from opendevin.events.action import (
     Action,
     action_from_dict,
 )
-from opendevin.config import config
-from opendevin.exceptions import LLMOutputError
-from opendevin.observation import (
+from opendevin.events.observation import (
     CmdOutputObservation,
 )
 
@@ -177,12 +177,18 @@ def parse_action_response(response: str) -> Action:
         # Find response-looking json in the output and use the more promising one. Helps with weak llms
         response_json_matches = re.finditer(
             r"""{\s*\"action\":\s?\"(\w+)\"(?:,?|,\s*\"args\":\s?{((?:.|\s)*?)})\s*}""",
-            response)  # Find all response-looking strings
+            response,
+        )  # Find all response-looking strings
 
         def rank(match):
-            return len(match[2]) if match[1] == 'think' else 130  # Crudely rank multiple responses by length
+            return (
+                len(match[2]) if match[1] == 'think' else 130
+            )  # Crudely rank multiple responses by length
+
         try:
-            action_dict = json.loads(max(response_json_matches, key=rank)[0])  # Use the highest ranked response
+            action_dict = json.loads(
+                max(response_json_matches, key=rank)[0]
+            )  # Use the highest ranked response
         except (ValueError, JSONDecodeError):
             raise LLMOutputError(
                 'Invalid JSON, the response must be well-formed JSON as specified in the prompt.'

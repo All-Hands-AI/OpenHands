@@ -13,9 +13,9 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from opendevin.config import config
-from opendevin.logger import llm_prompt_logger, llm_response_logger
-from opendevin.logger import opendevin_logger as logger
+from opendevin.core.config import config
+from opendevin.core.logger import llm_prompt_logger, llm_response_logger
+from opendevin.core.logger import opendevin_logger as logger
 
 DEFAULT_API_KEY = config.llm.api_key
 DEFAULT_BASE_URL = config.llm.base_url
@@ -26,6 +26,8 @@ LLM_RETRY_MIN_WAIT = config.llm.retry_min_wait
 LLM_RETRY_MAX_WAIT = config.llm.retry_max_wait
 LLM_TIMEOUT = config.llm.timeout
 LLM_MAX_RETURN_TOKENS = config.llm.max_return_tokens
+LLM_TEMPERATURE = config.llm.temperature
+LLM_TOP_P = config.llm.top_p
 
 
 class LLM:
@@ -44,6 +46,8 @@ class LLM:
         retry_max_wait=LLM_RETRY_MAX_WAIT,
         llm_timeout=LLM_TIMEOUT,
         llm_max_return_tokens=LLM_MAX_RETURN_TOKENS,
+        llm_temperature=LLM_TEMPERATURE,
+        llm_top_p=LLM_TOP_P,
     ):
         """
         Args:
@@ -79,6 +83,8 @@ class LLM:
             api_version=self.api_version,
             max_tokens=self.llm_max_return_tokens,
             timeout=self.llm_timeout,
+            temperature=llm_temperature,
+            top_p=llm_top_p,
         )
 
         completion_unwrapped = self._completion

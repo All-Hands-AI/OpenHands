@@ -39,6 +39,19 @@
     "pt": "Planejador",
     "es": "Planificador"
   },
+  "WORKSPACE$JUPYTER_TAB_LABEL": {
+    "en": "Jupyter IPython",
+    "zh-CN": "Jupyter IPython",
+    "de": "Jupyter IPython",
+    "ko-KR": "Jupyter IPython",
+    "no": "Jupyter IPython",
+    "zh-TW": "Jupyter IPython",
+    "ar": "Jupyter IPython",
+    "fr": "Jupyter IPython",
+    "it": "Jupyter IPython",
+    "pt": "Jupyter IPython",
+    "es": "Jupyter IPython"
+  },
   "WORKSPACE$CODE_EDITOR_TAB_LABEL": {
     "en": "Code Editor",
     "zh-CN": "代码编辑器",
@@ -230,16 +243,20 @@
     "es": "Guardar"
   },
   "LOAD_SESSION$MODAL_TITLE": {
-    "en": "Unfinished Session Detected"
+    "en": "Unfinished Session Detected",
+    "zh-TW": "偵測到未完成的會話"
   },
   "LOAD_SESSION$MODAL_CONTENT": {
-    "en": "You seem to have an unfinished task. Would you like to pick up where you left off or start fresh?"
+    "en": "You seem to have an unfinished task. Would you like to pick up where you left off or start fresh?",
+    "zh-TW": "您似乎有一個未完成的任務。您想從上次離開的地方繼續還是重新開始？"
   },
   "LOAD_SESSION$RESUME_SESSION_MODAL_ACTION_LABEL": {
-    "en": "Resume Session"
+    "en": "Resume Session",
+    "zh-TW": "恢復會話"
   },
   "LOAD_SESSION$START_NEW_SESSION_MODAL_ACTION_LABEL": {
-    "en": "Start New Session"
+    "en": "Start New Session",
+    "zh-TW": "開始新會話"
   },
   "CHAT_INTERFACE$INITIALZING_AGENT_LOADING_MESSAGE": {
     "en": "Initializing agent (may take up to 10 seconds)...",
@@ -288,7 +305,7 @@
     "de": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "ko-KR": "안녕하세요! 저는 오픈데빈(OpenDevin), AI 소프트웨어 엔지니어입니다. 오늘은 저와 함께 무엇을 만들어 볼까요?",
     "no": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
-    "zh-TW": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "zh-TW": "嗨！我是 OpenDevin，一位人工智慧軟體工程師。你今天想和我一起建造什麼？",
     "it": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "pt": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "es": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
@@ -301,7 +318,7 @@
     "ko-KR": "어시스턴트",
     "de": "Assistant",
     "no": "Assistant",
-    "zh-TW": "Assistant",
+    "zh-TW": "助理",
     "it": "Assistant",
     "pt": "Assistant",
     "es": "Assistant",
@@ -311,34 +328,42 @@
   },
   "SETTINGS$MODEL_TOOLTIP": {
     "en": "Select the language model to use.",
+    "zh-TW": "選擇要使用的語言模型。",
     "de": "Wähle das zu verwendende Model."
   },
   "SETTINGS$AGENT_TOOLTIP": {
     "en": "Select the agent to use.",
+    "zh-TW": "選擇要使用的智能體。",
     "de": "Wähle den zu verwendenden Agent."
   },
   "SETTINGS$LANGUAGE_TOOLTIP": {
     "en": "Select the language for the UI.",
+    "zh-TW": "選擇 UI 的語言。",
     "de": "Wähle die Sprache für das Interface."
   },
   "SETTINGS$DISABLED_RUNNING": {
     "en": "Cannot be changed while the agent is running.",
+    "zh-TW": "智能體正在執行時無法更改。",
     "de": "Kann nicht geändert werden während ein Task ausgeführt wird."
   },
   "SETTINGS$API_KEY_PLACEHOLDER": {
     "en": "Enter your API key.",
+    "zh-TW": "輸入您的 API 金鑰。",
     "de": "Model API key."
   },
   "CODE_EDITOR$EMPTY_MESSAGE": {
     "en": "No file selected.",
+    "zh-TW": "未選取任何文件。",
     "de": "Keine Datei ausgewählt."
   },
   "BROWSER$EMPTY_MESSAGE": {
     "en": "No page loaded.",
+    "zh-TW": "未加載任何頁面。",
     "de": "Keine Seite geladen."
   },
   "PLANNER$EMPTY_MESSAGE": {
     "en": "No plan created.",
+    "zh-TW": "未創建任何計劃。",
     "de": "Kein Plan erstellt."
   }
 }

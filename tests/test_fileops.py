@@ -2,26 +2,44 @@ from pathlib import Path
 
 import pytest
 
-from opendevin.config import config
-from opendevin.action import fileop
-from opendevin.schema import ConfigType
+from opendevin.core.config import config
+from opendevin.events.action import files
+
+SANDBOX_PATH_PREFIX = '/workspace'
 
 
 def test_resolve_path():
-    assert fileop.resolve_path('test.txt', '/workspace') == Path(config.workspace_base) / 'test.txt'
-    assert fileop.resolve_path('subdir/test.txt', '/workspace') == \
-        Path(config.workspace_base) / 'subdir' / 'test.txt'
-    assert fileop.resolve_path(Path(fileop.SANDBOX_PATH_PREFIX) / 'test.txt', '/workspace') == \
-        Path(config.workspace_base) / 'test.txt'
-    assert fileop.resolve_path(Path(fileop.SANDBOX_PATH_PREFIX) / 'subdir' / 'test.txt',
-                               '/workspace') == Path(config.workspace_base) / 'subdir' / 'test.txt'
-    assert fileop.resolve_path(Path(fileop.SANDBOX_PATH_PREFIX) / 'subdir' / '..' / 'test.txt',
-                               '/workspace') == Path(config.workspace_base) / 'test.txt'
+    assert (
+        files.resolve_path('test.txt', '/workspace')
+        == Path(config.workspace_base) / 'test.txt'
+    )
+    assert (
+        files.resolve_path('subdir/test.txt', '/workspace')
+        == Path(config.workspace_base) / 'subdir' / 'test.txt'
+    )
+    assert (
+        files.resolve_path(Path(SANDBOX_PATH_PREFIX) / 'test.txt', '/workspace')
+        == Path(config.workspace_base) / 'test.txt'
+    )
+    assert (
+        files.resolve_path(
+            Path(SANDBOX_PATH_PREFIX) / 'subdir' / 'test.txt', '/workspace'
+        )
+        == Path(config.workspace_base) / 'subdir' / 'test.txt'
+    )
+    assert (
+        files.resolve_path(
+            Path(SANDBOX_PATH_PREFIX) / 'subdir' / '..' / 'test.txt', '/workspace'
+        )
+        == Path(config.workspace_base) / 'test.txt'
+    )
     with pytest.raises(PermissionError):
-        fileop.resolve_path(Path(fileop.SANDBOX_PATH_PREFIX) / '..' / 'test.txt', '/workspace')
+        files.resolve_path(Path(SANDBOX_PATH_PREFIX) / '..' / 'test.txt', '/workspace')
     with pytest.raises(PermissionError):
-        fileop.resolve_path(Path('..') / 'test.txt', '/workspace')
+        files.resolve_path(Path('..') / 'test.txt', '/workspace')
     with pytest.raises(PermissionError):
-        fileop.resolve_path(Path('/') / 'test.txt', '/workspace')
-    assert fileop.resolve_path('test.txt', '/workspace/test') == \
-        Path(config.workspace_base) / 'test' / 'test.txt'
+        files.resolve_path(Path('/') / 'test.txt', '/workspace')
+    assert (
+        files.resolve_path('test.txt', '/workspace/test')
+        == Path(config.workspace_base) / 'test' / 'test.txt'
+    )

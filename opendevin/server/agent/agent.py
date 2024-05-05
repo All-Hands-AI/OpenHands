@@ -1,24 +1,33 @@
 import asyncio
 from typing import Dict, List, Optional
 
-from opendevin.action import (
+from opendevin.const.guide_url import TROUBLESHOOTING_URL
+from opendevin.controller import AgentController
+from opendevin.controller.agent import Agent
+from opendevin.core.config import config
+from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema import ActionType, ConfigType, TaskState, TaskStateAction
+from opendevin.events.action import (
     Action,
     NullAction,
 )
-from opendevin.agent import Agent
-from opendevin.config import config
-from opendevin.controller import AgentController
+from opendevin.events.observation import (
+    NullObservation,
+    Observation,
+    UserMessageObservation,
+)
 from opendevin.llm.llm import LLM
-from opendevin.logger import opendevin_logger as logger
-from opendevin.observation import NullObservation, Observation, UserMessageObservation
-from opendevin.schema import ActionType, ConfigType, TaskState, TaskStateAction
 from opendevin.server.session import session_manager
 
 # new task state to valid old task states
 VALID_TASK_STATE_MAP: Dict[TaskStateAction, List[TaskState]] = {
     TaskStateAction.PAUSE: [TaskState.RUNNING],
     TaskStateAction.RESUME: [TaskState.PAUSED],
-    TaskStateAction.STOP: [TaskState.RUNNING, TaskState.PAUSED],
+    TaskStateAction.STOP: [
+        TaskState.RUNNING,
+        TaskState.PAUSED,
+        TaskState.AWAITING_USER_INPUT,
+    ],
 }
 IGNORED_TASK_STATE_MAP: Dict[TaskStateAction, List[TaskState]] = {
     TaskStateAction.PAUSE: [
@@ -26,12 +35,14 @@ IGNORED_TASK_STATE_MAP: Dict[TaskStateAction, List[TaskState]] = {
         TaskState.PAUSED,
         TaskState.STOPPED,
         TaskState.FINISHED,
+        TaskState.AWAITING_USER_INPUT,
     ],
     TaskStateAction.RESUME: [
         TaskState.INIT,
         TaskState.RUNNING,
         TaskState.STOPPED,
         TaskState.FINISHED,
+        TaskState.AWAITING_USER_INPUT,
     ],
     TaskStateAction.STOP: [TaskState.INIT, TaskState.STOPPED, TaskState.FINISHED],
 }
@@ -94,6 +105,8 @@ class AgentUnit:
                 await self.create_controller(data)
             case ActionType.START:
                 await self.start_task(data)
+            case ActionType.USER_MESSAGE:
+                await self.send_user_message(data)
             case ActionType.CHANGE_TASK_STATE:
                 task_state_action = data.get('args', {}).get('task_state_action', None)
                 if task_state_action is None:
@@ -141,7 +154,7 @@ class AgentUnit:
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
             await self.send_error(
-                'Error creating controller. Please check Docker is running and visit `https://github.com/OpenDevin/OpenDevin/blob/main/docs/guides/Troubleshooting.md` for more debugging information..'
+                f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
             )
             return
         await self.init_done()
@@ -164,10 +177,6 @@ class AgentUnit:
         Args:
             start_event: The start event data.
         """
-        if 'task' not in start_event['args']:
-            await self.send_error('No task specified')
-            return
-        await self.send_message('Starting new task...')
         task = start_event['args']['task']
         if self.controller is None:
             await self.send_error('No agent started. Please wait a second...')
@@ -180,6 +189,15 @@ class AgentUnit:
             )
         except Exception as e:
             await self.send_error(f'Error during task loop: {e}')
+
+    async def send_user_message(self, data: dict):
+        if not self.agent_task or not self.controller:
+            await self.send_error('No agent started.')
+            return
+
+        await self.controller.add_user_message(
+            UserMessageObservation(data['args']['message'])
+        )
 
     async def set_task_state(self, new_state_action: TaskStateAction):
         """Sets the state of the agent task."""

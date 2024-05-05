@@ -5,7 +5,7 @@ WORKDIR /app
 
 COPY ./frontend/package.json frontend/package-lock.json ./
 RUN npm install -g npm@10.5.1
-RUN npm install
+RUN npm ci
 
 COPY ./frontend ./
 RUN npm run make-i18n && npm run build
@@ -33,7 +33,7 @@ FROM python:3.12-slim as runtime
 WORKDIR /app
 
 ENV RUN_AS_DEVIN=true
-ENV SANDBOX_USER_ID=1000
+ENV OPENDEVIN_USER_ID=1000
 ENV USE_HOST_NETWORK=false
 ENV SSH_HOSTNAME=host.docker.internal
 ENV WORKSPACE_BASE=/opt/workspace_base
@@ -43,40 +43,33 @@ RUN mkdir -p $WORKSPACE_BASE
 RUN apt-get update -y \
     && apt-get install -y curl ssh sudo
 
-RUN useradd -m -u $SANDBOX_USER_ID -s /bin/bash opendevin && \
+RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs # Default is 1000, but OSX is often 501
+
+RUN groupadd app
+RUN useradd -l -m -u $OPENDEVIN_USER_ID -s /bin/bash opendevin && \
+    usermod -aG app opendevin && \
     usermod -aG sudo opendevin && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-RUN chown -R opendevin:opendevin /app
+RUN chown -R opendevin:app /app && chmod -R 770 /app
 USER opendevin
 
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH='/app'
 
-COPY --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
-# change ownership of the virtual environment to the sandbox user
-USER root
-RUN chown -R opendevin:opendevin ${VIRTUAL_ENV}
-USER opendevin
-
-COPY ./opendevin ./opendevin
-COPY ./agenthub ./agenthub
-RUN python opendevin/download.py # No-op to download assets
+COPY --chown=opendevin:app --chmod=770 --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 RUN playwright install --with-deps chromium
 
-COPY --from=frontend-builder /app/dist ./frontend/dist
+COPY --chown=opendevin:app --chmod=770 ./opendevin ./opendevin
+COPY --chown=opendevin:app --chmod=777 ./opendevin/runtime/plugins ./opendevin/runtime/plugins
+COPY --chown=opendevin:app --chmod=770 ./agenthub ./agenthub
+
+RUN python opendevin/core/download.py # No-op to download assets
+RUN chown -R opendevin:app /app/logs && chmod -R 770 /app/logs # This gets created by the download.py script
+
+
+COPY --chown=opendevin:app --chmod=770 --from=frontend-builder /app/dist ./frontend/dist
+COPY --chown=opendevin:app --chmod=770 ./containers/app/entrypoint.sh /app/entrypoint.sh
 
 USER root
-RUN chown -R opendevin:opendevin /app
-# make group permissions the same as user permissions
-RUN chmod -R g=u /app
-USER opendevin
-
-# change ownership of the app directory to the sandbox user
-COPY ./containers/app/entrypoint.sh /app/entrypoint.sh
-
-# run the script as root
-USER root
-RUN chown opendevin:opendevin /app/entrypoint.sh
-RUN chmod 777 /app/entrypoint.sh
 CMD ["/app/entrypoint.sh"]

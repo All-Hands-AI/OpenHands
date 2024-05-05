@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { handleAssistantMessage } from "#/services/actions";
-import { sendChatMessageFromEvent } from "#/services/chatService";
+import { addChatMessageFromEvent } from "#/services/chatService";
 import { clearMsgs, fetchMsgs } from "#/services/session";
 import toast from "#/utils/toast";
 import BaseModal from "../base-modal/BaseModal";
@@ -28,7 +28,7 @@ function LoadPreviousSessionModal({
 
       messages.forEach((message) => {
         if (message.role === "user") {
-          sendChatMessageFromEvent(message.payload);
+          addChatMessageFromEvent(message.payload);
         }
 
         if (message.role === "assistant") {

@@ -2,7 +2,12 @@ from typing import List
 
 import agenthub.monologue_agent.utils.prompts as prompts
 from agenthub.monologue_agent.utils.monologue import Monologue
-from opendevin.action import (
+from opendevin.controller.agent import Agent
+from opendevin.controller.state.state import State
+from opendevin.core.config import config
+from opendevin.core.exceptions import AgentNoInstructionError
+from opendevin.core.schema import ActionType
+from opendevin.events.action import (
     Action,
     AgentRecallAction,
     AgentThinkAction,
@@ -13,11 +18,7 @@ from opendevin.action import (
     GitHubPushAction,
     NullAction,
 )
-from opendevin.agent import Agent
-from opendevin.config import config
-from opendevin.exceptions import AgentNoInstructionError
-from opendevin.llm.llm import LLM
-from opendevin.observation import (
+from opendevin.events.observation import (
     AgentRecallObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
@@ -25,8 +26,7 @@ from opendevin.observation import (
     NullObservation,
     Observation,
 )
-from opendevin.schema import ActionType
-from opendevin.state import State
+from opendevin.llm.llm import LLM
 
 if config.agent.memory_enabled:
     from agenthub.monologue_agent.utils.memory import LongTermMemory
@@ -55,7 +55,7 @@ INITIAL_THOUGHTS = [
     'RUN echo "hello world"',
     'hello world',
     'Cool! I bet I can write files too using the write action.',
-    "WRITE echo \"console.log('hello world')\" > test.js",
+    'WRITE echo "console.log(\'hello world\')" > test.js',
     '',
     "I just created test.js. I'll try and run it now.",
     'RUN node test.js',
@@ -132,7 +132,7 @@ class MonologueAgent(Agent):
 
     def _initialize(self, task: str):
         """
-        Utilizes the INITIAL_THOUGHTS list to give the agent a context for it's capabilities
+        Utilizes the INITIAL_THOUGHTS list to give the agent a context for its capabilities
         and how to navigate the WORKSPACE_MOUNT_PATH_IN_SANDBOX in `config` (e.g., /workspace by default).
         Short circuited to return when already initialized.
         Will execute again when called after reset.
@@ -172,8 +172,7 @@ class MonologueAgent(Agent):
                 elif previous_action == ActionType.READ:
                     observation = FileReadObservation(content=thought, path='')
                 elif previous_action == ActionType.RECALL:
-                    observation = AgentRecallObservation(
-                        content=thought, memories=[])
+                    observation = AgentRecallObservation(content=thought, memories=[])
                 elif previous_action == ActionType.BROWSE:
                     observation = BrowserOutputObservation(
                         content=thought, url='', screenshot=''
