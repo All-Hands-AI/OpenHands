@@ -16,8 +16,7 @@ from tenacity import (
 from opendevin.core import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema.config import ConfigType
-
-from . import json
+from opendevin.core.utils import json
 
 num_retries = config.get(ConfigType.LLM_NUM_RETRIES)
 retry_min_wait = config.get(ConfigType.LLM_RETRY_MIN_WAIT)

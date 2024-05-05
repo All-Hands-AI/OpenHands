@@ -27,10 +27,11 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
+from opendevin.llm.condenser import MemoryCondenser
 from opendevin.llm.llm import LLM
 
 if config.get(ConfigType.AGENT_MEMORY_ENABLED):
-    from agenthub.monologue_agent.utils.memory import LongTermMemory
+    from opendevin.llm.memory import LongTermMemory
 
 MAX_MONOLOGUE_LENGTH = 20000
 MAX_OUTPUT_LENGTH = 5000
@@ -95,6 +96,7 @@ class MonologueAgent(Agent):
     _initialized = False
     monologue: Monologue
     memory: 'LongTermMemory | None'
+    memory_condenser: MemoryCondenser
 
     def __init__(self, llm: LLM):
         """
@@ -129,7 +131,11 @@ class MonologueAgent(Agent):
         if self.memory is not None:
             self.memory.add_event(event)
         if self.monologue.get_total_length() > MAX_MONOLOGUE_LENGTH:
-            self.monologue.condense(self.llm)
+            prompt = prompts.get_summarize_monologue_prompt(self.monologue.thoughts)
+            summary_response = self.memory_condenser.condense(
+                summarize_prompt=prompt, llm=self.llm
+            )
+            self.monologue.thoughts = prompts.parse_summary_response(summary_response)
 
     def _initialize(self, task: str):
         """
@@ -156,6 +162,8 @@ class MonologueAgent(Agent):
             self.memory = LongTermMemory()
         else:
             self.memory = None
+
+        self.memory_condenser = MemoryCondenser()
 
         self._add_initial_thoughts(task)
         self._initialized = True

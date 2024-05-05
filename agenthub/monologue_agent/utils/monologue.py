@@ -1,8 +1,6 @@
-import agenthub.monologue_agent.utils.json as json
-import agenthub.monologue_agent.utils.prompts as prompts
+import opendevin.core.utils.json as json
 from opendevin.core.exceptions import AgentEventTypeError
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.llm.llm import LLM
 
 
 class Monologue:
@@ -54,26 +52,3 @@ class Monologue:
             except TypeError as e:
                 logger.error('Error serializing thought: %s', str(e), exc_info=False)
         return total_length
-
-    def condense(self, llm: LLM):
-        """
-        Attempts to condense the monologue by using the llm
-
-        Parameters:
-        - llm (LLM): llm to be used for summarization
-
-        Raises:
-        - Exception: the same exception as it got from the llm or processing the response
-        """
-
-        try:
-            prompt = prompts.get_summarize_monologue_prompt(self.thoughts)
-            messages = [{'content': prompt, 'role': 'user'}]
-            resp = llm.completion(messages=messages)
-            summary_resp = resp['choices'][0]['message']['content']
-            self.thoughts = prompts.parse_summary_response(summary_resp)
-        except Exception as e:
-            logger.error('Error condensing thoughts: %s', str(e), exc_info=False)
-
-            # TODO If the llm fails with ContextWindowExceededError, we can try to condense the monologue chunk by chunk
-            raise
