@@ -16,6 +16,19 @@ if TYPE_CHECKING:
 
 
 @dataclass
+class ChangeAgentStateAction(Action):
+    """Fake action, just to notify the client that a task state has changed."""
+
+    agent_state: str
+    thought: str = ''
+    action: str = ActionType.CHANGE_AGENT_STATE
+
+    @property
+    def message(self) -> str:
+        return f'Agent state changed to {self.agent_state}'
+
+
+@dataclass
 class AgentRecallAction(Action):
     query: str
     thought: str = ''
