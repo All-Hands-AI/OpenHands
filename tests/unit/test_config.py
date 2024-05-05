@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from opendevin.config import AgentConfig, AppConfig, LLMConfig, load_from_env
+from opendevin.core.config import AgentConfig, AppConfig, LLMConfig, load_from_env
 
 
 @pytest.fixture
@@ -22,6 +22,7 @@ def setup_env():
     os.environ.pop('AGENT_MEMORY_MAX_THREADS', None)
     os.environ.pop('AGENT_MEMORY_ENABLED', None)
     os.environ.pop('AGENT', None)
+
 
 def test_compat_env_to_config(setup_env):
     config = AppConfig()

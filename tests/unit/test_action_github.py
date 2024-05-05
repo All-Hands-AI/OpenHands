@@ -5,7 +5,6 @@ import pytest
 from agenthub.dummy_agent.agent import DummyAgent
 from opendevin.controller.agent_controller import AgentController
 from opendevin.core.config import config
-from opendevin.core.schema.config import ConfigType
 from opendevin.events.action.github import GitHubPushAction, GitHubSendPRAction
 from opendevin.events.observation.commands import CmdOutputObservation
 from opendevin.events.observation.error import AgentErrorObservation
@@ -16,7 +15,7 @@ from opendevin.llm.llm import LLM
 @pytest.fixture
 def agent_controller():
     # Setup the environment variable
-    config.config[ConfigType.SANDBOX_TYPE] = 'local'
+    config.sandbox_type = 'local'
     llm = LLM()
     agent = DummyAgent(llm=llm)
     controller = AgentController(agent)
