@@ -15,6 +15,7 @@ from tqdm import tqdm
 from evaluation.swe_bench.swe_env_box import SWEBenchSSHBox
 from opendevin.controller.state.state import State
 from opendevin.core.config import args
+from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.observation import UserMessageObservation
@@ -170,6 +171,11 @@ def process_instance(instance, agent_class, metadata):
     log_file = os.path.join(
         eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
     )
+    # Remove all existing handlers from logger
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+    # add back the console handler to print ONE line
+    logger.addHandler(get_console_handler())
     logger.info(
         f'Starting evaluation for instance {instance.instance_id}.\nLOG:   tail -f {log_file}'
     )
