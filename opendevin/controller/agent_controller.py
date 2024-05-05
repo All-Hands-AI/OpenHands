@@ -92,8 +92,6 @@ class AgentController:
                 'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful (LocalBox, DockerExecBox) will not work properly.'
             )
 
-        self._await_user_message_queue: asyncio.Queue = asyncio.Queue()
-
     async def close(self):
         if self.agent_task is not None:
             self.agent_task.cancel()
@@ -188,7 +186,13 @@ class AgentController:
             else:
                 logger.warning(f'Unknown agent state: {event.agent_state}')
         elif isinstance(event, MessageAction) and event.source == EventSource.USER:
-            self._await_user_message_queue.put_nowait(event)
+            # FIXME: we're hacking a message action into a user message observation, for the benefit of CodeAct
+            await self.add_history(
+                self._pending_talk_action,
+                UserMessageObservation(event.content),
+                add_to_stream=False,
+            )
+            await self.set_agent_state_to(AgentState.RUNNING)
 
     async def reset_task(self):
         if self.agent_task is not None:
@@ -206,7 +210,10 @@ class AgentController:
         self._agent_state = new_state
         if new_state == AgentState.RUNNING:
             self.agent_task = asyncio.create_task(self._run())
-        elif new_state == AgentState.PAUSED:
+        elif (
+            new_state == AgentState.PAUSED
+            or new_state == AgentState.AWAITING_USER_INPUT
+        ):
             self._cur_step += 1
             if self.agent_task is not None:
                 self.agent_task.cancel()
@@ -222,14 +229,6 @@ class AgentController:
     def get_agent_state(self):
         """Returns the current state of the agent task."""
         return self._agent_state
-
-    async def wait_for_user_input(self) -> MessageAction:
-        await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
-        # FIXME: need a way to handle CLI input
-        user_message_observation = await self._await_user_message_queue.get()
-        self._await_user_message_queue.task_done()
-        await self.set_agent_state_to(AgentState.RUNNING)
-        return user_message_observation
 
     async def start_delegate(self, action: AgentDelegateAction):
         AgentCls: Type[Agent] = Agent.get_cls(action.agent)
@@ -282,15 +281,9 @@ class AgentController:
         self.update_state_after_step()
 
         if isinstance(action, AgentTalkAction):
+            self._pending_talk_action = action
             await self.event_stream.add_event(action, EventSource.AGENT)
-            user_message = await self.wait_for_user_input()
-            logger.info(user_message, extra={'msg_type': 'ACTION'})
-            # FIXME: we're hacking a message action into a user message observation, for the benefit of CodeAct
-            await self.add_history(
-                action,
-                UserMessageObservation(user_message.content),
-                add_to_stream=False,
-            )
+            await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
             return False
 
         finished = isinstance(action, AgentFinishAction)
