@@ -22,6 +22,7 @@ from opendevin.events.action import (
     AgentFinishAction,
     AgentTalkAction,
     ChangeAgentStateAction,
+    MessageAction,
     NullAction,
 )
 from opendevin.events.event import Event
@@ -114,7 +115,9 @@ class AgentController:
     async def add_error_to_history(self, message: str):
         await self.add_history(NullAction(), AgentErrorObservation(message))
 
-    async def add_history(self, action: Action, observation: Observation):
+    async def add_history(
+        self, action: Action, observation: Observation, add_to_stream=True
+    ):
         if self.state is None:
             raise ValueError('Added history while state was None')
         if not isinstance(action, Action):
@@ -127,8 +130,9 @@ class AgentController:
             )
         self.state.history.append((action, observation))
         self.state.updated_info.append((action, observation))
-        await self.event_stream.add_event(action, EventSource.AGENT)
-        await self.event_stream.add_event(observation, EventSource.AGENT)
+        if add_to_stream:
+            await self.event_stream.add_event(action, EventSource.AGENT)
+            await self.event_stream.add_event(observation, EventSource.AGENT)
 
     async def _run(self):
         if self.state is None:
@@ -183,6 +187,8 @@ class AgentController:
                 await self.set_agent_state_to(AgentState.FINISHED)
             else:
                 logger.warning(f'Unknown agent state: {event.agent_state}')
+        elif isinstance(event, MessageAction) and event.source == EventSource.USER:
+            self._await_user_message_queue.put_nowait(event)
 
     async def reset_task(self):
         if self.agent_task is not None:
@@ -217,7 +223,7 @@ class AgentController:
         """Returns the current state of the agent task."""
         return self._agent_state
 
-    async def wait_for_user_input(self) -> UserMessageObservation:
+    async def wait_for_user_input(self) -> MessageAction:
         await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
         # FIXME: need a way to handle CLI input
         user_message_observation = await self._await_user_message_queue.get()
@@ -274,12 +280,16 @@ class AgentController:
 
         self.update_state_after_step()
 
-        # whether to await for user messages
         if isinstance(action, AgentTalkAction):
-            # await for the next user messages
-            user_message_observation = await self.wait_for_user_input()
-            logger.info(user_message_observation, extra={'msg_type': 'OBSERVATION'})
-            await self.add_history(action, user_message_observation)
+            await self.event_stream.add_event(action, EventSource.AGENT)
+            user_message = await self.wait_for_user_input()
+            logger.info(user_message, extra={'msg_type': 'ACTION'})
+            # FIXME: we're hacking a message action into a user message observation, for the benefit of CodeAct
+            await self.add_history(
+                action,
+                UserMessageObservation(user_message.content),
+                add_to_stream=False,
+            )
             return False
 
         finished = isinstance(action, AgentFinishAction)

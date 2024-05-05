@@ -8,8 +8,8 @@ class ActionTypeSchema(BaseModel):
     """Initializes the agent. Only sent by client.
     """
 
-    USER_MESSAGE: str = Field(default='user_message')
-    """Sends a message from the user. Only sent by the client.
+    MESSAGE: str = Field(default='message')
+    """Represents a message.
     """
 
     START: str = Field(default='start')
