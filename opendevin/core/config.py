@@ -46,8 +46,8 @@ class LLMConfig(metaclass=Singleton):
     timeout: int | None = None
     max_return_tokens: int | None = None
     max_chars: int = 5_000_000  # fallback for token counting
-    temperature: float | None = None
-    top_p: float | None = None
+    temperature: float = 0
+    top_p: float = 0.5
 
     def defaults_to_dict(self) -> dict:
         """
