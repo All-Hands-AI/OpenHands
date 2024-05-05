@@ -7,7 +7,6 @@ import { renderWithProviders } from "test-utils";
 import ChatInterface from "./ChatInterface";
 import Socket from "#/services/socket";
 import ActionType from "#/types/ActionType";
-import ObservationType from "#/types/ObservationType";
 import { addAssistantMessage } from "#/state/chatSlice";
 import AgentState from "#/types/AgentState";
 
@@ -117,7 +116,7 @@ describe("ChatInterface", () => {
     });
 
     const event = {
-      observation: ObservationType.MESSAGE,
+      action: ActionType.MESSAGE,
       content: "my message",
     };
     expect(socketSpy).toHaveBeenCalledWith(JSON.stringify(event));
