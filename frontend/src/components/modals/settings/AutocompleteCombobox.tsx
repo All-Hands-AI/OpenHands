@@ -22,6 +22,7 @@ type AutocompleteItemType = {
   label: string;
 };
 
+type Key = string | number;
 interface AutocompleteComboboxProps {
   ariaLabel: Label;
   items: AutocompleteItemType[];
@@ -43,6 +44,14 @@ export function AutocompleteCombobox({
 }: AutocompleteComboboxProps) {
   const { t } = useTranslation();
 
+  const [selectedKey, setSelectedKey] = React.useState<Key>(defaultKey);
+  React.useEffect(() => {
+    if (!allowCustomValue) setSelectedKey(defaultKey);
+    else {
+      setSelectedKey("");
+    }
+  }, [defaultKey]);
+
   return (
     <Tooltip
       content={
@@ -58,16 +67,21 @@ export function AutocompleteCombobox({
         label={t(LABELS[ariaLabel])}
         placeholder={t(PLACEHOLDERS[ariaLabel])}
         defaultItems={items}
-        inputValue={
-          // Find the label for the default key, otherwise use the default key itself
-          // This is useful when the default key is not in the list of items, in the case of a custom LLM model
-          items.find((item) => item.value === defaultKey)?.label || defaultKey
-        }
+        inputValue={allowCustomValue ? defaultKey : undefined}
+        selectedKey={!allowCustomValue ? selectedKey : undefined}
+        onSelectionChange={(key: Key) => {
+          if (!allowCustomValue) {
+            setSelectedKey(key);
+            onChange(key as string);
+          }
+        }}
+        onInputChange={(val) => {
+          if (allowCustomValue) {
+            onChange(val);
+          }
+        }}
         isDisabled={disabled}
         allowsCustomValue={allowCustomValue}
-        onInputChange={(value) => {
-          onChange(value);
-        }}
       >
         {(item) => (
           <AutocompleteItem key={item.value}>{item.label}</AutocompleteItem>
