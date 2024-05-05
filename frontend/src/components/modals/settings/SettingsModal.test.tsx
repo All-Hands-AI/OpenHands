@@ -190,7 +190,7 @@ describe("SettingsModal", () => {
         userEvent.click(saveButton);
       });
 
-      expect(toastSpy).toHaveBeenCalledTimes(1);
+      expect(toastSpy).toHaveBeenCalledTimes(2);
     });
 
     it("should change the language", async () => {

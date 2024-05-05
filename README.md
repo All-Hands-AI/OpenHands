@@ -24,14 +24,15 @@
   <a href="https://github.com/OpenDevin/OpenDevin/issues"><img src="https://img.shields.io/github/issues/opendevin/opendevin?style=for-the-badge" alt="Issues"></a>
   <a href="https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE"><img src="https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge" alt="MIT License"></a>
   </br>
-  <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2etftj1dd-X1fDL2PYIVpsmJZkqEYANw"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="Join our Slack community"></a>
-  <a href="https://discord.gg/mBuDGRzzES"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community"></a>
+  <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2i1iqdag6-bVmvamiPA9EZUu7oCO6KhA"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="Join our Slack community"></a>
+  <a href="https://discord.gg/ESHStjSjD4"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community"></a>
 </div>
 
 <!-- PROJECT LOGO -->
 <div align="center">
   <img src="./docs/static/img/logo.png" alt="Logo" width="200" height="200">
   <h1 align="center">OpenDevin: Code Less, Make More</h1>
+  <a href="https://opendevin.github.io/OpenDevin/"><img src="https://img.shields.io/badge/Documenation-OpenDevin-blue?logo=googledocs&logoColor=white&style=for-the-badge" alt="Check out the documentation"></a>
 </div>
 
 ## 🎯 Mission
@@ -45,6 +46,28 @@ To learn more and to use OpenDevin, check out our [documentation](https://opende
         ↑ Back to Top ↑
     </a>
 </p>
+
+## ⚡ Quick Start
+You can run OpenDevin with Docker. It works best with the most recent
+version of Docker, `26.0.0`.
+
+```bash
+#The directory you want OpenDevin to modify. MUST be an absolute path!
+export WORKSPACE_BASE=$(pwd)/workspace;
+
+docker run \
+    --pull=always \
+    -e SANDBOX_USER_ID=$(id -u) \
+    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+    -v $WORKSPACE_BASE:/opt/workspace_base \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -p 3000:3000 \
+    --add-host host.docker.internal=host-gateway \
+    ghcr.io/opendevin/opendevin:0.5
+```
+
+For troubleshooting and advanced configuration, see
+[the full documentation](https://opendevin.github.io/OpenDevin/).
 
 ## 🤝 How to Contribute
 
@@ -66,8 +89,8 @@ For details, please check [this document](./CONTRIBUTING.md).
 
 Now we have both Slack workspace for the collaboration on building OpenDevin and Discord server for discussion about anything related, e.g., this project, LLM, agent, etc.
 
-- [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2etftj1dd-X1fDL2PYIVpsmJZkqEYANw)
-- [Discord server](https://discord.gg/mBuDGRzzES)
+- [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw)
+- [Discord server](https://discord.gg/ESHStjSjD4)
 
 If you would love to contribute, feel free to join our community (note that now there is no need to fill in the [form](https://forms.gle/758d5p6Ve8r2nxxq6)). Let's simplify software engineering together!
 

@@ -1,4 +1,4 @@
-from opendevin.observation import (
+from opendevin.events.observation import (
     CmdOutputObservation,
     Observation,
     observation_from_dict,

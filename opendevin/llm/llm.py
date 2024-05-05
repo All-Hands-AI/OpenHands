@@ -14,10 +14,10 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from opendevin import config
-from opendevin.logger import llm_prompt_logger, llm_response_logger
-from opendevin.logger import opendevin_logger as logger
-from opendevin.schema import ConfigType
+from opendevin.core import config
+from opendevin.core.logger import llm_prompt_logger, llm_response_logger
+from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema import ConfigType
 
 DEFAULT_API_KEY = config.get(ConfigType.LLM_API_KEY)
 DEFAULT_BASE_URL = config.get(ConfigType.LLM_BASE_URL)
@@ -30,6 +30,8 @@ LLM_MAX_INPUT_TOKENS = config.get(ConfigType.LLM_MAX_INPUT_TOKENS)
 LLM_MAX_OUTPUT_TOKENS = config.get(ConfigType.LLM_MAX_OUTPUT_TOKENS)
 LLM_CUSTOM_LLM_PROVIDER = config.get(ConfigType.LLM_CUSTOM_LLM_PROVIDER)
 LLM_TIMEOUT = config.get(ConfigType.LLM_TIMEOUT)
+LLM_TEMPERATURE = config.get(ConfigType.LLM_TEMPERATURE)
+LLM_TOP_P = config.get(ConfigType.LLM_TOP_P)
 
 
 class LLM:
@@ -49,7 +51,9 @@ class LLM:
         max_input_tokens=LLM_MAX_INPUT_TOKENS,
         max_output_tokens=LLM_MAX_OUTPUT_TOKENS,
         custom_llm_provider=LLM_CUSTOM_LLM_PROVIDER,
-        llm_timeout=LLM_TIMEOUT
+        llm_timeout=LLM_TIMEOUT,
+        llm_temperature=LLM_TEMPERATURE,
+        llm_top_p=LLM_TOP_P,
     ):
         """
         Args:
@@ -113,6 +117,8 @@ class LLM:
             custom_llm_provider=custom_llm_provider,
             max_tokens=self.max_output_tokens,
             timeout=self.llm_timeout,
+            temperature=llm_temperature,
+            top_p=llm_top_p,
         )
 
         completion_unwrapped = self._completion

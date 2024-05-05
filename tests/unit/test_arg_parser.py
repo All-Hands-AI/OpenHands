@@ -1,6 +1,6 @@
 import pytest
 
-from opendevin.config import get_parser
+from opendevin.core.config import get_parser
 
 
 def test_help_message(capsys):
@@ -35,8 +35,12 @@ options:
     expected_lines = expected_help_message.strip().split('\n')
 
     # Ensure both outputs have the same number of lines
-    assert len(actual_lines) == len(expected_lines), 'The number of lines in the help message does not match.'
+    assert len(actual_lines) == len(
+        expected_lines
+    ), 'The number of lines in the help message does not match.'
 
     # Compare each line
     for actual, expected in zip(actual_lines, expected_lines):
-        assert actual.strip() == expected.strip(), f"Expected '{expected}', got '{actual}'"
+        assert (
+            actual.strip() == expected.strip()
+        ), f"Expected '{expected}', got '{actual}'"

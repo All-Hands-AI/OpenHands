@@ -7,7 +7,7 @@ export type Settings = {
 
 export const DEFAULT_SETTINGS: Settings = {
   LLM_MODEL: "gpt-3.5-turbo",
-  AGENT: "MonologueAgent",
+  AGENT: "CodeActAgent",
   LANGUAGE: "en",
   LLM_API_KEY: "",
 };
@@ -46,7 +46,7 @@ export const saveSettings = (settings: Partial<Settings>) => {
 
 /**
  * Get the difference between the current settings and the provided settings.
- * Useful for notifiying the user of exact changes.
+ * Useful for notifying the user of exact changes.
  *
  * @example
  * // Assuming the current settings are: { LLM_MODEL: "gpt-3.5", AGENT: "MonologueAgent", LANGUAGE: "en" }
