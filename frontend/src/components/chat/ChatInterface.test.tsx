@@ -37,7 +37,16 @@ describe("ChatInterface", () => {
   });
 
   it("should render the new message the user has typed", async () => {
-    renderChatInterface();
+    renderWithProviders(<ChatInterface />, {
+      preloadedState: {
+        task: {
+          completed: false,
+        },
+        agent: {
+          curAgentState: AgentState.INIT,
+        },
+      },
+    });
 
     const input = screen.getByRole("textbox");
 
