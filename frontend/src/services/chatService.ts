@@ -11,7 +11,7 @@ export function sendChatMessage(message: string, isTask: boolean = true): void {
   if (isTask) {
     event = { action: ActionType.START, args: { task: message } };
   } else {
-    event = { action: ActionType.MESSAGE, args: {content: message } };
+    event = { action: ActionType.MESSAGE, args: { content: message } };
   }
   const eventString = JSON.stringify(event);
   Socket.send(eventString);

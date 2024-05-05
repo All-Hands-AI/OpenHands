@@ -5,9 +5,6 @@ import ChatInput from "./ChatInput";
 import Chat from "./Chat";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
-import { addUserMessage } from "#/state/chatSlice";
-import ActionType from "#/types/ActionType";
-import ObservationType from "#/types/ObservationType";
 import { sendChatMessage } from "#/services/chatService";
 
 function ChatInterface() {
