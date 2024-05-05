@@ -41,40 +41,95 @@ if SANDBOX_USER_ID := config.get(ConfigType.SANDBOX_USER_ID):
 elif hasattr(os, 'getuid'):
     USER_ID = os.getuid()
 
-def split_bash_commands(bash_string):
-    commands = []
-    current_command = []
-    in_single_quote = False
-    in_double_quote = False
-    escape = False
 
-    for i, char in enumerate(bash_string):
-        if escape:
+def split_bash_commands(commands):
+    # States
+    NORMAL = 0
+    IN_SINGLE_QUOTE = 1
+    IN_DOUBLE_QUOTE = 2
+    IN_HEREDOC = 3
+
+    state = NORMAL
+    heredoc_trigger = None
+    result = []
+    current_command: List[str] = []
+
+    i = 0
+    while i < len(commands):
+        char = commands[i]
+
+        if state == NORMAL:
+            if char == "'":
+                state = IN_SINGLE_QUOTE
+            elif char == '"':
+                state = IN_DOUBLE_QUOTE
+            elif char == '\\':
+                # Check if this is escaping a newline
+                if i + 1 < len(commands) and commands[i + 1] == '\n':
+                    i += 1  # Skip the newline
+                    # Continue with the next line as part of the same command
+                    i += 1  # Move to the first character of the next line
+                    continue
+            elif char == '\n':
+                if not heredoc_trigger and current_command:
+                    result.append(''.join(current_command).strip())
+                    current_command = []
+            elif char == '<' and commands[i : i + 2] == '<<':
+                # Detect heredoc
+                state = IN_HEREDOC
+                i += 2  # Skip '<<'
+                while commands[i] == ' ':
+                    i += 1
+                start = i
+                while commands[i] not in [' ', '\n']:
+                    i += 1
+                heredoc_trigger = commands[start:i]
+                current_command.append(commands[start - 2 : i])  # Include '<<'
+                continue  # Skip incrementing i at the end of the loop
             current_command.append(char)
-            escape = False
-        elif char == '\\':
-            escape = True
+
+        elif state == IN_SINGLE_QUOTE:
             current_command.append(char)
-        elif char == "'":
+            if char == "'" and commands[i - 1] != '\\':
+                state = NORMAL
+
+        elif state == IN_DOUBLE_QUOTE:
             current_command.append(char)
-            in_single_quote = not in_single_quote if not in_double_quote else in_single_quote
-        elif char == '"':
+            if char == '"' and commands[i - 1] != '\\':
+                state = NORMAL
+
+        elif state == IN_HEREDOC:
             current_command.append(char)
-            in_double_quote = not in_double_quote if not in_single_quote else in_double_quote
-        elif char == '\n':
-            if in_single_quote or in_double_quote:
-                current_command.append(char)
-            else:
-                commands.append(''.join(current_command))
+            if (
+                char == '\n'
+                and heredoc_trigger
+                and commands[i + 1 : i + 1 + len(heredoc_trigger) + 1]
+                == heredoc_trigger + '\n'
+            ):
+                # Check if the next line starts with the heredoc trigger followed by a newline
+                i += (
+                    len(heredoc_trigger) + 1
+                )  # Move past the heredoc trigger and newline
+                current_command.append(
+                    heredoc_trigger + '\n'
+                )  # Include the heredoc trigger and newline
+                result.append(''.join(current_command).strip())
                 current_command = []
-        else:
-            current_command.append(char)
+                heredoc_trigger = None
+                state = NORMAL
+                continue
 
-    # Append the last command if not empty
+        i += 1
+
+    # Add the last command if any
     if current_command:
-        commands.append(''.join(current_command))
+        result.append(''.join(current_command).strip())
 
-    return commands
+    # Remove any empty strings from the result
+    result = [cmd for cmd in result if cmd]
+
+    return result
+
 
 class DockerSSHBox(Sandbox):
     instance_id: str
@@ -96,13 +151,17 @@ class DockerSSHBox(Sandbox):
         timeout: int = 120,
         sid: str | None = None,
     ):
-        logger.info(f'SSHBox is running as {"opendevin" if RUN_AS_DEVIN else "root"} user with USER_ID={USER_ID} in the sandbox')
+        logger.info(
+            f'SSHBox is running as {"opendevin" if RUN_AS_DEVIN else "root"} user with USER_ID={USER_ID} in the sandbox'
+        )
         # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
             self.docker_client = docker.from_env()
         except Exception as ex:
             logger.exception(
-                'Error creating controller. Please check Docker is running and visit `https://github.com/OpenDevin/OpenDevin/blob/main/docs/guides/Troubleshooting.md` for more debugging information.', exc_info=False)
+                'Error creating controller. Please check Docker is running and visit `https://github.com/OpenDevin/OpenDevin/blob/main/docs/guides/Troubleshooting.md` for more debugging information.',
+                exc_info=False,
+            )
             raise ex
 
         self.instance_id = sid if sid is not None else str(uuid.uuid4())
@@ -112,7 +171,9 @@ class DockerSSHBox(Sandbox):
         # command to finish (e.g. apt-get update)
         # if it is too long, the user may have to wait for a unnecessary long time
         self.timeout = timeout
-        self.container_image = CONTAINER_IMAGE if container_image is None else container_image
+        self.container_image = (
+            CONTAINER_IMAGE if container_image is None else container_image
+        )
         self.container_name = self.container_name_prefix + self.instance_id
 
         # set up random user password
@@ -127,17 +188,16 @@ class DockerSSHBox(Sandbox):
         atexit.register(self.close)
 
     def setup_user(self):
-
         # Make users sudoers passwordless
         # TODO(sandbox): add this line in the Dockerfile for next minor version of docker image
         exit_code, logs = self.container.exec_run(
-            ['/bin/bash', '-c',
-             r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"],
+            ['/bin/bash', '-c', r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"],
             workdir=SANDBOX_WORKSPACE_DIR,
         )
         if exit_code != 0:
             raise Exception(
-                f'Failed to make all users passwordless sudoers in sandbox: {logs}')
+                f'Failed to make all users passwordless sudoers in sandbox: {logs}'
+            )
 
         # Check if the opendevin user exists
         exit_code, logs = self.container.exec_run(
@@ -151,22 +211,26 @@ class DockerSSHBox(Sandbox):
                 workdir=SANDBOX_WORKSPACE_DIR,
             )
             if exit_code != 0:
-                raise Exception(
-                    f'Failed to remove opendevin user in sandbox: {logs}')
+                raise Exception(f'Failed to remove opendevin user in sandbox: {logs}')
 
         if RUN_AS_DEVIN:
             # Create the opendevin user
             exit_code, logs = self.container.exec_run(
-                ['/bin/bash', '-c',
-                 f'useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {USER_ID} opendevin'],
+                [
+                    '/bin/bash',
+                    '-c',
+                    f'useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {USER_ID} opendevin',
+                ],
                 workdir=SANDBOX_WORKSPACE_DIR,
             )
             if exit_code != 0:
-                raise Exception(
-                    f'Failed to create opendevin user in sandbox: {logs}')
+                raise Exception(f'Failed to create opendevin user in sandbox: {logs}')
             exit_code, logs = self.container.exec_run(
-                ['/bin/bash', '-c',
-                 f"echo 'opendevin:{self._ssh_password}' | chpasswd"],
+                [
+                    '/bin/bash',
+                    '-c',
+                    f"echo 'opendevin:{self._ssh_password}' | chpasswd",
+                ],
                 workdir=SANDBOX_WORKSPACE_DIR,
             )
             if exit_code != 0:
@@ -179,7 +243,8 @@ class DockerSSHBox(Sandbox):
             )
             if exit_code != 0:
                 raise Exception(
-                    f'Failed to chown home directory for opendevin in sandbox: {logs}')
+                    f'Failed to chown home directory for opendevin in sandbox: {logs}'
+                )
             exit_code, logs = self.container.exec_run(
                 ['/bin/bash', '-c', f'chown opendevin:root {SANDBOX_WORKSPACE_DIR}'],
                 workdir=SANDBOX_WORKSPACE_DIR,
@@ -192,13 +257,11 @@ class DockerSSHBox(Sandbox):
         else:
             exit_code, logs = self.container.exec_run(
                 # change password for root
-                ['/bin/bash', '-c',
-                 f"echo 'root:{self._ssh_password}' | chpasswd"],
+                ['/bin/bash', '-c', f"echo 'root:{self._ssh_password}' | chpasswd"],
                 workdir=SANDBOX_WORKSPACE_DIR,
             )
             if exit_code != 0:
-                raise Exception(
-                    f'Failed to set password for root in sandbox: {logs}')
+                raise Exception(f'Failed to set password for root in sandbox: {logs}')
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c', "echo 'opendevin-sandbox' > /etc/hostname"],
             workdir=SANDBOX_WORKSPACE_DIR,
@@ -213,12 +276,11 @@ class DockerSSHBox(Sandbox):
         else:
             username = 'root'
         logger.info(
-            f"Connecting to {username}@{hostname} via ssh. "
+            f'Connecting to {username}@{hostname} via ssh. '
             f"If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub. "
             f"If you started OpenDevin with `docker run`, you should try `ssh -v -p {self._ssh_port} {username}@localhost` with the password '{self._ssh_password} on the host machine (where you started the container)."
         )
-        self.ssh.login(hostname, username, self._ssh_password,
-                       port=self._ssh_port)
+        self.ssh.login(hostname, username, self._ssh_password, port=self._ssh_port)
 
         # Fix: https://github.com/pexpect/pexpect/issues/669
         self.ssh.sendline("bind 'set enable-bracketed-paste off'")
@@ -254,13 +316,15 @@ class DockerSSHBox(Sandbox):
         self.ssh.sendline(cmd)
         success = self.ssh.prompt(timeout=self.timeout)
         if not success:
-            logger.exception(
-                'Command timed out, killing process...', exc_info=False)
+            logger.exception('Command timed out, killing process...', exc_info=False)
             # send a SIGINT to the process
             self.ssh.sendintr()
             self.ssh.prompt()
             command_output = self.ssh.before.decode('utf-8')
-            return -1, f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}'
+            return (
+                -1,
+                f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}',
+            )
         command_output = self.ssh.before.decode('utf-8')
 
         # once out, make sure that we have *every* output, we while loop until we get an empty output
@@ -273,7 +337,9 @@ class DockerSSHBox(Sandbox):
                 break
             logger.debug('WAITING FOR .before')
             output = self.ssh.before.decode('utf-8')
-            logger.debug(f'WAITING FOR END OF command output ({bool(output)}): {output}')
+            logger.debug(
+                f'WAITING FOR END OF command output ({bool(output)}): {output}'
+            )
             if output == '':
                 break
             command_output += output
@@ -298,18 +364,25 @@ class DockerSSHBox(Sandbox):
         )
         if exit_code != 0:
             raise Exception(
-                f'Failed to create directory {sandbox_dest} in sandbox: {logs}')
+                f'Failed to create directory {sandbox_dest} in sandbox: {logs}'
+            )
 
         if recursive:
-            assert os.path.isdir(host_src), 'Source must be a directory when recursive is True'
+            assert os.path.isdir(
+                host_src
+            ), 'Source must be a directory when recursive is True'
             files = glob(host_src + '/**/*', recursive=True)
             srcname = os.path.basename(host_src)
             tar_filename = os.path.join(os.path.dirname(host_src), srcname + '.tar')
             with tarfile.open(tar_filename, mode='w') as tar:
                 for file in files:
-                    tar.add(file, arcname=os.path.relpath(file, os.path.dirname(host_src)))
+                    tar.add(
+                        file, arcname=os.path.relpath(file, os.path.dirname(host_src))
+                    )
         else:
-            assert os.path.isfile(host_src), 'Source must be a file when recursive is False'
+            assert os.path.isfile(
+                host_src
+            ), 'Source must be a file when recursive is False'
             srcname = os.path.basename(host_src)
             tar_filename = os.path.join(os.path.dirname(host_src), srcname + '.tar')
             with tarfile.open(tar_filename, mode='w') as tar:
@@ -349,7 +422,8 @@ class DockerSSHBox(Sandbox):
         bg_cmd = self.background_commands[id]
         if bg_cmd.pid is not None:
             self.container.exec_run(
-                f'kill -9 {bg_cmd.pid}', workdir=SANDBOX_WORKSPACE_DIR)
+                f'kill -9 {bg_cmd.pid}', workdir=SANDBOX_WORKSPACE_DIR
+            )
         assert isinstance(bg_cmd, DockerProcess)
         bg_cmd.result.output.close()
         self.background_commands.pop(id)
@@ -366,8 +440,7 @@ class DockerSSHBox(Sandbox):
                 elapsed += 1
                 if elapsed > self.timeout:
                     break
-                container = self.docker_client.containers.get(
-                    self.container_name)
+                container = self.docker_client.containers.get(self.container_name)
         except docker.errors.NotFound:
             pass
 
@@ -403,10 +476,11 @@ class DockerSSHBox(Sandbox):
                 # FIXME: This is a temporary workaround for Mac OS
                 network_kwargs['ports'] = {f'{self._ssh_port}/tcp': self._ssh_port}
                 logger.warning(
-                    ('Using port forwarding for Mac OS. '
-                     'Server started by OpenDevin will not be accessible from the host machine at the moment. '
-                     'See https://github.com/OpenDevin/OpenDevin/issues/897 for more information.'
-                     )
+                    (
+                        'Using port forwarding for Mac OS. '
+                        'Server started by OpenDevin will not be accessible from the host machine at the moment. '
+                        'See https://github.com/OpenDevin/OpenDevin/issues/897 for more information.'
+                    )
                 )
 
             mount_dir = config.get(ConfigType.WORKSPACE_MOUNT_PATH)
@@ -421,14 +495,13 @@ class DockerSSHBox(Sandbox):
                 name=self.container_name,
                 detach=True,
                 volumes={
-                    mount_dir: {
-                        'bind': SANDBOX_WORKSPACE_DIR,
-                        'mode': 'rw'
-                    },
+                    mount_dir: {'bind': SANDBOX_WORKSPACE_DIR, 'mode': 'rw'},
                     # mount cache directory to /home/opendevin/.cache for pip cache reuse
                     config.get(ConfigType.CACHE_DIR): {
-                        'bind': '/home/opendevin/.cache' if RUN_AS_DEVIN else '/root/.cache',
-                        'mode': 'rw'
+                        'bind': '/home/opendevin/.cache'
+                        if RUN_AS_DEVIN
+                        else '/root/.cache',
+                        'mode': 'rw',
                     },
                 },
             )
@@ -447,10 +520,10 @@ class DockerSSHBox(Sandbox):
                 break
             time.sleep(1)
             elapsed += 1
-            self.container = self.docker_client.containers.get(
-                self.container_name)
+            self.container = self.docker_client.containers.get(self.container_name)
             logger.info(
-                f'waiting for container to start: {elapsed}, container status: {self.container.status}')
+                f'waiting for container to start: {elapsed}, container status: {self.container.status}'
+            )
             if elapsed > self.timeout:
                 break
         if self.container.status != 'running':
@@ -468,7 +541,6 @@ class DockerSSHBox(Sandbox):
 
 
 if __name__ == '__main__':
-
     try:
         ssh_box = DockerSSHBox()
     except Exception as e:
@@ -476,7 +548,8 @@ if __name__ == '__main__':
         sys.exit(1)
 
     logger.info(
-        "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit.")
+        "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit."
+    )
 
     # Initialize required plugins
     ssh_box.init_plugins([JupyterRequirement(), SWEAgentCommandsRequirement()])
