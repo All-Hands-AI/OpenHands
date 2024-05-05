@@ -207,7 +207,12 @@ data = []
 for filepath in select_filepaths:
     with open(filepath, 'r') as f:
         for line in f.readlines():
-            data.append(json.loads(line))
+            d = json.loads(line)
+            # clear out git patch
+            if 'git_patch' in d and 'diff' in d['git_patch']:
+                # strip everything before the first `diff` (inclusive)
+                d['git_patch'] = d['git_patch'][d['git_patch'].index('diff') :]
+            data.append(d)
 df = pd.DataFrame(data)
 st.write(f'{len(data)} rows found.')
 
