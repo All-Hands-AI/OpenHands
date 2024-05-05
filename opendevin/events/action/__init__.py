@@ -17,6 +17,7 @@ from .empty import NullAction
 from .files import FileReadAction, FileWriteAction
 from .github import GitHubPushAction
 from .tasks import AddTaskAction, ModifyTaskAction
+from .user import UserMessageAction
 
 actions = (
     CmdKillAction,
@@ -77,4 +78,5 @@ __all__ = [
     'ModifyTaskAction',
     'ChangeAgentStateAction',
     'IPythonRunCellAction',
+    'UserMessageAction',
 ]
