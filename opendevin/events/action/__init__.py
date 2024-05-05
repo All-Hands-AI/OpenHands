@@ -17,6 +17,7 @@ from .empty import NullAction
 from .files import FileReadAction, FileWriteAction
 from .github import GitHubPushAction
 from .tasks import AddTaskAction, ModifyTaskAction
+from .user import UserMessageAction
 
 actions = (
     CmdKillAction,
@@ -34,6 +35,7 @@ actions = (
     ModifyTaskAction,
     ChangeAgentStateAction,
     GitHubPushAction,
+    UserMessageAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]
@@ -77,4 +79,5 @@ __all__ = [
     'ModifyTaskAction',
     'ChangeAgentStateAction',
     'IPythonRunCellAction',
+    'UserMessageAction',
 ]
