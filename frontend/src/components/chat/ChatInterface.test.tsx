@@ -117,7 +117,7 @@ describe("ChatInterface", () => {
 
     const event = {
       action: ActionType.MESSAGE,
-      content: "my message",
+      args: { content: "my message" },
     };
     expect(socketSpy).toHaveBeenCalledWith(JSON.stringify(event));
   });
