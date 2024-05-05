@@ -198,6 +198,9 @@ class AgentController:
                 self.add_history(NullAction(), obs)
                 self.delegate = None
                 self.delegateAction = None
+            if self._is_stuck(is_delegate=True):
+                logger.info('Loop detected, stopping task')
+                raise Exception('Loop detected in DelegateAgent')
             return False
 
         logger.info(f'STEP {i}', extra={'msg_type': 'STEP'})
@@ -258,23 +261,27 @@ class AgentController:
     def get_state(self):
         return self.state
 
-    def _is_stuck(self):
-        if self.state is None or self.state.history is None or len(self.state.history) < 3:
+    def _is_stuck(self, is_delegate=False):
+        to_check_state = self.state
+        if is_delegate:
+            to_check_state = self.delegate.state
+
+        if to_check_state is None or to_check_state.history is None or len(to_check_state.history) < 3:
             return False
 
         # if the last three (Action, Observation) tuples are too repetitive
         # the agent got stuck in a loop
         if all(
-            [self.state.history[-i][0] == self.state.history[-3][0] for i in range(1, 3)]
+            [to_check_state.history[-i][0] == to_check_state.history[-3][0] for i in range(1, 3)]
         ):
             # it repeats same action, give it a chance, but not if:
             if (all
-                    (isinstance(self.state.history[-i][1], NullObservation) for i in range(1, 4))):
+                    (isinstance(to_check_state.history[-i][1], NullObservation) for i in range(1, 4))):
                 # same (Action, NullObservation): like 'think' the same thought over and over
                 logger.debug('Action, NullObservation loop detected')
                 return True
             elif (all
-                  (isinstance(self.state.history[-i][1], AgentErrorObservation) for i in range(1, 4))):
+                  (isinstance(to_check_state.history[-i][1], AgentErrorObservation) for i in range(1, 4))):
                 # (NullAction, AgentErrorObservation): errors coming from an exception
                 # (Action, AgentErrorObservation): the same action getting an error, even if not necessarily the same error
                 logger.debug('Action, AgentErrorObservation loop detected')
