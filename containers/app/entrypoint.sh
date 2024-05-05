@@ -10,9 +10,23 @@ if [ -z "$SANDBOX_USER_ID" ]; then
   exit 1
 fi
 
+if [[ "$SANDBOX_USER_ID" -eq 0 ]]; then
+  echo "SANDBOX_USER_ID cannot be 0. Please run with a different user id."
+  exit 1
+fi
+
 # change uid of opendevin user to match the host user
 # but the group id is not changed, so the user can still access everything under /app
-useradd -l -m -u $SANDBOX_USER_ID -s /bin/bash enduser
+if ! useradd -l -m -u $SANDBOX_USER_ID -s /bin/bash enduser; then
+  echo "Failed to create user enduser with id $SANDBOX_USER_ID. Moving opendevin user."
+  incremented_id=$(($SANDBOX_USER_ID + 1))
+  usermod -u $incremented_id opendevin
+fi
+if ! useradd -l -m -u $SANDBOX_USER_ID -s /bin/bash enduser; then
+  echo "Failed to create user enduser with id $SANDBOX_USER_ID for a second time. Exiting."
+  exit 1
+fi
+
 usermod -aG app enduser
 mkdir -p /home/enduser/.cache/ms-playwright/
 mv /home/opendevin/.cache/ms-playwright/ /home/enduser/.cache/
