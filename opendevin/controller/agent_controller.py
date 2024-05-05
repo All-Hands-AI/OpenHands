@@ -173,18 +173,7 @@ class AgentController:
 
     async def on_event(self, event: Event):
         if isinstance(event, ChangeAgentStateAction):
-            if event.agent_state == AgentState.INIT:
-                await self.set_agent_state_to(AgentState.INIT)
-            elif event.agent_state == AgentState.RUNNING:
-                await self.set_agent_state_to(AgentState.RUNNING)
-            elif event.agent_state == AgentState.PAUSED:
-                await self.set_agent_state_to(AgentState.PAUSED)
-            elif event.agent_state == AgentState.STOPPED:
-                await self.set_agent_state_to(AgentState.STOPPED)
-            elif event.agent_state == AgentState.FINISHED:
-                await self.set_agent_state_to(AgentState.FINISHED)
-            else:
-                logger.warning(f'Unknown agent state: {event.agent_state}')
+            await self.set_agent_state_to(event.agent_state)  # type: ignore
         elif isinstance(event, MessageAction) and event.source == EventSource.USER:
             # FIXME: we're hacking a message action into a user message observation, for the benefit of CodeAct
             await self.add_history(
