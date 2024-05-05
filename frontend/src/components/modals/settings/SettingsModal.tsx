@@ -27,8 +27,6 @@ interface SettingsProps {
 
 function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const { t } = useTranslation();
-  maybeMigrateSettings();
-  const currentSettings = getSettings();
 
   const [models, setModels] = React.useState<string[]>([]);
   const [agents, setAgents] = React.useState<string[]>([]);
@@ -36,6 +34,11 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const [agentIsRunning, setAgentIsRunning] = React.useState<boolean>(false);
   const [loading, setLoading] = React.useState(true);
   const { curTaskState } = useSelector((state: RootState) => state.agent);
+
+  useEffect(() => {
+    maybeMigrateSettings();
+    setSettings(getSettings());
+  }, []);
 
   useEffect(() => {
     setAgentIsRunning(
@@ -120,6 +123,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       title={t(I18nKey.CONFIGURATION$MODAL_TITLE)}
+      isDismissable={settingsAreUpToDate()}
       subtitle={subtitle}
       actions={[
         {
