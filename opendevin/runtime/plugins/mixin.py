@@ -30,7 +30,7 @@ class PluginMixin:
                 requirement.sandbox_dest, requirement.bash_script_path
             )
             logger.info(
-                f'Initalizing plugin [{requirement.name}] by executing [{abs_path_to_bash_script}] in the sandbox.'
+                f'Initializing plugin [{requirement.name}] by executing [{abs_path_to_bash_script}] in the sandbox.'
             )
             exit_code, output = self.execute(abs_path_to_bash_script)
             if exit_code != 0:

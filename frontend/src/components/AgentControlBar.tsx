@@ -6,10 +6,10 @@ import PauseIcon from "#/assets/pause";
 import PlayIcon from "#/assets/play";
 import { changeTaskState } from "#/services/agentStateService";
 import { clearMsgs } from "#/services/session";
-import { clearMessages } from "#/state/chatSlice";
 import store, { RootState } from "#/store";
 import AgentTaskAction from "#/types/AgentTaskAction";
 import AgentTaskState from "#/types/AgentTaskState";
+import { clearMessages } from "#/state/chatSlice";
 
 const TaskStateActionMap = {
   [AgentTaskAction.START]: AgentTaskState.RUNNING,
