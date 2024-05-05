@@ -61,7 +61,7 @@ class LLMConfig(metaclass=Singleton):
 
 @dataclass
 class AgentConfig(metaclass=Singleton):
-    name: str = 'MonologueAgent'
+    name: str = 'CodeActAgent'
     memory_enabled: bool = False
     memory_max_threads: int = 2
 
