@@ -11,6 +11,7 @@ from typing import Dict, List, Tuple, Union
 import docker
 from pexpect import pxssh
 
+from opendevin.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core import config
 from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
@@ -72,12 +73,12 @@ class DockerSSHBox(Sandbox):
             self.docker_client = docker.from_env()
         except Exception as ex:
             logger.exception(
-                'Error creating controller. Please check Docker is running and visit `https://opendevin.github.io/OpenDevin/modules/usage/troubleshooting` for more debugging information.',
+                f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information.',
                 exc_info=False,
             )
             raise ex
 
-        self.instance_id = sid if sid is not None else str(uuid.uuid4())
+        self.instance_id = sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
 
         # TODO: this timeout is actually essential - need a better way to set it
         # if it is too short, the container may still waiting for previous

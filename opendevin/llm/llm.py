@@ -27,6 +27,8 @@ LLM_RETRY_MIN_WAIT = config.get(ConfigType.LLM_RETRY_MIN_WAIT)
 LLM_RETRY_MAX_WAIT = config.get(ConfigType.LLM_RETRY_MAX_WAIT)
 LLM_TIMEOUT = config.get(ConfigType.LLM_TIMEOUT)
 LLM_MAX_RETURN_TOKENS = config.get(ConfigType.LLM_MAX_RETURN_TOKENS)
+LLM_TEMPERATURE = config.get(ConfigType.LLM_TEMPERATURE)
+LLM_TOP_P = config.get(ConfigType.LLM_TOP_P)
 
 
 class LLM:
@@ -45,6 +47,8 @@ class LLM:
         retry_max_wait=LLM_RETRY_MAX_WAIT,
         llm_timeout=LLM_TIMEOUT,
         llm_max_return_tokens=LLM_MAX_RETURN_TOKENS,
+        llm_temperature=LLM_TEMPERATURE,
+        llm_top_p=LLM_TOP_P,
     ):
         """
         Args:
@@ -80,6 +84,8 @@ class LLM:
             api_version=self.api_version,
             max_tokens=self.llm_max_return_tokens,
             timeout=self.llm_timeout,
+            temperature=llm_temperature,
+            top_p=llm_top_p,
         )
 
         completion_unwrapped = self._completion

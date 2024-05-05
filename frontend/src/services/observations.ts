@@ -1,10 +1,10 @@
-import { appendAssistantMessage } from "#/state/chatSlice";
 import { setUrl, setScreenshotSrc } from "#/state/browserSlice";
 import store from "#/store";
 import { ObservationMessage } from "#/types/Message";
 import { appendOutput } from "#/state/commandSlice";
 import { appendJupyterOutput } from "#/state/jupyterSlice";
 import ObservationType from "#/types/ObservationType";
+import { addAssistantMessage } from "#/state/chatSlice";
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {
@@ -24,7 +24,7 @@ export function handleObservationMessage(message: ObservationMessage) {
       }
       break;
     default:
-      store.dispatch(appendAssistantMessage(message.message));
+      store.dispatch(addAssistantMessage(message.message));
       break;
   }
 }
