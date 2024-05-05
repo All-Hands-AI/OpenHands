@@ -28,7 +28,7 @@ st.set_page_config(layout='wide', page_title='OpenDevin SWE-Bench Output Visuali
 st.title('OpenDevin SWE-Bench Output Visualizer')
 
 # Select your data directory
-glob_pattern = 'evaluation/outputs/**/output.jsonl'
+glob_pattern = 'evaluation/outputs_complete/**/output.merged.jsonl'
 filepaths = list(set(glob(glob_pattern, recursive=True)))
 st.write(f'Matching glob pattern: `{glob_pattern}`. **{len(filepaths)}** files found.')
 
@@ -36,7 +36,9 @@ st.write(f'Matching glob pattern: `{glob_pattern}`. **{len(filepaths)}** files f
 def parse_filepath(filepath: str):
     splited = (
         filepath.removeprefix('evaluation/outputs/')
+        .removeprefix('evaluation/outputs_complete/')
         .removesuffix('output.jsonl')
+        .removesuffix('output.merged.jsonl')
         .strip('/')
         .split('/')
     )
@@ -238,15 +240,21 @@ def agg_stats(data):
         )
 
         # resolved: if the test is successful and the agent has generated a non-empty patch
-        test_result['resolved_script'] = bool(test_result['resolved'])  # most loose
-        test_result['resolved'] = (
-            test_result['resolved_script'] and not empty_generation
-        )
-        test_result['resolved_strict'] = (
-            test_result['resolved_script']
-            and not empty_generation
-            and not test_cmd_exit_error
-        )
+        if 'fine_grained_report' in entry:
+            test_result['resolved'] = entry['fine_grained_report']['resolved']
+            test_result['test_timeout'] = entry['fine_grained_report']['test_timeout']
+            test_result['test_errored'] = entry['fine_grained_report']['test_errored']
+            test_result['patch_applied'] = entry['fine_grained_report']['applied']
+        else:
+            test_result['resolved_script'] = bool(test_result['resolved'])  # most loose
+            test_result['resolved'] = (
+                test_result['resolved_script'] and not empty_generation
+            )
+            test_result['resolved_strict'] = (
+                test_result['resolved_script']
+                and not empty_generation
+                and not test_cmd_exit_error
+            )
         # avg,std obs length
         obs_lengths = []
         for _, (_, obs) in enumerate(history):
@@ -286,8 +294,8 @@ if len(stats_df) == 0:
     st.stop()
 
 resolved_rate = stats_df['resolved'].sum() / len(stats_df)
-resolved_strict_rate = stats_df['resolved_strict'].sum() / len(stats_df)
-resolved_script_rate = stats_df['resolved_script'].sum() / len(stats_df)
+# resolved_strict_rate = stats_df['resolved_strict'].sum() / len(stats_df)
+# resolved_script_rate = stats_df['resolved_script'].sum() / len(stats_df)
 
 st.markdown(
     f'- **Resolved Rate**: **{resolved_rate:2%}** : {stats_df["resolved"].sum()} / {len(data)}\n'
@@ -534,10 +542,37 @@ def visualize_swe_instance(row_dict):
     st.markdown(f'Repo: `{swe_instance["repo"]}`')
     st.markdown(f'Instance ID: `{swe_instance["instance_id"]}`')
     st.markdown(f'Base Commit: `{swe_instance["base_commit"]}`')
-    st.markdown('#### PASS_TO_PASS')
-    st.write(pd.Series(json.loads(swe_instance['PASS_TO_PASS'])))
-    st.markdown('#### FAIL_TO_PASS')
-    st.write(pd.Series(json.loads(swe_instance['FAIL_TO_PASS'])))
+
+    if 'fine_grained_report' in row_dict:
+        st.markdown('### Fine Grained Report')
+        # st.write(row_dict['fine_grained_report'])
+        eval_report = row_dict['fine_grained_report']['eval_report']
+        st.markdown('#### PASS_TO_PASS')
+        p2p_success = eval_report['PASS_TO_PASS']['success']
+        p2p_fail = eval_report['PASS_TO_PASS']['failure']
+        # make an extra column for success label
+        p2p_success = pd.Series(p2p_success).to_frame('test')
+        p2p_success['success'] = True
+        p2p_fail = pd.Series(p2p_fail).to_frame('test')
+        p2p_fail['success'] = False
+        p2p = pd.concat([p2p_success, p2p_fail])
+        st.dataframe(p2p)
+
+        st.markdown('#### FAIL_TO_PASS')
+        f2p_success = eval_report['FAIL_TO_PASS']['success']
+        f2p_fail = eval_report['FAIL_TO_PASS']['failure']
+        # make an extra column for success label
+        f2p_success = pd.Series(f2p_success).to_frame('test')
+        f2p_success['success'] = True
+        f2p_fail = pd.Series(f2p_fail).to_frame('test')
+        f2p_fail['success'] = False
+        f2p = pd.concat([f2p_success, f2p_fail])
+        st.dataframe(f2p)
+    else:
+        st.markdown('#### PASS_TO_PASS')
+        st.write(pd.Series(json.loads(swe_instance['PASS_TO_PASS'])))
+        st.markdown('#### FAIL_TO_PASS')
+        st.write(pd.Series(json.loads(swe_instance['FAIL_TO_PASS'])))
 
 
 NAV_MD = """
