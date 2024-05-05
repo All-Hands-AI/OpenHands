@@ -45,6 +45,7 @@ export WORKSPACE_BASE=$(pwd)/workspace
 
 docker run \
     --add-host host.docker.internal=host-gateway \
+    -e SANDBOX_USER_ID=$(id -u) \
     -e LLM_API_KEY="ollama" \
     -e LLM_BASE_URL="http://host.docker.internal:11434" \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
