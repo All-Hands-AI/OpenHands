@@ -41,13 +41,12 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   }, []);
 
   useEffect(() => {
-    setAgentIsRunning(
+    const isRunning =
       curTaskState === AgentTaskState.RUNNING ||
       curTaskState === AgentTaskState.PAUSED ||
-      curTaskState === AgentTaskState.AWAITING_USER_INPUT
-    )
+      curTaskState === AgentTaskState.AWAITING_USER_INPUT;
+    setAgentIsRunning(isRunning);
   }, [curTaskState]);
-
 
   React.useEffect(() => {
     (async () => {

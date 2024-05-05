@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { AvailableLanguages } from "../../../i18n";
 import { I18nKey } from "../../../i18n/declaration";
-import { RootState } from "../../../store";
 import { AutocompleteCombobox } from "./AutocompleteCombobox";
 import { Settings } from "#/services/settings";
 
