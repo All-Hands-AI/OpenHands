@@ -229,6 +229,9 @@ def agg_stats(data):
         test_result = entry['test_result']['result']
 
         # additional metrircs:
+        apply_test_patch_success = entry['test_result']['metadata'][
+            '3_apply_test_patch_success'
+        ]
         empty_generation = bool(entry['git_patch'].strip() == '')
         test_cmd_exit_error = bool(
             not entry['test_result']['metadata']['4_run_test_command_success']
@@ -259,6 +262,7 @@ def agg_stats(data):
             'n_turns': len(history),
             **test_result,
             'empty_generation': empty_generation,
+            'apply_test_patch_success': apply_test_patch_success,
             'test_cmd_exit_error': test_cmd_exit_error,
             'obs_len_avg': obs_lengths.mean().round(0),
             'obs_len_std': obs_lengths.std().round(0),
