@@ -175,7 +175,7 @@ class JupyterKernel:
                 if parent_msg_id != msg_id:
                     continue
 
-                if os.environ.get('DEBUG', False):
+                if os.environ.get('DEBUG'):
                     logging.info(
                         f"MSG TYPE: {msg_type.upper()} DONE:{execution_done}\nCONTENT: {msg['content']}"
                     )
@@ -221,7 +221,7 @@ class JupyterKernel:
         # Remove ANSI
         ret = strip_ansi(ret)
 
-        if os.environ.get('DEBUG', False):
+        if os.environ.get('DEBUG'):
             logging.info(f'OUTPUT:\n{ret}')
         return ret
 
