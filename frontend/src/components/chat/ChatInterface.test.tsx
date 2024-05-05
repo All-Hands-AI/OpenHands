@@ -8,7 +8,7 @@ import ChatInterface from "./ChatInterface";
 import Socket from "#/services/socket";
 import ActionType from "#/types/ActionType";
 import { addAssistantMessage } from "#/state/chatSlice";
-import AgentTaskState from "#/types/AgentTaskState";
+import AgentState from "#/types/AgentState";
 
 // avoid typing side-effect
 vi.mock("#/hooks/useTyping", () => ({
@@ -25,7 +25,6 @@ const renderChatInterface = () =>
   renderWithProviders(<ChatInterface />, {
     preloadedState: {
       task: {
-        initialized: true,
         completed: false,
       },
     },
@@ -38,7 +37,16 @@ describe("ChatInterface", () => {
   });
 
   it("should render the new message the user has typed", async () => {
-    renderChatInterface();
+    renderWithProviders(<ChatInterface />, {
+      preloadedState: {
+        task: {
+          completed: false,
+        },
+        agent: {
+          curAgentState: AgentState.INIT,
+        },
+      },
+    });
 
     const input = screen.getByRole("textbox");
 
@@ -73,11 +81,10 @@ describe("ChatInterface", () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
         task: {
-          initialized: true,
           completed: false,
         },
         agent: {
-          curTaskState: AgentTaskState.INIT,
+          curAgentState: AgentState.INIT,
         },
       },
     });
@@ -95,11 +102,10 @@ describe("ChatInterface", () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
         task: {
-          initialized: true,
           completed: false,
         },
         agent: {
-          curTaskState: AgentTaskState.AWAITING_USER_INPUT,
+          curAgentState: AgentState.AWAITING_USER_INPUT,
         },
       },
     });
@@ -110,8 +116,8 @@ describe("ChatInterface", () => {
     });
 
     const event = {
-      action: ActionType.USER_MESSAGE,
-      args: { message: "my message" },
+      action: ActionType.MESSAGE,
+      args: { content: "my message" },
     };
     expect(socketSpy).toHaveBeenCalledWith(JSON.stringify(event));
   });
@@ -120,8 +126,10 @@ describe("ChatInterface", () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
         task: {
-          initialized: false,
           completed: false,
+        },
+        agent: {
+          curAgentState: AgentState.LOADING,
         },
       },
     });
