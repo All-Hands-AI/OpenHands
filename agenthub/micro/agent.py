@@ -1,5 +1,5 @@
 import copy
-import json
+from json import JSONDecodeError
 from typing import Dict, List
 
 from jinja2 import BaseLoader, Environment
@@ -7,6 +7,7 @@ from jinja2 import BaseLoader, Environment
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.exceptions import LLMOutputError
+from opendevin.core.utils import json
 from opendevin.events.action import Action, action_from_dict
 from opendevin.llm.llm import LLM
 
@@ -14,32 +15,15 @@ from .instructions import instructions
 from .registry import all_microagents
 
 
-def parse_response(orig_response: str) -> Action:
-    json_start = orig_response.find('{')
-    json_end = orig_response.rfind('}') + 1
-    response = orig_response[json_start:json_end]
+def parse_response(response: str) -> Action:
     try:
         action_dict = json.loads(response)
-    except json.JSONDecodeError as e:
+    except (JSONDecodeError, ValueError) as e:
         raise LLMOutputError(
             'Invalid JSON in response. Please make sure the response is a valid JSON object'
         ) from e
     action = action_from_dict(action_dict)
     return action
-
-
-def my_encoder(obj):
-    """
-    Encodes objects as dictionaries
-
-    Parameters:
-    - obj (Object): An object that will be converted
-
-    Returns:
-    - dict: If the object can be converted it is returned in dict format
-    """
-    if hasattr(obj, 'to_dict'):
-        return obj.to_dict()
 
 
 def _remove_fields(obj, fields: set[str]):
@@ -74,7 +58,7 @@ def to_json(obj, **kwargs):
     # Remove things like screenshots that shouldn't be in a prompt
     sanitized_obj = copy.deepcopy(obj)
     _remove_fields(sanitized_obj, {'screenshot'})
-    return json.dumps(sanitized_obj, default=my_encoder, **kwargs)
+    return json.dumps(sanitized_obj, **kwargs)
 
 
 class MicroAgent(Agent):
