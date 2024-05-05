@@ -53,7 +53,7 @@ version of Docker, `26.0.0`.
 
 ```bash
 #The directory you want OpenDevin to modify. MUST be an absolute path!
-export WORKSPACE_BASE=$(pwd)/workspace`;
+export WORKSPACE_BASE=$(pwd)/workspace;
 
 docker run \
     --pull=always \

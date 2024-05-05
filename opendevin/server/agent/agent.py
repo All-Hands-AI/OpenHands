@@ -1,6 +1,7 @@
 import asyncio
 from typing import Dict, List, Optional
 
+from opendevin.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.core import config
@@ -166,7 +167,7 @@ class AgentUnit:
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
             await self.send_error(
-                'Error creating controller. Please check Docker is running and visit `https://opendevin.github.io/OpenDevin/modules/usage/troubleshooting` for more debugging information..'
+                f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
             )
             return
         await self.init_done()
