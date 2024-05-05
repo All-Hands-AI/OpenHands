@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from opendevin import config
+from opendevin.core import config
 from opendevin.runtime.docker.exec_box import DockerExecBox
 from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
 
