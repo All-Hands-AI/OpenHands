@@ -5,7 +5,7 @@ sidebar_position: 5
 # 🚧 Troubleshooting
 
 There are some error messages that get reported over and over by users.
-We'll try and make the install process easier, and to make these error messages
+We'll try to make the install process easier, and to make these error messages
 better in the future. But for now, you can look for your error message below,
 and see if there are any workaround.
 
@@ -26,7 +26,7 @@ If you're running on Windows and having trouble, check out our [guide for Window
 ### Symptoms
 
 ```
-Error creating controller. Please check Docker is running and visit `https://github.com/OpenDevin/OpenDevin/blob/main/docs/guides/Troubleshooting.md` for more debugging information.
+Error creating controller. Please check Docker is running and visit `https://opendevin.github.io/OpenDevin/modules/usage/troubleshooting` for more debugging information.
 ```
 
 ```
