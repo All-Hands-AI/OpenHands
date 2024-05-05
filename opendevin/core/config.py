@@ -162,6 +162,12 @@ def get_parser():
         help='The number of workers to use for evaluation',
     )
     parser.add_argument(
+        '--eval-note',
+        default=None,
+        type=str,
+        help='The note to add to the evaluation directory',
+    )
+    parser.add_argument(
         '--llm-temperature',
         default=1.0,
         type=float,
