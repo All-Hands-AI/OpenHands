@@ -54,6 +54,7 @@ class AgentController:
     state: State | None = None
     _agent_state: AgentState = AgentState.LOADING
     _cur_step: int = 0
+    _pending_talk_action: Optional[AgentTalkAction] = None
 
     def __init__(
         self,
@@ -175,13 +176,19 @@ class AgentController:
         if isinstance(event, ChangeAgentStateAction):
             await self.set_agent_state_to(event.agent_state)  # type: ignore
         elif isinstance(event, MessageAction) and event.source == EventSource.USER:
-            # FIXME: we're hacking a message action into a user message observation, for the benefit of CodeAct
-            await self.add_history(
-                self._pending_talk_action,
-                UserMessageObservation(event.content),
-                add_to_stream=False,
-            )
-            await self.set_agent_state_to(AgentState.RUNNING)
+            if self._pending_talk_action is None:
+                await self.add_history(
+                    NullAction(), UserMessageObservation(event.content)
+                )
+            else:
+                # FIXME: we're hacking a message action into a user message observation, for the benefit of CodeAct
+                await self.add_history(
+                    self._pending_talk_action,
+                    UserMessageObservation(event.content),
+                    add_to_stream=False,
+                )
+                self._pending_talk_action = None
+                await self.set_agent_state_to(AgentState.RUNNING)
 
     async def reset_task(self):
         if self.agent_task is not None:
