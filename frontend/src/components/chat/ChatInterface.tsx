@@ -10,7 +10,6 @@ import ActionType from "#/types/ActionType";
 import Socket from "#/services/socket";
 
 function ChatInterface() {
-  const { initialized } = useSelector((state: RootState) => state.task);
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 

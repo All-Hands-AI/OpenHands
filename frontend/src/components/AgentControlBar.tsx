@@ -8,8 +8,6 @@ import { changeAgentState } from "#/services/agentStateService";
 import { clearMsgs } from "#/services/session";
 import store, { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
-import AgentTaskAction from "#/types/AgentTaskAction";
-import AgentTaskState from "#/types/AgentTaskState";
 import { clearMessages } from "#/state/chatSlice";
 
 const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {

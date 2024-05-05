@@ -1,5 +1,4 @@
 import { changeAgentState } from "#/state/agentSlice";
-import { appendAssistantMessage } from "#/state/chatSlice";
 import { setUrl, setScreenshotSrc } from "#/state/browserSlice";
 import store from "#/store";
 import { ObservationMessage } from "#/types/Message";
