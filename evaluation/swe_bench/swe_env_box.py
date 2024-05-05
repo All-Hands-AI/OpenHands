@@ -1,4 +1,5 @@
 import sys
+import time
 import uuid
 
 from opendevin.core.logger import opendevin_logger as logger
@@ -57,20 +58,26 @@ class SWEBenchSSHBox(DockerSSHBox):
 
     @classmethod
     def get_box_for_instance(
-        cls, instance, workspace_dir_name=None
+        cls, instance, workspace_dir_name=None, n_tries=5
     ) -> 'SWEBenchSSHBox':
         if workspace_dir_name is None:
             workspace_dir_name = f"{instance['repo']}__{instance['version']}".replace(
                 '/', '__'
             )
-        try:
-            sandbox = cls(
-                container_image=SWE_BENCH_CONTAINER_IMAGE,
-                swe_instance_id=instance['instance_id'],
-                swe_instance=instance,
-            )
-        except Exception as e:
-            logger.exception('Failed to start Docker container: %s', e)
+        while n_tries > 0:
+            try:
+                sandbox = cls(
+                    container_image=SWE_BENCH_CONTAINER_IMAGE,
+                    swe_instance_id=instance['instance_id'],
+                    swe_instance=instance,
+                )
+                break
+            except Exception as e:
+                logger.exception('Failed to start Docker container: %s', e)
+                n_tries -= 1
+                time.sleep(5)
+        if n_tries == 0:
+            logger.error('Failed to start Docker container after 5 tries')
             sys.exit(1)
         logger.info(f"SSH box started for instance {instance['instance_id']}.")
 
