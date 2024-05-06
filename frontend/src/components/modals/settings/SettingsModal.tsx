@@ -74,7 +74,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     const updatedSettings = getSettingsDifference(settings);
     saveSettings(settings);
     i18next.changeLanguage(settings.LANGUAGE);
-    initializeAgent(settings); // reinitialize the agent with the new settings
+    initializeAgent(); // reinitialize the agent with the new settings
 
     const sensitiveKeys = ["LLM_API_KEY"];
 

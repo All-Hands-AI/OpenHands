@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import ActionType from "#/types/ActionType";
 import { initializeAgent } from "./agent";
-import { Settings } from "./settings";
+import { Settings, saveSettings } from "./settings";
 import Socket from "./socket";
 
 const sendSpy = vi.spyOn(Socket, "send");
@@ -21,7 +21,8 @@ describe("initializeAgent", () => {
       args: settings,
     };
 
-    initializeAgent(settings);
+    saveSettings(settings);
+    initializeAgent();
 
     expect(sendSpy).toHaveBeenCalledWith(JSON.stringify(event));
   });
