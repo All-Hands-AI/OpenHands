@@ -21,18 +21,9 @@ const socketSpy = vi.spyOn(Socket, "send");
 // TODO: Move this into test setup
 HTMLElement.prototype.scrollIntoView = vi.fn();
 
-const renderChatInterface = () =>
-  renderWithProviders(<ChatInterface />, {
-    preloadedState: {
-      task: {
-        completed: false,
-      },
-    },
-  });
-
 describe("ChatInterface", () => {
   it("should render the messages and input", () => {
-    renderChatInterface();
+    renderWithProviders(<ChatInterface />);
     expect(screen.queryAllByTestId("message")).toHaveLength(1); // initial welcome message only
   });
 
@@ -80,9 +71,6 @@ describe("ChatInterface", () => {
   it("should send the a start event to the Socket", () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
-        task: {
-          completed: false,
-        },
         agent: {
           curAgentState: AgentState.INIT,
         },
@@ -101,9 +89,6 @@ describe("ChatInterface", () => {
   it("should send the a user message event to the Socket", () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
-        task: {
-          completed: false,
-        },
         agent: {
           curAgentState: AgentState.AWAITING_USER_INPUT,
         },
@@ -125,9 +110,6 @@ describe("ChatInterface", () => {
   it("should disable the user input if agent is not initialized", () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
-        task: {
-          completed: false,
-        },
         agent: {
           curAgentState: AgentState.LOADING,
         },
