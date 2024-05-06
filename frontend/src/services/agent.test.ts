@@ -1,14 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { setInitialized } from "#/state/taskSlice";
-import store from "#/store";
 import ActionType from "#/types/ActionType";
 import { initializeAgent } from "./agent";
-import { Settings } from "./settings";
+import { Settings, saveSettings } from "./settings";
 import Socket from "./socket";
 
 const sendSpy = vi.spyOn(Socket, "send");
-const dispatchSpy = vi.spyOn(store, "dispatch");
 
 describe("initializeAgent", () => {
   it("Should initialize the agent with the current settings", () => {
@@ -24,9 +21,9 @@ describe("initializeAgent", () => {
       args: settings,
     };
 
-    initializeAgent(settings);
+    saveSettings(settings);
+    initializeAgent();
 
     expect(sendSpy).toHaveBeenCalledWith(JSON.stringify(event));
-    expect(dispatchSpy).toHaveBeenCalledWith(setInitialized(false));
   });
 });
