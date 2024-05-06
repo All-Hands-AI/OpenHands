@@ -243,6 +243,7 @@ def process_instance(instance, agent_class, metadata, skip_workspace_mount):
         'git_patch': git_patch,
         'metadata': metadata,
         'history': [(action.to_dict(), obs.to_dict()) for action, obs in state.history],
+        'error': state.error,
         'test_result': test_result,
     }
 
