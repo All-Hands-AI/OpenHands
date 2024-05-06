@@ -144,8 +144,8 @@ install-frontend-dependencies:
 
 install-precommit-hooks:
 	@echo "$(YELLOW)Installing pre-commit hooks...$(RESET)"
-# 	@git config --unset-all core.hooksPath || true
-# 	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
+	@git config --unset-all core.hooksPath || true
+	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 
 lint-backend:
