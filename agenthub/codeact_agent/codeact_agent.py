@@ -6,11 +6,10 @@ from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import (
     Action,
-    AgentEchoAction,
     AgentFinishAction,
-    AgentTalkAction,
     CmdRunAction,
     IPythonRunCellAction,
+    MessageAction,
     NullAction,
 )
 from opendevin.events.observation import (
@@ -93,8 +92,6 @@ class CodeActAgent(Agent):
     SUPPORTED_ACTIONS = (
         CmdRunAction,
         IPythonRunCellAction,
-        AgentEchoAction,
-        AgentTalkAction,
         NullAction,
     )
     SUPPORTED_OBSERVATIONS = (
@@ -128,7 +125,7 @@ class CodeActAgent(Agent):
         Returns:
         - CmdRunAction(command) - bash command to run
         - IPythonRunCellAction(code) - IPython code to run
-        - AgentTalkAction(content) - Talk action to run (e.g. ask for clarification)
+        - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
 
@@ -218,7 +215,7 @@ class CodeActAgent(Agent):
         else:
             # We assume the LLM is GOOD enough that when it returns pure natural language
             # it want to talk to the user
-            return AgentTalkAction(content=action_str)
+            return MessageAction(content=action_str, wait_for_response=True)
 
     def search_memory(self, query: str) -> List[str]:
         raise NotImplementedError('Implement this abstract method')

@@ -33,9 +33,8 @@ Here is a list of available Actions, which can be returned by `agent.step()`:
 - [`AgentRecallAction`](../opendevin/action/agent.py) - Searches memory (e.g. a vector database)
 - [`AddTaskAction`](../opendevin/action/tasks.py) - Adds a subtask to the plan
 - [`ModifyTaskAction`](../opendevin/action/tasks.py) - Changes the state of a subtask
-- [`AgentThinkAction`](../opendevin/action/agent.py) - A no-op that allows the agent to add plaintext to the history (as well as the chat log)
-- [`AgentTalkAction`](../opendevin/action/agent.py) - A no-op that allows the agent to add plaintext to the history and talk to the user.
 - [`AgentFinishAction`](../opendevin/action/agent.py) - Stops the control loop, allowing the user to enter a new task
+- [`MessageAction`](../opendevin/action/message.py) - Represents a message from an agent or the user
 
 You can use `action.to_dict()` and `action_from_dict` to serialize and deserialize actions.
 

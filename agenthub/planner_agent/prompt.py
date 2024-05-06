@@ -1,22 +1,11 @@
 import json
-from typing import Dict, List, Tuple, Type
+from typing import List, Tuple
 
 from opendevin.controller.state.plan import Plan
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ActionType
 from opendevin.events.action import (
     Action,
-    AddTaskAction,
-    AgentFinishAction,
-    AgentRecallAction,
-    AgentSummarizeAction,
-    AgentThinkAction,
-    BrowseURLAction,
-    CmdKillAction,
-    CmdRunAction,
-    FileReadAction,
-    FileWriteAction,
-    ModifyTaskAction,
     NullAction,
     action_from_dict,
 )
@@ -24,20 +13,6 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
-
-ACTION_TYPE_TO_CLASS: Dict[str, Type[Action]] = {
-    ActionType.RUN: CmdRunAction,
-    ActionType.KILL: CmdKillAction,
-    ActionType.BROWSE: BrowseURLAction,
-    ActionType.READ: FileReadAction,
-    ActionType.WRITE: FileWriteAction,
-    ActionType.RECALL: AgentRecallAction,
-    ActionType.THINK: AgentThinkAction,
-    ActionType.SUMMARIZE: AgentSummarizeAction,
-    ActionType.FINISH: AgentFinishAction,
-    ActionType.ADD_TASK: AddTaskAction,
-    ActionType.MODIFY_TASK: ModifyTaskAction,
-}
 
 HISTORY_SIZE = 10
 

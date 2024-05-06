@@ -20,7 +20,6 @@ from opendevin.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
-    AgentTalkAction,
     ChangeAgentStateAction,
     MessageAction,
     NullAction,
@@ -54,7 +53,7 @@ class AgentController:
     state: State | None = None
     _agent_state: AgentState = AgentState.LOADING
     _cur_step: int = 0
-    _pending_talk_action: AgentTalkAction | None = None
+    _pending_message_action: MessageAction | None = None
 
     def __init__(
         self,
@@ -176,18 +175,18 @@ class AgentController:
         if isinstance(event, ChangeAgentStateAction):
             await self.set_agent_state_to(event.agent_state)  # type: ignore
         elif isinstance(event, MessageAction) and event.source == EventSource.USER:
-            if self._pending_talk_action is None:
+            if self._pending_message_action is None:
                 await self.add_history(
                     NullAction(), UserMessageObservation(event.content)
                 )
             else:
                 # FIXME: we're hacking a message action into a user message observation, for the benefit of CodeAct
                 await self.add_history(
-                    self._pending_talk_action,
+                    self._pending_message_action,
                     UserMessageObservation(event.content),
                     add_to_stream=False,
                 )
-                self._pending_talk_action = None
+                self._pending_message_action = None
                 await self.set_agent_state_to(AgentState.RUNNING)
 
     async def reset_task(self):
@@ -275,8 +274,8 @@ class AgentController:
 
         self.update_state_after_step()
 
-        if isinstance(action, AgentTalkAction):
-            self._pending_talk_action = action
+        if isinstance(action, MessageAction) and action.wait_for_response:
+            self._pending_message_action = action
             await self.event_stream.add_event(action, EventSource.AGENT)
             await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
             return False
