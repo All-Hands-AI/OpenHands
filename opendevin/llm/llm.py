@@ -18,41 +18,37 @@ from opendevin.core.config import config
 from opendevin.core.logger import llm_prompt_logger, llm_response_logger
 from opendevin.core.logger import opendevin_logger as logger
 
-DEFAULT_API_KEY = config.llm.api_key
-DEFAULT_BASE_URL = config.llm.base_url
-DEFAULT_MODEL_NAME = config.llm.model
-DEFAULT_API_VERSION = config.llm.api_version
-LLM_NUM_RETRIES = config.llm.num_retries
-LLM_RETRY_MIN_WAIT = config.llm.retry_min_wait
-LLM_RETRY_MAX_WAIT = config.llm.retry_max_wait
-LLM_MAX_INPUT_TOKENS = config.llm.max_input_tokens
-LLM_MAX_OUTPUT_TOKENS = config.llm.max_output_tokens
-LLM_CUSTOM_LLM_PROVIDER = config.llm.custom_llm_provider
-LLM_TIMEOUT = config.llm.timeout
-LLM_TEMPERATURE = config.llm.temperature
-LLM_TOP_P = config.llm.top_p
-
 
 class LLM:
     """
     The LLM class represents a Language Model instance.
+
+    Attributes:
+        model_name (str): The name of the language model.
+        api_key (str): The API key for accessing the language model.
+        base_url (str): The base URL for the language model API.
+        api_version (str): The version of the API to use.
+        max_input_tokens (int): The maximum number of tokens to send to the LLM per task.
+        max_output_tokens (int): The maximum number of tokens to receive from the LLM per task.
+        llm_timeout (int): The maximum time to wait for a response in seconds.
+        custom_llm_provider (str): A custom LLM provider.
     """
 
     def __init__(
         self,
-        model=DEFAULT_MODEL_NAME,
-        api_key=DEFAULT_API_KEY,
-        base_url=DEFAULT_BASE_URL,
-        api_version=DEFAULT_API_VERSION,
-        num_retries=LLM_NUM_RETRIES,
-        retry_min_wait=LLM_RETRY_MIN_WAIT,
-        retry_max_wait=LLM_RETRY_MAX_WAIT,
-        max_input_tokens=LLM_MAX_INPUT_TOKENS,
-        max_output_tokens=LLM_MAX_OUTPUT_TOKENS,
-        custom_llm_provider=LLM_CUSTOM_LLM_PROVIDER,
-        llm_timeout=LLM_TIMEOUT,
-        llm_temperature=LLM_TEMPERATURE,
-        llm_top_p=LLM_TOP_P,
+        model=config.llm.model,
+        api_key=config.llm.api_key,
+        base_url=config.llm.base_url,
+        api_version=config.llm.api_version,
+        num_retries=config.llm.num_retries,
+        retry_min_wait=config.llm.retry_min_wait,
+        retry_max_wait=config.llm.retry_max_wait,
+        llm_timeout=config.llm.timeout,
+        llm_temperature=config.llm.temperature,
+        llm_top_p=config.llm.top_p,
+        custom_llm_provider=config.llm.custom_llm_provider,
+        max_input_tokens=config.llm.max_input_tokens,
+        max_output_tokens=config.llm.max_output_tokens,
     ):
         """
         Args:
@@ -68,11 +64,6 @@ class LLM:
             custom_llm_provider (str, optional): A custom LLM provider. Defaults to LLM_CUSTOM_LLM_PROVIDER.
             llm_timeout (int, optional): The maximum time to wait for a response in seconds. Defaults to LLM_TIMEOUT.
 
-        Attributes:
-            model_name (str): The name of the language model.
-            api_key (str): The API key for accessing the language model.
-            base_url (str): The base URL for the language model API.
-            api_version (str): The version of the API to use.
         """
         logger.info(f'Initializing LLM with model: {model}')
         self.model_name = model

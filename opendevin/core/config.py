@@ -44,7 +44,6 @@ class LLMConfig(metaclass=Singleton):
     retry_min_wait: int = 3
     retry_max_wait: int = 60
     timeout: int | None = None
-    max_return_tokens: int | None = None
     max_chars: int = 5_000_000  # fallback for token counting
     temperature: float = 0
     top_p: float = 0.5
