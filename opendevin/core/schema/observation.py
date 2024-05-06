@@ -40,5 +40,7 @@ class ObservationTypeSchema(BaseModel):
 
     NULL: str = Field(default='null')
 
+    AGENT_STATE_CHANGED: str = Field(default='agent_state_changed')
+
 
 ObservationType = ObservationTypeSchema()

@@ -112,3 +112,23 @@ class BrowserEnv:
 
         image_base64 = base64.b64encode(buffered.getvalue()).decode()
         return f'{image_base64}'
+
+
+class BrowserContainer:
+    id: str
+    browser: BrowserEnv
+
+    def __init__(
+        self,
+        sid: str = 'default',
+    ):
+        self.id = sid
+        # Initialize browser environment
+        self.browser = BrowserEnv()
+
+
+if __name__ == '__main__':
+    for i in range(10):
+        print(i)
+        browser_container = BrowserContainer(str(i))
+    input()

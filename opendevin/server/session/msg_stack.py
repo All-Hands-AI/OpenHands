@@ -64,7 +64,7 @@ class MessageStack:
             # Ignore assistant init message for now.
             if 'action' in msg.payload and msg.payload['action'] in [
                 ActionType.INIT,
-                ActionType.CHANGE_TASK_STATE,
+                ActionType.CHANGE_AGENT_STATE,
             ]:
                 continue
             cnt += 1
