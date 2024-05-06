@@ -6,25 +6,33 @@ from jinja2 import BaseLoader, Environment
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.exceptions import LLMOutputError
-from opendevin.events.action import Action, action_from_dict
+from opendevin.events.action import Action
 from opendevin.llm.llm import LLM
 
 from .instructions import instructions
 from .registry import all_microagents
 
 
-def parse_response(orig_response: str) -> Action:
-    json_start = orig_response.find('{')
-    json_end = orig_response.rfind('}') + 1
-    response = orig_response[json_start:json_end]
-    try:
-        action_dict = json.loads(response)
-    except json.JSONDecodeError as e:
-        raise LLMOutputError(
-            'Invalid JSON in response. Please make sure the response is a valid JSON object'
-        ) from e
-    action = action_from_dict(action_dict)
-    return action
+def parse_response(orig_response: str):
+    depth = 0
+    start = -1
+    for i, char in enumerate(orig_response):
+        if char == '{':
+            if depth == 0:
+                start = i
+            depth += 1
+        elif char == '}':
+            depth -= 1
+            if depth == 0 and start != -1:
+                response = orig_response[start : i + 1]
+                try:
+                    action_dict = json.loads(response)
+                    return action_dict
+                except json.JSONDecodeError as e:
+                    raise LLMOutputError(
+                        'Invalid JSON in response. Please make sure the response is a valid JSON object.'
+                    ) from e
+    raise LLMOutputError('No valid JSON object found in response.')
 
 
 def my_encoder(obj):
