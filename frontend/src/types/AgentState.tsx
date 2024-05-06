@@ -1,4 +1,5 @@
-enum AgentTaskState {
+enum AgentState {
+  LOADING = "loading",
   INIT = "init",
   RUNNING = "running",
   AWAITING_USER_INPUT = "awaiting_user_input",
@@ -8,4 +9,4 @@ enum AgentTaskState {
   ERROR = "error",
 }
 
-export default AgentTaskState;
+export default AgentState;
