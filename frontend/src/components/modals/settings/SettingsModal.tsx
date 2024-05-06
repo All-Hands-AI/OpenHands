@@ -7,6 +7,7 @@ import { fetchAgents, fetchModels } from "#/api";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import { initializeAgent } from "#/services/agent";
+import { RootState } from "../../../store";
 import AgentState from "../../../types/AgentState";
 import {
   Settings,

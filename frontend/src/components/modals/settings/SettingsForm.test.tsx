@@ -14,6 +14,7 @@ const onAPIKeyChangeMock = vi.fn();
 const renderSettingsForm = (settings?: Settings) => {
   renderWithProviders(
     <SettingsForm
+      disabled={false}
       settings={
         settings || {
           LLM_MODEL: "model1",
