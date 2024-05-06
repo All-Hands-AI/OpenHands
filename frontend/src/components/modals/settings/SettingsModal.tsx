@@ -25,6 +25,8 @@ interface SettingsProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
+const REQUIRED_SETTINGS = ["LLM_MODEL", "AGENT"];
+
 function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const { t } = useTranslation();
 
@@ -117,7 +119,8 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   } else if (!settingsAreUpToDate()) {
     subtitle = t(I18nKey.CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE);
   }
-  const saveIsDisabled = !settings.LLM_MODEL || !settings.AGENT;
+  const saveIsDisabled = REQUIRED_SETTINGS.some(key => !settings[key]);
+
   return (
     <BaseModal
       isOpen={isOpen}
