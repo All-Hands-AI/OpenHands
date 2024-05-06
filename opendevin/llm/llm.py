@@ -114,10 +114,12 @@ class LLM:
             debug_message = ''
             for message in messages:
                 debug_message += '\n\n----------\n\n' + message['content']
-            llm_prompt_logger.debug(debug_message)
+            if config.get(ConfigType.DEBUG):
+                llm_prompt_logger.debug(debug_message)
             resp = completion_unwrapped(*args, **kwargs)
             message_back = resp['choices'][0]['message']['content']
-            llm_response_logger.debug(message_back)
+            if config.get(ConfigType.DEBUG):
+                llm_response_logger.debug(message_back)
             return resp
 
         self._completion = wrapper  # type: ignore

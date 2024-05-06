@@ -10,7 +10,7 @@ from termcolor import colored
 from opendevin.core import config
 from opendevin.core.schema.config import ConfigType
 
-DISABLE_COLOR_PRINTING = config.get(ConfigType.DISABLE_COLOR).lower() == 'true'
+DISABLE_COLOR_PRINTING = config.get(ConfigType.DISABLE_COLOR)
 
 ColorType = Literal[
     'red',

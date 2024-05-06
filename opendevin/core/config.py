@@ -29,7 +29,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.CACHE_DIR: '/tmp/cache',  # '/tmp/cache' is the default cache directory
     ConfigType.LLM_MODEL: 'gpt-3.5-turbo-1106',
     ConfigType.SANDBOX_CONTAINER_IMAGE: DEFAULT_CONTAINER_IMAGE,
-    ConfigType.RUN_AS_DEVIN: 'true',
+    ConfigType.RUN_AS_DEVIN: True,
     ConfigType.LLM_EMBEDDING_MODEL: 'local',
     ConfigType.LLM_EMBEDDING_BASE_URL: None,
     ConfigType.LLM_EMBEDDING_DEPLOYMENT_NAME: None,
@@ -51,19 +51,27 @@ DEFAULT_CONFIG: dict = {
     ConfigType.AGENT: 'CodeActAgent',
     ConfigType.E2B_API_KEY: '',
     ConfigType.SANDBOX_TYPE: 'ssh',  # Can be 'ssh', 'exec', or 'e2b'
-    ConfigType.USE_HOST_NETWORK: 'false',
+    ConfigType.USE_HOST_NETWORK: False,
     ConfigType.SSH_HOSTNAME: 'localhost',
-    ConfigType.DISABLE_COLOR: 'false',
+    ConfigType.DISABLE_COLOR: False,
     ConfigType.SANDBOX_USER_ID: os.getuid() if hasattr(os, 'getuid') else None,
     ConfigType.SANDBOX_TIMEOUT: 120,
     ConfigType.GITHUB_TOKEN: None,
     ConfigType.SANDBOX_USER_ID: None,
+    ConfigType.DEBUG: False,
 }
 
 config_str = ''
 if os.path.exists('config.toml'):
     with open('config.toml', 'rb') as f:
         config_str = f.read().decode('utf-8')
+
+
+def str_to_bool(value):
+    return value.lower() in [
+        'true',
+        '1',
+    ]
 
 
 def int_value(value, default, config_key):
@@ -91,6 +99,14 @@ for k, v in config.items():
     ]:
         config[k] = int_value(config[k], v, config_key=k)
 
+    if k in [
+        ConfigType.RUN_AS_DEVIN,
+        ConfigType.USE_HOST_NETWORK,
+        ConfigType.AGENT_MEMORY_ENABLED,
+        ConfigType.DISABLE_COLOR,
+        ConfigType.DEBUG,
+    ]:
+        config[k] = str_to_bool(config[k])
 # In local there is no sandbox, the workspace will have the same pwd as the host
 if config[ConfigType.SANDBOX_TYPE] == 'local':
     config[ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX] = config[
@@ -174,7 +190,7 @@ def finalize_config():
     if config.get(ConfigType.LLM_EMBEDDING_BASE_URL) is None:
         config[ConfigType.LLM_EMBEDDING_BASE_URL] = config.get(ConfigType.LLM_BASE_URL)
 
-    USE_HOST_NETWORK = config[ConfigType.USE_HOST_NETWORK].lower() != 'false'
+    USE_HOST_NETWORK = config[ConfigType.USE_HOST_NETWORK]
     if USE_HOST_NETWORK and platform.system() == 'Darwin':
         logger.warning(
             'Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. '
