@@ -1,1 +1,4 @@
-The shell script 'hello.sh' has been created successfully. It contains the command to print 'hello'. You can run the script using the command `./hello.sh`. If you have any other requests or questions, feel free to ask!
+The shell script `hello.sh` has been created and made executable. Now, let's run the script to see the output.
+
+<execute_bash>
+./hello.sh
