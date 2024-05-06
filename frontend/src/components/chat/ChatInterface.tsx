@@ -17,6 +17,7 @@ function ChatInterface() {
     const isTask =
       curAgentState === AgentState.INIT ||
       curAgentState === AgentState.FINISHED;
+    dispatch(addUserMessage(content));
     sendChatMessage(content, isTask);
   };
 
