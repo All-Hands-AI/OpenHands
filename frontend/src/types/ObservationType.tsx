@@ -16,6 +16,9 @@ enum ObservationType {
 
   // A message from the user
   CHAT = "chat",
+
+  // Agent state has changed
+  AGENT_STATE_CHANGED = "agent_state_changed",
 }
 
 export default ObservationType;

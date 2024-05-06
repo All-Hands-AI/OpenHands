@@ -1,57 +1,23 @@
-import asyncio
-from typing import Dict, List, Optional
+from typing import Optional
 
 from opendevin.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.schema import ActionType, ConfigType, TaskState, TaskStateAction
+from opendevin.core.schema import ActionType, AgentState, ConfigType
 from opendevin.events.action import (
-    Action,
+    ChangeAgentStateAction,
     NullAction,
+    action_from_dict,
 )
+from opendevin.events.event import Event
 from opendevin.events.observation import (
     NullObservation,
-    Observation,
-    UserMessageObservation,
 )
+from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.llm.llm import LLM
 from opendevin.server.session import session_manager
-
-# new task state to valid old task states
-VALID_TASK_STATE_MAP: Dict[TaskStateAction, List[TaskState]] = {
-    TaskStateAction.PAUSE: [TaskState.RUNNING],
-    TaskStateAction.RESUME: [TaskState.PAUSED],
-    TaskStateAction.STOP: [
-        TaskState.RUNNING,
-        TaskState.PAUSED,
-        TaskState.AWAITING_USER_INPUT,
-    ],
-}
-IGNORED_TASK_STATE_MAP: Dict[TaskStateAction, List[TaskState]] = {
-    TaskStateAction.PAUSE: [
-        TaskState.INIT,
-        TaskState.PAUSED,
-        TaskState.STOPPED,
-        TaskState.FINISHED,
-        TaskState.AWAITING_USER_INPUT,
-    ],
-    TaskStateAction.RESUME: [
-        TaskState.INIT,
-        TaskState.RUNNING,
-        TaskState.STOPPED,
-        TaskState.FINISHED,
-        TaskState.AWAITING_USER_INPUT,
-    ],
-    TaskStateAction.STOP: [TaskState.INIT, TaskState.STOPPED, TaskState.FINISHED],
-}
-TASK_STATE_ACTION_MAP: Dict[TaskStateAction, TaskState] = {
-    TaskStateAction.START: TaskState.RUNNING,
-    TaskStateAction.PAUSE: TaskState.PAUSED,
-    TaskStateAction.RESUME: TaskState.RUNNING,
-    TaskStateAction.STOP: TaskState.STOPPED,
-}
 
 
 class AgentUnit:
@@ -59,16 +25,19 @@ class AgentUnit:
 
     Attributes:
         controller: The AgentController instance for controlling the agent.
-        agent_task: The task representing the agent's execution.
     """
 
     sid: str
+    event_stream: EventStream
     controller: Optional[AgentController] = None
-    agent_task: Optional[asyncio.Task] = None
+    # TODO: we will add the runtime here
+    # runtime: Optional[Runtime] = None
 
     def __init__(self, sid):
         """Initializes a new instance of the Session class."""
         self.sid = sid
+        self.event_stream = EventStream()
+        self.event_stream.subscribe(EventStreamSubscriber.SERVER, self.on_event)
 
     async def send_error(self, message):
         """Sends an error message to the client.
@@ -100,28 +69,27 @@ class AgentUnit:
             await self.send_error('Invalid action')
             return
 
-        match action:
-            case ActionType.INIT:
-                await self.create_controller(data)
-            case ActionType.START:
-                await self.start_task(data)
-            case ActionType.USER_MESSAGE:
-                await self.send_user_message(data)
-            case ActionType.CHANGE_TASK_STATE:
-                task_state_action = data.get('args', {}).get('task_state_action', None)
-                if task_state_action is None:
-                    await self.send_error('No task state action specified.')
-                    return
-                await self.set_task_state(TaskStateAction(task_state_action))
-            case ActionType.CHAT:
-                if self.controller is None:
-                    await self.send_error('No agent started. Please wait a second...')
-                    return
-                self.controller.add_history(
-                    NullAction(), UserMessageObservation(data['message'])
-                )
-            case _:
-                await self.send_error("I didn't recognize this action:" + action)
+        if action == ActionType.INIT:
+            await self.create_controller(data)
+            await self.event_stream.add_event(
+                ChangeAgentStateAction(AgentState.INIT), EventSource.USER
+            )
+            return
+        elif action == ActionType.START:
+            if self.controller is None:
+                await self.send_error('No agent started.')
+                return
+            task = data['args']['task']
+            await self.controller.setup_task(task)
+            await self.event_stream.add_event(
+                ChangeAgentStateAction(agent_state=AgentState.RUNNING), EventSource.USER
+            )
+            return
+
+        action_dict = data.copy()
+        action_dict['action'] = action
+        action_obj = action_from_dict(action_dict)
+        await self.event_stream.add_event(action_obj, EventSource.USER)
 
     async def create_controller(self, start_event: dict):
         """Creates an AgentController instance.
@@ -143,13 +111,15 @@ class AgentUnit:
 
         logger.info(f'Creating agent {agent_cls} using LLM {model}')
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
+        if self.controller is not None:
+            await self.controller.close()
         try:
             self.controller = AgentController(
                 sid=self.sid,
+                event_stream=self.event_stream,
                 agent=Agent.get_cls(agent_cls)(llm),
                 max_iterations=int(max_iterations),
                 max_chars=int(max_chars),
-                callbacks=[self.on_agent_event],
             )
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
@@ -157,77 +127,8 @@ class AgentUnit:
                 f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
             )
             return
-        await self.init_done()
 
-    async def init_done(self):
-        if self.controller is None:
-            await self.send_error('No agent started.')
-            return
-        await self.send(
-            {
-                'action': ActionType.INIT,
-                'message': 'Control loop started.',
-            }
-        )
-        await self.controller.notify_task_state_changed()
-
-    async def start_task(self, start_event):
-        """Starts a task for the agent.
-
-        Args:
-            start_event: The start event data.
-        """
-        task = start_event['args']['task']
-        if self.controller is None:
-            await self.send_error('No agent started. Please wait a second...')
-            return
-        try:
-            if self.agent_task:
-                self.agent_task.cancel()
-            self.agent_task = asyncio.create_task(
-                self.controller.start(task), name='agent start task loop'
-            )
-        except Exception as e:
-            await self.send_error(f'Error during task loop: {e}')
-
-    async def send_user_message(self, data: dict):
-        if not self.agent_task or not self.controller:
-            await self.send_error('No agent started.')
-            return
-
-        await self.controller.add_user_message(
-            UserMessageObservation(data['args']['message'])
-        )
-
-    async def set_task_state(self, new_state_action: TaskStateAction):
-        """Sets the state of the agent task."""
-        if self.controller is None:
-            await self.send_error('No agent started.')
-            return
-
-        cur_state = self.controller.get_task_state()
-        new_state = TASK_STATE_ACTION_MAP.get(new_state_action)
-        if new_state is None:
-            await self.send_error('Invalid task state action.')
-            return
-        if cur_state in VALID_TASK_STATE_MAP.get(new_state_action, []):
-            await self.controller.set_task_state_to(new_state)
-        elif cur_state in IGNORED_TASK_STATE_MAP.get(new_state_action, []):
-            # notify once again.
-            await self.controller.notify_task_state_changed()
-            return
-        else:
-            await self.send_error('Current task state not recognized.')
-            return
-
-        if new_state_action == TaskStateAction.RESUME:
-            if self.agent_task:
-                self.agent_task.cancel()
-            self.agent_task = asyncio.create_task(
-                self.controller.resume(), name='agent resume task loop'
-            )
-
-    async def on_agent_event(self, event: Observation | Action):
+    async def on_event(self, event: Event):
         """Callback function for agent events.
 
         Args:
@@ -237,10 +138,10 @@ class AgentUnit:
             return
         if isinstance(event, NullObservation):
             return
-        await self.send(event.to_dict())
+        if event.source == 'agent':
+            await self.send(event.to_dict())
+            return
 
     def close(self):
-        if self.agent_task:
-            self.agent_task.cancel()
         if self.controller is not None:
-            self.controller.action_manager.sandbox.close()
+            self.controller.close()

@@ -2,7 +2,7 @@ import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { renderWithProviders } from "test-utils";
-import AgentTaskState from "#/types/AgentTaskState";
+import AgentState from "#/types/AgentState";
 import { Settings } from "#/services/settings";
 import SettingsForm from "./SettingsForm";
 
@@ -80,7 +80,7 @@ describe("SettingsForm", () => {
         onLanguageChange={onLanguageChangeMock}
         onAPIKeyChange={onAPIKeyChangeMock}
       />,
-      { preloadedState: { agent: { curTaskState: AgentTaskState.RUNNING } } },
+      { preloadedState: { agent: { curAgentState: AgentState.RUNNING } } },
     );
     const modelInput = screen.getByRole("combobox", { name: "model" });
     const agentInput = screen.getByRole("combobox", { name: "agent" });
