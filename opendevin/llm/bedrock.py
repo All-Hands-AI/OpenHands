@@ -11,9 +11,12 @@ AWS_SECRET_ACCESS_KEY = config.get(ConfigType.AWS_SECRET_ACCESS_KEY)
 AWS_REGION_NAME = config.get(ConfigType.AWS_REGION_NAME)
 
 # It needs to be set as an environment variable, if the variable is configured in the Config file.
-os.environ[ConfigType.AWS_ACCESS_KEY_ID] = AWS_ACCESS_KEY_ID
-os.environ[ConfigType.AWS_SECRET_ACCESS_KEY] = AWS_SECRET_ACCESS_KEY
-os.environ[ConfigType.AWS_REGION_NAME] = AWS_REGION_NAME
+if AWS_ACCESS_KEY_ID is not None:
+    os.environ[ConfigType.AWS_ACCESS_KEY_ID] = AWS_ACCESS_KEY_ID
+if AWS_SECRET_ACCESS_KEY is not None:
+    os.environ[ConfigType.AWS_SECRET_ACCESS_KEY] = AWS_SECRET_ACCESS_KEY
+if AWS_REGION_NAME is not None:
+    os.environ[ConfigType.AWS_REGION_NAME] = AWS_REGION_NAME
 
 
 def list_foundation_models():
