@@ -2,7 +2,6 @@ import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { renderWithProviders } from "test-utils";
-import AgentState from "#/types/AgentState";
 import { Settings } from "#/services/settings";
 import SettingsForm from "./SettingsForm";
 
@@ -76,7 +75,7 @@ describe("SettingsForm", () => {
         }}
         models={["model1", "model2", "model3"]}
         agents={["agent1", "agent2", "agent3"]}
-        disabled={true}
+        disabled
         onModelChange={onModelChangeMock}
         onAgentChange={onAgentChangeMock}
         onLanguageChange={onLanguageChangeMock}
