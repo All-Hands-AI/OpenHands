@@ -117,6 +117,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   } else if (!settingsAreUpToDate()) {
     subtitle = t(I18nKey.CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE);
   }
+  const saveIsDisabled = !settings.LLM_MODEL || !settings.AGENT;
   return (
     <BaseModal
       isOpen={isOpen}
@@ -128,6 +129,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
         {
           label: t(I18nKey.CONFIGURATION$MODAL_SAVE_BUTTON_LABEL),
           action: handleSaveSettings,
+          isDisabled: saveIsDisabled,
           closeAfterAction: true,
           className: "bg-primary rounded-lg",
         },
