@@ -25,10 +25,7 @@ const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
     AgentState.FINISHED,
     AgentState.AWAITING_USER_INPUT,
   ],
-  [AgentState.STOPPED]: [
-    AgentState.INIT,
-    AgentState.STOPPED,
-  ],
+  [AgentState.STOPPED]: [AgentState.INIT, AgentState.STOPPED],
 };
 
 interface ButtonProps {
@@ -76,7 +73,6 @@ function AgentControlBar() {
     }
 
     if (action === AgentState.STOPPED) {
-      action = AgentState.STOPPED;
       clearMsgs().then().catch();
       store.dispatch(clearMessages());
     } else {
