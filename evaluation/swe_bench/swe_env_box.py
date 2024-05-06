@@ -17,18 +17,20 @@ class SWEBenchSSHBox(DockerSSHBox):
         sid: str | None = None,
         swe_instance_id: str | None = None,
         swe_instance: dict | None = None,
+        skip_workspace_mount: bool = True,
     ):
+        if swe_instance_id is None:
+            raise ValueError('swe_instance_id must be provided!')
+        self.swe_instance_id = swe_instance_id
+        self.swe_instance = swe_instance
+        self.skip_workspace_mount = skip_workspace_mount
+
         assert (
             container_image is not None
         ), 'container_image is required for SWEBenchSSHBox!'
         # Need to run as root to use SWEBench container
         sid = f'swe_bench_{swe_instance_id}' + str(uuid.uuid4())
         super().__init__(container_image, timeout, sid, run_as_devin=False)
-
-        if swe_instance_id is None:
-            raise ValueError('swe_instance_id must be provided!')
-        self.swe_instance_id = swe_instance_id
-        self.swe_instance = swe_instance
 
         exit_code, output = self.execute('mv ~/.bashrc ~/.bashrc.bak')
         assert exit_code == 0, f'Failed to backup ~/.bashrc: {output}'
@@ -48,17 +50,21 @@ class SWEBenchSSHBox(DockerSSHBox):
 
     @property
     def volumes(self):
-        # remove the default workspace mounting SANDBOX_WORKSPACE_DIR
-        volumes = {
-            k: v
-            for k, v in super().volumes.items()
-            if not v['bind'] == SANDBOX_WORKSPACE_DIR
-        }
-        return volumes
+        if self.skip_workspace_mount:
+            return {
+                k: v
+                for k, v in super().volumes.items()
+                if not v['bind'] == SANDBOX_WORKSPACE_DIR
+            }
+        return super().volumes
 
     @classmethod
     def get_box_for_instance(
-        cls, instance, workspace_dir_name=None, n_tries=5
+        cls,
+        instance,
+        workspace_dir_name=None,
+        n_tries=5,
+        skip_workspace_mount: bool = True,
     ) -> 'SWEBenchSSHBox':
         if workspace_dir_name is None:
             workspace_dir_name = f"{instance['repo']}__{instance['version']}".replace(
@@ -70,6 +76,7 @@ class SWEBenchSSHBox(DockerSSHBox):
                     container_image=SWE_BENCH_CONTAINER_IMAGE,
                     swe_instance_id=instance['instance_id'],
                     swe_instance=instance,
+                    skip_workspace_mount=skip_workspace_mount,
                 )
                 break
             except Exception as e:

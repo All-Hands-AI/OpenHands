@@ -48,7 +48,14 @@ def codeact_user_response(state: State) -> str:
     return msg
 
 
-AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {'CodeActAgent': codeact_user_response}
+def monologue_user_response(state: State) -> str:
+    raise NotImplementedError('MonologueAgent should never ask for user responses.')
+
+
+AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
+    'CodeActAgent': codeact_user_response,
+    'MonologueAgent': monologue_user_response,
+}
 
 AGENT_CLS_TO_INST_SUFFIX = {
     'CodeActAgent': 'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n'
@@ -166,7 +173,7 @@ def get_test_result(instance, sandbox, workspace_dir_name):
     return test_result
 
 
-def process_instance(instance, agent_class, metadata):
+def process_instance(instance, agent_class, metadata, skip_workspace_mount):
     # Set up logger
     log_file = os.path.join(
         eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
@@ -189,7 +196,11 @@ def process_instance(instance, agent_class, metadata):
     logger.addHandler(file_handler)
 
     workspace_dir_name = f'{instance.repo}__{instance.version}'.replace('/', '__')
-    sandbox = SWEBenchSSHBox.get_box_for_instance(instance, workspace_dir_name)
+    sandbox = SWEBenchSSHBox.get_box_for_instance(
+        instance,
+        workspace_dir_name,
+        skip_workspace_mount=skip_workspace_mount,
+    )
 
     # Prepare controller kwargs
     controller_kwargs = {
@@ -333,12 +344,22 @@ if __name__ == '__main__':
     num_workers = args.eval_num_workers
     logger.info(f'Using {num_workers} workers for evaluation.')
 
+    skip_workspace_mount = agent_class == 'CodeActAgent'
+    if num_workers > 1 and not skip_workspace_mount:
+        raise ValueError(
+            'Cannot use multiple workers without skipping workspace mount (i.e., will cause conflicts)'
+        )
+    logger.info(f'Skipping workspace mount: {skip_workspace_mount}')
     try:
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
             for row_idx, instance in swe_bench_lite_test.iterrows():
                 future = executor.submit(
-                    process_instance, instance, agent_class, metadata
+                    process_instance,
+                    instance,
+                    agent_class,
+                    metadata,
+                    skip_workspace_mount,
                 )
                 future.add_done_callback(update_progress)
                 futures.append(future)
