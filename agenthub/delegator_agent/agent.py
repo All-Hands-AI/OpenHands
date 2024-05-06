@@ -49,7 +49,7 @@ class DelegatorAgent(Agent):
         if self.current_delegate == 'study':
             self.current_delegate = 'coder'
             return AgentDelegateAction(
-                agent='Coder',
+                agent='CoderAgent',
                 inputs={
                     'task': state.plan.main_goal,
                     'summary': lastObservation.outputs['summary'],
@@ -58,7 +58,7 @@ class DelegatorAgent(Agent):
         elif self.current_delegate == 'coder':
             self.current_delegate = 'verifier'
             return AgentDelegateAction(
-                agent='Verifier',
+                agent='VerifierAgent',
                 inputs={
                     'task': state.plan.main_goal,
                 },
@@ -72,7 +72,7 @@ class DelegatorAgent(Agent):
             else:
                 self.current_delegate = 'coder'
                 return AgentDelegateAction(
-                    agent='Coder',
+                    agent='CoderAgent',
                     inputs={
                         'task': state.plan.main_goal,
                         'summary': lastObservation.outputs['summary'],
