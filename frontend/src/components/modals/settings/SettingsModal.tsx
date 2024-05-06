@@ -30,7 +30,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
 
   const [models, setModels] = React.useState<string[]>([]);
   const [agents, setAgents] = React.useState<string[]>([]);
-  const [settings, setSettings] = React.useState<Settings>(currentSettings);
+  const [settings, setSettings] = React.useState<Settings>({} as Settings);
   const [agentIsRunning, setAgentIsRunning] = React.useState<boolean>(false);
   const [loading, setLoading] = React.useState(true);
   const { curTaskState } = useSelector((state: RootState) => state.agent);
