@@ -7,7 +7,7 @@ import { fetchAgents, fetchModels } from "#/api";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import { initializeAgent } from "#/services/agent";
-import AgentTaskState from "../../../types/AgentTaskState";
+import AgentState from "../../../types/AgentState";
 import {
   Settings,
   getSettings,
@@ -35,7 +35,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const [settings, setSettings] = React.useState<Settings>({} as Settings);
   const [agentIsRunning, setAgentIsRunning] = React.useState<boolean>(false);
   const [loading, setLoading] = React.useState(true);
-  const { curTaskState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   useEffect(() => {
     maybeMigrateSettings();
@@ -44,11 +44,11 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
 
   useEffect(() => {
     const isRunning =
-      curTaskState === AgentTaskState.RUNNING ||
-      curTaskState === AgentTaskState.PAUSED ||
-      curTaskState === AgentTaskState.AWAITING_USER_INPUT;
+      curAgentState === AgentState.RUNNING ||
+      curAgentState === AgentState.PAUSED ||
+      curAgentState === AgentState.AWAITING_USER_INPUT;
     setAgentIsRunning(isRunning);
-  }, [curTaskState]);
+  }, [curAgentState]);
 
   React.useEffect(() => {
     (async () => {
