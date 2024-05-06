@@ -1,4 +1,4 @@
-Sure, I'll create a shell script named `hello.sh` that prints "hello". Let's start by writing the script.
+Certainly! I will create a shell script named `hello.sh` that contains the command to print 'hello'.
 
 <execute_bash>
-echo "echo 'hello'" > hello.sh
+echo "echo 'hello'" > hello.sh && chmod +x hello.sh
