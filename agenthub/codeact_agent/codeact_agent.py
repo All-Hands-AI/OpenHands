@@ -50,6 +50,7 @@ def truncate_observation(observation: str, max_chars: int = 5000) -> str:
 
 
 class CodeActAgent(Agent):
+    VERSION = '1.1'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
