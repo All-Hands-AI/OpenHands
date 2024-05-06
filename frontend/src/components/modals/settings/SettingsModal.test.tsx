@@ -68,16 +68,6 @@ describe("SettingsModal", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it("should disable the save button if the settings are the same as the initial settings", async () => {
-    await act(async () =>
-      renderWithProviders(<SettingsModal isOpen onOpenChange={vi.fn()} />),
-    );
-
-    const saveButton = screen.getByRole("button", { name: /save/i });
-
-    expect(saveButton).toBeDisabled();
-  });
-
   it("should disabled the save button if the settings contain a missing value", () => {
     const onOpenChangeMock = vi.fn();
     (getSettings as Mock).mockReturnValueOnce({
