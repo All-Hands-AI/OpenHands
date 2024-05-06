@@ -25,6 +25,12 @@ class BrowserOutputObservation(Observation):
     last_browser_action: str = ''
     focused_element_bid: str = ''
 
+    def to_dict(self):
+        dictionary = super().to_dict()
+        # add screenshot for frontend showcase only, not for agent consumption
+        dictionary['screenshot'] = self.screenshot
+        return dictionary
+
     def to_memory(self) -> dict:
         memory_dict = super().to_memory()
         # remove some fields from the memory, as currently they are too big for LLMs
