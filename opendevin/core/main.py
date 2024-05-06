@@ -40,16 +40,18 @@ async def main(task_str: str = ''):
     else:
         raise ValueError('No task provided. Please specify a task through -t, -f.')
 
+    # only one of model_name or llm_config is required
     if args.llm_config:
-        # --llm llm_config_name
-        # llm_config_name contains any of the attributes of LLMConfig
+        # --llm_config
+        # llm_config contains any of the attributes of LLMConfig
         print(f'LLM Config: {args.llm_config}')
         llm_config = get_llm_config_arg(args.llm_config)
 
-        # the group config overrides the model name
-        args.model_name = llm_config.model
-
-    llm = LLM(args.model_name)
+        # create LLM instance with the given config
+        llm = LLM(llm_config=llm_config)
+    else:
+        # --model-name model_name
+        llm = LLM(args.model_name)
 
     print(
         f'Running agent {args.agent_cls} (model: {args.model_name}, with task: "{task}"'

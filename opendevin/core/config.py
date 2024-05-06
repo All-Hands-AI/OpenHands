@@ -276,7 +276,7 @@ def get_llm_config_arg(llm_config_arg: str):
     Get a group of llm settings from the config file.
     """
 
-    # keep only the name
+    # keep only the name, just in case
     llm_config_arg = llm_config_arg.strip('[]')
     logger.info(f'Loading llm config from {llm_config_arg}')
 
