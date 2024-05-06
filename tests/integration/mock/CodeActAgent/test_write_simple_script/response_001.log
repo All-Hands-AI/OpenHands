@@ -1,4 +1,4 @@
 Certainly! I will create a shell script named `hello.sh` that contains the command to print 'hello'.
 
 <execute_bash>
-echo "echo 'hello'" > hello.sh && chmod +x hello.sh
+echo "echo hello" > hello.sh && chmod +x hello.sh

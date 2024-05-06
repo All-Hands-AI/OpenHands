@@ -175,8 +175,7 @@ USER:
 11:    app.run(port=5000)
 
 ASSISTANT:
-I should edit the file to display the numbers in a table format. Let me do that for you:
-
+I should edit the file to display the numbers in a table format. I should include correct indentation. Let me update the file:
 <execute_bash>
 edit 8:8 <<EOF
     return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
