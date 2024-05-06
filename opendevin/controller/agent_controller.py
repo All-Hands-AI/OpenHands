@@ -172,8 +172,10 @@ class AgentController:
                     'I got stuck into a loop, the task has stopped.'
                 )
                 await self._run_callbacks(observation)
+                finished_state = self.state
                 await self.set_task_state_to(TaskState.STOPPED)
-                break
+                finished_state.error = 'Loop detected'
+                return finished_state
         return self.state
 
     async def setup_task(self, task: str, inputs: dict = {}):
