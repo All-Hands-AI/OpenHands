@@ -297,7 +297,7 @@ class AgentController:
 
     def _is_stuck(self, is_delegate=False):
         to_check_state = self.state
-        if is_delegate:
+        if is_delegate and self.delegate is not None:
             to_check_state = self.delegate.state
 
         if (
