@@ -54,7 +54,7 @@ class AgentController:
     state: State | None = None
     _agent_state: AgentState = AgentState.LOADING
     _cur_step: int = 0
-    _pending_talk_action: Optional[AgentTalkAction] = None
+    _pending_talk_action: AgentTalkAction | None = None
 
     def __init__(
         self,
