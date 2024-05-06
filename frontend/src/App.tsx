@@ -16,7 +16,7 @@ import AgentControlBar from "./components/AgentControlBar";
 import AgentStatusBar from "./components/AgentStatusBar";
 import Terminal from "./components/terminal/Terminal";
 import { initializeAgent } from "./services/agent";
-import { getSettings, settingsAreUpToDate } from "./services/settings";
+import { settingsAreUpToDate } from "./services/settings";
 
 interface Props {
   setSettingOpen: (isOpen: boolean) => void;
@@ -76,7 +76,7 @@ function App(): JSX.Element {
     if (!settingsAreUpToDate()) {
       onSettingsModalOpen();
     } else {
-      initializeAgent(getSettings());
+      initializeAgent();
     }
 
     Socket.registerCallback("open", [getMsgTotal]);
