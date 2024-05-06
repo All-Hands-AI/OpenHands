@@ -119,7 +119,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   } else if (!settingsAreUpToDate()) {
     subtitle = t(I18nKey.CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE);
   }
-  const saveIsDisabled = REQUIRED_SETTINGS.some(key => !settings[key]);
+  const saveIsDisabled = REQUIRED_SETTINGS.some((key) => !settings[key]);
 
   return (
     <BaseModal
