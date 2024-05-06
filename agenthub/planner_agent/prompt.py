@@ -84,8 +84,8 @@ It must be an object, and it must contain two fields:
   * `id` - the ID of the background command to kill
 * `browse` - opens a web page. Arguments:
   * `url` - the URL to open
-* `think` - make a plan, set a goal, or record your thoughts. Arguments:
-  * `thought` - the thought to record
+* `message` - make a plan, set a goal, or record your thoughts. Arguments:
+  * `content` - the message to record
 * `add_task` - add a task to your plan. Arguments:
   * `parent` - the ID of the parent task
   * `goal` - the goal of the task
@@ -95,9 +95,9 @@ It must be an object, and it must contain two fields:
   * `state` - set to 'in_progress' to start the task, 'completed' to finish it, 'verified' to assert that it was successful, 'abandoned' to give up on it permanently, or `open` to stop working on it for now.
 * `finish` - if ALL of your tasks and subtasks have been verified or abandoned, and you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
-You MUST take time to think in between read, write, run, browse, and recall actions.
+You MUST take time to think in between read, write, run, browse, and recall actions--do this with the `message` action.
 You should never act twice in a row without thinking. But if your last several
-actions are all `think` actions, you should consider taking a different action.
+actions are all `message` actions, you should consider taking a different action.
 
 What is your next thought or action? Again, you must reply with JSON, and only with JSON.
 
