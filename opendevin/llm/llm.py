@@ -2,6 +2,7 @@ from functools import partial
 
 import litellm
 from litellm import completion as litellm_completion
+from litellm import completion_cost
 from litellm.exceptions import (
     APIConnectionError,
     RateLimitError,
@@ -18,6 +19,8 @@ from opendevin.core import config
 from opendevin.core.logger import llm_prompt_logger, llm_response_logger
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ConfigType
+
+__all__ = ['LLM', 'completion_cost']
 
 DEFAULT_API_KEY = config.get(ConfigType.LLM_API_KEY)
 DEFAULT_BASE_URL = config.get(ConfigType.LLM_BASE_URL)
@@ -68,6 +71,7 @@ class LLM:
             max_output_tokens (int, optional): The maximum number of tokens to receive from the LLM per task. Defaults to LLM_MAX_OUTPUT_TOKENS.
             custom_llm_provider (str, optional): A custom LLM provider. Defaults to LLM_CUSTOM_LLM_PROVIDER.
             llm_timeout (int, optional): The maximum time to wait for a response in seconds. Defaults to LLM_TIMEOUT.
+            llm_temperature (float, optional): The temperature for LLM sampling. Defaults to LLM_TEMPERATURE.
 
         Attributes:
             model_name (str): The name of the language model.
