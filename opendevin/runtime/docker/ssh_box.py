@@ -38,12 +38,8 @@ USE_HOST_NETWORK = config.use_host_network
 # How do we make this more flexible?
 RUN_AS_DEVIN = config.run_as_devin
 
-# FIXME why not just default sandbox_user_id to 1000 unless there's a getuid then getuid?
-USER_ID = 1000
-if SANDBOX_USER_ID := config.sandbox_user_id:
-    USER_ID = int(SANDBOX_USER_ID)
-elif hasattr(os, 'getuid'):
-    USER_ID = os.getuid()
+USER_ID = config.sandbox_user_id
+SANDBOX_USER_ID = config.sandbox_user_id
 
 
 class DockerSSHBox(Sandbox):
