@@ -96,8 +96,19 @@ class DockerSSHBox(Sandbox):
         self._ssh_port = find_available_tcp_port()
 
         # always restart the container, cuz the initial be regarded as a new session
-        self.restart_docker_container()
-
+        n_tries = 5
+        while n_tries > 0:
+            try:
+                self.restart_docker_container()
+                break
+            except Exception as e:
+                logger.exception(
+                    'Failed to start Docker container, retrying...', exc_info=False
+                )
+                n_tries -= 1
+                if n_tries == 0:
+                    raise e
+                time.sleep(5)
         self.setup_user()
         self.start_ssh_session()
         atexit.register(self.close)
