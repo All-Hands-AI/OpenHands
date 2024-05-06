@@ -15,6 +15,7 @@ from opendevin.events.action import (
 from opendevin.events.observation import (
     CmdOutputObservation,
     IPythonRunCellObservation,
+    NullObservation,
 )
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
@@ -96,6 +97,7 @@ class CodeActAgent(Agent):
     SUPPORTED_OBSERVATIONS = (
         CmdOutputObservation,
         IPythonRunCellObservation,
+        NullObservation,
     )
 
     def __init__(
