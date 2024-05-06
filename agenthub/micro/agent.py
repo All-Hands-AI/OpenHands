@@ -6,7 +6,7 @@ from jinja2 import BaseLoader, Environment
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.exceptions import LLMOutputError
-from opendevin.events.action import Action
+from opendevin.events.action import Action, action_from_dict
 from opendevin.llm.llm import LLM
 
 from .instructions import instructions
@@ -27,13 +27,13 @@ def parse_response(orig_response: str):
                 response = orig_response[start : i + 1]
                 try:
                     action_dict = json.loads(response)
-                    return action_dict
+                    action = action_from_dict(action_dict)
+                    return action
                 except json.JSONDecodeError as e:
                     raise LLMOutputError(
                         'Invalid JSON in response. Please make sure the response is a valid JSON object.'
                     ) from e
     raise LLMOutputError('No valid JSON object found in response.')
-
 
 def my_encoder(obj):
     """
