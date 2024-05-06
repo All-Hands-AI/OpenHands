@@ -134,7 +134,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
         {
           label: t(I18nKey.CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL),
           action: () => {
-            setSettings(currentSettings); // reset settings from any changes
+            setSettings(getSettings()); // reset settings from any changes
           },
           isDisabled: !settingsAreUpToDate(),
           closeAfterAction: true,
