@@ -1,5 +1,4 @@
 import sys
-import time
 import uuid
 
 from opendevin.core.config import ConfigType, config
@@ -72,24 +71,14 @@ class SWEBenchSSHBox(DockerSSHBox):
             workspace_dir_name = f"{instance['repo']}__{instance['version']}".replace(
                 '/', '__'
             )
-        while n_tries > 0:
-            try:
-                config[ConfigType.WORKSPACE_BASE] = workspace_mount_path
-                config[ConfigType.WORKSPACE_MOUNT_PATH] = workspace_mount_path
-                sandbox = cls(
-                    container_image=SWE_BENCH_CONTAINER_IMAGE,
-                    swe_instance_id=instance['instance_id'],
-                    swe_instance=instance,
-                    skip_workspace_mount=skip_workspace_mount,
-                )
-                break
-            except Exception as e:
-                logger.exception('Failed to start Docker container: %s', e)
-                n_tries -= 1
-                time.sleep(5)
-        if n_tries == 0:
-            logger.error('Failed to start Docker container after 5 tries')
-            sys.exit(1)
+        config[ConfigType.WORKSPACE_BASE] = workspace_mount_path
+        config[ConfigType.WORKSPACE_MOUNT_PATH] = workspace_mount_path
+        sandbox = cls(
+            container_image=SWE_BENCH_CONTAINER_IMAGE,
+            swe_instance_id=instance['instance_id'],
+            swe_instance=instance,
+            skip_workspace_mount=skip_workspace_mount,
+        )
         logger.info(f"SSH box started for instance {instance['instance_id']}.")
 
         # cd to the repo
