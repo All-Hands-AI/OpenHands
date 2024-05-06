@@ -111,7 +111,9 @@ class AgentController:
     async def add_error_to_history(self, message: str):
         await self.add_history(NullAction(), ErrorObservation(message))
 
-    async def add_history(self, action: Action, observation: Observation):
+    async def add_history(
+        self, action: Action, observation: Observation, add_to_stream=True
+    ):
         if self.state is None:
             raise ValueError('Added history while state was None')
         if not isinstance(action, Action):
@@ -124,8 +126,9 @@ class AgentController:
             )
         self.state.history.append((action, observation))
         self.state.updated_info.append((action, observation))
-        await self.event_stream.add_event(action, EventSource.AGENT)
-        await self.event_stream.add_event(observation, EventSource.AGENT)
+        if add_to_stream:
+            await self.event_stream.add_event(action, EventSource.AGENT)
+            await self.event_stream.add_event(observation, EventSource.AGENT)
 
     async def _run(self):
         if self.state is None:
@@ -170,7 +173,7 @@ class AgentController:
         if isinstance(event, ChangeAgentStateAction):
             await self.set_agent_state_to(event.agent_state)  # type: ignore
         elif isinstance(event, MessageAction) and event.source == EventSource.USER:
-            await self.add_history(event, NullObservation(''))
+            await self.add_history(event, NullObservation(''), add_to_stream=False)
             if self.get_agent_state() == AgentState.AWAITING_USER_INPUT:
                 await self.set_agent_state_to(AgentState.RUNNING)
 
@@ -260,6 +263,7 @@ class AgentController:
         self.update_state_after_step()
 
         if isinstance(action, MessageAction) and action.wait_for_response:
+            # FIXME: remove this once history is managed outside the agent controller
             await self.add_history(action, NullObservation(''))
             await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
             return False
