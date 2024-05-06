@@ -8,7 +8,6 @@ from .action import Action
 @dataclass
 class MessageAction(Action):
     content: str
-    source: str = ''  # TODO: remove this once sources are on all Events
     wait_for_response: bool = False
     action: str = ActionType.MESSAGE
 

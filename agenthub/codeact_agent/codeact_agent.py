@@ -13,10 +13,8 @@ from opendevin.events.action import (
     NullAction,
 )
 from opendevin.events.observation import (
-    AgentMessageObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
-    UserMessageObservation,
 )
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
@@ -92,11 +90,10 @@ class CodeActAgent(Agent):
     SUPPORTED_ACTIONS = (
         CmdRunAction,
         IPythonRunCellAction,
+        MessageAction,
         NullAction,
     )
     SUPPORTED_OBSERVATIONS = (
-        AgentMessageObservation,
-        UserMessageObservation,
         CmdOutputObservation,
         IPythonRunCellObservation,
     )
@@ -147,19 +144,23 @@ class CodeActAgent(Agent):
                 assert isinstance(
                     prev_action, self.SUPPORTED_ACTIONS
                 ), f'{prev_action.__class__} is not supported (supported: {self.SUPPORTED_ACTIONS})'
-                # prev_action is already added to self.messages when returned
+                if (
+                    isinstance(prev_action, MessageAction)
+                    and prev_action.source == 'user'
+                ):
+                    self.messages.append(
+                        {'role': 'user', 'content': prev_action.content}
+                    )
+                    if obs.content.strip() == '/exit':
+                        # User wants to exit
+                        return AgentFinishAction()
 
                 # handle observations
                 assert isinstance(
                     obs, self.SUPPORTED_OBSERVATIONS
                 ), f'{obs.__class__} is not supported (supported: {self.SUPPORTED_OBSERVATIONS})'
-                if isinstance(obs, (AgentMessageObservation, UserMessageObservation)):
-                    self.messages.append({'role': 'user', 'content': obs.content})
 
-                    # User wants to exit
-                    if obs.content.strip() == '/exit':
-                        return AgentFinishAction()
-                elif isinstance(obs, CmdOutputObservation):
+                if isinstance(obs, CmdOutputObservation):
                     content = 'OBSERVATION:\n' + truncate_observation(obs.content)
                     content += f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
                     self.messages.append({'role': 'user', 'content': content})

@@ -48,9 +48,9 @@ Here is a list of available Observations:
 - [`BrowserOutputObservation`](../opendevin/observation/browse.py)
 - [`FileReadObservation`](../opendevin/observation/files.py)
 - [`FileWriteObservation`](../opendevin/observation/files.py)
-- [`UserMessageObservation`](../opendevin/observation/)
 - [`AgentRecallObservation`](../opendevin/observation/recall.py)
-- [`AgentErrorObservation`](../opendevin/observation/error.py)
+- [`ErrorObservation`](../opendevin/observation/error.py)
+- [`SuccessObservation`](../opendevin/observation/success.py)
 
 You can use `observation.to_dict()` and `observation_from_dict` to serialize and deserialize observations.
 
