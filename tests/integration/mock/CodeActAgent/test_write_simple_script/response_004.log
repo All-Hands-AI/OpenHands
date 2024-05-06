@@ -1,1 +1,5 @@
-The script `hello.sh` is working correctly and prints "hello" as expected. If you have any more tasks or need further modifications, feel free to let me know!
+It seems that the script does not have the necessary permissions to be executed. I will add the execute permission to the script and then run it again.
+
+<execute_bash>
+chmod +x hello.sh
+./hello.sh

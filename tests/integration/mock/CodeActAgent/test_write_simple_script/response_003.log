@@ -1,4 +1,4 @@
-Certainly! Let's run the `hello.sh` script to ensure it's working as expected.
+Sure, I will run the shell script 'hello.sh' to verify that it is working.
 
 <execute_bash>
-bash hello.sh
+./hello.sh
