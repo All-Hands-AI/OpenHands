@@ -1,3 +1,4 @@
+```json
 {
   "action": "modify_task",
   "args": {
@@ -5,3 +6,4 @@
     "state": "in_progress"
   }
 }
+```

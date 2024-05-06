@@ -82,3 +82,15 @@ If you encounter any issues with the Language Model (LM) or you're simply curiou
     ```bash
     make help
     ```
+
+### 8. Testing
+
+#### Unit tests
+
+```bash
+poetry run pytest ./tests/unit/test_sandbox.py
+```
+
+#### Integration tests
+
+Please refer to [this README](./tests/integration/README.md) for details.

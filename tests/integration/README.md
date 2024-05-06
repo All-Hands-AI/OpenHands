@@ -86,14 +86,17 @@ rm -rf logs
 rm -rf workspace
 mkdir workspace
 # Depending on the complexity of the task you want to test, you can change the number of iterations limit. Change agent accordingly. If you are adding a new test, try generating mock responses for every agent.
-poetry run python ./opendevin/main.py -i 10 -t "Write a shell script 'hello.sh' that prints 'hello'." -c "MonologueAgent" -d "./workspace"
+poetry run python ./opendevin/core/main.py -i 10 -t "Write a shell script 'hello.sh' that prints 'hello'." -c "MonologueAgent" -d "./workspace"
 ```
+
+**NOTE**: If your agent decide to support user-agent interaction via natural language (e.g., you will prompted to enter user resposes when running the above `main.py` command), you should create a file named `tests/integration/mock/<AgentName>/<TestName>/user_responses.log` containing all the responses in order you provided to the agent, delimited by newline ('\n'). This will be used to mock the STDIN during testing.
 
 After running the above commands, you should be able to locate the real prompts
 and responses logged. The log folder follows `logs/llm/%y-%m-%d_%H-%M.log` format.
 
 Now, move all files under that folder to `tests/integration/mock/<AgentName>/<TestName>` folder. For example, moving all files from `logs/llm/24-04-23_21-55/` folder to
 `tests/integration/mock/MonologueAgent/test_write_simple_script` folder.
+
 
 That's it, you are good to go! When you launch an integration test, mock
 responses are loaded and used to replace a real LLM, so that we get

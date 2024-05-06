@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import { AvailableLanguages } from "../../../i18n";
 import { I18nKey } from "../../../i18n/declaration";
 import { RootState } from "../../../store";
-import AgentTaskState from "../../../types/AgentTaskState";
+import AgentState from "../../../types/AgentState";
 import { AutocompleteCombobox } from "./AutocompleteCombobox";
 import { Settings } from "#/services/settings";
 
@@ -31,20 +31,21 @@ function SettingsForm({
   onLanguageChange,
 }: SettingsFormProps) {
   const { t } = useTranslation();
-  const { curTaskState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const [disabled, setDisabled] = React.useState<boolean>(false);
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
 
   useEffect(() => {
     if (
-      curTaskState === AgentTaskState.RUNNING ||
-      curTaskState === AgentTaskState.PAUSED
+      curAgentState === AgentState.RUNNING ||
+      curAgentState === AgentState.PAUSED ||
+      curAgentState === AgentState.AWAITING_USER_INPUT
     ) {
       setDisabled(true);
     } else {
       setDisabled(false);
     }
-  }, [curTaskState, setDisabled]);
+  }, [curAgentState, setDisabled]);
 
   return (
     <>

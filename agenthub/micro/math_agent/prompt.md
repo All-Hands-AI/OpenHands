@@ -1,5 +1,5 @@
 # Task
-You are a brilliant mathematician and programmer. You've been given the follwoing problem to solve:
+You are a brilliant mathematician and programmer. You've been given the following problem to solve:
 
 {{ state.plan.main_goal }}
 

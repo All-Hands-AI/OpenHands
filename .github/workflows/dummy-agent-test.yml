@@ -1,0 +1,30 @@
+name: Run e2e test with dummy agent
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Set up environment
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          poetry install --without evaluation
+          poetry run playwright install --with-deps chromium
+          wget https://huggingface.co/BAAI/bge-small-en-v1.5/raw/main/1_Pooling/config.json -P /tmp/llama_index/models--BAAI--bge-small-en-v1.5/snapshots/5c38ec7c405ec4b44b94cc5a9bb96e735b38267a/1_Pooling/
+      - name: Run tests
+        run: |
+          poetry run python opendevin/core/main.py -t "do a flip" -m ollama/not-a-model -d ./workspace/ -c DummyAgent

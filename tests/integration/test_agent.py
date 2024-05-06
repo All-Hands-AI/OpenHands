@@ -4,10 +4,15 @@ import subprocess
 
 import pytest
 
-from opendevin.main import main
+from opendevin.core.main import main
 
 
-@pytest.mark.skipif(os.environ.get('AGENT') == 'CodeActAgent', reason='CodeActAgent requires task to be in a special format')
+# skip if
+@pytest.mark.skipif(
+    os.getenv('AGENT') == 'CodeActAgent'
+    and os.getenv('SANDBOX_TYPE').lower() == 'exec',
+    reason='CodeActAgent does not support exec sandbox since exec sandbox is NOT stateful',
+)
 def test_write_simple_script():
     task = "Write a shell script 'hello.sh' that prints 'hello'."
     asyncio.run(main(task))
@@ -20,4 +25,6 @@ def test_write_simple_script():
     result = subprocess.run(['bash', script_path], capture_output=True, text=True)
 
     # Verify the output from the script
-    assert result.stdout.strip() == 'hello', f'Expected output "hello", but got "{result.stdout.strip()}"'
+    assert (
+        result.stdout.strip() == 'hello'
+    ), f'Expected output "hello", but got "{result.stdout.strip()}"'

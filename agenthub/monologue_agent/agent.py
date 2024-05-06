@@ -2,8 +2,13 @@ from typing import List
 
 import agenthub.monologue_agent.utils.prompts as prompts
 from agenthub.monologue_agent.utils.monologue import Monologue
-from opendevin import config
-from opendevin.action import (
+from opendevin.controller.agent import Agent
+from opendevin.controller.state.state import State
+from opendevin.core import config
+from opendevin.core.exceptions import AgentNoInstructionError
+from opendevin.core.schema import ActionType
+from opendevin.core.schema.config import ConfigType
+from opendevin.events.action import (
     Action,
     AgentRecallAction,
     AgentThinkAction,
@@ -14,10 +19,7 @@ from opendevin.action import (
     GitHubPushAction,
     NullAction,
 )
-from opendevin.agent import Agent
-from opendevin.exceptions import AgentNoInstructionError
-from opendevin.llm.llm import LLM
-from opendevin.observation import (
+from opendevin.events.observation import (
     AgentRecallObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
@@ -25,14 +27,12 @@ from opendevin.observation import (
     NullObservation,
     Observation,
 )
-from opendevin.schema import ActionType
-from opendevin.schema.config import ConfigType
-from opendevin.state import State
+from opendevin.llm.llm import LLM
 
 if config.get(ConfigType.AGENT_MEMORY_ENABLED):
     from agenthub.monologue_agent.utils.memory import LongTermMemory
 
-MAX_MONOLOGUE_LENGTH = 20000
+MAX_TOKEN_COUNT_PADDING = 512
 MAX_OUTPUT_LENGTH = 5000
 
 INITIAL_THOUGHTS = [
@@ -56,7 +56,7 @@ INITIAL_THOUGHTS = [
     'RUN echo "hello world"',
     'hello world',
     'Cool! I bet I can write files too using the write action.',
-    "WRITE echo \"console.log('hello world')\" > test.js",
+    'WRITE echo "console.log(\'hello world\')" > test.js',
     '',
     "I just created test.js. I'll try and run it now.",
     'RUN node test.js',
@@ -128,14 +128,25 @@ class MonologueAgent(Agent):
         self.monologue.add_event(event)
         if self.memory is not None:
             self.memory.add_event(event)
-        if self.monologue.get_total_length() > MAX_MONOLOGUE_LENGTH:
+
+        # Test monologue token length
+        prompt = prompts.get_request_action_prompt(
+            '',
+            self.monologue.get_thoughts(),
+            [],
+        )
+        messages = [{'content': prompt, 'role': 'user'}]
+        token_count = self.llm.get_token_count(messages)
+
+        if token_count + MAX_TOKEN_COUNT_PADDING > self.llm.max_input_tokens:
             self.monologue.condense(self.llm)
 
     def _initialize(self, task: str):
         """
-        Utilizes the INITIAL_THOUGHTS list to give the agent a context for it's capabilities
+        Utilizes the INITIAL_THOUGHTS list to give the agent a context for its capabilities
         and how to navigate the WORKSPACE_MOUNT_PATH_IN_SANDBOX in `config` (e.g., /workspace by default).
         Short circuited to return when already initialized.
+        Will execute again when called after reset.
 
         Parameters:
         - task (str): The initial goal statement provided by the user
@@ -156,6 +167,10 @@ class MonologueAgent(Agent):
         else:
             self.memory = None
 
+        self._add_initial_thoughts(task)
+        self._initialized = True
+
+    def _add_initial_thoughts(self, task):
         previous_action = ''
         for thought in INITIAL_THOUGHTS:
             thought = thought.replace('$TASK', task)
@@ -168,8 +183,7 @@ class MonologueAgent(Agent):
                 elif previous_action == ActionType.READ:
                     observation = FileReadObservation(content=thought, path='')
                 elif previous_action == ActionType.RECALL:
-                    observation = AgentRecallObservation(
-                        content=thought, memories=[])
+                    observation = AgentRecallObservation(content=thought, memories=[])
                 elif previous_action == ActionType.BROWSE:
                     observation = BrowserOutputObservation(
                         content=thought, url='', screenshot=''
@@ -207,7 +221,6 @@ class MonologueAgent(Agent):
                 else:
                     action = AgentThinkAction(thought=thought)
                 self._add_event(action.to_memory())
-        self._initialized = True
 
     def step(self, state: State) -> Action:
         """
@@ -256,8 +269,6 @@ class MonologueAgent(Agent):
 
     def reset(self) -> None:
         super().reset()
-        self.monologue = Monologue()
-        if config.get(ConfigType.AGENT_MEMORY_ENABLED):
-            self.memory = LongTermMemory()
-        else:
-            self.memory = None
+
+        # Reset the initial monologue and memory
+        self._initialized = False

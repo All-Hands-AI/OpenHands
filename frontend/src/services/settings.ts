@@ -7,7 +7,7 @@ export type Settings = {
 
 export const DEFAULT_SETTINGS: Settings = {
   LLM_MODEL: "gpt-3.5-turbo",
-  AGENT: "MonologueAgent",
+  AGENT: "CodeActAgent",
   LANGUAGE: "en",
   LLM_API_KEY: "",
 };
@@ -17,15 +17,19 @@ const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[];
 /**
  * Get the settings from local storage or use the default settings if not found
  */
-export const getSettings = (): Settings => ({
-  LLM_MODEL: localStorage.getItem("LLM_MODEL") || DEFAULT_SETTINGS.LLM_MODEL,
-  AGENT: localStorage.getItem("AGENT") || DEFAULT_SETTINGS.AGENT,
-  LANGUAGE: localStorage.getItem("LANGUAGE") || DEFAULT_SETTINGS.LANGUAGE,
-  LLM_API_KEY:
-    localStorage.getItem(
-      `API_KEY_${localStorage.getItem("LLM_MODEL") || DEFAULT_SETTINGS.LLM_MODEL}`,
-    ) || DEFAULT_SETTINGS.LLM_API_KEY,
-});
+export const getSettings = (): Settings => {
+  const model = localStorage.getItem("LLM_MODEL");
+  const agent = localStorage.getItem("AGENT");
+  const language = localStorage.getItem("LANGUAGE");
+  const apiKey = localStorage.getItem(`API_KEY_${model}`);
+
+  return {
+    LLM_MODEL: model || DEFAULT_SETTINGS.LLM_MODEL,
+    AGENT: agent || DEFAULT_SETTINGS.AGENT,
+    LANGUAGE: language || DEFAULT_SETTINGS.LANGUAGE,
+    LLM_API_KEY: apiKey || DEFAULT_SETTINGS.LLM_API_KEY,
+  };
+};
 
 /**
  * Save the settings to local storage. Only valid settings are saved.
@@ -42,7 +46,7 @@ export const saveSettings = (settings: Partial<Settings>) => {
 
 /**
  * Get the difference between the current settings and the provided settings.
- * Useful for notifiying the user of exact changes.
+ * Useful for notifying the user of exact changes.
  *
  * @example
  * // Assuming the current settings are: { LLM_MODEL: "gpt-3.5", AGENT: "MonologueAgent", LANGUAGE: "en" }
