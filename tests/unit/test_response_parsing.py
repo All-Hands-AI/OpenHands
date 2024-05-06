@@ -5,6 +5,7 @@ from opendevin.events.action import (
     FileWriteAction,
 )
 
+
 def test_parse_single_complete_json():
     input_response = """
     {
@@ -16,6 +17,7 @@ def test_parse_single_complete_json():
     """
     expected = AgentThinkAction(thought="The following typos were fixed:\n* 'futur' -> 'future'\n* 'imagin' -> 'imagine'\n* 'techological' -> 'technological'\n* 'responsability' -> 'responsibility'\nThe corrected file is ./short_essay.txt.")
     assert parse_response(input_response) == expected
+
 
 def test_parse_json_with_surrounding_text():
     input_response = """
@@ -31,6 +33,7 @@ def test_parse_json_with_surrounding_text():
     """
     expected = FileWriteAction(path="./updated_file.txt", content="Updated text content here...")
     assert parse_response(input_response) == expected
+
 
 def test_parse_first_of_multiple_jsons():
     input_response = """
@@ -52,6 +55,7 @@ def test_parse_first_of_multiple_jsons():
     """
     expected = FileWriteAction(path="./short_essay.txt", content="Text content here...")
     assert parse_response(input_response) == expected
+
 
 def test_invalid_json_raises_error():
     input_response = '{"action": "write", "args": { "path": "./short_essay.txt", "content": "Missing closing brace"'

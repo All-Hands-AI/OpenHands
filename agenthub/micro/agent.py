@@ -13,7 +13,7 @@ from .instructions import instructions
 from .registry import all_microagents
 
 
-def parse_response(orig_response: str):
+def parse_response(orig_response: str) -> Action:
     depth = 0
     start = -1
     for i, char in enumerate(orig_response):
@@ -34,6 +34,7 @@ def parse_response(orig_response: str):
                         'Invalid JSON in response. Please make sure the response is a valid JSON object.'
                     ) from e
     raise LLMOutputError('No valid JSON object found in response.')
+
 
 def my_encoder(obj):
     """
