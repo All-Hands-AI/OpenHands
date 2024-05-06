@@ -8,8 +8,8 @@ class ActionTypeSchema(BaseModel):
     """Initializes the agent. Only sent by client.
     """
 
-    USER_MESSAGE: str = Field(default='user_message')
-    """Sends a message from the user. Only sent by the client.
+    MESSAGE: str = Field(default='message')
+    """Represents a message.
     """
 
     START: str = Field(default='start')
@@ -81,7 +81,7 @@ class ActionTypeSchema(BaseModel):
     """Stops the task. Must send a start action to restart a new task.
     """
 
-    CHANGE_TASK_STATE: str = Field(default='change_task_state')
+    CHANGE_AGENT_STATE: str = Field(default='change_agent_state')
 
     PUSH: str = Field(default='push')
     """Push a branch to github."""
