@@ -20,6 +20,7 @@ vi.mock("#/services/settings", async (importOriginal) => ({
     AGENT: "MonologueAgent",
     LANGUAGE: "en",
   }),
+  settingsAreUpToDate: vi.fn().mockReturnValue(true),
   saveSettings: vi.fn(),
 }));
 

@@ -65,7 +65,7 @@ describe("SettingsForm", () => {
     expect(languageInput).toHaveValue("Español");
   });
 
-  it("should disable settings while task is running", () => {
+  it("should disable settings when disabled is true", () => {
     renderWithProviders(
       <SettingsForm
         settings={{
@@ -76,12 +76,12 @@ describe("SettingsForm", () => {
         }}
         models={["model1", "model2", "model3"]}
         agents={["agent1", "agent2", "agent3"]}
+        disabled={true}
         onModelChange={onModelChangeMock}
         onAgentChange={onAgentChangeMock}
         onLanguageChange={onLanguageChangeMock}
         onAPIKeyChange={onAPIKeyChangeMock}
       />,
-      { preloadedState: { agent: { curAgentState: AgentState.RUNNING } } },
     );
     const modelInput = screen.getByRole("combobox", { name: "model" });
     const agentInput = screen.getByRole("combobox", { name: "agent" });

@@ -45,7 +45,7 @@ export const getSettings = (): Settings => {
   const model = localStorage.getItem("LLM_MODEL");
   const agent = localStorage.getItem("AGENT");
   const language = localStorage.getItem("LANGUAGE");
-  const apiKey = localStorage.getItem(`API_KEY_${model}`);
+  const apiKey = localStorage.getItem("LLM_API_KEY");
 
   return {
     LLM_MODEL: model || DEFAULT_SETTINGS.LLM_MODEL,
