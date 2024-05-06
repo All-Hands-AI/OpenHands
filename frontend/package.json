@@ -39,20 +39,20 @@
   "scripts": {
     "start": "vite",
     "build": "tsc && vite build",
-    "test": "vitest",
+    "test": "vitest run",
     "preview": "vite preview",
     "make-i18n": "node scripts/make-i18n-translations.cjs",
     "prelint": "npm run make-i18n",
-    "lint": "eslint src/**/*.ts* && prettier --check src/**/*.ts*",
+    "lint": "eslint src --ext .ts,.tsx,.js && prettier --check src/**/*.{ts,tsx}",
     "prepare": "cd .. && husky install frontend/.husky"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged"
+      "pre-commit": "npm run test && lint-staged"
     }
   },
   "lint-staged": {
-    "src/**/*.ts*": [
+    "src/**/*.{ts,tsx,js}": [
       "eslint --fix",
       "prettier --write"
     ]

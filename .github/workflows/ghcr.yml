@@ -1,9 +1,15 @@
 name: Publish Docker Image
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 on:
   push:
     branches:
     - main
+    tags:
+      - '*'
   pull_request:
   workflow_dispatch:
     inputs:

@@ -22,7 +22,8 @@ uvicorn = "*"
 types-toml = "*"
 numpy = "*"
 json-repair = "*"
-playwright = "*"
+browsergym = "*" # integrate browsergym as the browsing interface
+html2text = "*"
 e2b = "^0.14.13"
 pexpect = "*"
 jinja2 = "^3.1.3"
@@ -40,7 +41,6 @@ llama-index-embeddings-ollama = "*"
 ruff = "0.3.7"
 mypy = "1.9.0"
 pre-commit = "3.7.0"
-pydoc-markdown = "^4.8.2"
 
 [tool.poetry.group.test.dependencies]
 pytest = "*"

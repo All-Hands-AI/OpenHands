@@ -1,18 +1,18 @@
 import { createSlice } from "@reduxjs/toolkit";
-import AgentTaskState from "#/types/AgentTaskState";
+import AgentState from "#/types/AgentState";
 
 export const agentSlice = createSlice({
   name: "agent",
   initialState: {
-    curTaskState: AgentTaskState.INIT,
+    curAgentState: AgentState.LOADING,
   },
   reducers: {
-    changeTaskState: (state, action) => {
-      state.curTaskState = action.payload;
+    changeAgentState: (state, action) => {
+      state.curAgentState = action.payload;
     },
   },
 });
 
-export const { changeTaskState } = agentSlice.actions;
+export const { changeAgentState } = agentSlice.actions;
 
 export default agentSlice.reducer;

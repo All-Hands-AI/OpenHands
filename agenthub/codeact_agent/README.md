@@ -1,23 +1,29 @@
-# CodeAct-based Agent Framework
+# CodeAct Agent Framework
 
-This folder implements the [CodeAct idea](https://arxiv.org/abs/2402.13463) that relies on LLM to autonomously perform actions in a Bash shell. It requires more from the LLM itself: LLM needs to be capable enough to do all the stuff autonomously, instead of stuck in an infinite loop.
+This folder implements the CodeAct idea ([paper](https://arxiv.org/abs/2402.13463), [tweet](https://twitter.com/xingyaow_/status/1754556835703751087)) that consolidates LLM agents’ **act**ions into a unified **code** action space for both *simplicity* and *performance* (see paper for more details).
 
-**NOTE: This agent is still highly experimental and under active development to reach the capability described in the original paper & [repo](https://github.com/xingyaoww/code-act).**
+The conceptual idea is illustrated below. At each turn, the agent can:
 
-<video src="https://github.com/xingyaoww/code-act/assets/38853559/62c80ada-62ce-447e-811c-fc801dd4beac"> </video>
-*Demo of the expected capability - work-in-progress.*
+1. **Converse**: Communicate with humans in natural language to ask for clarification, confirmation, etc.
+2. **CodeAct**: Choose to perform the task by executing code
+   - Execute any valid Linux `bash` command
+   - Execute any valid `Python` code with [an interactive Python interpreter](https://ipython.org/). This is simulated through `bash` command, see plugin system below for more details.
 
-```bash
-mkdir workspace
-PYTHONPATH=`pwd`:$PYTHONPATH python3 opendevin/main.py -d ./workspace -c CodeActAgent -t "Please write a flask app that returns 'Hello, World\!' at the root URL, then start the app on port 5000. python3 has already been installed for you."
-```
+![image](https://github.com/OpenDevin/OpenDevin/assets/38853559/92b622e3-72ad-4a61-8f41-8c040b6d5fb3)
 
-Example: prompts `gpt-4-0125-preview` to write a flask server, install `flask` library, and start the server.
+## Plugin System
 
-<img width="951" alt="image" src="https://github.com/OpenDevin/OpenDevin/assets/38853559/325c3115-a343-4cc5-a92b-f1e5d552a077">
+To make the CodeAct agent more powerful with only access to `bash` action space, CodeAct agent leverages OpenDevin's plugin system:
+- [Jupyter plugin](https://github.com/OpenDevin/OpenDevin/tree/main/opendevin/runtime/plugins/jupyter): for IPython execution via bash command
+- [SWE-agent tool plugin](https://github.com/OpenDevin/OpenDevin/tree/main/opendevin/runtime/plugins/swe_agent_commands): Powerful bash command line tools for software development tasks introduced by [swe-agent](https://github.com/princeton-nlp/swe-agent).
 
-<img width="957" alt="image" src="https://github.com/OpenDevin/OpenDevin/assets/38853559/68ad10c1-744a-4e9d-bb29-0f163d665a0a">
+## Demo
 
-Most of the things are working as expected, except at the end, the model did not follow the instruction to stop the interaction by outputting `<execute> exit </execute>` as instructed.
+https://github.com/OpenDevin/OpenDevin/assets/38853559/f592a192-e86c-4f48-ad31-d69282d5f6ac
 
-**TODO**: This should be fixable by either (1) including a complete in-context example like [this](https://github.com/xingyaoww/mint-bench/blob/main/mint/tasks/in_context_examples/reasoning/with_tool.txt), OR (2) collect some interaction data like this and fine-tune a model (like [this](https://github.com/xingyaoww/code-act), a more complex route).
+*Example of CodeActAgent with `gpt-4-turbo-2024-04-09` performing a data science task (linear regression)*
+
+## Work-in-progress & Next step
+
+[] Support web-browsing
+[] Complete the workflow for CodeAct agent to submit Github PRs
