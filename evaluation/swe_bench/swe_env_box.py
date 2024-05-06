@@ -2,6 +2,7 @@ import sys
 import time
 import uuid
 
+from opendevin.core.config import ConfigType, config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.runtime.docker.ssh_box import SANDBOX_WORKSPACE_DIR, DockerSSHBox
 from opendevin.runtime.plugins import JupyterRequirement, SWEAgentCommandsRequirement
@@ -65,6 +66,7 @@ class SWEBenchSSHBox(DockerSSHBox):
         workspace_dir_name=None,
         n_tries=5,
         skip_workspace_mount: bool = True,
+        workspace_mount_path: str | None = None,
     ) -> 'SWEBenchSSHBox':
         if workspace_dir_name is None:
             workspace_dir_name = f"{instance['repo']}__{instance['version']}".replace(
@@ -72,6 +74,8 @@ class SWEBenchSSHBox(DockerSSHBox):
             )
         while n_tries > 0:
             try:
+                config[ConfigType.WORKSPACE_BASE] = workspace_mount_path
+                config[ConfigType.WORKSPACE_MOUNT_PATH] = workspace_mount_path
                 sandbox = cls(
                     container_image=SWE_BENCH_CONTAINER_IMAGE,
                     swe_instance_id=instance['instance_id'],

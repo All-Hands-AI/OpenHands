@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 from evaluation.swe_bench.swe_env_box import SWEBenchSSHBox
 from opendevin.controller.state.state import State
-from opendevin.core.config import args
+from opendevin.core.config import ConfigType, args, config
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
@@ -174,6 +174,12 @@ def get_test_result(instance, sandbox, workspace_dir_name):
 
 
 def process_instance(instance, agent_class, metadata, skip_workspace_mount):
+    workspace_mount_path = config.get(ConfigType.WORKSPACE_MOUNT_PATH)
+    # create process-specific workspace dir
+    if not skip_workspace_mount:
+        workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
+        pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
+
     # Set up logger
     log_file = os.path.join(
         eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
@@ -186,6 +192,8 @@ def process_instance(instance, agent_class, metadata, skip_workspace_mount):
     logger.info(
         f'Starting evaluation for instance {instance.instance_id}.\nLOG:   tail -f {log_file}'
     )
+    if not skip_workspace_mount:
+        logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
     # Remove all existing handlers from logger
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
@@ -200,6 +208,7 @@ def process_instance(instance, agent_class, metadata, skip_workspace_mount):
         instance,
         workspace_dir_name,
         skip_workspace_mount=skip_workspace_mount,
+        workspace_mount_path=workspace_mount_path,
     )
 
     # Prepare controller kwargs
@@ -346,10 +355,6 @@ if __name__ == '__main__':
     logger.info(f'Using {num_workers} workers for evaluation.')
 
     skip_workspace_mount = agent_class == 'CodeActAgent'
-    if num_workers > 1 and not skip_workspace_mount:
-        raise ValueError(
-            'Cannot use multiple workers without skipping workspace mount (i.e., will cause conflicts)'
-        )
     logger.info(f'Skipping workspace mount: {skip_workspace_mount}')
     try:
         with ProcessPoolExecutor(num_workers) as executor:
