@@ -1,18 +1,23 @@
 import React from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { IoMdChatbubbles } from "react-icons/io";
 import ChatInput from "./ChatInput";
 import Chat from "./Chat";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import { sendChatMessage } from "#/services/chatService";
+import { addUserMessage } from "#/state/chatSlice";
 
 function ChatInterface() {
+  const dispatch = useDispatch();
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const handleSendMessage = (content: string) => {
-    const isTask = curAgentState === AgentState.INIT;
+    const isTask =
+      curAgentState === AgentState.INIT ||
+      curAgentState === AgentState.FINISHED;
+    dispatch(addUserMessage(content));
     sendChatMessage(content, isTask);
   };
 

@@ -8,16 +8,27 @@ import { I18nKey } from "#/i18n/declaration";
 import { initialState as initialBrowserState } from "#/state/browserSlice";
 import { initialState as initialCodeState } from "#/state/codeSlice";
 import { RootState } from "#/store";
-import { AllTabs, TabOption, TabType } from "#/types/TabOption";
+import { TabOption, TabType } from "#/types/TabOption";
 import Browser from "./Browser";
 import CodeEditor from "./CodeEditor";
 import Planner from "./Planner";
 import Jupyter from "./Jupyter";
+import { getSettings } from "#/services/settings";
 
 function Workspace() {
   const { t } = useTranslation();
   const plan = useSelector((state: RootState) => state.plan.plan);
   const code = useSelector((state: RootState) => state.code.code);
+
+  const { AGENT } = getSettings();
+  const baseTabs = [TabOption.CODE, TabOption.BROWSER];
+  const extraTabsMap: { [key: string]: TabOption[] } = {
+    CodeActAgent: [TabOption.JUPYTER],
+    PlannerAgent: [TabOption.PLANNER],
+  };
+  const extraTabs = extraTabsMap[AGENT] || [];
+  const showTabs = [...baseTabs, ...extraTabs];
+
   const screenshotSrc = useSelector(
     (state: RootState) => state.browser.screenshotSrc,
   );
@@ -30,26 +41,27 @@ function Workspace() {
     [TabOption.JUPYTER]: false,
   });
 
+  const iconSize = 18;
   const tabData = useMemo(
     () => ({
       [TabOption.PLANNER]: {
         name: t(I18nKey.WORKSPACE$PLANNER_TAB_LABEL),
-        icon: <VscListOrdered size={18} />,
+        icon: <VscListOrdered size={iconSize} />,
         component: <Planner key="planner" />,
       },
       [TabOption.CODE]: {
         name: t(I18nKey.WORKSPACE$CODE_EDITOR_TAB_LABEL),
-        icon: <VscCode size={18} />,
+        icon: <VscCode size={iconSize} />,
         component: <CodeEditor key="code" />,
       },
       [TabOption.BROWSER]: {
         name: t(I18nKey.WORKSPACE$BROWSER_TAB_LABEL),
-        icon: <IoIosGlobe size={18} />,
+        icon: <IoIosGlobe size={iconSize} />,
         component: <Browser key="browser" />,
       },
       [TabOption.JUPYTER]: {
         name: t(I18nKey.WORKSPACE$JUPYTER_TAB_LABEL),
-        icon: <VscCode size={18} />,
+        icon: <VscCode size={iconSize} />,
         component: <Jupyter key="jupyter" />,
       },
     }),
@@ -109,10 +121,10 @@ function Workspace() {
             setActiveTab(v as TabType);
           }}
         >
-          {AllTabs.map((tab, index) => (
+          {showTabs.map((tab, index) => (
             <Tab
               key={tab}
-              className={`flex-grow ${index + 1 === AllTabs.length ? "" : "border-r"}`}
+              className={`flex-grow ${index + 1 === showTabs.length ? "" : "border-r"}`}
               title={
                 <div className="flex grow items-center gap-2 justify-center text-xs">
                   {tabData[tab].icon}

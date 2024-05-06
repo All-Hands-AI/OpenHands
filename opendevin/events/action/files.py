@@ -144,6 +144,8 @@ class FileWriteAction(Action):
                 whole_path = resolve_path(
                     self.path, controller.action_manager.sandbox.get_working_directory()
                 )
+                if not os.path.exists(os.path.dirname(whole_path)):
+                    os.makedirs(os.path.dirname(whole_path))
                 mode = 'w' if not os.path.exists(whole_path) else 'r+'
                 try:
                     with open(whole_path, mode, encoding='utf-8') as file:

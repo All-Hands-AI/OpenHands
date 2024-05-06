@@ -6,7 +6,6 @@ import Socket from "./socket";
 import { addUserMessage } from "#/state/chatSlice";
 
 export function sendChatMessage(message: string, isTask: boolean = true): void {
-  store.dispatch(addUserMessage(message));
   let event;
   if (isTask) {
     event = { action: ActionType.START, args: { task: message } };
