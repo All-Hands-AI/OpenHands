@@ -179,6 +179,8 @@ class CodeActAgent(Agent):
                     content = '\n'.join(splited)
                     content = truncate_observation(content)
                     self.messages.append({'role': 'user', 'content': content})
+                elif isinstance(obs, NullObservation):
+                    pass
                 else:
                     raise NotImplementedError(
                         f'Unknown observation type: {obs.__class__}'
