@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 from opendevin.core.schema import ObservationType
-from opendevin.events.utils import _remove_fields
+from opendevin.events.utils import remove_fields
 
 from .observation import Observation
 
@@ -28,7 +28,7 @@ class BrowserOutputObservation(Observation):
     def to_memory(self) -> dict:
         memory_dict = super().to_memory()
         # remove some fields from the memory, as currently they are too big for LLMs
-        _remove_fields(
+        remove_fields(
             memory_dict['extras'],
             {
                 'screenshot',
