@@ -272,8 +272,6 @@ def finalize_config(config: AppConfig):
             'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'
         )
 
-    # TODO why was the last workspace_mount_path line unreachable?
-
     if config.cache_dir:
         pathlib.Path(config.cache_dir).mkdir(parents=True, exist_ok=True)
 
@@ -282,6 +280,33 @@ config = AppConfig()
 load_from_toml(config)
 load_from_env(config, os.environ)
 finalize_config(config)
+
+
+# Utility function for command line --group argument
+def get_llm_config_arg(llm_config_arg: str):
+    """
+    Get a group of llm settings from the config file.
+    """
+
+    # keep only the name
+    llm_config_arg = llm_config_arg.strip('[]')
+    logger.info(f'Loading llm config from {llm_config_arg}')
+
+    # load the toml file
+    try:
+        with open('config.toml', 'r', encoding='utf-8') as toml_file:
+            toml_config = toml.load(toml_file)
+    except FileNotFoundError:
+        return None
+    except toml.TomlDecodeError:
+        logger.debug(f'Cannot parse llm group from {llm_config_arg}')
+        return None
+
+    # update the llm config with the specified section
+    if llm_config_arg in toml_config:
+        return LLMConfig(**toml_config[llm_config_arg])
+    logger.debug(f'Loading from toml failed for {llm_config_arg}')
+    return None
 
 
 # Command line arguments
@@ -332,6 +357,13 @@ def get_parser():
         default=config.llm.max_chars,
         type=int,
         help='The maximum number of characters to send to and receive from LLM per task',
+    )
+    parser.add_argument(
+        '-l',
+        '--llm-config',
+        default=None,
+        type=str,
+        help='A group of llm settings to be applied, e.g. a "[llama3]" section in the toml file',
     )
     return parser
 

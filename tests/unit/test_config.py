@@ -14,6 +14,17 @@ def setup_env():
     os.environ['AGENT_MEMORY_MAX_THREADS'] = '4'
     os.environ['AGENT_MEMORY_ENABLED'] = 'True'
     os.environ['AGENT'] = 'CodeActAgent'
+
+    # old-style and new-style files
+    with open('old_style_config.toml', 'w') as f:
+        f.write('[default]\nLLM_MODEL="GPT-4"\n')
+
+    with open('new_style_config.toml', 'w') as f:
+        f.write('[app]\nLLM_MODEL="GPT-3"\n')
+
+    with open('.env', 'w') as f:
+        f.write('LLM_MODEL=GPT-5\n')
+
     yield
     # Tear down
     os.environ.pop('WORKSPACE_BASE', None)
@@ -22,6 +33,11 @@ def setup_env():
     os.environ.pop('AGENT_MEMORY_MAX_THREADS', None)
     os.environ.pop('AGENT_MEMORY_ENABLED', None)
     os.environ.pop('AGENT', None)
+
+    # clean up files
+    os.remove('old_style_config.toml')
+    os.remove('new_style_config.toml')
+    os.remove('.env')
 
 
 def test_compat_env_to_config(setup_env):

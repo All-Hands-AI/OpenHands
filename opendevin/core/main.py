@@ -5,7 +5,7 @@ from typing import Type
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
-from opendevin.core.config import args
+from opendevin.core.config import args, get_llm_config_arg
 from opendevin.llm.llm import LLM
 
 
@@ -35,10 +35,21 @@ async def main(task_str: str = ''):
     else:
         raise ValueError('No task provided. Please specify a task through -t, -f.')
 
-    print(
-        f'Running agent {args.agent_cls} (model: {args.model_name}) with task: "{task}"'
-    )
+    if args.llm_config:
+        # --llm llm_config_name
+        # llm_config_name contains any of the attributes of LLMConfig
+        print(f'LLM Config: {args.llm_config}')
+        llm_config = get_llm_config_arg(args.llm_config)
+
+        # the group config overrides the model name
+        args.model_name = llm_config.model
+
     llm = LLM(args.model_name)
+
+    print(
+        f'Running agent {args.agent_cls} (model: {args.model_name}, with task: "{task}"'
+    )
+
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
     controller = AgentController(
