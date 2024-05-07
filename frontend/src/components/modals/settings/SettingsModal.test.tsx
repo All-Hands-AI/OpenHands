@@ -263,9 +263,6 @@ describe("SettingsModal", () => {
 
   it("should reset settings to defaults when the 'reset to defaults' button is clicked", async () => {
     const onOpenChangeMock = vi.fn();
-    (getDefaultSettings as Mock).mockReturnValueOnce({
-      AGENT: "agent1",
-    });
     await act(async () =>
       renderWithProviders(
         <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
@@ -284,12 +281,14 @@ describe("SettingsModal", () => {
     act(() => {
       userEvent.click(agent3);
     });
-    expect(agentInput).not.toHaveValue("agent1");
+    expect(agentInput).toHaveValue("agent3");
 
     act(() => {
       userEvent.click(resetButton);
     });
-    expect(agentInput).toHaveValue("agent1"); // Agent value is reset to default from getDefaultSettings()
+    expect(getDefaultSettings).toHaveBeenCalled();
+
+    expect(agentInput).toHaveValue("CodeActAgent"); // Agent value is reset to default from getDefaultSettings()
   });
 
   it.todo(

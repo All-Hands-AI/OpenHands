@@ -73,7 +73,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   };
 
   const handleResetSettings = () => {
-    setSettings(getDefaultSettings());
+    setSettings(getDefaultSettings);
   };
 
   const handleSaveSettings = () => {

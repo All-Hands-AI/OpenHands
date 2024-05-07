@@ -124,22 +124,21 @@ describe("SettingsForm", () => {
       expect(onAgentChangeMock).toHaveBeenCalledWith("agent3");
     });
 
-    // uncomment / fix
-    // it("should call the onLanguageChange handler when the language changes", () => {
-    //   renderSettingsForm();
+    it("should call the onLanguageChange handler when the language changes", () => {
+      renderSettingsForm();
 
-    //   const languageInput = screen.getByRole("combobox", { name: "language" });
-    //   act(() => {
-    //     userEvent.click(languageInput);
-    //   });
+      const languageInput = screen.getByRole("combobox", { name: "language" });
+      act(() => {
+        userEvent.click(languageInput);
+      });
 
-    //   const french = screen.getByText("Français");
-    //   act(() => {
-    //     userEvent.click(french);
-    //   });
+      const french = screen.getByText("Français");
+      act(() => {
+        userEvent.click(french);
+      });
 
-    //   expect(onLanguageChangeMock).toHaveBeenCalledWith("Français");
-    // });
+      expect(onLanguageChangeMock).toHaveBeenCalledWith("Français");
+    });
 
     it("should call the onAPIKeyChange handler when the API key changes", () => {
       renderSettingsForm();
