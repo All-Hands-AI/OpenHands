@@ -74,7 +74,7 @@ async def test_run_push_error_missing_token(
 
     # Verify the result is an error due to missing token
     assert isinstance(result, ErrorObservation)
-    assert result.message == 'Oops. Something went wrong: GITHUB_TOKEN is not set'
+    assert result.message == 'GITHUB_TOKEN is not set'
 
 
 @pytest.mark.asyncio

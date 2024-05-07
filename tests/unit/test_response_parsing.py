@@ -1,21 +1,24 @@
 import pytest
-from agenthub.micro.agent import parse_response, LLMOutputError
+
+from agenthub.micro.agent import LLMOutputError, parse_response
 from opendevin.events.action import (
-    AgentThinkAction,
     FileWriteAction,
+    MessageAction,
 )
 
 
 def test_parse_single_complete_json():
     input_response = """
     {
-        "action": "think",
+        "action": "message",
         "args": {
-            "thought": "The following typos were fixed:\\n* 'futur' -> 'future'\\n* 'imagin' -> 'imagine'\\n* 'techological' -> 'technological'\\n* 'responsability' -> 'responsibility'\\nThe corrected file is ./short_essay.txt."
+            "content": "The following typos were fixed:\\n* 'futur' -> 'future'\\n* 'imagin' -> 'imagine'\\n* 'techological' -> 'technological'\\n* 'responsability' -> 'responsibility'\\nThe corrected file is ./short_essay.txt."
         }
     }
     """
-    expected = AgentThinkAction(thought="The following typos were fixed:\n* 'futur' -> 'future'\n* 'imagin' -> 'imagine'\n* 'techological' -> 'technological'\n* 'responsability' -> 'responsibility'\nThe corrected file is ./short_essay.txt.")
+    expected = MessageAction(
+        "The following typos were fixed:\n* 'futur' -> 'future'\n* 'imagin' -> 'imagine'\n* 'techological' -> 'technological'\n* 'responsability' -> 'responsibility'\nThe corrected file is ./short_essay.txt."
+    )
     assert parse_response(input_response) == expected
 
 
@@ -31,7 +34,9 @@ def test_parse_json_with_surrounding_text():
     }
     Some trailing text that is also not JSON formatted.
     """
-    expected = FileWriteAction(path="./updated_file.txt", content="Updated text content here...")
+    expected = FileWriteAction(
+        path='./updated_file.txt', content='Updated text content here...'
+    )
     assert parse_response(input_response) == expected
 
 
@@ -53,7 +58,7 @@ def test_parse_first_of_multiple_jsons():
         }
     }
     """
-    expected = FileWriteAction(path="./short_essay.txt", content="Text content here...")
+    expected = FileWriteAction(path='./short_essay.txt', content='Text content here...')
     assert parse_response(input_response) == expected
 
 
