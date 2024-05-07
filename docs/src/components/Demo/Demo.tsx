@@ -8,18 +8,7 @@ export function Demo() {
     <div
       style={{ paddingBottom: "30px", paddingTop: "20px", textAlign: "center" }}
     >
-      <video
-        playsInline
-        autoPlay={true}
-        loop
-        className={styles.demo}
-        muted
-        onMouseOver={() => (videoRef.current.controls = true)}
-        onMouseOut={() => (videoRef.current.controls = false)}
-        ref={videoRef}
-      >
-        <source src="img/teaser.mp4" type="video/mp4"></source>
-      </video>
+      <img src="img/demo.gif" type="video/mp4"></img>
     </div>
   );
 }
