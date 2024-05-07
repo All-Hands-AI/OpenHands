@@ -83,7 +83,8 @@ For details, please check [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## 🤖 Join Our Community
 
-If you'd like to contribute, feel free to join our community. Let's make software engineering better together!
+Whether you're a developer, a researcher, or simply enthusiastic about OpenDevin, we'd love to have you in our community.
+Let's make software engineering better together!
 
 - [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw) - Here we talk about research, architecture, and future development.
 - [Discord server](https://discord.gg/ESHStjSjD4) - This is a community-run server for general discussion, questions, and feedback.
