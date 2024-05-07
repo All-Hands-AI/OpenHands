@@ -39,11 +39,13 @@
 
 ## 🎯 Mission
 
-Welcome to OpenDevin, an open-source project aiming to replicate Devin, an autonomous AI software engineer who is capable of executing complex engineering tasks and collaborating actively with users on software development projects. This project aspires to replicate, enhance, and innovate upon Devin through the power of the open-source community.
+Welcome to OpenDevin, a platform for autonomous AI software engineering.
+OpenDevin agents collaborate with human developers to write code, fix bugs, and ship features.
 
-## [🚀 Get Started](https://opendevin.github.io/OpenDevin/modules/usage/intro)
+## [🚀 Documentation](https://opendevin.github.io/OpenDevin/modules/usage/intro)
 
-To learn more and to use OpenDevin, **check out our [documentation](https://opendevin.github.io/OpenDevin/)**!
+To learn more about the project, and for tips on using OpenDevin,
+**check out our [documentation](https://opendevin.github.io/OpenDevin/)**.
 
 <p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
     <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
@@ -75,13 +77,15 @@ For troubleshooting and advanced configuration, see
 
 ## 🤝 How to Contribute
 
-OpenDevin is a community-driven project, and we welcome contributions from everyone. Whether you're a developer, a researcher, or simply enthusiastic about advancing the field of software engineering with AI, there are many ways to get involved:
+OpenDevin is a community-driven project, and we welcome contributions from everyone.
+Whether you're a developer, a researcher, or simply enthusiastic about advancing the field of
+software engineering with AI, there are many ways to get involved:
 
-- **Code Contributions:** Help us develop the core functionalities, frontend interface, or sandboxing solutions.
+- **Code Contributions:** Help us develop new agents, core functionality, the frontend and other interfaces, or sandboxing solutions.
 - **Research and Evaluation:** Contribute to our understanding of LLMs in software engineering, participate in evaluating the models, or suggest improvements.
 - **Feedback and Testing:** Use the OpenDevin toolset, report bugs, suggest features, or provide feedback on usability.
 
-For details, please check [this document](./CONTRIBUTING.md).
+For details, please check [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 <p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
     <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
@@ -91,12 +95,16 @@ For details, please check [this document](./CONTRIBUTING.md).
 
 ## 🤖 Join Our Community
 
-Now we have both Slack workspace for the collaboration on building OpenDevin and Discord server for discussion about anything related, e.g., this project, LLM, agent, etc.
+If you'd like to contribute, feel free to join our community. Let's make software engineering better together!
 
-- [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw)
-- [Discord server](https://discord.gg/ESHStjSjD4)
+- [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw) - Here we talk about research, architecture, and future development.
+- [Discord server](https://discord.gg/ESHStjSjD4) - This is a community-run server for general discussion, questions, and feedback.
 
-If you would love to contribute, feel free to join our community (note that now there is no need to fill in the [form](https://forms.gle/758d5p6Ve8r2nxxq6)). Let's simplify software engineering together!
+<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
+    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
+        ↑ Back to Top ↑
+    </a>
+</p>
 
 
 ## 📈 Progress
