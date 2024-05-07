@@ -1,4 +1,4 @@
-I will create a shell script 'hello.sh' that prints 'hello' without asking for confirmation at any point.
+Certainly! I will create a shell script named `hello.sh` that contains the command to print 'hello'.
+
 <execute_bash>
-echo 'echo hello' > hello.sh
-chmod +x hello.sh
+echo "echo 'hello'" > hello.sh && chmod +x hello.sh
