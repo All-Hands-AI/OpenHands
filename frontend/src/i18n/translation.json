@@ -242,6 +242,7 @@
     "pt": "Salvar",
     "es": "Guardar"
   },
+<<<<<<< HEAD
   "CONFIGURATION$MODAL_RESET_BUTTON_LABEL": {
     "en": "Reset to Defaults",
     "zh-CN": "重置为默认值",
@@ -255,6 +256,16 @@
     "ar": "إعادة التعيين إلى الإعدادات الافتراضية",
     "fr": "Réinitialiser aux valeurs par défaut",
     "tr": "Varsayılanlara Sıfırla"
+=======
+  "CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE": {
+    "en": "We've changed some settings in the latest update. Take a minute to review."
+  },
+  "CONFIGURATION$AGENT_LOADING": {
+    "en": "Please wait while the agent loads. This may take a few seconds..."
+  },
+  "CONFIGURATION$AGENT_RUNNING": {
+    "en": "Please stop the agent before editing these settings."
+>>>>>>> 6150ab6a3e09cfe257afde7c527bf6eb46b95e1e
   },
   "LOAD_SESSION$MODAL_TITLE": {
     "en": "Unfinished Session Detected",
