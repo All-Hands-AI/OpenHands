@@ -1,9 +1,6 @@
-```json
 {
-  "action": "modify_task",
+  "action": "think",
   "args": {
-    "id": "0",
-    "state": "in_progress"
+    "thought": "I need to create a shell script named 'hello.sh' that prints 'hello'. I should start by writing the script."
   }
 }
-```

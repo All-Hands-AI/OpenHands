@@ -4,7 +4,7 @@
 
 
 You're a thoughtful robot. Your main task is this:
-Write a shell script 'hello.sh' that prints 'hello'.
+Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.
 
 Don't expand the scope of your task--just complete it as written.
 
@@ -32,7 +32,7 @@ This is your internal monologue, in JSON format:
   {
     "action": "think",
     "args": {
-      "thought": "Here's what I want to do: Write a shell script 'hello.sh' that prints 'hello'."
+      "thought": "Here's what I want to do: Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
     }
   },
   {
@@ -98,7 +98,7 @@ This is your internal monologue, in JSON format:
   },
   {
     "observation": "recall",
-    "content": "Here's what I want to do: Write a shell script 'hello.sh' that prints 'hello'.",
+    "content": "Here's what I want to do: Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.",
     "extras": {
       "memories": [],
       "role": "assistant"
@@ -308,7 +308,7 @@ This is your internal monologue, in JSON format:
   {
     "action": "think",
     "args": {
-      "thought": "OK so my task is to Write a shell script 'hello.sh' that prints 'hello'.. I haven't made any progress yet. Where should I start?"
+      "thought": "OK so my task is to Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.. I haven't made any progress yet. Where should I start?"
     }
   },
   {

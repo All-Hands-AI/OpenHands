@@ -1,4 +1,3 @@
-```json
 {
   "action": "run",
   "args": {
@@ -6,4 +5,3 @@
     "background": false
   }
 }
-```

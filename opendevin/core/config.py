@@ -187,7 +187,7 @@ def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
     set_attr_from_env(config)
 
 
-def load_from_toml(config: AppConfig):
+def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
     """Load the config from the toml file. Supports both styles of config vars.
 
     Args:
@@ -198,8 +198,8 @@ def load_from_toml(config: AppConfig):
     toml_config = {}
 
     try:
-        with open('config.toml', 'r', encoding='utf-8') as toml_file:
-            toml_config = toml.load(toml_file)
+        with open(toml_file, 'r', encoding='utf-8') as toml_contents:
+            toml_config = toml.load(toml_contents)
     except FileNotFoundError:
         # the file is optional, we don't need to do anything
         return
@@ -351,7 +351,7 @@ def get_parser():
         '--llm-config',
         default=None,
         type=str,
-        help='A group of llm settings to be applied, e.g. a "[llama3]" section in the toml file',
+        help='The group of llm settings, e.g. a [llama3] section in the toml file. Overrides model if both are provided.',
     )
     return parser
 

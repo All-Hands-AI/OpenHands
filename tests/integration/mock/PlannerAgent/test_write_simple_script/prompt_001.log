@@ -9,7 +9,7 @@ browser, but you can read and write files, and you can run commands, and you can
 
 You've been given the following task:
 
-Write a shell script 'hello.sh' that prints 'hello'.
+Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.
 
 ## Plan
 As you complete this task, you're building a plan and keeping
@@ -17,7 +17,7 @@ track of your progress. Here's a JSON representation of your plan:
 
 {
   "id": "0",
-  "goal": "Write a shell script 'hello.sh' that prints 'hello'.",
+  "goal": "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.",
   "state": "open",
   "subtasks": []
 }
