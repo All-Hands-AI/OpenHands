@@ -1,5 +1,7 @@
 # Easy SWE-Bench Evaluation in the OpenDevin SWE-Bench Docker Image
 
+The documentation for this section is currently **under construction** and is expected to be completed and merged to `main` within the week. Subscribe to [this pr](https://github.com/OpenDevin/OpenDevin/pull/1468) to track its progress.
+
 ## OpenDevin SWE-Bench Docker Image
 
 In [OpenDevin-SWE-Bench fork](https://github.com/OpenDevin/OD-SWE-bench.git), we try to pre-build the **testbed** (i.e., code of the repository we want the agent to edit) AND the **conda environment**, so that in evaluation (inference) time, we can directly leverage existing environments for effecienct evaluation.
@@ -34,12 +36,8 @@ python3 evaluation/swe_bench/run_infer.py \
   --eval-num-workers 8
 ```
 
----
-
 
 ## Evaluate Generated Patches
-
-The documentation for this section is currently **under tuned** and is expected to be completed within the week!
 
 ### Evaluate Model Generated Patches
 
@@ -50,7 +48,7 @@ Before evaluating model-generated patches, you need to set up the Docker environ
 ```shell
 docker run -it \
 -v DIR_TO_YOUR_PATCH_FILES_ON_HOST:/swe_bench_output \
-ghcr.io/opendevin/eval-swe-bench-all:lite-v1.0 /bin/bash
+ghcr.io/xingyaoww/eval-swe-bench-all:lite-v1.0 /bin/bash
 ```
 
 Running the Evaluation
