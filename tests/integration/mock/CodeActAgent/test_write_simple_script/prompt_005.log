@@ -218,3 +218,53 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 NOW, LET'S START!
 
 Write a shell script 'hello.sh' that prints 'hello'.
+
+----------
+
+Certainly! I will create a shell script named `hello.sh` that contains the command to print 'hello'.
+
+<execute_bash>
+echo "echo 'hello'" > hello.sh && chmod +x hello.sh
+</execute_bash>
+
+----------
+
+OBSERVATION:
+
+[Command -1 finished with exit code 0]]
+
+----------
+
+The shell script `hello.sh` has been created and made executable. Now, let's run the script to see the output.
+
+<execute_bash>
+./hello.sh
+</execute_bash>
+
+----------
+
+OBSERVATION:
+hello
+[Command -1 finished with exit code 0]]
+
+----------
+
+The script executed successfully and printed "hello" as expected. If you have any more tasks or questions, feel free to ask!
+
+----------
+
+can you run it to make sure it is working?
+
+----------
+
+Certainly! I will run the `hello.sh` script again to confirm that it is working as intended.
+
+<execute_bash>
+./hello.sh
+</execute_bash>
+
+----------
+
+OBSERVATION:
+hello
+[Command -1 finished with exit code 0]]
