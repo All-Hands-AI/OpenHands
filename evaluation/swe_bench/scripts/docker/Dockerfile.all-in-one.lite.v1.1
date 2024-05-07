@@ -1,0 +1,17 @@
+FROM ghcr.io/xingyaoww/eval-swe-bench-all:lite-v1.0
+
+# ================== ONLY update the OD codebase ==================
+# Remove the old OD codebase
+RUN rm -rf /swe_util/OD-SWE-bench/
+
+# copy everything except the folder of `eval_data` or `miniconda3`
+# typically, this should be the OD codebase
+RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
+    rsync -ar --progress \
+    --exclude='eval_data' \
+    --exclude='miniconda3' \
+    /eval_workspace/OD-SWE-bench/ /swe_util/OD-SWE-bench/
+
+
+# pushd evaluation/SWE-bench
+# docker build -t ghcr.io/opendevin/eval-swe-bench-all:lite-v1.1 -f ./scripts/docker/Dockerfile.all-in-one.lite.v1.1 .

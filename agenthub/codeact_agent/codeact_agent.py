@@ -36,7 +36,7 @@ def parse_response(response) -> str:
     return action
 
 
-def truncate_observation(observation: str, max_chars: int = 5000) -> str:
+def truncate_observation(observation: str, max_chars: int = 10_000) -> str:
     """
     Truncate the middle of the observation if it is too long.
     """
@@ -73,14 +73,10 @@ def swe_agent_edit_hack(bash_command: str) -> str:
     if 'edit' in bash_command:
         # edit\s(\d+):(\d+)([\s\S]*)end_of_edit
         # replace
-        bash_command_before = bash_command
         bash_command = re.sub(
             r'edit\s(\d+):(\d+)([\s\S]*)end_of_edit',
             r'edit \1:\2 <<EOF\3EOF',
             bash_command,
-        )
-        logger.info(
-            f'SWE-agent edit hack applied:\n- Before:\n{bash_command_before}\n- After:\n{bash_command}'
         )
     return bash_command
 

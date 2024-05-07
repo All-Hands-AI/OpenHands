@@ -2,11 +2,12 @@ import atexit
 import os
 import sys
 import tarfile
+import tempfile
 import time
 import uuid
 from collections import namedtuple
 from glob import glob
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import docker
 from pexpect import pxssh
@@ -76,7 +77,9 @@ class DockerSSHBox(Sandbox):
             )
             raise ex
 
-        self.instance_id = sid if sid is not None else str(uuid.uuid4())
+        self.instance_id = (
+            sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
+        )
 
         # TODO: this timeout is actually essential - need a better way to set it
         # if it is too short, the container may still waiting for previous
@@ -93,8 +96,19 @@ class DockerSSHBox(Sandbox):
         self._ssh_port = find_available_tcp_port()
 
         # always restart the container, cuz the initial be regarded as a new session
-        self.restart_docker_container()
-
+        n_tries = 5
+        while n_tries > 0:
+            try:
+                self.restart_docker_container()
+                break
+            except Exception as e:
+                logger.exception(
+                    'Failed to start Docker container, retrying...', exc_info=False
+                )
+                n_tries -= 1
+                if n_tries == 0:
+                    raise e
+                time.sleep(5)
         self.setup_user()
         self.start_ssh_session()
         atexit.register(self.close)
@@ -213,21 +227,33 @@ class DockerSSHBox(Sandbox):
         bg_cmd = self.background_commands[id]
         return bg_cmd.read_logs()
 
-    def execute(self, cmd: str) -> Tuple[int, str]:
-        cmd = cmd.strip()
-        # use self.ssh
-        self.ssh.sendline(cmd)
-        success = self.ssh.prompt(timeout=self.timeout)
-        if not success:
-            logger.exception('Command timed out, killing process...', exc_info=False)
-            # send a SIGINT to the process
-            self.ssh.sendintr()
-            self.ssh.prompt()
-            command_output = self.ssh.before.decode('utf-8').lstrip(cmd).strip()
-            return (
-                -1,
-                f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}',
+    def _send_interrupt(
+        self,
+        cmd: str,
+        prev_output: Optional[str] = '',
+        ignore_last_output: bool = False,
+    ) -> Tuple[int, str]:
+        logger.exception('Command timed out, killing process...', exc_info=False)
+        # send a SIGINT to the process
+        self.ssh.sendintr()
+        self.ssh.prompt()
+        command_output = prev_output
+        if not ignore_last_output:
+            command_output += (
+                '\n' + self.ssh.before.decode('utf-8').removeprefix(cmd).strip()
             )
+        return (
+            -1,
+            f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}',
+        )
+
+    def execute(self, cmd: str, timeout: Optional[int] = None) -> Tuple[int, str]:
+        timeout = timeout or self.timeout
+        cmd = cmd.strip()
+        self.ssh.sendline(cmd)
+        success = self.ssh.prompt(timeout=timeout)
+        if not success:
+            return self._send_interrupt(cmd)
         command_output = self.ssh.before.decode('utf-8').strip()
 
         # once out, make sure that we have *every* output, we while loop until we get an empty output
@@ -246,17 +272,22 @@ class DockerSSHBox(Sandbox):
             if output == '':
                 break
             command_output += output
-        command_output = command_output.lstrip(cmd).strip()
+        command_output = command_output.removeprefix(cmd).strip()
 
         # get the exit code
         self.ssh.sendline('echo $?')
         self.ssh.prompt()
+        _start_time = time.time()
         exit_code = self.ssh.before.decode('utf-8')
         while not exit_code.startswith('echo $?'):
             self.ssh.prompt()
             exit_code = self.ssh.before.decode('utf-8')
             logger.debug(f'WAITING FOR exit code: {exit_code}')
-        exit_code = int(exit_code.lstrip('echo $?').strip())
+            if time.time() - _start_time > timeout:
+                return self._send_interrupt(
+                    cmd, command_output, ignore_last_output=True
+                )
+        exit_code = int(exit_code.removeprefix('echo $?').strip())
         return exit_code, command_output
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
@@ -270,32 +301,32 @@ class DockerSSHBox(Sandbox):
                 f'Failed to create directory {sandbox_dest} in sandbox: {logs}'
             )
 
-        if recursive:
-            assert os.path.isdir(
-                host_src
-            ), 'Source must be a directory when recursive is True'
-            files = glob(host_src + '/**/*', recursive=True)
-            srcname = os.path.basename(host_src)
-            tar_filename = os.path.join(os.path.dirname(host_src), srcname + '.tar')
-            with tarfile.open(tar_filename, mode='w') as tar:
-                for file in files:
-                    tar.add(
-                        file, arcname=os.path.relpath(file, os.path.dirname(host_src))
-                    )
-        else:
-            assert os.path.isfile(
-                host_src
-            ), 'Source must be a file when recursive is False'
-            srcname = os.path.basename(host_src)
-            tar_filename = os.path.join(os.path.dirname(host_src), srcname + '.tar')
-            with tarfile.open(tar_filename, mode='w') as tar:
-                tar.add(host_src, arcname=srcname)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            if recursive:
+                assert os.path.isdir(
+                    host_src
+                ), 'Source must be a directory when recursive is True'
+                files = glob(host_src + '/**/*', recursive=True)
+                srcname = os.path.basename(host_src)
+                tar_filename = os.path.join(tmp_dir, srcname + '.tar')
+                with tarfile.open(tar_filename, mode='w') as tar:
+                    for file in files:
+                        tar.add(
+                            file,
+                            arcname=os.path.relpath(file, os.path.dirname(host_src)),
+                        )
+            else:
+                assert os.path.isfile(
+                    host_src
+                ), 'Source must be a file when recursive is False'
+                srcname = os.path.basename(host_src)
+                tar_filename = os.path.join(tmp_dir, srcname + '.tar')
+                with tarfile.open(tar_filename, mode='w') as tar:
+                    tar.add(host_src, arcname=srcname)
 
-        with open(tar_filename, 'rb') as f:
-            data = f.read()
-
-        self.container.put_archive(os.path.dirname(sandbox_dest), data)
-        os.remove(tar_filename)
+            with open(tar_filename, 'rb') as f:
+                data = f.read()
+            self.container.put_archive(os.path.dirname(sandbox_dest), data)
 
     def execute_in_background(self, cmd: str) -> Process:
         result = self.container.exec_run(
@@ -366,7 +397,6 @@ class DockerSSHBox(Sandbox):
     @property
     def volumes(self):
         mount_dir = config.get(ConfigType.WORKSPACE_MOUNT_PATH)
-        logger.info(f'Mounting workspace directory: {mount_dir}')
         return {
             mount_dir: {'bind': SANDBOX_WORKSPACE_DIR, 'mode': 'rw'},
             # mount cache directory to /home/opendevin/.cache for pip cache reuse
@@ -402,6 +432,7 @@ class DockerSSHBox(Sandbox):
                 )
 
             # start the container
+            logger.info(f'Mounting volumes: {self.volumes}')
             self.container = self.docker_client.containers.run(
                 self.container_image,
                 # allow root login
@@ -441,7 +472,9 @@ class DockerSSHBox(Sandbox):
         containers = self.docker_client.containers.list(all=True)
         for container in containers:
             try:
-                if container.name.startswith(self.container_name_prefix):
+                if container.name.startswith(
+                    self.container_name
+                ):  # only remove the container we created
                     container.remove(force=True)
             except docker.errors.NotFound:
                 pass

@@ -6697,6 +6697,17 @@ MarkupSafe = ">=2.1.1"
 watchdog = ["watchdog (>=2.3)"]
 
 [[package]]
+name = "whatthepatch"
+version = "1.0.5"
+description = "A patch parsing and application library."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "whatthepatch-1.0.5-py3-none-any.whl", hash = "sha256:6bc41f9f48a63384be4478d8b2d5b22185aac75be853cdcb150a2dc174ede7e1"},
+    {file = "whatthepatch-1.0.5.tar.gz", hash = "sha256:7f374c172812581bc3763587525d14a143aac7fe4220bc4676ecce0d86cb8f08"},
+]
+
+[[package]]
 name = "wrapt"
 version = "1.16.0"
 description = "Module for decorators, wrappers and monkey patching."
@@ -7013,4 +7024,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "134dad10d40d1357a1f022bef59404bbbde6fb292da95ea1809d9f36d60dba3f"
+content-hash = "e2616a3d4000c73443b222cd09424f5d3fc067ab1ab59fb6a1f44325f7c05d99"

@@ -61,6 +61,7 @@ class AgentController:
         callbacks: List[Callable] = [],
         fake_user_response_fn: Optional[Callable[[Optional[State]], str]] = None,
         sandbox: Optional[Sandbox] = None,
+        iteration_reminder: bool = config.get(ConfigType.ITERATION_REMINDER),
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -72,10 +73,16 @@ class AgentController:
             callbacks: A list of callback functions to run after each action.
             fake_user_response_fn: A optional function that receives the current state (could be None) and returns a fake user response.
             sandbox: An optional initialized sandbox to run the agent in. If not provided, a default sandbox will be created based on config.
+            iteration_reminder: A boolean value indicating whether to remind the agent its remaining budget of interaction.
         """
         self.id = sid
         self.agent = agent
         self.max_iterations = max_iterations
+        self.iteration_reminder = iteration_reminder
+        if self.iteration_reminder:
+            logger.info(
+                'Iteration reminder is ENABLED: agent will be reminded of remaining turns.'
+            )
         self.action_manager = ActionManager(self.id, sandbox=sandbox)
         self.max_chars = max_chars
         self.callbacks = callbacks
@@ -132,15 +139,17 @@ class AgentController:
                 finished = await self.step(i)
                 if finished:
                     self._task_state = TaskState.FINISHED
-            except Exception:
+            except Exception as e:
                 logger.error('Error in loop', exc_info=True)
                 await self._run_callbacks(
                     AgentErrorObservation(
                         'Oops! Something went wrong while completing your task. You can check the logs for more info.'
                     )
                 )
+                finished_state = self.state
                 await self.set_task_state_to(TaskState.STOPPED)
-                break
+                finished_state.error = str(e)
+                return finished_state
 
             if self._task_state == TaskState.FINISHED:
                 logger.info('Task finished by agent')
@@ -163,8 +172,10 @@ class AgentController:
                     'I got stuck into a loop, the task has stopped.'
                 )
                 await self._run_callbacks(observation)
+                finished_state = self.state
                 await self.set_task_state_to(TaskState.STOPPED)
-                break
+                finished_state.error = 'Loop detected'
+                return finished_state
         return self.state
 
     async def setup_task(self, task: str, inputs: dict = {}):
@@ -262,6 +273,17 @@ class AgentController:
         task = action.inputs.get('task') or ''
         await self.delegate.setup_task(task, action.inputs)
 
+    def add_iteration_reminder_when_needed(self, i: int, obs: Observation):
+        """Add iteration reminder to the observation if needed.
+
+        Args:
+            i: The current iteration number (0-indexed).
+            obs: The observation to add the reminder to.
+        """
+        if self.iteration_reminder:
+            obs.content += f'\n\nENVIRONMENT REMINDER: You have {self.max_iterations - i - 1} turns left to complete the task.'
+        return obs
+
     async def step(self, i: int) -> bool:
         if self.state is None:
             raise ValueError('No task to run')
@@ -306,6 +328,9 @@ class AgentController:
         if isinstance(action, AgentTalkAction):
             # await for the next user messages
             user_message_observation = await self.wait_for_user_input()
+            user_message_observation = self.add_iteration_reminder_when_needed(
+                i, user_message_observation
+            )
             logger.info(user_message_observation, extra={'msg_type': 'OBSERVATION'})
             self.add_history(action, user_message_observation)
             return False
@@ -314,11 +339,13 @@ class AgentController:
         if finished:
             self.state.outputs = action.outputs  # type: ignore[attr-defined]
             logger.info(action, extra={'msg_type': 'INFO'})
+            self.add_history(action, NullObservation(''))
             return True
 
         if isinstance(observation, NullObservation):
             observation = await self.action_manager.run_action(action, self)
 
+        observation = self.add_iteration_reminder_when_needed(i, observation)
         if not isinstance(observation, NullObservation):
             logger.info(observation, extra={'msg_type': 'OBSERVATION'})
 
@@ -376,3 +403,7 @@ class AgentController:
                 return True
 
         return False
+
+    # add destructor to cleanup resources
+    def __del__(self):
+        self.browser.close()

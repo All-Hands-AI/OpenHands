@@ -1,45 +1,48 @@
 import sys
 import uuid
 
+from opendevin.core.config import ConfigType, config
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.runtime.docker.ssh_box import DockerSSHBox
+from opendevin.runtime.docker.ssh_box import SANDBOX_WORKSPACE_DIR, DockerSSHBox
 from opendevin.runtime.plugins import JupyterRequirement, SWEAgentCommandsRequirement
 
-SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/xingyaoww/eval-swe-bench-all:lite-v1.0'
+SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/xingyaoww/eval-swe-bench-all:lite-v1.1'
 
 
 class SWEBenchSSHBox(DockerSSHBox):
     def __init__(
         self,
         container_image: str,
-        # larger timeout for SWEBench to account for long-running installations (e.g., require compilation)
-        timeout: int = 600,
+        timeout: int = 120,
         sid: str | None = None,
         swe_instance_id: str | None = None,
         swe_instance: dict | None = None,
+        skip_workspace_mount: bool = True,
     ):
-        assert (
-            container_image is not None
-        ), 'container_image is required for SWEBenchSSHBox!'
-        # Need to run as root to use SWEBench container
-        sid = f'swe_bench_{sid}' + str(uuid.uuid4())
-        super().__init__(container_image, timeout, sid, run_as_devin=False)
-
         if swe_instance_id is None:
             raise ValueError('swe_instance_id must be provided!')
         self.swe_instance_id = swe_instance_id
         self.swe_instance = swe_instance
+        self.skip_workspace_mount = skip_workspace_mount
+
+        assert (
+            container_image is not None
+        ), 'container_image is required for SWEBenchSSHBox!'
+        # Need to run as root to use SWEBench container
+        sid = f'swe_bench_{swe_instance_id}' + str(uuid.uuid4())
+        super().__init__(container_image, timeout, sid, run_as_devin=False)
 
         exit_code, output = self.execute('mv ~/.bashrc ~/.bashrc.bak')
         assert exit_code == 0, f'Failed to backup ~/.bashrc: {output}'
 
         exit_code, output = self.execute(
-            f"echo 'export SWE_INSTANCE_ID={self.swe_instance_id}' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc"
+            f"echo 'export SWE_INSTANCE_ID={self.swe_instance_id}' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo \"alias git='git --no-pager'\" >> ~/.bashrc"
         )
         assert exit_code == 0, f'Failed to set SWE_INSTANCE_ID in ~/.bashrc: {output}'
 
         logger.info('Sourcing swe_entry.sh to set up environment variables')
-        exit_code, output = self.execute('source /swe_util/swe_entry.sh')
+        # larger timeout for SWEBench init to account for long-running installations (e.g., require compilation)
+        exit_code, output = self.execute('source /swe_util/swe_entry.sh', timeout=600)
         logger.info('exit code: %d', exit_code)
         logger.info(output)
         assert exit_code == 0, f'Failed to source swe_entry.sh: {output}'
@@ -47,25 +50,35 @@ class SWEBenchSSHBox(DockerSSHBox):
 
     @property
     def volumes(self):
-        return {**super().volumes}
+        if self.skip_workspace_mount:
+            return {
+                k: v
+                for k, v in super().volumes.items()
+                if not v['bind'] == SANDBOX_WORKSPACE_DIR
+            }
+        return super().volumes
 
     @classmethod
     def get_box_for_instance(
-        cls, instance, workspace_dir_name=None
+        cls,
+        instance,
+        workspace_dir_name=None,
+        n_tries=5,
+        skip_workspace_mount: bool = True,
+        workspace_mount_path: str | None = None,
     ) -> 'SWEBenchSSHBox':
         if workspace_dir_name is None:
             workspace_dir_name = f"{instance['repo']}__{instance['version']}".replace(
                 '/', '__'
             )
-        try:
-            sandbox = cls(
-                container_image=SWE_BENCH_CONTAINER_IMAGE,
-                swe_instance_id=instance['instance_id'],
-                swe_instance=instance,
-            )
-        except Exception as e:
-            logger.exception('Failed to start Docker container: %s', e)
-            sys.exit(1)
+        config[ConfigType.WORKSPACE_BASE] = workspace_mount_path
+        config[ConfigType.WORKSPACE_MOUNT_PATH] = workspace_mount_path
+        sandbox = cls(
+            container_image=SWE_BENCH_CONTAINER_IMAGE,
+            swe_instance_id=instance['instance_id'],
+            swe_instance=instance,
+            skip_workspace_mount=skip_workspace_mount,
+        )
         logger.info(f"SSH box started for instance {instance['instance_id']}.")
 
         # cd to the repo
@@ -97,7 +110,7 @@ class SWEBenchSSHBox(DockerSSHBox):
 
         # get the git diff
         exit_code, git_patch = self.execute(
-            f'git --no-pager diff --no-color --cached {self.swe_instance["base_commit"]}'
+            f'git diff --no-color --cached {self.swe_instance["base_commit"]}'
         )
         if exit_code != 0:
             logger.error('Failed to get git diff')
@@ -159,6 +172,25 @@ if __name__ == '__main__':
     exit_code, output = sandbox.execute('git reset --hard')
     assert exit_code == 0, 'Failed to reset the repo'
     logger.info(f'git reset --hard: {output}')
+
+    exit_code, output = sandbox.execute("""cat > /tmp/opendevin_jupyter_temp.py <<EOL
+import sys
+
+def main():
+    print("Hello, World!")
+    print("This is multiline Python code.")
+    print("It's being redirected to execute_cli.")
+
+if __name__ == "__main__":
+    main()
+EOL""")
+    logger.info('exit code: %d', exit_code)
+    logger.info(output)
+    exit_code, output = sandbox.execute(
+        'cat /tmp/opendevin_jupyter_temp.py | execute_cli'
+    )
+    logger.info('exit code: %d', exit_code)
+    logger.info(output)
 
     bg_cmd = sandbox.execute_in_background(
         "while true; do echo 'dot ' && sleep 10; done"

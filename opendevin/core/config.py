@@ -38,6 +38,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.LLM_RETRY_MIN_WAIT: 3,
     ConfigType.LLM_RETRY_MAX_WAIT: 60,
     ConfigType.MAX_ITERATIONS: 100,
+    ConfigType.ITERATION_REMINDER: 'true',
     ConfigType.AGENT_MEMORY_MAX_THREADS: 2,
     ConfigType.AGENT_MEMORY_ENABLED: False,
     ConfigType.LLM_TIMEOUT: None,
@@ -155,6 +156,18 @@ def get_parser():
         help='The number of instances to evaluate',
     )
     parser.add_argument(
+        '--eval-num-workers',
+        default=4,
+        type=int,
+        help='The number of workers to use for evaluation',
+    )
+    parser.add_argument(
+        '--eval-note',
+        default=None,
+        type=str,
+        help='The note to add to the evaluation directory',
+    )
+    parser.add_argument(
         '--llm-temperature',
         default=1.0,
         type=float,
@@ -207,6 +220,10 @@ def finalize_config():
 
     if config.get(ConfigType.WORKSPACE_MOUNT_PATH) is None:
         config[ConfigType.WORKSPACE_MOUNT_PATH] = config.get(ConfigType.WORKSPACE_BASE)
+
+    config[ConfigType.ITERATION_REMINDER] = (
+        config[ConfigType.ITERATION_REMINDER].lower() == 'true'
+    )
 
 
 finalize_config()

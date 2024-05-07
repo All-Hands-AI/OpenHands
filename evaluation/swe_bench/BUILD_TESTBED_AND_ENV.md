@@ -21,17 +21,17 @@ Setup your eval workspace by:
 Run the following command to do the above two steps. The results will be saved to `evaluation/SWE-bench/eval_workspace`.
 
 ```bash
-./evaluation/SWE-bench/scripts/prepare_swe_utils.sh
+./evaluation/swe_bench/scripts/prepare_swe_utils.sh
 ```
 
 ### Pre-build Conda Env and Test Bed
 
 ```bash
-./evaluation/SWE-bench/scripts/swe_lite_env_setup.sh
+./evaluation/swe_bench/scripts/swe_lite_env_setup.sh
 ```
 
 ### Build the pre-build conda env and testbed into ONE docker image
 
 ```bash
-./evaluation/SWE-bench/scripts/docker/build_all_in_one.sh
+./evaluation/swe_bench/scripts/docker/build_all_in_one.sh
 ```

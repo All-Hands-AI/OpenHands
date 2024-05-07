@@ -7,7 +7,7 @@ In [OpenDevin-SWE-Bench fork](https://github.com/OpenDevin/OD-SWE-bench.git), we
 **We pack everything you need for SWE-Bench evaluation into one, gigantic, docker image.** To use it:
 
 ```bash
-docker pull ghcr.io/xingyaoww/eval-swe-bench-all:lite-v1.0
+docker pull ghcr.io/xingyaoww/eval-swe-bench-all:lite-v1.1
 ```
 
 To reproduce how we pack the image, check [this doc](./BUILD_TESTBED_AND_ENV.md).
@@ -29,7 +29,9 @@ python3 evaluation/swe_bench/run_infer.py \
   --agent-cls CodeActAgent \
   --model-name gpt-4-turbo-2024-04-09 \
   --max-iterations 50 \
-  --llm-temperature 0.0
+  --llm-temperature 0.0 \
+  --max-chars 10000000 \
+  --eval-num-workers 8
 ```
 
 ---

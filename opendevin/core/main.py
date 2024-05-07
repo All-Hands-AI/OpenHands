@@ -7,6 +7,7 @@ from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import args
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.llm.llm import LLM
 
 
@@ -36,7 +37,7 @@ async def main(task_str: str = '', controller_kwargs: dict = {}) -> Optional[Sta
     else:
         raise ValueError('No task provided. Please specify a task through -t, -f.')
 
-    print(
+    logger.info(
         f'Running agent {args.agent_cls} (model: {args.model_name}) with task: "{task}"'
     )
     llm = LLM(args.model_name)

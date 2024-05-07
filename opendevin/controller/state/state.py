@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from opendevin.controller.state.plan import Plan
 from opendevin.events.action import (
@@ -22,3 +22,4 @@ class State:
     updated_info: List[Tuple[Action, Observation]] = field(default_factory=list)
     inputs: Dict = field(default_factory=dict)
     outputs: Dict = field(default_factory=dict)
+    error: Optional[str] = None
