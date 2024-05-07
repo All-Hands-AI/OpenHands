@@ -108,7 +108,7 @@ If you would love to contribute, feel free to join our community (note that now 
 
 <div style="max-width: 500px; margin-left: auto; margin-right: auto">
   <a href="https://star-history.com/#OpenDevin/OpenDevin&Date">
-    <img src="https://api.star-history.com/svg?repos=OpenDevin/OpenDevin&type=Date" alt="Star History Chart">
+    <img src="https://api.star-history.com/svg?repos=OpenDevin/OpenDevin&type=Date" width="500" alt="Star History Chart">
   </a>
 </div>
 
