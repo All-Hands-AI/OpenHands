@@ -162,7 +162,7 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
     - str: The formatted string prompt with historical values
     """
 
-    plan_str = json.dumps(plan.task.to_dict(), indent=2)
+    plan_str = json.dumps(plan.root_task.to_dict(), indent=2)
     sub_history = history[-HISTORY_SIZE:]
     history_dicts = []
     latest_action: Action = NullAction()

@@ -1,5 +1,5 @@
 import re
-from typing import List, Mapping
+from typing import List
 
 from agenthub.codeact_agent.prompt import EXAMPLES, SYSTEM_MESSAGE
 from opendevin.controller.agent import Agent
@@ -116,7 +116,23 @@ class CodeActAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
-        self.messages: List[Mapping[str, str]] = []
+        self.reset()
+
+    def reset(self) -> None:
+        """
+        Resets the CodeAct Agent.
+        """
+        super().reset()
+        self.messages = [
+            {'role': 'system', 'content': SYSTEM_MESSAGE},
+            {
+                'role': 'user',
+                'content': (
+                    f'Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\n'
+                    f"NOW, LET'S START!",
+                ),
+            },
+        ]
 
     def step(self, state: State) -> Action:
         """
@@ -133,18 +149,6 @@ class CodeActAgent(Agent):
         - AgentFinishAction() - end the interaction
         """
 
-        if len(self.messages) == 0:
-            assert state.plan.main_goal, 'Expecting instruction to be set'
-            self.messages = [
-                {'role': 'system', 'content': SYSTEM_MESSAGE},
-                {
-                    'role': 'user',
-                    'content': (
-                        f'Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\n'
-                        f"NOW, LET'S START!\n\n{state.plan.main_goal}"
-                    ),
-                },
-            ]
         updated_info = state.updated_info
         if updated_info:
             for prev_action, obs in updated_info:
@@ -199,8 +203,9 @@ class CodeActAgent(Agent):
         ) + len(action_str)
         self.messages.append({'role': 'assistant', 'content': action_str})
 
-        if re.search(r'<finish>.*</finish>', action_str, re.DOTALL):
-            return AgentFinishAction()
+        if finish_command := re.search(r'<finish>.*</finish>', action_str, re.DOTALL):
+            thought = action_str.replace(finish_command.group(0), '').strip()
+            return AgentFinishAction(thought=thought)
         if bash_command := re.search(
             r'<execute_bash>(.*)</execute_bash>', action_str, re.DOTALL
         ):

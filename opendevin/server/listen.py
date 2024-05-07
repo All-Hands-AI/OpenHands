@@ -176,13 +176,12 @@ def get_plan(
     controller = agent.controller
     if controller is not None:
         state = controller.get_state()
-        if state is not None:
+        if state and state.plan and state.plan.root_task:
             return JSONResponse(
                 status_code=status.HTTP_200_OK,
                 content=json.dumps(
                     {
-                        'mainGoal': state.plan.main_goal,
-                        'task': state.plan.task.to_dict(),
+                        'task': state.plan.root_task.to_dict(),
                     }
                 ),
             )

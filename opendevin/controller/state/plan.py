@@ -136,21 +136,10 @@ class Plan:
     """Represents a plan consisting of tasks.
 
     Attributes:
-        main_goal: The main goal of the plan.
         task: The root task of the plan.
     """
 
-    main_goal: str
-    task: Task
-
-    def __init__(self, task: str):
-        """Initializes a new instance of the Plan class.
-
-        Args:
-            task: The main goal of the plan.
-        """
-        self.main_goal = task
-        self.task = Task(parent=None, goal=task, subtasks=[])
+    root_task: Task
 
     def __str__(self):
         """Returns a string representation of the plan.
@@ -194,8 +183,11 @@ class Plan:
             goal: The goal of the subtask.
             subtasks: A list of subtasks associated with the new subtask.
         """
+        task = Task(parent=parent, goal=goal, subtasks=subtasks)
+        if self.root_task is None:
+            self.root_task = task
+            return
         parent = self.get_task_by_id(parent_id)
-        child = Task(parent=parent, goal=goal, subtasks=subtasks)
         parent.subtasks.append(child)
 
     def set_subtask_state(self, id: str, state: str):
