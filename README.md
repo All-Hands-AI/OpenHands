@@ -39,7 +39,8 @@
 
 ## 🎯 Mission
 
-Welcome to OpenDevin, a platform for autonomous AI software engineering.
+Welcome to OpenDevin, a platform for autonomous software engineers, powered by AI and LLMs.
+
 OpenDevin agents collaborate with human developers to write code, fix bugs, and ship features.
 
 ## ⚡ Quick Start
