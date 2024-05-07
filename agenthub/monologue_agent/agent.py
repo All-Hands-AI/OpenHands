@@ -113,8 +113,6 @@ class MonologueAgent(Agent):
         - event (dict): The event that will be added to monologue and memory
         """
 
-        if 'extras' in event and 'screenshot' in event['extras']:
-            del event['extras']['screenshot']
         if (
             'args' in event
             and 'output' in event['args']

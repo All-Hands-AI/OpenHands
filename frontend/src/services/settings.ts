@@ -1,3 +1,5 @@
+const LATEST_SETTINGS_VERSION = 1;
+
 export type Settings = {
   LLM_MODEL: string;
   AGENT: string;
@@ -14,6 +16,28 @@ export const DEFAULT_SETTINGS: Settings = {
 
 const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[];
 
+export const getCurrentSettingsVersion = () => {
+  const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
+  if (!settingsVersion) return 0;
+  try {
+    return parseInt(settingsVersion, 10);
+  } catch (e) {
+    return 0;
+  }
+};
+
+export const settingsAreUpToDate = () =>
+  getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
+
+export const maybeMigrateSettings = () => {
+  // Sometimes we ship major changes, like a new default agent.
+  // In this case, we may want to override a previous choice made by the user.
+  const currentVersion = getCurrentSettingsVersion();
+  if (currentVersion < 1) {
+    localStorage.setItem("AGENT", DEFAULT_SETTINGS.AGENT);
+  }
+};
+
 /**
  * Get the settings from local storage or use the default settings if not found
  */
@@ -21,7 +45,7 @@ export const getSettings = (): Settings => {
   const model = localStorage.getItem("LLM_MODEL");
   const agent = localStorage.getItem("AGENT");
   const language = localStorage.getItem("LANGUAGE");
-  const apiKey = localStorage.getItem(`API_KEY_${model}`);
+  const apiKey = localStorage.getItem("LLM_API_KEY");
 
   return {
     LLM_MODEL: model || DEFAULT_SETTINGS.LLM_MODEL,
@@ -42,6 +66,7 @@ export const saveSettings = (settings: Partial<Settings>) => {
 
     if (isValid && value) localStorage.setItem(key, value);
   });
+  localStorage.setItem("SETTINGS_VERSION", LATEST_SETTINGS_VERSION.toString());
 };
 
 /**
