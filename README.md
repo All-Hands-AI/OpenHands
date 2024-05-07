@@ -100,9 +100,13 @@ If you would love to contribute, feel free to join our community (note that now 
 
 🐚 **Code less, make more with OpenDevin.**
 
+<div style="max-width: 500px; margin-left: auto; margin-right: auto">
 [![SWE-Bench Lite Score](/docs/static/img/results.png)](https://www.swebench.com/lite.html)
+</div>
 
+<div style="max-width: 500px; margin-left: auto; margin-right: auto">
 [![Star History Chart](https://api.star-history.com/svg?repos=OpenDevin/OpenDevin&type=Date)](https://star-history.com/#OpenDevin/OpenDevin&Date)
+</div>
 
 <p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
     <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
