@@ -41,7 +41,7 @@ def resolve_path(file_path, working_directory):
     return path_in_host_workspace
 
 
-def _read_lines(action, all_lines: list[str]):
+def read_lines(action, all_lines: list[str]):
     if action.end == -1:
         if action.start == 0:
             return all_lines
@@ -60,8 +60,8 @@ async def read_file(action, workdir) -> Observation:
         action.start = max(action.start, 0)
         try:
             with open(whole_path, 'r', encoding='utf-8') as file:
-                read_lines = action._read_lines(file.readlines())
-                code_view = ''.join(read_lines)
+                lines = read_lines(action, file.readlines())
+                code_view = ''.join(lines)
         except FileNotFoundError:
             return AgentErrorObservation(f'File not found: {action.path}')
         except UnicodeDecodeError:
@@ -77,7 +77,7 @@ async def read_file(action, workdir) -> Observation:
     return FileReadObservation(path=action.path, content=code_view)
 
 
-def _insert_lines(action, to_insert: list[str], original: list[str]):
+def insert_lines(action, to_insert: list[str], original: list[str]):
     """
     Insert the new content to the original content based on action.start and action.end
     """
@@ -99,7 +99,7 @@ async def write_file(action, workdir) -> Observation:
             with open(whole_path, mode, encoding='utf-8') as file:
                 if mode != 'w':
                     all_lines = file.readlines()
-                    new_file = action._insert_lines(insert, all_lines)
+                    new_file = insert_lines(action, insert, all_lines)
                 else:
                     new_file = [i + '\n' for i in insert]
 
