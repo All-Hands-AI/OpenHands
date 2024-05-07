@@ -191,7 +191,7 @@ class AgentController:
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState):
-        logger.info(f'Setting agent state from {self._agent_state} to {new_state}')
+        logger.info(f'Setting agent({type(self.agent).__name__}) state from {self._agent_state} to {new_state}')
         if new_state == self._agent_state:
             return
 
@@ -205,9 +205,7 @@ class AgentController:
             self._cur_step += 1
             if self.agent_task is not None:
                 self.agent_task.cancel()
-        elif new_state == AgentState.STOPPED:
-            await self.reset_task()
-        elif new_state == AgentState.FINISHED:
+        elif new_state == AgentState.STOPPED or new_state == AgentState.ERROR or new_state == AgentState.FINISHED:
             await self.reset_task()
 
         await self.event_stream.add_event(
@@ -242,9 +240,10 @@ class AgentController:
                 await self.add_history(NullAction(), obs)
                 self.delegate = None
                 self.delegateAction = None
-            if self._is_stuck(is_delegate=True):
-                logger.info('Loop detected, stopping task')
-                raise Exception('Loop detected in DelegateAgent')
+            elif self.delegate._is_stuck():
+                logger.info('Loop detected in DelegateAgent, stopping task')
+                await self.delegate.set_agent_state_to(AgentState.ERROR)
+                raise Exception('Loop detected, stopping task.')
             return False
 
         logger.info(f'STEP {i}', extra={'msg_type': 'STEP'})
@@ -295,37 +294,33 @@ class AgentController:
     def get_state(self):
         return self.state
 
-    def _is_stuck(self, is_delegate=False):
-        to_check_state = self.state
-        if is_delegate and self.delegate is not None:
-            to_check_state = self.delegate.state
-
+    def _is_stuck(self):
         if (
-            to_check_state is None
-            or to_check_state.history is None
-            or len(to_check_state.history) < 3
+                self.state is None
+                or self.state.history is None
+                or len(self.state.history) < 3
         ):
             return False
 
         # if the last three (Action, Observation) tuples are too repetitive
         # the agent got stuck in a loop
         if all(
-            [
-                to_check_state.history[-i][0] == to_check_state.history[-3][0]
-                for i in range(1, 3)
-            ]
+                [
+                    self.state.history[-i][0] == self.state.history[-3][0]
+                    for i in range(1, 3)
+                ]
         ):
             # it repeats same action, give it a chance, but not if:
             if all(
-                isinstance(to_check_state.history[-i][1], NullObservation)
-                for i in range(1, 4)
+                    isinstance(self.state.history[-i][1], NullObservation)
+                    for i in range(1, 4)
             ):
                 # same (Action, NullObservation): like 'think' the same thought over and over
                 logger.debug('Action, NullObservation loop detected')
                 return True
             elif all(
-                isinstance(to_check_state.history[-i][1], AgentErrorObservation)
-                for i in range(1, 4)
+                    isinstance(self.state.history[-i][1], AgentErrorObservation)
+                    for i in range(1, 4)
             ):
                 # (NullAction, AgentErrorObservation): errors coming from an exception
                 # (Action, AgentErrorObservation): the same action getting an error, even if not necessarily the same error
