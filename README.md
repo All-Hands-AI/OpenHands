@@ -98,8 +98,8 @@ Now we have both Slack workspace for the collaboration on building OpenDevin and
 
 If you would love to contribute, feel free to join our community (note that now there is no need to fill in the [form](https://forms.gle/758d5p6Ve8r2nxxq6)). Let's simplify software engineering together!
 
-🐚 **Code less, make more with OpenDevin.**
 
+## 📈 Progress
 <p align="center">
     <a href="https://www.swebench.com/lite.html">
         <img src="/docs/static/img/results.png" alt="SWE-Bench Lite Score" width="500" height="auto">
