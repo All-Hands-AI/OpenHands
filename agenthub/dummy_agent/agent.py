@@ -8,6 +8,7 @@ from opendevin.events.action import (
     AddTaskAction,
     AgentFinishAction,
     AgentRecallAction,
+    AgentRejectAction,
     AgentThinkAction,
     BrowseURLAction,
     CmdRunAction,
@@ -121,6 +122,10 @@ class DummyAgent(Agent):
             },
             {
                 'action': AgentFinishAction(),
+                'observations': [],
+            },
+            {
+                'action': AgentRejectAction(),
                 'observations': [],
             },
         ]

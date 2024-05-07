@@ -20,6 +20,7 @@ from opendevin.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
+    AgentRejectAction,
     AgentTalkAction,
     ChangeAgentStateAction,
     MessageAction,
@@ -281,7 +282,9 @@ class AgentController:
             await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
             return False
 
-        finished = isinstance(action, AgentFinishAction)
+        finished = isinstance(action, AgentFinishAction) or isinstance(
+            action, AgentRejectAction
+        )
         if finished:
             self.state.outputs = action.outputs  # type: ignore[attr-defined]
             logger.info(action, extra={'msg_type': 'INFO'})
