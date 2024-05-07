@@ -58,16 +58,17 @@ export function AutocompleteCombobox({
         label={t(LABELS[ariaLabel])}
         placeholder={t(PLACEHOLDERS[ariaLabel])}
         defaultItems={items}
-        defaultInputValue={
+        defaultSelectedKey={defaultKey}
+        inputValue={
           // Find the label for the default key, otherwise use the default key itself
           // This is useful when the default key is not in the list of items, in the case of a custom LLM model
           items.find((item) => item.value === defaultKey)?.label || defaultKey
         }
+        onInputChange={(val) => {
+          onChange(val);
+        }}
         isDisabled={disabled}
         allowsCustomValue={allowCustomValue}
-        onInputChange={(value) => {
-          onChange(value);
-        }}
       >
         {(item) => (
           <AutocompleteItem key={item.value}>{item.label}</AutocompleteItem>
