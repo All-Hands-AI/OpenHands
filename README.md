@@ -23,9 +23,11 @@
   <a href="https://github.com/OpenDevin/OpenDevin/stargazers"><img src="https://img.shields.io/github/stars/opendevin/opendevin?style=for-the-badge" alt="Stargazers"></a>
   <a href="https://github.com/OpenDevin/OpenDevin/issues"><img src="https://img.shields.io/github/issues/opendevin/opendevin?style=for-the-badge" alt="Issues"></a>
   <a href="https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE"><img src="https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge" alt="MIT License"></a>
-  </br>
+  <br/>
   <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2i1iqdag6-bVmvamiPA9EZUu7oCO6KhA"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="Join our Slack community"></a>
   <a href="https://discord.gg/ESHStjSjD4"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community"></a>
+  <br/>
+  <a href="https://www.swebench.com/lite.html"><img src="https://img.shields.io/badge/SWE--bench%20Lite-21.0%25-blue?style=for-the-badge" alt="SWE-bench "></a>
 </div>
 
 <!-- PROJECT LOGO -->
@@ -97,6 +99,8 @@ Now we have both Slack workspace for the collaboration on building OpenDevin and
 If you would love to contribute, feel free to join our community (note that now there is no need to fill in the [form](https://forms.gle/758d5p6Ve8r2nxxq6)). Let's simplify software engineering together!
 
 🐚 **Code less, make more with OpenDevin.**
+
+[![SWE-Bench Lite Score](/docs/static/img/results.png)](https://www.swebench.com/lite.html)
 
 [![Star History Chart](https://api.star-history.com/svg?repos=OpenDevin/OpenDevin&type=Date)](https://star-history.com/#OpenDevin/OpenDevin&Date)
 
