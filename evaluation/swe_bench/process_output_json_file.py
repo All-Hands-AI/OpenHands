@@ -1,6 +1,5 @@
 import json
 import sys
-from icecream import ic
 
 def process_jsonl(input_file, model_name, output_file):
     try:
