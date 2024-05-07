@@ -91,7 +91,8 @@ def get_file_handler():
     timestamp = datetime.now().strftime('%Y-%m-%d')
     file_name = f'opendevin_{timestamp}.log'
     file_handler = logging.FileHandler(os.path.join(log_dir, file_name))
-    file_handler.setLevel(logging.DEBUG)
+    if config.get(ConfigType.DEBUG):
+        file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(file_formatter)
     return file_handler
 
@@ -196,10 +197,12 @@ def get_llm_response_file_handler():
 
 llm_prompt_logger = logging.getLogger('prompt')
 llm_prompt_logger.propagate = False
-llm_prompt_logger.setLevel(logging.DEBUG)
+if config.get(ConfigType.DEBUG):
+    llm_prompt_logger.setLevel(logging.DEBUG)
 llm_prompt_logger.addHandler(get_llm_prompt_file_handler())
 
 llm_response_logger = logging.getLogger('response')
 llm_response_logger.propagate = False
-llm_response_logger.setLevel(logging.DEBUG)
+if config.get(ConfigType.DEBUG):
+    llm_response_logger.setLevel(logging.DEBUG)
 llm_response_logger.addHandler(get_llm_response_file_handler())

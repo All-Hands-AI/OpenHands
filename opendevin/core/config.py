@@ -70,6 +70,8 @@ if os.path.exists('config.toml'):
 
 
 def str_to_bool(value):
+    if isinstance(value, bool):
+        return value
     return value.lower() in [
         'true',
         '1',
@@ -94,6 +96,7 @@ for k, v in config.items():
         config[k] = os.environ[k]
     elif k in tomlConfig:
         config[k] = tomlConfig[k]
+
     if k in [
         ConfigType.LLM_NUM_RETRIES,
         ConfigType.LLM_RETRY_MIN_WAIT,
