@@ -37,6 +37,11 @@ For example, you can list the files in the current directory by <execute_bash> l
 The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
 The assistant can install Python packages through bash by <execute_bash> pip install [package needed] </execute_bash> and should always import packages and define variables before starting to use them.
 The assistant should stop <execute> and provide an answer when they have already obtained the answer from the execution result.
+If the assistant encounters an import error in IPython for a newly installed package, they should try to restart the kernel and import the package again. IPython kernel can be re-started by:
+<execute_ipython>
+import IPython
+IPython.Application.instance().kernel.do_shutdown(True)  # Restart the kernel
+</execute_ipython>
 
 {_COMMAND_DOCS}
 
