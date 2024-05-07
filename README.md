@@ -42,7 +42,7 @@
 Welcome to OpenDevin, a platform for autonomous AI software engineering.
 OpenDevin agents collaborate with human developers to write code, fix bugs, and ship features.
 
-## [🚀 Documentation](https://opendevin.github.io/OpenDevin/modules/usage/intro)
+## 🚀 Documentation
 
 To learn more about the project, and for tips on using OpenDevin,
 **check out our [documentation](https://opendevin.github.io/OpenDevin/)**.
