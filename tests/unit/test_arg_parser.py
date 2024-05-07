@@ -10,7 +10,7 @@ def test_help_message(capsys):
     captured = capsys.readouterr()
     expected_help_message = """
 usage: pytest [-h] [-d DIRECTORY] [-t TASK] [-f FILE] [-c AGENT_CLS]
-[-m MODEL_NAME] [-i MAX_ITERATIONS] [-n MAX_CHARS]
+[-m MODEL_NAME] [-i MAX_ITERATIONS] [-n MAX_CHARS] [-l LLM_CONFIG]
 
 Run an agent with a specific task
 
@@ -30,6 +30,8 @@ options:
   -n MAX_CHARS, --max-chars MAX_CHARS
                         The maximum number of characters to send to and
                         receive from LLM per task
+  -l LLM_CONFIG, --llm-config LLM_CONFIG
+                        The group of llm settings, e.g. a [llama3] section in the toml file. Overrides model if both are provided.
 """
     actual_lines = captured.out.strip().split('\n')
     expected_lines = expected_help_message.strip().split('\n')

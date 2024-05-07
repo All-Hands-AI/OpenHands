@@ -18,15 +18,9 @@ def temp_dir():
 
 def test_ssh_box_run_as_devin(temp_dir):
     # get a temporary directory
-    with patch.dict(
-        config.config,
-        {
-            config.ConfigType.WORKSPACE_BASE: temp_dir,
-            config.ConfigType.RUN_AS_DEVIN: 'true',
-            config.ConfigType.SANDBOX_TYPE: 'ssh',
-        },
-        clear=True,
-    ):
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'run_as_devin', new='true'
+    ), patch.object(config, 'sandbox_type', new='ssh'):
         ssh_box = DockerSSHBox()
 
         # test the ssh box
@@ -54,15 +48,9 @@ def test_ssh_box_run_as_devin(temp_dir):
 
 def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
     # get a temporary directory
-    with patch.dict(
-        config.config,
-        {
-            config.ConfigType.WORKSPACE_BASE: temp_dir,
-            config.ConfigType.RUN_AS_DEVIN: 'true',
-            config.ConfigType.SANDBOX_TYPE: 'ssh',
-        },
-        clear=True,
-    ):
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'run_as_devin', new='true'
+    ), patch.object(config, 'sandbox_type', new='ssh'):
         ssh_box = DockerSSHBox()
 
         # test the ssh box
@@ -74,15 +62,9 @@ def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
 
 def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
     # get a temporary directory
-    with patch.dict(
-        config.config,
-        {
-            config.ConfigType.WORKSPACE_BASE: temp_dir,
-            config.ConfigType.RUN_AS_DEVIN: 'true',
-            config.ConfigType.SANDBOX_TYPE: 'ssh',
-        },
-        clear=True,
-    ):
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'run_as_devin', new='true'
+    ), patch.object(config, 'sandbox_type', new='ssh'):
         ssh_box = DockerSSHBox()
 
         # test the ssh box
@@ -101,15 +83,9 @@ def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
 
 def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
     # get a temporary directory
-    with patch.dict(
-        config.config,
-        {
-            config.ConfigType.WORKSPACE_BASE: temp_dir,
-            config.ConfigType.RUN_AS_DEVIN: 'true',
-            config.ConfigType.SANDBOX_TYPE: 'ssh',
-        },
-        clear=True,
-    ):
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'run_as_devin', new='true'
+    ), patch.object(config, 'sandbox_type', new='ssh'):
         ssh_box = DockerSSHBox()
 
         # test the ssh box with a command that fails
