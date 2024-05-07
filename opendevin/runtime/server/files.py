@@ -41,57 +41,61 @@ def resolve_path(file_path, working_directory):
     return path_in_host_workspace
 
 
-def read_lines(action, all_lines: list[str]):
-    if action.end == -1:
-        if action.start == 0:
+def read_lines(all_lines: list[str], start=0, end=-1):
+    start = max(start, 0)
+    start = min(start, len(all_lines))
+    end = -1 if end == -1 else max(end, 0)
+    end = min(end, len(all_lines))
+    if end == -1:
+        if start == 0:
             return all_lines
         else:
-            return all_lines[action.start :]
+            return all_lines[start:]
     else:
         num_lines = len(all_lines)
-        begin = max(0, min(action.start, num_lines - 2))
-        end = -1 if action.end > num_lines else max(begin + 1, action.end)
+        begin = max(0, min(start, num_lines - 2))
+        end = -1 if end > num_lines else max(begin + 1, end)
         return all_lines[begin:end]
 
 
-async def read_file(action, workdir) -> Observation:
+async def read_file(path, workdir, start=0, end=-1) -> Observation:
     try:
-        whole_path = resolve_path(action.path, workdir)
-        action.start = max(action.start, 0)
-        try:
-            with open(whole_path, 'r', encoding='utf-8') as file:
-                lines = read_lines(action, file.readlines())
-                code_view = ''.join(lines)
-        except FileNotFoundError:
-            return AgentErrorObservation(f'File not found: {action.path}')
-        except UnicodeDecodeError:
-            return AgentErrorObservation(
-                f'File could not be decoded as utf-8: {action.path}'
-            )
-        except IsADirectoryError:
-            return AgentErrorObservation(
-                f'Path is a directory: {action.path}. You can only read files'
-            )
+        whole_path = resolve_path(path, workdir)
     except PermissionError:
-        return AgentErrorObservation(f'Malformed paths not permitted: {action.path}')
-    return FileReadObservation(path=action.path, content=code_view)
+        return AgentErrorObservation(f'Malformed paths not permitted: {path}')
+
+    try:
+        with open(whole_path, 'r', encoding='utf-8') as file:
+            lines = read_lines(file.readlines(), start, end)
+    except FileNotFoundError:
+        return AgentErrorObservation(f'File not found: {path}')
+    except UnicodeDecodeError:
+        return AgentErrorObservation(f'File could not be decoded as utf-8: {path}')
+    except IsADirectoryError:
+        return AgentErrorObservation(
+            f'Path is a directory: {path}. You can only read files'
+        )
+    code_view = ''.join(lines)
+    return FileReadObservation(path=path, content=code_view)
 
 
-def insert_lines(action, to_insert: list[str], original: list[str]):
+def insert_lines(
+    to_insert: list[str], original: list[str], start: int = 0, end: int = -1
+):
     """
-    Insert the new content to the original content based on action.start and action.end
+    Insert the new content to the original content based on start and end
     """
-    new_lines = [''] if action.start == 0 else original[: action.start]
+    new_lines = [''] if start == 0 else original[:start]
     new_lines += [i + '\n' for i in to_insert]
-    new_lines += [''] if action.end == -1 else original[action.end :]
+    new_lines += [''] if end == -1 else original[end:]
     return new_lines
 
 
-async def write_file(action, workdir) -> Observation:
-    insert = action.content.split('\n')
+async def write_file(path, workdir, content, start=0, end=-1) -> Observation:
+    insert = content.split('\n')
 
     try:
-        whole_path = resolve_path(action.path, workdir)
+        whole_path = resolve_path(path, workdir)
         if not os.path.exists(os.path.dirname(whole_path)):
             os.makedirs(os.path.dirname(whole_path))
         mode = 'w' if not os.path.exists(whole_path) else 'r+'
@@ -99,7 +103,7 @@ async def write_file(action, workdir) -> Observation:
             with open(whole_path, mode, encoding='utf-8') as file:
                 if mode != 'w':
                     all_lines = file.readlines()
-                    new_file = insert_lines(action, insert, all_lines)
+                    new_file = insert_lines(insert, all_lines, start, end)
                 else:
                     new_file = [i + '\n' for i in insert]
 
@@ -107,15 +111,13 @@ async def write_file(action, workdir) -> Observation:
                 file.writelines(new_file)
                 file.truncate()
         except FileNotFoundError:
-            return AgentErrorObservation(f'File not found: {action.path}')
+            return AgentErrorObservation(f'File not found: {path}')
         except IsADirectoryError:
             return AgentErrorObservation(
-                f'Path is a directory: {action.path}. You can only write to files'
+                f'Path is a directory: {path}. You can only write to files'
             )
         except UnicodeDecodeError:
-            return AgentErrorObservation(
-                f'File could not be decoded as utf-8: {action.path}'
-            )
+            return AgentErrorObservation(f'File could not be decoded as utf-8: {path}')
     except PermissionError:
-        return AgentErrorObservation(f'Malformed paths not permitted: {action.path}')
-    return FileWriteObservation(content='', path=action.path)
+        return AgentErrorObservation(f'Malformed paths not permitted: {path}')
+    return FileWriteObservation(content='', path=path)

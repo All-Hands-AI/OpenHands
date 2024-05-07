@@ -26,7 +26,7 @@ class E2BRuntime(ServerRuntime):
 
     async def read(self, action: FileReadAction) -> Observation:
         content = self.filesystem.read(action.path)
-        lines = read_lines(action, content.split('\n'))
+        lines = read_lines(content.split('\n'), action.start, action.end)
         code_view = ''.join(lines)
         return FileReadObservation(code_view, path=action.path)
 
@@ -34,7 +34,9 @@ class E2BRuntime(ServerRuntime):
         files = self.filesystem.list(action.path)
         if action.path in files:
             all_lines = self.filesystem.read(action.path)
-            new_file = insert_lines(action, action.content.split('\n'), all_lines)
+            new_file = insert_lines(
+                action.content.split('\n'), all_lines, action.start, action.end
+            )
             self.filesystem.write(action.path, ''.join(new_file))
             return FileWriteObservation('', path=action.path)
         else:
