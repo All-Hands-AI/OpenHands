@@ -1,12 +1,9 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Dict
+from typing import Dict
 
 from opendevin.core.schema import ActionType
 
 from .action import Action
-
-if TYPE_CHECKING:
-    pass
 
 
 @dataclass
