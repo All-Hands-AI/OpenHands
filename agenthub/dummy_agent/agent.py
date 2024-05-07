@@ -8,11 +8,11 @@ from opendevin.events.action import (
     AddTaskAction,
     AgentFinishAction,
     AgentRecallAction,
-    AgentThinkAction,
     BrowseURLAction,
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
+    MessageAction,
     ModifyTaskAction,
 )
 from opendevin.events.observation import (
@@ -62,7 +62,7 @@ class DummyAgent(Agent):
                 'observations': [NullObservation('')],
             },
             {
-                'action': AgentThinkAction(thought='Time to get started!'),
+                'action': MessageAction('Time to get started!'),
                 'observations': [NullObservation('')],
             },
             {
