@@ -2,17 +2,11 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Dict
 
 from opendevin.core.schema import ActionType
-from opendevin.events.observation import (
-    AgentMessageObservation,
-    AgentRecallObservation,
-    NullObservation,
-    Observation,
-)
 
 from .action import Action
 
 if TYPE_CHECKING:
-    from opendevin.controller import AgentController
+    pass
 
 
 @dataclass
@@ -34,11 +28,9 @@ class AgentRecallAction(Action):
     thought: str = ''
     action: str = ActionType.RECALL
 
-    async def run(self, controller: 'AgentController') -> AgentRecallObservation:
-        return AgentRecallObservation(
-            content='',
-            memories=controller.agent.search_memory(self.query),
-        )
+    @property
+    def runnable(self) -> bool:
+        return True
 
     @property
     def message(self) -> str:
@@ -60,9 +52,6 @@ class AgentTalkAction(Action):
     content: str
     action: str = ActionType.TALK
 
-    async def run(self, controller: 'AgentController') -> Observation:
-        raise NotImplementedError
-
     @property
     def message(self) -> str:
         return self.content
@@ -75,9 +64,6 @@ class AgentTalkAction(Action):
 class AgentEchoAction(Action):
     content: str
     action: str = 'echo'
-
-    async def run(self, controller: 'AgentController') -> Observation:
-        return AgentMessageObservation(self.content)
 
     @property
     def message(self) -> str:
@@ -111,10 +97,6 @@ class AgentDelegateAction(Action):
     inputs: dict
     thought: str = ''
     action: str = ActionType.DELEGATE
-
-    async def run(self, controller: 'AgentController') -> Observation:
-        await controller.start_delegate(self)
-        return NullObservation('')
 
     @property
     def message(self) -> str:
