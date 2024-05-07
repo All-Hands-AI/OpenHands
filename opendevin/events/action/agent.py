@@ -108,6 +108,7 @@ class AgentFinishAction(Action):
 @dataclass
 class AgentRejectAction(Action):
     outputs: Dict = field(default_factory=dict)
+    thought: str = ''
     action: str = ActionType.REJECT
 
     @property
