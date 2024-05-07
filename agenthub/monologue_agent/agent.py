@@ -26,12 +26,12 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
-from opendevin.llm.condenser import MemoryCondenser
-from opendevin.llm.history import ShortTermHistory
 from opendevin.llm.llm import LLM
+from opendevin.memory.condenser import MemoryCondenser
+from opendevin.memory.history import ShortTermHistory
 
 if config.get(ConfigType.AGENT_MEMORY_ENABLED):
-    from opendevin.llm.memory import LongTermMemory
+    from opendevin.memory.memory import LongTermMemory
 
 MAX_TOKEN_COUNT_PADDING = 512
 MAX_OUTPUT_LENGTH = 5000
