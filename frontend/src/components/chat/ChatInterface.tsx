@@ -14,7 +14,9 @@ function ChatInterface() {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const handleSendMessage = (content: string) => {
-    const isTask = curAgentState === AgentState.INIT;
+    const isTask =
+      curAgentState === AgentState.INIT ||
+      curAgentState === AgentState.FINISHED;
     dispatch(addUserMessage(content));
     sendChatMessage(content, isTask);
   };

@@ -242,6 +242,15 @@
     "pt": "Salvar",
     "es": "Guardar"
   },
+  "CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE": {
+    "en": "We've changed some settings in the latest update. Take a minute to review."
+  },
+  "CONFIGURATION$AGENT_LOADING": {
+    "en": "Please wait while the agent loads. This may take a few seconds..."
+  },
+  "CONFIGURATION$AGENT_RUNNING": {
+    "en": "Please stop the agent before editing these settings."
+  },
   "LOAD_SESSION$MODAL_TITLE": {
     "en": "Unfinished Session Detected",
     "zh-CN": "检测到有未完成的会话",
