@@ -42,11 +42,6 @@
 Welcome to OpenDevin, a platform for autonomous AI software engineering.
 OpenDevin agents collaborate with human developers to write code, fix bugs, and ship features.
 
-## 🚀 Documentation
-
-To learn more about the project, and for tips on using OpenDevin,
-**check out our [documentation](https://opendevin.github.io/OpenDevin/)**.
-
 ## ⚡ Quick Start
 You can run OpenDevin with Docker. It works best with the most recent
 version of Docker, `26.0.0`.
@@ -66,8 +61,13 @@ docker run \
     ghcr.io/opendevin/opendevin:0.5
 ```
 
-For troubleshooting and advanced configuration, see
-[the full documentation](https://opendevin.github.io/OpenDevin/).
+## 🚀 Documentation
+
+To learn more about the project, and for tips on using OpenDevin,
+**check out our [documentation](https://opendevin.github.io/OpenDevin/)**.
+
+There you'll find resources on how to use different LLM providers (like ollama and Anthropic's Claude),
+troubleshooting resources, and advanced configuration options.
 
 ## 🤝 How to Contribute
 
