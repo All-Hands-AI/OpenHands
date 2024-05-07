@@ -212,14 +212,14 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 
 NOW, LET'S START!
 
-Write a shell script 'hello.sh' that prints 'hello'.
+Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.
 
 ----------
 
-Sure, I'll create a shell script named `hello.sh` that prints "hello". Let's start by writing the script.
-
+I will create a shell script 'hello.sh' that prints 'hello' without asking for confirmation at any point.
 <execute_bash>
-echo "echo 'hello'" > hello.sh
+echo 'echo hello' > hello.sh
+chmod +x hello.sh
 </execute_bash>
 
 ----------
