@@ -8,10 +8,10 @@ import requests
 from opendevin.core.config import config
 from opendevin.core.schema import ActionType
 from opendevin.events.observation import (
-    AgentErrorObservation,
-    AgentMessageObservation,
     CmdOutputObservation,
+    ErrorObservation,
     Observation,
+    SuccessObservation,
 )
 
 from .action import Action
@@ -43,7 +43,7 @@ class GitHubPushAction(Action):
     async def run(self, controller: 'AgentController') -> Observation:
         github_token = config.github_token
         if not github_token:
-            return AgentErrorObservation('GITHUB_TOKEN is not set')
+            return ErrorObservation('GITHUB_TOKEN is not set')
 
         # Create a random short string to use as a temporary remote
         random_remote = ''.join(
@@ -112,7 +112,7 @@ class GitHubSendPRAction(Action):
     async def run(self, controller: 'AgentController') -> Observation:
         github_token = config.github_token
         if not github_token:
-            return AgentErrorObservation('GITHUB_TOKEN is not set')
+            return ErrorObservation('GITHUB_TOKEN is not set')
 
         # API URL to create the pull request
         url = f'https://api.github.com/repos/{self.owner}/{self.repo}/pulls'
@@ -138,12 +138,12 @@ class GitHubSendPRAction(Action):
 
         # Check for errors
         if response.status_code == 201:
-            return AgentMessageObservation(
+            return SuccessObservation(
                 'Pull request created successfully!\n'
                 f'Pull request URL:{response.json()["html_url"]}'
             )
         else:
-            return AgentErrorObservation(
+            return ErrorObservation(
                 'Failed to create pull request\n'
                 f'Status code: {response.status_code}\n'
                 f'Response: {response.text}'

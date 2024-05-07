@@ -5,7 +5,7 @@ from pathlib import Path
 from opendevin.core.config import config
 from opendevin.core.schema import ActionType
 from opendevin.events.observation import (
-    AgentErrorObservation,
+    ErrorObservation,
     FileReadObservation,
     FileWriteObservation,
     Observation,
@@ -83,19 +83,17 @@ class FileReadAction(Action):
                         read_lines = self._read_lines(file.readlines())
                         code_view = ''.join(read_lines)
                 except FileNotFoundError:
-                    return AgentErrorObservation(f'File not found: {self.path}')
+                    return ErrorObservation(f'File not found: {self.path}')
                 except UnicodeDecodeError:
-                    return AgentErrorObservation(
+                    return ErrorObservation(
                         f'File could not be decoded as utf-8: {self.path}'
                     )
                 except IsADirectoryError:
-                    return AgentErrorObservation(
+                    return ErrorObservation(
                         f'Path is a directory: {self.path}. You can only read files'
                     )
             except PermissionError:
-                return AgentErrorObservation(
-                    f'Malformed paths not permitted: {self.path}'
-                )
+                return ErrorObservation(f'Malformed paths not permitted: {self.path}')
         return FileReadObservation(path=self.path, content=code_view)
 
     @property
@@ -133,7 +131,7 @@ class FileWriteAction(Action):
                     self.path, ''.join(new_file)
                 )
             else:
-                return AgentErrorObservation(f'File not found: {self.path}')
+                return ErrorObservation(f'File not found: {self.path}')
         else:
             try:
                 whole_path = resolve_path(
@@ -154,19 +152,17 @@ class FileWriteAction(Action):
                         file.writelines(new_file)
                         file.truncate()
                 except FileNotFoundError:
-                    return AgentErrorObservation(f'File not found: {self.path}')
+                    return ErrorObservation(f'File not found: {self.path}')
                 except IsADirectoryError:
-                    return AgentErrorObservation(
+                    return ErrorObservation(
                         f'Path is a directory: {self.path}. You can only write to files'
                     )
                 except UnicodeDecodeError:
-                    return AgentErrorObservation(
+                    return ErrorObservation(
                         f'File could not be decoded as utf-8: {self.path}'
                     )
             except PermissionError:
-                return AgentErrorObservation(
-                    f'Malformed paths not permitted: {self.path}'
-                )
+                return ErrorObservation(f'Malformed paths not permitted: {self.path}')
         return FileWriteObservation(content='', path=self.path)
 
     @property

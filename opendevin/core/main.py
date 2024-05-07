@@ -83,6 +83,7 @@ async def main(task_str: str = ''):
     while controller.get_agent_state() not in [
         AgentState.FINISHED,
         AgentState.ERROR,
+        AgentState.PAUSED,
         AgentState.STOPPED,
     ]:
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run

@@ -1,7 +1,0 @@
-{
-  "action": "run",
-  "args": {
-    "command": "bash hello.sh",
-    "background": false
-  }
-}

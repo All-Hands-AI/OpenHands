@@ -1,0 +1,7 @@
+Thoughts:
+I need to ensure that the 'hello.sh' file contains the code to print 'hello' without asking for confirmation. I will use the echo command to achieve this.
+
+Action:
+```
+edit 0 -1 "echo 'hello'"
+```

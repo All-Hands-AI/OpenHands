@@ -19,7 +19,6 @@ from opendevin.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
-    AgentTalkAction,
     ChangeAgentStateAction,
     MessageAction,
     NullAction,
@@ -27,11 +26,10 @@ from opendevin.events.action import (
 from opendevin.events.event import Event
 from opendevin.events.observation import (
     AgentDelegateObservation,
-    AgentErrorObservation,
     AgentStateChangedObservation,
+    ErrorObservation,
     NullObservation,
     Observation,
-    UserMessageObservation,
 )
 from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.runtime import DockerSSHBox
@@ -53,7 +51,6 @@ class AgentController:
     state: State | None = None
     _agent_state: AgentState = AgentState.LOADING
     _cur_step: int = 0
-    _pending_talk_action: AgentTalkAction | None = None
 
     def __init__(
         self,
@@ -111,7 +108,7 @@ class AgentController:
         self.state.updated_info = []
 
     async def add_error_to_history(self, message: str):
-        await self.add_history(NullAction(), AgentErrorObservation(message))
+        await self.add_history(NullAction(), ErrorObservation(message))
 
     async def add_history(
         self, action: Action, observation: Observation, add_to_stream=True
@@ -164,6 +161,9 @@ class AgentController:
             await asyncio.sleep(
                 0.001
             )  # Give back control for a tick, so other async stuff can run
+        final_state = self.get_agent_state()
+        if final_state == AgentState.RUNNING:
+            await self.set_agent_state_to(AgentState.PAUSED)
 
     async def setup_task(self, task: str, inputs: dict = {}):
         """Sets up the agent controller with a task."""
@@ -175,18 +175,8 @@ class AgentController:
         if isinstance(event, ChangeAgentStateAction):
             await self.set_agent_state_to(event.agent_state)  # type: ignore
         elif isinstance(event, MessageAction) and event.source == EventSource.USER:
-            if self._pending_talk_action is None:
-                await self.add_history(
-                    NullAction(), UserMessageObservation(event.content)
-                )
-            else:
-                # FIXME: we're hacking a message action into a user message observation, for the benefit of CodeAct
-                await self.add_history(
-                    self._pending_talk_action,
-                    UserMessageObservation(event.content),
-                    add_to_stream=False,
-                )
-                self._pending_talk_action = None
+            await self.add_history(event, NullObservation(''), add_to_stream=False)
+            if self.get_agent_state() == AgentState.AWAITING_USER_INPUT:
                 await self.set_agent_state_to(AgentState.RUNNING)
 
     async def reset_task(self):
@@ -269,14 +259,14 @@ class AgentController:
             if action is None:
                 raise AgentNoActionError('No action was returned')
         except (AgentMalformedActionError, AgentNoActionError, LLMOutputError) as e:
-            observation = AgentErrorObservation(str(e))
+            observation = ErrorObservation(str(e))
         logger.info(action, extra={'msg_type': 'ACTION'})
 
         self.update_state_after_step()
 
-        if isinstance(action, AgentTalkAction):
-            self._pending_talk_action = action
-            await self.event_stream.add_event(action, EventSource.AGENT)
+        if isinstance(action, MessageAction) and action.wait_for_response:
+            # FIXME: remove this once history is managed outside the agent controller
+            await self.add_history(action, NullObservation(''))
             await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
             return False
 
@@ -323,12 +313,12 @@ class AgentController:
                 logger.debug('Action, NullObservation loop detected')
                 return True
             elif all(
-                isinstance(self.state.history[-i][1], AgentErrorObservation)
+                isinstance(self.state.history[-i][1], ErrorObservation)
                 for i in range(1, 4)
             ):
-                # (NullAction, AgentErrorObservation): errors coming from an exception
-                # (Action, AgentErrorObservation): the same action getting an error, even if not necessarily the same error
-                logger.debug('Action, AgentErrorObservation loop detected')
+                # (NullAction, ErrorObservation): errors coming from an exception
+                # (Action, ErrorObservation): the same action getting an error, even if not necessarily the same error
+                logger.debug('Action, ErrorObservation loop detected')
                 return True
 
         return False

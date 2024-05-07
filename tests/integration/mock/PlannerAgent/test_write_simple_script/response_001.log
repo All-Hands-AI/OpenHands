@@ -1,6 +1,7 @@
 {
-  "action": "think",
+  "action": "write",
   "args": {
-    "thought": "I need to create a shell script named 'hello.sh' that prints 'hello'. I should start by writing the script."
+    "path": "hello.sh",
+    "content": "#!/bin/bash\n\necho 'hello'"
   }
 }
