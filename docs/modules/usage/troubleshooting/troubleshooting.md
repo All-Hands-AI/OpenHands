@@ -89,7 +89,7 @@ See our guide for [local LLMs](llms/localLLMs) for more information.
 
 - Check your `LLM_BASE_URL`
 - Check that ollama is running OK
-- Make sure you're using `--add-host host.docker.internal=host-gateway` when running in docker
+- Make sure you're using `--add-host host.docker.internal:host-gateway` when running in docker
 
 ## 404 Resource not found
 ### Symptoms

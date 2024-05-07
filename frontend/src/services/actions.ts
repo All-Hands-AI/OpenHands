@@ -1,11 +1,9 @@
-import { changeTaskState } from "#/state/agentSlice";
 import { setScreenshotSrc, setUrl } from "#/state/browserSlice";
 import { addAssistantMessage } from "#/state/chatSlice";
 import { setCode, updatePath } from "#/state/codeSlice";
 import { appendInput } from "#/state/commandSlice";
 import { appendJupyterInput } from "#/state/jupyterSlice";
 import { setPlan } from "#/state/planSlice";
-import { setInitialized } from "#/state/taskSlice";
 import store from "#/store";
 import ActionType from "#/types/ActionType";
 import { ActionMessage } from "#/types/Message";
@@ -14,9 +12,6 @@ import { handleObservationMessage } from "./observations";
 import { getPlan } from "./planService";
 
 const messageActions = {
-  [ActionType.INIT]: () => {
-    store.dispatch(setInitialized(true));
-  },
   [ActionType.BROWSE]: (message: ActionMessage) => {
     const { url, screenshotSrc } = message.args;
     store.dispatch(setUrl(url));
@@ -53,9 +48,6 @@ const messageActions = {
   },
   [ActionType.MODIFY_TASK]: () => {
     getPlan().then((fetchedPlan) => store.dispatch(setPlan(fetchedPlan)));
-  },
-  [ActionType.CHANGE_TASK_STATE]: (message: ActionMessage) => {
-    store.dispatch(changeTaskState(message.args.task_state));
   },
 };
 

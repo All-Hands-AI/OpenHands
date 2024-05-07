@@ -33,7 +33,7 @@ from opendevin.llm.llm import LLM
 if config.get(ConfigType.AGENT_MEMORY_ENABLED):
     from opendevin.llm.memory import LongTermMemory
 
-MAX_MONOLOGUE_LENGTH = 20000
+MAX_TOKEN_COUNT_PADDING = 512
 MAX_OUTPUT_LENGTH = 5000
 
 INITIAL_THOUGHTS = [
@@ -130,7 +130,17 @@ class MonologueAgent(Agent):
         self.monologue.add_event(event_dict)
         if self.memory is not None:
             self.memory.add_event(event_dict)
-        if self.monologue.get_total_length() > MAX_MONOLOGUE_LENGTH:
+
+        # Test monologue token length
+        prompt = prompts.get_request_action_prompt(
+            '',
+            self.monologue.get_events(),
+            [],
+        )
+        messages = [{'content': prompt, 'role': 'user'}]
+        token_count = self.llm.get_token_count(messages)
+
+        if token_count + MAX_TOKEN_COUNT_PADDING > self.llm.max_input_tokens:
             prompt = prompts.get_summarize_monologue_prompt(self.monologue.events)
             summary_response = self.memory_condenser.condense(
                 summarize_prompt=prompt, llm=self.llm
