@@ -15,7 +15,6 @@ from .browse import BrowseURLAction
 from .commands import CmdKillAction, CmdRunAction, IPythonRunCellAction
 from .empty import NullAction
 from .files import FileReadAction, FileWriteAction
-from .github import GitHubPushAction
 from .message import MessageAction
 from .tasks import AddTaskAction, ModifyTaskAction
 
@@ -34,7 +33,6 @@ actions = (
     AddTaskAction,
     ModifyTaskAction,
     ChangeAgentStateAction,
-    GitHubPushAction,
     MessageAction,
 )
 
