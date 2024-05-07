@@ -43,6 +43,8 @@ Welcome to OpenDevin, a platform for autonomous software engineers, powered by A
 
 OpenDevin agents collaborate with human developers to write code, fix bugs, and ship features.
 
+[Project Demo Video](./docs/static/img/teaser.mp4)
+
 ## ⚡ Quick Start
 You can run OpenDevin with Docker. It works best with the most recent
 version of Docker, `26.0.0`.
