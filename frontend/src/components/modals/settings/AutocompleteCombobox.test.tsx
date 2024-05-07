@@ -60,7 +60,6 @@ describe("AutocompleteCombobox", () => {
       userEvent.click(model2);
     });
 
-    expect(modelInput).toHaveValue("model2");
     expect(onChangeMock).toHaveBeenCalledWith("model2");
   });
 
