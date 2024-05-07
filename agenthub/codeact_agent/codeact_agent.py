@@ -154,7 +154,7 @@ class CodeActAgent(Agent):
                     self.messages.append(
                         {'role': 'user', 'content': prev_action.content}
                     )
-                    if obs.content.strip() == '/exit':
+                    if prev_action.content.strip() == '/exit':
                         # User wants to exit
                         return AgentFinishAction()
 
