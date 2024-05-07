@@ -199,6 +199,8 @@ class CodeActAgent(Agent):
         ) + len(action_str)
         self.messages.append({'role': 'assistant', 'content': action_str})
 
+        if re.search(r'<finish>.*</finish>', action_str, re.DOTALL):
+            return AgentFinishAction()
         if bash_command := re.search(
             r'<execute_bash>(.*)</execute_bash>', action_str, re.DOTALL
         ):
