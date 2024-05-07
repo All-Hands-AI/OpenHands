@@ -47,12 +47,6 @@ OpenDevin agents collaborate with human developers to write code, fix bugs, and 
 To learn more about the project, and for tips on using OpenDevin,
 **check out our [documentation](https://opendevin.github.io/OpenDevin/)**.
 
-<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
-    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
-        ↑ Back to Top ↑
-    </a>
-</p>
-
 ## ⚡ Quick Start
 You can run OpenDevin with Docker. It works best with the most recent
 version of Docker, `26.0.0`.
@@ -87,25 +81,12 @@ software engineering with AI, there are many ways to get involved:
 
 For details, please check [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
-    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
-        ↑ Back to Top ↑
-    </a>
-</p>
-
 ## 🤖 Join Our Community
 
 If you'd like to contribute, feel free to join our community. Let's make software engineering better together!
 
 - [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw) - Here we talk about research, architecture, and future development.
 - [Discord server](https://discord.gg/ESHStjSjD4) - This is a community-run server for general discussion, questions, and feedback.
-
-<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
-    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
-        ↑ Back to Top ↑
-    </a>
-</p>
-
 
 ## 📈 Progress
 <p align="center">
@@ -120,21 +101,9 @@ If you'd like to contribute, feel free to join our community. Let's make softwar
   </a>
 </p>
 
-<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
-    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
-        ↑ Back to Top ↑
-    </a>
-</p>
-
 ## 📜 License
 
 Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more information.
-
-<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
-    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
-        ↑ Back to Top ↑
-    </a>
-</p>
 
 [contributors-shield]: https://img.shields.io/github/contributors/opendevin/opendevin?style=for-the-badge
 [contributors-url]: https://github.com/OpenDevin/OpenDevin/graphs/contributors
