@@ -1,12 +1,8 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
 
 from opendevin.core.schema import ActionType
 
 from .action import Action
-
-if TYPE_CHECKING:
-    pass
 
 
 @dataclass
