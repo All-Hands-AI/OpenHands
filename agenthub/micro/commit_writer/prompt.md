@@ -12,7 +12,9 @@ changes. The commit message should include:
 - Optionally, a detailed description if the changes are complex or need further explanation.
 
 You should find the diff using `git diff --cached`, compile a commit message,
-and call the `finish` action with `outputs.answer` set to the answer.
+and call the `finish` action with `outputs.answer` set to the answer. If current
+repo is not a valid git repo, or there is no diff in the staging area, please call
+the `reject` action with `outputs.answer` set to the reason.
 
 ## History
 {{ instructions.history_truncated }}
@@ -22,6 +24,7 @@ If the last item in the history is an error, you should try to fix it.
 
 ## Available Actions
 {{ instructions.actions.run }}
+{{ instructions.actions.reject }}
 {{ instructions.actions.finish }}
 
 ## Format
