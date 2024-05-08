@@ -323,16 +323,18 @@ This is your internal monologue, in JSON format:
     "action": "write",
     "args": {
       "path": "hello.sh",
-      "content": "echo \"hello\"",
+      "content": "echo 'hello'",
       "start": 0,
       "end": -1,
       "thought": ""
     }
   },
   {
-    "observation": "null",
+    "observation": "write",
     "content": "",
-    "extras": {}
+    "extras": {
+      "path": "hello.sh"
+    }
   }
 ]
 

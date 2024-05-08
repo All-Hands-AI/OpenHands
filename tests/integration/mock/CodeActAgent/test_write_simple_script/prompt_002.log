@@ -226,3 +226,9 @@ I will create a shell script 'hello.sh' that prints 'hello' without asking for c
 echo 'echo hello' > hello.sh
 chmod +x hello.sh
 </execute_bash>
+
+----------
+
+OBSERVATION:
+
+[Command -1 finished with exit code 0]]
