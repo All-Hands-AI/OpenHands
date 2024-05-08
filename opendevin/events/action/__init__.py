@@ -3,13 +3,10 @@ from opendevin.core.exceptions import AgentMalformedActionError
 from .action import Action
 from .agent import (
     AgentDelegateAction,
-    AgentEchoAction,
     AgentFinishAction,
     AgentRecallAction,
     AgentRejectAction,
     AgentSummarizeAction,
-    AgentTalkAction,
-    AgentThinkAction,
     ChangeAgentStateAction,
 )
 from .browse import BrowseURLAction
@@ -28,8 +25,6 @@ actions = (
     FileReadAction,
     FileWriteAction,
     AgentRecallAction,
-    AgentThinkAction,
-    AgentTalkAction,
     AgentFinishAction,
     AgentRejectAction,
     AgentDelegateAction,
@@ -75,12 +70,9 @@ __all__ = [
     'FileReadAction',
     'FileWriteAction',
     'AgentRecallAction',
-    'AgentThinkAction',
-    'AgentTalkAction',
     'AgentFinishAction',
     'AgentRejectAction',
     'AgentDelegateAction',
-    'AgentEchoAction',
     'AgentSummarizeAction',
     'AddTaskAction',
     'ModifyTaskAction',

@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Dict
 
 from opendevin.core.schema import ActionType
 from opendevin.events.observation import (
-    AgentMessageObservation,
     AgentRecallObservation,
     NullObservation,
     Observation,
@@ -43,45 +42,6 @@ class AgentRecallAction(Action):
     @property
     def message(self) -> str:
         return f"Let me dive into my memories to find what you're looking for! Searching for: '{self.query}'. This might take a moment."
-
-
-@dataclass
-class AgentThinkAction(Action):
-    thought: str
-    action: str = ActionType.THINK
-
-    @property
-    def message(self) -> str:
-        return self.thought
-
-
-@dataclass
-class AgentTalkAction(Action):
-    content: str
-    action: str = ActionType.TALK
-
-    async def run(self, controller: 'AgentController') -> Observation:
-        raise NotImplementedError
-
-    @property
-    def message(self) -> str:
-        return self.content
-
-    def __str__(self) -> str:
-        return self.content
-
-
-@dataclass
-class AgentEchoAction(Action):
-    content: str
-    action: str = 'echo'
-
-    async def run(self, controller: 'AgentController') -> Observation:
-        return AgentMessageObservation(self.content)
-
-    @property
-    def message(self) -> str:
-        return self.content
 
 
 @dataclass
