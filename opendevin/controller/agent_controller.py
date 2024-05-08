@@ -279,7 +279,7 @@ class AgentController:
             self.state.plan.add_subtask(action.parent, action.goal, action.subtasks)
         elif isinstance(action, ModifyTaskAction):
             self.state.plan.set_subtask_state(action.id, action.state)
-        elif not isinstance(observation, NullObservation):
+        elif not isinstance(observation, ErrorObservation):
             observation = await self.runtime.run_action(action)
 
         if not isinstance(observation, NullObservation):

@@ -62,6 +62,7 @@ class Runtime:
         self.sandbox.init_plugins(plugins)
 
     async def run_action(self, action: Action) -> Observation:
+        print('run action!', action.runnable)
         if not action.runnable:
             return NullObservation('')
         action_id = action.action  # type: ignore[attr-defined]
@@ -71,7 +72,8 @@ class Runtime:
             return ErrorObservation(
                 f'Action {action_id} is not supported in the current runtime.'
             )
-        observation = getattr(self, action_id)(action)
+        print('actually running')
+        observation = await getattr(self, action_id)(action)
         return observation
 
     def get_background_obs(self) -> List[CmdOutputObservation]:
