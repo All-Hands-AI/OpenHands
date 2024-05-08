@@ -3,22 +3,21 @@ from .browse import BrowserOutputObservation
 from .commands import CmdOutputObservation, IPythonRunCellObservation
 from .delegate import AgentDelegateObservation
 from .empty import NullObservation
-from .error import AgentErrorObservation
+from .error import ErrorObservation
 from .files import FileReadObservation, FileWriteObservation
-from .message import AgentMessageObservation, UserMessageObservation
 from .observation import Observation
 from .recall import AgentRecallObservation
+from .success import SuccessObservation
 
 observations = (
     CmdOutputObservation,
     BrowserOutputObservation,
     FileReadObservation,
     FileWriteObservation,
-    UserMessageObservation,
-    AgentMessageObservation,
     AgentRecallObservation,
     AgentDelegateObservation,
-    AgentErrorObservation,
+    SuccessObservation,
+    ErrorObservation,
     AgentStateChangedObservation,
 )
 
@@ -52,9 +51,7 @@ __all__ = [
     'BrowserOutputObservation',
     'FileReadObservation',
     'FileWriteObservation',
-    'UserMessageObservation',
-    'AgentMessageObservation',
     'AgentRecallObservation',
-    'AgentErrorObservation',
+    'ErrorObservation',
     'AgentStateChangedObservation',
 ]

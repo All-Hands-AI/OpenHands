@@ -101,7 +101,7 @@ Action:
 Do not provide anything extra just your thought and action.
 
 You are currently trying to complete this task:
-Write a shell script 'hello.sh' that prints 'hello'.
+Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.
 
 None
 
