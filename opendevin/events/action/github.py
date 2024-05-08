@@ -112,7 +112,7 @@ class GitHubSendPRAction(Action):
     async def run(self, controller: 'AgentController') -> Observation:
         github_token = config.github_token
         if not github_token:
-            return ErrorObservation('GITHUB_TOKEN is not set')
+            return ErrorObservation('github_token is not set')
 
         # API URL to create the pull request
         url = f'https://api.github.com/repos/{self.owner}/{self.repo}/pulls'

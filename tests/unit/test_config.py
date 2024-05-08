@@ -1,5 +1,4 @@
 import os
-import tempfile
 
 import pytest
 
@@ -30,9 +29,6 @@ def setup_env():
     with open('new_style_config.toml', 'w') as f:
         f.write('[app]\nLLM_MODEL="GPT-3"\n')
 
-    with open('.env', 'w') as f:
-        f.write('LLM_MODEL=GPT-5\n')
-
     yield
     # Tear down
 
@@ -47,7 +43,6 @@ def setup_env():
     # clean up files
     os.remove('old_style_config.toml')
     os.remove('new_style_config.toml')
-    os.remove('.env')
 
 
 def test_compat_env_to_config(setup_env):
@@ -58,17 +53,15 @@ def test_compat_env_to_config(setup_env):
     assert config.llm.api_key == 'sk-proj-rgMV0...'
     assert config.llm.model == 'gpt-3.5-turbo'
     assert isinstance(config.agent, AgentConfig)
-    assert config.agent.memory_max_threads == 4
     assert isinstance(config.agent.memory_max_threads, int)
+    assert config.agent.memory_max_threads == 4
 
 
 @pytest.fixture
-def temp_toml_file():
+def temp_toml_file(tmp_path):
     # Fixture to create a temporary directory and TOML file for testing.
-    tmp_dir = tempfile.TemporaryDirectory()
-    tmp_toml_file = os.path.join(tmp_dir.name, 'config.toml')
+    tmp_toml_file = os.path.join(tmp_path, 'config.toml')
     yield tmp_toml_file
-    tmp_dir.cleanup()
 
 
 @pytest.fixture
@@ -165,13 +158,13 @@ def test_invalid_toml_format(temp_toml_file, default_config):
         toml_file.write('INVALID TOML CONTENT')
 
     load_from_toml(default_config)
-    load_from_env(default_config)
+    load_from_env(default_config, os.environ)
     assert default_config.llm.model == 'gpt-5-turbo-1106'
     assert default_config.llm.api_key is None
 
 
 def test_finalize_config(default_config):
-    """Test finalize config"""
+    # Test finalize config
     default_config.sandbox_type = 'local'
     finalize_config(default_config)
 

@@ -9,7 +9,7 @@ def test_help_message(capsys):
         parser.parse_args(['--help'])
     captured = capsys.readouterr()
     expected_help_message = """
-usage: pytest [-h] [-d DIRECTORY] [-t TASK] [-f FILE] [-c AGENT_CLS]
+usage: run_pytest_script.py [-h] [-d DIRECTORY] [-t TASK] [-f FILE] [-c AGENT_CLS]
 [-m MODEL_NAME] [-i MAX_ITERATIONS] [-n MAX_CHARS] [-l LLM_CONFIG]
 
 Run an agent with a specific task

@@ -3,7 +3,7 @@ import logging
 import os
 import pathlib
 import platform
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field, fields, is_dataclass
 from types import UnionType
 from typing import Any, ClassVar, get_args, get_origin
 
@@ -106,7 +106,9 @@ class AppConfig(metaclass=Singleton):
         dict = {}
         for f in fields(self):
             field_value = getattr(self, f.name)
-            if isinstance(field_value, (LLMConfig, AgentConfig)):
+
+            # dataclasses compute their defaults themselves
+            if is_dataclass(type(field_value)):
                 dict[f.name] = field_value.defaults_to_dict()
             else:
                 dict[f.name] = get_field_info(f)
@@ -126,6 +128,9 @@ def get_field_info(field):
     optional = False
 
     # for types like str | None, find the non-None type and set optional to True
+    # this is useful for the frontend to know if a field is optional
+    # and to show the correct type in the UI
+    # Note: this only works for UnionTypes with None as one of the types
     if get_origin(field_type) is UnionType:
         types = get_args(field_type)
         non_none_arg = next((t for t in types if t is not type(None)), None)
@@ -141,7 +146,7 @@ def get_field_info(field):
     # default is always present
     default = field.default
 
-    # return a schema with the useful info for the frontend
+    # return a schema with the useful info for frontend
     return {'type': type_name.lower(), 'optional': optional, 'default': default}
 
 
@@ -164,9 +169,15 @@ def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
         """Set attributes of a config dataclass based on environment variables."""
         for field_name, field_type in sub_config.__annotations__.items():
             # compute the expected env var name from the prefix and field name
+            # e.g. LLM_BASE_URL
             env_var_name = (prefix + field_name).upper()
 
-            if hasattr(field_type, '__annotations__'):
+            if field_name == 'agent':
+                # the agent field: the env var for agent.name is just 'AGENT'
+                env_var_name = 'AGENT'
+                if env_var_name in env_or_toml_dict:
+                    setattr(sub_config, 'name', env_or_toml_dict[env_var_name])
+            elif is_dataclass(field_type):
                 # nested dataclass
                 nested_sub_config = getattr(sub_config, field_name)
                 set_attr_from_env(nested_sub_config, prefix=field_name + '_')
@@ -222,14 +233,17 @@ def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
     core_config = toml_config['core']
 
     try:
+        # set llm config from the toml file
         llm_config = config.llm
         if 'llm' in toml_config:
             llm_config = LLMConfig(**toml_config['llm'])
 
+        # set agent config from the toml file
         agent_config = config.agent
         if 'agent' in toml_config:
             agent_config = AgentConfig(**toml_config['agent'])
 
+        # update the config object with the new values
         config = AppConfig(llm=llm_config, agent=agent_config, **core_config)
     except (TypeError, KeyError):
         logger.warning(
@@ -245,7 +259,6 @@ def finalize_config(config: AppConfig):
 
     # In local there is no sandbox, the workspace will have the same pwd as the host
     if config.sandbox_type == 'local':
-        # TODO why do we seem to need None for these paths?
         config.workspace_mount_path_in_sandbox = config.workspace_mount_path
 
     if config.workspace_mount_rewrite:  # and not config.workspace_mount_path:
@@ -263,6 +276,7 @@ def finalize_config(config: AppConfig):
             'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'
         )
 
+    # make sure cache dir exists
     if config.cache_dir:
         pathlib.Path(config.cache_dir).mkdir(parents=True, exist_ok=True)
 
@@ -289,8 +303,8 @@ def get_llm_config_arg(llm_config_arg: str):
             toml_config = toml.load(toml_file)
     except FileNotFoundError:
         return None
-    except toml.TomlDecodeError:
-        logger.debug(f'Cannot parse llm group from {llm_config_arg}')
+    except toml.TomlDecodeError as e:
+        logger.error(f'Cannot parse llm group from {llm_config_arg}. Exception: {e}')
         return None
 
     # update the llm config with the specified section

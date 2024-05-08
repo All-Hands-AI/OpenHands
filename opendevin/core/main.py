@@ -43,22 +43,28 @@ async def main(task_str: str = ''):
     # only one of model_name or llm_config is required
     if args.llm_config:
         # --llm_config
-        # llm_config contains any of the attributes of LLMConfig
-        print(f'LLM Config: {args.llm_config}')
+        # llm_config can contain any of the attributes of LLMConfig
         llm_config = get_llm_config_arg(args.llm_config)
+
+        if llm_config is None:
+            raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
+
+        print(
+            f'Running agent {args.agent_cls} (model: {llm_config.model}, llm_config: {llm_config}) with task: "{task}"'
+        )
 
         # create LLM instance with the given config
         llm = LLM(llm_config=llm_config)
     else:
         # --model-name model_name
+        print(
+            f'Running agent {args.agent_cls} (model: {args.model_name}), with task: "{task}"'
+        )
         llm = LLM(args.model_name)
-
-    print(
-        f'Running agent {args.agent_cls} (model: {args.model_name}, with task: "{task}"'
-    )
 
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
+
     event_stream = EventStream()
     controller = AgentController(
         agent=agent,

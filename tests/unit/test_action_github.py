@@ -24,7 +24,7 @@ def agent_controller():
 
 
 @pytest.mark.asyncio
-@patch.dict(config.config, {'GITHUB_TOKEN': 'fake_token'}, clear=True)
+@patch.object(config, 'github_token', 'fake_token')
 @patch('random.choices')
 @patch('opendevin.controller.action_manager.ActionManager.run_command')
 async def test_run_push_successful(
@@ -73,11 +73,11 @@ async def test_run_push_error_missing_token(
 
     # Verify the result is an error due to missing token
     assert isinstance(result, ErrorObservation)
-    assert result.message == 'GITHUB_TOKEN is not set'
+    assert result.message == 'github_token is not set'
 
 
 @pytest.mark.asyncio
-@patch.dict(config.config, {'GITHUB_TOKEN': 'fake_token'}, clear=True)
+@patch.object(config, 'github_token', 'fake_token')
 @patch('requests.post')
 async def test_run_pull_request_created_successfully(mock_post, agent_controller):
     # Set up the mock for the requests.post call to simulate a successful pull request creation
@@ -105,7 +105,7 @@ async def test_run_pull_request_created_successfully(mock_post, agent_controller
 
 @pytest.mark.asyncio
 @patch('requests.post')
-@patch.dict(config.config, {'GITHUB_TOKEN': 'fake_token'}, clear=True)
+@patch.object(config, 'github_token', 'fake_token')
 async def test_run_pull_request_creation_failed(mock_post, agent_controller):
     # Set up the mock for the requests.post call to simulate a failed pull request creation
     mock_response = MagicMock()
@@ -148,4 +148,4 @@ async def test_run_error_missing_token(agent_controller):
 
     # Verify the result is an error due to missing token
     assert isinstance(result, ErrorObservation)
-    assert 'GITHUB_TOKEN is not set' in result.message
+    assert 'github_token is not set' in result.message

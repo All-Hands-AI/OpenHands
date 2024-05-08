@@ -16,9 +16,9 @@ def temp_dir():
         yield temp_dir
 
 
-def test_ssh_box_run_as_devin(temp_dir):
+def test_ssh_box_run_as_devin(tmp_path):
     # get a temporary directory
-    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+    with patch.object(config, 'workspace_base', new=tmp_path), patch.object(
         config, 'run_as_devin', new='true'
     ), patch.object(config, 'sandbox_type', new='ssh'):
         ssh_box = DockerSSHBox()
@@ -46,9 +46,9 @@ def test_ssh_box_run_as_devin(temp_dir):
         assert 'foo.txt' in output, 'The output should contain the foo.txt file'
 
 
-def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
+def test_ssh_box_multi_line_cmd_run_as_devin(tmp_path):
     # get a temporary directory
-    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+    with patch.object(config, 'workspace_base', new=tmp_path), patch.object(
         config, 'run_as_devin', new='true'
     ), patch.object(config, 'sandbox_type', new='ssh'):
         ssh_box = DockerSSHBox()
@@ -60,9 +60,9 @@ def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
         assert output.strip().splitlines() == expected_lines
 
 
-def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
+def test_ssh_box_stateful_cmd_run_as_devin(tmp_path):
     # get a temporary directory
-    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+    with patch.object(config, 'workspace_base', new=tmp_path), patch.object(
         config, 'run_as_devin', new='true'
     ), patch.object(config, 'sandbox_type', new='ssh'):
         ssh_box = DockerSSHBox()
@@ -81,9 +81,9 @@ def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
         assert output.strip() == '/workspace/test'
 
 
-def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
+def test_ssh_box_failed_cmd_run_as_devin(tmp_path):
     # get a temporary directory
-    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+    with patch.object(config, 'workspace_base', new=tmp_path), patch.object(
         config, 'run_as_devin', new='true'
     ), patch.object(config, 'sandbox_type', new='ssh'):
         ssh_box = DockerSSHBox()
