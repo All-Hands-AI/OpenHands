@@ -1,6 +1,6 @@
 import os
-from dataclasses import dataclass
 from pathlib import Path
+from typing import ClassVar
 
 from opendevin.core import config
 from opendevin.core.schema import ActionType
@@ -46,7 +46,6 @@ def resolve_path(file_path, working_directory):
     return path_in_host_workspace
 
 
-@dataclass
 class FileReadAction(Action):
     """
     Reads a file from a given path.
@@ -58,7 +57,7 @@ class FileReadAction(Action):
     start: int = 0
     end: int = -1
     thought: str = ''
-    action: str = ActionType.READ
+    action: ClassVar[str] = ActionType.READ
 
     def _read_lines(self, all_lines: list[str]):
         if self.end == -1:
@@ -106,14 +105,13 @@ class FileReadAction(Action):
         return f'Reading file: {self.path}'
 
 
-@dataclass
 class FileWriteAction(Action):
     path: str
     content: str
     start: int = 0
     end: int = -1
     thought: str = ''
-    action: str = ActionType.WRITE
+    action: ClassVar[str] = ActionType.WRITE
 
     def _insert_lines(self, to_insert: list[str], original: list[str]):
         """

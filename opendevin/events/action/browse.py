@@ -1,6 +1,5 @@
 import os
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from opendevin.core.schema import ActionType
 from opendevin.events.observation import BrowserOutputObservation
@@ -11,11 +10,10 @@ if TYPE_CHECKING:
     from opendevin.controller import AgentController
 
 
-@dataclass
 class BrowseURLAction(Action):
     url: str
     thought: str = ''
-    action: str = ActionType.BROWSE
+    action: ClassVar[str] = ActionType.BROWSE
 
     async def run(self, controller: 'AgentController') -> BrowserOutputObservation:  # type: ignore
         asked_url = self.url

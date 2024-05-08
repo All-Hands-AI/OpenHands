@@ -1,7 +1,6 @@
 import os
 import pathlib
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from opendevin.core import config
 from opendevin.core.schema import ActionType, ConfigType
@@ -15,12 +14,11 @@ if TYPE_CHECKING:
 from opendevin.events.observation import IPythonRunCellObservation
 
 
-@dataclass
 class CmdRunAction(Action):
     command: str
     background: bool = False
     thought: str = ''
-    action: str = ActionType.RUN
+    action: ClassVar[str] = ActionType.RUN
 
     async def run(self, controller: 'AgentController') -> 'Observation':
         return controller.action_manager.run_command(self.command, self.background)
@@ -37,11 +35,10 @@ class CmdRunAction(Action):
         return ret
 
 
-@dataclass
 class CmdKillAction(Action):
     id: int
     thought: str = ''
-    action: str = ActionType.KILL
+    action: ClassVar[str] = ActionType.KILL
 
     async def run(self, controller: 'AgentController') -> 'CmdOutputObservation':
         return controller.action_manager.kill_command(self.id)
@@ -54,11 +51,10 @@ class CmdKillAction(Action):
         return f'**CmdKillAction**\n{self.id}'
 
 
-@dataclass
 class IPythonRunCellAction(Action):
     code: str
     thought: str = ''
-    action: str = ActionType.RUN_IPYTHON
+    action: ClassVar[str] = ActionType.RUN_IPYTHON
 
     async def run(self, controller: 'AgentController') -> 'IPythonRunCellObservation':
         # echo "import math" | execute_cli

@@ -1,7 +1,6 @@
 import random
 import string
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 import requests
 
@@ -21,7 +20,6 @@ if TYPE_CHECKING:
     from opendevin.controller import AgentController
 
 
-@dataclass
 class GitHubPushAction(Action):
     """This pushes the current branch to github.
 
@@ -39,7 +37,7 @@ class GitHubPushAction(Action):
     owner: str
     repo: str
     branch: str
-    action: str = ActionType.PUSH
+    action: ClassVar[str] = ActionType.PUSH
 
     async def run(self, controller: 'AgentController') -> Observation:
         github_token = config.get(ConfigType.GITHUB_TOKEN)
@@ -85,7 +83,6 @@ class GitHubPushAction(Action):
         return f'Pushing branch {self.branch} to {self.owner}/{self.repo}'
 
 
-@dataclass
 class GitHubSendPRAction(Action):
     """An action to send a github PR.
 
@@ -108,7 +105,7 @@ class GitHubSendPRAction(Action):
     head_repo: str | None
     base: str
     body: str | None
-    action: str = ActionType.SEND_PR
+    action: ClassVar[str] = ActionType.SEND_PR
 
     async def run(self, controller: 'AgentController') -> Observation:
         github_token = config.get(ConfigType.GITHUB_TOKEN)

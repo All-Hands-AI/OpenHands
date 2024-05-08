@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from opendevin.events.event import Event
@@ -8,7 +7,6 @@ if TYPE_CHECKING:
     from opendevin.controller import AgentController
 
 
-@dataclass
 class Action(Event):
     async def run(self, controller: 'AgentController') -> 'Observation':
         return NullObservation('')

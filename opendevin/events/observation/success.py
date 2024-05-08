@@ -1,17 +1,16 @@
-from dataclasses import dataclass
+from typing import ClassVar
 
 from opendevin.core.schema import ObservationType
 
 from .observation import Observation
 
 
-@dataclass
 class SuccessObservation(Observation):
     """
     This data class represents the result of a successful action.
     """
 
-    observation: str = ObservationType.SUCCESS
+    observation: ClassVar[str] = ObservationType.SUCCESS
 
     @property
     def message(self) -> str:

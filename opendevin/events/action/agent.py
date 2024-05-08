@@ -1,5 +1,6 @@
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, ClassVar
+
+from pydantic import Field
 
 from opendevin.core.schema import ActionType
 from opendevin.events.observation import (
@@ -14,24 +15,22 @@ if TYPE_CHECKING:
     from opendevin.controller import AgentController
 
 
-@dataclass
 class ChangeAgentStateAction(Action):
     """Fake action, just to notify the client that a task state has changed."""
 
     agent_state: str
     thought: str = ''
-    action: str = ActionType.CHANGE_AGENT_STATE
+    action: ClassVar[str] = ActionType.CHANGE_AGENT_STATE
 
     @property
     def message(self) -> str:
         return f'Agent state changed to {self.agent_state}'
 
 
-@dataclass
 class AgentRecallAction(Action):
     query: str
     thought: str = ''
-    action: str = ActionType.RECALL
+    action: ClassVar[str] = ActionType.RECALL
 
     async def run(self, controller: 'AgentController') -> AgentRecallObservation:
         return AgentRecallObservation(
@@ -44,33 +43,30 @@ class AgentRecallAction(Action):
         return f"Let me dive into my memories to find what you're looking for! Searching for: '{self.query}'. This might take a moment."
 
 
-@dataclass
 class AgentSummarizeAction(Action):
     summary: str
-    action: str = ActionType.SUMMARIZE
+    action: ClassVar[str] = ActionType.SUMMARIZE
 
     @property
     def message(self) -> str:
         return self.summary
 
 
-@dataclass
 class AgentFinishAction(Action):
-    outputs: Dict = field(default_factory=dict)
+    outputs: dict = Field(default_factory=dict)
     thought: str = ''
-    action: str = ActionType.FINISH
+    action: ClassVar[str] = ActionType.FINISH
 
     @property
     def message(self) -> str:
         return "All done! What's next on the agenda?"
 
 
-@dataclass
 class AgentDelegateAction(Action):
     agent: str
     inputs: dict
     thought: str = ''
-    action: str = ActionType.DELEGATE
+    action: ClassVar[str] = ActionType.DELEGATE
 
     async def run(self, controller: 'AgentController') -> Observation:
         await controller.start_delegate(self)

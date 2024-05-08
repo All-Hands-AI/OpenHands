@@ -1,4 +1,6 @@
-from dataclasses import dataclass, field
+from typing import ClassVar
+
+from pydantic import Field
 
 from opendevin.core.schema import ObservationType
 from opendevin.events.utils import remove_fields
@@ -6,22 +8,21 @@ from opendevin.events.utils import remove_fields
 from .observation import Observation
 
 
-@dataclass
 class BrowserOutputObservation(Observation):
     """
     This data class represents the output of a browser.
     """
 
     url: str
-    screenshot: str = field(repr=False)  # don't show in repr
+    screenshot: str = Field(repr=False)  # don't show in repr
     status_code: int = 200
     error: bool = False
-    observation: str = ObservationType.BROWSE
+    observation: ClassVar[str] = ObservationType.BROWSE
     # do not include in the memory
-    open_pages_urls: list = field(default_factory=list)
+    open_pages_urls: list = Field(default_factory=list)
     active_page_index: int = -1
-    dom_object: dict = field(default_factory=dict, repr=False)  # don't show in repr
-    axtree_object: dict = field(default_factory=dict, repr=False)  # don't show in repr
+    dom_object: dict = Field(default_factory=dict, repr=False)  # don't show in repr
+    axtree_object: dict = Field(default_factory=dict, repr=False)  # don't show in repr
     last_browser_action: str = ''
     focused_element_bid: str = ''
 

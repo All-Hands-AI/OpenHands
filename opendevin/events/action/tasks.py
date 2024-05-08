@@ -1,5 +1,6 @@
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
+
+from pydantic import Field
 
 from opendevin.core.schema import ActionType
 from opendevin.events.observation import NullObservation
@@ -10,13 +11,12 @@ if TYPE_CHECKING:
     from opendevin.controller import AgentController
 
 
-@dataclass
 class AddTaskAction(Action):
     parent: str
     goal: str
-    subtasks: list = field(default_factory=list)
+    subtasks: list = Field(default_factory=list)
     thought: str = ''
-    action: str = ActionType.ADD_TASK
+    action: ClassVar[str] = ActionType.ADD_TASK
 
     async def run(self, controller: 'AgentController') -> NullObservation:  # type: ignore
         if controller.state is not None:
@@ -28,12 +28,11 @@ class AddTaskAction(Action):
         return f'Added task: {self.goal}'
 
 
-@dataclass
 class ModifyTaskAction(Action):
     id: str
     state: str
     thought: str = ''
-    action: str = ActionType.MODIFY_TASK
+    action: ClassVar[str] = ActionType.MODIFY_TASK
 
     async def run(self, controller: 'AgentController') -> NullObservation:  # type: ignore
         if controller.state is not None:

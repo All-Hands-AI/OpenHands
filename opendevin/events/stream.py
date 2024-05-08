@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Callable, Dict, List
 
 from opendevin.core.logger import opendevin_logger as logger
@@ -8,14 +8,14 @@ from opendevin.core.logger import opendevin_logger as logger
 from .event import Event
 
 
-class EventStreamSubscriber(str, Enum):
+class EventStreamSubscriber(StrEnum):
     AGENT_CONTROLLER = 'agent_controller'
     SERVER = 'server'
     RUNTIME = 'runtime'
     MAIN = 'main'
 
 
-class EventSource(str, Enum):
+class EventSource(StrEnum):
     AGENT = 'agent'
     USER = 'user'
 

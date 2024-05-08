@@ -1,11 +1,10 @@
-from dataclasses import dataclass
+from typing import ClassVar
 
 from opendevin.core.schema import ObservationType
 
 from .observation import Observation
 
 
-@dataclass
 class CmdOutputObservation(Observation):
     """
     This data class represents the output of a command.
@@ -14,7 +13,7 @@ class CmdOutputObservation(Observation):
     command_id: int
     command: str
     exit_code: int = 0
-    observation: str = ObservationType.RUN
+    observation: ClassVar[str] = ObservationType.RUN
 
     @property
     def error(self) -> bool:
@@ -25,14 +24,13 @@ class CmdOutputObservation(Observation):
         return f'Command `{self.command}` executed with exit code {self.exit_code}.'
 
 
-@dataclass
 class IPythonRunCellObservation(Observation):
     """
     This data class represents the output of a IPythonRunCellAction.
     """
 
     code: str
-    observation: str = ObservationType.RUN_IPYTHON
+    observation: ClassVar[str] = ObservationType.RUN_IPYTHON
 
     @property
     def error(self) -> bool:
