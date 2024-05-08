@@ -114,7 +114,7 @@ api_key = "toml-api-key"
 [core]
 workspace_base = "/opt/files3/workspace"
 sandbox_type = "local"
-disable_color = True
+disable_color = true
 """)
 
     monkeypatch.setenv('LLM_API_KEY', 'env-api-key')

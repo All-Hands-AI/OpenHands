@@ -178,7 +178,7 @@ def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
 
                 # the agent field: the env var for agent.name is just 'AGENT'
                 if field_name == 'agent' and 'AGENT' in env_or_toml_dict:
-                    setattr(sub_config, 'name', env_or_toml_dict[env_var_name])
+                    setattr(nested_sub_config, 'name', env_or_toml_dict[env_var_name])
 
                 set_attr_from_env(nested_sub_config, prefix=field_name + '_')
             elif env_var_name in env_or_toml_dict:
