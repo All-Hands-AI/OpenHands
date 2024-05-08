@@ -70,17 +70,13 @@ class MicroAgent(Agent):
         del self.delegates[self.agent_definition['name']]
 
     def step(self, state: State) -> Action:
-        latest_user_message = None
-        for action, obs in reversed(state.history):
-            if isinstance(action, MessageAction) and action.source == 'user':
-                latest_user_message = action.message
-                break
+        latest_user_message = state.get_current_user_intent()
         prompt = self.prompt_template.render(
             state=state,
             instructions=instructions,
             to_json=to_json,
             delegates=self.delegates,
-            latest_user_message=latest_user_message.content,
+            latest_user_message=latest_user_message,
         )
         messages = [{'content': prompt, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)

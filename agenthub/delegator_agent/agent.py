@@ -38,20 +38,22 @@ class DelegatorAgent(Agent):
         """
         if self.current_delegate == '':
             self.current_delegate = 'study'
+            task = state.get_current_user_intent()
             return AgentDelegateAction(
-                agent='StudyRepoForTaskAgent', inputs={'task': state.plan.main_goal}
+                agent='StudyRepoForTaskAgent', inputs={'task': task}
             )
 
         last_observation = state.history[-1][1]
         if not isinstance(last_observation, AgentDelegateObservation):
             raise Exception('Last observation is not an AgentDelegateObservation')
 
+        goal = state.get_current_user_intent()
         if self.current_delegate == 'study':
             self.current_delegate = 'coder'
             return AgentDelegateAction(
                 agent='CoderAgent',
                 inputs={
-                    'task': state.plan.main_goal,
+                    'task': goal,
                     'summary': last_observation.outputs['summary'],
                 },
             )
@@ -60,7 +62,7 @@ class DelegatorAgent(Agent):
             return AgentDelegateAction(
                 agent='VerifierAgent',
                 inputs={
-                    'task': state.plan.main_goal,
+                    'task': goal,
                 },
             )
         elif self.current_delegate == 'verifier':
@@ -74,7 +76,7 @@ class DelegatorAgent(Agent):
                 return AgentDelegateAction(
                     agent='CoderAgent',
                     inputs={
-                        'task': state.plan.main_goal,
+                        'task': goal,
                         'summary': last_observation.outputs['summary'],
                     },
                 )

@@ -158,8 +158,9 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
         plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
     hint = get_hint(latest_action.to_dict()['action'])
     logger.info('HINT:\n' + hint, extra={'msg_type': 'INFO'})
+    task = state.get_current_user_intent()
     return prompt % {
-        'task': plan.main_goal,
+        'task': task,
         'plan': plan_str,
         'history': history_str,
         'hint': hint,
