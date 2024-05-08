@@ -1,7 +1,6 @@
 export type Task = {
   id: string;
   goal: string;
-  parent: "Task | None";
   subtasks: Task[];
   state: TaskState;
 };
