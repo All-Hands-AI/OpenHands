@@ -10,6 +10,7 @@ for agent in "${agents[@]}"; do
   echo -e "\n\n\n\n========Generating test data for $agent========\n\n\n\n"
   rm -rf logs
   rm -rf _test_workspace
+  mkdir -p tests/integration/mock/$agent/test_write_simple_script/
   rm -rf tests/integration/mock/$agent/test_write_simple_script/*
   mkdir _test_workspace
   echo -e "/exit\n" | poetry run python ./opendevin/core/main.py \
