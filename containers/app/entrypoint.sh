@@ -33,8 +33,11 @@ mv /home/opendevin/.cache/ms-playwright/ /home/enduser/.cache/
 
 # get the user group of /var/run/docker.sock and set opendevin to that group
 DOCKER_SOCKET_GID=$(stat -c '%g' /var/run/docker.sock)
-echo "Docker socket group id: $DOCKER_SOCKET_GID"
-usermod -aG $DOCKER_SOCKET_GID enduser
+echo "Docker socket group id: $DOCKER_SOCKET_GID."
+echo "Creating docker group with fetched gid."
+groupadd -g $DOCKER_SOCKET_GID docker
+echo "Adding enduser to local docker group"
+usermod -aG docker enduser
 
 # switch to the user and start the server
 su enduser -c "cd /app && uvicorn opendevin.server.listen:app --host 0.0.0.0 --port 3000"
