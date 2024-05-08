@@ -13,7 +13,7 @@ export const planSlice = createSlice({
   },
   reducers: {
     setPlan: (state, action) => {
-      state.plan = action.payload as Plan;
+      state.plan = action.payload as Task;
     },
   },
 });
