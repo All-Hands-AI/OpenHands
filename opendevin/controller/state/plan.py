@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from opendevin.core.exceptions import PlanInvalidStateError
 from opendevin.core.logger import opendevin_logger as logger
@@ -139,7 +139,7 @@ class Plan:
         task: The root task of the plan.
     """
 
-    root_task: Task
+    root_task: Optional[Task]
 
     def __str__(self):
         """Returns a string representation of the plan.
@@ -147,7 +147,9 @@ class Plan:
         Returns:
             A string representation of the plan.
         """
-        return self.task.to_string()
+        if self.root_task is None:
+            return 'no tasks'
+        return self.root_task.to_string()
 
     def get_task_by_id(self, id: str) -> Task:
         """Retrieves a task by its ID.
@@ -161,6 +163,8 @@ class Plan:
         Raises:
             ValueError: If the provided task ID is invalid or does not exist.
         """
+        if self.root_task is None:
+            raise ValueError('No tasks in plan')
         try:
             parts = [int(p) for p in id.split('.')]
         except ValueError:
@@ -168,7 +172,7 @@ class Plan:
         if parts[0] != 0:
             raise ValueError('Invalid task id, must start with 0:' + id)
         parts = parts[1:]
-        task = self.task
+        task = self.root_task
         for part in parts:
             if part >= len(task.subtasks):
                 raise ValueError('Task does not exist:' + id)
@@ -183,12 +187,13 @@ class Plan:
             goal: The goal of the subtask.
             subtasks: A list of subtasks associated with the new subtask.
         """
-        task = Task(parent=parent, goal=goal, subtasks=subtasks)
         if self.root_task is None:
+            task = Task(parent=None, goal=goal, subtasks=subtasks)
             self.root_task = task
-            return
-        parent = self.get_task_by_id(parent_id)
-        parent.subtasks.append(child)
+        else:
+            parent = self.get_task_by_id(parent_id)
+            child = Task(parent=parent, goal=goal, subtasks=subtasks)
+            parent.subtasks.append(child)
 
     def set_subtask_state(self, id: str, state: str):
         """Sets the state of a subtask.
@@ -206,4 +211,6 @@ class Plan:
         Returns:
             The current task in progress, or None if no task is in progress.
         """
-        return self.task.get_current_task()
+        if self.root_task is None:
+            return None
+        return self.root_task.get_current_task()

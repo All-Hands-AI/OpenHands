@@ -100,6 +100,7 @@ class CodeActAgent(Agent):
         IPythonRunCellObservation,
         NullObservation,
     )
+    messages: List[dict] = []
 
     def __init__(
         self,

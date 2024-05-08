@@ -71,7 +71,7 @@ class AgentController:
         """
         self.id = sid
         self.agent = agent
-        self.state = State(inputs=inputs)
+        self.state = State(inputs=inputs or {})
         self.event_stream = event_stream
         self.event_stream.subscribe(
             EventStreamSubscriber.AGENT_CONTROLLER, self.on_event

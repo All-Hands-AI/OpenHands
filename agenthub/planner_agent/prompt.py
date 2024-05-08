@@ -1,7 +1,6 @@
 import json
-from typing import List, Tuple
 
-from opendevin.controller.state.plan import Plan
+from opendevin.controller.state.state import State
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ActionType
 from opendevin.events.action import (
@@ -11,7 +10,6 @@ from opendevin.events.action import (
 )
 from opendevin.events.observation import (
     NullObservation,
-    Observation,
 )
 
 HISTORY_SIZE = 10
@@ -124,21 +122,24 @@ def get_hint(latest_action_id: str) -> str:
     return hints.get(latest_action_id, '')
 
 
-def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
+def get_prompt(state: State) -> str:
     """
     Gets the prompt for the planner agent.
     Formatted with the most recent action-observation pairs, current task, and hint based on last action
 
     Parameters:
-    - plan (Plan): The original plan outlined by the user with LLM defined tasks
-    - history (List[Tuple[Action, Observation]]): List of corresponding action-observation pairs
+    - state (State): The state of the current agent
 
     Returns:
     - str: The formatted string prompt with historical values
     """
 
-    plan_str = json.dumps(plan.root_task.to_dict(), indent=2)
-    sub_history = history[-HISTORY_SIZE:]
+    plan_str = (
+        '{}'
+        if not state.plan.root_task
+        else json.dumps(state.plan.root_task.to_dict(), indent=2)
+    )
+    sub_history = state.history[-HISTORY_SIZE:]
     history_dicts = []
     latest_action: Action = NullAction()
     for action, observation in sub_history:
@@ -149,7 +150,7 @@ def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
             observation_dict = observation.to_memory()
             history_dicts.append(observation_dict)
     history_str = json.dumps(history_dicts, indent=2)
-    current_task = plan.get_current_task()
+    current_task = state.plan.get_current_task()
     if current_task is not None:
         plan_status = f"You're currently working on this task:\n{current_task.goal}."
         if len(current_task.subtasks) == 0:

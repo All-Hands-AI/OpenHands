@@ -36,9 +36,13 @@ class PlannerAgent(Agent):
         - Action: The next action to take based on llm response
         """
 
-        if state.plan.root_task.state in ['completed', 'verified', 'abandoned']:
+        if state.plan.root_task and state.plan.root_task.state in [
+            'completed',
+            'verified',
+            'abandoned',
+        ]:
             return AgentFinishAction()
-        prompt = get_prompt(state.plan, state.history)
+        prompt = get_prompt(state)
         messages = [{'content': prompt, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)
         action_resp = resp['choices'][0]['message']['content']
