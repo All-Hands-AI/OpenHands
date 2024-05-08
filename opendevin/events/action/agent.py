@@ -35,39 +35,6 @@ class AgentRecallAction(Action):
 
 
 @dataclass
-class AgentThinkAction(Action):
-    thought: str
-    action: str = ActionType.THINK
-
-    @property
-    def message(self) -> str:
-        return self.thought
-
-
-@dataclass
-class AgentTalkAction(Action):
-    content: str
-    action: str = ActionType.TALK
-
-    @property
-    def message(self) -> str:
-        return self.content
-
-    def __str__(self) -> str:
-        return self.content
-
-
-@dataclass
-class AgentEchoAction(Action):
-    content: str
-    action: str = 'echo'
-
-    @property
-    def message(self) -> str:
-        return self.content
-
-
-@dataclass
 class AgentSummarizeAction(Action):
     summary: str
     action: str = ActionType.SUMMARIZE

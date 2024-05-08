@@ -67,7 +67,7 @@ args:
   start: 0
   end: -1
   thought: Thoughts:
-  I need to create a shell script named 'hello.sh' that prints 'hello' when executed. I will use the 'write' command to create the script with the required content.
+  I have already created the 'hello.sh' file, and now I need to add the code to the file that will print 'hello' when executed. I will use the 'edit' command to add the necessary code to the file.
 
   Action:
 
@@ -85,7 +85,7 @@ args:
   start: 0
   end: -1
   thought: Thoughts:
-  I need to add the code to the 'hello.sh' script that will print 'hello' when executed. I will use the 'edit' command to add the necessary code to the file.
+  I have already created the 'hello.sh' file, and now I need to add the code to the file that will print 'hello' when executed. I will use the 'edit' command to add the necessary code to the file.
 
   Action:
 
@@ -96,6 +96,24 @@ extras:
   path: hello.sh
 
 Memory 2:
+Previous Action:
+action: write
+args:
+  path: hello.sh
+  start: 0
+  end: -1
+  thought: Thoughts:
+  I need to add the code to the 'hello.sh' script that will print 'hello' when executed. I will use the 'edit' command to add the necessary code to the file.
+
+  Action:
+
+Output from Action:
+observation: write
+content:
+extras:
+  path: hello.sh
+
+Memory 3:
 Previous Action:
 action: write
 args:

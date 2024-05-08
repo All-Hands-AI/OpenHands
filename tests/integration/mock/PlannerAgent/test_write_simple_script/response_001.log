@@ -1,9 +1,1 @@
-```json
-{
-  "action": "modify_task",
-  "args": {
-    "id": "0",
-    "state": "in_progress"
-  }
-}
-```
+{"action": "write", "args": {"path": "hello.sh", "content": "#!/bin/bash\n\necho 'hello'"}}

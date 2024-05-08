@@ -4,9 +4,9 @@ from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import (
     Action,
-    AgentThinkAction,
     FileReadAction,
     FileWriteAction,
+    MessageAction,
 )
 from opendevin.events.observation import Observation
 from opendevin.llm.llm import LLM
@@ -93,7 +93,7 @@ class SWEAgent(Agent):
             action, thought = self._think_act(messages=msgs)
 
         if not action:
-            action = AgentThinkAction(thought)
+            action = MessageAction(thought)
 
         self._update(action)
         self.latest_action = action

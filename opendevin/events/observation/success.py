@@ -6,12 +6,12 @@ from .observation import Observation
 
 
 @dataclass
-class ErrorObservation(Observation):
+class SuccessObservation(Observation):
     """
-    This data class represents an error encountered by the agent.
+    This data class represents the result of a successful action.
     """
 
-    observation: str = ObservationType.ERROR
+    observation: str = ObservationType.SUCCESS
 
     @property
     def message(self) -> str:

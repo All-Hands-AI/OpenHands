@@ -15,8 +15,8 @@ from opendevin.events.action import (
     IPythonRunCellAction,
 )
 from opendevin.events.observation import (
-    AgentErrorObservation,
     CmdOutputObservation,
+    ErrorObservation,
     NullObservation,
     Observation,
 )
@@ -66,9 +66,9 @@ class Runtime:
             return NullObservation('')
         action_id = action.action  # type: ignore[attr-defined]
         if action_id not in ACTION_TYPE_TO_CLASS:
-            return AgentErrorObservation(f'Action {action_id} does not exist.')
+            return ErrorObservation(f'Action {action_id} does not exist.')
         if not hasattr(self, action_id):
-            return AgentErrorObservation(
+            return ErrorObservation(
                 f'Action {action_id} is not supported in the current runtime.'
             )
         observation = getattr(self, action_id)(action)

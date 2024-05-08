@@ -3,12 +3,12 @@ from opendevin.events.action import (
     AddTaskAction,
     AgentFinishAction,
     AgentRecallAction,
-    AgentThinkAction,
     BrowseURLAction,
     CmdKillAction,
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
+    MessageAction,
     ModifyTaskAction,
     action_from_dict,
 )
@@ -33,9 +33,15 @@ def serialization_deserialization(original_action_dict, cls):
     ), 'The serialized action in memory should match the original action dict.'
 
 
-def test_agent_think_action_serialization_deserialization():
-    original_action_dict = {'action': 'think', 'args': {'thought': 'This is a test.'}}
-    serialization_deserialization(original_action_dict, AgentThinkAction)
+def test_message_action_serialization_deserialization():
+    original_action_dict = {
+        'action': 'message',
+        'args': {
+            'content': 'This is a test.',
+            'wait_for_response': False,
+        },
+    }
+    serialization_deserialization(original_action_dict, MessageAction)
 
 
 def test_agent_recall_action_serialization_deserialization():

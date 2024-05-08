@@ -8,6 +8,7 @@ from .action import Action
 @dataclass
 class MessageAction(Action):
     content: str
+    wait_for_response: bool = False
     action: str = ActionType.MESSAGE
 
     @property

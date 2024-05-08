@@ -3,7 +3,7 @@ from opendevin.events.action import (
     FileWriteAction,
 )
 from opendevin.events.observation import (
-    AgentErrorObservation,
+    ErrorObservation,
     FileReadObservation,
     FileWriteObservation,
     Observation,
@@ -41,4 +41,4 @@ class E2BRuntime(ServerRuntime):
             return FileWriteObservation('', path=action.path)
         else:
             # FIXME: we should create a new file here
-            return AgentErrorObservation(f'File not found: {action.path}')
+            return ErrorObservation(f'File not found: {action.path}')

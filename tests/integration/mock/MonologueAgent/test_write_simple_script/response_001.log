@@ -1,7 +1,7 @@
 {
-  "action": "run",
+  "action": "write",
   "args": {
-    "command": "ls",
-    "background": false
+    "path": "hello.sh",
+    "content": "echo 'hello'"
   }
 }

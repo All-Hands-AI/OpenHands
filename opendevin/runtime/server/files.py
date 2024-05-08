@@ -4,7 +4,7 @@ from pathlib import Path
 from opendevin.core import config
 from opendevin.core.schema.config import ConfigType
 from opendevin.events.observation import (
-    AgentErrorObservation,
+    ErrorObservation,
     FileReadObservation,
     FileWriteObservation,
     Observation,
@@ -62,19 +62,17 @@ async def read_file(path, workdir, start=0, end=-1) -> Observation:
     try:
         whole_path = resolve_path(path, workdir)
     except PermissionError:
-        return AgentErrorObservation(f'Malformed paths not permitted: {path}')
+        return ErrorObservation(f'Malformed paths not permitted: {path}')
 
     try:
         with open(whole_path, 'r', encoding='utf-8') as file:
             lines = read_lines(file.readlines(), start, end)
     except FileNotFoundError:
-        return AgentErrorObservation(f'File not found: {path}')
+        return ErrorObservation(f'File not found: {path}')
     except UnicodeDecodeError:
-        return AgentErrorObservation(f'File could not be decoded as utf-8: {path}')
+        return ErrorObservation(f'File could not be decoded as utf-8: {path}')
     except IsADirectoryError:
-        return AgentErrorObservation(
-            f'Path is a directory: {path}. You can only read files'
-        )
+        return ErrorObservation(f'Path is a directory: {path}. You can only read files')
     code_view = ''.join(lines)
     return FileReadObservation(path=path, content=code_view)
 
@@ -111,13 +109,13 @@ async def write_file(path, workdir, content, start=0, end=-1) -> Observation:
                 file.writelines(new_file)
                 file.truncate()
         except FileNotFoundError:
-            return AgentErrorObservation(f'File not found: {path}')
+            return ErrorObservation(f'File not found: {path}')
         except IsADirectoryError:
-            return AgentErrorObservation(
+            return ErrorObservation(
                 f'Path is a directory: {path}. You can only write to files'
             )
         except UnicodeDecodeError:
-            return AgentErrorObservation(f'File could not be decoded as utf-8: {path}')
+            return ErrorObservation(f'File could not be decoded as utf-8: {path}')
     except PermissionError:
-        return AgentErrorObservation(f'Malformed paths not permitted: {path}')
+        return ErrorObservation(f'Malformed paths not permitted: {path}')
     return FileWriteObservation(content='', path=path)

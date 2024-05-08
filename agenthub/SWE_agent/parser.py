@@ -2,21 +2,21 @@ import re
 
 from opendevin.events.action import (
     Action,
-    AgentEchoAction,
     AgentFinishAction,
-    AgentThinkAction,
     BrowseURLAction,
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
+    MessageAction,
 )
 
 from .prompts import COMMAND_USAGE, CUSTOM_DOCS
 
 # commands: exit, read, write, browse, kill, search_file, search_dir
 
-no_open_file_error = AgentEchoAction(
-    'You are not currently in a file. You can use the read command to open a file and then use goto to navigate through it.')
+no_open_file_error = MessageAction(
+    'You are not currently in a file. You can use the read command to open a file and then use goto to navigate through it.'
+)
 
 
 def invalid_error(cmd, docs):
@@ -33,7 +33,9 @@ Try again using this format:
 """
 
 
-def get_action_from_string(command_string: str, path: str, line: int, thoughts: str = '') -> Action | None:
+def get_action_from_string(
+    command_string: str, path: str, line: int, thoughts: str = ''
+) -> Action | None:
     """
     Parses the command string to find which command the agent wants to run
     Converts the command into a proper Action and returns
@@ -46,7 +48,7 @@ def get_action_from_string(command_string: str, path: str, line: int, thoughts: 
         return AgentFinishAction()
 
     elif 'think' == cmd:
-        return AgentThinkAction(' '.join(args))
+        return MessageAction(' '.join(args))
 
     elif 'scroll_up' == cmd:
         if not path:
@@ -68,7 +70,7 @@ def get_action_from_string(command_string: str, path: str, line: int, thoughts: 
             end = start + 100
             return FileReadAction(path, start, end, thoughts)
         else:
-            return AgentEchoAction(invalid_error(command_string, 'goto'))
+            return MessageAction(invalid_error(command_string, 'goto'))
 
     elif 'edit' == cmd:
         if not path:
@@ -83,7 +85,7 @@ def get_action_from_string(command_string: str, path: str, line: int, thoughts: 
                 change = change[1:-1]
             return FileWriteAction(path, change, start, end, thoughts)
         else:
-            return AgentEchoAction(invalid_error(command_string, 'edit'))
+            return MessageAction(invalid_error(command_string, 'edit'))
 
     elif 'read' == cmd:
         rex = r'^read\s+(\S+)(?:\s+(\d+))?(?:\s+(-?\d+))?$'
@@ -98,7 +100,7 @@ def get_action_from_string(command_string: str, path: str, line: int, thoughts: 
 
             return FileReadAction(file, start, end, thoughts)
         else:
-            return AgentEchoAction(invalid_error(command_string, 'read'))
+            return MessageAction(invalid_error(command_string, 'read'))
 
     elif 'write' == cmd:
         rex = r'^write\s+(\S+)\s+(.*?)\s*(\d+)?\s*(-?\d+)?$'
@@ -118,7 +120,7 @@ def get_action_from_string(command_string: str, path: str, line: int, thoughts: 
 
             return FileWriteAction(file, content, start, end, thoughts)
         else:
-            return AgentEchoAction(invalid_error(command_string, 'write'))
+            return MessageAction(invalid_error(command_string, 'write'))
 
     elif 'browse' == cmd:
         return BrowseURLAction(args[0].strip())
@@ -129,13 +131,15 @@ def get_action_from_string(command_string: str, path: str, line: int, thoughts: 
         if valid:
             return CmdRunAction(command_string)
         else:
-            return AgentEchoAction(f'Invalid command structure for\n ```\n{command_string}\n```.\nTry again using this format:\n{CUSTOM_DOCS}')
+            return MessageAction(
+                f'Invalid command structure for\n ```\n{command_string}\n```.\nTry again using this format:\n{CUSTOM_DOCS}'
+            )
     else:
         # check bash command
         obs = str(CmdRunAction(f'type {cmd}'))
         if obs.split(':')[-1].strip() == 'not found':
             # echo not found error for llm
-            return AgentEchoAction(content=obs)
+            return MessageAction(content=obs)
         else:
             # run valid command
             return CmdRunAction(command_string)
@@ -157,8 +161,7 @@ def parse_command(input_str: str, path: str, line: int):
         command_str = parts[1].strip()
         ind = 2 if len(parts) > 2 else 1
         accompanying_text = ''.join(parts[:-ind]).strip()
-        action = get_action_from_string(
-            command_str, path, line, accompanying_text)
+        action = get_action_from_string(command_str, path, line, accompanying_text)
         if action:
             return action, accompanying_text
     return None, input_str  # used for retry

@@ -13,8 +13,8 @@ from opendevin.events.action import (
     IPythonRunCellAction,
 )
 from opendevin.events.observation import (
-    AgentErrorObservation,
     CmdOutputObservation,
+    ErrorObservation,
     IPythonRunCellObservation,
     NullObservation,
     Observation,
@@ -87,7 +87,7 @@ class ServerRuntime(Runtime):
                 command_id=-1, content=output, command=command, exit_code=exit_code
             )
         except UnicodeDecodeError:
-            return AgentErrorObservation('Command output could not be decoded as utf-8')
+            return ErrorObservation('Command output could not be decoded as utf-8')
 
     def _run_background(self, command: str) -> Observation:
         bg_cmd = self.sandbox.execute_in_background(command)

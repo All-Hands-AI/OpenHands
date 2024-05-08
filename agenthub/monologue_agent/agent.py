@@ -11,11 +11,11 @@ from opendevin.core.schema.config import ConfigType
 from opendevin.events.action import (
     Action,
     AgentRecallAction,
-    AgentThinkAction,
     BrowseURLAction,
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
+    MessageAction,
     NullAction,
 )
 from opendevin.events.observation import (
@@ -207,7 +207,7 @@ class MonologueAgent(Agent):
                     action = BrowseURLAction(url=url)
                     previous_action = ActionType.BROWSE
                 else:
-                    action = AgentThinkAction(thought=thought)
+                    action = MessageAction(thought)
                 self._add_event(action.to_memory())
 
     def step(self, state: State) -> Action:
