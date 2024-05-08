@@ -7,6 +7,9 @@ WORKSPACE_MOUNT_PATH=$(pwd)/workspace
 agents=("MonologueAgent" "CodeActAgent" "PlannerAgent" "SWEAgent")
 
 for agent in "${agents[@]}"; do
+  if [[ -n $TARGET_AGENT && $agent != $TARGET_AGENT ]]; then
+    continue
+  fi
   echo -e "\n\n\n\n========Generating test data for $agent========\n\n\n\n"
   rm -rf logs
   rm -rf _test_workspace
