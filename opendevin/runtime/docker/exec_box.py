@@ -22,8 +22,6 @@ from opendevin.runtime.sandbox import Sandbox
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
-SANDBOX_USER_ID = config.sandbox_user_id
-
 
 class DockerExecBox(Sandbox):
     instance_id: str
