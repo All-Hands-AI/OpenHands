@@ -35,6 +35,7 @@ function ChatInterface() {
         <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-b from-transparent to-neutral-800" />
       </div>
       <ChatInput
+        currentTaskState={curAgentState}
         disabled={curAgentState === AgentState.LOADING}
         onSendMessage={handleSendMessage}
       />

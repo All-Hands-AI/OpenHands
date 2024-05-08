@@ -2,6 +2,7 @@ import { Textarea } from "@nextui-org/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { VscArrowUp } from "react-icons/vsc";
+import { IoIosRefresh } from "react-icons/io";
 import { twMerge } from "tailwind-merge";
 import { I18nKey } from "#/i18n/declaration";
 import AgentState from "#/types/AgentState";
@@ -48,14 +49,17 @@ function ChatInput({
   return (
     <>
       {currentTaskState === AgentState.AWAITING_USER_INPUT && (
-        <div className="mx-3 pt-3 text-center">
+        <div className="m-3 pt-3 flex justify-center">
           <button
             type="button"
-            className="w-full relative bg-transparent border rounded-lg p-1 border-white hover:opacity-80 cursor-pointer select-none bottom-[10px] transition active:bg-white active:text-black hover:bg-neutral-500"
+            className="relative border-1 text-sm rounded px-3 py-1 border-neutral-600 bg-neutral-700 cursor-pointer select-none"
             onClick={handleSendContinueMsg}
           >
-            <span className="m-2">
-              {`>>> ${t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)} `}
+            <span className="flex items-center">
+              <IoIosRefresh className="inline mr-2 w-3 h-3" />
+              <span className="inline-block">
+                {t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
+              </span>
             </span>
           </button>
         </div>
