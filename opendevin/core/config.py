@@ -172,14 +172,14 @@ def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
             # e.g. LLM_BASE_URL
             env_var_name = (prefix + field_name).upper()
 
-            if field_name == 'agent':
-                # the agent field: the env var for agent.name is just 'AGENT'
-                env_var_name = 'AGENT'
-                if env_var_name in env_or_toml_dict:
-                    setattr(sub_config, 'name', env_or_toml_dict[env_var_name])
-            elif is_dataclass(field_type):
+            if is_dataclass(field_type):
                 # nested dataclass
                 nested_sub_config = getattr(sub_config, field_name)
+
+                # the agent field: the env var for agent.name is just 'AGENT'
+                if field_name == 'agent' and 'AGENT' in env_or_toml_dict:
+                    setattr(sub_config, 'name', env_or_toml_dict[env_var_name])
+
                 set_attr_from_env(nested_sub_config, prefix=field_name + '_')
             elif env_var_name in env_or_toml_dict:
                 # convert the env var to the correct type and set it

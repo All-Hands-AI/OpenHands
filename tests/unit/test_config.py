@@ -14,15 +14,7 @@ from opendevin.core.config import (
 
 @pytest.fixture
 def setup_env():
-    # Set up
-    os.environ['WORKSPACE_BASE'] = '/repos/opendevin/workspace'
-    os.environ['LLM_API_KEY'] = 'sk-proj-rgMV0...'
-    os.environ['LLM_MODEL'] = 'gpt-3.5-turbo'
-    os.environ['AGENT_MEMORY_MAX_THREADS'] = '4'
-    os.environ['AGENT_MEMORY_ENABLED'] = 'True'
-    os.environ['AGENT'] = 'CodeActAgent'
-
-    # old-style and new-style files
+    # Create old-style and new-style TOML files
     with open('old_style_config.toml', 'w') as f:
         f.write('[default]\nLLM_MODEL="GPT-4"\n')
 
@@ -30,24 +22,24 @@ def setup_env():
         f.write('[app]\nLLM_MODEL="GPT-3"\n')
 
     yield
-    # Tear down
 
-    # clean up environment variables
-    os.environ.pop('WORKSPACE_BASE', None)
-    os.environ.pop('LLM_API_KEY', None)
-    os.environ.pop('LLM_MODEL', None)
-    os.environ.pop('AGENT_MEMORY_MAX_THREADS', None)
-    os.environ.pop('AGENT_MEMORY_ENABLED', None)
-    os.environ.pop('AGENT', None)
-
-    # clean up files
+    # Cleanup TOML files after the test
     os.remove('old_style_config.toml')
     os.remove('new_style_config.toml')
 
 
-def test_compat_env_to_config(setup_env):
+def test_compat_env_to_config(monkeypatch, setup_env):
+    # Use `monkeypatch` to set environment variables for this specific test
+    monkeypatch.setenv('WORKSPACE_BASE', '/repos/opendevin/workspace')
+    monkeypatch.setenv('LLM_API_KEY', 'sk-proj-rgMV0...')
+    monkeypatch.setenv('LLM_MODEL', 'gpt-3.5-turbo')
+    monkeypatch.setenv('AGENT_MEMORY_MAX_THREADS', '4')
+    monkeypatch.setenv('AGENT_MEMORY_ENABLED', 'True')
+    monkeypatch.setenv('AGENT', 'CodeActAgent')
+
     config = AppConfig()
     load_from_env(config, os.environ)
+
     assert config.workspace_base == '/repos/opendevin/workspace'
     assert isinstance(config.llm, LLMConfig)
     assert config.llm.api_key == 'sk-proj-rgMV0...'
@@ -59,25 +51,24 @@ def test_compat_env_to_config(setup_env):
 
 @pytest.fixture
 def temp_toml_file(tmp_path):
-    # Fixture to create a temporary directory and TOML file for testing.
+    # Fixture to create a temporary directory and TOML file for testing
     tmp_toml_file = os.path.join(tmp_path, 'config.toml')
     yield tmp_toml_file
 
 
 @pytest.fixture
-def default_config():
-    # Fixture to provide a default AppConfig instance.
+def default_config(monkeypatch):
+    # Fixture to provide a default AppConfig instance
+    AppConfig.reset()
     yield AppConfig()
 
-    # finalizer
 
-
-def test_load_from_old_style_env(default_config):
-    # Test loading configuration from old-style environment variables.
-    os.environ['LLM_API_KEY'] = 'test-api-key'
-    os.environ['AGENT_MEMORY_ENABLED'] = 'True'
-    os.environ['AGENT_NAME'] = 'PlannerAgent'
-    os.environ['workspace_base'] = '/opt/files/workspace'
+def test_load_from_old_style_env(monkeypatch, default_config):
+    # Test loading configuration from old-style environment variables using monkeypatch
+    monkeypatch.setenv('LLM_API_KEY', 'test-api-key')
+    monkeypatch.setenv('AGENT_MEMORY_ENABLED', 'True')
+    monkeypatch.setenv('AGENT_NAME', 'PlannerAgent')
+    monkeypatch.setenv('WORKSPACE_BASE', '/opt/files/workspace')
 
     load_from_env(default_config, os.environ)
 
@@ -88,7 +79,7 @@ def test_load_from_old_style_env(default_config):
 
 
 def test_load_from_new_style_toml(default_config, temp_toml_file):
-    # Test loading configuration from a new-style TOML file.
+    # Test loading configuration from a new-style TOML file
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
         toml_file.write("""
 [llm]
@@ -99,6 +90,7 @@ api_key = "toml-api-key"
 name = "TestAgent"
 memory_enabled = true
 
+[core]
 workspace_base = "/opt/files2/workspace"
 """)
 
@@ -111,8 +103,8 @@ workspace_base = "/opt/files2/workspace"
     assert default_config.workspace_base == '/opt/files2/workspace'
 
 
-def test_env_overrides_toml(default_config, temp_toml_file):
-    # Test that environment variables override TOML values.
+def test_env_overrides_toml(monkeypatch, default_config, temp_toml_file):
+    # Test that environment variables override TOML values using monkeypatch
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
         toml_file.write("""
 [llm]
@@ -124,13 +116,14 @@ sandbox_type = "local"
 disable_color = True
 """)
 
-    os.environ['LLM_API_KEY'] = 'env-api-key'
-    os.environ['workspace_base'] = '/opt/files4/workspace'
-    os.environ['sandbox_type'] = 'ssh'
+    monkeypatch.setenv('LLM_API_KEY', 'env-api-key')
+    monkeypatch.setenv('workspace_base', '/opt/files4/workspace')
+    monkeypatch.setenv('sandbox_type', 'ssh')
 
     load_from_toml(default_config, temp_toml_file)
     load_from_env(default_config, os.environ)
 
+    assert os.environ.get('LLM_MODEL') is None
     assert default_config.llm.model == 'test-model'
     assert default_config.llm.api_key == 'env-api-key'
     assert default_config.workspace_base == '/opt/files4/workspace'
@@ -139,7 +132,7 @@ disable_color = True
 
 
 def test_defaults_dict_after_updates(default_config):
-    """Test that `defaults_dict` retains initial values after updates."""
+    # Test that `defaults_dict` retains initial values after updates.
     initial_defaults = default_config.defaults_dict
     updated_config = AppConfig()
     updated_config.llm.api_key = 'updated-api-key'
@@ -150,16 +143,21 @@ def test_defaults_dict_after_updates(default_config):
     assert defaults_after_updates['agent']['name']['default'] == 'CodeActAgent'
     assert defaults_after_updates == initial_defaults
 
+    AppConfig.reset()
 
-def test_invalid_toml_format(temp_toml_file, default_config):
-    # invalid TOML format doesn't break the configuration.
-    os.environ['LLM_MODEL'] = 'gpt-5-turbo-1106'
+
+def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
+    # Invalid TOML format doesn't break the configuration
+    monkeypatch.setenv('LLM_MODEL', 'gpt-5-turbo-1106')
+    monkeypatch.delenv('LLM_API_KEY', raising=False)
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
         toml_file.write('INVALID TOML CONTENT')
 
     load_from_toml(default_config)
     load_from_env(default_config, os.environ)
     assert default_config.llm.model == 'gpt-5-turbo-1106'
+    assert default_config.llm.custom_llm_provider is None
+    assert default_config.github_token is None
     assert default_config.llm.api_key is None
 
 

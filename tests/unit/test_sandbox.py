@@ -9,21 +9,31 @@ from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
 
 @pytest.fixture
-def temp_dir():
+def temp_dir(monkeypatch):
     # get a temporary directory
     with tempfile.TemporaryDirectory() as temp_dir:
         pathlib.Path().mkdir(parents=True, exist_ok=True)
         yield temp_dir
 
+    # make sure os.environ is clean
+    monkeypatch.delenv('RUN_AS_DEVIN', raising=False)
+    monkeypatch.delenv('SANDBOX_TYPE', raising=False)
+    monkeypatch.delenv('WORKSPACE_BASE', raising=False)
 
-def test_ssh_box_run_as_devin(tmp_path):
+    # make sure config is clean
+    config.reset()
+    yield config
+
+
+def test_ssh_box_run_as_devin(temp_dir):
     # get a temporary directory
-    with patch.object(config, 'workspace_base', new=tmp_path), patch.object(
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'run_as_devin', new='true'
     ), patch.object(config, 'sandbox_type', new='ssh'):
         ssh_box = DockerSSHBox()
 
         # test the ssh box
+        assert config.workspace_base == temp_dir
         exit_code, output = ssh_box.execute('ls -l')
         assert exit_code == 0, 'The exit code should be 0.'
         assert output.strip() == 'total 0'

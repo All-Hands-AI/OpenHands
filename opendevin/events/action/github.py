@@ -43,7 +43,7 @@ class GitHubPushAction(Action):
     async def run(self, controller: 'AgentController') -> Observation:
         github_token = config.github_token
         if not github_token:
-            return ErrorObservation('GITHUB_TOKEN is not set')
+            return ErrorObservation('github_token is not set')
 
         # Create a random short string to use as a temporary remote
         random_remote = ''.join(
