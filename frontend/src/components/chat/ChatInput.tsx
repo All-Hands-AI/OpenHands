@@ -4,12 +4,12 @@ import { useTranslation } from "react-i18next";
 import { VscArrowUp } from "react-icons/vsc";
 import { twMerge } from "tailwind-merge";
 import { I18nKey } from "#/i18n/declaration";
-import AgentTaskState from "#/types/AgentTaskState";
+import AgentState from "#/types/AgentState";
 
 interface ChatInputProps {
   disabled?: boolean;
   onSendMessage: (message: string) => void;
-  currentTaskState: AgentTaskState;
+  currentTaskState: AgentState;
 }
 
 function ChatInput({
@@ -33,6 +33,7 @@ function ChatInput({
     const continueMsg = t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE);
     setMessage(continueMsg);
     onSendMessage(continueMsg);
+    setMessage("");
   };
 
   const onKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -46,7 +47,7 @@ function ChatInput({
 
   return (
     <>
-      {currentTaskState === AgentTaskState.AWAITING_USER_INPUT && (
+      {currentTaskState === AgentState.AWAITING_USER_INPUT && (
         <div className="mx-3 pt-3 text-center">
           <button
             type="button"
