@@ -6,7 +6,13 @@ from jinja2 import BaseLoader, Environment
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.exceptions import LLMOutputError
-from opendevin.events.action import Action, AgentFinishAction, action_from_dict
+from opendevin.events.action import (
+    Action,
+    AgentFinishAction,
+    AgentRejectAction,
+    action_from_dict,
+)
+from opendevin.events.observation import CmdOutputObservation, Observation
 from opendevin.llm.llm import LLM
 
 from .instructions import instructions
@@ -92,6 +98,10 @@ class MicroAgent(Agent):
     def step_workflow(self, state: State) -> Action:
         if self.workflow_step >= len(self.agent_definition['workflow']):
             return AgentFinishAction()
+        if self.workflow_step > 0:
+            if not self.update_previous_workflow_step(state):
+                return AgentRejectAction()
+
         step = self.agent_definition['workflow'][self.workflow_step]
         self.workflow_step += 1
         do = step.get('do', {})
@@ -108,6 +118,23 @@ class MicroAgent(Agent):
             return self.prompt_to_action(prompt, state, inputs)
         else:
             raise ValueError('Step must contain either an action or a prompt')
+
+    def update_previous_workflow_step(self, state: State) -> bool:
+        prev_step = self.agent_definition['workflow'][self.workflow_step - 1]
+        for action, obs in state.updated_info:
+            if (
+                'action' in prev_step['do']
+                and action.action == prev_step['do']['action']  # type: ignore [attr-defined]
+            ):
+                self.workflow_data[prev_step['name']] = obs
+                if not self.validate_observation(action, obs):
+                    return False
+        return True
+
+    def validate_observation(self, action: Action, obs: Observation) -> bool:
+        if isinstance(obs, CmdOutputObservation):
+            return obs.exit_code == 0
+        return True
 
     def search_memory(self, query: str) -> List[str]:
         return []
