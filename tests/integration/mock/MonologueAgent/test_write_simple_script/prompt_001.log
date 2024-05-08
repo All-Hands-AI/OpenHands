@@ -349,6 +349,18 @@ This is your internal monologue, in JSON format:
       "content": "It seems like there might be an existing project here. I should probably start by running `pwd` and `ls` to orient myself.",
       "wait_for_response": false
     }
+  },
+  {
+    "action": "message",
+    "args": {
+      "content": "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.",
+      "wait_for_response": false
+    }
+  },
+  {
+    "observation": "null",
+    "content": "",
+    "extras": {}
   }
 ]
 
@@ -398,5 +410,3 @@ Notes:
 * whenever an action fails, always send a `message` about why it may have happened before acting again.
 
 What is your next single thought or action? Again, you must reply with JSON, and only with JSON. You must respond with exactly one 'action' object.
-
-You've been thinking a lot lately. Maybe it's time to take action?

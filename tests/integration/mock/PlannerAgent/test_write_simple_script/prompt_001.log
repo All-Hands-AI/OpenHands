@@ -16,8 +16,8 @@ As you complete this task, you're building a plan and keeping
 track of your progress. Here's a JSON representation of your plan:
 
 {
-  "id": "0",
-  "goal": "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.",
+  "id": "",
+  "goal": "",
   "state": "open",
   "subtasks": []
 }
@@ -51,7 +51,15 @@ Here is a recent history of actions you've taken in service of this plan,
 as well as observations you've made. This only includes the MOST RECENT
 ten actions--more happened before that.
 
-[]
+[
+  {
+    "action": "message",
+    "args": {
+      "content": "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.",
+      "wait_for_response": false
+    }
+  }
+]
 
 
 Your most recent action is at the bottom of that history.
@@ -78,7 +86,7 @@ It must be an object, and it must contain two fields:
 * `message` - make a plan, set a goal, or record your thoughts. Arguments:
   * `content` - the message to record
 * `add_task` - add a task to your plan. Arguments:
-  * `parent` - the ID of the parent task
+  * `parent` - the ID of the parent task (leave empty if it should go at the top level)
   * `goal` - the goal of the task
   * `subtasks` - a list of subtasks, each of which is a map with a `goal` key.
 * `modify_task` - close a task. Arguments:

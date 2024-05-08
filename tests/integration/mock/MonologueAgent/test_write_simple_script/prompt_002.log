@@ -351,6 +351,18 @@ This is your internal monologue, in JSON format:
     }
   },
   {
+    "action": "message",
+    "args": {
+      "content": "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.",
+      "wait_for_response": false
+    }
+  },
+  {
+    "observation": "null",
+    "content": "",
+    "extras": {}
+  },
+  {
     "action": "write",
     "args": {
       "path": "hello.sh",

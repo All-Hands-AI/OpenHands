@@ -1,7 +1,7 @@
 Thoughts:
-I need to add the code to the 'hello.sh' script that will print 'hello' when executed. I will use the 'edit' command to add the necessary code to the file.
+I need to add the echo command to the 'hello.sh' script to print 'hello' without asking for confirmation. I will use the 'edit' command to add this command to the script.
 
 Action:
 ```
-edit 0 -1 "echo 'hello'"
+edit 0 0 "echo 'hello'"
 ```

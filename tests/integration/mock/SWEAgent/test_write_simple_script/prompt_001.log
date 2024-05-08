@@ -56,6 +56,25 @@ when using write and edit do not surround the code with any "" just write the co
 
 ----------
 
+These are your past 4 actions:
+===== Previous Actions =====
+
+Memory 0:
+Previous Action:
+action: message
+args:
+  wait_for_response: False
+
+Output from Action:
+observation: null
+content:
+extras:
+======= End Actions =======
+Use these memories to provide additional context to the problem you are solving.
+Remember that you have already completed these steps so you do not need to perform them again.
+
+----------
+
 RESPONSE FORMAT:
 This is the format of the response you will make in order to solve the current issue.
 You will be given multiple iterations to complete this task so break it into steps and solve them one by one.

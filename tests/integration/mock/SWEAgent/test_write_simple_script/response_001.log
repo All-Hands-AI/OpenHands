@@ -1,5 +1,5 @@
 Thoughts:
-I need to create a shell script named 'hello.sh' that prints 'hello' when executed. I will use the 'write' command to create the script with the required content.
+I need to create a shell script named 'hello.sh' that prints 'hello' without asking for confirmation. I'll need to use a simple echo command to achieve this.
 
 Action:
 ```
