@@ -61,6 +61,11 @@ class ActionTypeSchema(BaseModel):
     use the finish action to stop working.
     """
 
+    REJECT: str = Field(default='reject')
+    """If you're absolutely certain that you cannot complete the task with given requirements,
+    use the reject action to stop working.
+    """
+
     NULL: str = Field(default='null')
 
     SUMMARIZE: str = Field(default='summarize')
