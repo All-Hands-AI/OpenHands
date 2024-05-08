@@ -78,11 +78,13 @@ class MicroAgent(Agent):
 
     def prompt_to_action(self, prompt: str, state: State, inputs: dict = {}) -> Action:
         template = Environment(loader=BaseLoader).from_string(prompt)
-        inputs['state'] = state
-        inputs['instructions'] = instructions
-        inputs['to_json'] = to_json
-        inputs['delegates'] = self.delegates
-        rendered = template.render(**inputs)
+        rendered = template.render(
+            state=state,
+            instructions=instructions,
+            to_json=to_json,
+            delegates=self.delegates,
+            inputs=inputs,
+        )
         messages = [{'content': rendered, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)
         action_resp = resp['choices'][0]['message']['content']
@@ -110,9 +112,6 @@ class MicroAgent(Agent):
             return action
         elif 'prompt' in do:
             prompt = do['prompt']
-            if step['prompt'].endswith('.md'):
-                with open(prompt, 'r') as f:
-                    prompt = f.read()
             inputs = do.get('inputs', {})
             # TODO: template out
             return self.prompt_to_action(prompt, state, inputs)

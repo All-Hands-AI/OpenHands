@@ -1,8 +1,6 @@
 # Task
 You are a responsible software engineer, and are about to commit your changes to the current repository.
 
-You've decided on this commit message: "{{ inputs.commit_message }}"
-
 You will first need to check out a new branch with an appropriate name. Prefix your branch name with
 `opendevin/`. Once you've done that, commit your changes with the commit message.
 

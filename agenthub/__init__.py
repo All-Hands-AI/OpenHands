@@ -26,8 +26,7 @@ __all__ = [
     'dummy_agent',
 ]
 
-for agent in all_microagents.values():
-    name = agent['name']
+for name, agent in all_microagents.items():
     prompt = agent['prompt']
 
     anon_class = type(
