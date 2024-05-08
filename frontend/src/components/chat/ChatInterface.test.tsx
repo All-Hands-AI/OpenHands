@@ -84,7 +84,7 @@ describe("ChatInterface", () => {
 
     const event = {
       action: ActionType.MESSAGE,
-      args: { content: "my message" }
+      args: { content: "my message" },
     };
     expect(socketSpy).toHaveBeenCalledWith(JSON.stringify(event));
   });

@@ -11,7 +11,7 @@ import {
 import { VscListOrdered } from "react-icons/vsc";
 import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
-import { Plan, Task, TaskState } from "#/services/planService";
+import { Task, TaskState } from "#/services/planService";
 import { RootState } from "#/store";
 
 function StatusIcon({ status }: { status: TaskState }): JSX.Element {
