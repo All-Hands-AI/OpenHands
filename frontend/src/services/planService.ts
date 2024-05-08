@@ -23,7 +23,6 @@ export async function getPlan(): Promise<Task | undefined> {
   if (res.status !== 200) {
     return undefined;
   }
-  const data = await res.json() as Task;
-  console.log('got data', data);
+  const data = (await res.json()) as Task;
   return data;
 }

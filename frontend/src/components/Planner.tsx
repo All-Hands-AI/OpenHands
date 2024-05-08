@@ -53,10 +53,6 @@ function TaskCard({ task, level }: { task: Task; level: number }): JSX.Element {
   );
 }
 
-interface PlanProps {
-  plan: Plan;
-}
-
 function Planner(): JSX.Element {
   const { t } = useTranslation();
   const plan = useSelector((state: RootState) => state.plan.plan);
