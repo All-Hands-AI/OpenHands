@@ -1,6 +1,9 @@
 from typing import List
 
-from opendevin.core.exceptions import PlanInvalidStateError
+from opendevin.core.exceptions import (
+    AgentMalformedActionError,
+    PlanInvalidStateError,
+)
 from opendevin.core.logger import opendevin_logger as logger
 
 OPEN_STATE = 'open'
@@ -164,20 +167,20 @@ class Plan(Task):
             The task with the specified ID.
 
         Raises:
-            ValueError: If the provided task ID is invalid or does not exist.
+            AgentMalformedActionError: If the provided task ID is invalid or does not exist.
         """
         if id == '':
             return self
         if len(self.subtasks) == 0:
-            raise ValueError('No tasks in plan')
+            raise AgentMalformedActionError('Task does not exist:' + id)
         try:
             parts = [int(p) for p in id.split('.')]
         except ValueError:
-            raise ValueError('Invalid task id, non-integer:' + id)
+            raise AgentMalformedActionError('Invalid task id:' + id)
         task: Task = self
         for part in parts:
             if part >= len(task.subtasks):
-                raise ValueError('Task does not exist:' + id)
+                raise AgentMalformedActionError('Task does not exist:' + id)
             task = task.subtasks[part]
         return task
 

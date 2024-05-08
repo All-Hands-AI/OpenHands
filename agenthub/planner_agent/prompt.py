@@ -85,7 +85,7 @@ It must be an object, and it must contain two fields:
 * `message` - make a plan, set a goal, or record your thoughts. Arguments:
   * `content` - the message to record
 * `add_task` - add a task to your plan. Arguments:
-  * `parent` - the ID of the parent task
+  * `parent` - the ID of the parent task (leave empty if it should go at the top level)
   * `goal` - the goal of the task
   * `subtasks` - a list of subtasks, each of which is a map with a `goal` key.
 * `modify_task` - close a task. Arguments:
