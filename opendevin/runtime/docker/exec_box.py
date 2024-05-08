@@ -62,7 +62,9 @@ class DockerExecBox(Sandbox):
             )
             raise ex
 
-        self.instance_id = sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
+        self.instance_id = (
+            sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
+        )
 
         # TODO: this timeout is actually essential - need a better way to set it
         # if it is too short, the container may still waiting for previous
@@ -80,6 +82,7 @@ class DockerExecBox(Sandbox):
         if RUN_AS_DEVIN:
             self.setup_devin_user()
         atexit.register(self.close)
+        super().__init__()
 
     def setup_devin_user(self):
         cmds = [
@@ -89,7 +92,9 @@ class DockerExecBox(Sandbox):
         ]
         for cmd in cmds:
             exit_code, logs = self.container.exec_run(
-                ['/bin/bash', '-c', cmd], workdir=SANDBOX_WORKSPACE_DIR
+                ['/bin/bash', '-c', cmd],
+                workdir=SANDBOX_WORKSPACE_DIR,
+                environment=self._env,
             )
             if exit_code != 0:
                 raise Exception(f'Failed to setup devin user: {logs}')
