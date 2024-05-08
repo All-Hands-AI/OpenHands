@@ -48,7 +48,7 @@ When the assistant has completed the user's latest request, the assistant MUST e
 {_COMMAND_DOCS}
 
 The assistant's response should be concise, but do express their thoughts.
-You MUST include one of <execute_ipython> or <execute_bash> in each of your responses.
+Try to include one of <execute_ipython> or <execute_bash> in each of your responses, unless it is a direct answer to a question OR a message to the user.
 IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
 """
 
