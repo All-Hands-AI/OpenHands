@@ -80,14 +80,16 @@ describe("SettingsModal", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it("should disabled the save button if the settings contain a missing value", () => {
+  it("should disabled the save button if the settings contain a missing value", async () => {
     const onOpenChangeMock = vi.fn();
     (getSettings as Mock).mockReturnValueOnce({
       LLM_MODEL: "gpt-3.5-turbo",
       AGENT: "",
     });
-    renderWithProviders(
-      <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
+    await act(async () =>
+      renderWithProviders(
+        <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
+      ),
     );
 
     const saveButton = screen.getByRole("button", { name: /save/i });
