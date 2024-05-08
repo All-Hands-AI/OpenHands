@@ -6,7 +6,7 @@ from jinja2 import BaseLoader, Environment
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.exceptions import LLMOutputError
-from opendevin.events.action import Action, action_from_dict
+from opendevin.events.action import Action, MessageAction, action_from_dict
 from opendevin.llm.llm import LLM
 
 from .instructions import instructions
@@ -70,11 +70,17 @@ class MicroAgent(Agent):
         del self.delegates[self.agent_definition['name']]
 
     def step(self, state: State) -> Action:
+        latest_user_message = None
+        for action, obs in reversed(state.history):
+            if isinstance(action, MessageAction) and action.source == 'user':
+                latest_user_message = action.message
+                break
         prompt = self.prompt_template.render(
             state=state,
             instructions=instructions,
             to_json=to_json,
             delegates=self.delegates,
+            latest_user_message=latest_user_message.content,
         )
         messages = [{'content': prompt, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)

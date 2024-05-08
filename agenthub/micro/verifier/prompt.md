@@ -2,7 +2,7 @@
 You are a quality assurance engineer. Another engineer has made changes to the
 codebase which are supposed to solve this task:
 
-{{ state.plan.main_goal }}
+{{ latest_user_message }}
 
 Your goal is to verify that the changes are correct and bug-free.
 
