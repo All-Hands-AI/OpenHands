@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from opendevin.core.config import config
+from opendevin.core.config import AppConfig, config
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
 
@@ -21,15 +21,16 @@ def temp_dir(monkeypatch):
     monkeypatch.delenv('WORKSPACE_BASE', raising=False)
 
     # make sure config is clean
-    config.reset()
-    yield config
+    AppConfig.reset()
 
 
 def test_ssh_box_run_as_devin(temp_dir):
     # get a temporary directory
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
-        config, 'run_as_devin', new='true'
-    ), patch.object(config, 'sandbox_type', new='ssh'):
+        config, 'workspace_mount_path', new=temp_dir
+    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+        config, 'sandbox_type', new='ssh'
+    ):
         ssh_box = DockerSSHBox()
 
         # test the ssh box
@@ -56,11 +57,13 @@ def test_ssh_box_run_as_devin(temp_dir):
         assert 'foo.txt' in output, 'The output should contain the foo.txt file'
 
 
-def test_ssh_box_multi_line_cmd_run_as_devin(tmp_path):
+def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
     # get a temporary directory
-    with patch.object(config, 'workspace_base', new=tmp_path), patch.object(
-        config, 'run_as_devin', new='true'
-    ), patch.object(config, 'sandbox_type', new='ssh'):
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'workspace_mount_path', new=temp_dir
+    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+        config, 'sandbox_type', new='ssh'
+    ):
         ssh_box = DockerSSHBox()
 
         # test the ssh box
@@ -70,11 +73,13 @@ def test_ssh_box_multi_line_cmd_run_as_devin(tmp_path):
         assert output.strip().splitlines() == expected_lines
 
 
-def test_ssh_box_stateful_cmd_run_as_devin(tmp_path):
+def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
     # get a temporary directory
-    with patch.object(config, 'workspace_base', new=tmp_path), patch.object(
-        config, 'run_as_devin', new='true'
-    ), patch.object(config, 'sandbox_type', new='ssh'):
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'workspace_mount_path', new=temp_dir
+    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+        config, 'sandbox_type', new='ssh'
+    ):
         ssh_box = DockerSSHBox()
 
         # test the ssh box
@@ -91,11 +96,13 @@ def test_ssh_box_stateful_cmd_run_as_devin(tmp_path):
         assert output.strip() == '/workspace/test'
 
 
-def test_ssh_box_failed_cmd_run_as_devin(tmp_path):
+def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
     # get a temporary directory
-    with patch.object(config, 'workspace_base', new=tmp_path), patch.object(
-        config, 'run_as_devin', new='true'
-    ), patch.object(config, 'sandbox_type', new='ssh'):
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'workspace_mount_path', new=temp_dir
+    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+        config, 'sandbox_type', new='ssh'
+    ):
         ssh_box = DockerSSHBox()
 
         # test the ssh box with a command that fails
