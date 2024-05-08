@@ -18,17 +18,10 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.runtime.docker.process import DockerProcess, Process
 from opendevin.runtime.sandbox import Sandbox
 
+# FIXME these are not used, should we remove them?
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
-CONTAINER_IMAGE = config.sandbox_container_image
-SANDBOX_WORKSPACE_DIR = config.workspace_mount_path_in_sandbox
-
-# FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
-# How do we make this more flexible?
-RUN_AS_DEVIN = config.run_as_devin
-
-USER_ID = config.sandbox_user_id
 SANDBOX_USER_ID = config.sandbox_user_id
 
 
@@ -69,32 +62,40 @@ class DockerExecBox(Sandbox):
         # if it is too long, the user may have to wait for a unnecessary long time
         self.timeout = timeout
         self.container_image = (
-            CONTAINER_IMAGE if container_image is None else container_image
+            config.sandbox_container_image
+            if container_image is None
+            else container_image
         )
         self.container_name = self.container_name_prefix + self.instance_id
+
+        logger.info(
+            'Starting Docker container with image %s, sandbox workspace dir=%s',
+            self.container_image,
+            self.sandbox_workspace_dir,
+        )
 
         # always restart the container, cuz the initial be regarded as a new session
         self.restart_docker_container()
 
-        if RUN_AS_DEVIN:
+        if self.run_as_devin:
             self.setup_devin_user()
         atexit.register(self.close)
 
     def setup_devin_user(self):
         cmds = [
-            f'useradd --shell /bin/bash -u {USER_ID} -o -c "" -m devin',
+            f'useradd --shell /bin/bash -u {self.user_id} -o -c "" -m devin',
             r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers",
             'sudo adduser devin sudo',
         ]
         for cmd in cmds:
             exit_code, logs = self.container.exec_run(
-                ['/bin/bash', '-c', cmd], workdir=SANDBOX_WORKSPACE_DIR
+                ['/bin/bash', '-c', cmd], workdir=self.sandbox_workspace_dir
             )
             if exit_code != 0:
                 raise Exception(f'Failed to setup devin user: {logs}')
 
     def get_exec_cmd(self, cmd: str) -> List[str]:
-        if RUN_AS_DEVIN:
+        if self.run_as_devin:
             return ['su', 'devin', '-c', cmd]
         else:
             return ['/bin/bash', '-c', cmd]
@@ -108,7 +109,7 @@ class DockerExecBox(Sandbox):
     def execute(self, cmd: str) -> Tuple[int, str]:
         # TODO: each execute is not stateful! We need to keep track of the current working directory
         def run_command(container, command):
-            return container.exec_run(command, workdir=SANDBOX_WORKSPACE_DIR)
+            return container.exec_run(command, workdir=self.sandbox_workspace_dir)
 
         # Use ThreadPoolExecutor to control command and set timeout
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -124,7 +125,7 @@ class DockerExecBox(Sandbox):
                 pid = self.get_pid(cmd)
                 if pid is not None:
                     self.container.exec_run(
-                        f'kill -9 {pid}', workdir=SANDBOX_WORKSPACE_DIR
+                        f'kill -9 {pid}', workdir=self.sandbox_workspace_dir
                     )
                 return -1, f'Command: "{cmd}" timed out'
         logs_out = logs.decode('utf-8')
@@ -136,7 +137,7 @@ class DockerExecBox(Sandbox):
         # mkdir -p sandbox_dest if it doesn't exist
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c', f'mkdir -p {sandbox_dest}'],
-            workdir=SANDBOX_WORKSPACE_DIR,
+            workdir=self.sandbox_workspace_dir,
         )
         if exit_code != 0:
             raise Exception(
@@ -172,7 +173,7 @@ class DockerExecBox(Sandbox):
 
     def execute_in_background(self, cmd: str) -> Process:
         result = self.container.exec_run(
-            self.get_exec_cmd(cmd), socket=True, workdir=SANDBOX_WORKSPACE_DIR
+            self.get_exec_cmd(cmd), socket=True, workdir=self.sandbox_workspace_dir
         )
         result.output._sock.setblocking(0)
         pid = self.get_pid(cmd)
@@ -198,7 +199,7 @@ class DockerExecBox(Sandbox):
         bg_cmd = self.background_commands[id]
         if bg_cmd.pid is not None:
             self.container.exec_run(
-                f'kill -9 {bg_cmd.pid}', workdir=SANDBOX_WORKSPACE_DIR
+                f'kill -9 {bg_cmd.pid}', workdir=self.sandbox_workspace_dir
             )
         assert isinstance(bg_cmd, DockerProcess)
         bg_cmd.result.output.close()
@@ -245,10 +246,10 @@ class DockerExecBox(Sandbox):
                 self.container_image,
                 command='tail -f /dev/null',
                 network_mode='host',
-                working_dir=SANDBOX_WORKSPACE_DIR,
+                working_dir=self.sandbox_workspace_dir,
                 name=self.container_name,
                 detach=True,
-                volumes={mount_dir: {'bind': SANDBOX_WORKSPACE_DIR, 'mode': 'rw'}},
+                volumes={mount_dir: {'bind': self.sandbox_workspace_dir, 'mode': 'rw'}},
             )
             logger.info('Container started')
         except Exception as ex:
@@ -282,7 +283,21 @@ class DockerExecBox(Sandbox):
                 pass
 
     def get_working_directory(self):
-        return SANDBOX_WORKSPACE_DIR
+        return self.sandbox_workspace_dir
+
+    @property
+    def user_id(self):
+        return config.sandbox_user_id
+
+    @property
+    def run_as_devin(self):
+        # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
+        # How do we make this more flexible?
+        return config.run_as_devin
+
+    @property
+    def sandbox_workspace_dir(self):
+        return config.workspace_mount_path_in_sandbox
 
 
 if __name__ == '__main__':
