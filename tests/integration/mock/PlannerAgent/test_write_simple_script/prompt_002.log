@@ -56,17 +56,10 @@ ten actions--more happened before that.
     "action": "write",
     "args": {
       "path": "hello.sh",
-      "content": "#!/bin/bash\n\necho 'hello'",
+      "content": "echo 'hello'",
       "start": 0,
       "end": -1,
       "thought": ""
-    }
-  },
-  {
-    "observation": "write",
-    "content": "",
-    "extras": {
-      "path": "hello.sh"
     }
   }
 ]

@@ -1,10 +1,6 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
 from opendevin.events.event import Event
-
-if TYPE_CHECKING:
-    pass
 
 
 @dataclass

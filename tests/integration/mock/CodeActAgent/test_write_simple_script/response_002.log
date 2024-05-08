@@ -1,4 +1,4 @@
-The shell script `hello.sh` has been created and made executable. Now, let's run the script to see the output.
-
+I will create a shell script 'hello.sh' that prints 'hello' without asking for confirmation at any point.
 <execute_bash>
-./hello.sh
+echo 'echo hello' > hello.sh
+chmod +x hello.sh
