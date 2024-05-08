@@ -1,7 +1,7 @@
 Thoughts:
-I have already created the 'hello.sh' file, but I need to ensure that it contains the code to print 'hello' without asking for confirmation. I will use the echo command to achieve this.
+I need to add the code to the 'hello.sh' script that will print 'hello' without asking for confirmation. I have already attempted to do this a few times, but it seems that the changes have not been saved. I will use the 'edit' command to add the necessary code to the 'hello.sh' script.
 
 Action:
 ```
-edit 0 -1 "echo 'hello'"
+edit 0 0 "echo 'hello'"
 ```
