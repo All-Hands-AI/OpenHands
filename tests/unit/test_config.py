@@ -111,6 +111,7 @@ def test_env_overrides_toml(monkeypatch, default_config, temp_toml_file):
 model = "test-model"
 api_key = "toml-api-key"
 
+[core]
 workspace_base = "/opt/files3/workspace"
 sandbox_type = "local"
 disable_color = True
