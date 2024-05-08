@@ -134,11 +134,7 @@ def get_prompt(state: State) -> str:
     - str: The formatted string prompt with historical values
     """
 
-    plan_str = (
-        '{}'
-        if not state.plan.root_task
-        else json.dumps(state.plan.root_task.to_dict(), indent=2)
-    )
+    plan_str = json.dumps(state.plan.to_dict(), indent=2)
     sub_history = state.history[-HISTORY_SIZE:]
     history_dicts = []
     latest_action: Action = NullAction()

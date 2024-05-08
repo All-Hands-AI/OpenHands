@@ -172,7 +172,7 @@ class AgentController:
             await self.set_agent_state_to(event.agent_state)  # type: ignore
         elif isinstance(event, MessageAction) and event.source == EventSource.USER:
             await self.add_history(event, NullObservation(''), add_to_stream=False)
-            if self.get_agent_state() == AgentState.AWAITING_USER_INPUT:
+            if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
 
     async def reset_task(self):

@@ -1,4 +1,3 @@
-import json
 import shutil
 import uuid
 from pathlib import Path
@@ -176,14 +175,10 @@ def get_plan(
     controller = agent.controller
     if controller is not None:
         state = controller.get_state()
-        if state and state.plan and state.plan.root_task:
+        if state:
             return JSONResponse(
                 status_code=status.HTTP_200_OK,
-                content=json.dumps(
-                    {
-                        'task': state.plan.root_task.to_dict(),
-                    }
-                ),
+                content=state.plan.to_dict(),
             )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

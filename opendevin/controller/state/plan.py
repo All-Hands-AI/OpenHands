@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from opendevin.core.exceptions import PlanInvalidStateError
 from opendevin.core.logger import opendevin_logger as logger
@@ -25,7 +25,7 @@ class Task:
 
     def __init__(
         self,
-        parent: 'Task | None',
+        parent: 'Task',
         goal: str,
         state: str = OPEN_STATE,
         subtasks: List = [],
@@ -38,10 +38,10 @@ class Task:
             state: The initial state of the task.
             subtasks: A list of subtasks associated with this task.
         """
-        if parent is None:
-            self.id = '0'
-        else:
+        if parent.id:
             self.id = parent.id + '.' + str(len(parent.subtasks))
+        else:
+            self.id = str(len(parent.subtasks))
         self.parent = parent
         self.goal = goal
         self.subtasks = []
@@ -132,14 +132,19 @@ class Task:
         return None
 
 
-class Plan:
+class Plan(Task):
     """Represents a plan consisting of tasks.
 
     Attributes:
         task: The root task of the plan.
     """
 
-    root_task: Optional[Task]
+    def __init__(self):
+        self.id = ''
+        self.goal = ''
+        self.parent = None
+        self.subtasks = []
+        self.state = OPEN_STATE
 
     def __str__(self):
         """Returns a string representation of the plan.
@@ -147,9 +152,7 @@ class Plan:
         Returns:
             A string representation of the plan.
         """
-        if self.root_task is None:
-            return 'no tasks'
-        return self.root_task.to_string()
+        return self.to_string()
 
     def get_task_by_id(self, id: str) -> Task:
         """Retrieves a task by its ID.
@@ -163,16 +166,15 @@ class Plan:
         Raises:
             ValueError: If the provided task ID is invalid or does not exist.
         """
-        if self.root_task is None:
+        if id == '':
+            return self
+        if len(self.subtasks) == 0:
             raise ValueError('No tasks in plan')
         try:
             parts = [int(p) for p in id.split('.')]
         except ValueError:
             raise ValueError('Invalid task id, non-integer:' + id)
-        if parts[0] != 0:
-            raise ValueError('Invalid task id, must start with 0:' + id)
-        parts = parts[1:]
-        task = self.root_task
+        task: Task = self
         for part in parts:
             if part >= len(task.subtasks):
                 raise ValueError('Task does not exist:' + id)
@@ -187,13 +189,9 @@ class Plan:
             goal: The goal of the subtask.
             subtasks: A list of subtasks associated with the new subtask.
         """
-        if self.root_task is None:
-            task = Task(parent=None, goal=goal, subtasks=subtasks)
-            self.root_task = task
-        else:
-            parent = self.get_task_by_id(parent_id)
-            child = Task(parent=parent, goal=goal, subtasks=subtasks)
-            parent.subtasks.append(child)
+        parent = self.get_task_by_id(parent_id)
+        child = Task(parent=parent, goal=goal, subtasks=subtasks)
+        parent.subtasks.append(child)
 
     def set_subtask_state(self, id: str, state: str):
         """Sets the state of a subtask.
@@ -204,13 +202,3 @@ class Plan:
         """
         task = self.get_task_by_id(id)
         task.set_state(state)
-
-    def get_current_task(self):
-        """Retrieves the current task in progress.
-
-        Returns:
-            The current task in progress, or None if no task is in progress.
-        """
-        if self.root_task is None:
-            return None
-        return self.root_task.get_current_task()
