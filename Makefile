@@ -44,7 +44,11 @@ check-system:
 	@if [ "$(shell uname)" = "Darwin" ]; then \
 		echo "$(BLUE)macOS detected.$(RESET)"; \
 	elif [ "$(shell uname)" = "Linux" ]; then \
-		echo "$(BLUE)Linux detected.$(RESET)"; \
+		if [ -f "/etc/manjaro-release" ]; then \
+			echo "$(BLUE)Manjaro Linux detected.$(RESET)"; \
+		else \
+			echo "$(BLUE)Linux detected.$(RESET)"; \
+		fi; \
 	elif [ "$$(uname -r | grep -i microsoft)" ]; then \
 		echo "$(BLUE)Windows Subsystem for Linux detected.$(RESET)"; \
 	else \
@@ -128,7 +132,13 @@ install-python-dependencies:
 		poetry run pip install chroma-hnswlib; \
 	fi
 	@poetry install --without evaluation
-	@poetry run playwright install --with-deps chromium
+	@if [ -f "/etc/manjaro-release" ]; then \
+		echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
+		poetry run pip install playwright; \
+		poetry run playwright install chromium; \
+	else \
+		poetry run playwright install --with-deps chromium; \
+	fi
 	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
 
 install-frontend-dependencies:

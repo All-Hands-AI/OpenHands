@@ -268,9 +268,9 @@ class AgentController:
             self.state.outputs = action.outputs  # type: ignore[attr-defined]
             logger.info(action, extra={'msg_type': 'INFO'})
             return True
-        if isinstance(action, MessageAction) and action.wait_for_response:
-            self._pending_talk_action = action
-            await self.event_stream.add_event(action, EventSource.AGENT)
+        elif isinstance(action, MessageAction) and action.wait_for_response:
+            # FIXME: remove this once history is managed outside the agent controller
+            await self.add_history(action, NullObservation(''))
             await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
             return False
         elif isinstance(action, AgentDelegateAction):

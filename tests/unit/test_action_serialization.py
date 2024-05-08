@@ -3,6 +3,7 @@ from opendevin.events.action import (
     AddTaskAction,
     AgentFinishAction,
     AgentRecallAction,
+    AgentRejectAction,
     BrowseURLAction,
     CmdKillAction,
     CmdRunAction,
@@ -55,6 +56,11 @@ def test_agent_recall_action_serialization_deserialization():
 def test_agent_finish_action_serialization_deserialization():
     original_action_dict = {'action': 'finish', 'args': {'outputs': {}, 'thought': ''}}
     serialization_deserialization(original_action_dict, AgentFinishAction)
+
+
+def test_agent_reject_action_serialization_deserialization():
+    original_action_dict = {'action': 'reject', 'args': {'outputs': {}, 'thought': ''}}
+    serialization_deserialization(original_action_dict, AgentRejectAction)
 
 
 def test_cmd_kill_action_serialization_deserialization():
