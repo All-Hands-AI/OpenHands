@@ -118,8 +118,8 @@ disable_color = true
 """)
 
     monkeypatch.setenv('LLM_API_KEY', 'env-api-key')
-    monkeypatch.setenv('workspace_base', '/opt/files4/workspace')
-    monkeypatch.setenv('sandbox_type', 'ssh')
+    monkeypatch.setenv('WORKSPACE_BASE', '/opt/files4/workspace')
+    monkeypatch.setenv('SANDBOX_TYPE', 'ssh')
 
     load_from_toml(default_config, temp_toml_file)
     load_from_env(default_config, os.environ)
