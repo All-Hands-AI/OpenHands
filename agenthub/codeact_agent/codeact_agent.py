@@ -124,10 +124,7 @@ class CodeActAgent(Agent):
             {'role': 'system', 'content': SYSTEM_MESSAGE},
             {
                 'role': 'user',
-                'content': (
-                    f'Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\n'
-                    f"NOW, LET'S START!",
-                ),
+                'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!",
             },
         ]
 
