@@ -3,16 +3,20 @@ description: "Open a pull request for pending changes in the repository"
 inputs: {}
 workflow:
   - name: add_changes
-    action:
-      id: run
-      command: git add .
+    do:
+      action: run
+      args:
+        command: git add .
   - name: generate_message
-    action:
-      id: delegate
-      agent: CommitWriterAgent
+    do:
+      action: delegate
+      args:
+        agent: CommitWriterAgent
   - name: commit_changes
-    prompt: commit.md
-    inputs:
-      commit_message: '{{ generate_message.outputs.message }}'
+    do:
+      prompt: commit.md
+      inputs:
+        commit_message: '{{ outputs.generate_message.message }}'
   - name: open_pull_request
-    prompt: pull_request.md
+    do:
+      prompt: pull_request.md

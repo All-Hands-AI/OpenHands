@@ -67,15 +67,16 @@ class MicroAgent(Agent):
             raise ValueError('Agent definition must contain a name')
         self.delegates = all_microagents.copy()
         del self.delegates[self.agent_definition['name']]
+        self.workflow_step = 0
+        self.workflow_data: dict = {}
 
-    def prompt_to_action(self, prompt: str, state: State) -> Action:
+    def prompt_to_action(self, prompt: str, state: State, inputs: dict = {}) -> Action:
         template = Environment(loader=BaseLoader).from_string(prompt)
-        rendered = template.render(
-            state=state,
-            instructions=instructions,
-            to_json=to_json,
-            delegates=self.delegates,
-        )
+        inputs['state'] = state
+        inputs['instructions'] = instructions
+        inputs['to_json'] = to_json
+        inputs['delegates'] = self.delegates
+        rendered = template.render(**inputs)
         messages = [{'content': rendered, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)
         action_resp = resp['choices'][0]['message']['content']
@@ -89,18 +90,22 @@ class MicroAgent(Agent):
         return self.prompt_to_action(self.prompt, state)
 
     def step_workflow(self, state: State) -> Action:
-        if state.iteration >= len(self.agent_definition['workflow']):
+        if self.workflow_step >= len(self.agent_definition['workflow']):
             return AgentFinishAction()
-        step = self.agent_definition['workflow'][state.iteration]
-        if 'action' in step:
-            action = action_from_dict(step['action'])
+        step = self.agent_definition['workflow'][self.workflow_step]
+        self.workflow_step += 1
+        do = step.get('do', {})
+        if 'action' in do:
+            action = action_from_dict(do)
             return action
-        elif 'prompt' in step:
-            prompt = step['prompt']
+        elif 'prompt' in do:
+            prompt = do['prompt']
             if step['prompt'].endswith('.md'):
                 with open(prompt, 'r') as f:
                     prompt = f.read()
-            return self.prompt_to_action(prompt, state)
+            inputs = do.get('inputs', {})
+            # TODO: template out
+            return self.prompt_to_action(prompt, state, inputs)
         else:
             raise ValueError('Step must contain either an action or a prompt')
 

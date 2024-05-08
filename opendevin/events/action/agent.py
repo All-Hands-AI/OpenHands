@@ -79,7 +79,7 @@ class AgentRejectAction(Action):
 @dataclass
 class AgentDelegateAction(Action):
     agent: str
-    inputs: dict
+    inputs: dict = field(default_factory=dict)
     thought: str = ''
     action: str = ActionType.DELEGATE
 
