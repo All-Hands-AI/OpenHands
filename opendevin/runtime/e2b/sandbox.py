@@ -37,6 +37,7 @@ class E2BBox(Sandbox):
         )
         self.timeout = timeout
         logger.info(f'Started E2B sandbox with ID "{self.sandbox.id}"')
+        super().__init__()
 
     @property
     def filesystem(self):
@@ -74,7 +75,7 @@ class E2BBox(Sandbox):
         return '\n'.join([m.line for m in proc.output_messages])
 
     def execute(self, cmd: str) -> Tuple[int, str]:
-        process = self.sandbox.process.start(cmd)
+        process = self.sandbox.process.start(cmd, envVars=self._env)
         try:
             process_output = process.wait(timeout=self.timeout)
         except TimeoutException:

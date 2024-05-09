@@ -353,6 +353,10 @@
     "fr": "Assistant",
     "tr": "Gönder"
   },
+  "CHAT_INTERFACE$TO_BOTTOM": {
+    "en": "To Bottom",
+    "zh-CN": "回到底部"
+  },
   "SETTINGS$MODEL_TOOLTIP": {
     "en": "Select the language model to use.",
     "zh-CN": "选择要使用的语言模型",
