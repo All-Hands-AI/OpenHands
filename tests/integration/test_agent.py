@@ -18,7 +18,7 @@ def test_write_simple_script():
     asyncio.run(main(task))
 
     # Verify the script file exists
-    script_path = 'workspace/hello.sh'
+    script_path = os.path.join(os.getenv('WORKSPACE_BASE'), 'hello.sh')
     assert os.path.exists(script_path), 'The file "hello.sh" does not exist'
 
     # Run the script and capture the output
