@@ -196,6 +196,7 @@ logs
 # agent
 .envrc
 /workspace
+/_test_workspace
 /debug
 cache
 

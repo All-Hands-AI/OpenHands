@@ -334,6 +334,44 @@ files = [
 ]
 
 [[package]]
+name = "boto3"
+version = "1.34.99"
+description = "The AWS SDK for Python"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "boto3-1.34.99-py3-none-any.whl", hash = "sha256:b54084d000483b578757df03ce39a819fbba47071c9aa98611beb8806bcecd45"},
+    {file = "boto3-1.34.99.tar.gz", hash = "sha256:6f600b3fe0bda53476395c902d9af5a47294c93ec52a9cdc2b926a9dc705ce79"},
+]
+
+[package.dependencies]
+botocore = ">=1.34.99,<1.35.0"
+jmespath = ">=0.7.1,<2.0.0"
+s3transfer = ">=0.10.0,<0.11.0"
+
+[package.extras]
+crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
+
+[[package]]
+name = "botocore"
+version = "1.34.99"
+description = "Low-level, data-driven core of boto 3."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "botocore-1.34.99-py3-none-any.whl", hash = "sha256:18c68bdeb0ffb73290912b0c96204fc36d3128f00a00b5cdc35ac34d66225f1c"},
+    {file = "botocore-1.34.99.tar.gz", hash = "sha256:cafe569e2136cb33cb0e5dd32fb1c0e1503ddc1413d3be215df8ddf05e69137a"},
+]
+
+[package.dependencies]
+jmespath = ">=0.7.1,<2.0.0"
+python-dateutil = ">=2.1,<3.0.0"
+urllib3 = {version = ">=1.25.4,<2.2.0 || >2.2.0,<3", markers = "python_version >= \"3.10\""}
+
+[package.extras]
+crt = ["awscrt (==0.20.9)"]
+
+[[package]]
 name = "browsergym"
 version = "0.1.0rc7"
 description = "BrowserGym: a gym environment for web task automation in the Chromium browser"
@@ -1545,13 +1583,13 @@ grpcio-gcp = ["grpcio-gcp (>=0.2.2,<1.0.dev0)"]
 
 [[package]]
 name = "google-api-python-client"
-version = "2.127.0"
+version = "2.128.0"
 description = "Google API Client Library for Python"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "google-api-python-client-2.127.0.tar.gz", hash = "sha256:bbb51b0fbccdf40e536c26341e372d7800f09afebb53103bbcc94e08f14b523b"},
-    {file = "google_api_python_client-2.127.0-py2.py3-none-any.whl", hash = "sha256:d01c70c7840ec37888aa02b1aea5d9baba4c1701e268d1a0251640afd56e5e90"},
+    {file = "google-api-python-client-2.128.0.tar.gz", hash = "sha256:908af182dfc1cd79412a489b37fe45e4f3cc99c74e80c7c477ca5babaa54eea5"},
+    {file = "google_api_python_client-2.128.0-py2.py3-none-any.whl", hash = "sha256:99da6acb0acc648e309102b0e0262d7fef30f07f6bf56c6eeaa0504ceca113e3"},
 ]
 
 [package.dependencies]
@@ -2095,6 +2133,17 @@ MarkupSafe = ">=2.0"
 i18n = ["Babel (>=2.7)"]
 
 [[package]]
+name = "jmespath"
+version = "1.0.1"
+description = "JSON Matching Expressions"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "jmespath-1.0.1-py3-none-any.whl", hash = "sha256:02e2e4cc71b5bcab88332eebf907519190dd9e6e82107fa7f83b1003a6252980"},
+    {file = "jmespath-1.0.1.tar.gz", hash = "sha256:90261b206d6defd58fdd5e85f478bf633a2901798906be2ad389150c5c60edbe"},
+]
+
+[[package]]
 name = "joblib"
 version = "1.4.2"
 description = "Lightweight pipelining with Python functions"
@@ -2107,13 +2156,13 @@ files = [
 
 [[package]]
 name = "json-repair"
-version = "0.17.1"
+version = "0.17.2"
 description = "A package to repair broken json strings"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "json_repair-0.17.1-py3-none-any.whl", hash = "sha256:e649d7b7f35a7ecfcef795a460b033dd4cd542dd8637235e8918f3dbee9f8827"},
-    {file = "json_repair-0.17.1.tar.gz", hash = "sha256:d32768d3397dc9256b3cabdc731812c11ac60e6baa2f50df3ad8b5f006363ede"},
+    {file = "json_repair-0.17.2-py3-none-any.whl", hash = "sha256:6cdf8cea727d5b5e99177a4bf5f330a4f528201de8a7308b4d6bda7ff7df3d0a"},
+    {file = "json_repair-0.17.2.tar.gz", hash = "sha256:1dcd92449849a177b1cabf9f7a81b79a2f30398e27b89bee89dfcd674868ff6d"},
 ]
 
 [[package]]
@@ -2296,13 +2345,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.36.0"
+version = "1.36.1"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.36.0-py3-none-any.whl", hash = "sha256:8f2e78f07883f00a0c8bbb6c83b89f864a81f2eab214c5eecccb452c22f28aa5"},
-    {file = "litellm-1.36.0.tar.gz", hash = "sha256:1939983117ae7a8d2501967d0d2100f3929217d4f1833e3d0f8a16d5d91bf318"},
+    {file = "litellm-1.36.1-py3-none-any.whl", hash = "sha256:3a41db4c139989ef24171a69eba72b814b1ac60591af2da7ed689e57bd62b015"},
+    {file = "litellm-1.36.1.tar.gz", hash = "sha256:709cb3a9f31186a093c191c01e0df162e5b08c8cc257a2b746668f29fa99a628"},
 ]
 
 [package.dependencies]
@@ -4991,6 +5040,23 @@ files = [
 ]
 
 [[package]]
+name = "s3transfer"
+version = "0.10.1"
+description = "An Amazon S3 Transfer Manager"
+optional = false
+python-versions = ">= 3.8"
+files = [
+    {file = "s3transfer-0.10.1-py3-none-any.whl", hash = "sha256:ceb252b11bcf87080fb7850a224fb6e05c8a776bab8f2b64b7f25b969464839d"},
+    {file = "s3transfer-0.10.1.tar.gz", hash = "sha256:5683916b4c724f799e600f41dd9e10a9ff19871bf87623cc8f491cb4f5fa0a19"},
+]
+
+[package.dependencies]
+botocore = ">=1.33.2,<2.0a.0"
+
+[package.extras]
+crt = ["botocore[crt] (>=1.33.2,<2.0a.0)"]
+
+[[package]]
 name = "safetensors"
 version = "0.4.3"
 description = ""
@@ -5432,17 +5498,18 @@ mpmath = ">=0.19"
 
 [[package]]
 name = "tenacity"
-version = "8.2.3"
+version = "8.3.0"
 description = "Retry code until it succeeds"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "tenacity-8.2.3-py3-none-any.whl", hash = "sha256:ce510e327a630c9e1beaf17d42e6ffacc88185044ad85cf74c0a8887c6a0f88c"},
-    {file = "tenacity-8.2.3.tar.gz", hash = "sha256:5398ef0d78e63f40007c1fb4c0bff96e1911394d2fa8d194f77619c05ff6cc8a"},
+    {file = "tenacity-8.3.0-py3-none-any.whl", hash = "sha256:3649f6443dbc0d9b01b9d8020a9c4ec7a1ff5f6f3c6c8a036ef371f573fe9185"},
+    {file = "tenacity-8.3.0.tar.gz", hash = "sha256:953d4e6ad24357bceffbc9707bc74349aca9d245f68eb65419cf0c249a1949a2"},
 ]
 
 [package.extras]
-doc = ["reno", "sphinx", "tornado (>=4.5)"]
+doc = ["reno", "sphinx"]
+test = ["pytest", "tornado (>=4.5)", "typeguard"]
 
 [[package]]
 name = "termcolor"
@@ -6619,4 +6686,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "e744168aeffb105a3bf3a19475fc3784ee3770e9446051024f0faef5ebbef675"
+content-hash = "1024a961ae0dc343d1613c506c29de58a0f577bf7bda0743d9cb27a5af2c343c"

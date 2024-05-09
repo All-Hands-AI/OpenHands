@@ -6,8 +6,8 @@ from opendevin.events.action import (
     Action,
 )
 from opendevin.events.observation import (
-    AgentErrorObservation,
     CmdOutputObservation,
+    ErrorObservation,
     Observation,
 )
 from opendevin.runtime import (
@@ -64,7 +64,7 @@ class ActionManager:
                 command_id=-1, content=output, command=command, exit_code=exit_code
             )
         except UnicodeDecodeError:
-            return AgentErrorObservation('Command output could not be decoded as utf-8')
+            return ErrorObservation('Command output could not be decoded as utf-8')
 
     def _run_background(self, command: str) -> CmdOutputObservation:
         bg_cmd = self.sandbox.execute_in_background(command)
