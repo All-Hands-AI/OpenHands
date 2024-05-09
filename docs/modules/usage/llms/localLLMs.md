@@ -32,7 +32,7 @@ Use the instructions [here](../intro) to start OpenDevin using Docker.
 But when running `docker run`, you'll need to add a few more arguments:
 
 ```bash
---add-host host.docker.internal=host-gateway \
+--add-host host.docker.internal:host-gateway \
 -e LLM_API_KEY="ollama" \
 -e LLM_BASE_URL="http://host.docker.internal:11434" \
 ```
@@ -44,7 +44,7 @@ For example:
 export WORKSPACE_BASE=$(pwd)/workspace
 
 docker run \
-    --add-host host.docker.internal=host-gateway \
+    --add-host host.docker.internal:host-gateway \
     -e SANDBOX_USER_ID=$(id -u) \
     -e LLM_API_KEY="ollama" \
     -e LLM_BASE_URL="http://host.docker.internal:11434" \

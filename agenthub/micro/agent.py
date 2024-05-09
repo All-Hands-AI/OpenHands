@@ -1,4 +1,3 @@
-import copy
 import json
 from typing import Dict, List
 
@@ -15,17 +14,26 @@ from .registry import all_microagents
 
 
 def parse_response(orig_response: str) -> Action:
-    json_start = orig_response.find('{')
-    json_end = orig_response.rfind('}') + 1
-    response = orig_response[json_start:json_end]
-    try:
-        action_dict = json.loads(response)
-    except json.JSONDecodeError as e:
-        raise LLMOutputError(
-            'Invalid JSON in response. Please make sure the response is a valid JSON object'
-        ) from e
-    action = action_from_dict(action_dict)
-    return action
+    depth = 0
+    start = -1
+    for i, char in enumerate(orig_response):
+        if char == '{':
+            if depth == 0:
+                start = i
+            depth += 1
+        elif char == '}':
+            depth -= 1
+            if depth == 0 and start != -1:
+                response = orig_response[start : i + 1]
+                try:
+                    action_dict = json.loads(response)
+                    action = action_from_dict(action_dict)
+                    return action
+                except json.JSONDecodeError as e:
+                    raise LLMOutputError(
+                        'Invalid JSON in response. Please make sure the response is a valid JSON object.'
+                    ) from e
+    raise LLMOutputError('No valid JSON object found in response.')
 
 
 def my_encoder(obj):
@@ -42,39 +50,11 @@ def my_encoder(obj):
         return obj.to_dict()
 
 
-def _remove_fields(obj, fields: set[str]):
-    """
-    Remove fields from an object
-
-    Parameters:
-    - obj (Object): The object to remove fields from
-    - fields (set[str]): A set of field names to remove from the object
-    """
-    if isinstance(obj, dict):
-        for field in fields:
-            if field in obj:
-                del obj[field]
-        for _, value in obj.items():
-            _remove_fields(value, fields)
-    elif isinstance(obj, list) or isinstance(obj, tuple):
-        for item in obj:
-            _remove_fields(item, fields)
-    elif hasattr(obj, '__dataclass_fields__'):
-        for field in fields:
-            if field in obj.__dataclass_fields__:
-                setattr(obj, field, None)
-        for value in obj.__dict__.values():
-            _remove_fields(value, fields)
-
-
 def to_json(obj, **kwargs):
     """
     Serialize an object to str format
     """
-    # Remove things like screenshots that shouldn't be in a prompt
-    sanitized_obj = copy.deepcopy(obj)
-    _remove_fields(sanitized_obj, {'screenshot'})
-    return json.dumps(sanitized_obj, default=my_encoder, **kwargs)
+    return json.dumps(obj, default=my_encoder, **kwargs)
 
 
 class MicroAgent(Agent):
