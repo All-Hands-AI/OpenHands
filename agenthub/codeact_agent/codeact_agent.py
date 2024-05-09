@@ -228,11 +228,9 @@ class CodeActAgent(Agent):
             ],
             temperature=0.0,
         )
-        cur_cost = completion_cost(completion_response=response)
-        self.cost_accumulator += cur_cost
-        logger.info(
-            f'Cost: {cur_cost:.2f} USD | Accumulated Cost: {self.cost_accumulator:.2f} USD'
-        )
+
+        self.logCost(response)
+
         action_str: str = parse_response(response)
         state.num_of_chars += sum(
             len(message['content']) for message in self.messages
@@ -265,3 +263,15 @@ class CodeActAgent(Agent):
 
     def search_memory(self, query: str) -> List[str]:
         raise NotImplementedError('Implement this abstract method')
+
+    def logCost(self, response):
+        try:
+            cur_cost = completion_cost(completion_response=response)
+            self.cost_accumulator += cur_cost
+            logger.info(
+                'Cost: %.2f USD | Accumulated Cost: %.2f USD',
+                cur_cost,
+                self.cost_accumulator,
+            )
+        except Exception:
+            logger.warning('Cost calculation not supported for this model.')
