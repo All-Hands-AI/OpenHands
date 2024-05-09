@@ -1,5 +1,6 @@
 #!/bin/bash
 # check user is root
+echo "Starting OpenDevin..."
 if [ "$(id -u)" -ne 0 ]; then
   echo "The OpenDevin entrypoint.sh must run as root"
   exit 1
@@ -11,7 +12,6 @@ if [ -z "$SANDBOX_USER_ID" ]; then
 fi
 
 if [[ "$SANDBOX_USER_ID" -eq 0 ]]; then
-  echo "Running as root"
   export RUN_AS_DEVIN=false
   mkdir -p /home/root/.cache/ms-playwright/
   mv /home/opendevin/.cache/ms-playwright/ /home/root/.cache/
@@ -36,4 +36,8 @@ else
   su enduser
 fi
 
-cd /app && uvicorn opendevin.server.listen:app --host 0.0.0.0 --port 3000
+echo "Running as user $(whoami)"
+echo "Run as devin: $RUN_AS_DEVIN"
+echo "Running command: $@"
+
+"$@" # This runs any command passed to the entrypoint.sh as args, i.e. whatever is in CMD
