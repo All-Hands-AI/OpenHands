@@ -1,6 +1,12 @@
 #!/bin/bash
 # check user is root
 echo "Starting OpenDevin..."
+if [ -n $NO_SETUP ]; then
+  echo "Skipping setup"
+  "$@"
+  exit 0
+fi
+
 if [ "$(id -u)" -ne 0 ]; then
   echo "The OpenDevin entrypoint.sh must run as root"
   exit 1
