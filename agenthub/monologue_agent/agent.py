@@ -4,10 +4,9 @@ import agenthub.monologue_agent.utils.prompts as prompts
 from agenthub.monologue_agent.utils.monologue import Monologue
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core import config
+from opendevin.core.config import config
 from opendevin.core.exceptions import AgentNoInstructionError
 from opendevin.core.schema import ActionType
-from opendevin.core.schema.config import ConfigType
 from opendevin.events.action import (
     Action,
     AgentRecallAction,
@@ -15,7 +14,6 @@ from opendevin.events.action import (
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
-    GitHubPushAction,
     MessageAction,
     NullAction,
 )
@@ -29,7 +27,7 @@ from opendevin.events.observation import (
 )
 from opendevin.llm.llm import LLM
 
-if config.get(ConfigType.AGENT_MEMORY_ENABLED):
+if config.agent.memory_enabled:
     from agenthub.monologue_agent.utils.memory import LongTermMemory
 
 MAX_TOKEN_COUNT_PADDING = 512
@@ -71,10 +69,6 @@ INITIAL_THOUGHTS = [
     'BROWSE google.com',
     '<form><input type="text"></input><button type="submit"></button></form>',
     'I can browse the web too!',
-    'If I have done some work and I want to push it to github, I can do that also!',
-    "Let's do it.",
-    'PUSH owner/repo branch',
-    'The repo was successfully pushed to https://github.com/owner/repo/branch',
     'And once I have completed my task, I can use the finish action to stop working.',
     "But I should only use the finish action when I'm absolutely certain that I've completed my task and have tested my work.",
     'Very cool. Now to accomplish my task.',
@@ -160,7 +154,7 @@ class MonologueAgent(Agent):
             raise AgentNoInstructionError()
 
         self.monologue = Monologue()
-        if config.get(ConfigType.AGENT_MEMORY_ENABLED):
+        if config.agent.memory_enabled:
             self.memory = LongTermMemory()
         else:
             self.memory = None
@@ -211,11 +205,6 @@ class MonologueAgent(Agent):
                     url = thought.split('BROWSE ')[1]
                     action = BrowseURLAction(url=url)
                     previous_action = ActionType.BROWSE
-                elif thought.startswith('PUSH'):
-                    owner_repo, branch = thought.split('PUSH ')[1].split(' ')
-                    owner, repo = owner_repo.split('/')
-                    action = GitHubPushAction(owner=owner, repo=repo, branch=branch)
-                    previous_action = ActionType.PUSH
                 else:
                     action = MessageAction(thought)
                 self._add_event(action.to_memory())

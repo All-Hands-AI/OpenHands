@@ -1,17 +1,9 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Dict
+from typing import Dict
 
 from opendevin.core.schema import ActionType
-from opendevin.events.observation import (
-    AgentRecallObservation,
-    NullObservation,
-    Observation,
-)
 
 from .action import Action
-
-if TYPE_CHECKING:
-    from opendevin.controller import AgentController
 
 
 @dataclass
@@ -33,11 +25,9 @@ class AgentRecallAction(Action):
     thought: str = ''
     action: str = ActionType.RECALL
 
-    async def run(self, controller: 'AgentController') -> AgentRecallObservation:
-        return AgentRecallObservation(
-            content='',
-            memories=controller.agent.search_memory(self.query),
-        )
+    @property
+    def runnable(self) -> bool:
+        return True
 
     @property
     def message(self) -> str:
@@ -82,10 +72,6 @@ class AgentDelegateAction(Action):
     inputs: dict
     thought: str = ''
     action: str = ActionType.DELEGATE
-
-    async def run(self, controller: 'AgentController') -> Observation:
-        await controller.start_delegate(self)
-        return NullObservation('')
 
     @property
     def message(self) -> str:

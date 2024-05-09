@@ -202,3 +202,5 @@ cache
 
 # configuration
 config.toml
+
+test_results*
