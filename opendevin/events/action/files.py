@@ -128,6 +128,12 @@ class FileWriteAction(Action):
         insert = self.content.split('\n')
 
         if isinstance(controller.action_manager.sandbox, E2BBox):
+            if self.start == 0 and self.end == -1:
+                controller.action_manager.sandbox.filesystem.write(
+                    self.path, self.content
+                )
+                return FileWriteObservation(content='', path=self.path)
+
             files = controller.action_manager.sandbox.filesystem.list(self.path)
             if self.path in files:
                 all_lines = controller.action_manager.sandbox.filesystem.read(self.path)
