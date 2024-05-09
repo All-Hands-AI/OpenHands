@@ -2,7 +2,7 @@ from functools import partial
 
 import litellm
 from litellm import completion as litellm_completion
-from litellm import completion_cost
+from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     APIConnectionError,
     RateLimitError,
@@ -20,7 +20,7 @@ from opendevin.core.logger import llm_prompt_logger, llm_response_logger
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ConfigType
 
-__all__ = ['LLM', 'completion_cost']
+__all__ = ['LLM']
 
 DEFAULT_API_KEY = config.get(ConfigType.LLM_API_KEY)
 DEFAULT_BASE_URL = config.get(ConfigType.LLM_BASE_URL)
@@ -177,6 +177,28 @@ class LLM:
             int: The number of tokens.
         """
         return litellm.token_counter(model=self.model_name, messages=messages)
+
+    def completion_cost(self, response):
+        """
+        Calculate the cost of a completion response based on the model.  Local models are treated as free.
+
+        Args:
+            response (list): A response from a model invocation.
+
+        Returns:
+            number: The cost of the response.
+        """
+        if (
+            'localhost' not in self.base_url
+            and '127.0.0.1' not in self.base_url
+            and '0.0.0.0' not in self.base_url
+        ):
+            try:
+                cost = litellm_completion_cost(completion_response=response)
+                return cost
+            except Exception:
+                logger.warning('Cost calculation not supported for this model.')
+        return 0.0
 
     def __str__(self):
         if self.api_version:

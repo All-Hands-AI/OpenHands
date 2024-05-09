@@ -18,7 +18,7 @@ from opendevin.events.observation import (
     IPythonRunCellObservation,
     NullObservation,
 )
-from opendevin.llm.llm import LLM, completion_cost
+from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
@@ -265,13 +265,10 @@ class CodeActAgent(Agent):
         raise NotImplementedError('Implement this abstract method')
 
     def logCost(self, response):
-        try:
-            cur_cost = completion_cost(completion_response=response)
-            self.cost_accumulator += cur_cost
-            logger.info(
-                'Cost: %.2f USD | Accumulated Cost: %.2f USD',
-                cur_cost,
-                self.cost_accumulator,
-            )
-        except Exception:
-            logger.warning('Cost calculation not supported for this model.')
+        cur_cost = self.llm.completion_cost(response)
+        self.cost_accumulator += cur_cost
+        logger.info(
+            'Cost: %.2f USD | Accumulated Cost: %.2f USD',
+            cur_cost,
+            self.cost_accumulator,
+        )
