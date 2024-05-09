@@ -38,7 +38,7 @@ USE_HOST_NETWORK = config.get(ConfigType.USE_HOST_NETWORK)
 
 # FIXME: On some containers, the devin user doesn't have enough permission, e.g. to install packages
 # How do we make this more flexible?
-RUN_AS_DEVIN = config.get(ConfigType.RUN_AS_DEVIN).lower() != 'false'
+RUN_AS_DEVIN = config.get(ConfigType.RUN_AS_DEVIN)
 USER_ID = 1000
 if SANDBOX_USER_ID := config.get(ConfigType.SANDBOX_USER_ID):
     USER_ID = int(SANDBOX_USER_ID)
