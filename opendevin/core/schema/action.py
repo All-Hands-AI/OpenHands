@@ -44,14 +44,6 @@ class ActionTypeSchema(BaseModel):
     """Searches long-term memory
     """
 
-    THINK: str = Field(default='think')
-    """Allows the agent to make a plan, set a goal, or record thoughts
-    """
-
-    TALK: str = Field(default='talk')
-    """Allows the agent to respond to the user.
-    """
-
     DELEGATE: str = Field(default='delegate')
     """Delegates a task to another agent.
     """

@@ -10,7 +10,7 @@ of the codebase, including:
 ## Available Actions
 {{ instructions.actions.run }}
 {{ instructions.actions.read }}
-{{ instructions.actions.think }}
+{{ instructions.actions.message }}
 {{ instructions.actions.finish }}
 
 You should ONLY `run` commands that have no side-effects, like `ls` and `grep`.
