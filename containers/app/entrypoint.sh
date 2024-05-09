@@ -1,6 +1,8 @@
 #!/bin/bash
+set -eo pipefail
+
 echo "Starting OpenDevin..."
-if [ -n $NO_SETUP ]; then
+if [[ $NO_SETUP == "true" ]]; then
   echo "Skipping setup"
   "$@"
   exit 0
@@ -20,6 +22,7 @@ if [[ "$SANDBOX_USER_ID" -eq 0 ]]; then
   export RUN_AS_DEVIN=false
   mkdir -p /home/root/.cache/ms-playwright/
   mv /home/opendevin/.cache/ms-playwright/ /home/root/.cache/
+  "$@"
 else
   echo "Setting up enduser with id $SANDBOX_USER_ID"
   if ! useradd -l -m -u $SANDBOX_USER_ID -s /bin/bash enduser; then
@@ -35,16 +38,14 @@ else
   # get the user group of /var/run/docker.sock and set opendevin to that group
   DOCKER_SOCKET_GID=$(stat -c '%g' /var/run/docker.sock)
   echo "Docker socket group id: $DOCKER_SOCKET_GID"
-  if groupadd -g $DOCKER_SOCKET_GID docker; then
-    echo "Created docker group with id $DOCKER_SOCKET_GID"
+  if getent group $DOCKER_SOCKET_GID; then
+    echo "Group with id $DOCKER_SOCKET_GID already exists"
+  else
+    echo "Creating group with id $DOCKER_SOCKET_GID"
+    groupadd -g $DOCKER_SOCKET_GID docker
   fi
 
   usermod -aG $DOCKER_SOCKET_GID enduser
-  su enduser
+  echo "Running as enduser"
+  su enduser /bin/bash -c "$*"
 fi
-
-echo "Running as user $(whoami)"
-echo "Run as devin: $RUN_AS_DEVIN"
-echo "Running command: $@"
-
-"$@" # This runs any command passed to the entrypoint.sh as args, i.e. whatever is in CMD
