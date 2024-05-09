@@ -1,12 +1,12 @@
 import React from "react";
 import userEvent from "@testing-library/user-event";
-import { act, getAllByRole, render } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import ChatInput from "./ChatInput";
 import AgentState from "#/types/AgentState";
 
 describe("ChatInput", () => {
   const onSendMessage = vi.fn();
-  const curAgentState  = AgentState.LOADING
+  const curAgentState = AgentState.LOADING;
 
   afterEach(() => {
     vi.clearAllMocks();
@@ -15,10 +15,11 @@ describe("ChatInput", () => {
   it("should render a textarea", () => {
     const { getByRole } = render(
       <ChatInput
-      currentTaskState={curAgentState}
-      disabled
-      onSendMessage={onSendMessage}
-    />);
+        currentTaskState={curAgentState}
+        disabled
+        onSendMessage={onSendMessage}
+      />,
+    );
     const textarea = getByRole("textbox");
     expect(textarea).toBeInTheDocument();
   });
@@ -58,20 +59,18 @@ describe("ChatInput", () => {
   it("should render a send button", () => {
     const { getByRole } = render(
       <ChatInput
-      currentTaskState={curAgentState}
-      onSendMessage={onSendMessage}
-    />);
+        currentTaskState={curAgentState}
+        onSendMessage={onSendMessage}
+      />,
+    );
     const button = getByRole("button");
     expect(button).toBeInTheDocument();
   });
 
   it("should render the continue button when currentTaskState is 'awaiting_user_input'", () => {
-    const curAgentState: AgentState = AgentState.AWAITING_USER_INPUT;
+    const state: AgentState = AgentState.AWAITING_USER_INPUT;
     const { getAllByRole } = render(
-      <ChatInput
-        currentTaskState={curAgentState}
-        onSendMessage={onSendMessage}
-      />,
+      <ChatInput currentTaskState={state} onSendMessage={onSendMessage} />,
     );
     const buttons = getAllByRole("button");
     expect(buttons[0]).toBeInTheDocument();
