@@ -55,7 +55,7 @@ class Runtime:
     ):
         self.sid = sid
         sandbox_type = config.get(ConfigType.SANDBOX_TYPE)
-        self.sandbox = get_sandbox(sid, sandbox_type)
+        self.sandbox = create_sandbox(sid, sandbox_type)
         self.browser = BrowserEnv()
 
     def init_sandbox_plugins(self, plugins: List[PluginRequirement]):
