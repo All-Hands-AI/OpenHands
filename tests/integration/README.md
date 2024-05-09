@@ -66,7 +66,7 @@ by running:
 ```
 Note that this will make several calls to your LLM_MODEL, potentially costing money! If you don't want
 to cover the cost, ask one of the maintainers to regenerate for you.
-You might also be able to fix the tests by hand
+You might also be able to fix the tests by hand.
 
 ## Write a new Integration Test
 
