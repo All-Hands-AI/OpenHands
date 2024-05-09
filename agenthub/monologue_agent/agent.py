@@ -11,12 +11,12 @@ from opendevin.core.schema.config import ConfigType
 from opendevin.events.action import (
     Action,
     AgentRecallAction,
-    AgentThinkAction,
     BrowseURLAction,
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
     GitHubPushAction,
+    MessageAction,
     NullAction,
 )
 from opendevin.events.observation import (
@@ -217,7 +217,7 @@ class MonologueAgent(Agent):
                     action = GitHubPushAction(owner=owner, repo=repo, branch=branch)
                     previous_action = ActionType.PUSH
                 else:
-                    action = AgentThinkAction(thought=thought)
+                    action = MessageAction(thought)
                 self._add_event(action.to_memory())
 
     def step(self, state: State) -> Action:

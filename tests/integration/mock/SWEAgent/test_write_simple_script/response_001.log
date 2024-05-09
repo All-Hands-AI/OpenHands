@@ -1,8 +1,7 @@
 Thoughts:
-To solve the task of writing a shell script named 'hello.sh' that prints 'hello', I need to create a new file named 'hello.sh'. I will then write the necessary shell script code into this file.
+I need to create a shell script named 'hello.sh' that prints 'hello' when executed. I will use the 'write' command to create the script with the required content.
 
 Action:
 ```
-write hello.sh #!/bin/bash
-echo "hello"
+write hello.sh "echo 'hello'"
 ```
