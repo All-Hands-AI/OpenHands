@@ -1,4 +1,5 @@
 import atexit
+import json
 import os
 import sys
 import tarfile
@@ -87,6 +88,12 @@ class DockerSSHBox(Sandbox):
         self.setup_user()
         self.start_ssh_session()
         atexit.register(self.close)
+        super().__init__()
+
+    def add_to_env(self, key: str, value: str):
+        super().add_to_env(key, value)
+        # Note: json.dumps gives us nice escaping for free
+        self.execute(f'export {key}={json.dumps(value)}')
 
     def setup_user(self):
         # Make users sudoers passwordless
@@ -94,6 +101,7 @@ class DockerSSHBox(Sandbox):
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c', r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"],
             workdir=self.sandbox_workspace_dir,
+            environment=self._env,
         )
         if exit_code != 0:
             raise Exception(
@@ -104,12 +112,14 @@ class DockerSSHBox(Sandbox):
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c', 'id -u opendevin'],
             workdir=self.sandbox_workspace_dir,
+            environment=self._env,
         )
         if exit_code == 0:
             # User exists, delete it
             exit_code, logs = self.container.exec_run(
                 ['/bin/bash', '-c', 'userdel -r opendevin'],
                 workdir=self.sandbox_workspace_dir,
+                environment=self._env,
             )
             if exit_code != 0:
                 raise Exception(f'Failed to remove opendevin user in sandbox: {logs}')
@@ -123,6 +133,7 @@ class DockerSSHBox(Sandbox):
                     f'useradd -rm -d /home/opendevin -s /bin/bash -g root -G sudo -u {self.user_id} opendevin',
                 ],
                 workdir=self.sandbox_workspace_dir,
+                environment=self._env,
             )
             if exit_code != 0:
                 raise Exception(f'Failed to create opendevin user in sandbox: {logs}')
@@ -133,6 +144,7 @@ class DockerSSHBox(Sandbox):
                     f"echo 'opendevin:{self._ssh_password}' | chpasswd",
                 ],
                 workdir=self.sandbox_workspace_dir,
+                environment=self._env,
             )
             if exit_code != 0:
                 raise Exception(f'Failed to set password in sandbox: {logs}')
@@ -141,6 +153,7 @@ class DockerSSHBox(Sandbox):
             exit_code, logs = self.container.exec_run(
                 ['/bin/bash', '-c', 'chown opendevin:root /home/opendevin'],
                 workdir=self.sandbox_workspace_dir,
+                environment=self._env,
             )
             if exit_code != 0:
                 raise Exception(
@@ -153,6 +166,7 @@ class DockerSSHBox(Sandbox):
                     f'chown opendevin:root {self.sandbox_workspace_dir}',
                 ],
                 workdir=self.sandbox_workspace_dir,
+                environment=self._env,
             )
             if exit_code != 0:
                 # This is not a fatal error, just a warning
@@ -164,12 +178,14 @@ class DockerSSHBox(Sandbox):
                 # change password for root
                 ['/bin/bash', '-c', f"echo 'root:{self._ssh_password}' | chpasswd"],
                 workdir=self.sandbox_workspace_dir,
+                environment=self._env,
             )
             if exit_code != 0:
                 raise Exception(f'Failed to set password for root in sandbox: {logs}')
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c', "echo 'opendevin-sandbox' > /etc/hostname"],
             workdir=self.sandbox_workspace_dir,
+            environment=self._env,
         )
 
     def start_ssh_session(self):
@@ -257,6 +273,7 @@ class DockerSSHBox(Sandbox):
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c', f'mkdir -p {sandbox_dest}'],
             workdir=self.sandbox_workspace_dir,
+            environment=self._env,
         )
         if exit_code != 0:
             raise Exception(
@@ -292,7 +309,10 @@ class DockerSSHBox(Sandbox):
 
     def execute_in_background(self, cmd: str) -> Process:
         result = self.container.exec_run(
-            self.get_exec_cmd(cmd), socket=True, workdir=self.sandbox_workspace_dir
+            self.get_exec_cmd(cmd),
+            socket=True,
+            workdir=self.sandbox_workspace_dir,
+            environment=self._env,
         )
         result.output._sock.setblocking(0)
         pid = self.get_pid(cmd)
@@ -302,7 +322,7 @@ class DockerSSHBox(Sandbox):
         return bg_cmd
 
     def get_pid(self, cmd):
-        exec_result = self.container.exec_run('ps aux')
+        exec_result = self.container.exec_run('ps aux', environment=self._env)
         processes = exec_result.output.decode('utf-8').splitlines()
         cmd = ' '.join(self.get_exec_cmd(cmd))
 
@@ -318,7 +338,9 @@ class DockerSSHBox(Sandbox):
         bg_cmd = self.background_commands[id]
         if bg_cmd.pid is not None:
             self.container.exec_run(
-                f'kill -9 {bg_cmd.pid}', workdir=self.sandbox_workspace_dir
+                f'kill -9 {bg_cmd.pid}',
+                workdir=self.sandbox_workspace_dir,
+                environment=self._env,
             )
         assert isinstance(bg_cmd, DockerProcess)
         bg_cmd.result.output.close()

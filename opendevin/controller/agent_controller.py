@@ -19,6 +19,7 @@ from opendevin.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
+    AgentRejectAction,
     ChangeAgentStateAction,
     MessageAction,
     NullAction,
@@ -94,6 +95,7 @@ class AgentController:
             self.agent_task.cancel()
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
         self.action_manager.sandbox.close()
+        self.browser.close()
         await self.set_agent_state_to(AgentState.STOPPED)
 
     def update_state_for_step(self, i):
@@ -270,7 +272,9 @@ class AgentController:
             await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
             return False
 
-        finished = isinstance(action, AgentFinishAction)
+        finished = isinstance(action, AgentFinishAction) or isinstance(
+            action, AgentRejectAction
+        )
         if finished:
             self.state.outputs = action.outputs  # type: ignore[attr-defined]
             logger.info(action, extra={'msg_type': 'INFO'})

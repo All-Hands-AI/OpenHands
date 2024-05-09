@@ -1,3 +1,4 @@
+import os
 import pathlib
 import tempfile
 from unittest.mock import patch
@@ -5,6 +6,8 @@ from unittest.mock import patch
 import pytest
 
 from opendevin.core.config import AppConfig, config
+from opendevin.runtime.docker.exec_box import DockerExecBox
+from opendevin.runtime.docker.local_box import LocalBox
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
 
@@ -22,6 +25,18 @@ def temp_dir(monkeypatch):
 
     # make sure config is clean
     AppConfig.reset()
+
+
+def test_env_vars(temp_dir):
+    os.environ['SANDBOX_ENV_FOOBAR'] = 'BAZ'
+    for box_class in [DockerSSHBox, DockerExecBox, LocalBox]:
+        box = box_class()
+        box.add_to_env('QUUX', 'abc"def')
+        assert box._env['FOOBAR'] == 'BAZ'
+        assert box._env['QUUX'] == 'abc"def'
+        exit_code, output = box.execute('echo $FOOBAR $QUUX')
+        assert exit_code == 0, 'The exit code should be 0.'
+        assert output.strip() == 'BAZ abc"def', f'Output: {output} for {box_class}'
 
 
 def test_ssh_box_run_as_devin(temp_dir):

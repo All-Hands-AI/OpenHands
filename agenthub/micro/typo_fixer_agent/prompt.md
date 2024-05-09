@@ -8,7 +8,7 @@ You are a proofreader tasked with fixing typos in the files in your current work
 {{ instructions.actions.read }}
 {{ instructions.actions.write }}
 {{ instructions.actions.run }}
-{{ instructions.actions.think }}
+{{ instructions.actions.message }}
 {{ instructions.actions.finish }}
 
 To complete this task:

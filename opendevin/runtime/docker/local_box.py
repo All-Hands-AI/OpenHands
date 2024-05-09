@@ -32,6 +32,7 @@ class LocalBox(Sandbox):
         self.background_commands: Dict[int, Process] = {}
         self.cur_background_id = 0
         atexit.register(self.cleanup)
+        super().__init__()
 
     def execute(self, cmd: str) -> Tuple[int, str]:
         try:
@@ -42,6 +43,7 @@ class LocalBox(Sandbox):
                 capture_output=True,
                 timeout=self.timeout,
                 cwd=config.workspace_base,
+                env=self._env,
             )
             return completed_process.returncode, completed_process.stdout.strip()
         except subprocess.TimeoutExpired:
@@ -54,6 +56,7 @@ class LocalBox(Sandbox):
             shell=True,
             text=True,
             cwd=config.workspace_base,
+            env=self._env,
         )
         if res.returncode != 0:
             raise RuntimeError(f'Failed to create directory {sandbox_dest} in sandbox')
@@ -64,6 +67,7 @@ class LocalBox(Sandbox):
                 shell=True,
                 text=True,
                 cwd=config.workspace_base,
+                env=self._env,
             )
             if res.returncode != 0:
                 raise RuntimeError(
@@ -75,6 +79,7 @@ class LocalBox(Sandbox):
                 shell=True,
                 text=True,
                 cwd=config.workspace_base,
+                env=self._env,
             )
             if res.returncode != 0:
                 raise RuntimeError(

@@ -11,7 +11,7 @@ You must:
 
 ## Actions
 You may take any of the following actions:
-{{ instructions.actions.think }}
+{{ instructions.actions.message }}
 {{ instructions.actions.read }}
 {{ instructions.actions.write }}
 {{ instructions.actions.run }}
