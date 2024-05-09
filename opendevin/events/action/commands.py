@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import ClassVar
 
 from opendevin.core.schema import ActionType
 
@@ -11,9 +12,7 @@ class CmdRunAction(Action):
     background: bool = False
     thought: str = ''
     action: str = ActionType.RUN
-
-    def runnable(self) -> bool:
-        return True
+    runnable: ClassVar[bool] = True
 
     @property
     def message(self) -> str:
@@ -32,9 +31,7 @@ class CmdKillAction(Action):
     id: int
     thought: str = ''
     action: str = ActionType.KILL
-
-    def runnable(self) -> bool:
-        return True
+    runnable: ClassVar[bool] = True
 
     @property
     def message(self) -> str:
@@ -49,9 +46,7 @@ class IPythonRunCellAction(Action):
     code: str
     thought: str = ''
     action: str = ActionType.RUN_IPYTHON
-
-    def runnable(self) -> bool:
-        return True
+    runnable: ClassVar[bool] = True
 
     def __str__(self) -> str:
         ret = '**IPythonRunCellAction**\n'

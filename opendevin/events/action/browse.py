@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import ClassVar
 
 from opendevin.core.schema import ActionType
 
@@ -10,10 +11,7 @@ class BrowseURLAction(Action):
     url: str
     thought: str = ''
     action: str = ActionType.BROWSE
-
-    @property
-    def runnable(self) -> bool:
-        return True
+    runnable: ClassVar[bool] = True
 
     @property
     def message(self) -> str:
