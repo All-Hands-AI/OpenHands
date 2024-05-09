@@ -1,6 +1,7 @@
 from typing import List
 
 from opendevin.core import config
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ConfigType
 from opendevin.events.action import (
     Action,
@@ -29,6 +30,7 @@ class ActionManager:
         sid: str = 'default',
     ):
         sandbox_type = config.get(ConfigType.SANDBOX_TYPE).lower()
+        logger.info(f'Initializing sandbox of type {sandbox_type}')
         if sandbox_type == 'exec':
             self.sandbox = DockerExecBox(
                 sid=(sid or 'default'), timeout=config.get(ConfigType.SANDBOX_TIMEOUT)

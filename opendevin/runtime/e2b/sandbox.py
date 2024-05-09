@@ -75,7 +75,7 @@ class E2BBox(Sandbox):
         return '\n'.join([m.line for m in proc.output_messages])
 
     def execute(self, cmd: str) -> Tuple[int, str]:
-        process = self.sandbox.process.start(cmd, envVars=self._env)
+        process = self.sandbox.process.start(cmd, env_vars=self._env)
         try:
             process_output = process.wait(timeout=self.timeout)
         except TimeoutException:
