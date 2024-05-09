@@ -5,7 +5,7 @@ from typing import Type
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
-from opendevin.core.config import args
+from opendevin.core.config import args, get_llm_config_arg
 from opendevin.core.schema import AgentState
 from opendevin.events.action import ChangeAgentStateAction, MessageAction
 from opendevin.events.event import Event
@@ -40,12 +40,31 @@ async def main(task_str: str = ''):
     else:
         raise ValueError('No task provided. Please specify a task through -t, -f.')
 
-    print(
-        f'Running agent {args.agent_cls} (model: {args.model_name}) with task: "{task}"'
-    )
-    llm = LLM(args.model_name)
+    # only one of model_name or llm_config is required
+    if args.llm_config:
+        # --llm_config
+        # llm_config can contain any of the attributes of LLMConfig
+        llm_config = get_llm_config_arg(args.llm_config)
+
+        if llm_config is None:
+            raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
+
+        print(
+            f'Running agent {args.agent_cls} (model: {llm_config.model}, llm_config: {llm_config}) with task: "{task}"'
+        )
+
+        # create LLM instance with the given config
+        llm = LLM(llm_config=llm_config)
+    else:
+        # --model-name model_name
+        print(
+            f'Running agent {args.agent_cls} (model: {args.model_name}), with task: "{task}"'
+        )
+        llm = LLM(args.model_name)
+
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
+
     event_stream = EventStream()
     controller = AgentController(
         agent=agent,

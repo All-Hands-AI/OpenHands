@@ -2,7 +2,7 @@ import atexit
 import json
 import os
 import uuid
-from typing import Dict, List
+from typing import Dict
 
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema.action import ActionType
@@ -31,7 +31,7 @@ class Message:
 
 
 class MessageStack:
-    _messages: Dict[str, List[Message]] = {}
+    _messages: Dict[str, list[Message]] = {}
 
     def __init__(self):
         self._load_messages()
@@ -51,7 +51,7 @@ class MessageStack:
             return
         del self._messages[sid]
 
-    def get_messages(self, sid: str) -> List[Dict[str, object]]:
+    def get_messages(self, sid: str) -> list[Dict[str, object]]:
         if sid not in self._messages:
             return []
         return [msg.to_dict() for msg in self._messages[sid]]
