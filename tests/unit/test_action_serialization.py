@@ -9,7 +9,6 @@ from opendevin.events.action import (
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
-    GitHubPushAction,
     MessageAction,
     ModifyTaskAction,
     action_from_dict,
@@ -83,14 +82,6 @@ def test_browse_url_action_serialization_deserialization():
         'args': {'thought': '', 'url': 'https://www.example.com'},
     }
     serialization_deserialization(original_action_dict, BrowseURLAction)
-
-
-def test_github_push_action_serialization_deserialization():
-    original_action_dict = {
-        'action': 'push',
-        'args': {'owner': 'myname', 'repo': 'myrepo', 'branch': 'main'},
-    }
-    serialization_deserialization(original_action_dict, GitHubPushAction)
 
 
 def test_file_read_action_serialization_deserialization():

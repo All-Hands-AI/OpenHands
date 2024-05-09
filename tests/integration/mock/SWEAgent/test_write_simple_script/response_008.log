@@ -1,7 +1,7 @@
 Thoughts:
-I need to modify the 'hello.sh' script to print 'hello' without asking for confirmation. I will use the echo command to achieve this.
+I need to ensure that the 'hello.sh' script is executable. This can be done by using the chmod command to add the execute permission to the file.
 
 Action:
 ```
-edit 0 -1 "echo 'hello'"
+bash chmod +x hello.sh
 ```

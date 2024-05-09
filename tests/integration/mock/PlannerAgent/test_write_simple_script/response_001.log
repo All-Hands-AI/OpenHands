@@ -1,3 +1,4 @@
+```json
 {
   "action": "write",
   "args": {
@@ -5,3 +6,4 @@
     "content": "#!/bin/bash\n\necho 'hello'"
   }
 }
+```

@@ -1,7 +1,7 @@
 Thoughts:
-I have already written the shell script 'hello.sh' to print 'hello' without asking for confirmation. I need to verify the content of the file to ensure that the script is correctly implemented.
+I need to make the 'hello.sh' script executable so that it can be run. The previous attempt to make it executable using the 'bash chmod +x hello.sh' command resulted in an error. I will use the 'chmod' command directly to make the script executable.
 
 Action:
 ```
-read hello.sh
+chmod +x hello.sh
 ```
