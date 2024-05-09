@@ -46,6 +46,13 @@ def create_sandbox(sid: str = 'default', sandbox_type: str = 'exec') -> Sandbox:
 
 
 class Runtime:
+    """
+    The runtime is how the agent interacts with the external environment.
+    This includes a bash sandbox, a browser, and filesystem interactions.
+
+    sid is the session id, which is used to identify the current user session.
+    """
+
     sid: str
     sandbox: Sandbox
 
@@ -58,7 +65,7 @@ class Runtime:
         self.sandbox = create_sandbox(sid, sandbox_type)
         self.browser = BrowserEnv()
 
-    def init_sandbox_plugins(self, plugins: List[PluginRequirement]):
+    def init_sandbox_plugins(self, plugins: List[PluginRequirement]) -> None:
         self.sandbox.init_plugins(plugins)
 
     async def run_action(self, action: Action) -> Observation:
