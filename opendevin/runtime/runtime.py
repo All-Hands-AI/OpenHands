@@ -31,7 +31,7 @@ from opendevin.runtime.browser.browser_env import BrowserEnv
 from opendevin.runtime.plugins import PluginRequirement
 
 
-def get_sandbox(sid: str = 'default', sandbox_type: str = 'exec') -> Sandbox:
+def create_sandbox(sid: str = 'default', sandbox_type: str = 'exec') -> Sandbox:
     timeout = config.get(ConfigType.SANDBOX_TIMEOUT)
     if sandbox_type == 'exec':
         return DockerExecBox(sid=sid, timeout=timeout)
