@@ -69,7 +69,11 @@ class Runtime:
         self.sandbox.init_plugins(plugins)
 
     async def run_action(self, action: Action) -> Observation:
-        print('run action!', action.runnable)
+        """
+        Run an action and return the resulting observation.
+        If the action is not runnable in any runtime, a NullObservation is returned.
+        If the action is not supported by the current runtime, an ErrorObservation is returned.
+        """
         if not action.runnable:
             return NullObservation('')
         action_id = action.action  # type: ignore[attr-defined]
@@ -79,11 +83,15 @@ class Runtime:
             return ErrorObservation(
                 f'Action {action_id} is not supported in the current runtime.'
             )
-        print('actually running')
         observation = await getattr(self, action_id)(action)
         return observation
 
     def get_background_obs(self) -> List[CmdOutputObservation]:
+        """
+        Returns all observations that have accumulated in the runtime's background.
+        Right now, this is just background commands, but could include e.g. asyncronous
+        events happening in the browser.
+        """
         obs = []
         for _id, cmd in self.sandbox.background_commands.items():
             output = cmd.read_logs()
