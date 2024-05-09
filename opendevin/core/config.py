@@ -19,7 +19,7 @@ load_dotenv()
 
 @dataclass
 class LLMConfig(metaclass=Singleton):
-    model: str = 'gpt-3.5-turbo-1106'
+    model: str = 'gpt-3.5-turbo'
     api_key: str | None = None
     base_url: str | None = None
     api_version: str | None = None
