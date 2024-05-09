@@ -1,8 +1,7 @@
 from abc import abstractmethod
 from typing import List
 
-from opendevin.core import config
-from opendevin.core.schema import ConfigType
+from opendevin.core.config import config
 from opendevin.events.action import (
     ACTION_TYPE_TO_CLASS,
     Action,
@@ -32,15 +31,14 @@ from opendevin.runtime.plugins import PluginRequirement
 
 
 def create_sandbox(sid: str = 'default', sandbox_type: str = 'exec') -> Sandbox:
-    timeout = config.get(ConfigType.SANDBOX_TIMEOUT)
     if sandbox_type == 'exec':
-        return DockerExecBox(sid=sid, timeout=timeout)
+        return DockerExecBox(sid=sid, timeout=config.sandbox_timeout)
     elif sandbox_type == 'local':
-        return LocalBox(timeout=timeout)
+        return LocalBox(timeout=config.sandbox_timeout)
     elif sandbox_type == 'ssh':
-        return DockerSSHBox(sid=sid, timeout=timeout)
+        return DockerSSHBox(sid=sid, timeout=config.sandbox_timeout)
     elif sandbox_type == 'e2b':
-        return E2BBox(timeout=timeout)
+        return E2BBox(timeout=config.sandbox_timeout)
     else:
         raise ValueError(f'Invalid sandbox type: {sandbox_type}')
 
@@ -61,8 +59,7 @@ class Runtime:
         sid: str = 'default',
     ):
         self.sid = sid
-        sandbox_type = config.get(ConfigType.SANDBOX_TYPE)
-        self.sandbox = create_sandbox(sid, sandbox_type)
+        self.sandbox = create_sandbox(sid, config.sandbox_type)
         self.browser = BrowserEnv()
 
     def init_sandbox_plugins(self, plugins: List[PluginRequirement]) -> None:

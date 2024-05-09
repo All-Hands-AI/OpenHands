@@ -15,50 +15,50 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from opendevin.core import config
+from opendevin.core.config import config
 from opendevin.core.logger import llm_prompt_logger, llm_response_logger
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.schema import ConfigType
 
 __all__ = ['LLM', 'completion_cost']
-
-DEFAULT_API_KEY = config.get(ConfigType.LLM_API_KEY)
-DEFAULT_BASE_URL = config.get(ConfigType.LLM_BASE_URL)
-DEFAULT_MODEL_NAME = config.get(ConfigType.LLM_MODEL)
-DEFAULT_API_VERSION = config.get(ConfigType.LLM_API_VERSION)
-LLM_NUM_RETRIES = config.get(ConfigType.LLM_NUM_RETRIES)
-LLM_RETRY_MIN_WAIT = config.get(ConfigType.LLM_RETRY_MIN_WAIT)
-LLM_RETRY_MAX_WAIT = config.get(ConfigType.LLM_RETRY_MAX_WAIT)
-LLM_MAX_INPUT_TOKENS = config.get(ConfigType.LLM_MAX_INPUT_TOKENS)
-LLM_MAX_OUTPUT_TOKENS = config.get(ConfigType.LLM_MAX_OUTPUT_TOKENS)
-LLM_CUSTOM_LLM_PROVIDER = config.get(ConfigType.LLM_CUSTOM_LLM_PROVIDER)
-LLM_TIMEOUT = config.get(ConfigType.LLM_TIMEOUT)
-LLM_TEMPERATURE = config.get(ConfigType.LLM_TEMPERATURE)
-LLM_TOP_P = config.get(ConfigType.LLM_TOP_P)
 
 
 class LLM:
     """
     The LLM class represents a Language Model instance.
+
+    Attributes:
+        model_name (str): The name of the language model.
+        api_key (str): The API key for accessing the language model.
+        base_url (str): The base URL for the language model API.
+        api_version (str): The version of the API to use.
+        max_input_tokens (int): The maximum number of tokens to send to the LLM per task.
+        max_output_tokens (int): The maximum number of tokens to receive from the LLM per task.
+        llm_timeout (int): The maximum time to wait for a response in seconds.
+        custom_llm_provider (str): A custom LLM provider.
     """
 
     def __init__(
         self,
-        model=DEFAULT_MODEL_NAME,
-        api_key=DEFAULT_API_KEY,
-        base_url=DEFAULT_BASE_URL,
-        api_version=DEFAULT_API_VERSION,
-        num_retries=LLM_NUM_RETRIES,
-        retry_min_wait=LLM_RETRY_MIN_WAIT,
-        retry_max_wait=LLM_RETRY_MAX_WAIT,
-        max_input_tokens=LLM_MAX_INPUT_TOKENS,
-        max_output_tokens=LLM_MAX_OUTPUT_TOKENS,
-        custom_llm_provider=LLM_CUSTOM_LLM_PROVIDER,
-        llm_timeout=LLM_TIMEOUT,
-        llm_temperature=LLM_TEMPERATURE,
-        llm_top_p=LLM_TOP_P,
+        model=None,
+        api_key=None,
+        base_url=None,
+        api_version=None,
+        num_retries=None,
+        retry_min_wait=None,
+        retry_max_wait=None,
+        llm_timeout=None,
+        llm_temperature=None,
+        llm_top_p=None,
+        custom_llm_provider=None,
+        max_input_tokens=None,
+        max_output_tokens=None,
+        llm_config=None,
     ):
         """
+        Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
+
+        Passing simple parameters always overrides config.
+
         Args:
             model (str, optional): The name of the language model. Defaults to LLM_MODEL.
             api_key (str, optional): The API key for accessing the language model. Defaults to LLM_API_KEY.
@@ -73,12 +73,41 @@ class LLM:
             llm_timeout (int, optional): The maximum time to wait for a response in seconds. Defaults to LLM_TIMEOUT.
             llm_temperature (float, optional): The temperature for LLM sampling. Defaults to LLM_TEMPERATURE.
 
-        Attributes:
-            model_name (str): The name of the language model.
-            api_key (str): The API key for accessing the language model.
-            base_url (str): The base URL for the language model API.
-            api_version (str): The version of the API to use.
         """
+        if llm_config is None:
+            llm_config = config.llm
+        model = model if model is not None else llm_config.model
+        api_key = api_key if api_key is not None else llm_config.api_key
+        base_url = base_url if base_url is not None else llm_config.base_url
+        api_version = api_version if api_version is not None else llm_config.api_version
+        num_retries = num_retries if num_retries is not None else llm_config.num_retries
+        retry_min_wait = (
+            retry_min_wait if retry_min_wait is not None else llm_config.retry_min_wait
+        )
+        retry_max_wait = (
+            retry_max_wait if retry_max_wait is not None else llm_config.retry_max_wait
+        )
+        llm_timeout = llm_timeout if llm_timeout is not None else llm_config.timeout
+        llm_temperature = (
+            llm_temperature if llm_temperature is not None else llm_config.temperature
+        )
+        llm_top_p = llm_top_p if llm_top_p is not None else llm_config.top_p
+        custom_llm_provider = (
+            custom_llm_provider
+            if custom_llm_provider is not None
+            else llm_config.custom_llm_provider
+        )
+        max_input_tokens = (
+            max_input_tokens
+            if max_input_tokens is not None
+            else llm_config.max_input_tokens
+        )
+        max_output_tokens = (
+            max_output_tokens
+            if max_output_tokens is not None
+            else llm_config.max_output_tokens
+        )
+
         logger.info(f'Initializing LLM with model: {model}')
         self.model_name = model
         self.api_key = api_key

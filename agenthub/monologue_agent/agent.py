@@ -4,10 +4,9 @@ import agenthub.monologue_agent.utils.prompts as prompts
 from agenthub.monologue_agent.utils.monologue import Monologue
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core import config
+from opendevin.core.config import config
 from opendevin.core.exceptions import AgentNoInstructionError
 from opendevin.core.schema import ActionType
-from opendevin.core.schema.config import ConfigType
 from opendevin.events.action import (
     Action,
     AgentRecallAction,
@@ -28,7 +27,7 @@ from opendevin.events.observation import (
 )
 from opendevin.llm.llm import LLM
 
-if config.get(ConfigType.AGENT_MEMORY_ENABLED):
+if config.agent.memory_enabled:
     from agenthub.monologue_agent.utils.memory import LongTermMemory
 
 MAX_TOKEN_COUNT_PADDING = 512
@@ -155,7 +154,7 @@ class MonologueAgent(Agent):
             raise AgentNoInstructionError()
 
         self.monologue = Monologue()
-        if config.get(ConfigType.AGENT_MEMORY_ENABLED):
+        if config.agent.memory_enabled:
             self.memory = LongTermMemory()
         else:
             self.memory = None

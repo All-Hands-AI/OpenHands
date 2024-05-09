@@ -14,6 +14,8 @@ jobs:
   test-on-macos:
     name: Test on macOS
     runs-on: macos-13
+    env:
+      INSTALL_DOCKER: '0'  # Set to '0' to skip Docker installation
     strategy:
       matrix:
         python-version: ["3.11"]
@@ -34,6 +36,7 @@ jobs:
         run: poetry install
 
       - name: Install & Start Docker
+        if: env.INSTALL_DOCKER == '1'
         run: |
           brew install colima docker
           colima start
@@ -46,7 +49,7 @@ jobs:
         run: make build
 
       - name: Run Tests
-        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit
+        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -55,6 +58,8 @@ jobs:
   test-on-linux:
     name: Test on Linux
     runs-on: ubuntu-latest
+    env:
+      INSTALL_DOCKER: '0'  # Set to '0' to skip Docker installation
     strategy:
       matrix:
         python-version: ["3.11"]
@@ -78,7 +83,37 @@ jobs:
         run: make build
 
       - name: Run Tests
-        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit
+        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  test-for-sandbox:
+    name: Test for Sandbox
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install poetry via pipx
+        run: pipx install poetry
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'poetry'
+
+      - name: Install Python dependencies using Poetry
+        run: poetry install
+
+      - name: Build Environment
+        run: make build
+
+      - name: Run Integration Test for Sandbox
+        run: |
+          poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml -s ./tests/unit/test_sandbox.py
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -87,6 +122,6 @@ jobs:
   test_matrix_success:
     name: All Mac/Linux Tests Passed
     runs-on: ubuntu-latest
-    needs: [test-on-macos, test-on-linux]
+    needs: [test-on-macos, test-on-linux, test-for-sandbox]
     steps:
     - run: echo Done!
