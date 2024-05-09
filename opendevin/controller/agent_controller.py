@@ -237,10 +237,6 @@ class AgentController:
                 obs: Observation = AgentDelegateObservation(content='', outputs=outputs)
                 await self.add_history(NullAction(), obs)
                 self.delegate = None
-            elif self.delegate._is_stuck():
-                logger.info('Loop detected in DelegateAgent, stopping task')
-                await self.delegate.set_agent_state_to(AgentState.ERROR)
-                raise Exception('Loop detected, stopping task.')
             return False
 
         logger.info(f'STEP {i}', extra={'msg_type': 'STEP'})
@@ -294,6 +290,9 @@ class AgentController:
         return self.state
 
     def _is_stuck(self):
+        # check if delegate stuck
+        if self.delegate and self.delegate._is_stuck():
+            return True
         if (
             self.state is None
             or self.state.history is None
