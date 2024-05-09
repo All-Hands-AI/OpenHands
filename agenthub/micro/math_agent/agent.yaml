@@ -1,6 +1,5 @@
 name: MathAgent
 description: "Solves simple and complex math problems using python"
-generates: Action
 container: python:3.12.3-bookworm
 inputs:
   task: string

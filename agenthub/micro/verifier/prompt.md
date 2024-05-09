@@ -9,7 +9,7 @@ Your goal is to verify that the changes are correct and bug-free.
 ## Available Actions
 {{ instructions.actions.run }}
 {{ instructions.actions.read }}
-{{ instructions.actions.think }}
+{{ instructions.actions.message }}
 {{ instructions.actions.finish }}
 
 You must ONLY `run` commands that have no side-effects, like `ls`, `grep`, and test scripts.

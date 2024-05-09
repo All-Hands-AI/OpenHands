@@ -112,7 +112,7 @@ def get_hint(latest_action_id: str) -> str:
         ActionType.READ: 'You should think about the file you just read, what you learned from it, and how that affects your plan.',
         ActionType.WRITE: 'You just changed a file. You should think about how it affects your plan.',
         ActionType.BROWSE: 'You should think about the page you just visited, and what you learned from it.',
-        ActionType.THINK: "Look at your last thought in the history above. What does it suggest? Don't think anymore--take action.",
+        ActionType.MESSAGE: "Look at your last thought in the history above. What does it suggest? Don't think anymore--take action.",
         ActionType.RECALL: 'You should think about the information you just recalled, and how it should affect your plan.',
         ActionType.ADD_TASK: 'You should think about the next action to take.',
         ActionType.MODIFY_TASK: 'You should think about the next action to take.',

@@ -8,7 +8,7 @@ the information needed to complete this task:
 ## Available Actions
 {{ instructions.actions.run }}
 {{ instructions.actions.read }}
-{{ instructions.actions.think }}
+{{ instructions.actions.message }}
 {{ instructions.actions.finish }}
 
 You must ONLY `run` commands that have no side-effects, like `ls` and `grep`.
