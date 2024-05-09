@@ -2,7 +2,6 @@ import asyncio
 from typing import Optional, Type
 
 from agenthub.codeact_agent.codeact_agent import CodeActAgent
-from opendevin.controller.action_manager import ActionManager
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.plan import Plan
 from opendevin.controller.state.state import State
@@ -17,11 +16,12 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
     Action,
+    AddTaskAction,
     AgentDelegateAction,
     AgentFinishAction,
-    AgentRejectAction,
     ChangeAgentStateAction,
     MessageAction,
+    ModifyTaskAction,
     NullAction,
 )
 from opendevin.events.event import Event
@@ -34,7 +34,8 @@ from opendevin.events.observation import (
 )
 from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.runtime import DockerSSHBox
-from opendevin.runtime.browser.browser_env import BrowserEnv
+from opendevin.runtime.runtime import Runtime
+from opendevin.runtime.server.runtime import ServerRuntime
 
 MAX_ITERATIONS = config.max_iterations
 MAX_CHARS = config.llm.max_chars
@@ -44,8 +45,7 @@ class AgentController:
     id: str
     agent: Agent
     max_iterations: int
-    action_manager: ActionManager
-    browser: BrowserEnv
+    runtime: Runtime
     event_stream: EventStream
     agent_task: Optional[asyncio.Task] = None
     delegate: 'AgentController | None' = None
@@ -76,15 +76,13 @@ class AgentController:
             EventStreamSubscriber.AGENT_CONTROLLER, self.on_event
         )
         self.max_iterations = max_iterations
-        self.action_manager = ActionManager(self.id)
+        self.runtime = ServerRuntime(self.id)
         self.max_chars = max_chars
         # Initialize agent-required plugins for sandbox (if any)
-        self.action_manager.init_sandbox_plugins(agent.sandbox_plugins)
-        # Initialize browser environment
-        self.browser = BrowserEnv()
+        self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
 
         if isinstance(agent, CodeActAgent) and not isinstance(
-            self.action_manager.sandbox, DockerSSHBox
+            self.runtime.sandbox, DockerSSHBox
         ):
             logger.warning(
                 'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful (LocalBox, DockerExecBox) will not work properly.'
@@ -94,15 +92,15 @@ class AgentController:
         if self.agent_task is not None:
             self.agent_task.cancel()
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
-        self.action_manager.sandbox.close()
-        self.browser.close()
+        self.runtime.sandbox.close()
+        self.runtime.browser.close()
         await self.set_agent_state_to(AgentState.STOPPED)
 
     def update_state_for_step(self, i):
         if self.state is None:
             return
         self.state.iteration = i
-        self.state.background_commands_obs = self.action_manager.get_background_obs()
+        self.state.background_commands_obs = self.runtime.get_background_obs()
 
     def update_state_after_step(self):
         if self.state is None:
@@ -248,7 +246,7 @@ class AgentController:
         if self.state.num_of_chars > self.max_chars:
             raise MaxCharsExceedError(self.state.num_of_chars, self.max_chars)
 
-        log_obs = self.action_manager.get_background_obs()
+        log_obs = self.runtime.get_background_obs()
         for obs in log_obs:
             await self.add_history(NullAction(), obs)
             logger.info(obs, extra={'msg_type': 'BACKGROUND LOG'})
@@ -266,26 +264,26 @@ class AgentController:
 
         self.update_state_after_step()
 
-        if isinstance(action, MessageAction) and action.wait_for_response:
+        if isinstance(action, AgentFinishAction):
+            self.state.outputs = action.outputs  # type: ignore[attr-defined]
+            logger.info(action, extra={'msg_type': 'INFO'})
+            return True
+        elif isinstance(action, MessageAction) and action.wait_for_response:
             # FIXME: remove this once history is managed outside the agent controller
             await self.add_history(action, NullObservation(''))
             await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
             return False
-
-        finished = isinstance(action, AgentFinishAction) or isinstance(
-            action, AgentRejectAction
-        )
-        if finished:
-            self.state.outputs = action.outputs  # type: ignore[attr-defined]
-            logger.info(action, extra={'msg_type': 'INFO'})
-            return True
-
-        if isinstance(observation, NullObservation):
-            observation = await self.action_manager.run_action(action, self)
+        elif isinstance(action, AgentDelegateAction):
+            await self.start_delegate(action)
+        elif isinstance(action, AddTaskAction):
+            self.state.plan.add_subtask(action.parent, action.goal, action.subtasks)
+        elif isinstance(action, ModifyTaskAction):
+            self.state.plan.set_subtask_state(action.id, action.state)
+        elif not isinstance(observation, ErrorObservation):
+            observation = await self.runtime.run_action(action)
 
         if not isinstance(observation, NullObservation):
             logger.info(observation, extra={'msg_type': 'OBSERVATION'})
-
         await self.add_history(action, observation)
         return False
 
