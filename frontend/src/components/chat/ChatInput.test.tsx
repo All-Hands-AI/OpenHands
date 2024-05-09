@@ -1,24 +1,35 @@
 import React from "react";
 import userEvent from "@testing-library/user-event";
-import { act, render } from "@testing-library/react";
+import { act, getAllByRole, render } from "@testing-library/react";
 import ChatInput from "./ChatInput";
+import AgentState from "#/types/AgentState";
 
 describe("ChatInput", () => {
   const onSendMessage = vi.fn();
+  const curAgentState  = AgentState.LOADING
 
   afterEach(() => {
     vi.clearAllMocks();
   });
 
   it("should render a textarea", () => {
-    const { getByRole } = render(<ChatInput onSendMessage={onSendMessage} />);
+    const { getByRole } = render(
+      <ChatInput
+      currentTaskState={curAgentState}
+      disabled
+      onSendMessage={onSendMessage}
+    />);
     const textarea = getByRole("textbox");
     expect(textarea).toBeInTheDocument();
   });
 
   it("should be able to be set as disabled", () => {
     const { getByRole } = render(
-      <ChatInput disabled onSendMessage={onSendMessage} />,
+      <ChatInput
+        currentTaskState={curAgentState}
+        disabled
+        onSendMessage={onSendMessage}
+      />,
     );
     const textarea = getByRole("textbox");
     const button = getByRole("button");
@@ -35,20 +46,44 @@ describe("ChatInput", () => {
 
   it("should render with a placeholder", () => {
     const { getByPlaceholderText } = render(
-      <ChatInput onSendMessage={onSendMessage} />,
+      <ChatInput
+        currentTaskState={curAgentState}
+        onSendMessage={onSendMessage}
+      />,
     );
     const textarea = getByPlaceholderText(/CHAT_INTERFACE\$INPUT_PLACEHOLDER/i);
     expect(textarea).toBeInTheDocument();
   });
 
   it("should render a send button", () => {
-    const { getByRole } = render(<ChatInput onSendMessage={onSendMessage} />);
+    const { getByRole } = render(
+      <ChatInput
+      currentTaskState={curAgentState}
+      onSendMessage={onSendMessage}
+    />);
     const button = getByRole("button");
     expect(button).toBeInTheDocument();
   });
 
+  it("should render the continue button when currentTaskState is 'awaiting_user_input'", () => {
+    const curAgentState: AgentState = AgentState.AWAITING_USER_INPUT;
+    const { getAllByRole } = render(
+      <ChatInput
+        currentTaskState={curAgentState}
+        onSendMessage={onSendMessage}
+      />,
+    );
+    const buttons = getAllByRole("button");
+    expect(buttons[0]).toBeInTheDocument();
+  });
+
   it("should call sendChatMessage with the input when the send button is clicked", () => {
-    const { getByRole } = render(<ChatInput onSendMessage={onSendMessage} />);
+    const { getByRole } = render(
+      <ChatInput
+        currentTaskState={curAgentState}
+        onSendMessage={onSendMessage}
+      />,
+    );
     const textarea = getByRole("textbox");
     const button = getByRole("button");
 
@@ -61,7 +96,12 @@ describe("ChatInput", () => {
   });
 
   it("should be able to send a message when the enter key is pressed", () => {
-    const { getByRole } = render(<ChatInput onSendMessage={onSendMessage} />);
+    const { getByRole } = render(
+      <ChatInput
+        currentTaskState={curAgentState}
+        onSendMessage={onSendMessage}
+      />,
+    );
     const textarea = getByRole("textbox");
 
     act(() => {
@@ -72,7 +112,12 @@ describe("ChatInput", () => {
   });
 
   it("should NOT send a message when shift + enter is pressed", () => {
-    const { getByRole } = render(<ChatInput onSendMessage={onSendMessage} />);
+    const { getByRole } = render(
+      <ChatInput
+        currentTaskState={curAgentState}
+        onSendMessage={onSendMessage}
+      />,
+    );
     const textarea = getByRole("textbox");
 
     act(() => {
@@ -83,7 +128,12 @@ describe("ChatInput", () => {
   });
 
   it("should NOT send an empty message", () => {
-    const { getByRole } = render(<ChatInput onSendMessage={onSendMessage} />);
+    const { getByRole } = render(
+      <ChatInput
+        currentTaskState={curAgentState}
+        onSendMessage={onSendMessage}
+      />,
+    );
     const textarea = getByRole("textbox");
     const button = getByRole("button");
 
@@ -101,7 +151,12 @@ describe("ChatInput", () => {
   });
 
   it("should clear the input message after sending a message", () => {
-    const { getByRole } = render(<ChatInput onSendMessage={onSendMessage} />);
+    const { getByRole } = render(
+      <ChatInput
+        currentTaskState={curAgentState}
+        onSendMessage={onSendMessage}
+      />,
+    );
     const textarea = getByRole("textbox");
     const button = getByRole("button");
 
