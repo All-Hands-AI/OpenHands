@@ -66,6 +66,17 @@ class AgentFinishAction(Action):
 
 
 @dataclass
+class AgentRejectAction(Action):
+    outputs: Dict = field(default_factory=dict)
+    thought: str = ''
+    action: str = ActionType.REJECT
+
+    @property
+    def message(self) -> str:
+        return 'Task is rejected by the agent.'
+
+
+@dataclass
 class AgentDelegateAction(Action):
     agent: str
     inputs: dict
