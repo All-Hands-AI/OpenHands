@@ -5,9 +5,8 @@ from typing import TYPE_CHECKING
 
 import requests
 
-from opendevin.core import config
+from opendevin.core.config import config
 from opendevin.core.schema import ActionType
-from opendevin.core.schema.config import ConfigType
 from opendevin.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
@@ -42,9 +41,9 @@ class GitHubPushAction(Action):
     action: str = ActionType.PUSH
 
     async def run(self, controller: 'AgentController') -> Observation:
-        github_token = config.get(ConfigType.GITHUB_TOKEN)
+        github_token = config.github_token
         if not github_token:
-            return ErrorObservation('GITHUB_TOKEN is not set')
+            return ErrorObservation('github_token is not set')
 
         # Create a random short string to use as a temporary remote
         random_remote = ''.join(
@@ -111,9 +110,9 @@ class GitHubSendPRAction(Action):
     action: str = ActionType.SEND_PR
 
     async def run(self, controller: 'AgentController') -> Observation:
-        github_token = config.get(ConfigType.GITHUB_TOKEN)
+        github_token = config.github_token
         if not github_token:
-            return ErrorObservation('GITHUB_TOKEN is not set')
+            return ErrorObservation('github_token is not set')
 
         # API URL to create the pull request
         url = f'https://api.github.com/repos/{self.owner}/{self.repo}/pulls'

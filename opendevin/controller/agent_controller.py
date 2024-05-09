@@ -6,7 +6,7 @@ from opendevin.controller.action_manager import ActionManager
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.plan import Plan
 from opendevin.controller.state.state import State
-from opendevin.core import config
+from opendevin.core.config import config
 from opendevin.core.exceptions import (
     AgentMalformedActionError,
     AgentNoActionError,
@@ -15,7 +15,6 @@ from opendevin.core.exceptions import (
 )
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
-from opendevin.core.schema.config import ConfigType
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
@@ -37,8 +36,8 @@ from opendevin.events.stream import EventSource, EventStream, EventStreamSubscri
 from opendevin.runtime import DockerSSHBox
 from opendevin.runtime.browser.browser_env import BrowserEnv
 
-MAX_ITERATIONS = config.get(ConfigType.MAX_ITERATIONS)
-MAX_CHARS = config.get(ConfigType.MAX_CHARS)
+MAX_ITERATIONS = config.max_iterations
+MAX_CHARS = config.llm.max_chars
 
 
 class AgentController:
@@ -96,6 +95,7 @@ class AgentController:
             self.agent_task.cancel()
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
         self.action_manager.sandbox.close()
+        self.browser.close()
         await self.set_agent_state_to(AgentState.STOPPED)
 
     def update_state_for_step(self, i):

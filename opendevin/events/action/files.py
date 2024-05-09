@@ -2,9 +2,8 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from opendevin.core import config
+from opendevin.core.config import config
 from opendevin.core.schema import ActionType
-from opendevin.core.schema.config import ConfigType
 from opendevin.events.observation import (
     ErrorObservation,
     FileReadObservation,
@@ -28,20 +27,16 @@ def resolve_path(file_path, working_directory):
     abs_path_in_sandbox = path_in_sandbox.resolve()
 
     # If the path is outside the workspace, deny it
-    if not abs_path_in_sandbox.is_relative_to(
-        config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX)
-    ):
+    if not abs_path_in_sandbox.is_relative_to(config.workspace_mount_path_in_sandbox):
         raise PermissionError(f'File access not permitted: {file_path}')
 
     # Get path relative to the root of the workspace inside the sandbox
     path_in_workspace = abs_path_in_sandbox.relative_to(
-        Path(config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX))
+        Path(config.workspace_mount_path_in_sandbox)
     )
 
     # Get path relative to host
-    path_in_host_workspace = (
-        Path(config.get(ConfigType.WORKSPACE_BASE)) / path_in_workspace
-    )
+    path_in_host_workspace = Path(config.workspace_base) / path_in_workspace
 
     return path_in_host_workspace
 

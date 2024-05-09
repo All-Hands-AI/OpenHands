@@ -4,6 +4,7 @@ from typing import List, Mapping
 from agenthub.codeact_agent.prompt import EXAMPLES, SYSTEM_MESSAGE
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
@@ -17,7 +18,7 @@ from opendevin.events.observation import (
     IPythonRunCellObservation,
     NullObservation,
 )
-from opendevin.llm.llm import LLM
+from opendevin.llm.llm import LLM, completion_cost
 from opendevin.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
@@ -33,7 +34,7 @@ def parse_response(response) -> str:
     return action
 
 
-def truncate_observation(observation: str, max_chars: int = 5000) -> str:
+def truncate_observation(observation: str, max_chars: int = 10_000) -> str:
     """
     Truncate the middle of the observation if it is too long.
     """
@@ -45,6 +46,37 @@ def truncate_observation(observation: str, max_chars: int = 5000) -> str:
         + '\n[... Observation truncated due to length ...]\n'
         + observation[-half:]
     )
+
+
+def swe_agent_edit_hack(bash_command: str) -> str:
+    """
+    Hack to handle the SWE-agent edit command. The vanilla edit command will hang the SSHBox.
+
+    REPLACE THIS:
+    edit 683:693
+            try:
+                return list(urlsplit(url))
+            except ValueError:
+                raise ValidationError(self.error_messages['invalid'], code='invalid')
+    end_of_edit
+
+    WITH THIS:
+    edit 683:693 <<EOF
+            try:
+                return list(urlsplit(url))
+            except ValueError:
+                raise ValidationError(self.error_messages['invalid'], code='invalid')s
+    EOF
+    """
+    if 'edit' in bash_command:
+        # edit\s(\d+):(\d+)([\s\S]*)end_of_edit
+        # replace
+        bash_command = re.sub(
+            r'edit\s(\d+):(\d+)([\s\S]*)end_of_edit',
+            r'edit \1:\2 <<EOF\3EOF',
+            bash_command,
+        )
+    return bash_command
 
 
 class CodeActAgent(Agent):
@@ -113,6 +145,7 @@ class CodeActAgent(Agent):
         """
         super().__init__(llm)
         self.messages: List[Mapping[str, str]] = []
+        self.cost_accumulator = 0
 
     def step(self, state: State) -> Action:
         """
@@ -195,6 +228,11 @@ class CodeActAgent(Agent):
             ],
             temperature=0.0,
         )
+        cur_cost = completion_cost(completion_response=response)
+        self.cost_accumulator += cur_cost
+        logger.info(
+            f'Cost: {cur_cost:.2f} USD | Accumulated Cost: {self.cost_accumulator:.2f} USD'
+        )
         action_str: str = parse_response(response)
         state.num_of_chars += sum(
             len(message['content']) for message in self.messages
@@ -208,6 +246,8 @@ class CodeActAgent(Agent):
             thought = action_str.replace(bash_command.group(0), '').strip()
             # a command was found
             command_group = bash_command.group(1).strip()
+            command_group = swe_agent_edit_hack(command_group)
+
             if command_group.strip() == 'exit':
                 return AgentFinishAction()
             return CmdRunAction(command=command_group, thought=thought)

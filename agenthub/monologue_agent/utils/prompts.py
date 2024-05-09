@@ -2,9 +2,8 @@ import re
 from json import JSONDecodeError
 from typing import List
 
-from opendevin.core import config
+from opendevin.core.config import config
 from opendevin.core.exceptions import LLMOutputError
-from opendevin.core.schema.config import ConfigType
 from opendevin.events.action import (
     Action,
     action_from_dict,
@@ -149,7 +148,7 @@ def get_request_action_prompt(
             )
         bg_commands_message += '\nYou can end any process by sending a `kill` action with the numerical `id` above.'
 
-    user = 'opendevin' if config.get(ConfigType.RUN_AS_DEVIN) else 'root'
+    user = 'opendevin' if config.run_as_devin else 'root'
 
     return ACTION_PROMPT % {
         'task': task,
@@ -157,10 +156,8 @@ def get_request_action_prompt(
         'background_commands': bg_commands_message,
         'hint': hint,
         'user': user,
-        'timeout': config.get(ConfigType.SANDBOX_TIMEOUT),
-        'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.get(
-            ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX
-        ),
+        'timeout': config.sandbox_timeout,
+        'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.workspace_mount_path_in_sandbox,
     }
 
 
