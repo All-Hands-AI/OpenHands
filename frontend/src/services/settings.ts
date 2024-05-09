@@ -39,6 +39,11 @@ export const maybeMigrateSettings = () => {
 };
 
 /**
+ * Get the default settings
+ */
+export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
+
+/**
  * Get the settings from local storage or use the default settings if not found
  */
 export const getSettings = (): Settings => {

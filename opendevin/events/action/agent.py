@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Dict
 
 from opendevin.core.schema import ActionType
 from opendevin.events.observation import (
-    AgentMessageObservation,
     AgentRecallObservation,
     NullObservation,
     Observation,
@@ -46,45 +45,6 @@ class AgentRecallAction(Action):
 
 
 @dataclass
-class AgentThinkAction(Action):
-    thought: str
-    action: str = ActionType.THINK
-
-    @property
-    def message(self) -> str:
-        return self.thought
-
-
-@dataclass
-class AgentTalkAction(Action):
-    content: str
-    action: str = ActionType.TALK
-
-    async def run(self, controller: 'AgentController') -> Observation:
-        raise NotImplementedError
-
-    @property
-    def message(self) -> str:
-        return self.content
-
-    def __str__(self) -> str:
-        return self.content
-
-
-@dataclass
-class AgentEchoAction(Action):
-    content: str
-    action: str = 'echo'
-
-    async def run(self, controller: 'AgentController') -> Observation:
-        return AgentMessageObservation(self.content)
-
-    @property
-    def message(self) -> str:
-        return self.content
-
-
-@dataclass
 class AgentSummarizeAction(Action):
     summary: str
     action: str = ActionType.SUMMARIZE
@@ -103,6 +63,17 @@ class AgentFinishAction(Action):
     @property
     def message(self) -> str:
         return "All done! What's next on the agenda?"
+
+
+@dataclass
+class AgentRejectAction(Action):
+    outputs: Dict = field(default_factory=dict)
+    thought: str = ''
+    action: str = ActionType.REJECT
+
+    @property
+    def message(self) -> str:
+        return 'Task is rejected by the agent.'
 
 
 @dataclass

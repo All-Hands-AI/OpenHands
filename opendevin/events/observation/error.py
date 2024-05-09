@@ -6,7 +6,7 @@ from .observation import Observation
 
 
 @dataclass
-class AgentErrorObservation(Observation):
+class ErrorObservation(Observation):
     """
     This data class represents an error encountered by the agent.
     """
@@ -15,4 +15,4 @@ class AgentErrorObservation(Observation):
 
     @property
     def message(self) -> str:
-        return 'Oops. Something went wrong: ' + self.content
+        return self.content

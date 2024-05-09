@@ -8,8 +8,7 @@ from opendevin.core import config
 from opendevin.core.schema.config import ConfigType
 from opendevin.events.action.github import GitHubPushAction, GitHubSendPRAction
 from opendevin.events.observation.commands import CmdOutputObservation
-from opendevin.events.observation.error import AgentErrorObservation
-from opendevin.events.observation.message import AgentMessageObservation
+from opendevin.events.observation.error import ErrorObservation
 from opendevin.events.stream import EventStream
 from opendevin.llm.llm import LLM
 
@@ -74,8 +73,8 @@ async def test_run_push_error_missing_token(
     result = await push_action.run(agent_controller)
 
     # Verify the result is an error due to missing token
-    assert isinstance(result, AgentErrorObservation)
-    assert result.message == 'Oops. Something went wrong: GITHUB_TOKEN is not set'
+    assert isinstance(result, ErrorObservation)
+    assert result.message == 'GITHUB_TOKEN is not set'
 
 
 @pytest.mark.asyncio
@@ -101,7 +100,6 @@ async def test_run_pull_request_created_successfully(mock_post, agent_controller
     result = await pr_action.run(agent_controller)
 
     # Verify the result is a success observation
-    assert isinstance(result, AgentMessageObservation)
     assert 'Pull request created successfully' in result.content
     assert 'https://github.com/example/pull/1' in result.content
 
@@ -129,7 +127,7 @@ async def test_run_pull_request_creation_failed(mock_post, agent_controller):
     result = await pr_action.run(agent_controller)
 
     # Verify the result is an error observation
-    assert isinstance(result, AgentErrorObservation)
+    assert isinstance(result, ErrorObservation)
     assert 'Failed to create pull request' in result.content
     assert 'Status code: 400' in result.content
     assert 'Bad Request' in result.content
@@ -150,5 +148,5 @@ async def test_run_error_missing_token(agent_controller):
     result = await pr_action.run(agent_controller)
 
     # Verify the result is an error due to missing token
-    assert isinstance(result, AgentErrorObservation)
+    assert isinstance(result, ErrorObservation)
     assert 'GITHUB_TOKEN is not set' in result.message

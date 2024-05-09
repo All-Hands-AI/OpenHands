@@ -14,7 +14,7 @@ from opendevin.core.main import main
     reason='CodeActAgent does not support exec sandbox since exec sandbox is NOT stateful',
 )
 def test_write_simple_script():
-    task = "Write a shell script 'hello.sh' that prints 'hello'."
+    task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
     asyncio.run(main(task))
 
     # Verify the script file exists
