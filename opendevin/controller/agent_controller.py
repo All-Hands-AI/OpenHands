@@ -96,6 +96,7 @@ class AgentController:
             self.agent_task.cancel()
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
         self.action_manager.sandbox.close()
+        self.browser.close()
         await self.set_agent_state_to(AgentState.STOPPED)
 
     def update_state_for_step(self, i):
