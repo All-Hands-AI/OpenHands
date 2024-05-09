@@ -1,10 +1,14 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import Markdown from "react-markdown";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { VscArrowDown } from "react-icons/vsc";
+import { useTranslation } from "react-i18next";
 import { RootState } from "#/store";
 import { Cell } from "#/state/jupyterSlice";
+import { useScrollToBottom } from "#/hooks/useScrollToBottom";
+import { I18nKey } from "#/i18n/declaration";
 
 interface IJupyterCell {
   cell: Cell;
@@ -75,13 +79,49 @@ function JupyterCell({ cell }: IJupyterCell): JSX.Element {
 }
 
 function Jupyter(): JSX.Element {
+  const { t } = useTranslation();
+
   const { cells } = useSelector((state: RootState) => state.jupyter);
+  const jupyterRef = useRef<HTMLDivElement>(null);
+
+  const [hitBottom, setHitBottom] = useState(true);
+  const { setAutoScroll, scrollDomToBottom } = useScrollToBottom(jupyterRef);
+
+  const onChatBodyScroll = (e: HTMLElement) => {
+    const bottomHeight = e.scrollTop + e.clientHeight;
+
+    const isHitBottom = bottomHeight >= e.scrollHeight - 10;
+
+    setHitBottom(isHitBottom);
+    setAutoScroll(isHitBottom);
+  };
 
   return (
-    <div className="flex-1 overflow-y-auto flex flex-col">
-      {cells.map((cell, index) => (
-        <JupyterCell key={index} cell={cell} />
-      ))}
+    <div className="flex-1">
+      <div
+        className="overflow-y-auto h-full"
+        ref={jupyterRef}
+        onScroll={(e) => onChatBodyScroll(e.currentTarget)}
+      >
+        {cells.map((cell, index) => (
+          <JupyterCell key={index} cell={cell} />
+        ))}
+      </div>
+      {!hitBottom && (
+        <div className="sticky bottom-2 flex items-center justify-center">
+          <button
+            type="button"
+            className="relative border-1 text-sm rounded px-3 py-1 border-neutral-600 bg-neutral-700 cursor-pointer select-none"
+          >
+            <span className="flex items-center" onClick={scrollDomToBottom}>
+              <VscArrowDown className="inline mr-2 w-3 h-3" />
+              <span className="inline-block" onClick={scrollDomToBottom}>
+                {t(I18nKey.CHAT_INTERFACE$TO_BOTTOM)}
+              </span>
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

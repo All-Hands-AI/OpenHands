@@ -25,7 +25,7 @@ export async function getPlan(): Promise<Plan | undefined> {
     Authorization: `Bearer ${localStorage.getItem("token")}`,
   });
   const res = await fetch("/api/plan", { headers });
-  if (res.status !== 200) {
+  if (res.status !== 200 && res.status !== 204) {
     return undefined;
   }
   const data = await res.json();

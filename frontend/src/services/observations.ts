@@ -1,10 +1,11 @@
-import { appendAssistantMessage } from "#/state/chatSlice";
+import { changeAgentState } from "#/state/agentSlice";
 import { setUrl, setScreenshotSrc } from "#/state/browserSlice";
 import store from "#/store";
 import { ObservationMessage } from "#/types/Message";
 import { appendOutput } from "#/state/commandSlice";
 import { appendJupyterOutput } from "#/state/jupyterSlice";
 import ObservationType from "#/types/ObservationType";
+import { addAssistantMessage } from "#/state/chatSlice";
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {
@@ -16,15 +17,18 @@ export function handleObservationMessage(message: ObservationMessage) {
       store.dispatch(appendJupyterOutput(message.content));
       break;
     case ObservationType.BROWSE:
-      if (message.extras?.screenshot) {
-        store.dispatch(setScreenshotSrc(message.extras.screenshot));
+      if (message.screenshot) {
+        store.dispatch(setScreenshotSrc(message.screenshot));
       }
       if (message.extras?.url) {
         store.dispatch(setUrl(message.extras.url));
       }
       break;
+    case ObservationType.AGENT_STATE_CHANGED:
+      store.dispatch(changeAgentState(message.extras.agent_state));
+      break;
     default:
-      store.dispatch(appendAssistantMessage(message.message));
+      store.dispatch(addAssistantMessage(message.message));
       break;
   }
 }

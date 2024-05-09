@@ -1,6 +1,8 @@
 from functools import partial
 
+import litellm
 from litellm import completion as litellm_completion
+from litellm import completion_cost
 from litellm.exceptions import (
     APIConnectionError,
     RateLimitError,
@@ -18,6 +20,8 @@ from opendevin.core.logger import llm_prompt_logger, llm_response_logger
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ConfigType
 
+__all__ = ['LLM', 'completion_cost']
+
 DEFAULT_API_KEY = config.get(ConfigType.LLM_API_KEY)
 DEFAULT_BASE_URL = config.get(ConfigType.LLM_BASE_URL)
 DEFAULT_MODEL_NAME = config.get(ConfigType.LLM_MODEL)
@@ -25,8 +29,10 @@ DEFAULT_API_VERSION = config.get(ConfigType.LLM_API_VERSION)
 LLM_NUM_RETRIES = config.get(ConfigType.LLM_NUM_RETRIES)
 LLM_RETRY_MIN_WAIT = config.get(ConfigType.LLM_RETRY_MIN_WAIT)
 LLM_RETRY_MAX_WAIT = config.get(ConfigType.LLM_RETRY_MAX_WAIT)
+LLM_MAX_INPUT_TOKENS = config.get(ConfigType.LLM_MAX_INPUT_TOKENS)
+LLM_MAX_OUTPUT_TOKENS = config.get(ConfigType.LLM_MAX_OUTPUT_TOKENS)
+LLM_CUSTOM_LLM_PROVIDER = config.get(ConfigType.LLM_CUSTOM_LLM_PROVIDER)
 LLM_TIMEOUT = config.get(ConfigType.LLM_TIMEOUT)
-LLM_MAX_RETURN_TOKENS = config.get(ConfigType.LLM_MAX_RETURN_TOKENS)
 LLM_TEMPERATURE = config.get(ConfigType.LLM_TEMPERATURE)
 LLM_TOP_P = config.get(ConfigType.LLM_TOP_P)
 
@@ -45,8 +51,10 @@ class LLM:
         num_retries=LLM_NUM_RETRIES,
         retry_min_wait=LLM_RETRY_MIN_WAIT,
         retry_max_wait=LLM_RETRY_MAX_WAIT,
+        max_input_tokens=LLM_MAX_INPUT_TOKENS,
+        max_output_tokens=LLM_MAX_OUTPUT_TOKENS,
+        custom_llm_provider=LLM_CUSTOM_LLM_PROVIDER,
         llm_timeout=LLM_TIMEOUT,
-        llm_max_return_tokens=LLM_MAX_RETURN_TOKENS,
         llm_temperature=LLM_TEMPERATURE,
         llm_top_p=LLM_TOP_P,
     ):
@@ -59,8 +67,11 @@ class LLM:
             num_retries (int, optional): The number of retries for API calls. Defaults to LLM_NUM_RETRIES.
             retry_min_wait (int, optional): The minimum time to wait between retries in seconds. Defaults to LLM_RETRY_MIN_TIME.
             retry_max_wait (int, optional): The maximum time to wait between retries in seconds. Defaults to LLM_RETRY_MAX_TIME.
+            max_input_tokens (int, optional): The maximum number of tokens to send to the LLM per task. Defaults to LLM_MAX_INPUT_TOKENS.
+            max_output_tokens (int, optional): The maximum number of tokens to receive from the LLM per task. Defaults to LLM_MAX_OUTPUT_TOKENS.
+            custom_llm_provider (str, optional): A custom LLM provider. Defaults to LLM_CUSTOM_LLM_PROVIDER.
             llm_timeout (int, optional): The maximum time to wait for a response in seconds. Defaults to LLM_TIMEOUT.
-            llm_max_return_tokens (int, optional): The maximum number of tokens to return. Defaults to LLM_MAX_RETURN_TOKENS.
+            llm_temperature (float, optional): The temperature for LLM sampling. Defaults to LLM_TEMPERATURE.
 
         Attributes:
             model_name (str): The name of the language model.
@@ -73,8 +84,33 @@ class LLM:
         self.api_key = api_key
         self.base_url = base_url
         self.api_version = api_version
+        self.max_input_tokens = max_input_tokens
+        self.max_output_tokens = max_output_tokens
         self.llm_timeout = llm_timeout
-        self.llm_max_return_tokens = llm_max_return_tokens
+        self.custom_llm_provider = custom_llm_provider
+
+        # litellm actually uses base Exception here for unknown model
+        self.model_info = None
+        try:
+            self.model_info = litellm.get_model_info(self.model_name)
+        # noinspection PyBroadException
+        except Exception:
+            logger.warning(f'Could not get model info for {self.model_name}')
+
+        if self.max_input_tokens is None:
+            if self.model_info is not None and 'max_input_tokens' in self.model_info:
+                self.max_input_tokens = self.model_info['max_input_tokens']
+            else:
+                # Max input tokens for gpt3.5, so this is a safe fallback for any potentially viable model
+                self.max_input_tokens = 4096
+
+        if self.max_output_tokens is None:
+            if self.model_info is not None and 'max_output_tokens' in self.model_info:
+                self.max_output_tokens = self.model_info['max_output_tokens']
+            else:
+                # Enough tokens for most output actions, and not too many for a bad llm to get carried away responding
+                # with thousands of unwanted tokens
+                self.max_output_tokens = 1024
 
         self._completion = partial(
             litellm_completion,
@@ -82,7 +118,8 @@ class LLM:
             api_key=self.api_key,
             base_url=self.base_url,
             api_version=self.api_version,
-            max_tokens=self.llm_max_return_tokens,
+            custom_llm_provider=custom_llm_provider,
+            max_tokens=self.max_output_tokens,
             timeout=self.llm_timeout,
             temperature=llm_temperature,
             top_p=llm_top_p,
@@ -128,6 +165,18 @@ class LLM:
         Decorator for the litellm completion function.
         """
         return self._completion
+
+    def get_token_count(self, messages):
+        """
+        Get the number of tokens in a list of messages.
+
+        Args:
+            messages (list): A list of messages.
+
+        Returns:
+            int: The number of tokens.
+        """
+        return litellm.token_counter(model=self.model_name, messages=messages)
 
     def __str__(self):
         if self.api_version:

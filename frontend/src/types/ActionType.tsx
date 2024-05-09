@@ -2,11 +2,11 @@ enum ActionType {
   // Initializes the agent. Only sent by client.
   INIT = "initialize",
 
-  // Sends a message from the user
-  USER_MESSAGE = "user_message",
-
-  // Starts a new development task
+  // Starts a new development task.
   START = "start",
+
+  // Represents a message from the user or agent.
+  MESSAGE = "message",
 
   // Reads the contents of a file.
   READ = "read",
@@ -29,12 +29,6 @@ enum ActionType {
   // Searches long-term memory.
   RECALL = "recall",
 
-  // Allows the agent to make a plan, set a goal, or record thoughts.
-  THINK = "think",
-
-  // Allows the agent to respond to the user. Only sent by the agent.
-  TALK = "talk",
-
   // If you're absolutely certain that you've completed your task and have tested your work,
   // use the finish action to stop working.
   FINISH = "finish",
@@ -45,7 +39,8 @@ enum ActionType {
   // Updates a task in the plan.
   MODIFY_TASK = "modify_task",
 
-  CHANGE_TASK_STATE = "change_task_state",
+  // Changes the state of the agent, e.g. to paused or running
+  CHANGE_AGENT_STATE = "change_agent_state",
 }
 
 export default ActionType;

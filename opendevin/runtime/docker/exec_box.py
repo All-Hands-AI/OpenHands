@@ -11,6 +11,7 @@ from typing import Dict, List, Tuple
 
 import docker
 
+from opendevin.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core import config
 from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
@@ -56,12 +57,14 @@ class DockerExecBox(Sandbox):
             self.docker_client = docker.from_env()
         except Exception as ex:
             logger.exception(
-                'Error creating controller. Please check Docker is running and visit `https://opendevin.github.io/OpenDevin/modules/usage/troubleshooting` for more debugging information.',
+                f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information.',
                 exc_info=False,
             )
             raise ex
 
-        self.instance_id = sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
+        self.instance_id = (
+            sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
+        )
 
         # TODO: this timeout is actually essential - need a better way to set it
         # if it is too short, the container may still waiting for previous
@@ -79,6 +82,7 @@ class DockerExecBox(Sandbox):
         if RUN_AS_DEVIN:
             self.setup_devin_user()
         atexit.register(self.close)
+        super().__init__()
 
     def setup_devin_user(self):
         cmds = [
@@ -88,7 +92,9 @@ class DockerExecBox(Sandbox):
         ]
         for cmd in cmds:
             exit_code, logs = self.container.exec_run(
-                ['/bin/bash', '-c', cmd], workdir=SANDBOX_WORKSPACE_DIR
+                ['/bin/bash', '-c', cmd],
+                workdir=SANDBOX_WORKSPACE_DIR,
+                environment=self._env,
             )
             if exit_code != 0:
                 raise Exception(f'Failed to setup devin user: {logs}')
@@ -108,7 +114,9 @@ class DockerExecBox(Sandbox):
     def execute(self, cmd: str) -> Tuple[int, str]:
         # TODO: each execute is not stateful! We need to keep track of the current working directory
         def run_command(container, command):
-            return container.exec_run(command, workdir=SANDBOX_WORKSPACE_DIR)
+            return container.exec_run(
+                command, workdir=SANDBOX_WORKSPACE_DIR, environment=self._env
+            )
 
         # Use ThreadPoolExecutor to control command and set timeout
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -124,7 +132,9 @@ class DockerExecBox(Sandbox):
                 pid = self.get_pid(cmd)
                 if pid is not None:
                     self.container.exec_run(
-                        f'kill -9 {pid}', workdir=SANDBOX_WORKSPACE_DIR
+                        f'kill -9 {pid}',
+                        workdir=SANDBOX_WORKSPACE_DIR,
+                        environment=self._env,
                     )
                 return -1, f'Command: "{cmd}" timed out'
         logs_out = logs.decode('utf-8')
@@ -137,6 +147,7 @@ class DockerExecBox(Sandbox):
         exit_code, logs = self.container.exec_run(
             ['/bin/bash', '-c', f'mkdir -p {sandbox_dest}'],
             workdir=SANDBOX_WORKSPACE_DIR,
+            environment=self._env,
         )
         if exit_code != 0:
             raise Exception(
@@ -172,7 +183,10 @@ class DockerExecBox(Sandbox):
 
     def execute_in_background(self, cmd: str) -> Process:
         result = self.container.exec_run(
-            self.get_exec_cmd(cmd), socket=True, workdir=SANDBOX_WORKSPACE_DIR
+            self.get_exec_cmd(cmd),
+            socket=True,
+            workdir=SANDBOX_WORKSPACE_DIR,
+            environment=self._env,
         )
         result.output._sock.setblocking(0)
         pid = self.get_pid(cmd)
@@ -182,7 +196,7 @@ class DockerExecBox(Sandbox):
         return bg_cmd
 
     def get_pid(self, cmd):
-        exec_result = self.container.exec_run('ps aux')
+        exec_result = self.container.exec_run('ps aux', environment=self._env)
         processes = exec_result.output.decode('utf-8').splitlines()
         cmd = ' '.join(self.get_exec_cmd(cmd))
 
@@ -198,7 +212,9 @@ class DockerExecBox(Sandbox):
         bg_cmd = self.background_commands[id]
         if bg_cmd.pid is not None:
             self.container.exec_run(
-                f'kill -9 {bg_cmd.pid}', workdir=SANDBOX_WORKSPACE_DIR
+                f'kill -9 {bg_cmd.pid}',
+                workdir=SANDBOX_WORKSPACE_DIR,
+                environment=self._env,
             )
         assert isinstance(bg_cmd, DockerProcess)
         bg_cmd.result.output.close()

@@ -1,12 +1,9 @@
 import { Input, useDisclosure } from "@nextui-org/react";
-import React, { useEffect } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { useSelector } from "react-redux";
 import { AvailableLanguages } from "../../../i18n";
 import { I18nKey } from "../../../i18n/declaration";
-import { RootState } from "../../../store";
-import AgentTaskState from "../../../types/AgentTaskState";
 import { AutocompleteCombobox } from "./AutocompleteCombobox";
 import { Settings } from "#/services/settings";
 
@@ -14,6 +11,7 @@ interface SettingsFormProps {
   settings: Settings;
   models: string[];
   agents: string[];
+  disabled: boolean;
 
   onModelChange: (model: string) => void;
   onAPIKeyChange: (apiKey: string) => void;
@@ -25,34 +23,29 @@ function SettingsForm({
   settings,
   models,
   agents,
+  disabled,
   onModelChange,
   onAPIKeyChange,
   onAgentChange,
   onLanguageChange,
 }: SettingsFormProps) {
   const { t } = useTranslation();
-  const { curTaskState } = useSelector((state: RootState) => state.agent);
-  const [disabled, setDisabled] = React.useState<boolean>(false);
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
-
-  useEffect(() => {
-    if (
-      curTaskState === AgentTaskState.RUNNING ||
-      curTaskState === AgentTaskState.PAUSED ||
-      curTaskState === AgentTaskState.AWAITING_USER_INPUT
-    ) {
-      setDisabled(true);
-    } else {
-      setDisabled(false);
-    }
-  }, [curTaskState, setDisabled]);
 
   return (
     <>
       <AutocompleteCombobox
+        ariaLabel="agent"
+        items={agents.map((agent) => ({ value: agent, label: agent }))}
+        defaultKey={settings.AGENT}
+        onChange={onAgentChange}
+        tooltip={t(I18nKey.SETTINGS$AGENT_TOOLTIP)}
+        disabled={disabled}
+      />
+      <AutocompleteCombobox
         ariaLabel="model"
         items={models.map((model) => ({ value: model, label: model }))}
-        defaultKey={settings.LLM_MODEL || models[0]}
+        defaultKey={settings.LLM_MODEL}
         onChange={(e) => {
           onModelChange(e);
         }}
@@ -62,7 +55,7 @@ function SettingsForm({
       />
       <Input
         label="API Key"
-        disabled={disabled}
+        isDisabled={disabled}
         aria-label="apikey"
         data-testid="apikey"
         placeholder={t(I18nKey.SETTINGS$API_KEY_PLACEHOLDER)}
@@ -86,17 +79,9 @@ function SettingsForm({
         }
       />
       <AutocompleteCombobox
-        ariaLabel="agent"
-        items={agents.map((agent) => ({ value: agent, label: agent }))}
-        defaultKey={settings.AGENT || agents[0]}
-        onChange={onAgentChange}
-        tooltip={t(I18nKey.SETTINGS$AGENT_TOOLTIP)}
-        disabled={disabled}
-      />
-      <AutocompleteCombobox
         ariaLabel="language"
         items={AvailableLanguages}
-        defaultKey={settings.LANGUAGE || "en"}
+        defaultKey={settings.LANGUAGE}
         onChange={onLanguageChange}
         tooltip={t(I18nKey.SETTINGS$LANGUAGE_TOOLTIP)}
         disabled={disabled}

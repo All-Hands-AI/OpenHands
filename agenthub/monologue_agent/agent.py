@@ -11,12 +11,12 @@ from opendevin.core.schema.config import ConfigType
 from opendevin.events.action import (
     Action,
     AgentRecallAction,
-    AgentThinkAction,
     BrowseURLAction,
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
     GitHubPushAction,
+    MessageAction,
     NullAction,
 )
 from opendevin.events.observation import (
@@ -32,7 +32,7 @@ from opendevin.llm.llm import LLM
 if config.get(ConfigType.AGENT_MEMORY_ENABLED):
     from agenthub.monologue_agent.utils.memory import LongTermMemory
 
-MAX_MONOLOGUE_LENGTH = 20000
+MAX_TOKEN_COUNT_PADDING = 512
 MAX_OUTPUT_LENGTH = 5000
 
 INITIAL_THOUGHTS = [
@@ -114,8 +114,6 @@ class MonologueAgent(Agent):
         - event (dict): The event that will be added to monologue and memory
         """
 
-        if 'extras' in event and 'screenshot' in event['extras']:
-            del event['extras']['screenshot']
         if (
             'args' in event
             and 'output' in event['args']
@@ -128,7 +126,17 @@ class MonologueAgent(Agent):
         self.monologue.add_event(event)
         if self.memory is not None:
             self.memory.add_event(event)
-        if self.monologue.get_total_length() > MAX_MONOLOGUE_LENGTH:
+
+        # Test monologue token length
+        prompt = prompts.get_request_action_prompt(
+            '',
+            self.monologue.get_thoughts(),
+            [],
+        )
+        messages = [{'content': prompt, 'role': 'user'}]
+        token_count = self.llm.get_token_count(messages)
+
+        if token_count + MAX_TOKEN_COUNT_PADDING > self.llm.max_input_tokens:
             self.monologue.condense(self.llm)
 
     def _initialize(self, task: str):
@@ -209,7 +217,7 @@ class MonologueAgent(Agent):
                     action = GitHubPushAction(owner=owner, repo=repo, branch=branch)
                     previous_action = ActionType.PUSH
                 else:
-                    action = AgentThinkAction(thought=thought)
+                    action = MessageAction(thought)
                 self._add_event(action.to_memory())
 
     def step(self, state: State) -> Action:

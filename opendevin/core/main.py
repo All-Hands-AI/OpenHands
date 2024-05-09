@@ -6,6 +6,11 @@ import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.core.config import args
+from opendevin.core.schema import AgentState
+from opendevin.events.action import ChangeAgentStateAction, MessageAction
+from opendevin.events.event import Event
+from opendevin.events.observation import AgentStateChangedObservation
+from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.llm.llm import LLM
 
 
@@ -41,11 +46,34 @@ async def main(task_str: str = ''):
     llm = LLM(args.model_name)
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
+    event_stream = EventStream()
     controller = AgentController(
-        agent=agent, max_iterations=args.max_iterations, max_chars=args.max_chars
+        agent=agent,
+        max_iterations=args.max_iterations,
+        max_chars=args.max_chars,
+        event_stream=event_stream,
     )
 
-    await controller.start(task)
+    await controller.setup_task(task)
+    await event_stream.add_event(
+        ChangeAgentStateAction(agent_state=AgentState.RUNNING), EventSource.USER
+    )
+
+    async def on_event(event: Event):
+        if isinstance(event, AgentStateChangedObservation):
+            if event.agent_state == AgentState.AWAITING_USER_INPUT:
+                message = input('Request user input >> ')
+                action = MessageAction(content=message)
+                await event_stream.add_event(action, EventSource.USER)
+
+    event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
+    while controller.get_agent_state() not in [
+        AgentState.FINISHED,
+        AgentState.ERROR,
+        AgentState.PAUSED,
+        AgentState.STOPPED,
+    ]:
+        await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
 
 if __name__ == '__main__':

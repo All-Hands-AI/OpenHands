@@ -2,7 +2,7 @@ import { useDisclosure } from "@nextui-org/react";
 import React, { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 import CogTooth from "#/assets/cog-tooth";
-import ChatInterface from "#/components/ChatInterface";
+import ChatInterface from "#/components/chat/ChatInterface";
 import Errors from "#/components/Errors";
 import { Container, Orientation } from "#/components/Resizable";
 import Workspace from "#/components/Workspace";
@@ -16,7 +16,7 @@ import AgentControlBar from "./components/AgentControlBar";
 import AgentStatusBar from "./components/AgentStatusBar";
 import Terminal from "./components/terminal/Terminal";
 import { initializeAgent } from "./services/agent";
-import { getSettings } from "./services/settings";
+import { settingsAreUpToDate } from "./services/settings";
 
 interface Props {
   setSettingOpen: (isOpen: boolean) => void;
@@ -73,7 +73,11 @@ function App(): JSX.Element {
     if (initOnce) return;
     initOnce = true;
 
-    initializeAgent(getSettings());
+    if (!settingsAreUpToDate()) {
+      onSettingsModalOpen();
+    } else {
+      initializeAgent();
+    }
 
     Socket.registerCallback("open", [getMsgTotal]);
 

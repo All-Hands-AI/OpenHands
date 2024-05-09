@@ -51,15 +51,15 @@ Here are the possible actions:
   * `branch` - the name of the branch to push
 * `recall` - recalls a past memory. Arguments:
   * `query` - the query to search for
-* `think` - make a plan, set a goal, or record your thoughts. Arguments:
-  * `thought` - the thought to record
+* `message` - make a plan, set a goal, or record your thoughts. Arguments:
+  * `content` - the message to record
 * `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
 %(background_commands)s
 
-You MUST take time to think in between read, write, run, browse, push, and recall actions.
+You MUST take time to think in between read, write, run, browse, push, and recall actions--do this with the `message` action.
 You should never act twice in a row without thinking. But if your last several
-actions are all "think" actions, you should consider taking a different action.
+actions are all `message` actions, you should consider taking a different action.
 
 Notes:
 * you are logged in as %(user)s, but sudo will always work without a password.
@@ -68,7 +68,7 @@ Notes:
 * don't run interactive commands, or commands that don't return (e.g. `node server.js`). You may run commands in the background (e.g. `node server.js &`)
 * don't run interactive text editors (e.g. `nano` or 'vim'), instead use the 'write' or 'read' action.
 * don't run gui applications (e.g. software IDEs (like vs code or codium), web browsers (like firefox or chromium), or other complex software packages). Use non-interactive cli applications, or special actions instead.
-* whenever an action fails, always `think` about why it may have happened before acting again.
+* whenever an action fails, always send a `message` about why it may have happened before acting again.
 
 What is your next single thought or action? Again, you must reply with JSON, and only with JSON. You must respond with exactly one 'action' object.
 
@@ -132,8 +132,8 @@ def get_request_action_prompt(
     if len(thoughts) > 0:
         latest_thought = thoughts[-1]
         if 'action' in latest_thought:
-            if latest_thought['action'] == 'think':
-                if latest_thought['args']['thought'].startswith('OK so my task is'):
+            if latest_thought['action'] == 'message':
+                if latest_thought['args']['content'].startswith('OK so my task is'):
                     hint = "You're just getting started! What should you do first?"
                 else:
                     hint = "You've been thinking a lot lately. Maybe it's time to take action?"
@@ -185,7 +185,7 @@ def parse_action_response(response: str) -> Action:
 
         def rank(match):
             return (
-                len(match[2]) if match[1] == 'think' else 130
+                len(match[2]) if match[1] == 'message' else 130
             )  # Crudely rank multiple responses by length
 
         try:
