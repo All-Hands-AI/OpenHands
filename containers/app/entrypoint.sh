@@ -35,6 +35,10 @@ else
   # get the user group of /var/run/docker.sock and set opendevin to that group
   DOCKER_SOCKET_GID=$(stat -c '%g' /var/run/docker.sock)
   echo "Docker socket group id: $DOCKER_SOCKET_GID"
+  if groupadd -g $DOCKER_SOCKET_GID docker; then
+    echo "Created docker group with id $DOCKER_SOCKET_GID"
+  fi
+
   usermod -aG $DOCKER_SOCKET_GID enduser
   su enduser
 fi
