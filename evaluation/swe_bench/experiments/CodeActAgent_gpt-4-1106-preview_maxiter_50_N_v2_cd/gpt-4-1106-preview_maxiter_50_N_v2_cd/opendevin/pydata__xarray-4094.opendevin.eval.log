@@ -1,0 +1,1105 @@
+Task Metadata:
+	- Instance ID: pydata__xarray-4094
+	- Testbed: /swe_util/eval_data/testbeds/pydata__xarray__0.12
+	- Virtual Env.: pydata__xarray__0.12
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file xarray/core/dataarray.py
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file xarray/core/dataarray.py.bak
+patch unexpectedly ends in middle of line
+patch: **** malformed patch at line 3857:  
+
+>>>>> Applied Patch (pred_minimal_try patch)
+>>>>> Applied Patch (pred_minimal_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate pydata__xarray__0.12 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/pydata__xarray__0.12
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: numpy>=1.15 in /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages (from xarray==0.15.2.dev110+ga64cf2d5) (1.26.4)
+Requirement already satisfied: pandas>=0.25 in /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages (from xarray==0.15.2.dev110+ga64cf2d5) (2.2.2)
+Requirement already satisfied: setuptools>=41.2 in /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages (from xarray==0.15.2.dev110+ga64cf2d5) (69.5.1)
+Requirement already satisfied: python-dateutil>=2.8.2 in /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages (from pandas>=0.25->xarray==0.15.2.dev110+ga64cf2d5) (2.9.0)
+Requirement already satisfied: pytz>=2020.1 in /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages (from pandas>=0.25->xarray==0.15.2.dev110+ga64cf2d5) (2024.1)
+Requirement already satisfied: tzdata>=2022.7 in /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages (from pandas>=0.25->xarray==0.15.2.dev110+ga64cf2d5) (2024.1)
+Requirement already satisfied: six>=1.5 in /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages (from python-dateutil>=2.8.2->pandas>=0.25->xarray==0.15.2.dev110+ga64cf2d5) (1.16.0)
+Installing collected packages: xarray
+  Running setup.py develop for xarray
+Successfully installed xarray-0.15.2.dev110+ga64cf2d5
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate pydata__xarray__0.12 && echo 'activate successful' && pytest --no-header -rA --tb=no -p no:cacheprovider xarray/tests/test_dataset.py;
+Output:
+activate successful
+============================= test session starts ==============================
+collected 889 items
+
+xarray/tests/test_dataset.py ...........FFF...........................F. [  4%]
+.FF..FF.....FF....F........FFFF..FF.F...F..F....xX...................... [ 12%]
+..........F.............................F....FF..FFFFFFF.FF..FF......... [ 21%]
+.....................................FF.....................F.F......... [ 29%]
+........................................................................ [ 37%]
+........................................................................ [ 45%]
+........................................................................ [ 53%]
+........................................................................ [ 61%]
+....ssssssssssssssss.................................................... [ 69%]
+........................................................................ [ 77%]
+........................................................................ [ 85%]
+........................................................................ [ 93%]
+....................................F.................                   [100%]
+
+=============================== warnings summary ===============================
+xarray/__init__.py:1
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/__init__.py:1: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+    import pkg_resources
+
+../../../miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2832
+  /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2832: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('pydap')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(pkg)
+
+../../../miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2832
+  /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2832: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('pydap.responses')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(pkg)
+
+../../../miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2317
+../../../miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2317
+../../../miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2317
+  /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2317: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('pydap')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(parent)
+
+../../../miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2832
+  /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2832: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('pydap.handlers')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(pkg)
+
+../../../miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2832
+  /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2832: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('pydap.tests')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(pkg)
+
+xarray/core/dask_array_compat.py:16
+xarray/core/dask_array_compat.py:16
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/core/dask_array_compat.py:16: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    if LooseVersion(dask_version) >= LooseVersion("2.0.0"):
+
+xarray/core/dask_array_compat.py:149
+xarray/core/dask_array_compat.py:149
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/core/dask_array_compat.py:149: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    if LooseVersion(dask_version) >= LooseVersion("2.8.1"):
+
+xarray/core/dask_array_compat.py:186
+xarray/core/dask_array_compat.py:186
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/core/dask_array_compat.py:186: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    if LooseVersion(dask_version) > LooseVersion("2.9.0"):
+
+xarray/core/pdcompat.py:45
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/core/pdcompat.py:45: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    if LooseVersion(pd.__version__) < "0.25.0":
+
+../../../miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/setuptools/_distutils/version.py:337: 1 warning
+xarray/tests/test_dataset.py: 1326 warnings
+  /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/setuptools/_distutils/version.py:337: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    other = LooseVersion(other)
+
+xarray/tests/__init__.py:54
+xarray/tests/__init__.py:54
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/tests/__init__.py:54: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    return version.LooseVersion(vstring)
+
+xarray/tests/test_dataset.py::TestDataset::test_repr_period_index
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/tests/test_dataset.py:289: FutureWarning: Period with BDay freq is deprecated and will be removed in a future version. Use a DatetimeIndex with BDay freq instead.
+    data.coords["time"] = pd.period_range("2000-01-01", periods=20, freq="B")
+
+xarray/tests/test_dataset.py::TestDataset::test_repr_period_index
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/tests/test_dataset.py:289: FutureWarning: PeriodDtype[B] is deprecated and will be removed in a future version. Use a DatetimeIndex with freq='B' instead
+    data.coords["time"] = pd.period_range("2000-01-01", periods=20, freq="B")
+
+xarray/tests/test_dataset.py::TestDataset::test_dask_is_lazy
+xarray/tests/test_dataset.py::TestDataset::test_dask_is_lazy
+xarray/tests/test_dataset.py::TestDataset::test_dask_is_lazy
+xarray/tests/test_dataset.py::TestDataset::test_dask_is_lazy
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/core/variable.py:985: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    if LooseVersion(dask.__version__) < "2.0.0":
+
+xarray/tests/test_dataset.py: 14 warnings
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/coding/cftimeindex.py:113: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    if LooseVersion(cftime.__version__) < LooseVersion("1.0.4"):
+
+xarray/tests/test_dataset.py: 54 warnings
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/coding/cftime_offsets.py:243: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    if LooseVersion(cftime.__version__) < LooseVersion("1.0.4"):
+
+xarray/tests/test_dataset.py: 20 warnings
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/core/concat.py:389: FutureWarning: unique with argument that is not not a Series, Index, ExtensionArray, or np.ndarray is deprecated and will raise in a future version.
+    common_dims = tuple(pd.unique([d for v in vars for d in v.dims]))
+
+xarray/tests/test_dataset.py::TestDataset::test_virtual_variable_same_name
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/tests/test_dataset.py:3192: FutureWarning: 'H' is deprecated and will be removed in a future version, please use 'h' instead.
+    times = pd.date_range("2000-01-01", freq="H", periods=5)
+
+xarray/tests/test_dataset.py::TestDataset::test_virtual_variable_multiindex
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/tests/test_dataset.py:3210: FutureWarning: 'H' is deprecated and will be removed in a future version, please use 'h' instead.
+    dr_index = pd.date_range("1/1/2011", periods=4, freq="H")
+
+xarray/tests/test_dataset.py::TestDataset::test_time_season
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/tests/test_dataset.py:3227: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+    ds = Dataset({"t": pd.date_range("2000-01-01", periods=12, freq="M")})
+
+xarray/tests/test_dataset.py: 1322 warnings
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/core/duck_array_ops.py:216: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    dask_version is not None and LooseVersion(dask_version) >= "2.9.1"
+
+xarray/tests/test_dataset.py::TestDataset::test_resample_and_first
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/tests/test_dataset.py:3706: FutureWarning: 'H' is deprecated and will be removed in a future version, please use 'h' instead.
+    times = pd.date_range("2000-01-01", freq="6H", periods=10)
+
+xarray/tests/test_dataset.py::TestDataset::test_resample_min_count
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/tests/test_dataset.py:3732: FutureWarning: 'H' is deprecated and will be removed in a future version, please use 'h' instead.
+    times = pd.date_range("2000-01-01", freq="6H", periods=10)
+
+xarray/tests/test_dataset.py::TestDataset::test_resample_by_mean_with_keep_attrs
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/tests/test_dataset.py:3754: FutureWarning: 'H' is deprecated and will be removed in a future version, please use 'h' instead.
+    times = pd.date_range("2000-01-01", freq="6H", periods=10)
+
+xarray/tests/test_dataset.py::TestDataset::test_resample_loffset
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/tests/test_dataset.py:3774: FutureWarning: 'H' is deprecated and will be removed in a future version, please use 'h' instead.
+    times = pd.date_range("2000-01-01", freq="6H", periods=10)
+
+xarray/tests/test_dataset.py::TestDataset::test_resample_loffset
+xarray/tests/test_dataset.py::TestDataset::test_resample_drop_nondim_coords
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/core/common.py:1123: FutureWarning: 'H' is deprecated and will be removed in a future version, please use 'h' instead.
+    grouper = pd.Grouper(
+
+xarray/tests/test_dataset.py::TestDataset::test_resample_by_mean_discarding_attrs
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/tests/test_dataset.py:3791: FutureWarning: 'H' is deprecated and will be removed in a future version, please use 'h' instead.
+    times = pd.date_range("2000-01-01", freq="6H", periods=10)
+
+xarray/tests/test_dataset.py::TestDataset::test_resample_by_last_discarding_attrs
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/tests/test_dataset.py:3807: FutureWarning: 'H' is deprecated and will be removed in a future version, please use 'h' instead.
+    times = pd.date_range("2000-01-01", freq="6H", periods=10)
+
+xarray/tests/test_dataset.py::TestDataset::test_resample_drop_nondim_coords
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/tests/test_dataset.py:3826: FutureWarning: 'H' is deprecated and will be removed in a future version, please use 'h' instead.
+    times = pd.date_range("2000-01-01", freq="6H", periods=5)
+
+xarray/tests/test_dataset.py::TestDataset::test_resample_old_api
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/tests/test_dataset.py:3851: FutureWarning: 'H' is deprecated and will be removed in a future version, please use 'h' instead.
+    times = pd.date_range("2000-01-01", freq="6H", periods=10)
+
+xarray/tests/test_dataset.py::TestDataset::test_resample_ds_da_are_the_same
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/tests/test_dataset.py:3870: FutureWarning: 'H' is deprecated and will be removed in a future version, please use 'h' instead.
+    time = pd.date_range("2000-01-01", freq="6H", periods=365 * 4)
+
+xarray/tests/test_dataset.py::TestDataset::test_resample_ds_da_are_the_same
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/core/common.py:1123: FutureWarning: 'M' is deprecated and will be removed in a future version, please use 'ME' instead.
+    grouper = pd.Grouper(
+
+xarray/tests/test_dataset.py: 64 warnings
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/core/computation.py:604: DeprecationWarning: the `interpolation=` argument to nanquantile was renamed to `method=`, which has additional options.
+  Users of the modes 'nearest', 'lower', 'higher', or 'midpoint' are encouraged to review the method they used. (Deprecated NumPy 1.22)
+    result_data = func(*input_data)
+
+xarray/tests/test_dataset.py: 64 warnings
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/core/computation.py:604: DeprecationWarning: the `interpolation=` argument to quantile was renamed to `method=`, which has additional options.
+  Users of the modes 'nearest', 'lower', 'higher', or 'midpoint' are encouraged to review the method they used. (Deprecated NumPy 1.22)
+    result_data = func(*input_data)
+
+xarray/tests/test_dataset.py::test_coarsen_coords_cftime
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/core/duck_array_ops.py:485: FutureWarning: The 'unit' keyword in TimedeltaIndex construction is deprecated and will be removed in a future version. Use pd.to_timedelta instead.
+    index = pd.TimedeltaIndex(array.ravel(), unit=unit)
+
+xarray/tests/test_dataset.py::test_trapz_datetime[np-True]
+xarray/tests/test_dataset.py::test_trapz_datetime[cftime-True]
+  /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/dask/array/core.py:1712: FutureWarning: The `numpy.trapz` function is not implemented by Dask array. You may want to use the da.map_blocks function or something similar to silence this warning. Your code may stop working in a future release.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+PASSED xarray/tests/test_dataset.py::TestDataset::test_repr
+PASSED xarray/tests/test_dataset.py::TestDataset::test_repr_multiindex
+PASSED xarray/tests/test_dataset.py::TestDataset::test_repr_period_index
+PASSED xarray/tests/test_dataset.py::TestDataset::test_unicode_data
+PASSED xarray/tests/test_dataset.py::TestDataset::test_repr_nep18
+PASSED xarray/tests/test_dataset.py::TestDataset::test_info
+PASSED xarray/tests/test_dataset.py::TestDataset::test_constructor
+PASSED xarray/tests/test_dataset.py::TestDataset::test_constructor_invalid_dims
+PASSED xarray/tests/test_dataset.py::TestDataset::test_constructor_1d
+PASSED xarray/tests/test_dataset.py::TestDataset::test_constructor_0d
+PASSED xarray/tests/test_dataset.py::TestDataset::test_constructor_deprecated
+PASSED xarray/tests/test_dataset.py::TestDataset::test_constructor_compat
+PASSED xarray/tests/test_dataset.py::TestDataset::test_constructor_with_coords
+PASSED xarray/tests/test_dataset.py::TestDataset::test_properties
+PASSED xarray/tests/test_dataset.py::TestDataset::test_asarray
+PASSED xarray/tests/test_dataset.py::TestDataset::test_get_index
+PASSED xarray/tests/test_dataset.py::TestDataset::test_attr_access
+PASSED xarray/tests/test_dataset.py::TestDataset::test_variable
+PASSED xarray/tests/test_dataset.py::TestDataset::test_modify_inplace
+PASSED xarray/tests/test_dataset.py::TestDataset::test_coords_properties
+PASSED xarray/tests/test_dataset.py::TestDataset::test_coords_modify
+PASSED xarray/tests/test_dataset.py::TestDataset::test_update_index
+PASSED xarray/tests/test_dataset.py::TestDataset::test_coords_setitem_with_new_dimension
+PASSED xarray/tests/test_dataset.py::TestDataset::test_coords_setitem_multiindex
+PASSED xarray/tests/test_dataset.py::TestDataset::test_coords_set
+PASSED xarray/tests/test_dataset.py::TestDataset::test_coords_to_dataset
+PASSED xarray/tests/test_dataset.py::TestDataset::test_coords_merge
+PASSED xarray/tests/test_dataset.py::TestDataset::test_coords_merge_mismatched_shape
+PASSED xarray/tests/test_dataset.py::TestDataset::test_data_vars_properties
+PASSED xarray/tests/test_dataset.py::TestDataset::test_equals_and_identical
+PASSED xarray/tests/test_dataset.py::TestDataset::test_equals_failures
+PASSED xarray/tests/test_dataset.py::TestDataset::test_broadcast_equals
+PASSED xarray/tests/test_dataset.py::TestDataset::test_attrs
+PASSED xarray/tests/test_dataset.py::TestDataset::test_chunk
+PASSED xarray/tests/test_dataset.py::TestDataset::test_dask_is_lazy
+PASSED xarray/tests/test_dataset.py::TestDataset::test_isel
+PASSED xarray/tests/test_dataset.py::TestDataset::test_isel_fancy
+PASSED xarray/tests/test_dataset.py::TestDataset::test_isel_dataarray
+PASSED xarray/tests/test_dataset.py::TestDataset::test_sel_dataarray
+PASSED xarray/tests/test_dataset.py::TestDataset::test_sel_dataarray_mindex
+PASSED xarray/tests/test_dataset.py::TestDataset::test_categorical_index
+PASSED xarray/tests/test_dataset.py::TestDataset::test_categorical_reindex
+PASSED xarray/tests/test_dataset.py::TestDataset::test_isel_drop
+PASSED xarray/tests/test_dataset.py::TestDataset::test_head
+PASSED xarray/tests/test_dataset.py::TestDataset::test_tail
+PASSED xarray/tests/test_dataset.py::TestDataset::test_thin
+PASSED xarray/tests/test_dataset.py::TestDataset::test_sel_fancy
+PASSED xarray/tests/test_dataset.py::TestDataset::test_selection_multiindex
+PASSED xarray/tests/test_dataset.py::TestDataset::test_broadcast_like
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reindex_like
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reindex
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reindex_variables_copied
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reindex_method
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reindex_fill_value[fill_value0]
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reindex_fill_value[2]
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reindex_fill_value[2.0]
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reindex_like_fill_value[fill_value0]
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reindex_like_fill_value[2]
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reindex_like_fill_value[2.0]
+PASSED xarray/tests/test_dataset.py::TestDataset::test_align_exact
+PASSED xarray/tests/test_dataset.py::TestDataset::test_align_override
+PASSED xarray/tests/test_dataset.py::TestDataset::test_align_indexes
+PASSED xarray/tests/test_dataset.py::TestDataset::test_broadcast
+PASSED xarray/tests/test_dataset.py::TestDataset::test_broadcast_nocopy
+PASSED xarray/tests/test_dataset.py::TestDataset::test_broadcast_exclude
+PASSED xarray/tests/test_dataset.py::TestDataset::test_variable_indexing
+PASSED xarray/tests/test_dataset.py::TestDataset::test_drop_variables
+PASSED xarray/tests/test_dataset.py::TestDataset::test_drop_labels_by_keyword
+PASSED xarray/tests/test_dataset.py::TestDataset::test_drop_dims
+PASSED xarray/tests/test_dataset.py::TestDataset::test_copy
+PASSED xarray/tests/test_dataset.py::TestDataset::test_copy_with_data
+PASSED xarray/tests/test_dataset.py::TestDataset::test_copy_with_data_errors
+PASSED xarray/tests/test_dataset.py::TestDataset::test_rename
+PASSED xarray/tests/test_dataset.py::TestDataset::test_rename_old_name
+PASSED xarray/tests/test_dataset.py::TestDataset::test_rename_same_name
+PASSED xarray/tests/test_dataset.py::TestDataset::test_rename_inplace
+PASSED xarray/tests/test_dataset.py::TestDataset::test_rename_dims
+PASSED xarray/tests/test_dataset.py::TestDataset::test_rename_vars
+PASSED xarray/tests/test_dataset.py::TestDataset::test_rename_multiindex
+PASSED xarray/tests/test_dataset.py::TestDataset::test_rename_does_not_change_CFTimeIndex_type
+PASSED xarray/tests/test_dataset.py::TestDataset::test_rename_does_not_change_DatetimeIndex_type
+PASSED xarray/tests/test_dataset.py::TestDataset::test_swap_dims
+PASSED xarray/tests/test_dataset.py::TestDataset::test_expand_dims_error
+PASSED xarray/tests/test_dataset.py::TestDataset::test_expand_dims_int
+PASSED xarray/tests/test_dataset.py::TestDataset::test_expand_dims_coords
+PASSED xarray/tests/test_dataset.py::TestDataset::test_expand_dims_existing_scalar_coord
+PASSED xarray/tests/test_dataset.py::TestDataset::test_isel_expand_dims_roundtrip
+PASSED xarray/tests/test_dataset.py::TestDataset::test_expand_dims_mixed_int_and_coords
+PASSED xarray/tests/test_dataset.py::TestDataset::test_expand_dims_kwargs_python36plus
+PASSED xarray/tests/test_dataset.py::TestDataset::test_set_index
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reset_index
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reset_index_keep_attrs
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reorder_levels
+PASSED xarray/tests/test_dataset.py::TestDataset::test_stack
+PASSED xarray/tests/test_dataset.py::TestDataset::test_unstack
+PASSED xarray/tests/test_dataset.py::TestDataset::test_unstack_errors
+PASSED xarray/tests/test_dataset.py::TestDataset::test_unstack_fill_value
+PASSED xarray/tests/test_dataset.py::TestDataset::test_unstack_sparse
+PASSED xarray/tests/test_dataset.py::TestDataset::test_stack_unstack_fast
+PASSED xarray/tests/test_dataset.py::TestDataset::test_stack_unstack_slow
+PASSED xarray/tests/test_dataset.py::TestDataset::test_to_stacked_array_invalid_sample_dims
+PASSED xarray/tests/test_dataset.py::TestDataset::test_to_stacked_array_name
+PASSED xarray/tests/test_dataset.py::TestDataset::test_to_stacked_array_dtype_dims
+PASSED xarray/tests/test_dataset.py::TestDataset::test_to_stacked_array_to_unstacked_dataset_different_dimension
+PASSED xarray/tests/test_dataset.py::TestDataset::test_update
+PASSED xarray/tests/test_dataset.py::TestDataset::test_update_overwrite_coords
+PASSED xarray/tests/test_dataset.py::TestDataset::test_update_auto_align
+PASSED xarray/tests/test_dataset.py::TestDataset::test_getitem
+PASSED xarray/tests/test_dataset.py::TestDataset::test_getitem_hashable
+PASSED xarray/tests/test_dataset.py::TestDataset::test_virtual_variables_default_coords
+PASSED xarray/tests/test_dataset.py::TestDataset::test_virtual_variables_time
+PASSED xarray/tests/test_dataset.py::TestDataset::test_virtual_variable_same_name
+PASSED xarray/tests/test_dataset.py::TestDataset::test_virtual_variable_multiindex
+PASSED xarray/tests/test_dataset.py::TestDataset::test_time_season
+PASSED xarray/tests/test_dataset.py::TestDataset::test_slice_virtual_variable
+PASSED xarray/tests/test_dataset.py::TestDataset::test_setitem
+PASSED xarray/tests/test_dataset.py::TestDataset::test_setitem_pandas
+PASSED xarray/tests/test_dataset.py::TestDataset::test_setitem_auto_align
+PASSED xarray/tests/test_dataset.py::TestDataset::test_setitem_dimension_override
+PASSED xarray/tests/test_dataset.py::TestDataset::test_setitem_with_coords
+PASSED xarray/tests/test_dataset.py::TestDataset::test_setitem_align_new_indexes
+PASSED xarray/tests/test_dataset.py::TestDataset::test_assign
+PASSED xarray/tests/test_dataset.py::TestDataset::test_assign_coords
+PASSED xarray/tests/test_dataset.py::TestDataset::test_assign_attrs
+PASSED xarray/tests/test_dataset.py::TestDataset::test_assign_multiindex_level
+PASSED xarray/tests/test_dataset.py::TestDataset::test_merge_multiindex_level
+PASSED xarray/tests/test_dataset.py::TestDataset::test_setitem_original_non_unique_index
+PASSED xarray/tests/test_dataset.py::TestDataset::test_setitem_both_non_unique_index
+PASSED xarray/tests/test_dataset.py::TestDataset::test_setitem_multiindex_level
+PASSED xarray/tests/test_dataset.py::TestDataset::test_delitem
+PASSED xarray/tests/test_dataset.py::TestDataset::test_squeeze
+PASSED xarray/tests/test_dataset.py::TestDataset::test_squeeze_drop
+PASSED xarray/tests/test_dataset.py::TestDataset::test_groupby_returns_new_type
+PASSED xarray/tests/test_dataset.py::TestDataset::test_groupby_iter
+PASSED xarray/tests/test_dataset.py::TestDataset::test_groupby_errors
+PASSED xarray/tests/test_dataset.py::TestDataset::test_groupby_reduce
+PASSED xarray/tests/test_dataset.py::TestDataset::test_groupby_nan
+PASSED xarray/tests/test_dataset.py::TestDataset::test_groupby_order
+PASSED xarray/tests/test_dataset.py::TestDataset::test_resample_old_api
+PASSED xarray/tests/test_dataset.py::TestDataset::test_to_array
+PASSED xarray/tests/test_dataset.py::TestDataset::test_to_and_from_dataframe
+PASSED xarray/tests/test_dataset.py::TestDataset::test_to_and_from_empty_dataframe
+PASSED xarray/tests/test_dataset.py::TestDataset::test_from_dataframe_non_unique_columns
+PASSED xarray/tests/test_dataset.py::TestDataset::test_convert_dataframe_with_many_types_and_multiindex
+PASSED xarray/tests/test_dataset.py::TestDataset::test_to_and_from_dict
+PASSED xarray/tests/test_dataset.py::TestDataset::test_to_and_from_dict_with_time_dim
+PASSED xarray/tests/test_dataset.py::TestDataset::test_to_and_from_dict_with_nan_nat
+PASSED xarray/tests/test_dataset.py::TestDataset::test_to_dict_with_numpy_attrs
+PASSED xarray/tests/test_dataset.py::TestDataset::test_pickle
+PASSED xarray/tests/test_dataset.py::TestDataset::test_lazy_load
+PASSED xarray/tests/test_dataset.py::TestDataset::test_dropna
+PASSED xarray/tests/test_dataset.py::TestDataset::test_fillna
+PASSED xarray/tests/test_dataset.py::TestDataset::test_where
+PASSED xarray/tests/test_dataset.py::TestDataset::test_where_other
+PASSED xarray/tests/test_dataset.py::TestDataset::test_where_drop
+PASSED xarray/tests/test_dataset.py::TestDataset::test_where_drop_empty
+PASSED xarray/tests/test_dataset.py::TestDataset::test_where_drop_no_indexes
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reduce
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reduce_coords
+PASSED xarray/tests/test_dataset.py::TestDataset::test_mean_uint_dtype
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reduce_bad_dim
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reduce_cumsum
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reduce_cumsum_test_dims
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reduce_non_numeric
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reduce_strings
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reduce_dtypes
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reduce_keep_attrs
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reduce_argmin
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reduce_scalars
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reduce_only_one_axis
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reduce_no_axis
+PASSED xarray/tests/test_dataset.py::TestDataset::test_reduce_keepdims
+PASSED xarray/tests/test_dataset.py::TestDataset::test_quantile[0.25-True]
+PASSED xarray/tests/test_dataset.py::TestDataset::test_quantile[0.25-False]
+PASSED xarray/tests/test_dataset.py::TestDataset::test_quantile[q1-True]
+PASSED xarray/tests/test_dataset.py::TestDataset::test_quantile[q1-False]
+PASSED xarray/tests/test_dataset.py::TestDataset::test_quantile[q2-True]
+PASSED xarray/tests/test_dataset.py::TestDataset::test_quantile[q2-False]
+PASSED xarray/tests/test_dataset.py::TestDataset::test_quantile_skipna[True]
+PASSED xarray/tests/test_dataset.py::TestDataset::test_quantile_skipna[False]
+PASSED xarray/tests/test_dataset.py::TestDataset::test_rank
+PASSED xarray/tests/test_dataset.py::TestDataset::test_count
+PASSED xarray/tests/test_dataset.py::TestDataset::test_map
+PASSED xarray/tests/test_dataset.py::TestDataset::test_apply_pending_deprecated_map
+PASSED xarray/tests/test_dataset.py::TestDataset::test_dataset_number_math
+PASSED xarray/tests/test_dataset.py::TestDataset::test_unary_ops
+PASSED xarray/tests/test_dataset.py::TestDataset::test_dataset_array_math
+PASSED xarray/tests/test_dataset.py::TestDataset::test_dataset_math_errors
+PASSED xarray/tests/test_dataset.py::TestDataset::test_dataset_transpose
+PASSED xarray/tests/test_dataset.py::TestDataset::test_dataset_ellipsis_transpose_different_ordered_vars
+PASSED xarray/tests/test_dataset.py::TestDataset::test_dataset_retains_period_index_on_transpose
+PASSED xarray/tests/test_dataset.py::TestDataset::test_dataset_diff_n1_simple
+PASSED xarray/tests/test_dataset.py::TestDataset::test_dataset_diff_n1_label
+PASSED xarray/tests/test_dataset.py::TestDataset::test_dataset_diff_n1
+PASSED xarray/tests/test_dataset.py::TestDataset::test_dataset_diff_n2
+PASSED xarray/tests/test_dataset.py::TestDataset::test_dataset_diff_exception_n_neg
+PASSED xarray/tests/test_dataset.py::TestDataset::test_dataset_diff_exception_label_str
+PASSED xarray/tests/test_dataset.py::TestDataset::test_shift[fill_value0]
+PASSED xarray/tests/test_dataset.py::TestDataset::test_shift[2]
+PASSED xarray/tests/test_dataset.py::TestDataset::test_shift[2.0]
+PASSED xarray/tests/test_dataset.py::TestDataset::test_roll_coords
+PASSED xarray/tests/test_dataset.py::TestDataset::test_roll_no_coords
+PASSED xarray/tests/test_dataset.py::TestDataset::test_roll_coords_none
+PASSED xarray/tests/test_dataset.py::TestDataset::test_roll_multidim
+PASSED xarray/tests/test_dataset.py::TestDataset::test_real_and_imag
+PASSED xarray/tests/test_dataset.py::TestDataset::test_setattr_raises
+PASSED xarray/tests/test_dataset.py::TestDataset::test_filter_by_attrs
+PASSED xarray/tests/test_dataset.py::TestDataset::test_binary_op_propagate_indexes
+PASSED xarray/tests/test_dataset.py::TestDataset::test_full_like
+PASSED xarray/tests/test_dataset.py::TestDataset::test_sortby
+PASSED xarray/tests/test_dataset.py::TestDataset::test_attribute_access
+PASSED xarray/tests/test_dataset.py::TestDataset::test_ipython_key_completion
+PASSED xarray/tests/test_dataset.py::TestDataset::test_polyfit_output
+PASSED xarray/tests/test_dataset.py::TestDataset::test_pad
+PASSED xarray/tests/test_dataset.py::test_isin[test_elements0]
+PASSED xarray/tests/test_dataset.py::test_isin[test_elements1]
+PASSED xarray/tests/test_dataset.py::test_isin[test_elements2]
+PASSED xarray/tests/test_dataset.py::test_isin_dask[test_elements0]
+PASSED xarray/tests/test_dataset.py::test_isin_dask[test_elements1]
+PASSED xarray/tests/test_dataset.py::test_isin_dask[test_elements2]
+PASSED xarray/tests/test_dataset.py::test_isin_dataset
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords0-unaligned_coords0]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords0-unaligned_coords1]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords0-unaligned_coords2]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords0-unaligned_coords3]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords0-unaligned_coords4]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords0-unaligned_coords5]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords0-unaligned_coords6]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords0-unaligned_coords7]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords0-unaligned_coords8]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords0-unaligned_coords9]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords1-unaligned_coords0]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords1-unaligned_coords1]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords1-unaligned_coords2]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords1-unaligned_coords3]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords1-unaligned_coords4]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords1-unaligned_coords5]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords1-unaligned_coords6]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords1-unaligned_coords7]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords1-unaligned_coords8]
+PASSED xarray/tests/test_dataset.py::test_dataset_constructor_aligns_to_explicit_coords[coords1-unaligned_coords9]
+PASSED xarray/tests/test_dataset.py::test_error_message_on_set_supplied
+PASSED xarray/tests/test_dataset.py::test_constructor_raises_with_invalid_coords[unaligned_coords0]
+PASSED xarray/tests/test_dataset.py::test_dir_expected_attrs[None]
+PASSED xarray/tests/test_dataset.py::test_dir_non_string[None]
+PASSED xarray/tests/test_dataset.py::test_dir_unicode[None]
+PASSED xarray/tests/test_dataset.py::test_coarsen_absent_dims_error[1]
+PASSED xarray/tests/test_dataset.py::test_coarsen[1-trim-left-True]
+PASSED xarray/tests/test_dataset.py::test_coarsen[1-trim-left-False]
+PASSED xarray/tests/test_dataset.py::test_coarsen[1-pad-right-True]
+PASSED xarray/tests/test_dataset.py::test_coarsen[1-pad-right-False]
+PASSED xarray/tests/test_dataset.py::test_coarsen_coords[1-True]
+PASSED xarray/tests/test_dataset.py::test_coarsen_coords[1-False]
+PASSED xarray/tests/test_dataset.py::test_coarsen_coords_cftime
+PASSED xarray/tests/test_dataset.py::test_coarsen_keep_attrs
+PASSED xarray/tests/test_dataset.py::test_rolling_keep_attrs
+PASSED xarray/tests/test_dataset.py::test_rolling_properties[1]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-True-sum]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-True-mean]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-True-std]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-True-var]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-True-min]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-True-max]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-True-median]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-False-sum]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-False-mean]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-False-std]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-False-var]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-False-min]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-False-max]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-False-median]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-None-sum]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-None-mean]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-None-std]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-None-var]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-None-min]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-None-max]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-1-None-median]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-True-sum]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-True-mean]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-True-std]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-True-var]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-True-min]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-True-max]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-True-median]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-False-sum]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-False-mean]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-False-std]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-False-var]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-False-min]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-False-max]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-False-median]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-None-sum]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-None-mean]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-None-std]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-None-var]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-None-min]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-None-max]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z1-None-None-median]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-True-sum]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-True-mean]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-True-std]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-True-var]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-True-min]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-True-max]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-True-median]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-False-sum]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-False-mean]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-False-std]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-False-var]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-False-min]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-False-max]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-False-median]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-None-sum]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-None-mean]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-None-std]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-None-var]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-None-min]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-None-max]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-1-None-median]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-True-sum]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-True-mean]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-True-std]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-True-var]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-True-min]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-True-max]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-True-median]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-False-sum]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-False-mean]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-False-std]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-False-var]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-False-min]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-False-max]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-False-median]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-None-sum]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-None-mean]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-None-std]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-None-var]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-None-min]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-None-max]
+PASSED xarray/tests/test_dataset.py::test_rolling_wrapped_bottleneck[1-z2-None-None-median]
+PASSED xarray/tests/test_dataset.py::test_rolling_exp[1]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[1-None-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[1-None-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[1-1-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[1-1-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[1-2-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[1-2-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[1-3-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[1-3-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[2-None-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[2-None-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[2-1-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[2-1-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[2-2-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[2-2-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[2-3-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[2-3-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[3-None-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[3-None-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[3-1-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[3-1-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[3-2-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[3-2-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[3-3-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[3-3-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[4-None-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[4-None-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[4-1-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[4-1-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[4-2-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[4-2-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[4-3-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_pandas_compat[4-3-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_construct[1-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_construct[1-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_construct[2-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_construct[2-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_construct[3-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_construct[3-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_construct[4-True]
+PASSED xarray/tests/test_dataset.py::test_rolling_construct[4-False]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-1-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-1-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-1-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-1-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-1-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-1-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-1-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-1-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-1-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-1-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-1-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-1-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-1-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-1-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-1-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-1-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-2-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-2-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-2-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-2-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-2-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-2-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-2-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-2-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-2-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-2-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-2-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-2-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-2-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-2-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-2-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-2-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-3-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-3-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-3-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-3-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-3-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-3-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-3-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-3-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-3-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-3-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-3-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-3-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-3-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-3-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-3-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-3-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-4-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-4-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-4-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-4-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-4-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-4-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-4-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-4-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-4-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-4-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-4-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-4-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-4-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-4-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-4-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[sum-4-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-1-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-1-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-1-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-1-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-1-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-1-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-1-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-1-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-1-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-1-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-1-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-1-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-1-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-1-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-1-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-1-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-2-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-2-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-2-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-2-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-2-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-2-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-2-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-2-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-2-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-2-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-2-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-2-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-2-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-2-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-2-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-2-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-3-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-3-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-3-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-3-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-3-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-3-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-3-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-3-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-3-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-3-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-3-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-3-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-3-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-3-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-3-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-3-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-4-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-4-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-4-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-4-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-4-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-4-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-4-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-4-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-4-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-4-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-4-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-4-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-4-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-4-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-4-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[mean-4-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-2-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-2-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-2-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-2-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-2-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-2-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-2-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-2-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-2-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-2-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-2-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-2-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-2-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-2-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-2-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-2-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-3-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-3-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-3-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-3-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-3-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-3-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-3-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-3-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-3-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-3-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-3-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-3-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-3-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-3-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-3-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-3-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-4-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-4-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-4-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-4-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-4-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-4-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-4-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-4-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-4-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-4-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-4-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-4-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-4-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-4-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-4-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[std-4-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-1-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-1-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-1-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-1-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-1-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-1-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-1-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-1-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-1-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-1-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-1-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-1-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-1-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-1-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-1-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-1-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-2-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-2-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-2-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-2-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-2-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-2-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-2-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-2-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-2-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-2-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-2-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-2-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-2-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-2-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-2-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-2-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-3-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-3-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-3-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-3-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-3-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-3-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-3-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-3-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-3-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-3-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-3-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-3-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-3-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-3-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-3-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-3-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-4-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-4-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-4-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-4-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-4-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-4-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-4-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-4-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-4-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-4-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-4-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-4-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-4-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-4-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-4-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[var-4-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-1-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-1-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-1-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-1-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-1-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-1-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-1-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-1-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-1-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-1-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-1-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-1-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-1-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-1-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-1-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-1-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-2-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-2-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-2-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-2-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-2-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-2-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-2-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-2-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-2-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-2-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-2-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-2-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-2-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-2-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-2-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-2-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-3-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-3-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-3-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-3-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-3-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-3-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-3-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-3-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-3-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-3-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-3-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-3-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-3-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-3-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-3-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-3-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-4-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-4-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-4-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-4-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-4-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-4-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-4-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-4-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-4-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-4-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-4-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-4-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-4-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-4-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-4-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[min-4-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-1-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-1-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-1-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-1-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-1-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-1-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-1-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-1-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-1-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-1-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-1-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-1-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-1-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-1-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-1-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-1-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-2-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-2-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-2-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-2-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-2-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-2-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-2-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-2-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-2-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-2-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-2-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-2-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-2-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-2-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-2-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-2-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-3-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-3-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-3-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-3-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-3-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-3-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-3-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-3-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-3-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-3-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-3-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-3-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-3-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-3-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-3-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-3-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-4-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-4-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-4-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-4-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-4-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-4-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-4-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-4-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-4-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-4-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-4-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-4-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-4-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-4-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-4-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[max-4-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-1-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-1-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-1-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-1-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-1-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-1-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-1-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-1-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-1-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-1-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-1-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-1-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-1-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-1-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-1-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-1-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-2-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-2-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-2-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-2-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-2-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-2-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-2-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-2-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-2-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-2-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-2-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-2-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-2-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-2-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-2-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-2-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-3-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-3-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-3-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-3-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-3-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-3-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-3-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-3-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-3-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-3-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-3-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-3-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-3-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-3-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-3-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-3-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-4-None-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-4-None-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-4-None-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-4-None-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-4-1-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-4-1-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-4-1-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-4-1-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-4-2-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-4-2-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-4-2-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-4-2-False-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-4-3-True-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-4-3-True-2]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-4-3-False-1]
+PASSED xarray/tests/test_dataset.py::test_rolling_reduce[median-4-3-False-2]
+PASSED xarray/tests/test_dataset.py::test_differentiate[1-True]
+PASSED xarray/tests/test_dataset.py::test_differentiate[1-False]
+PASSED xarray/tests/test_dataset.py::test_differentiate[2-True]
+PASSED xarray/tests/test_dataset.py::test_differentiate[2-False]
+PASSED xarray/tests/test_dataset.py::test_differentiate_datetime[True]
+PASSED xarray/tests/test_dataset.py::test_differentiate_datetime[False]
+PASSED xarray/tests/test_dataset.py::test_differentiate_cftime[True]
+PASSED xarray/tests/test_dataset.py::test_differentiate_cftime[False]
+PASSED xarray/tests/test_dataset.py::test_integrate[True]
+PASSED xarray/tests/test_dataset.py::test_integrate[False]
+PASSED xarray/tests/test_dataset.py::test_trapz_datetime[np-True]
+PASSED xarray/tests/test_dataset.py::test_trapz_datetime[np-False]
+PASSED xarray/tests/test_dataset.py::test_trapz_datetime[cftime-True]
+PASSED xarray/tests/test_dataset.py::test_trapz_datetime[cftime-False]
+PASSED xarray/tests/test_dataset.py::test_no_dict
+PASSED xarray/tests/test_dataset.py::test_subclass_slots
+PASSED xarray/tests/test_dataset.py::test_weakref
+SKIPPED [16] xarray/tests/test_dataset.py:5944: std with window == 1 is unstable in bottleneck
+XFAIL xarray/tests/test_dataset.py::TestDataset::test_copy_coords[True-expected_orig0]
+XPASS xarray/tests/test_dataset.py::TestDataset::test_copy_coords[False-expected_orig1]
+FAILED xarray/tests/test_dataset.py::TestDataset::test_constructor_auto_align
+FAILED xarray/tests/test_dataset.py::TestDataset::test_constructor_pandas_sequence
+FAILED xarray/tests/test_dataset.py::TestDataset::test_constructor_pandas_single
+FAILED xarray/tests/test_dataset.py::TestDataset::test_sel - TypeError: Datet...
+FAILED xarray/tests/test_dataset.py::TestDataset::test_sel_categorical - Impo...
+FAILED xarray/tests/test_dataset.py::TestDataset::test_sel_categorical_error
+FAILED xarray/tests/test_dataset.py::TestDataset::test_categorical_multiindex
+FAILED xarray/tests/test_dataset.py::TestDataset::test_sel_drop - TypeError: ...
+FAILED xarray/tests/test_dataset.py::TestDataset::test_sel_method - TypeError...
+FAILED xarray/tests/test_dataset.py::TestDataset::test_loc - TypeError: Index...
+FAILED xarray/tests/test_dataset.py::TestDataset::test_reindex_warning - Type...
+FAILED xarray/tests/test_dataset.py::TestDataset::test_align_fill_value[fill_value0]
+FAILED xarray/tests/test_dataset.py::TestDataset::test_align_fill_value[2] - ...
+FAILED xarray/tests/test_dataset.py::TestDataset::test_align_fill_value[2.0]
+FAILED xarray/tests/test_dataset.py::TestDataset::test_align - TypeError: uns...
+FAILED xarray/tests/test_dataset.py::TestDataset::test_align_exclude - Assert...
+FAILED xarray/tests/test_dataset.py::TestDataset::test_align_nocopy - ValueEr...
+FAILED xarray/tests/test_dataset.py::TestDataset::test_align_non_unique - Ass...
+FAILED xarray/tests/test_dataset.py::TestDataset::test_broadcast_misaligned
+FAILED xarray/tests/test_dataset.py::TestDataset::test_drop_index_labels - Fa...
+FAILED xarray/tests/test_dataset.py::TestDataset::test_to_stacked_array_to_unstacked_dataset
+FAILED xarray/tests/test_dataset.py::TestDataset::test_groupby - AttributeErr...
+FAILED xarray/tests/test_dataset.py::TestDataset::test_groupby_math - Attribu...
+FAILED xarray/tests/test_dataset.py::TestDataset::test_groupby_math_virtual
+FAILED xarray/tests/test_dataset.py::TestDataset::test_resample_and_first - T...
+FAILED xarray/tests/test_dataset.py::TestDataset::test_resample_min_count - T...
+FAILED xarray/tests/test_dataset.py::TestDataset::test_resample_by_mean_with_keep_attrs
+FAILED xarray/tests/test_dataset.py::TestDataset::test_resample_loffset - Typ...
+FAILED xarray/tests/test_dataset.py::TestDataset::test_resample_by_mean_discarding_attrs
+FAILED xarray/tests/test_dataset.py::TestDataset::test_resample_by_last_discarding_attrs
+FAILED xarray/tests/test_dataset.py::TestDataset::test_resample_drop_nondim_coords
+FAILED xarray/tests/test_dataset.py::TestDataset::test_resample_ds_da_are_the_same
+FAILED xarray/tests/test_dataset.py::TestDataset::test_ds_resample_apply_func_args
+FAILED xarray/tests/test_dataset.py::TestDataset::test_from_dataframe_categorical
+FAILED xarray/tests/test_dataset.py::TestDataset::test_from_dataframe_sparse
+FAILED xarray/tests/test_dataset.py::TestDataset::test_dataset_dataset_math
+FAILED xarray/tests/test_dataset.py::TestDataset::test_dataset_math_auto_align
+FAILED xarray/tests/test_dataset.py::TestDataset::test_binary_op_join_setting
+FAILED xarray/tests/test_dataset.py::TestDataset::test_combine_first - TypeEr...
+FAILED xarray/tests/test_dataset.py::test_raise_no_warning_for_nan_in_binary_ops
+= 40 failed, 831 passed, 16 skipped, 1 xfailed, 1 xpassed, 2906 warnings in 10.21s =
+
+>>>>> Some Tests Failed

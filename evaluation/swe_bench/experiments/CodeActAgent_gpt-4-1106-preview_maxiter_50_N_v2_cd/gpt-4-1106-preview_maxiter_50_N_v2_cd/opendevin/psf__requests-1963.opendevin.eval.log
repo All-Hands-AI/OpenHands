@@ -1,0 +1,216 @@
+Task Metadata:
+	- Instance ID: psf__requests-1963
+	- Testbed: /swe_util/eval_data/testbeds/psf__requests__2.3
+	- Virtual Env.: psf__requests__2.3
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file requests/sessions.py
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file sessions_fixed.py
+patch unexpectedly ends in middle of line
+patch: **** malformed patch at line 617:  
+
+>>>>> Applied Patch (pred_minimal_try patch)
+>>>>> Applied Patch (pred_minimal_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate psf__requests__2.3 && echo 'activate successful' && python -m pip install .
+Std. Output: activate successful
+Processing /swe_util/eval_data/testbeds/psf__requests__2.3
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Building wheels for collected packages: requests
+  Building wheel for requests (setup.py): started
+  Building wheel for requests (setup.py): finished with status 'done'
+  Created wheel for requests: filename=requests-2.3.0-py2.py3-none-any.whl size=441542 sha256=e9da5172649b06edc56eeddd7b6daa044f5c5138f13eef8dc4e283f075370cad
+  Stored in directory: /tmp/pip-ephem-wheel-cache-igtqs38t/wheels/eb/25/8f/f251aa507e9aea31de91b91909a0f9d87986993ed03dd0d44c
+Successfully built requests
+Installing collected packages: requests
+  Attempting uninstall: requests
+    Found existing installation: requests 2.3.0
+    Uninstalling requests-2.3.0:
+      Successfully uninstalled requests-2.3.0
+Successfully installed requests-2.3.0
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate psf__requests__2.3 && echo 'activate successful' && pytest --no-header -rA --tb=no -p no:cacheprovider test_requests.py;
+Output:
+activate successful
+============================= test session starts ==============================
+collected 121 items
+
+test_requests.py ....................F.................................. [ 45%]
+..................................................................       [100%]
+
+=============================== warnings summary ===============================
+requests/packages/urllib3/_collections.py:7
+  /swe_util/eval_data/testbeds/psf__requests__2.3/requests/packages/urllib3/_collections.py:7: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+    from collections import MutableMapping
+
+requests/sessions.py:396
+  /swe_util/eval_data/testbeds/psf__requests__2.3/requests/sessions.py:396: DeprecationWarning: invalid escape sequence \*
+    """Sends a GET request. Returns :class:`Response` object.
+
+requests/sessions.py:406
+  /swe_util/eval_data/testbeds/psf__requests__2.3/requests/sessions.py:406: DeprecationWarning: invalid escape sequence \*
+    """Sends a OPTIONS request. Returns :class:`Response` object.
+
+requests/sessions.py:416
+  /swe_util/eval_data/testbeds/psf__requests__2.3/requests/sessions.py:416: DeprecationWarning: invalid escape sequence \*
+    """Sends a HEAD request. Returns :class:`Response` object.
+
+requests/sessions.py:426
+  /swe_util/eval_data/testbeds/psf__requests__2.3/requests/sessions.py:426: DeprecationWarning: invalid escape sequence \*
+    """Sends a POST request. Returns :class:`Response` object.
+
+requests/sessions.py:436
+  /swe_util/eval_data/testbeds/psf__requests__2.3/requests/sessions.py:436: DeprecationWarning: invalid escape sequence \*
+    """Sends a PUT request. Returns :class:`Response` object.
+
+requests/sessions.py:446
+  /swe_util/eval_data/testbeds/psf__requests__2.3/requests/sessions.py:446: DeprecationWarning: invalid escape sequence \*
+    """Sends a PATCH request. Returns :class:`Response` object.
+
+requests/sessions.py:456
+  /swe_util/eval_data/testbeds/psf__requests__2.3/requests/sessions.py:456: DeprecationWarning: invalid escape sequence \*
+    """Sends a DELETE request. Returns :class:`Response` object.
+
+requests/sessions.py:12
+  /swe_util/eval_data/testbeds/psf__requests__2.3/requests/sessions.py:12: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+    from collections import Mapping
+
+test_requests.py::RequestsTestCase::test_BASICAUTH_TUPLE_HTTP_200_OK_GET
+  /swe_util/eval_data/testbeds/psf__requests__2.3/requests/models.py:164: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+    if isinstance(hook, collections.Callable):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+PASSED test_requests.py::RequestsTestCase::test_BASICAUTH_TUPLE_HTTP_200_OK_GET
+PASSED test_requests.py::RequestsTestCase::test_DIGESTAUTH_QUOTES_QOP_VALUE
+PASSED test_requests.py::RequestsTestCase::test_DIGESTAUTH_WRONG_HTTP_401_GET
+PASSED test_requests.py::RequestsTestCase::test_DIGEST_AUTH_RETURNS_COOKIE
+PASSED test_requests.py::RequestsTestCase::test_DIGEST_AUTH_SETS_SESSION_COOKIES
+PASSED test_requests.py::RequestsTestCase::test_DIGEST_HTTP_200_OK_GET
+PASSED test_requests.py::RequestsTestCase::test_DIGEST_STREAM
+PASSED test_requests.py::RequestsTestCase::test_HTTP_200_OK_GET_ALTERNATIVE
+PASSED test_requests.py::RequestsTestCase::test_HTTP_200_OK_GET_WITH_MIXED_PARAMS
+PASSED test_requests.py::RequestsTestCase::test_HTTP_200_OK_GET_WITH_PARAMS
+PASSED test_requests.py::RequestsTestCase::test_HTTP_200_OK_HEAD
+PASSED test_requests.py::RequestsTestCase::test_HTTP_200_OK_PUT
+PASSED test_requests.py::RequestsTestCase::test_HTTP_302_ALLOW_REDIRECT_GET
+PASSED test_requests.py::RequestsTestCase::test_POSTBIN_GET_POST_FILES
+PASSED test_requests.py::RequestsTestCase::test_POSTBIN_GET_POST_FILES_WITH_DATA
+PASSED test_requests.py::RequestsTestCase::test_autoset_header_values_are_native
+PASSED test_requests.py::RequestsTestCase::test_basic_building
+PASSED test_requests.py::RequestsTestCase::test_basicauth_with_netrc
+PASSED test_requests.py::RequestsTestCase::test_can_send_nonstring_objects_with_files
+PASSED test_requests.py::RequestsTestCase::test_cannot_send_unprepared_requests
+PASSED test_requests.py::RequestsTestCase::test_cookie_as_dict_items
+PASSED test_requests.py::RequestsTestCase::test_cookie_as_dict_keeps_items
+PASSED test_requests.py::RequestsTestCase::test_cookie_as_dict_keeps_len
+PASSED test_requests.py::RequestsTestCase::test_cookie_as_dict_keys
+PASSED test_requests.py::RequestsTestCase::test_cookie_as_dict_values
+PASSED test_requests.py::RequestsTestCase::test_cookie_parameters
+PASSED test_requests.py::RequestsTestCase::test_cookie_persists_via_api
+PASSED test_requests.py::RequestsTestCase::test_cookie_quote_wrapped
+PASSED test_requests.py::RequestsTestCase::test_cookie_removed_on_expire
+PASSED test_requests.py::RequestsTestCase::test_cookie_sent_on_redirect
+PASSED test_requests.py::RequestsTestCase::test_custom_content_type
+PASSED test_requests.py::RequestsTestCase::test_decompress_gzip
+PASSED test_requests.py::RequestsTestCase::test_different_encodings_dont_break_post
+PASSED test_requests.py::RequestsTestCase::test_entry_points
+PASSED test_requests.py::RequestsTestCase::test_fixes_1329
+PASSED test_requests.py::RequestsTestCase::test_generic_cookiejar_works
+PASSED test_requests.py::RequestsTestCase::test_get_auth_from_url
+PASSED test_requests.py::RequestsTestCase::test_get_auth_from_url_encoded_hashes
+PASSED test_requests.py::RequestsTestCase::test_get_auth_from_url_encoded_spaces
+PASSED test_requests.py::RequestsTestCase::test_get_auth_from_url_not_encoded_spaces
+PASSED test_requests.py::RequestsTestCase::test_get_auth_from_url_percent_chars
+PASSED test_requests.py::RequestsTestCase::test_header_keys_are_native
+PASSED test_requests.py::RequestsTestCase::test_header_remove_is_case_insensitive
+PASSED test_requests.py::RequestsTestCase::test_headers_on_session_with_None_are_not_sent
+PASSED test_requests.py::RequestsTestCase::test_hook_receives_request_arguments
+PASSED test_requests.py::RequestsTestCase::test_http_error
+PASSED test_requests.py::RequestsTestCase::test_invalid_url
+PASSED test_requests.py::RequestsTestCase::test_links
+PASSED test_requests.py::RequestsTestCase::test_long_authinfo_in_url
+PASSED test_requests.py::RequestsTestCase::test_mixed_case_scheme_acceptable
+PASSED test_requests.py::RequestsTestCase::test_no_content_length
+PASSED test_requests.py::RequestsTestCase::test_oddball_schemes_dont_check_URLs
+PASSED test_requests.py::RequestsTestCase::test_param_cookiejar_works
+PASSED test_requests.py::RequestsTestCase::test_params_are_added_before_fragment
+PASSED test_requests.py::RequestsTestCase::test_params_are_merged_case_sensitive
+PASSED test_requests.py::RequestsTestCase::test_path_is_not_double_encoded
+PASSED test_requests.py::RequestsTestCase::test_prepared_from_session
+PASSED test_requests.py::RequestsTestCase::test_prepared_request_hook
+PASSED test_requests.py::RequestsTestCase::test_pyopenssl_redirect
+PASSED test_requests.py::RequestsTestCase::test_request_and_response_are_pickleable
+PASSED test_requests.py::RequestsTestCase::test_request_cookie_overrides_session_cookie
+PASSED test_requests.py::RequestsTestCase::test_request_cookies_not_persisted
+PASSED test_requests.py::RequestsTestCase::test_request_ok_set
+PASSED test_requests.py::RequestsTestCase::test_requests_in_history_are_not_overridden
+PASSED test_requests.py::RequestsTestCase::test_response_is_iterable
+PASSED test_requests.py::RequestsTestCase::test_session_hooks_are_overriden_by_request_hooks
+PASSED test_requests.py::RequestsTestCase::test_session_hooks_are_used_with_no_request_hooks
+PASSED test_requests.py::RequestsTestCase::test_session_pickling
+PASSED test_requests.py::RequestsTestCase::test_set_cookie_on_301
+PASSED test_requests.py::RequestsTestCase::test_status_raising
+PASSED test_requests.py::RequestsTestCase::test_time_elapsed_blank
+PASSED test_requests.py::RequestsTestCase::test_transport_adapter_ordering
+PASSED test_requests.py::RequestsTestCase::test_unicode_get
+PASSED test_requests.py::RequestsTestCase::test_unicode_header_name
+PASSED test_requests.py::RequestsTestCase::test_unicode_method_name
+PASSED test_requests.py::RequestsTestCase::test_unicode_multipart_post
+PASSED test_requests.py::RequestsTestCase::test_unicode_multipart_post_fieldnames
+PASSED test_requests.py::RequestsTestCase::test_uppercase_scheme_redirect
+PASSED test_requests.py::RequestsTestCase::test_urlencoded_get_query_multivalued_param
+PASSED test_requests.py::RequestsTestCase::test_user_agent_transfers
+PASSED test_requests.py::TestContentEncodingDetection::test_html4_pragma
+PASSED test_requests.py::TestContentEncodingDetection::test_html_charset
+PASSED test_requests.py::TestContentEncodingDetection::test_none
+PASSED test_requests.py::TestContentEncodingDetection::test_precedence
+PASSED test_requests.py::TestContentEncodingDetection::test_xhtml_pragma
+PASSED test_requests.py::TestContentEncodingDetection::test_xml
+PASSED test_requests.py::TestCaseInsensitiveDict::test_contains
+PASSED test_requests.py::TestCaseInsensitiveDict::test_delitem
+PASSED test_requests.py::TestCaseInsensitiveDict::test_docstring_example
+PASSED test_requests.py::TestCaseInsensitiveDict::test_equality
+PASSED test_requests.py::TestCaseInsensitiveDict::test_fixes_649
+PASSED test_requests.py::TestCaseInsensitiveDict::test_get
+PASSED test_requests.py::TestCaseInsensitiveDict::test_getitem
+PASSED test_requests.py::TestCaseInsensitiveDict::test_iter
+PASSED test_requests.py::TestCaseInsensitiveDict::test_iterable_init
+PASSED test_requests.py::TestCaseInsensitiveDict::test_kwargs_init
+PASSED test_requests.py::TestCaseInsensitiveDict::test_len
+PASSED test_requests.py::TestCaseInsensitiveDict::test_lower_items
+PASSED test_requests.py::TestCaseInsensitiveDict::test_mapping_init
+PASSED test_requests.py::TestCaseInsensitiveDict::test_preserve_key_case
+PASSED test_requests.py::TestCaseInsensitiveDict::test_preserve_last_key_case
+PASSED test_requests.py::TestCaseInsensitiveDict::test_setdefault
+PASSED test_requests.py::TestCaseInsensitiveDict::test_update
+PASSED test_requests.py::TestCaseInsensitiveDict::test_update_retains_unchanged
+PASSED test_requests.py::UtilsTestCase::test_address_in_network
+PASSED test_requests.py::UtilsTestCase::test_dotted_netmask
+PASSED test_requests.py::UtilsTestCase::test_get_auth_from_url
+PASSED test_requests.py::UtilsTestCase::test_get_environ_proxies
+PASSED test_requests.py::UtilsTestCase::test_get_environ_proxies_ip_ranges
+PASSED test_requests.py::UtilsTestCase::test_is_ipv4_address
+PASSED test_requests.py::UtilsTestCase::test_is_valid_cidr
+PASSED test_requests.py::UtilsTestCase::test_super_len_io_streams
+PASSED test_requests.py::TestMorselToCookieExpires::test_expires_invalid_int
+PASSED test_requests.py::TestMorselToCookieExpires::test_expires_invalid_str
+PASSED test_requests.py::TestMorselToCookieExpires::test_expires_none
+PASSED test_requests.py::TestMorselToCookieExpires::test_expires_valid_str
+PASSED test_requests.py::TestMorselToCookieMaxAge::test_max_age_invalid_str
+PASSED test_requests.py::TestMorselToCookieMaxAge::test_max_age_valid_int
+PASSED test_requests.py::TestTimeout::test_stream_timeout
+PASSED test_requests.py::TestRedirects::test_requests_are_updated_each_time
+FAILED test_requests.py::RequestsTestCase::test_conflicting_post_params - Typ...
+============ 1 failed, 120 passed, 10 warnings in 61.20s (0:01:01) =============
+
+>>>>> Some Tests Failed

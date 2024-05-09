@@ -1,0 +1,105 @@
+Task Metadata:
+	- Instance ID: sympy__sympy-17630
+	- Testbed: /swe_util/eval_data/testbeds/sympy__sympy__1.5
+	- Virtual Env.: sympy__sympy__1.5
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+patch unexpectedly ends in middle of line
+patch: **** Only garbage was found in the patch input.
+>>>>> Applied Patch (pred_minimal_try patch)
+>>>>> Applied Patch (pred_minimal_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.5 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/sympy__sympy__1.5
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: mpmath>=0.19 in /swe_util/miniconda3/envs/sympy__sympy__1.5/lib/python3.9/site-packages (from sympy==1.5.dev0) (1.3.0)
+Installing collected packages: sympy
+  Running setup.py develop for sympy
+Successfully installed sympy-1.5.dev0
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.5 && echo 'activate successful' && bin/test -C --verbose sympy/matrices/expressions/tests/test_blockmatrix.py sympy/matrices/expressions/tests/test_matadd.py;
+Output:
+activate successful
+============================= test process starts ==============================
+executable:         /swe_util/miniconda3/envs/sympy__sympy__1.5/bin/python  (3.9.19-final-0) [CPython]
+architecture:       64-bit
+cache:              no
+ground types:       python 
+numpy:              None
+random seed:        5538171
+hash randomization: on (PYTHONHASHSEED=96230926)
+
+sympy/matrices/expressions/tests/test_blockmatrix.py[16] 
+test_bc_matmul ok
+test_bc_matadd ok
+test_bc_transpose ok
+test_bc_dist_diag ok
+test_block_plus_ident ok
+test_BlockMatrix ok
+test_block_collapse_explicit_matrices ok
+test_issue_17624 E
+test_BlockMatrix_trace ok
+test_BlockMatrix_Determinant ok
+test_squareBlockMatrix ok
+test_BlockDiagMatrix ok
+test_blockcut ok
+test_reblock_2x2 ok
+test_deblock ok
+test_block_collapse_type ok                                               [FAIL]
+
+sympy/matrices/expressions/tests/test_matadd.py[7] 
+test_sort_key ok
+test_matadd_sympify ok
+test_matadd_of_matrices ok
+test_doit_args ok
+test_generic_identity ok
+test_zero_matrix_add F
+test_matrix_add_with_scalar f                                             [FAIL]
+
+
+________________________________________________________________________________
+____ sympy/matrices/expressions/tests/test_blockmatrix.py:test_issue_17624 _____
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.5/sympy/matrices/expressions/tests/test_blockmatrix.py", line 111, in test_issue_17624
+    assert block_collapse(b * b) == BlockMatrix([[a**2, z], [z, z]])
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.5/sympy/matrices/expressions/blockmatrix.py", line 393, in block_collapse
+    result = rule(expr)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.5/sympy/strategies/core.py", line 11, in exhaustive_rl
+    new, old = rule(expr), expr
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.5/sympy/strategies/core.py", line 44, in chain_rl
+    expr = rule(expr)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.5/sympy/strategies/core.py", line 11, in exhaustive_rl
+    new, old = rule(expr), expr
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.5/sympy/strategies/core.py", line 33, in conditioned_rl
+    return rule(expr)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.5/sympy/strategies/core.py", line 95, in switch_rl
+    return rl(expr)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.5/sympy/matrices/expressions/blockmatrix.py", line 467, in bc_matmul
+    matrices[i] = A._blockmul(B)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.5/sympy/matrices/expressions/blockmatrix.py", line 167, in _blockmul
+    return BlockMatrix(self.blocks*other.blocks)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.5/sympy/matrices/expressions/blockmatrix.py", line 86, in __new__
+    raise ValueError(filldedent('''
+ValueError: 
+expecting a sequence of 1 or more rows containing Matrices.
+
+________________________________________________________________________________
+_____ sympy/matrices/expressions/tests/test_matadd.py:test_zero_matrix_add _____
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.5/sympy/matrices/expressions/tests/test_matadd.py", line 37, in test_zero_matrix_add
+    assert Add(ZeroMatrix(2, 2), ZeroMatrix(2, 2)) == ZeroMatrix(2, 2)
+AssertionError
+
+ tests finished: 20 passed, 1 failed, 1 expected to fail, 1 exceptions, 
+in 0.26 seconds 
+DO *NOT* COMMIT!
+
+>>>>> Some Tests Failed

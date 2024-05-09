@@ -1,0 +1,107 @@
+Task Metadata:
+	- Instance ID: django__django-15347
+	- Testbed: /swe_util/eval_data/testbeds/django__django__4.1
+	- Virtual Env.: django__django__4.1
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+patch unexpectedly ends in middle of line
+patch: **** Only garbage was found in the patch input.
+>>>>> Applied Patch (pred_minimal_try patch)
+>>>>> Applied Patch (pred_minimal_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__4.1 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/django__django__4.1
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: asgiref>=3.4.1 in /swe_util/miniconda3/envs/django__django__4.1/lib/python3.9/site-packages (from Django==4.1.dev20220122153814) (3.8.1)
+Requirement already satisfied: sqlparse>=0.2.2 in /swe_util/miniconda3/envs/django__django__4.1/lib/python3.9/site-packages (from Django==4.1.dev20220122153814) (0.5.0)
+Requirement already satisfied: typing-extensions>=4 in /swe_util/miniconda3/envs/django__django__4.1/lib/python3.9/site-packages (from asgiref>=3.4.1->Django==4.1.dev20220122153814) (4.11.0)
+Building wheels for collected packages: Django
+  Building editable for Django (pyproject.toml): started
+  Building editable for Django (pyproject.toml): finished with status 'done'
+  Created wheel for Django: filename=Django-4.1.dev20220122153814-0.editable-py3-none-any.whl size=26781 sha256=a45a826bca3f9ee95384c63eaaf6a399363b2cbf5ed2c3cac60a72dc2d5a7fe5
+  Stored in directory: /tmp/pip-ephem-wheel-cache-0uamiuqy/wheels/96/1c/3a/6dbb4373707d7778c3cbf41ba4c5a0c7c0a56ff499853543fb
+Successfully built Django
+Installing collected packages: Django
+  Attempting uninstall: Django
+    Found existing installation: Django 4.1.dev20211220101139
+    Uninstalling Django-4.1.dev20211220101139:
+      Successfully uninstalled Django-4.1.dev20211220101139
+Successfully installed Django-4.1.dev20220122153814
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__4.1 && echo 'activate successful' && ./tests/runtests.py --verbosity 2 messages_tests.test_cookie;
+Output:
+activate successful
+Testing against Django installed in '/swe_util/eval_data/testbeds/django__django__4.1/django' with up to 64 processes
+Importing application messages_tests
+Found 30 test(s).
+Skipping setup of unused database(s): default, other.
+System check identified no issues (0 silenced).
+test_add (messages_tests.test_cookie.CookieTests) ... ok
+test_add_lazy_translation (messages_tests.test_cookie.CookieTests) ... ok
+test_add_update (messages_tests.test_cookie.CookieTests) ... ok
+test_context_processor_message_levels (messages_tests.test_cookie.CookieTests) ... ok
+test_cookie_setings (messages_tests.test_cookie.CookieTests)
+CookieStorage honors SESSION_COOKIE_DOMAIN, SESSION_COOKIE_SECURE, and ... ok
+test_custom_tags (messages_tests.test_cookie.CookieTests) ... ok
+test_default_level (messages_tests.test_cookie.CookieTests) ... ok
+test_existing_add (messages_tests.test_cookie.CookieTests) ... ok
+test_existing_add_read_update (messages_tests.test_cookie.CookieTests) ... ok
+test_existing_read (messages_tests.test_cookie.CookieTests)
+Reading the existing storage doesn't cause the data to be lost. ... ok
+test_existing_read_add_update (messages_tests.test_cookie.CookieTests) ... ok
+test_extra_tags (messages_tests.test_cookie.CookieTests)
+A message's extra_tags attribute is correctly preserved when retrieved ... test_full_request_response_cycle (messages_tests.test_cookie.CookieTests)
+With the message middleware enabled, messages are properly stored and ... ok
+test_get (messages_tests.test_cookie.CookieTests) ... ok
+test_get_bad_cookie (messages_tests.test_cookie.CookieTests) ... ok
+test_high_level (messages_tests.test_cookie.CookieTests) ... ok
+test_json_encoder_decoder (messages_tests.test_cookie.CookieTests)
+A complex nested data structure containing Message ... ok
+test_level_tag (messages_tests.test_cookie.CookieTests) ... ok
+test_low_level (messages_tests.test_cookie.CookieTests) ... ok
+test_max_cookie_length (messages_tests.test_cookie.CookieTests)
+If the data exceeds what is allowed in a cookie, older messages are ... ok
+test_message_rfc6265 (messages_tests.test_cookie.CookieTests) ... ok
+test_middleware_disabled (messages_tests.test_cookie.CookieTests)
+When the middleware is disabled, an exception is raised when one ... ok
+test_middleware_disabled_fail_silently (messages_tests.test_cookie.CookieTests)
+When the middleware is disabled, an exception is not raised ... ok
+test_multiple_posts (messages_tests.test_cookie.CookieTests)
+Messages persist properly when multiple POSTs are made before a GET. ... ok
+test_no_update (messages_tests.test_cookie.CookieTests) ... ok
+test_repr (messages_tests.test_cookie.CookieTests) ... ok
+test_safedata (messages_tests.test_cookie.CookieTests)
+A message containing SafeData is keeping its safe status when ... ok
+test_settings_level (messages_tests.test_cookie.CookieTests) ... ok
+test_tags (messages_tests.test_cookie.CookieTests) ... ok
+test_with_template_response (messages_tests.test_cookie.CookieTests) ... ok
+
+======================================================================
+FAIL: test_extra_tags (messages_tests.test_cookie.CookieTests) (extra_tags='')
+A message's extra_tags attribute is correctly preserved when retrieved
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/django__django__4.1/tests/messages_tests/test_cookie.py", line 193, in test_extra_tags
+    self.assertEqual(
+AssertionError: None != ''
+
+----------------------------------------------------------------------
+Ran 30 tests in 0.093s
+
+FAILED (failures=1)
+
+>>>>> Some Tests Failed

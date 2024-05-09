@@ -1,0 +1,250 @@
+Task Metadata:
+	- Instance ID: matplotlib__matplotlib-25332
+	- Testbed: /swe_util/eval_data/testbeds/matplotlib__matplotlib__3.7
+	- Virtual Env.: matplotlib__matplotlib__3.7
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate matplotlib__matplotlib__3.7 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/matplotlib__matplotlib__3.7
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Installing backend dependencies: started
+  Installing backend dependencies: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: contourpy>=1.0.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.7/lib/python3.11/site-packages (from matplotlib==3.8.0.dev452+g66ba515e67) (1.1.0)
+Requirement already satisfied: cycler>=0.10 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.7/lib/python3.11/site-packages (from matplotlib==3.8.0.dev452+g66ba515e67) (0.11.0)
+Requirement already satisfied: fonttools>=4.22.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.7/lib/python3.11/site-packages (from matplotlib==3.8.0.dev452+g66ba515e67) (4.42.1)
+Requirement already satisfied: kiwisolver>=1.0.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.7/lib/python3.11/site-packages (from matplotlib==3.8.0.dev452+g66ba515e67) (1.4.5)
+Requirement already satisfied: numpy>=1.21 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.7/lib/python3.11/site-packages (from matplotlib==3.8.0.dev452+g66ba515e67) (1.25.2)
+Requirement already satisfied: packaging>=20.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.7/lib/python3.11/site-packages (from matplotlib==3.8.0.dev452+g66ba515e67) (23.1)
+Requirement already satisfied: pillow>=6.2.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.7/lib/python3.11/site-packages (from matplotlib==3.8.0.dev452+g66ba515e67) (10.0.0)
+Requirement already satisfied: pyparsing>=2.3.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.7/lib/python3.11/site-packages (from matplotlib==3.8.0.dev452+g66ba515e67) (3.0.9)
+Requirement already satisfied: python-dateutil>=2.7 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.7/lib/python3.11/site-packages (from matplotlib==3.8.0.dev452+g66ba515e67) (2.8.2)
+Requirement already satisfied: setuptools-scm>=7 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.7/lib/python3.11/site-packages (from matplotlib==3.8.0.dev452+g66ba515e67) (7.1.0)
+Requirement already satisfied: six>=1.5 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.7/lib/python3.11/site-packages (from python-dateutil>=2.7->matplotlib==3.8.0.dev452+g66ba515e67) (1.16.0)
+Requirement already satisfied: setuptools in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.7/lib/python3.11/site-packages (from setuptools-scm>=7->matplotlib==3.8.0.dev452+g66ba515e67) (68.1.2)
+Requirement already satisfied: typing-extensions in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.7/lib/python3.11/site-packages (from setuptools-scm>=7->matplotlib==3.8.0.dev452+g66ba515e67) (4.7.1)
+Building wheels for collected packages: matplotlib
+  Building editable for matplotlib (pyproject.toml): started
+  Building editable for matplotlib (pyproject.toml): finished with status 'done'
+  Created wheel for matplotlib: filename=matplotlib-3.8.0.dev452+g66ba515e67-0.editable-cp311-cp311-linux_x86_64.whl size=21970 sha256=132e5f68bb3b7df1b6aaf9722fb15d91332f46b74e1e307e4da49267a676045a
+  Stored in directory: /tmp/pip-ephem-wheel-cache-ht0kp964/wheels/57/0e/31/d2c96b939f1b3254af57b66ada5adf526816ae649eaca33dee
+Successfully built matplotlib
+Installing collected packages: matplotlib
+  Attempting uninstall: matplotlib
+    Found existing installation: matplotlib 3.8.0.dev565+g7eafdd8af3
+    Uninstalling matplotlib-3.8.0.dev565+g7eafdd8af3:
+      Successfully uninstalled matplotlib-3.8.0.dev565+g7eafdd8af3
+Successfully installed matplotlib-3.8.0.dev452+g66ba515e67
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate matplotlib__matplotlib__3.7 && echo 'activate successful' && pytest --no-header -rA --tb=no -p no:cacheprovider lib/matplotlib/tests/test_pickle.py;
+Output:
+activate successful
+============================= test session starts ==============================
+collected 183 items
+
+lib/matplotlib/tests/test_pickle.py .FF....F............................ [ 19%]
+........................................................................ [ 59%]
+........................................................................ [ 98%]
+...                                                                      [100%]
+
+=========================== short test summary info ============================
+PASSED lib/matplotlib/tests/test_pickle.py::test_simple
+PASSED lib/matplotlib/tests/test_pickle.py::test_gcf
+PASSED lib/matplotlib/tests/test_pickle.py::test_no_pyplot
+PASSED lib/matplotlib/tests/test_pickle.py::test_renderer
+PASSED lib/matplotlib/tests/test_pickle.py::test_image
+PASSED lib/matplotlib/tests/test_pickle.py::test_transform
+PASSED lib/matplotlib/tests/test_pickle.py::test_rrulewrapper
+PASSED lib/matplotlib/tests/test_pickle.py::test_shared
+PASSED lib/matplotlib/tests/test_pickle.py::test_inset_and_secondary
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap0]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap1]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap2]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap3]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap4]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap5]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap6]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap7]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap8]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap9]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap10]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap11]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap12]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap13]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap14]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap15]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap16]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap17]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap18]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap19]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap20]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap21]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap22]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap23]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap24]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap25]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap26]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap27]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap28]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap29]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap30]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap31]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap32]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap33]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap34]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap35]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap36]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap37]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap38]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap39]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap40]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap41]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap42]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap43]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap44]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap45]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap46]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap47]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap48]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap49]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap50]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap51]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap52]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap53]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap54]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap55]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap56]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap57]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap58]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap59]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap60]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap61]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap62]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap63]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap64]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap65]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap66]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap67]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap68]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap69]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap70]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap71]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap72]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap73]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap74]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap75]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap76]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap77]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap78]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap79]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap80]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap81]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap82]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap83]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap84]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap85]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap86]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap87]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap88]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap89]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap90]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap91]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap92]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap93]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap94]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap95]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap96]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap97]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap98]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap99]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap100]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap101]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap102]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap103]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap104]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap105]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap106]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap107]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap108]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap109]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap110]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap111]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap112]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap113]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap114]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap115]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap116]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap117]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap118]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap119]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap120]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap121]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap122]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap123]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap124]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap125]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap126]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap127]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap128]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap129]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap130]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap131]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap132]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap133]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap134]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap135]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap136]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap137]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap138]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap139]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap140]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap141]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap142]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap143]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap144]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap145]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap146]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap147]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap148]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap149]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap150]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap151]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap152]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap153]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap154]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap155]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap156]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap157]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap158]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap159]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap160]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap161]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap162]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap163]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap164]
+PASSED lib/matplotlib/tests/test_pickle.py::test_cmap[cmap165]
+PASSED lib/matplotlib/tests/test_pickle.py::test_unpickle_canvas
+PASSED lib/matplotlib/tests/test_pickle.py::test_mpl_toolkits
+PASSED lib/matplotlib/tests/test_pickle.py::test_standard_norm
+PASSED lib/matplotlib/tests/test_pickle.py::test_dynamic_norm
+PASSED lib/matplotlib/tests/test_pickle.py::test_vertexselector
+FAILED lib/matplotlib/tests/test_pickle.py::test_complete[png] - TypeError: c...
+FAILED lib/matplotlib/tests/test_pickle.py::test_pickle_load_from_subprocess[png]
+FAILED lib/matplotlib/tests/test_pickle.py::test_polar - AttributeError: 'Gro...
+======================== 3 failed, 180 passed in 1.73s =========================
+
+>>>>> Some Tests Failed

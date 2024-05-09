@@ -1,0 +1,166 @@
+Task Metadata:
+	- Instance ID: sympy__sympy-21379
+	- Testbed: /swe_util/eval_data/testbeds/sympy__sympy__1.9
+	- Virtual Env.: sympy__sympy__1.9
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+patch unexpectedly ends in middle of line
+patch: **** Only garbage was found in the patch input.
+>>>>> Applied Patch (pred_minimal_try patch)
+>>>>> Applied Patch (pred_minimal_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.9 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/sympy__sympy__1.9
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: mpmath>=0.19 in /swe_util/miniconda3/envs/sympy__sympy__1.9/lib/python3.9/site-packages (from sympy==1.9.dev0) (1.3.0)
+Installing collected packages: sympy
+  Running setup.py develop for sympy
+Successfully installed sympy-1.9.dev0
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.9 && echo 'activate successful' && bin/test -C --verbose sympy/core/tests/test_arit.py;
+Output:
+activate successful
+============================= test process starts ==============================
+executable:         /swe_util/miniconda3/envs/sympy__sympy__1.9/bin/python  (3.9.19-final-0) [CPython]
+architecture:       64-bit
+cache:              no
+ground types:       python 
+numpy:              None
+random seed:        31573776
+hash randomization: on (PYTHONHASHSEED=2615753141)
+
+sympy/core/tests/test_arit.py[95] 
+test_bug1 ok
+test_Symbol ok
+test_arit0 ok
+test_div ok
+test_pow ok
+test_pow2 ok
+test_pow3 ok
+test_mod_pow ok
+test_pow_E ok
+test_pow_issue_3516 ok
+test_pow_im ok
+test_real_mul ok
+test_ncmul ok
+test_mul_add_identity ok
+test_ncpow ok
+test_powerbug ok
+test_Mul_doesnt_expand_exp ok
+test_Mul_is_integer ok
+test_Add_Mul_is_integer ok
+test_Add_Mul_is_finite ok
+test_Mul_is_even_odd ok
+test_evenness_in_ternary_integer_product_with_odd f
+test_evenness_in_ternary_integer_product_with_even ok
+test_oddness_in_ternary_integer_product_with_odd f
+test_oddness_in_ternary_integer_product_with_even ok
+test_Mul_is_rational ok
+test_Add_is_rational ok
+test_Add_is_even_odd ok
+test_Mul_is_negative_positive ok
+test_Mul_is_negative_positive_2 ok
+test_Mul_is_nonpositive_nonnegative ok
+test_Add_is_negative_positive ok
+test_Add_is_nonpositive_nonnegative ok
+test_Pow_is_integer ok
+test_Pow_is_real ok
+test_real_Pow ok
+test_Pow_is_finite ok
+test_Pow_is_even_odd ok
+test_Pow_is_negative_positive ok
+test_Pow_is_zero ok
+test_Pow_is_nonpositive_nonnegative ok
+test_Mul_is_imaginary_real ok
+test_Mul_hermitian_antihermitian ok
+test_Add_is_comparable ok
+test_Mul_is_comparable ok
+test_Pow_is_comparable ok
+test_Add_is_positive_2 ok
+test_Add_is_irrational ok
+test_Mul_is_irrational ok
+test_issue_3531 ok
+test_issue_3531b ok
+test_bug3 ok
+test_suppressed_evaluation ok
+test_AssocOp_doit ok
+test_Add_Mul_Expr_args ok
+test_Add_as_coeff_mul ok
+test_Pow_as_coeff_mul_doesnt_expand ok
+test_issue_3514_18626 ok
+test_make_args ok
+test_issue_5126 ok
+test_Rational_as_content_primitive ok
+test_Add_as_content_primitive ok
+test_Mul_as_content_primitive ok
+test_Pow_as_content_primitive ok
+test_issue_5460 ok
+test_product_irrational ok
+test_issue_5919 ok
+test_Mod E
+test_Mod_Pow ok
+test_Mod_is_integer ok
+test_Mod_is_nonposneg ok
+test_issue_6001 ok
+test_polar ok
+test_issue_6040 ok
+test_issue_6082 ok
+test_issue_6077 ok
+test_mul_flatten_oo ok
+test_add_flatten ok
+test_issue_5160_6087_6089_6090 ok
+test_float_int_round ok
+test_issue_6611a ok
+test_denest_add_mul ok
+test_mul_coeff ok
+test_mul_zero_detection ok
+test_Mul_with_zero_infinite ok
+test_Mul_does_not_cancel_infinities ok
+test_Mul_does_not_distribute_infinity ok
+test_issue_8247_8354 ok
+test_Add_is_zero ok
+test_issue_14392 ok
+test_divmod ok
+test__neg__ ok
+test_issue_18507 ok
+test_issue_17130 ok
+test_issue_21034 ok                                                       [FAIL]
+
+
+________________________________________________________________________________
+____________________ sympy/core/tests/test_arit.py:test_Mod ____________________
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.9/sympy/core/tests/test_arit.py", line 1921, in test_Mod
+    (Piecewise((x_r, y_r > x_r), (y_r, True)) / z) % 1
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.9/sympy/core/decorators.py", line 266, in _func
+    return func(self, other)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.9/sympy/core/decorators.py", line 136, in binary_op_wrapper
+    return func(self, other)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.9/sympy/core/expr.py", line 280, in __mod__
+    return Mod(self, other)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.9/sympy/core/function.py", line 473, in __new__
+    result = super().__new__(cls, *args, **options)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.9/sympy/core/function.py", line 285, in __new__
+    evaluated = cls.eval(*args)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.9/sympy/core/mod.py", line 169, in eval
+    G = gcd(p, q)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.9/sympy/polys/polytools.py", line 5306, in gcd
+    (F, G), opt = parallel_poly_from_expr((f, g), *gens, **args)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.9/sympy/polys/polytools.py", line 4340, in parallel_poly_from_expr
+    return _parallel_poly_from_expr(exprs, opt)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.9/sympy/polys/polytools.py", line 4399, in _parallel_poly_from_expr
+    raise PolynomialError("Piecewise generators do not make sense")
+sympy.polys.polyerrors.PolynomialError: Piecewise generators do not make sense
+
+ tests finished: 92 passed, 2 expected to fail, 1 exceptions, in 21.10 seconds =
+DO *NOT* COMMIT!
+
+>>>>> Some Tests Failed

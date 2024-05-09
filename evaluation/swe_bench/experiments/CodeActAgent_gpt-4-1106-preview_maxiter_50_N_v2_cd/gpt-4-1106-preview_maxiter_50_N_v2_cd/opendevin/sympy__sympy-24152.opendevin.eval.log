@@ -1,0 +1,49 @@
+Task Metadata:
+	- Instance ID: sympy__sympy-24152
+	- Testbed: /swe_util/eval_data/testbeds/sympy__sympy__1.12
+	- Virtual Env.: sympy__sympy__1.12
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.12 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/sympy__sympy__1.12
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: mpmath>=0.19 in /swe_util/miniconda3/envs/sympy__sympy__1.12/lib/python3.9/site-packages (from sympy==1.12.dev0) (1.3.0)
+Installing collected packages: sympy
+  Running setup.py develop for sympy
+Successfully installed sympy-1.12.dev0
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.12 && echo 'activate successful' && bin/test -C --verbose sympy/physics/quantum/tests/test_tensorproduct.py;
+Output:
+activate successful
+============================= test process starts ==============================
+executable:         /swe_util/miniconda3/envs/sympy__sympy__1.12/bin/python  (3.9.19-final-0) [CPython]
+architecture:       64-bit
+cache:              no
+ground types:       python 
+numpy:              None
+random seed:        32038984
+hash randomization: on (PYTHONHASHSEED=2146058907)
+
+sympy/physics/quantum/tests/test_tensorproduct.py[8] 
+test_sparse_matrices ok
+test_tensor_product_dagger ok
+test_tensor_product_abstract ok
+test_tensor_product_expand ok
+test_tensor_product_commutator ok
+test_tensor_product_simp ok
+test_issue_5923 ok
+test_eval_trace ok                                                          [OK]
+
+
+================== tests finished: 8 passed, in 0.39 seconds ===================
+
+>>>>> All Tests Passed

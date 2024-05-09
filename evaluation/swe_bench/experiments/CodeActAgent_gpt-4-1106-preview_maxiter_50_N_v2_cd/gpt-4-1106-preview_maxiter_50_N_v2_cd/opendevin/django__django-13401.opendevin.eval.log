@@ -1,0 +1,161 @@
+Task Metadata:
+	- Instance ID: django__django-13401
+	- Testbed: /swe_util/eval_data/testbeds/django__django__3.2
+	- Virtual Env.: django__django__3.2
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__3.2 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/django__django__3.2
+Requirement already satisfied: asgiref>=3.2.10 in /swe_util/miniconda3/envs/django__django__3.2/lib/python3.6/site-packages (from Django==3.2) (3.4.1)
+Requirement already satisfied: pytz in /swe_util/miniconda3/envs/django__django__3.2/lib/python3.6/site-packages (from Django==3.2) (2024.1)
+Requirement already satisfied: sqlparse>=0.2.2 in /swe_util/miniconda3/envs/django__django__3.2/lib/python3.6/site-packages (from Django==3.2) (0.4.4)
+Requirement already satisfied: typing-extensions in /swe_util/miniconda3/envs/django__django__3.2/lib/python3.6/site-packages (from asgiref>=3.2.10->Django==3.2) (4.1.1)
+Installing collected packages: Django
+  Running setup.py develop for Django
+Successfully installed Django-3.2
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__3.2 && echo 'activate successful' && ./tests/runtests.py --verbosity 2 model_fields.tests;
+Output:
+activate successful
+Testing against Django installed in '/swe_util/eval_data/testbeds/django__django__3.2/django' with up to 64 processes
+Importing application model_fields
+Skipping setup of unused database(s): other.
+Operations to perform:
+  Synchronize unmigrated apps: auth, contenttypes, messages, model_fields, sessions, staticfiles
+  Apply all migrations: admin, sites
+Synchronizing apps without migrations:
+  Creating tables...
+    Creating table django_content_type
+    Creating table auth_permission
+    Creating table auth_group
+    Creating table auth_user
+    Creating table django_session
+    Creating table model_fields_foo
+    Creating table model_fields_bar
+    Creating table model_fields_whiz
+    Creating table model_fields_whizdelayed
+    Creating table model_fields_whiziter
+    Creating table model_fields_whiziterempty
+    Creating table model_fields_choiceful
+    Creating table model_fields_bigd
+    Creating table model_fields_floatmodel
+    Creating table model_fields_bigs
+    Creating table model_fields_unicodeslugfield
+    Creating table model_fields_automodel
+    Creating table model_fields_bigautomodel
+    Creating table model_fields_smallautomodel
+    Creating table model_fields_smallintegermodel
+    Creating table model_fields_integermodel
+    Creating table model_fields_bigintegermodel
+    Creating table model_fields_positivebigintegermodel
+    Creating table model_fields_positivesmallintegermodel
+    Creating table model_fields_positiveintegermodel
+    Creating table model_fields_post
+    Creating table model_fields_nullbooleanmodel
+    Creating table model_fields_booleanmodel
+    Creating table model_fields_datetimemodel
+    Creating table model_fields_durationmodel
+    Creating table model_fields_nulldurationmodel
+    Creating table model_fields_primarykeycharmodel
+    Creating table model_fields_fkstobooleans
+    Creating table model_fields_fktochar
+    Creating table model_fields_renamedfield
+    Creating table model_fields_verbosenamefield
+    Creating table model_fields_genericipaddress
+    Creating table model_fields_decimallessthanone
+    Creating table model_fields_fieldclassattributemodel
+    Creating table model_fields_datamodel
+    Creating table model_fields_document
+    Creating table model_fields_person
+    Creating table model_fields_personwithheight
+    Creating table model_fields_personwithheightandwidth
+    Creating table model_fields_persondimensionsfirst
+    Creating table model_fields_persontwoimages
+    Creating table model_fields_jsonmodel
+    Creating table model_fields_nullablejsonmodel
+    Creating table model_fields_allfieldsmodel
+    Creating table model_fields_manytomany
+    Creating table model_fields_uuidmodel
+    Creating table model_fields_nullableuuidmodel
+    Creating table model_fields_primarykeyuuidmodel
+    Creating table model_fields_relatedtouuidmodel
+    Creating table model_fields_uuidchild
+    Creating table model_fields_uuidgrandchild
+    Running deferred SQL...
+Running migrations:
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying sites.0001_initial... OK
+  Applying sites.0002_alter_domain_unique... OK
+System check identified no issues (3 silenced).
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+test_blank_in_choices (model_fields.tests.GetChoicesTests) ... ok
+test_blank_in_grouped_choices (model_fields.tests.GetChoicesTests) ... ok
+test_empty_choices (model_fields.tests.GetChoicesTests) ... ok
+test_lazy_strings_not_evaluated (model_fields.tests.GetChoicesTests) ... ok
+test_check (model_fields.tests.ChoicesTests) ... ok
+test_choices (model_fields.tests.ChoicesTests) ... ok
+test_flatchoices (model_fields.tests.ChoicesTests) ... ok
+test_formfield (model_fields.tests.ChoicesTests) ... ok
+test_invalid_choice (model_fields.tests.ChoicesTests) ... ok
+test_choices_and_field_display (model_fields.tests.GetFieldDisplayTests) ... ok
+test_empty_iterator_choices (model_fields.tests.GetFieldDisplayTests) ... ok
+test_get_FIELD_display_translated (model_fields.tests.GetFieldDisplayTests)
+A translated display value is coerced to str. ... ok
+test_iterator_choices (model_fields.tests.GetFieldDisplayTests) ... ok
+test_overriding_FIELD_display (model_fields.tests.GetFieldDisplayTests) ... ok
+test_overriding_inherited_FIELD_display (model_fields.tests.GetFieldDisplayTests) ... ok
+test_abstract_inherited_fields (model_fields.tests.BasicFieldTests)
+Field instances from abstract models are not equal. ... ok
+test_choices_form_class (model_fields.tests.BasicFieldTests)
+Can supply a custom choices form class to Field.formfield() ... ok
+test_deconstruct_nested_field (model_fields.tests.BasicFieldTests)
+deconstruct() uses __qualname__ for nested class support. ... ok
+test_field_instance_is_picklable (model_fields.tests.BasicFieldTests)
+Field instances can be pickled. ... ok
+test_field_name (model_fields.tests.BasicFieldTests) ... ok
+test_field_ordering (model_fields.tests.BasicFieldTests)
+Fields are ordered based on their creation. ... ok
+test_field_repr (model_fields.tests.BasicFieldTests) ... ok
+test_field_repr_nested (model_fields.tests.BasicFieldTests)
+__repr__() uses __qualname__ for nested class support. ... ok
+test_field_str (model_fields.tests.BasicFieldTests) ... ok
+test_field_verbose_name (model_fields.tests.BasicFieldTests) ... ok
+test_formfield_disabled (model_fields.tests.BasicFieldTests)
+Field.formfield() sets disabled for fields with choices. ... ok
+test_show_hidden_initial (model_fields.tests.BasicFieldTests) ... ok
+test_get_choices (model_fields.tests.GetChoicesLimitChoicesToTests) ... ok
+test_get_choices_reverse_related_field (model_fields.tests.GetChoicesLimitChoicesToTests) ... ok
+test_get_choices (model_fields.tests.GetChoicesOrderingTests) ... ok
+test_get_choices_default_ordering (model_fields.tests.GetChoicesOrderingTests) ... ok
+test_get_choices_reverse_related_field (model_fields.tests.GetChoicesOrderingTests) ... ok
+test_get_choices_reverse_related_field_default_ordering (model_fields.tests.GetChoicesOrderingTests) ... ok
+
+----------------------------------------------------------------------
+Ran 33 tests in 0.187s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+
+>>>>> All Tests Passed

@@ -1,0 +1,1320 @@
+Task Metadata:
+	- Instance ID: mwaskom__seaborn-2848
+	- Testbed: /swe_util/eval_data/testbeds/mwaskom__seaborn__0.12
+	- Virtual Env.: mwaskom__seaborn__0.12
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+patch unexpectedly ends in middle of line
+patch: **** Only garbage was found in the patch input.
+>>>>> Applied Patch (pred_minimal_try patch)
+>>>>> Applied Patch (pred_minimal_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate mwaskom__seaborn__0.12 && echo 'activate successful' && pip install -e .[dev]
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/mwaskom__seaborn__0.12
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: numpy>=1.17 in /swe_util/miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages (1.26.4)
+Requirement already satisfied: pandas>=0.25 in /swe_util/miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages (2.2.2)
+Requirement already satisfied: matplotlib>=3.1 in /swe_util/miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages (3.8.4)
+Requirement already satisfied: contourpy>=1.0.1 in /swe_util/miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages (from matplotlib>=3.1) (1.2.1)
+Requirement already satisfied: cycler>=0.10 in /swe_util/miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages (from matplotlib>=3.1) (0.12.1)
+Requirement already satisfied: fonttools>=4.22.0 in /swe_util/miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages (from matplotlib>=3.1) (4.51.0)
+Requirement already satisfied: kiwisolver>=1.3.1 in /swe_util/miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages (from matplotlib>=3.1) (1.4.5)
+Requirement already satisfied: packaging>=20.0 in /swe_util/miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages (from matplotlib>=3.1) (24.0)
+Requirement already satisfied: pillow>=8 in /swe_util/miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages (from matplotlib>=3.1) (10.3.0)
+Requirement already satisfied: pyparsing>=2.3.1 in /swe_util/miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages (from matplotlib>=3.1) (3.1.2)
+Requirement already satisfied: python-dateutil>=2.7 in /swe_util/miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages (from matplotlib>=3.1) (2.9.0.post0)
+Requirement already satisfied: importlib-resources>=3.2.0 in /swe_util/miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages (from matplotlib>=3.1) (6.4.0)
+Requirement already satisfied: pytz>=2020.1 in /swe_util/miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages (from pandas>=0.25) (2024.1)
+Requirement already satisfied: tzdata>=2022.7 in /swe_util/miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages (from pandas>=0.25) (2024.1)
+Requirement already satisfied: zipp>=3.1.0 in /swe_util/miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages (from importlib-resources>=3.2.0->matplotlib>=3.1) (3.18.1)
+Requirement already satisfied: six>=1.5 in /swe_util/miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages (from python-dateutil>=2.7->matplotlib>=3.1) (1.16.0)
+Installing collected packages: seaborn
+  Attempting uninstall: seaborn
+    Found existing installation: seaborn 0.12.1.dev0
+    Uninstalling seaborn-0.12.1.dev0:
+      Successfully uninstalled seaborn-0.12.1.dev0
+  Running setup.py develop for seaborn
+Successfully installed seaborn-0.12.0.dev0
+
+Std. Error: WARNING: seaborn 0.12.0.dev0 does not provide the extra 'dev'
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate mwaskom__seaborn__0.12 && echo 'activate successful' && pytest --no-header -rA tests/test_relational.py;
+Output:
+activate successful
+============================= test session starts ==============================
+collected 73 items
+
+tests/test_relational.py ............F.........F...F..F.FFFFFFFFFFFFFFFF [ 64%]
+F.......F...F.............                                               [100%]
+
+=================================== FAILURES ===================================
+__________________ TestRelationalPlotter.test_relplot_simple ___________________
+
+self = <tests.test_relational.TestRelationalPlotter object at 0x7fa76800bbe0>
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0   12  0.449243  6.611886  b  p  ...  2  0.2     b ...  8  0.3     a      8      8
+99  15  0.073484  1.036343  c  p  ...  8  0.2     c      8      8
+
+[100 rows x 13 columns]
+
+    def test_relplot_simple(self, long_df):
+    
+        g = relplot(data=long_df, x="x", y="y", kind="scatter")
+        x, y = g.ax.collections[0].get_offsets().T
+        assert_array_equal(x, long_df["x"])
+        assert_array_equal(y, long_df["y"])
+    
+>       g = relplot(data=long_df, x="x", y="y", kind="line")
+
+tests/test_relational.py:453: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:976: in relplot
+    g.map_dataframe(func, **plot_kws)
+seaborn/axisgrid.py:773: in map_dataframe
+    self._facet_plot(func, ax, args, kwargs)
+seaborn/axisgrid.py:802: in _facet_plot
+    func(*plot_args, **plot_kwargs)
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+__________________ TestRelationalPlotter.test_relplot_legend ___________________
+
+self = <tests.test_relational.TestRelationalPlotter object at 0x7fa767bb4580>
+long_df =      x         y         z  a  b  c  ...  s    f  a_cat  s_cat s_str a_like_b
+0   12  0.449243  6.611886  b  p  0  ......8     8        n
+99  15  0.073484  1.036343  c  p  0  ...  8  0.2      c      8     8        o
+
+[100 rows x 14 columns]
+
+    def test_relplot_legend(self, long_df):
+    
+        g = relplot(data=long_df, x="x", y="y")
+        assert g._legend is None
+    
+        g = relplot(data=long_df, x="x", y="y", hue="a")
+        texts = [t.get_text() for t in g._legend.texts]
+        expected_texts = long_df["a"].unique()
+        assert_array_equal(texts, expected_texts)
+    
+        g = relplot(data=long_df, x="x", y="y", hue="s", size="s")
+        texts = [t.get_text() for t in g._legend.texts]
+        assert_array_equal(texts, np.sort(texts))
+    
+        g = relplot(data=long_df, x="x", y="y", hue="a", legend=False)
+        assert g._legend is None
+    
+        palette = color_palette("deep", len(long_df["b"].unique()))
+        a_like_b = dict(zip(long_df["a"].unique(), long_df["b"].unique()))
+        long_df["a_like_b"] = long_df["a"].map(a_like_b)
+>       g = relplot(
+            data=long_df,
+            x="x", y="y", hue="b", style="a_like_b",
+            palette=palette, kind="line", estimator=None,
+        )
+
+tests/test_relational.py:615: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:976: in relplot
+    g.map_dataframe(func, **plot_kws)
+seaborn/axisgrid.py:773: in map_dataframe
+    self._facet_plot(func, ax, args, kwargs)
+seaborn/axisgrid.py:802: in _facet_plot
+    func(*plot_args, **plot_kwargs)
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+__________________________ TestLinePlotter.test_color __________________________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa767ddee80>
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0   12  0.449243  6.611886  b  p  ...  2  0.2     b ...  8  0.3     a      8      8
+99  15  0.073484  1.036343  c  p  ...  8  0.2     c      8      8
+
+[100 rows x 13 columns]
+
+    def test_color(self, long_df):
+    
+        ax = plt.figure().subplots()
+>       self.func(data=long_df, x="x", y="y", ax=ax)
+
+tests/test_relational.py:71: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+________________________ TestLinePlotter.test_log_scale ________________________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa767bb4310>
+
+    def test_log_scale(self):
+    
+        f, ax = plt.subplots()
+        ax.set_xscale("log")
+    
+        x = [1, 10, 100]
+        y = [1, 2, 3]
+    
+>       lineplot(x=x, y=y)
+
+tests/test_relational.py:1078: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+____________________ TestLinePlotter.test_matplotlib_kwargs ____________________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa767ddeb80>
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0   12  0.449243  6.611886  b  p  ...  2  0.2     b ...  8  0.3     a      8      8
+99  15  0.073484  1.036343  c  p  ...  8  0.2     c      8      8
+
+[100 rows x 13 columns]
+
+    def test_matplotlib_kwargs(self, long_df):
+    
+        kws = {
+            "linestyle": "--",
+            "linewidth": 3,
+            "color": (1, .5, .2),
+            "markeredgecolor": (.2, .5, .2),
+            "markeredgewidth": 1,
+        }
+>       ax = lineplot(data=long_df, x="x", y="y", **kws)
+
+tests/test_relational.py:1125: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+____________________ TestLinePlotter.test_nonmapped_dashes _____________________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa767dded90>
+
+    def test_nonmapped_dashes(self):
+    
+>       ax = lineplot(x=[1, 2], y=[1, 2], dashes=(2, 1))
+
+tests/test_relational.py:1134: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+______________________ TestLinePlotter.test_lineplot_axes ______________________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa767ddefd0>
+wide_df =                    a         b         c
+wide_index                              
+10          1.449377  0.547052 -1.23...        -0.305246 -1.329569  0.624981
+46          0.272567 -0.936631 -0.986104
+48          0.813041 -1.076465  0.829330
+
+    def test_lineplot_axes(self, wide_df):
+    
+        f1, ax1 = plt.subplots()
+        f2, ax2 = plt.subplots()
+    
+>       ax = lineplot(data=wide_df)
+
+tests/test_relational.py:1144: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+__________ TestLinePlotter.test_lineplot_vs_relplot[long_semantics0] ___________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa767dde8e0>
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0   12  0.449243  6.611886  b  p  ...  2  0.2     b ...  8  0.3     a      8      8
+99  15  0.073484  1.036343  c  p  ...  8  0.2     c      8      8
+
+[100 rows x 13 columns]
+long_semantics = {'x': 'x', 'y': 'y'}
+
+    def test_lineplot_vs_relplot(self, long_df, long_semantics):
+    
+>       ax = lineplot(data=long_df, **long_semantics)
+
+tests/test_relational.py:1152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+__________ TestLinePlotter.test_lineplot_vs_relplot[long_semantics1] ___________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa767dde820>
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0   12  0.449243  6.611886  b  p  ...  2  0.2     b ...  8  0.3     a      8      8
+99  15  0.073484  1.036343  c  p  ...  8  0.2     c      8      8
+
+[100 rows x 13 columns]
+long_semantics = {'x': 't', 'y': 'y'}
+
+    def test_lineplot_vs_relplot(self, long_df, long_semantics):
+    
+>       ax = lineplot(data=long_df, **long_semantics)
+
+tests/test_relational.py:1152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+__________ TestLinePlotter.test_lineplot_vs_relplot[long_semantics2] ___________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa767dde130>
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0   12  0.449243  6.611886  b  p  ...  2  0.2     b ...  8  0.3     a      8      8
+99  15  0.073484  1.036343  c  p  ...  8  0.2     c      8      8
+
+[100 rows x 13 columns]
+long_semantics = {'x': 'a', 'y': 'y'}
+
+    def test_lineplot_vs_relplot(self, long_df, long_semantics):
+    
+>       ax = lineplot(data=long_df, **long_semantics)
+
+tests/test_relational.py:1152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+__________ TestLinePlotter.test_lineplot_vs_relplot[long_semantics3] ___________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa767dcc940>
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0   12  0.449243  6.611886  b  p  ...  2  0.2     b ...  8  0.3     a      8      8
+99  15  0.073484  1.036343  c  p  ...  8  0.2     c      8      8
+
+[100 rows x 13 columns]
+long_semantics = {'hue': 'y', 'x': 'x', 'y': 'y'}
+
+    def test_lineplot_vs_relplot(self, long_df, long_semantics):
+    
+>       ax = lineplot(data=long_df, **long_semantics)
+
+tests/test_relational.py:1152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+__________ TestLinePlotter.test_lineplot_vs_relplot[long_semantics4] ___________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa767dcca00>
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0   12  0.449243  6.611886  b  p  ...  2  0.2     b ...  8  0.3     a      8      8
+99  15  0.073484  1.036343  c  p  ...  8  0.2     c      8      8
+
+[100 rows x 13 columns]
+long_semantics = {'hue': 'a', 'x': 'x', 'y': 'y'}
+
+    def test_lineplot_vs_relplot(self, long_df, long_semantics):
+    
+>       ax = lineplot(data=long_df, **long_semantics)
+
+tests/test_relational.py:1152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+__________ TestLinePlotter.test_lineplot_vs_relplot[long_semantics5] ___________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa767dccac0>
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0   12  0.449243  6.611886  b  p  ...  2  0.2     b ...  8  0.3     a      8      8
+99  15  0.073484  1.036343  c  p  ...  8  0.2     c      8      8
+
+[100 rows x 13 columns]
+long_semantics = {'size': 'a', 'x': 'x', 'y': 'y'}
+
+    def test_lineplot_vs_relplot(self, long_df, long_semantics):
+    
+>       ax = lineplot(data=long_df, **long_semantics)
+
+tests/test_relational.py:1152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+__________ TestLinePlotter.test_lineplot_vs_relplot[long_semantics6] ___________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa767dccb80>
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0   12  0.449243  6.611886  b  p  ...  2  0.2     b ...  8  0.3     a      8      8
+99  15  0.073484  1.036343  c  p  ...  8  0.2     c      8      8
+
+[100 rows x 13 columns]
+long_semantics = {'style': 'a', 'x': 'x', 'y': 'y'}
+
+    def test_lineplot_vs_relplot(self, long_df, long_semantics):
+    
+>       ax = lineplot(data=long_df, **long_semantics)
+
+tests/test_relational.py:1152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+__________ TestLinePlotter.test_lineplot_vs_relplot[long_semantics7] ___________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa767dccc40>
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0   12  0.449243  6.611886  b  p  ...  2  0.2     b ...  8  0.3     a      8      8
+99  15  0.073484  1.036343  c  p  ...  8  0.2     c      8      8
+
+[100 rows x 13 columns]
+long_semantics = {'hue': 's', 'x': 'x', 'y': 'y'}
+
+    def test_lineplot_vs_relplot(self, long_df, long_semantics):
+    
+>       ax = lineplot(data=long_df, **long_semantics)
+
+tests/test_relational.py:1152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+__________ TestLinePlotter.test_lineplot_vs_relplot[long_semantics8] ___________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa767dccd00>
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0   12  0.449243  6.611886  b  p  ...  2  0.2     b ...  8  0.3     a      8      8
+99  15  0.073484  1.036343  c  p  ...  8  0.2     c      8      8
+
+[100 rows x 13 columns]
+long_semantics = {'size': 's', 'x': 'x', 'y': 'y'}
+
+    def test_lineplot_vs_relplot(self, long_df, long_semantics):
+    
+>       ax = lineplot(data=long_df, **long_semantics)
+
+tests/test_relational.py:1152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+__________ TestLinePlotter.test_lineplot_vs_relplot[long_semantics9] ___________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa767dccdc0>
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0   12  0.449243  6.611886  b  p  ...  2  0.2     b ...  8  0.3     a      8      8
+99  15  0.073484  1.036343  c  p  ...  8  0.2     c      8      8
+
+[100 rows x 13 columns]
+long_semantics = {'style': 's', 'x': 'x', 'y': 'y'}
+
+    def test_lineplot_vs_relplot(self, long_df, long_semantics):
+    
+>       ax = lineplot(data=long_df, **long_semantics)
+
+tests/test_relational.py:1152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+__________ TestLinePlotter.test_lineplot_vs_relplot[long_semantics10] __________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa767dcce80>
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0   12  0.449243  6.611886  b  p  ...  2  0.2     b ...  8  0.3     a      8      8
+99  15  0.073484  1.036343  c  p  ...  8  0.2     c      8      8
+
+[100 rows x 13 columns]
+long_semantics = {'hue': 'a', 'style': 'a', 'x': 'x', 'y': 'y'}
+
+    def test_lineplot_vs_relplot(self, long_df, long_semantics):
+    
+>       ax = lineplot(data=long_df, **long_semantics)
+
+tests/test_relational.py:1152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+__________ TestLinePlotter.test_lineplot_vs_relplot[long_semantics11] __________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa767dccf40>
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0   12  0.449243  6.611886  b  p  ...  2  0.2     b ...  8  0.3     a      8      8
+99  15  0.073484  1.036343  c  p  ...  8  0.2     c      8      8
+
+[100 rows x 13 columns]
+long_semantics = {'hue': 'a', 'size': 'b', 'style': 'b', 'x': 'x', ...}
+
+    def test_lineplot_vs_relplot(self, long_df, long_semantics):
+    
+>       ax = lineplot(data=long_df, **long_semantics)
+
+tests/test_relational.py:1152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+_____________________ TestLinePlotter.test_lineplot_smoke ______________________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa767dcc580>
+wide_df =                    a         b         c
+wide_index                              
+10          1.449377  0.547052 -1.23...        -0.305246 -1.329569  0.624981
+46          0.272567 -0.936631 -0.986104
+48          0.813041 -1.076465  0.829330
+wide_array = array([[ 1.44937693,  0.54705238, -1.23849421],
+       [ 0.0042397 ,  0.96104443, -0.06555753],
+       [-2.22010765,  ...2956902,  0.62498133],
+       [ 0.27256657, -0.93663117, -0.9861045 ],
+       [ 0.81304077, -1.07646527,  0.82932958]])
+wide_list_of_series = [0    -0.462414
+1    -0.663266
+2     0.272339
+3    -0.202488
+4    -1.320671
+5     2.182511
+6     0.416575
+7    -0.4067...2296
+9    -1.253690
+10   -0.611071
+11   -0.127162
+12    1.658410
+13    0.747224
+14   -0.571759
+Name: b, dtype: float64]
+wide_list_of_arrays = [array([-0.46241397, -0.66326575,  0.27233885, -0.20248795, -1.3206712 ,
+        2.18251053,  0.41657504, -0.40679557,...94239,  1.42901482, -0.35229582, -1.25368957,
+       -0.61107077, -0.12716222,  1.65840991,  0.74722355, -0.57175876])]
+wide_list_of_lists = [[-0.4624139668622383, -0.6632657450083369, 0.27233885054394685, -0.2024879527524557, -1.3206712007140675, 2.182510529...64863895, 0.43494239175560634, 1.4290148188482537, -0.3522958175702248, -1.2536895712130631, -0.6110707708089032, ...]]
+flat_array = array([ 0.13830514, -0.10108545,  0.35369949, -0.58809377, -1.66542662,
+        1.67094557,  0.42036328,  1.78859975, ...010368, -1.14244064, -0.96140692,  0.11880587,
+       -0.15018541, -1.99302747, -0.00222044,  0.76400317,  0.12336583])
+flat_series = t
+10    0.138305
+11   -0.101085
+12    0.353699
+13   -0.588094
+14   -1.665427
+15    1.670946
+16    0.420363
+17    1.788...61407
+24    0.118806
+25   -0.150185
+26   -1.993027
+27   -0.002220
+28    0.764003
+29    0.123366
+Name: s, dtype: float64
+flat_list = [0.13830514195442498, -0.1010854511471884, 0.35369948934987555, -0.5880937734015119, -1.6654266179669477, 1.6709455731532739, ...]
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0    6 -0.853013  0.551712  b  p  ...  2  0.3     b ...  2  0.2     a      2      2
+99   1  0.321599  0.274270  c  n  ...  2  0.3     c      2      2
+
+[100 rows x 13 columns]
+missing_df =        x         y         z  a  b  ...    s    f a_cat  s_cat  s_str
+0    6.0 -0.853013  0.551712  b  p  ...  2.0  Na... 0.2     a      2      2
+99   1.0  0.321599  0.274270  c  n  ...  2.0  NaN     c      2      2
+
+[100 rows x 13 columns]
+object_df =      x         y         z  a  b  ...  s    f a_cat s_cat s_str
+0    6 -0.853013  0.551712  b  p  ...  2  0.3     b   ... ...  2  0.2     a     2     2
+99   1  0.321599  0.274270  c  n  ...  2  0.3     c     2     2
+
+[100 rows x 13 columns]
+
+    def test_lineplot_smoke(
+        self,
+        wide_df, wide_array,
+        wide_list_of_series, wide_list_of_arrays, wide_list_of_lists,
+        flat_array, flat_series, flat_list,
+        long_df, missing_df, object_df
+    ):
+    
+        f, ax = plt.subplots()
+    
+        lineplot(x=[], y=[])
+        ax.clear()
+    
+>       lineplot(data=wide_df)
+
+tests/test_relational.py:1177: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+_____________________ TestLinePlotter.test_ci_deprecation ______________________
+
+self = <tests.test_relational.TestLinePlotter object at 0x7fa7679a1f40>
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0   12  0.449243  6.611886  b  p  ...  2  0.2     b ...  8  0.3     a      8      8
+99  15  0.073484  1.036343  c  p  ...  8  0.2     c      8      8
+
+[100 rows x 13 columns]
+
+    def test_ci_deprecation(self, long_df):
+    
+        axs = plt.figure().subplots(2)
+>       lineplot(data=long_df, x="x", y="y", errorbar=("ci", 95), seed=0, ax=axs[0])
+
+tests/test_relational.py:1255: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:646: in lineplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:422: in plot
+    for sub_vars, sub_data in self.iter_data(grouping_vars, from_comp_data=True):
+seaborn/_oldcore.py:1005: in iter_data
+    data = self.comp_data
+seaborn/_oldcore.py:1096: in comp_data
+    with pd.option_context('mode.use_inf_as_null', True):
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in __enter__
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:480: in <listcomp>
+    self.undo = [(pat, _get_option(pat)) for pat, val in self.ops]
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:146: in _get_option
+    key = _get_single_key(pat, silent)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pat = 'mode.use_inf_as_null', silent = False
+
+    def _get_single_key(pat: str, silent: bool) -> str:
+        keys = _select_options(pat)
+        if len(keys) == 0:
+            if not silent:
+                _warn_if_deprecated(pat)
+>           raise OptionError(f"No such keys(s): {repr(pat)}")
+E           pandas._config.config.OptionError: "No such keys(s): 'mode.use_inf_as_null'"
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/pandas/_config/config.py:132: OptionError
+______________________ TestScatterPlotter.test_hue_order _______________________
+
+self = <seaborn._oldcore.HueMapping object at 0x7fa7633a4430>, key = 'c'
+
+    def _lookup_single(self, key):
+        """Get the color for a single value, using colormap to interpolate."""
+        try:
+            # Use a value that's in the original data vector
+>           value = self.lookup_table[key]
+E           KeyError: 'c'
+
+seaborn/_oldcore.py:150: KeyError
+
+During handling of the above exception, another exception occurred:
+
+self = <seaborn._oldcore.HueMapping object at 0x7fa7633a4430>, key = 'c'
+
+    def _lookup_single(self, key):
+        """Get the color for a single value, using colormap to interpolate."""
+        try:
+            # Use a value that's in the original data vector
+            value = self.lookup_table[key]
+        except KeyError:
+            # Use the colormap to interpolate between existing datapoints
+            # (e.g. in the context of making a continuous legend)
+            try:
+>               normed = self.norm(key)
+E               TypeError: 'NoneType' object is not callable
+
+seaborn/_oldcore.py:155: TypeError
+
+During handling of the above exception, another exception occurred:
+
+self = <tests.test_relational.TestScatterPlotter object at 0x7fa768002940>
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0   12  0.449243  6.611886  b  p  ...  2  0.2     b ...  8  0.3     a      8      8
+99  15  0.073484  1.036343  c  p  ...  8  0.2     c      8      8
+
+[100 rows x 13 columns]
+
+    def test_hue_order(self, long_df):
+    
+        order = categorical_order(long_df["a"])
+        unused = order.pop()
+    
+>       ax = scatterplot(data=long_df, x="x", y="y", hue="a", hue_order=order)
+
+tests/test_relational.py:1632: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+seaborn/relational.py:768: in scatterplot
+    p.plot(ax, kwargs)
+seaborn/relational.py:579: in plot
+    points.set_facecolors(self._hue_map(data["hue"]))
+seaborn/_oldcore.py:65: in __call__
+    return [self._lookup_single(k, *args, **kwargs) for k in key]
+seaborn/_oldcore.py:65: in <listcomp>
+    return [self._lookup_single(k, *args, **kwargs) for k in key]
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <seaborn._oldcore.HueMapping object at 0x7fa7633a4430>, key = 'c'
+
+    def _lookup_single(self, key):
+        """Get the color for a single value, using colormap to interpolate."""
+        try:
+            # Use a value that's in the original data vector
+            value = self.lookup_table[key]
+        except KeyError:
+            # Use the colormap to interpolate between existing datapoints
+            # (e.g. in the context of making a continuous legend)
+            try:
+                normed = self.norm(key)
+            except TypeError as err:
+>               if np.isnan(key):
+E               TypeError: ufunc 'isnan' not supported for the input types, and the inputs could not be safely coerced to any supported types according to the casting rule ''safe''
+
+seaborn/_oldcore.py:157: TypeError
+__________ TestScatterPlotter.test_unfilled_marker_edgecolor_warning ___________
+
+self = <tests.test_relational.TestScatterPlotter object at 0x7fa767f6ec40>
+long_df =      x         y         z  a  b  ...  s    f a_cat  s_cat  s_str
+0   12  0.449243  6.611886  b  p  ...  2  0.2     b ...  8  0.3     a      8      8
+99  15  0.073484  1.036343  c  p  ...  8  0.2     c      8      8
+
+[100 rows x 13 columns]
+
+    def test_unfilled_marker_edgecolor_warning(self, long_df):  # GH2636
+    
+>       with pytest.warns(None) as record:
+
+tests/test_relational.py:1712: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = WarningsChecker(record=True), expected_warning = None, match_expr = None
+
+    def __init__(
+        self,
+        expected_warning: Union[Type[Warning], Tuple[Type[Warning], ...]] = Warning,
+        match_expr: Optional[Union[str, Pattern[str]]] = None,
+        *,
+        _ispytest: bool = False,
+    ) -> None:
+        check_ispytest(_ispytest)
+        super().__init__(_ispytest=True)
+    
+        msg = "exceptions must be derived from Warning, not %s"
+        if isinstance(expected_warning, tuple):
+            for exc in expected_warning:
+                if not issubclass(exc, Warning):
+                    raise TypeError(msg % type(exc))
+            expected_warning_tup = expected_warning
+        elif isinstance(expected_warning, type) and issubclass(
+            expected_warning, Warning
+        ):
+            expected_warning_tup = (expected_warning,)
+        else:
+>           raise TypeError(msg % type(expected_warning))
+E           TypeError: exceptions must be derived from Warning, not <class 'NoneType'>
+
+../../../miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/_pytest/recwarn.py:281: TypeError
+=============================== warnings summary ===============================
+seaborn/cm.py:1582
+seaborn/cm.py:1582
+seaborn/cm.py:1582
+seaborn/cm.py:1582
+seaborn/cm.py:1582
+seaborn/cm.py:1582
+  /swe_util/eval_data/testbeds/mwaskom__seaborn__0.12/seaborn/cm.py:1582: MatplotlibDeprecationWarning: The register_cmap function was deprecated in Matplotlib 3.7 and will be removed two minor releases later. Use ``matplotlib.colormaps.register(name)`` instead.
+    mpl_cm.register_cmap(_name, _cmap)
+
+seaborn/cm.py:1583
+seaborn/cm.py:1583
+seaborn/cm.py:1583
+seaborn/cm.py:1583
+seaborn/cm.py:1583
+seaborn/cm.py:1583
+  /swe_util/eval_data/testbeds/mwaskom__seaborn__0.12/seaborn/cm.py:1583: MatplotlibDeprecationWarning: The register_cmap function was deprecated in Matplotlib 3.7 and will be removed two minor releases later. Use ``matplotlib.colormaps.register(name)`` instead.
+    mpl_cm.register_cmap(_name + "_r", _cmap_r)
+
+tests/test_relational.py: 1443 warnings
+  /swe_util/eval_data/testbeds/mwaskom__seaborn__0.12/seaborn/_oldcore.py:1475: DeprecationWarning: is_categorical_dtype is deprecated and will be removed in a future version. Use isinstance(dtype, pd.CategoricalDtype) instead
+    if pd.api.types.is_categorical_dtype(vector):
+
+tests/test_relational.py::TestRelationalPlotter::test_wide_df_variables
+tests/test_relational.py::TestRelationalPlotter::test_wide_df_with_nonnumeric_variables
+tests/test_relational.py::TestRelationalPlotter::test_wide_array_variables
+tests/test_relational.py::TestRelationalPlotter::test_flat_array_variables
+  /swe_util/miniconda3/envs/mwaskom__seaborn__0.12/lib/python3.9/site-packages/_pytest/python.py:162: DeprecationWarning: `product` is deprecated as of NumPy 1.25.0, and will be removed in NumPy 2.0. Please use `prod` instead.
+    result = testfunction(**testargs)
+
+tests/test_relational.py: 20 warnings
+  /swe_util/eval_data/testbeds/mwaskom__seaborn__0.12/seaborn/_oldcore.py:1052: FutureWarning: When grouping with a length-1 list-like, you will need to pass a length-1 tuple to get_group in a future version of pandas. Pass `(name,)` instead of `name` to silence this warning.
+    data_subset = grouped_data.get_group(pd_key)
+
+tests/test_relational.py::TestLinePlotter::test_plot
+tests/test_relational.py::TestLinePlotter::test_plot
+tests/test_relational.py::TestLinePlotter::test_plot
+tests/test_relational.py::TestLinePlotter::test_plot
+tests/test_relational.py::TestLinePlotter::test_plot
+tests/test_relational.py::TestLinePlotter::test_plot
+tests/test_relational.py::TestLinePlotter::test_plot
+tests/test_relational.py::TestLinePlotter::test_plot
+  /swe_util/eval_data/testbeds/mwaskom__seaborn__0.12/seaborn/relational.py:437: DeprecationWarning: DataFrameGroupBy.apply operated on the grouping columns. This behavior is deprecated, and in a future version of pandas the grouping columns will be excluded from the operation. Either pass `include_groups=False` to exclude the groupings or explicitly select the grouping columns after groupby to silence this warning.
+    sub_data = grouped.apply(agg, agg_var).reset_index()
+
+tests/test_relational.py::TestScatterPlotter::test_supplied_color_array
+  /swe_util/eval_data/testbeds/mwaskom__seaborn__0.12/tests/test_relational.py:1605: MatplotlibDeprecationWarning: The get_cmap function was deprecated in Matplotlib 3.7 and will be removed two minor releases later. Use ``matplotlib.colormaps[name]`` or ``matplotlib.colormaps.get_cmap(obj)`` instead.
+    cmap = mpl.cm.get_cmap("Blues")
+
+tests/test_relational.py::TestScatterPlotter::test_size_norm_extrapolation
+tests/test_relational.py::TestScatterPlotter::test_size_norm_extrapolation
+  /swe_util/eval_data/testbeds/mwaskom__seaborn__0.12/tests/test_relational.py:1690: MatplotlibDeprecationWarning: The legendHandles attribute was deprecated in Matplotlib 3.7 and will be removed two minor releases later. Use legend_handles instead.
+    for label, handle in zip(legend.get_texts(), legend.legendHandles)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+==================================== PASSES ====================================
+=========================== short test summary info ============================
+PASSED tests/test_relational.py::TestRelationalPlotter::test_wide_df_variables
+PASSED tests/test_relational.py::TestRelationalPlotter::test_wide_df_with_nonnumeric_variables
+PASSED tests/test_relational.py::TestRelationalPlotter::test_wide_array_variables
+PASSED tests/test_relational.py::TestRelationalPlotter::test_flat_array_variables
+PASSED tests/test_relational.py::TestRelationalPlotter::test_flat_list_variables
+PASSED tests/test_relational.py::TestRelationalPlotter::test_flat_series_variables
+PASSED tests/test_relational.py::TestRelationalPlotter::test_wide_list_of_series_variables
+PASSED tests/test_relational.py::TestRelationalPlotter::test_wide_list_of_arrays_variables
+PASSED tests/test_relational.py::TestRelationalPlotter::test_wide_list_of_list_variables
+PASSED tests/test_relational.py::TestRelationalPlotter::test_wide_dict_of_series_variables
+PASSED tests/test_relational.py::TestRelationalPlotter::test_wide_dict_of_arrays_variables
+PASSED tests/test_relational.py::TestRelationalPlotter::test_wide_dict_of_lists_variables
+PASSED tests/test_relational.py::TestRelationalPlotter::test_relplot_complex
+PASSED tests/test_relational.py::TestRelationalPlotter::test_relplot_vectors[series]
+PASSED tests/test_relational.py::TestRelationalPlotter::test_relplot_vectors[numpy]
+PASSED tests/test_relational.py::TestRelationalPlotter::test_relplot_vectors[list]
+PASSED tests/test_relational.py::TestRelationalPlotter::test_relplot_wide
+PASSED tests/test_relational.py::TestRelationalPlotter::test_relplot_hues
+PASSED tests/test_relational.py::TestRelationalPlotter::test_relplot_sizes
+PASSED tests/test_relational.py::TestRelationalPlotter::test_relplot_styles
+PASSED tests/test_relational.py::TestRelationalPlotter::test_relplot_stringy_numerics
+PASSED tests/test_relational.py::TestRelationalPlotter::test_relplot_data
+PASSED tests/test_relational.py::TestRelationalPlotter::test_facet_variable_collision
+PASSED tests/test_relational.py::TestRelationalPlotter::test_ax_kwarg_removal
+PASSED tests/test_relational.py::TestLinePlotter::test_legend_data
+PASSED tests/test_relational.py::TestLinePlotter::test_plot
+PASSED tests/test_relational.py::TestLinePlotter::test_axis_labels
+PASSED tests/test_relational.py::TestScatterPlotter::test_color
+PASSED tests/test_relational.py::TestScatterPlotter::test_legend_data
+PASSED tests/test_relational.py::TestScatterPlotter::test_plot
+PASSED tests/test_relational.py::TestScatterPlotter::test_axis_labels
+PASSED tests/test_relational.py::TestScatterPlotter::test_scatterplot_axes
+PASSED tests/test_relational.py::TestScatterPlotter::test_literal_attribute_vectors
+PASSED tests/test_relational.py::TestScatterPlotter::test_supplied_color_array
+PASSED tests/test_relational.py::TestScatterPlotter::test_linewidths
+PASSED tests/test_relational.py::TestScatterPlotter::test_size_norm_extrapolation
+PASSED tests/test_relational.py::TestScatterPlotter::test_datetime_scale
+PASSED tests/test_relational.py::TestScatterPlotter::test_scatterplot_vs_relplot[long_semantics0]
+PASSED tests/test_relational.py::TestScatterPlotter::test_scatterplot_vs_relplot[long_semantics1]
+PASSED tests/test_relational.py::TestScatterPlotter::test_scatterplot_vs_relplot[long_semantics2]
+PASSED tests/test_relational.py::TestScatterPlotter::test_scatterplot_vs_relplot[long_semantics3]
+PASSED tests/test_relational.py::TestScatterPlotter::test_scatterplot_vs_relplot[long_semantics4]
+PASSED tests/test_relational.py::TestScatterPlotter::test_scatterplot_vs_relplot[long_semantics5]
+PASSED tests/test_relational.py::TestScatterPlotter::test_scatterplot_vs_relplot[long_semantics6]
+PASSED tests/test_relational.py::TestScatterPlotter::test_scatterplot_vs_relplot[long_semantics7]
+PASSED tests/test_relational.py::TestScatterPlotter::test_scatterplot_vs_relplot[long_semantics8]
+PASSED tests/test_relational.py::TestScatterPlotter::test_scatterplot_vs_relplot[long_semantics9]
+PASSED tests/test_relational.py::TestScatterPlotter::test_scatterplot_vs_relplot[long_semantics10]
+PASSED tests/test_relational.py::TestScatterPlotter::test_scatterplot_vs_relplot[long_semantics11]
+PASSED tests/test_relational.py::TestScatterPlotter::test_scatterplot_smoke
+FAILED tests/test_relational.py::TestRelationalPlotter::test_relplot_simple
+FAILED tests/test_relational.py::TestRelationalPlotter::test_relplot_legend
+FAILED tests/test_relational.py::TestLinePlotter::test_color - pandas._config...
+FAILED tests/test_relational.py::TestLinePlotter::test_log_scale - pandas._co...
+FAILED tests/test_relational.py::TestLinePlotter::test_matplotlib_kwargs - pa...
+FAILED tests/test_relational.py::TestLinePlotter::test_nonmapped_dashes - pan...
+FAILED tests/test_relational.py::TestLinePlotter::test_lineplot_axes - pandas...
+FAILED tests/test_relational.py::TestLinePlotter::test_lineplot_vs_relplot[long_semantics0]
+FAILED tests/test_relational.py::TestLinePlotter::test_lineplot_vs_relplot[long_semantics1]
+FAILED tests/test_relational.py::TestLinePlotter::test_lineplot_vs_relplot[long_semantics2]
+FAILED tests/test_relational.py::TestLinePlotter::test_lineplot_vs_relplot[long_semantics3]
+FAILED tests/test_relational.py::TestLinePlotter::test_lineplot_vs_relplot[long_semantics4]
+FAILED tests/test_relational.py::TestLinePlotter::test_lineplot_vs_relplot[long_semantics5]
+FAILED tests/test_relational.py::TestLinePlotter::test_lineplot_vs_relplot[long_semantics6]
+FAILED tests/test_relational.py::TestLinePlotter::test_lineplot_vs_relplot[long_semantics7]
+FAILED tests/test_relational.py::TestLinePlotter::test_lineplot_vs_relplot[long_semantics8]
+FAILED tests/test_relational.py::TestLinePlotter::test_lineplot_vs_relplot[long_semantics9]
+FAILED tests/test_relational.py::TestLinePlotter::test_lineplot_vs_relplot[long_semantics10]
+FAILED tests/test_relational.py::TestLinePlotter::test_lineplot_vs_relplot[long_semantics11]
+FAILED tests/test_relational.py::TestLinePlotter::test_lineplot_smoke - panda...
+FAILED tests/test_relational.py::TestLinePlotter::test_ci_deprecation - panda...
+FAILED tests/test_relational.py::TestScatterPlotter::test_hue_order - TypeErr...
+FAILED tests/test_relational.py::TestScatterPlotter::test_unfilled_marker_edgecolor_warning
+================ 23 failed, 50 passed, 1490 warnings in 17.36s =================
+
+>>>>> Some Tests Failed

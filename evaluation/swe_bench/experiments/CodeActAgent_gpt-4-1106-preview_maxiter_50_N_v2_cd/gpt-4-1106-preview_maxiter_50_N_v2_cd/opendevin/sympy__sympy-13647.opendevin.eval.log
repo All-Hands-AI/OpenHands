@@ -1,0 +1,52 @@
+Task Metadata:
+	- Instance ID: sympy__sympy-13647
+	- Testbed: /swe_util/eval_data/testbeds/sympy__sympy__1.1
+	- Virtual Env.: sympy__sympy__1.1
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.1 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/sympy__sympy__1.1
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: mpmath>=0.19 in /swe_util/miniconda3/envs/sympy__sympy__1.1/lib/python3.9/site-packages (from sympy==1.1.2.dev0) (1.3.0)
+Installing collected packages: sympy
+  Running setup.py develop for sympy
+Successfully installed sympy-1.1.2.dev0
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.1 && echo 'activate successful' && bin/test -C --verbose sympy/matrices/tests/test_commonmatrix.py;
+Output:
+activate successful
+/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/core/basic.py:3: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+  from collections import Mapping, defaultdict
+/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/core/containers.py:271: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+  class OrderedSet(collections.MutableSet):
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.1/bin/test", line 105, in <module>
+    import sympy
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/__init__.py", line 60, in <module>
+    from .polys import *
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/polys/__init__.py", line 57, in <module>
+    from . import partfrac
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/polys/partfrac.py", line 17, in <module>
+    def apart(f, x=None, full=False, **options):
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/utilities/decorator.py", line 79, in xthreaded
+    return threaded_factory(func, False)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/utilities/decorator.py", line 17, in threaded_factory
+    from sympy.matrices import MatrixBase
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/matrices/__init__.py", line 6, in <module>
+    from .matrices import (DeferredVector, ShapeError, NonSquareMatrixError,
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/matrices/matrices.py", line 29, in <module>
+    from .common import (a2idx, classof, MatrixError, ShapeError,
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/matrices/common.py", line 91
+    return self._new(self.rows, self.cols + other.cols,
+IndentationError: unexpected indent
+
+>>>>> Some Tests Failed

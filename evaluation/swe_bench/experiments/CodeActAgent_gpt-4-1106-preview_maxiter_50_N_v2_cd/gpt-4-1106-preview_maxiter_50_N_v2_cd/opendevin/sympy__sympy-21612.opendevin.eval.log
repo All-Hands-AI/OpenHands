@@ -1,0 +1,150 @@
+Task Metadata:
+	- Instance ID: sympy__sympy-21612
+	- Testbed: /swe_util/eval_data/testbeds/sympy__sympy__1.9
+	- Virtual Env.: sympy__sympy__1.9
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file sympy/printing/str.py
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file sympy/printing/tests/test_issue_sympy_21537.py
+patch unexpectedly ends in middle of line
+patch: **** malformed patch at line 29:  
+
+>>>>> Applied Patch (pred_minimal_try git)
+>>>>> Applied Patch (pred_minimal_try git)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.9 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/sympy__sympy__1.9
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: mpmath>=0.19 in /swe_util/miniconda3/envs/sympy__sympy__1.9/lib/python3.9/site-packages (from sympy==1.9.dev0) (1.3.0)
+Installing collected packages: sympy
+  Running setup.py develop for sympy
+Successfully installed sympy-1.9.dev0
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal git)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.9 && echo 'activate successful' && bin/test -C --verbose sympy/printing/tests/test_str.py;
+Output:
+activate successful
+============================= test process starts ==============================
+executable:         /swe_util/miniconda3/envs/sympy__sympy__1.9/bin/python  (3.9.19-final-0) [CPython]
+architecture:       64-bit
+cache:              no
+ground types:       python 
+numpy:              None
+random seed:        17760028
+hash randomization: on (PYTHONHASHSEED=3456664919)
+
+sympy/printing/tests/test_str.py[100] 
+test_printmethod ok
+test_Abs ok
+test_Add ok
+test_Catalan ok
+test_ComplexInfinity ok
+test_Derivative ok
+test_dict ok
+test_Dict ok
+test_Dummy ok
+test_EulerGamma ok
+test_Exp ok
+test_factorial ok
+test_Function ok
+test_Geometry ok
+test_GoldenRatio ok
+test_TribonacciConstant ok
+test_ImaginaryUnit ok
+test_Infinity ok
+test_Integer ok
+test_Integral ok
+test_Interval ok
+test_AccumBounds ok
+test_Lambda ok
+test_Limit ok
+test_list ok
+test_Matrix_str ok
+test_Mul ok
+test_NaN ok
+test_NegativeInfinity ok
+test_Order ok
+test_Permutation_Cycle ok
+test_Pi ok
+test_Poly ok
+test_PolyRing ok
+test_FracField ok
+test_PolyElement ok
+test_FracElement ok
+test_GaussianInteger ok
+test_GaussianRational ok
+test_Pow ok
+test_sqrt ok
+test_Rational ok
+test_Float ok
+test_Relational ok
+test_AppliedBinaryRelation ok
+test_CRootOf ok
+test_RootSum ok
+test_GroebnerBasis ok
+test_set ok
+test_SparseMatrix ok
+test_Sum ok
+test_Symbol ok
+test_tuple ok
+test_Series_str ok
+test_TransferFunction_str ok
+test_Parallel_str ok
+test_Feedback_str ok
+test_Quaternion_str_printer ok
+test_Quantity_str ok
+test_wild_str ok
+test_wild_matchpy ok
+test_zeta ok
+test_issue_3101 ok
+test_issue_3103 ok
+test_issue_4021 ok
+test_sstrrepr ok
+test_infinity ok
+test_full_prec ok
+test_noncommutative ok
+test_empty_printer ok
+test_settings ok
+test_RandomDomain ok
+test_FiniteSet ok
+test_UniversalSet ok
+test_PrettyPoly ok
+test_categories ok
+test_Tr ok
+test_issue_6387 ok
+test_MatMul_MatAdd ok
+test_MatrixSlice ok
+test_true_false ok
+test_Equivalent ok
+test_Xor ok
+test_Complement ok
+test_SymmetricDifference ok
+test_UnevaluatedExpr ok
+test_MatrixElement_printing ok
+test_MatrixSymbol_printing ok
+test_MatrixExpressions ok
+test_Subs_printing ok
+test_issue_15716 ok
+test_str_special_matrices ok
+test_issue_14567 ok
+test_issue_21119_21460 ok
+test_Str ok
+test_diffgeom ok
+test_NDimArray ok
+test_Predicate ok
+test_AppliedPredicate ok
+test_printing_str_array_expressions ok                                      [OK]
+
+
+================= tests finished: 100 passed, in 1.12 seconds ==================
+
+>>>>> All Tests Passed

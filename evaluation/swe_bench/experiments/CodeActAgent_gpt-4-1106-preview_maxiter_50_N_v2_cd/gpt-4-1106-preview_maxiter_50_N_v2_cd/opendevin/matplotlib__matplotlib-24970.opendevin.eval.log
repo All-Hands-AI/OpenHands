@@ -1,0 +1,320 @@
+Task Metadata:
+	- Instance ID: matplotlib__matplotlib-24970
+	- Testbed: /swe_util/eval_data/testbeds/matplotlib__matplotlib__3.6
+	- Virtual Env.: matplotlib__matplotlib__3.6
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate matplotlib__matplotlib__3.6 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/matplotlib__matplotlib__3.6
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Installing backend dependencies: started
+  Installing backend dependencies: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: contourpy>=1.0.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev1362+ga3011dfd1a) (1.1.0)
+Requirement already satisfied: cycler>=0.10 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev1362+ga3011dfd1a) (0.11.0)
+Requirement already satisfied: fonttools>=4.22.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev1362+ga3011dfd1a) (4.42.1)
+Requirement already satisfied: kiwisolver>=1.0.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev1362+ga3011dfd1a) (1.4.5)
+Requirement already satisfied: numpy>=1.20 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev1362+ga3011dfd1a) (1.25.2)
+Requirement already satisfied: packaging>=20.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev1362+ga3011dfd1a) (23.1)
+Requirement already satisfied: pillow>=6.2.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev1362+ga3011dfd1a) (10.0.0)
+Requirement already satisfied: pyparsing>=2.3.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev1362+ga3011dfd1a) (3.0.9)
+Requirement already satisfied: python-dateutil>=2.7 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev1362+ga3011dfd1a) (2.8.2)
+Requirement already satisfied: setuptools-scm>=7 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev1362+ga3011dfd1a) (7.1.0)
+Requirement already satisfied: six>=1.5 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from python-dateutil>=2.7->matplotlib==3.7.0.dev1362+ga3011dfd1a) (1.16.0)
+Requirement already satisfied: setuptools in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from setuptools-scm>=7->matplotlib==3.7.0.dev1362+ga3011dfd1a) (68.1.2)
+Requirement already satisfied: typing-extensions in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from setuptools-scm>=7->matplotlib==3.7.0.dev1362+ga3011dfd1a) (4.7.1)
+Building wheels for collected packages: matplotlib
+  Building editable for matplotlib (pyproject.toml): started
+  Building editable for matplotlib (pyproject.toml): finished with status 'done'
+  Created wheel for matplotlib: filename=matplotlib-3.7.0.dev1362+ga3011dfd1a-0.editable-cp311-cp311-linux_x86_64.whl size=21999 sha256=0699356e68cf75e8f9bf4763fe1c1f975980a37a7193db66d4946f59f973886d
+  Stored in directory: /tmp/pip-ephem-wheel-cache-x6kf_3ok/wheels/84/91/51/e68cf89e4c0070620823ea3465577f0df7cab4d216dcb5c628
+Successfully built matplotlib
+Installing collected packages: matplotlib
+Successfully installed matplotlib-3.7.0.dev1362+ga3011dfd1a
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate matplotlib__matplotlib__3.6 && echo 'activate successful' && pytest --no-header -rA --tb=no -p no:cacheprovider lib/matplotlib/tests/test_colors.py;
+Output:
+activate successful
+============================= test session starts ==============================
+collected 256 items
+
+lib/matplotlib/tests/test_colors.py .......F..F....F.................... [ 14%]
+...........F......F......FFFFFFFFFF..FFFFFFFFFFFF......FFFFFFFFFFFFFFFFF [ 42%]
+FFFFFFF......FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF [ 70%]
+FFFFFFFFFFFFFFFFFFFFFFFFF........FFFFFFFFFFFF..............F...........s [ 98%]
+s...                                                                     [100%]
+
+=========================== short test summary info ============================
+PASSED lib/matplotlib/tests/test_colors.py::test_create_lookup_table[5-result0]
+PASSED lib/matplotlib/tests/test_colors.py::test_create_lookup_table[2-result1]
+PASSED lib/matplotlib/tests/test_colors.py::test_create_lookup_table[1-result2]
+PASSED lib/matplotlib/tests/test_colors.py::test_index_dtype[uint8]
+PASSED lib/matplotlib/tests/test_colors.py::test_index_dtype[int]
+PASSED lib/matplotlib/tests/test_colors.py::test_index_dtype[float16]
+PASSED lib/matplotlib/tests/test_colors.py::test_index_dtype[float]
+PASSED lib/matplotlib/tests/test_colors.py::test_register_cmap
+PASSED lib/matplotlib/tests/test_colors.py::test_colormaps_get_cmap
+PASSED lib/matplotlib/tests/test_colors.py::test_unregister_builtin_cmap
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_copy
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_equals
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_endian
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_return_types
+PASSED lib/matplotlib/tests/test_colors.py::test_BoundaryNorm
+PASSED lib/matplotlib/tests/test_colors.py::test_CenteredNorm
+PASSED lib/matplotlib/tests/test_colors.py::test_lognorm_invalid[-1-2]
+PASSED lib/matplotlib/tests/test_colors.py::test_lognorm_invalid[3-1]
+PASSED lib/matplotlib/tests/test_colors.py::test_LogNorm
+PASSED lib/matplotlib/tests/test_colors.py::test_LogNorm_inverse
+PASSED lib/matplotlib/tests/test_colors.py::test_PowerNorm
+PASSED lib/matplotlib/tests/test_colors.py::test_PowerNorm_translation_invariance
+PASSED lib/matplotlib/tests/test_colors.py::test_Normalize
+PASSED lib/matplotlib/tests/test_colors.py::test_FuncNorm
+PASSED lib/matplotlib/tests/test_colors.py::test_TwoSlopeNorm_autoscale
+PASSED lib/matplotlib/tests/test_colors.py::test_TwoSlopeNorm_autoscale_None_vmin
+PASSED lib/matplotlib/tests/test_colors.py::test_TwoSlopeNorm_autoscale_None_vmax
+PASSED lib/matplotlib/tests/test_colors.py::test_TwoSlopeNorm_scale
+PASSED lib/matplotlib/tests/test_colors.py::test_TwoSlopeNorm_scaleout_center
+PASSED lib/matplotlib/tests/test_colors.py::test_TwoSlopeNorm_scaleout_center_max
+PASSED lib/matplotlib/tests/test_colors.py::test_TwoSlopeNorm_Even
+PASSED lib/matplotlib/tests/test_colors.py::test_TwoSlopeNorm_Odd
+PASSED lib/matplotlib/tests/test_colors.py::test_TwoSlopeNorm_VminEqualsVcenter
+PASSED lib/matplotlib/tests/test_colors.py::test_TwoSlopeNorm_VmaxEqualsVcenter
+PASSED lib/matplotlib/tests/test_colors.py::test_TwoSlopeNorm_VminGTVcenter
+PASSED lib/matplotlib/tests/test_colors.py::test_TwoSlopeNorm_TwoSlopeNorm_VminGTVmax
+PASSED lib/matplotlib/tests/test_colors.py::test_TwoSlopeNorm_VcenterGTVmax
+PASSED lib/matplotlib/tests/test_colors.py::test_TwoSlopeNorm_premature_scaling
+PASSED lib/matplotlib/tests/test_colors.py::test_SymLogNorm
+PASSED lib/matplotlib/tests/test_colors.py::test_SymLogNorm_colorbar
+PASSED lib/matplotlib/tests/test_colors.py::test_SymLogNorm_single_zero
+PASSED lib/matplotlib/tests/test_colors.py::TestAsinhNorm::test_init
+PASSED lib/matplotlib/tests/test_colors.py::TestAsinhNorm::test_norm
+PASSED lib/matplotlib/tests/test_colors.py::test_cmap_and_norm_from_levels_and_colors[png]
+PASSED lib/matplotlib/tests/test_colors.py::test_cmap_and_norm_from_levels_and_colors2
+PASSED lib/matplotlib/tests/test_colors.py::test_rgb_hsv_round_trip
+PASSED lib/matplotlib/tests/test_colors.py::test_autoscale_masked
+PASSED lib/matplotlib/tests/test_colors.py::test_light_source_topo_surface[png]
+PASSED lib/matplotlib/tests/test_colors.py::test_light_source_shading_default
+PASSED lib/matplotlib/tests/test_colors.py::test_light_source_shading_empty_mask
+PASSED lib/matplotlib/tests/test_colors.py::test_light_source_hillshading
+PASSED lib/matplotlib/tests/test_colors.py::test_light_source_planar_hillshading
+PASSED lib/matplotlib/tests/test_colors.py::test_color_names
+PASSED lib/matplotlib/tests/test_colors.py::test_pandas_iterable
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Accent]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Accent_r]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Dark2]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Dark2_r]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Paired]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Paired_r]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Pastel1]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Pastel1_r]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Pastel2]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Pastel2_r]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Set1]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Set1_r]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Set2]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Set2_r]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Set3]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Set3_r]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[tab10]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[tab10_r]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[tab20]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[tab20_r]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[tab20b]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[tab20b_r]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[tab20c]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[tab20c_r]
+PASSED lib/matplotlib/tests/test_colors.py::test_has_alpha_channel
+PASSED lib/matplotlib/tests/test_colors.py::test_cn
+PASSED lib/matplotlib/tests/test_colors.py::test_conversions
+PASSED lib/matplotlib/tests/test_colors.py::test_conversions_masked
+PASSED lib/matplotlib/tests/test_colors.py::test_to_rgba_array_single_str
+PASSED lib/matplotlib/tests/test_colors.py::test_to_rgba_array_alpha_array
+PASSED lib/matplotlib/tests/test_colors.py::test_failed_conversions
+PASSED lib/matplotlib/tests/test_colors.py::test_grey_gray
+PASSED lib/matplotlib/tests/test_colors.py::test_tableau_order
+PASSED lib/matplotlib/tests/test_colors.py::test_ndarray_subclass_norm
+PASSED lib/matplotlib/tests/test_colors.py::test_same_color
+PASSED lib/matplotlib/tests/test_colors.py::test_hex_shorthand_notation
+PASSED lib/matplotlib/tests/test_colors.py::test_repr_png
+PASSED lib/matplotlib/tests/test_colors.py::test_repr_html
+PASSED lib/matplotlib/tests/test_colors.py::test_non_mutable_get_values[over]
+PASSED lib/matplotlib/tests/test_colors.py::test_non_mutable_get_values[under]
+PASSED lib/matplotlib/tests/test_colors.py::test_non_mutable_get_values[bad]
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_alpha_array
+PASSED lib/matplotlib/tests/test_colors.py::test_colormap_bad_data_with_alpha
+PASSED lib/matplotlib/tests/test_colors.py::test_2d_to_rgba
+PASSED lib/matplotlib/tests/test_colors.py::test_set_dict_to_rgba
+PASSED lib/matplotlib/tests/test_colors.py::test_norm_deepcopy
+PASSED lib/matplotlib/tests/test_colors.py::test_norm_callback
+PASSED lib/matplotlib/tests/test_colors.py::test_scalarmappable_norm_update
+PASSED lib/matplotlib/tests/test_colors.py::test_norm_update_figs[png]
+PASSED lib/matplotlib/tests/test_colors.py::test_make_norm_from_scale_name
+PASSED lib/matplotlib/tests/test_colors.py::test_color_sequences
+PASSED lib/matplotlib/tests/test_colors.py::test_cm_set_cmap_error
+SKIPPED [1] lib/matplotlib/testing/compare.py:285: Don't know how to convert .pdf files to png
+SKIPPED [1] lib/matplotlib/testing/compare.py:285: Don't know how to convert .svg files to png
+FAILED lib/matplotlib/tests/test_colors.py::test_resampled - AssertionError: 
+FAILED lib/matplotlib/tests/test_colors.py::test_double_register_builtin_cmap
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_invalid - Assertion...
+FAILED lib/matplotlib/tests/test_colors.py::test_boundarynorm_and_colorbarbase[png]
+FAILED lib/matplotlib/tests/test_colors.py::test_light_source_masked_shading
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Blues] - ...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Blues_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[BrBG] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[BrBG_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[BuGn] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[BuGn_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[BuPu] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[BuPu_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[CMRmap]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[CMRmap_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[GnBu] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[GnBu_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Greens]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Greens_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Greys] - ...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Greys_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[OrRd] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[OrRd_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Oranges]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Oranges_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[PRGn] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[PRGn_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[PiYG] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[PiYG_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[PuBu] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[PuBuGn]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[PuBuGn_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[PuBu_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[PuOr] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[PuOr_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[PuRd] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[PuRd_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Purples]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Purples_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[RdBu] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[RdBu_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[RdGy] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[RdGy_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[RdPu] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[RdPu_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[RdYlBu]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[RdYlBu_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[RdYlGn]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[RdYlGn_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Reds] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Reds_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Spectral]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Spectral_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Wistia]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[Wistia_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[YlGn] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[YlGnBu]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[YlGnBu_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[YlGn_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[YlOrBr]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[YlOrBr_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[YlOrRd]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[YlOrRd_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[afmhot]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[afmhot_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[autumn]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[autumn_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[binary]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[binary_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[bone] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[bone_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[brg] - As...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[brg_r] - ...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[bwr] - As...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[bwr_r] - ...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[cividis]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[cividis_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[cool] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[cool_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[coolwarm]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[coolwarm_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[copper]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[copper_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[cubehelix]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[cubehelix_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[flag] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[flag_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gist_earth]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gist_earth_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gist_gray]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gist_gray_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gist_heat]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gist_heat_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gist_ncar]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gist_ncar_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gist_rainbow]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gist_rainbow_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gist_stern]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gist_stern_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gist_yarg]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gist_yarg_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gnuplot]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gnuplot2]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gnuplot2_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gnuplot_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gray] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[gray_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[hot] - As...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[hot_r] - ...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[hsv] - As...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[hsv_r] - ...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[inferno]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[inferno_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[jet] - As...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[jet_r] - ...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[magma] - ...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[magma_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[nipy_spectral]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[nipy_spectral_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[ocean] - ...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[ocean_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[pink] - A...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[pink_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[plasma]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[plasma_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[prism] - ...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[prism_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[rainbow]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[rainbow_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[seismic]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[seismic_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[spring]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[spring_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[summer]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[summer_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[terrain]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[terrain_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[turbo] - ...
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[turbo_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[twilight]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[twilight_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[twilight_shifted]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[twilight_shifted_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[viridis]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[viridis_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[winter]
+FAILED lib/matplotlib/tests/test_colors.py::test_colormap_reversing[winter_r]
+FAILED lib/matplotlib/tests/test_colors.py::test_get_under_over_bad - Asserti...
+================== 148 failed, 106 passed, 2 skipped in 3.57s ==================
+
+>>>>> Some Tests Failed

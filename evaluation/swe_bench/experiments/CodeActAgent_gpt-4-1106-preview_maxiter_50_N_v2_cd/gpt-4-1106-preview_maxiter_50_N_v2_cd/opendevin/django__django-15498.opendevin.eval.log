@@ -1,0 +1,112 @@
+Task Metadata:
+	- Instance ID: django__django-15498
+	- Testbed: /swe_util/eval_data/testbeds/django__django__4.1
+	- Virtual Env.: django__django__4.1
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__4.1 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/django__django__4.1
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: asgiref>=3.4.1 in /swe_util/miniconda3/envs/django__django__4.1/lib/python3.9/site-packages (from Django==4.1.dev20220310115719) (3.8.1)
+Requirement already satisfied: sqlparse>=0.2.2 in /swe_util/miniconda3/envs/django__django__4.1/lib/python3.9/site-packages (from Django==4.1.dev20220310115719) (0.5.0)
+Requirement already satisfied: typing-extensions>=4 in /swe_util/miniconda3/envs/django__django__4.1/lib/python3.9/site-packages (from asgiref>=3.4.1->Django==4.1.dev20220310115719) (4.11.0)
+Building wheels for collected packages: Django
+  Building editable for Django (pyproject.toml): started
+  Building editable for Django (pyproject.toml): finished with status 'done'
+  Created wheel for Django: filename=Django-4.1.dev20220310115719-0.editable-py3-none-any.whl size=26800 sha256=4cdf5a4d89e2dc8fad452c0b0b6c20c0a349bb9711d783edd33ee13b4562acb6
+  Stored in directory: /tmp/pip-ephem-wheel-cache-_kfs3q5d/wheels/96/1c/3a/6dbb4373707d7778c3cbf41ba4c5a0c7c0a56ff499853543fb
+Successfully built Django
+Installing collected packages: Django
+  Attempting uninstall: Django
+    Found existing installation: Django 4.1.dev20220516073240
+    Uninstalling Django-4.1.dev20220516073240:
+      Successfully uninstalled Django-4.1.dev20220516073240
+Successfully installed Django-4.1.dev20220310115719
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__4.1 && echo 'activate successful' && ./tests/runtests.py --verbosity 2 view_tests.tests.test_static;
+Output:
+activate successful
+Testing against Django installed in '/swe_util/eval_data/testbeds/django__django__4.1/django' with up to 64 processes
+Importing application view_tests
+Found 30 test(s).
+Skipping setup of unused database(s): default, other.
+System check identified no issues (0 silenced).
+test_was_modified_since_empty_string (view_tests.tests.test_static.StaticUtilsTests) ... ERROR
+test_was_modified_since_fp (view_tests.tests.test_static.StaticUtilsTests)
+A floating point mtime does not disturb was_modified_since (#18675). ... ok
+test_404 (view_tests.tests.test_static.StaticTests) ... ok
+test_chunked (view_tests.tests.test_static.StaticTests)
+The static view should stream files in chunks to avoid large memory usage ... ok
+test_copes_with_empty_path_component (view_tests.tests.test_static.StaticTests) ... ok
+test_index (view_tests.tests.test_static.StaticTests) ... ok
+test_index_custom_template (view_tests.tests.test_static.StaticTests) ... ok
+test_index_subdir (view_tests.tests.test_static.StaticTests) ... ok
+test_invalid_if_modified_since (view_tests.tests.test_static.StaticTests)
+Handle bogus If-Modified-Since values gracefully ... ok
+test_invalid_if_modified_since2 (view_tests.tests.test_static.StaticTests)
+Handle even more bogus If-Modified-Since values gracefully ... ok
+test_is_modified_since (view_tests.tests.test_static.StaticTests) ... ok
+test_not_modified_since (view_tests.tests.test_static.StaticTests) ... ok
+test_serve (view_tests.tests.test_static.StaticTests)
+The static view can serve static media ... ok
+test_unknown_mime_type (view_tests.tests.test_static.StaticTests) ... ok
+test_404 (view_tests.tests.test_static.StaticHelperTest) ... ok
+test_chunked (view_tests.tests.test_static.StaticHelperTest)
+The static view should stream files in chunks to avoid large memory usage ... ok
+test_copes_with_empty_path_component (view_tests.tests.test_static.StaticHelperTest) ... ok
+test_debug_off (view_tests.tests.test_static.StaticHelperTest)
+No URLs are served if DEBUG=False. ... ok
+test_empty_prefix (view_tests.tests.test_static.StaticHelperTest) ... ok
+test_index (view_tests.tests.test_static.StaticHelperTest) ... ok
+test_index_custom_template (view_tests.tests.test_static.StaticHelperTest) ... ok
+test_index_subdir (view_tests.tests.test_static.StaticHelperTest) ... ok
+test_invalid_if_modified_since (view_tests.tests.test_static.StaticHelperTest)
+Handle bogus If-Modified-Since values gracefully ... ok
+test_invalid_if_modified_since2 (view_tests.tests.test_static.StaticHelperTest)
+Handle even more bogus If-Modified-Since values gracefully ... ok
+test_is_modified_since (view_tests.tests.test_static.StaticHelperTest) ... ok
+test_not_modified_since (view_tests.tests.test_static.StaticHelperTest) ... ok
+test_prefix (view_tests.tests.test_static.StaticHelperTest) ... ok
+test_serve (view_tests.tests.test_static.StaticHelperTest)
+The static view can serve static media ... ok
+test_special_prefix (view_tests.tests.test_static.StaticHelperTest)
+No URLs are served if prefix contains a netloc part. ... ok
+test_unknown_mime_type (view_tests.tests.test_static.StaticHelperTest) ... ok
+
+======================================================================
+ERROR: test_was_modified_since_empty_string (view_tests.tests.test_static.StaticUtilsTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.1/lib/python3.9/unittest/case.py", line 59, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.1/lib/python3.9/unittest/case.py", line 592, in run
+    self._callTestMethod(testMethod)
+  File "/swe_util/miniconda3/envs/django__django__4.1/lib/python3.9/unittest/case.py", line 550, in _callTestMethod
+    method()
+  File "/swe_util/eval_data/testbeds/django__django__4.1/tests/view_tests/tests/test_static.py", line 196, in test_was_modified_since_empty_string
+    self.assertTrue(was_modified_since(header="", mtime=1))
+  File "/swe_util/eval_data/testbeds/django__django__4.1/django/views/static.py", line 132, in was_modified_since
+    header_mtime = parse_http_date(matches[1])
+TypeError: 'NoneType' object is not subscriptable
+
+----------------------------------------------------------------------
+Ran 30 tests in 0.052s
+
+FAILED (errors=1)
+
+>>>>> Some Tests Failed

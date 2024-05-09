@@ -1,0 +1,64 @@
+Task Metadata:
+	- Instance ID: sympy__sympy-21847
+	- Testbed: /swe_util/eval_data/testbeds/sympy__sympy__1.9
+	- Virtual Env.: sympy__sympy__1.9
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+patch unexpectedly ends in middle of line
+patch: **** Only garbage was found in the patch input.
+>>>>> Applied Patch (pred_minimal_try patch)
+>>>>> Applied Patch (pred_minimal_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.9 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/sympy__sympy__1.9
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: mpmath>=0.19 in /swe_util/miniconda3/envs/sympy__sympy__1.9/lib/python3.9/site-packages (from sympy==1.9.dev0) (1.3.0)
+Installing collected packages: sympy
+  Running setup.py develop for sympy
+Successfully installed sympy-1.9.dev0
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.9 && echo 'activate successful' && bin/test -C --verbose sympy/polys/tests/test_monomials.py;
+Output:
+activate successful
+============================= test process starts ==============================
+executable:         /swe_util/miniconda3/envs/sympy__sympy__1.9/bin/python  (3.9.19-final-0) [CPython]
+architecture:       64-bit
+cache:              no
+ground types:       python 
+numpy:              None
+random seed:        67097211
+hash randomization: on (PYTHONHASHSEED=833513770)
+
+sympy/polys/tests/test_monomials.py[11] 
+test_monomials F
+test_monomial_count ok
+test_monomial_mul ok
+test_monomial_div ok
+test_monomial_gcd ok
+test_monomial_lcm ok
+test_monomial_max ok
+test_monomial_pow ok
+test_monomial_min ok
+test_monomial_divides ok
+test_Monomial ok                                                          [FAIL]
+
+
+________________________________________________________________________________
+______________ sympy/polys/tests/test_monomials.py:test_monomials ______________
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.9/sympy/polys/tests/test_monomials.py", line 116, in test_monomials
+    assert set(itermonomials([x, y], 3, 3)) == {x**3, x**2*y, x*y**2, y**3}
+AssertionError
+
+============= tests finished: 10 passed, 1 failed, in 0.13 seconds =============
+DO *NOT* COMMIT!
+
+>>>>> Some Tests Failed

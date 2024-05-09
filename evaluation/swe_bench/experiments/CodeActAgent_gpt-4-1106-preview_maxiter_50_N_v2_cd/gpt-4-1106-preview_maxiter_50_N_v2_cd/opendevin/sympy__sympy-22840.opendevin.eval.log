@@ -1,0 +1,168 @@
+Task Metadata:
+	- Instance ID: sympy__sympy-22840
+	- Testbed: /swe_util/eval_data/testbeds/sympy__sympy__1.10
+	- Virtual Env.: sympy__sympy__1.10
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file sympy/simplify/tests/test_cse_matrixsymbol.py
+patch unexpectedly ends in middle of line
+patch: **** malformed patch at line 33:  
+
+>>>>> Applied Patch (pred_minimal_try patch)
+>>>>> Applied Patch (pred_minimal_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.10 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/sympy__sympy__1.10
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: mpmath>=0.19 in /swe_util/miniconda3/envs/sympy__sympy__1.10/lib/python3.9/site-packages (from sympy==1.10.dev0) (1.3.0)
+Installing collected packages: sympy
+  Running setup.py develop for sympy
+Successfully installed sympy-1.10.dev0
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.10 && echo 'activate successful' && bin/test -C --verbose sympy/simplify/tests/test_cse.py sympy/utilities/tests/test_codegen.py;
+Output:
+activate successful
+============================= test process starts ==============================
+executable:         /swe_util/miniconda3/envs/sympy__sympy__1.10/bin/python  (3.9.19-final-0) [CPython]
+architecture:       64-bit
+cache:              no
+ground types:       python 
+numpy:              None
+random seed:        71398934
+hash randomization: on (PYTHONHASHSEED=3695120999)
+
+sympy/simplify/tests/test_cse.py[47] 
+test_numbered_symbols ok
+test_preprocess_for_cse ok
+test_postprocess_for_cse ok
+test_cse_single ok
+test_cse_single2 ok
+test_cse_not_possible ok
+test_nested_substitution ok
+test_subtraction_opt ok
+test_multiple_expressions ok
+test_non_commutative_cse f
+test_bypass_non_commutatives ok
+test_non_commutative_order f
+test_issue_10228 f
+test_powers f
+test_issue_4498 ok
+test_issue_4020 ok
+test_issue_4203 ok
+test_issue_6263 ok
+test_dont_cse_tuples ok
+test_pow_invpow ok
+test_postprocess ok
+test_issue_4499 ok
+test_issue_6169 ok
+test_cse_Indexed ok
+test_cse_MatrixSymbol F
+test_cse_MatrixExpr ok
+test_Piecewise ok
+test_ignore_order_terms ok
+test_name_conflict ok
+test_name_conflict_cust_symbols ok
+test_symbols_exhausted_error ok
+test_issue_7840 ok
+test_issue_8891 ok
+test_issue_11230 ok
+test_issue_11577 f
+test_hollow_rejection ok
+test_cse_ignore ok
+test_cse_ignore_issue_15002 ok
+test_cse__performance ok
+test_issue_12070 ok
+test_issue_13000 ok
+test_issue_18203 ok
+test_unevaluated_mul ok
+test_cse_release_variables ok
+test_cse_list ok
+test_issue_18991 ok
+test_unevaluated_Mul ok                                                   [FAIL]
+
+sympy/utilities/tests/test_codegen.py[57] 
+test_Routine_argument_order ok
+test_empty_c_code ok
+test_empty_c_code_with_comment ok
+test_empty_c_header ok
+test_simple_c_code ok
+test_c_code_reserved_words ok
+test_numbersymbol_c_code ok
+test_c_code_argument_order ok
+test_simple_c_header ok
+test_simple_c_codegen ok
+test_multiple_results_c ok
+test_no_results_c ok
+test_ansi_math1_codegen ok
+test_ansi_math2_codegen ok
+test_complicated_codegen ok
+test_loops_c ok
+test_dummy_loops_c ok
+test_partial_loops_c ok
+test_output_arg_c ok
+test_output_arg_c_reserved_words ok
+test_multidim_c_argument_cse F
+test_ccode_results_named_ordered ok
+test_ccode_matrixsymbol_slice ok
+test_ccode_cse ok
+test_ccode_unused_array_arg ok
+test_empty_f_code ok
+test_empty_f_code_with_header ok
+test_empty_f_header ok
+test_simple_f_code ok
+test_numbersymbol_f_code ok
+test_erf_f_code ok
+test_f_code_argument_order ok
+test_simple_f_header ok
+test_simple_f_codegen ok
+test_multiple_results_f ok
+test_no_results_f ok
+test_intrinsic_math_codegen ok
+test_intrinsic_math2_codegen ok
+test_complicated_codegen_f95 ok
+test_loops ok
+test_dummy_loops_f95 ok
+test_loops_InOut ok
+test_partial_loops_f ok
+test_output_arg_f ok
+test_inline_function ok
+test_f_code_call_signature_wrap ok
+test_check_case ok
+test_check_case_false_positive ok
+test_c_fortran_omit_routine_name ok
+test_fcode_matrix_output ok
+test_fcode_results_named_ordered ok
+test_fcode_matrixsymbol_slice ok
+test_fcode_matrixsymbol_slice_autoname ok
+test_global_vars ok
+test_custom_codegen ok
+test_c_with_printer ok
+test_fcode_complex ok                                                     [FAIL]
+
+
+________________________________________________________________________________
+____________ sympy/simplify/tests/test_cse.py:test_cse_MatrixSymbol ____________
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.10/sympy/simplify/tests/test_cse.py", line 352, in test_cse_MatrixSymbol
+    assert cse(A[0,0]*A[0,1] + A[0,0]*A[0,1]*A[0,2]) == ([(x0, A[0, 0]*A[0, 1])], [x0*A[0, 2] + x0])
+AssertionError
+________________________________________________________________________________
+______ sympy/utilities/tests/test_codegen.py:test_multidim_c_argument_cse ______
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.10/sympy/utilities/tests/test_codegen.py", line 539, in test_multidim_c_argument_cse
+    assert code == expected
+AssertionError
+
+== tests finished: 97 passed, 2 failed, 5 expected to fail, in 11.48 seconds ===
+DO *NOT* COMMIT!
+
+>>>>> Some Tests Failed

@@ -1,0 +1,75 @@
+Task Metadata:
+	- Instance ID: django__django-15202
+	- Testbed: /swe_util/eval_data/testbeds/django__django__4.1
+	- Virtual Env.: django__django__4.1
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file django/core/validators.py
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file django/forms/fields.py
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file tests/forms_tests/field_tests/test_urlfield.py
+patch unexpectedly ends in middle of line
+patch: **** malformed patch at line 63:  
+
+>>>>> Applied Patch (pred_minimal_try patch)
+>>>>> Applied Patch (pred_minimal_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__4.1 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/django__django__4.1
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: asgiref>=3.4.1 in /swe_util/miniconda3/envs/django__django__4.1/lib/python3.9/site-packages (from Django==4.1.dev20211220054634) (3.8.1)
+Requirement already satisfied: sqlparse>=0.2.2 in /swe_util/miniconda3/envs/django__django__4.1/lib/python3.9/site-packages (from Django==4.1.dev20211220054634) (0.5.0)
+Requirement already satisfied: typing-extensions>=4 in /swe_util/miniconda3/envs/django__django__4.1/lib/python3.9/site-packages (from asgiref>=3.4.1->Django==4.1.dev20211220054634) (4.11.0)
+Building wheels for collected packages: Django
+  Building editable for Django (pyproject.toml): started
+  Building editable for Django (pyproject.toml): finished with status 'done'
+  Created wheel for Django: filename=Django-4.1.dev20211220054634-0.editable-py3-none-any.whl size=26741 sha256=ac738e25d84a60bc24d04ce08198282b0f0955dfcba31f238433ffcf9324d07d
+  Stored in directory: /tmp/pip-ephem-wheel-cache-dgocxvgo/wheels/96/1c/3a/6dbb4373707d7778c3cbf41ba4c5a0c7c0a56ff499853543fb
+Successfully built Django
+Installing collected packages: Django
+  Attempting uninstall: Django
+    Found existing installation: Django 4.1.dev20211229095723
+    Uninstalling Django-4.1.dev20211229095723:
+      Successfully uninstalled Django-4.1.dev20211229095723
+Successfully installed Django-4.1.dev20211220054634
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__4.1 && echo 'activate successful' && ./tests/runtests.py --verbosity 2 forms_tests.field_tests.test_urlfield;
+Output:
+activate successful
+Testing against Django installed in '/swe_util/eval_data/testbeds/django__django__4.1/django' with up to 64 processes
+Importing application forms_tests
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/django__django__4.1/./tests/runtests.py", line 657, in <module>
+    failures = django_tests(
+  File "/swe_util/eval_data/testbeds/django__django__4.1/./tests/runtests.py", line 377, in django_tests
+    failures = test_runner.run_tests(test_labels)
+  File "/swe_util/eval_data/testbeds/django__django__4.1/django/test/runner.py", line 920, in run_tests
+    suite = self.build_suite(test_labels, extra_tests)
+  File "/swe_util/eval_data/testbeds/django__django__4.1/django/test/runner.py", line 781, in build_suite
+    tests = self.load_tests_for_label(label, discover_kwargs)
+  File "/swe_util/eval_data/testbeds/django__django__4.1/django/test/runner.py", line 732, in load_tests_for_label
+    tests = self.test_loader.loadTestsFromName(label)
+  File "/swe_util/miniconda3/envs/django__django__4.1/lib/python3.9/unittest/loader.py", line 154, in loadTestsFromName
+    module = __import__(module_name)
+  File "/swe_util/eval_data/testbeds/django__django__4.1/tests/forms_tests/field_tests/test_urlfield.py", line 134
+    def test_urlfield_clean_value_error(self):
+    ^
+IndentationError: expected an indented block
+
+>>>>> Some Tests Failed

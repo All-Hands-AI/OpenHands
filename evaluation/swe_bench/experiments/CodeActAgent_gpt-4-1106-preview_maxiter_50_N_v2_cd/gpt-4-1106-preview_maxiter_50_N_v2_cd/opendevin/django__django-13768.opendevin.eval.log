@@ -1,0 +1,78 @@
+Task Metadata:
+	- Instance ID: django__django-13768
+	- Testbed: /swe_util/eval_data/testbeds/django__django__3.2
+	- Virtual Env.: django__django__3.2
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__3.2 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/django__django__3.2
+Requirement already satisfied: asgiref>=3.2.10 in /swe_util/miniconda3/envs/django__django__3.2/lib/python3.6/site-packages (from Django==3.2) (3.4.1)
+Requirement already satisfied: pytz in /swe_util/miniconda3/envs/django__django__3.2/lib/python3.6/site-packages (from Django==3.2) (2024.1)
+Requirement already satisfied: sqlparse>=0.2.2 in /swe_util/miniconda3/envs/django__django__3.2/lib/python3.6/site-packages (from Django==3.2) (0.4.4)
+Requirement already satisfied: typing-extensions in /swe_util/miniconda3/envs/django__django__3.2/lib/python3.6/site-packages (from asgiref>=3.2.10->Django==3.2) (4.1.1)
+Installing collected packages: Django
+  Running setup.py develop for Django
+Successfully installed Django-3.2
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__3.2 && echo 'activate successful' && ./tests/runtests.py --verbosity 2 dispatch.tests;
+Output:
+activate successful
+Testing against Django installed in '/swe_util/eval_data/testbeds/django__django__3.2/django' with up to 64 processes
+Importing application dispatch
+Skipping setup of unused database(s): default, other.
+System check identified no issues (0 silenced).
+test_receiver_signal_list (dispatch.tests.ReceiverTestCase) ... ok
+test_receiver_single_signal (dispatch.tests.ReceiverTestCase) ... ok
+test_cached_garbaged_collected (dispatch.tests.DispatcherTests) ... ok
+test_cannot_connect_no_kwargs (dispatch.tests.DispatcherTests) ... ok
+test_cannot_connect_non_callable (dispatch.tests.DispatcherTests) ... ok
+test_disconnection (dispatch.tests.DispatcherTests) ... ok
+test_garbage_collected (dispatch.tests.DispatcherTests) ... ok
+test_has_listeners (dispatch.tests.DispatcherTests) ... ok
+test_multiple_registration (dispatch.tests.DispatcherTests) ... ok
+test_send (dispatch.tests.DispatcherTests) ... ok
+test_send_connected_no_sender (dispatch.tests.DispatcherTests) ... ok
+test_send_different_no_sender (dispatch.tests.DispatcherTests) ... ok
+test_send_no_receivers (dispatch.tests.DispatcherTests) ... ok
+test_send_robust_fail (dispatch.tests.DispatcherTests) ... FAIL
+test_send_robust_ignored_sender (dispatch.tests.DispatcherTests) ... ok
+test_send_robust_no_receivers (dispatch.tests.DispatcherTests) ... ok
+test_send_robust_success (dispatch.tests.DispatcherTests) ... ok
+test_uid_registration (dispatch.tests.DispatcherTests) ... ok
+test_values_returned_by_disconnection (dispatch.tests.DispatcherTests) ... ok
+
+======================================================================
+FAIL: test_send_robust_fail (dispatch.tests.DispatcherTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__3.2/lib/python3.6/unittest/case.py", line 59, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__3.2/lib/python3.6/unittest/case.py", line 605, in run
+    testMethod()
+  File "/swe_util/eval_data/testbeds/django__django__3.2/tests/dispatch/tests.py", line 180, in test_send_robust_fail
+    'Error calling '
+  File "/swe_util/miniconda3/envs/django__django__3.2/lib/python3.6/unittest/case.py", line 829, in assertEqual
+    assertion_func(first, second, msg=msg)
+  File "/swe_util/miniconda3/envs/django__django__3.2/lib/python3.6/unittest/case.py", line 1203, in assertMultiLineEqual
+    self.fail(self._formatMessage(msg, standardMsg))
+  File "/swe_util/miniconda3/envs/django__django__3.2/lib/python3.6/unittest/case.py", line 670, in fail
+    raise self.failureException(msg)
+AssertionError: 'Exception raised in signal receiver: <func[72 chars]e18>' != 'Error calling DispatcherTests.test_send_ro[51 chars]his)'
+- Exception raised in signal receiver: <function DispatcherTests.test_send_robust_fail.<locals>.fails at 0x7f7251bfae18>
++ Error calling DispatcherTests.test_send_robust_fail.<locals>.fails in Signal.send_robust() (this)
+
+
+----------------------------------------------------------------------
+Ran 19 tests in 0.174s
+
+FAILED (failures=1)
+
+>>>>> Some Tests Failed

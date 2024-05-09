@@ -1,0 +1,632 @@
+Task Metadata:
+	- Instance ID: sphinx-doc__sphinx-8273
+	- Testbed: /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3
+	- Virtual Env.: sphinx-doc__sphinx__3.3
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Pre-installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sphinx-doc__sphinx__3.3 && echo 'activate successful' && sed -i 's/pytest/pytest -rA/' tox.ini
+Std. Output: activate successful
+
+Std. Error: 
+Pre-installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sphinx-doc__sphinx__3.3 && echo 'activate successful' && sed -i 's/Jinja2>=2.3/Jinja2<3.0/' setup.py
+Std. Output: activate successful
+
+Std. Error: 
+Pre-installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sphinx-doc__sphinx__3.3 && echo 'activate successful' && sed -i 's/sphinxcontrib-applehelp/sphinxcontrib-applehelp<=1.0.7/' setup.py
+Std. Output: activate successful
+
+Std. Error: 
+Pre-installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sphinx-doc__sphinx__3.3 && echo 'activate successful' && sed -i 's/sphinxcontrib-devhelp/sphinxcontrib-devhelp<=1.0.5/' setup.py
+Std. Output: activate successful
+
+Std. Error: 
+Pre-installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sphinx-doc__sphinx__3.3 && echo 'activate successful' && sed -i 's/sphinxcontrib-qthelp/sphinxcontrib-qthelp<=1.0.6/' setup.py
+Std. Output: activate successful
+
+Std. Error: 
+Pre-installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sphinx-doc__sphinx__3.3 && echo 'activate successful' && sed -i 's/alabaster>=0.7,<0.8/alabaster>=0.7,<0.7.12/' setup.py
+Std. Output: activate successful
+
+Std. Error: 
+Pre-installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sphinx-doc__sphinx__3.3 && echo 'activate successful' && sed -i "s/'packaging',/'packaging', 'markupsafe<=2.0.1',/" setup.py
+Std. Output: activate successful
+
+Std. Error: 
+Pre-installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sphinx-doc__sphinx__3.3 && echo 'activate successful' && sed -i 's/sphinxcontrib-htmlhelp/sphinxcontrib-htmlhelp<=2.0.4/' setup.py
+Std. Output: activate successful
+
+Std. Error: 
+Pre-installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sphinx-doc__sphinx__3.3 && echo 'activate successful' && sed -i 's/sphinxcontrib-serializinghtml/sphinxcontrib-serializinghtml<=1.1.9/' setup.py
+Std. Output: activate successful
+
+Std. Error: 
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sphinx-doc__sphinx__3.3 && echo 'activate successful' && pip install -e .[test]
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: sphinxcontrib-applehelp<=1.0.7 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (1.0.4)
+Requirement already satisfied: sphinxcontrib-devhelp<=1.0.5 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (1.0.2)
+Requirement already satisfied: sphinxcontrib-jsmath in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (1.0.1)
+Requirement already satisfied: sphinxcontrib-htmlhelp<=2.0.4 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (2.0.1)
+Requirement already satisfied: sphinxcontrib-serializinghtml<=1.1.9 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (1.1.5)
+Requirement already satisfied: sphinxcontrib-qthelp<=1.0.6 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (1.0.3)
+Requirement already satisfied: Jinja2<3.0 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (2.11.3)
+Requirement already satisfied: Pygments>=2.0 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (2.17.2)
+Requirement already satisfied: docutils>=0.12 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (0.21.2)
+Requirement already satisfied: snowballstemmer>=1.1 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (2.2.0)
+Requirement already satisfied: babel>=1.3 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (2.14.0)
+Requirement already satisfied: alabaster<0.7.12,>=0.7 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (0.7.11)
+Requirement already satisfied: imagesize in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (1.4.1)
+Requirement already satisfied: requests>=2.5.0 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (2.31.0)
+Requirement already satisfied: setuptools in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (68.2.2)
+Requirement already satisfied: packaging in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (24.0)
+Requirement already satisfied: markupsafe<=2.0.1 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (2.0.1)
+Requirement already satisfied: pytest in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (8.2.0)
+Requirement already satisfied: pytest-cov in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (5.0.0)
+Requirement already satisfied: html5lib in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (1.1)
+Requirement already satisfied: typed_ast in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (1.5.5)
+Requirement already satisfied: cython in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (3.0.10)
+Requirement already satisfied: charset-normalizer<4,>=2 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (from requests>=2.5.0) (3.3.2)
+Requirement already satisfied: idna<4,>=2.5 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (from requests>=2.5.0) (3.7)
+Requirement already satisfied: urllib3<3,>=1.21.1 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (from requests>=2.5.0) (2.2.1)
+Requirement already satisfied: certifi>=2017.4.17 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (from requests>=2.5.0) (2024.2.2)
+Requirement already satisfied: six>=1.9 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (from html5lib) (1.16.0)
+Requirement already satisfied: webencodings in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (from html5lib) (0.5.1)
+Requirement already satisfied: iniconfig in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (from pytest) (2.0.0)
+Requirement already satisfied: pluggy<2.0,>=1.5 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (from pytest) (1.5.0)
+Requirement already satisfied: exceptiongroup>=1.0.0rc8 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (from pytest) (1.2.1)
+Requirement already satisfied: tomli>=1 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (from pytest) (2.0.1)
+Requirement already satisfied: coverage>=5.2.1 in /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages (from coverage[toml]>=5.2.1->pytest-cov) (7.5.0)
+Installing collected packages: Sphinx
+  Running setup.py develop for Sphinx
+Successfully installed Sphinx-3.3.0.dev20240505
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sphinx-doc__sphinx__3.3 && echo 'activate successful' && tox -epy39 -v -- tests/test_build_manpage.py;
+Output:
+activate successful
+.pkg: find interpreter for spec PythonSpec(major=3, minor=9)
+.pkg: proposed PythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: find interpreter for spec PythonSpec(path=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python)
+.pkg: proposed PythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: find interpreter for spec PythonSpec(major=3)
+.pkg: proposed PythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: find interpreter for spec PythonSpec(major=3)
+.pkg: proposed PythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: find interpreter for spec PythonSpec(major=3)
+.pkg: proposed PythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: find interpreter for spec PythonSpec(major=3)
+.pkg: proposed PythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: find interpreter for spec PythonSpec(major=3)
+.pkg: proposed PythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: find interpreter for spec PythonSpec(major=3, minor=5)
+.pkg: proposed PythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: proposed PathPythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python3, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: proposed PathPythonInfo(spec=CPython3.10.12.final.0-64, exe=/usr/bin/python3, platform=linux, version='3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: proposed PathPythonInfo(spec=CPython3.10.12.final.0-64, exe=/bin/python3, platform=linux, version='3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: find interpreter for spec PythonSpec(major=3, minor=6)
+.pkg: proposed PythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: proposed PathPythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python3, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: proposed PathPythonInfo(spec=CPython3.10.12.final.0-64, exe=/usr/bin/python3, platform=linux, version='3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: proposed PathPythonInfo(spec=CPython3.10.12.final.0-64, exe=/bin/python3, platform=linux, version='3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: find interpreter for spec PythonSpec(major=3, minor=7)
+.pkg: proposed PythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: proposed PathPythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python3, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: proposed PathPythonInfo(spec=CPython3.10.12.final.0-64, exe=/usr/bin/python3, platform=linux, version='3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: proposed PathPythonInfo(spec=CPython3.10.12.final.0-64, exe=/bin/python3, platform=linux, version='3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: find interpreter for spec PythonSpec(major=3, minor=8)
+.pkg: proposed PythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: proposed PathPythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python3, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: proposed PathPythonInfo(spec=CPython3.10.12.final.0-64, exe=/usr/bin/python3, platform=linux, version='3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: proposed PathPythonInfo(spec=CPython3.10.12.final.0-64, exe=/bin/python3, platform=linux, version='3.10.12 (main, Nov 20 2023, 15:14:05) [GCC 11.4.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: find interpreter for spec PythonSpec(path=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python)
+.pkg: proposed PythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: find interpreter for spec PythonSpec(path=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python)
+.pkg: proposed PythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: find interpreter for spec PythonSpec(path=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python)
+.pkg: proposed PythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: find interpreter for spec PythonSpec(path=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python)
+.pkg: proposed PythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: find interpreter for spec PythonSpec(major=3)
+.pkg: proposed PythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: find interpreter for spec PythonSpec(path=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python)
+.pkg: proposed PythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+.pkg: find interpreter for spec PythonSpec(path=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python)
+.pkg: proposed PythonInfo(spec=CPython3.9.19.final.0-64, exe=/swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/bin/python, platform=linux, version='3.9.19 (main, Mar 21 2024, 17:11:28) \n[GCC 11.2.0]', encoding_fs_io=utf-8-utf-8)
+py39: create virtual environment via CPython3Posix(dest=/swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/.tox/py39, clear=False, no_vcs_ignore=False, global=False)
+py39: add seed packages via FromAppData(download=False, pip=bundle, setuptools=bundle, wheel=bundle, via=copy, app_data_dir=/root/.local/share/virtualenv)
+py39: add activators for Bash, CShell, Fish, Nushell, PowerShell, Python
+.pkg: create virtual environment via CPython3Posix(dest=/swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/.tox/.pkg, clear=False, no_vcs_ignore=False, global=False)
+.pkg: add seed packages via FromAppData(download=False, pip=bundle, setuptools=bundle, wheel=bundle, via=copy, app_data_dir=/root/.local/share/virtualenv)
+.pkg: add activators for Bash, CShell, Fish, Nushell, PowerShell, Python
+.pkg: install_requires> python -I -m pip install 'setuptools>=40.8.0' wheel
+.pkg: exit 0 (1.01 seconds) /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3> python -I -m pip install 'setuptools>=40.8.0' wheel pid=136831
+.pkg: _optional_hooks> python /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages/pyproject_api/_backend.py True setuptools.build_meta __legacy__
+.pkg: exit None (0.19 seconds) /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3> python /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages/pyproject_api/_backend.py True setuptools.build_meta __legacy__ pid=137079
+.pkg: get_requires_for_build_editable> python /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages/pyproject_api/_backend.py True setuptools.build_meta __legacy__
+.pkg: exit None (0.26 seconds) /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3> python /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages/pyproject_api/_backend.py True setuptools.build_meta __legacy__ pid=137130
+.pkg: install_requires_for_build_editable> python -I -m pip install wheel
+.pkg: exit 0 (0.40 seconds) /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3> python -I -m pip install wheel pid=137182
+.pkg: build_editable> python /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages/pyproject_api/_backend.py True setuptools.build_meta __legacy__
+.pkg: exit None (0.38 seconds) /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3> python /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/site-packages/pyproject_api/_backend.py True setuptools.build_meta __legacy__ pid=137292
+py39: install_package_deps> python -I -m pip install 'Jinja2<3.0' 'Pygments>=2.0' 'alabaster<0.7.12,>=0.7' 'babel>=1.3' 'colorama>=0.3.5; sys_platform == "win32"' cython 'docutils>=0.12' html5lib imagesize 'markupsafe<=2.0.1' packaging pytest pytest-cov 'requests>=2.5.0' setuptools 'snowballstemmer>=1.1' 'sphinxcontrib-applehelp<=1.0.7' 'sphinxcontrib-devhelp<=1.0.5' 'sphinxcontrib-htmlhelp<=2.0.4' sphinxcontrib-jsmath 'sphinxcontrib-qthelp<=1.0.6' 'sphinxcontrib-serializinghtml<=1.1.9' typed-ast
+py39: exit 0 (7.43 seconds) /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3> python -I -m pip install 'Jinja2<3.0' 'Pygments>=2.0' 'alabaster<0.7.12,>=0.7' 'babel>=1.3' 'colorama>=0.3.5; sys_platform == "win32"' cython 'docutils>=0.12' html5lib imagesize 'markupsafe<=2.0.1' packaging pytest pytest-cov 'requests>=2.5.0' setuptools 'snowballstemmer>=1.1' 'sphinxcontrib-applehelp<=1.0.7' 'sphinxcontrib-devhelp<=1.0.5' 'sphinxcontrib-htmlhelp<=2.0.4' sphinxcontrib-jsmath 'sphinxcontrib-qthelp<=1.0.6' 'sphinxcontrib-serializinghtml<=1.1.9' typed-ast pid=137466
+py39: install_package> python -I -m pip install --force-reinstall --no-deps /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/.tox/.tmp/package/1/Sphinx-3.3.0.dev20240505-0.editable-py3-none-any.whl
+py39: exit 0 (0.45 seconds) /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3> python -I -m pip install --force-reinstall --no-deps /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/.tox/.tmp/package/1/Sphinx-3.3.0.dev20240505-0.editable-py3-none-any.whl pid=138813
+py39: commands[0]> pytest -rA --durations 25 tests/test_build_manpage.py
+[1m============================= test session starts ==============================[0m
+platform linux -- Python 3.9.19, pytest-8.2.0, pluggy-1.5.0
+cachedir: .tox/py39/.pytest_cache
+libraries: Sphinx-3.3.0+/88b81a06e, docutils-0.19
+base tempdir: /tmp/pytest-of-root/pytest-96
+rootdir: /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3
+configfile: setup.cfg
+plugins: cov-5.0.0
+collected 5 items
+
+tests/test_build_manpage.py [32m.[0m[31mF[0m[32m.[0m[32m.[0m[32m.[0m[31m                                        [100%][0m
+
+=================================== FAILURES ===================================
+[31m[1m_______________________ test_man_make_section_directory ________________________[0m
+
+app = <SphinxTestApp buildername='man'>
+status = <_io.StringIO object at 0x7f230e6354c0>
+warning = <_io.StringIO object at 0x7f230e635550>
+
+    [0m[37m@pytest[39;49;00m.mark.sphinx([33m'[39;49;00m[33mman[39;49;00m[33m'[39;49;00m, testroot=[33m'[39;49;00m[33mbasic[39;49;00m[33m'[39;49;00m,[90m[39;49;00m
+                        confoverrides={[33m'[39;49;00m[33mman_make_section_directory[39;49;00m[33m'[39;49;00m: [94mTrue[39;49;00m})[90m[39;49;00m
+    [94mdef[39;49;00m [92mtest_man_make_section_directory[39;49;00m(app, status, warning):[90m[39;49;00m
+        app.build()[90m[39;49;00m
+>       [94massert[39;49;00m (app.outdir / [33m'[39;49;00m[33m1[39;49;00m[33m'[39;49;00m / [33m'[39;49;00m[33mpython.1[39;49;00m[33m'[39;49;00m).exists()[90m[39;49;00m
+[1m[31mE       AssertionError: assert False[0m
+[1m[31mE        +  where False = <bound method path.exists of path('/tmp/pytest-of-root/pytest-96/basic/_build/man/1/python.1')>()[0m
+[1m[31mE        +    where <bound method path.exists of path('/tmp/pytest-of-root/pytest-96/basic/_build/man/1/python.1')> = ((path('/tmp/pytest-of-root/pytest-96/basic/_build/man') / '1') / 'python.1').exists[0m
+[1m[31mE        +      where path('/tmp/pytest-of-root/pytest-96/basic/_build/man') = <SphinxTestApp buildername='man'>.outdir[0m
+
+[1m[31mtests/test_build_manpage.py[0m:37: AssertionError
+--------------------------- Captured stdout teardown ---------------------------
+# testroot: root
+# builder: man
+# srcdir: /tmp/pytest-of-root/pytest-96/basic
+# outdir: /tmp/pytest-of-root/pytest-96/basic/_build/man
+# status: 
+[01mRunning Sphinx v3.3.0+/88b81a06e[39;49;00m
+[01mbuilding [mo]: [39;49;00mtargets for 0 po files that are out of date
+[01mbuilding [man]: [39;49;00mall manpages
+[01mupdating environment: [39;49;00m[new config] 1 added, 0 changed, 0 removed
+[01mreading sources... [39;49;00m[100%] [35mindex[39;49;00m                                                
+[01mlooking for now-outdated files... [39;49;00mnone found
+[01mpickling environment... [39;49;00mdone
+[01mchecking consistency... [39;49;00mdone
+[01mwriting... [39;49;00m[32mpython.1[39;49;00m { } done
+[01mbuild succeeded, 1 warning.[39;49;00m
+
+The manual pages are in ../../../../tmp/pytest-of-root/pytest-96/basic/_build/man.
+
+# warning: 
+[91mWARNING: while setting up extension sphinx.addnodes: node class 'meta' is already registered, its visitors will be overridden[39;49;00m
+
+[33m=============================== warnings summary ===============================[0m
+sphinx/util/docutils.py:45
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/util/docutils.py:45: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    __version_info__ = tuple(LooseVersion(docutils.__version__).version)
+
+sphinx/registry.py:22
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/registry.py:22: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+    from pkg_resources import iter_entry_points
+
+.tox/py39/lib/python3.9/site-packages/pkg_resources/__init__.py:2832
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/.tox/py39/lib/python3.9/site-packages/pkg_resources/__init__.py:2832: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('sphinxcontrib')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(pkg)
+
+sphinx/directives/patches.py:15
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/directives/patches.py:15: DeprecationWarning: The `docutils.parsers.rst.directive.html` module will be removed in Docutils 2.0. Since Docutils 0.18, the "Meta" node is defined in `docutils.parsers.rst.directives.misc`.
+    from docutils.parsers.rst.directives import images, html, tables
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/__init__.py:211: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse():  # type: Node
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/i18n.py:95: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(addnodes.translatable):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/__init__.py:111: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for ref in self.document.traverse(nodes.substitution_reference):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/__init__.py:132: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(nodes.target):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/__init__.py:151: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(nodes.block_quote):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/__init__.py:176: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(nodes.Element):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/__init__.py:223: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(addnodes.index):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/references.py:30: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(nodes.substitution_definition):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/__init__.py:190: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(nodes.section):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/__init__.py:280: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(nodes.doctest_block):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/domains/citation.py:117: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(nodes.citation):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/domains/citation.py:136: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(nodes.citation_reference):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/builders/latex/transforms.py:37: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(matcher):  # type: nodes.Element
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/__init__.py:292: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(matcher):  # type: Element
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/util/compat.py:44: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(addnodes.index):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/domains/index.py:52: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in document.traverse(addnodes.index):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/domains/math.py:85: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    self.data['has_equations'][docname] = any(document.traverse(math_node))
+
+tests/test_build_manpage.py: 15 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/ext/todo.py:98: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for todo in document.traverse(todo_node):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/environment/collectors/asset.py:47: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in doctree.traverse(nodes.image):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/environment/collectors/asset.py:128: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in doctree.traverse(addnodes.download_reference):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/environment/collectors/title.py:46: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in doctree.traverse(nodes.section):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/__init__.py:302: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(nodes.system_message):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/__init__.py:391: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(addnodes.manpage):
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/i18n.py:488: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for inline in self.document.traverse(matcher):  # type: nodes.inline
+
+tests/test_build_manpage.py: 26 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/util/nodes.py:350: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for img in node.traverse(nodes.image):
+
+tests/test_build_manpage.py: 26 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/util/nodes.py:352: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for raw in node.traverse(nodes.raw):
+
+tests/test_build_manpage.py: 15 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/domains/std.py:753: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    toctree = next(iter(node.traverse(addnodes.toctree)), None)
+
+tests/test_build_manpage.py: 10 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/util/nodes.py:154: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for classifier in reversed(list(node.parent.traverse(nodes.classifier))):
+
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_all
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/directives/other.py:178: DeprecationWarning: nodes.Text: initialization argument "rawsource" is ignored and will be removed in Docutils 2.0.
+    emph += nodes.Text(text, text)
+
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_all
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/roles.py:488: DeprecationWarning: nodes.Text: initialization argument "rawsource" is ignored and will be removed in Docutils 2.0.
+    result.append(nodes.Text(stack[0], stack[0]))
+
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_all
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/roles.py:505: DeprecationWarning: nodes.Text: initialization argument "rawsource" is ignored and will be removed in Docutils 2.0.
+    result.append(nodes.Text(text, text))
+
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_all
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/domains/index.py:114: DeprecationWarning: nodes.Text: initialization argument "rawsource" is ignored and will be removed in Docutils 2.0.
+    text = nodes.Text(title, title)
+
+tests/test_build_manpage.py: 10 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/domains/std.py:461: DeprecationWarning: nodes.Text: initialization argument "rawsource" is ignored and will be removed in Docutils 2.0.
+    retnodes.append(nodes.Text(txt, txt))
+
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_all
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/domains/std.py:468: DeprecationWarning: nodes.Text: initialization argument "rawsource" is ignored and will be removed in Docutils 2.0.
+    retnodes.append(nodes.Text(text[pos:], text[pos:]))
+
+tests/test_build_manpage.py::test_all
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/domains/python.py:281: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in result.traverse(nodes.Text):
+
+tests/test_build_manpage.py::test_all
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/environment/collectors/toctree.py:205: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for toctreenode in doctree.traverse(addnodes.toctree):
+
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_man_make_section_directory
+tests/test_build_manpage.py::test_captioned_code_block
+tests/test_build_manpage.py::test_rubric
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/builders/manpage.py:62: DeprecationWarning: The frontend.OptionParser class will be replaced by a subclass of argparse.ArgumentParser in Docutils 0.21 or later.
+    docsettings = OptionParser(
+
+tests/test_build_manpage.py: 200 warnings
+  /swe_util/miniconda3/envs/sphinx-doc__sphinx__3.3/lib/python3.9/optparse.py:1000: DeprecationWarning: The frontend.Option class will be removed in Docutils 0.21 or later.
+    option = self.option_class(*args, **kwargs)
+
+tests/test_build_manpage.py: 28 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/util/nodes.py:416: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for toctreenode in tree.traverse(addnodes.toctree):
+
+tests/test_build_manpage.py: 24 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/util/nodes.py:434: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for sectionnode in sof.traverse(nodes.section):
+
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_man_make_section_directory
+tests/test_build_manpage.py::test_captioned_code_block
+tests/test_build_manpage.py::test_rubric
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/domains/c.py:3471: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(AliasNode):
+
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_man_make_section_directory
+tests/test_build_manpage.py::test_captioned_code_block
+tests/test_build_manpage.py::test_rubric
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/domains/cpp.py:7042: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(AliasNode):
+
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_man_make_section_directory
+tests/test_build_manpage.py::test_captioned_code_block
+tests/test_build_manpage.py::test_rubric
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/post_transforms/__init__.py:71: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(addnodes.pending_xref):
+
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_man_make_section_directory
+tests/test_build_manpage.py::test_captioned_code_block
+tests/test_build_manpage.py::test_rubric
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/util/nodes.py:598: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in document.traverse(addnodes.only):
+
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_man_make_section_directory
+tests/test_build_manpage.py::test_man_make_section_directory
+tests/test_build_manpage.py::test_captioned_code_block
+tests/test_build_manpage.py::test_captioned_code_block
+tests/test_build_manpage.py::test_rubric
+tests/test_build_manpage.py::test_rubric
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/post_transforms/images.py:35: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(nodes.image):
+
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_man_make_section_directory
+tests/test_build_manpage.py::test_captioned_code_block
+tests/test_build_manpage.py::test_rubric
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/post_transforms/__init__.py:215: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(addnodes.desc_sig_element):
+
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_man_make_section_directory
+tests/test_build_manpage.py::test_captioned_code_block
+tests/test_build_manpage.py::test_rubric
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/builders/latex/transforms.py:595: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(nodes.title):
+
+tests/test_build_manpage.py: 86 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/builders/latex/transforms.py:597: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for i, index in enumerate(node.traverse(addnodes.index)):
+
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_man_make_section_directory
+tests/test_build_manpage.py::test_captioned_code_block
+tests/test_build_manpage.py::test_rubric
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/post_transforms/code.py:44: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(addnodes.highlightlang):
+
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_man_make_section_directory
+tests/test_build_manpage.py::test_captioned_code_block
+tests/test_build_manpage.py::test_rubric
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/post_transforms/code.py:96: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for lbnode in self.document.traverse(nodes.literal_block):  # type: nodes.literal_block
+
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_man_make_section_directory
+tests/test_build_manpage.py::test_captioned_code_block
+tests/test_build_manpage.py::test_rubric
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/transforms/post_transforms/code.py:100: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for dbnode in self.document.traverse(nodes.doctest_block):  # type: nodes.doctest_block
+
+tests/test_build_manpage.py::test_all
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/ext/todo.py:163: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in doctree.traverse(todolist):
+
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_man_make_section_directory
+tests/test_build_manpage.py::test_captioned_code_block
+tests/test_build_manpage.py::test_rubric
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/builders/manpage.py:98: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for pendingnode in largetree.traverse(addnodes.pending_xref):
+
+tests/test_build_manpage.py::test_all
+tests/test_build_manpage.py::test_man_make_section_directory
+tests/test_build_manpage.py::test_captioned_code_block
+tests/test_build_manpage.py::test_rubric
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/writers/manpage.py:65: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    for node in self.document.traverse(matcher):  # type: TextElement
+
+tests/test_build_manpage.py: 98 warnings
+  /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3/sphinx/writers/manpage.py:221: PendingDeprecationWarning: nodes.Node.traverse() is obsoleted by Node.findall().
+    if node.traverse(nodes.strong):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+==================================== PASSES ====================================
+--------------------------- Captured stdout teardown ---------------------------
+# testroot: root
+# builder: man
+# srcdir: /tmp/pytest-of-root/pytest-96/root
+# outdir: /tmp/pytest-of-root/pytest-96/root/_build/man
+# status: 
+[01mRunning Sphinx v3.3.0+/88b81a06e[39;49;00m
+[01mbuilding [man]: [39;49;00mall source files
+[01mupdating environment: [39;49;00m[new config] 15 added, 0 changed, 0 removed
+[01mreading sources... [39;49;00m[  6%] [35mautodoc[39;49;00m                                              
+[01mreading sources... [39;49;00m[ 13%] [35mbom[39;49;00m                                                  
+[01mreading sources... [39;49;00m[ 20%] [35mextapi[39;49;00m                                               
+[01mreading sources... [39;49;00m[ 26%] [35mextensions[39;49;00m                                           
+[01mreading sources... [39;49;00m[ 33%] [35mfootnote[39;49;00m                                             
+[01mreading sources... [39;49;00m[ 40%] [35mimages[39;49;00m                                               
+[01mreading sources... [39;49;00m[ 46%] [35mincludes[39;49;00m                                             
+[01mreading sources... [39;49;00m[ 53%] [35mindex[39;49;00m                                                
+[01mreading sources... [39;49;00m[ 60%] [35mlists[39;49;00m                                                
+[01mreading sources... [39;49;00m[ 66%] [35mmarkup[39;49;00m                                               
+[01mreading sources... [39;49;00m[ 73%] [35mmath[39;49;00m                                                 
+[01mreading sources... [39;49;00m[ 80%] [35mobjects[39;49;00m                                              
+[01mreading sources... [39;49;00m[ 86%] [35motherext[39;49;00m                                             
+[01mreading sources... [39;49;00m[ 93%] [35msubdir/images[39;49;00m                                        
+[01mreading sources... [39;49;00m[100%] [35msubdir/includes[39;49;00m                                      
+[01mlooking for now-outdated files... [39;49;00mnone found
+[01mpickling environment... [39;49;00mdone
+[01mchecking consistency... [39;49;00mdone
+[01mwriting... [39;49;00m[32msphinxtests.1[39;49;00m { [32mextapi[39;49;00m [32mimages[39;49;00m [32msubdir/images[39;49;00m [32msubdir/includes[39;49;00m [32mincludes[39;49;00m [32mmarkup[39;49;00m [32mobjects[39;49;00m [32mbom[39;49;00m [32mmath[39;49;00m [32mautodoc[39;49;00m [32mextensions[39;49;00m [32mfootnote[39;49;00m [32mlists[39;49;00m [32motherext[39;49;00m } done
+
+# warning: 
+[91mWARNING: while setting up extension sphinx.addnodes: node class 'meta' is already registered, its visitors will be overridden[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/autodoc_target.py:docstring of autodoc_target.Class:1: WARNING: duplicate object description of autodoc_target.Class, other instance in autodoc, use :noindex: for one of them[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/autodoc_target.py:docstring of autodoc_target.Class.attr:1: WARNING: duplicate object description of autodoc_target.Class.attr, other instance in autodoc, use :noindex: for one of them[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/autodoc_target.py:docstring of autodoc_target.Class.descr:1: WARNING: duplicate object description of autodoc_target.Class.descr, other instance in autodoc, use :noindex: for one of them[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/autodoc_target.py:docstring of autodoc_target.Class.docattr:1: WARNING: duplicate object description of autodoc_target.Class.docattr, other instance in autodoc, use :noindex: for one of them[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/autodoc_target.py:docstring of autodoc_target.Class.excludemeth:1: WARNING: duplicate object description of autodoc_target.Class.excludemeth, other instance in autodoc, use :noindex: for one of them[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/autodoc_target.py:docstring of autodoc_target.Class.inst_attr_comment:1: WARNING: duplicate object description of autodoc_target.Class.inst_attr_comment, other instance in autodoc, use :noindex: for one of them[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/autodoc_target.py:docstring of autodoc_target.Class.inst_attr_inline:1: WARNING: duplicate object description of autodoc_target.Class.inst_attr_inline, other instance in autodoc, use :noindex: for one of them[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/autodoc_target.py:docstring of autodoc_target.Class.inst_attr_string:1: WARNING: duplicate object description of autodoc_target.Class.inst_attr_string, other instance in autodoc, use :noindex: for one of them[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/autodoc_target.py:docstring of autodoc_target.Class.mdocattr:1: WARNING: duplicate object description of autodoc_target.Class.mdocattr, other instance in autodoc, use :noindex: for one of them[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/autodoc_target.py:docstring of autodoc_target.Class.meth:1: WARNING: duplicate object description of autodoc_target.Class.meth, other instance in autodoc, use :noindex: for one of them[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/autodoc_target.py:docstring of autodoc_target.Class.moore:1: WARNING: duplicate object description of autodoc_target.Class.moore, other instance in autodoc, use :noindex: for one of them[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/autodoc_target.py:docstring of autodoc_target.Class.prop:1: WARNING: duplicate object description of autodoc_target.Class.prop, other instance in autodoc, use :noindex: for one of them[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/autodoc_target.py:docstring of autodoc_target.Class.skipmeth:1: WARNING: duplicate object description of autodoc_target.Class.skipmeth, other instance in autodoc, use :noindex: for one of them[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/autodoc_target.py:docstring of autodoc_target.Class.udocattr:1: WARNING: duplicate object description of autodoc_target.Class.udocattr, other instance in autodoc, use :noindex: for one of them[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/autodoc_target.py:docstring of autodoc_target.Class.docattr:1: WARNING: duplicate object description of autodoc_target.Class.docattr, other instance in autodoc, use :noindex: for one of them[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/autodoc_target.py:docstring of autodoc_target.InstAttCls:1: WARNING: duplicate object description of autodoc_target.InstAttCls, other instance in autodoc, use :noindex: for one of them[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/autodoc_target.py:docstring of autodoc_target.InstAttCls.ca1:1: WARNING: duplicate object description of autodoc_target.InstAttCls.ca1, other instance in autodoc, use :noindex: for one of them[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/autodoc_target.py:docstring of autodoc_target.InstAttCls.ia1:1: WARNING: duplicate object description of autodoc_target.InstAttCls.ia1, other instance in autodoc, use :noindex: for one of them[39;49;00m
+[91m/tmp/pytest-of-root/pytest-96/root/objects.txt:143: WARNING: Unparseable C cross-reference: 'SphinxType *'
+Invalid C declaration: Expected end of definition. [error at 11]
+  SphinxType *
+  -----------^[39;49;00m
+
+--------------------------- Captured stdout teardown ---------------------------
+# testroot: root
+# builder: man
+# srcdir: /tmp/pytest-of-root/pytest-96/directive-code
+# outdir: /tmp/pytest-of-root/pytest-96/directive-code/_build/man
+# status: 
+[01mRunning Sphinx v3.3.0+/88b81a06e[39;49;00m
+[01mbuilding [man]: [39;49;00mall source files
+[01mupdating environment: [39;49;00m[new config] 11 added, 0 changed, 0 removed
+[01mreading sources... [39;49;00m[  9%] [35mcaption[39;49;00m                                              
+[01mreading sources... [39;49;00m[ 18%] [35mclasses[39;49;00m                                              
+[01mreading sources... [39;49;00m[ 27%] [35memphasize[39;49;00m                                            
+[01mreading sources... [39;49;00m[ 36%] [35mforce[39;49;00m                                                
+[01mreading sources... [39;49;00m[ 45%] [35mhighlight[39;49;00m                                            
+[01mreading sources... [39;49;00m[ 54%] [35mindex[39;49;00m                                                
+[01mreading sources... [39;49;00m[ 63%] [35mlinenos[39;49;00m                                              
+[01mreading sources... [39;49;00m[ 72%] [35mlinenothreshold[39;49;00m                                      
+[01mreading sources... [39;49;00m[ 81%] [35mnamedblocks[39;49;00m                                          
+[01mreading sources... [39;49;00m[ 90%] [35mpy-decorators[39;49;00m                                        
+[01mreading sources... [39;49;00m[100%] [35mpython[39;49;00m                                               
+[01mlooking for now-outdated files... [39;49;00mnone found
+[01mpickling environment... [39;49;00mdone
+[01mchecking consistency... [39;49;00mdone
+[01mwriting... [39;49;00m[32mpython.1[39;49;00m { [32mcaption[39;49;00m [32mclasses[39;49;00m [32memphasize[39;49;00m [32mforce[39;49;00m [32mhighlight[39;49;00m [32mlinenos[39;49;00m [32mlinenothreshold[39;49;00m [32mnamedblocks[39;49;00m [32mpy-decorators[39;49;00m [32mpython[39;49;00m } done
+
+# warning: 
+[91mWARNING: while setting up extension sphinx.addnodes: node class 'meta' is already registered, its visitors will be overridden[39;49;00m
+
+--------------------------- Captured stdout teardown ---------------------------
+# testroot: root
+# builder: man
+# srcdir: /tmp/pytest-of-root/pytest-96/markup-rubric
+# outdir: /tmp/pytest-of-root/pytest-96/markup-rubric/_build/man
+# status: 
+[01mRunning Sphinx v3.3.0+/88b81a06e[39;49;00m
+[01mbuilding [mo]: [39;49;00mtargets for 0 po files that are out of date
+[01mbuilding [man]: [39;49;00mall manpages
+[01mupdating environment: [39;49;00m[new config] 1 added, 0 changed, 0 removed
+[01mreading sources... [39;49;00m[100%] [35mindex[39;49;00m                                                
+[01mlooking for now-outdated files... [39;49;00mnone found
+[01mpickling environment... [39;49;00mdone
+[01mchecking consistency... [39;49;00mdone
+[01mwriting... [39;49;00m[32mpython.1[39;49;00m { } done
+[01mbuild succeeded, 1 warning.[39;49;00m
+
+The manual pages are in ../../../../tmp/pytest-of-root/pytest-96/markup-rubric/_build/man.
+
+# warning: 
+[91mWARNING: while setting up extension sphinx.addnodes: node class 'meta' is already registered, its visitors will be overridden[39;49;00m
+
+============================= slowest 25 durations =============================
+0.50s call     tests/test_build_manpage.py::test_all
+0.36s setup    tests/test_build_manpage.py::test_all
+0.07s call     tests/test_build_manpage.py::test_captioned_code_block
+0.05s setup    tests/test_build_manpage.py::test_rubric
+0.01s call     tests/test_build_manpage.py::test_man_make_section_directory
+0.01s setup    tests/test_build_manpage.py::test_captioned_code_block
+0.01s setup    tests/test_build_manpage.py::test_man_make_section_directory
+0.01s call     tests/test_build_manpage.py::test_rubric
+
+(7 durations < 0.005s hidden.  Use -vv to show these durations.)
+[36m[1m=========================== short test summary info ============================[0m
+[32mPASSED[0m tests/test_build_manpage.py::[1mtest_all[0m
+[32mPASSED[0m tests/test_build_manpage.py::[1mtest_captioned_code_block[0m
+[32mPASSED[0m tests/test_build_manpage.py::[1mtest_default_man_pages[0m
+[32mPASSED[0m tests/test_build_manpage.py::[1mtest_rubric[0m
+[31mFAILED[0m tests/test_build_manpage.py::[1mtest_man_make_section_directory[0m - AssertionError: assert False
+[31m================== [31m[1m1 failed[0m, [32m4 passed[0m, [33m1257 warnings[0m[31m in 1.13s[0m[31m ==================[0m
+py39: exit 1 (1.90 seconds) /swe_util/eval_data/testbeds/sphinx-doc__sphinx__3.3> pytest -rA --durations 25 tests/test_build_manpage.py pid=138847
+  py39: FAIL code 1 (12.34=setup[10.44]+cmd[1.90] seconds)
+  evaluation failed :( (12.60 seconds)
+
+>>>>> Some Tests Failed

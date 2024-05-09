@@ -1,0 +1,219 @@
+Task Metadata:
+	- Instance ID: sympy__sympy-16281
+	- Testbed: /swe_util/eval_data/testbeds/sympy__sympy__1.4
+	- Virtual Env.: sympy__sympy__1.4
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.4 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/sympy__sympy__1.4
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: mpmath>=0.19 in /swe_util/miniconda3/envs/sympy__sympy__1.4/lib/python3.9/site-packages (from sympy==1.4.dev0) (1.3.0)
+Installing collected packages: sympy
+  Running setup.py develop for sympy
+Successfully installed sympy-1.4.dev0
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.4 && echo 'activate successful' && bin/test -C --verbose sympy/printing/pretty/tests/test_pretty.py;
+Output:
+activate successful
+============================= test process starts ==============================
+executable:         /swe_util/miniconda3/envs/sympy__sympy__1.4/bin/python  (3.9.19-final-0) [CPython]
+architecture:       64-bit
+cache:              no
+ground types:       python 
+numpy:              None
+random seed:        26211298
+hash randomization: on (PYTHONHASHSEED=1274050868)
+
+sympy/printing/pretty/tests/test_pretty.py[125] 
+test_pretty_ascii_str ok
+test_pretty_unicode_str ok
+test_upretty_greek ok
+test_upretty_multiindex ok
+test_upretty_sub_super ok
+test_upretty_subs_missing_in_24 ok
+test_missing_in_2X_issue_9047 ok
+test_upretty_modifiers ok
+test_pretty_Cycle ok
+test_pretty_basic ok
+test_negative_fractions ok
+test_issue_5524 ok
+test_pretty_ordering ok
+test_EulerGamma ok
+test_GoldenRatio ok
+test_pretty_relational ok
+test_Assignment ok
+test_AugmentedAssignment ok
+test_issue_7117 ok
+test_pretty_rational ok
+test_pretty_functions ok
+test_pretty_sqrt ok
+test_pretty_sqrt_char_knob ok
+test_pretty_sqrt_longsymbol_no_sqrt_char ok
+test_pretty_KroneckerDelta ok
+test_pretty_product F
+test_pretty_lambda ok
+test_pretty_order ok
+test_pretty_derivatives ok
+test_pretty_integrals ok
+test_pretty_matrix ok
+test_pretty_ndim_arrays ok
+test_tensor_TensorProduct ok
+test_diffgeom_print_WedgeProduct ok
+test_Adjoint ok
+test_pretty_Trace_issue_9044 ok
+test_MatrixExpressions ok
+test_pretty_dotproduct ok
+test_pretty_piecewise ok
+test_pretty_ITE ok
+test_pretty_seq ok
+test_any_object_in_sequence ok
+test_print_builtin_set ok
+test_pretty_sets ok
+test_pretty_SetExpr ok
+test_pretty_ImageSet ok
+test_pretty_ConditionSet ok
+test_pretty_ComplexRegion ok
+test_pretty_Union_issue_10414 ok
+test_pretty_Intersection_issue_10414 ok
+test_ProductSet_paranthesis ok
+test_ProductSet_prod_char_issue_10413 ok
+test_pretty_sequences ok
+test_pretty_FourierSeries ok
+test_pretty_FormalPowerSeries ok
+test_pretty_limits ok
+test_pretty_ComplexRootOf ok
+test_pretty_RootSum ok
+test_GroebnerBasis ok
+test_pretty_Boolean ok
+test_pretty_Domain ok
+test_pretty_prec ok
+test_pprint ok
+test_pretty_class ok
+test_pretty_no_wrap_line ok
+test_settings ok
+test_pretty_sum ok
+test_units ok
+test_pretty_Subs ok
+test_gammas ok
+test_beta ok
+test_function_subclass_different_name ok
+test_SingularityFunction ok
+test_deltas ok
+test_hyper ok
+test_meijerg ok
+test_noncommutative ok
+test_pretty_special_functions ok
+test_pretty_geometry ok
+test_expint ok
+test_elliptic_functions ok
+test_RandomDomain ok
+test_PrettyPoly ok
+test_issue_6285 ok
+test_issue_6359 F
+test_issue_6739 ok
+test_complicated_symbol_unchanged ok
+test_categories ok
+test_PrettyModules ok
+test_QuotientRing ok
+test_Homomorphism ok
+test_Tr ok
+test_pretty_Add ok
+test_issue_7179 ok
+test_issue_7180 ok
+test_pretty_Complement ok
+test_pretty_SymmetricDifference ok
+test_pretty_Contains ok
+test_issue_8292 E
+test_issue_4335 ok
+test_issue_8344 E
+test_issue_6324 ok
+test_issue_7927 ok
+test_issue_6134 ok
+test_issue_9877 ok
+test_issue_13651 ok
+test_pretty_primenu ok
+test_pretty_primeomega ok
+test_pretty_Mod ok
+test_issue_11801 ok
+test_pretty_UnevaluatedExpr ok
+test_issue_10472 ok
+test_MatrixElement_printing ok
+test_issue_12675 ok
+test_MatrixSymbol_printing ok
+test_degree_printing ok
+test_vector_expr_pretty_printing ok
+test_pretty_print_tensor_expr ok
+test_pretty_print_tensor_partial_deriv ok
+test_issue_15560 ok
+test_print_lerchphi ok
+test_issue_15583 ok
+test_matrixSymbolBold ok
+test_center_accent ok
+test_imaginary_unit ok                                                    [FAIL]
+
+
+________________________________________________________________________________
+__________ sympy/printing/pretty/tests/test_pretty.py:test_issue_8292 __________
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.4/sympy/printing/pretty/tests/test_pretty.py", line 5859, in test_issue_8292
+    e = sympify('((x+x**4)/(x-1))-(2*(x-1)**4/(x-1)**4)', evaluate=False)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.4/sympy/core/sympify.py", line 384, in sympify
+    expr = parse_expr(a, local_dict=locals, transformations=transformations, evaluate=evaluate)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.4/sympy/parsing/sympy_parser.py", line 964, in parse_expr
+    code = compile(evaluateFalse(code), '<string>', 'eval')
+ValueError: Name node can't be used with 'False' constant
+________________________________________________________________________________
+__________ sympy/printing/pretty/tests/test_pretty.py:test_issue_8344 __________
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.4/sympy/printing/pretty/tests/test_pretty.py", line 5901, in test_issue_8344
+    e = sympify('2*x*y**2/1**2 + 1', evaluate=False)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.4/sympy/core/sympify.py", line 384, in sympify
+    expr = parse_expr(a, local_dict=locals, transformations=transformations, evaluate=evaluate)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.4/sympy/parsing/sympy_parser.py", line 964, in parse_expr
+    code = compile(evaluateFalse(code), '<string>', 'eval')
+ValueError: Name node can't be used with 'False' constant
+
+________________________________________________________________________________
+________ sympy/printing/pretty/tests/test_pretty.py:test_pretty_product ________
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.4/sympy/printing/pretty/tests/test_pretty.py", line 2102, in test_pretty_product
+    assert pretty(expr) == ascii_str
+AssertionError
+________________________________________________________________________________
+__________ sympy/printing/pretty/tests/test_pretty.py:test_issue_6359 __________
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.4/sympy/printing/pretty/tests/test_pretty.py", line 5509, in test_issue_6359
+    assert pretty(Product(x**2, (x, 1, 2))**2) == \
+AssertionError
+
+===== tests finished: 121 passed, 2 failed, 2 exceptions, in 5.51 seconds ======
+DO *NOT* COMMIT!
+/swe_util/eval_data/testbeds/sympy__sympy__1.4/sympy/solvers/diophantine.py:3186: SyntaxWarning: "is" with a literal. Did you mean "=="?
+  if feasible is 1:  # it's prime and k == 2
+/swe_util/eval_data/testbeds/sympy__sympy__1.4/sympy/plotting/plot.py:520: SyntaxWarning: "is" with a literal. Did you mean "=="?
+  if self.xscale is 'log':
+/swe_util/eval_data/testbeds/sympy__sympy__1.4/sympy/plotting/plot.py:540: SyntaxWarning: "is" with a literal. Did you mean "=="?
+  if self.xscale is 'log':
+/swe_util/eval_data/testbeds/sympy__sympy__1.4/sympy/plotting/plot.py:553: SyntaxWarning: "is" with a literal. Did you mean "=="?
+  if self.xscale is 'log':
+/swe_util/eval_data/testbeds/sympy__sympy__1.4/sympy/plotting/plot.py:560: SyntaxWarning: "is" with a literal. Did you mean "=="?
+  if self.xscale is 'log':
+/swe_util/eval_data/testbeds/sympy__sympy__1.4/sympy/physics/vector/printing.py:155: SyntaxWarning: "is not" with a literal. Did you mean "!="?
+  if len(base_split) is not 1:
+/swe_util/eval_data/testbeds/sympy__sympy__1.4/sympy/vector/coordsysrect.py:170: SyntaxWarning: "is" with a literal. Did you mean "=="?
+  if transformation.name is 'spherical':
+/swe_util/eval_data/testbeds/sympy__sympy__1.4/sympy/vector/coordsysrect.py:172: SyntaxWarning: "is" with a literal. Did you mean "=="?
+  elif transformation.name is 'cylindrical':
+/swe_util/eval_data/testbeds/sympy__sympy__1.4/sympy/polys/agca/modules.py:360: SyntaxWarning: "is" with a literal. Did you mean "=="?
+  elif elem is 0:
+
+>>>>> Some Tests Failed

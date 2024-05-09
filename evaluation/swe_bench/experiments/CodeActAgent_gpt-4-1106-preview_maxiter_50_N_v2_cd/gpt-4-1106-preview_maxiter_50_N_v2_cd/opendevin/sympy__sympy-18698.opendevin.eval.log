@@ -1,0 +1,209 @@
+Task Metadata:
+	- Instance ID: sympy__sympy-18698
+	- Testbed: /swe_util/eval_data/testbeds/sympy__sympy__1.6
+	- Virtual Env.: sympy__sympy__1.6
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+patch unexpectedly ends in middle of line
+patch: **** Only garbage was found in the patch input.
+>>>>> Applied Patch (pred_minimal_try patch)
+>>>>> Applied Patch (pred_minimal_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.6 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/sympy__sympy__1.6
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: mpmath>=0.19 in /swe_util/miniconda3/envs/sympy__sympy__1.6/lib/python3.9/site-packages (from sympy==1.6.dev0) (1.3.0)
+Installing collected packages: sympy
+  Running setup.py develop for sympy
+Successfully installed sympy-1.6.dev0
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.6 && echo 'activate successful' && bin/test -C --verbose sympy/polys/tests/test_polytools.py;
+Output:
+activate successful
+============================= test process starts ==============================
+executable:         /swe_util/miniconda3/envs/sympy__sympy__1.6/bin/python  (3.9.19-final-0) [CPython]
+architecture:       64-bit
+cache:              no
+ground types:       python 
+numpy:              None
+random seed:        21832515
+hash randomization: on (PYTHONHASHSEED=2056953348)
+
+sympy/polys/tests/test_polytools.py[150] 
+test_Poly_mixed_operations ok
+test_Poly_from_dict ok
+test_Poly_from_list ok
+test_Poly_from_poly ok
+test_Poly_from_expr ok
+test_Poly__new__ ok
+test_Poly__args ok
+test_Poly__gens ok
+test_Poly_zero ok
+test_Poly_one ok
+test_Poly__unify ok
+test_Poly_free_symbols ok
+test_PurePoly_free_symbols ok
+test_Poly__eq__ ok
+test_PurePoly__eq__ ok
+test_PurePoly_Poly ok
+test_Poly_get_domain ok
+test_Poly_set_domain ok
+test_Poly_get_modulus ok
+test_Poly_set_modulus ok
+test_Poly_add_ground ok
+test_Poly_sub_ground ok
+test_Poly_mul_ground ok
+test_Poly_quo_ground ok
+test_Poly_exquo_ground ok
+test_Poly_abs ok
+test_Poly_neg ok
+test_Poly_add ok
+test_Poly_sub ok
+test_Poly_mul ok
+test_issue_13079 ok
+test_Poly_sqr ok
+test_Poly_pow ok
+test_Poly_divmod ok
+test_Poly_eq_ne ok
+test_Poly_nonzero ok
+test_Poly_properties ok
+test_Poly_is_irreducible ok
+test_Poly_subs ok
+test_Poly_replace ok
+test_Poly_reorder ok
+test_Poly_ltrim ok
+test_Poly_has_only_gens ok
+test_Poly_to_ring ok
+test_Poly_to_field ok
+test_Poly_to_exact ok
+test_Poly_retract ok
+test_Poly_slice ok
+test_Poly_coeffs ok
+test_Poly_monoms ok
+test_Poly_terms ok
+test_Poly_all_coeffs ok
+test_Poly_all_monoms ok
+test_Poly_all_terms ok
+test_Poly_termwise ok
+test_Poly_length ok
+test_Poly_as_dict ok
+test_Poly_as_expr ok
+test_Poly_lift ok
+test_Poly_deflate ok
+test_Poly_inject ok
+test_Poly_eject ok
+test_Poly_exclude ok
+test_Poly__gen_to_level ok
+test_Poly_degree ok
+test_Poly_degree_list ok
+test_Poly_total_degree ok
+test_Poly_homogenize ok
+test_Poly_homogeneous_order ok
+test_Poly_LC ok
+test_Poly_TC ok
+test_Poly_EC ok
+test_Poly_coeff ok
+test_Poly_nth ok
+test_Poly_LM ok
+test_Poly_LM_custom_order ok
+test_Poly_EM ok
+test_Poly_LT ok
+test_Poly_ET ok
+test_Poly_max_norm ok
+test_Poly_l1_norm ok
+test_Poly_clear_denoms ok
+test_Poly_rat_clear_denoms ok
+test_Poly_integrate ok
+test_Poly_diff ok
+test_issue_9585 ok
+test_Poly_eval ok
+test_Poly___call__ ok
+test_parallel_poly_from_expr ok
+test_pdiv ok
+test_div ok
+test_issue_7864 ok
+test_gcdex ok
+test_revert ok
+test_subresultants ok
+test_resultant ok
+test_discriminant ok
+test_dispersion ok
+test_gcd_list ok
+test_lcm_list ok
+test_gcd ok
+test_gcd_numbers_vs_polys ok
+test_terms_gcd ok
+test_trunc ok
+test_monic ok
+test_content ok
+test_primitive ok
+test_compose ok
+test_shift ok
+test_transform ok
+test_sturm ok
+test_gff ok
+test_norm ok
+test_sqf_norm ok
+test_sqf ok
+test_factor ok
+test_factor_large ok
+test_factor_noeval ok
+test_intervals ok
+test_refine_root ok
+test_count_roots ok
+test_Poly_root ok
+test_real_roots ok
+test_all_roots ok
+test_nroots ok
+test_ground_roots ok
+test_nth_power_roots_poly ok
+test_torational_factor_list ok
+test_cancel ok
+test_reduced ok
+test_groebner ok
+test_fglm ok
+test_is_zero_dimensional ok
+test_GroebnerBasis ok
+test_poly ok
+test_keep_coeff ok
+test_poly_matching_consistency ok
+test_issue_5786 f
+test_noncommutative ok
+test_to_rational_coeffs ok
+test_factor_terms F
+test_as_list ok
+test_issue_11198 ok
+test_Poly_precision ok
+test_issue_12400 ok
+test_issue_14364 ok
+test_issue_15669 ok
+test_issue_17988 ok
+test_issue_18205 ok
+test_issue_8695 F                                                         [FAIL]
+
+
+________________________________________________________________________________
+____________ sympy/polys/tests/test_polytools.py:test_factor_terms _____________
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.6/sympy/polys/tests/test_polytools.py", line 3276, in test_factor_terms
+    assert sqf_list(x*(x + y)) == (1, [(x**2 + x*y, 1)])
+AssertionError
+________________________________________________________________________________
+_____________ sympy/polys/tests/test_polytools.py:test_issue_8695 ______________
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.6/sympy/polys/tests/test_polytools.py", line 3340, in test_issue_8695
+    assert sqf_list(p) == result
+AssertionError
+
+== tests finished: 147 passed, 2 failed, 1 expected to fail, in 12.88 seconds ==
+DO *NOT* COMMIT!
+
+>>>>> Some Tests Failed

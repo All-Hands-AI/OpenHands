@@ -1,0 +1,220 @@
+Task Metadata:
+	- Instance ID: django__django-16527
+	- Testbed: /swe_util/eval_data/testbeds/django__django__5.0
+	- Virtual Env.: django__django__5.0
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__5.0 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/django__django__5.0
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Installing backend dependencies: started
+  Installing backend dependencies: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: asgiref>=3.6.0 in /swe_util/miniconda3/envs/django__django__5.0/lib/python3.11/site-packages (from Django==5.0.dev20230206094108) (3.8.1)
+Requirement already satisfied: sqlparse>=0.2.2 in /swe_util/miniconda3/envs/django__django__5.0/lib/python3.11/site-packages (from Django==5.0.dev20230206094108) (0.5.0)
+Building wheels for collected packages: Django
+  Building editable for Django (pyproject.toml): started
+  Building editable for Django (pyproject.toml): finished with status 'done'
+  Created wheel for Django: filename=Django-5.0.dev20230206094108-0.editable-py3-none-any.whl size=27207 sha256=1e6b8882119ee14a594a9445068772fe8f15a9574d2724c9f649639c79438dfe
+  Stored in directory: /tmp/pip-ephem-wheel-cache-khpshjvc/wheels/e9/16/83/a3929efc89a9ccd6025da70987df9ad0b64ca5930cea9ad1de
+Successfully built Django
+Installing collected packages: Django
+  Attempting uninstall: Django
+    Found existing installation: Django 5.0.dev20230224080859
+    Uninstalling Django-5.0.dev20230224080859:
+      Successfully uninstalled Django-5.0.dev20230224080859
+Successfully installed Django-5.0.dev20230206094108
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__5.0 && echo 'activate successful' && ./tests/runtests.py --verbosity 2 admin_views.test_templatetags;
+Output:
+activate successful
+Testing against Django installed in '/swe_util/eval_data/testbeds/django__django__5.0/django' with up to 64 processes
+Importing application admin_views
+Found 7 test(s).
+Skipping setup of unused database(s): other.
+Operations to perform:
+  Synchronize unmigrated apps: admin_views, auth, contenttypes, messages, sessions, staticfiles
+  Apply all migrations: admin, sites
+Synchronizing apps without migrations:
+  Creating tables...
+    Creating table django_content_type
+    Creating table auth_permission
+    Creating table auth_group
+    Creating table auth_user
+    Creating table django_session
+    Creating table admin_views_section
+    Creating table admin_views_article
+    Creating table admin_views_book
+    Creating table admin_views_promo
+    Creating table admin_views_chapter
+    Creating table admin_views_chapterxtra1
+    Creating table admin_views_chapterxtra2
+    Creating table admin_views_rowlevelchangepermissionmodel
+    Creating table admin_views_customarticle
+    Creating table admin_views_modelwithstringprimarykey
+    Creating table admin_views_color
+    Creating table admin_views_thing
+    Creating table admin_views_actor
+    Creating table admin_views_inquisition
+    Creating table admin_views_sketch
+    Creating table admin_views_character
+    Creating table admin_views_stumpjoke
+    Creating table admin_views_fabric
+    Creating table admin_views_person
+    Creating table admin_views_persona
+    Creating table admin_views_account
+    Creating table admin_views_fooaccount
+    Creating table admin_views_baraccount
+    Creating table admin_views_subscriber
+    Creating table admin_views_externalsubscriber
+    Creating table admin_views_oldsubscriber
+    Creating table admin_views_media
+    Creating table admin_views_podcast
+    Creating table admin_views_vodcast
+    Creating table admin_views_parent
+    Creating table admin_views_child
+    Creating table admin_views_pkchild
+    Creating table admin_views_toy
+    Creating table admin_views_emptymodel
+    Creating table admin_views_gallery
+    Creating table admin_views_picture
+    Creating table admin_views_language
+    Creating table admin_views_title
+    Creating table admin_views_titletranslation
+    Creating table admin_views_recommender
+    Creating table admin_views_recommendation
+    Creating table admin_views_collector
+    Creating table admin_views_widget
+    Creating table admin_views_doohickey
+    Creating table admin_views_grommet
+    Creating table admin_views_whatsit
+    Creating table admin_views_doodad
+    Creating table admin_views_fancydoodad
+    Creating table admin_views_category
+    Creating table admin_views_link
+    Creating table admin_views_prepopulatedpost
+    Creating table admin_views_prepopulatedsubpost
+    Creating table admin_views_post
+    Creating table admin_views_gadget
+    Creating table admin_views_villain
+    Creating table admin_views_supervillain
+    Creating table admin_views_funkytag
+    Creating table admin_views_plot
+    Creating table admin_views_plotdetails
+    Creating table admin_views_secrethideout
+    Creating table admin_views_supersecrethideout
+    Creating table admin_views_bookmark
+    Creating table admin_views_cyclicone
+    Creating table admin_views_cyclictwo
+    Creating table admin_views_topping
+    Creating table admin_views_pizza
+    Creating table admin_views_album
+    Creating table admin_views_song
+    Creating table admin_views_employee
+    Creating table admin_views_workhour
+    Creating table admin_views_manager
+    Creating table admin_views_bonus
+    Creating table admin_views_question
+    Creating table admin_views_answer
+    Creating table admin_views_reservation
+    Creating table admin_views_fooddelivery
+    Creating table admin_views_coverletter
+    Creating table admin_views_paper
+    Creating table admin_views_shortmessage
+    Creating table admin_views_telegram
+    Creating table admin_views_story
+    Creating table admin_views_otherstory
+    Creating table admin_views_complexsortedperson
+    Creating table admin_views_pluggablesearchperson
+    Creating table admin_views_prepopulatedpostlargeslug
+    Creating table admin_views_adminorderedfield
+    Creating table admin_views_adminorderedmodelmethod
+    Creating table admin_views_adminorderedadminmethod
+    Creating table admin_views_adminorderedcallable
+    Creating table admin_views_report
+    Creating table admin_views_mainprepopulated
+    Creating table admin_views_relatedprepopulated
+    Creating table admin_views_unorderedobject
+    Creating table admin_views_undeletableobject
+    Creating table admin_views_unchangeableobject
+    Creating table admin_views_usermessenger
+    Creating table admin_views_simple
+    Creating table admin_views_choice
+    Creating table admin_views_parentwithdependentchildren
+    Creating table admin_views_dependentchild
+    Creating table admin_views_filteredmanager
+    Creating table admin_views_emptymodelvisible
+    Creating table admin_views_emptymodelhidden
+    Creating table admin_views_emptymodelmixin
+    Creating table admin_views_state
+    Creating table admin_views_city
+    Creating table admin_views_restaurant
+    Creating table admin_views_worker
+    Creating table admin_views_referencedbyparent
+    Creating table admin_views_parentwithfk
+    Creating table admin_views_childofreferer
+    Creating table admin_views_inlinereferer
+    Creating table admin_views_referencedbyinline
+    Creating table admin_views_inlinereference
+    Creating table admin_views_recipe
+    Creating table admin_views_ingredient
+    Creating table admin_views_recipeingredient
+    Creating table admin_views_notreferenced
+    Creating table admin_views_explicitlyprovidedpk
+    Creating table admin_views_implicitlygeneratedpk
+    Creating table admin_views_referencedbygenrel
+    Creating table admin_views_genrelreference
+    Creating table admin_views_parentwithuuidpk
+    Creating table admin_views_relatedwithuuidpkmodel
+    Creating table admin_views_author
+    Creating table admin_views_authorship
+    Creating table admin_views_readonlyrelatedfield
+    Creating table admin_views_héllo
+    Creating table admin_views_box
+    Creating table admin_views_country
+    Creating table admin_views_traveler
+    Running deferred SQL...
+Running migrations:
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying sites.0001_initial... OK
+  Applying sites.0002_alter_domain_unique... OK
+System check identified no issues (1 silenced).
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+test_choice_links (admin_views.test_templatetags.DateHierarchyTests.test_choice_links) ... ok
+test_choice_links_datetime (admin_views.test_templatetags.DateHierarchyTests.test_choice_links_datetime) ... ok
+test_override_change_form_template_tags (admin_views.test_templatetags.AdminTemplateTagsTest.test_override_change_form_template_tags)
+admin_modify template tags follow the standard search pattern ... ok
+test_override_change_list_template_tags (admin_views.test_templatetags.AdminTemplateTagsTest.test_override_change_list_template_tags)
+admin_list template tags follow the standard search pattern ... ok
+test_override_show_save_and_add_another (admin_views.test_templatetags.AdminTemplateTagsTest.test_override_show_save_and_add_another) ... ok
+test_submit_row (admin_views.test_templatetags.AdminTemplateTagsTest.test_submit_row)
+submit_row template tag should pass whole context. ... ok
+test_submit_row_save_as_new_add_permission_required (admin_views.test_templatetags.AdminTemplateTagsTest.test_submit_row_save_as_new_add_permission_required) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.499s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+
+>>>>> All Tests Passed

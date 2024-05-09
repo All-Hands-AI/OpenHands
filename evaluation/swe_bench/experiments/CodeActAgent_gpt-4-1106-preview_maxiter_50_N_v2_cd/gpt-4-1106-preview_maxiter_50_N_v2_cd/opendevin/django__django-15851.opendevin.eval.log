@@ -1,0 +1,48 @@
+Task Metadata:
+	- Instance ID: django__django-15851
+	- Testbed: /swe_util/eval_data/testbeds/django__django__4.2
+	- Virtual Env.: django__django__4.2
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__4.2 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/django__django__4.2
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: asgiref>=3.5.2 in /swe_util/miniconda3/envs/django__django__4.2/lib/python3.9/site-packages (from Django==4.2.dev20220717112353) (3.8.1)
+Requirement already satisfied: sqlparse>=0.2.2 in /swe_util/miniconda3/envs/django__django__4.2/lib/python3.9/site-packages (from Django==4.2.dev20220717112353) (0.5.0)
+Requirement already satisfied: typing-extensions>=4 in /swe_util/miniconda3/envs/django__django__4.2/lib/python3.9/site-packages (from asgiref>=3.5.2->Django==4.2.dev20220717112353) (4.11.0)
+Building wheels for collected packages: Django
+  Building editable for Django (pyproject.toml): started
+  Building editable for Django (pyproject.toml): finished with status 'done'
+  Created wheel for Django: filename=Django-4.2.dev20220717112353-0.editable-py3-none-any.whl size=26983 sha256=7f9de2dc1b710c96bc83bf8c0623d7a7c2214d81049066a4964dc97b3fae0d70
+  Stored in directory: /tmp/pip-ephem-wheel-cache-wes7u8xw/wheels/00/fa/57/964af4daf3f7bfbc9cbf4465b2f79914216e4bcb9b54d53278
+Successfully built Django
+Installing collected packages: Django
+  Attempting uninstall: Django
+    Found existing installation: Django 4.2.dev20220824103047
+    Uninstalling Django-4.2.dev20220824103047:
+      Successfully uninstalled Django-4.2.dev20220824103047
+Successfully installed Django-4.2.dev20220717112353
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Patch Apply Failed; (pred patch)
+Output:
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file django/db/backends/postgresql/client.py
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file tests/dbshell/test_postgresql.py
+patch unexpectedly ends in middle of line
+Hunk #1 FAILED at 154.
+1 out of 1 hunk FAILED -- saving rejects to file tests/dbshell/test_postgresql.py.rej

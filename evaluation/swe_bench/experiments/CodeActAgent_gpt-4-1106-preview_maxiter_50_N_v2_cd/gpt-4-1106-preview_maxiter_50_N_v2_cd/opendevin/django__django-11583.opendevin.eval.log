@@ -1,0 +1,113 @@
+Task Metadata:
+	- Instance ID: django__django-11583
+	- Testbed: /swe_util/eval_data/testbeds/django__django__3.0
+	- Virtual Env.: django__django__3.0
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__3.0 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/django__django__3.0
+Requirement already satisfied: pytz in /swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/site-packages (from Django==3.0.dev20190723054507) (2024.1)
+Requirement already satisfied: sqlparse in /swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/site-packages (from Django==3.0.dev20190723054507) (0.4.4)
+Requirement already satisfied: asgiref in /swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/site-packages (from Django==3.0.dev20190723054507) (3.4.1)
+Requirement already satisfied: typing-extensions in /swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/site-packages (from asgiref->Django==3.0.dev20190723054507) (4.1.1)
+Installing collected packages: Django
+  Running setup.py develop for Django
+Successfully installed Django-3.0.dev20190723054507
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__3.0 && echo 'activate successful' && ./tests/runtests.py --verbosity 2 utils_tests.test_autoreload;
+Output:
+activate successful
+Testing against Django installed in '/swe_util/eval_data/testbeds/django__django__3.0/django' with up to 64 processes
+Importing application utils_tests
+Skipping setup of unused database(s): default, other.
+System check identified no issues (0 silenced).
+test_watchman_available (utils_tests.test_autoreload.GetReloaderTests) ... ok
+test_watchman_unavailable (utils_tests.test_autoreload.GetReloaderTests) ... ok
+test_common_roots (utils_tests.test_autoreload.TestCommonRoots) ... ok
+test_no_exception (utils_tests.test_autoreload.TestRaiseLastException) ... ok
+test_raises_custom_exception (utils_tests.test_autoreload.TestRaiseLastException) ... ok
+test_raises_exception (utils_tests.test_autoreload.TestRaiseLastException) ... ok
+test_raises_exception_with_context (utils_tests.test_autoreload.TestRaiseLastException) ... ok
+test_check_availability (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_check_availability_lower_version (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_check_server_status (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_check_server_status_raises_error (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_file (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_glob (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_glob_recursive (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_multiple_globs (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_multiple_recursive_globs (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_nested_glob_recursive (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_overlapping_glob_recursive (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_overlapping_globs (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_pywatchman_not_available (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_setting_timeout_from_environment_variable (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_update_watches_raises_exceptions (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_watch_glob_ignores_non_existing_directories_two_levels (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_watch_glob_multiple_patterns (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_watch_glob_uses_existing_parent_directories (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_watched_roots_contains_directory_globs (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_watched_roots_contains_files (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_watched_roots_contains_sys_path (utils_tests.test_autoreload.WatchmanReloaderTests) ... skipped 'Watchman unavailable: Cannot connect to the watchman service.'
+test_mutates_error_files (utils_tests.test_autoreload.TestCheckErrors) ... ok
+test_manage_py (utils_tests.test_autoreload.RestartWithReloaderTests) ... ok
+test_python_m_django (utils_tests.test_autoreload.RestartWithReloaderTests) ... ok
+test_calls_start_django (utils_tests.test_autoreload.RunWithReloaderTests) ... ok
+test_calls_sys_exit (utils_tests.test_autoreload.RunWithReloaderTests) ... ok
+test_swallows_keyboard_interrupt (utils_tests.test_autoreload.RunWithReloaderTests) ... ok
+test_sys_paths_absolute (utils_tests.test_autoreload.TestSysPathDirectories) ... ok
+test_sys_paths_directories (utils_tests.test_autoreload.TestSysPathDirectories) ... ok
+test_sys_paths_non_existing (utils_tests.test_autoreload.TestSysPathDirectories) ... ok
+test_sys_paths_with_directories (utils_tests.test_autoreload.TestSysPathDirectories) ... ok
+test_check_errors_called (utils_tests.test_autoreload.StartDjangoTests) ... ok
+test_echo_on_called (utils_tests.test_autoreload.StartDjangoTests) ... ok
+test_starts_thread_with_args (utils_tests.test_autoreload.StartDjangoTests) ... ok
+test_watchman_becomes_unavailable (utils_tests.test_autoreload.StartDjangoTests) ... ok
+test_run_loop_catches_stopiteration (utils_tests.test_autoreload.BaseReloaderTests) ... ok
+test_run_loop_stop_and_return (utils_tests.test_autoreload.BaseReloaderTests) ... ok
+test_wait_for_apps_ready_checks_for_exception (utils_tests.test_autoreload.BaseReloaderTests) ... ok
+test_wait_for_apps_ready_without_exception (utils_tests.test_autoreload.BaseReloaderTests) ... ok
+test_watch_files_with_recursive_glob (utils_tests.test_autoreload.BaseReloaderTests) ... ok
+test_watch_with_glob (utils_tests.test_autoreload.BaseReloaderTests) ... ok
+test_watch_with_single_file (utils_tests.test_autoreload.BaseReloaderTests) ... ok
+test_watch_without_absolute (utils_tests.test_autoreload.BaseReloaderTests) ... ok
+test_bytecode_conversion_to_source (utils_tests.test_autoreload.TestIterModulesAndFiles)
+.pyc and .pyo files are included in the files list. ... ok
+test_check_errors (utils_tests.test_autoreload.TestIterModulesAndFiles) ... ok
+test_check_errors_catches_all_exceptions (utils_tests.test_autoreload.TestIterModulesAndFiles) ... ok
+test_file_added (utils_tests.test_autoreload.TestIterModulesAndFiles) ... ok
+test_main_module_is_resolved (utils_tests.test_autoreload.TestIterModulesAndFiles) ... ok
+test_main_module_without_file_is_not_resolved (utils_tests.test_autoreload.TestIterModulesAndFiles) ... ok
+test_module_without_spec (utils_tests.test_autoreload.TestIterModulesAndFiles) ... ok
+test_path_with_embedded_null_bytes (utils_tests.test_autoreload.TestIterModulesAndFiles) ... ok
+test_paths_are_pathlib_instances (utils_tests.test_autoreload.TestIterModulesAndFiles) ... ok
+test_weakref_in_sys_module (utils_tests.test_autoreload.TestIterModulesAndFiles)
+iter_all_python_module_file() ignores weakref modules. ... ok
+test_zip_reload (utils_tests.test_autoreload.TestIterModulesAndFiles) ... ok
+test_file (utils_tests.test_autoreload.StatReloaderTests) ... ok
+test_glob (utils_tests.test_autoreload.StatReloaderTests) ... ok
+test_glob_recursive (utils_tests.test_autoreload.StatReloaderTests) ... ok
+test_multiple_globs (utils_tests.test_autoreload.StatReloaderTests) ... ok
+test_multiple_recursive_globs (utils_tests.test_autoreload.StatReloaderTests) ... ok
+test_nested_glob_recursive (utils_tests.test_autoreload.StatReloaderTests) ... ok
+test_overlapping_glob_recursive (utils_tests.test_autoreload.StatReloaderTests) ... ok
+test_overlapping_globs (utils_tests.test_autoreload.StatReloaderTests) ... ok
+test_snapshot_files_ignores_missing_files (utils_tests.test_autoreload.StatReloaderTests) ... ok
+test_snapshot_files_updates (utils_tests.test_autoreload.StatReloaderTests) ... ok
+test_snapshot_files_with_duplicates (utils_tests.test_autoreload.StatReloaderTests) ... ok
+test_tick_does_not_trigger_twice (utils_tests.test_autoreload.StatReloaderTests) ... ok
+
+----------------------------------------------------------------------
+Ran 73 tests in 0.379s
+
+OK (skipped=21)
+
+>>>>> All Tests Passed

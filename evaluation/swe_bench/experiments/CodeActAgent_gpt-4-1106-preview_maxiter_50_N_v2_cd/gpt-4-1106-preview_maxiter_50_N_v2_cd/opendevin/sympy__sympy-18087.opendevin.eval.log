@@ -1,0 +1,96 @@
+Task Metadata:
+	- Instance ID: sympy__sympy-18087
+	- Testbed: /swe_util/eval_data/testbeds/sympy__sympy__1.6
+	- Virtual Env.: sympy__sympy__1.6
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.6 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/sympy__sympy__1.6
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: mpmath>=0.19 in /swe_util/miniconda3/envs/sympy__sympy__1.6/lib/python3.9/site-packages (from sympy==1.6.dev0) (1.3.0)
+Installing collected packages: sympy
+  Running setup.py develop for sympy
+Successfully installed sympy-1.6.dev0
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.6 && echo 'activate successful' && bin/test -C --verbose sympy/core/tests/test_exprtools.py sympy/simplify/tests/test_fu.py;
+Output:
+activate successful
+============================= test process starts ==============================
+executable:         /swe_util/miniconda3/envs/sympy__sympy__1.6/bin/python  (3.9.19-final-0) [CPython]
+architecture:       64-bit
+cache:              no
+ground types:       python 
+numpy:              None
+random seed:        2004979
+hash randomization: on (PYTHONHASHSEED=2171885965)
+
+sympy/core/tests/test_exprtools.py[12] 
+test_decompose_power ok
+test_Factors F
+test_Term ok
+test_gcd_terms ok
+test_factor_terms ok
+test_xreplace ok
+test_factor_nc ok
+test_issue_6360 ok
+test_issue_7903 ok
+test_issue_8263 ok
+test_monotonic_sign ok
+test_issue_17256 ok                                                       [FAIL]
+
+sympy/simplify/tests/test_fu.py[27] 
+test_TR1 ok
+test_TR2 ok
+test_TR2i ok
+test_TR3 ok
+test__TR56 ok
+test_TR5 ok
+test_TR6 ok
+test_TR7 ok
+test_TR8 ok
+test_TR9 ok
+test_TR10 ok
+test_TR10i ok
+test_TR11 ok
+test_TR12 ok
+test_TR13 ok
+test_L ok
+test_fu F
+test_objective ok
+test_process_common_addends ok
+test_trig_split ok
+test_TRmorrie ok
+test_TRpower ok
+test_hyper_as_trig ok
+test_TR12i ok
+test_TR14 ok
+test_TR15_16_17 ok
+test_as_f_sign_1 ok                                                       [FAIL]
+
+
+________________________________________________________________________________
+_______________ sympy/core/tests/test_exprtools.py:test_Factors ________________
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.6/sympy/core/tests/test_exprtools.py", line 31, in test_Factors
+    assert Factors((x**2)**S.Half).as_expr() == (x**2)**S.Half
+AssertionError
+________________________________________________________________________________
+___________________ sympy/simplify/tests/test_fu.py:test_fu ____________________
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.6/sympy/simplify/tests/test_fu.py", line 280, in test_fu
+    assert fu(cos(x) + sqrt(sin(x)**2)) == cos(x) + sqrt(sin(x)**2)
+AssertionError
+
+============ tests finished: 37 passed, 2 failed, in 15.87 seconds =============
+DO *NOT* COMMIT!
+
+>>>>> Some Tests Failed

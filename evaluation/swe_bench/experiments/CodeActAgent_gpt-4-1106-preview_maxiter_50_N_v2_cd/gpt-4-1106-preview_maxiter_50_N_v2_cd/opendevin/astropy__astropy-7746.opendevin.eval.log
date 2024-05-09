@@ -1,0 +1,116 @@
+Task Metadata:
+	- Instance ID: astropy__astropy-7746
+	- Testbed: /swe_util/eval_data/testbeds/astropy__astropy__1.3
+	- Virtual Env.: astropy__astropy__1.3
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+patch unexpectedly ends in middle of line
+patch: **** Only garbage was found in the patch input.
+>>>>> Applied Patch (pred_minimal_try patch)
+>>>>> Applied Patch (pred_minimal_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate astropy__astropy__1.3 && echo 'activate successful' && pip install -e .[test]
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/astropy__astropy__1.3
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: numpy>=1.13.0 in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (1.26.4)
+Requirement already satisfied: pytest-astropy in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (0.11.0)
+Requirement already satisfied: pytest>=4.6 in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (from pytest-astropy) (8.2.0)
+Requirement already satisfied: pytest-doctestplus>=1.0.0 in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (from pytest-astropy) (1.2.1)
+Requirement already satisfied: pytest-remotedata>=0.4.1 in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (from pytest-astropy) (0.4.1)
+Requirement already satisfied: pytest-astropy-header>=0.2.2 in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (from pytest-astropy) (0.2.2)
+Requirement already satisfied: pytest-arraydiff>=0.5 in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (from pytest-astropy) (0.6.1)
+Requirement already satisfied: pytest-filter-subpackage>=0.1.2 in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (from pytest-astropy) (0.2.0)
+Requirement already satisfied: pytest-cov>=2.3.1 in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (from pytest-astropy) (5.0.0)
+Requirement already satisfied: pytest-mock>=2.0 in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (from pytest-astropy) (3.14.0)
+Requirement already satisfied: attrs>=19.2.0 in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (from pytest-astropy) (23.2.0)
+Requirement already satisfied: hypothesis>=5.1 in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (from pytest-astropy) (6.100.2)
+Requirement already satisfied: sortedcontainers<3.0.0,>=2.1.0 in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (from hypothesis>=5.1->pytest-astropy) (2.4.0)
+Requirement already satisfied: exceptiongroup>=1.0.0 in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (from hypothesis>=5.1->pytest-astropy) (1.2.1)
+Requirement already satisfied: iniconfig in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (from pytest>=4.6->pytest-astropy) (2.0.0)
+Requirement already satisfied: packaging in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (from pytest>=4.6->pytest-astropy) (24.0)
+Requirement already satisfied: pluggy<2.0,>=1.5 in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (from pytest>=4.6->pytest-astropy) (1.5.0)
+Requirement already satisfied: tomli>=1 in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (from pytest>=4.6->pytest-astropy) (2.0.1)
+Requirement already satisfied: coverage>=5.2.1 in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (from coverage[toml]>=5.2.1->pytest-cov>=2.3.1->pytest-astropy) (7.5.0)
+Requirement already satisfied: setuptools>=30.3.0 in /swe_util/miniconda3/envs/astropy__astropy__1.3/lib/python3.9/site-packages (from pytest-doctestplus>=1.0.0->pytest-astropy) (68.2.2)
+Installing collected packages: astropy
+  Running setup.py develop for astropy
+Successfully installed astropy-3.1.dev22336
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate astropy__astropy__1.3 && echo 'activate successful' && pytest --no-header -rA --tb=no -p no:cacheprovider astropy/wcs/tests/test_wcs.py;
+Output:
+activate successful
+============================= test session starts ==============================
+collected 57 items
+
+astropy/wcs/tests/test_wcs.py FFFF...................................... [ 73%]
+..............F                                                          [100%]
+
+=========================== short test summary info ============================
+PASSED astropy/wcs/tests/test_wcs.py::test_fixes
+PASSED astropy/wcs/tests/test_wcs.py::test_outside_sky
+PASSED astropy/wcs/tests/test_wcs.py::test_pix2world
+PASSED astropy/wcs/tests/test_wcs.py::test_load_fits_path
+PASSED astropy/wcs/tests/test_wcs.py::test_dict_init
+PASSED astropy/wcs/tests/test_wcs.py::test_extra_kwarg
+PASSED astropy/wcs/tests/test_wcs.py::test_3d_shapes
+PASSED astropy/wcs/tests/test_wcs.py::test_preserve_shape
+PASSED astropy/wcs/tests/test_wcs.py::test_broadcasting
+PASSED astropy/wcs/tests/test_wcs.py::test_shape_mismatch
+PASSED astropy/wcs/tests/test_wcs.py::test_invalid_shape
+PASSED astropy/wcs/tests/test_wcs.py::test_warning_about_defunct_keywords
+PASSED astropy/wcs/tests/test_wcs.py::test_warning_about_defunct_keywords_exception
+PASSED astropy/wcs/tests/test_wcs.py::test_to_header_string
+PASSED astropy/wcs/tests/test_wcs.py::test_to_fits
+PASSED astropy/wcs/tests/test_wcs.py::test_to_header_warning
+PASSED astropy/wcs/tests/test_wcs.py::test_no_comments_in_header
+PASSED astropy/wcs/tests/test_wcs.py::test_find_all_wcs_crash
+PASSED astropy/wcs/tests/test_wcs.py::test_validate
+PASSED astropy/wcs/tests/test_wcs.py::test_validate_with_2_wcses
+PASSED astropy/wcs/tests/test_wcs.py::test_crpix_maps_to_crval
+PASSED astropy/wcs/tests/test_wcs.py::test_all_world2pix
+PASSED astropy/wcs/tests/test_wcs.py::test_scamp_sip_distortion_parameters
+PASSED astropy/wcs/tests/test_wcs.py::test_fixes2
+PASSED astropy/wcs/tests/test_wcs.py::test_unit_normalization
+PASSED astropy/wcs/tests/test_wcs.py::test_footprint_to_file
+PASSED astropy/wcs/tests/test_wcs.py::test_validate_faulty_wcs
+PASSED astropy/wcs/tests/test_wcs.py::test_error_message
+PASSED astropy/wcs/tests/test_wcs.py::test_out_of_bounds
+PASSED astropy/wcs/tests/test_wcs.py::test_calc_footprint_1
+PASSED astropy/wcs/tests/test_wcs.py::test_calc_footprint_2
+PASSED astropy/wcs/tests/test_wcs.py::test_calc_footprint_3
+PASSED astropy/wcs/tests/test_wcs.py::test_sip
+PASSED astropy/wcs/tests/test_wcs.py::test_printwcs
+PASSED astropy/wcs/tests/test_wcs.py::test_invalid_spherical
+PASSED astropy/wcs/tests/test_wcs.py::test_no_iteration
+PASSED astropy/wcs/tests/test_wcs.py::test_sip_tpv_agreement
+PASSED astropy/wcs/tests/test_wcs.py::test_tpv_copy
+PASSED astropy/wcs/tests/test_wcs.py::test_hst_wcs
+PASSED astropy/wcs/tests/test_wcs.py::test_list_naxis
+PASSED astropy/wcs/tests/test_wcs.py::test_sip_broken
+PASSED astropy/wcs/tests/test_wcs.py::test_no_truncate_crval
+PASSED astropy/wcs/tests/test_wcs.py::test_no_truncate_crval_try2
+PASSED astropy/wcs/tests/test_wcs.py::test_no_truncate_crval_p17
+PASSED astropy/wcs/tests/test_wcs.py::test_no_truncate_using_compare
+PASSED astropy/wcs/tests/test_wcs.py::test_passing_ImageHDU
+PASSED astropy/wcs/tests/test_wcs.py::test_inconsistent_sip
+PASSED astropy/wcs/tests/test_wcs.py::test_bounds_check
+PASSED astropy/wcs/tests/test_wcs.py::test_naxis
+PASSED astropy/wcs/tests/test_wcs.py::test_sip_with_altkey
+PASSED astropy/wcs/tests/test_wcs.py::test_to_fits_1
+PASSED astropy/wcs/tests/test_wcs.py::test_keyedsip
+FAILED astropy/wcs/tests/test_wcs.py::TestMaps::test_consistency - AttributeE...
+FAILED astropy/wcs/tests/test_wcs.py::TestMaps::test_maps - AttributeError: '...
+FAILED astropy/wcs/tests/test_wcs.py::TestSpectra::test_consistency - Attribu...
+FAILED astropy/wcs/tests/test_wcs.py::TestSpectra::test_spectra - AttributeEr...
+FAILED astropy/wcs/tests/test_wcs.py::test_zero_size_input - astropy.wcs._wcs...
+========================= 5 failed, 52 passed in 0.73s =========================
+
+>>>>> Some Tests Failed

@@ -1,0 +1,1007 @@
+Task Metadata:
+	- Instance ID: pytest-dev__pytest-7373
+	- Testbed: /swe_util/eval_data/testbeds/pytest-dev__pytest__5.4
+	- Virtual Env.: pytest-dev__pytest__5.4
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+patch unexpectedly ends in middle of line
+patch: **** Only garbage was found in the patch input.
+>>>>> Applied Patch (pred_minimal_try patch)
+>>>>> Applied Patch (pred_minimal_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate pytest-dev__pytest__5.4 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/pytest-dev__pytest__5.4
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: attrs>=17.4.0 in /swe_util/miniconda3/envs/pytest-dev__pytest__5.4/lib/python3.9/site-packages (from pytest==5.4.1.dev522+g7b77fc086) (23.2.0)
+Requirement already satisfied: iniconfig in /swe_util/miniconda3/envs/pytest-dev__pytest__5.4/lib/python3.9/site-packages (from pytest==5.4.1.dev522+g7b77fc086) (2.0.0)
+Requirement already satisfied: more-itertools>=4.0.0 in /swe_util/miniconda3/envs/pytest-dev__pytest__5.4/lib/python3.9/site-packages (from pytest==5.4.1.dev522+g7b77fc086) (10.2.0)
+Requirement already satisfied: packaging in /swe_util/miniconda3/envs/pytest-dev__pytest__5.4/lib/python3.9/site-packages (from pytest==5.4.1.dev522+g7b77fc086) (24.0)
+Requirement already satisfied: pluggy<1.0,>=0.12 in /swe_util/miniconda3/envs/pytest-dev__pytest__5.4/lib/python3.9/site-packages (from pytest==5.4.1.dev522+g7b77fc086) (0.13.1)
+Requirement already satisfied: py>=1.5.0 in /swe_util/miniconda3/envs/pytest-dev__pytest__5.4/lib/python3.9/site-packages (from pytest==5.4.1.dev522+g7b77fc086) (1.11.0)
+Requirement already satisfied: toml in /swe_util/miniconda3/envs/pytest-dev__pytest__5.4/lib/python3.9/site-packages (from pytest==5.4.1.dev522+g7b77fc086) (0.10.2)
+Building wheels for collected packages: pytest
+  Building editable for pytest (pyproject.toml): started
+  Building editable for pytest (pyproject.toml): finished with status 'done'
+  Created wheel for pytest: filename=pytest-5.4.1.dev522+g7b77fc086-0.editable-py3-none-any.whl size=5154 sha256=c63e523c19b70ffc2c2e0c153c51ee7c34c3fd4f8fa1c2ad963c0d05a6fb0f1b
+  Stored in directory: /tmp/pip-ephem-wheel-cache-5unkueww/wheels/da/f7/41/4e1950b13a71524970ac25be339b6d3f00a4c35d4cce64dea4
+Successfully built pytest
+Installing collected packages: pytest
+  Attempting uninstall: pytest
+    Found existing installation: pytest 5.4.1.dev593+ge6e300e72
+    Uninstalling pytest-5.4.1.dev593+ge6e300e72:
+      Successfully uninstalled pytest-5.4.1.dev593+ge6e300e72
+Successfully installed pytest-5.4.1.dev522+g7b77fc086
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate pytest-dev__pytest__5.4 && echo 'activate successful' && pytest -rA testing/test_mark.py;
+Output:
+activate successful
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /swe_util/eval_data/testbeds/pytest-dev__pytest__5.4, configfile: pyproject.toml
+collected 92 items
+
+testing/test_mark.py ................................................... [ 55%]
+...............F.........x...............                                [100%]
+
+=================================== FAILURES ===================================
+_________________ TestFunctional.test_reevaluate_dynamic_expr __________________
+
+self = <test_mark.TestFunctional object at 0x7fb7ff0f74c0>
+testdir = <Testdir local('/tmp/pytest-of-root/pytest-106/test_reevaluate_dynamic_expr0')>
+
+    def test_reevaluate_dynamic_expr(self, testdir):
+        """#7360"""
+        py_file1 = testdir.makepyfile(
+            test_reevaluate_dynamic_expr1="""
+            import pytest
+    
+            skip = True
+    
+            @pytest.mark.skipif("skip")
+            def test_should_skip():
+                assert True
+        """
+        )
+        py_file2 = testdir.makepyfile(
+            test_reevaluate_dynamic_expr2="""
+            import pytest
+    
+            skip = False
+    
+            @pytest.mark.skipif("skip")
+            def test_should_not_skip():
+                assert True
+        """
+        )
+    
+        file_name1 = os.path.basename(py_file1.strpath)
+        file_name2 = os.path.basename(py_file2.strpath)
+        reprec = testdir.inline_run(file_name1, file_name2)
+>       reprec.assertoutcome(passed=1, skipped=1)
+E       AssertionError: ([], [<TestReport 'test_reevaluate_dynamic_expr1.py::test_should_skip' when='setup' outcome='skipped'>, <TestReport 'test_reevaluate_dynamic_expr2.py::test_should_not_skip' when='setup' outcome='skipped'>], [])
+E       assert {'failed': 0,... 'skipped': 2} == {'failed': 0,... 'skipped': 1}
+E         Omitting 1 identical items, use -vv to show
+E         Differing items:
+E         {'passed': 0} != {'passed': 1}
+E         {'skipped': 2} != {'skipped': 1}
+E         Use -v to get the full diff
+
+/swe_util/eval_data/testbeds/pytest-dev__pytest__5.4/testing/test_mark.py:737: AssertionError
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_reevaluate_dynamic_expr0
+collected 2 items
+
+test_reevaluate_dynamic_expr1.py s                                       [ 50%]
+test_reevaluate_dynamic_expr2.py s                                       [100%]
+
+============================== 2 skipped in 0.01s ==============================
+==================================== PASSES ====================================
+_________________________ test_marked_class_run_twice __________________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_marked_class_run_twice0
+collected 6 items
+
+test_marked_class_run_twice.py ......
+
+============================== 6 passed in 0.01s ===============================
+_______________________________ test_ini_markers _______________________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_ini_markers0, configfile: tox.ini
+collected 1 item
+
+test_ini_markers.py .                                                    [100%]
+
+============================== 1 passed in 0.01s ===============================
+_____________________________ test_markers_option ______________________________
+----------------------------- Captured stdout call -----------------------------
+@pytest.mark.a1: this is a webtest marker
+
+@pytest.mark.a1some: another marker
+
+@pytest.mark.nodescription:
+
+@pytest.mark.filterwarnings(warning): add a warning filter to the given test. see https://docs.pytest.org/en/latest/warnings.html#pytest-mark-filterwarnings 
+
+@pytest.mark.skip(reason=None): skip the given test function with an optional reason. Example: skip(reason="no way of currently testing this") skips the test.
+
+@pytest.mark.skipif(condition): skip the given test function if eval(condition) results in a True value.  Evaluation happens within the module global context. Example: skipif('sys.platform == "win32"') skips the test if we are on the win32 platform. see https://docs.pytest.org/en/latest/skipping.html
+
+@pytest.mark.xfail(condition, reason=None, run=True, raises=None, strict=False): mark the test function as an expected failure if eval(condition) has a True value. Optionally specify a reason for better reporting and run=False if you don't even want to execute the test function. If only specific exception(s) are expected, you can list them in raises, and if the test fails in other ways, it will be reported as a true failure. See https://docs.pytest.org/en/latest/skipping.html
+
+@pytest.mark.parametrize(argnames, argvalues): call a test function multiple times passing in different arguments in turn. argvalues generally needs to be a list of values if argnames specifies only one name or a list of tuples of values if argnames specifies multiple names. Example: @parametrize('arg1', [1,2]) would lead to two calls of the decorated test function, one with arg1=1 and another with arg1=2.see https://docs.pytest.org/en/latest/parametrize.html for more info and examples.
+
+@pytest.mark.usefixtures(fixturename1, fixturename2, ...): mark tests as needing all of the specified fixtures. see https://docs.pytest.org/en/latest/fixture.html#usefixtures 
+
+@pytest.mark.tryfirst: mark a hook implementation function such that the plugin machinery will try to call it first/as early as possible.
+
+@pytest.mark.trylast: mark a hook implementation function such that the plugin machinery will try to call it last/as late as possible.
+
+_________________________ test_ini_markers_whitespace __________________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_ini_markers_whitespace0, configfile: tox.ini
+collected 1 item
+
+test_ini_markers_whitespace.py .                                         [100%]
+
+============================== 1 passed in 0.00s ===============================
+_______________________ test_marker_without_description ________________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_marker_without_description0, configfile: setup.cfg
+collected 0 items
+
+============================ no tests ran in 0.00s =============================
+________________ test_markers_option_with_plugin_in_current_dir ________________
+----------------------------- Captured stdout call -----------------------------
+@pytest.mark.flip:flop
+
+@pytest.mark.filterwarnings(warning): add a warning filter to the given test. see https://docs.pytest.org/en/latest/warnings.html#pytest-mark-filterwarnings 
+
+@pytest.mark.skip(reason=None): skip the given test function with an optional reason. Example: skip(reason="no way of currently testing this") skips the test.
+
+@pytest.mark.skipif(condition): skip the given test function if eval(condition) results in a True value.  Evaluation happens within the module global context. Example: skipif('sys.platform == "win32"') skips the test if we are on the win32 platform. see https://docs.pytest.org/en/latest/skipping.html
+
+@pytest.mark.xfail(condition, reason=None, run=True, raises=None, strict=False): mark the test function as an expected failure if eval(condition) has a True value. Optionally specify a reason for better reporting and run=False if you don't even want to execute the test function. If only specific exception(s) are expected, you can list them in raises, and if the test fails in other ways, it will be reported as a true failure. See https://docs.pytest.org/en/latest/skipping.html
+
+@pytest.mark.parametrize(argnames, argvalues): call a test function multiple times passing in different arguments in turn. argvalues generally needs to be a list of values if argnames specifies only one name or a list of tuples of values if argnames specifies multiple names. Example: @parametrize('arg1', [1,2]) would lead to two calls of the decorated test function, one with arg1=1 and another with arg1=2.see https://docs.pytest.org/en/latest/parametrize.html for more info and examples.
+
+@pytest.mark.usefixtures(fixturename1, fixturename2, ...): mark tests as needing all of the specified fixtures. see https://docs.pytest.org/en/latest/fixture.html#usefixtures 
+
+@pytest.mark.tryfirst: mark a hook implementation function such that the plugin machinery will try to call it first/as early as possible.
+
+@pytest.mark.trylast: mark a hook implementation function such that the plugin machinery will try to call it last/as late as possible.
+
+_________________________ test_mark_on_pseudo_function _________________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_mark_on_pseudo_function0
+collected 1 item
+
+test_mark_on_pseudo_function.py .                                        [100%]
+
+============================== 1 passed in 0.01s ===============================
+_________ test_strict_prohibits_unregistered_markers[--strict-markers] _________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_strict_prohibits_unregistered_markers0
+collected 0 items / 1 error
+
+==================================== ERRORS ====================================
+________ ERROR collecting test_strict_prohibits_unregistered_markers.py ________
+'unregisteredmark' not found in `markers` configuration option
+=========================== short test summary info ============================
+ERROR test_strict_prohibits_unregistered_markers.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+=============================== 1 error in 0.06s ===============================
+_____________ test_strict_prohibits_unregistered_markers[--strict] _____________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_strict_prohibits_unregistered_markers1
+collected 0 items / 1 error
+
+==================================== ERRORS ====================================
+________ ERROR collecting test_strict_prohibits_unregistered_markers.py ________
+'unregisteredmark' not found in `markers` configuration option
+=========================== short test summary info ============================
+ERROR test_strict_prohibits_unregistered_markers.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+=============================== 1 error in 0.05s ===============================
+____________________ test_mark_option[xyz-expected_passed0] ____________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_mark_option0
+collected 2 items / 1 deselected / 1 selected
+
+test_mark_option.py .                                                    [100%]
+
+======================= 1 passed, 1 deselected in 0.00s ========================
+_______________ test_mark_option[(((  xyz))  )-expected_passed1] _______________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_mark_option1
+collected 2 items / 1 deselected / 1 selected
+
+test_mark_option.py .                                                    [100%]
+
+======================= 1 passed, 1 deselected in 0.00s ========================
+________________ test_mark_option[not not xyz-expected_passed2] ________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_mark_option2
+collected 2 items / 1 deselected / 1 selected
+
+test_mark_option.py .                                                    [100%]
+
+======================= 1 passed, 1 deselected in 0.00s ========================
+_______________ test_mark_option[xyz and xyz2-expected_passed3] ________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_mark_option3
+collected 2 items / 2 deselected
+
+============================ 2 deselected in 0.00s =============================
+___________________ test_mark_option[xyz2-expected_passed4] ____________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_mark_option4
+collected 2 items / 1 deselected / 1 selected
+
+test_mark_option.py .                                                    [100%]
+
+======================= 1 passed, 1 deselected in 0.00s ========================
+________________ test_mark_option[xyz or xyz2-expected_passed5] ________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_mark_option5
+collected 2 items
+
+test_mark_option.py ..                                                   [100%]
+
+============================== 2 passed in 0.00s ===============================
+_____________ test_mark_option_custom[interface-expected_passed0] ______________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_mark_option_custom0
+collected 2 items / 1 deselected / 1 selected
+
+test_mark_option_custom.py .                                             [100%]
+
+======================= 1 passed, 1 deselected in 0.00s ========================
+___________ test_mark_option_custom[not interface-expected_passed1] ____________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_mark_option_custom1
+collected 2 items / 1 deselected / 1 selected
+
+test_mark_option_custom.py .                                             [100%]
+
+======================= 1 passed, 1 deselected in 0.00s ========================
+____________ test_keyword_option_custom[interface-expected_passed0] ____________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_keyword_option_custom0
+collected 5 items / 4 deselected / 1 selected
+
+test_keyword_option_custom.py .                                          [100%]
+
+======================= 1 passed, 4 deselected in 0.03s ========================
+__________ test_keyword_option_custom[not interface-expected_passed1] __________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_keyword_option_custom1
+collected 5 items / 1 deselected / 4 selected
+
+test_keyword_option_custom.py ....                                       [100%]
+
+======================= 4 passed, 1 deselected in 0.01s ========================
+______________ test_keyword_option_custom[pass-expected_passed2] _______________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_keyword_option_custom2
+collected 5 items / 4 deselected / 1 selected
+
+test_keyword_option_custom.py .                                          [100%]
+
+======================= 1 passed, 4 deselected in 0.00s ========================
+____________ test_keyword_option_custom[not pass-expected_passed3] _____________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_keyword_option_custom3
+collected 5 items / 1 deselected / 4 selected
+
+test_keyword_option_custom.py ....                                       [100%]
+
+======================= 4 passed, 1 deselected in 0.01s ========================
+_______ test_keyword_option_custom[not not not (pass)-expected_passed4] ________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_keyword_option_custom4
+collected 5 items / 1 deselected / 4 selected
+
+test_keyword_option_custom.py ....                                       [100%]
+
+======================= 4 passed, 1 deselected in 0.01s ========================
+_____________ test_keyword_option_custom[1 or 2-expected_passed5] ______________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_keyword_option_custom5
+collected 5 items / 3 deselected / 2 selected
+
+test_keyword_option_custom.py ..                                         [100%]
+
+======================= 2 passed, 3 deselected in 0.00s ========================
+__________ test_keyword_option_custom[not (1 or 2)-expected_passed6] ___________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_keyword_option_custom6
+collected 5 items / 2 deselected / 3 selected
+
+test_keyword_option_custom.py ...                                        [100%]
+
+======================= 3 passed, 2 deselected in 0.01s ========================
+______________________ test_keyword_option_considers_mark ______________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_keyword_option_considers_mark0
+collected 1 item
+
+test_marks_as_keywords.py .                                              [100%]
+
+============================== 1 passed in 0.00s ===============================
+____________ test_keyword_option_parametrize[None-expected_passed0] ____________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_keyword_option_parametrize0
+collected 3 items / 2 deselected / 1 selected
+
+test_keyword_option_parametrize.py .                                     [100%]
+
+======================= 1 passed, 2 deselected in 0.00s ========================
+___________ test_keyword_option_parametrize[[1.3]-expected_passed1] ____________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_keyword_option_parametrize1
+collected 3 items / 2 deselected / 1 selected
+
+test_keyword_option_parametrize.py .                                     [100%]
+
+======================= 1 passed, 2 deselected in 0.00s ========================
+____________ test_keyword_option_parametrize[2-3-expected_passed2] _____________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_keyword_option_parametrize2
+collected 3 items / 2 deselected / 1 selected
+
+test_keyword_option_parametrize.py .                                     [100%]
+
+======================= 1 passed, 2 deselected in 0.00s ========================
+_________________________ test_parametrize_with_module _________________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_parametrize_with_module0
+collected 1 item
+
+test_parametrize_with_module.py .                                        [100%]
+
+============================== 1 passed in 0.00s ===============================
+________________ test_parametrized_collected_from_command_line _________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_parametrized_collected_from_command_line0
+collected 3 items
+
+test_parametrized_collected_from_command_line.py ...                     [100%]
+
+============================== 3 passed in 0.00s ===============================
+__________________ test_parametrized_collect_with_wrong_args ___________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_parametrized_collect_with_wrong_args0
+collected 0 items / 1 error
+
+==================================== ERRORS ====================================
+________ ERROR collecting test_parametrized_collect_with_wrong_args.py _________
+test_parametrized_collect_with_wrong_args.py::test_func: in "parametrize" the number of names (2):
+  ['foo', 'bar']
+must be equal to the number of values (3):
+  (1, 2, 3)
+=========================== short test summary info ============================
+ERROR test_parametrized_collect_with_wrong_args.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+=============================== 1 error in 0.04s ===============================
+________________________ test_parametrized_with_kwargs _________________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_parametrized_with_kwargs0
+collected 4 items
+
+test_parametrized_with_kwargs.py ....                                    [100%]
+
+============================== 4 passed in 0.01s ===============================
+__________________________ test_parametrize_iterator ___________________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_parametrize_iterator0
+collected 3 items
+
+test_parametrize_iterator.py ...                                         [100%]
+
+============================== 3 passed in 0.01s ===============================
+___________________ TestFunctional.test_merging_markers_deep ___________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_merging_markers_deep0
+collected 2 items
+
+<Module test_merging_markers_deep.py>
+  <Class TestA>
+      <Function test_b>
+      <Class TestC>
+          <Function test_d>
+
+============================ no tests ran in 0.00s =============================
+<Function test_b> <NodeKeywords for node <Function test_b>>
+<Function test_d> <NodeKeywords for node <Function test_d>>
+____ TestFunctional.test_mark_decorator_subclass_does_not_propagate_to_base ____
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_mark_decorator_subclass_does_not_propagate_to_base0
+collected 2 items
+
+<Module test_mark_decorator_subclass_does_not_propagate_to_base.py>
+  <Class Test1>
+      <Function test_foo>
+  <Class Test2>
+      <Function test_bar>
+
+============================ no tests ran in 0.00s =============================
+__________ TestFunctional.test_mark_should_not_pass_to_siebling_class __________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_mark_should_not_pass_to_siebling_class0
+collected 3 items
+
+<Module test_mark_should_not_pass_to_siebling_class.py>
+  <Class TestBase>
+      <Function test_foo>
+  <Class TestSub>
+      <Function test_foo>
+  <Class TestOtherSub>
+      <Function test_foo>
+
+============================ no tests ran in 0.01s =============================
+[<Function test_foo>, <Function test_foo>, <Function test_foo>] ['test_mark_should_not_pass_to_siebling_class.py::TestBase::test_foo', 'test_mark_should_not_pass_to_siebling_class.py::TestSub::test_foo', 'test_mark_should_not_pass_to_siebling_class.py::TestOtherSub::test_foo']
+____________ TestFunctional.test_mark_decorator_baseclasses_merged _____________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_mark_decorator_baseclasses_merged0
+collected 2 items
+
+<Module test_mark_decorator_baseclasses_merged.py>
+  <Class Test1>
+      <Function test_foo>
+  <Class Test2>
+      <Function test_bar>
+
+============================ no tests ran in 0.00s =============================
+_______________________ TestFunctional.test_mark_closest _______________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_mark_closest0
+collected 2 items
+
+<Module test_mark_closest.py>
+  <Class Test>
+      <Function test_has_own>
+      <Function test_has_inherited>
+
+============================ no tests ran in 0.00s =============================
+__________________ TestFunctional.test_mark_with_wrong_marker __________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_mark_with_wrong_marker0
+collected 0 items / 1 error
+
+==================================== ERRORS ====================================
+_______________ ERROR collecting test_mark_with_wrong_marker.py ________________
+/swe_util/eval_data/testbeds/pytest-dev__pytest__5.4/src/_pytest/runner.py:286: in from_call
+    result = func()  # type: Optional[_T]
+/swe_util/eval_data/testbeds/pytest-dev__pytest__5.4/src/_pytest/runner.py:316: in <lambda>
+    call = CallInfo.from_call(lambda: list(collector.collect()), "collect")
+/swe_util/eval_data/testbeds/pytest-dev__pytest__5.4/src/_pytest/python.py:488: in collect
+    self._inject_setup_module_fixture()
+/swe_util/eval_data/testbeds/pytest-dev__pytest__5.4/src/_pytest/python.py:501: in _inject_setup_module_fixture
+    self.obj, ("setUpModule", "setup_module")
+/swe_util/eval_data/testbeds/pytest-dev__pytest__5.4/src/_pytest/python.py:293: in obj
+    self.own_markers.extend(get_unpacked_marks(self.obj))
+/swe_util/eval_data/testbeds/pytest-dev__pytest__5.4/src/_pytest/mark/structures.py:352: in get_unpacked_marks
+    return normalize_mark_list(mark_list)
+/swe_util/eval_data/testbeds/pytest-dev__pytest__5.4/src/_pytest/mark/structures.py:367: in normalize_mark_list
+    raise TypeError("got {!r} instead of Mark".format(mark))
+E   TypeError: got <class 'test_mark_with_wrong_marker.pytestmark'> instead of Mark
+=========================== short test summary info ============================
+ERROR test_mark_with_wrong_marker.py - TypeError: got <class 'test_mark_with_...
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+=============================== 1 error in 0.07s ===============================
+_______________ TestFunctional.test_mark_dynamically_in_funcarg ________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_mark_dynamically_in_funcarg0
+collected 1 item
+
+test_mark_dynamically_in_funcarg.py .                                    [100%]
+keyword: {'test_mark_dynamically_in_funcarg.py': 1, 'hello': 1, 'test_mark_dynamically_in_funcarg0': 1, 'test_func': 1}
+
+============================== 1 passed in 0.00s ===============================
+____________ TestFunctional.test_no_marker_match_on_unmarked_names _____________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_no_marker_match_on_unmarked_names0
+collected 2 items / 2 deselected
+
+============================ 2 deselected in 0.00s =============================
+__________________ TestFunctional.test_keywords_at_node_level __________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_keywords_at_node_level0
+collected 1 item
+
+test_keywords_at_node_level.py .                                         [100%]
+
+============================== 1 passed in 0.00s ===============================
+________________ TestFunctional.test_keyword_added_for_session _________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_keyword_added_for_session0
+collected 1 item
+
+test_keyword_added_for_session.py .                                      [100%]
+
+============================== 1 passed in 0.01s ===============================
+___________________ TestFunctional.test_mark_from_parameters ___________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_mark_from_parameters0
+collected 1 item
+
+test_mark_from_parameters.py s                                           [100%]
+
+============================== 1 skipped in 0.00s ==============================
+___________________ TestKeywordSelection.test_select_simple ____________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_select_simple0
+collected 2 items / 1 deselected / 1 selected
+
+test_select_simple.py F
+
+=================================== FAILURES ===================================
+___________________________________ test_one ___________________________________
+
+    def test_one():
+>       assert 0
+E       assert 0
+
+test_select_simple.py:2: AssertionError
+=========================== short test summary info ============================
+FAILED test_select_simple.py::test_one - assert 0
+======================= 1 failed, 1 deselected in 0.01s ========================
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_select_simple0
+collected 2 items / 1 deselected / 1 selected
+
+test_select_simple.py F
+
+=================================== FAILURES ===================================
+___________________________________ test_one ___________________________________
+
+    def test_one():
+>       assert 0
+E       assert 0
+
+test_select_simple.py:2: AssertionError
+=========================== short test summary info ============================
+FAILED test_select_simple.py::test_one - assert 0
+======================= 1 failed, 1 deselected in 0.01s ========================
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_select_simple0
+collected 2 items / 1 deselected / 1 selected
+
+test_select_simple.py F
+
+=================================== FAILURES ===================================
+__________________________ TestClass.test_method_one ___________________________
+
+self = <test_select_simple.TestClass object at 0x7fb7ff046be0>
+
+    def test_method_one(self):
+>       assert 42 == 43
+E       assert 42 == 43
+
+test_select_simple.py:5: AssertionError
+=========================== short test summary info ============================
+FAILED test_select_simple.py::TestClass::test_method_one - assert 42 == 43
+======================= 1 failed, 1 deselected in 0.00s ========================
+_____________ TestKeywordSelection.test_select_extra_keywords[xxx] _____________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_select_extra_keywords0
+collected 2 items / 1 deselected / 1 selected
+
+test_select.py .
+
+======================= 1 passed, 1 deselected in 0.00s ========================
+keyword 'xxx'
+_______ TestKeywordSelection.test_select_extra_keywords[xxx and test_2] ________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_select_extra_keywords1
+collected 2 items / 1 deselected / 1 selected
+
+test_select.py .
+
+======================= 1 passed, 1 deselected in 0.00s ========================
+keyword 'xxx and test_2'
+__________ TestKeywordSelection.test_select_extra_keywords[TestClass] __________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_select_extra_keywords2
+collected 2 items / 1 deselected / 1 selected
+
+test_select.py .
+
+======================= 1 passed, 1 deselected in 0.00s ========================
+keyword 'TestClass'
+_____ TestKeywordSelection.test_select_extra_keywords[xxx and not test_1] ______
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_select_extra_keywords3
+collected 2 items / 1 deselected / 1 selected
+
+test_select.py .
+
+======================= 1 passed, 1 deselected in 0.00s ========================
+keyword 'xxx and not test_1'
+____ TestKeywordSelection.test_select_extra_keywords[TestClass and test_2] _____
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_select_extra_keywords4
+collected 2 items / 1 deselected / 1 selected
+
+test_select.py .
+
+======================= 1 passed, 1 deselected in 0.00s ========================
+keyword 'TestClass and test_2'
+_ TestKeywordSelection.test_select_extra_keywords[xxx and TestClass and test_2] _
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_select_extra_keywords5
+collected 2 items / 1 deselected / 1 selected
+
+test_select.py .
+
+======================= 1 passed, 1 deselected in 0.00s ========================
+keyword 'xxx and TestClass and test_2'
+___________________ TestKeywordSelection.test_select_starton ___________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_select_starton0
+collected 3 items / 1 deselected / 2 selected
+
+test_threepass.py ..                                                     [100%]
+
+=============================== warnings summary ===============================
+/swe_util/eval_data/testbeds/pytest-dev__pytest__5.4/src/_pytest/mark/__init__.py:259
+  /swe_util/eval_data/testbeds/pytest-dev__pytest__5.4/src/_pytest/mark/__init__.py:259: PytestDeprecationWarning: The `-k 'expr:'` syntax to -k is deprecated.
+  Please open an issue if you use this and want a replacement.
+    deselect_by_keyword(items, config)
+
+-- Docs: https://docs.pytest.org/en/latest/warnings.html
+================== 2 passed, 1 deselected, 1 warning in 0.01s ==================
+___________________ TestKeywordSelection.test_keyword_extra ____________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_keyword_extra0
+collected 1 item
+
+test_keyword_extra.py F                                                  [100%]
+
+=================================== FAILURES ===================================
+___________________________________ test_one ___________________________________
+
+    def test_one():
+>       assert 0
+E       assert 0
+
+test_keyword_extra.py:2: AssertionError
+=========================== short test summary info ============================
+FAILED test_keyword_extra.py::test_one - assert 0
+============================== 1 failed in 0.00s ===============================
+________________ TestKeywordSelection.test_no_magic_values[__] _________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_no_magic_values0
+collected 1 item / 1 deselected
+
+============================ 1 deselected in 0.00s =============================
+_________________ TestKeywordSelection.test_no_magic_values[+] _________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_no_magic_values1
+collected 1 item / 1 deselected
+
+============================ 1 deselected in 0.01s =============================
+________________ TestKeywordSelection.test_no_magic_values[..] _________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_no_magic_values2
+collected 1 item / 1 deselected
+
+============================ 1 deselected in 0.00s =============================
+_______ TestKeywordSelection.test_no_match_directories_outside_the_suite _______
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_no_match_directories_outside_the_suite0
+collected 2 items
+
+<Package tests>
+  <Module test_foo.py>
+    <Function test_aaa>
+    <Function test_ddd>
+
+============================ no tests ran in 0.00s =============================
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_no_match_directories_outside_the_suite0
+collected 2 items / 2 deselected
+
+============================ 2 deselected in 0.00s =============================
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_no_match_directories_outside_the_suite0
+collected 2 items / 1 deselected / 1 selected
+
+<Package tests>
+  <Module test_foo.py>
+    <Function test_ddd>
+
+============================ 1 deselected in 0.00s =============================
+____________________ test_parameterset_for_fail_at_collect _____________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_parameterset_for_fail_at_collect0, configfile: tox.ini
+collected 0 items / 1 error
+
+==================================== ERRORS ====================================
+__________ ERROR collecting test_parameterset_for_fail_at_collect.py ___________
+Empty parameter set in 'test' at line 3
+=========================== short test summary info ============================
+ERROR test_parameterset_for_fail_at_collect.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+=============================== 1 error in 0.04s ===============================
+________________________ test_mark_expressions_no_smear ________________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_mark_expressions_no_smear0
+collected 2 items / 1 deselected / 1 selected
+
+test_mark_expressions_no_smear.py .                                      [100%]
+
+======================= 1 passed, 1 deselected in 0.01s ========================
+________________________ test_markers_from_parametrize _________________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_markers_from_parametrize0
+collected 4 items
+
+test_markers_from_parametrize.py ....                                    [100%]
+
+============================== 4 passed in 0.01s ===============================
+___________ test_marker_expr_eval_failure_handling[NOT internal_err] ___________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_marker_expr_eval_failure_handling0
+collected 1 item
+
+============================ no tests ran in 0.00s =============================
+----------------------------- Captured stderr call -----------------------------
+ERROR: Wrong expression passed to '-m': NOT internal_err: at column 5: expected end of input; got identifier
+
+__________ test_marker_expr_eval_failure_handling[NOT (internal_err)] __________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_marker_expr_eval_failure_handling1
+collected 1 item
+
+============================ no tests ran in 0.00s =============================
+----------------------------- Captured stderr call -----------------------------
+ERROR: Wrong expression passed to '-m': NOT (internal_err): at column 5: expected end of input; got left parenthesis
+
+________________ test_marker_expr_eval_failure_handling[bogus/] ________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-5.4.1.dev522+g7b77fc086, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-106/test_marker_expr_eval_failure_handling2
+collected 1 item
+
+============================ no tests ran in 0.00s =============================
+----------------------------- Captured stderr call -----------------------------
+ERROR: Wrong expression passed to '-m': bogus/: at column 6: unexpected character "/"
+
+=========================== short test summary info ============================
+PASSED testing/test_mark.py::TestMark::test_pytest_exists_in_namespace_all[py.test-mark]
+PASSED testing/test_mark.py::TestMark::test_pytest_exists_in_namespace_all[py.test-param]
+PASSED testing/test_mark.py::TestMark::test_pytest_exists_in_namespace_all[pytest-mark]
+PASSED testing/test_mark.py::TestMark::test_pytest_exists_in_namespace_all[pytest-param]
+PASSED testing/test_mark.py::TestMark::test_pytest_mark_notcallable
+PASSED testing/test_mark.py::TestMark::test_mark_with_param
+PASSED testing/test_mark.py::TestMark::test_pytest_mark_name_starts_with_underscore
+PASSED testing/test_mark.py::TestMarkDecorator::test__eq__[lhs0-rhs0-True]
+PASSED testing/test_mark.py::TestMarkDecorator::test__eq__[lhs1-rhs1-False]
+PASSED testing/test_mark.py::TestMarkDecorator::test__eq__[lhs2-bar-False]
+PASSED testing/test_mark.py::TestMarkDecorator::test__eq__[foo-rhs3-False]
+PASSED testing/test_mark.py::TestMarkDecorator::test_aliases
+PASSED testing/test_mark.py::test_addmarker_order
+PASSED testing/test_mark.py::test_pytest_param_id_requires_string
+PASSED testing/test_mark.py::test_pytest_param_id_allows_none_or_string[None]
+PASSED testing/test_mark.py::test_pytest_param_id_allows_none_or_string[hello world]
+PASSED testing/test_mark.py::test_marked_class_run_twice
+PASSED testing/test_mark.py::test_ini_markers
+PASSED testing/test_mark.py::test_markers_option
+PASSED testing/test_mark.py::test_ini_markers_whitespace
+PASSED testing/test_mark.py::test_marker_without_description
+PASSED testing/test_mark.py::test_markers_option_with_plugin_in_current_dir
+PASSED testing/test_mark.py::test_mark_on_pseudo_function
+PASSED testing/test_mark.py::test_strict_prohibits_unregistered_markers[--strict-markers]
+PASSED testing/test_mark.py::test_strict_prohibits_unregistered_markers[--strict]
+PASSED testing/test_mark.py::test_mark_option[xyz-expected_passed0]
+PASSED testing/test_mark.py::test_mark_option[(((  xyz))  )-expected_passed1]
+PASSED testing/test_mark.py::test_mark_option[not not xyz-expected_passed2]
+PASSED testing/test_mark.py::test_mark_option[xyz and xyz2-expected_passed3]
+PASSED testing/test_mark.py::test_mark_option[xyz2-expected_passed4]
+PASSED testing/test_mark.py::test_mark_option[xyz or xyz2-expected_passed5]
+PASSED testing/test_mark.py::test_mark_option_custom[interface-expected_passed0]
+PASSED testing/test_mark.py::test_mark_option_custom[not interface-expected_passed1]
+PASSED testing/test_mark.py::test_keyword_option_custom[interface-expected_passed0]
+PASSED testing/test_mark.py::test_keyword_option_custom[not interface-expected_passed1]
+PASSED testing/test_mark.py::test_keyword_option_custom[pass-expected_passed2]
+PASSED testing/test_mark.py::test_keyword_option_custom[not pass-expected_passed3]
+PASSED testing/test_mark.py::test_keyword_option_custom[not not not (pass)-expected_passed4]
+PASSED testing/test_mark.py::test_keyword_option_custom[1 or 2-expected_passed5]
+PASSED testing/test_mark.py::test_keyword_option_custom[not (1 or 2)-expected_passed6]
+PASSED testing/test_mark.py::test_keyword_option_considers_mark
+PASSED testing/test_mark.py::test_keyword_option_parametrize[None-expected_passed0]
+PASSED testing/test_mark.py::test_keyword_option_parametrize[[1.3]-expected_passed1]
+PASSED testing/test_mark.py::test_keyword_option_parametrize[2-3-expected_passed2]
+PASSED testing/test_mark.py::test_parametrize_with_module
+PASSED testing/test_mark.py::test_keyword_option_wrong_arguments[foo or-at column 7: expected not OR left parenthesis OR identifier; got end of input]
+PASSED testing/test_mark.py::test_keyword_option_wrong_arguments[foo or or-at column 8: expected not OR left parenthesis OR identifier; got or]
+PASSED testing/test_mark.py::test_keyword_option_wrong_arguments[(foo-at column 5: expected right parenthesis; got end of input]
+PASSED testing/test_mark.py::test_keyword_option_wrong_arguments[foo bar-at column 5: expected end of input; got identifier]
+PASSED testing/test_mark.py::test_keyword_option_wrong_arguments[or or-at column 1: expected not OR left parenthesis OR identifier; got or]
+PASSED testing/test_mark.py::test_keyword_option_wrong_arguments[not or-at column 5: expected not OR left parenthesis OR identifier; got or]
+PASSED testing/test_mark.py::test_parametrized_collected_from_command_line
+PASSED testing/test_mark.py::test_parametrized_collect_with_wrong_args
+PASSED testing/test_mark.py::test_parametrized_with_kwargs
+PASSED testing/test_mark.py::test_parametrize_iterator
+PASSED testing/test_mark.py::TestFunctional::test_merging_markers_deep
+PASSED testing/test_mark.py::TestFunctional::test_mark_decorator_subclass_does_not_propagate_to_base
+PASSED testing/test_mark.py::TestFunctional::test_mark_should_not_pass_to_siebling_class
+PASSED testing/test_mark.py::TestFunctional::test_mark_decorator_baseclasses_merged
+PASSED testing/test_mark.py::TestFunctional::test_mark_closest
+PASSED testing/test_mark.py::TestFunctional::test_mark_with_wrong_marker
+PASSED testing/test_mark.py::TestFunctional::test_mark_dynamically_in_funcarg
+PASSED testing/test_mark.py::TestFunctional::test_no_marker_match_on_unmarked_names
+PASSED testing/test_mark.py::TestFunctional::test_keywords_at_node_level
+PASSED testing/test_mark.py::TestFunctional::test_keyword_added_for_session
+PASSED testing/test_mark.py::TestFunctional::test_mark_from_parameters
+PASSED testing/test_mark.py::TestKeywordSelection::test_select_simple
+PASSED testing/test_mark.py::TestKeywordSelection::test_select_extra_keywords[xxx]
+PASSED testing/test_mark.py::TestKeywordSelection::test_select_extra_keywords[xxx and test_2]
+PASSED testing/test_mark.py::TestKeywordSelection::test_select_extra_keywords[TestClass]
+PASSED testing/test_mark.py::TestKeywordSelection::test_select_extra_keywords[xxx and not test_1]
+PASSED testing/test_mark.py::TestKeywordSelection::test_select_extra_keywords[TestClass and test_2]
+PASSED testing/test_mark.py::TestKeywordSelection::test_select_extra_keywords[xxx and TestClass and test_2]
+PASSED testing/test_mark.py::TestKeywordSelection::test_select_starton
+PASSED testing/test_mark.py::TestKeywordSelection::test_keyword_extra
+PASSED testing/test_mark.py::TestKeywordSelection::test_no_magic_values[__]
+PASSED testing/test_mark.py::TestKeywordSelection::test_no_magic_values[+]
+PASSED testing/test_mark.py::TestKeywordSelection::test_no_magic_values[..]
+PASSED testing/test_mark.py::TestKeywordSelection::test_no_match_directories_outside_the_suite
+PASSED testing/test_mark.py::test_parameterset_for_parametrize_marks[None]
+PASSED testing/test_mark.py::test_parameterset_for_parametrize_marks[]
+PASSED testing/test_mark.py::test_parameterset_for_parametrize_marks[skip]
+PASSED testing/test_mark.py::test_parameterset_for_parametrize_marks[xfail]
+PASSED testing/test_mark.py::test_parameterset_for_fail_at_collect
+PASSED testing/test_mark.py::test_parameterset_for_parametrize_bad_markname
+PASSED testing/test_mark.py::test_mark_expressions_no_smear
+PASSED testing/test_mark.py::test_markers_from_parametrize
+PASSED testing/test_mark.py::test_marker_expr_eval_failure_handling[NOT internal_err]
+PASSED testing/test_mark.py::test_marker_expr_eval_failure_handling[NOT (internal_err)]
+PASSED testing/test_mark.py::test_marker_expr_eval_failure_handling[bogus/]
+XFAIL testing/test_mark.py::TestKeywordSelection::test_keyword_extra_dash
+FAILED testing/test_mark.py::TestFunctional::test_reevaluate_dynamic_expr - A...
+=================== 1 failed, 90 passed, 1 xfailed in 1.96s ====================
+
+>>>>> Some Tests Failed

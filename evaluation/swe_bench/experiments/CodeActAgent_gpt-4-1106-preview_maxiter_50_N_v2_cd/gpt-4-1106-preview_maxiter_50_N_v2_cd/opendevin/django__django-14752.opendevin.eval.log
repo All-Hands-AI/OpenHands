@@ -1,0 +1,229 @@
+Task Metadata:
+	- Instance ID: django__django-14752
+	- Testbed: /swe_util/eval_data/testbeds/django__django__4.0
+	- Virtual Env.: django__django__4.0
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__4.0 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/django__django__4.0
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: asgiref>=3.3.2 in /swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/site-packages (from Django==4.0.dev20210809172329) (3.8.1)
+Requirement already satisfied: pytz in /swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/site-packages (from Django==4.0.dev20210809172329) (2024.1)
+Requirement already satisfied: sqlparse>=0.2.2 in /swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/site-packages (from Django==4.0.dev20210809172329) (0.5.0)
+Requirement already satisfied: typing-extensions>=4 in /swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/site-packages (from asgiref>=3.3.2->Django==4.0.dev20210809172329) (4.11.0)
+Building wheels for collected packages: Django
+  Building editable for Django (pyproject.toml): started
+  Building editable for Django (pyproject.toml): finished with status 'done'
+  Created wheel for Django: filename=Django-4.0.dev20210809172329-0.editable-py3-none-any.whl size=26481 sha256=f945416f6fe289b31b21db3acb4500ebe704dea9f2760bb656eb4ecbdb9e072c
+  Stored in directory: /tmp/pip-ephem-wheel-cache-jm04vqv5/wheels/78/a8/44/4a36192cfeb98e1e098ced3ae2973727e752f889fc463ef49c
+Successfully built Django
+Installing collected packages: Django
+  Attempting uninstall: Django
+    Found existing installation: Django 4.0.dev20210917181926
+    Uninstalling Django-4.0.dev20210917181926:
+      Successfully uninstalled Django-4.0.dev20210917181926
+Successfully installed Django-4.0.dev20210809172329
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__4.0 && echo 'activate successful' && ./tests/runtests.py --verbosity 2 admin_views.test_autocomplete_view;
+Output:
+activate successful
+Testing against Django installed in '/swe_util/eval_data/testbeds/django__django__4.0/django' with up to 64 processes
+Importing application admin_views
+Found 19 test(s).
+Skipping setup of unused database(s): other.
+Operations to perform:
+  Synchronize unmigrated apps: admin_views, auth, contenttypes, messages, sessions, staticfiles
+  Apply all migrations: admin, sites
+Synchronizing apps without migrations:
+  Creating tables...
+    Creating table django_content_type
+    Creating table auth_permission
+    Creating table auth_group
+    Creating table auth_user
+    Creating table django_session
+    Creating table admin_views_section
+    Creating table admin_views_article
+    Creating table admin_views_book
+    Creating table admin_views_promo
+    Creating table admin_views_chapter
+    Creating table admin_views_chapterxtra1
+    Creating table admin_views_chapterxtra2
+    Creating table admin_views_rowlevelchangepermissionmodel
+    Creating table admin_views_customarticle
+    Creating table admin_views_modelwithstringprimarykey
+    Creating table admin_views_color
+    Creating table admin_views_thing
+    Creating table admin_views_actor
+    Creating table admin_views_inquisition
+    Creating table admin_views_sketch
+    Creating table admin_views_character
+    Creating table admin_views_stumpjoke
+    Creating table admin_views_fabric
+    Creating table admin_views_person
+    Creating table admin_views_persona
+    Creating table admin_views_account
+    Creating table admin_views_fooaccount
+    Creating table admin_views_baraccount
+    Creating table admin_views_subscriber
+    Creating table admin_views_externalsubscriber
+    Creating table admin_views_oldsubscriber
+    Creating table admin_views_media
+    Creating table admin_views_podcast
+    Creating table admin_views_vodcast
+    Creating table admin_views_parent
+    Creating table admin_views_child
+    Creating table admin_views_pkchild
+    Creating table admin_views_toy
+    Creating table admin_views_emptymodel
+    Creating table admin_views_gallery
+    Creating table admin_views_picture
+    Creating table admin_views_language
+    Creating table admin_views_title
+    Creating table admin_views_titletranslation
+    Creating table admin_views_recommender
+    Creating table admin_views_recommendation
+    Creating table admin_views_collector
+    Creating table admin_views_widget
+    Creating table admin_views_doohickey
+    Creating table admin_views_grommet
+    Creating table admin_views_whatsit
+    Creating table admin_views_doodad
+    Creating table admin_views_fancydoodad
+    Creating table admin_views_category
+    Creating table admin_views_link
+    Creating table admin_views_prepopulatedpost
+    Creating table admin_views_prepopulatedsubpost
+    Creating table admin_views_post
+    Creating table admin_views_gadget
+    Creating table admin_views_villain
+    Creating table admin_views_supervillain
+    Creating table admin_views_funkytag
+    Creating table admin_views_plot
+    Creating table admin_views_plotdetails
+    Creating table admin_views_secrethideout
+    Creating table admin_views_supersecrethideout
+    Creating table admin_views_bookmark
+    Creating table admin_views_cyclicone
+    Creating table admin_views_cyclictwo
+    Creating table admin_views_topping
+    Creating table admin_views_pizza
+    Creating table admin_views_album
+    Creating table admin_views_song
+    Creating table admin_views_employee
+    Creating table admin_views_workhour
+    Creating table admin_views_manager
+    Creating table admin_views_bonus
+    Creating table admin_views_question
+    Creating table admin_views_answer
+    Creating table admin_views_reservation
+    Creating table admin_views_fooddelivery
+    Creating table admin_views_coverletter
+    Creating table admin_views_paper
+    Creating table admin_views_shortmessage
+    Creating table admin_views_telegram
+    Creating table admin_views_story
+    Creating table admin_views_otherstory
+    Creating table admin_views_complexsortedperson
+    Creating table admin_views_pluggablesearchperson
+    Creating table admin_views_prepopulatedpostlargeslug
+    Creating table admin_views_adminorderedfield
+    Creating table admin_views_adminorderedmodelmethod
+    Creating table admin_views_adminorderedadminmethod
+    Creating table admin_views_adminorderedcallable
+    Creating table admin_views_report
+    Creating table admin_views_mainprepopulated
+    Creating table admin_views_relatedprepopulated
+    Creating table admin_views_unorderedobject
+    Creating table admin_views_undeletableobject
+    Creating table admin_views_unchangeableobject
+    Creating table admin_views_usermessenger
+    Creating table admin_views_simple
+    Creating table admin_views_choice
+    Creating table admin_views_parentwithdependentchildren
+    Creating table admin_views_dependentchild
+    Creating table admin_views_filteredmanager
+    Creating table admin_views_emptymodelvisible
+    Creating table admin_views_emptymodelhidden
+    Creating table admin_views_emptymodelmixin
+    Creating table admin_views_state
+    Creating table admin_views_city
+    Creating table admin_views_restaurant
+    Creating table admin_views_worker
+    Creating table admin_views_referencedbyparent
+    Creating table admin_views_parentwithfk
+    Creating table admin_views_childofreferer
+    Creating table admin_views_inlinereferer
+    Creating table admin_views_referencedbyinline
+    Creating table admin_views_inlinereference
+    Creating table admin_views_recipe
+    Creating table admin_views_ingredient
+    Creating table admin_views_recipeingredient
+    Creating table admin_views_notreferenced
+    Creating table admin_views_explicitlyprovidedpk
+    Creating table admin_views_implicitlygeneratedpk
+    Creating table admin_views_referencedbygenrel
+    Creating table admin_views_genrelreference
+    Creating table admin_views_parentwithuuidpk
+    Creating table admin_views_relatedwithuuidpkmodel
+    Creating table admin_views_author
+    Creating table admin_views_authorship
+    Creating table admin_views_readonlyrelatedfield
+    Running deferred SQL...
+Running migrations:
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying sites.0001_initial... OK
+  Applying sites.0002_alter_domain_unique... OK
+System check identified no issues (1 silenced).
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+test_inline_add_another_widgets (admin_views.test_autocomplete_view.SeleniumTests) ... skipped 'No browsers specified.'
+test_select (admin_views.test_autocomplete_view.SeleniumTests) ... skipped 'No browsers specified.'
+test_select_multiple (admin_views.test_autocomplete_view.SeleniumTests) ... skipped 'No browsers specified.'
+test_custom_to_field (admin_views.test_autocomplete_view.AutocompleteJsonViewTests) ... ok
+test_custom_to_field_custom_pk (admin_views.test_autocomplete_view.AutocompleteJsonViewTests) ... ok
+test_custom_to_field_permission_denied (admin_views.test_autocomplete_view.AutocompleteJsonViewTests) ... ok
+test_field_does_not_allowed (admin_views.test_autocomplete_view.AutocompleteJsonViewTests) ... ok
+test_field_does_not_exist (admin_views.test_autocomplete_view.AutocompleteJsonViewTests) ... ok
+test_field_no_related_field (admin_views.test_autocomplete_view.AutocompleteJsonViewTests) ... ok
+test_get_paginator (admin_views.test_autocomplete_view.AutocompleteJsonViewTests)
+Search results are paginated. ... ok
+test_has_view_or_change_permission_required (admin_views.test_autocomplete_view.AutocompleteJsonViewTests)
+Users require the change permission for the related model to the ... ok
+test_limit_choices_to (admin_views.test_autocomplete_view.AutocompleteJsonViewTests) ... ok
+test_missing_search_fields (admin_views.test_autocomplete_view.AutocompleteJsonViewTests) ... ok
+test_must_be_logged_in (admin_views.test_autocomplete_view.AutocompleteJsonViewTests) ... ok
+test_search_use_distinct (admin_views.test_autocomplete_view.AutocompleteJsonViewTests)
+Searching across model relations use QuerySet.distinct() to avoid ... ok
+test_serialize_result (admin_views.test_autocomplete_view.AutocompleteJsonViewTests) ... ok
+test_success (admin_views.test_autocomplete_view.AutocompleteJsonViewTests) ... ok
+test_to_field_resolution_with_fk_pk (admin_views.test_autocomplete_view.AutocompleteJsonViewTests) ... ok
+test_to_field_resolution_with_mti (admin_views.test_autocomplete_view.AutocompleteJsonViewTests)
+to_field resolution should correctly resolve for target models using ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 0.498s
+
+OK (skipped=3)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+
+>>>>> All Tests Passed

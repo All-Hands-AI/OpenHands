@@ -1,0 +1,322 @@
+Task Metadata:
+	- Instance ID: django__django-15902
+	- Testbed: /swe_util/eval_data/testbeds/django__django__4.2
+	- Virtual Env.: django__django__4.2
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__4.2 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/django__django__4.2
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: asgiref>=3.5.2 in /swe_util/miniconda3/envs/django__django__4.2/lib/python3.9/site-packages (from Django==4.2.dev20220801182949) (3.8.1)
+Requirement already satisfied: sqlparse>=0.2.2 in /swe_util/miniconda3/envs/django__django__4.2/lib/python3.9/site-packages (from Django==4.2.dev20220801182949) (0.5.0)
+Requirement already satisfied: typing-extensions>=4 in /swe_util/miniconda3/envs/django__django__4.2/lib/python3.9/site-packages (from asgiref>=3.5.2->Django==4.2.dev20220801182949) (4.11.0)
+Building wheels for collected packages: Django
+  Building editable for Django (pyproject.toml): started
+  Building editable for Django (pyproject.toml): finished with status 'done'
+  Created wheel for Django: filename=Django-4.2.dev20220801182949-0.editable-py3-none-any.whl size=26988 sha256=891724032872d07b07bd9e1a0563ac082338a985432cc953b57b98e486902ad3
+  Stored in directory: /tmp/pip-ephem-wheel-cache-79i4injt/wheels/00/fa/57/964af4daf3f7bfbc9cbf4465b2f79914216e4bcb9b54d53278
+Successfully built Django
+Installing collected packages: Django
+  Attempting uninstall: Django
+    Found existing installation: Django 4.2.dev20220623091235
+    Uninstalling Django-4.2.dev20220623091235:
+      Successfully uninstalled Django-4.2.dev20220623091235
+Successfully installed Django-4.2.dev20220801182949
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__4.2 && echo 'activate successful' && ./tests/runtests.py --verbosity 2 forms_tests.tests.test_formsets;
+Output:
+activate successful
+Testing against Django installed in '/swe_util/eval_data/testbeds/django__django__4.2/django' with up to 64 processes
+Importing application forms_tests
+Found 157 test(s).
+Skipping setup of unused database(s): default, other.
+System check identified no issues (0 silenced).
+test_no_management_form_warning (forms_tests.tests.test_formsets.DeprecationTests)
+Management forms are already rendered with the new div template. ... ERROR
+test_warning (forms_tests.tests.test_formsets.DeprecationTests) ... ok
+test_invalid (forms_tests.tests.test_formsets.AllValidTests)
+all_valid() validates all forms, even when some are invalid. ... ok
+test_valid (forms_tests.tests.test_formsets.AllValidTests) ... ok
+test_empty_formset_is_multipart (forms_tests.tests.test_formsets.TestEmptyFormSet)
+is_multipart() works with an empty formset. ... ok
+test_empty_formset_is_valid (forms_tests.tests.test_formsets.TestEmptyFormSet)
+An empty formset still calls clean() ... ok
+test_empty_formset_media (forms_tests.tests.test_formsets.TestEmptyFormSet)
+Media is available on empty formset. ... ok
+test_as_div (forms_tests.tests.test_formsets.FormsetAsTagTests) ... ok
+test_as_p (forms_tests.tests.test_formsets.FormsetAsTagTests) ... ok
+test_as_table (forms_tests.tests.test_formsets.FormsetAsTagTests) ... ok
+test_as_ul (forms_tests.tests.test_formsets.FormsetAsTagTests) ... ok
+test_customize_management_form_error (forms_tests.tests.test_formsets.TestIsBoundBehavior) ... ok
+test_empty_forms_are_unbound (forms_tests.tests.test_formsets.TestIsBoundBehavior) ... ok
+test_form_errors_are_caught_by_formset (forms_tests.tests.test_formsets.TestIsBoundBehavior) ... ok
+test_management_form_invalid_data (forms_tests.tests.test_formsets.TestIsBoundBehavior) ... ok
+test_no_data_error (forms_tests.tests.test_formsets.TestIsBoundBehavior) ... ok
+test_with_management_data_attrs_work_fine (forms_tests.tests.test_formsets.TestIsBoundBehavior) ... ok
+test_as_div (forms_tests.tests.test_formsets.Jinja2FormsetAsTagTests) ... ok
+test_as_p (forms_tests.tests.test_formsets.Jinja2FormsetAsTagTests) ... ok
+test_as_table (forms_tests.tests.test_formsets.Jinja2FormsetAsTagTests) ... ok
+test_as_ul (forms_tests.tests.test_formsets.Jinja2FormsetAsTagTests) ... ok
+test_absolute_max (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_absolute_max_invalid (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_absolute_max_with_max_num (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_basic_formset (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+A FormSet constructor takes the same arguments as Form. Create a ... ok
+test_blank_form_unfilled (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+A form that's displayed as blank may be submitted as blank. ... ok
+test_can_delete_extra_formset_forms (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_clean_hook (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+FormSets have a clean() hook for doing extra validation that isn't tied ... ok
+test_custom_renderer (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+A custom renderer passed to a formset_factory() is passed to all forms ... ok
+test_default_absolute_max (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_delete_prefilled_data (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+Deleting prefilled data is an error. Removing data from form fields ... ok
+test_disable_delete_extra_formset_forms (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_displaying_more_than_one_blank_form (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+More than 1 empty form can be displayed using formset_factory's ... ok
+test_empty_ordered_fields (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+Ordering fields are allowed to be left blank. If they are left blank, ... ok
+test_form_kwargs_empty_form (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_form_kwargs_formset (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+Custom kwargs set on the formset instance are passed to the ... ok
+test_form_kwargs_formset_dynamic (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+Form kwargs can be passed dynamically in a formset. ... ok
+test_formset_calls_forms_is_valid (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+Formsets call is_valid() on each form. ... ok
+test_formset_error_class (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+Formset's forms use the formset's error_class. ... ok
+test_formset_has_changed (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+FormSet.has_changed() is True if any data is passed to its forms, even ... ok
+test_formset_initial_data (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+A FormSet can be prefilled with existing data by providing a list of ... ok
+test_formset_iteration (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+Formset instances are iterable. ... ok
+test_formset_nonzero (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+A formsets without any forms evaluates as True. ... ok
+test_formset_splitdatetimefield (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+Formset works with SplitDateTimeField(initial=datetime.datetime.now). ... ok
+test_formset_total_error_count (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+A valid formset should have 0 total errors. ... ok
+test_formset_total_error_count_with_non_form_errors (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_formset_validate_max_flag (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+If validate_max is set and max_num is less than TOTAL_FORMS in the ... ok
+test_formset_validate_max_flag_custom_error (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_formset_validate_min_excludes_empty_forms (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_formset_validate_min_flag (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+If validate_min is set and min_num is more than TOTAL_FORMS in the ... ok
+test_formset_validate_min_flag_custom_formatted_error (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_formset_validate_min_unchanged_forms (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+min_num validation doesn't consider unchanged forms with initial data ... ok
+test_formset_validation (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_formset_validation_count (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+A formset's ManagementForm is validated once per FormSet.is_valid() ... ok
+test_formset_with_deletion (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+formset_factory's can_delete argument adds a boolean "delete" field to ... ok
+test_formset_with_deletion_custom_widget (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_formset_with_deletion_invalid_deleted_form (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+deleted_forms works on a valid formset even if a deleted form would ... ok
+test_formset_with_deletion_remove_deletion_flag (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+If a form is filled with something and can_delete is also checked, that ... ok
+test_formset_with_ordering_and_deletion (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+FormSets with ordering + deletion. ... ok
+test_formsets_with_ordering (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+formset_factory's can_order argument adds an integer field to each ... ok
+test_formsets_with_ordering_custom_widget (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_hard_limit_on_instantiated_forms (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+A formset has a hard limit on the number of forms instantiated. ... ok
+test_html_safe (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_increase_hard_limit (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+Can increase the built-in forms limit via a higher max_num. ... ok
+test_invalid_deleted_form_with_ordering (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+Can get ordered_forms from a valid formset even if a deleted form ... ok
+test_limited_max_forms_two (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_limiting_extra_lest_than_max_num (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+max_num has no effect when extra is less than max_num. ... ok
+test_limiting_max_forms (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+Limiting the maximum number of forms with max_num. ... ok
+test_management_form_field_names (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+The management form class has field names matching the constants. ... ok
+test_management_form_prefix (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+The management form has the correct prefix. ... ok
+test_max_num_with_initial_data (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_max_num_zero (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+If max_num is 0 then no form is rendered at all, regardless of extra, ... ok
+test_max_num_zero_with_initial (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_min_num_displaying_more_than_one_blank_form (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+More than 1 empty form can also be displayed using formset_factory's ... ok
+test_min_num_displaying_more_than_one_blank_form_with_zero_extra (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+More than 1 empty form can be displayed using min_num. ... ok
+test_more_initial_data (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+The extra argument works when the formset is pre-filled with initial ... ok
+test_more_initial_form_result_in_one (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+One form from initial and extra=3 with max_num=2 results in the one ... ok
+test_more_initial_than_max_num (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+More initial forms than max_num results in all initial forms being ... ok
+test_non_form_errors (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_non_form_errors_run_full_clean (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+If non_form_errors() is called without calling is_valid() first, ... ok
+test_ordering_blank_fieldsets (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+Ordering works with blank fieldsets. ... ok
+test_repr (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_repr_do_not_trigger_validation (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_second_form_partially_filled (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+If at least one field is filled out on a blank form, it will be ... ok
+test_second_form_partially_filled_2 (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+A partially completed form is invalid. ... ok
+test_single_form_completed (forms_tests.tests.test_formsets.FormsFormsetTestCase)
+Just one form may be completed. ... ok
+test_template_name_can_be_overridden (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_template_name_uses_renderer_value (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_validate_max_ignores_forms_marked_for_deletion (forms_tests.tests.test_formsets.FormsFormsetTestCase) ... ok
+test_absolute_max (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_absolute_max_invalid (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_absolute_max_with_max_num (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_basic_formset (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+A FormSet constructor takes the same arguments as Form. Create a ... ok
+test_blank_form_unfilled (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+A form that's displayed as blank may be submitted as blank. ... ok
+test_can_delete_extra_formset_forms (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_clean_hook (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+FormSets have a clean() hook for doing extra validation that isn't tied ... ok
+test_custom_renderer (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+A custom renderer passed to a formset_factory() is passed to all forms ... ok
+test_default_absolute_max (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_delete_prefilled_data (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+Deleting prefilled data is an error. Removing data from form fields ... ok
+test_disable_delete_extra_formset_forms (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_displaying_more_than_one_blank_form (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+More than 1 empty form can be displayed using formset_factory's ... ok
+test_empty_ordered_fields (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+Ordering fields are allowed to be left blank. If they are left blank, ... ok
+test_form_kwargs_empty_form (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_form_kwargs_formset (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+Custom kwargs set on the formset instance are passed to the ... ok
+test_form_kwargs_formset_dynamic (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+Form kwargs can be passed dynamically in a formset. ... ok
+test_formset_calls_forms_is_valid (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+Formsets call is_valid() on each form. ... ok
+test_formset_error_class (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+Formset's forms use the formset's error_class. ... ok
+test_formset_has_changed (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+FormSet.has_changed() is True if any data is passed to its forms, even ... ok
+test_formset_initial_data (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+A FormSet can be prefilled with existing data by providing a list of ... ok
+test_formset_iteration (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+Formset instances are iterable. ... ok
+test_formset_nonzero (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+A formsets without any forms evaluates as True. ... ok
+test_formset_splitdatetimefield (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+Formset works with SplitDateTimeField(initial=datetime.datetime.now). ... ok
+test_formset_total_error_count (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+A valid formset should have 0 total errors. ... ok
+test_formset_total_error_count_with_non_form_errors (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_formset_validate_max_flag (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+If validate_max is set and max_num is less than TOTAL_FORMS in the ... ok
+test_formset_validate_max_flag_custom_error (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_formset_validate_min_excludes_empty_forms (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_formset_validate_min_flag (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+If validate_min is set and min_num is more than TOTAL_FORMS in the ... ok
+test_formset_validate_min_flag_custom_formatted_error (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_formset_validate_min_unchanged_forms (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+min_num validation doesn't consider unchanged forms with initial data ... ok
+test_formset_validation (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_formset_validation_count (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+A formset's ManagementForm is validated once per FormSet.is_valid() ... ok
+test_formset_with_deletion (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+formset_factory's can_delete argument adds a boolean "delete" field to ... ok
+test_formset_with_deletion_custom_widget (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_formset_with_deletion_invalid_deleted_form (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+deleted_forms works on a valid formset even if a deleted form would ... ok
+test_formset_with_deletion_remove_deletion_flag (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+If a form is filled with something and can_delete is also checked, that ... ok
+test_formset_with_ordering_and_deletion (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+FormSets with ordering + deletion. ... ok
+test_formsets_with_ordering (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+formset_factory's can_order argument adds an integer field to each ... ok
+test_formsets_with_ordering_custom_widget (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_hard_limit_on_instantiated_forms (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+A formset has a hard limit on the number of forms instantiated. ... ok
+test_html_safe (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_increase_hard_limit (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+Can increase the built-in forms limit via a higher max_num. ... ok
+test_invalid_deleted_form_with_ordering (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+Can get ordered_forms from a valid formset even if a deleted form ... ok
+test_limited_max_forms_two (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_limiting_extra_lest_than_max_num (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+max_num has no effect when extra is less than max_num. ... ok
+test_limiting_max_forms (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+Limiting the maximum number of forms with max_num. ... ok
+test_management_form_field_names (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+The management form class has field names matching the constants. ... ok
+test_management_form_prefix (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+The management form has the correct prefix. ... ok
+test_max_num_with_initial_data (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_max_num_zero (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+If max_num is 0 then no form is rendered at all, regardless of extra, ... ok
+test_max_num_zero_with_initial (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_min_num_displaying_more_than_one_blank_form (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+More than 1 empty form can also be displayed using formset_factory's ... ok
+test_min_num_displaying_more_than_one_blank_form_with_zero_extra (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+More than 1 empty form can be displayed using min_num. ... ok
+test_more_initial_data (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+The extra argument works when the formset is pre-filled with initial ... ok
+test_more_initial_form_result_in_one (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+One form from initial and extra=3 with max_num=2 results in the one ... ok
+test_more_initial_than_max_num (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+More initial forms than max_num results in all initial forms being ... ok
+test_non_form_errors (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_non_form_errors_run_full_clean (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+If non_form_errors() is called without calling is_valid() first, ... ok
+test_ordering_blank_fieldsets (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+Ordering works with blank fieldsets. ... ok
+test_repr (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_repr_do_not_trigger_validation (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_second_form_partially_filled (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+If at least one field is filled out on a blank form, it will be ... ok
+test_second_form_partially_filled_2 (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+A partially completed form is invalid. ... ok
+test_single_form_completed (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase)
+Just one form may be completed. ... ok
+test_template_name_can_be_overridden (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_template_name_uses_renderer_value (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+test_validate_max_ignores_forms_marked_for_deletion (forms_tests.tests.test_formsets.Jinja2FormsFormsetTestCase) ... ok
+
+======================================================================
+ERROR: test_no_management_form_warning (forms_tests.tests.test_formsets.DeprecationTests)
+Management forms are already rendered with the new div template.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.2/lib/python3.9/unittest/case.py", line 59, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.2/lib/python3.9/unittest/case.py", line 592, in run
+    self._callTestMethod(testMethod)
+  File "/swe_util/miniconda3/envs/django__django__4.2/lib/python3.9/unittest/case.py", line 550, in _callTestMethod
+    method()
+  File "/swe_util/eval_data/testbeds/django__django__4.2/tests/forms_tests/tests/test_formsets.py", line 1923, in test_no_management_form_warning
+    str(formset.management_form)
+  File "/swe_util/eval_data/testbeds/django__django__4.2/django/forms/utils.py", line 72, in render
+    warnings.warn(
+django.utils.deprecation.RemovedInDjango50Warning: The "default.html" templates for forms and formsets will be removed. These were proxies to the equivalent "table.html" templates, but the new "div.html" templates will be the default from Django 5.0. Transitional renderers are provided to allow you to opt-in to the new output style now. See https://docs.djangoproject.com/en/dev/releases/4.1/ for more details
+
+----------------------------------------------------------------------
+Ran 157 tests in 0.309s
+
+FAILED (errors=1)
+
+>>>>> Some Tests Failed

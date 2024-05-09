@@ -1,0 +1,83 @@
+Task Metadata:
+	- Instance ID: matplotlib__matplotlib-22835
+	- Testbed: /swe_util/eval_data/testbeds/matplotlib__matplotlib__3.5
+	- Virtual Env.: matplotlib__matplotlib__3.5
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+patch unexpectedly ends in middle of line
+patch: **** Only garbage was found in the patch input.
+>>>>> Applied Patch (pred_minimal_try patch)
+>>>>> Applied Patch (pred_minimal_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate matplotlib__matplotlib__3.5 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/matplotlib__matplotlib__3.5
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: cycler>=0.10 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2034+gc33557d120) (0.11.0)
+Requirement already satisfied: fonttools>=4.22.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2034+gc33557d120) (4.42.1)
+Requirement already satisfied: kiwisolver>=1.0.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2034+gc33557d120) (1.4.5)
+Requirement already satisfied: numpy>=1.19 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2034+gc33557d120) (1.25.2)
+Requirement already satisfied: packaging>=20.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2034+gc33557d120) (23.1)
+Requirement already satisfied: pillow>=6.2.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2034+gc33557d120) (10.0.0)
+Requirement already satisfied: pyparsing>=2.2.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2034+gc33557d120) (2.4.7)
+Requirement already satisfied: python-dateutil>=2.7 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2034+gc33557d120) (2.8.2)
+Requirement already satisfied: setuptools_scm>=4 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2034+gc33557d120) (7.1.0)
+Requirement already satisfied: six>=1.5 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from python-dateutil>=2.7->matplotlib==3.6.0.dev2034+gc33557d120) (1.16.0)
+Requirement already satisfied: setuptools in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from setuptools_scm>=4->matplotlib==3.6.0.dev2034+gc33557d120) (68.1.2)
+Requirement already satisfied: typing-extensions in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from setuptools_scm>=4->matplotlib==3.6.0.dev2034+gc33557d120) (4.7.1)
+Installing collected packages: matplotlib
+  Running setup.py develop for matplotlib
+Successfully installed matplotlib-3.6.0.dev2034+gc33557d120
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate matplotlib__matplotlib__3.5 && echo 'activate successful' && pytest --no-header -rA --tb=no -p no:cacheprovider lib/matplotlib/tests/test_artist.py;
+Output:
+activate successful
+============================= test session starts ==============================
+collected 29 items
+
+lib/matplotlib/tests/test_artist.py ...ss...ss..................F        [100%]
+
+=============================== warnings summary ===============================
+../../../miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages/pyparsing.py:108
+  /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages/pyparsing.py:108: DeprecationWarning: module 'sre_constants' is deprecated
+    import sre_constants
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+PASSED lib/matplotlib/tests/test_artist.py::test_patch_transform_of_none
+PASSED lib/matplotlib/tests/test_artist.py::test_collection_transform_of_none
+PASSED lib/matplotlib/tests/test_artist.py::test_clipping[png]
+PASSED lib/matplotlib/tests/test_artist.py::test_clipping_zoom[png]
+PASSED lib/matplotlib/tests/test_artist.py::test_cull_markers
+PASSED lib/matplotlib/tests/test_artist.py::test_hatching[png]
+PASSED lib/matplotlib/tests/test_artist.py::test_remove
+PASSED lib/matplotlib/tests/test_artist.py::test_default_edges[png]
+PASSED lib/matplotlib/tests/test_artist.py::test_properties
+PASSED lib/matplotlib/tests/test_artist.py::test_setp
+PASSED lib/matplotlib/tests/test_artist.py::test_None_zorder
+PASSED lib/matplotlib/tests/test_artist.py::test_artist_inspector_get_valid_values[-unknown]
+PASSED lib/matplotlib/tests/test_artist.py::test_artist_inspector_get_valid_values[ACCEPTS: [ '-' | '--' | '-.' ]-[ '-' | '--' | '-.' ]]
+PASSED lib/matplotlib/tests/test_artist.py::test_artist_inspector_get_valid_values[ACCEPTS: Some description.-Some description.]
+PASSED lib/matplotlib/tests/test_artist.py::test_artist_inspector_get_valid_values[.. ACCEPTS: Some description.-Some description.]
+PASSED lib/matplotlib/tests/test_artist.py::test_artist_inspector_get_valid_values[arg : int-int]
+PASSED lib/matplotlib/tests/test_artist.py::test_artist_inspector_get_valid_values[*arg : int-int]
+PASSED lib/matplotlib/tests/test_artist.py::test_artist_inspector_get_valid_values[arg : int\nACCEPTS: Something else.-Something else. ]
+PASSED lib/matplotlib/tests/test_artist.py::test_artist_inspector_get_aliases
+PASSED lib/matplotlib/tests/test_artist.py::test_set_alpha
+PASSED lib/matplotlib/tests/test_artist.py::test_set_alpha_for_array
+PASSED lib/matplotlib/tests/test_artist.py::test_callbacks
+PASSED lib/matplotlib/tests/test_artist.py::test_set_signature
+PASSED lib/matplotlib/tests/test_artist.py::test_set_is_overwritten
+SKIPPED [2] ../../../miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/contextlib.py:81: Cannot compare pdf files on this system
+SKIPPED [2] ../../../miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/contextlib.py:81: Cannot compare svg files on this system
+FAILED lib/matplotlib/tests/test_artist.py::test_format_cursor_data_BoundaryNorm
+============== 1 failed, 24 passed, 4 skipped, 1 warning in 1.45s ==============
+
+>>>>> Some Tests Failed

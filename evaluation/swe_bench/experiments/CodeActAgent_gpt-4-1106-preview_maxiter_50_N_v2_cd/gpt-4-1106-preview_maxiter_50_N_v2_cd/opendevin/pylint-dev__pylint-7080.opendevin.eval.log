@@ -1,0 +1,183 @@
+Task Metadata:
+	- Instance ID: pylint-dev__pylint-7080
+	- Testbed: /swe_util/eval_data/testbeds/pylint-dev__pylint__2.15
+	- Virtual Env.: pylint-dev__pylint__2.15
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate pylint-dev__pylint__2.15 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/pylint-dev__pylint__2.15
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: dill>=0.2 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.15/lib/python3.9/site-packages (from pylint==2.15.0.dev0) (0.3.8)
+Requirement already satisfied: platformdirs>=2.2.0 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.15/lib/python3.9/site-packages (from pylint==2.15.0.dev0) (4.2.1)
+Collecting astroid<=2.12.0-dev0,>=2.11.6 (from pylint==2.15.0.dev0)
+  Using cached astroid-2.11.7-py3-none-any.whl.metadata (4.7 kB)
+Requirement already satisfied: isort<6,>=4.2.5 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.15/lib/python3.9/site-packages (from pylint==2.15.0.dev0) (5.10.1)
+Requirement already satisfied: mccabe<0.8,>=0.6 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.15/lib/python3.9/site-packages (from pylint==2.15.0.dev0) (0.7.0)
+Requirement already satisfied: tomlkit>=0.10.1 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.15/lib/python3.9/site-packages (from pylint==2.15.0.dev0) (0.12.4)
+Requirement already satisfied: typing-extensions>=3.10.0 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.15/lib/python3.9/site-packages (from pylint==2.15.0.dev0) (4.11.0)
+Requirement already satisfied: tomli>=1.1.0 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.15/lib/python3.9/site-packages (from pylint==2.15.0.dev0) (2.0.1)
+Requirement already satisfied: lazy-object-proxy>=1.4.0 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.15/lib/python3.9/site-packages (from astroid<=2.12.0-dev0,>=2.11.6->pylint==2.15.0.dev0) (1.10.0)
+Requirement already satisfied: wrapt<2,>=1.11 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.15/lib/python3.9/site-packages (from astroid<=2.12.0-dev0,>=2.11.6->pylint==2.15.0.dev0) (1.16.0)
+Requirement already satisfied: setuptools>=20.0 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.15/lib/python3.9/site-packages (from astroid<=2.12.0-dev0,>=2.11.6->pylint==2.15.0.dev0) (68.2.2)
+Using cached astroid-2.11.7-py3-none-any.whl (251 kB)
+Installing collected packages: astroid, pylint
+  Attempting uninstall: astroid
+    Found existing installation: astroid 2.12.13
+    Uninstalling astroid-2.12.13:
+      Successfully uninstalled astroid-2.12.13
+  Running setup.py develop for pylint
+Successfully installed astroid-2.11.7 pylint-2.15.0.dev0
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate pylint-dev__pylint__2.15 && echo 'activate successful' && pytest --no-header -rA --tb=no -p no:cacheprovider tests/test_self.py;
+Output:
+activate successful
+============================= test session starts ==============================
+collected 125 items
+
+tests/test_self.py ..........x.......................................... [ 42%]
+....................................................F.............FF.... [100%]
+
+=============================== warnings summary ===============================
+../../../miniconda3/envs/pylint-dev__pylint__2.15/lib/python3.9/site-packages/astroid/interpreter/_import/util.py:6
+  /swe_util/miniconda3/envs/pylint-dev__pylint__2.15/lib/python3.9/site-packages/astroid/interpreter/_import/util.py:6: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+    import pkg_resources
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+PASSED tests/test_self.py::TestRunTC::test_pkginfo
+PASSED tests/test_self.py::TestRunTC::test_all
+PASSED tests/test_self.py::TestRunTC::test_no_ext_file
+PASSED tests/test_self.py::TestRunTC::test_w0704_ignored
+PASSED tests/test_self.py::TestRunTC::test_exit_zero
+PASSED tests/test_self.py::TestRunTC::test_nonexistent_config_file
+PASSED tests/test_self.py::TestRunTC::test_error_missing_arguments
+PASSED tests/test_self.py::TestRunTC::test_no_out_encoding
+PASSED tests/test_self.py::TestRunTC::test_parallel_execution
+PASSED tests/test_self.py::TestRunTC::test_parallel_execution_missing_arguments
+PASSED tests/test_self.py::TestRunTC::test_enable_all_works
+PASSED tests/test_self.py::TestRunTC::test_wrong_import_position_when_others_disabled
+PASSED tests/test_self.py::TestRunTC::test_import_itself_not_accounted_for_relative_imports
+PASSED tests/test_self.py::TestRunTC::test_reject_empty_indent_strings
+PASSED tests/test_self.py::TestRunTC::test_json_report_when_file_has_syntax_error
+PASSED tests/test_self.py::TestRunTC::test_json_report_when_file_is_missing
+PASSED tests/test_self.py::TestRunTC::test_json_report_does_not_escape_quotes
+PASSED tests/test_self.py::TestRunTC::test_information_category_disabled_by_default
+PASSED tests/test_self.py::TestRunTC::test_error_mode_shows_no_score
+PASSED tests/test_self.py::TestRunTC::test_evaluation_score_shown_by_default
+PASSED tests/test_self.py::TestRunTC::test_confidence_levels
+PASSED tests/test_self.py::TestRunTC::test_bom_marker
+PASSED tests/test_self.py::TestRunTC::test_pylintrc_plugin_duplicate_options
+PASSED tests/test_self.py::TestRunTC::test_pylintrc_comments_in_values
+PASSED tests/test_self.py::TestRunTC::test_no_crash_with_formatting_regex_defaults
+PASSED tests/test_self.py::TestRunTC::test_getdefaultencoding_crashes_with_lc_ctype_utf8
+PASSED tests/test_self.py::TestRunTC::test_parseable_file_path
+PASSED tests/test_self.py::TestRunTC::test_stdin[/swe_util/eval_data/testbeds/pylint-dev__pylint__2.15/tests/mymodule.py-mymodule-/swe_util/eval_data/testbeds/pylint-dev__pylint__2.15/tests/mymodule.py]
+PASSED tests/test_self.py::TestRunTC::test_stdin[mymodule.py-mymodule-mymodule.py]
+PASSED tests/test_self.py::TestRunTC::test_stdin_missing_modulename
+PASSED tests/test_self.py::TestRunTC::test_relative_imports[False]
+PASSED tests/test_self.py::TestRunTC::test_relative_imports[True]
+PASSED tests/test_self.py::TestRunTC::test_stdin_syntaxerror
+PASSED tests/test_self.py::TestRunTC::test_version
+PASSED tests/test_self.py::TestRunTC::test_fail_under
+PASSED tests/test_self.py::TestRunTC::test_fail_on[-10-missing-function-docstring-fail_under_plus7_5.py-16]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[6-missing-function-docstring-fail_under_plus7_5.py-16]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[7.5-missing-function-docstring-fail_under_plus7_5.py-16]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[7.6-missing-function-docstring-fail_under_plus7_5.py-16]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[-11-missing-function-docstring-fail_under_minus10.py-22]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[-10-missing-function-docstring-fail_under_minus10.py-22]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[-9-missing-function-docstring-fail_under_minus10.py-22]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[-5-missing-function-docstring-fail_under_minus10.py-22]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[-10-broad-except-fail_under_plus7_5.py-0]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[6-broad-except-fail_under_plus7_5.py-0]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[7.5-broad-except-fail_under_plus7_5.py-0]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[7.6-broad-except-fail_under_plus7_5.py-16]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[-11-broad-except-fail_under_minus10.py-0]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[-10-broad-except-fail_under_minus10.py-0]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[-9-broad-except-fail_under_minus10.py-22]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[-5-broad-except-fail_under_minus10.py-22]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[-10-C0116-fail_under_plus7_5.py-16]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[-10-C-fail_under_plus7_5.py-16]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[-10-fake1,C,fake2-fail_under_plus7_5.py-16]
+PASSED tests/test_self.py::TestRunTC::test_fail_on[-10-C0115-fail_under_plus7_5.py-0]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_edge_case[opts0-0]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_edge_case[opts1-0]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_edge_case[opts2-16]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_edge_case[opts3-16]
+PASSED tests/test_self.py::TestRunTC::test_modify_sys_path
+PASSED tests/test_self.py::TestRunTC::test_do_not_import_files_from_local_directory
+PASSED tests/test_self.py::TestRunTC::test_do_not_import_files_from_local_directory_with_pythonpath
+PASSED tests/test_self.py::TestRunTC::test_import_plugin_from_local_directory_if_pythonpath_cwd
+PASSED tests/test_self.py::TestRunTC::test_allow_import_of_files_found_in_modules_during_parallel_check
+PASSED tests/test_self.py::TestRunTC::test_can_list_directories_without_dunder_init
+PASSED tests/test_self.py::TestRunTC::test_jobs_score
+PASSED tests/test_self.py::TestRunTC::test_regression_parallel_mode_without_filepath
+PASSED tests/test_self.py::TestRunTC::test_output_file_valid_path
+PASSED tests/test_self.py::TestRunTC::test_output_file_invalid_path_exits_with_code_32
+PASSED tests/test_self.py::TestRunTC::test_fail_on_exit_code[args0-0]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_exit_code[args1-0]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_exit_code[args2-0]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_exit_code[args3-6]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_exit_code[args4-6]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_exit_code[args5-22]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_exit_code[args6-22]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_exit_code[args7-6]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_exit_code[args8-22]
+PASSED tests/test_self.py::TestRunTC::test_one_module_fatal_error
+PASSED tests/test_self.py::TestRunTC::test_fail_on_info_only_exit_code[args0-0]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_info_only_exit_code[args1-0]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_info_only_exit_code[args2-0]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_info_only_exit_code[args3-0]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_info_only_exit_code[args4-0]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_info_only_exit_code[args5-0]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_info_only_exit_code[args6-0]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_info_only_exit_code[args7-1]
+PASSED tests/test_self.py::TestRunTC::test_fail_on_info_only_exit_code[args8-1]
+PASSED tests/test_self.py::TestRunTC::test_output_file_can_be_combined_with_output_format_option[text-tests/regrtest_data/unused_variable.py:4:4: W0612: Unused variable 'variable' (unused-variable)]
+PASSED tests/test_self.py::TestRunTC::test_output_file_can_be_combined_with_output_format_option[parseable-tests/regrtest_data/unused_variable.py:4: [W0612(unused-variable), test] Unused variable 'variable']
+PASSED tests/test_self.py::TestRunTC::test_output_file_can_be_combined_with_output_format_option[msvs-tests/regrtest_data/unused_variable.py(4): [W0612(unused-variable)test] Unused variable 'variable']
+PASSED tests/test_self.py::TestRunTC::test_output_file_can_be_combined_with_output_format_option[colorized-tests/regrtest_data/unused_variable.py:4:4: W0612: \x1b[35mUnused variable 'variable'\x1b[0m (\x1b[35munused-variable\x1b[0m)]
+PASSED tests/test_self.py::TestRunTC::test_output_file_can_be_combined_with_output_format_option[json-"message": "Unused variable 'variable'",]
+PASSED tests/test_self.py::TestRunTC::test_output_file_can_be_combined_with_custom_reporter
+PASSED tests/test_self.py::TestRunTC::test_output_file_specified_in_rcfile
+PASSED tests/test_self.py::TestRunTC::test_load_text_repoter_if_not_provided
+PASSED tests/test_self.py::TestRunTC::test_regex_paths_csv_validator
+PASSED tests/test_self.py::TestRunTC::test_max_inferred_for_complicated_class_hierarchy
+PASSED tests/test_self.py::TestRunTC::test_regression_recursive
+PASSED tests/test_self.py::TestRunTC::test_recursive
+PASSED tests/test_self.py::TestRunTC::test_ignore_recursive
+PASSED tests/test_self.py::TestRunTC::test_ignore_pattern_recursive
+PASSED tests/test_self.py::TestRunTC::test_ignore_path_recursive
+PASSED tests/test_self.py::TestRunTC::test_recursive_current_dir
+PASSED tests/test_self.py::TestRunTC::test_regression_recursive_current_dir
+PASSED tests/test_self.py::TestCallbackOptions::test_output_of_callback_options[command0-Emittable messages with current interpreter:]
+PASSED tests/test_self.py::TestCallbackOptions::test_output_of_callback_options[command1-Enabled messages:]
+PASSED tests/test_self.py::TestCallbackOptions::test_output_of_callback_options[command2-nonascii-checker]
+PASSED tests/test_self.py::TestCallbackOptions::test_output_of_callback_options[command3-Confidence(name='HIGH', description=]
+PASSED tests/test_self.py::TestCallbackOptions::test_output_of_callback_options[command4-pylint.extensions.empty_comment]
+PASSED tests/test_self.py::TestCallbackOptions::test_output_of_callback_options[command5-Pylint global options and switches]
+PASSED tests/test_self.py::TestCallbackOptions::test_output_of_callback_options[command6-Environment variables:]
+PASSED tests/test_self.py::TestCallbackOptions::test_help_msg[args0-:unreachable (W0101)-False]
+PASSED tests/test_self.py::TestCallbackOptions::test_help_msg[args1-No such message id-False]
+PASSED tests/test_self.py::TestCallbackOptions::test_help_msg[args2---help-msg: expected at least one argumen-True]
+PASSED tests/test_self.py::TestCallbackOptions::test_generate_rcfile
+PASSED tests/test_self.py::TestCallbackOptions::test_generate_config_disable_symbolic_names
+PASSED tests/test_self.py::TestCallbackOptions::test_errors_only
+PASSED tests/test_self.py::TestCallbackOptions::test_errors_only_functions_as_disable
+PASSED tests/test_self.py::TestCallbackOptions::test_verbose
+PASSED tests/test_self.py::TestCallbackOptions::test_enable_all_extensions
+XFAIL tests/test_self.py::TestRunTC::test_abbreviations_are_not_supported
+FAILED tests/test_self.py::TestRunTC::test_ignore_path_recursive_current_dir
+FAILED tests/test_self.py::TestCallbackOptions::test_generate_toml_config - a...
+FAILED tests/test_self.py::TestCallbackOptions::test_generate_toml_config_disable_symbolic_names
+============= 3 failed, 121 passed, 1 xfailed, 1 warning in 14.88s =============
+
+>>>>> Some Tests Failed

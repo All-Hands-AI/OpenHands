@@ -1,0 +1,159 @@
+Task Metadata:
+	- Instance ID: matplotlib__matplotlib-23476
+	- Testbed: /swe_util/eval_data/testbeds/matplotlib__matplotlib__3.5
+	- Virtual Env.: matplotlib__matplotlib__3.5
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate matplotlib__matplotlib__3.5 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/matplotlib__matplotlib__3.5
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: contourpy>=1.0.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2718+g33a0599711) (1.1.0)
+Requirement already satisfied: cycler>=0.10 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2718+g33a0599711) (0.11.0)
+Requirement already satisfied: fonttools>=4.22.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2718+g33a0599711) (4.42.1)
+Requirement already satisfied: kiwisolver>=1.0.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2718+g33a0599711) (1.4.5)
+Requirement already satisfied: numpy>=1.19 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2718+g33a0599711) (1.25.2)
+Requirement already satisfied: packaging>=20.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2718+g33a0599711) (23.1)
+Requirement already satisfied: pillow>=6.2.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2718+g33a0599711) (10.0.0)
+Requirement already satisfied: pyparsing>=2.2.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2718+g33a0599711) (2.4.7)
+Requirement already satisfied: python-dateutil>=2.7 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2718+g33a0599711) (2.8.2)
+Requirement already satisfied: setuptools_scm>=4 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev2718+g33a0599711) (7.1.0)
+Requirement already satisfied: six>=1.5 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from python-dateutil>=2.7->matplotlib==3.6.0.dev2718+g33a0599711) (1.16.0)
+Requirement already satisfied: setuptools in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from setuptools_scm>=4->matplotlib==3.6.0.dev2718+g33a0599711) (68.1.2)
+Requirement already satisfied: typing-extensions in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from setuptools_scm>=4->matplotlib==3.6.0.dev2718+g33a0599711) (4.7.1)
+Installing collected packages: matplotlib
+  Running setup.py develop for matplotlib
+Successfully installed matplotlib-3.6.0.dev2718+g33a0599711
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate matplotlib__matplotlib__3.5 && echo 'activate successful' && pytest --no-header -rA --tb=no -p no:cacheprovider lib/matplotlib/tests/test_figure.py;
+Output:
+activate successful
+============================= test session starts ==============================
+collected 112 items
+
+lib/matplotlib/tests/test_figure.py .s.....ss.ss....ss..s............... [ 32%]
+........s.............ssss.............................................. [ 96%]
+...F                                                                     [100%]
+
+=============================== warnings summary ===============================
+../../../miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages/pyparsing.py:108
+  /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages/pyparsing.py:108: DeprecationWarning: module 'sre_constants' is deprecated
+    import sre_constants
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+PASSED lib/matplotlib/tests/test_figure.py::test_align_labels[png]
+PASSED lib/matplotlib/tests/test_figure.py::test_align_labels_stray_axes
+PASSED lib/matplotlib/tests/test_figure.py::test_figure_label
+PASSED lib/matplotlib/tests/test_figure.py::test_fignum_exists
+PASSED lib/matplotlib/tests/test_figure.py::test_clf_keyword
+PASSED lib/matplotlib/tests/test_figure.py::test_figure[png]
+PASSED lib/matplotlib/tests/test_figure.py::test_figure_legend[png]
+PASSED lib/matplotlib/tests/test_figure.py::test_gca
+PASSED lib/matplotlib/tests/test_figure.py::test_add_subplot_subclass
+PASSED lib/matplotlib/tests/test_figure.py::test_add_subplot_invalid
+PASSED lib/matplotlib/tests/test_figure.py::test_suptitle[png]
+PASSED lib/matplotlib/tests/test_figure.py::test_suptitle_fontproperties
+PASSED lib/matplotlib/tests/test_figure.py::test_alpha[png]
+PASSED lib/matplotlib/tests/test_figure.py::test_too_many_figures
+PASSED lib/matplotlib/tests/test_figure.py::test_iterability_axes_argument
+PASSED lib/matplotlib/tests/test_figure.py::test_set_fig_size
+PASSED lib/matplotlib/tests/test_figure.py::test_axes_remove
+PASSED lib/matplotlib/tests/test_figure.py::test_figaspect
+PASSED lib/matplotlib/tests/test_figure.py::test_autofmt_xdate[both]
+PASSED lib/matplotlib/tests/test_figure.py::test_autofmt_xdate[major]
+PASSED lib/matplotlib/tests/test_figure.py::test_autofmt_xdate[minor]
+PASSED lib/matplotlib/tests/test_figure.py::test_change_dpi
+PASSED lib/matplotlib/tests/test_figure.py::test_invalid_figure_size[1-nan]
+PASSED lib/matplotlib/tests/test_figure.py::test_invalid_figure_size[-1-1]
+PASSED lib/matplotlib/tests/test_figure.py::test_invalid_figure_size[inf-1]
+PASSED lib/matplotlib/tests/test_figure.py::test_invalid_figure_add_axes
+PASSED lib/matplotlib/tests/test_figure.py::test_subplots_shareax_loglabels
+PASSED lib/matplotlib/tests/test_figure.py::test_savefig
+PASSED lib/matplotlib/tests/test_figure.py::test_savefig_warns
+PASSED lib/matplotlib/tests/test_figure.py::test_savefig_backend
+PASSED lib/matplotlib/tests/test_figure.py::test_savefig_pixel_ratio[Agg]
+PASSED lib/matplotlib/tests/test_figure.py::test_savefig_pixel_ratio[Cairo]
+PASSED lib/matplotlib/tests/test_figure.py::test_figure_repr
+PASSED lib/matplotlib/tests/test_figure.py::test_valid_layouts
+PASSED lib/matplotlib/tests/test_figure.py::test_invalid_layouts
+PASSED lib/matplotlib/tests/test_figure.py::test_add_artist[png]
+PASSED lib/matplotlib/tests/test_figure.py::test_fspath[png]
+PASSED lib/matplotlib/tests/test_figure.py::test_fspath[pdf]
+PASSED lib/matplotlib/tests/test_figure.py::test_fspath[ps]
+PASSED lib/matplotlib/tests/test_figure.py::test_fspath[eps]
+PASSED lib/matplotlib/tests/test_figure.py::test_fspath[svg]
+PASSED lib/matplotlib/tests/test_figure.py::test_tightbbox
+PASSED lib/matplotlib/tests/test_figure.py::test_axes_removal
+PASSED lib/matplotlib/tests/test_figure.py::test_removed_axis
+PASSED lib/matplotlib/tests/test_figure.py::test_figure_clear[clear]
+PASSED lib/matplotlib/tests/test_figure.py::test_figure_clear[clf]
+PASSED lib/matplotlib/tests/test_figure.py::test_clf_not_redefined
+PASSED lib/matplotlib/tests/test_figure.py::test_picking_does_not_stale
+PASSED lib/matplotlib/tests/test_figure.py::test_add_subplot_twotuple
+PASSED lib/matplotlib/tests/test_figure.py::test_animated_with_canvas_change[png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_basic[x0-png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_basic[x1-png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_all_nested[png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_nested[png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_nested_tuple[png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_empty[x0-None-png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_empty[x1-SKIP-png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_empty[x2-0-png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_empty[x3-None-png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_empty[x4-SKIP-png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_empty[x5-0-png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_fail_list_of_str
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_subplot_kw[subplot_kw0-png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_subplot_kw[subplot_kw1-png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_subplot_kw[None-png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_string_parser
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_single_str_input[AAA\nBBB-png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_single_str_input[\nAAA\nBBB\n-png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_single_str_input[ABC\nDEF-png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_fail[x0-(?m)we found that the label .A. specifies a non-rectangular or non-contiguous area.]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_fail[x1-There are duplicate keys .* between the outer layout]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_fail[AAA\nc\nBBB-All of the rows must be the same length]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_fail[x3-All of the rows must be the same length]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_hashable_keys[png]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_user_order[abc]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_user_order[cab]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_user_order[bca]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_user_order[cba]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_user_order[acb]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_user_order[bac]
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_nested_user_order
+PASSED lib/matplotlib/tests/test_figure.py::TestSubplotMosaic::test_share_all
+PASSED lib/matplotlib/tests/test_figure.py::test_reused_gridspec
+PASSED lib/matplotlib/tests/test_figure.py::test_subfigure[png]
+PASSED lib/matplotlib/tests/test_figure.py::test_subfigure_tightbbox
+PASSED lib/matplotlib/tests/test_figure.py::test_subfigure_dpi
+PASSED lib/matplotlib/tests/test_figure.py::test_subfigure_ss[png]
+PASSED lib/matplotlib/tests/test_figure.py::test_subfigure_double[png]
+PASSED lib/matplotlib/tests/test_figure.py::test_subfigure_spanning
+PASSED lib/matplotlib/tests/test_figure.py::test_subfigure_ticks
+PASSED lib/matplotlib/tests/test_figure.py::test_subfigure_scatter_size[png]
+PASSED lib/matplotlib/tests/test_figure.py::test_subfigure_pdf
+PASSED lib/matplotlib/tests/test_figure.py::test_add_subplot_kwargs
+PASSED lib/matplotlib/tests/test_figure.py::test_add_axes_kwargs
+PASSED lib/matplotlib/tests/test_figure.py::test_ginput
+PASSED lib/matplotlib/tests/test_figure.py::test_waitforbuttonpress
+PASSED lib/matplotlib/tests/test_figure.py::test_kwargs_pass
+PASSED lib/matplotlib/tests/test_figure.py::test_deepcopy
+SKIPPED [6] ../../../miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/contextlib.py:81: Cannot compare svg files on this system
+SKIPPED [3] ../../../miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/contextlib.py:81: Cannot compare pdf files on this system
+SKIPPED [2] lib/matplotlib/testing/compare.py:285: Don't know how to convert .pdf files to png
+SKIPPED [1] lib/matplotlib/testing/compare.py:285: Don't know how to convert .svg files to png
+SKIPPED [1] lib/matplotlib/testing/compare.py:285: Don't know how to convert .eps files to png
+FAILED lib/matplotlib/tests/test_figure.py::test_unpickle_with_device_pixel_ratio
+============= 1 failed, 98 passed, 13 skipped, 1 warning in 12.08s =============
+
+>>>>> Some Tests Failed

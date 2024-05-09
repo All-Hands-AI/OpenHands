@@ -1,0 +1,318 @@
+Task Metadata:
+	- Instance ID: pytest-dev__pytest-5413
+	- Testbed: /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6
+	- Virtual Env.: pytest-dev__pytest__4.6
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate pytest-dev__pytest__4.6 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/pytest-dev__pytest__4.6
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: py>=1.5.0 in /swe_util/miniconda3/envs/pytest-dev__pytest__4.6/lib/python3.9/site-packages (from pytest==4.6.1.dev72+g450d26462) (1.11.0)
+Requirement already satisfied: packaging in /swe_util/miniconda3/envs/pytest-dev__pytest__4.6/lib/python3.9/site-packages (from pytest==4.6.1.dev72+g450d26462) (24.0)
+Requirement already satisfied: attrs>=17.4.0 in /swe_util/miniconda3/envs/pytest-dev__pytest__4.6/lib/python3.9/site-packages (from pytest==4.6.1.dev72+g450d26462) (23.2.0)
+Requirement already satisfied: more-itertools>=4.0.0 in /swe_util/miniconda3/envs/pytest-dev__pytest__4.6/lib/python3.9/site-packages (from pytest==4.6.1.dev72+g450d26462) (10.2.0)
+Requirement already satisfied: atomicwrites>=1.0 in /swe_util/miniconda3/envs/pytest-dev__pytest__4.6/lib/python3.9/site-packages (from pytest==4.6.1.dev72+g450d26462) (1.4.1)
+Requirement already satisfied: pluggy<1.0,>=0.12 in /swe_util/miniconda3/envs/pytest-dev__pytest__4.6/lib/python3.9/site-packages (from pytest==4.6.1.dev72+g450d26462) (0.13.1)
+Requirement already satisfied: importlib-metadata>=0.12 in /swe_util/miniconda3/envs/pytest-dev__pytest__4.6/lib/python3.9/site-packages (from pytest==4.6.1.dev72+g450d26462) (7.1.0)
+Requirement already satisfied: wcwidth in /swe_util/miniconda3/envs/pytest-dev__pytest__4.6/lib/python3.9/site-packages (from pytest==4.6.1.dev72+g450d26462) (0.2.13)
+Requirement already satisfied: zipp>=0.5 in /swe_util/miniconda3/envs/pytest-dev__pytest__4.6/lib/python3.9/site-packages (from importlib-metadata>=0.12->pytest==4.6.1.dev72+g450d26462) (3.18.1)
+Building wheels for collected packages: pytest
+  Building editable for pytest (pyproject.toml): started
+  Building editable for pytest (pyproject.toml): finished with status 'done'
+  Created wheel for pytest: filename=pytest-4.6.1.dev72+g450d26462-0.editable-py3-none-any.whl size=4794 sha256=d67a45294a00fe7a697f9473397301a9ceebb15f19f15832340f285e43a0e522
+  Stored in directory: /tmp/pip-ephem-wheel-cache-o7n51fe9/wheels/fc/c5/31/e483b6ce4510c09e8ec85bb2ca32eabf63533fb586c58fb5f9
+Successfully built pytest
+Installing collected packages: pytest
+  Attempting uninstall: pytest
+    Found existing installation: pytest 4.6.1.dev144+g1aefb24b3
+    Uninstalling pytest-4.6.1.dev144+g1aefb24b3:
+      Successfully uninstalled pytest-4.6.1.dev144+g1aefb24b3
+Successfully installed pytest-4.6.1.dev72+g450d26462
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate pytest-dev__pytest__4.6 && echo 'activate successful' && pytest -rA testing/code/test_excinfo.py;
+Output:
+activate successful
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-4.6.1.dev72+g450d26462, py-1.11.0, pluggy-0.13.1
+rootdir: /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6, inifile: tox.ini
+collected 95 items
+
+testing/code/test_excinfo.py ..............s.......s.................... [ 45%]
+....................................................                     [100%]
+
+==================================== PASSES ====================================
+_______ TestTraceback_f_g_h.test_traceback_entry_getsource_in_construct ________
+----------------------------- Captured stdout call -----------------------------
+def xyz():
+    try:
+        raise ValueError
+    except somenoname:
+______ TestTraceback_f_g_h.test_traceback_filter_selective[<lambda>-True] ______
+----------------------------- Captured stdout call -----------------------------
+old: [<TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/src/_pytest/python_api.py:700>, <TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:209>, <TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:204>, <TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:198>]
+new: [<TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:209>, <TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:198>]
+_____ TestTraceback_f_g_h.test_traceback_filter_selective[<lambda>-False] ______
+----------------------------- Captured stdout call -----------------------------
+old: [<TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/src/_pytest/python_api.py:700>, <TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:209>, <TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:204>, <TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:198>]
+new: [<TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:209>, <TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:204>, <TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:198>]
+___ TestTraceback_f_g_h.test_traceback_filter_selective[tracebackhide2-True] ___
+----------------------------- Captured stdout call -----------------------------
+old: [<TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/src/_pytest/python_api.py:700>, <TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:209>, <TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:204>, <TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:198>]
+new: [<TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:209>, <TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:198>]
+__ TestTraceback_f_g_h.test_traceback_filter_selective[tracebackhide3-False] ___
+----------------------------- Captured stdout call -----------------------------
+old: [<TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/src/_pytest/python_api.py:700>, <TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:209>, <TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:204>, <TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:198>]
+new: [<TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:209>, <TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:204>, <TracebackEntry /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:198>]
+________________ TestFormattedExcinfo.test_traceback_repr_style ________________
+----------------------------- Captured stdout call -----------------------------
+
+    def f():
+>       g()
+
+(<object object at 0x7fdabf114110>, '/tmp/pytest-of-root/pytest-126/test_traceback_repr_style0/mod.py')
+:3: 
+('_ ', None)
+(<object object at 0x7fdabf114110>, '/tmp/pytest-of-root/pytest-126/test_traceback_repr_style0/mod.py')
+:5: in g
+    h()
+(<object object at 0x7fdabf114110>, '/tmp/pytest-of-root/pytest-126/test_traceback_repr_style0/mod.py')
+:7: in h
+    i()
+('_ ', None)
+
+    def i():
+>       raise ValueError()
+E       ValueError
+
+(<object object at 0x7fdabf114110>, '/tmp/pytest-of-root/pytest-126/test_traceback_repr_style0/mod.py')
+:9: ValueError
+___________________ TestFormattedExcinfo.test_exc_chain_repr ___________________
+----------------------------- Captured stdout call -----------------------------
+
+    def f():
+        try:
+>           g()
+
+(<object object at 0x7fdabf114110>, '/tmp/pytest-of-root/pytest-126/test_exc_chain_repr0/mod.py')
+:6: 
+('_ ', None)
+
+    def g():
+>       raise ValueError()
+E       ValueError
+
+(<object object at 0x7fdabf114110>, '/tmp/pytest-of-root/pytest-126/test_exc_chain_repr0/mod.py')
+:12: ValueError
+
+The above exception was the direct cause of the following exception:
+
+    def f():
+        try:
+            g()
+        except Exception as e:
+>           raise Err() from e
+E           test_exc_chain_repr0.mod.Err
+
+(<object object at 0x7fdabf114110>, '/tmp/pytest-of-root/pytest-126/test_exc_chain_repr0/mod.py')
+:8: Err
+
+During handling of the above exception, another exception occurred:
+
+    def f():
+        try:
+            g()
+        except Exception as e:
+            raise Err() from e
+        finally:
+>           h()
+
+(<object object at 0x7fdabf114110>, '/tmp/pytest-of-root/pytest-126/test_exc_chain_repr0/mod.py')
+:10: 
+('_ ', None)
+
+    def h():
+>       raise AttributeError()
+E       AttributeError
+
+(<object object at 0x7fdabf114110>, '/tmp/pytest-of-root/pytest-126/test_exc_chain_repr0/mod.py')
+:15: AttributeError
+_______ TestFormattedExcinfo.test_exc_repr_chain_suppression[from_none] ________
+----------------------------- Captured stdout call -----------------------------
+
+    def f():
+        try:
+            g()
+        except Exception:
+>           raise AttributeError() from None
+E           AttributeError
+
+(<object object at 0x7fdabf114110>, '/tmp/pytest-of-root/pytest-126/test_exc_repr_chain_suppressio0/mod.py')
+:6: AttributeError
+___ TestFormattedExcinfo.test_exc_repr_chain_suppression[explicit_suppress] ____
+----------------------------- Captured stdout call -----------------------------
+
+    def f():
+        try:
+            g()
+        except Exception:
+>           raise AttributeError()
+E           AttributeError
+
+(<object object at 0x7fdabf114110>, '/tmp/pytest-of-root/pytest-126/test_exc_repr_chain_suppressio1/mod.py')
+:6: AttributeError
+___________________________ test_match_raises_error ____________________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-4.6.1.dev72+g450d26462, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-126/test_match_raises_error0
+collected 1 item
+
+test_match_raises_error.py F                                             [100%]
+
+=================================== FAILURES ===================================
+______________________________ test_division_zero ______________________________
+
+    def test_division_zero():
+        with pytest.raises(ZeroDivisionError) as excinfo:
+            0 / 0
+>       excinfo.match(r'[123]+')
+E       AssertionError: Pattern '[123]+' not found in 'division by zero'
+
+test_match_raises_error.py:5: AssertionError
+=========================== 1 failed in 0.01 seconds ===========================
+_______________________________ test_cwd_deleted _______________________________
+----------------------------- Captured stdout call -----------------------------
+============================= test session starts ==============================
+platform linux -- Python 3.9.19, pytest-4.6.1.dev72+g450d26462, py-1.11.0, pluggy-0.13.1
+rootdir: /tmp/pytest-of-root/pytest-126/test_cwd_deleted0
+collected 1 item
+
+test_cwd_deleted.py F                                                    [100%]
+
+=================================== FAILURES ===================================
+_____________________________________ test _____________________________________
+
+tmpdir = local('/tmp/pytest-of-root/pytest-126/basetemp/test0')
+
+    def test(tmpdir):
+        tmpdir.chdir()
+        tmpdir.remove()
+>       assert False
+E       assert False
+
+/tmp/pytest-of-root/pytest-126/test_cwd_deleted0/test_cwd_deleted.py:4: AssertionError
+=========================== 1 failed in 0.01 seconds ===========================
+=========================== short test summary info ============================
+PASSED testing/code/test_excinfo.py::test_excinfo_simple
+PASSED testing/code/test_excinfo.py::test_excinfo_getstatement
+PASSED testing/code/test_excinfo.py::TestTraceback_f_g_h::test_traceback_entries
+PASSED testing/code/test_excinfo.py::TestTraceback_f_g_h::test_traceback_entry_getsource
+PASSED testing/code/test_excinfo.py::TestTraceback_f_g_h::test_traceback_entry_getsource_in_construct
+PASSED testing/code/test_excinfo.py::TestTraceback_f_g_h::test_traceback_cut
+PASSED testing/code/test_excinfo.py::TestTraceback_f_g_h::test_traceback_filter
+PASSED testing/code/test_excinfo.py::TestTraceback_f_g_h::test_traceback_filter_selective[<lambda>-True]
+PASSED testing/code/test_excinfo.py::TestTraceback_f_g_h::test_traceback_filter_selective[<lambda>-False]
+PASSED testing/code/test_excinfo.py::TestTraceback_f_g_h::test_traceback_filter_selective[tracebackhide2-True]
+PASSED testing/code/test_excinfo.py::TestTraceback_f_g_h::test_traceback_filter_selective[tracebackhide3-False]
+PASSED testing/code/test_excinfo.py::TestTraceback_f_g_h::test_traceback_recursion_index
+PASSED testing/code/test_excinfo.py::TestTraceback_f_g_h::test_traceback_only_specific_recursion_errors
+PASSED testing/code/test_excinfo.py::TestTraceback_f_g_h::test_traceback_no_recursion_index
+PASSED testing/code/test_excinfo.py::TestTraceback_f_g_h::test_traceback_getcrashentry
+PASSED testing/code/test_excinfo.py::TestTraceback_f_g_h::test_traceback_getcrashentry_empty
+PASSED testing/code/test_excinfo.py::test_excinfo_exconly
+PASSED testing/code/test_excinfo.py::test_excinfo_repr_str
+PASSED testing/code/test_excinfo.py::test_excinfo_for_later
+PASSED testing/code/test_excinfo.py::test_excinfo_errisinstance
+PASSED testing/code/test_excinfo.py::test_excinfo_no_sourcecode
+PASSED testing/code/test_excinfo.py::test_entrysource_Queue_example
+PASSED testing/code/test_excinfo.py::test_codepath_Queue_example
+PASSED testing/code/test_excinfo.py::test_match_succeeds
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_source
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_source_excinfo
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_source_not_existing
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_many_line_source_not_existing
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_source_failing_fullsource
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_local
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_local_with_error
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_local_with_exception_in_class_property
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_local_truncated
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_tracebackentry_lines
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_tracebackentry_lines2
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_tracebackentry_lines_var_kw_args
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_tracebackentry_short
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_tracebackentry_no
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_traceback_tbfilter
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_traceback_short_no_source
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_traceback_and_excinfo
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_traceback_with_invalid_cwd
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_excinfo_addouterr
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_excinfo_reprcrash
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_repr_traceback_recursion
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_reprexcinfo_getrepr
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_reprexcinfo_unicode
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_toterminal_long
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_toterminal_long_missing_source
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_toterminal_long_incomplete_source
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_toterminal_long_filenames
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions0]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions1]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions2]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions3]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions4]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions5]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions6]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions7]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions8]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions9]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions10]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions11]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions12]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions13]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions14]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions15]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions16]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions17]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions18]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions19]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions20]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions21]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions22]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_format_excinfo[reproptions23]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_traceback_repr_style
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_exc_chain_repr
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_exc_repr_chain_suppression[from_none]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_exc_repr_chain_suppression[explicit_suppress]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_exc_chain_repr_without_traceback[cause-The above exception was the direct cause of the following exception:]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_exc_chain_repr_without_traceback[context-During handling of the above exception, another exception occurred:]
+PASSED testing/code/test_excinfo.py::TestFormattedExcinfo::test_exc_chain_repr_cycle
+PASSED testing/code/test_excinfo.py::test_repr_traceback_with_unicode[None-short]
+PASSED testing/code/test_excinfo.py::test_repr_traceback_with_unicode[None-long]
+PASSED testing/code/test_excinfo.py::test_repr_traceback_with_unicode[utf8-short]
+PASSED testing/code/test_excinfo.py::test_repr_traceback_with_unicode[utf8-long]
+PASSED testing/code/test_excinfo.py::test_repr_traceback_with_unicode[utf16-short]
+PASSED testing/code/test_excinfo.py::test_repr_traceback_with_unicode[utf16-long]
+PASSED testing/code/test_excinfo.py::test_exception_repr_extraction_error_on_recursion
+PASSED testing/code/test_excinfo.py::test_no_recursion_index_on_recursion_error
+PASSED testing/code/test_excinfo.py::TestTraceback_f_g_h::test_traceback_cut_excludepath
+PASSED testing/code/test_excinfo.py::test_match_raises_error
+PASSED testing/code/test_excinfo.py::test_cwd_deleted
+SKIPPED [1] /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:270: could not import 'decorator': No module named 'decorator'
+SKIPPED [1] /swe_util/eval_data/testbeds/pytest-dev__pytest__4.6/testing/code/test_excinfo.py:367: could not import 'jinja2': No module named 'jinja2'
+===================== 93 passed, 2 skipped in 1.38 seconds =====================
+
+>>>>> All Tests Passed

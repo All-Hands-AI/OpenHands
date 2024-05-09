@@ -1,0 +1,81 @@
+Task Metadata:
+	- Instance ID: sympy__sympy-21627
+	- Testbed: /swe_util/eval_data/testbeds/sympy__sympy__1.9
+	- Virtual Env.: sympy__sympy__1.9
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file sympy/functions/elementary/complexes.py
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file sympy/functions/elementary/tests/test_complexes_issue.py
+patch unexpectedly ends in middle of line
+patch: **** malformed patch at line 31:  
+
+>>>>> Applied Patch (pred_minimal_try git)
+>>>>> Applied Patch (pred_minimal_try git)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.9 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/sympy__sympy__1.9
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: mpmath>=0.19 in /swe_util/miniconda3/envs/sympy__sympy__1.9/lib/python3.9/site-packages (from sympy==1.9.dev0) (1.3.0)
+Installing collected packages: sympy
+  Running setup.py develop for sympy
+Successfully installed sympy-1.9.dev0
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal git)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.9 && echo 'activate successful' && bin/test -C --verbose sympy/functions/elementary/tests/test_complexes.py;
+Output:
+activate successful
+============================= test process starts ==============================
+executable:         /swe_util/miniconda3/envs/sympy__sympy__1.9/bin/python  (3.9.19-final-0) [CPython]
+architecture:       64-bit
+cache:              no
+ground types:       python 
+numpy:              None
+random seed:        92236980
+hash randomization: on (PYTHONHASHSEED=253750825)
+
+sympy/functions/elementary/tests/test_complexes.py[31] 
+test_re ok
+test_im ok
+test_sign ok
+test_as_real_imag ok
+test_sign_issue_3068 f
+test_Abs ok
+test_Abs_rewrite ok
+test_Abs_real ok
+test_Abs_properties ok
+test_abs ok
+test_arg ok
+test_arg_rewrite ok
+test_adjoint ok
+test_conjugate ok
+test_conjugate_transpose ok
+test_transpose ok
+test_polarify ok
+test_unpolarify ok
+test_issue_4035 ok
+test_issue_3206 ok
+test_issue_4754_derivative_conjugate ok
+test_derivatives_issue_4757 ok
+test_issue_11413 ok
+test_periodic_argument ok
+test_principal_branch_fail f
+test_principal_branch ok
+test_issue_6167_6151 f
+test_issue_14216 ok
+test_issue_14238 ok
+test_zero_assumptions ok
+test_issue_15893 ok                                                         [OK]
+
+
+======== tests finished: 28 passed, 3 expected to fail, in 5.87 seconds ========
+
+>>>>> All Tests Passed

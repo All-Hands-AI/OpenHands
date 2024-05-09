@@ -1,0 +1,2244 @@
+Task Metadata:
+	- Instance ID: sympy__sympy-11897
+	- Testbed: /swe_util/eval_data/testbeds/sympy__sympy__1.0
+	- Virtual Env.: sympy__sympy__1.0
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+patch unexpectedly ends in middle of line
+patch: **** Only garbage was found in the patch input.
+>>>>> Applied Patch (pred_minimal_try patch)
+>>>>> Applied Patch (pred_minimal_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.0 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/sympy__sympy__1.0
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: mpmath>=0.19 in /swe_util/miniconda3/envs/sympy__sympy__1.0/lib/python3.9/site-packages (from sympy==1.0.1.dev0) (1.3.0)
+Installing collected packages: sympy
+  Running setup.py develop for sympy
+Successfully installed sympy-1.0.1.dev0
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.0 && echo 'activate successful' && bin/test -C --verbose sympy/printing/tests/test_latex.py;
+Output:
+activate successful
+============================= test process starts ==============================
+executable:         /swe_util/miniconda3/envs/sympy__sympy__1.0/bin/python  (3.9.19-final-0) [CPython]
+architecture:       64-bit
+cache:              no
+ground types:       python 
+random seed:        18608686
+hash randomization: on (PYTHONHASHSEED=3151961084)
+
+sympy/printing/tests/test_latex.py[107] 
+test_printmethod ok
+test_latex_basic ok
+test_latex_builtins ok
+test_latex_SingularityFunction ok
+test_latex_cycle ok
+test_latex_permutation ok
+test_latex_Float ok
+test_latex_symbols ok
+test_latex_symbols_failing f
+test_latex_functions ok
+test_hyper_printing ok
+test_latex_bessel ok
+test_latex_fresnel ok
+test_latex_brackets ok
+test_latex_indexed E
+test_latex_derivatives E
+test_latex_subs ok
+test_latex_integrals ok
+test_latex_sets ok
+test_latex_Range ok
+test_latex_sequences ok
+test_latex_FourierSeries ok
+test_latex_FormalPowerSeries E
+test_latex_intervals ok
+test_latex_AccumuBounds ok
+test_latex_emptyset ok
+test_latex_commutator ok
+test_latex_union ok
+test_latex_symmetric_difference ok
+test_latex_Complement ok
+test_latex_Complexes ok
+test_latex_productset ok
+test_latex_Naturals ok
+test_latex_Naturals0 ok
+test_latex_Integers ok
+test_latex_ImageSet ok
+test_latex_ConditionSet ok
+test_latex_ComplexRegion ok
+test_latex_Contains ok
+test_latex_sum ok
+test_latex_product ok
+test_latex_limits ok
+test_issue_3568 ok
+test_latex ok
+test_latex_dict ok
+test_latex_list ok
+test_latex_rational ok
+test_latex_inverse ok
+test_latex_DiracDelta ok
+test_latex_Heaviside ok
+test_latex_KroneckerDelta ok
+test_latex_LeviCivita ok
+test_mode ok
+test_latex_Piecewise F
+test_latex_Matrix ok
+test_latex_matrix_with_functions E
+test_latex_NDimArray E
+test_latex_mul_symbol ok
+test_latex_issue_4381 ok
+test_latex_issue_4576 ok
+test_latex_pow_fraction ok
+test_noncommutative ok
+test_latex_order ok
+test_latex_Lambda ok
+test_latex_PolyElement ok
+test_latex_FracElement ok
+test_latex_Poly ok
+test_latex_ComplexRootOf ok
+test_latex_RootSum ok
+test_settings ok
+test_latex_numbers ok
+test_lamda ok
+test_custom_symbol_names ok
+test_matAdd ok
+test_matMul ok
+test_latex_MatrixSlice ok
+test_latex_RandomDomain ok
+test_PrettyPoly ok
+test_integral_transforms ok
+test_PolynomialRingBase ok
+test_categories ok
+test_Modules ok
+test_QuotientRing ok
+test_Tr ok
+test_Adjoint ok
+test_Hadamard ok
+test_ZeroMatrix ok
+test_boolean_args_order ok
+test_imaginary ok
+test_builtins_without_args ok
+test_latex_greek_functions ok
+test_translate ok
+test_other_symbols ok
+test_modifiers ok
+test_greek_symbols ok
+test_builtin_without_args_mismatched_names f
+test_builtin_no_args ok
+test_issue_6853 ok
+test_Mul ok
+test_Pow ok
+test_issue_7180 ok
+test_issue_8409 ok
+test_issue_8470 E
+test_issue_7117 ok
+test_issue_2934 ok
+test_issue_10489 ok
+test_latex_UnevaluatedExpr ok                                             [FAIL]
+
+
+________________________________________________________________________________
+____________ sympy/printing/tests/test_latex.py:test_latex_indexed _____________
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/tests/test_latex.py", line 467, in test_latex_indexed
+    indexed_latex = latex(Psi_indexed[0] * conjugate(Psi_indexed[0]))
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/tensor/indexed.py", line 392, in __getitem__
+    return Indexed(self, indices, **kw_args)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/tensor/indexed.py", line 155, in __new__
+    if isinstance(base, (NDimArray, collections.Iterable, Tuple, MatrixBase)) and all([i.is_number for i in args]):
+  File "/swe_util/miniconda3/envs/sympy__sympy__1.0/lib/python3.9/collections/__init__.py", line 62, in __getattr__
+    warnings.warn("Using or importing the ABCs from 'collections' instead "
+DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+________________________________________________________________________________
+__________ sympy/printing/tests/test_latex.py:test_latex_derivatives ___________
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/tests/test_latex.py", line 480, in test_latex_derivatives
+    assert latex(diff(x**3, x, evaluate=False)) == \
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/latex.py", line 2151, in latex
+    return LatexPrinter(settings).doprint(expr)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/latex.py", line 175, in doprint
+    tex = Printer.doprint(self, expr)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/printer.py", line 233, in doprint
+    return self._str(self._print(expr))
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/printer.py", line 257, in _print
+    return getattr(self, printmethod)(expr, *args, **kwargs)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/latex.py", line 567, in _print_Derivative
+    if requires_partial(expr):
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/conventions.py", line 80, in requires_partial
+    if not isinstance(expr.free_symbols, collections.Iterable):
+  File "/swe_util/miniconda3/envs/sympy__sympy__1.0/lib/python3.9/collections/__init__.py", line 62, in __getattr__
+    warnings.warn("Using or importing the ABCs from 'collections' instead "
+DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+________________________________________________________________________________
+_______ sympy/printing/tests/test_latex.py:test_latex_FormalPowerSeries ________
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/tests/test_latex.py", line 637, in test_latex_FormalPowerSeries
+    assert latex(fps(log(1 + x))) == latex_str
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/series/formal.py", line 1250, in fps
+    result = compute_fps(f, x, x0, dir, hyper, order, rational, full)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/series/formal.py", line 900, in compute_fps
+    return _compute_fps(f, x, x0, dir, hyper, order, rational, full)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/series/formal.py", line 817, in _compute_fps
+    result = rational_algorithm(f, x, k, order, full)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/series/formal.py", line 144, in rational_algorithm
+    sep += (ds.pop() - sep).limit(x, 0)  # constant of integration
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/expr.py", line 2742, in limit
+    return limit(self, x, xlim, dir)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/series/limits.py", line 45, in limit
+    return Limit(e, z, z0, dir).doit(deep=False)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/series/limits.py", line 173, in doit
+    r = gruntz(e, z, z0, dir)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/series/gruntz.py", line 656, in gruntz
+    r = limitinf(e0, z)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/series/gruntz.py", line 426, in limitinf
+    c0, e0 = mrv_leadterm(e, x)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/series/gruntz.py", line 485, in mrv_leadterm
+    Omega, exps = mrv(e, x)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/series/gruntz.py", line 244, in mrv
+    e = powsimp(e, deep=True, combine='exp')
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/simplify/powsimp.py", line 118, in powsimp
+    expr = expr.func(*[recurse(w) for w in expr.args])
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/simplify/powsimp.py", line 118, in <listcomp>
+    expr = expr.func(*[recurse(w) for w in expr.args])
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/simplify/powsimp.py", line 109, in recurse
+    return powsimp(arg, _deep, _combine, _force, _measure)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/simplify/powsimp.py", line 118, in powsimp
+    expr = expr.func(*[recurse(w) for w in expr.args])
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/simplify/powsimp.py", line 118, in <listcomp>
+    expr = expr.func(*[recurse(w) for w in expr.args])
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/simplify/powsimp.py", line 109, in recurse
+    return powsimp(arg, _deep, _combine, _force, _measure)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/simplify/powsimp.py", line 121, in powsimp
+    return recurse(expr*_y, deep=False)/_y
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/decorators.py", line 77, in __sympifyit_wrapper
+    return func(a, b)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/decorators.py", line 118, in binary_op_wrapper
+    return func(self, other)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/expr.py", line 161, in __div__
+    return Mul(self, Pow(other, S.NegativeOne))
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/operations.py", line 41, in __new__
+    c_part, nc_part, order_symbols = cls.flatten(args)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/mul.py", line 182, in flatten
+    if not a.is_zero and a.is_Rational:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 302, in _ask
+    _ask(pk, obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/mul.py", line 1058, in _eval_is_algebraic
+    r = _fuzzy_group((a.is_algebraic for a in self.args), quick_exit=True)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/logic.py", line 78, in _fuzzy_group
+    for a in args:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/mul.py", line 1058, in <genexpr>
+    r = _fuzzy_group((a.is_algebraic for a in self.args), quick_exit=True)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/power.py", line 1059, in _eval_is_algebraic
+    if self.base.is_zero or (self.base - 1).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 247, in getit
+    return _ask(fact, self)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/assumptions.py", line 290, in _ask
+    a = evaluate(obj)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/add.py", line 513, in _eval_is_zero
+    if self.func(*nz).is_zero:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/operations.py", line 30, in __new__
+    args = list(map(_sympify, args))
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/sympify.py", line 358, in _sympify
+    return sympify(a, strict=True)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/sympify.py", line 239, in sympify
+    if a in sympy_classes:
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/numbers.py", line 1943, in __hash__
+    return hash(self.p)
+RecursionError: maximum recursion depth exceeded while calling a Python object
+________________________________________________________________________________
+_____ sympy/printing/tests/test_latex.py:test_latex_matrix_with_functions ______
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/tests/test_latex.py", line 908, in test_latex_matrix_with_functions
+    assert latex(M) == expected
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/latex.py", line 2151, in latex
+    return LatexPrinter(settings).doprint(expr)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/latex.py", line 175, in doprint
+    tex = Printer.doprint(self, expr)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/printer.py", line 233, in doprint
+    return self._str(self._print(expr))
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/printer.py", line 257, in _print
+    return getattr(self, printmethod)(expr, *args, **kwargs)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/latex.py", line 1335, in _print_MatrixBase
+    lines.append(" & ".join([ self._print(i) for i in expr[line, :] ]))
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/latex.py", line 1335, in <listcomp>
+    lines.append(" & ".join([ self._print(i) for i in expr[line, :] ]))
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/printer.py", line 257, in _print
+    return getattr(self, printmethod)(expr, *args, **kwargs)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/latex.py", line 692, in _print_Function
+    args = [ str(self._print(arg)) for arg in expr.args ]
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/latex.py", line 692, in <listcomp>
+    args = [ str(self._print(arg)) for arg in expr.args ]
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/printer.py", line 257, in _print
+    return getattr(self, printmethod)(expr, *args, **kwargs)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/latex.py", line 567, in _print_Derivative
+    if requires_partial(expr):
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/conventions.py", line 80, in requires_partial
+    if not isinstance(expr.free_symbols, collections.Iterable):
+  File "/swe_util/miniconda3/envs/sympy__sympy__1.0/lib/python3.9/collections/__init__.py", line 62, in __getattr__
+    warnings.warn("Using or importing the ABCs from 'collections' instead "
+DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+________________________________________________________________________________
+___________ sympy/printing/tests/test_latex.py:test_latex_NDimArray ____________
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/tests/test_latex.py", line 915, in test_latex_NDimArray
+    M = ArrayType([[1 / x, y], [z, w]])
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/tensor/array/dense_ndim_array.py", line 138, in __new__
+    return cls._new(iterable, shape, **kwargs)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/tensor/array/dense_ndim_array.py", line 144, in _new
+    shape, flat_list = cls._handle_ndarray_creation_inputs(iterable, shape, **kwargs)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/tensor/array/ndim_array.py", line 134, in _handle_ndarray_creation_inputs
+    elif shape is None and isinstance(iterable, collections.Iterable):
+  File "/swe_util/miniconda3/envs/sympy__sympy__1.0/lib/python3.9/collections/__init__.py", line 62, in __getattr__
+    warnings.warn("Using or importing the ABCs from 'collections' instead "
+DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+________________________________________________________________________________
+______________ sympy/printing/tests/test_latex.py:test_issue_8470 ______________
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/tests/test_latex.py", line 1564, in test_issue_8470
+    e = parse_expr("-B*A", evaluate=False)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/parsing/sympy_parser.py", line 892, in parse_expr
+    code = compile(evaluateFalse(code), '<string>', 'eval')
+ValueError: Name node can't be used with 'False' constant
+
+________________________________________________________________________________
+___________ sympy/printing/tests/test_latex.py:test_latex_Piecewise ____________
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/printing/tests/test_latex.py", line 870, in test_latex_Piecewise
+    assert latex(A*p) == r"A \left(%s\right)" % s
+AssertionError
+
+ tests finished: 98 passed, 1 failed, 2 expected to fail, 6 exceptions, 
+in 1.61 seconds 
+DO *NOT* COMMIT!
+/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/basic.py:3: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+  from collections import Mapping
+/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/solvers/diophantine.py:3072: SyntaxWarning: "is" with a literal. Did you mean "=="?
+  if feasible is 1:  # it's prime and k == 2
+/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/plotting/plot.py:28: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+  from collections import Callable
+/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/basic.py:3: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+  from collections import Mapping
+/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/plotting/plot.py:28: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+  from collections import Callable
+/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/polys/agca/modules.py:351: SyntaxWarning: "is" with a literal. Did you mean "=="?
+  elif elem is 0:
+
+>>>>> Some Tests Failed

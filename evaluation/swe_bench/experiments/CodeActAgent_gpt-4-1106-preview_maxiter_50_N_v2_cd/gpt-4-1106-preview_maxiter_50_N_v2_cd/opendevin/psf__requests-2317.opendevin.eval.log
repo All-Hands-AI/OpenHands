@@ -1,0 +1,78 @@
+Task Metadata:
+	- Instance ID: psf__requests-2317
+	- Testbed: /swe_util/eval_data/testbeds/psf__requests__2.4
+	- Virtual Env.: psf__requests__2.4
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate psf__requests__2.4 && echo 'activate successful' && python -m pip install .
+Std. Output: activate successful
+Processing /swe_util/eval_data/testbeds/psf__requests__2.4
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Building wheels for collected packages: requests
+  Building wheel for requests (setup.py): started
+  Building wheel for requests (setup.py): finished with status 'done'
+  Created wheel for requests: filename=requests-2.4.3-py2.py3-none-any.whl size=453222 sha256=8d0b66b5d9160dc89baed35cbe0031566642b5b6a0046b2ec2fac0370a7a7f52
+  Stored in directory: /tmp/pip-ephem-wheel-cache-hvonfryg/wheels/db/d9/d3/13bc7d285da5f57e04c9a5a7ef5ade6738dc21a0cb16cba8ab
+Successfully built requests
+Installing collected packages: requests
+  Attempting uninstall: requests
+    Found existing installation: requests 2.4.3
+    Uninstalling requests-2.4.3:
+      Successfully uninstalled requests-2.4.3
+Successfully installed requests-2.4.3
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate psf__requests__2.4 && echo 'activate successful' && pytest --no-header -rA --tb=no -p no:cacheprovider test_requests.py;
+Output:
+activate successful
+============================= test session starts ==============================
+collected 0 items / 1 error
+
+=============================== warnings summary ===============================
+requests/packages/urllib3/_collections.py:1
+requests/packages/urllib3/_collections.py:1
+  /swe_util/eval_data/testbeds/psf__requests__2.4/requests/packages/urllib3/_collections.py:1: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+    from collections import Mapping, MutableMapping
+
+requests/sessions.py:462
+  /swe_util/eval_data/testbeds/psf__requests__2.4/requests/sessions.py:462: DeprecationWarning: invalid escape sequence \*
+    """Sends a GET request. Returns :class:`Response` object.
+
+requests/sessions.py:472
+  /swe_util/eval_data/testbeds/psf__requests__2.4/requests/sessions.py:472: DeprecationWarning: invalid escape sequence \*
+    """Sends a OPTIONS request. Returns :class:`Response` object.
+
+requests/sessions.py:482
+  /swe_util/eval_data/testbeds/psf__requests__2.4/requests/sessions.py:482: DeprecationWarning: invalid escape sequence \*
+    """Sends a HEAD request. Returns :class:`Response` object.
+
+requests/sessions.py:492
+  /swe_util/eval_data/testbeds/psf__requests__2.4/requests/sessions.py:492: DeprecationWarning: invalid escape sequence \*
+    """Sends a POST request. Returns :class:`Response` object.
+
+requests/sessions.py:503
+  /swe_util/eval_data/testbeds/psf__requests__2.4/requests/sessions.py:503: DeprecationWarning: invalid escape sequence \*
+    """Sends a PUT request. Returns :class:`Response` object.
+
+requests/sessions.py:513
+  /swe_util/eval_data/testbeds/psf__requests__2.4/requests/sessions.py:513: DeprecationWarning: invalid escape sequence \*
+    """Sends a PATCH request. Returns :class:`Response` object.
+
+requests/sessions.py:523
+  /swe_util/eval_data/testbeds/psf__requests__2.4/requests/sessions.py:523: DeprecationWarning: invalid escape sequence \*
+    """Sends a DELETE request. Returns :class:`Response` object.
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR test_requests.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+========================= 9 warnings, 1 error in 0.21s =========================
+
+>>>>> Some Tests Failed

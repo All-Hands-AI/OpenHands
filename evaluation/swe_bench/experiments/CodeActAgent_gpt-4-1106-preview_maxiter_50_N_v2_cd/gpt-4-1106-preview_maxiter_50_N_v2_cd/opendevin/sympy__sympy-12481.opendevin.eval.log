@@ -1,0 +1,72 @@
+Task Metadata:
+	- Instance ID: sympy__sympy-12481
+	- Testbed: /swe_util/eval_data/testbeds/sympy__sympy__1.0
+	- Virtual Env.: sympy__sympy__1.0
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+patch unexpectedly ends in middle of line
+patch: **** Only garbage was found in the patch input.
+>>>>> Applied Patch (pred_minimal_try patch)
+>>>>> Applied Patch (pred_minimal_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.0 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/sympy__sympy__1.0
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: mpmath>=0.19 in /swe_util/miniconda3/envs/sympy__sympy__1.0/lib/python3.9/site-packages (from sympy==1.0.1.dev0) (1.3.0)
+Installing collected packages: sympy
+  Running setup.py develop for sympy
+Successfully installed sympy-1.0.1.dev0
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.0 && echo 'activate successful' && bin/test -C --verbose sympy/combinatorics/tests/test_permutations.py;
+Output:
+activate successful
+============================= test process starts ==============================
+executable:         /swe_util/miniconda3/envs/sympy__sympy__1.0/bin/python  (3.9.19-final-0) [CPython]
+architecture:       64-bit
+cache:              no
+ground types:       python 
+random seed:        74109797
+hash randomization: on (PYTHONHASHSEED=3274406811)
+
+sympy/combinatorics/tests/test_permutations.py[9] 
+test_Permutation ok
+test_josephus ok
+test_ranking ok
+test_mul ok
+test_args E
+test_Cycle ok
+test_from_sequence ok
+test_printing_cyclic ok
+test_printing_non_cyclic ok                                               [FAIL]
+
+
+________________________________________________________________________________
+___________ sympy/combinatorics/tests/test_permutations.py:test_args ___________
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/combinatorics/tests/test_permutations.py", line 342, in test_args
+    assert Permutation([[0, 1], [0, 2]]) == Permutation(0, 1, 2)
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/combinatorics/permutations.py", line 900, in __new__
+    raise ValueError('there were repeated elements; to resolve '
+ValueError: there were repeated elements; to resolve cycles use Cycle(0, 1)(0, 2).
+
+=========== tests finished: 8 passed, 1 exceptions, in 0.19 seconds ============
+DO *NOT* COMMIT!
+/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/basic.py:3: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+  from collections import Mapping
+/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/solvers/diophantine.py:3188: SyntaxWarning: "is" with a literal. Did you mean "=="?
+  if feasible is 1:  # it's prime and k == 2
+/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/plotting/plot.py:28: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+  from collections import Callable
+/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/core/basic.py:3: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+  from collections import Mapping
+/swe_util/eval_data/testbeds/sympy__sympy__1.0/sympy/plotting/plot.py:28: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+  from collections import Callable
+
+>>>>> Some Tests Failed

@@ -1,0 +1,444 @@
+Task Metadata:
+	- Instance ID: django__django-11620
+	- Testbed: /swe_util/eval_data/testbeds/django__django__3.0
+	- Virtual Env.: django__django__3.0
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file django/views/debug.py
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file django/views/templates/technical_404.html
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file tests/test_technical_404_response.py
+patch unexpectedly ends in middle of line
+patch: **** malformed patch at line 69:  
+
+>>>>> Applied Patch (pred_minimal_try git)
+>>>>> Applied Patch (pred_minimal_try git)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__3.0 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/django__django__3.0
+Requirement already satisfied: pytz in /swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/site-packages (from Django==3.0.dev20190809080806) (2024.1)
+Requirement already satisfied: sqlparse in /swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/site-packages (from Django==3.0.dev20190809080806) (0.4.4)
+Requirement already satisfied: asgiref in /swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/site-packages (from Django==3.0.dev20190809080806) (3.4.1)
+Requirement already satisfied: typing-extensions in /swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/site-packages (from asgiref->Django==3.0.dev20190809080806) (4.1.1)
+Installing collected packages: Django
+  Running setup.py develop for Django
+Successfully installed Django-3.0.dev20190809080806
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal git)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__3.0 && echo 'activate successful' && ./tests/runtests.py --verbosity 2 view_tests.tests.test_debug;
+Output:
+activate successful
+Testing against Django installed in '/swe_util/eval_data/testbeds/django__django__3.0/django' with up to 64 processes
+Importing application view_tests
+Skipping setup of unused database(s): other.
+Operations to perform:
+  Synchronize unmigrated apps: auth, contenttypes, messages, sessions, staticfiles, view_tests
+  Apply all migrations: admin, sites
+Synchronizing apps without migrations:
+  Creating tables...
+    Creating table django_content_type
+    Creating table auth_permission
+    Creating table auth_group
+    Creating table auth_user
+    Creating table django_session
+    Creating table view_tests_author
+    Creating table view_tests_article
+    Creating table view_tests_urlarticle
+    Creating table view_tests_datearticle
+    Running deferred SQL...
+Running migrations:
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying sites.0001_initial... OK
+  Applying sites.0002_alter_domain_unique... OK
+System check identified no issues (0 silenced).
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+test_repr (view_tests.tests.test_debug.CallableSettingWrapperTests) ... ok
+test_cleanse_setting_basic (view_tests.tests.test_debug.HelperFunctionTests) ... ok
+test_cleanse_setting_ignore_case (view_tests.tests.test_debug.HelperFunctionTests) ... ok
+test_cleanse_setting_recurses_in_dictionary (view_tests.tests.test_debug.HelperFunctionTests) ... ok
+test_handle_db_exception (view_tests.tests.test_debug.DebugViewQueriesAllowedTests) ... Internal Server Error: /raises404/
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/base.py", line 115, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/base.py", line 113, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/tests/view_tests/views.py", line 59, in raises404
+    resolver.resolve('/not-in-urls')
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/urls/resolvers.py", line 571, in resolve
+    raise Resolver404({'tried': tried, 'path': new_path})
+django.urls.exceptions.Resolver404: {'tried': [[<URLPattern ''>], [<URLPattern 'nonexistent_url/'>], [<URLPattern 'server_error/'>], [<URLPattern 'raises/'>], [<URLPattern 'raises400/'>], [<URLPattern 'raises403/'>], [<URLPattern 'raises404/'>], [<URLPattern 'raises500/'>], [<URLPattern 'technical404/' [name='my404']>], [<URLPattern 'classbased404/'>], [<URLResolver <module 'django.conf.urls.i18n' from '/swe_util/eval_data/testbeds/django__django__3.0/django/conf/urls/i18n.py'> (None:None) 'i18n/'>], [<URLPattern 'jsi18n/'>], [<URLPattern 'jsi18n/app1/'>], [<URLPattern 'jsi18n/app2/'>], [<URLPattern 'jsi18n/app5/'>], [<URLPattern 'jsi18n_english_translation/'>], [<URLPattern 'jsi18n_multi_packages1/'>], [<URLPattern 'jsi18n_multi_packages2/'>], [<URLPattern 'jsi18n_admin/'>], [<URLPattern 'jsi18n_template/'>], [<URLPattern 'jsi18n_multi_catalogs/'>], [<URLPattern 'jsoni18n/'>], [<URLPattern '^site_media/(?P<path>.*)$'>], [<URLResolver <URLPattern list> (None:None) 'en/'>], [<URLPattern 'template_exception/' [name='template_exception']>], [<URLPattern 'raises_template_does_not_exist/<path:path>' [name='raises_template_does_not_exist']>], [<URLPattern 'render_no_template/' [name='render_no_template']>], [<URLPattern '^test-setlang/(?P<parameter>[^/]+)/$' [name='with_parameter']>], [<URLPattern '^regex-post/(?P<pk>[0-9]+)/$' [name='regex-post']>], [<URLPattern 'path-post/<int:pk>/' [name='path-post']>]], 'path': 'not-in-urls'}
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/utils/deprecation.py", line 94, in __call__
+    response = response or self.get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 36, in inner
+    response = response_for_exception(request, exc)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 44, in response_for_exception
+    response = debug.technical_404_response(request, exc)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/views/debug.py", line 513, in technical_404_response
+    'reason': exception_message,
+UnboundLocalError: local variable 'exception_message' referenced before assignment
+Internal Server Error: /raises404/
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/base.py", line 115, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/base.py", line 113, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/tests/view_tests/views.py", line 59, in raises404
+    resolver.resolve('/not-in-urls')
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/urls/resolvers.py", line 571, in resolve
+    raise Resolver404({'tried': tried, 'path': new_path})
+django.urls.exceptions.Resolver404: {'tried': [[<URLPattern ''>], [<URLPattern 'nonexistent_url/'>], [<URLPattern 'server_error/'>], [<URLPattern 'raises/'>], [<URLPattern 'raises400/'>], [<URLPattern 'raises403/'>], [<URLPattern 'raises404/'>], [<URLPattern 'raises500/'>], [<URLPattern 'technical404/' [name='my404']>], [<URLPattern 'classbased404/'>], [<URLResolver <module 'django.conf.urls.i18n' from '/swe_util/eval_data/testbeds/django__django__3.0/django/conf/urls/i18n.py'> (None:None) 'i18n/'>], [<URLPattern 'jsi18n/'>], [<URLPattern 'jsi18n/app1/'>], [<URLPattern 'jsi18n/app2/'>], [<URLPattern 'jsi18n/app5/'>], [<URLPattern 'jsi18n_english_translation/'>], [<URLPattern 'jsi18n_multi_packages1/'>], [<URLPattern 'jsi18n_multi_packages2/'>], [<URLPattern 'jsi18n_admin/'>], [<URLPattern 'jsi18n_template/'>], [<URLPattern 'jsi18n_multi_catalogs/'>], [<URLPattern 'jsoni18n/'>], [<URLPattern '^site_media/(?P<path>.*)$'>], [<URLResolver <URLPattern list> (None:None) 'en/'>], [<URLPattern 'template_exception/' [name='template_exception']>], [<URLPattern 'raises_template_does_not_exist/<path:path>' [name='raises_template_does_not_exist']>], [<URLPattern 'render_no_template/' [name='render_no_template']>], [<URLPattern '^test-setlang/(?P<parameter>[^/]+)/$' [name='with_parameter']>], [<URLPattern '^regex-post/(?P<pk>[0-9]+)/$' [name='regex-post']>], [<URLPattern 'path-post/<int:pk>/' [name='path-post']>]], 'path': 'not-in-urls'}
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/utils/deprecation.py", line 94, in __call__
+    response = response or self.get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 36, in inner
+    response = response_for_exception(request, exc)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 44, in response_for_exception
+    response = debug.technical_404_response(request, exc)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/views/debug.py", line 513, in technical_404_response
+    'reason': exception_message,
+UnboundLocalError: local variable 'exception_message' referenced before assignment
+ok
+test_disallowed_host (view_tests.tests.test_debug.PlainTextReportTests)
+An exception report can be generated even for a disallowed host. ... ok
+test_message_only (view_tests.tests.test_debug.PlainTextReportTests) ... ok
+test_no_exception (view_tests.tests.test_debug.PlainTextReportTests)
+An exception report can be generated for just a request ... ok
+test_no_request (view_tests.tests.test_debug.PlainTextReportTests)
+An exception report can be generated without request ... ok
+test_request_and_exception (view_tests.tests.test_debug.PlainTextReportTests)
+A simple exception report can be generated ... ok
+test_request_and_message (view_tests.tests.test_debug.PlainTextReportTests)
+A message can be provided in addition to a request ... ok
+test_request_with_items_key (view_tests.tests.test_debug.PlainTextReportTests) ... ok
+test_template_exception (view_tests.tests.test_debug.PlainTextReportTests) ... ok
+test_400 (view_tests.tests.test_debug.NonDjangoTemplatesDebugViewTests) ... ok
+test_403 (view_tests.tests.test_debug.NonDjangoTemplatesDebugViewTests) ... ok
+test_404 (view_tests.tests.test_debug.NonDjangoTemplatesDebugViewTests) ... ERROR
+test_template_not_found_error (view_tests.tests.test_debug.NonDjangoTemplatesDebugViewTests) ... Internal Server Error: /classbased404/
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/base.py", line 115, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/base.py", line 113, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/views/generic/base.py", line 71, in view
+    return self.dispatch(request, *args, **kwargs)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/views/generic/base.py", line 97, in dispatch
+    return handler(request, *args, **kwargs)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/tests/view_tests/views.py", line 68, in get
+    raise Http404("Testing class-based technical 404.")
+django.http.response.Http404: Testing class-based technical 404.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/utils/deprecation.py", line 94, in __call__
+    response = response or self.get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 36, in inner
+    response = response_for_exception(request, exc)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 44, in response_for_exception
+    response = debug.technical_404_response(request, exc)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/views/debug.py", line 513, in technical_404_response
+    'reason': exception_message,
+UnboundLocalError: local variable 'exception_message' referenced before assignment
+Internal Server Error: /technical404/
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/base.py", line 115, in _get_response
+    response = self.process_exception_by_middleware(e, request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/base.py", line 113, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/tests/view_tests/views.py", line 63, in technical404
+    raise Http404("Testing technical 404.")
+django.http.response.Http404: Testing technical 404.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/utils/deprecation.py", line 94, in __call__
+    response = response or self.get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 36, in inner
+    response = response_for_exception(request, exc)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 44, in response_for_exception
+    response = debug.technical_404_response(request, exc)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/views/debug.py", line 513, in technical_404_response
+    'reason': exception_message,
+UnboundLocalError: local variable 'exception_message' referenced before assignment
+ok
+test_ajax_response_encoding (view_tests.tests.test_debug.AjaxResponseExceptionReporterFilter) ... ok
+test_custom_exception_reporter_filter (view_tests.tests.test_debug.AjaxResponseExceptionReporterFilter) ... ok
+test_non_sensitive_request (view_tests.tests.test_debug.AjaxResponseExceptionReporterFilter) ... ok
+test_paranoid_request (view_tests.tests.test_debug.AjaxResponseExceptionReporterFilter) ... ok
+test_sensitive_request (view_tests.tests.test_debug.AjaxResponseExceptionReporterFilter) ... ok
+test_400 (view_tests.tests.test_debug.DebugViewTests) ... ok
+test_403 (view_tests.tests.test_debug.DebugViewTests) ... ok
+test_403_template (view_tests.tests.test_debug.DebugViewTests) ... ok
+test_404 (view_tests.tests.test_debug.DebugViewTests) ... ERROR
+test_404_empty_path_not_in_urls (view_tests.tests.test_debug.DebugViewTests) ... FAIL
+test_404_not_in_urls (view_tests.tests.test_debug.DebugViewTests) ... FAIL
+test_classbased_technical_404 (view_tests.tests.test_debug.DebugViewTests) ... ERROR
+test_default_urlconf_template (view_tests.tests.test_debug.DebugViewTests) ... ok
+test_files (view_tests.tests.test_debug.DebugViewTests) ... ok
+test_no_template_source_loaders (view_tests.tests.test_debug.DebugViewTests) ... ok
+test_non_l10ned_numeric_ids (view_tests.tests.test_debug.DebugViewTests) ... ok
+test_regression_21530 (view_tests.tests.test_debug.DebugViewTests) ... ok
+test_technical_404 (view_tests.tests.test_debug.DebugViewTests) ... ERROR
+test_technical_404_converter_raise_404 (view_tests.tests.test_debug.DebugViewTests) ... ok
+test_template_encoding (view_tests.tests.test_debug.DebugViewTests) ... ok
+test_template_exceptions (view_tests.tests.test_debug.DebugViewTests) ... ok
+test_template_loader_postmortem (view_tests.tests.test_debug.DebugViewTests)
+Tests for not existing file ... ok
+test_disallowed_host (view_tests.tests.test_debug.ExceptionReporterTests)
+An exception report can be generated even for a disallowed host. ... ok
+test_encoding_error (view_tests.tests.test_debug.ExceptionReporterTests) ... ok
+test_eol_support (view_tests.tests.test_debug.ExceptionReporterTests)
+The ExceptionReporter supports Unix, Windows and Macintosh EOL markers ... ok
+test_exception_fetching_user (view_tests.tests.test_debug.ExceptionReporterTests) ... ok
+test_ignore_traceback_evaluation_exceptions (view_tests.tests.test_debug.ExceptionReporterTests) ... ok
+test_local_variable_escaping (view_tests.tests.test_debug.ExceptionReporterTests)
+Safe strings in local variables are escaped. ... ok
+test_message_only (view_tests.tests.test_debug.ExceptionReporterTests) ... ok
+test_no_exception (view_tests.tests.test_debug.ExceptionReporterTests)
+An exception report can be generated for just a request ... ok
+test_no_request (view_tests.tests.test_debug.ExceptionReporterTests)
+An exception report can be generated without request ... ok
+test_non_utf8_values_handling (view_tests.tests.test_debug.ExceptionReporterTests)
+Non-UTF-8 exceptions/values should not make the output generation choke. ... ok
+test_reporting_frames_for_cyclic_reference (view_tests.tests.test_debug.ExceptionReporterTests) ... ok
+test_reporting_frames_without_source (view_tests.tests.test_debug.ExceptionReporterTests) ... ok
+test_reporting_of_nested_exceptions (view_tests.tests.test_debug.ExceptionReporterTests) ... ok
+test_request_and_exception (view_tests.tests.test_debug.ExceptionReporterTests)
+A simple exception report can be generated ... ok
+test_request_and_message (view_tests.tests.test_debug.ExceptionReporterTests)
+A message can be provided in addition to a request ... ok
+test_request_with_items_key (view_tests.tests.test_debug.ExceptionReporterTests) ... ok
+test_template_encoding (view_tests.tests.test_debug.ExceptionReporterTests) ... ok
+test_too_large_values_handling (view_tests.tests.test_debug.ExceptionReporterTests)
+Large values should not create a large HTML. ... ok
+test_unfrozen_importlib (view_tests.tests.test_debug.ExceptionReporterTests) ... ok
+test_unprintable_values_handling (view_tests.tests.test_debug.ExceptionReporterTests)
+Unprintable values should not make the output generation choke. ... ok
+test_callable_settings (view_tests.tests.test_debug.ExceptionReporterFilterTests) ... ok
+test_callable_settings_forbidding_to_set_attributes (view_tests.tests.test_debug.ExceptionReporterFilterTests) ... ok
+test_custom_exception_reporter_filter (view_tests.tests.test_debug.ExceptionReporterFilterTests) ... ok
+test_dict_setting_with_non_str_key (view_tests.tests.test_debug.ExceptionReporterFilterTests) ... ok
+test_multivalue_dict_key_error (view_tests.tests.test_debug.ExceptionReporterFilterTests) ... ok
+test_non_sensitive_request (view_tests.tests.test_debug.ExceptionReporterFilterTests) ... ok
+test_paranoid_request (view_tests.tests.test_debug.ExceptionReporterFilterTests) ... ok
+test_sensitive_function_arguments (view_tests.tests.test_debug.ExceptionReporterFilterTests) ... ok
+test_sensitive_function_keyword_arguments (view_tests.tests.test_debug.ExceptionReporterFilterTests) ... ok
+test_sensitive_method (view_tests.tests.test_debug.ExceptionReporterFilterTests) ... ok
+test_sensitive_request (view_tests.tests.test_debug.ExceptionReporterFilterTests) ... ok
+test_sensitive_settings (view_tests.tests.test_debug.ExceptionReporterFilterTests) ... ok
+test_settings_with_sensitive_keys (view_tests.tests.test_debug.ExceptionReporterFilterTests) ... ok
+
+======================================================================
+ERROR: test_404 (view_tests.tests.test_debug.NonDjangoTemplatesDebugViewTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/unittest/case.py", line 59, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/unittest/case.py", line 605, in run
+    testMethod()
+  File "/swe_util/eval_data/testbeds/django__django__3.0/tests/view_tests/tests/test_debug.py", line 289, in test_404
+    response = self.client.get('/raises404/')
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/client.py", line 518, in get
+    response = super().get(path, data=data, secure=secure, **extra)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/client.py", line 346, in get
+    **extra,
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/client.py", line 421, in generic
+    return self.request(**r)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/client.py", line 496, in request
+    raise exc_value
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/utils/deprecation.py", line 94, in __call__
+    response = response or self.get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 36, in inner
+    response = response_for_exception(request, exc)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 44, in response_for_exception
+    response = debug.technical_404_response(request, exc)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/views/debug.py", line 513, in technical_404_response
+    'reason': exception_message,
+UnboundLocalError: local variable 'exception_message' referenced before assignment
+
+======================================================================
+ERROR: test_404 (view_tests.tests.test_debug.DebugViewTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/unittest/case.py", line 59, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/unittest/case.py", line 605, in run
+    testMethod()
+  File "/swe_util/eval_data/testbeds/django__django__3.0/tests/view_tests/tests/test_debug.py", line 109, in test_404
+    response = self.client.get('/raises404/')
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/client.py", line 518, in get
+    response = super().get(path, data=data, secure=secure, **extra)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/client.py", line 346, in get
+    **extra,
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/client.py", line 421, in generic
+    return self.request(**r)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/client.py", line 496, in request
+    raise exc_value
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/utils/deprecation.py", line 94, in __call__
+    response = response or self.get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 36, in inner
+    response = response_for_exception(request, exc)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 44, in response_for_exception
+    response = debug.technical_404_response(request, exc)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/views/debug.py", line 513, in technical_404_response
+    'reason': exception_message,
+UnboundLocalError: local variable 'exception_message' referenced before assignment
+
+======================================================================
+ERROR: test_classbased_technical_404 (view_tests.tests.test_debug.DebugViewTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/unittest/case.py", line 59, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/unittest/case.py", line 605, in run
+    testMethod()
+  File "/swe_util/eval_data/testbeds/django__django__3.0/tests/view_tests/tests/test_debug.py", line 136, in test_classbased_technical_404
+    response = self.client.get('/classbased404/')
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/client.py", line 518, in get
+    response = super().get(path, data=data, secure=secure, **extra)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/client.py", line 346, in get
+    **extra,
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/client.py", line 421, in generic
+    return self.request(**r)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/client.py", line 496, in request
+    raise exc_value
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/utils/deprecation.py", line 94, in __call__
+    response = response or self.get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 36, in inner
+    response = response_for_exception(request, exc)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 44, in response_for_exception
+    response = debug.technical_404_response(request, exc)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/views/debug.py", line 513, in technical_404_response
+    'reason': exception_message,
+UnboundLocalError: local variable 'exception_message' referenced before assignment
+
+======================================================================
+ERROR: test_technical_404 (view_tests.tests.test_debug.DebugViewTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/unittest/case.py", line 59, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/unittest/case.py", line 605, in run
+    testMethod()
+  File "/swe_util/eval_data/testbeds/django__django__3.0/tests/view_tests/tests/test_debug.py", line 131, in test_technical_404
+    response = self.client.get('/technical404/')
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/client.py", line 518, in get
+    response = super().get(path, data=data, secure=secure, **extra)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/client.py", line 346, in get
+    **extra,
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/client.py", line 421, in generic
+    return self.request(**r)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/client.py", line 496, in request
+    raise exc_value
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 34, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/utils/deprecation.py", line 94, in __call__
+    response = response or self.get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 36, in inner
+    response = response_for_exception(request, exc)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/core/handlers/exception.py", line 44, in response_for_exception
+    response = debug.technical_404_response(request, exc)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/views/debug.py", line 513, in technical_404_response
+    'reason': exception_message,
+UnboundLocalError: local variable 'exception_message' referenced before assignment
+
+======================================================================
+FAIL: test_404_empty_path_not_in_urls (view_tests.tests.test_debug.DebugViewTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/unittest/case.py", line 59, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/unittest/case.py", line 605, in run
+    testMethod()
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/utils.py", line 370, in inner
+    return func(*args, **kwargs)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/tests/view_tests/tests/test_debug.py", line 128, in test_404_empty_path_not_in_urls
+    self.assertContains(response, "The empty path didn't match any of these.", status_code=404)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/testcases.py", line 454, in assertContains
+    self.assertTrue(real_count != 0, msg_prefix + "Couldn't find %s in response" % text_repr)
+  File "/swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/unittest/case.py", line 682, in assertTrue
+    raise self.failureException(msg)
+AssertionError: False is not true : Couldn't find 'The empty path didn't match any of these.' in response
+
+======================================================================
+FAIL: test_404_not_in_urls (view_tests.tests.test_debug.DebugViewTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/unittest/case.py", line 59, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/unittest/case.py", line 605, in run
+    testMethod()
+  File "/swe_util/eval_data/testbeds/django__django__3.0/tests/view_tests/tests/test_debug.py", line 116, in test_404_not_in_urls
+    self.assertContains(response, "Django tried these URL patterns", status_code=404)
+  File "/swe_util/eval_data/testbeds/django__django__3.0/django/test/testcases.py", line 454, in assertContains
+    self.assertTrue(real_count != 0, msg_prefix + "Couldn't find %s in response" % text_repr)
+  File "/swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/unittest/case.py", line 682, in assertTrue
+    raise self.failureException(msg)
+AssertionError: False is not true : Couldn't find 'Django tried these URL patterns' in response
+
+----------------------------------------------------------------------
+Ran 72 tests in 1.383s
+
+FAILED (failures=2, errors=4)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+
+>>>>> Some Tests Failed

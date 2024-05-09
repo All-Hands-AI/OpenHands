@@ -1,0 +1,1179 @@
+Task Metadata:
+	- Instance ID: django__django-14155
+	- Testbed: /swe_util/eval_data/testbeds/django__django__4.0
+	- Virtual Env.: django__django__4.0
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file django/urls/resolvers.py
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file tests/urlpatterns_reverse/test_resolver_match_repr.py
+patch unexpectedly ends in middle of line
+patch: **** malformed patch at line 85:  
+
+>>>>> Applied Patch (pred_minimal_try git)
+>>>>> Applied Patch (pred_minimal_try git)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__4.0 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/django__django__4.0
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: asgiref>=3.2.10 in /swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/site-packages (from Django==4.0) (3.8.1)
+Requirement already satisfied: pytz in /swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/site-packages (from Django==4.0) (2024.1)
+Requirement already satisfied: sqlparse>=0.2.2 in /swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/site-packages (from Django==4.0) (0.5.0)
+Requirement already satisfied: typing-extensions>=4 in /swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/site-packages (from asgiref>=3.2.10->Django==4.0) (4.11.0)
+Building wheels for collected packages: Django
+  Building editable for Django (pyproject.toml): started
+  Building editable for Django (pyproject.toml): finished with status 'done'
+  Created wheel for Django: filename=Django-4.0-0.editable-py3-none-any.whl size=25471 sha256=b0748c14f2937e238394edd81a6cdb6751dcee50c5a9587512d3648883aea7dc
+  Stored in directory: /tmp/pip-ephem-wheel-cache-isrz_ozl/wheels/78/a8/44/4a36192cfeb98e1e098ced3ae2973727e752f889fc463ef49c
+Successfully built Django
+Installing collected packages: Django
+  Attempting uninstall: Django
+    Found existing installation: Django 4.0.dev20210408073629
+    Uninstalling Django-4.0.dev20210408073629:
+      Successfully uninstalled Django-4.0.dev20210408073629
+Successfully installed Django-4.0
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal git)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__4.0 && echo 'activate successful' && ./tests/runtests.py --verbosity 2 urlpatterns_reverse.tests;
+Output:
+activate successful
+Testing against Django installed in '/swe_util/eval_data/testbeds/django__django__4.0/django' with up to 64 processes
+Importing application urlpatterns_reverse
+Skipping setup of unused database(s): other.
+Operations to perform:
+  Synchronize unmigrated apps: auth, contenttypes, messages, sessions, staticfiles, urlpatterns_reverse
+  Apply all migrations: admin, sites
+Synchronizing apps without migrations:
+  Creating tables...
+    Creating table django_content_type
+    Creating table auth_permission
+    Creating table auth_group
+    Creating table auth_user
+    Creating table django_session
+    Running deferred SQL...
+Running migrations:
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying sites.0001_initial... OK
+  Applying sites.0002_alter_domain_unique... OK
+System check identified no issues (0 silenced).
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+test_include_2_tuple (urlpatterns_reverse.tests.IncludeTests) ... ok
+test_include_2_tuple_namespace (urlpatterns_reverse.tests.IncludeTests) ... ok
+test_include_3_tuple (urlpatterns_reverse.tests.IncludeTests) ... ok
+test_include_3_tuple_namespace (urlpatterns_reverse.tests.IncludeTests) ... ok
+test_include_4_tuple (urlpatterns_reverse.tests.IncludeTests) ... ok
+test_include_app_name (urlpatterns_reverse.tests.IncludeTests) ... ok
+test_include_app_name_namespace (urlpatterns_reverse.tests.IncludeTests) ... ok
+test_include_namespace (urlpatterns_reverse.tests.IncludeTests) ... ok
+test_include_urls (urlpatterns_reverse.tests.IncludeTests) ... ok
+test_no_urls_exception (urlpatterns_reverse.tests.NoURLPatternsTests)
+URLResolver should raise an exception when no urlpatterns exist. ... ok
+test_callable_handlers (urlpatterns_reverse.tests.ErrorHandlerResolutionTests) ... ok
+test_named_handlers (urlpatterns_reverse.tests.ErrorHandlerResolutionTests) ... ok
+test_invalid_regex (urlpatterns_reverse.tests.ErroneousViewTests) ... ok
+test_noncallable_view (urlpatterns_reverse.tests.ErroneousViewTests) ... ok
+test_attributeerror_not_hidden (urlpatterns_reverse.tests.ViewLoadingTests) ... ok
+test_module_does_not_exist (urlpatterns_reverse.tests.ViewLoadingTests) ... ok
+test_non_string_value (urlpatterns_reverse.tests.ViewLoadingTests) ... ok
+test_not_callable (urlpatterns_reverse.tests.ViewLoadingTests) ... ok
+test_parent_module_does_not_exist (urlpatterns_reverse.tests.ViewLoadingTests) ... ok
+test_string_without_dot (urlpatterns_reverse.tests.ViewLoadingTests) ... ok
+test_view_does_not_exist (urlpatterns_reverse.tests.ViewLoadingTests) ... ok
+test_view_loading (urlpatterns_reverse.tests.ViewLoadingTests) ... ok
+test_no_illegal_imports (urlpatterns_reverse.tests.ReverseShortcutTests) ... ok
+test_redirect_to_object (urlpatterns_reverse.tests.ReverseShortcutTests) ... ok
+test_redirect_to_url (urlpatterns_reverse.tests.ReverseShortcutTests) ... ok
+test_redirect_to_view_name (urlpatterns_reverse.tests.ReverseShortcutTests) ... ok
+test_redirect_view_object (urlpatterns_reverse.tests.ReverseShortcutTests) ... ok
+test_reverse_by_path_nested (urlpatterns_reverse.tests.ReverseShortcutTests) ... ok
+test_invalid_resolve (urlpatterns_reverse.tests.LookaheadTests) ... ok
+test_invalid_reverse (urlpatterns_reverse.tests.LookaheadTests) ... ok
+test_valid_resolve (urlpatterns_reverse.tests.LookaheadTests) ... test_valid_reverse (urlpatterns_reverse.tests.LookaheadTests) ... ok
+test_illegal_args_message (urlpatterns_reverse.tests.URLPatternReverse) ... ok
+test_illegal_kwargs_message (urlpatterns_reverse.tests.URLPatternReverse) ... ok
+test_mixing_args_and_kwargs (urlpatterns_reverse.tests.URLPatternReverse) ... ok
+test_no_args_message (urlpatterns_reverse.tests.URLPatternReverse) ... ok
+test_non_urlsafe_prefix_with_args (urlpatterns_reverse.tests.URLPatternReverse) ... ok
+test_patterns_reported (urlpatterns_reverse.tests.URLPatternReverse) ... ok
+test_prefix_braces (urlpatterns_reverse.tests.URLPatternReverse) ... ok
+test_prefix_format_char (urlpatterns_reverse.tests.URLPatternReverse) ... ok
+test_prefix_parenthesis (urlpatterns_reverse.tests.URLPatternReverse) ... ok
+test_reverse_none (urlpatterns_reverse.tests.URLPatternReverse) ... ok
+test_script_name_escaping (urlpatterns_reverse.tests.URLPatternReverse) ... ok
+test_urlpattern_reverse (urlpatterns_reverse.tests.URLPatternReverse) ... ok
+test_view_not_found_message (urlpatterns_reverse.tests.URLPatternReverse) ... ok
+test_no_handler_exception (urlpatterns_reverse.tests.NoRootUrlConfTests) ... ok
+test_default_handler (urlpatterns_reverse.tests.DefaultErrorHandlerTests)
+If the urls.py doesn't specify handlers, the defaults are used ... ERROR
+test_build_absolute_uri (urlpatterns_reverse.tests.ReverseLazyTest) ... ok
+test_inserting_reverse_lazy_into_string (urlpatterns_reverse.tests.ReverseLazyTest) ... ok
+test_redirect_with_lazy_reverse (urlpatterns_reverse.tests.ReverseLazyTest) ... ERROR
+test_user_permission_with_lazy_reverse (urlpatterns_reverse.tests.ReverseLazyTest) ... ERROR
+test_404_tried_urls_have_names (urlpatterns_reverse.tests.ResolverTests)
+The list of URLs that come back from a Resolver404 exception contains ... ok
+test_namespaced_view_detail (urlpatterns_reverse.tests.ResolverTests) ... ok
+test_non_regex (urlpatterns_reverse.tests.ResolverTests)
+A Resolver404 is raised if resolving doesn't meet the basic ... ok
+test_populate_concurrency (urlpatterns_reverse.tests.ResolverTests)
+URLResolver._populate() can be called concurrently, but not more ... ok
+test_resolver_repr (urlpatterns_reverse.tests.ResolverTests)
+Test repr of URLResolver, especially when urlconf_name is a list ... ok
+test_resolver_reverse (urlpatterns_reverse.tests.ResolverTests) ... ok
+test_resolver_reverse_conflict (urlpatterns_reverse.tests.ResolverTests)
+URL pattern name arguments don't need to be unique. The last registered ... ok
+test_reverse_lazy_object_coercion_by_resolve (urlpatterns_reverse.tests.ResolverTests)
+Verifies lazy object returned by reverse_lazy is coerced to ... ERROR
+test_view_detail_as_method (urlpatterns_reverse.tests.ResolverTests) ... ok
+test_ambiguous_object (urlpatterns_reverse.tests.NamespaceTests)
+Names deployed via dynamic URL objects that require namespaces can't ... ok
+test_ambiguous_urlpattern (urlpatterns_reverse.tests.NamespaceTests)
+Names deployed via dynamic URL objects that require namespaces can't ... ok
+test_app_lookup_object (urlpatterns_reverse.tests.NamespaceTests)
+A default application namespace can be used for lookup. ... ok
+test_app_lookup_object_with_default (urlpatterns_reverse.tests.NamespaceTests)
+A default application namespace is sensitive to the current app. ... ok
+test_app_lookup_object_without_default (urlpatterns_reverse.tests.NamespaceTests)
+An application namespace without a default is sensitive to the current ... ok
+test_app_name_pattern (urlpatterns_reverse.tests.NamespaceTests)
+Namespaces can be applied to include()'d urlpatterns that set an ... ok
+test_app_object (urlpatterns_reverse.tests.NamespaceTests)
+Dynamic URL objects can return a (pattern, app_name) 2-tuple, and ... ok
+test_app_object_default_namespace (urlpatterns_reverse.tests.NamespaceTests)
+Namespace defaults to app_name when including a (pattern, app_name) ... ok
+test_current_app_no_partial_match (urlpatterns_reverse.tests.NamespaceTests)
+current_app shouldn't be used unless it matches the whole path. ... ok
+test_embedded_namespace_object (urlpatterns_reverse.tests.NamespaceTests)
+Namespaces can be installed anywhere in the URL pattern tree. ... ok
+test_multiple_namespace_pattern (urlpatterns_reverse.tests.NamespaceTests)
+Namespaces can be embedded. ... ok
+test_namespace_object (urlpatterns_reverse.tests.NamespaceTests)
+Dynamic URL objects can be found using a namespace. ... ok
+test_namespace_pattern (urlpatterns_reverse.tests.NamespaceTests)
+Namespaces can be applied to include()'d urlpatterns. ... ok
+test_namespace_pattern_with_variable_prefix (urlpatterns_reverse.tests.NamespaceTests)
+Using include() with namespaces when there is a regex variable in front ... ok
+test_namespaces_with_variables (urlpatterns_reverse.tests.NamespaceTests)
+Namespace prefixes can capture variables. ... ok
+test_nested_app_lookup (urlpatterns_reverse.tests.NamespaceTests)
+A nested current_app should be split in individual namespaces (#24904). ... ok
+test_nested_namespace_pattern (urlpatterns_reverse.tests.NamespaceTests)
+Namespaces can be nested. ... ok
+test_non_existent_namespace (urlpatterns_reverse.tests.NamespaceTests)
+Nonexistent namespaces raise errors. ... ok
+test_normal_name (urlpatterns_reverse.tests.NamespaceTests)
+Normal lookups work as expected. ... ok
+test_simple_included_name (urlpatterns_reverse.tests.NamespaceTests)
+Normal lookups work on names included from other patterns. ... ok
+test_special_chars_namespace (urlpatterns_reverse.tests.NamespaceTests) ... ok
+test_reverse_inner_in_response_middleware (urlpatterns_reverse.tests.RequestURLconfTests)
+Test reversing an URL from the *overridden* URLconf from inside ... ERROR
+test_reverse_inner_in_streaming (urlpatterns_reverse.tests.RequestURLconfTests)
+Test reversing an URL from the *overridden* URLconf from inside ... ERROR
+test_reverse_outer_in_response_middleware (urlpatterns_reverse.tests.RequestURLconfTests)
+Test reversing an URL from the *default* URLconf from inside ... ok
+test_reverse_outer_in_streaming (urlpatterns_reverse.tests.RequestURLconfTests)
+Test reversing an URL from the *default* URLconf from inside ... ERROR
+test_urlconf (urlpatterns_reverse.tests.RequestURLconfTests) ... ERROR
+test_urlconf_is_reset_after_request (urlpatterns_reverse.tests.RequestURLconfTests)
+The URLconf is reset after each request. ... ok
+test_urlconf_overridden (urlpatterns_reverse.tests.RequestURLconfTests) ... ERROR
+test_urlconf_overridden_with_null (urlpatterns_reverse.tests.RequestURLconfTests)
+Overriding request.urlconf with None will fall back to the default ... ERROR
+test_repr (urlpatterns_reverse.tests.ResolverMatchTests) ... ERROR
+test_repr_functools_partial (urlpatterns_reverse.tests.ResolverMatchTests) ... test_resolver_match_on_request (urlpatterns_reverse.tests.ResolverMatchTests) ... ERROR
+test_resolver_match_on_request_before_resolution (urlpatterns_reverse.tests.ResolverMatchTests) ... ok
+test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) ... test_lazy_in_settings (urlpatterns_reverse.tests.ReverseLazySettingsTest) ... ok
+
+======================================================================
+ERROR: test_valid_resolve (urlpatterns_reverse.tests.LookaheadTests) [<object object at 0x7fdacfb40dd0>] (url='/lookahead-/a-city/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1297, in test_valid_resolve
+    self.assertEqual(resolve(test_url).kwargs, {'city': 'a-city'})
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_valid_resolve (urlpatterns_reverse.tests.LookaheadTests) [<object object at 0x7fdacfb40dd0>] (url='/lookbehind-/a-city/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1297, in test_valid_resolve
+    self.assertEqual(resolve(test_url).kwargs, {'city': 'a-city'})
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_valid_resolve (urlpatterns_reverse.tests.LookaheadTests) [<object object at 0x7fdacfb40dd0>] (url='/lookahead+/a-city/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1297, in test_valid_resolve
+    self.assertEqual(resolve(test_url).kwargs, {'city': 'a-city'})
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_valid_resolve (urlpatterns_reverse.tests.LookaheadTests) [<object object at 0x7fdacfb40dd0>] (url='/lookbehind+/a-city/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1297, in test_valid_resolve
+    self.assertEqual(resolve(test_url).kwargs, {'city': 'a-city'})
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_default_handler (urlpatterns_reverse.tests.DefaultErrorHandlerTests)
+If the urls.py doesn't specify handlers, the defaults are used
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 676, in run
+    self._callTestMethod(testMethod)
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 633, in _callTestMethod
+    method()
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1088, in test_default_handler
+    self.client.get('/bad_view/')
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 745, in get
+    response = super().get(path, data=data, secure=secure, **extra)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 396, in get
+    return self.generic('GET', path, secure=secure, **{
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 473, in generic
+    return self.request(**r)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 719, in request
+    self.check_exception(response)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 580, in check_exception
+    raise exc_value
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/exception.py", line 47, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 167, in _get_response
+    callback, callback_args, callback_kwargs = self.resolve_request(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 290, in resolve_request
+    resolver_match = resolver.resolve(request.path_info)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_redirect_with_lazy_reverse (urlpatterns_reverse.tests.ReverseLazyTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 676, in run
+    self._callTestMethod(testMethod)
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 633, in _callTestMethod
+    method()
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 517, in test_redirect_with_lazy_reverse
+    response = self.client.get('/redirect/')
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 745, in get
+    response = super().get(path, data=data, secure=secure, **extra)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 396, in get
+    return self.generic('GET', path, secure=secure, **{
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 473, in generic
+    return self.request(**r)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 719, in request
+    self.check_exception(response)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 580, in check_exception
+    raise exc_value
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/exception.py", line 47, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 167, in _get_response
+    callback, callback_args, callback_kwargs = self.resolve_request(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 290, in resolve_request
+    resolver_match = resolver.resolve(request.path_info)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_user_permission_with_lazy_reverse (urlpatterns_reverse.tests.ReverseLazyTest)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 676, in run
+    self._callTestMethod(testMethod)
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 633, in _callTestMethod
+    method()
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 522, in test_user_permission_with_lazy_reverse
+    response = self.client.get('/login_required_view/')
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 745, in get
+    response = super().get(path, data=data, secure=secure, **extra)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 396, in get
+    return self.generic('GET', path, secure=secure, **{
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 473, in generic
+    return self.request(**r)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 719, in request
+    self.check_exception(response)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 580, in check_exception
+    raise exc_value
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/exception.py", line 47, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 167, in _get_response
+    callback, callback_args, callback_kwargs = self.resolve_request(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 290, in resolve_request
+    resolver_match = resolver.resolve(request.path_info)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_reverse_lazy_object_coercion_by_resolve (urlpatterns_reverse.tests.ResolverTests)
+Verifies lazy object returned by reverse_lazy is coerced to
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 676, in run
+    self._callTestMethod(testMethod)
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 633, in _callTestMethod
+    method()
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 392, in test_reverse_lazy_object_coercion_by_resolve
+    resolver.resolve(proxy_url)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_reverse_inner_in_response_middleware (urlpatterns_reverse.tests.RequestURLconfTests)
+Test reversing an URL from the *overridden* URLconf from inside
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 676, in run
+    self._callTestMethod(testMethod)
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 633, in _callTestMethod
+    method()
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/utils.py", line 430, in inner
+    return func(*args, **kwargs)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 997, in test_reverse_inner_in_response_middleware
+    response = self.client.get('/second_test/')
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 745, in get
+    response = super().get(path, data=data, secure=secure, **extra)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 396, in get
+    return self.generic('GET', path, secure=secure, **{
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 473, in generic
+    return self.request(**r)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 719, in request
+    self.check_exception(response)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 580, in check_exception
+    raise exc_value
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/exception.py", line 47, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 167, in _get_response
+    callback, callback_args, callback_kwargs = self.resolve_request(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 290, in resolve_request
+    resolver_match = resolver.resolve(request.path_info)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_reverse_inner_in_streaming (urlpatterns_reverse.tests.RequestURLconfTests)
+Test reversing an URL from the *overridden* URLconf from inside
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 676, in run
+    self._callTestMethod(testMethod)
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 633, in _callTestMethod
+    method()
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/utils.py", line 430, in inner
+    return func(*args, **kwargs)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1030, in test_reverse_inner_in_streaming
+    response = self.client.get('/second_test/')
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 745, in get
+    response = super().get(path, data=data, secure=secure, **extra)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 396, in get
+    return self.generic('GET', path, secure=secure, **{
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 473, in generic
+    return self.request(**r)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 719, in request
+    self.check_exception(response)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 580, in check_exception
+    raise exc_value
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/exception.py", line 47, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 167, in _get_response
+    callback, callback_args, callback_kwargs = self.resolve_request(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 290, in resolve_request
+    resolver_match = resolver.resolve(request.path_info)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_reverse_outer_in_streaming (urlpatterns_reverse.tests.RequestURLconfTests)
+Test reversing an URL from the *default* URLconf from inside
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 676, in run
+    self._callTestMethod(testMethod)
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 633, in _callTestMethod
+    method()
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/utils.py", line 430, in inner
+    return func(*args, **kwargs)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1047, in test_reverse_outer_in_streaming
+    self.client.get('/second_test/')
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 745, in get
+    response = super().get(path, data=data, secure=secure, **extra)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 396, in get
+    return self.generic('GET', path, secure=secure, **{
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 473, in generic
+    return self.request(**r)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 719, in request
+    self.check_exception(response)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 580, in check_exception
+    raise exc_value
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/exception.py", line 47, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 167, in _get_response
+    callback, callback_args, callback_kwargs = self.resolve_request(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 290, in resolve_request
+    resolver_match = resolver.resolve(request.path_info)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlconf (urlpatterns_reverse.tests.RequestURLconfTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 676, in run
+    self._callTestMethod(testMethod)
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 633, in _callTestMethod
+    method()
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 946, in test_urlconf
+    response = self.client.get('/test/me/')
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 745, in get
+    response = super().get(path, data=data, secure=secure, **extra)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 396, in get
+    return self.generic('GET', path, secure=secure, **{
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 473, in generic
+    return self.request(**r)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 719, in request
+    self.check_exception(response)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 580, in check_exception
+    raise exc_value
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/exception.py", line 47, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 167, in _get_response
+    callback, callback_args, callback_kwargs = self.resolve_request(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 290, in resolve_request
+    resolver_match = resolver.resolve(request.path_info)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlconf_overridden (urlpatterns_reverse.tests.RequestURLconfTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 676, in run
+    self._callTestMethod(testMethod)
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 633, in _callTestMethod
+    method()
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/utils.py", line 430, in inner
+    return func(*args, **kwargs)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 964, in test_urlconf_overridden
+    response = self.client.get('/second_test/')
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 745, in get
+    response = super().get(path, data=data, secure=secure, **extra)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 396, in get
+    return self.generic('GET', path, secure=secure, **{
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 473, in generic
+    return self.request(**r)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 719, in request
+    self.check_exception(response)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 580, in check_exception
+    raise exc_value
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/exception.py", line 47, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 167, in _get_response
+    callback, callback_args, callback_kwargs = self.resolve_request(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 290, in resolve_request
+    resolver_match = resolver.resolve(request.path_info)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlconf_overridden_with_null (urlpatterns_reverse.tests.RequestURLconfTests)
+Overriding request.urlconf with None will fall back to the default
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 676, in run
+    self._callTestMethod(testMethod)
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 633, in _callTestMethod
+    method()
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/utils.py", line 430, in inner
+    return func(*args, **kwargs)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 978, in test_urlconf_overridden_with_null
+    response = self.client.get('/test/me/')
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 745, in get
+    response = super().get(path, data=data, secure=secure, **extra)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 396, in get
+    return self.generic('GET', path, secure=secure, **{
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 473, in generic
+    return self.request(**r)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 719, in request
+    self.check_exception(response)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 580, in check_exception
+    raise exc_value
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/exception.py", line 47, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 167, in _get_response
+    callback, callback_args, callback_kwargs = self.resolve_request(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 290, in resolve_request
+    resolver_match = resolver.resolve(request.path_info)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_repr (urlpatterns_reverse.tests.ResolverMatchTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 676, in run
+    self._callTestMethod(testMethod)
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 633, in _callTestMethod
+    method()
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1142, in test_repr
+    repr(resolve('/no_kwargs/42/37/')),
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_repr_functools_partial (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (name='partial')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1162, in test_repr_functools_partial
+    repr(resolve(f'/{name}/')),
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_repr_functools_partial (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (name='partial_nested')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1162, in test_repr_functools_partial
+    repr(resolve(f'/{name}/')),
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_repr_functools_partial (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (name='partial_wrapped')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1162, in test_repr_functools_partial
+    repr(resolve(f'/{name}/')),
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_resolver_match_on_request (urlpatterns_reverse.tests.ResolverMatchTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 676, in run
+    self._callTestMethod(testMethod)
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 633, in _callTestMethod
+    method()
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1132, in test_resolver_match_on_request
+    response = self.client.get('/resolver_match/')
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 745, in get
+    response = super().get(path, data=data, secure=secure, **extra)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 396, in get
+    return self.generic('GET', path, secure=secure, **{
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 473, in generic
+    return self.request(**r)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 719, in request
+    self.check_exception(response)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/test/client.py", line 580, in check_exception
+    raise exc_value
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/exception.py", line 47, in inner
+    response = get_response(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 167, in _get_response
+    callback, callback_args, callback_kwargs = self.resolve_request(request)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/core/handlers/base.py", line 290, in resolve_request
+    resolver_match = resolver.resolve(request.path_info)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/normal/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/view_class/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/included/normal/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/included/view_class/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/mixed_args/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/included/mixed_args/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/included/12/mixed_args/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/unnamed/normal/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/unnamed/view_class/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/no_kwargs/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/included/no_kwargs/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/included/12/no_kwargs/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/test1/inner/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/included/test3/inner/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/ns-included1/normal/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/included/test3/inner/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/default/inner/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/other2/inner/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/other1/inner/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/ns-included1/test3/inner/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/ns-included1/ns-included4/ns-included2/test3/inner/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  [Previous line repeated 1 more time]
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/app-included/test3/inner/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/app-included/ns-included4/ns-included2/test3/inner/42/37/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  [Previous line repeated 1 more time]
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/inc70/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+======================================================================
+ERROR: test_urlpattern_resolve (urlpatterns_reverse.tests.ResolverMatchTests) [<object object at 0x7fdacfb40e30>] (path='/inc78/extra/foobar/')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 60, in testPartExecutor
+    yield
+  File "/swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/unittest/case.py", line 582, in subTest
+    yield
+  File "/swe_util/eval_data/testbeds/django__django__4.0/tests/urlpatterns_reverse/tests.py", line 1112, in test_urlpattern_resolve
+    match_func, match_args, match_kwargs = resolve(path_)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/base.py", line 24, in resolve
+    return get_resolver(urlconf).resolve(path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 556, in resolve
+    sub_match = pattern.resolve(new_path)
+  File "/swe_util/eval_data/testbeds/django__django__4.0/django/urls/resolvers.py", line 577, in resolve
+    [self.app_name] + sub_match.app_names,
+AttributeError: 'ResolverMatch' object has no attribute 'app_names'
+
+----------------------------------------------------------------------
+Ran 95 tests in 0.406s
+
+FAILED (errors=44)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+
+>>>>> Some Tests Failed

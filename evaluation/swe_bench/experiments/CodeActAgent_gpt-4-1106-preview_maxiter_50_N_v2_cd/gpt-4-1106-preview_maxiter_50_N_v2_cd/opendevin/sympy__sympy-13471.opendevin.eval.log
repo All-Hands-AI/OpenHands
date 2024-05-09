@@ -1,0 +1,150 @@
+Task Metadata:
+	- Instance ID: sympy__sympy-13471
+	- Testbed: /swe_util/eval_data/testbeds/sympy__sympy__1.1
+	- Virtual Env.: sympy__sympy__1.1
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.1 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/sympy__sympy__1.1
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: mpmath>=0.19 in /swe_util/miniconda3/envs/sympy__sympy__1.1/lib/python3.9/site-packages (from sympy==1.1.2.dev0) (1.3.0)
+Installing collected packages: sympy
+  Running setup.py develop for sympy
+Successfully installed sympy-1.1.2.dev0
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate sympy__sympy__1.1 && echo 'activate successful' && bin/test -C --verbose sympy/core/tests/test_numbers.py;
+Output:
+activate successful
+============================= test process starts ==============================
+executable:         /swe_util/miniconda3/envs/sympy__sympy__1.1/bin/python  (3.9.19-final-0) [CPython]
+architecture:       64-bit
+cache:              no
+ground types:       python 
+numpy:              None
+random seed:        50304460
+hash randomization: on (PYTHONHASHSEED=484753003)
+
+sympy/core/tests/test_numbers.py[85] 
+test_integers_cache ok
+test_seterr ok
+test_mod ok
+test_divmod ok
+test_igcd ok
+test_igcd_lehmer ok
+test_igcd2 ok
+test_ilcm ok
+test_igcdex ok
+test_Integer_new ok
+test_Rational_new ok
+test_Number_new ok
+test_Rational_cmp ok
+test_Float ok
+test_float_mpf ok
+test_Float_RealElement ok
+test_Float_default_to_highprec_from_str ok
+test_Float_eval ok
+test_Float_issue_2107 ok
+test_Float_from_tuple E
+test_Infinity ok
+test_Infinity_2 ok
+test_Mul_Infinity_Zero ok
+test_Div_By_Zero ok
+test_Infinity_inequations ok
+test_NaN ok
+test_special_numbers ok
+test_powers ok
+test_integer_nthroot_overflow ok
+test_isqrt ok
+test_powers_Integer ok
+test_powers_Rational ok
+test_powers_Float ok
+test_abs1 ok
+test_accept_int ok
+test_dont_accept_str ok
+test_int ok
+test_long ok
+test_real_bug ok
+test_bug_sqrt ok
+test_pi_Pi ok
+test_no_len ok
+test_issue_3321 ok
+test_issue_3692 ok
+test_issue_3423 ok
+test_issue_3449 ok
+test_Integer_factors ok
+test_Rational_factors ok
+test_issue_4107 ok
+test_IntegerInteger ok
+test_Rational_gcd_lcm_cofactors ok
+test_Float_gcd_lcm_cofactors ok
+test_issue_4611 ok
+test_conversion_to_mpmath ok
+test_relational ok
+test_Integer_as_index ok
+test_Rational_int ok
+test_zoo ok
+test_issue_4122 ok
+test_GoldenRatio_expand ok
+test_as_content_primitive ok
+test_hashing_sympy_integers ok
+test_issue_4172 ok
+test_mpmath_issues f
+test_Catalan_EulerGamma_prec ok
+test_Float_eq ok
+test_int_NumberSymbols ok
+test_issue_6640 ok
+test_issue_6349 ok
+test_mpf_norm ok
+test_latex ok
+test_issue_7742 ok
+test_simplify_AlgebraicNumber ok
+test_Float_idempotence ok
+test_comp ok
+test_issue_9491 ok
+test_issue_10063 ok
+test_issue_10020 ok
+test_invert_numbers ok
+test_mod_inverse ok
+test_golden_ratio_rewrite_as_sqrt ok
+test_comparisons_with_unknown_type ok
+test_NumberSymbol_comparison ok
+test_Integer_precision ok
+test_numpy_to_float numpy not installed. Abort numpy tests. s             [FAIL]
+
+
+________________________________________________________________________________
+____________ sympy/core/tests/test_numbers.py:test_Float_from_tuple ____________
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/core/tests/test_numbers.py", line 586, in test_Float_from_tuple
+    a = Float((0, '1L', 0, 1))
+  File "/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/core/numbers.py", line 1045, in __new__
+    num[1] = int(num[1], 16)
+ValueError: invalid literal for int() with base 16: '1L'
+
+ tests finished: 82 passed, 1 skipped, 1 expected to fail, 1 exceptions, 
+in 0.85 seconds 
+DO *NOT* COMMIT!
+/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/core/basic.py:3: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+  from collections import Mapping, defaultdict
+/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/core/containers.py:271: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+  class OrderedSet(collections.MutableSet):
+/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/solvers/diophantine.py:3188: SyntaxWarning: "is" with a literal. Did you mean "=="?
+  if feasible is 1:  # it's prime and k == 2
+/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/plotting/plot.py:28: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+  from collections import Callable
+/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/core/basic.py:3: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+  from collections import Mapping, defaultdict
+/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/core/containers.py:271: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+  class OrderedSet(collections.MutableSet):
+/swe_util/eval_data/testbeds/sympy__sympy__1.1/sympy/plotting/plot.py:28: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3, and in 3.10 it will stop working
+  from collections import Callable
+
+>>>>> Some Tests Failed

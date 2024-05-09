@@ -1,0 +1,125 @@
+Task Metadata:
+	- Instance ID: pydata__xarray-4248
+	- Testbed: /swe_util/eval_data/testbeds/pydata__xarray__0.12
+	- Virtual Env.: pydata__xarray__0.12
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate pydata__xarray__0.12 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/pydata__xarray__0.12
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: numpy>=1.15 in /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages (from xarray==0.16.1.dev27+g98dc1f4e) (1.26.4)
+Requirement already satisfied: pandas>=0.25 in /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages (from xarray==0.16.1.dev27+g98dc1f4e) (2.2.2)
+Requirement already satisfied: setuptools>=41.2 in /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages (from xarray==0.16.1.dev27+g98dc1f4e) (69.5.1)
+Requirement already satisfied: python-dateutil>=2.8.2 in /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages (from pandas>=0.25->xarray==0.16.1.dev27+g98dc1f4e) (2.9.0)
+Requirement already satisfied: pytz>=2020.1 in /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages (from pandas>=0.25->xarray==0.16.1.dev27+g98dc1f4e) (2024.1)
+Requirement already satisfied: tzdata>=2022.7 in /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages (from pandas>=0.25->xarray==0.16.1.dev27+g98dc1f4e) (2024.1)
+Requirement already satisfied: six>=1.5 in /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages (from python-dateutil>=2.8.2->pandas>=0.25->xarray==0.16.1.dev27+g98dc1f4e) (1.16.0)
+Installing collected packages: xarray
+  Attempting uninstall: xarray
+    Found existing installation: xarray 0.17.1.dev52+ge5690588
+    Uninstalling xarray-0.17.1.dev52+ge5690588:
+      Successfully uninstalled xarray-0.17.1.dev52+ge5690588
+  Running setup.py develop for xarray
+Successfully installed xarray-0.16.1.dev27+g98dc1f4e
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate pydata__xarray__0.12 && echo 'activate successful' && pytest --no-header -rA --tb=no -p no:cacheprovider xarray/tests/test_formatting.py;
+Output:
+activate successful
+============================= test session starts ==============================
+collected 19 items
+
+xarray/tests/test_formatting.py ...............F...                      [100%]
+
+=============================== warnings summary ===============================
+xarray/__init__.py:1
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/__init__.py:1: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+    import pkg_resources
+
+../../../miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2832
+  /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2832: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('pydap')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(pkg)
+
+../../../miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2832
+  /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2832: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('pydap.responses')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(pkg)
+
+../../../miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2317
+../../../miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2317
+../../../miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2317
+  /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2317: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('pydap')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(parent)
+
+../../../miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2832
+  /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2832: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('pydap.handlers')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(pkg)
+
+../../../miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2832
+  /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/pkg_resources/__init__.py:2832: DeprecationWarning: Deprecated call to `pkg_resources.declare_namespace('pydap.tests')`.
+  Implementing implicit namespace packages (as specified in PEP 420) is preferred to `pkg_resources.declare_namespace`. See https://setuptools.pypa.io/en/latest/references/keywords.html#keyword-namespace-packages
+    declare_namespace(pkg)
+
+xarray/core/dask_array_compat.py:16
+xarray/core/dask_array_compat.py:16
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/core/dask_array_compat.py:16: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    if LooseVersion(dask_version) >= LooseVersion("2.0.0"):
+
+xarray/core/dask_array_compat.py:149
+xarray/core/dask_array_compat.py:149
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/core/dask_array_compat.py:149: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    if LooseVersion(dask_version) >= LooseVersion("2.8.1"):
+
+xarray/core/dask_array_compat.py:186
+xarray/core/dask_array_compat.py:186
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/core/dask_array_compat.py:186: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    if LooseVersion(dask_version) > LooseVersion("2.9.0"):
+
+xarray/core/pdcompat.py:45
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/core/pdcompat.py:45: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    if LooseVersion(pd.__version__) < "0.25.0":
+
+../../../miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/setuptools/_distutils/version.py:337
+  /swe_util/miniconda3/envs/pydata__xarray__0.12/lib/python3.10/site-packages/setuptools/_distutils/version.py:337: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    other = LooseVersion(other)
+
+xarray/tests/__init__.py:58
+xarray/tests/__init__.py:58
+  /swe_util/eval_data/testbeds/pydata__xarray__0.12/xarray/tests/__init__.py:58: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    return version.LooseVersion(vstring)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+PASSED xarray/tests/test_formatting.py::TestFormatting::test_get_indexer_at_least_n_items
+PASSED xarray/tests/test_formatting.py::TestFormatting::test_first_n_items
+PASSED xarray/tests/test_formatting.py::TestFormatting::test_last_n_items
+PASSED xarray/tests/test_formatting.py::TestFormatting::test_last_item
+PASSED xarray/tests/test_formatting.py::TestFormatting::test_format_item
+PASSED xarray/tests/test_formatting.py::TestFormatting::test_format_items
+PASSED xarray/tests/test_formatting.py::TestFormatting::test_format_array_flat
+PASSED xarray/tests/test_formatting.py::TestFormatting::test_pretty_print
+PASSED xarray/tests/test_formatting.py::TestFormatting::test_maybe_truncate
+PASSED xarray/tests/test_formatting.py::TestFormatting::test_format_timestamp_out_of_bounds
+PASSED xarray/tests/test_formatting.py::TestFormatting::test_attribute_repr
+PASSED xarray/tests/test_formatting.py::TestFormatting::test_diff_array_repr
+PASSED xarray/tests/test_formatting.py::TestFormatting::test_diff_attrs_repr_with_array
+PASSED xarray/tests/test_formatting.py::TestFormatting::test_diff_dataset_repr
+PASSED xarray/tests/test_formatting.py::TestFormatting::test_array_repr
+PASSED xarray/tests/test_formatting.py::test_set_numpy_options
+PASSED xarray/tests/test_formatting.py::test_short_numpy_repr
+PASSED xarray/tests/test_formatting.py::test_large_array_repr_length
+FAILED xarray/tests/test_formatting.py::test_inline_variable_array_repr_custom_repr
+================== 1 failed, 18 passed, 18 warnings in 1.78s ===================
+
+>>>>> Some Tests Failed

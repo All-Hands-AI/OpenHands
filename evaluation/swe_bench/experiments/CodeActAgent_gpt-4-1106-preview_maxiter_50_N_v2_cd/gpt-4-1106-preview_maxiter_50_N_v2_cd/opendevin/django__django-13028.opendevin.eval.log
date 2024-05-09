@@ -1,0 +1,573 @@
+Task Metadata:
+	- Instance ID: django__django-13028
+	- Testbed: /swe_util/eval_data/testbeds/django__django__3.2
+	- Virtual Env.: django__django__3.2
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__3.2 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/django__django__3.2
+Requirement already satisfied: asgiref>=3.2 in /swe_util/miniconda3/envs/django__django__3.2/lib/python3.6/site-packages (from Django==3.2) (3.4.1)
+Requirement already satisfied: pytz in /swe_util/miniconda3/envs/django__django__3.2/lib/python3.6/site-packages (from Django==3.2) (2024.1)
+Requirement already satisfied: sqlparse>=0.2.2 in /swe_util/miniconda3/envs/django__django__3.2/lib/python3.6/site-packages (from Django==3.2) (0.4.4)
+Requirement already satisfied: typing-extensions in /swe_util/miniconda3/envs/django__django__3.2/lib/python3.6/site-packages (from asgiref>=3.2->Django==3.2) (4.1.1)
+Installing collected packages: Django
+  Running setup.py develop for Django
+Successfully installed Django-3.2
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__3.2 && echo 'activate successful' && ./tests/runtests.py --verbosity 2 queries.models queries.tests;
+Output:
+activate successful
+Testing against Django installed in '/swe_util/eval_data/testbeds/django__django__3.2/django' with up to 64 processes
+Importing application queries
+Skipping setup of unused database(s): other.
+Operations to perform:
+  Synchronize unmigrated apps: auth, contenttypes, messages, queries, sessions, staticfiles
+  Apply all migrations: admin, sites
+Synchronizing apps without migrations:
+  Creating tables...
+    Creating table django_content_type
+    Creating table auth_permission
+    Creating table auth_group
+    Creating table auth_user
+    Creating table django_session
+    Creating table queries_dumbcategory
+    Creating table queries_namedcategory
+    Creating table queries_tag
+    Creating table queries_note
+    Creating table queries_annotation
+    Creating table queries_datetimepk
+    Creating table queries_extrainfo
+    Creating table queries_author
+    Creating table queries_item
+    Creating table queries_report
+    Creating table queries_reportcomment
+    Creating table queries_ranking
+    Creating table queries_cover
+    Creating table queries_number
+    Creating table queries_valid
+    Creating table queries_x
+    Creating table queries_y
+    Creating table queries_loopx
+    Creating table queries_loopy
+    Creating table queries_loopz
+    Creating table queries_managedmodel
+    Creating table queries_detail
+    Creating table queries_member
+    Creating table queries_child
+    Creating table queries_custompk
+    Creating table queries_related
+    Creating table queries_custompktag
+    Creating table queries_celebrity
+    Creating table queries_tvchef
+    Creating table queries_fan
+    Creating table queries_leafa
+    Creating table queries_leafb
+    Creating table queries_join
+    Creating table queries_reservedname
+    Creating table queries_sharedconnection
+    Creating table queries_pointera
+    Creating table queries_pointerb
+    Creating table queries_singleobject
+    Creating table queries_relatedobject
+    Creating table queries_plaything
+    Creating table queries_article
+    Creating table queries_food
+    Creating table queries_eaten
+    Creating table queries_node
+    Creating table queries_objecta
+    Creating table queries_childobjecta
+    Creating table queries_objectb
+    Creating table queries_objectc
+    Creating table queries_simplecategory
+    Creating table queries_specialcategory
+    Creating table queries_categoryitem
+    Creating table queries_mixedcasefieldcategoryitem
+    Creating table queries_mixedcasedbcolumncategoryitem
+    Creating table queries_onetoonecategory
+    Creating table queries_categoryrelationship
+    Creating table queries_commonmixedcaseforeignkeys
+    Creating table queries_nullablename
+    Creating table queries_modeld
+    Creating table queries_modelc
+    Creating table queries_modelb
+    Creating table queries_modela
+    Creating table queries_job
+    Creating table queries_jobresponsibilities
+    Creating table queries_responsibility
+    Creating table queries_fk1
+    Creating table queries_fk2
+    Creating table queries_fk3
+    Creating table queries_basea
+    Creating table queries_identifier
+    Creating table queries_program
+    Creating table queries_channel
+    Creating table queries_book
+    Creating table queries_chapter
+    Creating table queries_paragraph
+    Creating table queries_page
+    Creating table queries_myobject
+    Creating table queries_order
+    Creating table queries_orderitem
+    Creating table queries_baseuser
+    Creating table queries_task
+    Creating table queries_staff
+    Creating table queries_staffuser
+    Creating table queries_ticket21203parent
+    Creating table queries_ticket21203child
+    Creating table queries_person
+    Creating table queries_company
+    Creating table queries_employment
+    Creating table queries_school
+    Creating table queries_student
+    Creating table queries_classroom
+    Creating table queries_teacher
+    Creating table queries_ticket23605aparent
+    Creating table queries_ticket23605a
+    Creating table queries_ticket23605b
+    Creating table queries_ticket23605c
+    Creating table Individual
+    Creating table RelatedIndividual
+    Creating table queries_customdbcolumn
+    Creating table queries_returningmodel
+    Creating table queries_nonintegerpkreturningmodel
+    Creating table queries_jsonfieldnullable
+    Running deferred SQL...
+Running migrations:
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying sites.0001_initial... OK
+  Applying sites.0002_alter_domain_unique... OK
+System check identified no issues (1 silenced).
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+test_ticket7371 (queries.tests.CustomPkTests) ... ok
+test_no_extra_params (queries.tests.DefaultValuesInsertTest) ... ok
+test_ticket14729 (queries.tests.RawQueriesTests) ... ok
+test_ticket_23622 (queries.tests.Ticket23622Tests) ... skipped "Database doesn't support feature(s): can_distinct_on_fields"
+test_exists (queries.tests.ExistsSql) ... ok
+test_ticket_18414 (queries.tests.ExistsSql) ... ok
+test_ticket_18414_distinct_on (queries.tests.ExistsSql) ... skipped "Database doesn't support feature(s): can_distinct_on_fields"
+test_tickets_3045_3288 (queries.tests.SelectRelatedTests) ... ok
+test_ticket22023 (queries.tests.Queries3Tests) ... ok
+test_ticket7107 (queries.tests.Queries3Tests) ... ok
+test_ticket8683 (queries.tests.Queries3Tests) ... ok
+test_evaluated_queryset_as_argument (queries.tests.CloneTests)
+#13227 -- If a queryset is already evaluated, it can still be used as a query arg ... ok
+test_no_fields_cloning (queries.tests.CloneTests) ... ok
+test_no_model_options_cloning (queries.tests.CloneTests) ... ok
+test_ticket_24278 (queries.tests.TestTicket24279) ... ok
+test_21001 (queries.tests.EmptyStringsAsNullTest) ... ok
+test_direct_exclude (queries.tests.EmptyStringsAsNullTest) ... ok
+test_joined_exclude (queries.tests.EmptyStringsAsNullTest) ... ok
+test_reverse_trimming (queries.tests.ReverseJoinTrimmingTest) ... ok
+test_invalid_values (queries.tests.TestInvalidValuesRelation) ... ok
+test_empty_full_handling_conjunction (queries.tests.WhereNodeTest) ... ok
+test_empty_full_handling_disjunction (queries.tests.WhereNodeTest) ... ok
+test_empty_nodes (queries.tests.WhereNodeTest) ... ok
+test_ticket7872 (queries.tests.DisjunctiveFilterTests) ... ok
+test_ticket8283 (queries.tests.DisjunctiveFilterTests) ... ok
+test_ticket_14056 (queries.tests.Ticket14056Tests) ... ok
+test_ticket_21879 (queries.tests.ReverseM2MCustomPkTests) ... ok
+test_ticket_21203 (queries.tests.Ticket21203Tests) ... ok
+test_ticket_21787 (queries.tests.ForeignKeyToBaseExcludeTests) ... ok
+test_ticket_12807 (queries.tests.Ticket12807Tests) ... ok
+test_primary_key (queries.tests.IsNullTests) ... ok
+test_to_field (queries.tests.IsNullTests) ... ok
+test_ticket_19964 (queries.tests.RelabelCloneTest) ... ok
+test_ticket_24605 (queries.tests.TestTicket24605) ... ok
+test_ticket10432 (queries.tests.GeneratorExpressionTests) ... ok
+test_empty_string_promotion (queries.tests.EmptyStringPromotionTests) ... ok
+test_emptyqueryset_values (queries.tests.EmptyQuerySetTests) ... ok
+test_ticket_19151 (queries.tests.EmptyQuerySetTests) ... ok
+test_values_subquery (queries.tests.EmptyQuerySetTests) ... ok
+test_invalid_order_by (queries.tests.QuerySetExceptionTests) ... ok
+test_invalid_queryset_model (queries.tests.QuerySetExceptionTests) ... ok
+test_iter_exceptions (queries.tests.QuerySetExceptionTests) ... ok
+test_ticket7778 (queries.tests.SubclassFKTests) ... ok
+test_annotated_ordering (queries.tests.QuerysetOrderedTests) ... ok
+test_cleared_default_ordering (queries.tests.QuerysetOrderedTests) ... ok
+test_empty_queryset (queries.tests.QuerysetOrderedTests) ... ok
+test_explicit_ordering (queries.tests.QuerysetOrderedTests) ... ok
+test_no_default_or_explicit_ordering (queries.tests.QuerysetOrderedTests) ... ok
+test_order_by_extra (queries.tests.QuerysetOrderedTests) ... ok
+test_ticket_20101 (queries.tests.Ticket20101Tests) ... ok
+test_ticket_20788 (queries.tests.Ticket20788Tests) ... ok
+test_col_not_in_list_containing_null (queries.tests.NullInExcludeTest) ... expected failure
+test_double_exclude (queries.tests.NullInExcludeTest) ... ok
+test_null_in_exclude_qs (queries.tests.NullInExcludeTest) ... ok
+test_double_subquery_in (queries.tests.DoubleInSubqueryTests) ... ok
+test_ticket_7302 (queries.tests.EscapingTests) ... ok
+test_ticket_18785 (queries.tests.Ticket18785Tests) ... ok
+test_ticket15786 (queries.tests.Exclude15786) ... ok
+test_or_with_both_slice (queries.tests.QuerySetBitwiseOperationTests) ... ok
+test_or_with_both_slice_and_ordering (queries.tests.QuerySetBitwiseOperationTests) ... ok
+test_or_with_lhs_slice (queries.tests.QuerySetBitwiseOperationTests) ... ok
+test_or_with_rhs_slice (queries.tests.QuerySetBitwiseOperationTests) ... ok
+test_empty_resultset_sql (queries.tests.WeirdQuerysetSlicingTests) ... ok
+test_empty_sliced_subquery (queries.tests.WeirdQuerysetSlicingTests) ... ok
+test_empty_sliced_subquery_exclude (queries.tests.WeirdQuerysetSlicingTests) ... ok
+test_tickets_7698_10202 (queries.tests.WeirdQuerysetSlicingTests) ... ok
+test_zero_length_values_slicing (queries.tests.WeirdQuerysetSlicingTests) ... ok
+test_in_list_limit (queries.tests.ConditionalTests) ... ok
+test_infinite_loop (queries.tests.ConditionalTests) ... ok
+test_null_ordering_added (queries.tests.ConditionalTests) ... skipped "Database doesn't support feature(s): requires_explicit_null_ordering_when_grouping"
+test_ticket8597 (queries.tests.ComparisonTests) ... ok
+test_join_already_in_query (queries.tests.NullableRelOrderingTests) ... ok
+test_ticket10028 (queries.tests.NullableRelOrderingTests) ... ok
+test_ticket12239 (queries.tests.Queries2Tests) ... ok
+test_ticket4289 (queries.tests.Queries2Tests) ... ok
+test_ticket7759 (queries.tests.Queries2Tests) ... ok
+test_evaluated_proxy_count (queries.tests.ProxyQueryCleanupTest) ... ok
+test_exclude_many_to_many (queries.tests.ManyToManyExcludeTest) ... ok
+test_ticket_12823 (queries.tests.ManyToManyExcludeTest) ... ok
+test_fk_reuse (queries.tests.JoinReuseTest) ... ok
+test_fk_reuse_annotation (queries.tests.JoinReuseTest) ... ok
+test_fk_reuse_disjunction (queries.tests.JoinReuseTest) ... ok
+test_fk_reuse_order_by (queries.tests.JoinReuseTest) ... ok
+test_fk_reuse_select_related (queries.tests.JoinReuseTest) ... ok
+test_inverted_q_across_relations (queries.tests.JoinReuseTest) ... ok
+test_revfk_noreuse (queries.tests.JoinReuseTest) ... ok
+test_revo2o_reuse (queries.tests.JoinReuseTest) ... ok
+test_ticket_22429 (queries.tests.Ticket22429Tests) ... ok
+test_correct_lookup (queries.tests.RelatedLookupTypeTests) ... ok
+test_values_queryset_lookup (queries.tests.RelatedLookupTypeTests) ... ok
+test_wrong_backward_lookup (queries.tests.RelatedLookupTypeTests) ... ok
+test_wrong_type_lookup (queries.tests.RelatedLookupTypeTests) ... ok
+test_ticket_20955 (queries.tests.Ticket20955Tests) ... ok
+test_ticket_23605 (queries.tests.Ticket23605Tests) ... ok
+test_exclude_plain (queries.tests.ExcludeTest17600) ... ok
+test_exclude_plain_distinct (queries.tests.ExcludeTest17600) ... ok
+test_exclude_with_q_is_equal_to_plain_exclude (queries.tests.ExcludeTest17600) ... ok
+test_exclude_with_q_is_equal_to_plain_exclude_variation (queries.tests.ExcludeTest17600) ... ok
+test_exclude_with_q_object_distinct (queries.tests.ExcludeTest17600) ... ok
+test_exclude_with_q_object_no_distinct (queries.tests.ExcludeTest17600) ... ok
+test_only_orders_with_all_items_having_status_1 (queries.tests.ExcludeTest17600) ... expected failure
+test_non_nullable_fk_not_promoted (queries.tests.ValuesJoinPromotionTests) ... ok
+test_ticket_21376 (queries.tests.ValuesJoinPromotionTests) ... ok
+test_values_no_promotion_for_existing (queries.tests.ValuesJoinPromotionTests) ... ok
+test_extra_multiple_select_params_values_order_by (queries.tests.ValuesQuerysetTests) ... ok
+test_extra_select_params_values_order_in_extra (queries.tests.ValuesQuerysetTests) ... ok
+test_extra_values (queries.tests.ValuesQuerysetTests) ... ok
+test_extra_values_list (queries.tests.ValuesQuerysetTests) ... ok
+test_extra_values_order_in_extra (queries.tests.ValuesQuerysetTests) ... ok
+test_extra_values_order_multiple (queries.tests.ValuesQuerysetTests) ... ok
+test_extra_values_order_twice (queries.tests.ValuesQuerysetTests) ... ok
+test_field_error_values_list (queries.tests.ValuesQuerysetTests) ... ok
+test_flat_extra_values_list (queries.tests.ValuesQuerysetTests) ... ok
+test_flat_values_list (queries.tests.ValuesQuerysetTests) ... ok
+test_named_values_list_bad_field_name (queries.tests.ValuesQuerysetTests) ... ok
+test_named_values_list_expression (queries.tests.ValuesQuerysetTests) ... ok
+test_named_values_list_expression_with_default_alias (queries.tests.ValuesQuerysetTests) ... ok
+test_named_values_list_flat (queries.tests.ValuesQuerysetTests) ... ok
+test_named_values_list_with_fields (queries.tests.ValuesQuerysetTests) ... ok
+test_named_values_list_without_fields (queries.tests.ValuesQuerysetTests) ... ok
+test_values_in_subquery (queries.tests.ValuesSubqueryTests) ... ok
+test_distinct_ordered_sliced_subquery_aggregation (queries.tests.Queries6Tests) ... ok
+test_multiple_columns_with_the_same_name_slice (queries.tests.Queries6Tests) ... ok
+test_nested_queries_sql (queries.tests.Queries6Tests) ... ok
+test_parallel_iterators (queries.tests.Queries6Tests) ... ok
+test_ticket3739 (queries.tests.Queries6Tests) ... ok
+test_ticket_11320 (queries.tests.Queries6Tests) ... ok
+test_tickets_8921_9188 (queries.tests.Queries6Tests) ... ok
+test_can_combine_queries_using_and_and_or_operators (queries.tests.QuerySetSupportsPythonIdioms) ... ok
+test_can_get_items_using_index_and_slice_notation (queries.tests.QuerySetSupportsPythonIdioms) ... ok
+test_can_get_number_of_items_in_queryset_using_standard_len (queries.tests.QuerySetSupportsPythonIdioms) ... ok
+test_invalid_index (queries.tests.QuerySetSupportsPythonIdioms) ... ok
+test_slicing_can_slice_again_after_slicing (queries.tests.QuerySetSupportsPythonIdioms) ... ok
+test_slicing_cannot_combine_queries_once_sliced (queries.tests.QuerySetSupportsPythonIdioms) ... ok
+test_slicing_cannot_filter_queryset_once_sliced (queries.tests.QuerySetSupportsPythonIdioms) ... ok
+test_slicing_cannot_reorder_queryset_once_sliced (queries.tests.QuerySetSupportsPythonIdioms) ... ok
+test_slicing_negative_indexing_not_supported_for_range (queries.tests.QuerySetSupportsPythonIdioms)
+hint: inverting your ordering might do what you need ... ok
+test_slicing_negative_indexing_not_supported_for_single_element (queries.tests.QuerySetSupportsPythonIdioms)
+hint: inverting your ordering might do what you need ... ok
+test_slicing_with_steps_can_be_used (queries.tests.QuerySetSupportsPythonIdioms) ... ok
+test_slicing_with_tests_is_not_lazy (queries.tests.QuerySetSupportsPythonIdioms) ... ok
+test_slicing_without_step_is_lazy (queries.tests.QuerySetSupportsPythonIdioms) ... ok
+test_in_query (queries.tests.ToFieldTests) ... ok
+test_in_subquery (queries.tests.ToFieldTests) ... ok
+test_nested_in_subquery (queries.tests.ToFieldTests) ... ok
+test_recursive_fk (queries.tests.ToFieldTests) ... ok
+test_recursive_fk_reverse (queries.tests.ToFieldTests) ... ok
+test_reverse_in (queries.tests.ToFieldTests) ... ok
+test_single_object (queries.tests.ToFieldTests) ... ok
+test_single_object_reverse (queries.tests.ToFieldTests) ... ok
+test_disjunction_promotion1 (queries.tests.DisjunctionPromotionTests) ... ok
+test_disjunction_promotion2 (queries.tests.DisjunctionPromotionTests) ... ok
+test_disjunction_promotion3 (queries.tests.DisjunctionPromotionTests) ... ok
+test_disjunction_promotion3_demote (queries.tests.DisjunctionPromotionTests) ... ok
+test_disjunction_promotion4 (queries.tests.DisjunctionPromotionTests) ... ok
+test_disjunction_promotion4_demote (queries.tests.DisjunctionPromotionTests) ... ok
+test_disjunction_promotion5_demote (queries.tests.DisjunctionPromotionTests) ... ok
+test_disjunction_promotion6 (queries.tests.DisjunctionPromotionTests) ... ok
+test_disjunction_promotion7 (queries.tests.DisjunctionPromotionTests) ... ok
+test_disjunction_promotion_fexpression (queries.tests.DisjunctionPromotionTests) ... ok
+test_disjunction_promotion_select_related (queries.tests.DisjunctionPromotionTests) ... ok
+test_AB_ACB (queries.tests.UnionTests) ... ok
+test_A_AB (queries.tests.UnionTests) ... ok
+test_A_AB2 (queries.tests.UnionTests) ... ok
+test_BAB_BAC (queries.tests.UnionTests) ... ok
+test_BAB_BACB (queries.tests.UnionTests) ... ok
+test_BA_BCA__BAB_BAC_BCA (queries.tests.UnionTests) ... ok
+test_extra_select_literal_percent_s (queries.tests.Queries5Tests) ... ok
+test_ordering (queries.tests.Queries5Tests) ... ok
+test_ticket5261 (queries.tests.Queries5Tests) ... ok
+test_ticket7045 (queries.tests.Queries5Tests) ... ok
+test_ticket7256 (queries.tests.Queries5Tests) ... ok
+test_ticket9848 (queries.tests.Queries5Tests) ... ok
+test_isnull_filter_promotion (queries.tests.NullJoinPromotionOrTest) ... ok
+test_null_join_demotion (queries.tests.NullJoinPromotionOrTest) ... ok
+test_ticket_17886 (queries.tests.NullJoinPromotionOrTest) ... ok
+test_ticket_21366 (queries.tests.NullJoinPromotionOrTest) ... ok
+test_ticket_21748 (queries.tests.NullJoinPromotionOrTest) ... ok
+test_ticket_21748_complex_filter (queries.tests.NullJoinPromotionOrTest) ... ok
+test_ticket_21748_double_negated_and (queries.tests.NullJoinPromotionOrTest) ... ok
+test_ticket_21748_double_negated_or (queries.tests.NullJoinPromotionOrTest) ... ok
+test_distinct_ordered_sliced_subquery (queries.tests.SubqueryTests) ... ok
+test_ordered_subselect (queries.tests.SubqueryTests)
+Subselects honor any manual ordering ... ok
+test_related_sliced_subquery (queries.tests.SubqueryTests) ... ok
+test_slice_subquery_and_query (queries.tests.SubqueryTests) ... ok
+test_sliced_delete (queries.tests.SubqueryTests)
+Delete queries can safely contain sliced subqueries ... ok
+test_exclude_reverse_fk_field_ref (queries.tests.ExcludeTests) ... ok
+test_exclude_with_circular_fk_relation (queries.tests.ExcludeTests) ... ok
+test_subquery_exclude_outerref (queries.tests.ExcludeTests) ... ok
+test_ticket14511 (queries.tests.ExcludeTests) ... ok
+test_to_field (queries.tests.ExcludeTests) ... ok
+test_combine_join_reuse (queries.tests.Queries4Tests) ... ok
+test_filter_reverse_non_integer_pk (queries.tests.Queries4Tests) ... ok
+test_join_reuse_order (queries.tests.Queries4Tests) ... ok
+test_order_by_resetting (queries.tests.Queries4Tests) ... ok
+test_order_by_reverse_fk (queries.tests.Queries4Tests) ... ok
+test_ticket10181 (queries.tests.Queries4Tests) ... ok
+test_ticket11811 (queries.tests.Queries4Tests) ... ok
+test_ticket14876 (queries.tests.Queries4Tests) ... ok
+test_ticket15316_exclude_false (queries.tests.Queries4Tests) ... ok
+test_ticket15316_exclude_true (queries.tests.Queries4Tests) ... ok
+test_ticket15316_filter_false (queries.tests.Queries4Tests) ... ok
+test_ticket15316_filter_true (queries.tests.Queries4Tests) ... ok
+test_ticket15316_one2one_exclude_false (queries.tests.Queries4Tests) ... ok
+test_ticket15316_one2one_exclude_true (queries.tests.Queries4Tests) ... ok
+test_ticket15316_one2one_filter_false (queries.tests.Queries4Tests) ... ok
+test_ticket15316_one2one_filter_true (queries.tests.Queries4Tests) ... ok
+test_ticket24525 (queries.tests.Queries4Tests) ... ok
+test_ticket7095 (queries.tests.Queries4Tests) ... ok
+test_avoid_infinite_loop_on_too_many_subqueries (queries.tests.Queries1Tests) ... ok
+test_common_mixed_case_foreign_keys (queries.tests.Queries1Tests) ... ok
+test_deferred_load_qs_pickling (queries.tests.Queries1Tests) ... ok
+test_double_exclude (queries.tests.Queries1Tests) ... ok
+test_error_raised_on_filter_with_dictionary (queries.tests.Queries1Tests) ... ok
+test_exclude (queries.tests.Queries1Tests) ... ok
+test_exclude_in (queries.tests.Queries1Tests) ... ok
+test_excluded_intermediary_m2m_table_joined (queries.tests.Queries1Tests) ... ok
+test_field_with_filterable (queries.tests.Queries1Tests) ... ok
+test_get_clears_ordering (queries.tests.Queries1Tests) ... ok
+test_heterogeneous_qs_combination (queries.tests.Queries1Tests) ... ok
+test_lookup_constraint_fielderror (queries.tests.Queries1Tests) ... ok
+test_nested_exclude (queries.tests.Queries1Tests) ... ok
+test_order_by_join_unref (queries.tests.Queries1Tests) ... ok
+test_order_by_raw_column_alias_warning (queries.tests.Queries1Tests) ... ok
+test_order_by_rawsql (queries.tests.Queries1Tests) ... ok
+test_order_by_tables (queries.tests.Queries1Tests) ... ok
+test_reasonable_number_of_subq_aliases (queries.tests.Queries1Tests) ... ok
+test_subquery_condition (queries.tests.Queries1Tests) ... ok
+test_ticket10205 (queries.tests.Queries1Tests) ... ok
+test_ticket10432 (queries.tests.Queries1Tests) ... ok
+test_ticket1050 (queries.tests.Queries1Tests) ... ok
+test_ticket10742 (queries.tests.Queries1Tests) ... ok
+test_ticket17429 (queries.tests.Queries1Tests) ... ok
+test_ticket1801 (queries.tests.Queries1Tests) ... ok
+test_ticket19672 (queries.tests.Queries1Tests) ... ok
+test_ticket2091 (queries.tests.Queries1Tests) ... ok
+test_ticket2253 (queries.tests.Queries1Tests) ... ok
+test_ticket2306 (queries.tests.Queries1Tests) ... ok
+test_ticket2400 (queries.tests.Queries1Tests) ... ok
+test_ticket2496 (queries.tests.Queries1Tests) ... ok
+test_ticket3037 (queries.tests.Queries1Tests) ... ok
+test_ticket3141 (queries.tests.Queries1Tests) ... ok
+test_ticket4358 (queries.tests.Queries1Tests) ... ok
+test_ticket4464 (queries.tests.Queries1Tests) ... ok
+test_ticket4510 (queries.tests.Queries1Tests) ... ok
+test_ticket6074 (queries.tests.Queries1Tests) ... ok
+test_ticket6154 (queries.tests.Queries1Tests) ... ok
+test_ticket6981 (queries.tests.Queries1Tests) ... ok
+test_ticket7076 (queries.tests.Queries1Tests) ... ok
+test_ticket7096 (queries.tests.Queries1Tests) ... ok
+test_ticket7098 (queries.tests.Queries1Tests) ... ok
+test_ticket7155 (queries.tests.Queries1Tests) ... ok
+test_ticket7181 (queries.tests.Queries1Tests) ... ok
+test_ticket7235 (queries.tests.Queries1Tests) ... ok
+test_ticket7277 (queries.tests.Queries1Tests) ... ok
+test_ticket7323 (queries.tests.Queries1Tests) ... ok
+test_ticket7378 (queries.tests.Queries1Tests) ... ok
+test_ticket7791 (queries.tests.Queries1Tests) ... ok
+test_ticket7813 (queries.tests.Queries1Tests) ... ok
+test_ticket8439 (queries.tests.Queries1Tests) ... ok
+test_ticket9411 (queries.tests.Queries1Tests) ... ok
+test_ticket9926 (queries.tests.Queries1Tests) ... ok
+test_ticket9985 (queries.tests.Queries1Tests) ... ok
+test_ticket9997 (queries.tests.Queries1Tests) ... ok
+test_ticket_10790_1 (queries.tests.Queries1Tests) ... ok
+test_ticket_10790_2 (queries.tests.Queries1Tests) ... ok
+test_ticket_10790_3 (queries.tests.Queries1Tests) ... ok
+test_ticket_10790_4 (queries.tests.Queries1Tests) ... ok
+test_ticket_10790_5 (queries.tests.Queries1Tests) ... ok
+test_ticket_10790_6 (queries.tests.Queries1Tests) ... ok
+test_ticket_10790_7 (queries.tests.Queries1Tests) ... ok
+test_ticket_10790_8 (queries.tests.Queries1Tests) ... ok
+test_ticket_10790_combine (queries.tests.Queries1Tests) ... ok
+test_ticket_20250 (queries.tests.Queries1Tests) ... ok
+test_tickets_1878_2939 (queries.tests.Queries1Tests) ... ok
+test_tickets_2076_7256 (queries.tests.Queries1Tests) ... ok
+test_tickets_2080_3592 (queries.tests.Queries1Tests) ... ok
+test_tickets_2874_3002 (queries.tests.Queries1Tests) ... ok
+test_tickets_4088_4306 (queries.tests.Queries1Tests) ... ok
+test_tickets_5321_7070 (queries.tests.Queries1Tests) ... ok
+test_tickets_5324_6704 (queries.tests.Queries1Tests) ... ok
+test_tickets_6180_6203 (queries.tests.Queries1Tests) ... ok
+test_tickets_7087_12242 (queries.tests.Queries1Tests) ... ok
+test_tickets_7204_7506 (queries.tests.Queries1Tests) ... ok
+test_tickets_7448_7707 (queries.tests.Queries1Tests) ... ok
+
+----------------------------------------------------------------------
+Ran 284 tests in 0.532s
+
+OK (skipped=3, expected failures=2)
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+
+>>>>> All Tests Passed

@@ -1,0 +1,149 @@
+Task Metadata:
+	- Instance ID: matplotlib__matplotlib-22711
+	- Testbed: /swe_util/eval_data/testbeds/matplotlib__matplotlib__3.5
+	- Virtual Env.: matplotlib__matplotlib__3.5
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate matplotlib__matplotlib__3.5 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/matplotlib__matplotlib__3.5
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: cycler>=0.10 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev1926+gf670fe7879) (0.11.0)
+Requirement already satisfied: fonttools>=4.22.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev1926+gf670fe7879) (4.42.1)
+Requirement already satisfied: kiwisolver>=1.0.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev1926+gf670fe7879) (1.4.5)
+Requirement already satisfied: numpy>=1.19 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev1926+gf670fe7879) (1.25.2)
+Requirement already satisfied: packaging>=20.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev1926+gf670fe7879) (23.1)
+Requirement already satisfied: pillow>=6.2.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev1926+gf670fe7879) (10.0.0)
+Requirement already satisfied: pyparsing<3.0.0,>=2.2.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev1926+gf670fe7879) (2.4.7)
+Requirement already satisfied: python-dateutil>=2.7 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev1926+gf670fe7879) (2.8.2)
+Requirement already satisfied: setuptools_scm>=4 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from matplotlib==3.6.0.dev1926+gf670fe7879) (7.1.0)
+Requirement already satisfied: six>=1.5 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from python-dateutil>=2.7->matplotlib==3.6.0.dev1926+gf670fe7879) (1.16.0)
+Requirement already satisfied: setuptools in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from setuptools_scm>=4->matplotlib==3.6.0.dev1926+gf670fe7879) (68.1.2)
+Requirement already satisfied: typing-extensions in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages (from setuptools_scm>=4->matplotlib==3.6.0.dev1926+gf670fe7879) (4.7.1)
+Installing collected packages: matplotlib
+  Running setup.py develop for matplotlib
+Successfully installed matplotlib-3.6.0.dev1926+gf670fe7879
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate matplotlib__matplotlib__3.5 && echo 'activate successful' && pytest --no-header -rA --tb=no -p no:cacheprovider lib/matplotlib/tests/test_widgets.py;
+Output:
+activate successful
+============================= test session starts ==============================
+collected 96 items
+
+lib/matplotlib/tests/test_widgets.py F.................................. [ 36%]
+......................s.............FF.....ss................            [100%]
+
+=============================== warnings summary ===============================
+../../../miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages/pyparsing.py:108
+  /swe_util/miniconda3/envs/matplotlib__matplotlib__3.5/lib/python3.11/site-packages/pyparsing.py:108: DeprecationWarning: module 'sre_constants' is deprecated
+    import sre_constants
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_minspan[0-10-0-10-data]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_minspan[0-10-0-10-pixels]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_minspan[0-10-1-10.5-data]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_minspan[0-10-1-10.5-pixels]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_minspan[0-10-1-11-data]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_minspan[0-10-1-11-pixels]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_minspan[1-10.5-0-10-data]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_minspan[1-10.5-0-10-pixels]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_minspan[1-10.5-1-10.5-data]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_minspan[1-10.5-1-10.5-pixels]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_minspan[1-10.5-1-11-data]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_minspan[1-10.5-1-11-pixels]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_minspan[1-11-0-10-data]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_minspan[1-11-0-10-pixels]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_minspan[1-11-1-10.5-data]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_minspan[1-11-1-10.5-pixels]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_minspan[1-11-1-11-data]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_minspan[1-11-1-11-pixels]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_drag[True-new_center0]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_drag[False-new_center1]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_selector_set_props_handle_props
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_resize
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_add_state
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_resize_center[True]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_resize_center[False]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_resize_square[True]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_resize_square[False]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_resize_square_center
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_rotate[RectangleSelector]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_rotate[EllipseSelector]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectange_add_remove_set
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_resize_square_center_aspect[False]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_resize_square_center_aspect[True]
+PASSED lib/matplotlib/tests/test_widgets.py::test_ellipse
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_handles
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_selector_onselect[True]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_selector_onselect[False]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_selector_ignore_outside[True]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rectangle_selector_ignore_outside[False]
+PASSED lib/matplotlib/tests/test_widgets.py::test_span_selector
+PASSED lib/matplotlib/tests/test_widgets.py::test_span_selector_onselect[True]
+PASSED lib/matplotlib/tests/test_widgets.py::test_span_selector_onselect[False]
+PASSED lib/matplotlib/tests/test_widgets.py::test_span_selector_ignore_outside[True]
+PASSED lib/matplotlib/tests/test_widgets.py::test_span_selector_ignore_outside[False]
+PASSED lib/matplotlib/tests/test_widgets.py::test_span_selector_drag[True]
+PASSED lib/matplotlib/tests/test_widgets.py::test_span_selector_drag[False]
+PASSED lib/matplotlib/tests/test_widgets.py::test_span_selector_direction
+PASSED lib/matplotlib/tests/test_widgets.py::test_span_selector_set_props_handle_props
+PASSED lib/matplotlib/tests/test_widgets.py::test_selector_clear[span]
+PASSED lib/matplotlib/tests/test_widgets.py::test_selector_clear[rectangle]
+PASSED lib/matplotlib/tests/test_widgets.py::test_selector_clear_method[span]
+PASSED lib/matplotlib/tests/test_widgets.py::test_selector_clear_method[rectangle]
+PASSED lib/matplotlib/tests/test_widgets.py::test_span_selector_add_state
+PASSED lib/matplotlib/tests/test_widgets.py::test_tool_line_handle
+PASSED lib/matplotlib/tests/test_widgets.py::test_span_selector_bound[horizontal]
+PASSED lib/matplotlib/tests/test_widgets.py::test_span_selector_bound[vertical]
+PASSED lib/matplotlib/tests/test_widgets.py::test_lasso_selector
+PASSED lib/matplotlib/tests/test_widgets.py::test_CheckButtons
+PASSED lib/matplotlib/tests/test_widgets.py::test_TextBox[none]
+PASSED lib/matplotlib/tests/test_widgets.py::test_TextBox[toolbar2]
+PASSED lib/matplotlib/tests/test_widgets.py::test_TextBox[toolmanager]
+PASSED lib/matplotlib/tests/test_widgets.py::test_check_radio_buttons_image[png]
+PASSED lib/matplotlib/tests/test_widgets.py::test_check_bunch_of_radio_buttons[png]
+PASSED lib/matplotlib/tests/test_widgets.py::test_slider_slidermin_slidermax_invalid
+PASSED lib/matplotlib/tests/test_widgets.py::test_slider_slidermin_slidermax
+PASSED lib/matplotlib/tests/test_widgets.py::test_slider_valmin_valmax
+PASSED lib/matplotlib/tests/test_widgets.py::test_slider_valstep_snapping
+PASSED lib/matplotlib/tests/test_widgets.py::test_slider_horizontal_vertical
+PASSED lib/matplotlib/tests/test_widgets.py::test_slider_reset
+PASSED lib/matplotlib/tests/test_widgets.py::test_polygon_selector[False]
+PASSED lib/matplotlib/tests/test_widgets.py::test_polygon_selector[True]
+PASSED lib/matplotlib/tests/test_widgets.py::test_polygon_selector_set_props_handle_props[False]
+PASSED lib/matplotlib/tests/test_widgets.py::test_polygon_selector_set_props_handle_props[True]
+PASSED lib/matplotlib/tests/test_widgets.py::test_rect_visibility[png]
+PASSED lib/matplotlib/tests/test_widgets.py::test_polygon_selector_remove[False-1]
+PASSED lib/matplotlib/tests/test_widgets.py::test_polygon_selector_remove[False-2]
+PASSED lib/matplotlib/tests/test_widgets.py::test_polygon_selector_remove[False-3]
+PASSED lib/matplotlib/tests/test_widgets.py::test_polygon_selector_remove[True-1]
+PASSED lib/matplotlib/tests/test_widgets.py::test_polygon_selector_remove[True-2]
+PASSED lib/matplotlib/tests/test_widgets.py::test_polygon_selector_remove[True-3]
+PASSED lib/matplotlib/tests/test_widgets.py::test_polygon_selector_remove_first_point[False]
+PASSED lib/matplotlib/tests/test_widgets.py::test_polygon_selector_remove_first_point[True]
+PASSED lib/matplotlib/tests/test_widgets.py::test_polygon_selector_redraw[False]
+PASSED lib/matplotlib/tests/test_widgets.py::test_polygon_selector_redraw[True]
+PASSED lib/matplotlib/tests/test_widgets.py::test_polygon_selector_verts_setter[png-False]
+PASSED lib/matplotlib/tests/test_widgets.py::test_polygon_selector_verts_setter[png-True]
+PASSED lib/matplotlib/tests/test_widgets.py::test_polygon_selector_box
+PASSED lib/matplotlib/tests/test_widgets.py::test_MultiCursor[True-True]
+PASSED lib/matplotlib/tests/test_widgets.py::test_MultiCursor[True-False]
+PASSED lib/matplotlib/tests/test_widgets.py::test_MultiCursor[False-True]
+SKIPPED [1] lib/matplotlib/tests/test_widgets.py:870: Failed to switch to backend QtAgg (Failed to import any qt binding).
+SKIPPED [1] lib/matplotlib/testing/compare.py:262: Don't know how to convert .pdf files to png
+SKIPPED [1] lib/matplotlib/testing/compare.py:262: Don't know how to convert .svg files to png
+FAILED lib/matplotlib/tests/test_widgets.py::test_rectangle_selector - matplo...
+FAILED lib/matplotlib/tests/test_widgets.py::test_range_slider[horizontal] - ...
+FAILED lib/matplotlib/tests/test_widgets.py::test_range_slider[vertical] - As...
+============= 3 failed, 90 passed, 3 skipped, 1 warning in 12.69s ==============
+
+>>>>> Some Tests Failed

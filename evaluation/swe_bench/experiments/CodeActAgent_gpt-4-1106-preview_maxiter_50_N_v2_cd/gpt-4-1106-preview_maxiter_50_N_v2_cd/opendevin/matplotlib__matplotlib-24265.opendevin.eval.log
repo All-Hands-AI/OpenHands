@@ -1,0 +1,88 @@
+Task Metadata:
+	- Instance ID: matplotlib__matplotlib-24265
+	- Testbed: /swe_util/eval_data/testbeds/matplotlib__matplotlib__3.6
+	- Virtual Env.: matplotlib__matplotlib__3.6
+	- Evaluation Model: opendevin
+>>>>> Patch Apply Failed; (pred_try patch)
+Output:
+(Stripping trailing CRs from patch; use --binary to disable.)
+patching file test_seaborn_colorblind_style.py
+patch unexpectedly ends in middle of line
+patch: **** malformed patch at line 30:  
+
+>>>>> Applied Patch (pred_minimal_try patch)
+>>>>> Applied Patch (pred_minimal_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate matplotlib__matplotlib__3.6 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/matplotlib__matplotlib__3.6
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Installing backend dependencies: started
+  Installing backend dependencies: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: contourpy>=1.0.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev487+ge148998d9b) (1.1.0)
+Requirement already satisfied: cycler>=0.10 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev487+ge148998d9b) (0.11.0)
+Requirement already satisfied: fonttools>=4.22.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev487+ge148998d9b) (4.42.1)
+Requirement already satisfied: kiwisolver>=1.0.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev487+ge148998d9b) (1.4.5)
+Requirement already satisfied: numpy>=1.19 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev487+ge148998d9b) (1.25.2)
+Requirement already satisfied: packaging>=20.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev487+ge148998d9b) (23.1)
+Requirement already satisfied: pillow>=6.2.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev487+ge148998d9b) (10.0.0)
+Requirement already satisfied: pyparsing>=2.3.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev487+ge148998d9b) (3.0.9)
+Requirement already satisfied: python-dateutil>=2.7 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev487+ge148998d9b) (2.8.2)
+Requirement already satisfied: setuptools-scm>=7 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev487+ge148998d9b) (7.1.0)
+Requirement already satisfied: six>=1.5 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from python-dateutil>=2.7->matplotlib==3.7.0.dev487+ge148998d9b) (1.16.0)
+Requirement already satisfied: setuptools in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from setuptools-scm>=7->matplotlib==3.7.0.dev487+ge148998d9b) (68.1.2)
+Requirement already satisfied: typing-extensions in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from setuptools-scm>=7->matplotlib==3.7.0.dev487+ge148998d9b) (4.7.1)
+Building wheels for collected packages: matplotlib
+  Building editable for matplotlib (pyproject.toml): started
+  Building editable for matplotlib (pyproject.toml): finished with status 'done'
+  Created wheel for matplotlib: filename=matplotlib-3.7.0.dev487+ge148998d9b-0.editable-cp311-cp311-linux_x86_64.whl size=22254 sha256=bec7fc4b318972a76eadc1d3e2d77c355c28d517d321a48644e19e4d324a9d37
+  Stored in directory: /tmp/pip-ephem-wheel-cache-2hjcqd7p/wheels/84/91/51/e68cf89e4c0070620823ea3465577f0df7cab4d216dcb5c628
+Successfully built matplotlib
+Installing collected packages: matplotlib
+  Attempting uninstall: matplotlib
+    Found existing installation: matplotlib 3.7.0.dev1362+ga3011dfd1a
+    Uninstalling matplotlib-3.7.0.dev1362+ga3011dfd1a:
+      Successfully uninstalled matplotlib-3.7.0.dev1362+ga3011dfd1a
+Successfully installed matplotlib-3.7.0.dev487+ge148998d9b
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred_minimal patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate matplotlib__matplotlib__3.6 && echo 'activate successful' && pytest --no-header -rA --tb=no -p no:cacheprovider lib/matplotlib/tests/test_style.py;
+Output:
+activate successful
+============================= test session starts ==============================
+collected 17 items
+
+lib/matplotlib/tests/test_style.py ...............F.                     [100%]
+
+=========================== short test summary info ============================
+PASSED lib/matplotlib/tests/test_style.py::test_invalid_rc_warning_includes_filename
+PASSED lib/matplotlib/tests/test_style.py::test_available
+PASSED lib/matplotlib/tests/test_style.py::test_use
+PASSED lib/matplotlib/tests/test_style.py::test_use_url
+PASSED lib/matplotlib/tests/test_style.py::test_single_path
+PASSED lib/matplotlib/tests/test_style.py::test_context
+PASSED lib/matplotlib/tests/test_style.py::test_context_with_dict
+PASSED lib/matplotlib/tests/test_style.py::test_context_with_dict_after_namedstyle
+PASSED lib/matplotlib/tests/test_style.py::test_context_with_dict_before_namedstyle
+PASSED lib/matplotlib/tests/test_style.py::test_context_with_union_of_dict_and_namedstyle
+PASSED lib/matplotlib/tests/test_style.py::test_context_with_badparam
+PASSED lib/matplotlib/tests/test_style.py::test_alias[mpl20]
+PASSED lib/matplotlib/tests/test_style.py::test_alias[mpl15]
+PASSED lib/matplotlib/tests/test_style.py::test_xkcd_no_cm
+PASSED lib/matplotlib/tests/test_style.py::test_xkcd_cm
+PASSED lib/matplotlib/tests/test_style.py::test_up_to_date_blacklist
+FAILED lib/matplotlib/tests/test_style.py::test_deprecated_seaborn_styles - F...
+========================= 1 failed, 16 passed in 0.66s =========================
+
+>>>>> Some Tests Failed

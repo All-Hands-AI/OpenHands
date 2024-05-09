@@ -1,0 +1,500 @@
+Task Metadata:
+	- Instance ID: django__django-14382
+	- Testbed: /swe_util/eval_data/testbeds/django__django__4.0
+	- Virtual Env.: django__django__4.0
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__4.0 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/django__django__4.0
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Getting requirements to build editable: finished with status 'done'
+  Preparing editable metadata (pyproject.toml): started
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: asgiref>=3.3.2 in /swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/site-packages (from Django==4.0.dev20210514051028) (3.8.1)
+Requirement already satisfied: pytz in /swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/site-packages (from Django==4.0.dev20210514051028) (2024.1)
+Requirement already satisfied: sqlparse>=0.2.2 in /swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/site-packages (from Django==4.0.dev20210514051028) (0.5.0)
+Requirement already satisfied: typing-extensions>=4 in /swe_util/miniconda3/envs/django__django__4.0/lib/python3.8/site-packages (from asgiref>=3.3.2->Django==4.0.dev20210514051028) (4.11.0)
+Building wheels for collected packages: Django
+  Building editable for Django (pyproject.toml): started
+  Building editable for Django (pyproject.toml): finished with status 'done'
+  Created wheel for Django: filename=Django-4.0.dev20210514051028-0.editable-py3-none-any.whl size=25963 sha256=902b5c28d45df82b3b51c5308e1c6d4e905af7818bcf6eb9ab88a09afc190afd
+  Stored in directory: /tmp/pip-ephem-wheel-cache-eg5aufs3/wheels/78/a8/44/4a36192cfeb98e1e098ced3ae2973727e752f889fc463ef49c
+Successfully built Django
+Installing collected packages: Django
+  Attempting uninstall: Django
+    Found existing installation: Django 4.0.dev20210701101319
+    Uninstalling Django-4.0.dev20210701101319:
+      Successfully uninstalled Django-4.0.dev20210701101319
+Successfully installed Django-4.0.dev20210514051028
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__4.0 && echo 'activate successful' && ./tests/runtests.py --verbosity 2 admin_scripts.tests;
+Output:
+activate successful
+Testing against Django installed in '/swe_util/eval_data/testbeds/django__django__4.0/django' with up to 64 processes
+Importing application admin_scripts
+Found 199 tests.
+Skipping setup of unused database(s): other.
+Operations to perform:
+  Synchronize unmigrated apps: admin_scripts, auth, contenttypes, messages, sessions, staticfiles
+  Apply all migrations: admin, sites
+Synchronizing apps without migrations:
+  Creating tables...
+    Creating table django_content_type
+    Creating table auth_permission
+    Creating table auth_group
+    Creating table auth_user
+    Creating table django_session
+    Running deferred SQL...
+Running migrations:
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying sites.0001_initial... OK
+  Applying sites.0002_alter_domain_unique... OK
+System check identified no issues (0 silenced).
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+test_program_name_from_argv (admin_scripts.tests.ExecuteFromCommandLine)
+Program name is computed from the execute_from_command_line()'s argv ... ok
+test_params_to_runserver (admin_scripts.tests.ManageTestserver) ... ok
+test_testserver_handle_params (admin_scripts.tests.ManageTestserver) ... ok
+test_migration_warning_multiple_apps (admin_scripts.tests.ManageRunserverMigrationWarning) ... ok
+test_migration_warning_one_app (admin_scripts.tests.ManageRunserverMigrationWarning) ... ok
+test_precedence (admin_scripts.tests.Discovery)
+Apps listed first in INSTALLED_APPS have precedence. ... ok
+test_no_database (admin_scripts.tests.ManageRunserver)
+Ensure runserver.check_migrations doesn't choke on empty DATABASES. ... ok
+test_readonly_database (admin_scripts.tests.ManageRunserver)
+runserver.check_migrations() doesn't choke when a database is read-only. ... ok
+test_runner_addrport_ipv6 (admin_scripts.tests.ManageRunserver) ... ok
+test_runner_ambiguous (admin_scripts.tests.ManageRunserver) ... ok
+test_runner_custom_defaults (admin_scripts.tests.ManageRunserver) ... ok
+test_runner_custom_defaults_ipv6 (admin_scripts.tests.ManageRunserver) ... ok
+test_runner_hostname (admin_scripts.tests.ManageRunserver) ... ok
+test_runner_hostname_ipv6 (admin_scripts.tests.ManageRunserver) ... ok
+test_runserver_addrport (admin_scripts.tests.ManageRunserver) ... ok
+test_skip_checks (admin_scripts.tests.ManageRunserver) ... ok
+test_program_name_in_help (admin_scripts.tests.MainModule) ... ok
+test_pks_parsing (admin_scripts.tests.Dumpdata)
+Regression for #20509 ... ok
+test_non_existent_command_output (admin_scripts.tests.ManageManuallyConfiguredSettings) ... ok
+test_empty_allowed_hosts_error (admin_scripts.tests.ManageRunserverEmptyAllowedHosts) ... ok
+test_builtin_command (admin_scripts.tests.ManageNoSettings)
+no settings: manage.py builtin commands fail with an error when no settings provided ... ok
+test_builtin_with_bad_environment (admin_scripts.tests.ManageNoSettings)
+no settings: manage.py builtin commands fail if settings file (from environment) doesn't exist ... ok
+test_builtin_with_bad_settings (admin_scripts.tests.ManageNoSettings)
+no settings: manage.py builtin commands fail if settings file (from argument) doesn't exist ... ok
+test_attribute_error (admin_scripts.tests.ManageSettingsWithSettingsErrors)
+manage.py builtin commands does not swallow attribute error due to bad ... ok
+test_help (admin_scripts.tests.ManageSettingsWithSettingsErrors)
+Test listing available commands output note when only core commands are ... ok
+test_import_error (admin_scripts.tests.ManageSettingsWithSettingsErrors)
+import error: manage.py builtin commands shows useful diagnostic info ... ok
+test_key_error (admin_scripts.tests.ManageSettingsWithSettingsErrors) ... ok
+test_builtin_command (admin_scripts.tests.DjangoAdminNoSettings)
+no settings: django-admin builtin commands fail with an error when no settings provided ... ok
+test_builtin_with_bad_environment (admin_scripts.tests.DjangoAdminNoSettings)
+no settings: django-admin builtin commands fail if settings file (from environment) doesn't exist ... ok
+test_builtin_with_bad_settings (admin_scripts.tests.DjangoAdminNoSettings)
+no settings: django-admin builtin commands fail if settings file (from argument) doesn't exist ... ok
+test_commands_with_invalid_settings (admin_scripts.tests.DjangoAdminNoSettings)
+Commands that don't require settings succeed if the settings file ... ok
+test_no_suggestions (admin_scripts.tests.DjangoAdminSuggestions) ... ok
+test_suggestions (admin_scripts.tests.DjangoAdminSuggestions) ... ok
+test_option_then_setting (admin_scripts.tests.ArgumentOrder)
+Options passed before settings are correctly handled. ... ok
+test_option_then_setting_then_option (admin_scripts.tests.ArgumentOrder)
+Options are correctly handled when they are passed before and after ... ok
+test_setting_then_option (admin_scripts.tests.ArgumentOrder)
+Options passed after settings are correctly handled. ... ok
+test_setting_then_short_option (admin_scripts.tests.ArgumentOrder)
+Short options passed after settings are correctly handled. ... ok
+test_short_option_then_setting (admin_scripts.tests.ArgumentOrder)
+Short options passed before settings are correctly handled. ... ok
+test_builtin_command (admin_scripts.tests.DjangoAdminMinimalSettings)
+minimal: django-admin builtin commands fail with an error when no settings provided ... ok
+test_builtin_with_bad_environment (admin_scripts.tests.DjangoAdminMinimalSettings)
+minimal: django-admin builtin commands fail if settings file (from environment) doesn't exist ... ok
+test_builtin_with_bad_settings (admin_scripts.tests.DjangoAdminMinimalSettings)
+minimal: django-admin builtin commands fail if settings file (from argument) doesn't exist ... ok
+test_builtin_with_environment (admin_scripts.tests.DjangoAdminMinimalSettings)
+minimal: django-admin builtin commands fail if settings are provided in the environment ... ok
+test_builtin_with_settings (admin_scripts.tests.DjangoAdminMinimalSettings)
+minimal: django-admin builtin commands fail if settings are provided as argument ... ok
+test_custom_command (admin_scripts.tests.DjangoAdminMinimalSettings)
+minimal: django-admin can't execute user commands unless settings are provided ... ok
+test_custom_command_with_environment (admin_scripts.tests.DjangoAdminMinimalSettings)
+minimal: django-admin can't execute user commands, even if settings are provided in environment ... ok
+test_custom_command_with_settings (admin_scripts.tests.DjangoAdminMinimalSettings)
+minimal: django-admin can't execute user commands, even if settings are provided as argument ... ok
+test_builtin_command (admin_scripts.tests.DjangoAdminMultipleSettings)
+alternate: django-admin builtin commands fail with an error when no settings provided ... ok
+test_builtin_with_bad_environment (admin_scripts.tests.DjangoAdminMultipleSettings)
+alternate: django-admin builtin commands fail if settings file (from environment) doesn't exist ... ok
+test_builtin_with_bad_settings (admin_scripts.tests.DjangoAdminMultipleSettings)
+alternate: django-admin builtin commands fail if settings file (from argument) doesn't exist ... ok
+test_builtin_with_environment (admin_scripts.tests.DjangoAdminMultipleSettings)
+alternate: django-admin builtin commands succeed if settings are provided in the environment ... ok
+test_builtin_with_settings (admin_scripts.tests.DjangoAdminMultipleSettings)
+alternate: django-admin builtin commands succeed if settings are provided as argument ... ok
+test_custom_command (admin_scripts.tests.DjangoAdminMultipleSettings)
+alternate: django-admin can't execute user commands unless settings are provided ... ok
+test_custom_command_with_environment (admin_scripts.tests.DjangoAdminMultipleSettings)
+alternate: django-admin can execute user commands if settings are provided in environment ... ok
+test_custom_command_with_settings (admin_scripts.tests.DjangoAdminMultipleSettings)
+alternate: django-admin can execute user commands if settings are provided as argument ... ok
+test_builtin_command (admin_scripts.tests.DjangoAdminFullPathDefaultSettings)
+fulldefault: django-admin builtin commands fail with an error when no settings provided ... ok
+test_builtin_with_bad_environment (admin_scripts.tests.DjangoAdminFullPathDefaultSettings)
+fulldefault: django-admin builtin commands fail if settings file (from environment) doesn't exist ... ok
+test_builtin_with_bad_settings (admin_scripts.tests.DjangoAdminFullPathDefaultSettings)
+fulldefault: django-admin builtin commands fail if settings file (from argument) doesn't exist ... ok
+test_builtin_with_environment (admin_scripts.tests.DjangoAdminFullPathDefaultSettings)
+fulldefault: django-admin builtin commands succeed if the environment contains settings ... ok
+test_builtin_with_settings (admin_scripts.tests.DjangoAdminFullPathDefaultSettings)
+fulldefault: django-admin builtin commands succeed if a settings file is provided ... ok
+test_custom_command (admin_scripts.tests.DjangoAdminFullPathDefaultSettings)
+fulldefault: django-admin can't execute user commands unless settings are provided ... ok
+test_custom_command_with_environment (admin_scripts.tests.DjangoAdminFullPathDefaultSettings)
+fulldefault: django-admin can execute user commands if settings are provided in environment ... ok
+test_custom_command_with_settings (admin_scripts.tests.DjangoAdminFullPathDefaultSettings)
+fulldefault: django-admin can execute user commands if settings are provided as argument ... ok
+test_builtin_command (admin_scripts.tests.DjangoAdminDefaultSettings)
+default: django-admin builtin commands fail with an error when no settings provided ... ok
+test_builtin_with_bad_environment (admin_scripts.tests.DjangoAdminDefaultSettings)
+default: django-admin builtin commands fail if settings file (from environment) doesn't exist ... ok
+test_builtin_with_bad_settings (admin_scripts.tests.DjangoAdminDefaultSettings)
+default: django-admin builtin commands fail if settings file (from argument) doesn't exist ... ok
+test_builtin_with_environment (admin_scripts.tests.DjangoAdminDefaultSettings)
+default: django-admin builtin commands succeed if settings are provided in the environment ... ok
+test_builtin_with_settings (admin_scripts.tests.DjangoAdminDefaultSettings)
+default: django-admin builtin commands succeed if settings are provided as argument ... ok
+test_custom_command (admin_scripts.tests.DjangoAdminDefaultSettings)
+default: django-admin can't execute user commands if it isn't provided settings ... ok
+test_custom_command_with_environment (admin_scripts.tests.DjangoAdminDefaultSettings)
+default: django-admin can execute user commands if settings are provided in environment ... ok
+test_custom_command_with_settings (admin_scripts.tests.DjangoAdminDefaultSettings)
+default: django-admin can execute user commands if settings are provided as argument ... ok
+test_app_with_import (admin_scripts.tests.ManageCheck)
+manage.py check does not raise errors when an app imports a base ... ok
+test_broken_app (admin_scripts.tests.ManageCheck)
+manage.py check reports an ImportError if an app's models.py ... ok
+test_complex_app (admin_scripts.tests.ManageCheck)
+manage.py check does not raise an ImportError validating a ... ok
+test_nonexistent_app (admin_scripts.tests.ManageCheck)
+check reports an error on a nonexistent app in INSTALLED_APPS. ... ok
+test_output_format (admin_scripts.tests.ManageCheck)
+All errors/warnings should be sorted by level and by message. ... ok
+test_warning_does_not_halt (admin_scripts.tests.ManageCheck)
+When there are only warnings or less serious messages, then Django ... ok
+test_builtin_command (admin_scripts.tests.DjangoAdminAlternateSettings)
+alternate: django-admin builtin commands fail with an error when no settings provided ... ok
+test_builtin_with_bad_environment (admin_scripts.tests.DjangoAdminAlternateSettings)
+alternate: django-admin builtin commands fail if settings file (from environment) doesn't exist ... ok
+test_builtin_with_bad_settings (admin_scripts.tests.DjangoAdminAlternateSettings)
+alternate: django-admin builtin commands fail if settings file (from argument) doesn't exist ... ok
+test_builtin_with_environment (admin_scripts.tests.DjangoAdminAlternateSettings)
+alternate: django-admin builtin commands succeed if settings are provided in the environment ... ok
+test_builtin_with_settings (admin_scripts.tests.DjangoAdminAlternateSettings)
+alternate: django-admin builtin commands succeed if settings are provided as argument ... ok
+test_custom_command (admin_scripts.tests.DjangoAdminAlternateSettings)
+alternate: django-admin can't execute user commands unless settings are provided ... ok
+test_custom_command_with_environment (admin_scripts.tests.DjangoAdminAlternateSettings)
+alternate: django-admin can execute user commands if settings are provided in environment ... ok
+test_custom_command_with_settings (admin_scripts.tests.DjangoAdminAlternateSettings)
+alternate: django-admin can execute user commands if settings are provided as argument ... ok
+test_builtin_command (admin_scripts.tests.ManageMultipleSettings)
+multiple: manage.py builtin commands fail with an error when no settings provided ... ok
+test_builtin_with_bad_environment (admin_scripts.tests.ManageMultipleSettings)
+multiple: manage.py builtin commands fail if settings file (from environment) doesn't exist ... ok
+test_builtin_with_bad_settings (admin_scripts.tests.ManageMultipleSettings)
+multiple: manage.py builtin commands fail if settings file (from argument) doesn't exist ... ok
+test_builtin_with_environment (admin_scripts.tests.ManageMultipleSettings)
+multiple: manage.py can execute builtin commands if settings are provided in the environment ... ok
+test_builtin_with_settings (admin_scripts.tests.ManageMultipleSettings)
+multiple: manage.py builtin commands succeed if settings are provided as argument ... ok
+test_custom_command (admin_scripts.tests.ManageMultipleSettings)
+multiple: manage.py can't execute user commands using default settings ... ok
+test_custom_command_with_environment (admin_scripts.tests.ManageMultipleSettings)
+multiple: manage.py can execute user commands if settings are provided in environment ... ok
+test_custom_command_with_settings (admin_scripts.tests.ManageMultipleSettings)
+multiple: manage.py can execute user commands if settings are provided as argument ... ok
+test_builtin_command (admin_scripts.tests.ManageAlternateSettings)
+alternate: manage.py builtin commands fail with an error when no default settings provided ... ok
+test_builtin_with_bad_environment (admin_scripts.tests.ManageAlternateSettings)
+alternate: manage.py builtin commands fail if settings file (from environment) doesn't exist ... ok
+test_builtin_with_bad_settings (admin_scripts.tests.ManageAlternateSettings)
+alternate: manage.py builtin commands fail if settings file (from argument) doesn't exist ... ok
+test_builtin_with_environment (admin_scripts.tests.ManageAlternateSettings)
+alternate: manage.py builtin commands work if settings are provided in the environment ... ok
+test_builtin_with_settings (admin_scripts.tests.ManageAlternateSettings)
+alternate: manage.py builtin commands work with settings provided as argument ... ok
+test_custom_command (admin_scripts.tests.ManageAlternateSettings)
+alternate: manage.py can't execute user commands without settings ... ok
+test_custom_command_output_color (admin_scripts.tests.ManageAlternateSettings)
+alternate: manage.py output syntax color can be deactivated with the `--no-color` option ... ok
+test_custom_command_with_environment (admin_scripts.tests.ManageAlternateSettings)
+alternate: manage.py can execute user commands if settings are provided in environment ... ok
+test_custom_command_with_settings (admin_scripts.tests.ManageAlternateSettings)
+alternate: manage.py can execute user commands if settings are provided as argument ... ok
+test_builtin_command (admin_scripts.tests.ManageMinimalSettings)
+minimal: manage.py builtin commands fail with an error when no settings provided ... ok
+test_builtin_with_bad_environment (admin_scripts.tests.ManageMinimalSettings)
+minimal: manage.py builtin commands fail if settings file (from environment) doesn't exist ... ok
+test_builtin_with_bad_settings (admin_scripts.tests.ManageMinimalSettings)
+minimal: manage.py builtin commands fail if settings file (from argument) doesn't exist ... ok
+test_builtin_with_environment (admin_scripts.tests.ManageMinimalSettings)
+minimal: manage.py builtin commands fail if settings are provided in the environment ... ok
+test_builtin_with_settings (admin_scripts.tests.ManageMinimalSettings)
+minimal: manage.py builtin commands fail if settings are provided as argument ... ok
+test_custom_command (admin_scripts.tests.ManageMinimalSettings)
+minimal: manage.py can't execute user commands without appropriate settings ... ok
+test_custom_command_with_environment (admin_scripts.tests.ManageMinimalSettings)
+minimal: manage.py can't execute user commands, even if settings are provided in environment ... ok
+test_custom_command_with_settings (admin_scripts.tests.ManageMinimalSettings)
+minimal: manage.py can't execute user commands, even if settings are provided as argument ... ok
+test_builtin_command (admin_scripts.tests.ManageDefaultSettings)
+default: manage.py builtin commands succeed when default settings are appropriate ... ok
+test_builtin_with_bad_environment (admin_scripts.tests.ManageDefaultSettings)
+default: manage.py builtin commands fail if settings file (from environment) doesn't exist ... ok
+test_builtin_with_bad_settings (admin_scripts.tests.ManageDefaultSettings)
+default: manage.py builtin commands succeed if settings file (from argument) doesn't exist ... ok
+test_builtin_with_environment (admin_scripts.tests.ManageDefaultSettings)
+default: manage.py builtin commands succeed if settings are provided in the environment ... ok
+test_builtin_with_settings (admin_scripts.tests.ManageDefaultSettings)
+default: manage.py builtin commands succeed if settings are provided as argument ... ok
+test_custom_command (admin_scripts.tests.ManageDefaultSettings)
+default: manage.py can execute user commands when default settings are appropriate ... ok
+test_custom_command_with_environment (admin_scripts.tests.ManageDefaultSettings)
+default: manage.py can execute user commands when settings are provided in environment ... ok
+test_custom_command_with_settings (admin_scripts.tests.ManageDefaultSettings)
+default: manage.py can execute user commands when settings are provided as argument ... ok
+test_all (admin_scripts.tests.DiffSettings)
+The all option also shows settings with the default value. ... ok
+test_basic (admin_scripts.tests.DiffSettings)
+Runs without error and emits settings diff. ... ok
+test_custom_default (admin_scripts.tests.DiffSettings)
+The --default option specifies an alternate settings module for ... ok
+test_dynamic_settings_configured (admin_scripts.tests.DiffSettings) ... ok
+test_settings_configured (admin_scripts.tests.DiffSettings) ... ok
+test_unified (admin_scripts.tests.DiffSettings)
+--output=unified emits settings diff in unified mode. ... ok
+test_unified_all (admin_scripts.tests.DiffSettings)
+--output=unified --all emits settings diff in unified mode and includes ... ok
+test_importable_name (admin_scripts.tests.StartApp)
+startapp validates that app name doesn't clash with existing Python ... ok
+test_importable_target_name (admin_scripts.tests.StartApp) ... ok
+test_invalid_name (admin_scripts.tests.StartApp)
+startapp validates that app name is a valid Python identifier. ... ok
+test_invalid_target_name (admin_scripts.tests.StartApp) ... ok
+test_overlaying_app (admin_scripts.tests.StartApp) ... ok
+test_template (admin_scripts.tests.StartApp) ... ok
+test_trailing_slash_in_target_app_directory_name (admin_scripts.tests.StartApp) ... ok
+test_builtin_command (admin_scripts.tests.DjangoAdminSettingsDirectory)
+directory: django-admin builtin commands fail with an error when no settings provided ... ok
+test_builtin_with_bad_environment (admin_scripts.tests.DjangoAdminSettingsDirectory)
+directory: django-admin builtin commands fail if settings file (from environment) doesn't exist ... ok
+test_builtin_with_bad_settings (admin_scripts.tests.DjangoAdminSettingsDirectory)
+directory: django-admin builtin commands fail if settings file (from argument) doesn't exist ... ok
+test_builtin_with_environment (admin_scripts.tests.DjangoAdminSettingsDirectory)
+directory: django-admin builtin commands succeed if settings are provided in the environment ... ok
+test_builtin_with_settings (admin_scripts.tests.DjangoAdminSettingsDirectory)
+directory: django-admin builtin commands succeed if settings are provided as argument ... ok
+test_custom_command (admin_scripts.tests.DjangoAdminSettingsDirectory)
+directory: django-admin can't execute user commands unless settings are provided ... ok
+test_setup_environ (admin_scripts.tests.DjangoAdminSettingsDirectory)
+directory: startapp creates the correct directory ... ok
+test_setup_environ_custom_template (admin_scripts.tests.DjangoAdminSettingsDirectory)
+directory: startapp creates the correct directory with a custom template ... ok
+test_startapp_unicode_name (admin_scripts.tests.DjangoAdminSettingsDirectory)
+startapp creates the correct directory with Unicode characters. ... ok
+test_builtin_command (admin_scripts.tests.ManageFullPathDefaultSettings)
+fulldefault: manage.py builtin commands succeed when default settings are appropriate ... ok
+test_builtin_with_bad_environment (admin_scripts.tests.ManageFullPathDefaultSettings)
+fulldefault: manage.py builtin commands fail if settings file (from environment) doesn't exist ... ok
+test_builtin_with_bad_settings (admin_scripts.tests.ManageFullPathDefaultSettings)
+fulldefault: manage.py builtin commands succeed if settings file (from argument) doesn't exist ... ok
+test_builtin_with_environment (admin_scripts.tests.ManageFullPathDefaultSettings)
+fulldefault: manage.py builtin commands succeed if settings are provided in the environment ... ok
+test_builtin_with_settings (admin_scripts.tests.ManageFullPathDefaultSettings)
+fulldefault: manage.py builtin commands succeed if settings are provided as argument ... ok
+test_custom_command (admin_scripts.tests.ManageFullPathDefaultSettings)
+fulldefault: manage.py can execute user commands when default settings are appropriate ... ok
+test_custom_command_with_environment (admin_scripts.tests.ManageFullPathDefaultSettings)
+fulldefault: manage.py can execute user commands when settings are provided in environment ... ok
+test_custom_command_with_settings (admin_scripts.tests.ManageFullPathDefaultSettings)
+fulldefault: manage.py can execute user commands when settings are provided as argument ... ok
+test_custom_project_destination_missing (admin_scripts.tests.StartProject)
+Make sure an exception is raised when the provided ... ok
+test_custom_project_template (admin_scripts.tests.StartProject)
+Make sure the startproject management command is able to use a different project template ... ok
+test_custom_project_template_context_variables (admin_scripts.tests.StartProject)
+Make sure template context variables are rendered with proper values ... ok
+test_custom_project_template_from_tarball_by_path (admin_scripts.tests.StartProject)
+Make sure the startproject management command is able to use a different project template from a tarball ... ok
+test_custom_project_template_from_tarball_by_url (admin_scripts.tests.StartProject)
+The startproject management command is able to use a different project ... ok
+test_custom_project_template_from_tarball_to_alternative_location (admin_scripts.tests.StartProject)
+Startproject can use a project template from a tarball and create it in a specified location ... ok
+test_custom_project_template_with_non_ascii_templates (admin_scripts.tests.StartProject)
+The startproject management command is able to render templates with ... ok
+test_file_without_extension (admin_scripts.tests.StartProject)
+Make sure the startproject management command is able to render custom files ... ok
+test_importable_project_name (admin_scripts.tests.StartProject)
+startproject validates that project name doesn't clash with existing ... ok
+test_invalid_project_name (admin_scripts.tests.StartProject)
+Make sure the startproject management command validates a project name ... ok
+test_no_escaping_of_project_variables (admin_scripts.tests.StartProject)
+Make sure template context variables are not html escaped ... ok
+test_project_template_tarball_url (admin_scripts.tests.StartProject)
+Startproject management command handles project template tar/zip balls from non-canonical urls ... ok
+test_simple_project (admin_scripts.tests.StartProject)
+Make sure the startproject management command creates a project ... ok
+test_simple_project_different_directory (admin_scripts.tests.StartProject)
+Make sure the startproject management command creates a project in a specific directory ... ok
+test_template_dir_with_trailing_slash (admin_scripts.tests.StartProject)
+Ticket 17475: Template dir passed has a trailing path separator ... ok
+test_wrong_args (admin_scripts.tests.StartProject)
+Make sure passing the wrong kinds of arguments outputs an error and prints usage ... ok
+test_app_command (admin_scripts.tests.CommandTypes)
+User AppCommands can execute when a single app name is provided ... ok
+test_app_command_invalid_app_label (admin_scripts.tests.CommandTypes)
+User AppCommands can execute when a single app name is provided ... ok
+test_app_command_multiple_apps (admin_scripts.tests.CommandTypes)
+User AppCommands raise an error when multiple app names are provided ... ok
+test_app_command_no_apps (admin_scripts.tests.CommandTypes)
+User AppCommands raise an error when no app name is provided ... ok
+test_app_command_some_invalid_app_labels (admin_scripts.tests.CommandTypes)
+User AppCommands can execute when some of the provided app names are invalid ... ok
+test_base_command (admin_scripts.tests.CommandTypes)
+User BaseCommands can execute when a label is provided ... ok
+test_base_command_multiple_label (admin_scripts.tests.CommandTypes)
+User BaseCommands can execute when no labels are provided ... ok
+test_base_command_no_label (admin_scripts.tests.CommandTypes)
+User BaseCommands can execute when no labels are provided ... ok
+test_base_command_with_option (admin_scripts.tests.CommandTypes)
+User BaseCommands can execute with options when a label is provided ... ok
+test_base_command_with_options (admin_scripts.tests.CommandTypes)
+User BaseCommands can execute with multiple options when a label is provided ... ok
+test_base_command_with_wrong_option (admin_scripts.tests.CommandTypes)
+User BaseCommands outputs command usage when wrong option is specified ... ok
+test_base_run_from_argv (admin_scripts.tests.CommandTypes)
+Test run_from_argv properly terminates even with custom execute() (#19665) ... ok
+test_color_style (admin_scripts.tests.CommandTypes) ... ok
+test_command_color (admin_scripts.tests.CommandTypes) ... ok
+test_command_no_color (admin_scripts.tests.CommandTypes)
+--no-color prevent colorization of the output ... ok
+test_custom_stderr (admin_scripts.tests.CommandTypes) ... ok
+test_custom_stdout (admin_scripts.tests.CommandTypes) ... ok
+test_force_color_command_init (admin_scripts.tests.CommandTypes) ... ok
+test_force_color_execute (admin_scripts.tests.CommandTypes) ... ok
+test_help (admin_scripts.tests.CommandTypes)
+help is handled as a special case ... ok
+test_help_alternative (admin_scripts.tests.CommandTypes)
+--help is equivalent to help ... ok
+test_help_commands (admin_scripts.tests.CommandTypes)
+help --commands shows the list of all available commands ... ok
+test_help_short_altert (admin_scripts.tests.CommandTypes)
+-h is handled as a short form of --help ... ok
+test_label_command (admin_scripts.tests.CommandTypes)
+User LabelCommands can execute when a label is provided ... ok
+test_label_command_multiple_label (admin_scripts.tests.CommandTypes)
+User LabelCommands are executed multiple times if multiple labels are provided ... ok
+test_label_command_no_label (admin_scripts.tests.CommandTypes)
+User LabelCommands raise an error if no label is provided ... ok
+test_no_color_force_color_mutually_exclusive_command_init (admin_scripts.tests.CommandTypes) ... ok
+test_no_color_force_color_mutually_exclusive_execute (admin_scripts.tests.CommandTypes) ... ok
+test_noargs (admin_scripts.tests.CommandTypes)
+NoArg Commands can be executed ... ok
+test_noargs_with_args (admin_scripts.tests.CommandTypes)
+NoArg Commands raise an error if an argument is provided ... ok
+test_run_from_argv_closes_connections (admin_scripts.tests.CommandTypes)
+A command called from the command line should close connections after ... ok
+test_run_from_argv_non_ascii_error (admin_scripts.tests.CommandTypes)
+Non-ASCII message of CommandError does not raise any ... ok
+test_specific_help (admin_scripts.tests.CommandTypes)
+--help can be used on a specific command ... ok
+test_version (admin_scripts.tests.CommandTypes)
+version is handled as a special case ... ok
+test_version_alternative (admin_scripts.tests.CommandTypes)
+--version is equivalent to version ... ok
+
+----------------------------------------------------------------------
+Ran 199 tests in 6.297s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+
+>>>>> All Tests Passed

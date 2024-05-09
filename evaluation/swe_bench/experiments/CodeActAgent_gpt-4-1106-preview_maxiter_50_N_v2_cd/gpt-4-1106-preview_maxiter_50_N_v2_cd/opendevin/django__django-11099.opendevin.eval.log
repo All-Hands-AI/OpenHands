@@ -1,0 +1,103 @@
+Task Metadata:
+	- Instance ID: django__django-11099
+	- Testbed: /swe_util/eval_data/testbeds/django__django__3.0
+	- Virtual Env.: django__django__3.0
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__3.0 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/django__django__3.0
+Requirement already satisfied: pytz in /swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/site-packages (from Django==3.0.dev20190322115239) (2024.1)
+Requirement already satisfied: sqlparse in /swe_util/miniconda3/envs/django__django__3.0/lib/python3.6/site-packages (from Django==3.0.dev20190322115239) (0.4.4)
+Installing collected packages: Django
+  Running setup.py develop for Django
+Successfully installed Django-3.0.dev20190322115239
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate django__django__3.0 && echo 'activate successful' && ./tests/runtests.py --verbosity 2 auth_tests.test_validators;
+Output:
+activate successful
+Testing against Django installed in '/swe_util/eval_data/testbeds/django__django__3.0/django' with up to 64 processes
+Importing application auth_tests
+Skipping setup of unused database(s): other.
+Operations to perform:
+  Synchronize unmigrated apps: auth, auth_tests, contenttypes, messages, sessions, staticfiles
+  Apply all migrations: admin, sites
+Synchronizing apps without migrations:
+  Creating tables...
+    Creating table django_content_type
+    Creating table auth_permission
+    Creating table auth_group
+    Creating table auth_user
+    Creating table django_session
+    Creating table auth_tests_customuser
+    Creating table auth_tests_customuserwithoutisactivefield
+    Creating table auth_tests_extensionuser
+    Creating table auth_tests_custompermissionsuser
+    Creating table auth_tests_customusernonuniqueusername
+    Creating table auth_tests_isactivetestuser1
+    Creating table auth_tests_minimaluser
+    Creating table auth_tests_nopassworduser
+    Creating table auth_tests_concrete
+    Creating table auth_tests_uuiduser
+    Creating table auth_tests_email
+    Creating table auth_tests_customuserwithfk
+    Creating table auth_tests_integerusernameuser
+    Creating table auth_tests_userwithdisabledlastloginfield
+    Running deferred SQL...
+Running migrations:
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying sites.0001_initial... OK
+  Applying sites.0002_alter_domain_unique... OK
+System check identified no issues (0 silenced).
+Creating test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Cloning test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+test_help_text (auth_tests.test_validators.NumericPasswordValidatorTest) ... ok
+test_validate (auth_tests.test_validators.NumericPasswordValidatorTest) ... ok
+test_help_text (auth_tests.test_validators.MinimumLengthValidatorTest) ... ok
+test_validate (auth_tests.test_validators.MinimumLengthValidatorTest) ... ok
+test_ascii_validator (auth_tests.test_validators.UsernameValidatorsTests) ... ok
+test_unicode_validator (auth_tests.test_validators.UsernameValidatorsTests) ... ok
+test_help_text (auth_tests.test_validators.UserAttributeSimilarityValidatorTest) ... ok
+test_validate (auth_tests.test_validators.UserAttributeSimilarityValidatorTest) ... ok
+test_validate_property (auth_tests.test_validators.UserAttributeSimilarityValidatorTest) ... ok
+test_empty_password_validator_help_text_html (auth_tests.test_validators.PasswordValidationTest) ... ok
+test_get_default_password_validators (auth_tests.test_validators.PasswordValidationTest) ... ok
+test_get_password_validators_custom (auth_tests.test_validators.PasswordValidationTest) ... ok
+test_password_changed (auth_tests.test_validators.PasswordValidationTest) ... ok
+test_password_changed_with_custom_validator (auth_tests.test_validators.PasswordValidationTest) ... ok
+test_password_validators_help_text_html (auth_tests.test_validators.PasswordValidationTest) ... ok
+test_password_validators_help_text_html_escaping (auth_tests.test_validators.PasswordValidationTest) ... ok
+test_password_validators_help_texts (auth_tests.test_validators.PasswordValidationTest) ... ok
+test_validate_password (auth_tests.test_validators.PasswordValidationTest) ... ok
+test_help_text (auth_tests.test_validators.CommonPasswordValidatorTest) ... ok
+test_validate (auth_tests.test_validators.CommonPasswordValidatorTest) ... ok
+test_validate_custom_list (auth_tests.test_validators.CommonPasswordValidatorTest) ... ok
+test_validate_django_supplied_file (auth_tests.test_validators.CommonPasswordValidatorTest) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 0.256s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+
+>>>>> All Tests Passed

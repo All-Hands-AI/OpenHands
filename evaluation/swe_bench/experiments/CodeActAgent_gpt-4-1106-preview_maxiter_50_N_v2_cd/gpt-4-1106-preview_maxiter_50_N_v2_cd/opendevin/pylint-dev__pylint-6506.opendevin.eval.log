@@ -1,0 +1,59 @@
+Task Metadata:
+	- Instance ID: pylint-dev__pylint-6506
+	- Testbed: /swe_util/eval_data/testbeds/pylint-dev__pylint__2.14
+	- Virtual Env.: pylint-dev__pylint__2.14
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate pylint-dev__pylint__2.14 && echo 'activate successful' && pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/pylint-dev__pylint__2.14
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: dill>=0.2 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.14/lib/python3.9/site-packages (from pylint==2.14.0.dev0) (0.3.8)
+Requirement already satisfied: platformdirs>=2.2.0 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.14/lib/python3.9/site-packages (from pylint==2.14.0.dev0) (4.2.1)
+Requirement already satisfied: astroid<=2.12.0-dev0,>=2.11.4 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.14/lib/python3.9/site-packages (from pylint==2.14.0.dev0) (2.11.6)
+Requirement already satisfied: isort<6,>=4.2.5 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.14/lib/python3.9/site-packages (from pylint==2.14.0.dev0) (5.10.1)
+Requirement already satisfied: mccabe<0.8,>=0.6 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.14/lib/python3.9/site-packages (from pylint==2.14.0.dev0) (0.6.1)
+Requirement already satisfied: tomlkit>=0.10.1 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.14/lib/python3.9/site-packages (from pylint==2.14.0.dev0) (0.12.4)
+Requirement already satisfied: typing-extensions>=3.10.0 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.14/lib/python3.9/site-packages (from pylint==2.14.0.dev0) (4.11.0)
+Requirement already satisfied: tomli>=1.1.0 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.14/lib/python3.9/site-packages (from pylint==2.14.0.dev0) (2.0.1)
+Requirement already satisfied: lazy-object-proxy>=1.4.0 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.14/lib/python3.9/site-packages (from astroid<=2.12.0-dev0,>=2.11.4->pylint==2.14.0.dev0) (1.10.0)
+Requirement already satisfied: wrapt<2,>=1.11 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.14/lib/python3.9/site-packages (from astroid<=2.12.0-dev0,>=2.11.4->pylint==2.14.0.dev0) (1.16.0)
+Requirement already satisfied: setuptools>=20.0 in /swe_util/miniconda3/envs/pylint-dev__pylint__2.14/lib/python3.9/site-packages (from astroid<=2.12.0-dev0,>=2.11.4->pylint==2.14.0.dev0) (68.2.2)
+Installing collected packages: pylint
+  Running setup.py develop for pylint
+Successfully installed pylint-2.14.0.dev0
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate pylint-dev__pylint__2.14 && echo 'activate successful' && pytest --no-header -rA --tb=no -p no:cacheprovider tests/config/test_config.py;
+Output:
+activate successful
+============================= test session starts ==============================
+collected 8 items
+
+tests/config/test_config.py FFFFFFFF                                     [100%]
+
+=============================== warnings summary ===============================
+../../../miniconda3/envs/pylint-dev__pylint__2.14/lib/python3.9/site-packages/astroid/interpreter/_import/util.py:6
+  /swe_util/miniconda3/envs/pylint-dev__pylint__2.14/lib/python3.9/site-packages/astroid/interpreter/_import/util.py:6: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+    import pkg_resources
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/config/test_config.py::test_can_read_toml_env_variable - TypeErr...
+FAILED tests/config/test_config.py::test_unknown_message_id - TypeError: str ...
+FAILED tests/config/test_config.py::test_unknown_option_name - TypeError: str...
+FAILED tests/config/test_config.py::test_unknown_short_option_name - TypeErro...
+FAILED tests/config/test_config.py::test_unknown_confidence - TypeError: str ...
+FAILED tests/config/test_config.py::test_unknown_yes_no - TypeError: str expe...
+FAILED tests/config/test_config.py::test_unknown_py_version - TypeError: str ...
+FAILED tests/config/test_config.py::test_short_verbose - TypeError: str expec...
+========================= 8 failed, 1 warning in 0.04s =========================
+
+>>>>> Some Tests Failed

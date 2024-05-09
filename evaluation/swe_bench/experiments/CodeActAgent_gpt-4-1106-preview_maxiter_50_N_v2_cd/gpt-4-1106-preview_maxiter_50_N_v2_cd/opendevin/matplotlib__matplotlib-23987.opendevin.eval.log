@@ -1,0 +1,96 @@
+Task Metadata:
+	- Instance ID: matplotlib__matplotlib-23987
+	- Testbed: /swe_util/eval_data/testbeds/matplotlib__matplotlib__3.6
+	- Virtual Env.: matplotlib__matplotlib__3.6
+	- Evaluation Model: opendevin
+>>>>> Applied Patch (pred_try patch)
+>>>>> Applied Patch (pred_try patch)
+Installation Command: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate matplotlib__matplotlib__3.6 && echo 'activate successful' && python -m pip install -e .
+Std. Output: activate successful
+Obtaining file:///swe_util/eval_data/testbeds/matplotlib__matplotlib__3.6
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: contourpy>=1.0.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev229+ge98d8d085e) (1.1.0)
+Requirement already satisfied: cycler>=0.10 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev229+ge98d8d085e) (0.11.0)
+Requirement already satisfied: fonttools>=4.22.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev229+ge98d8d085e) (4.42.1)
+Requirement already satisfied: kiwisolver>=1.0.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev229+ge98d8d085e) (1.4.5)
+Requirement already satisfied: numpy>=1.19 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev229+ge98d8d085e) (1.25.2)
+Requirement already satisfied: packaging>=20.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev229+ge98d8d085e) (23.1)
+Requirement already satisfied: pillow>=6.2.0 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev229+ge98d8d085e) (10.0.0)
+Requirement already satisfied: pyparsing>=2.2.1 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev229+ge98d8d085e) (3.0.9)
+Requirement already satisfied: python-dateutil>=2.7 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev229+ge98d8d085e) (2.8.2)
+Requirement already satisfied: setuptools_scm>=7 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from matplotlib==3.7.0.dev229+ge98d8d085e) (7.1.0)
+Requirement already satisfied: six>=1.5 in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from python-dateutil>=2.7->matplotlib==3.7.0.dev229+ge98d8d085e) (1.16.0)
+Requirement already satisfied: setuptools in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from setuptools_scm>=7->matplotlib==3.7.0.dev229+ge98d8d085e) (68.1.2)
+Requirement already satisfied: typing-extensions in /swe_util/miniconda3/envs/matplotlib__matplotlib__3.6/lib/python3.11/site-packages (from setuptools_scm>=7->matplotlib==3.7.0.dev229+ge98d8d085e) (4.7.1)
+Installing collected packages: matplotlib
+  Attempting uninstall: matplotlib
+    Found existing installation: matplotlib 3.7.0.dev635+g332937997d
+    Uninstalling matplotlib-3.7.0.dev635+g332937997d:
+      Successfully uninstalled matplotlib-3.7.0.dev635+g332937997d
+  Running setup.py develop for matplotlib
+Successfully installed matplotlib-3.7.0.dev229+ge98d8d085e
+
+Std. Error: WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+
+
+>>>>> Init Succeeded
+>>>>> Applied Patch (test git)
+>>>>> Applied Patch (pred patch)
+Test Script: . /swe_util/miniconda3/etc/profile.d/conda.sh && conda activate matplotlib__matplotlib__3.6 && echo 'activate successful' && pytest --no-header -rA --tb=no -p no:cacheprovider lib/matplotlib/tests/test_constrainedlayout.py;
+Output:
+activate successful
+============================= test session starts ==============================
+collected 44 items
+
+lib/matplotlib/tests/test_constrainedlayout.py ......................... [ 56%]
+..............F.F..                                                      [100%]
+
+=========================== short test summary info ============================
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout1[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout2[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout3[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout4[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout5[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout6[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_identical_subgridspec
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout7
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout8[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout9[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout10[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout11[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout11rat[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout12[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout13[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout14[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout15[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout16[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout17[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout18
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout19
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout20
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout21
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout22
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_constrained_layout23
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_colorbar_location[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_hidden_axes
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_colorbar_align
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_colorbars_no_overlapV[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_colorbars_no_overlapH[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_manually_set_position
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_bboxtight[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_bbox[png]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_align_labels
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_suplabels
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_gridspec_addressing
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_discouraged_api
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_kwargs
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_rect
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_set_constrained_layout[True-True]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_set_constrained_layout[arg2-True]
+PASSED lib/matplotlib/tests/test_constrainedlayout.py::test_set_constrained_layout[arg3-True]
+FAILED lib/matplotlib/tests/test_constrainedlayout.py::test_compressed1 - Ass...
+FAILED lib/matplotlib/tests/test_constrainedlayout.py::test_set_constrained_layout[False-False]
+========================= 2 failed, 42 passed in 9.45s =========================
+
+>>>>> Some Tests Failed
