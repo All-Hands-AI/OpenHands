@@ -31,6 +31,9 @@ class E2BRuntime(ServerRuntime):
         return FileReadObservation(code_view, path=action.path)
 
     async def write(self, action: FileWriteAction) -> Observation:
+        if action.start == 0 and action.end == -1:
+            self.filesystem.write(action.path, action.content)
+            return FileWriteObservation(content='', path=action.path)
         files = self.filesystem.list(action.path)
         if action.path in files:
             all_lines = self.filesystem.read(action.path)
