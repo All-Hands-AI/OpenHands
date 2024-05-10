@@ -2,21 +2,20 @@ import os
 
 import boto3
 
-from opendevin.core import config
+from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.schema import ConfigType
 
-AWS_ACCESS_KEY_ID = config.get(ConfigType.AWS_ACCESS_KEY_ID)
-AWS_SECRET_ACCESS_KEY = config.get(ConfigType.AWS_SECRET_ACCESS_KEY)
-AWS_REGION_NAME = config.get(ConfigType.AWS_REGION_NAME)
+AWS_ACCESS_KEY_ID = config.llm.aws_access_key_id
+AWS_SECRET_ACCESS_KEY = config.llm.aws_secret_access_key
+AWS_REGION_NAME = config.llm.aws_region_name
 
 # It needs to be set as an environment variable, if the variable is configured in the Config file.
 if AWS_ACCESS_KEY_ID is not None:
-    os.environ[ConfigType.AWS_ACCESS_KEY_ID] = AWS_ACCESS_KEY_ID
+    os.environ['AWS_ACCESS_KEY_ID'] = AWS_ACCESS_KEY_ID
 if AWS_SECRET_ACCESS_KEY is not None:
-    os.environ[ConfigType.AWS_SECRET_ACCESS_KEY] = AWS_SECRET_ACCESS_KEY
+    os.environ['AWS_SECRET_ACCESS_KEY'] = AWS_SECRET_ACCESS_KEY
 if AWS_REGION_NAME is not None:
-    os.environ[ConfigType.AWS_REGION_NAME] = AWS_REGION_NAME
+    os.environ['AWS_REGION_NAME'] = AWS_REGION_NAME
 
 
 def list_foundation_models():

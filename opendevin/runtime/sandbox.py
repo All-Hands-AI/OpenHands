@@ -1,14 +1,13 @@
 import os
 from abc import ABC, abstractmethod
-from typing import Dict, Tuple
 
 from opendevin.runtime.docker.process import Process
 from opendevin.runtime.plugins.mixin import PluginMixin
 
 
 class Sandbox(ABC, PluginMixin):
-    background_commands: Dict[int, Process] = {}
-    _env: Dict[str, str] = {}
+    background_commands: dict[int, Process] = {}
+    _env: dict[str, str] = {}
 
     def __init__(self, **kwargs):
         for key in os.environ:
@@ -20,7 +19,7 @@ class Sandbox(ABC, PluginMixin):
         self._env[key] = value
 
     @abstractmethod
-    def execute(self, cmd: str) -> Tuple[int, str]:
+    def execute(self, cmd: str) -> tuple[int, str]:
         pass
 
     @abstractmethod

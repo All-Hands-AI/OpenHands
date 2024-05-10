@@ -36,7 +36,7 @@ class Monologue:
         Get the current thoughts of the agent.
 
         Returns:
-        - List: The list of thoughts that the agent has.
+        - list: The list of thoughts that the agent has.
         """
         return self.thoughts
 

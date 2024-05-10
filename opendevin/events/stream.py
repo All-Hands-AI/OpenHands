@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Dict, List
+from typing import Callable
 
 from opendevin.core.logger import opendevin_logger as logger
 
@@ -21,8 +21,8 @@ class EventSource(str, Enum):
 
 
 class EventStream:
-    _subscribers: Dict[str, Callable] = {}
-    _events: List[Event] = []
+    _subscribers: dict[str, Callable] = {}
+    _events: list[Event] = []
     _lock = asyncio.Lock()
 
     def subscribe(self, id: EventStreamSubscriber, callback: Callable):
