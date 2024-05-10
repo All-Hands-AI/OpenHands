@@ -23,6 +23,7 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
+from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
 
 if config.agent.memory_enabled:
@@ -178,7 +179,7 @@ class MonologueAgent(Agent):
                     observation = BrowserOutputObservation(
                         content=thought, url='', screenshot=''
                     )
-                self._add_event(observation.to_memory())
+                self._add_event(event_to_memory(observation))
                 previous_action = ''
             else:
                 action: Action = NullAction()
@@ -205,7 +206,7 @@ class MonologueAgent(Agent):
                     previous_action = ActionType.BROWSE
                 else:
                     action = MessageAction(thought)
-                self._add_event(action.to_memory())
+                self._add_event(event_to_memory(action))
 
     def step(self, state: State) -> Action:
         """
@@ -219,8 +220,8 @@ class MonologueAgent(Agent):
         """
         self._initialize(state.plan.main_goal)
         for prev_action, obs in state.updated_info:
-            self._add_event(prev_action.to_memory())
-            self._add_event(obs.to_memory())
+            self._add_event(event_to_memory(prev_action))
+            self._add_event(event_to_memory(obs))
 
         state.updated_info = []
 

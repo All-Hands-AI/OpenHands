@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 
 from opendevin.core.schema import ObservationType
-from opendevin.events.utils import remove_fields
 
 from .observation import Observation
 
@@ -24,29 +23,6 @@ class BrowserOutputObservation(Observation):
     axtree_object: dict = field(default_factory=dict, repr=False)  # don't show in repr
     last_browser_action: str = ''
     focused_element_bid: str = ''
-
-    def to_dict(self):
-        dictionary = super().to_dict()
-        # add screenshot for frontend showcase only, not for agent consumption
-        dictionary['screenshot'] = self.screenshot
-        return dictionary
-
-    def to_memory(self) -> dict:
-        memory_dict = super().to_memory()
-        # remove some fields from the memory, as currently they are too big for LLMs
-        remove_fields(
-            memory_dict['extras'],
-            {
-                'screenshot',
-                'dom_object',
-                'axtree_object',
-                'open_pages_urls',
-                'active_page_index',
-                'last_browser_action',
-                'focused_element_bid',
-            },
-        )
-        return memory_dict
 
     @property
     def message(self) -> str:

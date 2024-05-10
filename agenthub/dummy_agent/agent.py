@@ -24,6 +24,7 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
+from opendevin.events.serialization.event import event_to_dict
 from opendevin.llm.llm import LLM
 
 """
@@ -138,8 +139,8 @@ class DummyAgent(Agent):
                 expected_observations = prev_step['observations']
                 hist_start = len(state.history) - len(expected_observations)
                 for i in range(len(expected_observations)):
-                    hist_obs = state.history[hist_start + i][1].to_dict()
-                    expected_obs = expected_observations[i].to_dict()
+                    hist_obs = event_to_dict(state.history[hist_start + i][1])
+                    expected_obs = event_to_dict(expected_observations[i])
                     if (
                         'command_id' in hist_obs['extras']
                         and hist_obs['extras']['command_id'] != -1

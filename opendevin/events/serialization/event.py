@@ -1,14 +1,33 @@
+import json
 from dataclasses import asdict
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from .action import action_from_dict
 from .observation import observation_from_dict
+from .utils import remove_fields
 
 if TYPE_CHECKING:
     from opendevin.events.event import Event
 
 # TODO: move `content` into `extras`
 TOP_KEYS = ['id', 'timestamp', 'source', 'message', 'action', 'observation', 'content']
+
+DELETE_FROM_MEMORY_EXTRAS = {
+    'screenshot',
+    'dom_object',
+    'axtree_object',
+    'open_pages_urls',
+    'active_page_index',
+    'last_browser_action',
+    'focused_element_bid',
+}
+
+
+def json_serial(obj):
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    return str(obj)
 
 
 def event_from_dict(data) -> 'Event':
@@ -36,3 +55,17 @@ def event_to_dict(event: 'Event') -> dict:
     else:
         raise ValueError('Event must be either action or observation')
     return d
+
+
+def event_to_memory(event: 'Event') -> dict:
+    d = event_to_dict(event)
+    d.pop('id', None)
+    d.pop('timestamp', None)
+    d.pop('message', None)
+    if 'extras' in d:
+        remove_fields(d['extras'], DELETE_FROM_MEMORY_EXTRAS)
+    return d
+
+
+def event_to_json(self):
+    return json.dumps(self.to_dict(), default=json_serial)
