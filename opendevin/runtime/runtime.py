@@ -1,6 +1,8 @@
+import asyncio
 from abc import abstractmethod
 
 from opendevin.core.config import config
+from opendevin.devents.event import Event
 from opendevin.events.action import (
     ACTION_TYPE_TO_CLASS,
     Action,
@@ -18,6 +20,7 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
+from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.runtime import (
     DockerExecBox,
     DockerSSHBox,
@@ -55,14 +58,29 @@ class Runtime:
 
     def __init__(
         self,
+        event_stream: EventStream,
         sid: str = 'default',
     ):
         self.sid = sid
         self.sandbox = create_sandbox(sid, config.sandbox_type)
         self.browser = BrowserEnv()
+        self.event_stream = event_stream
+        self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
+        loop = asyncio.get_event_loop()
+        self._bg_task = loop.create_task(self.submit_background_obs())
+
+    def close(self):
+        self.sandbox.close()
+        self.browser.close()
+        self._bg_task.cancel()
 
     def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
         self.sandbox.init_plugins(plugins)
+
+    async def on_event(self, event: Event) -> None:
+        if isinstance(Event, Action):
+            observation = await self.run_action(event)
+            await self.event_stream.add_event(observation, event.source)
 
     async def run_action(self, action: Action) -> Observation:
         """
@@ -72,32 +90,33 @@ class Runtime:
         """
         if not action.runnable:
             return NullObservation('')
-        action_id = action.action  # type: ignore[attr-defined]
-        if action_id not in ACTION_TYPE_TO_CLASS:
-            return ErrorObservation(f'Action {action_id} does not exist.')
-        if not hasattr(self, action_id):
+        action_type = action.action  # type: ignore[attr-defined]
+        if action_type not in ACTION_TYPE_TO_CLASS:
+            return ErrorObservation(f'Action {action_type} does not exist.')
+        if not hasattr(self, action_type):
             return ErrorObservation(
-                f'Action {action_id} is not supported in the current runtime.'
+                f'Action {action_type} is not supported in the current runtime.'
             )
-        observation = await getattr(self, action_id)(action)
+        observation = await getattr(self, action_type)(action)
+        observation._parent = action.id  # type: ignore[attr-defined]
         return observation
 
-    def get_background_obs(self) -> list[CmdOutputObservation]:
+    async def submit_background_obs(self):
         """
         Returns all observations that have accumulated in the runtime's background.
         Right now, this is just background commands, but could include e.g. asyncronous
         events happening in the browser.
         """
-        obs = []
         for _id, cmd in self.sandbox.background_commands.items():
             output = cmd.read_logs()
-            if output is not None and output != '':
-                obs.append(
+            if output:
+                await self.event_stream.add_event(
                     CmdOutputObservation(
                         content=output, command_id=_id, command=cmd.command
-                    )
+                    ),
+                    EventSource.AGENT,  # FIXME: use the original action's source
                 )
-        return obs
+        await asyncio.sleep(1)
 
     @abstractmethod
     async def run(self, action: CmdRunAction) -> Observation:

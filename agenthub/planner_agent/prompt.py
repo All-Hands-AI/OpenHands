@@ -90,7 +90,7 @@ It must be an object, and it must contain two fields:
   * `goal` - the goal of the task
   * `subtasks` - a list of subtasks, each of which is a map with a `goal` key.
 * `modify_task` - close a task. Arguments:
-  * `id` - the ID of the task to close
+  * `task_id` - the ID of the task to close
   * `state` - set to 'in_progress' to start the task, 'completed' to finish it, 'verified' to assert that it was successful, 'abandoned' to give up on it permanently, or `open` to stop working on it for now.
 * `finish` - if ALL of your tasks and subtasks have been verified or abandoned, and you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
