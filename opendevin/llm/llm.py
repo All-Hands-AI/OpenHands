@@ -189,7 +189,8 @@ class LLM:
             number: The cost of the response.
         """
         if (
-            'localhost' not in self.base_url
+            self.base_url is not None
+            and 'localhost' not in self.base_url
             and '127.0.0.1' not in self.base_url
             and '0.0.0.0' not in self.base_url
         ):
