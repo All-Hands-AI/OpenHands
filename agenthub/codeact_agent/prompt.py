@@ -42,8 +42,6 @@ If the assistant encounters an import error in IPython for a newly installed pac
 import IPython
 IPython.Application.instance().kernel.do_shutdown(True)  # Restart the kernel
 </execute_ipython>
-When the assistant has completed the user's latest request, the assistant MUST exit the environment by responding:
-<finish></finish>
 
 {_COMMAND_DOCS}
 
@@ -152,7 +150,6 @@ Press CTRL+C to quit
 
 ASSISTANT:
 The server is running on port 5000 with PID 124. You can access the list of numbers by visiting http://127.0.0.1:5000. If you have any further questions, feel free to ask!
-<finish></finish>
 
 USER: Now kill the server, make it display the numbers in a table format.
 
@@ -222,7 +219,6 @@ Observation:
 
 ASSISTANT:
 The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Free free to let me know if you have any further requests!
-<finish></finish>
 
 --- END OF EXAMPLE ---
 """
