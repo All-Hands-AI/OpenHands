@@ -73,7 +73,7 @@ class AgentController:
         )
         self.max_iterations = max_iterations
         self.max_chars = max_chars
-        self.agent_task = asyncio.create_task(self._start_run_loop())
+        self.agent_task = asyncio.create_task(self._start_step_loop())
 
     async def close(self):
         if self.agent_task is not None:
@@ -81,7 +81,7 @@ class AgentController:
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
         await self.set_agent_state_to(AgentState.STOPPED)
 
-    def update_state_for_step(self):
+    def update_state_before_step(self):
         self.state.iteration += 1
 
     def update_state_after_step(self):
@@ -162,7 +162,7 @@ class AgentController:
             inputs=action.inputs,
         )
 
-    async def _start_run_loop(self):
+    async def _start_step_loop(self):
         while True:
             try:
                 await self._step()
@@ -208,7 +208,7 @@ class AgentController:
         if self.state.num_of_chars > self.max_chars:
             raise MaxCharsExceedError(self.state.num_of_chars, self.max_chars)
 
-        self.update_state_for_step()
+        self.update_state_before_step()
         action: Action = NullAction()
         try:
             action = self.agent.step(self.state)
