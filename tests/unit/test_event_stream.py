@@ -32,3 +32,21 @@ async def test_stream_storage():
         'extras': {},
         'message': 'No observation',
     }
+
+
+@pytest.mark.asyncio
+async def test_rehydration():
+    stream1 = EventStream('es1')
+    await stream1.add_event(NullObservation('obs1'), EventSource.AGENT)
+    await stream1.add_event(NullObservation('obs2'), EventSource.AGENT)
+    assert len(stream1._events) == 2
+
+    stream2 = EventStream('es2')
+    assert len(stream2._events) == 0
+    await stream2._rehydrate()
+    assert len(stream2._events) == 0
+
+    stream1rehydrated = EventStream('es1')
+    assert len(stream1rehydrated._events) == 0
+    await stream1rehydrated._rehydrate()
+    assert len(stream1rehydrated._events) == 2

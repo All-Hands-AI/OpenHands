@@ -45,6 +45,7 @@ class EventStream:
         async with self._lock:
             self._events = []
             events = self._file_store.list(f'sessions/{self.sid}/events')
+            print('list of events', events)
             for event_str in events:
                 content = self._file_store.read(event_str)
                 data = json.loads(content)
