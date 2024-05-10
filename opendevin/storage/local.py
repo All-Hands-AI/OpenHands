@@ -28,7 +28,7 @@ class LocalFileStore(FileStore):
 
     def list(self, path: str) -> list[str]:
         full_path = self.get_full_path(path)
-        return os.listdir(full_path)
+        return [os.path.join(path, f) for f in os.listdir(full_path)]
 
     def delete(self, path: str) -> None:
         full_path = self.get_full_path(path)

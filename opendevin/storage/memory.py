@@ -1,3 +1,5 @@
+import os
+
 from .files import FileStore
 
 
@@ -13,14 +15,20 @@ class InMemoryFileStore(FileStore):
         return self.files[path]
 
     def list(self, path: str) -> list[str]:
-        depth = path.count('/')
         files = []
         for file in self.files:
             if not file.startswith(path):
                 continue
-            if file.count('/') != depth:
-                continue
-            files.append(file)
+            suffix = file.removeprefix(path)
+            parts = suffix.split('/')
+            if parts[0] == '':
+                parts.pop(0)
+            if len(parts) == 1:
+                files.append(file)
+            else:
+                dir_path = os.path.join(path, parts[0])
+                if dir_path not in files:
+                    files.append(dir_path)
         return files
 
     def delete(self, path: str) -> None:

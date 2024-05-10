@@ -25,18 +25,20 @@ class EventSource(str, Enum):
 
 class EventStream:
     sid: str
-    _subscribers: dict[str, Callable] = {}
-    _events: list[Event] = []
+    _subscribers: dict[str, Callable]
+    _events: list[Event]
     _lock = asyncio.Lock()
     _file_store: FileStore
 
     def __init__(self, sid: str):
         self.sid = sid
         self._file_store = get_file_store()
+        self._subscribers = {}
+        self._events = []
 
     def get_filename_for_event(self, event: Event):
         # TODO: change to .id once that prop is in
-        return f'{self.sid}/{event._id}.json'  # type: ignore [attr-defined]
+        return f'sessions/{self.sid}/events/{event._id}.json'  # type: ignore [attr-defined]
 
     def subscribe(self, id: EventStreamSubscriber, callback: Callable):
         if id in self._subscribers:
