@@ -22,7 +22,11 @@ async def test_stream_storage():
     content = stream._file_store.read('sessions/def/events/0.json')
     assert content is not None
     data = json.loads(content)
+    assert 'timestamp' in data
+    del data['timestamp']
     assert data == {
+        'id': 0,
+        'source': 'agent',
         'observation': 'null',
         'content': '',
         'extras': {},

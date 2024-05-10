@@ -1,5 +1,4 @@
 import asyncio
-import json
 from datetime import datetime
 from enum import Enum
 from typing import Callable
@@ -58,8 +57,7 @@ class EventStream:
             event._id = len(self._events)  # type: ignore [attr-defined]
             event._timestamp = datetime.now()  # type: ignore [attr-defined]
             event._source = source  # type: ignore [attr-defined]
-            to_store = json.dumps(event.to_dict())
-            self._file_store.write(self.get_filename_for_event(event), to_store)
+            self._file_store.write(self.get_filename_for_event(event), event.to_json())
             self._events.append(event)
         for key, fn in self._subscribers.items():
             print('calling subscriber', key)
