@@ -38,7 +38,7 @@ class PluginMixin:
                     f'Failed to initialize plugin {requirement.name} with exit code {exit_code} and output {output}'
                 )
             logger.info(
-                f'Plugin {requirement.name} initialized successfully\n:{output}'
+                f'Plugin {requirement.name} initialized successfully.'
             )
 
         if len(requirements) > 0:
