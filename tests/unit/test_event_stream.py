@@ -50,3 +50,5 @@ async def test_rehydration():
     assert len(stream1rehydrated._events) == 0
     await stream1rehydrated._rehydrate()
     assert len(stream1rehydrated._events) == 2
+    assert stream1rehydrated._events[0].content == 'obs1'
+    assert stream1rehydrated._events[1].content == 'obs2'
