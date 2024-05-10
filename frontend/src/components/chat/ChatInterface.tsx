@@ -1,12 +1,16 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { IoMdChatbubbles } from "react-icons/io";
+import { RiArrowRightDoubleLine } from "react-icons/ri";
+import { useTranslation } from "react-i18next";
+import { twMerge } from "tailwind-merge";
 import ChatInput from "./ChatInput";
 import Chat from "./Chat";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import { sendChatMessage } from "#/services/chatService";
 import { addUserMessage } from "#/state/chatSlice";
+import { I18nKey } from "#/i18n/declaration";
 
 function ChatInterface() {
   const dispatch = useDispatch();
@@ -21,6 +25,11 @@ function ChatInterface() {
     sendChatMessage(content, isTask);
   };
 
+  const { t } = useTranslation();
+  const handleSendContinueMsg = () => {
+    handleSendMessage(t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE));
+  };
+
   return (
     <div className="flex flex-col h-full bg-neutral-800">
       <div className="flex items-center gap-2 border-b border-neutral-600 text-sm px-4 py-2">
@@ -33,11 +42,32 @@ function ChatInterface() {
         </div>
         {/* Fade between messages and input */}
         <div
-          className={`absolute bottom-0 left-0 right-0 ${curAgentState === AgentState.AWAITING_USER_INPUT ? "h-10" : "h-4"} bg-gradient-to-b from-transparent to-neutral-800`}
+          className={twMerge(
+            "absolute bottom-0 left-0 right-0",
+            curAgentState === AgentState.AWAITING_USER_INPUT ? "h-10" : "h-4",
+            "bg-gradient-to-b from-transparent to-neutral-800",
+          )}
         />
       </div>
+      {curAgentState === AgentState.AWAITING_USER_INPUT && (
+        <div className="relative">
+          <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center">
+            <button
+              type="button"
+              className="relative border-1 text-xs rounded px-2 py-1 border-neutral-600 bg-neutral-700 cursor-pointer select-none"
+              onClick={handleSendContinueMsg}
+            >
+              <div className="flex items-center">
+                <RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />
+                <span className="inline-block">
+                  {t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
+                </span>
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
       <ChatInput
-        currentTaskState={curAgentState}
         disabled={curAgentState === AgentState.LOADING}
         onSendMessage={handleSendMessage}
       />
