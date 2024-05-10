@@ -1,13 +1,15 @@
 import asyncio
 import os
+import shutil
 import subprocess
 
 import pytest
 
 from opendevin.core.main import main
 
+workspace_base = os.getenv('WORKSPACE_BASE')
 
-# skip if
+
 @pytest.mark.skipif(
     os.getenv('AGENT') == 'CodeActAgent'
     and os.getenv('SANDBOX_TYPE').lower() == 'exec',
@@ -18,7 +20,7 @@ def test_write_simple_script():
     asyncio.run(main(task))
 
     # Verify the script file exists
-    script_path = os.path.join(os.getenv('WORKSPACE_BASE'), 'hello.sh')
+    script_path = os.path.join(workspace_base, 'hello.sh')
     assert os.path.exists(script_path), 'The file "hello.sh" does not exist'
 
     # Run the script and capture the output
@@ -28,3 +30,32 @@ def test_write_simple_script():
     assert (
         result.stdout.strip() == 'hello'
     ), f'Expected output "hello", but got "{result.stdout.strip()}"'
+
+
+@pytest.mark.skipif(
+    os.getenv('AGENT') != 'CodeActAgent' or os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    reason='Only CodeActAgent in ssh sandbox could pass this test right now',
+)
+def test_edits():
+    # Move workspace artifacts to workspace_base location
+    source_dir = os.path.join(os.path.dirname(__file__), 'workspace/test_edits/')
+    files = os.listdir(source_dir)
+    for file in files:
+        dest_file = os.path.join(workspace_base, file)
+        if os.path.exists(dest_file):
+            os.remove(dest_file)
+        shutil.copy(os.path.join(source_dir, file), dest_file)
+
+    # Execute the task
+    task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
+    asyncio.run(main(task))
+
+    # Verify bad.txt has been fixed
+    text = """This is a stupid typo
+Really?
+no more typos!
+Enjoy!
+"""
+    with open(os.path.join(workspace_base, 'bad.txt'), 'r') as f:
+        content = f.read()
+    assert content == text
