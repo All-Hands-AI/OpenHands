@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import ClassVar
 
 from opendevin.core.schema import ActionType
 
@@ -23,10 +24,7 @@ class AgentRecallAction(Action):
     query: str
     thought: str = ''
     action: str = ActionType.RECALL
-
-    @property
-    def runnable(self) -> bool:
-        return True
+    runnable: ClassVar[bool] = True
 
     @property
     def message(self) -> str:
