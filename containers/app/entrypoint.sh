@@ -45,6 +45,9 @@ else
     groupadd -g $DOCKER_SOCKET_GID docker
   fi
 
+  mkdir -p /home/enduser/.cache/ms-playwright/
+  mv /home/opendevin/.cache/ms-playwright/ /home/enduser/.cache/
+
   usermod -aG $DOCKER_SOCKET_GID enduser
   echo "Running as enduser"
   su enduser /bin/bash -c "$*"
