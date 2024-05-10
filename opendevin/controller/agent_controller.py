@@ -105,16 +105,13 @@ class AgentController:
     async def on_event(self, event: Event):
         if isinstance(event, ChangeAgentStateAction):
             await self.set_agent_state_to(event.agent_state)  # type: ignore
-        elif isinstance(event, MessageAction) and event.source == EventSource.USER:
-            await self.add_history(event, NullObservation(''))
-            if self.get_agent_state() != AgentState.RUNNING:
-                await self.set_agent_state_to(AgentState.RUNNING)
-        elif (
-            isinstance(event, MessageAction)
-            and event.source == EventSource.AGENT
-            and event.wait_for_response
-        ):
-            await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+        elif isinstance(event, MessageAction):
+            if event.source == EventSource.USER:
+                await self.add_history(event, NullObservation(''))
+                if self.get_agent_state() != AgentState.RUNNING:
+                    await self.set_agent_state_to(AgentState.RUNNING)
+            elif event.source == EventSource.AGENT and event.wait_for_response:
+                await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
         elif isinstance(event, AgentDelegateAction):
             await self.start_delegate(event)
         elif isinstance(event, AddTaskAction):
