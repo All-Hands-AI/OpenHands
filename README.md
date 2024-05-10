@@ -92,11 +92,6 @@ Let's make software engineering better together!
 - [Discord server](https://discord.gg/ESHStjSjD4) - This is a community-run server for general discussion, questions, and feedback.
 
 ## 📈 Progress
-<p align="center">
-    <a href="https://www.swebench.com/lite.html">
-        <img src="/docs/static/img/results.png" alt="SWE-Bench Lite Score" width="500" height="auto">
-    </a>
-</p>
 
 <p align="center">
   <a href="https://star-history.com/#OpenDevin/OpenDevin&Date">
