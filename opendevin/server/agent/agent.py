@@ -1,5 +1,6 @@
 from typing import Optional
 
+from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
@@ -17,6 +18,7 @@ from opendevin.events.observation import (
 )
 from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.llm.llm import LLM
+from opendevin.runtime import DockerSSHBox
 from opendevin.runtime.e2b.runtime import E2BRuntime
 from opendevin.runtime.runtime import Runtime
 from opendevin.runtime.server.runtime import ServerRuntime
@@ -109,13 +111,20 @@ class AgentUnit:
 
         logger.info(f'Creating agent {agent_cls} using LLM {model}')
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
+        agent = Agent.get_cls(agent_cls)(llm)
+        if isinstance(agent, CodeActAgent):
+            if not self.runtime or not isinstance(self.runtime.sandbox, DockerSSHBox):
+                logger.warning(
+                    'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful (LocalBox, DockerExecBox) will not work properly.'
+                )
+
         if self.controller is not None:
             await self.controller.close()
         try:
             self.controller = AgentController(
                 sid=self.sid,
                 event_stream=self.event_stream,
-                agent=Agent.get_cls(agent_cls)(llm),
+                agent=agent,
                 max_iterations=int(max_iterations),
                 max_chars=int(max_chars),
             )
