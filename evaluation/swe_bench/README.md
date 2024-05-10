@@ -38,6 +38,8 @@ If you get to the interactive shell successfully, it means success!
 ## Run Inference on SWE-Bench Instances
 
 ```bash
+# enable iteration countdown
+export ITERATION_REMINDER="true"
 python3 evaluation/swe_bench/run_infer.py \
   --agent-cls CodeActAgent \
   --model-name gpt-4-turbo-2024-04-09 \
@@ -52,7 +54,7 @@ python3 evaluation/swe_bench/run_infer.py \
 
 ### Prepare Output Files
 
-Ensure that model outputs are formatted correctly as below: 
+Ensure that model outputs are formatted correctly as below:
 ```json
 [
   {
@@ -65,7 +67,7 @@ Ensure that model outputs are formatted correctly as below:
 ```
 An example can be found [here](./examples/example_model_output.json).
 
-Agent output should be adhere to the OpenDevin format. An example can be found [here](./examples/example_agent_output.json). 
+Agent output should be adhere to the OpenDevin format. An example can be found [here](./examples/example_agent_output.json).
 
 ### Set Up the Environment
 

@@ -38,7 +38,7 @@ DEFAULT_CONFIG: dict = {
     ConfigType.LLM_RETRY_MIN_WAIT: 3,
     ConfigType.LLM_RETRY_MAX_WAIT: 60,
     ConfigType.MAX_ITERATIONS: 100,
-    ConfigType.ITERATION_REMINDER: 'true',
+    ConfigType.ITERATION_REMINDER: 'false',
     ConfigType.AGENT_MEMORY_MAX_THREADS: 2,
     ConfigType.AGENT_MEMORY_ENABLED: False,
     ConfigType.LLM_TIMEOUT: None,
@@ -244,3 +244,5 @@ def get(key: ConfigType, required: bool = False):
 _cache_dir = config.get(ConfigType.CACHE_DIR)
 if _cache_dir:
     pathlib.Path(_cache_dir).mkdir(parents=True, exist_ok=True)
+
+logger.info(f'config: {config}')
