@@ -59,7 +59,7 @@ class AgentController:
         sid: str = 'default',
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
-        inputs: Optional[dict] = None,
+        inputs: dict | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
