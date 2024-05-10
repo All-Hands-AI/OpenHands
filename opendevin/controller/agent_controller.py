@@ -192,7 +192,7 @@ class AgentController:
             return
 
         if self._pending_action:
-            logger.debug('waiting for pending action...', self._pending_action)
+            logger.debug('waiting for pending action: ' + str(self._pending_action))
             await asyncio.sleep(1)
             return
 
@@ -264,7 +264,7 @@ class AgentController:
                 for i in range(1, 4)
             ):
                 # same (Action, NullObservation): like 'think' the same thought over and over
-                logger.debug('Action, NullObservation loop detected')
+                logger.info('Action, NullObservation loop detected')
                 return True
             elif all(
                 isinstance(self.state.history[-i][1], ErrorObservation)
@@ -272,7 +272,7 @@ class AgentController:
             ):
                 # (NullAction, ErrorObservation): errors coming from an exception
                 # (Action, ErrorObservation): the same action getting an error, even if not necessarily the same error
-                logger.debug('Action, ErrorObservation loop detected')
+                logger.info('Action, ErrorObservation loop detected')
                 return True
 
         return False

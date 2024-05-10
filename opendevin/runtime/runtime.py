@@ -65,7 +65,6 @@ class Runtime:
         self.sandbox = create_sandbox(sid, config.sandbox_type)
         self.browser = BrowserEnv()
         self.event_stream = event_stream
-        print('SUBSCRIBE RUNTIME TO EVENT STREAM')
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
         self._bg_task = asyncio.create_task(self._start_background_observation_loop())
 
@@ -80,6 +79,7 @@ class Runtime:
     async def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
             observation = await self.run_action(event)
+            observation._cause = event.id  # type: ignore[attr-defined]
             source = event.source if event.source else EventSource.AGENT
             await self.event_stream.add_event(observation, source)
 
