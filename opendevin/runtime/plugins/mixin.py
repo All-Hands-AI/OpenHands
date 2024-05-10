@@ -37,10 +37,9 @@ class PluginMixin:
                 raise RuntimeError(
                     f'Failed to initialize plugin {requirement.name} with exit code {exit_code} and output {output}'
                 )
-            else:
-                logger.info(
-                    f'Plugin {requirement.name} initialized successfully.'
-                )
+            logger.info(
+                f'Plugin {requirement.name} initialized successfully.'
+            )
 
         if len(requirements) > 0:
             exit_code, output = self.execute('source ~/.bashrc')
