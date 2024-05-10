@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from opendevin.events.action import NullAction
@@ -17,7 +19,12 @@ async def test_stream_storage():
     stream = EventStream('def')
     await stream.add_event(NullObservation(''), EventSource.AGENT)
     assert len(stream._events) == 1
-    print(stream._file_store.list(''))
-    content = stream._file_store.read('sessions/def/events/1.json')
+    content = stream._file_store.read('sessions/def/events/0.json')
     assert content is not None
-    assert content == '{}'
+    data = json.loads(content)
+    assert data == {
+        'observation': 'null',
+        'content': '',
+        'extras': {},
+        'message': 'No observation',
+    }
