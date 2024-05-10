@@ -6,6 +6,17 @@ from opendevin.storage.local import LocalFileStore
 from opendevin.storage.memory import InMemoryFileStore
 
 
+@pytest.fixture
+def setup_env():
+    os.makedirs('./_test_files_tmp', exist_ok=True)
+
+    yield
+
+    os.rmdir('./_test_files_tmp/foo/bar', ignore_errors=True)
+    os.rmdir('./_test_files_tmp/foo', ignore_errors=True)
+    os.rmdir('./_test_files_tmp')
+
+
 def test_basic_fileops():
     filename = 'test.txt'
     for store in [LocalFileStore('./_test_files_tmp'), InMemoryFileStore()]:
@@ -15,7 +26,6 @@ def test_basic_fileops():
         store.delete(filename)
         with pytest.raises(FileNotFoundError):
             store.read(filename)
-    os.rmdir('./_test_files_tmp')
 
 
 def test_complex_path_fileops():
@@ -27,9 +37,6 @@ def test_complex_path_fileops():
             store.delete(filename)
             with pytest.raises(FileNotFoundError):
                 store.read(filename)
-    os.rmdir('./_test_files_tmp/foo/bar')
-    os.rmdir('./_test_files_tmp/foo')
-    os.rmdir('./_test_files_tmp')
 
 
 def test_list():
@@ -41,7 +48,6 @@ def test_list():
         store.delete('foo.txt')
         store.delete('bar.txt')
         store.delete('baz.txt')
-    os.rmdir('./_test_files_tmp')
 
 
 def test_deep_list():
@@ -60,5 +66,3 @@ def test_deep_list():
         store.delete('foo/bar/baz.txt')
         store.delete('foo/bar/qux.txt')
         store.delete('foo/bar/quux.txt')
-    os.rmdir('./_test_files_tmp/foo/bar')
-    os.rmdir('./_test_files_tmp/foo')
