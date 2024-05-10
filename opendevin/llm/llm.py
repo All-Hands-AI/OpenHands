@@ -178,6 +178,25 @@ class LLM:
         """
         return litellm.token_counter(model=self.model_name, messages=messages)
 
+    def is_local(self):
+        """
+        Determines if the system is using a locally running LLM.
+
+        Returns:
+            boolean: True if executing a local model.
+        """
+        if self.base_url is not None:
+            if (
+                'localhost' not in self.base_url
+                and '127.0.0.1' not in self.base_url
+                and '0.0.0.0' not in self.base_url
+            ):
+                return True
+        elif self.model_name is not None:
+            if self.model_name.startswith('ollama'):
+                return True
+        return False
+
     def completion_cost(self, response):
         """
         Calculate the cost of a completion response based on the model.  Local models are treated as free.
@@ -188,12 +207,7 @@ class LLM:
         Returns:
             number: The cost of the response.
         """
-        if (
-            self.base_url is not None
-            and 'localhost' not in self.base_url
-            and '127.0.0.1' not in self.base_url
-            and '0.0.0.0' not in self.base_url
-        ):
+        if not self.is_local():
             try:
                 cost = litellm_completion_cost(completion_response=response)
                 return cost

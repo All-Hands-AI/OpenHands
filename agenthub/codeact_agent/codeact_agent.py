@@ -229,7 +229,7 @@ class CodeActAgent(Agent):
             temperature=0.0,
         )
 
-        self.logCost(response)
+        self.log_cost(response)
 
         action_str: str = parse_response(response)
         state.num_of_chars += sum(
@@ -264,7 +264,7 @@ class CodeActAgent(Agent):
     def search_memory(self, query: str) -> List[str]:
         raise NotImplementedError('Implement this abstract method')
 
-    def logCost(self, response):
+    def log_cost(self, response):
         cur_cost = self.llm.completion_cost(response)
         self.cost_accumulator += cur_cost
         logger.info(
