@@ -33,7 +33,7 @@ if [ ! -z "$experiment_name" ]
 then
     echo "use provided experiment name: $experiment_name"
 else
-    experiment_name="$model_name"__"$dataset"
+    experiment_name=${model_name}__${dataset}
     echo "use generated experiment name: $experiment_name"
 fi
 
