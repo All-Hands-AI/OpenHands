@@ -5,7 +5,8 @@ from jinja2 import BaseLoader, Environment
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.exceptions import LLMOutputError
-from opendevin.events.action import Action, action_from_dict
+from opendevin.events.action import Action
+from opendevin.events.serialization.action import action_from_dict
 from opendevin.llm.llm import LLM
 
 from .instructions import instructions

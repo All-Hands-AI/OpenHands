@@ -9,12 +9,12 @@ from opendevin.core.schema import ActionType, AgentState, ConfigType
 from opendevin.events.action import (
     ChangeAgentStateAction,
     NullAction,
-    action_from_dict,
 )
 from opendevin.events.event import Event
 from opendevin.events.observation import (
     NullObservation,
 )
+from opendevin.events.serialization.action import action_from_dict
 from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.llm.llm import LLM
 from opendevin.server.session import session_manager

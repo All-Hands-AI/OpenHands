@@ -1,9 +1,11 @@
 import asyncio
+import json
 from datetime import datetime
 from enum import Enum
 from typing import Callable
 
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.events.serialization.event import event_from_dict
 from opendevin.storage import FileStore, get_file_store
 
 from .event import Event
@@ -35,9 +37,19 @@ class EventStream:
         self._subscribers = {}
         self._events = []
 
-    def get_filename_for_event(self, event: Event):
+    def _get_filename_for_event(self, event: Event):
         # TODO: change to .id once that prop is in
         return f'sessions/{self.sid}/events/{event._id}.json'  # type: ignore [attr-defined]
+
+    async def _rehydrate(self):
+        async with self._lock:
+            self._events = []
+            events = self._file_store.list(f'sessions/{self.sid}/events')
+            for event_str in events:
+                content = self._file_store.read(event_str)
+                data = json.loads(content)
+                event = event_from_dict(data)
+                self._events.append(event)
 
     def subscribe(self, id: EventStreamSubscriber, callback: Callable):
         if id in self._subscribers:
@@ -57,7 +69,7 @@ class EventStream:
             event._id = len(self._events)  # type: ignore [attr-defined]
             event._timestamp = datetime.now()  # type: ignore [attr-defined]
             event._source = source  # type: ignore [attr-defined]
-            self._file_store.write(self.get_filename_for_event(event), event.to_json())
+            self._file_store.write(self._get_filename_for_event(event), event.to_json())
             self._events.append(event)
         for key, fn in self._subscribers.items():
             print('calling subscriber', key)

@@ -1,6 +1,8 @@
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime
+
+from opendevin.events.serialization.event import event_to_dict
 
 
 def json_serial(obj):
@@ -9,28 +11,10 @@ def json_serial(obj):
     return str(obj)
 
 
-# TODO: move `content` into `extras`
-TOP_KEYS = ['id', 'timestamp', 'source', 'message', 'action', 'observation', 'content']
-
-
 @dataclass
 class Event:
     def to_dict(self):
-        props = asdict(self)
-        d = {}
-        for key in TOP_KEYS:
-            if hasattr(self, key):
-                d[key] = getattr(self, key)
-            elif hasattr(self, f'_{key}'):
-                d[key] = getattr(self, f'_{key}')
-            props.pop(key, None)
-        if 'action' in d:
-            d['args'] = props
-        elif 'observation' in d:
-            d['extras'] = props
-        else:
-            raise ValueError('Event must be either action or observation')
-        return d
+        return event_to_dict(self)
 
     def to_memory(self):
         d = self.to_dict()

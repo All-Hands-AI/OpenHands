@@ -6,12 +6,12 @@ from opendevin.core.schema import ActionType
 from opendevin.events.action import (
     Action,
     NullAction,
-    action_from_dict,
 )
 from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
+from opendevin.events.serialization.action import action_from_dict
 
 HISTORY_SIZE = 10
 
