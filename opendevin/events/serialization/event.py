@@ -67,5 +67,5 @@ def event_to_memory(event: 'Event') -> dict:
     return d
 
 
-def event_to_json(self):
-    return json.dumps(self.to_dict(), default=json_serial)
+def event_to_json(event: 'Event'):
+    return json.dumps(event_to_dict(event), default=json_serial)
