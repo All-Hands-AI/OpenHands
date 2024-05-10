@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import pytest
 
@@ -12,12 +13,10 @@ def setup_env():
 
     yield
 
-    os.rmdir('./_test_files_tmp/foo/bar', ignore_errors=True)
-    os.rmdir('./_test_files_tmp/foo', ignore_errors=True)
-    os.rmdir('./_test_files_tmp')
+    shutil.rmtree('./_test_files_tmp')
 
 
-def test_basic_fileops():
+def test_basic_fileops(setup_env):
     filename = 'test.txt'
     for store in [LocalFileStore('./_test_files_tmp'), InMemoryFileStore()]:
         store.write(filename, 'Hello, world!')
@@ -28,7 +27,7 @@ def test_basic_fileops():
             store.read(filename)
 
 
-def test_complex_path_fileops():
+def test_complex_path_fileops(setup_env):
     filenames = ['foo.bar.baz', './foo/bar/baz', 'foo/bar/baz', '/foo/bar/baz']
     for store in [LocalFileStore('./_test_files_tmp'), InMemoryFileStore()]:
         for filename in filenames:
@@ -39,7 +38,7 @@ def test_complex_path_fileops():
                 store.read(filename)
 
 
-def test_list():
+def test_list(setup_env):
     for store in [LocalFileStore('./_test_files_tmp'), InMemoryFileStore()]:
         store.write('foo.txt', 'Hello, world!')
         store.write('bar.txt', 'Hello, world!')
@@ -50,7 +49,7 @@ def test_list():
         store.delete('baz.txt')
 
 
-def test_deep_list():
+def test_deep_list(setup_env):
     for store in [LocalFileStore('./_test_files_tmp'), InMemoryFileStore()]:
         store.write('foo/bar/baz.txt', 'Hello, world!')
         store.write('foo/bar/qux.txt', 'Hello, world!')
