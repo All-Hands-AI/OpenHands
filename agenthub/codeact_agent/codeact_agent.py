@@ -1,5 +1,5 @@
 import re
-from typing import List, Mapping
+from typing import Mapping
 
 from agenthub.codeact_agent.prompt import EXAMPLES, SYSTEM_MESSAGE
 from opendevin.controller.agent import Agent
@@ -117,7 +117,7 @@ class CodeActAgent(Agent):
 
     """
 
-    sandbox_plugins: List[PluginRequirement] = [
+    sandbox_plugins: list[PluginRequirement] = [
         JupyterRequirement(),
         SWEAgentCommandsRequirement(),
     ]
@@ -144,7 +144,7 @@ class CodeActAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
-        self.messages: List[Mapping[str, str]] = []
+        self.messages: list[Mapping[str, str]] = []
         self.cost_accumulator = 0
 
     def step(self, state: State) -> Action:
@@ -261,7 +261,7 @@ class CodeActAgent(Agent):
             # it want to talk to the user
             return MessageAction(content=action_str, wait_for_response=True)
 
-    def search_memory(self, query: str) -> List[str]:
+    def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
 
     def log_cost(self, response):

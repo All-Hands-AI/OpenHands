@@ -1,5 +1,4 @@
 import json
-from typing import Dict, List
 
 from jinja2 import BaseLoader, Environment
 
@@ -59,7 +58,7 @@ def to_json(obj, **kwargs):
 
 class MicroAgent(Agent):
     prompt = ''
-    agent_definition: Dict = {}
+    agent_definition: dict = {}
 
     def __init__(self, llm: LLM):
         super().__init__(llm)
@@ -83,5 +82,5 @@ class MicroAgent(Agent):
         action = parse_response(action_resp)
         return action
 
-    def search_memory(self, query: str) -> List[str]:
+    def search_memory(self, query: str) -> list[str]:
         return []

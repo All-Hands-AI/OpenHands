@@ -1,7 +1,7 @@
 Thoughts:
-I have already created the 'hello.sh' file, and now I need to add the code to the file that will print 'hello' when executed. I will use the 'edit' command to add the necessary code to the file.
+I need to make the 'hello.sh' script executable so that it can be run. The previous attempt to make it executable using the 'bash chmod +x hello.sh' command resulted in an error. I will use the 'chmod' command directly to make the script executable.
 
 Action:
 ```
-edit 0 -1 "echo 'hello'"
+chmod +x hello.sh
 ```
