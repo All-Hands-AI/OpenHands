@@ -22,7 +22,7 @@ class EventStream:
 
     def subscribe(self, id: EventStreamSubscriber, callback: Callable):
         if id in self._subscribers:
-            logger.warning('Subscriber subscribed multiple times: ' + id)
+            raise ValueError('Subscriber already exists: ' + id)
         else:
             self._subscribers[id] = callback
 

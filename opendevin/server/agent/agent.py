@@ -17,6 +17,9 @@ from opendevin.events.observation import (
 )
 from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.llm.llm import LLM
+from opendevin.runtime.e2b.runtime import E2BRuntime
+from opendevin.runtime.runtime import Runtime
+from opendevin.runtime.server.runtime import ServerRuntime
 from opendevin.server.session import session_manager
 
 
@@ -30,14 +33,19 @@ class AgentUnit:
     sid: str
     event_stream: EventStream
     controller: Optional[AgentController] = None
-    # TODO: we will add the runtime here
-    # runtime: Optional[Runtime] = None
+    runtime: Optional[Runtime] = None
 
     def __init__(self, sid):
         """Initializes a new instance of the Session class."""
         self.sid = sid
         self.event_stream = EventStream()
         self.event_stream.subscribe(EventStreamSubscriber.SERVER, self.on_event)
+        if config.runtime == 'server':
+            logger.info('Using server runtime')
+            self.runtime = ServerRuntime(self.event_stream, sid)
+        elif config.runtime == 'e2b':
+            logger.info('Using E2B runtime')
+            self.runtime = E2BRuntime(self.event_stream, sid)
 
     async def send_error(self, message):
         """Sends an error message to the client.
@@ -135,3 +143,5 @@ class AgentUnit:
     def close(self):
         if self.controller is not None:
             self.controller.close()
+        if self.runtime is not None:
+            self.runtime.close()

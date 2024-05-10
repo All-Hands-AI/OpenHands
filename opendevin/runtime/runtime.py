@@ -2,7 +2,6 @@ import asyncio
 from abc import abstractmethod
 
 from opendevin.core.config import config
-from opendevin.devents.event import Event
 from opendevin.events.action import (
     ACTION_TYPE_TO_CLASS,
     Action,
@@ -14,6 +13,7 @@ from opendevin.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from opendevin.events.event import Event
 from opendevin.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
@@ -65,9 +65,9 @@ class Runtime:
         self.sandbox = create_sandbox(sid, config.sandbox_type)
         self.browser = BrowserEnv()
         self.event_stream = event_stream
+        print('SUBSCRIBE RUNTIME TO EVENT STREAM')
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
-        loop = asyncio.get_event_loop()
-        self._bg_task = loop.create_task(self.submit_background_obs())
+        self._bg_task = asyncio.create_task(self._start_background_observation_loop())
 
     def close(self):
         self.sandbox.close()
@@ -78,9 +78,10 @@ class Runtime:
         self.sandbox.init_plugins(plugins)
 
     async def on_event(self, event: Event) -> None:
-        if isinstance(Event, Action):
+        if isinstance(event, Action):
             observation = await self.run_action(event)
-            await self.event_stream.add_event(observation, event.source)
+            source = event.source if event.source else EventSource.AGENT
+            await self.event_stream.add_event(observation, source)
 
     async def run_action(self, action: Action) -> Observation:
         """
@@ -100,6 +101,11 @@ class Runtime:
         observation = await getattr(self, action_type)(action)
         observation._parent = action.id  # type: ignore[attr-defined]
         return observation
+
+    async def _start_background_observation_loop(self):
+        while True:
+            await self.submit_background_obs()
+            await asyncio.sleep(1)
 
     async def submit_background_obs(self):
         """

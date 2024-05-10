@@ -73,9 +73,7 @@ class AgentController:
         )
         self.max_iterations = max_iterations
         self.max_chars = max_chars
-        self.lock = asyncio.Lock()
-        loop = asyncio.get_event_loop()
-        self.agent_task = loop.create_task(self._step_with_lock())
+        self.agent_task = asyncio.create_task(self._start_run_loop())
 
     async def close(self):
         if self.agent_task is not None:
@@ -108,6 +106,7 @@ class AgentController:
         if isinstance(event, ChangeAgentStateAction):
             await self.set_agent_state_to(event.agent_state)  # type: ignore
         elif isinstance(event, MessageAction) and event.source == EventSource.USER:
+            await self.add_history(event, NullObservation(''))
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif (
@@ -166,17 +165,36 @@ class AgentController:
             inputs=action.inputs,
         )
 
-    async def _step_with_lock(self):
-        async with self.lock:
-            return await self._step()
+    async def _start_run_loop(self):
+        while True:
+            try:
+                await self._step()
+            except asyncio.CancelledError:
+                logger.info('AgentController task was cancelled')
+                break
+            except Exception as e:
+                logger.error(f'Error while running the agent: {e}')
+                await self.report_error(
+                    'There was an unexpected error while running the agent'
+                )
+                await self.set_agent_state_to(AgentState.ERROR)
+                break
+
+            await asyncio.sleep(1)
 
     async def _step(self):
         if self.state is None:
             raise ValueError('AgentController has no state')
 
         if self.get_agent_state() != AgentState.RUNNING:
-            print('waiting for agent to run...')
-            yield asyncio.sleep(1)
+            logger.debug('waiting for agent to run...')
+            await asyncio.sleep(1)
+            return
+
+        if self._pending_action:
+            logger.debug('waiting for pending action...', self._pending_action)
+            await asyncio.sleep(1)
+            return
 
         logger.info(f'STEP {self.state.iteration}', extra={'msg_type': 'STEP'})
 
@@ -203,12 +221,20 @@ class AgentController:
             await self.event_stream.add_event(
                 ErrorObservation(str(e)), EventSource.AGENT
             )
+        logger.info(f'Action: {action}', extra={'msg_type': 'ACTION'})
 
-        if not isinstance(action, NullAction):
+        if action.runnable:
             self._pending_action = action
+        else:
+            await self.add_history(action, NullObservation(''))
+        if not isinstance(action, NullAction):
             await self.event_stream.add_event(action, EventSource.AGENT)
 
         self.update_state_after_step()
+
+        if self._is_stuck():
+            await self.report_error('Agent got stuck in a loop')
+            await self.set_agent_state_to(AgentState.ERROR)
 
     def get_state(self):
         return self.state
