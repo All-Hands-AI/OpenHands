@@ -2,7 +2,6 @@ import atexit
 import os
 import subprocess
 import sys
-from typing import Dict, Tuple
 
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
@@ -29,12 +28,12 @@ class LocalBox(Sandbox):
     def __init__(self, timeout: int = 120):
         os.makedirs(config.workspace_base, exist_ok=True)
         self.timeout = timeout
-        self.background_commands: Dict[int, Process] = {}
+        self.background_commands: dict[int, Process] = {}
         self.cur_background_id = 0
         atexit.register(self.cleanup)
         super().__init__()
 
-    def execute(self, cmd: str) -> Tuple[int, str]:
+    def execute(self, cmd: str) -> tuple[int, str]:
         try:
             completed_process = subprocess.run(
                 cmd,

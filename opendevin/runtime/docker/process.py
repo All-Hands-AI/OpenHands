@@ -1,6 +1,5 @@
 import select
 import sys
-from typing import Tuple
 
 from opendevin.runtime.process import Process
 
@@ -33,7 +32,7 @@ class DockerProcess(Process):
     def command(self) -> str:
         return self._command
 
-    def parse_docker_exec_output(self, logs: bytes) -> Tuple[bytes, bytes]:
+    def parse_docker_exec_output(self, logs: bytes) -> tuple[bytes, bytes]:
         """
             When you execute a command using `exec` in a docker container, the output produced will be in bytes. this function parses the output of a Docker exec command.
 
@@ -61,7 +60,7 @@ class DockerProcess(Process):
             logs (bytes): The raw output logs of the command.
 
         Returns:
-            Tuple[bytes, bytes]: A tuple containing the parsed output and any remaining data.
+            tuple[bytes, bytes]: A tuple containing the parsed output and any remaining data.
         """
         res = b''
         tail = b''

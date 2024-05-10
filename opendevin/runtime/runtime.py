@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from typing import List
 
 from opendevin.core.config import config
 from opendevin.events.action import (
@@ -62,7 +61,7 @@ class Runtime:
         self.sandbox = create_sandbox(sid, config.sandbox_type)
         self.browser = BrowserEnv()
 
-    def init_sandbox_plugins(self, plugins: List[PluginRequirement]) -> None:
+    def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
         self.sandbox.init_plugins(plugins)
 
     async def run_action(self, action: Action) -> Observation:
@@ -83,7 +82,7 @@ class Runtime:
         observation = await getattr(self, action_id)(action)
         return observation
 
-    def get_background_obs(self) -> List[CmdOutputObservation]:
+    def get_background_obs(self) -> list[CmdOutputObservation]:
         """
         Returns all observations that have accumulated in the runtime's background.
         Right now, this is just background commands, but could include e.g. asyncronous

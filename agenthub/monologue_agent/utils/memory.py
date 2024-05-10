@@ -171,7 +171,7 @@ class LongTermMemory:
         - k (int): Number of top results to return
 
         Returns:
-        - List[str]: List of top k results found in current memory
+        - list[str]: list of top k results found in current memory
         """
         retriever = VectorIndexRetriever(
             index=self.index,
