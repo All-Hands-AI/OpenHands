@@ -21,10 +21,6 @@ class PluginMixin:
 
         # clean-up ~/.bashrc and touch ~/.bashrc
         exit_code, output = self.execute('rm -f ~/.bashrc && touch ~/.bashrc')
-        if exit_code != 0:
-            raise RuntimeError(
-                f'Failed to clean-up ~/.bashrc with exit code {exit_code} and output {output}'
-            )
 
         for requirement in requirements:
             # copy over the files
@@ -45,9 +41,7 @@ class PluginMixin:
                 raise RuntimeError(
                     f'Failed to initialize plugin {requirement.name} with exit code {exit_code} and output {output}'
                 )
-            logger.info(
-                f'Plugin {requirement.name} initialized successfully.'
-            )
+            logger.info(f'Plugin {requirement.name} initialized successfully.')
 
         if len(requirements) > 0:
             exit_code, output = self.execute('source ~/.bashrc')
