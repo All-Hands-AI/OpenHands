@@ -3,7 +3,7 @@ set -eo pipefail
 
 echo "Starting OpenDevin..."
 if [[ $NO_SETUP == "true" ]]; then
-  echo "Skipping setup"
+  echo "Skipping setup, running as $(whoami)"
   "$@"
   exit 0
 fi
@@ -19,9 +19,10 @@ if [ -z "$SANDBOX_USER_ID" ]; then
 fi
 
 if [[ "$SANDBOX_USER_ID" -eq 0 ]]; then
+  echo "Running OpenDevin as root"
   export RUN_AS_DEVIN=false
-  mkdir -p /home/root/.cache/ms-playwright/
-  mv /home/opendevin/.cache/ms-playwright/ /home/root/.cache/
+  mkdir -p /root/.cache/ms-playwright/
+  mv /home/opendevin/.cache/ms-playwright/ /root/.cache/
   "$@"
 else
   echo "Setting up enduser with id $SANDBOX_USER_ID"
