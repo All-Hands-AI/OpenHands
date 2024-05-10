@@ -2,9 +2,13 @@ import os
 
 from minio import Minio
 
+from .files import FileStore
 
-class S3FileStore:
-    def __init__(self, endpoint: str) -> None:
+AWS_S3_ENDPOINT = 's3.amazonaws.com'
+
+
+class S3FileStore(FileStore):
+    def __init__(self, endpoint: str = AWS_S3_ENDPOINT) -> None:
         access_key = os.getenv('AWS_ACCESS_KEY_ID')
         secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
         self.bucket = os.getenv('AWS_S3_BUCKET')

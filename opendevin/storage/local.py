@@ -1,7 +1,9 @@
 import os
 
+from .files import FileStore
 
-class LocalFileStore:
+
+class LocalFileStore(FileStore):
     root: str
 
     def __init__(self, root: str):

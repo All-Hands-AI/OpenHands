@@ -1,4 +1,7 @@
-class InMemoryFileStore:
+from .files import FileStore
+
+
+class InMemoryFileStore(FileStore):
     files: dict[str, str] = {}
 
     def write(self, path: str, contents: str) -> None:

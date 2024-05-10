@@ -65,7 +65,7 @@ async def main(task_str: str = ''):
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
 
-    event_stream = EventStream()
+    event_stream = EventStream('main')
     controller = AgentController(
         agent=agent,
         max_iterations=args.max_iterations,
