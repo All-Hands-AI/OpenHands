@@ -273,37 +273,6 @@ This is your internal monologue, in JSON format:
   {
     "action": "message",
     "args": {
-      "content": "If I have done some work and I want to push it to github, I can do that also!",
-      "wait_for_response": false
-    }
-  },
-  {
-    "action": "message",
-    "args": {
-      "content": "Let's do it.",
-      "wait_for_response": false
-    }
-  },
-  {
-    "action": "push",
-    "args": {
-      "owner": "owner",
-      "repo": "repo",
-      "branch": "branch"
-    }
-  },
-  {
-    "observation": "run",
-    "content": "The repo was successfully pushed to https://github.com/owner/repo/branch",
-    "extras": {
-      "command_id": 0,
-      "command": "",
-      "exit_code": 0
-    }
-  },
-  {
-    "action": "message",
-    "args": {
       "content": "And once I have completed my task, I can use the finish action to stop working.",
       "wait_for_response": false
     }

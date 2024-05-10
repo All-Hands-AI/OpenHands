@@ -1,5 +1,3 @@
-from typing import List
-
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import Action, AgentFinishAction
@@ -50,5 +48,5 @@ class PlannerAgent(Agent):
         action = parse_response(action_resp)
         return action
 
-    def search_memory(self, query: str) -> List[str]:
+    def search_memory(self, query: str) -> list[str]:
         return []

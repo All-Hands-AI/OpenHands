@@ -1,5 +1,3 @@
-from typing import List
-
 from opendevin.core.exceptions import (
     AgentMalformedActionError,
     PlanInvalidStateError,
@@ -24,14 +22,14 @@ class Task:
     id: str
     goal: str
     parent: 'Task | None'
-    subtasks: List['Task']
+    subtasks: list['Task']
 
     def __init__(
         self,
         parent: 'Task',
         goal: str,
         state: str = OPEN_STATE,
-        subtasks: List = [],
+        subtasks: list = [],
     ):
         """Initializes a new instance of the Task class.
 
@@ -184,7 +182,7 @@ class Plan(Task):
             task = task.subtasks[part]
         return task
 
-    def add_subtask(self, parent_id: str, goal: str, subtasks: List = []):
+    def add_subtask(self, parent_id: str, goal: str, subtasks: list = []):
         """Adds a subtask to a parent task.
 
         Args:
