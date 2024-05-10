@@ -3,7 +3,7 @@ import atexit
 import json
 import os
 import time
-from typing import Callable, Dict
+from typing import Callable
 
 from fastapi import WebSocket
 
@@ -17,7 +17,7 @@ SESSION_CACHE_FILE = os.path.join(CACHE_DIR, 'sessions.json')
 
 
 class SessionManager:
-    _sessions: Dict[str, Session] = {}
+    _sessions: dict[str, Session] = {}
     cleanup_interval: int = 300
     session_timeout: int = 600
 
@@ -43,7 +43,7 @@ class SessionManager:
         logger.info('Saving sessions...')
         self._save_sessions()
 
-    async def send(self, sid: str, data: Dict[str, object]) -> bool:
+    async def send(self, sid: str, data: dict[str, object]) -> bool:
         """Sends data to the client."""
         message_stack.add_message(sid, 'assistant', data)
         if sid not in self._sessions:

@@ -1,5 +1,4 @@
 import json
-from typing import List, Tuple
 
 from opendevin.controller.state.plan import Plan
 from opendevin.core.logger import opendevin_logger as logger
@@ -114,7 +113,7 @@ def get_hint(latest_action_id: str) -> str:
         ActionType.READ: 'You should think about the file you just read, what you learned from it, and how that affects your plan.',
         ActionType.WRITE: 'You just changed a file. You should think about how it affects your plan.',
         ActionType.BROWSE: 'You should think about the page you just visited, and what you learned from it.',
-        ActionType.THINK: "Look at your last thought in the history above. What does it suggest? Don't think anymore--take action.",
+        ActionType.MESSAGE: "Look at your last thought in the history above. What does it suggest? Don't think anymore--take action.",
         ActionType.RECALL: 'You should think about the information you just recalled, and how it should affect your plan.',
         ActionType.ADD_TASK: 'You should think about the next action to take.',
         ActionType.MODIFY_TASK: 'You should think about the next action to take.',
@@ -124,14 +123,14 @@ def get_hint(latest_action_id: str) -> str:
     return hints.get(latest_action_id, '')
 
 
-def get_prompt(plan: Plan, history: List[Tuple[Action, Observation]]) -> str:
+def get_prompt(plan: Plan, history: list[tuple[Action, Observation]]) -> str:
     """
     Gets the prompt for the planner agent.
     Formatted with the most recent action-observation pairs, current task, and hint based on last action
 
     Parameters:
     - plan (Plan): The original plan outlined by the user with LLM defined tasks
-    - history (List[Tuple[Action, Observation]]): List of corresponding action-observation pairs
+    - history (list[tuple[Action, Observation]]): list of corresponding action-observation pairs
 
     Returns:
     - str: The formatted string prompt with historical values

@@ -1,5 +1,3 @@
-from typing import List
-
 from opendevin.core.exceptions import PlanInvalidStateError
 from opendevin.core.logger import opendevin_logger as logger
 
@@ -21,14 +19,14 @@ class Task:
     id: str
     goal: str
     parent: 'Task | None'
-    subtasks: List['Task']
+    subtasks: list['Task']
 
     def __init__(
         self,
         parent: 'Task | None',
         goal: str,
         state: str = OPEN_STATE,
-        subtasks: List = [],
+        subtasks: list = [],
     ):
         """Initializes a new instance of the Task class.
 
@@ -186,7 +184,7 @@ class Plan:
             task = task.subtasks[part]
         return task
 
-    def add_subtask(self, parent_id: str, goal: str, subtasks: List = []):
+    def add_subtask(self, parent_id: str, goal: str, subtasks: list = []):
         """Adds a subtask to a parent task.
 
         Args:

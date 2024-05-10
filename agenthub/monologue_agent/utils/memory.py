@@ -13,15 +13,14 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from opendevin.core import config
+from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.schema.config import ConfigType
 
 from . import json
 
-num_retries = config.get(ConfigType.LLM_NUM_RETRIES)
-retry_min_wait = config.get(ConfigType.LLM_RETRY_MIN_WAIT)
-retry_max_wait = config.get(ConfigType.LLM_RETRY_MAX_WAIT)
+num_retries = config.llm.num_retries
+retry_min_wait = config.llm.retry_min_wait
+retry_max_wait = config.llm.retry_max_wait
 
 # llama-index includes a retry decorator around openai.get_embeddings() function
 # it is initialized with hard-coded values and errors
@@ -31,7 +30,7 @@ retry_max_wait = config.get(ConfigType.LLM_RETRY_MAX_WAIT)
 if hasattr(llama_openai.get_embeddings, '__wrapped__'):
     original_get_embeddings = llama_openai.get_embeddings.__wrapped__
 else:
-    logger.warning('Cannot set custom retry limits.')  # warn
+    logger.warning('Cannot set custom retry limits.')
     num_retries = 1
     original_get_embeddings = llama_openai.get_embeddings
 
@@ -59,63 +58,61 @@ def wrapper_get_embeddings(*args, **kwargs):
 
 llama_openai.get_embeddings = wrapper_get_embeddings
 
-embedding_strategy = config.get(ConfigType.LLM_EMBEDDING_MODEL)
 
-# TODO: More embeddings: https://docs.llamaindex.ai/en/stable/examples/embeddings/OpenAI/
-# There's probably a more programmatic way to do this.
-supported_ollama_embed_models = [
-    'llama2',
-    'mxbai-embed-large',
-    'nomic-embed-text',
-    'all-minilm',
-    'stable-code',
-]
-if embedding_strategy in supported_ollama_embed_models:
-    from llama_index.embeddings.ollama import OllamaEmbedding
+class EmbeddingsLoader:
+    """Loader for embedding model initialization."""
 
-    embed_model = OllamaEmbedding(
-        model_name=embedding_strategy,
-        base_url=config.get(ConfigType.LLM_EMBEDDING_BASE_URL, required=True),
-        ollama_additional_kwargs={'mirostat': 0},
-    )
-elif embedding_strategy == 'openai':
-    from llama_index.embeddings.openai import OpenAIEmbedding
+    @staticmethod
+    def get_embedding_model(strategy: str):
+        supported_ollama_embed_models = [
+            'llama2',
+            'mxbai-embed-large',
+            'nomic-embed-text',
+            'all-minilm',
+            'stable-code',
+        ]
+        if strategy in supported_ollama_embed_models:
+            from llama_index.embeddings.ollama import OllamaEmbedding
 
-    embed_model = OpenAIEmbedding(
-        model='text-embedding-ada-002',
-        api_key=config.get(ConfigType.LLM_API_KEY, required=True),
-    )
-elif embedding_strategy == 'azureopenai':
-    # Need to instruct to set these env variables in documentation
-    from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
+            return OllamaEmbedding(
+                model_name=strategy,
+                base_url=config.llm.embedding_base_url,
+                ollama_additional_kwargs={'mirostat': 0},
+            )
+        elif strategy == 'openai':
+            from llama_index.embeddings.openai import OpenAIEmbedding
 
-    embed_model = AzureOpenAIEmbedding(
-        model='text-embedding-ada-002',
-        deployment_name=config.get(
-            ConfigType.LLM_EMBEDDING_DEPLOYMENT_NAME, required=True
-        ),
-        api_key=config.get(ConfigType.LLM_API_KEY, required=True),
-        azure_endpoint=config.get(ConfigType.LLM_BASE_URL, required=True),
-        api_version=config.get(ConfigType.LLM_API_VERSION, required=True),
-    )
-elif (embedding_strategy is not None) and (embedding_strategy.lower() == 'none'):
-    # TODO: this works but is not elegant enough. The incentive is when
-    # monologue agent is not used, there is no reason we need to initialize an
-    # embedding model
-    embed_model = None
-else:
-    from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+            return OpenAIEmbedding(
+                model='text-embedding-ada-002',
+                api_key=config.llm.api_key,
+            )
+        elif strategy == 'azureopenai':
+            from llama_index.embeddings.azure_openai import AzureOpenAIEmbedding
 
-    embed_model = HuggingFaceEmbedding(model_name='BAAI/bge-small-en-v1.5')
+            return AzureOpenAIEmbedding(
+                model='text-embedding-ada-002',
+                deployment_name=config.llm.embedding_deployment_name,
+                api_key=config.llm.api_key,
+                azure_endpoint=config.llm.base_url,
+                api_version=config.llm.api_version,
+            )
+        elif (strategy is not None) and (strategy.lower() == 'none'):
+            # TODO: this works but is not elegant enough. The incentive is when
+            # monologue agent is not used, there is no reason we need to initialize an
+            # embedding model
+            return None
+        else:
+            from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+            return HuggingFaceEmbedding(model_name='BAAI/bge-small-en-v1.5')
 
 
-sema = threading.Semaphore(value=config.get(ConfigType.AGENT_MEMORY_MAX_THREADS))
+sema = threading.Semaphore(value=config.agent.memory_max_threads)
 
 
 class LongTermMemory:
     """
-    Responsible for storing information that the agent can call on later for better insights and context.
-    Uses chromadb to store and search through memories.
+    Handles storing information for the agent to access later, using chromadb.
     """
 
     def __init__(self):
@@ -125,9 +122,9 @@ class LongTermMemory:
         db = chromadb.Client()
         self.collection = db.get_or_create_collection(name='memories')
         vector_store = ChromaVectorStore(chroma_collection=self.collection)
-        self.index = VectorStoreIndex.from_vector_store(
-            vector_store, embed_model=embed_model
-        )
+        embedding_strategy = config.llm.embedding_model
+        embed_model = EmbeddingsLoader.get_embedding_model(embedding_strategy)
+        self.index = VectorStoreIndex.from_vector_store(vector_store, embed_model)
         self.thought_idx = 0
         self._add_threads = []
 
@@ -174,7 +171,7 @@ class LongTermMemory:
         - k (int): Number of top results to return
 
         Returns:
-        - List[str]: List of top k results found in current memory
+        - list[str]: list of top k results found in current memory
         """
         retriever = VectorIndexRetriever(
             index=self.index,

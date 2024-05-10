@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import List
 
 from opendevin.core.schema import ObservationType
 
@@ -12,7 +11,7 @@ class AgentRecallObservation(Observation):
     This data class represents a list of memories recalled by the agent.
     """
 
-    memories: List[str]
+    memories: list[str]
     role: str = 'assistant'
     observation: str = ObservationType.RECALL
 
