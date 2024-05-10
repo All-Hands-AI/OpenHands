@@ -79,7 +79,7 @@ It must be an object, and it must contain two fields:
   * `command` - the command to run
   * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.
 * `kill` - kills a background command
-  * `id` - the ID of the background command to kill
+  * `command_id` - the ID of the background command to kill
 * `browse` - opens a web page. Arguments:
   * `url` - the URL to open
 * `message` - make a plan, set a goal, or record your thoughts. Arguments:
