@@ -1,4 +1,7 @@
-from opendevin.core.exceptions import PlanInvalidStateError
+from opendevin.core.exceptions import (
+    AgentMalformedActionError,
+    PlanInvalidStateError,
+)
 from opendevin.core.logger import opendevin_logger as logger
 
 OPEN_STATE = 'open'
@@ -23,7 +26,7 @@ class Task:
 
     def __init__(
         self,
-        parent: 'Task | None',
+        parent: 'Task',
         goal: str,
         state: str = OPEN_STATE,
         subtasks: list = [],
@@ -36,10 +39,10 @@ class Task:
             state: The initial state of the task.
             subtasks: A list of subtasks associated with this task.
         """
-        if parent is None:
-            self.id = '0'
-        else:
+        if parent.id:
             self.id = parent.id + '.' + str(len(parent.subtasks))
+        else:
+            self.id = str(len(parent.subtasks))
         self.parent = parent
         self.goal = goal
         self.subtasks = []
@@ -130,25 +133,19 @@ class Task:
         return None
 
 
-class Plan:
+class Plan(Task):
     """Represents a plan consisting of tasks.
 
     Attributes:
-        main_goal: The main goal of the plan.
         task: The root task of the plan.
     """
 
-    main_goal: str
-    task: Task
-
-    def __init__(self, task: str):
-        """Initializes a new instance of the Plan class.
-
-        Args:
-            task: The main goal of the plan.
-        """
-        self.main_goal = task
-        self.task = Task(parent=None, goal=task, subtasks=[])
+    def __init__(self):
+        self.id = ''
+        self.goal = ''
+        self.parent = None
+        self.subtasks = []
+        self.state = OPEN_STATE
 
     def __str__(self):
         """Returns a string representation of the plan.
@@ -156,7 +153,7 @@ class Plan:
         Returns:
             A string representation of the plan.
         """
-        return self.task.to_string()
+        return self.to_string()
 
     def get_task_by_id(self, id: str) -> Task:
         """Retrieves a task by its ID.
@@ -168,19 +165,20 @@ class Plan:
             The task with the specified ID.
 
         Raises:
-            ValueError: If the provided task ID is invalid or does not exist.
+            AgentMalformedActionError: If the provided task ID is invalid or does not exist.
         """
+        if id == '':
+            return self
+        if len(self.subtasks) == 0:
+            raise AgentMalformedActionError('Task does not exist:' + id)
         try:
             parts = [int(p) for p in id.split('.')]
         except ValueError:
-            raise ValueError('Invalid task id, non-integer:' + id)
-        if parts[0] != 0:
-            raise ValueError('Invalid task id, must start with 0:' + id)
-        parts = parts[1:]
-        task = self.task
+            raise AgentMalformedActionError('Invalid task id:' + id)
+        task: Task = self
         for part in parts:
             if part >= len(task.subtasks):
-                raise ValueError('Task does not exist:' + id)
+                raise AgentMalformedActionError('Task does not exist:' + id)
             task = task.subtasks[part]
         return task
 
@@ -205,11 +203,3 @@ class Plan:
         """
         task = self.get_task_by_id(id)
         task.set_state(state)
-
-    def get_current_task(self):
-        """Retrieves the current task in progress.
-
-        Returns:
-            The current task in progress, or None if no task is in progress.
-        """
-        return self.task.get_current_task()

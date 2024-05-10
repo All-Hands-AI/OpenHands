@@ -1,7 +1,7 @@
 Thoughts:
-The shell script 'hello.sh' has been created to print 'hello' without asking for confirmation. The script content is currently set to "echo 'hello'". The next step is to make sure that the script is executable and then test it to ensure that it prints 'hello' without asking for confirmation.
+The previous attempts to add the `echo` command to the 'hello.sh' script were unsuccessful. I need to use the `edit` command to add the `echo` command to the script in order to print 'hello' without asking for confirmation.
 
 Action:
 ```
-chmod +x hello.sh
+edit 0 -1 "echo 'hello'"
 ```

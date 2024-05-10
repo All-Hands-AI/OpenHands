@@ -1,6 +1,6 @@
 import json
 
-from opendevin.controller.state.plan import Plan
+from opendevin.controller.state.state import State
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ActionType
 from opendevin.events.action import (
@@ -10,7 +10,6 @@ from opendevin.events.action import (
 )
 from opendevin.events.observation import (
     NullObservation,
-    Observation,
 )
 
 HISTORY_SIZE = 10
@@ -86,7 +85,7 @@ It must be an object, and it must contain two fields:
 * `message` - make a plan, set a goal, or record your thoughts. Arguments:
   * `content` - the message to record
 * `add_task` - add a task to your plan. Arguments:
-  * `parent` - the ID of the parent task
+  * `parent` - the ID of the parent task (leave empty if it should go at the top level)
   * `goal` - the goal of the task
   * `subtasks` - a list of subtasks, each of which is a map with a `goal` key.
 * `modify_task` - close a task. Arguments:
@@ -123,21 +122,20 @@ def get_hint(latest_action_id: str) -> str:
     return hints.get(latest_action_id, '')
 
 
-def get_prompt(plan: Plan, history: list[tuple[Action, Observation]]) -> str:
+def get_prompt(state: State) -> str:
     """
     Gets the prompt for the planner agent.
     Formatted with the most recent action-observation pairs, current task, and hint based on last action
 
     Parameters:
-    - plan (Plan): The original plan outlined by the user with LLM defined tasks
-    - history (list[tuple[Action, Observation]]): list of corresponding action-observation pairs
+    - state (State): The state of the current agent
 
     Returns:
     - str: The formatted string prompt with historical values
     """
 
-    plan_str = json.dumps(plan.task.to_dict(), indent=2)
-    sub_history = history[-HISTORY_SIZE:]
+    plan_str = json.dumps(state.plan.to_dict(), indent=2)
+    sub_history = state.history[-HISTORY_SIZE:]
     history_dicts = []
     latest_action: Action = NullAction()
     for action, observation in sub_history:
@@ -148,7 +146,7 @@ def get_prompt(plan: Plan, history: list[tuple[Action, Observation]]) -> str:
             observation_dict = observation.to_memory()
             history_dicts.append(observation_dict)
     history_str = json.dumps(history_dicts, indent=2)
-    current_task = plan.get_current_task()
+    current_task = state.plan.get_current_task()
     if current_task is not None:
         plan_status = f"You're currently working on this task:\n{current_task.goal}."
         if len(current_task.subtasks) == 0:
@@ -157,8 +155,9 @@ def get_prompt(plan: Plan, history: list[tuple[Action, Observation]]) -> str:
         plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
     hint = get_hint(latest_action.to_dict()['action'])
     logger.info('HINT:\n' + hint, extra={'msg_type': 'INFO'})
+    task = state.get_current_user_intent()
     return prompt % {
-        'task': plan.main_goal,
+        'task': task,
         'plan': plan_str,
         'history': history_str,
         'hint': hint,

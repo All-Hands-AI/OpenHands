@@ -1,23 +1,19 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { Plan, TaskState } from "#/services/planService";
+import { Task, TaskState } from "#/services/planService";
 
 export const planSlice = createSlice({
   name: "plan",
   initialState: {
     plan: {
-      mainGoal: undefined,
-      task: {
-        id: "",
-        goal: "",
-        parent: "Task | None",
-        subtasks: [],
-        state: TaskState.OPEN_STATE,
-      },
-    } as Plan,
+      id: "",
+      goal: "",
+      subtasks: [],
+      state: TaskState.OPEN_STATE,
+    } as Task,
   },
   reducers: {
     setPlan: (state, action) => {
-      state.plan = action.payload as Plan;
+      state.plan = action.payload as Task;
     },
   },
 });

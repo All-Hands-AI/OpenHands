@@ -69,7 +69,7 @@ function Workspace() {
   );
 
   useEffect(() => {
-    if (activeTab !== TabOption.PLANNER && plan.mainGoal !== undefined) {
+    if (activeTab !== TabOption.PLANNER && plan) {
       setChanges((prev) => ({ ...prev, [TabOption.PLANNER]: true }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

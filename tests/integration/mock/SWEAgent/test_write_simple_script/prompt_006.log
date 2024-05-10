@@ -40,7 +40,7 @@ write <file> <changes> [<start_line>] [<end_line>] - Modifies a <file> by replac
 browse <url> - Returns the text version of any url, this can be useful to look up documentation or finding issues on github
 scroll_up - Takes no arguments. This will scroll up and show you the 100 lines above your current lines
 scroll_down - Takes no arguments. This will scroll down and show you the 100 lines below your current lines
-edit <start_line> <end_line> <changes> - This will modify lines in the currently open file. use start_line and end_line to designate which lines to change and then write the multiline changes
+edit <start_line> <end_line> <changes> - This will modify lines in the currently open file. use start_line and end_line to designate which lines to change and then write the multiline changes. Set end_line to -1 to denote the end of the file
 goto <line_num> - This will take you directly to a line and show you the 100 lines below it.
 <bash_command> <args> - You can use any bash command you need (cd, ls, rm, grep, dir, mv, wget, git, zip, etc.) with their arguments included
 pip install <package> - You can use this to import python packages. Make sure you include the correct package name when using this command.
@@ -67,7 +67,7 @@ args:
   start: 0
   end: -1
   thought: Thoughts:
-  I need to add the code to the 'hello.sh' script to print 'hello' without asking for confirmation. I will use the echo command to achieve this.
+  I need to write a simple shell script that prints "hello" without asking for confirmation. I will use the `echo` command to print "hello" to the console.
 
   Action:
 
@@ -85,7 +85,7 @@ args:
   start: 0
   end: -1
   thought: Thoughts:
-  I need to add the code to the 'hello.sh' script to print 'hello' without asking for confirmation. I will use the echo command to achieve this.
+  I need to add the command to the 'hello.sh' script to print 'hello' without asking for confirmation. I will use the `echo` command to achieve this.
 
   Action:
 
@@ -103,7 +103,7 @@ args:
   start: 0
   end: -1
   thought: Thoughts:
-  I need to add the code to the 'hello.sh' script to print 'hello' without asking for confirmation. I will use the echo command to achieve this.
+  I need to add the `echo` command to the 'hello.sh' script in order to print 'hello' without asking for confirmation. I will use the `edit` command to add this command to the script.
 
   Action:
 
@@ -121,7 +121,7 @@ args:
   start: 0
   end: -1
   thought: Thoughts:
-  I need to add the code to the 'hello.sh' script to print 'hello' without asking for confirmation. I will use the echo command to achieve this.
+  I need to add the `echo` command to the 'hello.sh' script in order to print 'hello' without asking for confirmation. I will use the `edit` command to add this command to the script.
 
   Action:
 

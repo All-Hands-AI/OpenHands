@@ -1,7 +1,7 @@
 Thoughts:
-I need to create a shell script named 'hello.sh' that prints 'hello' without asking for confirmation. I will use the echo command to print 'hello' to the console.
+I need to create a shell script named 'hello.sh' that prints 'hello' without asking for confirmation. I'll need to use a text editor to create the script and then make sure it has the correct permissions to be executed.
 
 Action:
 ```
-write hello.sh "echo 'hello'"
+write hello.sh 'echo "hello"' 0 -1
 ```

@@ -1,7 +1,7 @@
 Thoughts:
-I need to make the 'hello.sh' script executable so that it can be run. The previous attempt to make it executable using the 'bash chmod +x hello.sh' command resulted in an error. I will use the 'chmod' command directly to make the script executable.
+The previous attempts to add the `echo` command to the 'hello.sh' script were unsuccessful. I need to use the `edit` command to add the `echo` command to the script in order to print 'hello' without asking for confirmation.
 
 Action:
 ```
-chmod +x hello.sh
+edit 0 -1 "echo 'hello'"
 ```
