@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Dict, List, Type
+from typing import TYPE_CHECKING, Type
 
 if TYPE_CHECKING:
     from opendevin.controller.state.state import State
@@ -20,8 +20,8 @@ class Agent(ABC):
     It tracks the execution status and maintains a history of interactions.
     """
 
-    _registry: Dict[str, Type['Agent']] = {}
-    sandbox_plugins: List[PluginRequirement] = []
+    _registry: dict[str, Type['Agent']] = {}
+    sandbox_plugins: list[PluginRequirement] = []
 
     def __init__(
         self,
@@ -49,7 +49,7 @@ class Agent(ABC):
         pass
 
     @abstractmethod
-    def search_memory(self, query: str) -> List[str]:
+    def search_memory(self, query: str) -> list[str]:
         """
         Searches the agent's memory for information relevant to the given query.
 

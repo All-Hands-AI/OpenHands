@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import Dict
 
 from opendevin.core.schema import ActionType
 
@@ -46,7 +45,7 @@ class AgentSummarizeAction(Action):
 
 @dataclass
 class AgentFinishAction(Action):
-    outputs: Dict = field(default_factory=dict)
+    outputs: dict = field(default_factory=dict)
     thought: str = ''
     action: str = ActionType.FINISH
 
@@ -57,7 +56,7 @@ class AgentFinishAction(Action):
 
 @dataclass
 class AgentRejectAction(Action):
-    outputs: Dict = field(default_factory=dict)
+    outputs: dict = field(default_factory=dict)
     thought: str = ''
     action: str = ActionType.REJECT
 

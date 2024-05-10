@@ -7,7 +7,6 @@ import time
 import uuid
 from collections import namedtuple
 from glob import glob
-from typing import Dict, List, Tuple
 
 import docker
 
@@ -32,7 +31,7 @@ class DockerExecBox(Sandbox):
     docker_client: docker.DockerClient
 
     cur_background_id = 0
-    background_commands: Dict[int, Process] = {}
+    background_commands: dict[int, Process] = {}
 
     def __init__(
         self,
@@ -95,7 +94,7 @@ class DockerExecBox(Sandbox):
             if exit_code != 0:
                 raise Exception(f'Failed to setup devin user: {logs}')
 
-    def get_exec_cmd(self, cmd: str) -> List[str]:
+    def get_exec_cmd(self, cmd: str) -> list[str]:
         if self.run_as_devin:
             return ['su', 'devin', '-c', cmd]
         else:
@@ -107,7 +106,7 @@ class DockerExecBox(Sandbox):
         bg_cmd = self.background_commands[id]
         return bg_cmd.read_logs()
 
-    def execute(self, cmd: str) -> Tuple[int, str]:
+    def execute(self, cmd: str) -> tuple[int, str]:
         # TODO: each execute is not stateful! We need to keep track of the current working directory
         def run_command(container, command):
             return container.exec_run(

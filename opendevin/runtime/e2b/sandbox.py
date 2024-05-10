@@ -1,7 +1,6 @@
 import os
 import tarfile
 from glob import glob
-from typing import Dict, Tuple
 
 from e2b import Sandbox as E2BSandbox
 from e2b.sandbox.exception import (
@@ -18,7 +17,7 @@ from opendevin.runtime.sandbox import Sandbox
 class E2BBox(Sandbox):
     closed = False
     cur_background_id = 0
-    background_commands: Dict[int, Process] = {}
+    background_commands: dict[int, Process] = {}
     _cwd: str = '/home/user'
 
     def __init__(
@@ -73,7 +72,7 @@ class E2BBox(Sandbox):
         assert isinstance(proc, E2BProcess)
         return '\n'.join([m.line for m in proc.output_messages])
 
-    def execute(self, cmd: str) -> Tuple[int, str]:
+    def execute(self, cmd: str) -> tuple[int, str]:
         process = self.sandbox.process.start(cmd, env_vars=self._env)
         try:
             process_output = process.wait(timeout=self.timeout)

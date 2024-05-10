@@ -7,7 +7,6 @@ import time
 import uuid
 from collections import namedtuple
 from glob import glob
-from typing import Dict, List, Tuple, Union
 
 import docker
 from pexpect import pxssh
@@ -41,7 +40,7 @@ class DockerSSHBox(Sandbox):
     _ssh_port: int
 
     cur_background_id = 0
-    background_commands: Dict[int, Process] = {}
+    background_commands: dict[int, Process] = {}
 
     def __init__(
         self,
@@ -210,7 +209,7 @@ class DockerSSHBox(Sandbox):
         self.ssh.sendline(f'cd {self.sandbox_workspace_dir}')
         self.ssh.prompt()
 
-    def get_exec_cmd(self, cmd: str) -> List[str]:
+    def get_exec_cmd(self, cmd: str) -> list[str]:
         if self.run_as_devin:
             return ['su', 'opendevin', '-c', cmd]
         else:
@@ -222,7 +221,7 @@ class DockerSSHBox(Sandbox):
         bg_cmd = self.background_commands[id]
         return bg_cmd.read_logs()
 
-    def execute(self, cmd: str) -> Tuple[int, str]:
+    def execute(self, cmd: str) -> tuple[int, str]:
         cmd = cmd.strip()
         # use self.ssh
         self.ssh.sendline(cmd)
@@ -411,7 +410,7 @@ class DockerSSHBox(Sandbox):
             raise ex
 
         try:
-            network_kwargs: Dict[str, Union[str, Dict[str, int]]] = {}
+            network_kwargs: dict[str, str | dict[str, int]] = {}
             if self.use_host_network:
                 network_kwargs['network_mode'] = 'host'
             else:
@@ -440,9 +439,11 @@ class DockerSSHBox(Sandbox):
                     mount_dir: {'bind': self.sandbox_workspace_dir, 'mode': 'rw'},
                     # mount cache directory to /home/opendevin/.cache for pip cache reuse
                     config.cache_dir: {
-                        'bind': '/home/opendevin/.cache'
-                        if self.run_as_devin
-                        else '/root/.cache',
+                        'bind': (
+                            '/home/opendevin/.cache'
+                            if self.run_as_devin
+                            else '/root/.cache'
+                        ),
                         'mode': 'rw',
                     },
                 },

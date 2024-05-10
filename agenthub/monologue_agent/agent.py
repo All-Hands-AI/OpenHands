@@ -1,5 +1,3 @@
-from typing import List
-
 import agenthub.monologue_agent.utils.prompts as prompts
 from agenthub.monologue_agent.utils.monologue import Monologue
 from opendevin.controller.agent import Agent
@@ -239,7 +237,7 @@ class MonologueAgent(Agent):
         self.latest_action = action
         return action
 
-    def search_memory(self, query: str) -> List[str]:
+    def search_memory(self, query: str) -> list[str]:
         """
         Uses VectorIndexRetriever to find related memories within the long term memory.
         Uses search to produce top 10 results.
@@ -248,7 +246,7 @@ class MonologueAgent(Agent):
         - query (str): The query that we want to find related memories for
 
         Returns:
-        - List[str]: A list of top 10 text results that matched the query
+        - list[str]: A list of top 10 text results that matched the query
         """
         if self.memory is None:
             return []
