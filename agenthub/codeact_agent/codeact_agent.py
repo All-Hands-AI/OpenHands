@@ -1,5 +1,5 @@
 import re
-from typing import List, Mapping
+from typing import Mapping
 
 from agenthub.codeact_agent.prompt import EXAMPLES, SYSTEM_MESSAGE
 from opendevin.controller.agent import Agent
