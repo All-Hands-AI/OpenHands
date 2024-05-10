@@ -32,7 +32,9 @@ function ChatInterface() {
           <Chat messages={messages} />
         </div>
         {/* Fade between messages and input */}
-        <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-b from-transparent to-neutral-800" />
+        <div
+          className={`absolute bottom-0 left-0 right-0 ${curAgentState === AgentState.AWAITING_USER_INPUT ? "h-10" : "h-4"} bg-gradient-to-b from-transparent to-neutral-800`}
+        />
       </div>
       <ChatInput
         currentTaskState={curAgentState}

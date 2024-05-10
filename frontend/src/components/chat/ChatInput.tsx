@@ -49,19 +49,21 @@ function ChatInput({
   return (
     <>
       {currentTaskState === AgentState.AWAITING_USER_INPUT && (
-        <div className="m-3 pt-3 flex justify-center">
-          <button
-            type="button"
-            className="relative border-1 text-sm rounded px-3 py-1 border-neutral-600 bg-neutral-700 cursor-pointer select-none"
-            onClick={handleSendContinueMsg}
-          >
-            <span className="flex items-center">
-              <IoIosRefresh className="inline mr-2 w-3 h-3" />
-              <span className="inline-block">
-                {t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
-              </span>
-            </span>
-          </button>
+        <div className="relative">
+          <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center">
+            <button
+              type="button"
+              className="relative border-1 text-xs rounded px-2 py-1 border-neutral-600 bg-neutral-700 cursor-pointer select-none"
+              onClick={handleSendContinueMsg}
+            >
+              <div className="flex items-center">
+                <IoIosRefresh className="inline mr-2 w-2.5 h-2.5" />
+                <span className="inline-block">
+                  {t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
+                </span>
+              </div>
+            </button>
+          </div>
         </div>
       )}
       <div className="w-full relative text-base flex">
