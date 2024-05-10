@@ -20,7 +20,7 @@ from opendevin.events.observation import (
     IPythonRunCellObservation,
     UserMessageObservation,
 )
-from opendevin.llm.llm import LLM, completion_cost
+from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
@@ -225,11 +225,9 @@ class CodeActAgent(Agent):
             ],
             temperature=0.0,
         )
-        cur_cost = completion_cost(completion_response=response)
-        self.cost_accumulator += cur_cost
-        logger.info(
-            f'Cost: {cur_cost:.2f} USD | Accumulated Cost: {self.cost_accumulator:.2f} USD'
-        )
+
+        self.log_cost(response)
+
         action_str: str = parse_response(response)
         state.num_of_chars += sum(
             len(message['content']) for message in self.messages
@@ -262,3 +260,12 @@ class CodeActAgent(Agent):
 
     def search_memory(self, query: str) -> List[str]:
         raise NotImplementedError('Implement this abstract method')
+
+    def log_cost(self, response):
+        cur_cost = self.llm.completion_cost(response)
+        self.cost_accumulator += cur_cost
+        logger.info(
+            'Cost: %.2f USD | Accumulated Cost: %.2f USD',
+            cur_cost,
+            self.cost_accumulator,
+        )
