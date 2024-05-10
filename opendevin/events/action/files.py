@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import ClassVar
 
 from opendevin.core.schema import ActionType
 
@@ -18,10 +19,7 @@ class FileReadAction(Action):
     end: int = -1
     thought: str = ''
     action: str = ActionType.READ
-
-    @property
-    def runnable(self) -> bool:
-        return True
+    runnable: ClassVar[bool] = True
 
     @property
     def message(self) -> str:
@@ -36,10 +34,7 @@ class FileWriteAction(Action):
     end: int = -1
     thought: str = ''
     action: str = ActionType.WRITE
-
-    @property
-    def runnable(self) -> bool:
-        return True
+    runnable: ClassVar[bool] = True
 
     @property
     def message(self) -> str:

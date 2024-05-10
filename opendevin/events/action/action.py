@@ -1,13 +1,12 @@
 from dataclasses import dataclass
+from typing import ClassVar
 
 from opendevin.events.event import Event
 
 
 @dataclass
 class Action(Event):
-    @property
-    def runnable(self):
-        return False
+    runnable: ClassVar[bool] = False
 
     def to_memory(self):
         d = super().to_memory()
