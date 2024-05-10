@@ -4,7 +4,10 @@ from .files import FileStore
 
 
 class InMemoryFileStore(FileStore):
-    files: dict[str, str] = {}
+    files: dict[str, str]
+
+    def __init__(self):
+        self.files = {}
 
     def write(self, path: str, contents: str) -> None:
         self.files[path] = contents
