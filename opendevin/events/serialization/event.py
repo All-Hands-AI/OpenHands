@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from opendevin.events.event import Event
 
 # TODO: move `content` into `extras`
-TOP_KEYS = ['id', 'timestamp', 'source', 'message', 'action', 'observation', 'content']
+TOP_KEYS = ['id', 'timestamp', 'source', 'message', 'action', 'observation']
 
 DELETE_FROM_MEMORY_EXTRAS = {
     'screenshot',
@@ -27,6 +27,8 @@ DELETE_FROM_MEMORY_EXTRAS = {
 def json_serial(obj):
     if isinstance(obj, datetime):
         return obj.isoformat()
+    if obj is None:
+        return None
     return str(obj)
 
 
@@ -51,6 +53,7 @@ def event_to_dict(event: 'Event') -> dict:
     if 'action' in d:
         d['args'] = props
     elif 'observation' in d:
+        d['content'] = props.pop('content', '')
         d['extras'] = props
     else:
         raise ValueError('Event must be either action or observation')

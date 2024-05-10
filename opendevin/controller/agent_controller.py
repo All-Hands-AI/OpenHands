@@ -187,7 +187,9 @@ class AgentController:
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState):
-        logger.info(f'Setting agent({type(self.agent).__name__}) state from {self._agent_state} to {new_state}')
+        logger.info(
+            f'Setting agent({type(self.agent).__name__}) state from {self._agent_state} to {new_state}'
+        )
         if new_state == self._agent_state:
             return
 
@@ -201,7 +203,11 @@ class AgentController:
             self._cur_step += 1
             if self.agent_task is not None:
                 self.agent_task.cancel()
-        elif new_state == AgentState.STOPPED or new_state == AgentState.ERROR or new_state == AgentState.FINISHED:
+        elif (
+            new_state == AgentState.STOPPED
+            or new_state == AgentState.ERROR
+            or new_state == AgentState.FINISHED
+        ):
             await self.reset_task()
 
         await self.event_stream.add_event(
@@ -276,7 +282,7 @@ class AgentController:
         elif isinstance(action, AddTaskAction):
             self.state.plan.add_subtask(action.parent, action.goal, action.subtasks)
         elif isinstance(action, ModifyTaskAction):
-            self.state.plan.set_subtask_state(action.id, action.state)
+            self.state.plan.set_subtask_state(action.task_id, action.state)
         elif not isinstance(observation, ErrorObservation):
             observation = await self.runtime.run_action(action)
 
