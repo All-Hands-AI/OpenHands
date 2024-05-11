@@ -28,7 +28,7 @@ jobs:
 
     strategy:
       matrix:
-        image: ["app", "evaluation", "sandbox"]
+        image: ["app", "sandbox"]
 
     steps:
       - name: checkout
