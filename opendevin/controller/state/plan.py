@@ -29,7 +29,7 @@ class Task:
         parent: 'Task',
         goal: str,
         state: str = OPEN_STATE,
-        subtasks: list = [],
+        subtasks: list = None,
     ):
         """Initializes a new instance of the Task class.
 
