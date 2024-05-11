@@ -42,14 +42,16 @@ def test_write_simple_script():
     os.getenv('AGENT') == 'SWEAgent',
     reason='SWEAgent is not capable of this task right now',
 )
+@pytest.mark.skipif(
+    os.getenv('SANDBOX_TYPE') == 'local',
+    reason='local sandbox shows environment-dependent absolute path for pwd command',
+)
 def test_edits():
     # Move workspace artifacts to workspace_base location
     source_dir = os.path.join(os.path.dirname(__file__), 'workspace/test_edits/')
     files = os.listdir(source_dir)
     for file in files:
         dest_file = os.path.join(workspace_base, file)
-        if not os.path.exists(workspace_base):
-            os.makedirs(workspace_base)
         if os.path.exists(dest_file):
             os.remove(dest_file)
         print('source = ', os.path.join(source_dir, file), ' dest = ', dest_file)
