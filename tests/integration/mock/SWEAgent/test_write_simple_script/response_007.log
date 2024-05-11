@@ -1,0 +1,7 @@
+Thoughts:
+I have already written the shell script 'hello.sh' to print 'hello' without asking for confirmation. I need to verify the content of the file to ensure that the script is correctly implemented.
+
+Action:
+```
+read hello.sh
+```

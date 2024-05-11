@@ -1,0 +1,7 @@
+Thoughts:
+I need to ensure that the 'hello.sh' script is executable. This can be done by using the chmod command to add the execute permission to the file.
+
+Action:
+```
+bash chmod +x hello.sh
+```

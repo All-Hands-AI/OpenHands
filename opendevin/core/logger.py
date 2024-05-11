@@ -7,10 +7,9 @@ from typing import Literal, Mapping
 
 from termcolor import colored
 
-from opendevin.core import config
-from opendevin.core.schema.config import ConfigType
+from opendevin.core.config import config
 
-DISABLE_COLOR_PRINTING = config.get(ConfigType.DISABLE_COLOR).lower() == 'true'
+DISABLE_COLOR_PRINTING = config.disable_color
 
 ColorType = Literal[
     'red',
@@ -91,7 +90,8 @@ def get_file_handler():
     timestamp = datetime.now().strftime('%Y-%m-%d')
     file_name = f'opendevin_{timestamp}.log'
     file_handler = logging.FileHandler(os.path.join(log_dir, file_name))
-    file_handler.setLevel(logging.DEBUG)
+    if config.debug:
+        file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(file_formatter)
     return file_handler
 
@@ -196,10 +196,12 @@ def get_llm_response_file_handler():
 
 llm_prompt_logger = logging.getLogger('prompt')
 llm_prompt_logger.propagate = False
-llm_prompt_logger.setLevel(logging.DEBUG)
+if config.debug:
+    llm_prompt_logger.setLevel(logging.DEBUG)
 llm_prompt_logger.addHandler(get_llm_prompt_file_handler())
 
 llm_response_logger = logging.getLogger('response')
 llm_response_logger.propagate = False
-llm_response_logger.setLevel(logging.DEBUG)
+if config.debug:
+    llm_response_logger.setLevel(logging.DEBUG)
 llm_response_logger.addHandler(get_llm_response_file_handler())

@@ -73,4 +73,8 @@ COPY --chown=opendevin:app --chmod=770 --from=frontend-builder /app/dist ./front
 COPY --chown=opendevin:app --chmod=770 ./containers/app/entrypoint.sh /app/entrypoint.sh
 
 USER root
-CMD ["/app/entrypoint.sh"]
+
+WORKDIR /app
+
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["uvicorn", "opendevin.server.listen:app", "--host", "0.0.0.0", "--port", "3000"]
