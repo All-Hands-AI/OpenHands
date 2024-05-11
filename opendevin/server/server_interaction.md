@@ -127,4 +127,4 @@ This document provides instructions on how to interact with the OpenDevin server
         ```sh
         curl http://localhost:3000/api/defaults
         ```
-    **Note:** For the endpoints that require authentication (e.g., getting messages, deleting messages, getting plan), you need to obtain an authentication token first using the /api/auth endpoint with the appropriate JWT_SECRET. The obtained token is then used in the Authorization header for subsequent requests.
+    **Note:** For the endpoints that require authentication (e.g., getting messages, deleting messages, getting plan), you need to obtain an authentication token first using the `/api/auth` endpoint with the appropriate `JWT_SECRET`. The obtained token is then used in the Authorization header for subsequent requests.
