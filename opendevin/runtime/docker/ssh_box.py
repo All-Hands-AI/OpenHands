@@ -308,6 +308,8 @@ class DockerSSHBox(Sandbox):
                 f'Failed to create directory {sandbox_dest} in sandbox: {logs}'
             )
 
+        # use temp directory to store the tar file to avoid
+        # conflict of filename when running multi-processes
         with tempfile.TemporaryDirectory() as tmp_dir:
             if recursive:
                 assert os.path.isdir(
@@ -509,9 +511,10 @@ class DockerSSHBox(Sandbox):
         containers = self.docker_client.containers.list(all=True)
         for container in containers:
             try:
-                if container.name.startswith(
-                    self.container_name
-                ):  # only remove the container we created
+                if container.name.startswith(self.container_name):
+                    # only remove the container we created
+                    # otherwise all other containers with the same prefix will be removed
+                    # which will mess up with parallel evaluation
                     container.remove(force=True)
             except docker.errors.NotFound:
                 pass
