@@ -1,5 +1,5 @@
 import re
-from typing import List, Mapping
+from typing import Mapping
 
 from agenthub.codeact_agent.prompt import EXAMPLES, SYSTEM_MESSAGE
 from opendevin.controller.agent import Agent
@@ -7,18 +7,16 @@ from opendevin.controller.state.state import State
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
-    AgentEchoAction,
     AgentFinishAction,
-    AgentTalkAction,
     CmdRunAction,
     IPythonRunCellAction,
+    MessageAction,
     NullAction,
 )
 from opendevin.events.observation import (
-    AgentMessageObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
-    UserMessageObservation,
+    NullObservation,
 )
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
@@ -67,14 +65,14 @@ def swe_agent_edit_hack(bash_command: str) -> str:
             try:
                 return list(urlsplit(url))
             except ValueError:
-                raise ValidationError(self.error_messages['invalid'], code='invalid')s
+                raise ValidationError(self.error_messages['invalid'], code='invalid')
     EOF
     """
     if 'edit' in bash_command:
         # edit\s(\d+):(\d+)([\s\S]*)end_of_edit
         # replace
         bash_command = re.sub(
-            r'edit\s(\d+):(\d+)([\s\S]*)end_of_edit',
+            r'edit\s(\d+):(\d+)([\s\S]*?)end_of_edit',
             r'edit \1:\2 <<EOF\3EOF',
             bash_command,
         )
@@ -82,6 +80,7 @@ def swe_agent_edit_hack(bash_command: str) -> str:
 
 
 class CodeActAgent(Agent):
+    VERSION = '1.1'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
@@ -118,22 +117,20 @@ class CodeActAgent(Agent):
 
     """
 
-    sandbox_plugins: List[PluginRequirement] = [
+    sandbox_plugins: list[PluginRequirement] = [
         JupyterRequirement(),
         SWEAgentCommandsRequirement(),
     ]
     SUPPORTED_ACTIONS = (
         CmdRunAction,
         IPythonRunCellAction,
-        AgentEchoAction,
-        AgentTalkAction,
+        MessageAction,
         NullAction,
     )
     SUPPORTED_OBSERVATIONS = (
-        AgentMessageObservation,
-        UserMessageObservation,
         CmdOutputObservation,
         IPythonRunCellObservation,
+        NullObservation,
     )
 
     def __init__(
@@ -147,7 +144,7 @@ class CodeActAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
-        self.messages: List[Mapping[str, str]] = []
+        self.messages: list[Mapping[str, str]] = []
         self.cost_accumulator = 0
 
     def step(self, state: State) -> Action:
@@ -161,7 +158,7 @@ class CodeActAgent(Agent):
         Returns:
         - CmdRunAction(command) - bash command to run
         - IPythonRunCellAction(code) - IPython code to run
-        - AgentTalkAction(content) - Talk action to run (e.g. ask for clarification)
+        - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
 
@@ -183,19 +180,23 @@ class CodeActAgent(Agent):
                 assert isinstance(
                     prev_action, self.SUPPORTED_ACTIONS
                 ), f'{prev_action.__class__} is not supported (supported: {self.SUPPORTED_ACTIONS})'
-                # prev_action is already added to self.messages when returned
+                if (
+                    isinstance(prev_action, MessageAction)
+                    and prev_action.source == 'user'
+                ):
+                    self.messages.append(
+                        {'role': 'user', 'content': prev_action.content}
+                    )
+                    if prev_action.content.strip() == '/exit':
+                        # User wants to exit
+                        return AgentFinishAction()
 
                 # handle observations
                 assert isinstance(
                     obs, self.SUPPORTED_OBSERVATIONS
                 ), f'{obs.__class__} is not supported (supported: {self.SUPPORTED_OBSERVATIONS})'
-                if isinstance(obs, (AgentMessageObservation, UserMessageObservation)):
-                    self.messages.append({'role': 'user', 'content': obs.content})
 
-                    # User wants to exit
-                    if obs.content.strip() == '/exit':
-                        return AgentFinishAction()
-                elif isinstance(obs, CmdOutputObservation):
+                if isinstance(obs, CmdOutputObservation):
                     content = 'OBSERVATION:\n' + truncate_observation(obs.content)
                     content += f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
                     self.messages.append({'role': 'user', 'content': content})
@@ -203,15 +204,17 @@ class CodeActAgent(Agent):
                 elif isinstance(obs, IPythonRunCellObservation):
                     content = 'OBSERVATION:\n' + obs.content
                     # replace base64 images with a placeholder
-                    splited = content.split('\n')
-                    for i, line in enumerate(splited):
+                    splitted = content.split('\n')
+                    for i, line in enumerate(splitted):
                         if '![image](data:image/png;base64,' in line:
-                            splited[i] = (
+                            splitted[i] = (
                                 '![image](data:image/png;base64, ...) already displayed to user'
                             )
-                    content = '\n'.join(splited)
+                    content = '\n'.join(splitted)
                     content = truncate_observation(content)
                     self.messages.append({'role': 'user', 'content': content})
+                elif isinstance(obs, NullObservation):
+                    pass
                 else:
                     raise NotImplementedError(
                         f'Unknown observation type: {obs.__class__}'
@@ -256,9 +259,9 @@ class CodeActAgent(Agent):
         else:
             # We assume the LLM is GOOD enough that when it returns pure natural language
             # it want to talk to the user
-            return AgentTalkAction(content=action_str)
+            return MessageAction(content=action_str, wait_for_response=True)
 
-    def search_memory(self, query: str) -> List[str]:
+    def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
 
     def log_cost(self, response):

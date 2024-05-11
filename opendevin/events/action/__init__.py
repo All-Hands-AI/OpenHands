@@ -3,19 +3,18 @@ from opendevin.core.exceptions import AgentMalformedActionError
 from .action import Action
 from .agent import (
     AgentDelegateAction,
-    AgentEchoAction,
     AgentFinishAction,
     AgentRecallAction,
+    AgentRejectAction,
     AgentSummarizeAction,
-    AgentTalkAction,
-    AgentThinkAction,
+    ChangeAgentStateAction,
 )
 from .browse import BrowseURLAction
 from .commands import CmdKillAction, CmdRunAction, IPythonRunCellAction
 from .empty import NullAction
 from .files import FileReadAction, FileWriteAction
-from .github import GitHubPushAction
-from .tasks import AddTaskAction, ModifyTaskAction, TaskStateChangedAction
+from .message import MessageAction
+from .tasks import AddTaskAction, ModifyTaskAction
 
 actions = (
     CmdKillAction,
@@ -25,14 +24,13 @@ actions = (
     FileReadAction,
     FileWriteAction,
     AgentRecallAction,
-    AgentThinkAction,
-    AgentTalkAction,
     AgentFinishAction,
+    AgentRejectAction,
     AgentDelegateAction,
     AddTaskAction,
     ModifyTaskAction,
-    TaskStateChangedAction,
-    GitHubPushAction,
+    ChangeAgentStateAction,
+    MessageAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]
@@ -44,6 +42,10 @@ def action_from_dict(action: dict) -> Action:
     action = action.copy()
     if 'action' not in action:
         raise AgentMalformedActionError(f"'action' key is not found in {action=}")
+    if not isinstance(action['action'], str):
+        raise AgentMalformedActionError(
+            f"'{action['action']=}' is not defined. Available actions: {ACTION_TYPE_TO_CLASS.keys()}"
+        )
     action_class = ACTION_TYPE_TO_CLASS.get(action['action'])
     if action_class is None:
         raise AgentMalformedActionError(
@@ -66,14 +68,13 @@ __all__ = [
     'FileReadAction',
     'FileWriteAction',
     'AgentRecallAction',
-    'AgentThinkAction',
-    'AgentTalkAction',
     'AgentFinishAction',
+    'AgentRejectAction',
     'AgentDelegateAction',
-    'AgentEchoAction',
     'AgentSummarizeAction',
     'AddTaskAction',
     'ModifyTaskAction',
-    'TaskStateChangedAction',
+    'ChangeAgentStateAction',
     'IPythonRunCellAction',
+    'MessageAction',
 ]

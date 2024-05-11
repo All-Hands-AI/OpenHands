@@ -242,17 +242,48 @@
     "pt": "Salvar",
     "es": "Guardar"
   },
+  "CONFIGURATION$MODAL_RESET_BUTTON_LABEL": {
+    "en": "Reset to Defaults",
+    "zh-CN": "重置为默认值",
+    "de": "Auf Standardwerte zurücksetzen",
+    "ko-KR": "기본값으로 재설정",
+    "no": "Tilbakestill til standardverdier",
+    "zh-TW": "重設為預設值",
+    "it": "Reimposta ai valori predefiniti",
+    "pt": "Redefinir para os padrões",
+    "es": "Restablecer valores predeterminados",
+    "ar": "إعادة التعيين إلى الإعدادات الافتراضية",
+    "fr": "Réinitialiser aux valeurs par défaut",
+    "tr": "Varsayılanlara Sıfırla"
+  },
+  "CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE": {
+    "en": "We've changed some settings in the latest update. Take a minute to review."
+  },
+  "CONFIGURATION$AGENT_LOADING": {
+    "en": "Please wait while the agent loads. This may take a few seconds..."
+  },
+  "CONFIGURATION$AGENT_RUNNING": {
+    "en": "Please stop the agent before editing these settings."
+  },
   "LOAD_SESSION$MODAL_TITLE": {
-    "en": "Unfinished Session Detected"
+    "en": "Unfinished Session Detected",
+    "zh-CN": "检测到有未完成的会话",
+    "zh-TW": "偵測到未完成的會話"
   },
   "LOAD_SESSION$MODAL_CONTENT": {
-    "en": "You seem to have an unfinished task. Would you like to pick up where you left off or start fresh?"
+    "en": "You seem to have an unfinished task. Would you like to pick up where you left off or start fresh?",
+    "zh-CN": "您似乎有一个未完成的任务。您想继续之前的工作还是重新开始？",
+    "zh-TW": "您似乎有一個未完成的任務。您想從上次離開的地方繼續還是重新開始？"
   },
   "LOAD_SESSION$RESUME_SESSION_MODAL_ACTION_LABEL": {
-    "en": "Resume Session"
+    "en": "Resume Session",
+    "zh-CN": "恢复会话",
+    "zh-TW": "恢復會話"
   },
   "LOAD_SESSION$START_NEW_SESSION_MODAL_ACTION_LABEL": {
-    "en": "Start New Session"
+    "en": "Start New Session",
+    "zh-CN": "开始新会话",
+    "zh-TW": "開始新會話"
   },
   "CHAT_INTERFACE$INITIALZING_AGENT_LOADING_MESSAGE": {
     "en": "Initializing agent (may take up to 10 seconds)...",
@@ -270,7 +301,7 @@
   },
   "CHAT_INTERFACE$INPUT_PLACEHOLDER": {
     "en": "Message assistant...",
-    "zh-CN": "畀助手發消息",
+    "zh-CN": "给助理发消息",
     "de": "Sende eine Nachricht an den Assistenten...",
     "ko-KR": "어시스턴트에게 메시지 보내기",
     "no": "Send melding til assistenten...",
@@ -281,6 +312,10 @@
     "ar": "مراسلة المساعد",
     "fr": "Envoyez un message à l'assistant...",
     "tr": "Asistana mesaj gönder..."
+  },
+  "CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE": {
+    "en": "Continue",
+    "zh-CN": "继续"
   },
   "CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT": {
     "en": "Send",
@@ -297,11 +332,11 @@
   },
   "CHAT_INTERFACE$INITIAL_MESSAGE": {
     "en": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
-    "zh-CN": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "zh-CN": "你好！我是 OpenDevin，一名 AI 软件工程师。今天想和我一起编写什么程序呢?",
     "de": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "ko-KR": "안녕하세요! 저는 오픈데빈(OpenDevin), AI 소프트웨어 엔지니어입니다. 오늘은 저와 함께 무엇을 만들어 볼까요?",
     "no": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
-    "zh-TW": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
+    "zh-TW": "嗨！我是 OpenDevin，一位人工智慧軟體工程師。你今天想和我一起建造什麼？",
     "it": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "pt": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
     "es": "Hi! I'm OpenDevin, an AI Software Engineer. What would you like to build with me today?",
@@ -310,11 +345,11 @@
   },
   "CHAT_INTERFACE$ASSISTANT": {
     "en": "Assistant",
-    "zh-CN": "Assistant",
+    "zh-CN": "助理",
     "ko-KR": "어시스턴트",
     "de": "Assistant",
     "no": "Assistant",
-    "zh-TW": "Assistant",
+    "zh-TW": "助理",
     "it": "Assistant",
     "pt": "Assistant",
     "es": "Assistant",
@@ -322,36 +357,56 @@
     "fr": "Assistant",
     "tr": "Gönder"
   },
+  "CHAT_INTERFACE$TO_BOTTOM": {
+    "en": "To Bottom",
+    "zh-CN": "回到底部"
+  },
   "SETTINGS$MODEL_TOOLTIP": {
     "en": "Select the language model to use.",
+    "zh-CN": "选择要使用的语言模型",
+    "zh-TW": "選擇要使用的語言模型。",
     "de": "Wähle das zu verwendende Model."
   },
   "SETTINGS$AGENT_TOOLTIP": {
     "en": "Select the agent to use.",
+    "zh-CN": "选择要使用的智能体",
+    "zh-TW": "選擇要使用的智能體。",
     "de": "Wähle den zu verwendenden Agent."
   },
   "SETTINGS$LANGUAGE_TOOLTIP": {
     "en": "Select the language for the UI.",
+    "zh-CN": "选择界面语言",
+    "zh-TW": "選擇 UI 的語言。",
     "de": "Wähle die Sprache für das Interface."
   },
   "SETTINGS$DISABLED_RUNNING": {
     "en": "Cannot be changed while the agent is running.",
+    "zh-CN": "在智能体运行时无法更改",
+    "zh-TW": "智能體正在執行時無法更改。",
     "de": "Kann nicht geändert werden während ein Task ausgeführt wird."
   },
   "SETTINGS$API_KEY_PLACEHOLDER": {
     "en": "Enter your API key.",
+    "zh-CN": "输入您的 API key",
+    "zh-TW": "輸入您的 API 金鑰。",
     "de": "Model API key."
   },
   "CODE_EDITOR$EMPTY_MESSAGE": {
     "en": "No file selected.",
+    "zh-CN": "文件未选中",
+    "zh-TW": "未選取任何文件。",
     "de": "Keine Datei ausgewählt."
   },
   "BROWSER$EMPTY_MESSAGE": {
     "en": "No page loaded.",
+    "zh-CN": "页面未加载",
+    "zh-TW": "未加載任何頁面。",
     "de": "Keine Seite geladen."
   },
   "PLANNER$EMPTY_MESSAGE": {
     "en": "No plan created.",
+    "zh-CN": "计划未创建",
+    "zh-TW": "未創建任何計劃。",
     "de": "Kein Plan erstellt."
   }
 }

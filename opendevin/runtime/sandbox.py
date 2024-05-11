@@ -1,15 +1,25 @@
+import os
 from abc import ABC, abstractmethod
-from typing import Dict, Tuple
 
 from opendevin.runtime.docker.process import Process
 from opendevin.runtime.plugins.mixin import PluginMixin
 
 
 class Sandbox(ABC, PluginMixin):
-    background_commands: Dict[int, Process] = {}
+    background_commands: dict[int, Process] = {}
+    _env: dict[str, str] = {}
+
+    def __init__(self, **kwargs):
+        for key in os.environ:
+            if key.startswith('SANDBOX_ENV_'):
+                sandbox_key = key.removeprefix('SANDBOX_ENV_')
+                self.add_to_env(sandbox_key, os.environ[key])
+
+    def add_to_env(self, key: str, value: str):
+        self._env[key] = value
 
     @abstractmethod
-    def execute(self, cmd: str) -> Tuple[int, str]:
+    def execute(self, cmd: str) -> tuple[int, str]:
         pass
 
     @abstractmethod

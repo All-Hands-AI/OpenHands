@@ -4,20 +4,18 @@ import { CodeBlock } from "./CodeBlock";
 import styles from "./styles.module.css";
 
 export function Code() {
-  const keyCode = `# Your OpenAI API key, or any other LLM API key
-export LLM_API_KEY="sk-..."`;
-
   const workspaceCode = `# The directory you want OpenDevin to modify. MUST be an absolute path!
 export WORKSPACE_BASE=$(pwd)/workspace`;
 
   const dockerCode = `docker run \\
-    -e LLM_API_KEY \\
+    --pull=always \\
+    -e SANDBOX_USER_ID=$(id -u) \\
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \\
     -v $WORKSPACE_BASE:/opt/workspace_base \\
     -v /var/run/docker.sock:/var/run/docker.sock \\
     -p 3000:3000 \\
-    --add-host host.docker.internal=host-gateway \\
-    ghcr.io/opendevin/opendevin:0.3.1`;
+    --add-host host.docker.internal:host-gateway \\
+    ghcr.io/opendevin/opendevin:0.5`;
 
   return (
     <div className={styles.container}>
@@ -38,7 +36,6 @@ export WORKSPACE_BASE=$(pwd)/workspace`;
           </div>
         </div>
         <br />
-        <CodeBlock language="python" code={keyCode} />
         <CodeBlock language="python" code={workspaceCode} />
         <CodeBlock language="python" code={dockerCode} />
       </div>

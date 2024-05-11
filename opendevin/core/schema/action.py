@@ -8,8 +8,8 @@ class ActionTypeSchema(BaseModel):
     """Initializes the agent. Only sent by client.
     """
 
-    USER_MESSAGE: str = Field(default='user_message')
-    """Sends a message from the user. Only sent by the client.
+    MESSAGE: str = Field(default='message')
+    """Represents a message.
     """
 
     START: str = Field(default='start')
@@ -44,14 +44,6 @@ class ActionTypeSchema(BaseModel):
     """Searches long-term memory
     """
 
-    THINK: str = Field(default='think')
-    """Allows the agent to make a plan, set a goal, or record thoughts
-    """
-
-    TALK: str = Field(default='talk')
-    """Allows the agent to respond to the user.
-    """
-
     DELEGATE: str = Field(default='delegate')
     """Delegates a task to another agent.
     """
@@ -59,6 +51,11 @@ class ActionTypeSchema(BaseModel):
     FINISH: str = Field(default='finish')
     """If you're absolutely certain that you've completed your task and have tested your work,
     use the finish action to stop working.
+    """
+
+    REJECT: str = Field(default='reject')
+    """If you're absolutely certain that you cannot complete the task with given requirements,
+    use the reject action to stop working.
     """
 
     NULL: str = Field(default='null')
@@ -81,7 +78,7 @@ class ActionTypeSchema(BaseModel):
     """Stops the task. Must send a start action to restart a new task.
     """
 
-    CHANGE_TASK_STATE: str = Field(default='change_task_state')
+    CHANGE_AGENT_STATE: str = Field(default='change_agent_state')
 
     PUSH: str = Field(default='push')
     """Push a branch to github."""

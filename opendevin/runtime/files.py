@@ -1,16 +1,16 @@
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 
 class WorkspaceFile:
     name: str
-    children: List['WorkspaceFile']
+    children: list['WorkspaceFile']
 
-    def __init__(self, name: str, children: List['WorkspaceFile']):
+    def __init__(self, name: str, children: list['WorkspaceFile']):
         self.name = name
         self.children = children
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Converts the File object to a dictionary.
 
         Returns:

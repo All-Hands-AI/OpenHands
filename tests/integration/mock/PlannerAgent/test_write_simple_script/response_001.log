@@ -1,9 +1,9 @@
 ```json
 {
-  "action": "modify_task",
+  "action": "write",
   "args": {
-    "id": "0",
-    "state": "in_progress"
+    "path": "hello.sh",
+    "content": "#!/bin/bash\n\necho 'hello'"
   }
 }
 ```

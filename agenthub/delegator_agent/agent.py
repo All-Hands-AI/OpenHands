@@ -1,5 +1,3 @@
-from typing import List
-
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import Action, AgentDelegateAction, AgentFinishAction
@@ -42,44 +40,44 @@ class DelegatorAgent(Agent):
                 agent='StudyRepoForTaskAgent', inputs={'task': state.plan.main_goal}
             )
 
-        lastObservation = state.history[-1][1]
-        if not isinstance(lastObservation, AgentDelegateObservation):
+        last_observation = state.history[-1][1]
+        if not isinstance(last_observation, AgentDelegateObservation):
             raise Exception('Last observation is not an AgentDelegateObservation')
 
         if self.current_delegate == 'study':
             self.current_delegate = 'coder'
             return AgentDelegateAction(
-                agent='Coder',
+                agent='CoderAgent',
                 inputs={
                     'task': state.plan.main_goal,
-                    'summary': lastObservation.outputs['summary'],
+                    'summary': last_observation.outputs['summary'],
                 },
             )
         elif self.current_delegate == 'coder':
             self.current_delegate = 'verifier'
             return AgentDelegateAction(
-                agent='Verifier',
+                agent='VerifierAgent',
                 inputs={
                     'task': state.plan.main_goal,
                 },
             )
         elif self.current_delegate == 'verifier':
             if (
-                'completed' in lastObservation.outputs
-                and lastObservation.outputs['completed']
+                'completed' in last_observation.outputs
+                and last_observation.outputs['completed']
             ):
                 return AgentFinishAction()
             else:
                 self.current_delegate = 'coder'
                 return AgentDelegateAction(
-                    agent='Coder',
+                    agent='CoderAgent',
                     inputs={
                         'task': state.plan.main_goal,
-                        'summary': lastObservation.outputs['summary'],
+                        'summary': last_observation.outputs['summary'],
                     },
                 )
         else:
             raise Exception('Invalid delegate state')
 
-    def search_memory(self, query: str) -> List[str]:
+    def search_memory(self, query: str) -> list[str]:
         return []

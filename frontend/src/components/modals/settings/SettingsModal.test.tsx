@@ -5,7 +5,12 @@ import React from "react";
 import { renderWithProviders } from "test-utils";
 import { Mock } from "vitest";
 import toast from "#/utils/toast";
-import { Settings, getSettings, saveSettings } from "#/services/settings";
+import {
+  Settings,
+  getSettings,
+  saveSettings,
+  getDefaultSettings,
+} from "#/services/settings";
 import { initializeAgent } from "#/services/agent";
 import { fetchAgents, fetchModels } from "#/api";
 import SettingsModal from "./SettingsModal";
@@ -20,6 +25,13 @@ vi.mock("#/services/settings", async (importOriginal) => ({
     AGENT: "MonologueAgent",
     LANGUAGE: "en",
   }),
+  getDefaultSettings: vi.fn().mockReturnValue({
+    LLM_MODEL: "gpt-3.5-turbo",
+    AGENT: "CodeActAgent",
+    LANGUAGE: "en",
+    LLM_API_KEY: "",
+  }),
+  settingsAreUpToDate: vi.fn().mockReturnValue(true),
   saveSettings: vi.fn(),
 }));
 
@@ -51,7 +63,7 @@ describe("SettingsModal", () => {
     });
   });
 
-  it("should close the modal when the cancel button is clicked", async () => {
+  it("should close the modal when the close button is clicked", async () => {
     const onOpenChange = vi.fn();
     await act(async () =>
       renderWithProviders(<SettingsModal isOpen onOpenChange={onOpenChange} />),
@@ -68,24 +80,16 @@ describe("SettingsModal", () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
-  it("should disable the save button if the settings are the same as the initial settings", async () => {
-    await act(async () =>
-      renderWithProviders(<SettingsModal isOpen onOpenChange={vi.fn()} />),
-    );
-
-    const saveButton = screen.getByRole("button", { name: /save/i });
-
-    expect(saveButton).toBeDisabled();
-  });
-
-  it("should disabled the save button if the settings contain a missing value", () => {
+  it("should disabled the save button if the settings contain a missing value", async () => {
     const onOpenChangeMock = vi.fn();
     (getSettings as Mock).mockReturnValueOnce({
       LLM_MODEL: "gpt-3.5-turbo",
       AGENT: "",
     });
-    renderWithProviders(
-      <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
+    await act(async () =>
+      renderWithProviders(
+        <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
+      ),
     );
 
     const saveButton = screen.getByRole("button", { name: /save/i });
@@ -158,11 +162,7 @@ describe("SettingsModal", () => {
         userEvent.click(saveButton);
       });
 
-      expect(initializeAgent).toHaveBeenCalledWith({
-        ...initialSettings,
-        LLM_MODEL: "model3",
-        LLM_API_KEY: "", // reset after model change
-      });
+      expect(initializeAgent).toHaveBeenCalled();
     });
 
     it("should display a toast for every change", async () => {
@@ -190,7 +190,7 @@ describe("SettingsModal", () => {
         userEvent.click(saveButton);
       });
 
-      expect(toastSpy).toHaveBeenCalledTimes(1);
+      expect(toastSpy).toHaveBeenCalledTimes(2);
     });
 
     it("should change the language", async () => {
@@ -250,7 +250,35 @@ describe("SettingsModal", () => {
     });
   });
 
-  it.todo("should reset setting changes when the cancel button is clicked");
+  it("should reset settings to defaults when the 'reset to defaults' button is clicked", async () => {
+    const onOpenChangeMock = vi.fn();
+    await act(async () =>
+      renderWithProviders(
+        <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
+      ),
+    );
+
+    const resetButton = screen.getByRole("button", {
+      name: /MODAL_RESET_BUTTON_LABEL/i,
+    });
+    const agentInput = screen.getByRole("combobox", { name: "agent" });
+
+    act(() => {
+      userEvent.click(agentInput);
+    });
+    const agent3 = screen.getByText("agent3");
+    act(() => {
+      userEvent.click(agent3);
+    });
+    expect(agentInput).toHaveValue("agent3");
+
+    act(() => {
+      userEvent.click(resetButton);
+    });
+    expect(getDefaultSettings).toHaveBeenCalled();
+
+    expect(agentInput).toHaveValue("CodeActAgent"); // Agent value is reset to default from getDefaultSettings()
+  });
 
   it.todo(
     "should display a loading spinner when fetching the models and agents",

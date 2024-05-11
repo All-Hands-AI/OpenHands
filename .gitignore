@@ -196,6 +196,7 @@ logs
 # agent
 .envrc
 /workspace
+/_test_workspace
 /debug
 cache
 
@@ -203,3 +204,4 @@ cache
 config.toml
 evaluation/swe_bench/eval_workspace
 evaluation/outputs
+test_results*

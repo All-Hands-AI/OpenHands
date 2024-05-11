@@ -32,7 +32,7 @@ Use the instructions [here](../intro) to start OpenDevin using Docker.
 But when running `docker run`, you'll need to add a few more arguments:
 
 ```bash
---add-host host.docker.internal=host-gateway \
+--add-host host.docker.internal:host-gateway \
 -e LLM_API_KEY="ollama" \
 -e LLM_BASE_URL="http://host.docker.internal:11434" \
 ```
@@ -44,7 +44,8 @@ For example:
 export WORKSPACE_BASE=$(pwd)/workspace
 
 docker run \
-    --add-host host.docker.internal=host-gateway \
+    --add-host host.docker.internal:host-gateway \
+    -e SANDBOX_USER_ID=$(id -u) \
     -e LLM_API_KEY="ollama" \
     -e LLM_BASE_URL="http://host.docker.internal:11434" \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
@@ -103,7 +104,7 @@ docker exec [CONTAINER ID] curl http://host.docker.internal:11434/api/generate -
 
 ## Fixing it
 
-Now let's make it work, edit /etc/systemd/system/ollama.service with sudo priviledges. (Path may vary depending on linux flavor)
+Now let's make it work, edit /etc/systemd/system/ollama.service with sudo privileges. (Path may vary depending on linux flavor)
 
 ```bash
 sudo vi /etc/systemd/system/ollama.service

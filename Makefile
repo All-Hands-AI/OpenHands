@@ -7,7 +7,7 @@ BACKEND_PORT = 3000
 BACKEND_HOST = "127.0.0.1:$(BACKEND_PORT)"
 FRONTEND_PORT = 3001
 DEFAULT_WORKSPACE_DIR = "./workspace"
-DEFAULT_MODEL = "gpt-3.5-turbo-1106"
+DEFAULT_MODEL = "gpt-3.5-turbo"
 CONFIG_FILE = config.toml
 PRECOMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
 
@@ -22,7 +22,9 @@ RESET=$(shell tput -Txterm sgr0)
 build:
 	@echo "$(GREEN)Building project...$(RESET)"
 	@$(MAKE) -s check-dependencies
+ifeq ($(INSTALL_DOCKER),)
 	@$(MAKE) -s pull-docker-image
+endif
 	@$(MAKE) -s install-python-dependencies
 	@$(MAKE) -s install-frontend-dependencies
 	@$(MAKE) -s install-precommit-hooks
@@ -35,7 +37,9 @@ check-dependencies:
 	@$(MAKE) -s check-python
 	@$(MAKE) -s check-npm
 	@$(MAKE) -s check-nodejs
+ifeq ($(INSTALL_DOCKER),)
 	@$(MAKE) -s check-docker
+endif
 	@$(MAKE) -s check-poetry
 	@echo "$(GREEN)Dependencies checked successfully.$(RESET)"
 
@@ -44,7 +48,11 @@ check-system:
 	@if [ "$(shell uname)" = "Darwin" ]; then \
 		echo "$(BLUE)macOS detected.$(RESET)"; \
 	elif [ "$(shell uname)" = "Linux" ]; then \
-		echo "$(BLUE)Linux detected.$(RESET)"; \
+		if [ -f "/etc/manjaro-release" ]; then \
+			echo "$(BLUE)Manjaro Linux detected.$(RESET)"; \
+		else \
+			echo "$(BLUE)Linux detected.$(RESET)"; \
+		fi; \
 	elif [ "$$(uname -r | grep -i microsoft)" ]; then \
 		echo "$(BLUE)Windows Subsystem for Linux detected.$(RESET)"; \
 	else \
@@ -128,7 +136,13 @@ install-python-dependencies:
 		poetry run pip install chroma-hnswlib; \
 	fi
 	@poetry install --without evaluation
-	@poetry run playwright install --with-deps chromium
+	@if [ -f "/etc/manjaro-release" ]; then \
+		echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
+		poetry run pip install playwright; \
+		poetry run playwright install chromium; \
+	else \
+		poetry run playwright install --with-deps chromium; \
+	fi
 	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
 
 install-frontend-dependencies:
@@ -159,6 +173,13 @@ lint-frontend:
 lint:
 	@$(MAKE) -s lint-frontend
 	@$(MAKE) -s lint-backend
+
+test-frontend:
+	@echo "$(YELLOW)Running tests for frontend...$(RESET)"
+	@cd frontend && npm run test
+
+test:
+	@$(MAKE) -s test-frontend
 
 build-frontend:
 	@echo "$(YELLOW)Building frontend...$(RESET)"
@@ -198,15 +219,24 @@ setup-config:
 	@echo "$(GREEN)Config.toml setup completed.$(RESET)"
 
 setup-config-prompts:
-	@read -p "Enter your LLM Model name, used for running without UI. Set the model in the UI after you start the app. (see https://docs.litellm.ai/docs/providers for full list) [default: $(DEFAULT_MODEL)]: " llm_model; \
+	@echo "[core]" > $(CONFIG_FILE).tmp
+
+	@read -p "Enter your workspace directory [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
+	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
+	 echo "workspace_base=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
+
+	@echo "" >> $(CONFIG_FILE).tmp
+
+	@echo "[llm]" >> $(CONFIG_FILE).tmp
+	@read -p "Enter your LLM model name, used for running without UI. Set the model in the UI after you start the app. (see https://docs.litellm.ai/docs/providers for full list) [default: $(DEFAULT_MODEL)]: " llm_model; \
 	 llm_model=$${llm_model:-$(DEFAULT_MODEL)}; \
-	 echo "LLM_MODEL=\"$$llm_model\"" > $(CONFIG_FILE).tmp
+	 echo "model=\"$$llm_model\"" >> $(CONFIG_FILE).tmp
 
-	@read -p "Enter your LLM API key: " llm_api_key; \
-	 echo "LLM_API_KEY=\"$$llm_api_key\"" >> $(CONFIG_FILE).tmp
+	@read -p "Enter your LLM api key: " llm_api_key; \
+	 echo "api_key=\"$$llm_api_key\"" >> $(CONFIG_FILE).tmp
 
-	@read -p "Enter your LLM Base URL [mostly used for local LLMs, leave blank if not needed - example: http://localhost:5001/v1/]: " llm_base_url; \
-	 if [[ ! -z "$$llm_base_url" ]]; then echo "LLM_BASE_URL=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; fi
+	@read -p "Enter your LLM base URL [mostly used for local LLMs, leave blank if not needed - example: http://localhost:5001/v1/]: " llm_base_url; \
+	 if [[ ! -z "$$llm_base_url" ]]; then echo "base_url=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; fi
 
 	@echo "Enter your LLM Embedding Model"; \
 		echo "Choices are:"; \
@@ -220,22 +250,19 @@ setup-config-prompts:
 		echo "    - stable-code"; \
 		echo "  - Leave blank to default to 'BAAI/bge-small-en-v1.5' via huggingface"; \
 		read -p "> " llm_embedding_model; \
-		echo "LLM_EMBEDDING_MODEL=\"$$llm_embedding_model\"" >> $(CONFIG_FILE).tmp; \
+		echo "embedding_model=\"$$llm_embedding_model\"" >> $(CONFIG_FILE).tmp; \
 		if [ "$$llm_embedding_model" = "llama2" ] || [ "$$llm_embedding_model" = "mxbai-embed-large" ] || [ "$$llm_embedding_model" = "nomic-embed-text" ] || [ "$$llm_embedding_model" = "all-minilm" ] || [ "$$llm_embedding_model" = "stable-code" ]; then \
-			read -p "Enter the local model URL for the embedding model (will set LLM_EMBEDDING_BASE_URL): " llm_embedding_base_url; \
-				echo "LLM_EMBEDDING_BASE_URL=\"$$llm_embedding_base_url\"" >> $(CONFIG_FILE).tmp; \
+			read -p "Enter the local model URL for the embedding model (will set llm.embedding_base_url): " llm_embedding_base_url; \
+				echo "embedding_base_url=\"$$llm_embedding_base_url\"" >> $(CONFIG_FILE).tmp; \
 		elif [ "$$llm_embedding_model" = "azureopenai" ]; then \
-			read -p "Enter the Azure endpoint URL (will overwrite LLM_BASE_URL): " llm_base_url; \
-				echo "LLM_BASE_URL=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; \
+			read -p "Enter the Azure endpoint URL (will overwrite llm.base_url): " llm_base_url; \
+				echo "base_url=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; \
 			read -p "Enter the Azure LLM Embedding Deployment Name: " llm_embedding_deployment_name; \
-				echo "LLM_EMBEDDING_DEPLOYMENT_NAME=\"$$llm_embedding_deployment_name\"" >> $(CONFIG_FILE).tmp; \
+				echo "embedding_deployment_name=\"$$llm_embedding_deployment_name\"" >> $(CONFIG_FILE).tmp; \
 			read -p "Enter the Azure API Version: " llm_api_version; \
-				echo "LLM_API_VERSION=\"$$llm_api_version\"" >> $(CONFIG_FILE).tmp; \
+				echo "api_version=\"$$llm_api_version\"" >> $(CONFIG_FILE).tmp; \
 		fi
 
-	@read -p "Enter your workspace directory [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
-	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
-	 echo "WORKSPACE_BASE=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
 
 # Clean up all caches
 clean:

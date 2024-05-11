@@ -1,6 +1,9 @@
+import warnings
 from functools import partial
 
-import litellm
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore')
+    import litellm
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
@@ -15,44 +18,50 @@ from tenacity import (
     wait_random_exponential,
 )
 
-from opendevin.core import config
+from opendevin.core.config import config
 from opendevin.core.logger import llm_prompt_logger, llm_response_logger
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.schema import ConfigType
 
 __all__ = ['LLM']
-
-DEFAULT_API_KEY = config.get(ConfigType.LLM_API_KEY)
-DEFAULT_BASE_URL = config.get(ConfigType.LLM_BASE_URL)
-DEFAULT_MODEL_NAME = config.get(ConfigType.LLM_MODEL)
-DEFAULT_API_VERSION = config.get(ConfigType.LLM_API_VERSION)
-LLM_NUM_RETRIES = config.get(ConfigType.LLM_NUM_RETRIES)
-LLM_RETRY_MIN_WAIT = config.get(ConfigType.LLM_RETRY_MIN_WAIT)
-LLM_RETRY_MAX_WAIT = config.get(ConfigType.LLM_RETRY_MAX_WAIT)
-LLM_TIMEOUT = config.get(ConfigType.LLM_TIMEOUT)
-LLM_MAX_RETURN_TOKENS = config.get(ConfigType.LLM_MAX_RETURN_TOKENS)
-LLM_TEMPERATURE = config.get(ConfigType.LLM_TEMPERATURE)
 
 
 class LLM:
     """
     The LLM class represents a Language Model instance.
+
+    Attributes:
+        model_name (str): The name of the language model.
+        api_key (str): The API key for accessing the language model.
+        base_url (str): The base URL for the language model API.
+        api_version (str): The version of the API to use.
+        max_input_tokens (int): The maximum number of tokens to send to the LLM per task.
+        max_output_tokens (int): The maximum number of tokens to receive from the LLM per task.
+        llm_timeout (int): The maximum time to wait for a response in seconds.
+        custom_llm_provider (str): A custom LLM provider.
     """
 
     def __init__(
         self,
-        model=DEFAULT_MODEL_NAME,
-        api_key=DEFAULT_API_KEY,
-        base_url=DEFAULT_BASE_URL,
-        api_version=DEFAULT_API_VERSION,
-        num_retries=LLM_NUM_RETRIES,
-        retry_min_wait=LLM_RETRY_MIN_WAIT,
-        retry_max_wait=LLM_RETRY_MAX_WAIT,
-        llm_timeout=LLM_TIMEOUT,
-        llm_max_return_tokens=LLM_MAX_RETURN_TOKENS,
-        llm_temperature=LLM_TEMPERATURE,
+        model=None,
+        api_key=None,
+        base_url=None,
+        api_version=None,
+        num_retries=None,
+        retry_min_wait=None,
+        retry_max_wait=None,
+        llm_timeout=None,
+        llm_temperature=None,
+        llm_top_p=None,
+        custom_llm_provider=None,
+        max_input_tokens=None,
+        max_output_tokens=None,
+        llm_config=None,
     ):
         """
+        Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
+
+        Passing simple parameters always overrides config.
+
         Args:
             model (str, optional): The name of the language model. Defaults to LLM_MODEL.
             api_key (str, optional): The API key for accessing the language model. Defaults to LLM_API_KEY.
@@ -61,23 +70,79 @@ class LLM:
             num_retries (int, optional): The number of retries for API calls. Defaults to LLM_NUM_RETRIES.
             retry_min_wait (int, optional): The minimum time to wait between retries in seconds. Defaults to LLM_RETRY_MIN_TIME.
             retry_max_wait (int, optional): The maximum time to wait between retries in seconds. Defaults to LLM_RETRY_MAX_TIME.
+            max_input_tokens (int, optional): The maximum number of tokens to send to the LLM per task. Defaults to LLM_MAX_INPUT_TOKENS.
+            max_output_tokens (int, optional): The maximum number of tokens to receive from the LLM per task. Defaults to LLM_MAX_OUTPUT_TOKENS.
+            custom_llm_provider (str, optional): A custom LLM provider. Defaults to LLM_CUSTOM_LLM_PROVIDER.
             llm_timeout (int, optional): The maximum time to wait for a response in seconds. Defaults to LLM_TIMEOUT.
-            llm_max_return_tokens (int, optional): The maximum number of tokens to return. Defaults to LLM_MAX_RETURN_TOKENS.
             llm_temperature (float, optional): The temperature for LLM sampling. Defaults to LLM_TEMPERATURE.
 
-        Attributes:
-            model_name (str): The name of the language model.
-            api_key (str): The API key for accessing the language model.
-            base_url (str): The base URL for the language model API.
-            api_version (str): The version of the API to use.
         """
+        if llm_config is None:
+            llm_config = config.llm
+        model = model if model is not None else llm_config.model
+        api_key = api_key if api_key is not None else llm_config.api_key
+        base_url = base_url if base_url is not None else llm_config.base_url
+        api_version = api_version if api_version is not None else llm_config.api_version
+        num_retries = num_retries if num_retries is not None else llm_config.num_retries
+        retry_min_wait = (
+            retry_min_wait if retry_min_wait is not None else llm_config.retry_min_wait
+        )
+        retry_max_wait = (
+            retry_max_wait if retry_max_wait is not None else llm_config.retry_max_wait
+        )
+        llm_timeout = llm_timeout if llm_timeout is not None else llm_config.timeout
+        llm_temperature = (
+            llm_temperature if llm_temperature is not None else llm_config.temperature
+        )
+        llm_top_p = llm_top_p if llm_top_p is not None else llm_config.top_p
+        custom_llm_provider = (
+            custom_llm_provider
+            if custom_llm_provider is not None
+            else llm_config.custom_llm_provider
+        )
+        max_input_tokens = (
+            max_input_tokens
+            if max_input_tokens is not None
+            else llm_config.max_input_tokens
+        )
+        max_output_tokens = (
+            max_output_tokens
+            if max_output_tokens is not None
+            else llm_config.max_output_tokens
+        )
+
         logger.info(f'Initializing LLM with model: {model}')
         self.model_name = model
         self.api_key = api_key
         self.base_url = base_url
         self.api_version = api_version
+        self.max_input_tokens = max_input_tokens
+        self.max_output_tokens = max_output_tokens
         self.llm_timeout = llm_timeout
-        self.llm_max_return_tokens = llm_max_return_tokens
+        self.custom_llm_provider = custom_llm_provider
+
+        # litellm actually uses base Exception here for unknown model
+        self.model_info = None
+        try:
+            self.model_info = litellm.get_model_info(self.model_name)
+        # noinspection PyBroadException
+        except Exception:
+            logger.warning(f'Could not get model info for {self.model_name}')
+
+        if self.max_input_tokens is None:
+            if self.model_info is not None and 'max_input_tokens' in self.model_info:
+                self.max_input_tokens = self.model_info['max_input_tokens']
+            else:
+                # Max input tokens for gpt3.5, so this is a safe fallback for any potentially viable model
+                self.max_input_tokens = 4096
+
+        if self.max_output_tokens is None:
+            if self.model_info is not None and 'max_output_tokens' in self.model_info:
+                self.max_output_tokens = self.model_info['max_output_tokens']
+            else:
+                # Enough tokens for most output actions, and not too many for a bad llm to get carried away responding
+                # with thousands of unwanted tokens
+                self.max_output_tokens = 1024
 
         self._completion = partial(
             litellm_completion,
@@ -85,9 +150,11 @@ class LLM:
             api_key=self.api_key,
             base_url=self.base_url,
             api_version=self.api_version,
-            max_tokens=self.llm_max_return_tokens,
+            custom_llm_provider=custom_llm_provider,
+            max_tokens=self.max_output_tokens,
             timeout=self.llm_timeout,
             temperature=llm_temperature,
+            top_p=llm_top_p,
         )
 
         completion_unwrapped = self._completion

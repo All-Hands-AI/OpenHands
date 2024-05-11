@@ -1,15 +1,21 @@
 import { Spinner } from "@nextui-org/react";
 import i18next from "i18next";
-import React from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { fetchAgents, fetchModels } from "#/api";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import { initializeAgent } from "#/services/agent";
+import { RootState } from "../../../store";
+import AgentState from "../../../types/AgentState";
 import {
   Settings,
   getSettings,
+  getDefaultSettings,
   getSettingsDifference,
+  settingsAreUpToDate,
+  maybeMigrateSettings,
   saveSettings,
 } from "#/services/settings";
 import toast from "#/utils/toast";
@@ -21,15 +27,30 @@ interface SettingsProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
+const REQUIRED_SETTINGS = ["LLM_MODEL", "AGENT"];
+
 function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   const { t } = useTranslation();
-  const currentSettings = getSettings();
 
   const [models, setModels] = React.useState<string[]>([]);
   const [agents, setAgents] = React.useState<string[]>([]);
-  const [settings, setSettings] = React.useState<Settings>(currentSettings);
-
+  const [settings, setSettings] = React.useState<Settings>({} as Settings);
+  const [agentIsRunning, setAgentIsRunning] = React.useState<boolean>(false);
   const [loading, setLoading] = React.useState(true);
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
+
+  useEffect(() => {
+    maybeMigrateSettings();
+    setSettings(getSettings());
+  }, []);
+
+  useEffect(() => {
+    const isRunning =
+      curAgentState === AgentState.RUNNING ||
+      curAgentState === AgentState.PAUSED ||
+      curAgentState === AgentState.AWAITING_USER_INPUT;
+    setAgentIsRunning(isRunning);
+  }, [curAgentState]);
 
   React.useEffect(() => {
     (async () => {
@@ -59,22 +80,27 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   };
 
   const handleLanguageChange = (language: string) => {
-    const key = AvailableLanguages.find(
-      (lang) => lang.label === language,
-    )?.value;
-
-    if (key) setSettings((prev) => ({ ...prev, LANGUAGE: key }));
+    const key =
+      AvailableLanguages.find((lang) => lang.label === language)?.value ||
+      language;
+    // The appropriate key is assigned when the user selects a language.
+    // Otherwise, their input is reflected in the inputValue field of the Autocomplete component.
+    setSettings((prev) => ({ ...prev, LANGUAGE: key }));
   };
 
   const handleAPIKeyChange = (key: string) => {
     setSettings((prev) => ({ ...prev, LLM_API_KEY: key }));
   };
 
+  const handleResetSettings = () => {
+    setSettings(getDefaultSettings);
+  };
+
   const handleSaveSettings = () => {
     const updatedSettings = getSettingsDifference(settings);
     saveSettings(settings);
     i18next.changeLanguage(settings.LANGUAGE);
-    initializeAgent(settings); // reinitialize the agent with the new settings
+    initializeAgent(); // reinitialize the agent with the new settings
 
     const sensitiveKeys = ["LLM_API_KEY"];
 
@@ -92,40 +118,54 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     );
   };
 
-  const isDisabled =
-    Object.entries(settings)
-      // filter api key
-      .filter(([key]) => key !== "LLM_API_KEY")
-      .some(([, value]) => !value) ||
-    JSON.stringify(settings) === JSON.stringify(currentSettings);
+  let subtitle = t(I18nKey.CONFIGURATION$MODAL_SUB_TITLE);
+  if (loading) {
+    subtitle = t(I18nKey.CONFIGURATION$AGENT_LOADING);
+  } else if (agentIsRunning) {
+    subtitle = t(I18nKey.CONFIGURATION$AGENT_RUNNING);
+  } else if (!settingsAreUpToDate()) {
+    subtitle = t(I18nKey.CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE);
+  }
+  const saveIsDisabled = REQUIRED_SETTINGS.some(
+    (key) => !settings[key as keyof Settings],
+  );
 
   return (
     <BaseModal
       isOpen={isOpen}
       onOpenChange={onOpenChange}
       title={t(I18nKey.CONFIGURATION$MODAL_TITLE)}
-      subtitle={t(I18nKey.CONFIGURATION$MODAL_SUB_TITLE)}
+      isDismissable={settingsAreUpToDate()}
+      subtitle={subtitle}
       actions={[
         {
           label: t(I18nKey.CONFIGURATION$MODAL_SAVE_BUTTON_LABEL),
           action: handleSaveSettings,
-          isDisabled,
+          isDisabled: saveIsDisabled,
           closeAfterAction: true,
           className: "bg-primary rounded-lg",
         },
         {
+          label: t(I18nKey.CONFIGURATION$MODAL_RESET_BUTTON_LABEL),
+          action: handleResetSettings,
+          closeAfterAction: false,
+          className: "bg-neutral-500 rounded-lg",
+        },
+        {
           label: t(I18nKey.CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL),
           action: () => {
-            setSettings(currentSettings); // reset settings from any changes
+            setSettings(getSettings()); // reset settings from any changes
           },
+          isDisabled: !settingsAreUpToDate(),
           closeAfterAction: true,
-          className: "bg-neutral-500 rounded-lg",
+          className: "bg-rose-600 rounded-lg",
         },
       ]}
     >
       {loading && <Spinner />}
       {!loading && (
         <SettingsForm
+          disabled={agentIsRunning}
           settings={settings}
           models={models}
           agents={agents}

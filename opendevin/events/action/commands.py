@@ -1,15 +1,9 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import ClassVar
 
 from opendevin.core.schema import ActionType
 
 from .action import Action
-
-if TYPE_CHECKING:
-    from opendevin.controller import AgentController
-    from opendevin.events.observation import CmdOutputObservation, Observation
-
-from opendevin.events.observation import IPythonRunCellObservation
 
 
 @dataclass
@@ -18,9 +12,7 @@ class CmdRunAction(Action):
     background: bool = False
     thought: str = ''
     action: str = ActionType.RUN
-
-    async def run(self, controller: 'AgentController') -> 'Observation':
-        return controller.action_manager.run_command(self.command, self.background)
+    runnable: ClassVar[bool] = True
 
     @property
     def message(self) -> str:
@@ -39,9 +31,7 @@ class CmdKillAction(Action):
     id: int
     thought: str = ''
     action: str = ActionType.KILL
-
-    async def run(self, controller: 'AgentController') -> 'CmdOutputObservation':
-        return controller.action_manager.kill_command(self.id)
+    runnable: ClassVar[bool] = True
 
     @property
     def message(self) -> str:
@@ -56,19 +46,7 @@ class IPythonRunCellAction(Action):
     code: str
     thought: str = ''
     action: str = ActionType.RUN_IPYTHON
-
-    async def run(self, controller: 'AgentController') -> 'IPythonRunCellObservation':
-        obs = controller.action_manager.run_command(
-            ('cat > /tmp/opendevin_jupyter_temp.py <<EOL\n' f'{self.code}\n' 'EOL'),
-            background=False,
-        )
-
-        # run the code
-        obs = controller.action_manager.run_command(
-            ('cat /tmp/opendevin_jupyter_temp.py | execute_cli'), background=False
-        )
-
-        return IPythonRunCellObservation(content=obs.content, code=self.code)
+    runnable: ClassVar[bool] = True
 
     def __str__(self) -> str:
         ret = '**IPythonRunCellAction**\n'

@@ -1,4 +1,4 @@
-Sure, I'll create a shell script named `hello.sh` that prints "hello". Let's start by writing the script.
+Let's create the shell script `hello.sh` that prints "hello". I'll write the script and save it.
 
 <execute_bash>
-echo "echo 'hello'" > hello.sh
+echo "echo hello" > hello.sh

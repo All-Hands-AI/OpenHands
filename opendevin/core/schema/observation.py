@@ -38,7 +38,11 @@ class ObservationTypeSchema(BaseModel):
 
     ERROR: str = Field(default='error')
 
+    SUCCESS: str = Field(default='success')
+
     NULL: str = Field(default='null')
+
+    AGENT_STATE_CHANGED: str = Field(default='agent_state_changed')
 
 
 ObservationType = ObservationTypeSchema()

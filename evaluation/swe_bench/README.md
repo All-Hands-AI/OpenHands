@@ -42,9 +42,9 @@ If you get to the interactive shell successfully, it means success!
 export ITERATION_REMINDER="true"
 python3 evaluation/swe_bench/run_infer.py \
   --agent-cls CodeActAgent \
-  --model-name gpt-4-turbo-2024-04-09 \
+  --llm_config.llm gpt-4-1106-preview \
   --max-iterations 50 \
-  --llm-temperature 0.0 \
+  --llm_config.temperature 0.0 \
   --max-chars 10000000 \
   --eval-num-workers 8
 ```

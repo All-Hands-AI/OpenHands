@@ -5,7 +5,7 @@ sidebar_position: 5
 # 🚧 Troubleshooting
 
 There are some error messages that get reported over and over by users.
-We'll try and make the install process easier, and to make these error messages
+We'll try to make the install process easier, and to make these error messages
 better in the future. But for now, you can look for your error message below,
 and see if there are any workaround.
 
@@ -42,6 +42,7 @@ OpenDevin uses a docker container to do its work safely, without potentially bre
 * Run `docker ps` to ensure that docker is running
 * Make sure you don't need `sudo` to run docker [see here](https://www.baeldung.com/linux/docker-run-without-sudo)
 * If you are on a mac, check the [permissions requirements](https://docs.docker.com/desktop/mac/permission-requirements/) and in particular consider enabling the "Allow the default Docker socket to be used" under "Settings > Advanced" in Docker Desktop.
+* If you are on a mac, Upgrade your Docker to the latest version under "Check for Updates"
 
 ## Unable to connect to SSH box
 [GitHub Issue](https://github.com/OpenDevin/OpenDevin/issues/1156)
@@ -89,7 +90,7 @@ See our guide for [local LLMs](llms/localLLMs) for more information.
 
 - Check your `LLM_BASE_URL`
 - Check that ollama is running OK
-- Make sure you're using `--add-host host.docker.internal=host-gateway` when running in docker
+- Make sure you're using `--add-host host.docker.internal:host-gateway` when running in docker
 
 ## 404 Resource not found
 ### Symptoms

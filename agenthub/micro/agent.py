@@ -1,11 +1,11 @@
-import json
-from typing import Dict, List
+from json import JSONDecodeError
 
 from jinja2 import BaseLoader, Environment
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.exceptions import LLMOutputError
+from opendevin.core.utils import json
 from opendevin.events.action import Action, action_from_dict
 from opendevin.llm.llm import LLM
 
@@ -14,43 +14,38 @@ from .registry import all_microagents
 
 
 def parse_response(orig_response: str) -> Action:
-    json_start = orig_response.find('{')
-    json_end = orig_response.rfind('}') + 1
-    response = orig_response[json_start:json_end]
-    try:
-        action_dict = json.loads(response)
-    except json.JSONDecodeError as e:
-        raise LLMOutputError(
-            'Invalid JSON in response. Please make sure the response is a valid JSON object'
-        ) from e
-    action = action_from_dict(action_dict)
-    return action
-
-
-def my_encoder(obj):
-    """
-    Encodes objects as dictionaries
-
-    Parameters:
-    - obj (Object): An object that will be converted
-
-    Returns:
-    - dict: If the object can be converted it is returned in dict format
-    """
-    if hasattr(obj, 'to_dict'):
-        return obj.to_dict()
+    depth = 0
+    start = -1
+    for i, char in enumerate(orig_response):
+        if char == '{':
+            if depth == 0:
+                start = i
+            depth += 1
+        elif char == '}':
+            depth -= 1
+            if depth == 0 and start != -1:
+                response = orig_response[start : i + 1]
+                try:
+                    action_dict = json.loads(response)
+                    action = action_from_dict(action_dict)
+                    return action
+                except JSONDecodeError as e:
+                    raise LLMOutputError(
+                        'Invalid JSON in response. Please make sure the response is a valid JSON object.'
+                    ) from e
+    raise LLMOutputError('No valid JSON object found in response.')
 
 
 def to_json(obj, **kwargs):
     """
     Serialize an object to str format
     """
-    return json.dumps(obj, default=my_encoder, **kwargs)
+    return json.dumps(obj, **kwargs)
 
 
 class MicroAgent(Agent):
     prompt = ''
-    agent_definition: Dict = {}
+    agent_definition: dict = {}
 
     def __init__(self, llm: LLM):
         super().__init__(llm)
@@ -74,5 +69,5 @@ class MicroAgent(Agent):
         action = parse_response(action_resp)
         return action
 
-    def search_memory(self, query: str) -> List[str]:
+    def search_memory(self, query: str) -> list[str]:
         return []

@@ -1,7 +1,9 @@
+import asyncio
 import atexit
 import json
 import os
-from typing import Callable, Dict
+import time
+from typing import Callable
 
 from fastapi import WebSocket
 
@@ -15,11 +17,14 @@ SESSION_CACHE_FILE = os.path.join(CACHE_DIR, 'sessions.json')
 
 
 class SessionManager:
-    _sessions: Dict[str, Session] = {}
+    _sessions: dict[str, Session] = {}
+    cleanup_interval: int = 300
+    session_timeout: int = 600
 
     def __init__(self):
         self._load_sessions()
         atexit.register(self.close)
+        asyncio.create_task(self._cleanup_sessions())
 
     def add_session(self, sid: str, ws_conn: WebSocket):
         if sid not in self._sessions:
@@ -38,7 +43,7 @@ class SessionManager:
         logger.info('Saving sessions...')
         self._save_sessions()
 
-    async def send(self, sid: str, data: Dict[str, object]) -> bool:
+    async def send(self, sid: str, data: dict[str, object]) -> bool:
         """Sends data to the client."""
         message_stack.add_message(sid, 'assistant', data)
         if sid not in self._sessions:
@@ -79,3 +84,18 @@ class SessionManager:
             pass
         except json.decoder.JSONDecodeError:
             pass
+
+    async def _cleanup_sessions(self):
+        while True:
+            current_time = time.time()
+            session_ids_to_remove = []
+            for sid, session in list(self._sessions.items()):
+                # if session inactive for a long time, remove it
+                if not session.is_alive and current_time - session.last_active_ts > self.session_timeout:
+                    session_ids_to_remove.append(sid)
+
+            for sid in session_ids_to_remove:
+                del self._sessions[sid]
+                logger.info(f'Session {sid} has been removed due to inactivity.')
+
+            await asyncio.sleep(self.cleanup_interval)

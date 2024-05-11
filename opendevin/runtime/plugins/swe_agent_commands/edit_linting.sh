@@ -3,7 +3,7 @@
 #   edit <start_line>:<end_line>
 #   <replacement_text>
 #   end_of_edit
-# docstring: replaces lines <start_line> through <end_line> (inclusive) with the given text in the open file. The replacement text is terminated by a line with only end_of_edit on it. All of the <replacement text> will be entered, so make sure your indentation is formatted properly. Python files will be checked for syntax errors after the edit. If the system detects a syntax error, the edit will not be executed. Simply try to edit the file again, but make sure to read the error message and modify the edit command you issue accordingly. Issuing the same command a second time will just lead to the same error message again.
+# docstring: replaces lines <start_line> through <end_line> (inclusive) with the given text in the open file. The replacement text is terminated by a line with only end_of_edit on it. All of the <replacement text> will be entered, so make sure your indentation is formatted properly. Python files will be checked for syntax errors after the edit. If the system detects a syntax error, the edit will not be executed. Simply try to edit the file again, but make sure to read the error message and modify the edit command you issue accordingly. Issuing the same command a second time will just lead to the same error message again. Remember, the file must be open before editing.
 # end_name: end_of_edit
 # arguments:
 #   start_line:
@@ -83,7 +83,7 @@ edit() {
 
         echo "File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary."
     else
-        echo "Your proposed edit has introduced new syntax error(s). Please understand the fixes and retry your edit commmand."
+        echo "Your proposed edit has introduced new syntax error(s). Please understand the fixes and retry your edit command."
         echo ""
         echo "ERRORS:"
         _split_string "$lint_output"

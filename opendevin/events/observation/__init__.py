@@ -1,26 +1,30 @@
+from .agent import AgentStateChangedObservation
 from .browse import BrowserOutputObservation
 from .commands import CmdOutputObservation, IPythonRunCellObservation
 from .delegate import AgentDelegateObservation
 from .empty import NullObservation
-from .error import AgentErrorObservation
+from .error import ErrorObservation
 from .files import FileReadObservation, FileWriteObservation
-from .message import AgentMessageObservation, UserMessageObservation
 from .observation import Observation
 from .recall import AgentRecallObservation
+from .success import SuccessObservation
 
 observations = (
     CmdOutputObservation,
     BrowserOutputObservation,
     FileReadObservation,
     FileWriteObservation,
-    UserMessageObservation,
-    AgentMessageObservation,
     AgentRecallObservation,
     AgentDelegateObservation,
-    AgentErrorObservation,
+    SuccessObservation,
+    ErrorObservation,
+    AgentStateChangedObservation,
 )
 
-OBSERVATION_TYPE_TO_CLASS = {observation_class.observation: observation_class for observation_class in observations}  # type: ignore[attr-defined]
+OBSERVATION_TYPE_TO_CLASS = {
+    observation_class.observation: observation_class  # type: ignore[attr-defined]
+    for observation_class in observations
+}
 
 
 def observation_from_dict(observation: dict) -> Observation:
@@ -29,7 +33,9 @@ def observation_from_dict(observation: dict) -> Observation:
         raise KeyError(f"'observation' key is not found in {observation=}")
     observation_class = OBSERVATION_TYPE_TO_CLASS.get(observation['observation'])
     if observation_class is None:
-        raise KeyError(f"'{observation['observation']=}' is not defined. Available observations: {OBSERVATION_TYPE_TO_CLASS.keys()}")
+        raise KeyError(
+            f"'{observation['observation']=}' is not defined. Available observations: {OBSERVATION_TYPE_TO_CLASS.keys()}"
+        )
     observation.pop('observation')
     observation.pop('message', None)
     content = observation.pop('content', '')
@@ -45,8 +51,7 @@ __all__ = [
     'BrowserOutputObservation',
     'FileReadObservation',
     'FileWriteObservation',
-    'UserMessageObservation',
-    'AgentMessageObservation',
     'AgentRecallObservation',
-    'AgentErrorObservation',
+    'ErrorObservation',
+    'AgentStateChangedObservation',
 ]
