@@ -27,7 +27,7 @@ Run the following command to do the above two steps. The results will be saved t
 ### Pre-build Conda Env and Test Bed
 
 ```bash
-./evaluation/swe_bench/scripts/swe_lite_env_setup.sh
+./evaluation/swe_bench/scripts/swe_env_setup.sh
 ```
 
 ### Build the pre-build conda env and testbed into ONE docker image
