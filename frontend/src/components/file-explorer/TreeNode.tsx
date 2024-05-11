@@ -2,6 +2,8 @@ import React from "react";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
 import { WorkspaceFile } from "#/services/fileService";
+import { CodeEditorContext } from "../CodeEditorContext";
+import { twMerge } from "tailwind-merge";
 
 interface TitleProps {
   name: string;
@@ -37,6 +39,8 @@ function TreeNode({
   defaultOpen = false,
 }: TreeNodeProps) {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
+  const selectedFileAbsolutePath =
+    React.useContext(CodeEditorContext).selectedFileAbsolutePath;
 
   const handleClick = React.useCallback(() => {
     if (node.children) {
@@ -47,7 +51,12 @@ function TreeNode({
   }, [node, path, onFileClick]);
 
   return (
-    <div className="text-sm text-neutral-400">
+    <div
+      className={twMerge(
+        "text-sm text-neutral-400",
+        path === selectedFileAbsolutePath ? "bg-gray-700" : "",
+      )}
+    >
       <Title
         name={node.name}
         type={node.children ? "folder" : "file"}
