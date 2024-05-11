@@ -93,8 +93,6 @@ class MessageStack:
 
     async def _del_messages(self, del_sid: str):
         logger.info('Deleting messages...')
-        if not os.path.exists(MSG_CACHE_FILE):
-            return
         try:
             with open(MSG_CACHE_FILE, 'r+') as file:
                 data = json.load(file)
