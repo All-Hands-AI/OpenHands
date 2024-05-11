@@ -2,7 +2,11 @@ import shutil
 import uuid
 from pathlib import Path
 
-import litellm
+import warnings
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    import litellm
 from fastapi import Depends, FastAPI, Response, UploadFile, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
