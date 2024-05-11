@@ -1,7 +1,0 @@
-Task Metadata:
-	- Instance ID: matplotlib__matplotlib-26020
-	- Testbed: /swe_util/eval_data/testbeds/matplotlib__matplotlib__3.7
-	- Virtual Env.: matplotlib__matplotlib__3.7
-	- Evaluation Model: opendevin
->>>>> Applied Patch (pred_try patch)
->>>>> Applied Patch (pred_try patch)
