@@ -101,6 +101,8 @@ class MessageStack:
                     if sid != del_sid:
                         new_data[sid] = [msg.to_dict() for msg in msgs]
                 json.dump(new_data, file)
+        except FileNotFoundError:
+            pass
         except json.decoder.JSONDecodeError:
             pass
 
