@@ -18,7 +18,7 @@ from opendevin.events.observation import (
     IPythonRunCellObservation,
     NullObservation,
 )
-from opendevin.llm.llm import LLM, completion_cost
+from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
@@ -72,7 +72,7 @@ def swe_agent_edit_hack(bash_command: str) -> str:
         # edit\s(\d+):(\d+)([\s\S]*)end_of_edit
         # replace
         bash_command = re.sub(
-            r'edit\s(\d+):(\d+)([\s\S]*)end_of_edit',
+            r'edit\s(\d+):(\d+)([\s\S]*?)end_of_edit',
             r'edit \1:\2 <<EOF\3EOF',
             bash_command,
         )
@@ -228,11 +228,9 @@ class CodeActAgent(Agent):
             ],
             temperature=0.0,
         )
-        cur_cost = completion_cost(completion_response=response)
-        self.cost_accumulator += cur_cost
-        logger.info(
-            f'Cost: {cur_cost:.2f} USD | Accumulated Cost: {self.cost_accumulator:.2f} USD'
-        )
+
+        self.log_cost(response)
+
         action_str: str = parse_response(response)
         state.num_of_chars += sum(
             len(message['content']) for message in self.messages
@@ -265,3 +263,12 @@ class CodeActAgent(Agent):
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
+
+    def log_cost(self, response):
+        cur_cost = self.llm.completion_cost(response)
+        self.cost_accumulator += cur_cost
+        logger.info(
+            'Cost: %.2f USD | Accumulated Cost: %.2f USD',
+            cur_cost,
+            self.cost_accumulator,
+        )

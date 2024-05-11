@@ -18,6 +18,10 @@ class PluginMixin:
 
     def init_plugins(self: SandboxProtocol, requirements: list[PluginRequirement]):
         """Load a plugin into the sandbox."""
+
+        # clean-up ~/.bashrc and touch ~/.bashrc
+        exit_code, output = self.execute('rm -f ~/.bashrc && touch ~/.bashrc')
+
         for requirement in requirements:
             # copy over the files
             self.copy_to(requirement.host_src, requirement.sandbox_dest, recursive=True)
@@ -37,9 +41,7 @@ class PluginMixin:
                 raise RuntimeError(
                     f'Failed to initialize plugin {requirement.name} with exit code {exit_code} and output {output}'
                 )
-            logger.info(
-                f'Plugin {requirement.name} initialized successfully\n:{output}'
-            )
+            logger.info(f'Plugin {requirement.name} initialized successfully.')
 
         if len(requirements) > 0:
             exit_code, output = self.execute('source ~/.bashrc')
