@@ -192,7 +192,7 @@ def load_from_env(config: AppConfig, env_or_toml_dict: dict | os._Environ):
 
                     # Attempt to cast the env var to type hinted in the dataclass
                     if field_type is bool:
-                        cast_value = value.lower() in ['true', '1']
+                        cast_value = str(value).lower() in ['true', '1']
                     else:
                         cast_value = field_type(value)
                     setattr(sub_config, field_name, cast_value)
