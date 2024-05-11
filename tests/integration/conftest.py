@@ -7,6 +7,7 @@ import pytest
 from litellm import completion
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
+workspace_path = os.getenv('WORKSPACE_BASE')
 
 
 def filter_out_symbols(input):
@@ -100,7 +101,6 @@ def patch_completion(monkeypatch, request):
 
 
 def clean_up():
-    workspace_path = os.getenv('WORKSPACE_BASE')
     assert workspace_path is not None
     files = os.listdir(workspace_path)
     for file in files:
@@ -110,6 +110,8 @@ def clean_up():
 @pytest.fixture
 def resource_setup():
     clean_up()
+    if not os.path.exists(workspace_path):
+        os.makedirs(workspace_path)
     # Yield to test execution
     yield
     clean_up()

@@ -48,8 +48,11 @@ def test_edits():
     files = os.listdir(source_dir)
     for file in files:
         dest_file = os.path.join(workspace_base, file)
+        if not os.path.exists(workspace_base):
+            os.makedirs(workspace_base)
         if os.path.exists(dest_file):
             os.remove(dest_file)
+        print('source = ', os.path.join(source_dir, file), ' dest = ', dest_file)
         shutil.copy(os.path.join(source_dir, file), dest_file)
 
     # Execute the task
