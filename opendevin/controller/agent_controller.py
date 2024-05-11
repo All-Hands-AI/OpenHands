@@ -65,9 +65,11 @@ class AgentController:
 
         Args:
             agent: The agent instance to control.
+            event_stream: The event stream to publish events to.
             sid: The session ID of the agent.
             max_iterations: The maximum number of iterations the agent can run.
             max_chars: The maximum number of characters the agent can output.
+            inputs: The initial inputs to the agent.
         """
         self.id = sid
         self.agent = agent

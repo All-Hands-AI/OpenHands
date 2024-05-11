@@ -29,7 +29,7 @@ class Task:
         parent: 'Task',
         goal: str,
         state: str = OPEN_STATE,
-        subtasks: list = None,
+        subtasks: list = [],
     ):
         """Initializes a new instance of the Task class.
 
@@ -134,16 +134,24 @@ class Task:
 
 
 class Plan(Task):
-    """Represents a plan consisting of tasks.
+    """Serves as the root node in a tree of tasks.
+    Because we want the top-level of the plan to be a list of tasks (1, 2, 3, etc.),
+    the "root node" of the data structure is kind of invisible--it just
+    holds references to the top-level tasks.
 
     Attributes:
-        task: The root task of the plan.
+        id: Kept blank for plan
+        goal: Kept blank for plan
+        parent: None for plan
+        subtasks: The top-level list of tasks associated with the plan.
+        state: The state of the plan.
     """
 
+    id: str = ''
+    goal: str = ''
+    parent: None = None
+
     def __init__(self):
-        self.id = ''
-        self.goal = ''
-        self.parent = None
         self.subtasks = []
         self.state = OPEN_STATE
 
