@@ -55,7 +55,7 @@ WORKSPACE_BASE="/Users/admin/OpenDevin/workspace" WORKSPACE_MOUNT_PATH="/Users/a
 poetry run pytest -s ./tests/integration
 ```
 
-Note: in order to run integration tests correctly, please ensure your workspace is empty.
+Note: in order to run integration tests correctly, please ensure your workspace is empty. If you meet package miss problem, make sure running `make install` first to install the necessary packages.
 
 
 ## Regenerate Integration Tests

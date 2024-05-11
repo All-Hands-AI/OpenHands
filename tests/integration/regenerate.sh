@@ -1,5 +1,6 @@
 #!/bin/bash
 set -eo pipefail
+umask 022
 
 WORKSPACE_MOUNT_PATH=$(pwd)/_test_workspace
 WORKSPACE_BASE=$(pwd)/_test_workspace
@@ -31,6 +32,7 @@ for agent in "${agents[@]}"; do
     rm -rf tests/integration/mock/$agent/test_write_simple_script/*
     mkdir $WORKSPACE_BASE
     echo -e "/exit\n" | SANDBOX_TYPE=$SANDBOX_TYPE WORKSPACE_BASE=$WORKSPACE_BASE \
+      DEBUG=true \
       WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
       poetry run python ./opendevin/core/main.py \
       -i 10 \
