@@ -19,6 +19,10 @@ function CodeEditor(): JSX.Element {
     const paths = selectedFileAbsolutePath.split("/");
     return paths[paths.length - 1];
   }, [selectedFileAbsolutePath]);
+  const codeEditorContext = useMemo(
+    () => ({ selectedFileAbsolutePath }),
+    [selectedFileAbsolutePath],
+  );
 
   const dispatch = useDispatch();
   const code = useSelector((state: RootState) => state.code.code);
@@ -53,7 +57,7 @@ function CodeEditor(): JSX.Element {
 
   return (
     <div className="flex h-full w-full bg-neutral-900 transition-all duration-500 ease-in-out">
-      <CodeEditorContext.Provider value={{ selectedFileAbsolutePath }}>
+      <CodeEditorContext.Provider value={codeEditorContext}>
         <FileExplorer onFileClick={onSelectFile} />
         <div className="flex flex-col min-h-0 w-full">
           <Tabs
