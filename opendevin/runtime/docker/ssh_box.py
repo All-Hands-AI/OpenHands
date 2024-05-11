@@ -15,6 +15,7 @@ from opendevin.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.config import config
 from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema import CancellableStream
 from opendevin.runtime.docker.process import DockerProcess, Process
 from opendevin.runtime.plugins import (
     JupyterRequirement,
@@ -221,7 +222,9 @@ class DockerSSHBox(Sandbox):
         bg_cmd = self.background_commands[id]
         return bg_cmd.read_logs()
 
-    def execute(self, cmd: str) -> tuple[int, str]:
+    def execute(
+        self, cmd: str, stream: bool = False
+    ) -> tuple[int, str | CancellableStream]:
         cmd = cmd.strip()
         # use self.ssh
         self.ssh.sendline(cmd)
@@ -365,7 +368,7 @@ class DockerSSHBox(Sandbox):
         exit_code, result = self.execute('pwd')
         if exit_code != 0:
             raise Exception('Failed to get working directory')
-        return result.strip()
+        return str(result).strip()
 
     @property
     def user_id(self):

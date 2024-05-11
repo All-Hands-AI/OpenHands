@@ -1,6 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 
+from opendevin.core.schema import CancellableStream
 from opendevin.runtime.docker.process import Process
 from opendevin.runtime.plugins.mixin import PluginMixin
 
@@ -19,7 +20,9 @@ class Sandbox(ABC, PluginMixin):
         self._env[key] = value
 
     @abstractmethod
-    def execute(self, cmd: str) -> tuple[int, str]:
+    def execute(
+        self, cmd: str, stream: bool = False
+    ) -> tuple[int, str | CancellableStream]:
         pass
 
     @abstractmethod

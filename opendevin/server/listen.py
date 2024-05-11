@@ -1,12 +1,11 @@
 import json
 import shutil
 import uuid
+import warnings
 from pathlib import Path
 
-import warnings
-
 with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
+    warnings.simplefilter('ignore')
     import litellm
 from fastapi import Depends, FastAPI, Response, UploadFile, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware

@@ -9,6 +9,7 @@ from e2b.sandbox.exception import (
 
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema import CancellableStream
 from opendevin.runtime.e2b.process import E2BProcess
 from opendevin.runtime.process import Process
 from opendevin.runtime.sandbox import Sandbox
@@ -72,8 +73,10 @@ class E2BBox(Sandbox):
         assert isinstance(proc, E2BProcess)
         return '\n'.join([m.line for m in proc.output_messages])
 
-    def execute(self, cmd: str) -> tuple[int, str]:
-        process = self.sandbox.process.start(cmd, env_vars=self._env)
+    def execute(
+        self, cmd: str, stream: bool = False
+    ) -> tuple[int, str | CancellableStream]:
+        process = self.sandbox.process.start(cmd)
         try:
             process_output = process.wait(timeout=self.timeout)
         except TimeoutException:

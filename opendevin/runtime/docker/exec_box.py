@@ -1,5 +1,4 @@
 import atexit
-import concurrent.futures
 import os
 import sys
 import tarfile
@@ -14,12 +13,78 @@ from opendevin.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.config import config
 from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema import CancellableStream
 from opendevin.runtime.docker.process import DockerProcess, Process
 from opendevin.runtime.sandbox import Sandbox
 
 # FIXME these are not used, should we remove them?
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
+
+
+ExecResult = namedtuple('ExecResult', 'exit_code,output')
+""" A result of Container.exec_run with the properties ``exit_code`` and
+    ``output``. """
+
+
+class DockerExecCancellableStream(CancellableStream):
+    # Reference: https://github.com/docker/docker-py/issues/1989
+    def __init__(self, _client, _id, _output):
+        super().__init__(_output)
+        self._id = _id
+        self._client = _client
+
+    def close(self):
+        self.closed = True
+
+    def exit_code(self):
+        return self.inspect()['ExitCode']
+
+    def inspect(self):
+        return self._client.api.exec_inspect(self._id)
+
+
+def container_exec_run(
+    container,
+    cmd,
+    stdout=True,
+    stderr=True,
+    stdin=False,
+    tty=False,
+    privileged=False,
+    user='',
+    detach=False,
+    stream=False,
+    socket=False,
+    environment=None,
+    workdir=None,
+) -> ExecResult:
+    exec_id = container.client.api.exec_create(
+        container.id,
+        cmd,
+        stdout=stdout,
+        stderr=stderr,
+        stdin=stdin,
+        tty=tty,
+        privileged=privileged,
+        user=user,
+        environment=environment,
+        workdir=workdir,
+    )['Id']
+
+    output = container.client.api.exec_start(
+        exec_id, detach=detach, tty=tty, stream=stream, socket=socket
+    )
+
+    if stream:
+        return ExecResult(
+            None, DockerExecCancellableStream(container.client, exec_id, output)
+        )
+
+    if socket:
+        return ExecResult(None, output)
+
+    return ExecResult(container.client.api.exec_inspect(exec_id)['ExitCode'], output)
 
 
 class DockerExecBox(Sandbox):
@@ -106,36 +171,25 @@ class DockerExecBox(Sandbox):
         bg_cmd = self.background_commands[id]
         return bg_cmd.read_logs()
 
-    def execute(self, cmd: str) -> tuple[int, str]:
-        # TODO: each execute is not stateful! We need to keep track of the current working directory
-        def run_command(container, command):
-            return container.exec_run(
-                command, workdir=self.sandbox_workspace_dir, environment=self._env
-            )
+    def execute(
+        self, cmd: str, stream: bool = False
+    ) -> tuple[int, str | CancellableStream]:
+        wrapper = f'timeout {self.timeout}s {cmd}'
+        _exit_code, _output = container_exec_run(
+            self.container,
+            wrapper,
+            stream=stream,
+            workdir=self.sandbox_workspace_dir,
+            environment=self._env,
+        )
 
-        # Use ThreadPoolExecutor to control command and set timeout
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(
-                run_command, self.container, self.get_exec_cmd(cmd)
-            )
-            try:
-                exit_code, logs = future.result(timeout=self.timeout)
-            except concurrent.futures.TimeoutError:
-                logger.exception(
-                    'Command timed out, killing process...', exc_info=False
-                )
-                pid = self.get_pid(cmd)
-                if pid is not None:
-                    self.container.exec_run(
-                        f'kill -9 {pid}',
-                        workdir=self.sandbox_workspace_dir,
-                        environment=self._env,
-                    )
-                return -1, f'Command: "{cmd}" timed out'
-        logs_out = logs.decode('utf-8')
-        if logs_out.endswith('\n'):
-            logs_out = logs_out[:-1]
-        return exit_code, logs_out
+        if stream:
+            return _exit_code, _output
+
+        _output = _output.decode('utf-8')
+        if _output.endswith('\n'):
+            _output = _output[:-1]
+        return _exit_code, _output
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         # mkdir -p sandbox_dest if it doesn't exist
