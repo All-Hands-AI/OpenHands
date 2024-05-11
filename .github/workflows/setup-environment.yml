@@ -1,0 +1,89 @@
+# File: .github/workflows/setup-environment.yml
+name: Setup Development Environment For Test
+
+on:
+  workflow_call:
+    inputs:
+      operating-system:
+        type: string
+        required: true
+        description: 'Operating system to run the job on'
+        enum:
+          - ubuntu-latest
+          - macos-13
+      install-docker:
+        type: boolean
+        required: true
+        description: 'Whether to install Docker'
+      make-command:
+        type: string
+        required: true
+        description: 'Command to run with make'
+        enum:
+          - build
+          - install-python-dependencies
+      pytest-args:
+        type: string
+        required: true
+        description: 'Arguments to pass to pytest'
+
+jobs:
+  setup:
+    runs-on: ${{ inputs.operating-system }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install poetry via pipx
+        run: pipx install poetry
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'poetry'
+
+      - name: Setup INSTALL_DOCKER Environment Variable
+        run: |
+          if [ "${{ inputs.install-docker }}" == "false" ]; then
+            export INSTALL_DOCKER='1'
+          else
+            export INSTALL_DOCKER='0'
+          fi
+          echo "INSTALL_DOCKER is set to $INSTALL_DOCKER"
+
+      - name: Conditionally Install Docker
+        if: inputs.install-docker
+        run: |
+          if [ "${{ runner.os }}" == "Linux" ]; then
+            if command -v docker &> /dev/null; then
+              echo "Docker is already installed on Linux."
+            else
+              curl -fsSL https://get.docker.com -o get-docker.sh
+              sudo sh get-docker.sh
+            fi
+          elif [ "${{ runner.os }}" == "macOS" ]; then
+            brew install colima docker
+            colima start
+
+            # For testcontainers to find the Colima socket
+            # https://github.com/abiosoft/colima/blob/main/docs/FAQ.md#cannot-connect-to-the-docker-daemon-at-unixvarrundockersock-is-the-docker-daemon-running
+            sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
+          fi
+
+      - name: Build Environment
+        run: make ${{ inputs.make-command }}
+
+      - name: Run Tests
+        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ${{ inputs.pytest-args }}
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./coverage/reports/
+          fail_ci_if_error: true
+          files: ./coverage1.xml,./coverage2.xml,!./cache
+          flags: unittests
+          name: codecov-umbrella
+          verbose: true
+          env:
+            CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
