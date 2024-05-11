@@ -17,7 +17,8 @@ workspace_base = os.getenv('WORKSPACE_BASE')
 )
 def test_write_simple_script():
     task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
-    asyncio.run(main(task))
+    controller = asyncio.run(main(task))
+    asyncio.run(controller.close())
 
     # Verify the script file exists
     script_path = os.path.join(workspace_base, 'hello.sh')
@@ -48,7 +49,8 @@ def test_edits():
 
     # Execute the task
     task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
-    asyncio.run(main(task))
+    controller = asyncio.run(main(task))
+    asyncio.run(controller.close())
 
     # Verify bad.txt has been fixed
     text = """This is a stupid typo

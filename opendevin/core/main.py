@@ -94,6 +94,8 @@ async def main(task_str: str = ''):
     ]:
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
+    return controller
+
 
 if __name__ == '__main__':
     asyncio.run(main())
