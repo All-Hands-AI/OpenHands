@@ -18,7 +18,7 @@ search_file <search_term> [<file>] - searches for search_term in file. If file i
 find_file <file_name> [<dir>] - finds all files with the given name in dir. If dir is not provided, searches in the current directory
 edit <start_line>:<end_line>
 <replacement_text>
-end_of_edit - replaces lines <start_line> through <end_line> (inclusive) with the given text in the open file. The replacement text is terminated by a line with only end_of_edit on it. All of the <replacement text> will be entered, so make sure your indentation is formatted properly. Python files will be checked for syntax errors after the edit. If the system detects a syntax error, the edit will not be executed. Simply try to edit the file again, but make sure to read the error message and modify the edit command you issue accordingly. Issuing the same command a second time will just lead to the same error message again.
+end_of_edit - replaces lines <start_line> through <end_line> (inclusive) with the given text in the open file. The replacement text is terminated by a line with only end_of_edit on it. All of the <replacement text> will be entered, so make sure your indentation is formatted properly. Python files will be checked for syntax errors after the edit. If the system detects a syntax error, the edit will not be executed. Simply try to edit the file again, but make sure to read the error message and modify the edit command you issue accordingly. Issuing the same command a second time will just lead to the same error message again. Remember, the file must be open before editing.
 """
 
 _COMMAND_DOCS = (
@@ -186,9 +186,9 @@ USER:
 ASSISTANT:
 I should edit the file to display the numbers in a table format. I should include correct indentation. Let me update the file:
 <execute_bash>
-edit 8:8 <<EOF
+edit 8:8
     return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
-EOF
+end_of_edit
 </execute_bash>
 
 USER:
