@@ -102,12 +102,12 @@ def patch_completion(monkeypatch, request):
 
 def clean_up():
     assert workspace_path is not None
-    files = os.listdir(workspace_path)
-    for file in files:
-        os.remove(os.path.join(workspace_path, file))
+    if os.path.exists(workspace_path):
+        for file in os.listdir(workspace_path):
+            os.remove(os.path.join(workspace_path, file))
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def resource_setup():
     clean_up()
     if not os.path.exists(workspace_path):
