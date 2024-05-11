@@ -114,4 +114,3 @@ def resource_setup():
         os.makedirs(workspace_path)
     # Yield to test execution
     yield
-    clean_up()
