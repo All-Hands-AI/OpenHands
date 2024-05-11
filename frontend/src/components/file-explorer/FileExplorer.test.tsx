@@ -89,7 +89,7 @@ describe("FileExplorer", () => {
     expect(queryByText("root")).not.toBeVisible();
   });
 
-  it("should upload a file", async () => {
+  it("should upload a file when clicking the input", async () => {
     const { getByTestId } = render(<FileExplorer onFileClick={vi.fn} />);
 
     const uploadFileInput = getByTestId("file-input");
@@ -103,6 +103,16 @@ describe("FileExplorer", () => {
     expect(uploadFile).toHaveBeenCalledWith(file);
     expect(getWorkspace).toHaveBeenCalled();
   });
+
+  it.todo("should upload a folder when clicking the input");
+
+  it.todo("should upload a file when dragging it to the explorer");
+
+  it.todo("should upload a folder when dragging it to the explorer");
+
+  it.todo("should download a file");
+
+  it.todo("should download a folder");
 
   it.todo("should display an error toast if file upload fails", async () => {
     (uploadFile as Mock).mockRejectedValue(new Error());
