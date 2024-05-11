@@ -1,9 +1,9 @@
 import React from "react";
+import { twMerge } from "tailwind-merge";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
 import { WorkspaceFile } from "#/services/fileService";
 import { CodeEditorContext } from "../CodeEditorContext";
-import { twMerge } from "tailwind-merge";
 
 interface TitleProps {
   name: string;
@@ -39,8 +39,7 @@ function TreeNode({
   defaultOpen = false,
 }: TreeNodeProps) {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
-  const selectedFileAbsolutePath =
-    React.useContext(CodeEditorContext).selectedFileAbsolutePath;
+  const { selectedFileAbsolutePath } = React.useContext(CodeEditorContext);
 
   const handleClick = React.useCallback(() => {
     if (node.children) {
