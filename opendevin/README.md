@@ -6,7 +6,7 @@ See the [main README](../README.md) for instructions on how to run OpenDevin fro
 
 ## Sandbox Image
 ```bash
-docker build -f opendevin/sandbox/docker/Dockerfile -t opendevin/sandbox:v0.1 .
+docker build -f containers/sandbox/Dockerfile -t opendevin/sandbox:v0.1 .
 ```
 
 ## Sandbox Runner

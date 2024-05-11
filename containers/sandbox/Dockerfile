@@ -28,6 +28,11 @@ RUN mkdir -p -m0755 /var/run/sshd
 # symlink python3 to python
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
+# create and activate virtual environment
+ENV VIRTUAL_ENV=/app/.venv \
+    PATH="$VIRTUAL_ENV/.venv/bin:$PATH"
+RUN python3 -m venv $VIRTUAL_ENV
+
 # install basic dependencies for CodeActAgent
 RUN pip3 install --upgrade pip
 RUN pip3 install jupyterlab notebook jupyter_kernel_gateway flake8
