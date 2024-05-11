@@ -84,3 +84,7 @@ This list may grow over time.
 * `recall` - the result of a search
   * `query` - the query searched for
 * `chat` - a message from the user
+
+## Interacting with the Server
+
+For detailed instructions on how to interact with the OpenDevin server using WebSocket and REST API endpoints, please refer to the [Server Interaction Guide](server_interaction.md).
