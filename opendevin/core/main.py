@@ -26,7 +26,10 @@ def read_task_from_stdin() -> str:
 
 
 async def main(task_str: str = ''):
-    """Main coroutine to run the agent controller with task input flexibility."""
+    """
+    Main coroutine to run the agent controller with task input flexibility.
+    It's only used when you launch opendevin backend directly via cmdline.
+    """
 
     # Determine the task source
     if task_str:
@@ -94,7 +97,7 @@ async def main(task_str: str = ''):
     ]:
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
-    return controller
+    # await controller.close()
 
 
 if __name__ == '__main__':
