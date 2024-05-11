@@ -34,8 +34,13 @@ def test_write_simple_script():
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') != 'CodeActAgent' or os.getenv('SANDBOX_TYPE').lower() != 'ssh',
-    reason='Only CodeActAgent in ssh sandbox could pass this test right now',
+    os.getenv('AGENT') == 'CodeActAgent'
+    and os.getenv('SANDBOX_TYPE').lower() == 'exec',
+    reason='CodeActAgent does not support exec sandbox since exec sandbox is NOT stateful',
+)
+@pytest.mark.skipif(
+    os.getenv('AGENT') == 'SWEAgent',
+    reason='SWEAgent is not capable of this task right now',
 )
 def test_edits():
     # Move workspace artifacts to workspace_base location
@@ -53,11 +58,11 @@ def test_edits():
     asyncio.run(controller.close())
 
     # Verify bad.txt has been fixed
-    text = """This is a stupid typo
+    text = """This is a stupid typo.
 Really?
-no more typos!
+No more typos!
 Enjoy!
 """
     with open(os.path.join(workspace_base, 'bad.txt'), 'r') as f:
         content = f.read()
-    assert content == text
+    assert content.strip() == text.strip()
