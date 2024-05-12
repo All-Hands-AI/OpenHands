@@ -22,7 +22,7 @@ Known limitations:
 1. To avoid the potential impact of non-determinism, we remove all special
 characters when doing the comparison. If two prompts for the same task only
 differ in non-alphanumeric characters, a wrong mock response might be picked up.
-2. It is required that everything has to be deternimistic. For example, agent
+2. It is required that everything has to be deterministic. For example, agent
 must not use randomly generated numbers.
 
 The folder is organised as follows:
