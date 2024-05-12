@@ -155,8 +155,7 @@ async def get_messages(
 
     To get messages:
     ```sh
-    TOKEN=$(curl -s -H "Authorization: Bearer 5ecRe7" http://localhost:3000/api/auth | jq -r '.token')
-    curl -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/messages
+    curl -H "Authorization: Bearer <TOKEN>" http://localhost:3000/api/messages
     ```
     """
     data = []
@@ -176,8 +175,7 @@ async def get_message_total(
 
     To get the total message count:
     ```sh
-    TOKEN=$(curl -s -H "Authorization: Bearer 5ecRe7" http://localhost:3000/api/auth | jq -r '.token')
-    curl -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/messages/total
+    curl -H "Authorization: Bearer <TOKEN>" http://localhost:3000/api/messages/total
     ```
     """
     sid = get_sid_from_token(credentials.credentials)
@@ -193,8 +191,8 @@ async def del_messages(
 
     To delete messages:
     ```sh
-    TOKEN=$(curl -s -H "Authorization: Bearer 5ecRe7" http://localhost:3000/api/auth | jq -r '.token')
-    curl -X DELETE -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/messages
+
+    curl -X DELETE -H "Authorization: Bearer <TOKEN>" http://localhost:3000/api/messages
     ```
     """
     sid = get_sid_from_token(credentials.credentials)
@@ -278,8 +276,7 @@ def get_plan(
 
     To get the plan:
     ```sh
-    TOKEN=$(curl -s -H "Authorization: Bearer 5ecRe7" http://localhost:3000/api/auth | jq -r '.token')
-    curl -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/plan
+    curl -H "Authorization: Bearer <TOKEN>" http://localhost:3000/api/plan
     ```
     """
     sid = get_sid_from_token(credentials.credentials)
