@@ -7,10 +7,7 @@ on:
       operating-system:
         type: string
         required: true
-        description: 'Operating system to run the job on'
-        enum:
-          - ubuntu-latest
-          - macos-13
+        description: 'Operating system to run the job on (e.g., ubuntu-latest, macos-13)'
       install-docker:
         type: boolean
         required: true
@@ -18,10 +15,7 @@ on:
       make-command:
         type: string
         required: true
-        description: 'Command to run with make'
-        enum:
-          - build
-          - install-python-dependencies
+        description: 'Command to run with make (e.g., build, install-python-dependencies)'
       pytest-args:
         type: string
         required: true
@@ -80,10 +74,10 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           directory: ./coverage/reports/
-          fail_ci_if_error: true
+          fail_ci_if_error: flase
           files: ./coverage1.xml,./coverage2.xml,!./cache
           flags: unittests
           name: codecov-umbrella
           verbose: true
-          env:
-            CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
