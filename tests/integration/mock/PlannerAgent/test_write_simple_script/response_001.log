@@ -1,7 +1,9 @@
+```json
 {
-  "action": "add_task",
+  "action": "write",
   "args": {
-    "goal": "Write a shell script 'hello.sh' that prints 'hello'",
-    "subtasks": []
+    "path": "hello.sh",
+    "content": "#!/bin/bash\n\necho 'hello'"
   }
 }
+```

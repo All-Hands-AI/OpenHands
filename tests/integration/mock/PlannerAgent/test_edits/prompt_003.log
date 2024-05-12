@@ -16,14 +16,16 @@ As you complete this task, you're building a plan and keeping
 track of your progress. Here's a JSON representation of your plan:
 
 {
-  "id": "",
-  "goal": "",
-  "state": "open",
+  "id": "0",
+  "goal": "Fix typos in bad.txt. Do not ask me for confirmation at any point.",
+  "state": "in_progress",
   "subtasks": []
 }
 
 
-You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress.
+You're currently working on this task:
+Fix typos in bad.txt. Do not ask me for confirmation at any point..
+If it's not achievable AND verifiable with a SINGLE action, you MUST break it down into subtasks NOW.
 
 You're responsible for managing this plan and the status of tasks in
 it, by using the `add_task` and `modify_task` actions described below.
@@ -53,43 +55,18 @@ ten actions--more happened before that.
 
 [
   {
+    "action": "modify_task",
+    "args": {
+      "id": "0",
+      "state": "in_progress",
+      "thought": ""
+    }
+  },
+  {
     "action": "message",
     "args": {
-      "content": "Fix typos in bad.txt. Do not ask me for confirmation at any point.",
+      "content": "To fix the typos in bad.txt, I need to first read the content of the file to understand the extent of the errors and determine the necessary corrections.",
       "wait_for_response": false
-    }
-  },
-  {
-    "action": "read",
-    "args": {
-      "path": "bad.txt",
-      "start": 0,
-      "end": -1,
-      "thought": ""
-    }
-  },
-  {
-    "observation": "read",
-    "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n",
-    "extras": {
-      "path": "bad.txt"
-    }
-  },
-  {
-    "action": "write",
-    "args": {
-      "path": "bad.txt",
-      "content": "This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!\n",
-      "start": 0,
-      "end": -1,
-      "thought": ""
-    }
-  },
-  {
-    "observation": "write",
-    "content": "",
-    "extras": {
-      "path": "bad.txt"
     }
   }
 ]
@@ -119,7 +96,7 @@ It must be an object, and it must contain two fields:
 * `message` - make a plan, set a goal, or record your thoughts. Arguments:
   * `content` - the message to record
 * `add_task` - add a task to your plan. Arguments:
-  * `parent` - the ID of the parent task (leave empty if it should go at the top level)
+  * `parent` - the ID of the parent task
   * `goal` - the goal of the task
   * `subtasks` - a list of subtasks, each of which is a map with a `goal` key.
 * `modify_task` - close a task. Arguments:
@@ -133,4 +110,4 @@ actions are all `message` actions, you should consider taking a different action
 
 What is your next thought or action? Again, you must reply with JSON, and only with JSON.
 
-You just changed a file. You should think about how it affects your plan.
+Look at your last thought in the history above. What does it suggest? Don't think anymore--take action.

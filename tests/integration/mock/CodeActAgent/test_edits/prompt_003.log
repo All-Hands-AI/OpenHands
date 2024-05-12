@@ -216,13 +216,12 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 
 NOW, LET'S START!
 
-----------
-
 Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ----------
 
-Sure! Let me open the file `bad.txt` to fix the typos without asking for confirmation:
+Let's start by opening the file `bad.txt` to see what's inside and identify the typos.
+
 <execute_bash>
 open bad.txt
 </execute_bash>
@@ -230,22 +229,52 @@ open bad.txt
 ----------
 
 OBSERVATION:
-File bad.txt not found
-
+[File: /workspace/bad.txt (4 lines total)]
+1:This is a stupid typoo.
+2:Really?
+3:No mor typos!
+4:Enjoy!
 ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
 [Command -1 finished with exit code 0]]
 
 ----------
 
-It seems that the file `bad.txt` was not found. Let me search for the file in the current directory:
+I see a few typos in the file `bad.txt`. Let's correct them:
+
+1. "typoo" should be "typo".
+2. "mor" should be "more".
+
+I will now edit the file to fix these typos.
+
 <execute_bash>
-find_file bad.txt
+edit 1:1
+This is a stupid typo.
+end_of_edit
+edit 3:3
+No more typos!
+end_of_edit
 </execute_bash>
 
 ----------
 
 OBSERVATION:
-No matches found for "bad.txt" in /workspace
+> This is a stupid typo.
+> EOF
+[File: /workspace/bad.txt (4 lines total)]
+1:This is a stupid typo.
+2:Really?
+3:No mor typos!
+4:Enjoy!
+File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.edit 3:3 <<EOF
+> No more typos!
+> EOF
 
+
+[File: /workspace/bad.txt (4 lines total)]
+1:This is a stupid typo.
+2:Really?
+3:No more typos!
+4:Enjoy!
+File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.
 ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
 [Command -1 finished with exit code 0]]

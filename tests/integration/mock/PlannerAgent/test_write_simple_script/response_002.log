@@ -1,7 +1,7 @@
 {
   "action": "modify_task",
   "args": {
-    "id": "",
-    "state": "open"
+    "id": "0",
+    "state": "completed"
   }
 }

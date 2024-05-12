@@ -1,6 +1,9 @@
+```json
 {
-  "action": "read",
+  "action": "run",
   "args": {
-    "path": "bad.txt"
+    "command": "pwd",
+    "background": false
   }
 }
+```
