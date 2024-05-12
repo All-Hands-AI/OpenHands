@@ -264,7 +264,7 @@ def process_instance(instance, agent_class, metadata, skip_workspace_mount):
 if __name__ == '__main__':
     # Load the dataset
     dataset = load_dataset('princeton-nlp/SWE-bench_Lite')
-    swe_bench_lite_test = dataset['test'].to_pandas()
+    swe_bench_tests = dataset['test'].to_pandas()
 
     # TEST METADATA
     agent_class = args.agent_cls
@@ -302,7 +302,7 @@ if __name__ == '__main__':
     # LIMIT EVALUATION
     eval_n_limit = args.eval_n_limit
     if eval_n_limit:
-        swe_bench_lite_test = swe_bench_lite_test.head(eval_n_limit)
+        swe_bench_tests = swe_bench_tests.head(eval_n_limit)
         logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
 
     # OUTPUT FILE
@@ -324,21 +324,21 @@ if __name__ == '__main__':
     )
 
     # filter out finished instances
-    new_swe_bench_lite_test = []
-    for idx, instance in swe_bench_lite_test.iterrows():
+    new_swe_bench_tests = []
+    for idx, instance in swe_bench_tests.iterrows():
         if instance.instance_id in finished_instance_ids:
             logger.info(
                 f'Skipping instance {instance.instance_id} as it is already finished.'
             )
             continue
-        new_swe_bench_lite_test.append(instance)
+        new_swe_bench_tests.append(instance)
 
-    swe_bench_lite_test = pd.DataFrame(new_swe_bench_lite_test)
+    swe_bench_tests = pd.DataFrame(new_swe_bench_tests)
     logger.info(
-        f'Finished instances: {len(finished_instance_ids)}, Remaining instances: {len(swe_bench_lite_test)}'
+        f'Finished instances: {len(finished_instance_ids)}, Remaining instances: {len(swe_bench_tests)}'
     )
 
-    pbar = tqdm(total=len(swe_bench_lite_test))
+    pbar = tqdm(total=len(swe_bench_tests))
 
     def update_progress(future):
         pbar.update(1)
@@ -359,7 +359,7 @@ if __name__ == '__main__':
     try:
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
-            for row_idx, instance in swe_bench_lite_test.iterrows():
+            for row_idx, instance in swe_bench_tests.iterrows():
                 future = executor.submit(
                     process_instance,
                     instance,
