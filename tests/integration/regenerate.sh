@@ -7,8 +7,16 @@ SANDBOX_TYPE="ssh"
 
 # FIXME: SWEAgent hangs, so it goes last
 agents=("MonologueAgent" "CodeActAgent" "PlannerAgent" "SWEAgent")
-tasks=("Fix typos in bad.txt." "Write a shell script 'hello.sh' that prints 'hello'.")
-test_names=("test_edits" "test_write_simple_script")
+tasks=(
+  "Fix typos in bad.txt."
+  "Write a shell script 'hello.sh' that prints 'hello'."
+  "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'."
+)
+test_names=(
+  "test_edits"
+  "test_write_simple_script"
+  "test_ipython"
+)
 
 num_of_tests=${#tasks[@]}
 
@@ -18,6 +26,13 @@ for ((i = 0; i < num_of_tests; i++)); do
   task=${tasks[i]}
   test_name=${test_names[i]}
   for agent in "${agents[@]}"; do
+    # only test CodeActAgent and skip other if 'test_ipython'
+    if [ "$test_name" = "test_ipython" ]; then
+      if [ "$agent" != "CodeActAgent" ]; then
+        continue
+      fi
+    fi
+
     echo -e "\n\n\n\n========Running $test_name for $agent========\n\n\n\n"
     rm -rf $WORKSPACE_BASE
     mkdir $WORKSPACE_BASE
