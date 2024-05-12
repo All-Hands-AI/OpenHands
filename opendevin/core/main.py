@@ -25,7 +25,7 @@ def read_task_from_stdin() -> str:
     return sys.stdin.read()
 
 
-async def main(task_str: str = ''):
+async def main(task_str: str = '') -> None:
     """
     Main coroutine to run the agent controller with task input flexibility.
     It's only used when you launch opendevin backend directly via cmdline.
