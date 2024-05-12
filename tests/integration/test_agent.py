@@ -81,8 +81,7 @@ Enjoy!
 def test_ipython():
     # Execute the task
     task = "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point."
-    controller = asyncio.run(main(task))
-    asyncio.run(controller.close())
+    asyncio.run(main(task))
 
     # Verify the file exists
     file_path = os.path.join(workspace_base, 'test.txt')

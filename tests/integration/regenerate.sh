@@ -38,12 +38,6 @@ for ((i = 0; i < num_of_tests; i++)); do
     agent=${agents[j]}
     remind_iterations=${remind_iterations_config[j]}
 
-    if [ "$test_name" = "test_ipython" ]; then
-      if [ "$agent" != "CodeActAgent" ]; then
-        continue
-      fi
-    fi
-
     echo -e "\n\n\n\n========Running $test_name for $agent========\n\n\n\n"
     rm -rf $WORKSPACE_BASE
     mkdir $WORKSPACE_BASE
@@ -54,6 +48,7 @@ for ((i = 0; i < num_of_tests; i++)); do
       # Temporarily disable 'exit on error'
       set +e
     fi
+
     SANDBOX_TYPE=$SANDBOX_TYPE WORKSPACE_BASE=$WORKSPACE_BASE \
       MAX_ITERATIONS=$MAX_ITERATIONS REMIND_ITERATIONS=$remind_iterations \
       WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
