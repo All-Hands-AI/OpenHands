@@ -1,20 +1,42 @@
+import os
 import pathlib
 import tempfile
 from unittest.mock import patch
 
 import pytest
 
-from opendevin.core import config
+from opendevin.core.config import AppConfig, config
 from opendevin.runtime.docker.exec_box import DockerExecBox
+from opendevin.runtime.docker.local_box import LocalBox
 from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
 
 
 @pytest.fixture
-def temp_dir():
+def temp_dir(monkeypatch):
     # get a temporary directory
     with tempfile.TemporaryDirectory() as temp_dir:
         pathlib.Path().mkdir(parents=True, exist_ok=True)
         yield temp_dir
+
+    # make sure os.environ is clean
+    monkeypatch.delenv('RUN_AS_DEVIN', raising=False)
+    monkeypatch.delenv('SANDBOX_TYPE', raising=False)
+    monkeypatch.delenv('WORKSPACE_BASE', raising=False)
+
+    # make sure config is clean
+    AppConfig.reset()
+
+
+def test_env_vars(temp_dir):
+    os.environ['SANDBOX_ENV_FOOBAR'] = 'BAZ'
+    for box_class in [DockerSSHBox, DockerExecBox, LocalBox]:
+        box = box_class()
+        box.add_to_env('QUUX', 'abc"def')
+        assert box._env['FOOBAR'] == 'BAZ'
+        assert box._env['QUUX'] == 'abc"def'
+        exit_code, output = box.execute('echo $FOOBAR $QUUX')
+        assert exit_code == 0, 'The exit code should be 0.'
+        assert output.strip() == 'BAZ abc"def', f'Output: {output} for {box_class}'
 
 
 def test_split_commands():
@@ -75,14 +97,10 @@ EOF
 
 def test_ssh_box_run_as_devin(temp_dir):
     # get a temporary directory
-    with patch.dict(
-        config.config,
-        {
-            config.ConfigType.WORKSPACE_BASE: temp_dir,
-            config.ConfigType.RUN_AS_DEVIN: 'true',
-            config.ConfigType.SANDBOX_TYPE: 'ssh',
-        },
-        clear=True,
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'workspace_mount_path', new=temp_dir
+    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+        config, 'sandbox_type', new='ssh'
     ):
         for box in [
             DockerSSHBox()
@@ -98,6 +116,11 @@ def test_ssh_box_run_as_devin(temp_dir):
                 'The exit code should be 0 for ' + box.__class__.__name__
             )
             assert output.strip() == ''
+
+            assert config.workspace_base == temp_dir
+            exit_code, output = box.execute('ls -l')
+            assert exit_code == 0, 'The exit code should be 0.'
+            assert output.strip() == 'total 0'
 
             exit_code, output = box.execute('ls -l')
             assert exit_code == 0, 'The exit code should be 0.'
@@ -128,14 +151,10 @@ def test_ssh_box_run_as_devin(temp_dir):
 
 def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
     # get a temporary directory
-    with patch.dict(
-        config.config,
-        {
-            config.ConfigType.WORKSPACE_BASE: temp_dir,
-            config.ConfigType.RUN_AS_DEVIN: 'true',
-            config.ConfigType.SANDBOX_TYPE: 'ssh',
-        },
-        clear=True,
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'workspace_mount_path', new=temp_dir
+    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+        config, 'sandbox_type', new='ssh'
     ):
         for box in [DockerSSHBox(), DockerExecBox()]:
             exit_code, output = box.execute('pwd\nls -l')
@@ -152,14 +171,10 @@ def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
 
 def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
     # get a temporary directory
-    with patch.dict(
-        config.config,
-        {
-            config.ConfigType.WORKSPACE_BASE: temp_dir,
-            config.ConfigType.RUN_AS_DEVIN: 'true',
-            config.ConfigType.SANDBOX_TYPE: 'ssh',
-        },
-        clear=True,
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'workspace_mount_path', new=temp_dir
+    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+        config, 'sandbox_type', new='ssh'
     ):
         for box in [
             DockerSSHBox()
@@ -187,14 +202,10 @@ def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
 
 def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
     # get a temporary directory
-    with patch.dict(
-        config.config,
-        {
-            config.ConfigType.WORKSPACE_BASE: temp_dir,
-            config.ConfigType.RUN_AS_DEVIN: 'true',
-            config.ConfigType.SANDBOX_TYPE: 'ssh',
-        },
-        clear=True,
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'workspace_mount_path', new=temp_dir
+    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+        config, 'sandbox_type', new='ssh'
     ):
         for box in [DockerSSHBox(), DockerExecBox()]:
             exit_code, output = box.execute('non_existing_command')

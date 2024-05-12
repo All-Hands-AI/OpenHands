@@ -3,19 +3,16 @@ from opendevin.core.exceptions import AgentMalformedActionError
 from .action import Action
 from .agent import (
     AgentDelegateAction,
-    AgentEchoAction,
     AgentFinishAction,
     AgentRecallAction,
+    AgentRejectAction,
     AgentSummarizeAction,
-    AgentTalkAction,
-    AgentThinkAction,
     ChangeAgentStateAction,
 )
 from .browse import BrowseURLAction
 from .commands import CmdKillAction, CmdRunAction, IPythonRunCellAction
 from .empty import NullAction
 from .files import FileReadAction, FileWriteAction
-from .github import GitHubPushAction
 from .message import MessageAction
 from .tasks import AddTaskAction, ModifyTaskAction
 
@@ -27,14 +24,12 @@ actions = (
     FileReadAction,
     FileWriteAction,
     AgentRecallAction,
-    AgentThinkAction,
-    AgentTalkAction,
     AgentFinishAction,
+    AgentRejectAction,
     AgentDelegateAction,
     AddTaskAction,
     ModifyTaskAction,
     ChangeAgentStateAction,
-    GitHubPushAction,
     MessageAction,
 )
 
@@ -73,11 +68,9 @@ __all__ = [
     'FileReadAction',
     'FileWriteAction',
     'AgentRecallAction',
-    'AgentThinkAction',
-    'AgentTalkAction',
     'AgentFinishAction',
+    'AgentRejectAction',
     'AgentDelegateAction',
-    'AgentEchoAction',
     'AgentSummarizeAction',
     'AddTaskAction',
     'ModifyTaskAction',

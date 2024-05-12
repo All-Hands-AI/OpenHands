@@ -196,8 +196,11 @@ logs
 # agent
 .envrc
 /workspace
+/_test_workspace
 /debug
 cache
 
 # configuration
 config.toml
+
+test_results*

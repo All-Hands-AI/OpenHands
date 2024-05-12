@@ -3,7 +3,7 @@ from typing import Optional
 from opendevin.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
-from opendevin.core import config
+from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ActionType, AgentState, ConfigType
 from opendevin.events.action import (
@@ -91,19 +91,6 @@ class AgentUnit:
         action_obj = action_from_dict(action_dict)
         await self.event_stream.add_event(action_obj, EventSource.USER)
 
-    def get_arg_or_default(self, _args: dict, key: ConfigType) -> str:
-        """Gets an argument from the args dictionary or the default value.
-
-        Args:
-            _args: The args dictionary.
-            key: The key to get.
-
-        Returns:
-            The value of the key or the default value.
-        """
-
-        return _args.get(key, config.get(key))
-
     async def create_controller(self, start_event: dict):
         """Creates an AgentController instance.
 
@@ -115,12 +102,12 @@ class AgentUnit:
             for key, value in start_event.get('args', {}).items()
             if value != ''
         }  # remove empty values, prevent FE from sending empty strings
-        agent_cls = self.get_arg_or_default(args, ConfigType.AGENT)
-        model = self.get_arg_or_default(args, ConfigType.LLM_MODEL)
-        api_key = self.get_arg_or_default(args, ConfigType.LLM_API_KEY)
-        api_base = config.get(ConfigType.LLM_BASE_URL)
-        max_iterations = self.get_arg_or_default(args, ConfigType.MAX_ITERATIONS)
-        max_chars = self.get_arg_or_default(args, ConfigType.MAX_CHARS)
+        agent_cls = args.get(ConfigType.AGENT, config.agent.name)
+        model = args.get(ConfigType.LLM_MODEL, config.llm.model)
+        api_key = args.get(ConfigType.LLM_API_KEY, config.llm.api_key)
+        api_base = config.llm.base_url
+        max_iterations = args.get(ConfigType.MAX_ITERATIONS, config.max_iterations)
+        max_chars = args.get(ConfigType.MAX_CHARS, config.llm.max_chars)
 
         logger.info(f'Creating agent {agent_cls} using LLM {model}')
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
@@ -147,13 +134,9 @@ class AgentUnit:
         Args:
             event: The agent event (Observation or Action).
         """
-        if isinstance(event, NullAction):
-            return
-        if isinstance(event, NullObservation):
-            return
-        if event.source == 'agent':
+        if event.source == 'agent' and not isinstance(event, (NullAction, NullObservation)):
             await self.send(event.to_dict())
-            return
+        return
 
     def close(self):
         if self.controller is not None:

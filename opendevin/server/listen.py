@@ -3,7 +3,11 @@ import shutil
 import uuid
 from pathlib import Path
 
-import litellm
+import warnings
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    import litellm
 from fastapi import Depends, FastAPI, Response, UploadFile, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -12,9 +16,8 @@ from fastapi.staticfiles import StaticFiles
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller.agent import Agent
-from opendevin.core import config
+from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.schema.config import ConfigType
 from opendevin.llm import bedrock
 from opendevin.runtime import files
 from opendevin.server.agent import agent_manager
@@ -124,16 +127,14 @@ async def del_messages(
 
 @app.get('/api/refresh-files')
 def refresh_files():
-    structure = files.get_folder_structure(
-        Path(str(config.get(ConfigType.WORKSPACE_BASE)))
-    )
+    structure = files.get_folder_structure(Path(str(config.workspace_base)))
     return structure.to_dict()
 
 
 @app.get('/api/select-file')
 def select_file(file: str):
     try:
-        workspace_base = config.get(ConfigType.WORKSPACE_BASE)
+        workspace_base = config.workspace_base
         file_path = Path(workspace_base, file)
         # The following will check if the file is within the workspace base and throw an exception if not
         file_path.resolve().relative_to(Path(workspace_base).resolve())
@@ -152,7 +153,7 @@ def select_file(file: str):
 @app.post('/api/upload-file')
 async def upload_file(file: UploadFile):
     try:
-        workspace_base = config.get(ConfigType.WORKSPACE_BASE)
+        workspace_base = config.workspace_base
         file_path = Path(workspace_base, file.filename)
         # The following will check if the file is within the workspace base and throw an exception if not
         file_path.resolve().relative_to(Path(workspace_base).resolve())
@@ -187,6 +188,11 @@ def get_plan(
                 ),
             )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@app.get('/api/defaults')
+async def appconfig_defaults():
+    return config.defaults_dict
 
 
 @app.get('/')

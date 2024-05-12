@@ -55,6 +55,7 @@ class BrowserEnv:
                     unique_request_id, action_data = self.browser_side.recv()
                     # shutdown the browser environment
                     if unique_request_id == 'SHUTDOWN':
+                        logger.info('SHUTDOWN recv, shutting down browser env...')
                         env.close()
                         return
                     action = action_data['action']
@@ -69,6 +70,10 @@ class BrowserEnv:
                     self.browser_side.send((unique_request_id, obs))
             except KeyboardInterrupt:
                 logger.info('Browser env process interrupted by user.')
+                try:
+                    env.close()
+                except Exception:
+                    pass
                 return
 
     def step(self, action_str: str, timeout: float = 10) -> dict:
@@ -86,8 +91,13 @@ class BrowserEnv:
                     return obs
 
     def close(self):
-        self.agent_side.send(('SHUTDOWN', None))
-        self.process.join()
+        try:
+            self.agent_side.send(('SHUTDOWN', None))
+            self.process.join()
+            self.agent_side.close()
+            self.browser_side.close()
+        except Exception:
+            pass
 
     @staticmethod
     def image_to_png_base64_url(image: np.ndarray | Image.Image):

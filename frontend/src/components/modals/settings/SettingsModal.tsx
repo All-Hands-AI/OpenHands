@@ -12,6 +12,7 @@ import AgentState from "../../../types/AgentState";
 import {
   Settings,
   getSettings,
+  getDefaultSettings,
   getSettingsDifference,
   settingsAreUpToDate,
   maybeMigrateSettings,
@@ -79,15 +80,20 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   };
 
   const handleLanguageChange = (language: string) => {
-    const key = AvailableLanguages.find(
-      (lang) => lang.label === language,
-    )?.value;
-
-    if (key) setSettings((prev) => ({ ...prev, LANGUAGE: key }));
+    const key =
+      AvailableLanguages.find((lang) => lang.label === language)?.value ||
+      language;
+    // The appropriate key is assigned when the user selects a language.
+    // Otherwise, their input is reflected in the inputValue field of the Autocomplete component.
+    setSettings((prev) => ({ ...prev, LANGUAGE: key }));
   };
 
   const handleAPIKeyChange = (key: string) => {
     setSettings((prev) => ({ ...prev, LLM_API_KEY: key }));
+  };
+
+  const handleResetSettings = () => {
+    setSettings(getDefaultSettings);
   };
 
   const handleSaveSettings = () => {
@@ -140,13 +146,19 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
           className: "bg-primary rounded-lg",
         },
         {
+          label: t(I18nKey.CONFIGURATION$MODAL_RESET_BUTTON_LABEL),
+          action: handleResetSettings,
+          closeAfterAction: false,
+          className: "bg-neutral-500 rounded-lg",
+        },
+        {
           label: t(I18nKey.CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL),
           action: () => {
             setSettings(getSettings()); // reset settings from any changes
           },
           isDisabled: !settingsAreUpToDate(),
           closeAfterAction: true,
-          className: "bg-neutral-500 rounded-lg",
+          className: "bg-rose-600 rounded-lg",
         },
       ]}
     >

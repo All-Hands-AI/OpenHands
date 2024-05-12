@@ -19,7 +19,9 @@ def agents():
     """
     agents = []
     for agent in os.listdir(AGENTHUB_DIR):
-        if os.path.isdir(os.path.join(AGENTHUB_DIR, agent)) and agent.endswith('_agent'):
+        if os.path.isdir(os.path.join(AGENTHUB_DIR, agent)) and agent.endswith(
+            '_agent'
+        ):
             agents.append(agent)
     return agents
 
@@ -74,9 +76,9 @@ def model(request):
         request: The pytest request object.
 
     Returns:
-        The model name, defaulting to "gpt-3.5-turbo-1106".
+        The model name, defaulting to "gpt-3.5-turbo".
     """
-    return request.config.getoption('model', default='gpt-3.5-turbo-1106')
+    return request.config.getoption('model', default='gpt-3.5-turbo')
 
 
 @pytest.fixture
@@ -91,6 +93,7 @@ def run_test_case(test_cases_dir, workspace_dir, request):
     Returns:
         A function that runs a test case for a given agent and case.
     """
+
     def _run_test_case(agent, case):
         """Runs a test case for a given agent.
 
@@ -116,14 +119,32 @@ def run_test_case(test_cases_dir, workspace_dir, request):
 
         shutil.rmtree(os.path.join(agent_dir, 'workspace'), ignore_errors=True)
         if os.path.isdir(os.path.join(case_dir, 'start')):
-            os.copytree(os.path.join(case_dir, 'start'), os.path.join(agent_dir, 'workspace'))
+            os.copytree(
+                os.path.join(case_dir, 'start'), os.path.join(agent_dir, 'workspace')
+            )
         else:
             os.makedirs(os.path.join(agent_dir, 'workspace'))
         agents_ref = {
             'monologue_agent': 'MonologueAgent',
-            'codeact_agent': 'CodeActAgent'
+            'codeact_agent': 'CodeActAgent',
         }
-        process = subprocess.Popen(['python3', f'{SCRIPT_DIR}/../../opendevin/main.py', '-d', f"{os.path.join(agent_dir, 'workspace')}", '-c', f'{agents_ref[agent]}', '-t', f'{task}', '-m', 'gpt-3.5-turbo-1106'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        process = subprocess.Popen(
+            [
+                'python3',
+                f'{SCRIPT_DIR}/../../opendevin/main.py',
+                '-d',
+                f"{os.path.join(agent_dir, 'workspace')}",
+                '-c',
+                f'{agents_ref[agent]}',
+                '-t',
+                f'{task}',
+                '-m',
+                'gpt-3.5-turbo',
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+        )
         stdout, stderr = process.communicate()
         logging.info(f'Stdout: {stdout}')
         logging.error(f'Stderr: {stderr}')
@@ -146,6 +167,6 @@ def pytest_configure(config):
         format='%(asctime)s [%(levelname)s] %(message)s',
         handlers=[
             logging.FileHandler(f"test_results_{now.strftime('%Y%m%d_%H%M%S')}.log"),
-            logging.StreamHandler()
-        ]
+            logging.StreamHandler(),
+        ],
     )

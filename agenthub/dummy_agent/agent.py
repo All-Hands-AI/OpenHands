@@ -1,5 +1,5 @@
 import time
-from typing import List, TypedDict
+from typing import TypedDict
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
@@ -8,11 +8,12 @@ from opendevin.events.action import (
     AddTaskAction,
     AgentFinishAction,
     AgentRecallAction,
-    AgentThinkAction,
+    AgentRejectAction,
     BrowseURLAction,
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
+    MessageAction,
     ModifyTaskAction,
 )
 from opendevin.events.observation import (
@@ -34,7 +35,7 @@ FIXME: There are a few problems this surfaced
 """
 
 ActionObs = TypedDict(
-    'ActionObs', {'action': Action, 'observations': List[Observation]}
+    'ActionObs', {'action': Action, 'observations': list[Observation]}
 )
 
 BACKGROUND_CMD = 'echo "This is in the background" && sleep .1 && echo "This too"'
@@ -48,7 +49,7 @@ class DummyAgent(Agent):
 
     def __init__(self, llm: LLM):
         super().__init__(llm)
-        self.steps: List[ActionObs] = [
+        self.steps: list[ActionObs] = [
             {
                 'action': AddTaskAction(parent='0', goal='check the current directory'),
                 'observations': [NullObservation('')],
@@ -62,7 +63,7 @@ class DummyAgent(Agent):
                 'observations': [NullObservation('')],
             },
             {
-                'action': AgentThinkAction(thought='Time to get started!'),
+                'action': MessageAction('Time to get started!'),
                 'observations': [NullObservation('')],
             },
             {
@@ -123,6 +124,10 @@ class DummyAgent(Agent):
                 'action': AgentFinishAction(),
                 'observations': [],
             },
+            {
+                'action': AgentRejectAction(),
+                'observations': [],
+            },
         ]
 
     def step(self, state: State) -> Action:
@@ -155,5 +160,5 @@ class DummyAgent(Agent):
                     ), f'Expected observation {expected_obs}, got {hist_obs}'
         return self.steps[state.iteration]['action']
 
-    def search_memory(self, query: str) -> List[str]:
+    def search_memory(self, query: str) -> list[str]:
         return ['I am a computer.']
