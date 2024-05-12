@@ -43,35 +43,65 @@ async def websocket_endpoint(websocket: WebSocket):
 
     Once connected, you can send various actions:
     - Initialize the agent:
-      {"action": "initialize", "args": {"LLM_MODEL": "ollama/llama3", "AGENT": "CodeActAgent", "LANGUAGE": "en", "LLM_API_KEY": "ollama"}}
+        ```json
+        {"action": "initialize", "args": {"LLM_MODEL": "ollama/llama3", "AGENT": "CodeActAgent", "LANGUAGE": "en", "LLM_API_KEY": "ollama"}}
+        ```
     - Start a new development task:
-      {"action": "start", "args": {"task": "write a bash script that prints hello"}}
+        ```json
+        {"action": "start", "args": {"task": "write a bash script that prints hello"}}
+        ```
     - Send a message:
-      {"action": "message", "args": {"content": "Hello, how are you?"}}
+        ```json
+        {"action": "message", "args": {"content": "Hello, how are you?"}}
+        ```
     - Write contents to a file:
-      {"action": "write", "args": {"path": "./greetings.txt", "content": "Hello, OpenDevin?"}}
+        ```json
+        {"action": "write", "args": {"path": "./greetings.txt", "content": "Hello, OpenDevin?"}}
+        ```
     - Read the contents of a file:
-      {"action": "read", "args": {"path": "./greetings.txt"}}
+        ```json
+        {"action": "read", "args": {"path": "./greetings.txt"}}
+        ```
     - Run a command:
-      {"action": "run", "args": {"command": "ls -l"}}
+        ```json
+        {"action": "run", "args": {"command": "ls -l"}}
+        ```
     - Run an IPython command:
-      {"action": "run_ipython", "args": {"command": "print('Hello, IPython!')"}}
+        ```json
+        {"action": "run_ipython", "args": {"command": "print('Hello, IPython!')"}}
+        ```
     - Kill a background command:
-      {"action": "kill", "args": {"id": "command_id"}}
+        ```json
+        {"action": "kill", "args": {"id": "command_id"}}
+        ```
     - Open a web page:
-      {"action": "open", "args": {"url": "https://arxiv.org/html/2402.01030v2"}}
+        ```json
+        {"action": "open", "args": {"url": "https://arxiv.org/html/2402.01030v2"}}
+        ```
     - Search long-term memory:
-      {"action": "recall", "args": {"query": "past projects"}}
+        ```json
+        {"action": "recall", "args": {"query": "past projects"}}
+        ```
     - Save a message to long-term memory:
-      {"action": "save", "args": {"content": "Hello, OpenDevin!"}}
+        ```json
+        {"action": "save", "args": {"content": "Hello, OpenDevin!"}}
+        ```
     - Add a task to the plan:
-      {"action": "add_task", "args": {"task": "Implement feature X"}}
+        ```json
+        {"action": "add_task", "args": {"task": "Implement feature X"}}
+        ```
     - Update a task in the plan:
-      {"action": "modify_task", "args": {"task_id": "task_id", "task": "Updated task description"}}
+        ```json
+        {"action": "modify_task", "args": {"task_id": "task_id", "task": "Updated task description"}}
+        ```
     - Change the agent's state:
-      {"action": "change_agent_state", "args": {"state": "paused"}}
+        ```json
+        {"action": "change_agent_state", "args": {"state": "paused"}}
+        ```
     - Finish the task:
-      {"action": "finish"}
+        ```json
+        {"action": "finish"}
+        ```
     """
     await websocket.accept()
     sid = get_sid_from_token(websocket.query_params.get('token') or '')
