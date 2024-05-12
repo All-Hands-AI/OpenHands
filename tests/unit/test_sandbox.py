@@ -216,14 +216,10 @@ def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
 
 
 def test_single_multiline_command(temp_dir):
-    with patch.dict(
-        config.config,
-        {
-            config.ConfigType.WORKSPACE_BASE: temp_dir,
-            config.ConfigType.RUN_AS_DEVIN: 'true',
-            config.ConfigType.SANDBOX_TYPE: 'ssh',
-        },
-        clear=True,
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'workspace_mount_path', new=temp_dir
+    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+        config, 'sandbox_type', new='ssh'
     ):
         for box in [DockerSSHBox(), DockerExecBox()]:
             exit_code, output = box.execute('echo \\\n -e "foo"')
@@ -244,14 +240,10 @@ def test_single_multiline_command(temp_dir):
 
 
 def test_multiline_echo(temp_dir):
-    with patch.dict(
-        config.config,
-        {
-            config.ConfigType.WORKSPACE_BASE: temp_dir,
-            config.ConfigType.RUN_AS_DEVIN: 'true',
-            config.ConfigType.SANDBOX_TYPE: 'ssh',
-        },
-        clear=True,
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'workspace_mount_path', new=temp_dir
+    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+        config, 'sandbox_type', new='ssh'
     ):
         for box in [DockerSSHBox(), DockerExecBox()]:
             exit_code, output = box.execute('echo -e "hello\nworld"')
@@ -273,14 +265,10 @@ def test_multiline_echo(temp_dir):
 
 def test_sandbox_whitespace(temp_dir):
     # get a temporary directory
-    with patch.dict(
-        config.config,
-        {
-            config.ConfigType.WORKSPACE_BASE: temp_dir,
-            config.ConfigType.RUN_AS_DEVIN: 'true',
-            config.ConfigType.SANDBOX_TYPE: 'ssh',
-        },
-        clear=True,
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'workspace_mount_path', new=temp_dir
+    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+        config, 'sandbox_type', new='ssh'
     ):
         for box in [DockerSSHBox(), DockerExecBox()]:
             # test the ssh box
