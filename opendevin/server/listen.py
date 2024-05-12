@@ -1,12 +1,11 @@
 import json
 import shutil
 import uuid
+import warnings
 from pathlib import Path
 
-import warnings
-
 with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
+    warnings.simplefilter('ignore')
     import litellm
 from fastapi import Depends, FastAPI, Response, UploadFile, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -150,22 +149,26 @@ def select_file(file: str):
     return {'code': content}
 
 
-@app.post('/api/upload-file')
-async def upload_file(file: UploadFile):
+@app.post('/api/upload-files')
+async def upload_files(files: list[UploadFile]):
+    print(files)
     try:
         workspace_base = config.workspace_base
-        file_path = Path(workspace_base, file.filename)
-        # The following will check if the file is within the workspace base and throw an exception if not
-        file_path.resolve().relative_to(Path(workspace_base).resolve())
-        with open(file_path, 'wb') as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        for file in files:
+            file_path = Path(workspace_base, file.filename)
+            # Ensure the directory exists (directories are received with the directory name before the file name, i.e. "<dir>/<file>")
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            # The following will check if the file is within the workspace base and throw an exception if not
+            file_path.resolve().relative_to(Path(workspace_base).resolve())
+            with open(file_path, 'wb') as buffer:
+                shutil.copyfileobj(file.file, buffer)
     except Exception as e:
-        logger.error(f'Error saving file {file.filename}: {e}', exc_info=True)
+        logger.error(f'Error saving files: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': f'Error saving file: {e}'},
+            content={'error': f'Error saving file:s {e}'},
         )
-    return {'filename': file.filename, 'location': str(file_path)}
+    return {'message': 'Files uploaded successfully', 'file_count': len(files)}
 
 
 @app.get('/api/plan')

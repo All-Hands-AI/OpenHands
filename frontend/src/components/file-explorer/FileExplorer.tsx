@@ -7,9 +7,16 @@ import {
 } from "react-icons/io";
 import { twMerge } from "tailwind-merge";
 import {
+  Button,
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownTrigger,
+} from "@nextui-org/react";
+import {
   WorkspaceFile,
   getWorkspace,
-  uploadFile,
+  uploadFiles,
 } from "#/services/fileService";
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
@@ -18,7 +25,7 @@ import toast from "#/utils/toast";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
-  onUpload: () => void;
+  onUpload: (type: "file" | "dir") => void;
   toggleHidden: () => void;
   isHidden: boolean;
 }
@@ -49,17 +56,29 @@ function ExplorerActions({
             ariaLabel="Refresh workspace"
             onClick={onRefresh}
           />
-          <IconButton
-            icon={
-              <IoIosCloudUpload
-                size={16}
-                className="text-neutral-400 hover:text-neutral-100 transition"
-              />
-            }
-            testId="upload"
-            ariaLabel="Upload File"
-            onClick={onUpload}
-          />
+          <Dropdown>
+            <DropdownTrigger>
+              <Button
+                data-testid="upload"
+                aria-label="Upload File"
+                variant="flat"
+                className="cursor-pointer text-[12px] bg-transparent aspect-square px-0 min-w-[20px] h-[20px]"
+              >
+                <IoIosCloudUpload
+                  size={16}
+                  className="text-neutral-400 hover:text-neutral-100 transition"
+                />
+              </Button>
+            </DropdownTrigger>
+            <DropdownMenu aria-label="Upload Actions">
+              <DropdownItem key="file" onClick={() => onUpload("file")}>
+                Upload File
+              </DropdownItem>
+              <DropdownItem key="directory" onClick={() => onUpload("dir")}>
+                Upload Directory
+              </DropdownItem>
+            </DropdownMenu>
+          </Dropdown>
         </>
       )}
 
@@ -93,25 +112,27 @@ function FileExplorer({ onFileClick }: FileExplorerProps) {
   const [workspace, setWorkspace] = React.useState<WorkspaceFile>();
   const [isHidden, setIsHidden] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const directoryInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const getWorkspaceData = async () => {
     const wsFile = await getWorkspace();
     setWorkspace(removeEmptyNodes(wsFile));
   };
 
-  const selectFileInput = () => {
-    fileInputRef.current?.click(); // Trigger the file browser
+  const selectFileInput = async (type: "file" | "dir") => {
+    // Trigger the file browser
+    if (type === "file") fileInputRef.current?.click();
+    else directoryInputRef.current?.click();
   };
 
   const uploadFileData = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files ? event.target.files[0] : null;
-    if (!file) return;
-
-    try {
-      await uploadFile(file);
-      await getWorkspaceData(); // Refresh the workspace to show the new file
-    } catch (error) {
-      toast.stickyError("ws", "Error uploading file");
+    if (event.target.files) {
+      try {
+        await uploadFiles(event.target.files);
+        await getWorkspaceData(); // Refresh the workspace to show the new file
+      } catch (error) {
+        toast.stickyError("ws", "Error uploading file");
+      }
     }
   };
 
@@ -150,6 +171,17 @@ function FileExplorer({ onFileClick }: FileExplorerProps) {
         data-testid="file-input"
         type="file"
         ref={fileInputRef}
+        style={{ display: "none" }}
+        onChange={uploadFileData}
+      />
+      <input
+        data-testid="dir-input"
+        type="file"
+        ref={directoryInputRef}
+        // @ts-expect-error - required for browsers to recognize dir uploads
+        // eslint-disable-next-line react/no-unknown-property
+        directory=""
+        webkitdirectory=""
         style={{ display: "none" }}
         onChange={uploadFileData}
       />
