@@ -6,7 +6,7 @@ WORKSPACE_BASE=$(pwd)/_test_workspace
 SANDBOX_TYPE="ssh"
 
 # FIXME: SWEAgent hangs, so it goes last
-agents=("MonologueAgent" "CodeActAgent" "PlannerAgent" "SWEAgent")
+agents=("ManagerAgent" "MonologueAgent" "CodeActAgent" "PlannerAgent" "SWEAgent")
 tasks=("Fix typos in bad.txt." "Write a shell script 'hello.sh' that prints 'hello'.")
 test_names=("test_edits" "test_write_simple_script")
 

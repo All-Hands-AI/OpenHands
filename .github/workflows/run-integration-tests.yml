@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.11"]
-        agent: ["SWEAgent", "PlannerAgent", "MonologueAgent", "CodeActAgent"]
+        agent: ["ManagerAgent", "SWEAgent", "PlannerAgent", "MonologueAgent", "CodeActAgent"]
         sandbox: ["ssh", "exec"]
         include:
           - agent: "MonologueAgent"
@@ -32,6 +32,8 @@ jobs:
           - agent: "PlannerAgent"
             embedding-model: "none"
           - agent: "CodeActAgent"
+            embedding-model: "none"
+          - agent: "ManagerAgent"
             embedding-model: "none"
     steps:
       - uses: actions/checkout@v4

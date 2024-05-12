@@ -71,3 +71,7 @@ Enjoy!
     with open(os.path.join(workspace_base, 'bad.txt'), 'r') as f:
         content = f.read()
     assert content.strip() == text.strip()
+
+
+# def test_task_rejection():
+#     pass

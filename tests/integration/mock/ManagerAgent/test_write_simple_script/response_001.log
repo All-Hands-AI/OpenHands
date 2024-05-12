@@ -1,0 +1,9 @@
+{
+  "action": "delegate",
+  "args": {
+    "agent": "StudyRepoForTaskAgent",
+    "inputs": {
+      "task": "Write a shell script 'hello.sh' that prints 'hello'"
+    }
+  }
+}

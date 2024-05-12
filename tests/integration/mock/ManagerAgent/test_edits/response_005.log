@@ -1,0 +1,8 @@
+{
+  "action": "finish",
+  "args": {
+    "outputs": {
+      "summary": "Fixed typos in './bad.txt':\n- 'typoo' to 'typo'\n- 'mor' to 'more'"
+    }
+  }
+}

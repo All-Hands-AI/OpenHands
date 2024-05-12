@@ -1,0 +1,7 @@
+{
+  "action": "write",
+  "args": {
+    "path": "hello.sh",
+    "content": "#!/bin/bash\necho 'hello'"
+  }
+}

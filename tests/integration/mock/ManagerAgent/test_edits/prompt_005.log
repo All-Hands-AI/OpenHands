@@ -1,0 +1,71 @@
+
+
+----------
+
+# Task
+You are a proofreader tasked with fixing typos in the files in your current working directory. Your goal is to:
+1. Scan the files for typos
+2. Overwrite the files with the typos fixed
+3. Provide a summary of the typos fixed
+
+## Available Actions
+* `read` - reads the content of a file. Arguments:
+  * `path` - the path of the file to read
+
+* `write` - writes the content to a file. Arguments:
+  * `path` - the path of the file to write
+  * `content` - the content to write to the file
+
+* `run` - runs a command on the command line in a Linux shell. Arguments:
+  * `command` - the command to run
+  * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.
+
+* `message` - make a plan, set a goal, or record your thoughts. Arguments:
+  * `content` - the thought to record
+
+* `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working. Arguments:
+  * `outputs` - a dictionary representing the outputs of your task, if any
+
+
+To complete this task:
+1. Use the `read` action to read the contents of the files in your current working directory. Make sure to provide the file path in the format `'./file_name.ext'`.
+2. Use the `think` action to analyze the contents and identify typos.
+3. Use the `write` action to create new versions of the files with the typos fixed.
+  - Overwrite the original files with the corrected content. Make sure to provide the file path in the format `'./file_name.ext'`.
+4. Use the `think` action to generate a summary of the typos fixed, including the original and fixed versions of each typo, and the file(s) they were found in.
+5. Use the `finish` action to return the summary in the `outputs.summary` field.
+
+Do NOT finish until you have fixed all the typos and generated a summary.
+
+## History
+Here is a recent history of actions you've taken in service of this plan,
+as well as observations you've made. This only includes the MOST RECENT
+actions and observations--more may have happened before that.
+They are time-ordered, with your most recent action at the bottom.
+
+[[{"action": "run", "args": {"command": "ls", "background": false, "thought": ""}, "message": "Running command: ls"}, {"observation": "run", "content": "bad.txt", "extras": {"command_id": -1, "command": "ls", "exit_code": 0}, "message": "Command `ls` executed with exit code 0."}], [{"action": "read", "args": {"path": "./bad.txt", "start": 0, "end": -1, "thought": ""}, "message": "Reading file: ./bad.txt"}, {"observation": "read", "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n", "extras": {"path": "./bad.txt"}, "message": "I read the file ./bad.txt."}], [{"action": "write", "args": {"path": "./bad.txt", "content": "This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!\n", "start": 0, "end": -1, "thought": ""}, "message": "Writing file: ./bad.txt"}, {"observation": "write", "content": "", "extras": {"path": "./bad.txt"}, "message": "I wrote to the file ./bad.txt."}]]
+
+## Format
+Your response MUST be in JSON format. It must be an object, and it must contain two fields:
+* `action`, which is one of the actions specified here
+* `args`, which is a map of key-value pairs, specifying the arguments for that action
+
+You MUST NOT include any other text besides the JSON response
+
+
+For example, if you want to use the read action to read the contents of a file named example.txt, your response should look like this:
+{
+  "action": "read",
+  "args": {
+    "path": "./example.txt"
+  }
+}
+
+Similarly, if you want to use the write action to write content to a file named output.txt, your response should look like this:
+{
+  "action": "write",
+  "args": {
+    "path": "./output.txt",
+    "content": "This is the content to be written to the file."
+  }
+}

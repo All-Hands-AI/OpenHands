@@ -1,0 +1,7 @@
+{
+  "action": "delegate",
+  "args": {
+    "agent": "TypoFixerAgent",
+    "inputs": {}
+  }
+}
