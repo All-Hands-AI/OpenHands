@@ -69,6 +69,18 @@ Output from Action:
 observation: null
 content:
 extras:
+
+Memory 1:
+Previous Action:
+action: null
+args:
+
+
+Output from Action:
+observation: agent_state_changed
+content:
+extras:
+  agent_state: AgentState.RUNNING
 ======= End Actions =======
 Use these memories to provide additional context to the problem you are solving.
 Remember that you have already completed these steps so you do not need to perform them again.

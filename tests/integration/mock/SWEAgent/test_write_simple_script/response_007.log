@@ -1,5 +1,5 @@
 Thoughts:
-I have already attempted to add the `echo` command to the 'hello.sh' script in order to print 'hello' without asking for confirmation. However, it seems that the changes were not successfully made. I will need to use the `edit` command to add the `echo` command to the script again.
+I need to add the code to the 'hello.sh' script that prints 'hello' without asking for confirmation. Since I have already added the shebang line and the echo command to print 'hello', I should now save the changes to the file.
 
 Action:
 ```

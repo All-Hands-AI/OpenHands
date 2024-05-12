@@ -320,21 +320,52 @@ This is your internal monologue, in JSON format:
     }
   },
   {
-    "action": "run",
+    "action": "message",
     "args": {
-      "command": "pwd",
-      "background": false,
+      "content": "Fix typos in bad.txt. Do not ask me for confirmation at any point.",
+      "wait_for_response": false
+    }
+  },
+  {
+    "observation": "null",
+    "content": "",
+    "extras": {}
+  },
+  {
+    "action": "null",
+    "args": {}
+  },
+  {
+    "observation": "agent_state_changed",
+    "content": "",
+    "extras": {
+      "agent_state": "running"
+    }
+  },
+  {
+    "action": "read",
+    "args": {
+      "path": "bad.txt",
+      "start": 0,
+      "end": -1,
       "thought": ""
     }
   },
   {
-    "observation": "run",
-    "content": "/workspace",
+    "observation": "read",
+    "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n",
     "extras": {
-      "command_id": -1,
-      "command": "pwd",
-      "exit_code": 0
+      "path": "bad.txt"
     }
+  },
+  {
+    "action": "null",
+    "args": {}
+  },
+  {
+    "observation": "null",
+    "content": "",
+    "extras": {}
   }
 ]
 
@@ -355,7 +386,7 @@ Here are the possible actions:
   * `command` - the command to run
   * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.
 * `kill` - kills a background command
-  * `id` - the ID of the background command to kill
+  * `command_id` - the ID of the background command to kill
 * `browse` - opens a web page. Arguments:
   * `url` - the URL to open
 * `push` - Push a branch from the current repo to github:

@@ -222,30 +222,16 @@ Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmat
 
 ----------
 
-<<<<<<< HEAD
 Sure! I will create a shell script named 'hello.sh' that prints 'hello' without asking for confirmation. Let me write the script for you:
 <execute_bash>
-cat > hello.sh <<EOF
+cat > hello.sh << 'EOF'
 #!/bin/bash
 echo "hello"
 EOF
-=======
-Let's create the shell script `hello.sh` that prints "hello". I'll write the script and save it.
-
-<execute_bash>
-echo "echo hello" > hello.sh
->>>>>>> main
 </execute_bash>
 
 ----------
 
 OBSERVATION:
-<<<<<<< HEAD
-> #!/bin/bash
-> echo "hello"
-> EOF
-=======
-
-ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
->>>>>>> main
+> > >
 [Command -1 finished with exit code 0]]
