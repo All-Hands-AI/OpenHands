@@ -1,0 +1,3 @@
+I have created the file `bad.txt` for you. Let me open the file so you can fix the typos:
+<execute_bash>
+open bad.txt
