@@ -1,10 +1,7 @@
-from json import JSONDecodeError
-
 from jinja2 import BaseLoader, Environment
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.exceptions import LLMOutputError
 from opendevin.core.utils import json
 from opendevin.events.action import Action, action_from_dict
 from opendevin.llm.llm import LLM
@@ -14,26 +11,11 @@ from .registry import all_microagents
 
 
 def parse_response(orig_response: str) -> Action:
-    depth = 0
-    start = -1
-    for i, char in enumerate(orig_response):
-        if char == '{':
-            if depth == 0:
-                start = i
-            depth += 1
-        elif char == '}':
-            depth -= 1
-            if depth == 0 and start != -1:
-                response = orig_response[start : i + 1]
-                try:
-                    action_dict = json.loads(response)
-                    action = action_from_dict(action_dict)
-                    return action
-                except JSONDecodeError as e:
-                    raise LLMOutputError(
-                        'Invalid JSON in response. Please make sure the response is a valid JSON object.'
-                    ) from e
-    raise LLMOutputError('No valid JSON object found in response.')
+    # attempt to load the JSON dict from the response
+    action_dict = json.loads(orig_response)
+
+    # load the action from the dict
+    return action_from_dict(action_dict)
 
 
 def to_json(obj, **kwargs):
