@@ -141,13 +141,11 @@ class AgentUnit:
         Args:
             event: The agent event (Observation or Action).
         """
-        if isinstance(event, NullAction):
-            return
-        if isinstance(event, NullObservation):
-            return
-        if event.source == 'agent':
+        if event.source == 'agent' and not isinstance(
+            event, (NullAction, NullObservation)
+        ):
             await self.send(event.to_dict())
-            return
+        return
 
     def close(self):
         if self.controller is not None:

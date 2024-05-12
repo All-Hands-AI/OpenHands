@@ -52,9 +52,10 @@ class AgentController:
         agent: Agent,
         event_stream: EventStream,
         sid: str = 'default',
+        inputs: Optional[dict] = None,
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
-        inputs: Optional[dict] = None,
+        remind_iterations: bool = config.remind_iterations,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -63,6 +64,8 @@ class AgentController:
             sid: The session ID of the agent.
             max_iterations: The maximum number of iterations the agent can run.
             max_chars: The maximum number of characters the agent can output.
+            sandbox: An optional initialized sandbox to run the agent in. If not provided, a default sandbox will be created based on config.
+            remind_iterations: A boolean value indicating whether to remind the agent its remaining budget of interaction.
         """
         self.id = sid
         self.agent = agent
@@ -74,6 +77,13 @@ class AgentController:
         self.max_iterations = max_iterations
         self.max_chars = max_chars
         self.agent_task = asyncio.create_task(self._start_step_loop())
+
+        self.remind_iterations = remind_iterations
+        if self.remind_iterations:
+            logger.info(
+                'Iteration reminder is ENABLED: agent will be reminded of remaining turns.'
+            )
+        self.max_chars = max_chars
 
     async def close(self):
         if self.agent_task is not None:
@@ -179,6 +189,14 @@ class AgentController:
 
             await asyncio.sleep(1)
 
+    async def add_iteration_reminder_when_needed(self):
+        """Add iteration reminder to the observation if needed."""
+
+        i = self.state.iteration
+        content = f'ENVIRONMENT REMINDER: You have {self.max_iterations - i - 1} turns left to complete the task.'
+        action = MessageAction(content=content)
+        await self.event_stream.add_event(action, EventSource.AGENT)
+
     async def _step(self):
         if self.state is None:
             raise ValueError('AgentController has no state')
@@ -232,6 +250,8 @@ class AgentController:
         if self._is_stuck():
             await self.report_error('Agent got stuck in a loop')
             await self.set_agent_state_to(AgentState.ERROR)
+
+        await self.add_iteration_reminder_when_needed()
 
     def get_state(self):
         return self.state

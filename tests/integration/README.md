@@ -20,11 +20,10 @@ not possible with benchmarks.
 
 Known limitations:
 1. To avoid the potential impact of non-determinism, we remove all special
-characters and numbers (often used as PIDs) when doing the comparison. If two
-prompts for the same task only differ in non-alpha characters, a wrong mock
-response might be picked up.
-2. It is required that the agent itself doesn't do anything non-deterministic,
-including but not limited to using randomly generated numbers.
+characters when doing the comparison. If two prompts for the same task only
+differ in non-alphanumeric characters, a wrong mock response might be picked up.
+2. It is required that everything has to be deterministic. For example, agent
+must not use randomly generated numbers.
 
 The folder is organised as follows:
 
@@ -46,16 +45,13 @@ of agents with real LLMs are stored under `mock/AgentName/TestName` folders.
 ## Run Integration Tests
 
 Take a look at `run-integration-tests.yml` to learn how integration tests are
-launched in CI environment. Assuming you want to use `workspace` for testing, an
-example is as follows:
+launched in CI environment. You can also simply run:
 
 ```bash
-rm -rf workspace; AGENT=PlannerAgent \
-WORKSPACE_BASE="/Users/admin/OpenDevin/workspace" WORKSPACE_MOUNT_PATH="/Users/admin/OpenDevin/workspace" MAX_ITERATIONS=10 \
-poetry run pytest -s ./tests/integration
+TEST_ONLY=true ./tests/integration/regenerate.sh
 ```
 
-Note: in order to run integration tests correctly, please ensure your workspace is empty.
+to run all integration tests until the first failure.
 
 
 ## Regenerate Integration Tests
@@ -64,7 +60,8 @@ by running:
 ```bash
 ./tests/integration/regenerate.sh
 ```
-Note that this will make several calls to your LLM_MODEL, potentially costing money! If you don't want
+Note that this will run existing tests first and call real LLM_MODEL only for
+failed tests, but it still costs money! If you don't want
 to cover the cost, ask one of the maintainers to regenerate for you.
 You might also be able to fix the tests by hand.
 

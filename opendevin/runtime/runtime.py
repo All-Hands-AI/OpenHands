@@ -54,15 +54,18 @@ class Runtime:
     """
 
     sid: str
-    sandbox: Sandbox
 
     def __init__(
         self,
         event_stream: EventStream,
         sid: str = 'default',
+        sandbox: Sandbox | None = None,
     ):
         self.sid = sid
-        self.sandbox = create_sandbox(sid, config.sandbox_type)
+        if sandbox is None:
+            self.sandbox = create_sandbox(sid, config.sandbox_type)
+        else:
+            self.sandbox = sandbox
         self.browser = BrowserEnv()
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)

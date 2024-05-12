@@ -3,6 +3,7 @@ from json import JSONDecodeError
 
 from opendevin.core.config import config
 from opendevin.core.exceptions import LLMOutputError
+from opendevin.core.utils import json
 from opendevin.events.action import (
     Action,
     action_from_dict,
@@ -10,8 +11,6 @@ from opendevin.events.action import (
 from opendevin.events.observation import (
     CmdOutputObservation,
 )
-
-from . import json
 
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is this:

@@ -9,6 +9,7 @@ from opendevin.events.observation import (
     Observation,
 )
 from opendevin.events.stream import EventStream
+from opendevin.runtime import Sandbox
 from opendevin.runtime.server.files import insert_lines, read_lines
 from opendevin.runtime.server.runtime import ServerRuntime
 
@@ -20,8 +21,9 @@ class E2BRuntime(ServerRuntime):
         self,
         event_stream: EventStream,
         sid: str = 'default',
+        sandbox: Sandbox | None = None,
     ):
-        super().__init__(event_stream, sid)
+        super().__init__(event_stream, sid, sandbox)
         if not isinstance(self.sandbox, E2BSandbox):
             raise ValueError('E2BRuntime requires an E2BSandbox')
         self.filesystem = self.sandbox.filesystem
