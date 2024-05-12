@@ -9,7 +9,7 @@ MAX_ITERATIONS=10
 # FIXME: SWEAgent hangs, so it goes last
 agents=("ManagerAgent" "MonologueAgent" "CodeActAgent" "PlannerAgent" "SWEAgent")
 # only enable iteration reminder for CodeActAgent in tests
-remind_iterations_config=(false true false false)
+remind_iterations_config=(false false true false false)
 tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
@@ -23,6 +23,11 @@ test_names=(
 
 num_of_tests=${#tasks[@]}
 num_of_agents=${#agents[@]}
+
+if [ "$num_of_agents" -ne "${#remind_iterations_config[@]}" ]; then
+    echo "Every agent must have its own remind_iterations_config"
+    exit 1
+fi
 
 rm -rf logs
 rm -rf _test_workspace
