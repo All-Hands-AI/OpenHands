@@ -86,6 +86,8 @@ class DockerSSHBox(Sandbox):
 
         self.setup_user()
         self.start_ssh_session()
+        # make sure /tmp always exists
+        self.execute('mkdir -p /tmp')
         atexit.register(self.close)
         super().__init__()
 
