@@ -64,7 +64,7 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Run a command:
         ```json
-        {"action": "run", "args": {"command": "ls -l"}}
+        {"action": "run", "args": {"command": "ls -l", "background": false, "thought": ""}}
         ```
     - Run an IPython command:
         ```json
