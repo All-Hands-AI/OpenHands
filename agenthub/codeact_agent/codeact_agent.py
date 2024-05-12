@@ -65,7 +65,7 @@ def swe_agent_edit_hack(bash_command: str) -> str:
             try:
                 return list(urlsplit(url))
             except ValueError:
-                raise ValidationError(self.error_messages['invalid'], code='invalid')s
+                raise ValidationError(self.error_messages['invalid'], code='invalid')
     EOF
     """
     if 'edit' in bash_command:

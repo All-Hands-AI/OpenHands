@@ -42,6 +42,7 @@ OpenDevin uses a docker container to do its work safely, without potentially bre
 * Run `docker ps` to ensure that docker is running
 * Make sure you don't need `sudo` to run docker [see here](https://www.baeldung.com/linux/docker-run-without-sudo)
 * If you are on a mac, check the [permissions requirements](https://docs.docker.com/desktop/mac/permission-requirements/) and in particular consider enabling the "Allow the default Docker socket to be used" under "Settings > Advanced" in Docker Desktop.
+* If you are on a mac, Upgrade your Docker to the latest version under "Check for Updates"
 
 ## Unable to connect to SSH box
 [GitHub Issue](https://github.com/OpenDevin/OpenDevin/issues/1156)
