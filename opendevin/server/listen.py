@@ -76,15 +76,11 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Open a web page:
         ```json
-        {"action": "open", "args": {"url": "https://arxiv.org/html/2402.01030v2"}}
+        {"action": "browse", "args": {"url": "https://arxiv.org/html/2402.01030v2"}}
         ```
     - Search long-term memory:
         ```json
         {"action": "recall", "args": {"query": "past projects"}}
-        ```
-    - Save a message to long-term memory:
-        ```json
-        {"action": "save", "args": {"content": "Hello, OpenDevin!"}}
         ```
     - Add a task to the plan:
         ```json
@@ -92,7 +88,7 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Update a task in the plan:
         ```json
-        {"action": "modify_task", "args": {"task_id": "task_id", "task": "Updated task description"}}
+        {"action": "modify_task", "args": {"id": "0", "state": "in_progress", "thought": ""}}
         ```
     - Change the agent's state:
         ```json
