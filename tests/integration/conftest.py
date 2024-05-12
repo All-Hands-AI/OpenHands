@@ -11,7 +11,7 @@ workspace_path = os.getenv('WORKSPACE_BASE')
 
 
 def filter_out_symbols(input):
-    return ' '.join([char for char in input if char.isalpha()])
+    return ' '.join([char for char in input if char.isalnum()])
 
 
 def get_log_id(prompt_log_name):

@@ -20,11 +20,10 @@ not possible with benchmarks.
 
 Known limitations:
 1. To avoid the potential impact of non-determinism, we remove all special
-characters and numbers (often used as PIDs) when doing the comparison. If two
-prompts for the same task only differ in non-alpha characters, a wrong mock
-response might be picked up.
-2. It is required that the agent itself doesn't do anything non-deterministic,
-including but not limited to using randomly generated numbers.
+characters when doing the comparison. If two prompts for the same task only
+differ in non-alphanumeric characters, a wrong mock response might be picked up.
+2. It is required that everything has to be deternimistic. For example, agent
+must not use randomly generated numbers.
 
 The folder is organised as follows:
 
