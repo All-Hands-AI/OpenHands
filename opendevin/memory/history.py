@@ -9,6 +9,7 @@ class ShortTermHistory:
 
     The short term history includes core events, which the agent learned in the initial prompt, and recent events of interest from the event stream.
     An agent can send this in the prompt or use it for other purpose.
+    The list of recent events may be condensed when its too long, if the agent uses the memory condenser.
     """
 
     def __init__(self):
@@ -18,6 +19,21 @@ class ShortTermHistory:
         self.recent_events = []
         # core events are events that the agent learned in the initial prompt
         self.core_events = []
+
+    def add_core_event(self, event_dict: dict):
+        """
+        Adds an event to core memory if it is a valid event.
+
+        Parameters:
+        - event_dict (dict): The event that we want to add to memory
+
+        Raises:
+        - AgentEventTypeError: If event_dict is not a dict
+        """
+        if not isinstance(event_dict, dict):
+            raise AgentEventTypeError()
+
+        self.core_events.append(event_dict)
 
     def add_event(self, event_dict: dict, core=False):
         """
@@ -32,11 +48,8 @@ class ShortTermHistory:
         if not isinstance(event_dict, dict):
             raise AgentEventTypeError()
 
-        # add to core events or to the list of other recent events
-        if core:
-            self.core_events.append(event_dict)
-        else:
-            self.recent_events.append(event_dict)
+        # add to the list of recent events
+        self.recent_events.append(event_dict)
 
     def get_events(self):
         """

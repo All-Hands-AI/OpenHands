@@ -95,7 +95,7 @@ You can also use the same action and args from the source monologue.
 """
 
 
-def get_summarize_monologue_prompt(core_memories: list[dict], thoughts: list[dict]):
+def get_summarize_prompt(core_events: list[dict], recent_events: list[dict]):
     """
     Gets the prompt for summarizing the monologue
 
@@ -104,15 +104,16 @@ def get_summarize_monologue_prompt(core_memories: list[dict], thoughts: list[dic
     """
     return MONOLOGUE_SUMMARY_PROMPT % {
         'monologue': json.dumps(
-            {'core_memories': core_memories, 'old_monologue': thoughts}, indent=2
+            {'core_memories': core_events, 'old_monologue': recent_events}, indent=2
         ),
     }
 
 
-def get_request_action_prompt(
-    task: str,
-    thoughts: list[dict],
-    background_commands_obs: list[CmdOutputObservation] = [],
+def get_action_prompt(
+    task: str = '',
+    core_events: list[dict] | None = None,
+    recent_events: list[dict] | None = None,
+    background_commands_obs: list[CmdOutputObservation] | None = None,
 ):
     """
     Gets the action prompt formatted with appropriate values.
@@ -127,8 +128,8 @@ def get_request_action_prompt(
     """
 
     hint = ''
-    if len(thoughts) > 0:
-        latest_thought = thoughts[-1]
+    if recent_events is not None and len(recent_events) > 0:
+        latest_thought = recent_events[-1]
         if 'action' in latest_thought:
             if latest_thought['action'] == 'message':
                 if latest_thought['args']['content'].startswith('OK so my task is'):
@@ -139,7 +140,7 @@ def get_request_action_prompt(
                 hint = 'Looks like that last command failed. Maybe you need to fix it, or try something else.'
 
     bg_commands_message = ''
-    if len(background_commands_obs) > 0:
+    if background_commands_obs is not None and len(background_commands_obs) > 0:
         bg_commands_message = 'The following commands are running in the background:'
         for command_obs in background_commands_obs:
             bg_commands_message += (
@@ -151,7 +152,7 @@ def get_request_action_prompt(
 
     return ACTION_PROMPT % {
         'task': task,
-        'monologue': json.dumps(thoughts, indent=2),
+        'monologue': json.dumps(core_events + recent_events, indent=2),
         'background_commands': bg_commands_message,
         'hint': hint,
         'user': user,

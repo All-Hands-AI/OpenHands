@@ -98,6 +98,19 @@ class MonologueAgent(Agent):
         """
         super().__init__(llm)
 
+    def _add_core_event(self, event_dict: dict):
+        """
+        Adds a new core event to the agent's monologue and memory.
+
+        Core events are not condensed and are used to give the LLM context and examples.
+
+        Parameters:
+        - event (dict): The event that will be added to monologue and memory
+        """
+        self.monologue.add_core_event(event_dict)
+        if self.memory is not None:
+            self.memory.add_event(event_dict)
+
     def _add_event(self, event_dict: dict):
         """
         Adds a new event to the agent's monologue and memory.
@@ -124,32 +137,16 @@ class MonologueAgent(Agent):
         if self.memory is not None:
             self.memory.add_event(event_dict)
 
-        # get the action prompt that will be used when this step calls the llm completion
-        action_prompt = prompts.get_request_action_prompt(
-            '',
-            self.monologue.get_events(),
-            [],
-        )
-
         # summarize the short term history (events) if necessary
         if self.memory_condenser.needs_condense(
             llm=self.llm,
-            action_prompt=action_prompt,
-            events=self.monologue.get_events(),
+            core_events=self.monologue.get_core_events(),
+            recent_events=self.monologue.get_recent_events(),
         ):
             summary_response = self.memory_condenser.condense(
-                self.monologue.get_core_events(),
-                self.monologue.get_recent_events(),
                 llm=self.llm,
-                action_prompt=prompts.get_request_action_prompt(
-                    '',
-                    self.monologue.get_events(),
-                    [],
-                ),
-                summarize_prompt=prompts.get_summarize_monologue_prompt(
-                    self.monologue.get_core_events(),
-                    self.monologue.get_recent_events(),
-                ),
+                core_events=self.monologue.get_core_events(),
+                recent_events=self.monologue.get_recent_events(),
             )
         if summary_response[1]:
             self.monologue.recent_events = prompts.parse_summary_response(
@@ -182,7 +179,10 @@ class MonologueAgent(Agent):
         else:
             self.memory = None
 
-        self.memory_condenser = MemoryCondenser()
+        self.memory_condenser = MemoryCondenser(
+            action_prompt=prompts.get_action_prompt,
+            summarize_prompt=prompts.get_summarize_prompt,
+        )
 
         self._add_initial_thoughts(task)
         self._initialized = True
@@ -205,7 +205,7 @@ class MonologueAgent(Agent):
                     observation = BrowserOutputObservation(
                         content=thought, url='', screenshot=''
                     )
-                self._add_event(observation.to_memory())
+                self._add_core_event(observation.to_memory())
                 previous_action = ''
             else:
                 action: Action = NullAction()
@@ -232,7 +232,7 @@ class MonologueAgent(Agent):
                     previous_action = ActionType.BROWSE
                 else:
                     action = MessageAction(thought)
-                self._add_event(action.to_memory())
+                self._add_core_event(action.to_memory())
 
     def step(self, state: State) -> Action:
         """
@@ -254,9 +254,10 @@ class MonologueAgent(Agent):
         # clean info for this step
         state.updated_info = []
 
-        prompt = prompts.get_request_action_prompt(
+        prompt = prompts.get_action_prompt(
             state.plan.main_goal,
-            self.monologue.get_events(),
+            self.monologue.get_core_events(),
+            self.monologue.get_recent_events(),
             state.background_commands_obs,
         )
         messages = [{'content': prompt, 'role': 'user'}]

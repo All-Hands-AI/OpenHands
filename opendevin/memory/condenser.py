@@ -1,6 +1,7 @@
-from litellm.exceptions import ContextWindowExceededError
+from typing import Callable
 
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.utils import json
 from opendevin.llm.llm import LLM
 
 MAX_TOKEN_COUNT_PADDING = 16000
@@ -11,128 +12,150 @@ class MemoryCondenser:
     Condenses the prompt with a call to the LLM.
     """
 
-    def needs_condense(self, llm: LLM, action_prompt: str, events: list) -> bool:
+    def __init__(
+        self,
+        action_prompt: Callable[[list[dict], list[dict]], str],
+        summarize_prompt: Callable[[list[dict], list[dict]], str],
+    ):
+        """
+        Initialize the MemoryCondenser with the action and summarize prompts.
+
+        Parameters:
+        - action_prompt (Callable): The function to generate an action prompt. The function should accept core events and recent events as arguments.
+        - summarize_prompt (Callable): The function to generate a summarize prompt. The function should accept core events and recent events as arguments.
+        """
+        self.action_prompt = action_prompt
+        self.summarize_prompt = summarize_prompt
+
+    def condense(
+        self, llm: LLM, core_events: list[dict], recent_events: list[dict]
+    ) -> tuple[str, bool]:
+        """
+        Attempts to condense the recent events of the monologue by using the llm, if necessary. Returns unmodified prompt if it is already short enough.
+
+        It includes core events for context, but does not alter them.
+        Condenses the monologue with action and summary prompts using the llm when necessary.
+        Checks if the action_prompt (including events) needs condensation based on token count, and doesn't attempt it if not.
+
+        Parameters:
+        - llm (LLM): LLM to be used for summarization.
+        - core_events (list[dict]): List of core events that should remain unchanged.
+        - recent_events (list[dict]): List of recent events that may be condensed.
+        - action_prompt (str): Initial check action prompt.
+        - summarize_prompt (str): Starting string for summarization if needed.
+
+        Returns:
+        - tuple: A tuple containing the condensed string, or the unmodified string if it wasn't performed, and a boolean indicating if condensation was performed.
+        """
+
+        action_prompt = self.action_prompt(core_events, recent_events)
+        summarize_prompt = self.summarize_prompt(core_events, recent_events)
+
+        # test prompt token length
+        if not self.needs_condense(llm, core_events, recent_events):
+            return action_prompt, False
+
+        try:
+            return self.process_in_chunks(
+                llm, core_events, recent_events, summarize_prompt
+            ), True
+        except Exception as e:
+            logger.error('Condensation failed: %s', str(e), exc_info=False)
+            return action_prompt, False
+
+    def needs_condense(
+        self, llm: LLM, core_events: list[dict], recent_events: list[dict]
+    ) -> bool:
         """
         Checks if the prompt needs to be condensed based on the token count against the limits of the llm passed in the call.
 
         Parameters:
-        - llm (LLM): The llm to be used for token count.
-        - action_prompt (str): The initial action prompt.
+        - llm (LLM): The llm to use for checking the token count.
+        - core_events (list[dict]): List of core events that should remain unchanged.
+        - recent_events (list[dict]): List of recent events that may be condensed.
 
         Returns:
         - bool: True if the prompt needs to be condensed, False otherwise.
         """
+        action_prompt = self.action_prompt(core_events, recent_events)
+        combined_prompt = (
+            action_prompt
+            + ' '
+            + json.dumps(core_events)
+            + ' '
+            + json.dumps(recent_events)
+        )
+        token_count = llm.get_token_count(
+            [{'content': combined_prompt, 'role': 'user'}]
+        )
+        return token_count >= self.get_token_limit(llm)
 
-        # get prompt token length
-        messages = [{'content': action_prompt, 'role': 'user'}]
-        token_count = llm.get_token_count(messages)
+    def process_in_chunks(
+        self,
+        llm: LLM,
+        core_events: list[dict],
+        recent_events: list[dict],
+        summarize_prompt: str,
+    ) -> str:
+        """
+        Condenses recent events in chunks, while preserving core events for context.
+        """
+        # Initial part of the prompt includes core memories for context
+        initial_prompt = self.action_prompt(core_events=core_events)
+        return self.attempt_condense(llm, recent_events, initial_prompt, 0)
 
-        # test against token limits of this llm
-        if token_count + MAX_TOKEN_COUNT_PADDING < llm.max_input_tokens:
-            return False
-
-        return True
-
-    def condense(
+    def attempt_condense(
         self,
         llm: LLM,
         recent_events: list[dict],
         action_prompt: str,
-        summarize_prompt: str = None,
-    ) -> tuple[str, bool]:
-        """
-        Attempts to condense the monologue by using the llm, if necessary. Returns unmodified prompt if it is already short enough.
+        attempt_count: int,
+    ) -> str:
+        if attempt_count >= 5 or not recent_events:
+            raise Exception('Condensation attempts exceeded without success.')
 
-        Condenses the monologue with action and summary prompts using the llm when necessary.
-        First checks if the action_prompt (including events) needs condensation based on token count.
-        If needed, uses summarize_prompt and events to condense in manageable chunks.
+        # get the summarize prompt to use
+        summarize_prompt = self.summarize_prompt(recent_events, recent_events)
 
-        Parameters:
-        - llm (LLM): LLM to be used for summarization.
-        - action_prompt (str): Initial check action prompt.
-        - summarize_prompt (str): Starting string for summarization if needed.
-        - events (list): List of events to be condensed.
+        # Split events into two halves
+        midpoint = len(recent_events) // 2
+        first_half = recent_events[:midpoint]
+        second_half = recent_events[midpoint:]
 
-        Returns:
-        - tuple: A tuple containing the condensed string and a boolean indicating if condensation was performed.
-        """
+        # Try to condense the first half
+        condensed_summary = self.process_events(llm, first_half, summarize_prompt)
+        new_prompt = f'{action_prompt} {condensed_summary}'
+        new_token_count = llm.get_token_count([{'content': new_prompt, 'role': 'user'}])
 
-        # test prompt token length
-        if not self.needs_condense(llm, action_prompt, recent_events):
-            return action_prompt, False
+        if new_token_count < self.get_token_limit(llm):
+            return new_prompt  # Condensed successfully
+        else:
+            # If not successful, attempt to condense the second half
+            return self.attempt_condense(
+                llm, second_half, new_prompt, attempt_count + 1
+            )
 
-        try:
-            # send the summarize prompt to the llm
-            messages = [{'content': summarize_prompt, 'role': 'user'}]
-            resp = llm.completion(messages=messages)
-            summary_response = resp['choices'][0]['message']['content']
-            return summary_response, True
-        except ContextWindowExceededError:
-            # this is a subclass of InvalidRequestError in litellm exceptions
-            # it applies only to some (albeit apparently most) llm providers
-            # for bedrock, vertexai, sagemaker it's documented to be an InvalidRequestError directly instead
-            try:
-                return self.process_in_chunks(
-                    llm, summarize_prompt, recent_events
-                ), True
-            except Exception as e:
-                logger.error(
-                    'Error in chunk-by-chunk condensation: %s', str(e), exc_info=False
-                )
-                raise
-
-        except Exception as e:
-            logger.error('Error condensing history: %s', str(e), exc_info=False)
-            raise
-
-    def process_in_chunks(
-        self, llm: LLM, initial_prompt: str, recent_events: list[dict]
+    def process_events(
+        self, llm: LLM, recent_events: list[dict], summarize_prompt: str
     ) -> str:
         """
-        Processes the prompt in chunks, attempting to keep each chunk within the llm's max token count.
+        Processes a list of events by converting them into a single string representation and sending it to the LLM for condensation.
 
         Parameters:
-        - llm (LLM): The llm to use for processing.
-        - initial_prompt (str): The initial prompt used for the beginning of the summarization.
-        - events (list): The events to be included in the summarization.
+        - llm (LLM): The LLM to use for processing the events.
+        - recent_events (list[dict]): The events to be processed, where each event is a dictionary containing various attributes.
+        - summarize_prompt (str): The initial prompt used for summarization.
 
         Returns:
-        - str: The summarized result of processing in chunks.
+        - str: The summarized result of processing the events.
         """
-        chunk = []
-        summarized_parts = [initial_prompt]  # Start with the initial prompt for summary
-        token_limit = self.get_token_limit(llm)
+        # apply the prompt template to the events
+        summarize_prompt = self.summarize_prompt(recent_events=recent_events)
 
-        # naive approach
-        # use the summarize prompt for summarization call
-        # messages = [{'content': summarize_prompt, 'role': 'user'}]
-        # resp = llm.completion(messages=messages)
-        # summary_response = resp['choices'][0]['message']['content']
-
-        current_count = llm.get_token_count(
-            [{'content': initial_prompt, 'role': 'user'}]
-        )
-
-        for event in recent_events:
-            event_count = llm.get_token_count([{'content': event, 'role': 'user'}])
-            if current_count + event_count >= token_limit:
-                # Process the current chunk
-                messages = [{'content': ' '.join(chunk), 'role': 'user'}]
-                response = llm.completion(messages=messages)
-                summarized_parts.append(response['choices'][0]['message']['content'])
-                chunk = []  # Reset chunk
-                current_count = llm.get_token_count(
-                    [{'content': initial_prompt, 'role': 'user'}]
-                )  # Reset token count
-            chunk.append(event)
-            current_count += event_count
-
-        if chunk:  # Handle any remaining events in the last chunk
-            messages = [{'content': ' '.join(chunk), 'role': 'user'}]
-            response = llm.completion(messages=messages)
-            summarized_parts.append(response['choices'][0]['message']['content'])
-
-        return ' '.join(summarized_parts)
+        # send the combined prompt to the LLM
+        messages = [{'content': f'{summarize_prompt}', 'role': 'user'}]
+        response = llm.completion(messages=messages)
+        return response['choices'][0]['message']['content']
 
     def get_token_limit(self, llm: LLM) -> int:
         """
