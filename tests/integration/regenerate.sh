@@ -27,6 +27,7 @@ for ((i = 0; i < num_of_tests; i++)); do
     echo -e "\n\n\n\n========Running $test_name for $agent========\n\n\n\n"
     rm -rf $WORKSPACE_BASE
     mkdir $WORKSPACE_BASE
+    cp -r tests/integration/workspace/$test_name/* $WORKSPACE_BASE
 
     if [ "$TEST_ONLY" = true ]; then
       set -e
