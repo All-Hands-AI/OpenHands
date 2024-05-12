@@ -140,12 +140,12 @@ class MonologueAgent(Agent):
         # summarize the short term history (events) if necessary
         if self.memory_condenser.needs_condense(
             llm=self.llm,
-            core_events=self.monologue.get_core_events(),
+            default_events=self.monologue.get_core_events(),
             recent_events=self.monologue.get_recent_events(),
         ):
             summary_response = self.memory_condenser.condense(
                 llm=self.llm,
-                core_events=self.monologue.get_core_events(),
+                default_events=self.monologue.get_core_events(),
                 recent_events=self.monologue.get_recent_events(),
             )
         if summary_response[1]:
@@ -180,8 +180,9 @@ class MonologueAgent(Agent):
             self.memory = None
 
         self.memory_condenser = MemoryCondenser(
-            action_prompt=prompts.get_action_prompt,
-            summarize_prompt=prompts.get_summarize_prompt,
+            action_prompt=prompts.generate_action_prompt,
+            action_prompt_with_defaults=prompts.generate_action_prompt_with_defaults,
+            summarize_prompt=prompts.generate_summarize_prompt,
         )
 
         self._add_initial_thoughts(task)
