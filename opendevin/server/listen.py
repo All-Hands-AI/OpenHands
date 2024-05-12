@@ -96,7 +96,7 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Finish the task:
         ```json
-        {"action": "finish"}
+        {"action": "finish", "args": {}}
         ```
     """
     await websocket.accept()
