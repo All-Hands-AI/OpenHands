@@ -72,7 +72,10 @@ MONOLOGUE_SUMMARY_PROMPT = """
 Below is the internal monologue of an automated LLM agent. Each
 thought is an item in a JSON array. The thoughts may be memories,
 actions taken by the agent, or outputs from those actions.
-Please return a new, smaller JSON array, which summarizes the
+The monologue has two parts: the core memories, which you must not change,
+they are provided to you only for context, and the recent monologue.
+
+Please return a new, smaller JSON array, which summarizes the recent
 internal monologue. You can summarize individual thoughts, and
 you can condense related thoughts together with a description
 of their content.
@@ -92,7 +95,7 @@ You can also use the same action and args from the source monologue.
 """
 
 
-def get_summarize_monologue_prompt(thoughts: list[dict]):
+def get_summarize_monologue_prompt(core_memories: list[dict], thoughts: list[dict]):
     """
     Gets the prompt for summarizing the monologue
 
@@ -100,7 +103,9 @@ def get_summarize_monologue_prompt(thoughts: list[dict]):
     - str: A formatted string with the current monologue within the prompt
     """
     return MONOLOGUE_SUMMARY_PROMPT % {
-        'monologue': json.dumps({'old_monologue': thoughts}, indent=2),
+        'monologue': json.dumps(
+            {'core_memories': core_memories, 'old_monologue': thoughts}, indent=2
+        ),
     }
 
 

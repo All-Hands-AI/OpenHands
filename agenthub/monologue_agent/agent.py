@@ -29,7 +29,6 @@ from opendevin.memory.history import ShortTermHistory
 if config.agent.memory_enabled:
     from opendevin.memory.memory import LongTermMemory
 
-MAX_TOKEN_COUNT_PADDING = 512
 MAX_OUTPUT_LENGTH = 5000
 
 INITIAL_THOUGHTS = [
@@ -108,6 +107,7 @@ class MonologueAgent(Agent):
         - event (dict): The event that will be added to monologue and memory
         """
 
+        # truncate output if it's too long
         if (
             'args' in event_dict
             and 'output' in event_dict['args']
@@ -117,25 +117,44 @@ class MonologueAgent(Agent):
                 event_dict['args']['output'][:MAX_OUTPUT_LENGTH] + '...'
             )
 
+        # add event to short term history
         self.monologue.add_event(event_dict)
+
+        # add event to long term memory
         if self.memory is not None:
             self.memory.add_event(event_dict)
 
-        # Test monologue token length
-        prompt = prompts.get_request_action_prompt(
+        # get the action prompt that will be used when this step calls the llm completion
+        action_prompt = prompts.get_request_action_prompt(
             '',
             self.monologue.get_events(),
             [],
         )
-        messages = [{'content': prompt, 'role': 'user'}]
-        token_count = self.llm.get_token_count(messages)
 
-        if token_count + MAX_TOKEN_COUNT_PADDING > self.llm.max_input_tokens:
-            prompt = prompts.get_summarize_monologue_prompt(self.monologue.events)
+        # summarize the short term history (events) if necessary
+        if self.memory_condenser.needs_condense(
+            llm=self.llm,
+            action_prompt=action_prompt,
+            events=self.monologue.get_events(),
+        ):
             summary_response = self.memory_condenser.condense(
-                summarize_prompt=prompt, llm=self.llm
+                self.monologue.get_core_events(),
+                self.monologue.get_recent_events(),
+                llm=self.llm,
+                action_prompt=prompts.get_request_action_prompt(
+                    '',
+                    self.monologue.get_events(),
+                    [],
+                ),
+                summarize_prompt=prompts.get_summarize_monologue_prompt(
+                    self.monologue.get_core_events(),
+                    self.monologue.get_recent_events(),
+                ),
             )
-            self.monologue.events = prompts.parse_summary_response(summary_response)
+        if summary_response[1]:
+            self.monologue.recent_events = prompts.parse_summary_response(
+                summary_response[0]
+            )
 
     def _initialize(self, task: str):
         """
@@ -226,10 +245,13 @@ class MonologueAgent(Agent):
         - Action: The next action to take based on LLM response
         """
         self._initialize(state.plan.main_goal)
+
+        # add the most recent actions and observations to the agent's memory
         for prev_action, obs in state.updated_info:
             self._add_event(prev_action.to_memory())
             self._add_event(obs.to_memory())
 
+        # clean info for this step
         state.updated_info = []
 
         prompt = prompts.get_request_action_prompt(
