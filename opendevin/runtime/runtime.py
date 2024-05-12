@@ -51,14 +51,17 @@ class Runtime:
     """
 
     sid: str
-    sandbox: Sandbox
 
     def __init__(
         self,
+        sandbox: Sandbox | None = None,
         sid: str = 'default',
     ):
         self.sid = sid
-        self.sandbox = create_sandbox(sid, config.sandbox_type)
+        if sandbox is None:
+            self.sandbox = create_sandbox(sid, config.sandbox_type)
+        else:
+            self.sandbox = sandbox
         self.browser = BrowserEnv()
 
     def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
