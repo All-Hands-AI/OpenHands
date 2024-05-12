@@ -61,7 +61,7 @@ class AgentController:
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
         sandbox: Optional[Sandbox] = None,
-        iteration_reminder: bool = config.iteration_reminder,
+        remind_iterations: bool = config.remind_iterations,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -71,7 +71,7 @@ class AgentController:
             max_iterations: The maximum number of iterations the agent can run.
             max_chars: The maximum number of characters the agent can output.
             sandbox: An optional initialized sandbox to run the agent in. If not provided, a default sandbox will be created based on config.
-            iteration_reminder: A boolean value indicating whether to remind the agent its remaining budget of interaction.
+            remind_iterations: A boolean value indicating whether to remind the agent its remaining budget of interaction.
         """
         self.id = sid
         self.agent = agent
@@ -81,8 +81,8 @@ class AgentController:
         )
         self.max_iterations = max_iterations
 
-        self.iteration_reminder = iteration_reminder
-        if self.iteration_reminder:
+        self.remind_iterations = remind_iterations
+        if self.remind_iterations:
             logger.info(
                 'Iteration reminder is ENABLED: agent will be reminded of remaining turns.'
             )
@@ -249,7 +249,7 @@ class AgentController:
             i: The current iteration number (0-indexed).
             obs: The observation to add the reminder to.
         """
-        if self.iteration_reminder:
+        if self.remind_iterations:
             obs.content += f'\n\nENVIRONMENT REMINDER: You have {self.max_iterations - i - 1} turns left to complete the task.'
         return obs
 
