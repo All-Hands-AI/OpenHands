@@ -7,6 +7,7 @@ import time
 import uuid
 from collections import namedtuple
 from glob import glob
+from typing import Tuple
 
 import docker
 from pexpect import pxssh
@@ -26,6 +27,95 @@ from opendevin.runtime.utils import find_available_tcp_port
 # FIXME: these are not used, can we remove them?
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
+
+
+def split_bash_commands(commands):
+    # States
+    NORMAL = 0
+    IN_SINGLE_QUOTE = 1
+    IN_DOUBLE_QUOTE = 2
+    IN_HEREDOC = 3
+
+    state = NORMAL
+    heredoc_trigger = None
+    result = []
+    current_command: list[str] = []
+
+    i = 0
+    while i < len(commands):
+        char = commands[i]
+
+        if state == NORMAL:
+            if char == "'":
+                state = IN_SINGLE_QUOTE
+            elif char == '"':
+                state = IN_DOUBLE_QUOTE
+            elif char == '\\':
+                # Check if this is escaping a newline
+                if i + 1 < len(commands) and commands[i + 1] == '\n':
+                    i += 1  # Skip the newline
+                    # Continue with the next line as part of the same command
+                    i += 1  # Move to the first character of the next line
+                    continue
+            elif char == '\n':
+                if not heredoc_trigger and current_command:
+                    result.append(''.join(current_command).strip())
+                    current_command = []
+            elif char == '<' and commands[i : i + 2] == '<<':
+                # Detect heredoc
+                state = IN_HEREDOC
+                i += 2  # Skip '<<'
+                while commands[i] == ' ':
+                    i += 1
+                start = i
+                while commands[i] not in [' ', '\n']:
+                    i += 1
+                heredoc_trigger = commands[start:i]
+                current_command.append(commands[start - 2 : i])  # Include '<<'
+                continue  # Skip incrementing i at the end of the loop
+            current_command.append(char)
+
+        elif state == IN_SINGLE_QUOTE:
+            current_command.append(char)
+            if char == "'" and commands[i - 1] != '\\':
+                state = NORMAL
+
+        elif state == IN_DOUBLE_QUOTE:
+            current_command.append(char)
+            if char == '"' and commands[i - 1] != '\\':
+                state = NORMAL
+
+        elif state == IN_HEREDOC:
+            current_command.append(char)
+            if (
+                char == '\n'
+                and heredoc_trigger
+                and commands[i + 1 : i + 1 + len(heredoc_trigger) + 1]
+                == heredoc_trigger + '\n'
+            ):
+                # Check if the next line starts with the heredoc trigger followed by a newline
+                i += (
+                    len(heredoc_trigger) + 1
+                )  # Move past the heredoc trigger and newline
+                current_command.append(
+                    heredoc_trigger + '\n'
+                )  # Include the heredoc trigger and newline
+                result.append(''.join(current_command).strip())
+                current_command = []
+                heredoc_trigger = None
+                state = NORMAL
+                continue
+
+        i += 1
+
+    # Add the last command if any
+    if current_command:
+        result.append(''.join(current_command).strip())
+
+    # Remove any empty strings from the result
+    result = [cmd for cmd in result if cmd]
+
+    return result
 
 
 class DockerSSHBox(Sandbox):
@@ -86,6 +176,8 @@ class DockerSSHBox(Sandbox):
 
         self.setup_user()
         self.start_ssh_session()
+        # make sure /tmp always exists
+        self.execute('mkdir -p /tmp')
         atexit.register(self.close)
         super().__init__()
 
@@ -189,7 +281,7 @@ class DockerSSHBox(Sandbox):
 
     def start_ssh_session(self):
         # start ssh session at the background
-        self.ssh = pxssh.pxssh()
+        self.ssh = pxssh.pxssh(echo=False, timeout=self.timeout)
         hostname = self.ssh_hostname
         if self.run_as_devin:
             username = 'opendevin'
@@ -221,9 +313,18 @@ class DockerSSHBox(Sandbox):
         bg_cmd = self.background_commands[id]
         return bg_cmd.read_logs()
 
-    def execute(self, cmd: str) -> tuple[int, str]:
-        cmd = cmd.strip()
-        # use self.ssh
+    def execute(self, cmd: str) -> Tuple[int, str]:
+        commands = split_bash_commands(cmd)
+        if len(commands) > 1:
+            all_output = ''
+            for command in commands:
+                exit_code, output = self.execute(command)
+                if all_output:
+                    all_output += '\r\n'
+                all_output += output
+                if exit_code != 0:
+                    return exit_code, all_output
+            return 0, all_output
         self.ssh.sendline(cmd)
         success = self.ssh.prompt(timeout=self.timeout)
         if not success:
@@ -231,12 +332,12 @@ class DockerSSHBox(Sandbox):
             # send a SIGINT to the process
             self.ssh.sendintr()
             self.ssh.prompt()
-            command_output = self.ssh.before.decode('utf-8').lstrip(cmd).strip()
+            command_output = self.ssh.before.decode('utf-8')
             return (
                 -1,
                 f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}',
             )
-        command_output = self.ssh.before.decode('utf-8').strip()
+        command_output = self.ssh.before.decode('utf-8')
 
         # once out, make sure that we have *every* output, we while loop until we get an empty output
         while True:
@@ -247,24 +348,24 @@ class DockerSSHBox(Sandbox):
                 logger.debug('TIMEOUT REACHED')
                 break
             logger.debug('WAITING FOR .before')
-            output = self.ssh.before.decode('utf-8').strip()
+            output = self.ssh.before.decode('utf-8')
             logger.debug(
                 f'WAITING FOR END OF command output ({bool(output)}): {output}'
             )
             if output == '':
                 break
             command_output += output
-        command_output = command_output.lstrip(cmd).strip()
+        command_output = command_output.removesuffix('\r\n')
 
         # get the exit code
         self.ssh.sendline('echo $?')
         self.ssh.prompt()
-        exit_code = self.ssh.before.decode('utf-8')
-        while not exit_code.startswith('echo $?'):
+        exit_code_str = self.ssh.before.decode('utf-8')
+        while not exit_code_str:
             self.ssh.prompt()
-            exit_code = self.ssh.before.decode('utf-8')
-            logger.debug(f'WAITING FOR exit code: {exit_code}')
-        exit_code = int(exit_code.lstrip('echo $?').strip())
+            exit_code_str = self.ssh.before.decode('utf-8')
+            logger.debug(f'WAITING FOR exit code: {exit_code_str}')
+        exit_code = int(exit_code_str.strip())
         return exit_code, command_output
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
