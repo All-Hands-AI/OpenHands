@@ -15,6 +15,7 @@ class MemoryCondenser:
     def __init__(
         self,
         action_prompt: Callable[[list[dict], list[dict]], str],
+        action_prompt_with_defaults: Callable[[list[dict]], str],
         summarize_prompt: Callable[[list[dict], list[dict]], str],
     ):
         """
@@ -25,6 +26,7 @@ class MemoryCondenser:
         - summarize_prompt (Callable): The function to generate a summarize prompt. The function should accept core events and recent events as arguments.
         """
         self.action_prompt = action_prompt
+        self.action_prompt_with_defaults = action_prompt_with_defaults
         self.summarize_prompt = summarize_prompt
 
     def condense(
@@ -95,13 +97,12 @@ class MemoryCondenser:
         llm: LLM,
         core_events: list[dict],
         recent_events: list[dict],
-        summarize_prompt: str,
     ) -> str:
         """
         Condenses recent events in chunks, while preserving core events for context.
         """
         # Initial part of the prompt includes core memories for context
-        initial_prompt = self.action_prompt(core_events=core_events)
+        initial_prompt = self.action_prompt_with_defaults(core_events=core_events)
         return self.attempt_condense(llm, recent_events, initial_prompt, 0)
 
     def attempt_condense(

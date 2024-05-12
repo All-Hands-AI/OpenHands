@@ -192,4 +192,42 @@ def parse_summary_response(response: str) -> list[dict]:
     - list[dict]: The list of summaries output by the model
     """
     parsed = json.loads(response)
-    return parsed['new_monologue']
+
+def generate_action_prompt(task: str, core_events: list[dict], recent_events: list[dict]) -> str:
+    monologue = json.dumps({'core': core_events, 'recent': recent_events}, indent=2)
+    formatted_prompt = ACTION_PROMPT % {'task': task, 'monologue': monologue}
+    return formatted_prompt
+
+def generate_summarize_prompt(core_events: list[dict], recent_events: list[dict]) -> str:
+    monologue = json.dumps({'core': core_events, 'recent': recent_events}, indent=2)
+    formatted_prompt = MONOLOGUE_SUMMARY_PROMPT % {'monologue': monologue}
+    return formatted_prompt
+
+class SafeFormatter(dict):
+    def __missing__(self, key):
+        return "{" + key + "}"
+    
+    def generate_action_prompt(task, core_events: list[dict], recent_events: list[dict]) -> str:
+        formatter = SafeFormatter(task=task, monologue=json.dumps({'core': core_events, 'recent': recent_events}, indent=2))
+        return ACTION_PROMPT.format_map(formatter)
+    
+    def generate_summarize_prompt(core_events: list[dict], recent_events: list[dict]) -> str:
+        formatter = SafeFormatter(monologue=json.dumps({'core': core_events, 'recent': recent_events}, indent=2))
+        return MONOLOGUE_SUMMARY_PROMPT.format_map(formatter)
+    
+    def generate_action_prompt_with_defaults(self, core_events: list[dict]):
+        # Convert core_events to JSON string for embedding in the prompt
+        core_events_str = json.dumps(core_events, indent=2)
+        # Prepare data with available values and defaults
+        data = {
+            'task': '',  # Empty as specified
+            'core_events': core_events_str,  # Filled in from condenser
+            'recent_events': '',  # Not filled in, left as empty or placeholder text
+            # Add other placeholders with sensible defaults
+            'user': 'default_user',
+            'timeout': 'default_timeout',
+        }
+        # Use SafeFormatter for incremental replacement
+        formatter = SafeFormatter(**data)
+        formatted_prompt = self.action_prompt.format_map(formatter)
+        return formatted_prompt

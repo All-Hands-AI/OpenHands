@@ -180,8 +180,9 @@ class MonologueAgent(Agent):
             self.memory = None
 
         self.memory_condenser = MemoryCondenser(
-            action_prompt=prompts.get_action_prompt,
-            summarize_prompt=prompts.get_summarize_prompt,
+            action_prompt=prompts.generate_action_prompt,
+            action_prompt_with_defaults=prompts.generate_action_prompt_with_defaults,
+            summarize_prompt=prompts.generate_summarize_prompt,
         )
 
         self._add_initial_thoughts(task)
