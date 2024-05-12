@@ -234,6 +234,7 @@ OBSERVATION:
 2:Really?
 3:No mor typos!
 4:Enjoy!
+ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
 [Command -1 finished with exit code 0]]
 
 ----------
@@ -275,4 +276,5 @@ File updated. Please review the changes and make sure they are correct (correct 
 3:No more typos!
 4:Enjoy!
 File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.
+ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
 [Command -1 finished with exit code 0]]

@@ -11,7 +11,7 @@ workspace_path = os.getenv('WORKSPACE_BASE')
 
 
 def filter_out_symbols(input):
-    return ' '.join([char for char in input if char.isalpha()])
+    return ' '.join([char for char in input if char.isalnum()])
 
 
 def get_log_id(prompt_log_name):
@@ -100,7 +100,7 @@ def patch_completion(monkeypatch, request):
         monkeypatch.setattr('sys.stdin', user_responses)
 
 
-def clean_up():
+def set_up():
     assert workspace_path is not None
     if os.path.exists(workspace_path):
         for file in os.listdir(workspace_path):
@@ -109,7 +109,7 @@ def clean_up():
 
 @pytest.fixture(autouse=True)
 def resource_setup():
-    clean_up()
+    set_up()
     if not os.path.exists(workspace_path):
         os.makedirs(workspace_path)
     # Yield to test execution
