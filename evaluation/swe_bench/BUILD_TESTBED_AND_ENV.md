@@ -33,5 +33,7 @@ Run the following command to do the above two steps. The results will be saved t
 ### Build the pre-build conda env and testbed into ONE docker image
 
 ```bash
-./evaluation/swe_bench/scripts/docker/build_all_in_one.sh
+pushd evaluation/swe_bench
+docker build -t ghcr.io/opendevin/eval-swe-bench:full-v1.0 -f ./scripts/docker/Dockerfile.full.v1.0 .
+docker push ghcr.io/opendevin/eval-swe-bench:full-v1.0
 ```

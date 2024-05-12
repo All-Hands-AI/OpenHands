@@ -1,4 +1,4 @@
-FROM ghcr.io/opendevin/eval-swe-bench:latest
+FROM ghcr.io/opendevin/eval-swe-bench:builder
 
 # This Dockefile is used to build the Docker image for the evaluation of the SWE-Bench.
 # YOU SHOULD ENSURE ./eval_workspace CONTAINS THE EVALUATION WORKSPACE (testbed, conda)
@@ -40,38 +40,42 @@ RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
     rsync -ar --progress \
     --exclude='envs' \
     --exclude='pkgs' \
-    /eval_workspace/miniconda3 /swe_util/
+    /eval_workspace/miniforge3 /swe_util/
 
 # copy pkgs in separate layers (~9.4GB)
 RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
     rsync -ar --progress \
-    /eval_workspace/miniconda3/pkgs /swe_util/miniconda3/
+    /eval_workspace/miniforge3/pkgs /swe_util/miniforge3/
 
 # copy envs in separate layers (except matplotlib & scikit-learn - larger ones)
 RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
     rsync -ar --progress \
     --exclude='matplotlib*' \
     --exclude='scikit-learn*' \
-    /eval_workspace/miniconda3/envs /swe_util/miniconda3/
+    --exclude='pydata*' \
+    /eval_workspace/miniforge3/envs /swe_util/miniforge3/
 
 # copy the larger ones in separate layers
 RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
     rsync -ar --progress \
-    /eval_workspace/miniconda3/envs/matplotlib* /swe_util/miniconda3/envs/
+    /eval_workspace/miniforge3/envs/matplotlib* /swe_util/miniforge3/envs/
 
 RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
     rsync -ar --progress \
-    /eval_workspace/miniconda3/envs/scikit-learn* /swe_util/miniconda3/envs/
+    /eval_workspace/miniforge3/envs/scikit-learn* /swe_util/miniforge3/envs/
 
+RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
+    rsync -ar --progress \
+    /eval_workspace/miniforge3/envs/pydata* /swe_util/miniforge3/envs/
 
 # ================== COPY Smaller things ==================
-# copy everything except the folder of `eval_data` or `miniconda3`
+# copy everything except the folder of `eval_data` or `miniforge3`
 # typically, this should be the OD codebase
 RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
     rsync -ar --progress \
     --exclude='eval_data' \
-    --exclude='miniconda3' \
+    --exclude='miniforge3' \
     /eval_workspace/ /swe_util/
 
 # pushd evaluation/SWE-bench
-# docker build -t ghcr.io/opendevin/eval-swe-bench-all:lite-v1.0 -f ./scripts/docker/Dockerfile.all-in-one.lite.v1.0 .
+# docker build -t ghcr.io/opendevin/eval-swe-bench:full-v1.0 -f ./scripts/docker/Dockerfile.full.v1.0 .
