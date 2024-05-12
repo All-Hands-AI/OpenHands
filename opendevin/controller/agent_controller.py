@@ -46,9 +46,9 @@ class AgentController:
     max_iterations: int
     runtime: Runtime
     event_stream: EventStream
+    state: State
     agent_task: Optional[asyncio.Task] = None
     delegate: 'AgentController | None' = None
-    state: State | None = None
     _agent_state: AgentState = AgentState.LOADING
     _cur_step: int = 0
 
@@ -111,14 +111,10 @@ class AgentController:
         await self.set_agent_state_to(AgentState.STOPPED)
 
     def update_state_for_step(self, i):
-        if self.state is None:
-            return
         self.state.iteration = i
         self.state.background_commands_obs = self.runtime.get_background_obs()
 
     def update_state_after_step(self):
-        if self.state is None:
-            return
         self.state.updated_info = []
 
     async def add_error_to_history(self, message: str):
@@ -127,8 +123,6 @@ class AgentController:
     async def add_history(
         self, action: Action, observation: Observation, add_to_stream=True
     ):
-        if self.state is None:
-            raise ValueError('Added history while state was None')
         if not isinstance(action, Action):
             raise TypeError(
                 f'action must be an instance of Action, got {type(action).__name__} instead'
@@ -144,9 +138,6 @@ class AgentController:
             await self.event_stream.add_event(observation, EventSource.AGENT)
 
     async def _run(self):
-        if self.state is None:
-            return
-
         if self._agent_state != AgentState.RUNNING:
             raise ValueError('Task is not in running state')
 
@@ -190,7 +181,7 @@ class AgentController:
     async def reset_task(self):
         if self.agent_task is not None:
             self.agent_task.cancel()
-        self.state = None
+        self.state = State()
         self._cur_step = 0
         self.agent.reset()
 
@@ -246,8 +237,6 @@ class AgentController:
         return obs
 
     async def step(self, i: int) -> bool:
-        if self.state is None:
-            raise ValueError('No task to run')
         if self.delegate is not None:
             delegate_done = await self.delegate.step(i)
             if delegate_done:
@@ -312,11 +301,7 @@ class AgentController:
         # check if delegate stuck
         if self.delegate and self.delegate._is_stuck():
             return True
-        if (
-            self.state is None
-            or self.state.history is None
-            or len(self.state.history) < 3
-        ):
+        if len(self.state.history) < 3:
             return False
 
         # if the last three (Action, Observation) tuples are too repetitive
