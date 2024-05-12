@@ -1,8 +1,7 @@
-import json
-
 from opendevin.controller.state.plan import Plan
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ActionType
+from opendevin.core.utils import json
 from opendevin.events.action import (
     Action,
     NullAction,
@@ -176,9 +175,6 @@ def parse_response(response: str) -> Action:
     Returns:
     - Action: A valid next action to perform from model output
     """
-    json_start = response.find('{')
-    json_end = response.rfind('}') + 1
-    response = response[json_start:json_end]
     action_dict = json.loads(response)
     if 'contents' in action_dict:
         # The LLM gets confused here. Might as well be robust
