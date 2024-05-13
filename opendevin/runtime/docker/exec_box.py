@@ -1,6 +1,6 @@
 import atexit
-import json
 import os
+import shlex
 import sys
 import tarfile
 import time
@@ -180,8 +180,7 @@ class DockerExecBox(Sandbox):
     def execute(
         self, cmd: str, stream: bool = False
     ) -> tuple[int, str | CancellableStream]:
-        # Note: json.dumps gives us nice escaping for free
-        wrapper = f'timeout {self.timeout}s bash -c {json.dumps(cmd)}'
+        wrapper = f'timeout {self.timeout}s bash -c {shlex.quote(cmd)}'
         _exit_code, _output = container_exec_run(
             self.container,
             wrapper,
@@ -193,6 +192,7 @@ class DockerExecBox(Sandbox):
         if stream:
             return _exit_code, _output
 
+        print(_output)
         _output = _output.decode('utf-8')
         if _output.endswith('\n'):
             _output = _output[:-1]
