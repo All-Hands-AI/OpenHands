@@ -4,7 +4,7 @@
 
 # Task
 You are in charge of accomplishing the following task:
-Write a git commit message for the current staging area.
+Write a git commit message for the current staging area. Do not ask me for confirmation at any point.
 
 In order to accomplish this goal, you must delegate tasks to one or more agents, who
 can do the actual work. A description of each agent is provided below. You MUST
@@ -68,7 +68,7 @@ as well as observations you've made. This only includes the MOST RECENT
 actions and observations--more may have happened before that.
 They are time-ordered, with your most recent action at the bottom.
 
-[[{"action": "delegate", "args": {"agent": "CommitWriterAgent", "inputs": {}, "thought": ""}, "message": "I'm asking CommitWriterAgent for help with this task."}, {"observation": "null", "content": "", "extras": {}, "message": "No observation"}], [{"action": "null", "args": {}, "message": "No action"}, {"observation": "delegate", "content": "", "extras": {"outputs": {"reason": "Unable to retrieve git diff --cached due to unknown option error. It seems the git command or its options are not recognized in the current environment."}}, "message": ""}]]
+[[{"action": "delegate", "args": {"agent": "CommitWriterAgent", "inputs": {}, "thought": ""}, "message": "I'm asking CommitWriterAgent for help with this task."}, {"observation": "null", "content": "", "extras": {}, "message": "No observation"}], [{"action": "null", "args": {}, "message": "No action"}, {"observation": "delegate", "content": "", "extras": {"outputs": {"reason": "Unable to retrieve git diff --cached due to an unknown option error. It seems the git command or its options are not recognized in the current environment."}}, "message": ""}]]
 
 ## Available Actions
 * `delegate` - send a task to another agent from the list provided. Arguments:

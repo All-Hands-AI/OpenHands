@@ -2,7 +2,7 @@
   "action": "reject",
   "args": {
     "outputs": {
-      "reason": "Unable to retrieve git diff --cached due to unknown option error. It seems the git command or its options are not recognized in the current environment."
+      "reason": "Unable to retrieve git diff --cached due to an unknown option error. It seems the git command or its options are not recognized in the current environment."
     }
   }
 }

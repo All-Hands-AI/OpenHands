@@ -2,7 +2,7 @@
   "action": "reject",
   "args": {
     "outputs": {
-      "reason": "Unable to proceed with writing a git commit message due to an environment issue where git commands are not recognized."
+      "reason": "Unable to proceed with the CommitWriterAgent due to an environment issue where git commands are not recognized."
     }
   }
 }
