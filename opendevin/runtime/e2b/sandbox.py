@@ -72,10 +72,11 @@ class E2BBox(Sandbox):
         assert isinstance(proc, E2BProcess)
         return '\n'.join([m.line for m in proc.output_messages])
 
-    def execute(self, cmd: str) -> tuple[int, str]:
+    def execute(self, cmd: str, timeout: int | None = None) -> tuple[int, str]:
+        timeout = timeout if timeout is not None else self.timeout
         process = self.sandbox.process.start(cmd, env_vars=self._env)
         try:
-            process_output = process.wait(timeout=self.timeout)
+            process_output = process.wait(timeout=timeout)
         except TimeoutException:
             logger.info('Command timed out, killing process...')
             process.kill()

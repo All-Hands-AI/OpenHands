@@ -33,14 +33,15 @@ class LocalBox(Sandbox):
         atexit.register(self.cleanup)
         super().__init__()
 
-    def execute(self, cmd: str) -> tuple[int, str]:
+    def execute(self, cmd: str, timeout: int | None = None) -> tuple[int, str]:
+        timeout = timeout if timeout is not None else self.timeout
         try:
             completed_process = subprocess.run(
                 cmd,
                 shell=True,
                 text=True,
                 capture_output=True,
-                timeout=self.timeout,
+                timeout=timeout,
                 cwd=config.workspace_base,
                 env=self._env,
             )
