@@ -1,6 +1,7 @@
 import io
 import os
 import re
+import sys
 from functools import partial
 
 import pytest
@@ -79,7 +80,9 @@ def mock_completion(*args, test_name, **kwargs):
     for message in messages:
         message_str += message['content']
     mock_response = get_mock_response(test_name, message_str)
-    assert mock_response is not None, 'Mock response for prompt is not found'
+    if mock_response is None:
+        print('Mock response for prompt is not found, exiting...')
+        sys.exit(1)
     response = completion(**kwargs, mock_response=mock_response)
     return response
 
