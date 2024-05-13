@@ -253,7 +253,9 @@ def process_instance(instance, agent_class, metadata, skip_workspace_mount):
         'instruction': instruction,
         'git_patch': git_patch,
         'metadata': metadata,
-        'history': [(action.to_dict(), obs.to_dict()) for action, obs in state.history],
+        'history': [(action.to_dict(), obs.to_dict()) for action, obs in state.history]
+        if state and hasattr(state, 'history')
+        else None,
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
