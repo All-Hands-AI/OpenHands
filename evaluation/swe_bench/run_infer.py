@@ -246,6 +246,9 @@ def process_instance(instance, agent_class, metadata, skip_workspace_mount):
     # Attempt to analyze the test patch to get involved filepaths
     test_result = get_test_result(instance, sandbox, workspace_dir_name)
 
+    if state is None:
+        raise ValueError('State should not be None.')
+
     # Save the output
     output = {
         'instance_id': instance.instance_id,
@@ -253,9 +256,7 @@ def process_instance(instance, agent_class, metadata, skip_workspace_mount):
         'instruction': instruction,
         'git_patch': git_patch,
         'metadata': metadata,
-        'history': [(action.to_dict(), obs.to_dict()) for action, obs in state.history]
-        if state and hasattr(state, 'history')
-        else None,
+        'history': [(action.to_dict(), obs.to_dict()) for action, obs in state.history],
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
