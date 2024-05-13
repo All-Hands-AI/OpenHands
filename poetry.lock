@@ -373,30 +373,30 @@ crt = ["awscrt (==0.20.9)"]
 
 [[package]]
 name = "browsergym"
-version = "0.2.1"
+version = "0.1.0rc7"
 description = "BrowserGym: a gym environment for web task automation in the Chromium browser"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym-0.2.1-py3-none-any.whl", hash = "sha256:5804520c397788af0838c2f16a3d26cfedb11b55c57d2e59dbf11b883f6021d5"},
-    {file = "browsergym-0.2.1.tar.gz", hash = "sha256:1daaafb3d0bb21b1bdd3bb4145cbc3ca294a28e36442f5296c0e3c5335788861"},
+    {file = "browsergym-0.1.0rc7-py3-none-any.whl", hash = "sha256:333f207988b79affa16d2a900f9432adf1103d9bc25b511b4bbe0375ec5aa242"},
+    {file = "browsergym-0.1.0rc7.tar.gz", hash = "sha256:b65aab766194033e544f4f8bb6dcd712c9fca5061536dd7316d27a6b0b03e24f"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.2.1"
-browsergym-miniwob = "0.2.1"
-browsergym-webarena = "0.2.1"
-browsergym-workarena = "0.2.1"
+browsergym-core = "0.1.0rc7"
+browsergym-miniwob = "0.1.0rc7"
+browsergym-webarena = "0.1.0rc7"
+browsergym-workarena = "0.1.0rc7"
 
 [[package]]
 name = "browsergym-core"
-version = "0.2.1"
+version = "0.1.0rc7"
 description = "BrowserGym: a gym environment for web task automation in the Chromium browser"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_core-0.2.1-py3-none-any.whl", hash = "sha256:23e3ef336c7e23be707fdd7bced4efc1f37fd21ca3de022d2563de38c07ed9f8"},
-    {file = "browsergym_core-0.2.1.tar.gz", hash = "sha256:891d70df7668967b57a50f7f540ecf917dea44991a264704a5f4ab97da97a404"},
+    {file = "browsergym_core-0.1.0rc7-py3-none-any.whl", hash = "sha256:0ca03d9d26393cac4bd49650887c5268ac6eab24576d4e1c41dd8bd13b32a3a5"},
+    {file = "browsergym_core-0.1.0rc7.tar.gz", hash = "sha256:e0a5dfdba777d235ac3ed9ed61b580dffc7edc1b8b8f360111e24ebb43edd879"},
 ]
 
 [package.dependencies]
@@ -410,52 +410,50 @@ pyparsing = ">=3"
 
 [[package]]
 name = "browsergym-miniwob"
-version = "0.2.1"
+version = "0.1.0rc7"
 description = "MiniWoB++ benchmark for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_miniwob-0.2.1-py3-none-any.whl", hash = "sha256:0caafac46e5eabc4b18c9be30ef79b9ec21ce735b1208e26a1d7d4de6be3228b"},
-    {file = "browsergym_miniwob-0.2.1.tar.gz", hash = "sha256:8deca6820d8d654a6c603491953494ac982b7baac2451df8a4b904d434762fd5"},
+    {file = "browsergym_miniwob-0.1.0rc7-py3-none-any.whl", hash = "sha256:fe44d45e51ac0fddf5b68541170ba206c0b415a175058d092d32312edb8fa042"},
+    {file = "browsergym_miniwob-0.1.0rc7.tar.gz", hash = "sha256:b4de8b7d91bf768348727332cf3e6be82f7ca1a2a5d14a146aa3724bbad941b0"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.2.1"
+browsergym-core = "0.1.0rc7"
 
 [[package]]
 name = "browsergym-webarena"
-version = "0.2.1"
+version = "0.1.0rc7"
 description = "WebArena benchmark for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_webarena-0.2.1-py3-none-any.whl", hash = "sha256:58a8e6a067a507b3c26f83bc72d9c345f0b9c1564b0e12cca822cb39cf5f521d"},
-    {file = "browsergym_webarena-0.2.1.tar.gz", hash = "sha256:9f8540253d7110dad232fb529b743b064407e1c7cbab48644e99f3093cece65e"},
+    {file = "browsergym_webarena-0.1.0rc7-py3-none-any.whl", hash = "sha256:83b3fc12166be3c7401ecd0e61c4ffe049b88b73449a0e05ffebb8593b4b663e"},
+    {file = "browsergym_webarena-0.1.0rc7.tar.gz", hash = "sha256:4f5136878776427ccb41a6d0131c292077681bae40e45e2f890cbf00a90d6679"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.2.1"
+browsergym-core = "0.1.0rc7"
 libwebarena = "0.0.2"
 
 [[package]]
 name = "browsergym-workarena"
-version = "0.2.1"
+version = "0.1.0rc7"
 description = "WorkArena benchmark for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_workarena-0.2.1-py3-none-any.whl", hash = "sha256:32f9ba907a7effb757db1445aed98315e6c9fca916d507ca024053f70a6cd8a3"},
-    {file = "browsergym_workarena-0.2.1.tar.gz", hash = "sha256:6daa925f89dcf75b9917665a20441673dfd573e97316fa073e1653753c5808c7"},
+    {file = "browsergym_workarena-0.1.0rc7-py3-none-any.whl", hash = "sha256:b5b7985455b0459b8cbd7038ed07e9cefff6fc70e344487c666714aa01bad630"},
+    {file = "browsergym_workarena-0.1.0rc7.tar.gz", hash = "sha256:c1960066a87ada4c6226533eb15bcf5c40308b6dc39ad45acbaa6332c836aa7f"},
 ]
 
 [package.dependencies]
-browsergym-core = ">=0.2"
+browsergym-core = "0.1.0rc7"
 english-words = ">=2.0.1"
-faker = ">=24.11.0"
 numpy = ">=1.14"
 requests = ">=2.31"
 tenacity = ">=8.2.3"
-tqdm = ">=4.66.2"
 
 [[package]]
 name = "build"
@@ -1248,20 +1246,6 @@ tensorflow = ["tensorflow (>=2.2.0,!=2.6.0,!=2.6.1)"]
 tensorflow-gpu = ["tensorflow-gpu (>=2.2.0,!=2.6.0,!=2.6.1)"]
 tests = ["Werkzeug (>=1.0.1)", "absl-py", "accelerate", "bert-score (>=0.3.6)", "cer (>=1.2.0)", "charcut (>=1.1.1)", "jiwer", "mauve-text", "nltk", "pytest", "pytest-datadir", "pytest-xdist", "requests-file (>=1.5.1)", "rouge-score (>=0.1.2)", "sacrebleu", "sacremoses", "scikit-learn", "scipy (>=1.10.0)", "sentencepiece", "seqeval", "six (>=1.15.0,<1.16.0)", "tensorflow (>=2.3,!=2.6.0,!=2.6.1,<=2.10)", "texttable (>=1.6.3)", "tldextract (>=3.1.0)", "toml (>=0.10.1)", "torch", "transformers", "trectools", "unidecode (>=1.3.4)"]
 torch = ["torch"]
-
-[[package]]
-name = "faker"
-version = "25.1.0"
-description = "Faker is a Python package that generates fake data for you."
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "Faker-25.1.0-py3-none-any.whl", hash = "sha256:24e28dce0b89683bb9e017e042b971c8c4909cff551b6d46f1e207674c7c2526"},
-    {file = "Faker-25.1.0.tar.gz", hash = "sha256:2107618cf306bb188dcfea3e5cfd94aa92d65c7293a2437c1e96a99c83274755"},
-]
-
-[package.dependencies]
-python-dateutil = ">=2.4"
 
 [[package]]
 name = "farama-notifications"
@@ -2172,13 +2156,13 @@ files = [
 
 [[package]]
 name = "json-repair"
-version = "0.18.0"
+version = "0.19.0"
 description = "A package to repair broken json strings"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "json_repair-0.18.0-py3-none-any.whl", hash = "sha256:1e8e81a673bfdd427b0fb568bfa3cb9fb182892ed2770a1e72f0ad5dae5e4711"},
-    {file = "json_repair-0.18.0.tar.gz", hash = "sha256:9847b1742cb970d856d88b17b0f054fab3eb998797433d513df7951ba155e075"},
+    {file = "json_repair-0.19.0-py3-none-any.whl", hash = "sha256:5f39beec06af677eaaf302b53477e26674b0b1f5136279742639c2dfe8253a07"},
+    {file = "json_repair-0.19.0.tar.gz", hash = "sha256:82b33db04ea849bde8382f94cc38f3ecb33a1d84303184847bda94c16f0ac44e"},
 ]
 
 [[package]]
@@ -2361,13 +2345,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.37.3"
+version = "1.37.5"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.37.3-py3-none-any.whl", hash = "sha256:d90148c9e49afedb5fb6cd76b3bf125847b4ff732270ef8af723c9a8b13c58f9"},
-    {file = "litellm-1.37.3.tar.gz", hash = "sha256:93f0c849ca8f658da1f37c3aa337f39d3193fbef1de6300fc2ffb410ea3f6c93"},
+    {file = "litellm-1.37.5-py3-none-any.whl", hash = "sha256:a444dad4079d3d4c49037fe37581cd04b2135e674e9e9d1cfdbda32facd546ec"},
+    {file = "litellm-1.37.5.tar.gz", hash = "sha256:22d7292d2952d82992ebebc3b7dfa1a97393f603ce652f3223f2742123ba7f2b"},
 ]
 
 [package.dependencies]
@@ -2856,6 +2840,7 @@ files = [
     {file = "lxml-5.2.1-cp37-cp37m-musllinux_1_2_x86_64.whl", hash = "sha256:9e2addd2d1866fe112bc6f80117bcc6bc25191c5ed1bfbcf9f1386a884252ae8"},
     {file = "lxml-5.2.1-cp37-cp37m-win32.whl", hash = "sha256:f51969bac61441fd31f028d7b3b45962f3ecebf691a510495e5d2cd8c8092dbd"},
     {file = "lxml-5.2.1-cp37-cp37m-win_amd64.whl", hash = "sha256:b0b58fbfa1bf7367dde8a557994e3b1637294be6cf2169810375caf8571a085c"},
+    {file = "lxml-5.2.1-cp38-cp38-macosx_10_9_universal2.whl", hash = "sha256:3e183c6e3298a2ed5af9d7a356ea823bccaab4ec2349dc9ed83999fd289d14d5"},
     {file = "lxml-5.2.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:804f74efe22b6a227306dd890eecc4f8c59ff25ca35f1f14e7482bbce96ef10b"},
     {file = "lxml-5.2.1-cp38-cp38-manylinux_2_12_i686.manylinux2010_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:08802f0c56ed150cc6885ae0788a321b73505d2263ee56dad84d200cab11c07a"},
     {file = "lxml-5.2.1-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0f8c09ed18ecb4ebf23e02b8e7a22a05d6411911e6fabef3a36e4f371f4f2585"},
@@ -6702,4 +6687,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "1024a961ae0dc343d1613c506c29de58a0f577bf7bda0743d9cb27a5af2c343c"
+content-hash = "d390ba698e7278d14ffd2bca62ac62bc190b0c4d72cc669dec6307e187ca4653"
