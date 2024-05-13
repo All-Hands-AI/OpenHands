@@ -5,7 +5,6 @@ FROM node:${node_version}-alpine as builder
 ARG node_version
 ARG npm_version
 ARG debug
-ARG build_prod
 ARG app_root=/opt/opendevin/ui
 ARG build_dir="$app_root/build"
 
@@ -77,4 +76,4 @@ ENV FRONTEND_PORT=$frontend_port
 EXPOSE $frontend_port
 
 ENTRYPOINT ["/bin/sh", "-c", "/docker-entrypoint.sh"]
-CMD "-m ${DEFAULT_CHAT_MODEL} -e ${DEFAULT_EMBEDDINGS_MODEL} --"
+#CMD "-m ${DEFAULT_CHAT_MODEL} -e ${DEFAULT_EMBEDDINGS_MODEL} --"

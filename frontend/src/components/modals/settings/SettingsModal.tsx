@@ -34,7 +34,10 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   React.useEffect(() => {
     (async () => {
       try {
-        setModels(await fetchModels());
+        // eslint-disable-next-line
+        debugger;
+        const fModels = await fetchModels();
+        setModels(fModels);
         setAgents(await fetchAgents());
       } catch (error) {
         console.error(error);

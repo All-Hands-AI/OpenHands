@@ -5,23 +5,22 @@ FROM node:${node_version}-alpine as builder
 ARG node_version
 ARG npm_version
 ARG debug
-ARG build_prod
-ARG app_root=/opt/opendevin/ui
-ARG build_dir="$app_root/build"
+ARG dev_mode
+ARG app_root="/opt/opendevin/ui"
+ARG build_dir="${app_root}/build"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 COPY docker/openssl.cnf /etc/ssl/od_openssl.cnf
 
-RUN if [ -n "$debug" ]; then set -eux; fi && \
-    if [ -z "$build_prod" ]; then apk update && apk upgrade; fi && \
-    apk add openssl git ca-certificates &&\
-    mkdir -p $app_root/config/ssl && \
+RUN if [ -n "${debug}" ]; then set -eux; fi && \
+    apk update && apk upgrade && \
+    apk add --no-cache openssl git ca-certificates &&\
+    mkdir -p "${app_root}/config/ssl" && \
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout $app_root/config/ssl/mydomain-nginx.crt \
-    -out $app_root/config/ssl/mydomain-nginx.key \
-    -config /etc/ssl/od_openssl.cnf > /dev/null && \
-    rm -rf /var/lib/apt/lists/*
+    -keyout "${app_root}/config/ssl/mydomain-nginx.crt" \
+    -out "${app_root}/config/ssl/mydomain-nginx.key" \
+    -config /etc/ssl/od_openssl.cnf > /dev/null
 
 ARG node_env
 ARG node_options
@@ -36,47 +35,57 @@ WORKDIR $build_dir
 
 COPY frontend/*.json .
 COPY frontend/.npmrc .
-COPY frontend/*.config.js .
-COPY frontend/index.html .
-COPY frontend/src ./src
-COPY frontend/public ./public
-COPY frontend/scripts ./scripts
-COPY .env .
 
 RUN --mount=type=cache,target=$pm_cache_dir \
-    if [ -n "$debug" ]; then set -eux; fi && \
+    if [ -n "${debug}" ]; then set -eux; fi && \
     if [ -z .npmrc ]; then touch .npmrc; fi && \
-    if [ -z "$debug" ]; then echo "loglevel=silent" | tee -a ./.npmrc; fi && \
+    if [ -z "${debug}" ]; then echo "loglevel=silent" | tee -a ./.npmrc; fi && \
     sed -i 's/"packageManager": ".+@.+",/"packageManager": "yarn@'$(yarn --version)'",/' package.json > /dev/null && \
-    npm config set prefix "$yarn_global_root" && \
+    npm config set prefix "${yarn_global_root}" && \
     npm config set audit false && \
     npm config set fund false && \
     npm install -g npm@${npm_version} && \
-    yarn global add --prefix="$yarn_global_root" classnames typescript webpack tsx @types/node \
+    yarn global add --prefix="${yarn_global_root}" classnames typescript webpack tsx @types/node \
     vite nx@latest @nx/react && \
     yarn install
 
-ENV PATH=/usr/local/lib/bin:$PATH
+ENV PATH="/usr/local/lib/bin:$PATH"
 
-RUN if [ -n "$debug" ]; then set -eux; fi && \
+COPY frontend/*.config.js .
+COPY frontend/index.html .
+COPY frontend/src src
+COPY frontend/public public
+COPY frontend/scripts scripts
+COPY frontend/dist dist
+#COPY frontend/.env .
+COPY docker/devin/web_ui/.env /tmp/docker.env
+
+#RUN if [ -n "${debug}" ]; then set -eux; fi && \
+#    cat /tmp/docker.env | tee -a .env > /dev/null && \
+#    rm -f /tmp/docker.env > /dev/null
+
+RUN if [ -n "${debug}" ]; then set -eux; fi && \
     tsx && \
     sed -i 's/^\/\/.+//g' vite.config.js && \
 #    ls -al . && cat vite.config.js && exit 1  && \
     vite build --config vite.config.js --clearScreen false
 
-RUN if [ -n "$debug" ]; then set -eux; fi && \
-    if [ -n "$build_prod" ]; then rm -rf /var/lib/apt/lists/*; fi && \
-    if [ -n "$build_prod" ]; then rm -rf $pm_cache_dir/*; fi && \
-    if [ -z "$build_prod" ]; then npm cache clean --force; fi && \
-    if [ -z "$build_prod" ]; then yarn cache clean; fi
+RUN if [ -n "${debug}" ]; then set -eux; fi && \
+    if [ "${node_env}" != "development" ]; then rm -rf /var/lib/apt/lists/*; fi && \
+    if [ "${node_env}" != "development" ]; then rm -rf ${pm_cache_dir}/*; fi && \
+    if [ "${node_env}" != "development" ]; then npm cache clean --force; fi && \
+    if [ "${node_env}" != "development" ]; then yarn cache clean; fi
 
 COPY docker/devin/web_ui/entrypoint.sh /docker-entrypoint.sh
 
-ARG frontend_port
+#ARG backend_host
+#ARG frontend_port
 
-ENV FRONTEND_PORT=$frontend_port
+#ENV VITE_FRONTEND_PORT=${frontend_port}
+#ENV VITE_BACKEND_HOST=127.0.0.1:3017
+#ENV BACKEND_HOST=172.18.1.252:3017
 
-EXPOSE $frontend_port
+#EXPOSE ${VITE_FRONTEND_PORT}
 
-ENTRYPOINT ["/bin/sh", "-c", "/docker-entrypoint.sh"]
-CMD "-m ${DEFAULT_CHAT_MODEL} -e ${DEFAULT_EMBEDDINGS_MODEL} --"
+ENTRYPOINT ["/bin/sh", "-c", "/docker-entrypoint.sh", "--"]
+#CMD "-m ${DEFAULT_CHAT_MODEL} -e ${DEFAULT_EMBEDDINGS_MODEL} --"

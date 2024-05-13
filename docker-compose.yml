@@ -11,45 +11,54 @@ services:
     build:
       dockerfile: docker/devin/app/Dockerfile
       args:
-        # jupyter_port: ${JUPYTER_PORT:?}
         debug: ${DEBUG:-}
         conda_dir: /var/miniconda
-        nvidia_utils_driver: 550
+        cuda_version: ${CUDA_VERSION:?}
+        cuda_driver_branch: ${CUDA_DRIVER_BRANCH:?}
         app_root: ${APP_ROOT:?}
         venv_name: ${VENV_NAME:?}
         locale: ${LANG:?}
         timezone: ${TZ:?}
-        backend_host: ${DEVIN_HOST:?}
-        devin_ws_port: ${DEVIN_WS_PORT:?}
-        jupyter_port: ${JUPYTER_PORT:?}
+        devin_api_port: ${DEVIN_API_PORT:?}
+        ubuntu_tag: ${UBUNTU_TAG:?}
+        dev_mode: ${DEV_MODE}
     env_file:
       - ./.env
       - docker/devin/app/.env
-    command: "-m mixtral -e llama2"
-    depends_on:
-      - litellm
-      - postgres
-      - redis
+    environment:
+      - SANDBOX_USER_ID=1001
+      - WORKSPACE_MOUNT_PATH=${HOST_WORKSPACE_DIR:?}
+      - PYDEVD_DISABLE_FILE_VALIDATION=1
     networks:
-      opendevin-net:
-        ipv4_address: ${DEVIN_HOST:?}
+      litellm_proxy_net:
+        ipv4_address: ${DEVIN_IP:?}
+    extra_hosts:
+      - host.docker.internal=host-gateway
     volumes:
-      - root_dir_vol:/root
-      - pip_cache_vol:/root/.cache/pip
       - conda_vol:${CONDA_ROOT:?}
-      - ./environment.yml:${APP_ROOT:?}/environment.yml
-      - ./workspace:${WORKSPACE_DIR:?}
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Code workspace
+      - ${HOST_WORKSPACE_DIR:?}:/opt/workspace_base
+      # Bind mounts for development
+      - ./agenthub:${APP_ROOT}/agenthub
+      - ./dev_config:${APP_ROOT}/dev_config
+      - ./evaluation:${APP_ROOT}/evaluation
+      - ./opendevin:${APP_ROOT}/opendevin
+      - ./tests:${APP_ROOT}/tests
+      - ./pyproject.toml:${APP_ROOT}/pyproject.toml:ro
+      - ./poetry.lock:${APP_ROOT}/poetry.lock
+      - ./environment.yml:${APP_ROOT}/environment.yml
+      - ./frontend/dist:${APP_ROOT}/frontend/dist
     tmpfs:
       - /run
       - /tmp
       - /var/run
     ports:
-      - "${DEVIN_WS_PORT}:${DEVIN_WS_PORT}"
-      - "${JUPYTER_PORT:?}:${JUPYTER_PORT:?}"
+      - "${DEVIN_API_PORT}:${DEVIN_API_PORT}"
       # VSCode Python remote debugger
       - "5678:5678"
     tty: true
-    restart: no
+    restart: on-failure
     entrypoint: /docker-entrypoint.sh
     deploy:
       resources:
@@ -59,76 +68,11 @@ services:
               count: 1
               capabilities: [ "gpu" ]
     healthcheck:
-      test: [ "CMD", "curl", "-L", "http://localhost:${DEVIN_WS_PORT}" ]
+      test: [ "CMD", "curl", "-L", "http://127.0.0.1:${DEVIN_API_PORT:?}" ]
       interval: 1m
       timeout: 10s
       retries: 3
       start_period: 2m
-
-  litellm:
-    image: ghcr.io/berriai/litellm:main-latest
-    pull_policy: always
-    container_name: od_litellm_proxy
-    command: "--config /etc/litellm/config.yaml --port ${LITELLM_PORT} --num_workers 8 --detailed_debug"
-    environment:
-      DEFAULT_CHAT_MODEL: ${DEFAULT_CHAT_MODEL:?}
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_CONTAINER_PORT}/${POSTGRES_DB}
-    ports:
-      - "${LITELLM_PORT}:4000"
-    volumes:
-      - pip_cache_vol:/root/.cache/pip:tmpfs=4G
-      - ./litellm_config.yaml:/etc/litellm/config.yaml
-      - ./docker/env_debug.sh:${APP_ROOT}/run/env_debug
-    env_file:
-      - .env
-      - docker/litellm/.env
-    depends_on:
-      - redis
-      - postgres
-    networks:
-      - opendevin-net
-    healthcheck:
-      test: [ "CMD", "litellm", "--health" ]
-      interval: 1m
-      timeout: 10s
-      retries: 3
-      start_period: 2m
-    tmpfs:
-      - /run
-      - /var/run
-      - /tmp
-      - /var/tmp
-
-  redis:
-    image: ${REDIS_IMAGE:?}:latest
-    container_name: od_redis
-    pull_policy: always
-    env_file: docker/redis/.env
-    ports:
-      - "${REDIS_SERVER_PORT}:6379"
-      - "${REDIS_INSIGHT_PORT}:8001"
-    volumes:
-      - ./docker/redis/data:/data
-      - ./docker/redis/stack.conf:/redis-stack.conf
-    networks:
-      - opendevin-net
-
-  postgres:
-    image: postgres:latest
-    pull_policy: always
-    container_name: od_postgres
-    env_file:
-      - .env
-      - docker/postgres/.env
-    volumes:
-      - posgtres_data:${POSTGRES_DATA:-/var/lib/postgres}
-    ports:
-      - "${POSTGRES_HOST_PORT}:${POSTGRES_CONTAINER_PORT}"
-    tmpfs:
-      - /var/run:size=1m
-      - /tmp
-    networks:
-      - opendevin-net
 
   # UI service
   web_ui:
@@ -139,43 +83,42 @@ services:
     build:
       dockerfile: docker/devin/web_ui/${UI_BUILD_DOCKERFILE:?}
       args:
-        node_version: ${NODE_VERSION:?}
-        npm_version: ${NPM_VERSION:?}
-        node_env: ${NODE_ENV:?}
-        debug: ${DEBUG}
-        node_options: ${NODE_OPTIONS}
-        build_prod: ${BUILD_PROD}
-        frontend_port: ${UI_HTTP_PORT:?}
+        - node_version=${NODE_VERSION:?}
+        - npm_version=${NPM_VERSION:?}
+        - node_env=${NODE_ENV:?}
+        - debug=${DEBUG}
+        - node_options=${NODE_OPTIONS}
+        - frontend_port=${UI_HTTP_PORT:?}
+        - dev_mode=${DEV_MODE}
+        - backend_host=${DEVIN_IP:?}:${DEVIN_API_PORT:?}
     env_file:
       - ./.env
-      - docker/devin/web_ui/.env
+#      - docker/devin/web_ui/.env
     environment:
-      BACKEND_HOST: ${DEVIN_HOST:?}:${DEVIN_API_PORT:?}
-      FRONTEND_PORT: ${UI_HTTP_PORT:?}
-      LLM_PROXY_HOST: litellm
-      LLM_PROXY_PORT: ${LITELLM_PORT:?}
+      - VITE_USE_TLS=false
+      - VITE_INSECURE_SKIP_VERIFY=false
+      - VITE_BACKEND_HOST=${DEVIN_IP:?}:${DEVIN_API_PORT:?}
+#      - FRONTEND_PORT=${UI_HTTP_PORT:?}
+      - LLM_PROXY_HOST=litellm
+      - LLM_PROXY_PORT=${LITELLM_PORT:?}
     networks:
-      - opendevin-net
+      litellm_proxy_net:
     ports:
       - "${UI_HTTP_PORT:?}:${UI_HTTP_PORT:?}"
       - "${UI_HTTPS_PORT:?}:${UI_HTTPS_PORT:?}"
     tty: true
-    command: ""
     volumes:
       - ./docker/openssl.cnf:/etc/ssl/od_openssl.cnf
 #      - ./docker/nginx/nginx.conf.dist:/etc/nginx/nginx.conf
+      - ./frontend/dist:/opt/opendevin/ui/build/dist
+    depends_on:
+      - devin
 
 networks:
-  opendevin-net:
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.28.0.0/16
+  litellm_proxy_net:
+    external: true
+    name: litellm_llm_services_net
 
 volumes:
   root_dir_vol:
-  posgtres_data:
-  redis_data:
-  pip_cache_vol:
   conda_vol:
-  od_vol:

@@ -1,163 +1,117 @@
-ARG cuda_version=12.4.0
-ARG ubuntu_tag=ubuntu20.04
-ARG tag="${cuda_version}-devel-${ubuntu_tag}"
-FROM nvidia/cuda:${tag} as build-app
+ARG cuda_version="11.2.2"
+ARG ubuntu_tag="ubuntu20.04"
+ARG tag="${cuda_version}-base-${ubuntu_tag}"
+FROM nvcr.io/nvidia/cuda:${tag} as build-app
 ARG cuda_version
-ARG ubuntu_version=Ubuntu-20.04
 
 LABEL org.opencontainers.image.description="Devin with Nvidia CUDA v${cuda_version} and Miniconda3"
 LABEL org.opencontainers.image.author="lehcode <53556648+lehcode@users.noreply.github.com>"
 
 ARG debug
-ARG apt_cache_dir=/var/cache/apt
-ARG nvidia_utils_driver=550
+ARG apt_cache_dir="/var/cache/apt"
+ARG cuda_driver_branch=535
+ARG timezone="Etc/UTC"
+ARG lang="C.UTF-8"
 
-ENV DEBUG="$debug"
+ENV DEBUG="${debug}"
 ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG="${lang}"
+ENV TZ="${timezone}"
 
-ADD --checksum=sha256:3f2e5498e550a6437f15d9cc8020d52742d0ba70976ee8fce4f0daefa3992d2e https://repo.anaconda.com/miniconda/Miniconda3-py311_24.1.2-0-Linux-x86_64.sh /tmp/miniconda.sh
-
-RUN --mount=type=cache,target=${apt_cache_dir},sharing=locked \
-    if [ -n "${DEBUG}" ]; then set -eux; fi && \
-    echo "Updating $ubuntu_version packages..." && \
-    apt-get -q update > /dev/null && \
-    apt-get install -qy --no-install-recommends \
-      tzdata locales cpanminus curl git gnupg gnupg2 gnupg1 wget \
-      nvidia-utils-${nvidia_utils_driver} > /dev/null && \
-    if [ -z "${DEBUG}" ]; then apt-get -qy upgrade > /dev/null; fi
-
-ARG timezone=Etc/UTC
-ARG lang
-
-ENV LANG="$lang"
-ENV TZ="$timezone"
+RUN --mount=type=cache,target="${apt_cache_dir}",sharing=locked \
+    if [ -n "${debug}" ]; then set -eux; fi && \
+    apt-get -q update > /dev/null && apt-get -y upgrade && \
+    apt-get -qy install --no-install-recommends tzdata locales cpanminus curl git wget ca-certificates \
+      nvidia-driver-${cuda_driver_branch} nvidia-utils-${cuda_driver_branch}
 
 COPY docker/locales /etc/locale.gen
 
-RUN if [ -n "$debug" ]; then set -eux; fi && \
-    echo "Configuring timezone and $ubuntu_version locale..." && \
-    ln -fs "/usr/share/zoneinfo/$timezone" /etc/localtime > /dev/null && \
-    echo "$TZ" | tee -pa /etc/timezone > /dev/null && \
-    dpkg-reconfigure -f noninteractive tzdata locales > /dev/null && \
-    apt-get -q update && apt-get -qy upgrade && \
-    rm -f /usr/lib/x86_64-linux-gnu/libcudadebugger.so.1 && \
-    rm -f /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1 && \
-    rm -f /usr/lib/x86_64-linux-gnu/libcuda.so.1 && \
-    if [ -z "$debug" ]; then rm -rf /var/lib/apt/lists/*; fi
+RUN if [ -n "${debug}" ]; then set -eux; fi && \
+    ln -fs "/usr/share/zoneinfo/${timezone}" /etc/localtime > /dev/null && \
+    echo "${timezone}" | tee -pa /etc/timezone > /dev/null && \
+    dpkg-reconfigure -f noninteractive tzdata locales
 
-COPY docker/devin/app/conda.base.tmpl.yml /tmp/environment.yml
+ADD --checksum=sha256:3f2e5498e550a6437f15d9cc8020d52742d0ba70976ee8fce4f0daefa3992d2e https://repo.anaconda.com/miniconda/Miniconda3-py311_24.1.2-0-Linux-x86_64.sh /tmp/miniconda.sh
 
-ARG conda_root=/var/miniconda3
-ARG venv_name
-ARG app_root
+ARG conda_root="/var/miniconda3"
+ARG venv_name="od_env"
 
-ENV CONDA_ROOT=$conda_root
-ENV VENV_NAME="$venv_name"
-ENV APP_ROOT="$app_root"
+ENV CONDA_ROOT="${conda_root}"
+ENV VENV_NAME="${venv_name}"
 
-RUN if [ -n "${DEBUG}" ]; then set -eux; fi && \
-    echo "Installing Miniconda..." && \
-    mkdir -p "${CONDA_ROOT}" && \
-    bash /tmp/miniconda.sh -b -u -p ${CONDA_ROOT} > /dev/null && \
-    sed -i "s/<CONDA_DIR>/$(echo "${CONDA_ROOT}/envs/${VENV_NAME}" | sed -e 's/[\/&]/\\&/g')/g" /tmp/environment.yml > /dev/null  && \
-    sed -i "s/<VENV_NAME>/${VENV_NAME}/g" /tmp/environment.yml > /dev/null
+RUN if [ -n "${debug}" ]; then set -eux; fi && \
+    mkdir -p "${conda_root}" && \
+    bash /tmp/miniconda.sh -b -u -p ${conda_root} > /dev/null
 
-ENV PATH="/root/.local/bin:${CONDA_ROOT}/bin:${PATH}"
-ARG conda_pkgs_dir=$CONDA_ROOT/pkgs
+ARG conda_pkgs_dir="${CONDA_ROOT}/pkgs"
+ARG app_root="/app"
+ARG dev_mode
 
-COPY docker/devin/app/.condarc "${CONDA_ROOT}/.condarc"
+ENV PATH="/root/.local/bin:${conda_root}/bin:${PATH}"
+ENV APP_ROOT="${app_root}"
+ENV CONDA_NO_PLUGINS=true
 
-RUN --mount=type=cache,target=${conda_pkgs_dir},sharing=locked \
-    if [ -n "${DEBUG}" ]; then set -eux; fi && \
-    conda install -qy pip > /dev/null  && \
-    conda init bash > /dev/null  && \
-    echo "Configuring ${VENV_NAME} environment..." && \
-    conda env create -qy -f /tmp/environment.yml -n "${VENV_NAME}" > /dev/null
+WORKDIR "${app_root}"
 
-RUN --mount=type=cache,target=${conda_pkgs_dir},sharing=locked \
-    if [ -n "${DEBUG}" ]; then set -eux; fi && \
-    conda install -qy -n "${VENV_NAME}" pip > /dev/null
-
-ARG bin_dir=/usr/local/bin
-
-ENV PYTHONPATH="${APP_ROOT}"
-ENV BIN_DIR="$bin_dir"
-
-# Activate Miniconda environment
-RUN eval "$(conda shell.bash activate "${VENV_NAME}")"
-# Make RUN commands use the new environment
-SHELL ["conda", "run", "-n", "od_env", "/bin/bash", "-c"]
-
-RUN --mount=type=cache,target=${conda_pkgs_dir},sharing=locked \
-    if [ -n "$debug" ]; then set -eux; fi && \
-    echo "Setting up Miniconda..." && \
-    conda config -q --add channels anaconda > /dev/null && \
-    conda config -q --add channels pytorch > /dev/null && \
-    conda config -q --add channels microsoft > /dev/null && \
-    conda config -q --set channel_priority disabled
-
-WORKDIR "$APP_ROOT"
+RUN --mount=type=cache,target="${conda_pkgs_dir}",sharing=locked \
+    if [ -n "${debug}" ]; then set -eux; fi && \
+    conda config --add channels anaconda  && \
+    conda config --add channels microsoft  && \
+    conda config --add channels pytorch  && \
+    conda config --add channels nvidia  && \
+    conda config --add channels conda  && \
+    conda config --add channels conda-forge  && \
+    conda config --set solver classic && \
+    conda install -qy conda=24.4.0 pip && \
+    conda create -qy --name "${venv_name}" python=3.12 uvicorn chromadb chroma-hnswlib && \
+    conda install -qy --name "${venv_name}" pip && \
+    if [ -n "${dev_mode}" ]; then conda install --name ${venv_name} debugpy; fi
 
 COPY pyproject.toml .
+COPY poetry.lock .
 
 ENV POETRY_HOME=/etc/poetry
 ENV PATH="${POETRY_HOME}/bin:${PATH}"
 ENV POETRY_CACHE_DIR=/root/.cache/pypoetry
 # If you do not want to install the current project use --no-root.
-# If you want to use Poetry only for dependency management but not for packaging, you can disable package mode by
-# setting package-mode = false in your pyproject.toml file.
+# If you want to use Poetry only for dependency management but not for packaging,
+# you can disable package mode by setting package-mode = false in your pyproject.toml file.
 # In a future version of Poetry this warning will become an error!
 RUN --mount=type=cache,target=${POETRY_CACHE_DIR} \
     if [ -n "$debug" ]; then set -eux; fi && \
-    curl -sSL "https://install.python-poetry.org" | python3 - > /dev/null && poetry --version && \
-    echo "Building OpenDevin..." && \
-    poetry install --no-root --no-plugins > /dev/null
-
-#ARG litellm_port=11111
-#ARG jupyter_port=37799
-ARG workspace_dir
+    apt-get install -qy build-essential && \
+    conda run -n "${venv_name}" curl -sSL "https://install.python-poetry.org" | python3 - > /dev/null && \
+    conda run -n "${venv_name}" poetry --version && \
+    conda run -n "${venv_name}" poetry install && \
+    conda env export --name "${venv_name}" --file "${app_root}/environment.yml"
 
 COPY agenthub agenthub
 COPY dev_config dev_config
 COPY evaluation evaluation
 COPY opendevin opendevin
 COPY tests tests
+COPY frontend/dist frontend/dist
 
-RUN --mount=type=cache,target=${conda_pkgs_dir},sharing=locked \
-    if [ -n "$debug" ]; then set -eux; fi && \
-    echo "Installing Jupyter Notebook..." && \
-    if [ -n "$debug" ]; then set -eux; fi && \
-    conda install -qy jupyter > /dev/null
-
-RUN --mount=type=cache,target=${conda_pkgs_dir},sharing=locked \
-    if [ -n "$debug" ]; then set -eux; fi && \
-    echo "Dumping ${VENV_NAME} environment config..." && \
-    if [ -n "$debug" ]; then set -eux; fi && \
-    conda env export -q -n "${VENV_NAME}" -f environment.yml
-
-COPY dev_config/python/.pre-commit-config.yaml /tmp/
-COPY .git .git
-COPY .gitignore .
-COPY .gitattributes .
-
-COPY docker/devin/app/devin_up.py oppendevin_launcher
-COPY docker/env_debug.sh "${APP_ROOT}/run/env_debug"
+COPY docker/env_debug.sh "${app_root}/run/env_debug"
 COPY docker/devin/app/entrypoint.sh /docker-entrypoint.sh
 
-RUN if [ -n "$debug" ]; then set -eux; fi && \
-    echo "Finalizing build..." && \
-    git config --unset-all core.hooksPath || true > /dev/null && \
-    poetry run pre-commit install --config /tmp/.pre-commit-config.yaml && \
+ARG dev_mode
+
+ENV DEV_MODE="${dev_mode}"
+
+RUN if [ -n "${debug}" ]; then set -eux; fi && \
     chmod a+x /docker-entrypoint.sh && \
-    rm -rf /var/lib/apt/lists/*
+    if [ -z "${dev_mode}" ]; then rm -rf /var/lib/apt/lists/*; fi
 
-ARG devin_ws_port
-ARG jupyter_port
+ARG devin_api_port
 
-COPY .env .
+ENV PYTHONPATH="${APP_ROOT}/opendevin"
 
-EXPOSE $devin_ws_port
-EXPOSE $jupyter_port
+EXPOSE ${devin_api_port}
 
-ENTRYPOINT ["/docker-entrypoint.sh", "-c"]
-CMD "-m ${DEFAULT_CHAT_MODEL} -e ${DEFAULT_EMBEDDINGS_MODEL} --"
+# Activate Miniconda environment
+RUN eval "$(conda shell.bash activate "${venv_name}")"
+# Make RUN commands use the new environment
+SHELL ["conda", "run", "-n", "${venv_name}", "/bin/bash", "-c"]
+
+ENTRYPOINT ["/docker-entrypoint.sh"]

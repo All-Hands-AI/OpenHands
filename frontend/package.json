@@ -43,7 +43,8 @@
     "make-i18n": "node scripts/make-i18n-translations.cjs",
     "prelint": "npm run make-i18n",
     "lint": "eslint src/**/*.ts* && prettier --check src/**/*.ts*",
-    "prepare": "cd .. && husky install frontend/.husky"
+    "prepare": "cd .. && husky install frontend/.husky",
+    "debug": "node --inspect=0.0.0.0:9229 node_modules/vite/bin/vite.js --host --port 8080"
   },
   "husky": {
     "hooks": {
@@ -68,6 +69,7 @@
     "@typescript-eslint/eslint-plugin": "^7.4.0",
     "@typescript-eslint/parser": "^7.0.0",
     "autoprefixer": "^10.4.19",
+    "classnames": "^2.5.1",
     "eslint": "^8.57.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-airbnb-typescript": "^18.0.0",

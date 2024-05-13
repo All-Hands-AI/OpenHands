@@ -38,6 +38,7 @@ security_scheme = HTTPBearer()
 # This endpoint receives events from the client (i.e. the browser)
 @app.websocket('/ws')
 async def websocket_endpoint(websocket: WebSocket):
+    print(websocket)
     await websocket.accept()
     sid = get_sid_from_token(websocket.query_params.get('token') or '')
     if sid == '':

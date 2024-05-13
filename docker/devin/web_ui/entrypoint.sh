@@ -5,7 +5,7 @@
 
 if [ -n "${DEBUG}" ]; then set -eux; fi
 
-echo "Backend endpoint address http://${DEVIN_HOST}:${DEVIN_API_PORT}"
+echo "Backend endpoint address http://${DEVIN_IP}:${DEVIN_API_PORT}"
 
 if [ -n "${SECURE_MODE}" ]; then
     export UI_PORT="${UI_HTTPS_PORT}"

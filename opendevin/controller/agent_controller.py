@@ -1,5 +1,9 @@
 import asyncio
-from typing import Callable, List, Type
+import inspect
+import traceback
+
+from termcolor import colored
+from typing import Callable, List, Type, Any, Mapping, cast, Awaitable
 
 from opendevin import config
 from opendevin.action import (
@@ -8,7 +12,7 @@ from opendevin.action import (
     AgentFinishAction,
     NullAction,
 )
-from opendevin.action.tasks import TaskStateChangedAction
+from opendevin.action.tasks import TaskStateChangedAction, AddTaskAction, ModifyTaskAction
 from opendevin.agent import Agent
 from opendevin.controller.action_manager import ActionManager
 from opendevin.exceptions import (
@@ -17,7 +21,7 @@ from opendevin.exceptions import (
     LLMOutputError,
     MaxCharsExceedError,
 )
-from opendevin.logger import opendevin_logger as logger
+from opendevin.logger import opendevin_logger as logger, ColorType
 from opendevin.observation import (
     AgentDelegateObservation,
     AgentErrorObservation,
@@ -31,6 +35,7 @@ from opendevin.state import State
 
 MAX_ITERATIONS = config.get(ConfigType.MAX_ITERATIONS)
 MAX_CHARS = config.get(ConfigType.MAX_CHARS)
+DISABLE_COLOR_PRINTING = None
 
 
 def print_with_color(text: Any, print_type: str = 'INFO'):
@@ -57,7 +62,7 @@ class AgentController:
     id: str
     agent: Agent
     max_iterations: int
-    command_manager: CommandManager
+    # command_manager: CommandManager
     callbacks: List[Callable]
 
     delegate: 'AgentController | None' = None

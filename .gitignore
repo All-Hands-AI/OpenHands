@@ -204,3 +204,5 @@ config.toml
 .mitmproxy/mitmproxy-*
 .ollama/models
 .ollama/id_*
+**/.history
+

@@ -6,6 +6,7 @@ authors = ["OpenDevin"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/OpenDevin/OpenDevin"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -54,6 +55,7 @@ build-backend = "poetry.core.masonry.api"
 requires = [
   "poetry-core",
 ]
+package-mode = false
 
 [tool.autopep8]
 # autopep8 fights with mypy on line length issue

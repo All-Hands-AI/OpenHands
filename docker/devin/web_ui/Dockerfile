@@ -5,13 +5,15 @@ FROM node:${node_version}-alpine as builder
 ARG node_version
 ARG npm_version
 ARG debug
+ARG dev_mode
 
+ENV DEV_MODE="${dev_mode}"
 ENV DEBIAN_FRONTEND=noninteractive
 
 COPY docker/openssl.cnf /etc/ssl/openssl.cnf
 
-RUN if [ -n "$debug" ]; then set -eux; fi && \
-    apk update && if [ -z "$debug" ]; then apk upgrade; fi && \
+RUN if [ -n "${dev_mode}" ]; then set -eux; fi && \
+    apk update && apk upgrade && \
     apk --no-cache add git openssl ca-certificates && \
     mkdir -p /root/devin/.ssl && \
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
@@ -33,16 +35,16 @@ ENV NODE_OPTIONS="$node_options"
 WORKDIR $build_dir
 
 RUN --mount=type=cache,target=$pm_cache_dir \
-    if [ -n "$debug" ]; then set -eux; fi && \
+    if [ "${node_env}" != "development" ]; then set -eux; fi && \
     if [ -z .npmrc ]; then touch .npmrc; fi && \
-    if [ -z "$debug" ]; then echo "loglevel=silent" | tee -a ./.npmrc; fi && \
+    if [ "${node_env}" != "development" ]; then echo "loglevel=silent" | tee -a ./.npmrc; fi && \
     npm config set prefix "$yarn_global_root" && \
     npm config set audit false && \
     npm config set fund false && \
     npm install -g npm@${npm_version} && \
-    yarn global add --prefix="$yarn_global_root" typescript vite
+    yarn global add --prefix="${yarn_global_root}" typescript vite
 
-COPY .git ./../.git
+#COPY .git ./../.git
 COPY frontend/*.json .
 COPY frontend/.npmrc .
 COPY frontend/*.config.js .
@@ -119,4 +121,4 @@ RUN --mount=type=cache,target=$build_dir/dist \
     vite build --config vite.config.js --clearScreen false
 
 ENTRYPOINT ["/bin/sh", "-c", "/docker-entrypoint.sh"]
-CMD "-m ${DEFAULT_CHAT_MODEL} -e ${DEFAULT_EMBEDDINGS_MODEL} --"
+#CMD "-m ${DEFAULT_CHAT_MODEL} -e ${DEFAULT_EMBEDDINGS_MODEL} --"
