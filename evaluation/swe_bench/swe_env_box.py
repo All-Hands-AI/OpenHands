@@ -1,12 +1,12 @@
 import sys
 import uuid
 
-from opendevin.core.config import ConfigType, config
+from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.runtime.docker.ssh_box import SANDBOX_WORKSPACE_DIR, DockerSSHBox
+from opendevin.runtime.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.plugins import JupyterRequirement, SWEAgentCommandsRequirement
 
-SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/xingyaoww/eval-swe-bench-all:lite-v1.1'
+SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.0'
 
 
 class SWEBenchSSHBox(DockerSSHBox):
@@ -30,7 +30,7 @@ class SWEBenchSSHBox(DockerSSHBox):
         ), 'container_image is required for SWEBenchSSHBox!'
         # Need to run as root to use SWEBench container
         sid = f'swe_bench_{swe_instance_id}' + str(uuid.uuid4())
-        super().__init__(container_image, timeout, sid, run_as_devin=False)
+        super().__init__(container_image, timeout, sid)
 
         exit_code, output = self.execute('mv ~/.bashrc ~/.bashrc.bak')
         assert exit_code == 0, f'Failed to backup ~/.bashrc: {output}'
@@ -54,7 +54,7 @@ class SWEBenchSSHBox(DockerSSHBox):
             return {
                 k: v
                 for k, v in super().volumes.items()
-                if not v['bind'] == SANDBOX_WORKSPACE_DIR
+                if not v['bind'] == self.sandbox_workspace_dir
             }
         return super().volumes
 
@@ -71,8 +71,9 @@ class SWEBenchSSHBox(DockerSSHBox):
             workspace_dir_name = f"{instance['repo']}__{instance['version']}".replace(
                 '/', '__'
             )
-        config[ConfigType.WORKSPACE_BASE] = workspace_mount_path
-        config[ConfigType.WORKSPACE_MOUNT_PATH] = workspace_mount_path
+        config.workspace_base = workspace_mount_path
+        config.workspace_mount_path = workspace_mount_path
+        config.run_as_devin = False
         sandbox = cls(
             container_image=SWE_BENCH_CONTAINER_IMAGE,
             swe_instance_id=instance['instance_id'],
@@ -172,25 +173,6 @@ if __name__ == '__main__':
     exit_code, output = sandbox.execute('git reset --hard')
     assert exit_code == 0, 'Failed to reset the repo'
     logger.info(f'git reset --hard: {output}')
-
-    exit_code, output = sandbox.execute("""cat > /tmp/opendevin_jupyter_temp.py <<EOL
-import sys
-
-def main():
-    print("Hello, World!")
-    print("This is multiline Python code.")
-    print("It's being redirected to execute_cli.")
-
-if __name__ == "__main__":
-    main()
-EOL""")
-    logger.info('exit code: %d', exit_code)
-    logger.info(output)
-    exit_code, output = sandbox.execute(
-        'cat /tmp/opendevin_jupyter_temp.py | execute_cli'
-    )
-    logger.info('exit code: %d', exit_code)
-    logger.info(output)
 
     bg_cmd = sandbox.execute_in_background(
         "while true; do echo 'dot ' && sleep 10; done"
