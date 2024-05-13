@@ -53,7 +53,7 @@ fi
 cp -r $SWEUTIL_DIR/eval_data/testbeds/$CONDA_ENV_NAME /workspace
 
 # Reset swe-bench testbed and install the repo
-. $SWEUTIL_DIR/miniconda3/etc/profile.d/conda.sh
+. $SWEUTIL_DIR/miniforge3/etc/profile.d/conda.sh
 conda config --set changeps1 False
 conda config --append channels conda-forge
 conda activate swe-bench-eval
@@ -68,7 +68,7 @@ output=$(
     --swe_bench_tasks $SWEUTIL_DIR/eval_data/instances/swe-bench-test.json \
     --temp_dir $SWE_TASK_DIR/reset_testbed_temp \
     --testbed /workspace \
-    --conda_path $SWEUTIL_DIR/miniconda3 \
+    --conda_path $SWEUTIL_DIR/miniforge3 \
     --instance_id $SWE_INSTANCE_ID \
     --log_dir $SWE_TASK_DIR/reset_testbed_log_dir \
     --timeout 900 \
@@ -90,7 +90,7 @@ if [[ "$REPO_PATH" == "None" ]]; then
 fi
 
 # Activate instance-specific environment
-. $SWEUTIL_DIR/miniconda3/etc/profile.d/conda.sh
+. $SWEUTIL_DIR/miniforge3/etc/profile.d/conda.sh
 conda activate $CONDA_ENV_NAME
 
 set +e
