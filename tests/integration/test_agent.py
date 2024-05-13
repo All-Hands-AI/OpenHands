@@ -93,3 +93,13 @@ def test_ipython():
     assert (
         content.strip() == 'hello world'
     ), f'Expected content "hello world", but got "{content.strip()}"'
+
+
+@pytest.mark.skipif(
+    os.getenv('AGENT') != 'ManagerAgent',
+    reason='Currently, only ManagerAgent supports task rejection',
+)
+def test_task_rejection():
+    # Give an impossible task to do
+    task = 'Write a git commit message.'
+    asyncio.run(main(task))
