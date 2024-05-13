@@ -138,6 +138,6 @@ class AgentUnit:
             await self.send(event.to_dict())
         return
 
-    def close(self):
+    async def close(self):
         if self.controller is not None:
-            self.controller.close()
+            await self.controller.close()
