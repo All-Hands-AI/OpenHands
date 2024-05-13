@@ -59,6 +59,8 @@ for ((i = 0; i < num_of_tests; i++)); do
       sleep 1
       rm -rf logs
       rm -rf tests/integration/mock/$agent/$test_name/*
+      # set -x to print the command being executed
+      set -x
       echo -e "/exit\n" | SANDBOX_TYPE=$SANDBOX_TYPE WORKSPACE_BASE=$WORKSPACE_BASE \
         DEBUG=true REMIND_ITERATIONS=$remind_iterations \
         WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
@@ -66,6 +68,7 @@ for ((i = 0; i < num_of_tests; i++)); do
         -i $MAX_ITERATIONS \
         -t "$task Do not ask me for confirmation at any point." \
         -c $agent
+      set +x
 
       mkdir -p tests/integration/mock/$agent/$test_name/
       mv logs/llm/**/* tests/integration/mock/$agent/$test_name/
