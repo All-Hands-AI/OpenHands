@@ -21,15 +21,6 @@ jobs:
       make-command: install-python-dependencies
       pytest-args: "./tests/unit -k 'not test_sandbox'"
 
-  test-only-sandbox-on-macos:
-    name: Run Unit Tests on MacOS (Docker for Sandbox Only)
-    uses: ./.github/workflows/setup-environment.yml
-    with:
-      operating-system: macos-13
-      install-docker: true
-      make-command: install-python-dependencies
-      pytest-args: "-s ./tests/unit/test_sandbox.py"
-
   test-on-ubuntu:
     name: Run Unit Tests on Ubuntu
     uses: ./.github/workflows/setup-environment.yml
@@ -40,18 +31,9 @@ jobs:
       pytest-args: "./tests/unit -k 'not test_sandbox'"
 
 
-  test-only-sandbox-on-ubuntu:
-    name: Run Unit Tests on Ubuntu (Docker for Sandbox Only)
-    uses: ./.github/workflows/setup-environment.yml
-    with:
-      operating-system: ubuntu-latest
-      install-docker: true
-      make-command: install-python-dependencies
-      pytest-args: "-s ./tests/unit/test_sandbox.py"
-
   test_matrix_success:
     name: All Mac/Linux Tests Passed
     runs-on: ubuntu-latest
-    needs: [test-on-macos, test-only-sandbox-on-macos, test-on-ubuntu, test-only-sandbox-on-ubuntu]
+    needs: [test-on-macos, test-on-ubuntu]
     steps:
     - run: echo Done!

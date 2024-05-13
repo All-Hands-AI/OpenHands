@@ -1,0 +1,30 @@
+name: Run Sandbox Tests
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+
+jobs:
+  test-sandbox-on-macos:
+    name: Run Sandbox Unit Tests on MacOS
+    uses: ./.github/workflows/setup-environment.yml
+    with:
+      operating-system: macos-13
+      install-docker: true
+      make-command: build
+      pytest-args: "-s ./tests/unit/test_sandbox.py"
+
+  test-sandbox-on-ubuntu:
+    name: Run Sandbox Unit Tests on Ubuntu
+    uses: ./.github/workflows/setup-environment.yml
+    with:
+      operating-system: ubuntu-latest
+      install-docker: true
+      make-command: build
+      pytest-args: "-s ./tests/unit/test_sandbox.py"
