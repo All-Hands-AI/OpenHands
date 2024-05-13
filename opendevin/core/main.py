@@ -76,7 +76,7 @@ async def main(task_str: str = '', exit_on_message: bool = False) -> None:
         event_stream=event_stream,
     )
 
-    await controller.setup_task(task)
+    await event_stream.add_event(MessageAction(content=task), EventSource.USER)
     await event_stream.add_event(
         ChangeAgentStateAction(agent_state=AgentState.RUNNING), EventSource.USER
     )

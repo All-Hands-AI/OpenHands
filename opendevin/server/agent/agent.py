@@ -75,16 +75,6 @@ class AgentUnit:
                 ChangeAgentStateAction(AgentState.INIT), EventSource.USER
             )
             return
-        elif action == ActionType.START:
-            if self.controller is None:
-                await self.send_error('No agent started.')
-                return
-            task = data['args']['task']
-            await self.controller.setup_task(task)
-            await self.event_stream.add_event(
-                ChangeAgentStateAction(agent_state=AgentState.RUNNING), EventSource.USER
-            )
-            return
 
         action_dict = data.copy()
         action_dict['action'] = action

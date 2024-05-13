@@ -216,11 +216,14 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 
 NOW, LET'S START!
 
+----------
+
 Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ----------
 
-Sure! Let's first take a look at the content of the file `bad.txt` to identify the typos that need to be fixed. Let me display the content of the file:
+Let's start by examining the contents of `bad.txt` to identify the typos. I'll display the content first.
+
 <execute_bash>
 cat bad.txt
 </execute_bash>

@@ -1,7 +1,6 @@
 {
-  "action": "modify_task",
+  "action": "read",
   "args": {
-    "id": "0",
-    "state": "in_progress"
+    "path": "bad.txt"
   }
 }
