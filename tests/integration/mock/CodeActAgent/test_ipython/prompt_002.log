@@ -218,39 +218,20 @@ NOW, LET'S START!
 
 ----------
 
-Fix typos in bad.txt. Do not ask me for confirmation at any point.
+Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point.
 
 ----------
 
-Sure! Let me open the file `bad.txt` to fix the typos without asking for confirmation:
-<execute_bash>
-open bad.txt
-</execute_bash>
+I will write the text 'hello world' to a file named 'test.txt' in the '/workspace' directory without asking for confirmation. Let me execute the code to create the file:
 
-----------
-
-OBSERVATION:
-[File: /workspace/bad.txt (1 lines total)]
-1:ENVIRONMENT REMINDER: You have 1 turn left to complete the task.
-
-ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
-[Command -1 finished with exit code 0]]
-
-----------
-
-I see the typo in the file `bad.txt`. Let me correct it without asking for confirmation:
-<execute_bash>
-edit 1:1
-ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
-end_of_edit
-</execute_bash>
+<execute_ipython>
+with open('/workspace/test.txt', 'w') as f:
+    f.write('hello world')
+</execute_ipython>
 
 ----------
 
 OBSERVATION:
-> > [File: /workspace/bad.txt (1 lines total)]
-1:ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
-File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.
+[Code executed successfully with no output]
 
-ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
-[Command -1 finished with exit code 0]]
+ENVIRONMENT REMINDER: You have 9 turns left to complete the task.

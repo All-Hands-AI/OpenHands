@@ -231,7 +231,7 @@ open bad.txt
 
 OBSERVATION:
 [File: /workspace/bad.txt (1 lines total)]
-1:ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
+1:ENVIRONMENT REMINDER: You have 1 turn left to complete the task.
 
 ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
 [Command -1 finished with exit code 0]]

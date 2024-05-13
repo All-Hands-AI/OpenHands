@@ -1,4 +1,4 @@
-The file `bad.txt` has been updated with the corrected typo. Let me run the command to fix the typo without asking for confirmation:
+The typo in `bad.txt` has been corrected. Let me update it to reflect the new text without asking for confirmation:
 <execute_bash>
 edit 1:1
 ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
