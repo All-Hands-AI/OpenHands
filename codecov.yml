@@ -1,0 +1,6 @@
+coverage:
+  status:
+    project:
+      threshold: 5
+    patch:
+      threshold: 5
