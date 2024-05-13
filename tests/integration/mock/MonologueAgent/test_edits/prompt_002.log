@@ -320,20 +320,21 @@ This is your internal monologue, in JSON format:
     }
   },
   {
-    "action": "run",
+    "source": "agent",
+    "action": "read",
     "args": {
-      "command": "pwd",
-      "background": false,
+      "path": "bad.txt",
+      "start": 0,
+      "end": -1,
       "thought": ""
     }
   },
   {
-    "observation": "run",
-    "content": "/workspace",
+    "source": "agent",
+    "observation": "read",
+    "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n",
     "extras": {
-      "command_id": -1,
-      "command": "pwd",
-      "exit_code": 0
+      "path": "bad.txt"
     }
   }
 ]

@@ -220,19 +220,15 @@ Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ----------
 
-Let's start by opening the file `bad.txt` to see what's inside and identify the typos.
-
+Let's first view the content of the file `bad.txt` to identify the typos that need to be fixed:
 <execute_bash>
-open bad.txt
+cat bad.txt
 </execute_bash>
 
 ----------
 
 OBSERVATION:
-[File: /workspace/bad.txt (4 lines total)]
-1:This is a stupid typoo.
-2:Really?
-3:No mor typos!
-4:Enjoy!
+ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
+
 ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
 [Command -1 finished with exit code 0]]
