@@ -415,3 +415,7 @@ def parse_arguments():
 
 
 args = parse_arguments()
+specified_llm_config = get_llm_config_arg(args.llm_config)
+if specified_llm_config:
+    config.llm = specified_llm_config
+logger.info(f'Config: {config}')
