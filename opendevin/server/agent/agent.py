@@ -1,3 +1,4 @@
+from asyncio import get_event_loop
 from typing import Optional
 
 from opendevin.const.guide_url import TROUBLESHOOTING_URL
@@ -139,5 +140,9 @@ class AgentUnit:
         return
 
     async def close(self):
+        """Cleanly exits an AgentUnit.
+
+        Execution awaited by the AgentManager.
+        """
         if self.controller is not None:
             await self.controller.close()
