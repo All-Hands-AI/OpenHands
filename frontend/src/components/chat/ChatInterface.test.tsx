@@ -19,7 +19,7 @@ const socketSpy = vi.spyOn(Socket, "send");
 
 // This is for the scrollview ref in Chat.tsx
 // TODO: Move this into test setup
-HTMLElement.prototype.scrollIntoView = vi.fn();
+HTMLElement.prototype.scrollTo = vi.fn(() => {});
 
 describe("ChatInterface", () => {
   it("should render the messages and input", () => {
