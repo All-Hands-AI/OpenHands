@@ -1,4 +1,3 @@
-from asyncio import get_event_loop
 from typing import Optional
 
 from opendevin.const.guide_url import TROUBLESHOOTING_URL
