@@ -218,12 +218,9 @@ NOW, LET'S START!
 
 Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.
 
-ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
-
 ----------
 
-To create a shell script 'hello.sh' that prints 'hello' without asking for confirmation, I will write the script for you and save it to the file 'hello.sh':
-
+I will create a shell script named 'hello.sh' that prints 'hello' without asking for confirmation. Let me write the script for you:
 <execute_bash>
 echo 'echo hello' > hello.sh
 </execute_bash>
@@ -233,5 +230,3 @@ echo 'echo hello' > hello.sh
 OBSERVATION:
 
 [Command -1 finished with exit code 0]]
-
-ENVIRONMENT REMINDER: You have 8 turns left to complete the task.

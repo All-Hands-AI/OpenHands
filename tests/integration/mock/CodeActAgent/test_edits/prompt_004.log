@@ -258,3 +258,24 @@ OBSERVATION:
 5:Enjoy!
 File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.
 [Command -1 finished with exit code 0]]
+
+----------
+
+It seems there was an extra "Enjoy!" line added. Let's correct that by removing the duplicate line:
+<execute_bash>
+edit 5:5
+
+end_of_edit
+</execute_bash>
+
+----------
+
+OBSERVATION:
+> > [File: /workspace/bad.txt (5 lines total)]
+1:This is a stupid typo.
+2:Really?
+3:No more typos!
+4:Enjoy!
+5:
+File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.
+[Command -1 finished with exit code 0]]
