@@ -1,4 +1,4 @@
-I see the typos in the file `bad.txt`. Let's correct them without asking for confirmation:
+Let's correct the typos in the file `bad.txt` without asking for confirmation. I will edit the file directly:
 <execute_bash>
 edit 1:3
 This is a stupid typo.

@@ -1,3 +1,4 @@
 Sure! Let's create a text file containing 'hello world' in '/workspace/test.txt':
-<execute_bash>
-echo 'hello world' > /workspace/test.txt
+<execute_ipython>
+with open('/workspace/test.txt', 'w') as f:
+    f.write('hello world')

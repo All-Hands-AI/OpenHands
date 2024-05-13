@@ -221,12 +221,12 @@ Use Jupyter IPython to write a text file containing 'hello world' to '/workspace
 ----------
 
 Sure! Let's create a text file containing 'hello world' in '/workspace/test.txt':
-<execute_bash>
-echo 'hello world' > /workspace/test.txt
-</execute_bash>
+<execute_ipython>
+with open('/workspace/test.txt', 'w') as f:
+    f.write('hello world')
+</execute_ipython>
 
 ----------
 
 OBSERVATION:
-
-[Command -1 finished with exit code 0]]
+[Code executed successfully with no output]
