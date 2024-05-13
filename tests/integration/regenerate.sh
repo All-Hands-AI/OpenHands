@@ -10,8 +10,16 @@ MAX_ITERATIONS=10
 agents=("MonologueAgent" "CodeActAgent" "PlannerAgent" "SWEAgent")
 # only enable iteration reminder for CodeActAgent in tests
 remind_iterations_config=(false true false false)
-tasks=("Fix typos in bad.txt." "Write a shell script 'hello.sh' that prints 'hello'.")
-test_names=("test_edits" "test_write_simple_script")
+tasks=(
+  "Fix typos in bad.txt."
+  "Write a shell script 'hello.sh' that prints 'hello'."
+  "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'."
+)
+test_names=(
+  "test_edits"
+  "test_write_simple_script"
+  "test_ipython"
+)
 
 num_of_tests=${#tasks[@]}
 num_of_agents=${#agents[@]}
@@ -24,6 +32,7 @@ for ((i = 0; i < num_of_tests; i++)); do
   for ((j = 0; j < num_of_agents; j++)); do
     agent=${agents[j]}
     remind_iterations=${remind_iterations_config[j]}
+
     echo -e "\n\n\n\n========Running $test_name for $agent========\n\n\n\n"
     rm -rf $WORKSPACE_BASE
     mkdir $WORKSPACE_BASE
@@ -34,6 +43,7 @@ for ((i = 0; i < num_of_tests; i++)); do
       # Temporarily disable 'exit on error'
       set +e
     fi
+
     SANDBOX_TYPE=$SANDBOX_TYPE WORKSPACE_BASE=$WORKSPACE_BASE \
       MAX_ITERATIONS=$MAX_ITERATIONS REMIND_ITERATIONS=$remind_iterations \
       WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
