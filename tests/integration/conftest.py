@@ -79,7 +79,9 @@ def mock_completion(*args, test_name, **kwargs):
     for message in messages:
         message_str += message['content']
     mock_response = get_mock_response(test_name, message_str)
-    assert mock_response is not None, 'Mock response for prompt is not found'
+    assert mock_response is not None, (
+        'Mock response for prompt is not found:\n\n' + message_str
+    )
     response = completion(**kwargs, mock_response=mock_response)
     return response
 
