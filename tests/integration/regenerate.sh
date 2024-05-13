@@ -36,6 +36,9 @@ for ((i = 0; i < num_of_tests; i++)); do
     echo -e "\n\n\n\n========Running $test_name for $agent========\n\n\n\n"
     rm -rf $WORKSPACE_BASE
     mkdir $WORKSPACE_BASE
+    if [ -d "tests/integration/workspace/$test_name" ]; then
+      cp -r tests/integration/workspace/$test_name/* $WORKSPACE_BASE
+    fi
 
     if [ "$TEST_ONLY" = true ]; then
       set -e
@@ -54,9 +57,14 @@ for ((i = 0; i < num_of_tests; i++)); do
 
     if [[ $TEST_STATUS -ne 0 ]]; then
       echo -e "\n\n\n\n========$test_name failed, regenerating test data for $agent========\n\n\n\n"
-      # trick: let's not clean up $WORKSPACE_BASE folder, which might contain the
-      # artifacts we need that are auto-gerated by the test
       sleep 1
+
+      rm -rf $WORKSPACE_BASE
+      mkdir -p $WORKSPACE_BASE
+      if [ -d "tests/integration/workspace/$test_name" ]; then
+        cp -r tests/integration/workspace/$test_name/* $WORKSPACE_BASE
+      fi
+
       rm -rf logs
       rm -rf tests/integration/mock/$agent/$test_name/*
       echo -e "/exit\n" | SANDBOX_TYPE=$SANDBOX_TYPE WORKSPACE_BASE=$WORKSPACE_BASE \
