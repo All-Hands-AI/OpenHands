@@ -143,16 +143,16 @@ class MonologueAgent(Agent):
             default_events=self.monologue.get_default_events(),
             recent_events=self.monologue.get_recent_events(),
         ):
-            summary_response = self.memory_condenser.condense(
+            summary_response, was_summarized = self.memory_condenser.condense(
                 llm=self.llm,
                 default_events=self.monologue.get_default_events(),
                 recent_events=self.monologue.get_recent_events(),
                 background_commands=[],
             )
-        if summary_response[1]:
-            self.monologue.recent_events = prompts.parse_summary_response(
-                summary_response[0]
-            )
+            if was_summarized and summary_response[1]:
+                self.monologue.recent_events = prompts.parse_summary_response(
+                    summary_response[0]
+                )
 
     def _initialize(self, task: str):
         """

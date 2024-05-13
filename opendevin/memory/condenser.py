@@ -81,7 +81,7 @@ class MemoryCondenser:
         Returns:
         - bool: True if the prompt needs to be condensed, False otherwise.
         """
-        action_prompt = self.action_prompt(default_events, recent_events)
+        action_prompt = self.action_prompt('', default_events, recent_events, [])
         combined_prompt = (
             action_prompt
             + ' '
@@ -99,11 +99,11 @@ class MemoryCondenser:
         llm: LLM,
         default_events: list[dict],
         recent_events: list[dict],
-    ) -> str:
+    ) -> list[dict]:
         """
-        Condenses recent events in chunks, while preserving core events for context.
+        Condenses recent events in chunks, while preserving default events for context.
         """
-        # Initial part of the prompt includes default memories for context
+        # Initial part of the prompt includes default memories
         initial_prompt = self.action_prompt_with_defaults(default_events=default_events)
         return self.attempt_condense(
             llm, default_events, recent_events, initial_prompt, 0
@@ -116,9 +116,9 @@ class MemoryCondenser:
         recent_events: list[dict],
         action_prompt: str,
         attempt_count: int,
-    ) -> str:
+    ) -> list[dict]:
         if attempt_count >= 5 or not recent_events:
-            raise Exception('Condensation attempts exceeded without success.')
+            return recent_events  # FIXME
 
         # get the summarize prompt to use
         summarize_prompt = self.summarize_prompt(default_events, recent_events)
@@ -129,19 +129,23 @@ class MemoryCondenser:
         second_half = recent_events[midpoint:]
 
         # Try to condense the first half
+        # FIXME this summarized the default events as well
         condensed_summary = self.process_events(
             llm,
             default_events=default_events,
             recent_events=first_half,
             summarize_prompt=summarize_prompt,
         )
+
+        # FIXME collect the right events
         new_prompt = f'{action_prompt} {condensed_summary}'
         new_token_count = llm.get_token_count([{'content': new_prompt, 'role': 'user'}])
 
         if new_token_count < self.get_token_limit(llm):
-            return new_prompt  # Condensed successfully
+            return condensed_summary  # FIXME these are the recent events
         else:
-            # If not successful, attempt to condense the second half
+            # If not successful, attempt again
+            # FIXME first half of the second half
             return self.attempt_condense(
                 llm=llm,
                 default_events=default_events,

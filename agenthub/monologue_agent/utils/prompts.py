@@ -238,4 +238,5 @@ def generate_action_prompt_with_defaults(**kwargs):
     placeholders.update(formatted_kwargs)
 
     # format the template with what we have
+    # FIXME introduce the split of default and recent events
     return ACTION_PROMPT % placeholders
