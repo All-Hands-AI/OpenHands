@@ -1,4 +1,5 @@
 import atexit
+import json
 import os
 import sys
 import tarfile
@@ -30,9 +31,10 @@ ExecResult = namedtuple('ExecResult', 'exit_code,output')
 class DockerExecCancellableStream(CancellableStream):
     # Reference: https://github.com/docker/docker-py/issues/1989
     def __init__(self, _client, _id, _output):
-        super().__init__(_output)
+        super().__init__(self.read_output())
         self._id = _id
         self._client = _client
+        self._output = _output
 
     def close(self):
         self.closed = True
@@ -42,6 +44,10 @@ class DockerExecCancellableStream(CancellableStream):
 
     def inspect(self):
         return self._client.api.exec_inspect(self._id)
+
+    def read_output(self):
+        for chunk in self._output:
+            yield chunk.decode('utf-8')
 
 
 def container_exec_run(
@@ -174,7 +180,8 @@ class DockerExecBox(Sandbox):
     def execute(
         self, cmd: str, stream: bool = False
     ) -> tuple[int, str | CancellableStream]:
-        wrapper = f'timeout {self.timeout}s {cmd}'
+        # Note: json.dumps gives us nice escaping for free
+        wrapper = f'timeout {self.timeout}s bash -c {json.dumps(cmd)}'
         _exit_code, _output = container_exec_run(
             self.container,
             wrapper,

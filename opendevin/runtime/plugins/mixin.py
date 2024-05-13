@@ -42,7 +42,6 @@ class PluginMixin:
             exit_code, output = self.execute(abs_path_to_bash_script, stream=True)
             if isinstance(output, CancellableStream):
                 for line in output:
-                    line = line.decode('utf-8')
                     if line.endswith('\n'):
                         line = line[:-1]
                     logger.info(line)
@@ -63,7 +62,7 @@ class PluginMixin:
                 )
 
         if len(requirements) > 0:
-            exit_code, output = self.execute('bash -c "source ~/.bashrc"')
+            exit_code, output = self.execute('source ~/.bashrc')
             if exit_code != 0:
                 raise RuntimeError(
                     f'Failed to source ~/.bashrc with exit code {exit_code} and output {output}'
