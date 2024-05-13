@@ -16,6 +16,7 @@ MAX_ITERATIONS=10
 
 # FIXME: SWEAgent hangs, so it goes last
 agents=("MonologueAgent" "CodeActAgent" "PlannerAgent" "SWEAgent")
+remind_iterations_config=(false true false false)
 tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
