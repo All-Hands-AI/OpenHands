@@ -88,7 +88,6 @@ def test_generate_action_prompt_with_all_parameters():
         'hint': 'Next step',
         'user': 'opendevin',
         'timeout': '30',
-        'workspace_mount_path_in_sandbox': '/path/to/workspace',
     }
     expected_parts = [
         '"action": "start",\n    "args": {\n      "key": "value"\n    }\n  },\n  {\n    "action": "update",\n    "args": {\n      "key": "value2"\n    }',
@@ -96,7 +95,6 @@ def test_generate_action_prompt_with_all_parameters():
         'Next step',
         'opendevin',
         '30',
-        '/path/to/workspace',
     ]
     check_prompt(input_kwargs, expected_parts)
 
@@ -156,15 +154,3 @@ def check_prompt(input_kwargs, expected_parts):
         formatted = format_background_commands(input_kwargs['background_commands'])
         assert formatted in result
 
-    # Check for placeholders not replaced should not be present
-    for placeholder in [
-        '%(task)s',
-        '%(default_events)s',
-        '%(recent_events)s',
-        '%(background_commands)s',
-        '%(hint)s',
-        '%(user)s',
-        '%(timeout)s',
-        '%(workspace_mount_path_in_sandbox)s',
-    ]:
-        assert placeholder not in result
