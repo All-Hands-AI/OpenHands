@@ -59,7 +59,7 @@ set environment variable `ONLY_TEST_AGENT` to the agent. You could also use both
 e.g.
 
 ```bash
-TEST_ONLY=true ONLY_TEST_NAME="test_task_rejection" ONLY_TEST_AGENT="ManagerAgent" ./tests/integration/regenerate.sh
+TEST_ONLY=true ONLY_TEST_NAME="test_simple_task_rejection" ONLY_TEST_AGENT="ManagerAgent" ./tests/integration/regenerate.sh
 ```
 
 
