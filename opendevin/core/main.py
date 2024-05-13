@@ -25,7 +25,7 @@ def read_task_from_stdin() -> str:
     return sys.stdin.read()
 
 
-async def main(task_str: str = '') -> None:
+async def main(task_str: str = '', exit_on_message: bool = False) -> None:
     """
     Main coroutine to run the agent controller with task input flexibility.
     It's only used when you launch opendevin backend directly via cmdline.
@@ -84,8 +84,10 @@ async def main(task_str: str = '') -> None:
     async def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
-                message = input('Request user input >> ')
-                action = MessageAction(content=message)
+                action = MessageAction(content='/exit')
+                if not exit_on_message:
+                    message = input('Request user input >> ')
+                    action = MessageAction(content=message)
                 await event_stream.add_event(action, EventSource.USER)
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
