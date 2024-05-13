@@ -4,7 +4,7 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.utils import json
 from opendevin.llm.llm import LLM
 
-MAX_TOKEN_COUNT_PADDING = 16000
+MAX_TOKEN_COUNT_PADDING = 16000  # FIXME debug value
 
 
 class MemoryCondenser:
@@ -20,6 +20,11 @@ class MemoryCondenser:
     ):
         """
         Initialize the MemoryCondenser with the action and summarize prompts.
+
+        action_prompt is a callable that returns the prompt that is about to be sent to the LLM.
+        The prompt callable will be called with default events and recent events as arguments.
+        summarize_prompt, which is optional, is a callable that returns a specific prompt to tell the LLM to summarize the recent events.
+        The prompt callable will be called with default events and recent events as arguments.
 
         Parameters:
         - action_prompt (Callable): The function to generate an action prompt. The function should accept core events and recent events as arguments.
@@ -129,7 +134,6 @@ class MemoryCondenser:
             summarize_prompt=summarize_prompt,
         )
 
-        # FIXME collect the right events
         new_prompt = self.action_prompt_with_defaults(
             default_events=default_events, recent_events=condensed_events
         )
@@ -156,7 +160,7 @@ class MemoryCondenser:
         summarize_prompt: str,
     ) -> list[dict]:
         """
-        Processes a list of events by converting them into a single string representation and sending it to the LLM for condensation.
+        Send a list of events to the LLM with the specific summary prompt.
 
         Parameters:
         - llm (LLM): The LLM to use for processing the events.
@@ -164,7 +168,7 @@ class MemoryCondenser:
         - summarize_prompt (str): The initial prompt used for summarization.
 
         Returns:
-        - str: The summarized result of processing the events.
+        - list[dict]: The new list of recent events.
         """
         # apply the prompt template to the events
         summarize_prompt = self.summarize_prompt(default_events, recent_events)
@@ -175,6 +179,7 @@ class MemoryCondenser:
         response_content = response['choices'][0]['message']['content']
         parsed_summary = json.loads(response_content)
         return parsed_summary['new_monologue']
+    
 
     def get_token_limit(self, llm: LLM) -> int:
         """
