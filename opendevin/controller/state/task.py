@@ -211,3 +211,10 @@ class RootTask(Task):
         """
         task = self.get_task_by_id(id)
         task.set_state(state)
+        unfinished_tasks = [
+            t
+            for t in self.subtasks
+            if t.state not in [COMPLETED_STATE, VERIFIED_STATE, ABANDONED_STATE]
+        ]
+        if len(unfinished_tasks) == 0:
+            self.set_state(COMPLETED_STATE)
