@@ -35,7 +35,7 @@ class MemoryCondenser:
         default_events: list[dict],
         recent_events: list[dict],
         background_commands: list,
-    ) -> tuple[str, bool]:
+    ) -> tuple[list[dict], bool]:
         """
         Attempts to condense the recent events of the monologue by using the llm, if necessary. Returns unmodified prompt if it is already short enough.
 
@@ -82,16 +82,8 @@ class MemoryCondenser:
         - bool: True if the prompt needs to be condensed, False otherwise.
         """
         action_prompt = self.action_prompt('', default_events, recent_events, [])
-        combined_prompt = (
-            action_prompt
-            + ' '
-            + json.dumps(default_events)
-            + ' '
-            + json.dumps(recent_events)
-        )
-        token_count = llm.get_token_count(
-            [{'content': combined_prompt, 'role': 'user'}]
-        )
+
+        token_count = llm.get_token_count([{'content': action_prompt, 'role': 'user'}])
         return token_count >= self.get_token_limit(llm)
 
     def process_in_chunks(
@@ -123,14 +115,14 @@ class MemoryCondenser:
         # get the summarize prompt to use
         summarize_prompt = self.summarize_prompt(default_events, recent_events)
 
-        # Split events into two halves
+        # Split events
         midpoint = len(recent_events) // 2
         first_half = recent_events[:midpoint]
         second_half = recent_events[midpoint:]
 
         # Try to condense the first half
-        # FIXME this summarized the default events as well
-        condensed_summary = self.process_events(
+        # FIXME it summarized the default events
+        condensed_events = self.process_events(
             llm,
             default_events=default_events,
             recent_events=first_half,
@@ -138,11 +130,13 @@ class MemoryCondenser:
         )
 
         # FIXME collect the right events
-        new_prompt = f'{action_prompt} {condensed_summary}'
+        new_prompt = self.action_prompt_with_defaults(
+            default_events=default_events, recent_events=condensed_events
+        )
         new_token_count = llm.get_token_count([{'content': new_prompt, 'role': 'user'}])
 
         if new_token_count < self.get_token_limit(llm):
-            return condensed_summary  # FIXME these are the recent events
+            return condensed_events
         else:
             # If not successful, attempt again
             # FIXME first half of the second half
@@ -160,7 +154,7 @@ class MemoryCondenser:
         default_events: list[dict],
         recent_events: list[dict],
         summarize_prompt: str,
-    ) -> str:
+    ) -> list[dict]:
         """
         Processes a list of events by converting them into a single string representation and sending it to the LLM for condensation.
 
@@ -178,7 +172,9 @@ class MemoryCondenser:
         # send the combined prompt to the LLM
         messages = [{'content': f'{summarize_prompt}', 'role': 'user'}]
         response = llm.completion(messages=messages)
-        return response['choices'][0]['message']['content']
+        response_content = response['choices'][0]['message']['content']
+        parsed_summary = json.loads(response_content)
+        return parsed_summary['new_monologue']
 
     def get_token_limit(self, llm: LLM) -> int:
         """
