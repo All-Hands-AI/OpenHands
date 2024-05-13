@@ -61,7 +61,7 @@ This list may grow over time.
   * `url` - the URL to open
 * `recall` - searches long-term memory
   * `query` - the query to search for
-* `think` - Allows the agent to make a root_task, set a goal, or record thoughts
+* `think` - Allows the agent to make a plan, set a goal, or record thoughts
   * `thought` - the thought to record
 * `finish` - agent signals that the task is completed
 
