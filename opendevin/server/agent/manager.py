@@ -34,7 +34,7 @@ class AgentManager:
 
         await self.sid_to_agent[sid].dispatch(action, data)
 
-    def close(self):
+    async def close(self):
         logger.info(f'Closing {len(self.sid_to_agent)} agent(s)...')
         for sid, agent in self.sid_to_agent.items():
-            agent.close()
+            await agent.close()
