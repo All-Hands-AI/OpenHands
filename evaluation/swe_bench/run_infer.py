@@ -14,11 +14,11 @@ from tqdm import tqdm
 
 from evaluation.swe_bench.swe_env_box import SWEBenchSSHBox
 from opendevin.controller.state.state import State
-from opendevin.core.config import ConfigType, args, config
+from opendevin.core.config import args, config
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
-from opendevin.events.observation import UserMessageObservation
+from opendevin.events.action import MessageAction
 
 
 def cleanup():
@@ -36,10 +36,12 @@ def codeact_user_response(state: State) -> str:
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK.\n'
     )
     if state.history:
-        user_msg_obs = [
-            obs for _, obs in state.history if isinstance(obs, UserMessageObservation)
+        user_msgs = [
+            action
+            for action, _ in state.history
+            if isinstance(action, MessageAction) and action.source == 'user'
         ]
-        if len(user_msg_obs) >= 2:
+        if len(user_msgs) >= 2:
             # let the agent know that it can give up when it has tried 3 times
             return (
                 msg
@@ -174,7 +176,7 @@ def get_test_result(instance, sandbox, workspace_dir_name):
 
 
 def process_instance(instance, agent_class, metadata, skip_workspace_mount):
-    workspace_mount_path = config.get(ConfigType.WORKSPACE_MOUNT_PATH)
+    workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
     if not skip_workspace_mount:
         workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
@@ -211,12 +213,6 @@ def process_instance(instance, agent_class, metadata, skip_workspace_mount):
         workspace_mount_path=workspace_mount_path,
     )
 
-    # Prepare controller kwargs
-    controller_kwargs = {
-        'fake_user_response_fn': AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
-        'sandbox': sandbox,
-    }
-
     # Prepare instruction
     instruction = (
         f'Please fix the following issue for the repository in /workspace/{workspace_dir_name}.\n'
@@ -234,7 +230,13 @@ def process_instance(instance, agent_class, metadata, skip_workspace_mount):
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
     # Run the agent
-    state: State = asyncio.run(main(instruction, controller_kwargs=controller_kwargs))
+    state: State = asyncio.run(
+        main(
+            instruction,
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+            sandbox=sandbox,
+        )
+    )
 
     # Get git patch
     git_patch = sandbox.get_diff_patch()
@@ -271,7 +273,7 @@ if __name__ == '__main__':
     assert (
         agent_class in AGENT_CLS_TO_FAKE_USER_RESPONSE_FN
     ), f'Unsupported agent class: {agent_class}'
-    model_name = args.model_name
+    model_name = config.llm.model.split('/')[-1]
     max_iterations = args.max_iterations
     eval_note = ''
     if args.eval_note is not None:
