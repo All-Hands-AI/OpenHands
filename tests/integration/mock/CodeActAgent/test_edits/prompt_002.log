@@ -218,9 +218,11 @@ NOW, LET'S START!
 
 Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
+ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
+
 ----------
 
-Let's first open the file `bad.txt` to see the content and identify the typos:
+Let's first open the file `bad.txt` to see the typos that need to be fixed:
 <execute_bash>
 open bad.txt
 </execute_bash>
@@ -229,7 +231,7 @@ open bad.txt
 
 OBSERVATION:
 [File: /workspace/bad.txt (1 lines total)]
-1:ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
-
-ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
+1:ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
 [Command -1 finished with exit code 0]]
+
+ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
