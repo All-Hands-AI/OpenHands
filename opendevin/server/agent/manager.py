@@ -1,5 +1,4 @@
-import asyncio
-import atexit
+import asyncio, atexit
 
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.server.session import session_manager
