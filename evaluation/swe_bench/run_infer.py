@@ -268,6 +268,12 @@ if __name__ == '__main__':
     dataset = load_dataset('princeton-nlp/SWE-bench_Lite')
     swe_bench_tests = dataset['test'].to_pandas()
 
+    if args.llm_config:
+        specified_llm_config = get_llm_config_arg(args.llm_config)
+        if specified_llm_config:
+            config.llm = specified_llm_config
+    logger.info(f'Config for evaluation: {config}')
+
     # TEST METADATA
     agent_class = args.agent_cls
     assert (
@@ -284,11 +290,6 @@ if __name__ == '__main__':
         agent_class,
         model_name + '_maxiter_' + str(max_iterations) + eval_note,
     )
-    if args.llm_config:
-        specified_llm_config = get_llm_config_arg(args.llm_config)
-        if specified_llm_config:
-            config.llm = specified_llm_config
-    logger.info(f'Config for tvaluation: {config}')
 
     pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
     pathlib.Path(os.path.join(eval_output_dir, 'logs')).mkdir(
