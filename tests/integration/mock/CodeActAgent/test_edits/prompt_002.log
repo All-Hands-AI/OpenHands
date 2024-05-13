@@ -222,16 +222,19 @@ Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ----------
 
-Sure! Let me open the file `bad.txt` to fix the typos without asking for confirmation:
+Let's start by examining the contents of `bad.txt` to identify the typos. I'll display the content first.
+
 <execute_bash>
-open bad.txt
+cat bad.txt
 </execute_bash>
 
 ----------
 
 OBSERVATION:
-[File: /workspace/bad.txt (1 lines total)]
-1:ENVIRONMENT REMINDER: You have 1 turn left to complete the task.
+This is a stupid typoo.
+Really?
+No mor typos!
+Enjoy!
 
 ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
 [Command -1 finished with exit code 0]]
