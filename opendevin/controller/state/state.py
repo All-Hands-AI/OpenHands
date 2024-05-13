@@ -13,7 +13,7 @@ from opendevin.events.observation import (
 
 @dataclass
 class State:
-    root_task: RootTask = RootTask()
+    root_task: RootTask = field(default_factory=RootTask)
     iteration: int = 0
     # number of characters we have sent to and received from LLM so far for current task
     num_of_chars: int = 0
