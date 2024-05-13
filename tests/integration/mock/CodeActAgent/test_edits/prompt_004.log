@@ -257,7 +257,7 @@ ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
 
 ----------
 
-The typo in `bad.txt` has been corrected. Let me update it to reflect the new text without asking for confirmation:
+The typo has been corrected in the file `bad.txt`. Let me run the edit command again to ensure the correction is applied without asking for confirmation:
 <execute_bash>
 edit 1:1
 ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
