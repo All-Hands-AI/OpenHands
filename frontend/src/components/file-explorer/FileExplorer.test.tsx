@@ -89,7 +89,7 @@ describe("FileExplorer", () => {
     expect(queryByText("root")).not.toBeVisible();
   });
 
-  it("should upload a file/dir", async () => {
+  it("should upload files", async () => {
     // TODO: Improve this test by passing expected argument to `uploadFiles`
     const { getByTestId } = render(<FileExplorer onFileClick={vi.fn} />);
     const file = new File([""], "file-name");
@@ -105,7 +105,7 @@ describe("FileExplorer", () => {
     expect(uploadFiles).toHaveBeenCalledOnce();
     expect(getWorkspace).toHaveBeenCalled();
 
-    const uploadDirInput = getByTestId("dir-input");
+    const uploadDirInput = getByTestId("file-input");
 
     // The 'await' keyword is required here to avoid a warning during test runs
     await act(() => {
@@ -116,13 +116,13 @@ describe("FileExplorer", () => {
     expect(getWorkspace).toHaveBeenCalled();
   });
 
-  it.todo("should upload a file when dragging it to the explorer");
-
-  it.todo("should upload a folder when dragging it to the explorer");
+  it.skip("should upload files when dragging them to the explorer", () => {
+    // It will require too much work to mock drag logic, especially for our case
+    // https://github.com/testing-library/user-event/issues/440#issuecomment-685010755
+    // TODO: should be tested in an e2e environment such as Cypress/Playwright
+  });
 
   it.todo("should download a file");
-
-  it.todo("should download a folder");
 
   it.todo("should display an error toast if file upload fails", async () => {
     (uploadFiles as Mock).mockRejectedValue(new Error());

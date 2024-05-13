@@ -281,8 +281,6 @@ async def upload_files(files: list[UploadFile]):
         workspace_base = config.workspace_base
         for file in files:
             file_path = Path(workspace_base, file.filename)
-            # Ensure the directory exists (directories are received with the directory name before the file name, i.e. "<dir>/<file>")
-            file_path.parent.mkdir(parents=True, exist_ok=True)
             # The following will check if the file is within the workspace base and throw an exception if not
             file_path.resolve().relative_to(Path(workspace_base).resolve())
             with open(file_path, 'wb') as buffer:
