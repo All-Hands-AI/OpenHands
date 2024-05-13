@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 from evaluation.swe_bench.swe_env_box import SWEBenchSSHBox
 from opendevin.controller.state.state import State
-from opendevin.core.config import args, config
+from opendevin.core.config import args, config, get_llm_config_arg
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
@@ -237,7 +237,7 @@ def process_instance(instance, agent_class, metadata, skip_workspace_mount):
             sandbox=sandbox,
         )
     )
-
+    print(f'FINAL STATE: {state}')
     # Get git patch
     git_patch = sandbox.get_diff_patch()
     logger.info(f'Got git diff for instance {instance.instance_id}')
@@ -254,7 +254,7 @@ def process_instance(instance, agent_class, metadata, skip_workspace_mount):
         'git_patch': git_patch,
         'metadata': metadata,
         'history': [(action.to_dict(), obs.to_dict()) for action, obs in state.history],
-        'error': state.error,
+        'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
 
@@ -284,6 +284,11 @@ if __name__ == '__main__':
         agent_class,
         model_name + '_maxiter_' + str(max_iterations) + eval_note,
     )
+    if args.llm_config:
+        specified_llm_config = get_llm_config_arg(args.llm_config)
+        if specified_llm_config:
+            config.llm = specified_llm_config
+    logger.info(f'Config for tvaluation: {config}')
 
     pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
     pathlib.Path(os.path.join(eval_output_dir, 'logs')).mkdir(
