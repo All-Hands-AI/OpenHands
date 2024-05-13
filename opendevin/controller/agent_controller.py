@@ -86,6 +86,7 @@ class AgentController:
             logger.info(
                 'Iteration reminder is ENABLED: agent will be reminded of remaining turns.'
             )
+        self._external_sandbox = bool(sandbox is not None)
         self.runtime = ServerRuntime(sandbox=sandbox, sid=self.id)
         self.max_chars = max_chars
 
@@ -103,7 +104,8 @@ class AgentController:
         if self.agent_task is not None:
             self.agent_task.cancel()
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
-        self.runtime.sandbox.close()
+        if not self._external_sandbox:
+            self.runtime.sandbox.close()
         self.runtime.browser.close()
         await self.set_agent_state_to(AgentState.STOPPED)
         return self.finish_state
