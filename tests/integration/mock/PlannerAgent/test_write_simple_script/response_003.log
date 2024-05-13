@@ -1,7 +1,7 @@
 {
-  "action": "write",
+  "action": "modify_task",
   "args": {
-    "path": "hello.sh",
-    "content": "#!/bin/bash\necho 'hello'"
+    "id": "0",
+    "state": "completed"
   }
 }
