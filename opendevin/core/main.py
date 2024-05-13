@@ -13,6 +13,7 @@ from opendevin.events.event import Event
 from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.llm.llm import LLM
+from opendevin.runtime.sandbox import Sandbox
 
 
 def read_task_from_file(file_path: str) -> str:
@@ -29,6 +30,7 @@ def read_task_from_stdin() -> str:
 async def main(
     task_str: str = '',
     fake_user_response_fn: Optional[Callable[[Optional[State]], str]] = None,
+    sandbox: Optional[Sandbox] = None,
 ) -> Optional[State]:
     """Main coroutine to run the agent controller with task input flexibility.
     It's only used when you launch opendevin backend directly via cmdline.
@@ -81,6 +83,7 @@ async def main(
         max_iterations=args.max_iterations,
         max_chars=args.max_chars,
         event_stream=event_stream,
+        sandbox=sandbox,
     )
 
     await controller.setup_task(task)
