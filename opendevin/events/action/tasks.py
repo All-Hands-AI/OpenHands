@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from pydantic.dataclasses import Field, dataclass
 
 from opendevin.core.schema import ActionType
 
@@ -9,7 +9,7 @@ from .action import Action
 class AddTaskAction(Action):
     parent: str
     goal: str
-    subtasks: list = field(default_factory=list)
+    subtasks: list = Field(default_factory=list)
     thought: str = ''
     action: str = ActionType.ADD_TASK
 

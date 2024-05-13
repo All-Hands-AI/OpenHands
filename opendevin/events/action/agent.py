@@ -1,5 +1,6 @@
-from dataclasses import dataclass, field
 from typing import ClassVar
+
+from pydantic.dataclasses import Field, dataclass
 
 from opendevin.core.schema import ActionType
 
@@ -43,7 +44,7 @@ class AgentSummarizeAction(Action):
 
 @dataclass
 class AgentFinishAction(Action):
-    outputs: dict = field(default_factory=dict)
+    outputs: dict = Field(default_factory=dict)
     thought: str = ''
     action: str = ActionType.FINISH
 
@@ -54,7 +55,7 @@ class AgentFinishAction(Action):
 
 @dataclass
 class AgentRejectAction(Action):
-    outputs: dict = field(default_factory=dict)
+    outputs: dict = Field(default_factory=dict)
     thought: str = ''
     action: str = ActionType.REJECT
 

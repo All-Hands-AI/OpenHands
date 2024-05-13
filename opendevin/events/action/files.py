@@ -1,5 +1,7 @@
-from dataclasses import dataclass
 from typing import ClassVar
+
+from pydantic import StrictInt
+from pydantic.dataclasses import dataclass
 
 from opendevin.core.schema import ActionType
 
@@ -15,8 +17,8 @@ class FileReadAction(Action):
     """
 
     path: str
-    start: int = 0
-    end: int = -1
+    start: StrictInt = 0
+    end: StrictInt = -1
     thought: str = ''
     action: str = ActionType.READ
     runnable: ClassVar[bool] = True
@@ -30,8 +32,8 @@ class FileReadAction(Action):
 class FileWriteAction(Action):
     path: str
     content: str
-    start: int = 0
-    end: int = -1
+    start: StrictInt = 0
+    end: StrictInt = -1
     thought: str = ''
     action: str = ActionType.WRITE
     runnable: ClassVar[bool] = True

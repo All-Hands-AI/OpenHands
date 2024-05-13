@@ -1,5 +1,6 @@
-from dataclasses import dataclass
 from typing import ClassVar
+
+from pydantic.dataclasses import dataclass
 
 from opendevin.core.schema import ActionType
 

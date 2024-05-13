@@ -1,5 +1,7 @@
-from dataclasses import dataclass
 from typing import ClassVar
+
+from pydantic import StrictInt
+from pydantic.dataclasses import dataclass
 
 from opendevin.core.schema import ActionType
 
@@ -28,7 +30,7 @@ class CmdRunAction(Action):
 
 @dataclass
 class CmdKillAction(Action):
-    id: int
+    id: StrictInt
     thought: str = ''
     action: str = ActionType.KILL
     runnable: ClassVar[bool] = True

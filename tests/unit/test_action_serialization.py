@@ -1,3 +1,6 @@
+import pytest
+from pydantic import ValidationError
+
 from opendevin.events.action import (
     Action,
     AddTaskAction,
@@ -16,7 +19,11 @@ from opendevin.events.action import (
 
 
 def serialization_deserialization(original_action_dict, cls):
-    action_instance = action_from_dict(original_action_dict)
+    try:
+        action_instance = action_from_dict(original_action_dict)
+    except ValidationError:
+        raise
+
     assert isinstance(
         action_instance, Action
     ), 'The action instance should be an instance of Action.'
@@ -64,8 +71,14 @@ def test_agent_reject_action_serialization_deserialization():
 
 
 def test_cmd_kill_action_serialization_deserialization():
-    original_action_dict = {'action': 'kill', 'args': {'id': '1337', 'thought': ''}}
+    original_action_dict = {'action': 'kill', 'args': {'id': 1337, 'thought': ''}}
+
     serialization_deserialization(original_action_dict, CmdKillAction)
+
+    bad_action_dict = {'action': 'kill', 'args': {'id': '1337', 'thought': ''}}
+
+    with pytest.raises(ValidationError):
+        serialization_deserialization(bad_action_dict, CmdKillAction)
 
 
 def test_cmd_run_action_serialization_deserialization():
@@ -91,6 +104,19 @@ def test_file_read_action_serialization_deserialization():
     }
     serialization_deserialization(original_action_dict, FileReadAction)
 
+    bad_action_dict = {
+        'action': 'read',
+        'args': {
+            'path': '/path/to/file.txt',
+            'start': '0',
+            'end': '-1',
+            'thought': 'None',
+        },
+    }
+
+    with pytest.raises(ValidationError):
+        serialization_deserialization(bad_action_dict, FileReadAction)
+
 
 def test_file_write_action_serialization_deserialization():
     original_action_dict = {
@@ -104,6 +130,20 @@ def test_file_write_action_serialization_deserialization():
         },
     }
     serialization_deserialization(original_action_dict, FileWriteAction)
+
+    bad_action_dict = {
+        'action': 'write',
+        'args': {
+            'path': '/path/to/file.txt',
+            'content': 'Hello world',
+            'start': '0',
+            'end': '1',
+            'thought': 'None',
+        },
+    }
+
+    with pytest.raises(ValidationError):
+        serialization_deserialization(bad_action_dict, FileWriteAction)
 
 
 def test_add_task_action_serialization_deserialization():
@@ -122,6 +162,6 @@ def test_add_task_action_serialization_deserialization():
 def test_modify_task_action_serialization_deserialization():
     original_action_dict = {
         'action': 'modify_task',
-        'args': {'id': 1, 'state': 'Test state.', 'thought': ''},
+        'args': {'id': '1', 'state': 'Test state.', 'thought': ''},
     }
     serialization_deserialization(original_action_dict, ModifyTaskAction)
