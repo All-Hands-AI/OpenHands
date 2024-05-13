@@ -229,6 +229,29 @@
     "pt": "Salvar",
     "es": "Guardar"
   },
+  "CONFIGURATION$MODAL_RESET_BUTTON_LABEL": {
+    "en": "Reset to Defaults",
+    "zh-CN": "重置为默认值",
+    "de": "Auf Standardwerte zurücksetzen",
+    "ko-KR": "기본값으로 재설정",
+    "no": "Tilbakestill til standardverdier",
+    "zh-TW": "重設為預設值",
+    "it": "Reimposta ai valori predefiniti",
+    "pt": "Redefinir para os padrões",
+    "es": "Restablecer valores predeterminados",
+    "ar": "إعادة التعيين إلى الإعدادات الافتراضية",
+    "fr": "Réinitialiser aux valeurs par défaut",
+    "tr": "Varsayılanlara Sıfırla"
+  },
+  "CONFIGURATION$SETTINGS_NEED_UPDATE_MESSAGE": {
+    "en": "We've changed some settings in the latest update. Take a minute to review."
+  },
+  "CONFIGURATION$AGENT_LOADING": {
+    "en": "Please wait while the agent loads. This may take a few seconds..."
+  },
+  "CONFIGURATION$AGENT_RUNNING": {
+    "en": "Please stop the agent before editing these settings."
+  },
   "LOAD_SESSION$MODAL_TITLE": {
     "en": "Unfinished Session Detected"
   },
@@ -269,6 +292,10 @@
     "fr": "Envoyez un message à l'assistant...",
     "tr": "Asistana mesaj gönder..."
   },
+  "CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE": {
+    "en": "Continue",
+    "zh-CN": "继续"
+  },
   "CHAT_INTERFACE$INPUT_SEND_MESSAGE_BUTTON_CONTENT": {
     "en": "Send",
     "zh-CN": "发送",
@@ -308,6 +335,10 @@
     "ar": "مساعد",
     "fr": "Assistant",
     "tr": "Gönder"
+  },
+  "CHAT_INTERFACE$TO_BOTTOM": {
+    "en": "To Bottom",
+    "zh-CN": "回到底部"
   },
   "SETTINGS$MODEL_TOOLTIP": {
     "en": "Select the language model to use.",

@@ -1,5 +1,4 @@
 import os
-from typing import Dict
 
 import jwt
 from jwt.exceptions import InvalidTokenError
@@ -36,7 +35,7 @@ def get_sid_from_token(token: str) -> str:
     return ''
 
 
-def sign_token(payload: Dict[str, object]) -> str:
+def sign_token(payload: dict[str, object]) -> str:
     """Signs a JWT token."""
     # payload = {
     #     "sid": sid,

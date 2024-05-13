@@ -1,0 +1,5 @@
+name: CommitWriterAgent
+description: "Write a git commit message for files in the git staging area"
+inputs: {}
+outputs:
+  answer: string

@@ -12,7 +12,7 @@ Here's a summary of the codebase, as it relates to this task:
 {{ instructions.actions.run }}
 {{ instructions.actions.write }}
 {{ instructions.actions.read }}
-{{ instructions.actions.think }}
+{{ instructions.actions.message }}
 {{ instructions.actions.finish }}
 
 Do NOT finish until you have completed the tasks.

@@ -12,9 +12,7 @@ jobs:
   build:
     name: Build Docusaurus
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: docs
+    if: github.repository == 'OpenDevin/OpenDevin'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,7 +37,7 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     needs: build
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.repository == 'OpenDevin/OpenDevin'
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
     permissions:
       pages: write # to deploy to Pages

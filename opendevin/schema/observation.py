@@ -36,6 +36,8 @@ class ObservationTypeSchema(BaseModel):
 
     ERROR: str = Field(default='error')
 
+    SUCCESS: str = Field(default='success')
+
     NULL: str = Field(default='null')
 
 

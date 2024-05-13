@@ -1,17 +1,19 @@
 from ..exceptions import AgentMalformedActionError
 from .agent import (
     AgentDelegateAction,
-    AgentEchoAction,
     AgentFinishAction,
     AgentRecallAction,
+    AgentRejectAction,
     AgentSummarizeAction,
-    AgentThinkAction,
+    ChangeAgentStateAction,
 )
 from .base import Action, NullAction
 from .bash import CmdKillAction, CmdRunAction
 from .browse import BrowseURLAction
-from .fileop import FileReadAction, FileWriteAction
-from .github import GitHubPushAction
+from .commands import CmdKillAction, CmdRunAction, IPythonRunCellAction
+from .empty import NullAction
+from .files import FileReadAction, FileWriteAction
+from .message import MessageAction
 from .tasks import AddTaskAction, ModifyTaskAction
 
 actions = (
@@ -21,12 +23,13 @@ actions = (
     FileReadAction,
     FileWriteAction,
     AgentRecallAction,
-    AgentThinkAction,
     AgentFinishAction,
+    AgentRejectAction,
     AgentDelegateAction,
     AddTaskAction,
     ModifyTaskAction,
-    GitHubPushAction,
+    ChangeAgentStateAction,
+    MessageAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]
@@ -38,6 +41,10 @@ def action_from_dict(action: dict) -> Action:
     action = action.copy()
     if 'action' not in action:
         raise AgentMalformedActionError(f"'action' key is not found in {action=}")
+    if not isinstance(action['action'], str):
+        raise AgentMalformedActionError(
+            f"'{action['action']=}' is not defined. Available actions: {ACTION_TYPE_TO_CLASS.keys()}"
+        )
     action_class = ACTION_TYPE_TO_CLASS.get(action['action'])
     if action_class is None:
         raise AgentMalformedActionError(
@@ -60,10 +67,9 @@ __all__ = [
     'FileReadAction',
     'FileWriteAction',
     'AgentRecallAction',
-    'AgentThinkAction',
     'AgentFinishAction',
+    'AgentRejectAction',
     'AgentDelegateAction',
-    'AgentEchoAction',
     'AgentSummarizeAction',
     'AddTaskAction',
     'ModifyTaskAction',

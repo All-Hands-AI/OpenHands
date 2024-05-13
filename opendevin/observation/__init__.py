@@ -1,22 +1,23 @@
 from .base import NullObservation, Observation
 from .browse import BrowserOutputObservation
 from .delegate import AgentDelegateObservation
-from .error import AgentErrorObservation
+from .empty import NullObservation
+from .error import ErrorObservation
 from .files import FileReadObservation, FileWriteObservation
-from .message import AgentMessageObservation, UserMessageObservation
+from .observation import Observation
 from .recall import AgentRecallObservation
-from .run import CmdOutputObservation
+from .success import SuccessObservation
 
 observations = (
     CmdOutputObservation,
     BrowserOutputObservation,
     FileReadObservation,
     FileWriteObservation,
-    UserMessageObservation,
-    AgentMessageObservation,
     AgentRecallObservation,
     AgentDelegateObservation,
-    AgentErrorObservation,
+    SuccessObservation,
+    ErrorObservation,
+    AgentStateChangedObservation,
 )
 
 OBSERVATION_TYPE_TO_CLASS = {observation_class.observation: observation_class for observation_class in observations}  # type: ignore[attr-defined]
@@ -43,8 +44,7 @@ __all__ = [
     'BrowserOutputObservation',
     'FileReadObservation',
     'FileWriteObservation',
-    'UserMessageObservation',
-    'AgentMessageObservation',
     'AgentRecallObservation',
-    'AgentErrorObservation',
+    'ErrorObservation',
+    'AgentStateChangedObservation',
 ]

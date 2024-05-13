@@ -31,11 +31,7 @@ const IgnoreTaskStateMap: { [k: string]: AgentTaskState[] } = {
     AgentTaskState.STOPPED,
     AgentTaskState.FINISHED,
   ],
-  [AgentTaskAction.STOP]: [
-    AgentTaskState.INIT,
-    AgentTaskState.STOPPED,
-    AgentTaskState.FINISHED,
-  ],
+  [AgentState.STOPPED]: [AgentState.INIT, AgentState.STOPPED],
 };
 
 interface ButtonProps {
@@ -82,18 +78,15 @@ function AgentControlBar() {
       return;
     }
 
-    let act = action;
-
-    if (act === AgentTaskAction.STOP) {
-      act = AgentTaskAction.STOP;
+    if (action === AgentState.STOPPED) {
       clearMsgs().then().catch();
       store.dispatch(clearMessages());
     } else {
       setIsLoading(true);
     }
 
-    setDesiredState(TaskStateActionMap[act]);
-    changeTaskState(act);
+    setDesiredState(action);
+    changeAgentState(action);
   };
 
   useEffect(() => {
@@ -131,8 +124,8 @@ function AgentControlBar() {
             isLoading ||
             IgnoreTaskStateMap[AgentTaskAction.PAUSE].includes(curTaskState)
           }
-          content="Pause the agent task"
-          action={AgentTaskAction.PAUSE}
+          content="Pause the current task"
+          action={AgentState.PAUSED}
           handleAction={handleAction}
           large
         >
@@ -141,8 +134,8 @@ function AgentControlBar() {
       )}
       <ActionButton
         isDisabled={isLoading}
-        content="Restart a new agent task"
-        action={AgentTaskAction.STOP}
+        content="Start a new task"
+        action={AgentState.STOPPED}
         handleAction={handleAction}
       >
         <ArrowIcon />

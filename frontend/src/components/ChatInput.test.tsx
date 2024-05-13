@@ -3,12 +3,6 @@ import userEvent from "@testing-library/user-event";
 import { act, render } from "@testing-library/react";
 import ChatInput from "./ChatInput";
 
-const tMock = vi.fn((key: string) => key);
-
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({ t: tMock }),
-}));
-
 describe("ChatInput", () => {
   const onSendMessage = vi.fn();
 
@@ -39,14 +33,11 @@ describe("ChatInput", () => {
     expect(onSendMessage).not.toHaveBeenCalled();
   });
 
-  // Note that this test only checks that the placeholder is rendered, not the actual value
   it("should render with a placeholder", () => {
-    tMock.mockReturnValue("value-returned-by-t");
-
     const { getByPlaceholderText } = render(
       <ChatInput onSendMessage={onSendMessage} />,
     );
-    const textarea = getByPlaceholderText("value-returned-by-t");
+    const textarea = getByPlaceholderText(/CHAT_INTERFACE\$INPUT_PLACEHOLDER/i);
     expect(textarea).toBeInTheDocument();
   });
 

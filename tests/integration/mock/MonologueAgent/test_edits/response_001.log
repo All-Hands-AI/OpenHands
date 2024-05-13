@@ -1,0 +1,7 @@
+{
+  "action": "run",
+  "args": {
+    "command": "pwd",
+    "background": false
+  }
+}

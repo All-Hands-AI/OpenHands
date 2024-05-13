@@ -1,5 +1,5 @@
 import React from "react";
-import { render, waitFor } from "@testing-library/react";
+import { render, waitFor, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { act } from "react-dom/test-utils";
 import FileExplorer from "./FileExplorer";
@@ -55,11 +55,13 @@ describe("FileExplorer", () => {
     expect(onFileClickMock).toHaveBeenCalledWith(absPath);
   });
 
-  it("should refetch the workspace when clicking the refresh button", () => {
-    const { getByTestId } = render(<FileExplorer onFileClick={vi.fn} />);
+  it("should refetch the workspace when clicking the refresh button", async () => {
+    const onFileClickMock = vi.fn();
+    render(<FileExplorer onFileClick={onFileClickMock} />);
 
-    act(() => {
-      userEvent.click(getByTestId("refresh"));
+    // The 'await' keyword is required here to avoid a warning during test runs
+    await act(() => {
+      userEvent.click(screen.getByTestId("refresh"));
     });
 
     expect(getWorkspace).toHaveBeenCalledTimes(2); // 1 from initial render, 1 from refresh button
@@ -81,5 +83,37 @@ describe("FileExplorer", () => {
     // it should be hidden rather than removed from the DOM
     expect(queryByText("root")).toBeInTheDocument();
     expect(queryByText("root")).not.toBeVisible();
+  });
+
+  it("should upload a file", async () => {
+    const { getByTestId } = render(<FileExplorer onFileClick={vi.fn} />);
+
+    const uploadFileInput = getByTestId("file-input");
+    const file = new File([""], "test");
+
+    // The 'await' keyword is required here to avoid a warning during test runs
+    await act(() => {
+      userEvent.upload(uploadFileInput, file);
+    });
+
+    expect(uploadFile).toHaveBeenCalledWith(file);
+    expect(getWorkspace).toHaveBeenCalled();
+  });
+
+  it.todo("should display an error toast if file upload fails", async () => {
+    (uploadFile as Mock).mockRejectedValue(new Error());
+
+    const { getByTestId } = render(<FileExplorer onFileClick={vi.fn} />);
+
+    const uploadFileInput = getByTestId("file-input");
+    const file = new File([""], "test");
+
+    act(() => {
+      userEvent.upload(uploadFileInput, file);
+    });
+
+    expect(uploadFile).rejects.toThrow();
+    // TODO: figure out why spy isnt called to pass test
+    expect(toastSpy).toHaveBeenCalledWith("ws", "Error uploading file");
   });
 });

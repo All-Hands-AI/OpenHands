@@ -1,8 +1,7 @@
 Thoughts:
-I have created the file 'hello.sh' but have not yet written the script content that prints "hello". The next step is to write the shell script code into 'hello.sh'. This will include a shebang line to specify the shell interpreter (bash in this case) and an echo command to print "hello".
+I need to add the code to the 'hello.sh' script to print 'hello' without asking for confirmation. I will use the echo command to achieve this.
 
 Action:
 ```
-write hello.sh #!/bin/bash
-echo "hello"
+edit 0 -1 "echo 'hello'"
 ```

@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple
 
 from opendevin.action import (
     Action,
@@ -17,10 +16,8 @@ class State:
     iteration: int = 0
     # number of characters we have sent to and received from LLM so far for current task
     num_of_chars: int = 0
-    background_commands_obs: List[CmdOutputObservation] = field(
-        default_factory=list)
-    history: List[Tuple[Action, Observation]] = field(default_factory=list)
-    updated_info: List[Tuple[Action, Observation]
-                       ] = field(default_factory=list)
-    inputs: Dict = field(default_factory=dict)
-    outputs: Dict = field(default_factory=dict)
+    background_commands_obs: list[CmdOutputObservation] = field(default_factory=list)
+    history: list[tuple[Action, Observation]] = field(default_factory=list)
+    updated_info: list[tuple[Action, Observation]] = field(default_factory=list)
+    inputs: dict = field(default_factory=dict)
+    outputs: dict = field(default_factory=dict)

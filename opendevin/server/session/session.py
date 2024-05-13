@@ -1,5 +1,5 @@
 import time
-from typing import Callable, Dict
+from typing import Callable
 
 from fastapi import WebSocket, WebSocketDisconnect
 
@@ -44,7 +44,7 @@ class Session:
                 self.is_alive = False
             logger.exception('Error in loop_recv: %s', e)
 
-    async def send(self, data: Dict[str, object]) -> bool:
+    async def send(self, data: dict[str, object]) -> bool:
         try:
             if self.websocket is None or not self.is_alive:
                 return False
@@ -68,7 +68,7 @@ class Session:
         self.is_alive = True
         self.last_active_ts = int(time.time())
 
-    def load_from_data(self, data: Dict) -> bool:
+    def load_from_data(self, data: dict) -> bool:
         self.last_active_ts = data.get('last_active_ts', 0)
         if self.last_active_ts < int(time.time()) - DEL_DELT_SEC:
             return False

@@ -27,6 +27,10 @@ const AgentStatusMap: { [k: string]: { message: string; indicator: string } } =
       message: "Agent has finished the task.",
       indicator: "bg-green-500",
     },
+    [AgentState.ERROR]: {
+      message: "Agent encountered an error.",
+      indicator: "bg-red-500",
+    },
   };
 
 function AgentStatusBar() {

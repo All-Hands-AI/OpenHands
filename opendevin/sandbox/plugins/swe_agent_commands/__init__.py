@@ -1,6 +1,5 @@
 import os
 from dataclasses import dataclass, field
-from typing import List
 
 from opendevin.sandbox.plugins.requirement import PluginRequirement
 from opendevin.sandbox.plugins.swe_agent_commands.parse_commands import (
@@ -40,7 +39,9 @@ class SWEAgentCommandsRequirement(PluginRequirement):
     sandbox_dest: str = '/opendevin/plugins/swe_agent_commands'
     bash_script_path: str = 'setup_default.sh'
 
-    scripts_filepaths: List[str | None] = field(default_factory=lambda: DEFAULT_SCRIPT_FILEPATHS)
+    scripts_filepaths: list[str | None] = field(
+        default_factory=lambda: DEFAULT_SCRIPT_FILEPATHS
+    )
     documentation: str = DEFAULT_DOCUMENTATION
 
 
@@ -63,5 +64,7 @@ class SWEAgentCursorCommandsRequirement(PluginRequirement):
     sandbox_dest: str = '/opendevin/plugins/swe_agent_commands'
     bash_script_path: str = 'setup_cursor_mode.sh'
 
-    scripts_filepaths: List[str | None] = field(default_factory=lambda: CURSOR_SCRIPT_FILEPATHS)
+    scripts_filepaths: list[str | None] = field(
+        default_factory=lambda: CURSOR_SCRIPT_FILEPATHS
+    )
     documentation: str = CURSOR_DOCUMENTATION

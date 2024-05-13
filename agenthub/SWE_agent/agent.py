@@ -1,10 +1,10 @@
-from typing import List
-
-from opendevin.action import (
+from opendevin.controller.agent import Agent
+from opendevin.controller.state.state import State
+from opendevin.events.action import (
     Action,
-    AgentThinkAction,
     FileReadAction,
     FileWriteAction,
+    MessageAction,
 )
 from opendevin.agent import Agent
 from opendevin.llm.llm import LLM
@@ -32,7 +32,7 @@ class SWEAgent(Agent):
         super().__init__(llm)
         self.memory_window = 4
         self.max_retries = 2
-        self.running_memory: List[str] = []
+        self.running_memory: list[str] = []
         self.cur_file: str = ''
         self.cur_line: int = 0
 
@@ -41,7 +41,7 @@ class SWEAgent(Agent):
         memory = MEMORY_FORMAT(action.to_memory(), observation.to_memory())
         self.running_memory.append(memory)
 
-    def _think_act(self, messages: List[dict]) -> tuple[Action, str]:
+    def _think_act(self, messages: list[dict]) -> tuple[Action, str]:
         resp = self.llm.completion(
             messages=messages,
             temperature=0.05,
@@ -97,13 +97,13 @@ class SWEAgent(Agent):
             action, thought = self._think_act(messages=msgs)
 
         if not action:
-            action = AgentThinkAction(thought)
+            action = MessageAction(thought)
 
         self._update(action)
         self.latest_action = action
         return action
 
-    def search_memory(self, query: str) -> List[str]:
+    def search_memory(self, query: str) -> list[str]:
         return [item for item in self.running_memory if query in item]
 
     def reset(self) -> None:

@@ -195,6 +195,7 @@ logs
 # agent
 .envrc
 /workspace
+/_test_workspace
 /debug
 cache
 
@@ -205,4 +206,3 @@ config.toml
 .ollama/models
 .ollama/id_*
 **/.history
-

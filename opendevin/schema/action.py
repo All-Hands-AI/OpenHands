@@ -38,10 +38,6 @@ class ActionTypeSchema(BaseModel):
     """Searches long-term memory
     """
 
-    THINK: str = Field(default='think')
-    """Allows the agent to make a plan, set a goal, or record thoughts
-    """
-
     DELEGATE: str = Field(default='delegate')
     """Delegates a task to another agent.
     """
@@ -49,6 +45,11 @@ class ActionTypeSchema(BaseModel):
     FINISH: str = Field(default='finish')
     """If you're absolutely certain that you've completed your task and have tested your work,
     use the finish action to stop working.
+    """
+
+    REJECT: str = Field(default='reject')
+    """If you're absolutely certain that you cannot complete the task with given requirements,
+    use the reject action to stop working.
     """
 
     NULL: str = Field(default='null')

@@ -1,16 +1,17 @@
 import time
-from typing import List, TypedDict
+from typing import TypedDict
 
 from opendevin.action import (
     Action,
     AddTaskAction,
     AgentFinishAction,
     AgentRecallAction,
-    AgentThinkAction,
+    AgentRejectAction,
     BrowseURLAction,
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
+    MessageAction,
     ModifyTaskAction,
 )
 from opendevin.agent import Agent
@@ -33,7 +34,9 @@ FIXME: There are a few problems this surfaced
 * Browser not working
 """
 
-ActionObs = TypedDict('ActionObs', {'action': Action, 'observations': List[Observation]})
+ActionObs = TypedDict(
+    'ActionObs', {'action': Action, 'observations': list[Observation]}
+)
 
 BACKGROUND_CMD = 'echo "This is in the background" && sleep .1 && echo "This too"'
 
@@ -46,51 +49,86 @@ class DummyAgent(Agent):
 
     def __init__(self, llm: LLM):
         super().__init__(llm)
-        self.steps: List[ActionObs] = [{
-            'action': AddTaskAction(parent='0', goal='check the current directory'),
-            'observations': [NullObservation('')],
-        }, {
-            'action': AddTaskAction(parent='0.0', goal='run ls'),
-            'observations': [NullObservation('')],
-        }, {
-            'action': ModifyTaskAction(id='0.0', state='in_progress'),
-            'observations': [NullObservation('')],
-        }, {
-            'action': AgentThinkAction(thought='Time to get started!'),
-            'observations': [NullObservation('')],
-        }, {
-            'action': CmdRunAction(command='echo "foo"'),
-            'observations': [CmdOutputObservation('foo', command_id=-1, command='echo "foo"')],
-        }, {
-            'action': FileWriteAction(content='echo "Hello, World!"', path='hello.sh'),
-            'observations': [FileWriteObservation('', path='hello.sh')],
-        }, {
-            'action': FileReadAction(path='hello.sh'),
-            'observations': [FileReadObservation('echo "Hello, World!"\n', path='hello.sh')],
-        }, {
-            'action': CmdRunAction(command='bash hello.sh'),
-            'observations': [CmdOutputObservation('Hello, World!', command_id=-1, command='bash hello.sh')],
-        }, {
-            'action': CmdRunAction(command=BACKGROUND_CMD, background=True),
-            'observations': [
-                CmdOutputObservation('Background command started. To stop it, send a `kill` action with id 42', command_id='42', command=BACKGROUND_CMD),  # type: ignore[arg-type]
-                CmdOutputObservation('This is in the background\nThis too\n', command_id='42', command=BACKGROUND_CMD),  # type: ignore[arg-type]
-            ]
-        }, {
-            'action': AgentRecallAction(query='who am I?'),
-            'observations': [
-                AgentRecallObservation('', memories=['I am a computer.']),
-                # CmdOutputObservation('This too\n', command_id='42', command=BACKGROUND_CMD),
-            ],
-        }, {
-            'action': BrowseURLAction(url='https://google.com'),
-            'observations': [
-                # BrowserOutputObservation('<html></html>', url='https://google.com', screenshot=""),
-            ],
-        }, {
-            'action': AgentFinishAction(),
-            'observations': [],
-        }]
+        self.steps: list[ActionObs] = [
+            {
+                'action': AddTaskAction(parent='0', goal='check the current directory'),
+                'observations': [NullObservation('')],
+            },
+            {
+                'action': AddTaskAction(parent='0.0', goal='run ls'),
+                'observations': [NullObservation('')],
+            },
+            {
+                'action': ModifyTaskAction(id='0.0', state='in_progress'),
+                'observations': [NullObservation('')],
+            },
+            {
+                'action': MessageAction('Time to get started!'),
+                'observations': [NullObservation('')],
+            },
+            {
+                'action': CmdRunAction(command='echo "foo"'),
+                'observations': [
+                    CmdOutputObservation('foo', command_id=-1, command='echo "foo"')
+                ],
+            },
+            {
+                'action': FileWriteAction(
+                    content='echo "Hello, World!"', path='hello.sh'
+                ),
+                'observations': [FileWriteObservation('', path='hello.sh')],
+            },
+            {
+                'action': FileReadAction(path='hello.sh'),
+                'observations': [
+                    FileReadObservation('echo "Hello, World!"\n', path='hello.sh')
+                ],
+            },
+            {
+                'action': CmdRunAction(command='bash hello.sh'),
+                'observations': [
+                    CmdOutputObservation(
+                        'Hello, World!', command_id=-1, command='bash hello.sh'
+                    )
+                ],
+            },
+            {
+                'action': CmdRunAction(command=BACKGROUND_CMD, background=True),
+                'observations': [
+                    CmdOutputObservation(
+                        'Background command started. To stop it, send a `kill` action with id 42',
+                        command_id='42',  # type: ignore[arg-type]
+                        command=BACKGROUND_CMD,
+                    ),
+                    CmdOutputObservation(
+                        'This is in the background\nThis too\n',
+                        command_id='42',  # type: ignore[arg-type]
+                        command=BACKGROUND_CMD,
+                    ),
+                ],
+            },
+            {
+                'action': AgentRecallAction(query='who am I?'),
+                'observations': [
+                    AgentRecallObservation('', memories=['I am a computer.']),
+                    # CmdOutputObservation('This too\n', command_id='42', command=BACKGROUND_CMD),
+                ],
+            },
+            {
+                'action': BrowseURLAction(url='https://google.com'),
+                'observations': [
+                    # BrowserOutputObservation('<html></html>', url='https://google.com', screenshot=""),
+                ],
+            },
+            {
+                'action': AgentFinishAction(),
+                'observations': [],
+            },
+            {
+                'action': AgentRejectAction(),
+                'observations': [],
+            },
+        ]
 
     def step(self, state: State) -> Action:
         time.sleep(0.1)
@@ -114,5 +152,5 @@ class DummyAgent(Agent):
                     assert hist_obs == expected_obs, f'Expected observation {expected_obs}, got {hist_obs}'
         return self.steps[state.iteration]['action']
 
-    def search_memory(self, query: str) -> List[str]:
+    def search_memory(self, query: str) -> list[str]:
         return ['I am a computer.']

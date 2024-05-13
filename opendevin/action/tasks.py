@@ -1,13 +1,8 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
 
-from opendevin.observation import NullObservation
-from opendevin.schema import ActionType
+from opendevin.core.schema import ActionType
 
 from .base import ExecutableAction, NotExecutableAction
-
-if TYPE_CHECKING:
-    from opendevin.controller import AgentController
 
 
 @dataclass
@@ -16,11 +11,6 @@ class AddTaskAction(ExecutableAction):
     goal: str
     subtasks: list = field(default_factory=list)
     action: str = ActionType.ADD_TASK
-
-    async def run(self, controller: 'AgentController') -> NullObservation:  # type: ignore
-        if controller.state is not None:
-            controller.state.plan.add_subtask(self.parent, self.goal, self.subtasks)
-        return NullObservation('')
 
     @property
     def message(self) -> str:
@@ -32,11 +22,6 @@ class ModifyTaskAction(ExecutableAction):
     id: str
     state: str
     action: str = ActionType.MODIFY_TASK
-
-    async def run(self, controller: 'AgentController') -> NullObservation:  # type: ignore
-        if controller.state is not None:
-            controller.state.plan.set_subtask_state(self.id, self.state)
-        return NullObservation('')
 
     @property
     def message(self) -> str:

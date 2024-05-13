@@ -26,8 +26,8 @@ const messageActions = {
     store.dispatch(updatePath(path));
     store.dispatch(setCode(content));
   },
-  [ActionType.THINK]: (message: ActionMessage) => {
-    store.dispatch(appendAssistantMessage(message.args.thought));
+  [ActionType.MESSAGE]: (message: ActionMessage) => {
+    store.dispatch(addAssistantMessage(message.args.content));
   },
   [ActionType.FINISH]: (message: ActionMessage) => {
     store.dispatch(appendAssistantMessage(message.message));

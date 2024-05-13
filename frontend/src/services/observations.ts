@@ -11,8 +11,8 @@ export function handleObservationMessage(message: ObservationMessage) {
       store.dispatch(appendOutput(message.content));
       break;
     case ObservationType.BROWSE:
-      if (message.extras?.screenshot) {
-        store.dispatch(setScreenshotSrc(message.extras.screenshot));
+      if (message.screenshot) {
+        store.dispatch(setScreenshotSrc(message.screenshot));
       }
       if (message.extras?.url) {
         store.dispatch(setUrl(message.extras.url));

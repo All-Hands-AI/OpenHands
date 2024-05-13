@@ -1,9 +1,6 @@
-import re
-from json import JSONDecodeError
-from typing import List
-
-from opendevin import config
-from opendevin.action import (
+from opendevin.core.config import config
+from opendevin.core.utils import json
+from opendevin.events.action import (
     Action,
     action_from_dict,
 )
@@ -12,8 +9,6 @@ from opendevin.observation import (
     CmdOutputObservation,
 )
 from opendevin.schema.config import ConfigType
-
-from . import json
 
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is this:
@@ -51,15 +46,15 @@ Here are the possible actions:
   * `branch` - the name of the branch to push
 * `recall` - recalls a past memory. Arguments:
   * `query` - the query to search for
-* `think` - make a plan, set a goal, or record your thoughts. Arguments:
-  * `thought` - the thought to record
+* `message` - make a plan, set a goal, or record your thoughts. Arguments:
+  * `content` - the message to record
 * `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
 %(background_commands)s
 
-You MUST take time to think in between read, write, run, browse, push, and recall actions.
+You MUST take time to think in between read, write, run, browse, push, and recall actions--do this with the `message` action.
 You should never act twice in a row without thinking. But if your last several
-actions are all "think" actions, you should consider taking a different action.
+actions are all `message` actions, you should consider taking a different action.
 
 Notes:
 * you are logged in as %(user)s, but sudo will always work without a password.
@@ -68,7 +63,7 @@ Notes:
 * don't run interactive commands, or commands that don't return (e.g. `node server.js`). You may run commands in the background (e.g. `node server.js &`)
 * don't run interactive text editors (e.g. `nano` or 'vim'), instead use the 'write' or 'read' action.
 * don't run gui applications (e.g. software IDEs (like vs code or codium), web browsers (like firefox or chromium), or other complex software packages). Use non-interactive cli applications, or special actions instead.
-* whenever an action fails, always `think` about why it may have happened before acting again.
+* whenever an action fails, always send a `message` about why it may have happened before acting again.
 
 What is your next single thought or action? Again, you must reply with JSON, and only with JSON. You must respond with exactly one 'action' object.
 
@@ -99,7 +94,7 @@ You can also use the same action and args from the source monologue.
 """
 
 
-def get_summarize_monologue_prompt(thoughts: List[dict]):
+def get_summarize_monologue_prompt(thoughts: list[dict]):
     """
     Gets the prompt for summarizing the monologue
 
@@ -113,16 +108,16 @@ def get_summarize_monologue_prompt(thoughts: List[dict]):
 
 def get_request_action_prompt(
     task: str,
-    thoughts: List[dict],
-    background_commands_obs: List[CmdOutputObservation] = [],
+    thoughts: list[dict],
+    background_commands_obs: list[CmdOutputObservation] = [],
 ):
     """
     Gets the action prompt formatted with appropriate values.
 
     Parameters:
     - task (str): The current task the agent is trying to accomplish
-    - thoughts (List[dict]): The agent's current thoughts
-    - background_commands_obs (List[CmdOutputObservation]): List of all observed background commands running
+    - thoughts (list[dict]): The agent's current thoughts
+    - background_commands_obs (list[CmdOutputObservation]): list of all observed background commands running
 
     Returns:
     - str: Formatted prompt string with hint, task, monologue, and background included
@@ -132,8 +127,8 @@ def get_request_action_prompt(
     if len(thoughts) > 0:
         latest_thought = thoughts[-1]
         if 'action' in latest_thought:
-            if latest_thought['action'] == 'think':
-                if latest_thought['args']['thought'].startswith('OK so my task is'):
+            if latest_thought['action'] == 'message':
+                if latest_thought['args']['content'].startswith('OK so my task is'):
                     hint = "You're just getting started! What should you do first?"
                 else:
                     hint = "You've been thinking a lot lately. Maybe it's time to take action?"
@@ -149,7 +144,7 @@ def get_request_action_prompt(
             )
         bg_commands_message += '\nYou can end any process by sending a `kill` action with the numerical `id` above.'
 
-    user = 'opendevin' if config.get(ConfigType.RUN_AS_DEVIN) else 'root'
+    user = 'opendevin' if config.run_as_devin else 'root'
 
     return ACTION_PROMPT % {
         'task': task,
@@ -157,12 +152,12 @@ def get_request_action_prompt(
         'background_commands': bg_commands_message,
         'hint': hint,
         'user': user,
-        'timeout': config.get(ConfigType.SANDBOX_TIMEOUT),
-        'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.get(ConfigType.WORKSPACE_MOUNT_PATH_IN_SANDBOX),
+        'timeout': config.sandbox_timeout,
+        'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.workspace_mount_path_in_sandbox,
     }
 
 
-def parse_action_response(response: str) -> Action:
+def parse_action_response(orig_response: str) -> Action:
     """
     Parses a string to find an action within it
 
@@ -172,33 +167,17 @@ def parse_action_response(response: str) -> Action:
     Returns:
     - Action: The action that was found in the response string
     """
-    try:
-        action_dict = json.loads(response)
-    except JSONDecodeError:
-        # Find response-looking json in the output and use the more promising one. Helps with weak llms
-        response_json_matches = re.finditer(
-            r"""{\s*\"action\":\s?\"(\w+)\"(?:,?|,\s*\"args\":\s?{((?:.|\s)*?)})\s*}""",
-            response)  # Find all response-looking strings
+    # attempt to load the JSON dict from the response
+    action_dict = json.loads(orig_response)
 
-        def rank(match):
-            return len(match[2]) if match[1] == 'think' else 130  # Crudely rank multiple responses by length
-        try:
-            action_dict = json.loads(max(response_json_matches, key=rank)[0])  # Use the highest ranked response
-        except (ValueError, JSONDecodeError):
-            raise LLMOutputError(
-                'Invalid JSON, the response must be well-formed JSON as specified in the prompt.'
-            )
-    except (ValueError, TypeError):
-        raise LLMOutputError(
-            'Invalid JSON, the response must be well-formed JSON as specified in the prompt.'
-        )
     if 'content' in action_dict:
         # The LLM gets confused here. Might as well be robust
         action_dict['contents'] = action_dict.pop('content')
+
     return action_from_dict(action_dict)
 
 
-def parse_summary_response(response: str) -> List[dict]:
+def parse_summary_response(response: str) -> list[dict]:
     """
     Parses a summary of the monologue
 
@@ -206,7 +185,7 @@ def parse_summary_response(response: str) -> List[dict]:
     - response (str): The response string to be parsed
 
     Returns:
-    - List[dict]: The list of summaries output by the model
+    - list[dict]: The list of summaries output by the model
     """
     parsed = json.loads(response)
     return parsed['new_monologue']
