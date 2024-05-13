@@ -220,15 +220,27 @@ Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmat
 
 ----------
 
-Let's create the shell script `hello.sh` that prints "hello". I'll write the script and save it.
+ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
 
+----------
+
+Let's create a shell script named 'hello.sh' that prints 'hello' without asking for confirmation. Here's the script:
+
+```bash
+echo "hello"
+```
+
+Let me create the 'hello.sh' script for you:
 <execute_bash>
-echo "echo hello" > hello.sh
+echo 'echo "hello"' > hello.sh
 </execute_bash>
 
 ----------
 
 OBSERVATION:
 
-ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
 [Command -1 finished with exit code 0]]
+
+----------
+
+ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
