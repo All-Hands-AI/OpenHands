@@ -40,7 +40,7 @@ write <file> <changes> [<start_line>] [<end_line>] - Modifies a <file> by replac
 browse <url> - Returns the text version of any url, this can be useful to look up documentation or finding issues on github
 scroll_up - Takes no arguments. This will scroll up and show you the 100 lines above your current lines
 scroll_down - Takes no arguments. This will scroll down and show you the 100 lines below your current lines
-edit <start_line> <end_line> <changes> - This will modify lines in the currently open file. use start_line and end_line to designate which lines to change and then write the multiline changes
+edit <start_line> <end_line> <changes> - This will modify lines in the currently open file. use start_line and end_line to designate which lines to change and then write the multiline changes. Set end_line to -1 to denote the end of the file
 goto <line_num> - This will take you directly to a line and show you the 100 lines below it.
 <bash_command> <args> - You can use any bash command you need (cd, ls, rm, grep, dir, mv, wget, git, zip, etc.) with their arguments included
 pip install <package> - You can use this to import python packages. Make sure you include the correct package name when using this command.
@@ -53,6 +53,25 @@ None
 The following commands require an open file to be used: edit, scroll_up, scroll_down, goto
 To modify the current file use 'edit'. To move through the current file use 'goto' or 'scroll_up'/'scroll_down'
 when using write and edit do not surround the code with any "" just write the code.
+
+----------
+
+These are your past 4 actions:
+===== Previous Actions =====
+
+Memory 0:
+Previous Action:
+action: message
+args:
+  wait_for_response: False
+
+Output from Action:
+observation: null
+content:
+extras:
+======= End Actions =======
+Use these memories to provide additional context to the problem you are solving.
+Remember that you have already completed these steps so you do not need to perform them again.
 
 ----------
 

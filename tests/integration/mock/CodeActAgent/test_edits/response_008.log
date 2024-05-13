@@ -1,0 +1,5 @@
+The typo in the file `bad.txt` has been corrected to "ENVIRONMENT REMINDER: You have 3 turns left to complete the task." Let me save the changes without asking for confirmation:
+<execute_bash>
+edit 1:1
+ENVIRONMENT REMINDER: You have 3 turns left to complete the task.
+end_of_edit

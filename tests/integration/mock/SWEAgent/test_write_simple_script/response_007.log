@@ -1,7 +1,7 @@
 Thoughts:
-I have already written the shell script 'hello.sh' to print 'hello' without asking for confirmation. I need to verify the content of the file to ensure that the script is correctly implemented.
+I need to add the command to print 'hello' in the 'hello.sh' script without any prompts for confirmation. Since the script is already open, I will write the command to print 'hello' directly into the script.
 
 Action:
 ```
-read hello.sh
+edit 0 -1 "echo 'hello'"
 ```

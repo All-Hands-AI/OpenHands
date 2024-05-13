@@ -1,9 +1,4 @@
-```json
 {
-  "action": "write",
-  "args": {
-    "path": "hello.sh",
-    "content": "#!/bin/bash\n\necho 'hello'\n"
-  }
+  "action": "finish",
+  "args": {}
 }
-```
