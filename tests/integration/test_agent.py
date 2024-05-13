@@ -22,7 +22,8 @@ workspace_base = os.getenv('WORKSPACE_BASE')
 )
 def test_write_simple_script():
     task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
-    asyncio.run(main(task))
+    final_agent_state = asyncio.run(main(task))
+    assert final_agent_state == AgentState.FINISHED
 
     # Verify the script file exists
     script_path = os.path.join(workspace_base, 'hello.sh')
@@ -86,7 +87,8 @@ Enjoy!
 def test_ipython():
     # Execute the task
     task = "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point."
-    asyncio.run(main(task))
+    final_agent_state = asyncio.run(main(task))
+    assert final_agent_state == AgentState.FINISHED
 
     # Verify the file exists
     file_path = os.path.join(workspace_base, 'test.txt')
@@ -109,4 +111,4 @@ def test_simple_task_rejection():
     # the workspace is not a git repo
     task = 'Write a git commit message for the current staging area. Do not ask me for confirmation at any point.'
     final_agent_state = asyncio.run(main(task))
-    assert final_agent_state == AgentState.ERROR
+    assert final_agent_state == AgentState.FINISHED

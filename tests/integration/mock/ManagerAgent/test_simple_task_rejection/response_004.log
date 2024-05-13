@@ -1,8 +1,10 @@
+```json
 {
   "action": "reject",
   "args": {
     "outputs": {
-      "reason": "Unable to proceed with the CommitWriterAgent due to an environment issue where git commands are not recognized."
+      "reason": "Unable to proceed with CommitWriterAgent due to an error related to git diff command usage or unsupported option."
     }
   }
 }
+```

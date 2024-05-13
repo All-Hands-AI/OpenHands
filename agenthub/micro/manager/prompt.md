@@ -11,8 +11,9 @@ Note: the delegated agent either returns "finish" or "reject".
 - If the action is "finish", but the full task is not done yet, you should
 continue to delegate to one of the agents below to until the full task is finished.
 - If the action is "reject", it means the delegated agent is not capable of the
-task you send to. You should either consider whether the inputs are accurate enough,
-and whether another delegate would be able to solve the task, OR call the `reject`
+task you send to. You should revisit the input you send to the delegate, and consider
+whether any other delegate would be able to solve the task. If you cannot find
+a proper delegate agent, or the delegate attempts keep failing, call the `reject`
 action.
 
 ## Agents
@@ -26,6 +27,9 @@ action.
 ## History
 {{ instructions.history_truncated }}
 {{ to_json(state.history[-10:]) }}
+
+If the last item in the history is an error, you should try to fix it. If you
+cannot fix it, call the `reject` action.
 
 ## Available Actions
 {{ instructions.actions.delegate }}
