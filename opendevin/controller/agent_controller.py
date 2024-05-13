@@ -143,7 +143,7 @@ class AgentController:
 
     async def _run(self):
         if self.state is None:
-            return None
+            return
         self.finish_state = None
 
         if self._agent_state != AgentState.RUNNING:
