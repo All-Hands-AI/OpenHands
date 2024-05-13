@@ -1,1 +1,3 @@
-Let's correct the typos in the file `bad.txt`. Please provide me with the specific typos that need to be fixed.
+It seems like there are some typos in the file `bad.txt`. Let's correct those typos without asking for confirmation:
+<execute_bash>
+sed -i 's/typoo/typo/g; s/mor/more/g' bad.txt

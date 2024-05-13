@@ -237,3 +237,18 @@ Enjoy!
 [Command -1 finished with exit code 0]]
 
 ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
+
+----------
+
+It seems like there are some typos in the file `bad.txt`. Let's correct those typos without asking for confirmation:
+<execute_bash>
+sed -i 's/typoo/typo/g; s/mor/more/g' bad.txt
+</execute_bash>
+
+----------
+
+OBSERVATION:
+
+[Command -1 finished with exit code 0]]
+
+ENVIRONMENT REMINDER: You have 7 turns left to complete the task.
