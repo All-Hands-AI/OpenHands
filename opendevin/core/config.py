@@ -370,7 +370,7 @@ def get_parser():
     )
     parser.add_argument(
         '--eval-output-dir',
-        default='evaluation/outputs',
+        default='evaluation_outputs/outputs',
         type=str,
         help='The directory to save evaluation output',
     )
