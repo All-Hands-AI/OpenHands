@@ -15,8 +15,7 @@ from tenacity import (
 
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
-
-from . import json
+from opendevin.core.utils import json
 
 num_retries = config.llm.num_retries
 retry_min_wait = config.llm.retry_min_wait
@@ -119,7 +118,7 @@ class LongTermMemory:
         """
         Initialize the chromadb and set up ChromaVectorStore for later use.
         """
-        db = chromadb.Client()
+        db = chromadb.Client(chromadb.Settings(anonymized_telemetry=False))
         self.collection = db.get_or_create_collection(name='memories')
         vector_store = ChromaVectorStore(chroma_collection=self.collection)
         embedding_strategy = config.llm.embedding_model

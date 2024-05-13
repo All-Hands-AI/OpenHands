@@ -1,7 +1,3 @@
-import os
-import pathlib
-
-from opendevin.core.config import config
 from opendevin.events.action import (
     AgentRecallAction,
     BrowseURLAction,
@@ -38,22 +34,14 @@ class ServerRuntime(Runtime):
         )
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        # echo "import math" | execute_cli
-        # write code to a temporary file and pass it to `execute_cli` via stdin
-        tmp_filepath = os.path.join(
-            config.workspace_base, '.tmp', '.ipython_execution_tmp.py'
-        )
-        pathlib.Path(os.path.dirname(tmp_filepath)).mkdir(parents=True, exist_ok=True)
-        with open(tmp_filepath, 'w') as tmp_file:
-            tmp_file.write(action.code)
-
-        tmp_filepath_inside_sandbox = os.path.join(
-            config.workspace_mount_path_in_sandbox,
-            '.tmp',
-            '.ipython_execution_tmp.py',
-        )
         obs = self._run_command(
-            f'execute_cli < {tmp_filepath_inside_sandbox}', background=False
+            ('cat > /tmp/opendevin_jupyter_temp.py <<EOL\n' f'{action.code}\n' 'EOL'),
+            background=False,
+        )
+
+        # run the code
+        obs = self._run_command(
+            ('cat /tmp/opendevin_jupyter_temp.py | execute_cli'), background=False
         )
         return IPythonRunCellObservation(content=obs.content, code=action.code)
 

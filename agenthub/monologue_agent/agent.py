@@ -1,5 +1,4 @@
 import agenthub.monologue_agent.utils.prompts as prompts
-from agenthub.monologue_agent.utils.monologue import Monologue
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config
@@ -25,9 +24,11 @@ from opendevin.events.observation import (
 )
 from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
+from opendevin.memory.condenser import MemoryCondenser
+from opendevin.memory.history import ShortTermHistory
 
 if config.agent.memory_enabled:
-    from agenthub.monologue_agent.utils.memory import LongTermMemory
+    from opendevin.memory.memory import LongTermMemory
 
 MAX_TOKEN_COUNT_PADDING = 512
 MAX_OUTPUT_LENGTH = 5000
@@ -86,8 +87,9 @@ class MonologueAgent(Agent):
     """
 
     _initialized = False
-    monologue: Monologue
+    monologue: ShortTermHistory
     memory: 'LongTermMemory | None'
+    memory_condenser: MemoryCondenser
 
     def __init__(self, llm: LLM):
         """
@@ -98,7 +100,7 @@ class MonologueAgent(Agent):
         """
         super().__init__(llm)
 
-    def _add_event(self, event: dict):
+    def _add_event(self, event_dict: dict):
         """
         Adds a new event to the agent's monologue and memory.
         Monologue automatically condenses when it gets too large.
@@ -108,29 +110,33 @@ class MonologueAgent(Agent):
         """
 
         if (
-            'args' in event
-            and 'output' in event['args']
-            and len(event['args']['output']) > MAX_OUTPUT_LENGTH
+            'args' in event_dict
+            and 'output' in event_dict['args']
+            and len(event_dict['args']['output']) > MAX_OUTPUT_LENGTH
         ):
-            event['args']['output'] = (
-                event['args']['output'][:MAX_OUTPUT_LENGTH] + '...'
+            event_dict['args']['output'] = (
+                event_dict['args']['output'][:MAX_OUTPUT_LENGTH] + '...'
             )
 
-        self.monologue.add_event(event)
+        self.monologue.add_event(event_dict)
         if self.memory is not None:
-            self.memory.add_event(event)
+            self.memory.add_event(event_dict)
 
         # Test monologue token length
         prompt = prompts.get_request_action_prompt(
             '',
-            self.monologue.get_thoughts(),
+            self.monologue.get_events(),
             [],
         )
         messages = [{'content': prompt, 'role': 'user'}]
         token_count = self.llm.get_token_count(messages)
 
         if token_count + MAX_TOKEN_COUNT_PADDING > self.llm.max_input_tokens:
-            self.monologue.condense(self.llm)
+            prompt = prompts.get_summarize_monologue_prompt(self.monologue.events)
+            summary_response = self.memory_condenser.condense(
+                summarize_prompt=prompt, llm=self.llm
+            )
+            self.monologue.events = prompts.parse_summary_response(summary_response)
 
     def _initialize(self, task: str):
         """
@@ -152,11 +158,13 @@ class MonologueAgent(Agent):
         if task is None or task == '':
             raise AgentNoInstructionError()
 
-        self.monologue = Monologue()
+        self.monologue = ShortTermHistory()
         if config.agent.memory_enabled:
             self.memory = LongTermMemory()
         else:
             self.memory = None
+
+        self.memory_condenser = MemoryCondenser()
 
         self._add_initial_thoughts(task)
         self._initialized = True
@@ -227,7 +235,7 @@ class MonologueAgent(Agent):
 
         prompt = prompts.get_request_action_prompt(
             state.plan.main_goal,
-            self.monologue.get_thoughts(),
+            self.monologue.get_events(),
             state.background_commands_obs,
         )
         messages = [{'content': prompt, 'role': 'user'}]

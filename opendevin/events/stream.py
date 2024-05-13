@@ -28,7 +28,7 @@ class EventStream:
     sid: str
     _subscribers: dict[str, Callable]
     _events: list[Event]
-    _lock = asyncio.Lock()
+    _lock: asyncio.Lock
     _file_store: FileStore
 
     def __init__(self, sid: str):
@@ -36,6 +36,7 @@ class EventStream:
         self._file_store = get_file_store()
         self._subscribers = {}
         self._events = []
+        self._lock = asyncio.Lock()
 
     def _get_filename_for_event(self, event: Event):
         # TODO: change to .id once that prop is in
@@ -45,7 +46,6 @@ class EventStream:
         async with self._lock:
             self._events = []
             events = self._file_store.list(f'sessions/{self.sid}/events')
-            print('list of events', events)
             for event_str in events:
                 content = self._file_store.read(event_str)
                 data = json.loads(content)
