@@ -41,9 +41,19 @@ rm -rf _test_workspace
 for ((i = 0; i < num_of_tests; i++)); do
   task=${tasks[i]}
   test_name=${test_names[i]}
+
+  # skip other tests if only one test is specified
+  if [[ -n "$ONLY_TEST_NAME" && "$ONLY_TEST_NAME" != "$test_name" ]]; then
+    continue
+  fi
+
   for ((j = 0; j < num_of_agents; j++)); do
     agent=${agents[j]}
     remind_iterations=${remind_iterations_config[j]}
+
+    if [[ -n "$ONLY_TEST_AGENT" && "$ONLY_TEST_AGENT" != "$agent" ]]; then
+      continue
+    fi
 
     echo -e "\n\n\n\n========Running $test_name for $agent========\n\n\n\n"
     rm -rf $WORKSPACE_BASE
