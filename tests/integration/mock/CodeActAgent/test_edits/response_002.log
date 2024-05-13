@@ -1,2 +1,5 @@
-I see the typo that needs to be fixed. Let's correct it in the file `bad.txt`.
-Please provide me with the specific typo you would like to correct.
+I see the typo in the file. Let's correct it without asking for confirmation:
+<execute_bash>
+edit 1:1
+ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
+end_of_edit
