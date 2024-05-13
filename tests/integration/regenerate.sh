@@ -14,7 +14,6 @@ WORKSPACE_BASE+="/_test_workspace"
 SANDBOX_TYPE="ssh"
 MAX_ITERATIONS=10
 
-# FIXME: SWEAgent hangs, so it goes last
 agents=("MonologueAgent" "CodeActAgent" "PlannerAgent" "SWEAgent")
 remind_iterations_config=(false true false false)
 tasks=(
