@@ -53,6 +53,7 @@ version of Docker, `26.0.0`.
 export WORKSPACE_BASE=$(pwd)/workspace;
 
 docker run \
+    -it \
     --pull=always \
     -e SANDBOX_USER_ID=$(id -u) \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
