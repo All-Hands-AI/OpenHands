@@ -14,13 +14,13 @@ tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
   "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'."
-  "Write a git commit message"
+  "Write a git commit message for the current staging area."
 )
 test_names=(
   "test_edits"
   "test_write_simple_script"
   "test_ipython"
-  "test_task_rejection"
+  "test_simple_task_rejection"
 )
 
 num_of_tests=${#tasks[@]}

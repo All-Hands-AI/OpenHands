@@ -1,0 +1,8 @@
+{
+  "action": "reject",
+  "args": {
+    "outputs": {
+      "reason": "Unable to proceed with writing a git commit message due to an environment issue where git commands are not recognized."
+    }
+  }
+}
