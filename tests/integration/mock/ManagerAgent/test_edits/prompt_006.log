@@ -15,8 +15,9 @@ Note: the delegated agent either returns "finish" or "reject".
 - If the action is "finish", but the full task is not done yet, you should
 continue to delegate to one of the agents below to until the full task is finished.
 - If the action is "reject", it means the delegated agent is not capable of the
-task you send to. You should either consider whether the inputs are accurate enough,
-and whether another delegate would be able to solve the task, OR call the `reject`
+task you send to. You should revisit the input you send to the delegate, and consider
+whether any other delegate would be able to solve the task. If you cannot find
+a proper delegate agent, or the delegate attempts keep failing, call the `reject`
 action.
 
 ## Agents
@@ -68,7 +69,10 @@ as well as observations you've made. This only includes the MOST RECENT
 actions and observations--more may have happened before that.
 They are time-ordered, with your most recent action at the bottom.
 
-[[{"action": "delegate", "args": {"agent": "TypoFixerAgent", "inputs": {}, "thought": ""}, "message": "I'm asking TypoFixerAgent for help with this task."}, {"observation": "null", "content": "", "extras": {}, "message": "No observation"}], [{"action": "null", "args": {}, "message": "No action"}, {"observation": "delegate", "content": "", "extras": {"outputs": {"summary": "Fixed typos in './bad.txt': 'typoo' to 'typo', 'mor' to 'more'."}}, "message": ""}]]
+[[{"action": "delegate", "args": {"agent": "TypoFixerAgent", "inputs": {}, "thought": ""}, "message": "I'm asking TypoFixerAgent for help with this task."}, {"observation": "null", "content": "", "extras": {}, "message": "No observation"}], [{"action": "null", "args": {}, "message": "No action"}, {"observation": "delegate", "content": "", "extras": {"outputs": {"summary": "Fixed typos in file bad.txt:\n- 'typoo' to 'typo'\n- 'mor' to 'more'"}}, "message": ""}]]
+
+If the last item in the history is an error, you should try to fix it. If you
+cannot fix it, call the `reject` action.
 
 ## Available Actions
 * `delegate` - send a task to another agent from the list provided. Arguments:
