@@ -138,10 +138,6 @@ class AgentUnit:
             await self.send(event.to_dict())
         return
 
-    async def close(self):
-        """Cleanly exits an AgentUnit.
-
-        Execution awaited by the AgentManager.
-        """
+    def close(self):
         if self.controller is not None:
-            await self.controller.close()
+            self.controller.close()
