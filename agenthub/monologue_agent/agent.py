@@ -140,13 +140,14 @@ class MonologueAgent(Agent):
         # summarize the short term history (events) if necessary
         if self.memory_condenser.needs_condense(
             llm=self.llm,
-            default_events=self.monologue.get_core_events(),
+            default_events=self.monologue.get_default_events(),
             recent_events=self.monologue.get_recent_events(),
         ):
             summary_response = self.memory_condenser.condense(
                 llm=self.llm,
-                default_events=self.monologue.get_core_events(),
+                default_events=self.monologue.get_default_events(),
                 recent_events=self.monologue.get_recent_events(),
+                background_commands=[],
             )
         if summary_response[1]:
             self.monologue.recent_events = prompts.parse_summary_response(
@@ -180,9 +181,9 @@ class MonologueAgent(Agent):
             self.memory = None
 
         self.memory_condenser = MemoryCondenser(
-            action_prompt=prompts.generate_action_prompt,
+            action_prompt=prompts.get_action_prompt,
             action_prompt_with_defaults=prompts.generate_action_prompt_with_defaults,
-            summarize_prompt=prompts.generate_summarize_prompt,
+            summarize_prompt=prompts.get_summarize_prompt,
         )
 
         self._add_initial_thoughts(task)
@@ -257,7 +258,7 @@ class MonologueAgent(Agent):
 
         prompt = prompts.get_action_prompt(
             state.plan.main_goal,
-            self.monologue.get_core_events(),
+            self.monologue.get_default_events(),
             self.monologue.get_recent_events(),
             state.background_commands_obs,
         )

@@ -18,7 +18,7 @@ class ShortTermHistory:
         """
         self.recent_events = []
         # core events are events that the agent learned in the initial prompt
-        self.core_events = []
+        self.default_events = []
 
     def add_core_event(self, event_dict: dict):
         """
@@ -33,7 +33,7 @@ class ShortTermHistory:
         if not isinstance(event_dict, dict):
             raise AgentEventTypeError()
 
-        self.core_events.append(event_dict)
+        self.default_events.append(event_dict)
 
     def add_event(self, event_dict: dict, core=False):
         """
@@ -58,16 +58,16 @@ class ShortTermHistory:
         Returns:
         - List: The list of events that the agent remembers easily.
         """
-        return self.recent_events + self.core_events
+        return self.recent_events + self.default_events
 
-    def get_core_events(self):
+    def get_default_events(self):
         """
         Get the events in the agent's initial prompt.
 
         Returns:
         - List: The list of core events.
         """
-        return self.core_events
+        return self.default_events
 
     def get_recent_events(self, num_events=5):
         """

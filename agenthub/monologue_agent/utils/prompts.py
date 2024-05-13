@@ -111,10 +111,10 @@ def get_summarize_prompt(default_events: list[dict], recent_events: list[dict]):
 
 
 def get_action_prompt(
-    task: str = '',
-    default_events: list[dict] | None = None,
-    recent_events: list[dict] | None = None,
-    background_commands_obs: list[CmdOutputObservation] | None = None,
+    task: str,
+    default_events: list[dict],
+    recent_events: list[dict],
+    background_commands_obs: list[CmdOutputObservation],
 ):
     """
     Gets the action prompt formatted with appropriate values.

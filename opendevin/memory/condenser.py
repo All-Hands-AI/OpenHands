@@ -14,8 +14,8 @@ class MemoryCondenser:
 
     def __init__(
         self,
-        action_prompt: Callable[[list[dict], list[dict]], str],
-        action_prompt_with_defaults: Callable[[list[dict]], str],
+        action_prompt: Callable[..., str],
+        action_prompt_with_defaults: Callable[..., str],
         summarize_prompt: Callable[[list[dict], list[dict]], str],
     ):
         """
@@ -30,7 +30,11 @@ class MemoryCondenser:
         self.summarize_prompt = summarize_prompt
 
     def condense(
-        self, llm: LLM, default_events: list[dict], recent_events: list[dict]
+        self,
+        llm: LLM,
+        default_events: list[dict],
+        recent_events: list[dict],
+        background_commands: list,
     ) -> tuple[str, bool]:
         """
         Attempts to condense the recent events of the monologue by using the llm, if necessary. Returns unmodified prompt if it is already short enough.
@@ -48,7 +52,9 @@ class MemoryCondenser:
         - tuple: A tuple containing the condensed string, or the unmodified string if it wasn't performed, and a boolean indicating if condensation was performed.
         """
 
-        action_prompt = self.action_prompt(default_events, recent_events)
+        action_prompt = self.action_prompt(
+            'task', default_events, recent_events, background_commands
+        )
         summarize_prompt = self.summarize_prompt(default_events, recent_events)
 
         # test prompt token length
@@ -56,9 +62,7 @@ class MemoryCondenser:
             return action_prompt, False
 
         try:
-            return self.process_in_chunks(
-                llm, default_events, recent_events, summarize_prompt
-            ), True
+            return self.process_in_chunks(llm, default_events, recent_events), True
         except Exception as e:
             logger.error('Condensation failed: %s', str(e), exc_info=False)
             return action_prompt, False
@@ -100,12 +104,15 @@ class MemoryCondenser:
         Condenses recent events in chunks, while preserving core events for context.
         """
         # Initial part of the prompt includes default memories for context
-        initial_prompt = self.action_prompt_with_defaults(core_events=default_events)
-        return self.attempt_condense(llm, recent_events, initial_prompt, 0)
+        initial_prompt = self.action_prompt_with_defaults(default_events=default_events)
+        return self.attempt_condense(
+            llm, default_events, recent_events, initial_prompt, 0
+        )
 
     def attempt_condense(
         self,
         llm: LLM,
+        default_events: list[dict],
         recent_events: list[dict],
         action_prompt: str,
         attempt_count: int,
@@ -114,7 +121,7 @@ class MemoryCondenser:
             raise Exception('Condensation attempts exceeded without success.')
 
         # get the summarize prompt to use
-        summarize_prompt = self.summarize_prompt(recent_events, recent_events)
+        summarize_prompt = self.summarize_prompt(default_events, recent_events)
 
         # Split events into two halves
         midpoint = len(recent_events) // 2
@@ -122,7 +129,12 @@ class MemoryCondenser:
         second_half = recent_events[midpoint:]
 
         # Try to condense the first half
-        condensed_summary = self.process_events(llm, first_half, summarize_prompt)
+        condensed_summary = self.process_events(
+            llm,
+            default_events=default_events,
+            recent_events=first_half,
+            summarize_prompt=summarize_prompt,
+        )
         new_prompt = f'{action_prompt} {condensed_summary}'
         new_token_count = llm.get_token_count([{'content': new_prompt, 'role': 'user'}])
 
@@ -131,11 +143,19 @@ class MemoryCondenser:
         else:
             # If not successful, attempt to condense the second half
             return self.attempt_condense(
-                llm, second_half, new_prompt, attempt_count + 1
+                llm=llm,
+                default_events=default_events,
+                recent_events=second_half,
+                action_prompt=new_prompt,
+                attempt_count=attempt_count + 1,
             )
 
     def process_events(
-        self, llm: LLM, recent_events: list[dict], summarize_prompt: str
+        self,
+        llm: LLM,
+        default_events: list[dict],
+        recent_events: list[dict],
+        summarize_prompt: str,
     ) -> str:
         """
         Processes a list of events by converting them into a single string representation and sending it to the LLM for condensation.
@@ -149,7 +169,7 @@ class MemoryCondenser:
         - str: The summarized result of processing the events.
         """
         # apply the prompt template to the events
-        summarize_prompt = self.summarize_prompt(recent_events=recent_events)
+        summarize_prompt = self.summarize_prompt(default_events, recent_events)
 
         # send the combined prompt to the LLM
         messages = [{'content': f'{summarize_prompt}', 'role': 'user'}]
