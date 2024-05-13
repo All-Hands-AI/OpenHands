@@ -134,10 +134,16 @@ class AgentUnit:
         Args:
             event: The agent event (Observation or Action).
         """
-        if event.source == 'agent' and not isinstance(event, (NullAction, NullObservation)):
+        if event.source == 'agent' and not isinstance(
+            event, (NullAction, NullObservation)
+        ):
             await self.send(event.to_dict())
         return
 
-    def close(self):
+    async def close(self):
+        """Cleanly exits an AgentUnit.
+
+        Execution awaited by the AgentManager.
+        """
         if self.controller is not None:
-            self.controller.close()
+            await self.controller.close()
