@@ -73,7 +73,6 @@ class SWEBenchSSHBox(DockerSSHBox):
             )
         config.workspace_base = workspace_mount_path
         config.workspace_mount_path = workspace_mount_path
-        config.run_as_devin = False
         sandbox = cls(
             container_image=SWE_BENCH_CONTAINER_IMAGE,
             swe_instance_id=instance['instance_id'],
