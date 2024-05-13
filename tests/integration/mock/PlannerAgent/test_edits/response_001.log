@@ -8,7 +8,7 @@
         "goal": "Read the content of bad.txt"
       },
       {
-        "goal": "Identify and correct typos in the text"
+        "goal": "Identify and correct typos"
       },
       {
         "goal": "Write the corrected content back to bad.txt"

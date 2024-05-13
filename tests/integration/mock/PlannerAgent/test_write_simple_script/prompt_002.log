@@ -22,9 +22,22 @@ track of your progress. Here's a JSON representation of your plan:
   "subtasks": [
     {
       "id": "0",
-      "goal": "Create a shell script 'hello.sh' that prints 'hello'",
+      "goal": "Create and execute a shell script 'hello.sh' that prints 'hello'",
       "state": "open",
-      "subtasks": []
+      "subtasks": [
+        {
+          "id": "0.0",
+          "goal": "Write the shell script 'hello.sh'",
+          "state": "open",
+          "subtasks": []
+        },
+        {
+          "id": "0.1",
+          "goal": "Verify the script prints 'hello'",
+          "state": "open",
+          "subtasks": []
+        }
+      ]
     }
   ]
 }
@@ -70,8 +83,15 @@ ten actions--more happened before that.
     "action": "add_task",
     "args": {
       "parent": "",
-      "goal": "Create a shell script 'hello.sh' that prints 'hello'",
-      "subtasks": [],
+      "goal": "Create and execute a shell script 'hello.sh' that prints 'hello'",
+      "subtasks": [
+        {
+          "goal": "Write the shell script 'hello.sh'"
+        },
+        {
+          "goal": "Verify the script prints 'hello'"
+        }
+      ],
       "thought": ""
     }
   }
@@ -117,3 +137,4 @@ actions are all `message` actions, you should consider taking a different action
 What is your next thought or action? Again, you must reply with JSON, and only with JSON.
 
 You should think about the next action to take.
+

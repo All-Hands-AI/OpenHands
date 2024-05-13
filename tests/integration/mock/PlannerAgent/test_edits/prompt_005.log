@@ -33,7 +33,7 @@ track of your progress. Here's a JSON representation of your plan:
         },
         {
           "id": "0.1",
-          "goal": "Identify and correct typos in the text",
+          "goal": "Identify and correct typos",
           "state": "open",
           "subtasks": []
         },
@@ -96,7 +96,7 @@ ten actions--more happened before that.
           "goal": "Read the content of bad.txt"
         },
         {
-          "goal": "Identify and correct typos in the text"
+          "goal": "Identify and correct typos"
         },
         {
           "goal": "Write the corrected content back to bad.txt"
@@ -134,7 +134,7 @@ ten actions--more happened before that.
     "args": {
       "id": "0.0",
       "state": "completed",
-      "thought": "The content of bad.txt has been successfully read and is now stored for further processing."
+      "thought": "Successfully read the content of bad.txt and identified the typos present in the text."
     }
   }
 ]
