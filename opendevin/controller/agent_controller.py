@@ -106,6 +106,7 @@ class AgentController:
         self.runtime.sandbox.close()
         self.runtime.browser.close()
         await self.set_agent_state_to(AgentState.STOPPED)
+        return self.finish_state
 
     def update_state_for_step(self, i):
         if self.state is None:
@@ -142,7 +143,8 @@ class AgentController:
 
     async def _run(self):
         if self.state is None:
-            return
+            return None
+        self.finish_state = None
 
         if self._agent_state != AgentState.RUNNING:
             raise ValueError('Task is not in running state')
@@ -152,10 +154,13 @@ class AgentController:
             try:
                 finished = await self.step(i)
                 if finished:
+                    self.finish_state = self.get_state()
                     await self.set_agent_state_to(AgentState.FINISHED)
                     break
-            except Exception:
+            except Exception as e:
                 logger.error('Error in loop', exc_info=True)
+                self.finish_state = self.get_state()
+                self.finish_state.error = str(e)
                 await self.set_agent_state_to(AgentState.ERROR)
                 await self.add_error_to_history(
                     'Oops! Something went wrong while completing your task. You can check the logs for more info.'
@@ -164,6 +169,10 @@ class AgentController:
 
             if self._is_stuck():
                 logger.info('Loop detected, stopping task')
+                self.finish_state = self.get_state()
+                self.finish_state.error = (
+                    'I got stuck into a loop, the task has stopped.'
+                )
                 await self.set_agent_state_to(AgentState.ERROR)
                 await self.add_error_to_history(
                     'I got stuck into a loop, the task has stopped.'
@@ -173,6 +182,7 @@ class AgentController:
                 0.001
             )  # Give back control for a tick, so other async stuff can run
         final_state = self.get_agent_state()
+        self.finish_state = self.get_state()
         if final_state == AgentState.RUNNING:
             await self.set_agent_state_to(AgentState.PAUSED)
 

@@ -1,10 +1,11 @@
 import asyncio
 import sys
-from typing import Type
+from typing import Callable, Optional, Type
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
+from opendevin.controller.state.state import State
 from opendevin.core.config import args, get_llm_config_arg
 from opendevin.core.schema import AgentState
 from opendevin.events.action import ChangeAgentStateAction, MessageAction
@@ -25,10 +26,16 @@ def read_task_from_stdin() -> str:
     return sys.stdin.read()
 
 
-async def main(task_str: str = '') -> None:
-    """
-    Main coroutine to run the agent controller with task input flexibility.
+async def main(
+    task_str: str = '',
+    fake_user_response_fn: Optional[Callable[[Optional[State]], str]] = None,
+) -> Optional[State]:
+    """Main coroutine to run the agent controller with task input flexibility.
     It's only used when you launch opendevin backend directly via cmdline.
+
+    Args:
+        task_str: The task to run.
+        fake_user_response_fn: A optional function that receives the current state (could be None) and returns a fake user response.
     """
 
     # Determine the task source
@@ -84,7 +91,10 @@ async def main(task_str: str = '') -> None:
     async def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
-                message = input('Request user input >> ')
+                if fake_user_response_fn is None:
+                    message = input('Request user input >> ')
+                else:
+                    message = fake_user_response_fn(controller.get_state())
                 action = MessageAction(content=message)
                 await event_stream.add_event(action, EventSource.USER)
 
@@ -97,7 +107,8 @@ async def main(task_str: str = '') -> None:
     ]:
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
-    await controller.close()
+    finish_state = await controller.close()
+    return finish_state
 
 
 if __name__ == '__main__':
