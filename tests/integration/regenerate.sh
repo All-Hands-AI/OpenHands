@@ -38,6 +38,7 @@ for ((i = 0; i < num_of_tests; i++)); do
   test_name=${test_names[i]}
   for ((j = 0; j < num_of_agents; j++)); do
     agent=${agents[j]}
+    remind_iterations=${remind_iterations_config[j]}
 
     echo -e "\n\n\n\n========Running $test_name for $agent========\n\n\n\n"
     rm -rf $WORKSPACE_BASE
