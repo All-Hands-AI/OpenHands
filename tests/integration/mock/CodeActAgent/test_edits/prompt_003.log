@@ -220,7 +220,7 @@ Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ----------
 
-Let's first view the content of the file `bad.txt` to identify the typos that need to be fixed:
+Sure! Let's first take a look at the content of the file `bad.txt` to identify the typos that need to be fixed. Let me display the content of the file:
 <execute_bash>
 cat bad.txt
 </execute_bash>
@@ -232,18 +232,25 @@ This is a stupid typoo.
 Really?
 No mor typos!
 Enjoy!
+
+ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
 [Command -1 finished with exit code 0]]
 
 ----------
 
-I have identified the typos in the file `bad.txt`. Let's correct them without asking for confirmation:
+I see the typos that need to be fixed in the file `bad.txt`. Let's correct them without asking for confirmation. Let me open the file for editing:
 <execute_bash>
-sed -i 's/typoo/typo/g' bad.txt
-sed -i 's/mor/more/g' bad.txt
+open bad.txt
 </execute_bash>
 
 ----------
 
 OBSERVATION:
+[File: /workspace/bad.txt (4 lines total)]
+1:This is a stupid typoo.
+2:Really?
+3:No mor typos!
+4:Enjoy!
 
+ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
 [Command -1 finished with exit code 0]]

@@ -1,4 +1,3 @@
-I have identified the typos in the file `bad.txt`. Let's correct them without asking for confirmation:
+I see the typos that need to be fixed in the file `bad.txt`. Let's correct them without asking for confirmation. Let me open the file for editing:
 <execute_bash>
-sed -i 's/typoo/typo/g' bad.txt
-sed -i 's/mor/more/g' bad.txt
+open bad.txt
