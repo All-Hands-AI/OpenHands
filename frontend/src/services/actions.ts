@@ -41,10 +41,14 @@ const messageActions = {
     store.dispatch(appendJupyterInput(message.args.code));
   },
   [ActionType.ADD_TASK]: () => {
-    getRootTask().then((fetchedRootTask) => store.dispatch(setRootTask(fetchedRootTask)));
+    getRootTask().then((fetchedRootTask) =>
+      store.dispatch(setRootTask(fetchedRootTask)),
+    );
   },
   [ActionType.MODIFY_TASK]: () => {
-    getRootTask().then((fetchedRootTask) => store.dispatch(setRootTask(fetchedRootTask)));
+    getRootTask().then((fetchedRootTask) =>
+      store.dispatch(setRootTask(fetchedRootTask)),
+    );
   },
 };
 
