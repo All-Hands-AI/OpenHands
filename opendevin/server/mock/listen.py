@@ -48,7 +48,7 @@ def read_llm_agents():
     return [
         'MonologueAgent',
         'CodeActAgent',
-        'RootTasknerAgent',
+        'PlannerAgent',
     ]
 
 
