@@ -1,8 +1,16 @@
 #!/bin/bash
 set -eo pipefail
 
-WORKSPACE_MOUNT_PATH=$(pwd)/_test_workspace
-WORKSPACE_BASE=$(pwd)/_test_workspace
+if [ -z $WORKSPACE_MOUNT_PATH ]; then
+  WORKSPACE_MOUNT_PATH=$(pwd)
+fi
+if [ -z $WORKSPACE_BASE ]; then
+  WORKSPACE_BASE=$(pwd)
+fi
+
+WORKSPACE_MOUNT_PATH+="/_test_workspace"
+WORKSPACE_BASE+="/_test_workspace"
+
 SANDBOX_TYPE="ssh"
 MAX_ITERATIONS=10
 
@@ -19,11 +27,11 @@ test_names=(
   "test_ipython"
 )
 
-num_of_tests=${#tasks[@]}
+num_of_tests=${#test_names[@]}
 num_of_agents=${#agents[@]}
 
 rm -rf logs
-rm -rf _test_workspace
+rm -rf $WORKSPACE_BASE
 for ((i = 0; i < num_of_tests; i++)); do
   task=${tasks[i]}
   test_name=${test_names[i]}
@@ -87,5 +95,5 @@ for ((i = 0; i < num_of_tests; i++)); do
 done
 
 rm -rf logs
-rm -rf _test_workspace
+rm -rf $WORKSPACE_BASE
 echo "Done!"
