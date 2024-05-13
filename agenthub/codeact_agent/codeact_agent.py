@@ -1,4 +1,5 @@
 import re
+from typing import Mapping
 
 from agenthub.codeact_agent.prompt import EXAMPLES, SYSTEM_MESSAGE
 from opendevin.controller.agent import Agent
@@ -143,7 +144,7 @@ class CodeActAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
-        self.messages: list[dict[str, str]] = []
+        self.messages: list[Mapping[str, str]] = []
         self.cost_accumulator = 0
 
     def step(self, state: State) -> Action:
@@ -218,11 +219,6 @@ class CodeActAgent(Agent):
                     raise NotImplementedError(
                         f'Unknown observation type: {obs.__class__}'
                     )
-        latest_user_message = [m for m in self.messages if m['role'] == 'user'][-1]
-        if latest_user_message:
-            latest_user_message['content'] += (
-                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration - 1} turns left to complete the task.'
-            )
 
         response = self.llm.completion(
             messages=self.messages,
