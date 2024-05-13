@@ -186,6 +186,11 @@ class AgentController:
 
         final_state = self.get_agent_state()
         if final_state == AgentState.RUNNING:
+            # no issues, simply run out of interaction budget
+            self.finish_state = self.get_state()
+            self.finish_state.error = (
+                f'You have run out of interaction budget: {self.max_iterations} turns'
+            )
             await self.set_agent_state_to(AgentState.PAUSED)
         elif final_state not in [
             AgentState.ERROR,
