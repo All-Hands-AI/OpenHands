@@ -39,7 +39,7 @@ If you get to the interactive shell successfully, it means success!
 
 ```bash
 # enable iteration countdown
-export ITERATION_REMINDER="true"
+export REMIND_ITERATIONS="true"
 python3 evaluation/swe_bench/run_infer.py \
   --agent-cls CodeActAgent \
   --llm_config.llm gpt-4-1106-preview \
