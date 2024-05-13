@@ -175,9 +175,12 @@ def parse_response(response: str) -> Action:
     Returns:
     - Action: A valid next action to perform from model output
     """
+    # attempt to load the JSON dict from the response
     action_dict = json.loads(response)
+
     if 'contents' in action_dict:
         # The LLM gets confused here. Might as well be robust
         action_dict['content'] = action_dict.pop('contents')
+
     action = action_from_dict(action_dict)
     return action

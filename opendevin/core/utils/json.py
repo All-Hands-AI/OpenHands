@@ -2,6 +2,8 @@ import json
 
 from json_repair import repair_json
 
+from opendevin.core.exceptions import LLMOutputError
+
 
 def my_encoder(obj):
     """
@@ -25,14 +27,26 @@ def dumps(obj, **kwargs):
     return json.dumps(obj, default=my_encoder, **kwargs)
 
 
-def loads(s, **kwargs):
+def loads(json_str, **kwargs):
     """
     Create a JSON object from str
     """
-    json_start = s.find('{')
-    json_end = s.rfind('}') + 1
-    if json_start == -1 or json_end == -1:
-        raise ValueError('Invalid response: no JSON found')
-    s = s[json_start:json_end]
-    s = repair_json(s)
-    return json.loads(s, **kwargs)
+    depth = 0
+    start = -1
+    for i, char in enumerate(json_str):
+        if char == '{':
+            if depth == 0:
+                start = i
+            depth += 1
+        elif char == '}':
+            depth -= 1
+            if depth == 0 and start != -1:
+                response = json_str[start : i + 1]
+                try:
+                    json_str = repair_json(response)
+                    return json.loads(json_str, **kwargs)
+                except (json.JSONDecodeError, ValueError, TypeError) as e:
+                    raise LLMOutputError(
+                        'Invalid JSON in response. Please make sure the response is a valid JSON object.'
+                    ) from e
+    raise LLMOutputError('No valid JSON object found in response.')

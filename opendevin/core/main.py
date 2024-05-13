@@ -31,6 +31,7 @@ async def main(
     fake_user_response_fn: Optional[Callable[[Optional[State]], str]] = None,
 ) -> Optional[State]:
     """Main coroutine to run the agent controller with task input flexibility.
+    It's only used when you launch opendevin backend directly via cmdline.
 
     Args:
         task_str: The task to run.
@@ -106,8 +107,8 @@ async def main(
     ]:
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
-    # return finish state
-    return controller.finish_state
+    finish_state = await controller.close()
+    return finish_state
 
 
 if __name__ == '__main__':
