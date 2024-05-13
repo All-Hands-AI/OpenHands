@@ -237,7 +237,7 @@ def process_instance(instance, agent_class, metadata, skip_workspace_mount):
             sandbox=sandbox,
         )
     )
-    print(f'FINAL STATE: {state}')
+
     # Get git patch
     git_patch = sandbox.get_diff_patch()
     logger.info(f'Got git diff for instance {instance.instance_id}')
