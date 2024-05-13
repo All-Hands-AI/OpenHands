@@ -3,13 +3,13 @@ import { addAssistantMessage } from "#/state/chatSlice";
 import { setCode, updatePath } from "#/state/codeSlice";
 import { appendInput } from "#/state/commandSlice";
 import { appendJupyterInput } from "#/state/jupyterSlice";
-import { setPlan } from "#/state/planSlice";
+import { setRootTask } from "#/state/taskSlice";
 import store from "#/store";
 import ActionType from "#/types/ActionType";
 import { ActionMessage } from "#/types/Message";
 import { SocketMessage } from "#/types/ResponseType";
 import { handleObservationMessage } from "./observations";
-import { getPlan } from "./planService";
+import { getRootTask } from "./taskService";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -41,10 +41,10 @@ const messageActions = {
     store.dispatch(appendJupyterInput(message.args.code));
   },
   [ActionType.ADD_TASK]: () => {
-    getPlan().then((fetchedPlan) => store.dispatch(setPlan(fetchedPlan)));
+    getRootTask().then((fetchedRootTask) => store.dispatch(setRootTask(fetchedRootTask)));
   },
   [ActionType.MODIFY_TASK]: () => {
-    getPlan().then((fetchedPlan) => store.dispatch(setPlan(fetchedPlan)));
+    getRootTask().then((fetchedRootTask) => store.dispatch(setRootTask(fetchedRootTask)));
   },
 };
 

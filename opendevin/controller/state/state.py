@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from opendevin.controller.state.plan import Plan
+from opendevin.controller.state.task import RootTask
 from opendevin.events.action import (
     Action,
     MessageAction,
@@ -13,7 +13,7 @@ from opendevin.events.observation import (
 
 @dataclass
 class State:
-    plan: Plan = Plan()
+    root_task: RootTask = RootTask()
     iteration: int = 0
     # number of characters we have sent to and received from LLM so far for current task
     num_of_chars: int = 0

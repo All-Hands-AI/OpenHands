@@ -133,7 +133,7 @@ def get_prompt(state: State) -> str:
     - str: The formatted string prompt with historical values
     """
 
-    plan_str = json.dumps(state.plan.to_dict(), indent=2)
+    plan_str = json.dumps(state.root_task.to_dict(), indent=2)
     sub_history = state.history[-HISTORY_SIZE:]
     history_dicts = []
     latest_action: Action = NullAction()
@@ -145,7 +145,7 @@ def get_prompt(state: State) -> str:
             observation_dict = observation.to_memory()
             history_dicts.append(observation_dict)
     history_str = json.dumps(history_dicts, indent=2)
-    current_task = state.plan.get_current_task()
+    current_task = state.root_task.get_current_task()
     if current_task is not None:
         plan_status = f"You're currently working on this task:\n{current_task.goal}."
         if len(current_task.subtasks) == 0:

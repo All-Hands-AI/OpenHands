@@ -81,11 +81,11 @@ async def websocket_endpoint(websocket: WebSocket):
         ```json
         {"action": "recall", "args": {"query": "past projects"}}
         ```
-    - Add a task to the plan:
+    - Add a task to the root_task:
         ```json
         {"action": "add_task", "args": {"task": "Implement feature X"}}
         ```
-    - Update a task in the plan:
+    - Update a task in the root_task:
         ```json
         {"action": "modify_task", "args": {"id": "0", "state": "in_progress", "thought": ""}}
         ```
@@ -292,16 +292,16 @@ async def upload_file(file: UploadFile):
     return {'filename': file.filename, 'location': str(file_path)}
 
 
-@app.get('/api/plan')
-def get_plan(
+@app.get('/api/root_task')
+def get_root_task(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ):
     """
-    Get plan.
+    Get root_task.
 
-    To get the plan:
+    To get the root_task:
     ```sh
-    curl -H "Authorization: Bearer <TOKEN>" http://localhost:3000/api/plan
+    curl -H "Authorization: Bearer <TOKEN>" http://localhost:3000/api/root_task
     ```
     """
     sid = get_sid_from_token(credentials.credentials)
@@ -312,7 +312,7 @@ def get_plan(
         if state:
             return JSONResponse(
                 status_code=status.HTTP_200_OK,
-                content=state.plan.to_dict(),
+                content=state.root_task.to_dict(),
             )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 

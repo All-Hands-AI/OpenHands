@@ -1,6 +1,6 @@
 from opendevin.core.exceptions import (
     AgentMalformedActionError,
-    PlanInvalidStateError,
+    TaskInvalidStateError,
 )
 from opendevin.core.logger import opendevin_logger as logger
 
@@ -101,11 +101,11 @@ class Task:
         Args:            state: The new state of the task.
 
         Raises:
-            PlanInvalidStateError: If the provided state is invalid.
+            TaskInvalidStateError: If the provided state is invalid.
         """
         if state not in STATES:
             logger.error('Invalid state: %s', state)
-            raise PlanInvalidStateError(state)
+            raise TaskInvalidStateError(state)
         self.state = state
         if (
             state == COMPLETED_STATE
@@ -133,18 +133,18 @@ class Task:
         return None
 
 
-class Plan(Task):
+class RootTask(Task):
     """Serves as the root node in a tree of tasks.
-    Because we want the top-level of the plan to be a list of tasks (1, 2, 3, etc.),
+    Because we want the top-level of the root_task to be a list of tasks (1, 2, 3, etc.),
     the "root node" of the data structure is kind of invisible--it just
     holds references to the top-level tasks.
 
     Attributes:
-        id: Kept blank for plan
-        goal: Kept blank for plan
-        parent: None for plan
-        subtasks: The top-level list of tasks associated with the plan.
-        state: The state of the plan.
+        id: Kept blank for root_task
+        goal: Kept blank for root_task
+        parent: None for root_task
+        subtasks: The top-level list of tasks associated with the root_task.
+        state: The state of the root_task.
     """
 
     id: str = ''
@@ -156,10 +156,10 @@ class Plan(Task):
         self.state = OPEN_STATE
 
     def __str__(self):
-        """Returns a string representation of the plan.
+        """Returns a string representation of the root_task.
 
         Returns:
-            A string representation of the plan.
+            A string representation of the root_task.
         """
         return self.to_string()
 

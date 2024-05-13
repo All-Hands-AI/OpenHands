@@ -282,9 +282,11 @@ class AgentController:
         elif isinstance(action, AgentDelegateAction):
             await self.start_delegate(action)
         elif isinstance(action, AddTaskAction):
-            self.state.plan.add_subtask(action.parent, action.goal, action.subtasks)
+            self.state.root_task.add_subtask(
+                action.parent, action.goal, action.subtasks
+            )
         elif isinstance(action, ModifyTaskAction):
-            self.state.plan.set_subtask_state(action.id, action.state)
+            self.state.root_task.set_subtask_state(action.id, action.state)
         elif not isinstance(observation, ErrorObservation):
             observation = await self.runtime.run_action(action)
 

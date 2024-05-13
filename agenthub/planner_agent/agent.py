@@ -34,7 +34,7 @@ class PlannerAgent(Agent):
         - Action: The next action to take based on llm response
         """
 
-        if state.plan.state in [
+        if state.root_task.state in [
             'completed',
             'verified',
             'abandoned',
