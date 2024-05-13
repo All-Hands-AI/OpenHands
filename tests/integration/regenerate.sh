@@ -52,9 +52,12 @@ for ((i = 0; i < num_of_tests; i++)); do
       set +e
     fi
 
-    SANDBOX_TYPE=$SANDBOX_TYPE WORKSPACE_BASE=$WORKSPACE_BASE \
+    SANDBOX_TYPE=$SANDBOX_TYPE \
+      WORKSPACE_BASE=$WORKSPACE_BASE \
+      REMIND_ITERATIONS=$remind_iterations \
       MAX_ITERATIONS=$MAX_ITERATIONS \
-      WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
+      WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
+      AGENT=$agent \
       poetry run pytest -s ./tests/integration/test_agent.py::$test_name
     TEST_STATUS=$?
     # Re-enable 'exit on error'
@@ -77,8 +80,10 @@ for ((i = 0; i < num_of_tests; i++)); do
       echo -e "/exit\n" | \
         SANDBOX_TYPE=$SANDBOX_TYPE \
         WORKSPACE_BASE=$WORKSPACE_BASE \
-        DEBUG=true REMIND_ITERATIONS=$remind_iterations \
-        WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
+        DEBUG=true \
+        REMIND_ITERATIONS=$remind_iterations \
+        WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
+        AGENT=$agent \
         poetry run python ./opendevin/core/main.py \
         -i $MAX_ITERATIONS \
         -t "$task Do not ask me for confirmation at any point." \
