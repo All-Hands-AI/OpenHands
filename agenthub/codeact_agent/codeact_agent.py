@@ -219,6 +219,12 @@ class CodeActAgent(Agent):
                     raise NotImplementedError(
                         f'Unknown observation type: {obs.__class__}'
                     )
+            self.messages.append(
+                {
+                    'role': 'user',
+                    'content': f'ENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration - 1} turns left to complete the task.',
+                }
+            )
 
         response = self.llm.completion(
             messages=self.messages,

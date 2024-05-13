@@ -8,8 +8,6 @@ MAX_ITERATIONS=10
 
 # FIXME: SWEAgent hangs, so it goes last
 agents=("MonologueAgent" "CodeActAgent" "PlannerAgent" "SWEAgent")
-# only enable iteration reminder for CodeActAgent in tests
-remind_iterations_config=(false true false false)
 tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
@@ -31,7 +29,6 @@ for ((i = 0; i < num_of_tests; i++)); do
   test_name=${test_names[i]}
   for ((j = 0; j < num_of_agents; j++)); do
     agent=${agents[j]}
-    remind_iterations=${remind_iterations_config[j]}
 
     echo -e "\n\n\n\n========Running $test_name for $agent========\n\n\n\n"
     rm -rf $WORKSPACE_BASE
@@ -45,7 +42,7 @@ for ((i = 0; i < num_of_tests; i++)); do
     fi
 
     SANDBOX_TYPE=$SANDBOX_TYPE WORKSPACE_BASE=$WORKSPACE_BASE \
-      MAX_ITERATIONS=$MAX_ITERATIONS REMIND_ITERATIONS=$remind_iterations \
+      MAX_ITERATIONS=$MAX_ITERATIONS \
       WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
       poetry run pytest -s ./tests/integration/test_agent.py::$test_name
     TEST_STATUS=$?
@@ -59,8 +56,10 @@ for ((i = 0; i < num_of_tests; i++)); do
       sleep 1
       rm -rf logs
       rm -rf tests/integration/mock/$agent/$test_name/*
-      echo -e "/exit\n" | SANDBOX_TYPE=$SANDBOX_TYPE WORKSPACE_BASE=$WORKSPACE_BASE \
-        DEBUG=true REMIND_ITERATIONS=$remind_iterations \
+      echo -e "/exit\n" | \
+        SANDBOX_TYPE=$SANDBOX_TYPE \
+        WORKSPACE_BASE=$WORKSPACE_BASE \
+        DEBUG=true \
         WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
         poetry run python ./opendevin/core/main.py \
         -i $MAX_ITERATIONS \
