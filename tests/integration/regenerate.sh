@@ -14,19 +14,26 @@ tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
   "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'."
+  "Write a git commit message"
 )
 test_names=(
   "test_edits"
   "test_write_simple_script"
   "test_ipython"
+  "test_task_rejection"
 )
 
 num_of_tests=${#tasks[@]}
 num_of_agents=${#agents[@]}
 
 if [ "$num_of_agents" -ne "${#remind_iterations_config[@]}" ]; then
-    echo "Every agent must have its own remind_iterations_config"
-    exit 1
+  echo "Every agent must have its own remind_iterations_config"
+  exit 1
+fi
+
+if [ "$num_of_tests" -ne "${#test_names[@]}" ]; then
+  echo "Every task must correspond to one test case"
+  exit 1
 fi
 
 rm -rf logs
