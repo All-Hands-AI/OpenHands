@@ -8,7 +8,6 @@ import time
 import uuid
 from collections import namedtuple
 from glob import glob
-from typing import Tuple
 
 import docker
 from pexpect import pxssh
@@ -343,7 +342,7 @@ class DockerSSHBox(Sandbox):
             f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}',
         )
 
-    def execute(self, cmd: str, timeout: float | None = None) -> Tuple[int, str]:
+    def execute(self, cmd: str, timeout: float | None = None) -> tuple[int, str]:
         timeout = timeout if timeout is not None else self.timeout
 
         commands = split_bash_commands(cmd)

@@ -106,7 +106,9 @@ class DockerExecBox(Sandbox):
         bg_cmd = self.background_commands[id]
         return bg_cmd.read_logs()
 
-    def execute(self, cmd: str) -> tuple[int, str]:
+    def execute(self, cmd: str, timeout: float | None = None) -> tuple[int, str]:
+        timeout = timeout if timeout is not None else self.timeout
+
         # TODO: each execute is not stateful! We need to keep track of the current working directory
         def run_command(container, command):
             return container.exec_run(
@@ -119,7 +121,7 @@ class DockerExecBox(Sandbox):
                 run_command, self.container, self.get_exec_cmd(cmd)
             )
             try:
-                exit_code, logs = future.result(timeout=self.timeout)
+                exit_code, logs = future.result(timeout=timeout)
             except concurrent.futures.TimeoutError:
                 logger.exception(
                     'Command timed out, killing process...', exc_info=False
