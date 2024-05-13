@@ -220,17 +220,16 @@ Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ----------
 
-Let's first open the file `bad.txt` to see the typos and correct them without asking for confirmation:
+Let's first view the content of the file `bad.txt` to identify the typos that need to be fixed:
 <execute_bash>
-open bad.txt
+cat bad.txt
 </execute_bash>
 
 ----------
 
 OBSERVATION:
-[File: /workspace/bad.txt (4 lines total)]
-1:This is a stupid typoo.
-2:Really?
-3:No mor typos!
-4:Enjoy!
+This is a stupid typoo.
+Really?
+No mor typos!
+Enjoy!
 [Command -1 finished with exit code 0]]
