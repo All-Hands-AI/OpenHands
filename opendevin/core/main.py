@@ -85,6 +85,8 @@ async def main(task_str: str = '', exit_on_message: bool = False) -> None:
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
                 action = MessageAction(content='/exit')
+                print('Agent is awaiting user input')
+                print('exit on message:', exit_on_message)
                 if not exit_on_message:
                     message = input('Request user input >> ')
                     action = MessageAction(content=message)
