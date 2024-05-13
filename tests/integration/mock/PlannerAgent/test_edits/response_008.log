@@ -1,0 +1,10 @@
+```json
+{
+  "action": "modify_task",
+  "args": {
+    "id": "0.1",
+    "state": "completed",
+    "thought": "The typos in the text have been identified and corrected. The content has been updated and written back to bad.txt."
+  }
+}
+```

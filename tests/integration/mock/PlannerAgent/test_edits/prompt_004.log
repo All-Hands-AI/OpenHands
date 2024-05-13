@@ -113,6 +113,22 @@ ten actions--more happened before that.
       "state": "in_progress",
       "thought": ""
     }
+  },
+  {
+    "action": "read",
+    "args": {
+      "path": "bad.txt",
+      "start": 0,
+      "end": -1,
+      "thought": ""
+    }
+  },
+  {
+    "observation": "read",
+    "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n",
+    "extras": {
+      "path": "bad.txt"
+    }
   }
 ]
 
@@ -155,5 +171,5 @@ actions are all `message` actions, you should consider taking a different action
 
 What is your next thought or action? Again, you must reply with JSON, and only with JSON.
 
-You should think about the next action to take.
+You should think about the file you just read, what you learned from it, and how that affects your plan.
 

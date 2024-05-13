@@ -1,7 +1,7 @@
 {
-  "action": "write",
+  "action": "modify_task",
   "args": {
-    "path": "bad.txt",
-    "content": "This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!\n"
+    "id": "0.0",
+    "state": "in_progress"
   }
 }
