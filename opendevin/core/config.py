@@ -70,6 +70,7 @@ class AgentConfig(metaclass=Singleton):
 class AppConfig(metaclass=Singleton):
     llm: LLMConfig = field(default_factory=LLMConfig)
     agent: AgentConfig = field(default_factory=AgentConfig)
+    runtime: str = 'server'
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
     workspace_base: str = os.getcwd()

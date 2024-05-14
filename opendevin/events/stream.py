@@ -8,7 +8,7 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.serialization.event import event_from_dict, event_to_json
 from opendevin.storage import FileStore, get_file_store
 
-from .event import Event
+from .event import Event, EventSource
 
 
 class EventStreamSubscriber(str, Enum):
@@ -17,11 +17,6 @@ class EventStreamSubscriber(str, Enum):
     RUNTIME = 'runtime'
     MAIN = 'main'
     TEST = 'test'
-
-
-class EventSource(str, Enum):
-    AGENT = 'agent'
-    USER = 'user'
 
 
 class EventStream:
@@ -54,7 +49,7 @@ class EventStream:
 
     def subscribe(self, id: EventStreamSubscriber, callback: Callable):
         if id in self._subscribers:
-            logger.warning('Subscriber subscribed multiple times: ' + id)
+            raise ValueError('Subscriber already exists: ' + id)
         else:
             self._subscribers[id] = callback
 

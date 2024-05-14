@@ -97,7 +97,7 @@ class DummyAgent(Agent):
                 'action': CmdRunAction(command=BACKGROUND_CMD, background=True),
                 'observations': [
                     CmdOutputObservation(
-                        'Background command started. To stop it, send a `kill` action with id 42',
+                        'Background command started. To stop it, send a `kill` action with command_id 42',
                         command_id='42',  # type: ignore[arg-type]
                         command=BACKGROUND_CMD,
                     ),
