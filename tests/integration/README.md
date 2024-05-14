@@ -71,7 +71,7 @@ set environment variable `ONLY_TEST_AGENT` to the agent. You could also use both
 e.g.
 
 ```bash
-TEST_ONLY=true ONLY_TEST_NAME="test_simple_task_rejection" ONLY_TEST_AGENT="ManagerAgent" ./tests/integration/regenerate.sh
+TEST_ONLY=true ONLY_TEST_NAME="test_write_simple_script" ONLY_TEST_AGENT="MonologueAgent" ./tests/integration/regenerate.sh
 ```
 
 Known issue: sometimes you might see transient errors like `pexpect.pxssh.ExceptionPxssh: Could not establish connection to host`.
