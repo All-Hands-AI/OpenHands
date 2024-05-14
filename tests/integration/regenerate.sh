@@ -30,14 +30,35 @@ test_names=(
 num_of_tests=${#test_names[@]}
 num_of_agents=${#agents[@]}
 
+if [ "$num_of_agents" -ne "${#remind_iterations_config[@]}" ]; then
+  echo "Every agent must have its own remind_iterations_config"
+  exit 1
+fi
+
+if [ "$num_of_tests" -ne "${#test_names[@]}" ]; then
+  echo "Every task must correspond to one test case"
+  exit 1
+fi
+
 rm -rf logs
 rm -rf $WORKSPACE_BASE
 for ((i = 0; i < num_of_tests; i++)); do
   task=${tasks[i]}
   test_name=${test_names[i]}
+
+  # skip other tests if only one test is specified
+  if [[ -n "$ONLY_TEST_NAME" && "$ONLY_TEST_NAME" != "$test_name" ]]; then
+    continue
+  fi
+
   for ((j = 0; j < num_of_agents; j++)); do
     agent=${agents[j]}
     remind_iterations=${remind_iterations_config[j]}
+
+    # skip other agents if only one agent is specified
+    if [[ -n "$ONLY_TEST_AGENT" && "$ONLY_TEST_AGENT" != "$agent" ]]; then
+      continue
+    fi
 
     echo -e "\n\n\n\n========Running $test_name for $agent========\n\n\n\n"
     rm -rf $WORKSPACE_BASE

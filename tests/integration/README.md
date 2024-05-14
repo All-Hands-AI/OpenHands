@@ -65,6 +65,15 @@ failed tests, but it still costs money! If you don't want
 to cover the cost, ask one of the maintainers to regenerate for you.
 You might also be able to fix the tests by hand.
 
+If you only want to run a specific test, set environment variable
+`ONLY_TEST_NAME` to the test name. If you only want to run a specific agent,
+set environment variable `ONLY_TEST_AGENT` to the agent. You could also use both,
+e.g.
+
+```bash
+TEST_ONLY=true ONLY_TEST_NAME="test_simple_task_rejection" ONLY_TEST_AGENT="ManagerAgent" ./tests/integration/regenerate.sh
+```
+
 ## Write a new Integration Test
 
 To write an integration test, there are essentially two steps:
