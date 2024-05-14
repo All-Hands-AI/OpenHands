@@ -16,6 +16,7 @@ class Event:
 
     def to_dict(self):
         d = self.to_memory()
+        d['source'] = self.source
         d['message'] = self.message
         return d
 
