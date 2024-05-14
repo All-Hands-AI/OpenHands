@@ -65,6 +65,7 @@ def event_to_dict(event: 'Event') -> dict:
 def event_to_memory(event: 'Event') -> dict:
     d = event_to_dict(event)
     d.pop('id', None)
+    d.pop('cause', None)
     d.pop('timestamp', None)
     d.pop('message', None)
     if 'extras' in d:
