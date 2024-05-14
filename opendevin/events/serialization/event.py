@@ -1,4 +1,3 @@
-import json
 from dataclasses import asdict
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -51,6 +50,8 @@ def event_to_dict(event: 'Event') -> dict:
             d[key] = getattr(event, f'_{key}')
         if key == 'id' and d.get('id') == -1:
             d.pop('id', None)
+        if key == 'timestamp' and 'timestamp' in d:
+            d['timestamp'] = json_serial(d['timestamp'])
         props.pop(key, None)
     if 'action' in d:
         d['args'] = props
@@ -71,7 +72,3 @@ def event_to_memory(event: 'Event') -> dict:
     if 'extras' in d:
         remove_fields(d['extras'], DELETE_FROM_MEMORY_EXTRAS)
     return d
-
-
-def event_to_json(event: 'Event'):
-    return json.dumps(event_to_dict(event), default=json_serial)
