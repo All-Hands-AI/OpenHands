@@ -1,0 +1,6 @@
+It appears that I don't have permission to create a directory at `/workspace`. Let's write the file to the current working directory instead.
+
+<execute_ipython>
+with open('test.txt', 'w') as file:
+    file.write('hello world')
+
