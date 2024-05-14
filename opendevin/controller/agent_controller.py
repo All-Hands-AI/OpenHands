@@ -3,7 +3,6 @@ from typing import Optional, Type
 
 from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin.controller.agent import Agent
-from opendevin.controller.state.plan import Plan
 from opendevin.controller.state.state import State
 from opendevin.core.config import config
 from opendevin.core.exceptions import (
@@ -47,9 +46,9 @@ class AgentController:
     max_iterations: int
     runtime: Runtime
     event_stream: EventStream
+    state: State
     agent_task: Optional[asyncio.Task] = None
     delegate: 'AgentController | None' = None
-    state: State | None = None
     _agent_state: AgentState = AgentState.LOADING
     _cur_step: int = 0
 
@@ -60,19 +59,23 @@ class AgentController:
         sid: str = 'default',
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
+        inputs: dict | None = None,
         sandbox: Optional[Sandbox] = None,
     ):
         """Initializes a new instance of the AgentController class.
 
         Args:
             agent: The agent instance to control.
+            event_stream: The event stream to publish events to.
             sid: The session ID of the agent.
             max_iterations: The maximum number of iterations the agent can run.
             max_chars: The maximum number of characters the agent can output.
+            inputs: The initial inputs to the agent.
             sandbox: An optional initialized sandbox to run the agent in. If not provided, a default sandbox will be created based on config.
         """
         self.id = sid
         self.agent = agent
+        self.state = State(inputs=inputs or {})
         self.event_stream = event_stream
         self.event_stream.subscribe(
             EventStreamSubscriber.AGENT_CONTROLLER, self.on_event
@@ -101,14 +104,10 @@ class AgentController:
         await self.set_agent_state_to(AgentState.STOPPED)
 
     def update_state_for_step(self, i):
-        if self.state is None:
-            return
         self.state.iteration = i
         self.state.background_commands_obs = self.runtime.get_background_obs()
 
     def update_state_after_step(self):
-        if self.state is None:
-            return
         self.state.updated_info = []
 
     async def add_error_to_history(self, message: str):
@@ -117,8 +116,6 @@ class AgentController:
     async def add_history(
         self, action: Action, observation: Observation, add_to_stream=True
     ):
-        if self.state is None:
-            raise ValueError('Added history while state was None')
         if not isinstance(action, Action):
             raise TypeError(
                 f'action must be an instance of Action, got {type(action).__name__} instead'
@@ -134,9 +131,6 @@ class AgentController:
             await self.event_stream.add_event(observation, EventSource.AGENT)
 
     async def _run(self):
-        if self.state is None:
-            return
-
         if self._agent_state != AgentState.RUNNING:
             raise ValueError('Task is not in running state')
 
@@ -180,13 +174,13 @@ class AgentController:
             await self.set_agent_state_to(event.agent_state)  # type: ignore
         elif isinstance(event, MessageAction) and event.source == EventSource.USER:
             await self.add_history(event, NullObservation(''), add_to_stream=False)
-            if self.get_agent_state() == AgentState.AWAITING_USER_INPUT:
+            if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
 
     async def reset_task(self):
         if self.agent_task is not None:
             self.agent_task.cancel()
-        self.state = None
+        self.state = State()
         self._cur_step = 0
         self.agent.reset()
 
@@ -207,11 +201,7 @@ class AgentController:
             self._cur_step += 1
             if self.agent_task is not None:
                 self.agent_task.cancel()
-        elif (
-            new_state == AgentState.STOPPED
-            or new_state == AgentState.ERROR
-            or new_state == AgentState.FINISHED
-        ):
+        elif new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
             await self.reset_task()
 
         await self.event_stream.add_event(
@@ -231,13 +221,10 @@ class AgentController:
             event_stream=self.event_stream,
             max_iterations=self.max_iterations,
             max_chars=self.max_chars,
+            inputs=action.inputs,
         )
-        task = action.inputs.get('task') or ''
-        await self.delegate.setup_task(task, action.inputs)
 
     async def step(self, i: int) -> bool:
-        if self.state is None:
-            raise ValueError('No task to run')
         if self.delegate is not None:
             delegate_done = await self.delegate.step(i)
             if delegate_done:
@@ -249,8 +236,6 @@ class AgentController:
             return False
 
         logger.info(f'STEP {i}', extra={'msg_type': 'STEP'})
-        if i == 0:
-            logger.info(self.state.plan.main_goal, extra={'msg_type': 'PLAN'})
         if self.state.num_of_chars > self.max_chars:
             raise MaxCharsExceedError(self.state.num_of_chars, self.max_chars)
 
@@ -285,9 +270,11 @@ class AgentController:
         elif isinstance(action, AgentDelegateAction):
             await self.start_delegate(action)
         elif isinstance(action, AddTaskAction):
-            self.state.plan.add_subtask(action.parent, action.goal, action.subtasks)
+            self.state.root_task.add_subtask(
+                action.parent, action.goal, action.subtasks
+            )
         elif isinstance(action, ModifyTaskAction):
-            self.state.plan.set_subtask_state(action.id, action.state)
+            self.state.root_task.set_subtask_state(action.id, action.state)
         elif not isinstance(observation, ErrorObservation):
             observation = await self.runtime.run_action(action)
 
@@ -303,11 +290,7 @@ class AgentController:
         # check if delegate stuck
         if self.delegate and self.delegate._is_stuck():
             return True
-        if (
-            self.state is None
-            or self.state.history is None
-            or len(self.state.history) < 3
-        ):
+        if len(self.state.history) < 3:
             return False
 
         # if the last three (Action, Observation) tuples are too repetitive

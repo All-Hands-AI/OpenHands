@@ -6,6 +6,7 @@ import subprocess
 import pytest
 
 from opendevin.core.main import main
+from opendevin.core.schema import AgentState
 
 workspace_base = os.getenv('WORKSPACE_BASE')
 
@@ -17,7 +18,8 @@ workspace_base = os.getenv('WORKSPACE_BASE')
 )
 def test_write_simple_script():
     task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
-    asyncio.run(main(task))
+    final_agent_state = asyncio.run(main(task, exit_on_message=True))
+    assert final_agent_state == AgentState.FINISHED
 
     # Verify the script file exists
     script_path = os.path.join(workspace_base, 'hello.sh')
@@ -57,7 +59,8 @@ def test_edits():
 
     # Execute the task
     task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
-    asyncio.run(main(task))
+    final_agent_state = asyncio.run(main(task, exit_on_message=True))
+    assert final_agent_state == AgentState.FINISHED
 
     # Verify bad.txt has been fixed
     text = """This is a stupid typo.
@@ -81,7 +84,8 @@ Enjoy!
 def test_ipython():
     # Execute the task
     task = "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point."
-    asyncio.run(main(task))
+    final_agent_state = asyncio.run(main(task, exit_on_message=True))
+    assert final_agent_state == AgentState.FINISHED
 
     # Verify the file exists
     file_path = os.path.join(workspace_base, 'test.txt')

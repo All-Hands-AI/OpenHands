@@ -1,4 +1,4 @@
-import atexit
+import asyncio, atexit
 
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.server.session import session_manager
@@ -35,6 +35,14 @@ class AgentManager:
         await self.sid_to_agent[sid].dispatch(action, data)
 
     def close(self):
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+        loop.run_until_complete(self._close())
+
+    async def _close(self):
         logger.info(f'Closing {len(self.sid_to_agent)} agent(s)...')
         for sid, agent in self.sid_to_agent.items():
-            agent.close()
+            await agent.close()

@@ -1,7 +1,0 @@
-Thoughts:
-I need to make the 'hello.sh' script executable so that it can be run. The previous attempt to make it executable using the 'bash chmod +x hello.sh' command resulted in an error. I will use the 'chmod' command directly to make the script executable.
-
-Action:
-```
-chmod +x hello.sh
-```
