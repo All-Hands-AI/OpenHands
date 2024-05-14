@@ -25,8 +25,18 @@ def read_task_from_stdin() -> str:
     return sys.stdin.read()
 
 
-async def main(task_str: str = ''):
-    """Main coroutine to run the agent controller with task input flexibility."""
+async def main(task_str: str = '', exit_on_message: bool = False) -> AgentState:
+    """
+    Main coroutine to run the agent controller with task input flexibility.
+    It's only used when you launch opendevin backend directly via cmdline.
+
+    Args:
+        task_str: task string (optional)
+        exit_on_message: quit if agent asks for a message from user (optional)
+
+    Returns:
+        The final agent state right before shutdown
+    """
 
     # Determine the task source
     if task_str:
@@ -73,7 +83,7 @@ async def main(task_str: str = ''):
         event_stream=event_stream,
     )
 
-    await controller.setup_task(task)
+    await event_stream.add_event(MessageAction(content=task), EventSource.USER)
     await event_stream.add_event(
         ChangeAgentStateAction(agent_state=AgentState.RUNNING), EventSource.USER
     )
@@ -81,8 +91,10 @@ async def main(task_str: str = ''):
     async def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
-                message = input('Request user input >> ')
-                action = MessageAction(content=message)
+                action = MessageAction(content='/exit')
+                if not exit_on_message:
+                    message = input('Request user input >> ')
+                    action = MessageAction(content=message)
                 await event_stream.add_event(action, EventSource.USER)
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
@@ -94,7 +106,10 @@ async def main(task_str: str = ''):
     ]:
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
-    return controller
+    # retrieve the final state before we close the controller and agent
+    final_agent_state = controller.get_agent_state()
+    await controller.close()
+    return final_agent_state
 
 
 if __name__ == '__main__':

@@ -1,7 +1,10 @@
 {
-  "action": "run",
+  "action": "write",
   "args": {
-    "command": "ls",
-    "background": false
+    "path": "bad.txt",
+    "content": "This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!\n",
+    "start": 0,
+    "end": -1,
+    "thought": ""
   }
 }

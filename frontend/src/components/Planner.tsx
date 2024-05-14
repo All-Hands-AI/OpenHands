@@ -11,7 +11,7 @@ import {
 import { VscListOrdered } from "react-icons/vsc";
 import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
-import { Plan, Task, TaskState } from "#/services/planService";
+import { Task, TaskState } from "#/services/taskService";
 import { RootState } from "#/store";
 
 function StatusIcon({ status }: { status: TaskState }): JSX.Element {
@@ -53,14 +53,11 @@ function TaskCard({ task, level }: { task: Task; level: number }): JSX.Element {
   );
 }
 
-interface PlanProps {
-  plan: Plan;
-}
-
-function PlanContainer({ plan }: PlanProps): JSX.Element {
+function Planner(): JSX.Element {
   const { t } = useTranslation();
+  const task = useSelector((state: RootState) => state.task.task);
 
-  if (plan.mainGoal === undefined) {
+  if (!task || !task.subtasks?.length) {
     return (
       <div className="w-full h-full flex flex-col text-neutral-400 items-center justify-center">
         <VscListOrdered size={100} />
@@ -68,19 +65,14 @@ function PlanContainer({ plan }: PlanProps): JSX.Element {
       </div>
     );
   }
-  return (
-    <div className="p-2 overflow-y-auto h-full flex flex-col gap-2">
-      <TaskCard task={plan.task} level={0} />
-    </div>
-  );
-}
-
-function Planner(): JSX.Element {
-  const plan = useSelector((state: RootState) => state.plan.plan);
 
   return (
     <div className="h-full w-full bg-neutral-800">
-      <PlanContainer plan={plan} />
+      <div className="p-2 overflow-y-auto h-full flex flex-col gap-2">
+        {task.subtasks.map((subtask) => (
+          <TaskCard key={subtask.id} task={subtask} level={0} />
+        ))}
+      </div>
     </div>
   );
 }

@@ -225,7 +225,9 @@ class MonologueAgent(Agent):
         Returns:
         - Action: The next action to take based on LLM response
         """
-        self._initialize(state.plan.main_goal)
+
+        goal = state.get_current_user_intent()
+        self._initialize(goal)
         for prev_action, obs in state.updated_info:
             self._add_event(prev_action.to_memory())
             self._add_event(obs.to_memory())
@@ -233,7 +235,7 @@ class MonologueAgent(Agent):
         state.updated_info = []
 
         prompt = prompts.get_request_action_prompt(
-            state.plan.main_goal,
+            goal,
             self.monologue.get_events(),
             state.background_commands_obs,
         )
