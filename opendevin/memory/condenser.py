@@ -4,7 +4,7 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.utils import json
 from opendevin.llm.llm import LLM
 
-MAX_TOKEN_COUNT_PADDING = 127000  # FIXME debug value
+MAX_TOKEN_COUNT_PADDING = 124500  # FIXME debug value
 
 
 class MemoryCondenser:
@@ -69,6 +69,8 @@ class MemoryCondenser:
         if not self.needs_condense(llm=llm, action_prompt=action_prompt):
             return recent_events, False
 
+        logger.debug('Condensing recent events')
+
         try:
             # try 3 times to condense
             attempt_count = 0
@@ -92,6 +94,7 @@ class MemoryCondenser:
                 # check if the new prompt still needs to be condensed
                 if self.needs_condense(llm=llm, action_prompt=new_action_prompt):
                     attempt_count += 1
+                    recent_events = new_recent_events.copy()
                     continue
 
                 # the new prompt is within the token limit
@@ -108,10 +111,22 @@ class MemoryCondenser:
         default_events: list[dict],
         recent_events: list[dict],
     ) -> list[dict] | None:
+        """
+        Attempts to condense the recent events by splitting them in half and summarizing the first half.
+
+        Parameters:
+        - llm (LLM): The llm to use for summarization.
+        - default_events (list[dict]): The list of default events to include in the prompt.
+        - recent_events (list[dict]): The list of recent events to include in the prompt.
+
+        Returns:
+        - list[dict] | None: The condensed recent events if successful, None otherwise.
+        """
+
         # Split events
         midpoint = len(recent_events) // 2
-        first_half = recent_events[:midpoint]
-        second_half = recent_events[midpoint:]
+        first_half = recent_events[:midpoint].copy()
+        second_half = recent_events[midpoint:].copy()
 
         # attempt to condense the first half of the recent events
         summarize_prompt = self.summarize_prompt(default_events, first_half)
