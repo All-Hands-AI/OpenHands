@@ -44,6 +44,8 @@ For example:
 export WORKSPACE_BASE=$(pwd)/workspace
 
 docker run \
+    -it \
+    --pull=always \
     --add-host host.docker.internal:host-gateway \
     -e SANDBOX_USER_ID=$(id -u) \
     -e LLM_API_KEY="ollama" \

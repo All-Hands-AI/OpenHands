@@ -21,7 +21,7 @@ The `state` contains:
 
 - A history of actions taken by the agent, as well as any observations (e.g. file content, command output) from those actions
 - A list of actions/observations that have happened since the most recent step
-- A [`plan`](https://github.com/OpenDevin/OpenDevin/blob/main/opendevin/plan.py), which contains the main goal
+- A [`root_task`](https://github.com/OpenDevin/OpenDevin/blob/main/opendevin/controller/state/task.py), which contains a plan of action
   - The agent can add and modify subtasks through the `AddTaskAction` and `ModifyTaskAction`
 
 ## Actions
