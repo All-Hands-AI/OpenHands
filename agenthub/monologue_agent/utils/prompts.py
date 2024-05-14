@@ -76,26 +76,30 @@ actions taken by the agent, or outputs from those actions.
 The monologue has two parts: the default memories, which you must not change,
 they are provided to you only for context, and the recent monologue.
 
-Please return a new, smaller JSON array, which summarizes the recent monologue.
-When summarizing, you should condense the older events in the recent monologue
-more aggressively, while preserving more details for the more recent events.
+Please return a new, much smaller JSON array that summarizes the recent monologue.
+When summarizing, you should condense the events that appear earlier
+in the recent monologue list more aggressively, while preserving more details
+for the events that appear later in the list.
 
 You can summarize individual thoughts, and you can condense related thoughts
 together with a description of their content.
 
 %(monologue)s
 
-Make the summaries as pithy and informative as possible, especially for the older events.
+Make the summaries as pithy and informative as possible, especially for the earlier events
+in the old monologue.
+
 Be specific about what happened and what was learned. The summary
 will be used as keywords for searching for the original memory.
 Be sure to preserve any key words or important information.
 
-Your response must be in JSON format. It must be an object with the
-key `new_monologue`, which is a JSON array containing the summarized monologue.
-Each entry in the array must have an `action` key, and an `args` key.
-The action key may be `summarize`, and `args.summary` should contain the summary.
-The action key and args may also be the same action and args from the source monologue.
-Remember you must only summarize the recent monologue, not the default memories.
+Your response must be in JSON format. It must be an object with the key `new_monologue`,
+which must be a smaller JSON array containing the summarized monologue.
+Each entry in the new monologue must have an `action` key, and an `args` key.
+You can add a summarized entry with `action` set to "summarize" and a concise summary
+in `args.summary`. You can also use the source recent event if relevant, with its original `action` and `args`.
+
+Remember you must only summarize the old monologue, not the default memories.
 """
 
 

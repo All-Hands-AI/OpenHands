@@ -4,7 +4,7 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.utils import json
 from opendevin.llm.llm import LLM
 
-MAX_TOKEN_COUNT_PADDING = 124500  # FIXME debug value
+MAX_TOKEN_COUNT_PADDING = 1024
 
 
 class MemoryCondenser:

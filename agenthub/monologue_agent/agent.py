@@ -99,11 +99,11 @@ class MonologueAgent(Agent):
         """
         super().__init__(llm)
 
-    def _add_core_event(self, event_dict: dict):
+    def _add_default_event(self, event_dict: dict):
         """
-        Adds a new core event to the agent's monologue and memory.
+        Adds a default event to the agent's monologue and memory.
 
-        Core events are not condensed and are used to give the LLM context and examples.
+        Default events are not condensed and are used to give the LLM context and examples.
 
         Parameters:
         - event (dict): The event that will be added to monologue and memory
@@ -205,7 +205,7 @@ class MonologueAgent(Agent):
                     observation = BrowserOutputObservation(
                         content=thought, url='', screenshot=''
                     )
-                self._add_core_event(event_to_memory(observation))
+                self._add_default_event(event_to_memory(observation))
                 previous_action = ''
             else:
                 action: Action = NullAction()
@@ -232,7 +232,7 @@ class MonologueAgent(Agent):
                     previous_action = ActionType.BROWSE
                 else:
                     action = MessageAction(thought)
-                self._add_core_event(event_to_memory(action))
+                self._add_default_event(event_to_memory(action))
 
     def step(self, state: State) -> Action:
         """
