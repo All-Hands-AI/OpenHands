@@ -14,12 +14,14 @@ fi
 if [ -f $EVAL_WORKSPACE/swe_env_setup.sh ]; then
     rm $EVAL_WORKSPACE/swe_env_setup.sh
 fi
-cp evaluation/swe_bench/scripts/_swe_env_setup.sh $EVAL_WORKSPACE/swe_env_setup.sh
-cp evaluation/swe_bench/scripts/swe_entry.sh $EVAL_WORKSPACE/swe_entry.sh
-cp evaluation/swe_bench/scripts/get_model_report.sh $EVAL_WORKSPACE/get_model_report.sh
-cp evaluation/swe_bench/scripts/get_agent_report.sh $EVAL_WORKSPACE/get_agent_report.sh
-cp evaluation/swe_bench/scripts/process_output_json_file.py $EVAL_WORKSPACE/process_output_json_file.py
-cp evaluation/swe_bench/scripts/merge_fine_grained_report.py $EVAL_WORKSPACE/merge_fine_grained_report.py
+SCRIPT_DIR=evaluation/swe_bench/scripts/setup
+
+cp $SCRIPT_DIR/_swe_env_setup.sh $EVAL_WORKSPACE/swe_env_setup.sh
+cp $SCRIPT_DIR/swe_entry.sh $EVAL_WORKSPACE/swe_entry.sh
+cp $SCRIPT_DIR/get_model_report.sh $EVAL_WORKSPACE/get_model_report.sh
+cp $SCRIPT_DIR/get_agent_report.sh $EVAL_WORKSPACE/get_agent_report.sh
+cp $SCRIPT_DIR/process_output_json_file.py $EVAL_WORKSPACE/process_output_json_file.py
+cp $SCRIPT_DIR/merge_fine_grained_report.py $EVAL_WORKSPACE/merge_fine_grained_report.py
 
 docker run \
     -v $EVAL_WORKSPACE:/swe_util \
