@@ -34,7 +34,7 @@ Now we have both Slack workspace for the collaboration on building OpenDevin and
 - [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw)
 - [Discord server](https://discord.gg/ESHStjSjD4)
 
-If you would love to contribute, feel free to join our community (note that now there is no need to fill in the [form](https://forms.gle/758d5p6Ve8r2nxxq6)). Let's simplify software engineering together!
+If you would love to contribute, feel free to join our community. Let's simplify software engineering together!
 
 🐚 **Code less, make more with OpenDevin.**
 
