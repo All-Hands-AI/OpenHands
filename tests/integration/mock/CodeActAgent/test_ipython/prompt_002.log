@@ -220,9 +220,12 @@ NOW, LET'S START!
 
 Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point.
 
+ENVIRONMENT REMINDER: You have 98 turns left to complete the task.
+
 ----------
 
-I will write the text 'hello world' to a file named 'test.txt' in the '/workspace' directory without asking for confirmation. Let me execute the code to create the file:
+To write 'hello world' to a text file named 'test.txt' in the '/workspace' directory without asking for confirmation, I will execute the following Python code:
+
 <execute_ipython>
 with open('/workspace/test.txt', 'w') as f:
     f.write('hello world')
@@ -232,3 +235,5 @@ with open('/workspace/test.txt', 'w') as f:
 
 OBSERVATION:
 -bash: execute_cli: command not found
+
+ENVIRONMENT REMINDER: You have 97 turns left to complete the task.

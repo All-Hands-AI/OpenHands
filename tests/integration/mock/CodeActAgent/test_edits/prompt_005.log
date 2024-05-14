@@ -274,3 +274,21 @@ OBSERVATION:
 [Command -1 finished with exit code 127]]
 
 ENVIRONMENT REMINDER: You have 95 turns left to complete the task.
+
+----------
+
+It seems that the `edit` command is not available in this environment as well. Let's try a different approach to fix the typos in the file `bad.txt`. I will overwrite the content of the file with the corrected text:
+<execute_bash>
+echo "This is a stupid typo.
+Really?
+No more typos!
+Enjoy!" > bad.txt
+</execute_bash>
+
+----------
+
+OBSERVATION:
+> > >
+[Command -1 finished with exit code 0]]
+
+ENVIRONMENT REMINDER: You have 94 turns left to complete the task.

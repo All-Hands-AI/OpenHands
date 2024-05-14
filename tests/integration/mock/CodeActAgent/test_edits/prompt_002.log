@@ -220,9 +220,11 @@ NOW, LET'S START!
 
 Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
+ENVIRONMENT REMINDER: You have 98 turns left to complete the task.
+
 ----------
 
-Sure! Let me open the file `bad.txt` to fix the typos without asking for confirmation:
+Let's start by opening the file `bad.txt` to identify and fix the typos. Let me open the file for you:
 <execute_bash>
 open bad.txt
 </execute_bash>
@@ -232,3 +234,5 @@ open bad.txt
 OBSERVATION:
 -bash: open: command not found
 [Command -1 finished with exit code 127]]
+
+ENVIRONMENT REMINDER: You have 97 turns left to complete the task.
