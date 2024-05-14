@@ -7,6 +7,7 @@ from opendevin.events.action import (
     MessageAction,
 )
 from opendevin.events.observation import Observation
+from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
 
 from .parser import parse_command
@@ -36,7 +37,7 @@ class SWEAgent(Agent):
 
     def _remember(self, action: Action, observation: Observation) -> None:
         """Agent has a limited memory of the few steps implemented as a queue"""
-        memory = MEMORY_FORMAT(action.to_memory(), observation.to_memory())
+        memory = MEMORY_FORMAT(event_to_memory(action), event_to_memory(observation))
         self.running_memory.append(memory)
 
     def _think_act(self, messages: list[dict]) -> tuple[Action, str]:
