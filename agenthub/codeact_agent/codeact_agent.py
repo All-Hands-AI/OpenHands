@@ -16,12 +16,10 @@ from opendevin.events.action import (
     CmdRunAction,
     IPythonRunCellAction,
     MessageAction,
-    NullAction,
 )
 from opendevin.events.observation import (
     CmdOutputObservation,
     IPythonRunCellObservation,
-    NullObservation,
 )
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
@@ -128,18 +126,7 @@ class CodeActAgent(Agent):
         JupyterRequirement(),
         SWEAgentCommandsRequirement(),
     ]
-    SUPPORTED_ACTIONS = (
-        CmdRunAction,
-        IPythonRunCellAction,
-        MessageAction,
-        NullAction,
-    )
-    SUPPORTED_OBSERVATIONS = (
-        CmdOutputObservation,
-        IPythonRunCellObservation,
-        NullObservation,
-    )
-    messages: list[dict] = []
+
     system_message: str = (
         f'{SYSTEM_PREFIX}\n{GITHUB_MESSAGE}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
         if ENABLE_GITHUB
@@ -191,9 +178,6 @@ class CodeActAgent(Agent):
         updated_info = state.updated_info
         if updated_info:
             for prev_action, obs in updated_info:
-                assert isinstance(
-                    prev_action, self.SUPPORTED_ACTIONS
-                ), f'{prev_action.__class__} is not supported (supported: {self.SUPPORTED_ACTIONS})'
                 if (
                     isinstance(prev_action, MessageAction)
                     and prev_action.source == 'user'
@@ -205,16 +189,10 @@ class CodeActAgent(Agent):
                         # User wants to exit
                         return AgentFinishAction()
 
-                # handle observations
-                assert isinstance(
-                    obs, self.SUPPORTED_OBSERVATIONS
-                ), f'{obs.__class__} is not supported (supported: {self.SUPPORTED_OBSERVATIONS})'
-
                 if isinstance(obs, CmdOutputObservation):
                     content = 'OBSERVATION:\n' + truncate_observation(obs.content)
                     content += f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
                     self.messages.append({'role': 'user', 'content': content})
-
                 elif isinstance(obs, IPythonRunCellObservation):
                     content = 'OBSERVATION:\n' + obs.content
                     # replace base64 images with a placeholder
@@ -227,12 +205,7 @@ class CodeActAgent(Agent):
                     content = '\n'.join(splitted)
                     content = truncate_observation(content)
                     self.messages.append({'role': 'user', 'content': content})
-                elif isinstance(obs, NullObservation):
-                    pass
-                else:
-                    raise NotImplementedError(
-                        f'Unknown observation type: {obs.__class__}'
-                    )
+
         latest_user_message = [m for m in self.messages if m['role'] == 'user'][-1]
         if latest_user_message:
             latest_user_message['content'] += (

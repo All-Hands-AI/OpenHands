@@ -64,7 +64,10 @@ def test_agent_reject_action_serialization_deserialization():
 
 
 def test_cmd_kill_action_serialization_deserialization():
-    original_action_dict = {'action': 'kill', 'args': {'id': '1337', 'thought': ''}}
+    original_action_dict = {
+        'action': 'kill',
+        'args': {'command_id': '1337', 'thought': ''},
+    }
     serialization_deserialization(original_action_dict, CmdKillAction)
 
 
@@ -122,6 +125,6 @@ def test_add_task_action_serialization_deserialization():
 def test_modify_task_action_serialization_deserialization():
     original_action_dict = {
         'action': 'modify_task',
-        'args': {'id': 1, 'state': 'Test state.', 'thought': ''},
+        'args': {'task_id': 1, 'state': 'Test state.', 'thought': ''},
     }
     serialization_deserialization(original_action_dict, ModifyTaskAction)
