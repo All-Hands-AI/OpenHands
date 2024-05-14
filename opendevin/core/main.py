@@ -114,9 +114,8 @@ async def main(
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
     # retrieve the final state before we close the controller and agent
-    final_agent_state = controller.get_agent_state()
-    await controller.close()
-    return final_agent_state
+    final_state = await controller.close()
+    return final_state
 
 
 if __name__ == '__main__':
