@@ -37,8 +37,8 @@ class MemoryCondenser:
         llm: LLM,
         default_events: list[dict],
         recent_events: list[dict],
-        background_commands: list = None,
-    ) -> list[dict] | bool:
+        background_commands: list | None = None,
+    ) -> tuple[list[dict], bool]:
         """
         Attempts to condense the recent events of the monologue by using the llm, if necessary. Returns the condensed recent events if successful, or False if not.
 
@@ -66,8 +66,8 @@ class MemoryCondenser:
         )
 
         # test prompt token length
-        if not self.needs_condense(llm, action_prompt):
-            return recent_events
+        if not self.needs_condense(llm=llm, action_prompt=action_prompt):
+            return recent_events, False
 
         try:
             # try 3 times to condense
@@ -80,9 +80,9 @@ class MemoryCondenser:
                     llm, default_events, recent_events
                 )
 
-                if not new_recent_events:
+                if not new_recent_events or len(new_recent_events) == 0:
                     logger.debug('Condensation failed: new_recent_events is empty')
-                    return False
+                    return [], False
 
                 # re-generate the action prompt with the condensed events
                 new_action_prompt = self.action_prompt(
@@ -90,17 +90,17 @@ class MemoryCondenser:
                 )
 
                 # check if the new prompt still needs to be condensed
-                if self.needs_condense(llm, new_action_prompt):
+                if self.needs_condense(llm=llm, action_prompt=new_action_prompt):
                     attempt_count += 1
                     continue
 
                 # the new prompt is within the token limit
-                return new_recent_events
+                return new_recent_events, True
 
         except Exception as e:
             logger.error('Condensation failed: %s', str(e), exc_info=False)
-            return False
-        return False
+            return [], False
+        return [], False
 
     def attempt_condense(
         self,
@@ -137,17 +137,36 @@ class MemoryCondenser:
         condensed_events.extend(second_half)
         return condensed_events
 
-    def needs_condense(self, llm: LLM, action_prompt: str) -> bool:
+    def needs_condense(self, **kwargs):
         """
         Checks if the prompt needs to be condensed based on the token count against the limits of the llm passed in the call.
 
         Parameters:
         - llm (LLM): The llm to use for checking the token count.
-        - action_prompt (str): The prompt to check for token count.
+        - action_prompt (str, optional): The prompt to check for token count. If not provided, it will attempt to generate it using the available arguments.
+        - default_events (list[dict], optional): The list of default events to include in the prompt.
+        - recent_events (list[dict], optional): The list of recent events to include in the prompt.
+        - background_commands (list, optional): The list of background commands to include in the prompt.
 
         Returns:
         - bool: True if the prompt needs to be condensed, False otherwise.
         """
+        llm = kwargs.get('llm')
+        action_prompt = kwargs.get('action_prompt')
+
+        if not llm:
+            logger.warning("Missing argument 'llm', cannot check token count.")
+            return False
+
+        if not action_prompt:
+            # Attempt to generate the action_prompt using the available arguments
+            default_events = kwargs.get('default_events', [])
+            recent_events = kwargs.get('recent_events', [])
+            background_commands = kwargs.get('background_commands', [])
+
+            action_prompt = self.action_prompt(
+                '', default_events, recent_events, background_commands
+            )
 
         token_count = llm.get_token_count([{'content': action_prompt, 'role': 'user'}])
         return token_count >= self.get_token_limit(llm)

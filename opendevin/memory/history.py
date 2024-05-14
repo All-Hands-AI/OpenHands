@@ -16,8 +16,9 @@ class ShortTermHistory:
         """
         Initialize the empty lists of events
         """
+        # the list of events that the agent had in this session
         self.recent_events = []
-        # core events are events that the agent learned in the initial prompt
+        # default events are events that the agent learned in the initial prompt
         self.default_events = []
 
     def add_default_event(self, event_dict: dict):
@@ -35,7 +36,7 @@ class ShortTermHistory:
 
         self.default_events.append(event_dict)
 
-    def add_event(self, event_dict: dict, core=False):
+    def add_event(self, event_dict: dict):
         """
         Adds an event to memory if it is a valid event.
 
@@ -51,7 +52,7 @@ class ShortTermHistory:
         # add to the list of recent events
         self.recent_events.append(event_dict)
 
-    def get_events(self):
+    def get_events(self) -> list[dict]:
         """
         Get the events in the agent's recent history, including core knowledge (the events it learned in the initial prompt).
 
@@ -60,7 +61,7 @@ class ShortTermHistory:
         """
         return self.recent_events + self.default_events
 
-    def get_default_events(self):
+    def get_default_events(self) -> list[dict]:
         """
         Get the events in the agent's initial prompt.
 
@@ -69,7 +70,7 @@ class ShortTermHistory:
         """
         return self.default_events
 
-    def get_recent_events(self, num_events=None):
+    def get_recent_events(self, num_events=None) -> list[dict]:
         """
         Get the most recent events in the agent's short term history.
 
@@ -86,7 +87,7 @@ class ShortTermHistory:
         else:
             return self.recent_events[-num_events:]
 
-    def get_total_length(self):
+    def get_total_length(self) -> int:
         """
         Gives the total number of characters in all history
 

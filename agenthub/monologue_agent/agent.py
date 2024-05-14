@@ -149,7 +149,7 @@ class MonologueAgent(Agent):
                 recent_events=self.monologue.get_recent_events(),
                 background_commands=[],
             )
-            if was_summarized and condensed_events is not None:
+            if was_summarized is True and condensed_events is not None:
                 self.monologue.recent_events = condensed_events
 
     def _initialize(self, task: str):
