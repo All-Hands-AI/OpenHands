@@ -1,0 +1,3 @@
+Let's start by installing the pandas library using pip in this Jupyter IPython environment:
+<execute_ipython>
+!pip install pandas

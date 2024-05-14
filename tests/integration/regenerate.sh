@@ -32,12 +32,17 @@ tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
   "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'."
+  "Use Jupyter IPython to install pandas, create a DataFrame with 'Names' ['Alice', 'Bob'], and write it to '/workspace/names.txt'."
 )
 test_names=(
   "test_edits"
   "test_write_simple_script"
   "test_ipython"
+  "test_ipython_installation"
 )
+
+target_agent=${TARGET_AGENT:-"all"}
+target_test=${TARGET_TEST:-"all"}
 
 num_of_tests=${#test_names[@]}
 num_of_agents=${#agents[@]}
@@ -57,14 +62,14 @@ rm -rf $WORKSPACE_BASE
 for ((i = 0; i < num_of_tests; i++)); do
   task=${tasks[i]}
   test_name=${test_names[i]}
-
-  # skip other tests if only one test is specified
-  if [[ -n "$ONLY_TEST_NAME" && "$ONLY_TEST_NAME" != "$test_name" ]]; then
+  if [ "$target_test" != "all" ] && [ "$test_name" != "$target_test" ]; then
     continue
   fi
-
   for ((j = 0; j < num_of_agents; j++)); do
     agent=${agents[j]}
+    if [ "$target_agent" != "all" ] && [ "$agent" != "$target_agent" ]; then
+      continue
+    fi
     remind_iterations=${remind_iterations_config[j]}
 
     # skip other agents if only one agent is specified
