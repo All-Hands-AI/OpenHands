@@ -1,7 +1,4 @@
 {
-  "action": "modify_task",
-  "args": {
-    "id": "0",
-    "state": "completed"
-  }
+  "action": "finish",
+  "args": {}
 }

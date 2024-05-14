@@ -14,6 +14,7 @@ from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.llm.llm import LLM
 from opendevin.runtime.sandbox import Sandbox
+from opendevin.runtime.server.runtime import ServerRuntime
 
 
 def read_task_from_file(file_path: str) -> str:
@@ -29,6 +30,7 @@ def read_task_from_stdin() -> str:
 
 async def main(
     task_str: str = '',
+    exit_on_message: bool = False,
     fake_user_response_fn: Optional[Callable[[Optional[State]], str]] = None,
     sandbox: Optional[Sandbox] = None,
 ) -> Optional[State]:
@@ -37,6 +39,7 @@ async def main(
 
     Args:
         task_str: The task to run.
+        exit_on_message: quit if agent asks for a message from user (optional)
         fake_user_response_fn: A optional function that receives the current state (could be None) and returns a fake user response.
     """
 
@@ -77,16 +80,16 @@ async def main(
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
 
-    event_stream = EventStream()
+    event_stream = EventStream('main')
     controller = AgentController(
         agent=agent,
         max_iterations=args.max_iterations,
         max_chars=args.max_chars,
         event_stream=event_stream,
-        sandbox=sandbox,
     )
+    _ = ServerRuntime(event_stream=event_stream, sandbox=sandbox)
 
-    await controller.setup_task(task)
+    await event_stream.add_event(MessageAction(content=task), EventSource.USER)
     await event_stream.add_event(
         ChangeAgentStateAction(agent_state=AgentState.RUNNING), EventSource.USER
     )
@@ -94,7 +97,9 @@ async def main(
     async def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
-                if fake_user_response_fn is None:
+                if exit_on_message:
+                    message = '/exit'
+                elif fake_user_response_fn is None:
                     message = input('Request user input >> ')
                 else:
                     message = fake_user_response_fn(controller.get_state())
@@ -110,8 +115,10 @@ async def main(
     ]:
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
-    finish_state = await controller.close()
-    return finish_state
+    # retrieve the final state before we close the controller and agent
+    final_agent_state = controller.get_agent_state()
+    await controller.close()
+    return final_agent_state
 
 
 if __name__ == '__main__':

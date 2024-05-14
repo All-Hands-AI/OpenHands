@@ -1,7 +1,7 @@
 Thoughts:
-I need to ensure that the 'hello.sh' script is executable. This can be done by using the chmod command to add the execute permission to the file.
+I have already created the 'hello.sh' script that prints 'hello' without asking for confirmation. The script is also made executable. The next step is to ensure that the script runs successfully without any issues.
 
 Action:
 ```
-bash chmod +x hello.sh
+bash hello.sh
 ```

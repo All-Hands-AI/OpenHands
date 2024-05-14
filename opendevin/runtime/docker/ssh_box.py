@@ -342,7 +342,7 @@ class DockerSSHBox(Sandbox):
             f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}',
         )
 
-    def execute(self, cmd: str, timeout: float | None = None) -> tuple[int, str]:
+    def execute(self, cmd: str, timeout: int | None = None) -> tuple[int, str]:
         timeout = timeout if timeout is not None else self.timeout
 
         commands = split_bash_commands(cmd)

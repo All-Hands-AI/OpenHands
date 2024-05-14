@@ -8,6 +8,7 @@ export function Code() {
 export WORKSPACE_BASE=$(pwd)/workspace`;
 
   const dockerCode = `docker run \\
+    -it \\
     --pull=always \\
     -e SANDBOX_USER_ID=$(id -u) \\
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \\

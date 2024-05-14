@@ -11,7 +11,11 @@ from opendevin.events.action import (
     FileWriteAction,
     MessageAction,
     ModifyTaskAction,
+)
+from opendevin.events.serialization import (
     action_from_dict,
+    event_to_dict,
+    event_to_memory,
 )
 
 
@@ -23,8 +27,8 @@ def serialization_deserialization(original_action_dict, cls):
     assert isinstance(
         action_instance, cls
     ), f'The action instance should be an instance of {cls.__name__}.'
-    serialized_action_dict = action_instance.to_dict()
-    serialized_action_memory = action_instance.to_memory()
+    serialized_action_dict = event_to_dict(action_instance)
+    serialized_action_memory = event_to_memory(action_instance)
     serialized_action_dict.pop('message')
     assert (
         serialized_action_dict == original_action_dict
@@ -64,7 +68,10 @@ def test_agent_reject_action_serialization_deserialization():
 
 
 def test_cmd_kill_action_serialization_deserialization():
-    original_action_dict = {'action': 'kill', 'args': {'id': '1337', 'thought': ''}}
+    original_action_dict = {
+        'action': 'kill',
+        'args': {'command_id': '1337', 'thought': ''},
+    }
     serialization_deserialization(original_action_dict, CmdKillAction)
 
 
@@ -122,6 +129,6 @@ def test_add_task_action_serialization_deserialization():
 def test_modify_task_action_serialization_deserialization():
     original_action_dict = {
         'action': 'modify_task',
-        'args': {'id': 1, 'state': 'Test state.', 'thought': ''},
+        'args': {'task_id': 1, 'state': 'Test state.', 'thought': ''},
     }
     serialization_deserialization(original_action_dict, ModifyTaskAction)

@@ -106,7 +106,7 @@ class DockerExecBox(Sandbox):
         bg_cmd = self.background_commands[id]
         return bg_cmd.read_logs()
 
-    def execute(self, cmd: str, timeout: float | None = None) -> tuple[int, str]:
+    def execute(self, cmd: str, timeout: int | None = None) -> tuple[int, str]:
         timeout = timeout if timeout is not None else self.timeout
 
         # TODO: each execute is not stateful! We need to keep track of the current working directory

@@ -70,6 +70,9 @@ class AgentConfig(metaclass=Singleton):
 class AppConfig(metaclass=Singleton):
     llm: LLMConfig = field(default_factory=LLMConfig)
     agent: AgentConfig = field(default_factory=AgentConfig)
+    runtime: str = 'server'
+    file_store: str = 'memory'
+    file_store_path: str = '/tmp/file_store'
     workspace_base: str = os.getcwd()
     workspace_mount_path: str = os.getcwd()
     workspace_mount_path_in_sandbox: str = '/workspace'
@@ -82,7 +85,6 @@ class AppConfig(metaclass=Singleton):
     )
     run_as_devin: bool = True
     max_iterations: int = 100
-    remind_iterations: bool = False
     e2b_api_key: str = ''
     sandbox_type: str = 'ssh'  # Can be 'ssh', 'exec', or 'e2b'
     use_host_network: bool = False

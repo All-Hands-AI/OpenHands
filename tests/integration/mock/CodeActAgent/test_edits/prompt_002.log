@@ -216,12 +216,15 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 
 NOW, LET'S START!
 
+----------
+
 Fix typos in bad.txt. Do not ask me for confirmation at any point.
+
+ENVIRONMENT REMINDER: You have 98 turns left to complete the task.
 
 ----------
 
-Let's start by opening the file `bad.txt` to see what's inside and identify the typos.
-
+Let's start by opening the file `bad.txt` to identify and fix the typos. Let me open the file for you:
 <execute_bash>
 open bad.txt
 </execute_bash>
@@ -229,10 +232,7 @@ open bad.txt
 ----------
 
 OBSERVATION:
-[File: /workspace/bad.txt (4 lines total)]
-1:This is a stupid typoo.
-2:Really?
-3:No mor typos!
-4:Enjoy!
-ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
-[Command -1 finished with exit code 0]]
+-bash: open: command not found
+[Command -1 finished with exit code 127]]
+
+ENVIRONMENT REMINDER: You have 97 turns left to complete the task.
