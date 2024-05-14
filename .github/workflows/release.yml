@@ -2,8 +2,17 @@ name: Create release
 
 on:
   push:
+    branches:
+    - main
     tags:
-      - v*
+      - '*'
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual trigger'
+        required: true
+        default: ''
 
 permissions:
   contents: write
