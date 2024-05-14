@@ -137,7 +137,7 @@ for ((i = 0; i < num_of_tests; i++)); do
         echo -e "  3. There is something non-deterministic in the prompt."
         echo -e "  4. There is a bug in this script, or in OpenDevin code."
         echo -e "NOTE: Some of the above problems could sometimes be fixed by a retry (with a more powerful LLM)."
-        echo -e "      You could also consider improving the agent, increasing $MAX_ITERATIONS, or skipping this test for this agent."
+        echo -e "      You could also consider improving the agent, increasing MAX_ITERATIONS, or skipping this test for this agent."
         exit 1
       else
         echo -e "\n\n\n\n========$test_name for $agent RERUN PASSED========\n\n\n\n"
