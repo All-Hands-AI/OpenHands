@@ -30,9 +30,6 @@ describe("ChatInterface", () => {
   it("should render the new message the user has typed", async () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
-        task: {
-          completed: false,
-        },
         agent: {
           curAgentState: AgentState.INIT,
         },
@@ -82,7 +79,10 @@ describe("ChatInterface", () => {
       userEvent.type(input, "my message{enter}");
     });
 
-    const event = { action: ActionType.START, args: { task: "my message" } };
+    const event = {
+      action: ActionType.MESSAGE,
+      args: { content: "my message" },
+    };
     expect(socketSpy).toHaveBeenCalledWith(JSON.stringify(event));
   });
 

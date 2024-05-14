@@ -6,8 +6,9 @@ import yaml
 
 from agenthub.micro.registry import all_microagents
 from opendevin.controller.agent import Agent
-from opendevin.controller.state.plan import Plan
 from opendevin.controller.state.state import State
+from opendevin.events.action import MessageAction
+from opendevin.events.observation import NullObservation
 
 
 def test_all_agents_are_loaded():
@@ -33,10 +34,12 @@ def test_coder_agent_with_summary():
 
     coder_agent = Agent.get_cls('CoderAgent')(llm=mock_llm)
     assert coder_agent is not None
+
     task = 'This is a dummy task'
-    plan = Plan(task)
+    history = [(MessageAction(content=task), NullObservation(''))]
+    history[0][0]._source = 'user'
     summary = 'This is a dummy summary about this repo'
-    state = State(plan, inputs={'summary': summary})
+    state = State(history=history, inputs={'summary': summary})
     coder_agent.step(state)
 
     mock_llm.completion.assert_called_once()
@@ -58,9 +61,11 @@ def test_coder_agent_without_summary():
 
     coder_agent = Agent.get_cls('CoderAgent')(llm=mock_llm)
     assert coder_agent is not None
+
     task = 'This is a dummy task'
-    plan = Plan(task)
-    state = State(plan)
+    history = [(MessageAction(content=task), NullObservation(''))]
+    history[0][0]._source = 'user'
+    state = State(history=history)
     coder_agent.step(state)
 
     mock_llm.completion.assert_called_once()

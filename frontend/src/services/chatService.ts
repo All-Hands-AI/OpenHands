@@ -5,13 +5,8 @@ import { ActionMessage } from "#/types/Message";
 import Socket from "./socket";
 import { addUserMessage } from "#/state/chatSlice";
 
-export function sendChatMessage(message: string, isTask: boolean = true): void {
-  let event;
-  if (isTask) {
-    event = { action: ActionType.START, args: { task: message } };
-  } else {
-    event = { action: ActionType.MESSAGE, args: { content: message } };
-  }
+export function sendChatMessage(message: string): void {
+  const event = { action: ActionType.MESSAGE, args: { content: message } };
   const eventString = JSON.stringify(event);
   Socket.send(eventString);
 }

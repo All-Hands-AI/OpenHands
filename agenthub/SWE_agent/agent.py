@@ -69,7 +69,8 @@ class SWEAgent(Agent):
         for prev_action, obs in state.updated_info:
             self._remember(prev_action, obs)
 
-        prompt = STEP_PROMPT(state.plan.main_goal, self.cur_file, self.cur_line)
+        goal = state.get_current_user_intent()
+        prompt = STEP_PROMPT(goal, self.cur_file, self.cur_line)
 
         msgs = [
             {'content': SYSTEM_MESSAGE, 'role': 'system'},

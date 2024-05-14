@@ -49,7 +49,7 @@ class SandboxInvalidBackgroundCommandError(Exception):
         super().__init__(message)
 
 
-class PlanInvalidStateError(Exception):
+class TaskInvalidStateError(Exception):
     def __init__(self, state=None):
         if state is not None:
             message = f'Invalid state {state}'

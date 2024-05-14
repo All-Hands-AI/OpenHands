@@ -2,9 +2,6 @@ enum ActionType {
   // Initializes the agent. Only sent by client.
   INIT = "initialize",
 
-  // Starts a new development task.
-  START = "start",
-
   // Represents a message from the user or agent.
   MESSAGE = "message",
 
