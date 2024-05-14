@@ -27,7 +27,7 @@ COMMAND_DOCS = (
     "Please note that THE EDIT COMMAND REQUIRES PROPER INDENTATION. If you'd like to add the line '        print(x)' you must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run."
 )
 
-SYSTEM_PREFIX = f"""A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
+SYSTEM_PREFIX = """A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
 The assistant can interact with an interactive Python (Jupyter Notebook) environment and receive the corresponding output when needed. The code should be enclosed using "<execute_ipython>" tag, for example:
 <execute_ipython>
 print("Hello World!")
@@ -45,10 +45,7 @@ IPython.Application.instance().kernel.do_shutdown(True)  # Restart the kernel
 
 GITHUB_MESSAGE = """To do any activities on GitHub, you should use the token in the $GITHUB_TOKEN environment variable.
 For instance, to push a local branch `my_branch` to the github repo `owner/repo`, you can use the following four commands:
-<execute_bash> RANDOM_REMOTE_NAME=`tr -dc A-Za-z0-9 </dev/urandom | head -c 13` </execute_bash>
-<execute_bash> git remote add $RANDOM_REMOTE_NAME https://$GITHUB_TOKEN@github.com/owner/repo.git </execute_bash>
-<execute_bash> git remote push $RANDOM_REMOTE_NAME branch  </execute_bash>
-<execute_bash> git remote remove $RANDOM_REMOTE_NAME </execute_bash>
+<execute_bash> git push https://$GITHUB_TOKEN@github.com/owner/repo.git my_branch </execute_bash>
 If you require access to GitHub but $GITHUB_TOKEN is not set, ask the user to set it for you."""
 
 SYSTEM_SUFFIX = """The assistant's response should be concise, but do express their thoughts.
