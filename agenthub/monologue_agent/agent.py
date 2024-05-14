@@ -22,6 +22,7 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
+from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
 from opendevin.memory.condenser import MemoryCondenser
 from opendevin.memory.history import ShortTermHistory
@@ -204,7 +205,7 @@ class MonologueAgent(Agent):
                     observation = BrowserOutputObservation(
                         content=thought, url='', screenshot=''
                     )
-                self._add_core_event(observation.to_memory())
+                self._add_core_event(event_to_memory(observation))
                 previous_action = ''
             else:
                 action: Action = NullAction()
@@ -231,7 +232,7 @@ class MonologueAgent(Agent):
                     previous_action = ActionType.BROWSE
                 else:
                     action = MessageAction(thought)
-                self._add_core_event(action.to_memory())
+                self._add_core_event(event_to_memory(action))
 
     def step(self, state: State) -> Action:
         """
@@ -243,18 +244,20 @@ class MonologueAgent(Agent):
         Returns:
         - Action: The next action to take based on LLM response
         """
-        self._initialize(state.plan.main_goal)
+
+        goal = state.get_current_user_intent()
+        self._initialize(goal)
 
         # add the most recent actions and observations to the agent's memory
         for prev_action, obs in state.updated_info:
-            self._add_event(prev_action.to_memory())
-            self._add_event(obs.to_memory())
+            self._add_event(event_to_memory(prev_action))
+            self._add_event(event_to_memory(obs))
 
         # clean info for this step
         state.updated_info = []
 
         prompt = prompts.get_action_prompt(
-            state.plan.main_goal,
+            goal,
             self.monologue.get_default_events(),
             self.monologue.get_recent_events(),
             state.background_commands_obs,

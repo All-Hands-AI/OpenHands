@@ -2,11 +2,11 @@ from opendevin.core.config import config
 from opendevin.core.utils import json
 from opendevin.events.action import (
     Action,
-    action_from_dict,
 )
 from opendevin.events.observation import (
     CmdOutputObservation,
 )
+from opendevin.events.serialization.action import action_from_dict
 
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is this:
@@ -35,7 +35,7 @@ Here are the possible actions:
   * `command` - the command to run
   * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.
 * `kill` - kills a background command
-  * `id` - the ID of the background command to kill
+  * `command_id` - the ID of the background command to kill
 * `browse` - opens a web page. Arguments:
   * `url` - the URL to open
 * `push` - Push a branch from the current repo to github:
@@ -177,7 +177,7 @@ def format_background_commands(
     bg_commands_message = 'The following commands are running in the background:'
     for obs in background_commands_obs:
         bg_commands_message += f'\n`{obs.command_id}`: {obs.command}'
-    bg_commands_message += '\nYou can end any process by sending a `kill` action with the numerical `id` above.'
+    bg_commands_message += '\nYou can end any process by sending a `kill` action with the numerical `command_id` above.'
 
     return bg_commands_message
 

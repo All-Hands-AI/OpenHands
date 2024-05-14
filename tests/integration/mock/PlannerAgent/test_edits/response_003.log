@@ -1,6 +1,7 @@
 {
-  "action": "read",
+  "action": "write",
   "args": {
-    "path": "bad.txt"
+    "path": "bad.txt",
+    "content": "This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!\n"
   }
 }

@@ -318,6 +318,19 @@ This is your internal monologue, in JSON format:
       "content": "It seems like there might be an existing project here. I should probably start by running `pwd` and `ls` to orient myself.",
       "wait_for_response": false
     }
+  },
+  {
+    "source": "user",
+    "action": "message",
+    "args": {
+      "content": "Fix typos in bad.txt. Do not ask me for confirmation at any point.",
+      "wait_for_response": false
+    }
+  },
+  {
+    "observation": "null",
+    "content": "",
+    "extras": {}
   }
 ]
 
@@ -338,7 +351,7 @@ Here are the possible actions:
   * `command` - the command to run
   * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.
 * `kill` - kills a background command
-  * `id` - the ID of the background command to kill
+  * `command_id` - the ID of the background command to kill
 * `browse` - opens a web page. Arguments:
   * `url` - the URL to open
 * `push` - Push a branch from the current repo to github:
@@ -367,5 +380,3 @@ Notes:
 * whenever an action fails, always send a `message` about why it may have happened before acting again.
 
 What is your next single thought or action? Again, you must reply with JSON, and only with JSON. You must respond with exactly one 'action' object.
-
-You've been thinking a lot lately. Maybe it's time to take action?
