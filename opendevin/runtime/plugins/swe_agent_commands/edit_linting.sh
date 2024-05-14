@@ -67,11 +67,13 @@ edit() {
     # Write the new stuff directly back into the original file
     printf "%s\n" "${new_lines[@]}" >| "$CURRENT_FILE"
 
-    # Run linter
-    if [[ $CURRENT_FILE == *.py ]]; then
+    # Default linting to disabled
+    LINT_ENABLED=${LINT_ENABLED:-0}
+
+    # Run linter if enabled
+    if [[ $CURRENT_FILE == *.py && $LINT_ENABLED -eq 1 ]]; then
         lint_output=$(flake8 --isolated --select=F821,F822,F831,E111,E112,E113,E999,E902 "$CURRENT_FILE" 2>&1)
     else
-        # do nothing
         lint_output=""
     fi
 
