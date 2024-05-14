@@ -132,9 +132,12 @@ for ((i = 0; i < num_of_tests; i++)); do
       if [[ $TEST_STATUS -ne 0 ]]; then
         echo -e "\n\n\n\n========$test_name for $agent RERUN FAILED========\n\n\n\n"
         echo -e "There are multiple possibilities:"
-        echo -e "  1. The agent is unable to finish the task within $MAX_ITERATIONS steps. Please consider improving the agent or increasing MAX_ITERATIONS here and run-integration-tests.yml"
-        echo -e "  2. There is something non-deterministic in the prompt."
-        echo -e "  3. There is a bug in this script, or in OpenDevin code."
+        echo -e "  1. The agent is unable to finish the task within $MAX_ITERATIONS steps."
+        echo -e "  2. The agent thinks itself has finished the task, but fails the validation in the test code."
+        echo -e "  3. There is something non-deterministic in the prompt."
+        echo -e "  4. There is a bug in this script, or in OpenDevin code."
+        echo -e "NOTE: Some of the above problems could sometimes be fixed by a retry (with a more powerful LLM)."
+        echo -e "      You could also consider improving the agent, increasing $MAX_ITERATIONS, or skipping this test for this agent."
         exit 1
       else
         echo -e "\n\n\n\n========$test_name for $agent RERUN PASSED========\n\n\n\n"
