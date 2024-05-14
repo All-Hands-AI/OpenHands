@@ -45,9 +45,9 @@ def event_to_dict(event: 'Event') -> dict:
     props = asdict(event)
     d = {}
     for key in TOP_KEYS:
-        if hasattr(event, key):
+        if hasattr(event, key) and getattr(event, key):
             d[key] = getattr(event, key)
-        elif hasattr(event, f'_{key}'):
+        elif hasattr(event, f'_{key}') and getattr(event, f'_{key}'):
             d[key] = getattr(event, f'_{key}')
         props.pop(key, None)
     if 'action' in d:
