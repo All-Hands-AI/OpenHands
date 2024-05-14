@@ -48,8 +48,8 @@ For instance, to push a local branch `my_branch` to the github repo `owner/repo`
 <execute_bash> git push https://$GITHUB_TOKEN@github.com/owner/repo.git my_branch </execute_bash>
 If you require access to GitHub but $GITHUB_TOKEN is not set, ask the user to set it for you."""
 
-SYSTEM_SUFFIX = """The assistant's response should be concise, but do express their thoughts.
-Try to include one of <execute_ipython> or <execute_bash> in each of your responses, unless it is a direct answer to a question OR a message to the user.
+SYSTEM_SUFFIX = """The assistant's response should be concise.
+You should include <execute_ipython> or <execute_bash> in every one of your responses, unless you are finished with the task or need more input or action from the user in order to proceed.
 IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
 """
 
