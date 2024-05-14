@@ -332,35 +332,6 @@ This is your internal monologue, in JSON format:
     "extras": {}
   },
   {
-    "action": "null",
-    "args": {}
-  },
-  {
-    "observation": "agent_state_changed",
-    "content": "",
-    "extras": {
-      "agent_state": "running"
-    }
-  },
-  {
-    "action": "null",
-    "args": {}
-  },
-  {
-    "observation": "null",
-    "content": "",
-    "extras": {}
-  },
-  {
-    "action": "null",
-    "args": {}
-  },
-  {
-    "observation": "null",
-    "content": "",
-    "extras": {}
-  },
-  {
     "action": "read",
     "args": {
       "path": "bad.txt",

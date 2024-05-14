@@ -60,17 +60,10 @@ ten actions--more happened before that.
     }
   },
   {
-    "observation": "agent_state_changed",
-    "content": "",
-    "extras": {
-      "agent_state": "running"
-    }
-  },
-  {
     "action": "write",
     "args": {
       "path": "hello.sh",
-      "content": "echo 'hello'",
+      "content": "#!/bin/bash\n\necho 'hello'",
       "start": 0,
       "end": -1,
       "thought": ""

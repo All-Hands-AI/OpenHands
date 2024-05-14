@@ -60,13 +60,6 @@ ten actions--more happened before that.
     }
   },
   {
-    "observation": "agent_state_changed",
-    "content": "",
-    "extras": {
-      "agent_state": "running"
-    }
-  },
-  {
     "action": "read",
     "args": {
       "path": "bad.txt",

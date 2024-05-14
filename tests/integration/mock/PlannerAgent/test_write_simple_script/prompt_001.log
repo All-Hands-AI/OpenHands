@@ -58,13 +58,6 @@ ten actions--more happened before that.
       "content": "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.",
       "wait_for_response": false
     }
-  },
-  {
-    "observation": "agent_state_changed",
-    "content": "",
-    "extras": {
-      "agent_state": "running"
-    }
   }
 ]
 
