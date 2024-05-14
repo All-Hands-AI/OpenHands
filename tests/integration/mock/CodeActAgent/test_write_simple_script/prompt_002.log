@@ -216,17 +216,18 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 
 NOW, LET'S START!
 
+----------
+
 Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.
 
-ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
+ENVIRONMENT REMINDER: You have 99 turns left to complete the task.
 
 ----------
 
-To create a shell script 'hello.sh' that prints 'hello' without asking for confirmation, I will write the script for you and save it to a file named 'hello.sh':
+I will create a shell script named 'hello.sh' that prints 'hello' without asking for confirmation. Let's proceed with creating the script:
 
 <execute_bash>
-echo 'echo hello' > hello.sh
-chmod +x hello.sh
+echo "echo 'hello'" > hello.sh
 </execute_bash>
 
 ----------
@@ -235,4 +236,4 @@ OBSERVATION:
 
 [Command -1 finished with exit code 0]]
 
-ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
+ENVIRONMENT REMINDER: You have 98 turns left to complete the task.

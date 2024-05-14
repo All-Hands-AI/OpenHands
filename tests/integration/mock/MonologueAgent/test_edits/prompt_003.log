@@ -320,6 +320,18 @@ This is your internal monologue, in JSON format:
     }
   },
   {
+    "action": "message",
+    "args": {
+      "content": "Fix typos in bad.txt. Do not ask me for confirmation at any point.",
+      "wait_for_response": false
+    }
+  },
+  {
+    "observation": "null",
+    "content": "",
+    "extras": {}
+  },
+  {
     "action": "read",
     "args": {
       "path": "bad.txt",
