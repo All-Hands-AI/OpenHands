@@ -1,5 +1,4 @@
 import re
-from typing import Mapping
 
 from agenthub.codeact_agent.prompt import (
     COMMAND_DOCS,
@@ -165,7 +164,7 @@ class CodeActAgent(Agent):
         Resets the CodeAct Agent.
         """
         super().reset()
-        self.messages: list[Mapping[str, str]] = [
+        self.messages: list[dict[str, str]] = [
             {'role': 'system', 'content': self.system_message},
             {
                 'role': 'user',
@@ -234,6 +233,11 @@ class CodeActAgent(Agent):
                     raise NotImplementedError(
                         f'Unknown observation type: {obs.__class__}'
                     )
+        latest_user_message = [m for m in self.messages if m['role'] == 'user'][-1]
+        if latest_user_message:
+            latest_user_message['content'] += (
+                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration - 1} turns left to complete the task.'
+            )
 
         response = self.llm.completion(
             messages=self.messages,

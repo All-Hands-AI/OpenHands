@@ -1,4 +1,4 @@
-Let's start by examining the contents of `bad.txt` to identify the typos. I'll display the content first.
+To fix typos in a file without asking for confirmation, we can use the `sed` command in bash to replace the typos. Let's go ahead and fix the typos in `bad.txt` without any confirmation prompts.
 
 <execute_bash>
 cat bad.txt

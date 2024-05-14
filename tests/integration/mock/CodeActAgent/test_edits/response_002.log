@@ -1,13 +1,5 @@
-I've identified the typos in the file. Here are the corrections:
-- "typoo" should be "typo"
-- "mor" should be "more"
-
-I will now proceed to correct these typos in `bad.txt`.
+Great! Let's use the `sed` command to fix the typos in the `bad.txt` file without any confirmation prompts.
 
 <execute_bash>
-edit 1:1
-This is a stupid typo.
-end_of_edit
-edit 3:3
-No more typos!
-end_of_edit
+sed -i 's/typoo/typo/g' bad.txt
+sed -i 's/mor/more/g' bad.txt

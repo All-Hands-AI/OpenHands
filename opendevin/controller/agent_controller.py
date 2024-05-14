@@ -61,7 +61,6 @@ class AgentController:
         max_chars: int = MAX_CHARS,
         inputs: dict | None = None,
         sandbox: Optional[Sandbox] = None,
-        remind_iterations: bool = config.remind_iterations,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -73,7 +72,6 @@ class AgentController:
             max_chars: The maximum number of characters the agent can output.
             inputs: The initial inputs to the agent.
             sandbox: An optional initialized sandbox to run the agent in. If not provided, a default sandbox will be created based on config.
-            remind_iterations: A boolean value indicating whether to remind the agent its remaining budget of interaction.
         """
         self.id = sid
         self.agent = agent
@@ -84,11 +82,6 @@ class AgentController:
         )
         self.max_iterations = max_iterations
 
-        self.remind_iterations = remind_iterations
-        if self.remind_iterations:
-            logger.info(
-                'Iteration reminder is ENABLED: agent will be reminded of remaining turns.'
-            )
         self.runtime = ServerRuntime(sandbox=sandbox, sid=self.id)
         self.max_chars = max_chars
 
@@ -225,17 +218,6 @@ class AgentController:
             inputs=action.inputs,
         )
 
-    def add_iteration_reminder_when_needed(self, i: int, obs: Observation):
-        """Add iteration reminder to the observation if needed.
-
-        Args:
-            i: The current iteration number (0-indexed).
-            obs: The observation to add the reminder to.
-        """
-        if self.remind_iterations:
-            obs.content += f'\n\nENVIRONMENT REMINDER: You have {self.max_iterations - i - 1} turns left to complete the task.'
-        return obs
-
     async def step(self, i: int) -> bool:
         if self.delegate is not None:
             delegate_done = await self.delegate.step(i)
@@ -290,7 +272,6 @@ class AgentController:
         elif not isinstance(observation, ErrorObservation):
             observation = await self.runtime.run_action(action)
 
-        observation = self.add_iteration_reminder_when_needed(i, observation)
         if not isinstance(observation, NullObservation):
             logger.info(observation, extra={'msg_type': 'OBSERVATION'})
         await self.add_history(action, observation)
