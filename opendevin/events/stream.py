@@ -75,5 +75,4 @@ class EventStream:
             )
             self._events.append(event)
         for key, fn in self._subscribers.items():
-            print('calling subscriber', key)
             await fn(event)
