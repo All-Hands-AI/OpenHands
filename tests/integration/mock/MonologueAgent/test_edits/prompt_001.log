@@ -320,7 +320,6 @@ This is your internal monologue, in JSON format:
     }
   },
   {
-    "source": "user",
     "action": "message",
     "args": {
       "content": "Fix typos in bad.txt. Do not ask me for confirmation at any point.",

@@ -53,7 +53,6 @@ ten actions--more happened before that.
 
 [
   {
-    "source": "user",
     "action": "message",
     "args": {
       "content": "Fix typos in bad.txt. Do not ask me for confirmation at any point.",
