@@ -93,3 +93,28 @@ def test_ipython():
     assert (
         content.strip() == 'hello world'
     ), f'Expected content "hello world", but got "{content.strip()}"'
+
+
+@pytest.mark.skipif(
+    os.getenv('AGENT') != 'CodeActAgent',
+    reason='currently only CodeActAgent defaults to have IPython (Jupyter) execution',
+)
+@pytest.mark.skipif(
+    os.getenv('SANDBOX_TYPE') != 'ssh',
+    reason='Currently, only ssh sandbox supports stateful tasks',
+)
+def test_ipython_installation():
+    # Execute the task
+    task = "Use Jupyter IPython to install pandas, create a DataFrame with 'Names' ['Alice', 'Bob'], and write it to '/workspace/names.txt' . Do not ask me for confirmation at any point."
+    asyncio.run(main(task, exit_on_message=True))
+
+    # Verify the file exists
+    file_path = os.path.join(workspace_base, 'names.txt')
+    assert os.path.exists(file_path), 'The file "names.txt" does not exist'
+
+    # Verify the file contains the expected content
+    with open(file_path, 'r') as f:
+        content = f.read()
+    assert (
+        content.strip() == 'Names\nAlice\nBob'
+    ), f'Expected content "Names\nAlice\nBob", but got "{content.strip()}"'

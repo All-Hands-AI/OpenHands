@@ -1,0 +1,9 @@
+Now that pandas is installed, let's create a DataFrame with the given 'Names' and write it to '/workspace/names.txt':
+<execute_ipython>
+import pandas as pd
+
+# Create a DataFrame with 'Names' ['Alice', 'Bob']
+df = pd.DataFrame({'Names': ['Alice', 'Bob']})
+
+# Write the DataFrame to '/workspace/names.txt'
+df.to_csv('/workspace/names.txt', index=False)
