@@ -1,7 +1,7 @@
 Thoughts:
-I need to add the command to print 'hello' in the 'hello.sh' script without any prompts for confirmation. Since the script is already created, I will simply edit the existing script to include the command to print 'hello'.
+Despite multiple attempts to write content into 'hello.sh', the file still appears to be empty. I need to ensure that the content is correctly written this time. The script should contain a simple bash command to print 'hello'. I will use the `write` command to insert the correct bash script code into 'hello.sh'.
 
 Action:
 ```
-edit 0 -1 "echo 'hello'"
+write hello.sh echo "hello"
 ```
