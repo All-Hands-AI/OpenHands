@@ -61,17 +61,19 @@ These are your past 4 actions:
 
 Memory 0:
 Previous Action:
+source: EventSource.AGENT
 action: write
 args:
   path: hello.sh
   start: 0
   end: -1
   thought: Thoughts:
-  I need to add the code to the 'hello.sh' script that will print 'hello' without asking for confirmation. This involves editing the existing script.
+  I need to add the code to the 'hello.sh' script that will print 'hello' without asking for confirmation. This will ensure that the script is executable and functions as intended.
 
   Action:
 
 Output from Action:
+source: EventSource.AGENT
 observation: write
 content:
 extras:
@@ -79,17 +81,19 @@ extras:
 
 Memory 1:
 Previous Action:
+source: EventSource.AGENT
 action: write
 args:
   path: hello.sh
   start: 0
   end: -1
   thought: Thoughts:
-  I need to add the code to the 'hello.sh' script that will print 'hello' without asking for confirmation. Since the script is already created and made executable, I should simply edit the script to include the command to print 'hello'.
+  I need to add the code to the 'hello.sh' script that will print 'hello' without asking for confirmation. This will ensure that the script is executable and functions as intended.
 
   Action:
 
 Output from Action:
+source: EventSource.AGENT
 observation: write
 content:
 extras:
@@ -97,17 +101,19 @@ extras:
 
 Memory 2:
 Previous Action:
+source: EventSource.AGENT
 action: write
 args:
   path: hello.sh
   start: 0
   end: -1
   thought: Thoughts:
-  I need to add the code to the 'hello.sh' script that will print 'hello' without asking for confirmation. Since the script is already created, made executable, and the initial content was added, I should now insert the command to print 'hello' into the script.
+  I need to add the code to the 'hello.sh' script that will print 'hello' without asking for confirmation. This will ensure that the script is executable and functions as intended.
 
   Action:
 
 Output from Action:
+source: EventSource.AGENT
 observation: write
 content:
 extras:
@@ -115,19 +121,22 @@ extras:
 
 Memory 3:
 Previous Action:
-action: write
+source: EventSource.AGENT
+action: read
 args:
   path: hello.sh
   start: 0
   end: -1
   thought: Thoughts:
-  I need to add the command in the 'hello.sh' script to print 'hello' without asking for confirmation. Since the script is already created, made executable, and the initial content was added, I should now insert the command to print 'hello' into the script.
+  I have already added the code to the 'hello.sh' script that prints 'hello' without asking for confirmation. I should now check the content of the 'hello.sh' script to ensure that the code has been correctly added.
 
   Action:
 
 Output from Action:
-observation: write
-content:
+source: EventSource.AGENT
+observation: read
+content: echo 'hello'
+
 extras:
   path: hello.sh
 ======= End Actions =======

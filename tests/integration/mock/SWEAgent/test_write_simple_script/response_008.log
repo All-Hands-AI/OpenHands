@@ -1,7 +1,0 @@
-Thoughts:
-I need to edit the 'hello.sh' script to include the command to print 'hello' without asking for confirmation. Since the script is already created, made executable, and the initial content was added, I should now insert the command to print 'hello' into the script.
-
-Action:
-```
-edit 0 -1 "echo 'hello'"
-```

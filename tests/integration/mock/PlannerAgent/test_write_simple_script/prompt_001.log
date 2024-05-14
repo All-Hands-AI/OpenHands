@@ -53,6 +53,7 @@ ten actions--more happened before that.
 
 [
   {
+    "source": "user",
     "action": "message",
     "args": {
       "content": "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.",

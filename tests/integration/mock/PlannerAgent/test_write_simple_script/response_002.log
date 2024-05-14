@@ -1,3 +1,4 @@
 {
-  "action": "finish"
+  "action": "finish",
+  "args": {}
 }

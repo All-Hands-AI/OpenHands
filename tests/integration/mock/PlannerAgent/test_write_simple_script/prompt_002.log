@@ -53,6 +53,7 @@ ten actions--more happened before that.
 
 [
   {
+    "source": "user",
     "action": "message",
     "args": {
       "content": "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.",
@@ -60,16 +61,18 @@ ten actions--more happened before that.
     }
   },
   {
+    "source": "agent",
     "action": "write",
     "args": {
       "path": "hello.sh",
-      "content": "#!/bin/bash\n\necho 'hello'",
+      "content": "echo 'hello'",
       "start": 0,
       "end": -1,
       "thought": ""
     }
   },
   {
+    "source": "agent",
     "observation": "write",
     "content": "",
     "extras": {
