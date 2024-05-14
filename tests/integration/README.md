@@ -53,8 +53,8 @@ TEST_ONLY=true ./tests/integration/regenerate.sh
 
 to run all integration tests until the first failure.
 
-
 ## Regenerate Integration Tests
+
 When you make changes to an agent's prompt, the integration tests will fail. You'll need to regenerate them
 by running:
 ```bash
@@ -64,6 +64,28 @@ Note that this will run existing tests first and call real LLM_MODEL only for
 failed tests, but it still costs money! If you don't want
 to cover the cost, ask one of the maintainers to regenerate for you.
 You might also be able to fix the tests by hand.
+
+## Run Specific Agent Tests or Test Cases
+
+To run specific agent tests or a specific test case, you can set the environment variables `TARGET_AGENT` and `TARGET_TEST`. For example, to run only the `test_ipython` test case for the `CodeActAgent`, use:
+
+```bash
+TARGET_AGENT="CodeActAgent" TARGET_TEST="test_ipython" ./tests/integration/regenerate.sh
+```
+
+If you only want to run all tests for the `CodeActAgent`:
+
+```bash
+TARGET_AGENT="CodeActAgent" ./tests/integration/regenerate.sh
+```
+
+Or if you want to run the `test_ipython` test case for all agents:
+
+```bash
+TARGET_TEST="test_ipython" ./tests/integration/regenerate.sh
+```
+
+If no specific agent or test case is provided, all tests will be run by default.
 
 ## Write a new Integration Test
 
