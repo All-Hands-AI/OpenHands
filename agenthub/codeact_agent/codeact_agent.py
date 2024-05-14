@@ -2,11 +2,11 @@ import re
 from typing import Mapping
 
 from agenthub.codeact_agent.prompt import (
+    COMMAND_DOCS,
     EXAMPLES,
+    GITHUB_MESSAGE,
     SYSTEM_PREFIX,
     SYSTEM_SUFFIX,
-    COMMAND_DOCS,
-    GITHUB_MESSAGE,
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
@@ -141,6 +141,11 @@ class CodeActAgent(Agent):
         NullObservation,
     )
     messages: list[dict] = []
+    system_message: str = (
+        f'{SYSTEM_PREFIX}\n{GITHUB_MESSAGE}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
+        if ENABLE_GITHUB
+        else f'{SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
+    )
 
     def __init__(
         self,
@@ -154,11 +159,6 @@ class CodeActAgent(Agent):
         """
         super().__init__(llm)
         self.reset()
-        self.system_message = (
-            f"""{SYSTEM_PREFIX}\n{GITHUB_MESSAGE}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}"""
-            if ENABLE_GITHUB
-            else f"""{SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}"""
-        )
 
     def reset(self) -> None:
         """
