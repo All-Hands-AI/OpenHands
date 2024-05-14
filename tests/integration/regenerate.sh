@@ -1,14 +1,21 @@
 #!/bin/bash
 set -eo pipefail
 
-WORKSPACE_MOUNT_PATH=$(pwd)/_test_workspace
-WORKSPACE_BASE=$(pwd)/_test_workspace
+if [ -z $WORKSPACE_MOUNT_PATH ]; then
+  WORKSPACE_MOUNT_PATH=$(pwd)
+fi
+if [ -z $WORKSPACE_BASE ]; then
+  WORKSPACE_BASE=$(pwd)
+fi
+
+WORKSPACE_MOUNT_PATH+="/_test_workspace"
+WORKSPACE_BASE+="/_test_workspace"
+
 SANDBOX_TYPE="ssh"
 MAX_ITERATIONS=10
 
 # FIXME: SWEAgent hangs, so it goes last
 agents=("ManagerAgent" "MonologueAgent" "CodeActAgent" "PlannerAgent" "SWEAgent")
-# only enable iteration reminder for CodeActAgent in tests
 remind_iterations_config=(false false true false false)
 tasks=(
   "Fix typos in bad.txt."
@@ -23,7 +30,7 @@ test_names=(
   "test_simple_task_rejection"
 )
 
-num_of_tests=${#tasks[@]}
+num_of_tests=${#test_names[@]}
 num_of_agents=${#agents[@]}
 
 if [ "$num_of_agents" -ne "${#remind_iterations_config[@]}" ]; then
@@ -37,7 +44,7 @@ if [ "$num_of_tests" -ne "${#test_names[@]}" ]; then
 fi
 
 rm -rf logs
-rm -rf _test_workspace
+rm -rf $WORKSPACE_BASE
 for ((i = 0; i < num_of_tests; i++)); do
   task=${tasks[i]}
   test_name=${test_names[i]}
@@ -58,6 +65,9 @@ for ((i = 0; i < num_of_tests; i++)); do
     echo -e "\n\n\n\n========Running $test_name for $agent========\n\n\n\n"
     rm -rf $WORKSPACE_BASE
     mkdir $WORKSPACE_BASE
+    if [ -d "tests/integration/workspace/$test_name" ]; then
+      cp -r tests/integration/workspace/$test_name/* $WORKSPACE_BASE
+    fi
 
     if [ "$TEST_ONLY" = true ]; then
       set -e
@@ -66,9 +76,12 @@ for ((i = 0; i < num_of_tests; i++)); do
       set +e
     fi
 
-    SANDBOX_TYPE=$SANDBOX_TYPE WORKSPACE_BASE=$WORKSPACE_BASE \
-      MAX_ITERATIONS=$MAX_ITERATIONS REMIND_ITERATIONS=$remind_iterations \
-      WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
+    SANDBOX_TYPE=$SANDBOX_TYPE \
+      WORKSPACE_BASE=$WORKSPACE_BASE \
+      REMIND_ITERATIONS=$remind_iterations \
+      MAX_ITERATIONS=$MAX_ITERATIONS \
+      WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
+      AGENT=$agent \
       poetry run pytest -s ./tests/integration/test_agent.py::$test_name
     TEST_STATUS=$?
     # Re-enable 'exit on error'
@@ -76,18 +89,30 @@ for ((i = 0; i < num_of_tests; i++)); do
 
     if [[ $TEST_STATUS -ne 0 ]]; then
       echo -e "\n\n\n\n========$test_name failed, regenerating test data for $agent========\n\n\n\n"
-      # trick: let's not clean up $WORKSPACE_BASE folder, which might contain the
-      # artifacts we need that are auto-gerated by the test
       sleep 1
+
+      rm -rf $WORKSPACE_BASE
+      mkdir -p $WORKSPACE_BASE
+      if [ -d "tests/integration/workspace/$test_name" ]; then
+        cp -r tests/integration/workspace/$test_name/* $WORKSPACE_BASE
+      fi
+
       rm -rf logs
       rm -rf tests/integration/mock/$agent/$test_name/*
-      echo -e "/exit\n" | SANDBOX_TYPE=$SANDBOX_TYPE WORKSPACE_BASE=$WORKSPACE_BASE \
-        DEBUG=true REMIND_ITERATIONS=$remind_iterations \
-        WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
+      # set -x to print the command being executed
+      set -x
+      echo -e "/exit\n" | \
+        SANDBOX_TYPE=$SANDBOX_TYPE \
+        WORKSPACE_BASE=$WORKSPACE_BASE \
+        DEBUG=true \
+        REMIND_ITERATIONS=$remind_iterations \
+        WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
+        AGENT=$agent \
         poetry run python ./opendevin/core/main.py \
         -i $MAX_ITERATIONS \
         -t "$task Do not ask me for confirmation at any point." \
         -c $agent
+      set +x
 
       mkdir -p tests/integration/mock/$agent/$test_name/
       mv logs/llm/**/* tests/integration/mock/$agent/$test_name/
@@ -99,5 +124,5 @@ for ((i = 0; i < num_of_tests; i++)); do
 done
 
 rm -rf logs
-rm -rf _test_workspace
+rm -rf $WORKSPACE_BASE
 echo "Done!"

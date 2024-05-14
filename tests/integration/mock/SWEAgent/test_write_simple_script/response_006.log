@@ -1,5 +1,5 @@
 Thoughts:
-I need to add the code to the 'hello.sh' script to print 'hello' without asking for confirmation. I will use the echo command to achieve this.
+I need to add the command to print 'hello' in the 'hello.sh' script without any prompts for confirmation. Since the script is already open, I will simply write the command to print 'hello' in the script.
 
 Action:
 ```
