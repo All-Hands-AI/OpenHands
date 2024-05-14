@@ -205,6 +205,10 @@ class AgentController:
             return
 
         logger.info(f'STEP {self.state.iteration}', extra={'msg_type': 'STEP'})
+        if self.state.iteration >= self.max_iterations:
+            await self.report_error('Agent reached maximum number of iterations')
+            await self.set_agent_state_to(AgentState.ERROR)
+            return
 
         if self.delegate is not None:
             delegate_done = await self.delegate._step()
@@ -216,7 +220,6 @@ class AgentController:
                 self.delegateAction = None
             return
 
-        logger.info(f'STEP {self.state.iteration}', extra={'msg_type': 'STEP'})
         if self.state.num_of_chars > self.max_chars:
             raise MaxCharsExceedError(self.state.num_of_chars, self.max_chars)
 
