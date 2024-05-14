@@ -48,6 +48,9 @@ pytest = "*"
 pytest-cov = "*"
 pytest-asyncio = "*"
 
+[tool.coverage.run]
+concurrency = ["gevent"]
+
 [tool.poetry.group.evaluation.dependencies]
 torch = "2.2.2"
 
