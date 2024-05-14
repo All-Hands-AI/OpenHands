@@ -121,6 +121,7 @@ class AgentController:
             await self.add_history(
                 event, NullObservation('')
             )  # save it to history for test
+            await self.set_agent_state_to(event.agent_state)  # type: ignore
         elif isinstance(event, MessageAction):
             if event.source == EventSource.USER:
                 await self.add_history(event, NullObservation(''))
