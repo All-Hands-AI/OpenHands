@@ -26,6 +26,7 @@ from opendevin.events.event import Event
 from opendevin.events.observation import (
     AgentDelegateObservation,
     AgentStateChangedObservation,
+    CmdOutputObservation,
     ErrorObservation,
     NullObservation,
     Observation,
@@ -102,6 +103,8 @@ class AgentController:
         await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def add_history(self, action: Action, observation: Observation):
+        if isinstance(action, NullAction) and isinstance(observation, NullObservation):
+            return
         self.state.history.append((action, observation))
         self.state.updated_info.append((action, observation))
 
@@ -145,7 +148,7 @@ class AgentController:
             if self._pending_action and self._pending_action.id == event.cause:
                 await self.add_history(self._pending_action, event)
                 self._pending_action = None
-            else:
+            elif isinstance(event, CmdOutputObservation):
                 await self.add_history(NullAction(), event)
 
     def reset_task(self):
