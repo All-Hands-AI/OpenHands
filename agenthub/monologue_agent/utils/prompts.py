@@ -72,17 +72,20 @@ MONOLOGUE_SUMMARY_PROMPT = """
 Below is the internal monologue of an automated LLM agent. Each
 thought is an item in a JSON array. The thoughts may be memories,
 actions taken by the agent, or outputs from those actions.
+
 The monologue has two parts: the default memories, which you must not change,
 they are provided to you only for context, and the recent monologue.
 
-Please return a new, smaller JSON array, which summarizes the recent
-internal monologue. You can summarize individual thoughts, and
-you can condense related thoughts together with a description
-of their content.
+Please return a new, smaller JSON array, which summarizes the recent monologue.
+When summarizing, you should condense the older events in the recent monologue
+more aggressively, while preserving more details for the more recent events.
+
+You can summarize individual thoughts, and you can condense related thoughts
+together with a description of their content.
 
 %(monologue)s
 
-Make the summaries as pithy and informative as possible.
+Make the summaries as pithy and informative as possible, especially for the older events.
 Be specific about what happened and what was learned. The summary
 will be used as keywords for searching for the original memory.
 Be sure to preserve any key words or important information.
@@ -91,7 +94,8 @@ Your response must be in JSON format. It must be an object with the
 key `new_monologue`, which is a JSON array containing the summarized monologue.
 Each entry in the array must have an `action` key, and an `args` key.
 The action key may be `summarize`, and `args.summary` should contain the summary.
-You can also use the same action and args from the source monologue.
+The action key and args may also be the same action and args from the source monologue.
+Remember you must only summarize the recent monologue, not the default memories.
 """
 
 
