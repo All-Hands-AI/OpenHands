@@ -1,6 +1,18 @@
 #!/bin/bash
 set -eo pipefail
 
+run_test() {
+  SANDBOX_TYPE=$SANDBOX_TYPE \
+    WORKSPACE_BASE=$WORKSPACE_BASE \
+    REMIND_ITERATIONS=$remind_iterations \
+    MAX_ITERATIONS=$MAX_ITERATIONS \
+    WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
+    AGENT=$agent \
+    poetry run pytest -s ./tests/integration/test_agent.py::$test_name
+    # return exit code of pytest
+    return $?
+}
+
 if [ -z $WORKSPACE_MOUNT_PATH ]; then
   WORKSPACE_MOUNT_PATH=$(pwd)
 fi
@@ -74,13 +86,7 @@ for ((i = 0; i < num_of_tests; i++)); do
       set +e
     fi
 
-    SANDBOX_TYPE=$SANDBOX_TYPE \
-      WORKSPACE_BASE=$WORKSPACE_BASE \
-      REMIND_ITERATIONS=$remind_iterations \
-      MAX_ITERATIONS=$MAX_ITERATIONS \
-      WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
-      AGENT=$agent \
-      poetry run pytest -s ./tests/integration/test_agent.py::$test_name
+    run_test
     TEST_STATUS=$?
     # Re-enable 'exit on error'
     set -e
@@ -114,6 +120,28 @@ for ((i = 0; i < num_of_tests; i++)); do
 
       mkdir -p tests/integration/mock/$agent/$test_name/
       mv logs/llm/**/* tests/integration/mock/$agent/$test_name/
+
+      echo -e "\n\n\n\n========$test_name test data regenerated for $agent, rerun test again to verify========\n\n\n\n"
+      # Temporarily disable 'exit on error'
+      set +e
+      run_test
+      TEST_STATUS=$?
+      # Re-enable 'exit on error'
+      set -e
+
+      if [[ $TEST_STATUS -ne 0 ]]; then
+        echo -e "\n\n\n\n========$test_name for $agent RERUN FAILED========\n\n\n\n"
+        echo -e "There are multiple possibilities:"
+        echo -e "  1. The agent is unable to finish the task within $MAX_ITERATIONS steps. Please consider improving the agent or increasing MAX_ITERATIONS here and run-integration-tests.yml"
+        echo -e "  2. There is something non-deterministic in the prompt."
+        echo -e "  3. There is a bug in this script, or in OpenDevin code."
+        exit 1
+      else
+        echo -e "\n\n\n\n========$test_name for $agent RERUN PASSED========\n\n\n\n"
+        sleep 1
+      fi
+
+
     else
       echo -e "\n\n\n\n========$test_name for $agent PASSED========\n\n\n\n"
       sleep 1
