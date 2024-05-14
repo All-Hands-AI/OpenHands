@@ -192,6 +192,12 @@ class CodeActAgent(Agent):
                     content = truncate_observation(content)
                     self.messages.append({'role': 'user', 'content': content})
 
+        latest_user_message = [m for m in self.messages if m['role'] == 'user'][-1]
+        if latest_user_message:
+            latest_user_message['content'] += (
+                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration - 1} turns left to complete the task.'
+            )
+
         response = self.llm.completion(
             messages=self.messages,
             stop=[

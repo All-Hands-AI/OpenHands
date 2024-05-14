@@ -56,7 +56,6 @@ class AgentController:
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
         inputs: dict | None = None,
-        remind_iterations: bool = config.remind_iterations,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -67,7 +66,6 @@ class AgentController:
             max_iterations: The maximum number of iterations the agent can run.
             max_chars: The maximum number of characters the agent can output.
             inputs: The initial inputs to the agent.
-            remind_iterations: A boolean value indicating whether to remind the agent its remaining budget of interaction.
         """
         self.id = sid
         self.agent = agent
@@ -79,13 +77,6 @@ class AgentController:
         self.max_iterations = max_iterations
         self.max_chars = max_chars
         self.agent_task = asyncio.create_task(self._start_step_loop())
-
-        self.remind_iterations = remind_iterations
-        if self.remind_iterations:
-            logger.info(
-                'Iteration reminder is ENABLED: agent will be reminded of remaining turns.'
-            )
-        self.max_chars = max_chars
 
     async def close(self):
         if self.agent_task is not None:
@@ -123,7 +114,7 @@ class AgentController:
                 await self.set_agent_state_to(AgentState.ERROR)
                 break
 
-            await asyncio.sleep(.1)
+            await asyncio.sleep(0.1)
 
     async def on_event(self, event: Event):
         if isinstance(event, ChangeAgentStateAction):
@@ -184,17 +175,6 @@ class AgentController:
             max_chars=self.max_chars,
             inputs=action.inputs,
         )
-
-    def add_iteration_reminder_when_needed(self, i: int, obs: Observation):
-        """Add iteration reminder to the observation if needed.
-
-        Args:
-            i: The current iteration number (0-indexed).
-            obs: The observation to add the reminder to.
-        """
-        if self.remind_iterations:
-            obs.content += f'\n\nENVIRONMENT REMINDER: You have {self.max_iterations - i - 1} turns left to complete the task.'
-        return obs
 
     async def _step(self):
         if self.get_agent_state() != AgentState.RUNNING:
