@@ -1,6 +1,6 @@
-Certainly! I will write the text 'hello world' to the file `/workspace/test.txt` using Jupyter IPython.
+Certainly! I will write the text 'hello world' to the file `/workspace/test.txt` using IPython.
 
 <execute_ipython>
-# Write 'hello world' to the specified text file
+# Writing 'hello world' to the specified text file
 with open('/workspace/test.txt', 'w') as file:
     file.write('hello world')
