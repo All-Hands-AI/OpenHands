@@ -107,7 +107,7 @@ class MonologueAgent(Agent):
         Parameters:
         - event (dict): The event that will be added to monologue and memory
         """
-        self.monologue.add_core_event(event_dict)
+        self.monologue.add_default_event(event_dict)
         if self.memory is not None:
             self.memory.add_event(event_dict)
 
@@ -180,7 +180,6 @@ class MonologueAgent(Agent):
 
         self.memory_condenser = MemoryCondenser(
             action_prompt=prompts.get_action_prompt,
-            action_prompt_with_defaults=prompts.generate_action_prompt_with_defaults,
             summarize_prompt=prompts.get_summarize_prompt,
         )
 

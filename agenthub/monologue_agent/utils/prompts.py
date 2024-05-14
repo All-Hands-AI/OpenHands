@@ -229,7 +229,7 @@ def generate_action_prompt_with_defaults(**kwargs):
     for key, value in kwargs.items():
         if key in ['default_events', 'recent_events'] and value is not None:
             monologue.extend(value)
-        elif key == 'background_commands' and value is not None:
+        elif key == 'background_commands':
             formatted_kwargs[key] = format_background_commands(value)
         else:
             formatted_kwargs[key] = value

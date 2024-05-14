@@ -20,9 +20,9 @@ class ShortTermHistory:
         # core events are events that the agent learned in the initial prompt
         self.default_events = []
 
-    def add_core_event(self, event_dict: dict):
+    def add_default_event(self, event_dict: dict):
         """
-        Adds an event to core memory if it is a valid event.
+        Adds an event to the default memory (sent in every prompt), if it is a valid event.
 
         Parameters:
         - event_dict (dict): The event that we want to add to memory
@@ -69,19 +69,22 @@ class ShortTermHistory:
         """
         return self.default_events
 
-    def get_recent_events(self, num_events=5):
+    def get_recent_events(self, num_events=None):
         """
         Get the most recent events in the agent's short term history.
 
-        Will not return core events.
+        Will not return default events.
 
         Parameters:
-        - num_events (int): The number of recent events to return
+        - num_events (int): The number of recent events to return, defaults to all events.
 
         Returns:
         - List: The list of the most recent events.
         """
-        return self.recent_events[-num_events:]
+        if num_events is None:
+            return self.recent_events
+        else:
+            return self.recent_events[-num_events:]
 
     def get_total_length(self):
         """
