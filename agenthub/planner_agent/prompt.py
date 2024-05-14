@@ -81,9 +81,9 @@ It must be an object, and it must contain two fields:
   * `id` - the ID of the background command to kill
 * `browse` - opens a web page. Arguments:
   * `url` - the URL to open
-* `message` - make a plan, set a goal, record your thoughts, or ask for more input(If there's any uncertainty, or need input from the user, set the `wait_for_response` arg to true). Arguments:
+* `message` - make a plan, set a goal, record your thoughts, or ask for more input from the user. Arguments:
   * `content` - the message to record
-  * `wait_for_response` - whether to wait for input
+  * `wait_for_response` - set to `true` to wait for the user to respond before proceeding
 * `add_task` - add a task to your plan. Arguments:
   * `parent` - the ID of the parent task (leave empty if it should go at the top level)
   * `goal` - the goal of the task
