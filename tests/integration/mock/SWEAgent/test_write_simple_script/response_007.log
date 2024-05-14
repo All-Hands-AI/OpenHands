@@ -1,7 +1,0 @@
-Thoughts:
-I need to add the command to print 'hello' in the 'hello.sh' script without any prompts for confirmation. Since the script is already open, I will write the command to print 'hello' directly into the script.
-
-Action:
-```
-edit 0 -1 "echo 'hello'"
-```
