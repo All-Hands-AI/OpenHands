@@ -1,5 +1,4 @@
 import re
-from typing import List, Mapping
 
 from agenthub.codeact_agent.prompt import EXAMPLES, SYSTEM_MESSAGE
 from opendevin.controller.agent import Agent
@@ -119,7 +118,6 @@ class CodeActAgent(Agent):
         JupyterRequirement(),
         SWEAgentCommandsRequirement(),
     ]
-    messages: List[dict] = []
 
     def __init__(
         self,
@@ -139,7 +137,7 @@ class CodeActAgent(Agent):
         Resets the CodeAct Agent.
         """
         super().reset()
-        self.messages: list[Mapping[str, str]] = [
+        self.messages: list[dict[str, str]] = [
             {'role': 'system', 'content': SYSTEM_MESSAGE},
             {
                 'role': 'user',
