@@ -61,6 +61,7 @@ These are your past 4 actions:
 
 Memory 0:
 Previous Action:
+source: EventSource.USER
 action: message
 args:
   wait_for_response: False

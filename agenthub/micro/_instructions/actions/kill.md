@@ -1,2 +1,2 @@
 * `kill` - kills a background command
-  * `id` - the ID of the background command to kill
+  * `command_id` - the ID of the background command to kill
