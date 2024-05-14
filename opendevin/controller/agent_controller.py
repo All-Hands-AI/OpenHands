@@ -1,7 +1,6 @@
 import asyncio
 from typing import Optional, Type
 
-from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config
@@ -27,14 +26,12 @@ from opendevin.events.event import Event
 from opendevin.events.observation import (
     AgentDelegateObservation,
     AgentStateChangedObservation,
+    CmdOutputObservation,
     ErrorObservation,
     NullObservation,
     Observation,
 )
 from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
-from opendevin.runtime import DockerSSHBox, Sandbox
-from opendevin.runtime.runtime import Runtime
-from opendevin.runtime.server.runtime import ServerRuntime
 
 MAX_ITERATIONS = config.max_iterations
 MAX_CHARS = config.llm.max_chars
@@ -44,13 +41,12 @@ class AgentController:
     id: str
     agent: Agent
     max_iterations: int
-    runtime: Runtime
     event_stream: EventStream
     state: State
     agent_task: Optional[asyncio.Task] = None
     delegate: 'AgentController | None' = None
     _agent_state: AgentState = AgentState.LOADING
-    _cur_step: int = 0
+    _pending_action: Action | None = None
 
     def __init__(
         self,
@@ -60,7 +56,6 @@ class AgentController:
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
         inputs: dict | None = None,
-        sandbox: Optional[Sandbox] = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -71,7 +66,6 @@ class AgentController:
             max_iterations: The maximum number of iterations the agent can run.
             max_chars: The maximum number of characters the agent can output.
             inputs: The initial inputs to the agent.
-            sandbox: An optional initialized sandbox to run the agent in. If not provided, a default sandbox will be created based on config.
         """
         self.id = sid
         self.agent = agent
@@ -81,101 +75,74 @@ class AgentController:
             EventStreamSubscriber.AGENT_CONTROLLER, self.on_event
         )
         self.max_iterations = max_iterations
-
-        self.runtime = ServerRuntime(sandbox=sandbox, sid=self.id)
         self.max_chars = max_chars
-
-        # Initialize agent-required plugins for sandbox (if any)
-        self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
-
-        if isinstance(agent, CodeActAgent) and not isinstance(
-            self.runtime.sandbox, DockerSSHBox
-        ):
-            logger.warning(
-                'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful (LocalBox, DockerExecBox) will not work properly.'
-            )
+        self.agent_task = asyncio.create_task(self._start_step_loop())
 
     async def close(self):
         if self.agent_task is not None:
             self.agent_task.cancel()
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
-        self.runtime.sandbox.close()
-        self.runtime.browser.close()
         await self.set_agent_state_to(AgentState.STOPPED)
 
-    def update_state_for_step(self, i):
-        self.state.iteration = i
-        self.state.background_commands_obs = self.runtime.get_background_obs()
+    def update_state_before_step(self):
+        self.state.iteration += 1
 
     def update_state_after_step(self):
         self.state.updated_info = []
 
-    async def add_error_to_history(self, message: str):
-        await self.add_history(NullAction(), ErrorObservation(message))
+    async def report_error(self, message: str):
+        await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
-    async def add_history(
-        self, action: Action, observation: Observation, add_to_stream=True
-    ):
-        if not isinstance(action, Action):
-            raise TypeError(
-                f'action must be an instance of Action, got {type(action).__name__} instead'
-            )
-        if not isinstance(observation, Observation):
-            raise TypeError(
-                f'observation must be an instance of Observation, got {type(observation).__name__} instead'
-            )
+    async def add_history(self, action: Action, observation: Observation):
+        if isinstance(action, NullAction) and isinstance(observation, NullObservation):
+            return
         self.state.history.append((action, observation))
         self.state.updated_info.append((action, observation))
-        if add_to_stream:
-            await self.event_stream.add_event(action, EventSource.AGENT)
-            await self.event_stream.add_event(observation, EventSource.AGENT)
 
-    async def _run(self):
-        if self._agent_state != AgentState.RUNNING:
-            raise ValueError('Task is not in running state')
-
-        for i in range(self._cur_step, self.max_iterations):
-            self._cur_step = i
+    async def _start_step_loop(self):
+        while True:
             try:
-                finished = await self.step(i)
-                if finished:
-                    await self.set_agent_state_to(AgentState.FINISHED)
-                    break
-            except Exception:
-                logger.error('Error in loop', exc_info=True)
-                await self.set_agent_state_to(AgentState.ERROR)
-                await self.add_error_to_history(
-                    'Oops! Something went wrong while completing your task. You can check the logs for more info.'
+                await self._step()
+            except asyncio.CancelledError:
+                logger.info('AgentController task was cancelled')
+                break
+            except Exception as e:
+                logger.error(f'Error while running the agent: {e}')
+                await self.report_error(
+                    'There was an unexpected error while running the agent'
                 )
+                await self.set_agent_state_to(AgentState.ERROR)
                 break
 
-            if self._is_stuck():
-                logger.info('Loop detected, stopping task')
-                await self.set_agent_state_to(AgentState.ERROR)
-                await self.add_error_to_history(
-                    'I got stuck into a loop, the task has stopped.'
-                )
-                break
-            await asyncio.sleep(
-                0.001
-            )  # Give back control for a tick, so other async stuff can run
-        final_state = self.get_agent_state()
-        if final_state == AgentState.RUNNING:
-            await self.set_agent_state_to(AgentState.PAUSED)
+            await asyncio.sleep(0.1)
 
     async def on_event(self, event: Event):
         if isinstance(event, ChangeAgentStateAction):
             await self.set_agent_state_to(event.agent_state)  # type: ignore
-        elif isinstance(event, MessageAction) and event.source == EventSource.USER:
-            await self.add_history(event, NullObservation(''), add_to_stream=False)
-            if self.get_agent_state() != AgentState.RUNNING:
-                await self.set_agent_state_to(AgentState.RUNNING)
+        elif isinstance(event, MessageAction):
+            if event.source == EventSource.USER:
+                await self.add_history(event, NullObservation(''))
+                if self.get_agent_state() != AgentState.RUNNING:
+                    await self.set_agent_state_to(AgentState.RUNNING)
+            elif event.source == EventSource.AGENT and event.wait_for_response:
+                await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+        elif isinstance(event, AgentDelegateAction):
+            await self.start_delegate(event)
+        elif isinstance(event, AddTaskAction):
+            self.state.root_task.add_subtask(event.parent, event.goal, event.subtasks)
+        elif isinstance(event, ModifyTaskAction):
+            self.state.root_task.set_subtask_state(event.task_id, event.state)
+        elif isinstance(event, AgentFinishAction):
+            self.state.outputs = event.outputs  # type: ignore[attr-defined]
+            await self.set_agent_state_to(AgentState.FINISHED)
+        elif isinstance(event, Observation):
+            if self._pending_action and self._pending_action.id == event.cause:
+                await self.add_history(self._pending_action, event)
+                self._pending_action = None
+            elif isinstance(event, CmdOutputObservation):
+                await self.add_history(NullAction(), event)
 
-    async def reset_task(self):
-        if self.agent_task is not None:
-            self.agent_task.cancel()
-        self.state = State()
-        self._cur_step = 0
+    def reset_task(self):
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState):
@@ -186,17 +153,8 @@ class AgentController:
             return
 
         self._agent_state = new_state
-        if new_state == AgentState.RUNNING:
-            self.agent_task = asyncio.create_task(self._run())
-        elif (
-            new_state == AgentState.PAUSED
-            or new_state == AgentState.AWAITING_USER_INPUT
-        ):
-            self._cur_step += 1
-            if self.agent_task is not None:
-                self.agent_task.cancel()
-        elif new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
-            await self.reset_task()
+        if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
+            self.reset_task()
 
         await self.event_stream.add_event(
             AgentStateChangedObservation('', self._agent_state), EventSource.AGENT
@@ -218,64 +176,60 @@ class AgentController:
             inputs=action.inputs,
         )
 
-    async def step(self, i: int) -> bool:
+    async def _step(self):
+        if self.get_agent_state() != AgentState.RUNNING:
+            logger.debug('waiting for agent to run...')
+            await asyncio.sleep(1)
+            return
+
+        if self._pending_action:
+            logger.debug('waiting for pending action: ' + str(self._pending_action))
+            await asyncio.sleep(1)
+            return
+
+        logger.info(f'STEP {self.state.iteration}', extra={'msg_type': 'STEP'})
+        if self.state.iteration >= self.max_iterations:
+            await self.report_error('Agent reached maximum number of iterations')
+            await self.set_agent_state_to(AgentState.ERROR)
+            return
+
         if self.delegate is not None:
-            delegate_done = await self.delegate.step(i)
+            delegate_done = await self.delegate._step()
             if delegate_done:
                 outputs = self.delegate.state.outputs if self.delegate.state else {}
                 obs: Observation = AgentDelegateObservation(content='', outputs=outputs)
-                await self.add_history(NullAction(), obs)
+                await self.event_stream.add_event(obs, EventSource.AGENT)
                 self.delegate = None
                 self.delegateAction = None
-            return False
+            return
 
-        logger.info(f'STEP {i}', extra={'msg_type': 'STEP'})
         if self.state.num_of_chars > self.max_chars:
             raise MaxCharsExceedError(self.state.num_of_chars, self.max_chars)
 
-        log_obs = self.runtime.get_background_obs()
-        for obs in log_obs:
-            await self.add_history(NullAction(), obs)
-            logger.info(obs, extra={'msg_type': 'BACKGROUND LOG'})
-
-        self.update_state_for_step(i)
+        self.update_state_before_step()
         action: Action = NullAction()
-        observation: Observation = NullObservation('')
         try:
             action = self.agent.step(self.state)
             if action is None:
                 raise AgentNoActionError('No action was returned')
         except (AgentMalformedActionError, AgentNoActionError, LLMOutputError) as e:
-            observation = ErrorObservation(str(e))
+            await self.report_error(str(e))
+            return
+
         logger.info(action, extra={'msg_type': 'ACTION'})
 
         self.update_state_after_step()
-
-        if isinstance(action, AgentFinishAction):
-            self.state.outputs = action.outputs  # type: ignore[attr-defined]
-            logger.info(action, extra={'msg_type': 'INFO'})
+        if action.runnable:
+            self._pending_action = action
+        else:
             await self.add_history(action, NullObservation(''))
-            return True
-        elif isinstance(action, MessageAction) and action.wait_for_response:
-            # FIXME: remove this once history is managed outside the agent controller
-            await self.add_history(action, NullObservation(''))
-            await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
-            return False
-        elif isinstance(action, AgentDelegateAction):
-            await self.start_delegate(action)
-        elif isinstance(action, AddTaskAction):
-            self.state.root_task.add_subtask(
-                action.parent, action.goal, action.subtasks
-            )
-        elif isinstance(action, ModifyTaskAction):
-            self.state.root_task.set_subtask_state(action.id, action.state)
-        elif not isinstance(observation, ErrorObservation):
-            observation = await self.runtime.run_action(action)
 
-        if not isinstance(observation, NullObservation):
-            logger.info(observation, extra={'msg_type': 'OBSERVATION'})
-        await self.add_history(action, observation)
-        return False
+        if not isinstance(action, NullAction):
+            await self.event_stream.add_event(action, EventSource.AGENT)
+
+        if self._is_stuck():
+            await self.report_error('Agent got stuck in a loop')
+            await self.set_agent_state_to(AgentState.ERROR)
 
     def get_state(self):
         return self.state
@@ -301,7 +255,7 @@ class AgentController:
                 for i in range(1, 4)
             ):
                 # same (Action, NullObservation): like 'think' the same thought over and over
-                logger.debug('Action, NullObservation loop detected')
+                logger.warning('Action, NullObservation loop detected')
                 return True
             elif all(
                 isinstance(self.state.history[-i][1], ErrorObservation)
@@ -309,7 +263,7 @@ class AgentController:
             ):
                 # (NullAction, ErrorObservation): errors coming from an exception
                 # (Action, ErrorObservation): the same action getting an error, even if not necessarily the same error
-                logger.debug('Action, ErrorObservation loop detected')
+                logger.warning('Action, ErrorObservation loop detected')
                 return True
 
         return False
