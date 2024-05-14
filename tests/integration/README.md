@@ -74,6 +74,10 @@ e.g.
 TEST_ONLY=true ONLY_TEST_NAME="test_simple_task_rejection" ONLY_TEST_AGENT="ManagerAgent" ./tests/integration/regenerate.sh
 ```
 
+Known issue: sometimes you might see transient errors like `pexpect.pxssh.ExceptionPxssh: Could not establish connection to host`.
+The regenerate.sh script doesn't know this is a transient error and would still regenerate the test artifacts. You could simply
+terminate the script by `ctrl+c` and rerun the script.
+
 ## Write a new Integration Test
 
 To write an integration test, there are essentially two steps:
