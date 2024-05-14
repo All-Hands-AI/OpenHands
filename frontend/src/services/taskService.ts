@@ -1,12 +1,6 @@
-export type Plan = {
-  mainGoal: string | undefined;
-  task: Task;
-};
-
 export type Task = {
   id: string;
   goal: string;
-  parent: "Task | None";
   subtasks: Task[];
   state: TaskState;
 };
@@ -19,15 +13,15 @@ export enum TaskState {
   VERIFIED_STATE = "verified",
 }
 
-export async function getPlan(): Promise<Plan | undefined> {
+export async function getRootTask(): Promise<Task | undefined> {
   const headers = new Headers({
     "Content-Type": "application/json",
     Authorization: `Bearer ${localStorage.getItem("token")}`,
   });
-  const res = await fetch("/api/plan", { headers });
+  const res = await fetch("/api/root_task", { headers });
   if (res.status !== 200 && res.status !== 204) {
     return undefined;
   }
-  const data = await res.json();
-  return JSON.parse(data) as Plan;
+  const data = (await res.json()) as Task;
+  return data;
 }

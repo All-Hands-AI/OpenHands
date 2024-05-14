@@ -1,7 +1,8 @@
 {
-  "action": "write",
+  "action": "add_task",
   "args": {
-    "path": "hello.sh",
-    "content": "#!/bin/bash\n\necho 'hello'"
+    "goal": "Create a shell script 'hello.sh' that prints 'hello'",
+    "parent": "",
+    "subtasks": []
   }
 }

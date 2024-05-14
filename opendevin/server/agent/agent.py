@@ -76,16 +76,6 @@ class AgentUnit:
                 ChangeAgentStateAction(AgentState.INIT), EventSource.USER
             )
             return
-        elif action == ActionType.START:
-            if self.controller is None:
-                await self.send_error('No agent started.')
-                return
-            task = data['args']['task']
-            await self.controller.setup_task(task)
-            await self.event_stream.add_event(
-                ChangeAgentStateAction(agent_state=AgentState.RUNNING), EventSource.USER
-            )
-            return
 
         action_dict = data.copy()
         action_dict['action'] = action
@@ -139,10 +129,15 @@ class AgentUnit:
             return
         if isinstance(event, NullObservation):
             return
-        if event.source == 'agent':
+        if event.source == 'agent' and not isinstance(
+            event, (NullAction, NullObservation)
+        ):
             await self.send(event_to_dict(event))
-            return
 
-    def close(self):
+    async def close(self):
+        """Cleanly exits an AgentUnit.
+
+        Execution awaited by the AgentManager.
+        """
         if self.controller is not None:
-            self.controller.close()
+            await self.controller.close()

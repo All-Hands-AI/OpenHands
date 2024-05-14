@@ -23,6 +23,10 @@ const AgentStatusMap: { [k: string]: { message: string; indicator: string } } =
       message: "Agent has paused.",
       indicator: "bg-yellow-500",
     },
+    [AgentState.LOADING]: {
+      message: "Agent is initializing...",
+      indicator: "bg-yellow-500",
+    },
     [AgentState.STOPPED]: {
       message: "Agent has stopped.",
       indicator: "bg-red-500",

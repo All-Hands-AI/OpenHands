@@ -16,8 +16,13 @@ As you complete this task, you're building a plan and keeping
 track of your progress. Here's a JSON representation of your plan:
 
 {
+<<<<<<< HEAD
   "id": "0",
   "goal": "Fix typos in bad.txt. Do not ask me for confirmation at any point.",
+=======
+  "id": "",
+  "goal": "",
+>>>>>>> main
   "state": "open",
   "subtasks": []
 }
@@ -53,9 +58,21 @@ ten actions--more happened before that.
 
 [
   {
+<<<<<<< HEAD
     "source": "agent",
     "action": "read",
     "args": {
+=======
+    "action": "message",
+    "args": {
+      "content": "Fix typos in bad.txt. Do not ask me for confirmation at any point.",
+      "wait_for_response": false
+    }
+  },
+  {
+    "action": "read",
+    "args": {
+>>>>>>> main
       "path": "bad.txt",
       "start": 0,
       "end": -1,
@@ -63,7 +80,10 @@ ten actions--more happened before that.
     }
   },
   {
+<<<<<<< HEAD
     "source": "agent",
+=======
+>>>>>>> main
     "observation": "read",
     "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n",
     "extras": {
@@ -97,7 +117,7 @@ It must be an object, and it must contain two fields:
 * `message` - make a plan, set a goal, or record your thoughts. Arguments:
   * `content` - the message to record
 * `add_task` - add a task to your plan. Arguments:
-  * `parent` - the ID of the parent task
+  * `parent` - the ID of the parent task (leave empty if it should go at the top level)
   * `goal` - the goal of the task
   * `subtasks` - a list of subtasks, each of which is a map with a `goal` key.
 * `modify_task` - close a task. Arguments:

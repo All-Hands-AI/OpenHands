@@ -1,1 +1,9 @@
+<<<<<<< HEAD
 Let's edit the file `bad.txt` to fix the typos without asking for confirmation. Please provide the specific typos that need to be corrected.
+=======
+Great! Let's use the `sed` command to fix the typos in the `bad.txt` file without any confirmation prompts.
+
+<execute_bash>
+sed -i 's/typoo/typo/g' bad.txt
+sed -i 's/mor/more/g' bad.txt
+>>>>>>> main

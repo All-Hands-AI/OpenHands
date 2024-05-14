@@ -218,6 +218,42 @@ NOW, LET'S START!
 
 ----------
 
-Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point.
+Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ENVIRONMENT REMINDER: You have 99 turns left to complete the task.
+
+----------
+
+To fix typos in a file without asking for confirmation, we can use the `sed` command in bash to replace the typos. Let's go ahead and fix the typos in `bad.txt` without any confirmation prompts.
+
+<execute_bash>
+cat bad.txt
+</execute_bash>
+
+----------
+
+OBSERVATION:
+This is a stupid typoo.
+Really?
+No mor typos!
+Enjoy!
+[Command -1 finished with exit code 0]]
+
+ENVIRONMENT REMINDER: You have 98 turns left to complete the task.
+
+----------
+
+Great! Let's use the `sed` command to fix the typos in the `bad.txt` file without any confirmation prompts.
+
+<execute_bash>
+sed -i 's/typoo/typo/g' bad.txt
+sed -i 's/mor/more/g' bad.txt
+</execute_bash>
+
+----------
+
+OBSERVATION:
+
+[Command -1 finished with exit code 0]]
+
+ENVIRONMENT REMINDER: You have 97 turns left to complete the task.

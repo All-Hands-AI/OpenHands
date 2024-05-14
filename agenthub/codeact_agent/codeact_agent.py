@@ -1,5 +1,4 @@
 import re
-from typing import Mapping
 
 from agenthub.codeact_agent.prompt import EXAMPLES, SYSTEM_MESSAGE
 from opendevin.controller.agent import Agent
@@ -132,6 +131,7 @@ class CodeActAgent(Agent):
         IPythonRunCellObservation,
         NullObservation,
     )
+    messages: list[dict] = []
 
     def __init__(
         self,
@@ -144,7 +144,20 @@ class CodeActAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
-        self.messages: list[Mapping[str, str]] = []
+        self.reset()
+
+    def reset(self) -> None:
+        """
+        Resets the CodeAct Agent.
+        """
+        super().reset()
+        self.messages: list[dict[str, str]] = [
+            {'role': 'system', 'content': SYSTEM_MESSAGE},
+            {
+                'role': 'user',
+                'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!",
+            },
+        ]
         self.cost_accumulator = 0
 
     def step(self, state: State) -> Action:
@@ -162,18 +175,6 @@ class CodeActAgent(Agent):
         - AgentFinishAction() - end the interaction
         """
 
-        if len(self.messages) == 0:
-            assert state.plan.main_goal, 'Expecting instruction to be set'
-            self.messages = [
-                {'role': 'system', 'content': SYSTEM_MESSAGE},
-                {
-                    'role': 'user',
-                    'content': (
-                        f'Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\n'
-                        f"NOW, LET'S START!\n\n{state.plan.main_goal}"
-                    ),
-                },
-            ]
         updated_info = state.updated_info
         if updated_info:
             for prev_action, obs in updated_info:
@@ -219,6 +220,11 @@ class CodeActAgent(Agent):
                     raise NotImplementedError(
                         f'Unknown observation type: {obs.__class__}'
                     )
+        latest_user_message = [m for m in self.messages if m['role'] == 'user'][-1]
+        if latest_user_message:
+            latest_user_message['content'] += (
+                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration - 1} turns left to complete the task.'
+            )
 
         response = self.llm.completion(
             messages=self.messages,
@@ -237,6 +243,9 @@ class CodeActAgent(Agent):
         ) + len(action_str)
         self.messages.append({'role': 'assistant', 'content': action_str})
 
+        if finish_command := re.search(r'<finish>.*</finish>', action_str, re.DOTALL):
+            thought = action_str.replace(finish_command.group(0), '').strip()
+            return AgentFinishAction(thought=thought)
         if bash_command := re.search(
             r'<execute_bash>(.*)</execute_bash>', action_str, re.DOTALL
         ):

@@ -1,0 +1,14 @@
+codecov:
+  notify:
+    wait_for_ci: true
+
+coverage:
+  status:
+    patch:
+      default:
+        threshold: 10% # allow patch coverage to be lower than project coverage by at most 10%
+    project:
+      default:
+        threshold: 5% # allow project coverage to drop at most 5%
+
+comment: false

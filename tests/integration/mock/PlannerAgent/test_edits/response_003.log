@@ -1,4 +1,8 @@
 {
+<<<<<<< HEAD
   "action": "finish",
   "args": {}
+=======
+  "action": "finish"
+>>>>>>> main
 }

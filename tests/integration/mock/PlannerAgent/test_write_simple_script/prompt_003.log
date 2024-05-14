@@ -9,22 +9,24 @@ browser, but you can read and write files, and you can run commands, and you can
 
 You've been given the following task:
 
-Fix typos in bad.txt. Do not ask me for confirmation at any point.
+Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.
 
 ## Plan
 As you complete this task, you're building a plan and keeping
 track of your progress. Here's a JSON representation of your plan:
 
 {
-<<<<<<< HEAD
-  "id": "0",
-  "goal": "Fix typos in bad.txt. Do not ask me for confirmation at any point.",
-=======
   "id": "",
   "goal": "",
->>>>>>> main
   "state": "open",
-  "subtasks": []
+  "subtasks": [
+    {
+      "id": "0",
+      "goal": "Create a shell script 'hello.sh' that prints 'hello'",
+      "state": "open",
+      "subtasks": []
+    }
+  ]
 }
 
 
@@ -58,61 +60,36 @@ ten actions--more happened before that.
 
 [
   {
-<<<<<<< HEAD
-    "source": "agent",
-    "action": "read",
-    "args": {
-=======
     "action": "message",
     "args": {
-      "content": "Fix typos in bad.txt. Do not ask me for confirmation at any point.",
+      "content": "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.",
       "wait_for_response": false
     }
   },
   {
-    "action": "read",
+    "action": "add_task",
     "args": {
->>>>>>> main
-      "path": "bad.txt",
-      "start": 0,
-      "end": -1,
+      "parent": "",
+      "goal": "Create a shell script 'hello.sh' that prints 'hello'",
+      "subtasks": [],
       "thought": ""
     }
   },
   {
-<<<<<<< HEAD
-    "source": "agent",
-=======
->>>>>>> main
-    "observation": "read",
-    "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n",
-    "extras": {
-      "path": "bad.txt"
-    }
-  },
-  {
-<<<<<<< HEAD
-    "source": "agent",
-=======
->>>>>>> main
     "action": "write",
     "args": {
-      "path": "bad.txt",
-      "content": "This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!\n",
+      "path": "hello.sh",
+      "content": "echo 'hello'",
       "start": 0,
       "end": -1,
       "thought": ""
     }
   },
   {
-<<<<<<< HEAD
-    "source": "agent",
-=======
->>>>>>> main
     "observation": "write",
     "content": "",
     "extras": {
-      "path": "bad.txt"
+      "path": "hello.sh"
     }
   }
 ]
@@ -136,7 +113,7 @@ It must be an object, and it must contain two fields:
   * `command` - the command to run
   * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.
 * `kill` - kills a background command
-  * `command_id` - the ID of the background command to kill
+  * `id` - the ID of the background command to kill
 * `browse` - opens a web page. Arguments:
   * `url` - the URL to open
 * `message` - make a plan, set a goal, or record your thoughts. Arguments:
@@ -146,7 +123,7 @@ It must be an object, and it must contain two fields:
   * `goal` - the goal of the task
   * `subtasks` - a list of subtasks, each of which is a map with a `goal` key.
 * `modify_task` - close a task. Arguments:
-  * `task_id` - the ID of the task to close
+  * `id` - the ID of the task to close
   * `state` - set to 'in_progress' to start the task, 'completed' to finish it, 'verified' to assert that it was successful, 'abandoned' to give up on it permanently, or `open` to stop working on it for now.
 * `finish` - if ALL of your tasks and subtasks have been verified or abandoned, and you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 

@@ -16,10 +16,17 @@ As you complete this task, you're building a plan and keeping
 track of your progress. Here's a JSON representation of your plan:
 
 {
-  "id": "0",
-  "goal": "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.",
+  "id": "",
+  "goal": "",
   "state": "open",
-  "subtasks": []
+  "subtasks": [
+    {
+      "id": "0",
+      "goal": "Create a shell script 'hello.sh' that prints 'hello'",
+      "state": "open",
+      "subtasks": []
+    }
+  ]
 }
 
 
@@ -53,22 +60,32 @@ ten actions--more happened before that.
 
 [
   {
+<<<<<<< HEAD
     "source": "agent",
     "action": "write",
+=======
+    "action": "message",
+>>>>>>> main
     "args": {
-      "path": "hello.sh",
-      "content": "#!/bin/bash\n\necho 'hello'",
-      "start": 0,
-      "end": -1,
-      "thought": ""
+      "content": "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.",
+      "wait_for_response": false
     }
   },
   {
+<<<<<<< HEAD
     "source": "agent",
     "observation": "write",
     "content": "",
     "extras": {
       "path": "hello.sh"
+=======
+    "action": "add_task",
+    "args": {
+      "parent": "",
+      "goal": "Create a shell script 'hello.sh' that prints 'hello'",
+      "subtasks": [],
+      "thought": ""
+>>>>>>> main
     }
   }
 ]
@@ -98,7 +115,7 @@ It must be an object, and it must contain two fields:
 * `message` - make a plan, set a goal, or record your thoughts. Arguments:
   * `content` - the message to record
 * `add_task` - add a task to your plan. Arguments:
-  * `parent` - the ID of the parent task
+  * `parent` - the ID of the parent task (leave empty if it should go at the top level)
   * `goal` - the goal of the task
   * `subtasks` - a list of subtasks, each of which is a map with a `goal` key.
 * `modify_task` - close a task. Arguments:
@@ -112,4 +129,4 @@ actions are all `message` actions, you should consider taking a different action
 
 What is your next thought or action? Again, you must reply with JSON, and only with JSON.
 
-You just changed a file. You should think about how it affects your plan.
+You should think about the next action to take.
