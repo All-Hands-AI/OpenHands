@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Callable
 
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events.serialization.event import event_from_dict, event_to_json
+from opendevin.events.serialization.event import event_from_dict, event_to_dict
 from opendevin.storage import FileStore, get_file_store
 
 from .event import Event, EventSource
@@ -66,7 +66,7 @@ class EventStream:
             event._timestamp = datetime.now()  # type: ignore [attr-defined]
             event._source = source  # type: ignore [attr-defined]
             self._file_store.write(
-                self._get_filename_for_event(event), event_to_json(event)
+                self._get_filename_for_event(event), json.dumps(event_to_dict(event))
             )
             self._events.append(event)
         for key, fn in self._subscribers.items():
