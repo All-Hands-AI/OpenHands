@@ -44,8 +44,9 @@ Here are the possible actions:
   * `branch` - the name of the branch to push
 * `recall` - recalls a past memory. Arguments:
   * `query` - the query to search for
-* `message` - make a plan, set a goal, or record your thoughts. Arguments:
+* `message` - make a plan, set a goal, record your thoughts, or ask for more input(If there's any uncertainty, or need input from the user, set the `wait_for_response` arg to true). Arguments:
   * `content` - the message to record
+  * `wait_for_response` - whether to wait for input
 * `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
 %(background_commands)s
