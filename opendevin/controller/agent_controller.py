@@ -123,7 +123,7 @@ class AgentController:
                 await self.set_agent_state_to(AgentState.ERROR)
                 break
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(.1)
 
     async def on_event(self, event: Event):
         if isinstance(event, ChangeAgentStateAction):
