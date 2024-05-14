@@ -30,7 +30,7 @@ search_file <search_term> [<file>] - searches for search_term in file. If file i
 find_file <file_name> [<dir>] - finds all files with the given name in dir. If dir is not provided, searches in the current directory
 edit <start_line>:<end_line>
 <replacement_text>
-end_of_edit - replaces lines <start_line> through <end_line> (inclusive) with the given text in the open file. The replacement text is terminated by a line with only end_of_edit on it. All of the <replacement text> will be entered, so make sure your indentation is formatted properly. Python files will be checked for syntax errors after the edit. If the system detects a syntax error, the edit will not be executed. Simply try to edit the file again, but make sure to read the error message and modify the edit command you issue accordingly. Issuing the same command a second time will just lead to the same error message again.
+end_of_edit - replaces lines <start_line> through <end_line> (inclusive) with the given text in the open file. The replacement text is terminated by a line with only end_of_edit on it. All of the <replacement text> will be entered, so make sure your indentation is formatted properly. Python files will be checked for syntax errors after the edit. If the system detects a syntax error, the edit will not be executed. Simply try to edit the file again, but make sure to read the error message and modify the edit command you issue accordingly. Issuing the same command a second time will just lead to the same error message again. Remember, the file must be open before editing.
 Please note that THE EDIT COMMAND REQUIRES PROPER INDENTATION. If you'd like to add the line '        print(x)' you must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
 
 The assistant's response should be concise, but do express their thoughts.
@@ -177,9 +177,9 @@ USER:
 ASSISTANT:
 I should edit the file to display the numbers in a table format. I should include correct indentation. Let me update the file:
 <execute_bash>
-edit 8:8 <<EOF
+edit 8:8
     return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
-EOF
+end_of_edit
 </execute_bash>
 
 USER:
@@ -216,11 +216,13 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 
 NOW, LET'S START!
 
+----------
+
 Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ----------
 
-Let's start by examining the contents of `bad.txt` to identify the typos. I'll read the file and display its contents.
+Let's start by examining the contents of `bad.txt` to identify the typos. I'll display the content first.
 
 <execute_bash>
 cat bad.txt
@@ -233,15 +235,17 @@ This is a stupid typoo.
 Really?
 No mor typos!
 Enjoy!
+
+ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
 [Command -1 finished with exit code 0]]
 
 ----------
 
-I've identified the typos in the file `bad.txt`. Here are the corrections:
+I've identified the typos in the file. Here are the corrections:
 - "typoo" should be "typo"
 - "mor" should be "more"
 
-I will now proceed to correct these typos in the file.
+I will now proceed to correct these typos in `bad.txt`.
 
 <execute_bash>
 edit 1:1
@@ -255,10 +259,8 @@ end_of_edit
 ----------
 
 OBSERVATION:
-> This is a stupid typo.
-> EOF
-No file open. Use the `open` command first.edit 3:3 <<EOF
-> No more typos!
-> EOF
-No file open. Use the `open` command first.
+> > No file open. Use the `open` command first.
+> > No file open. Use the `open` command first.
+
+ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
 [Command -1 finished with exit code 0]]

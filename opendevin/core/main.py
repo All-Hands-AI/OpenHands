@@ -25,8 +25,11 @@ def read_task_from_stdin() -> str:
     return sys.stdin.read()
 
 
-async def main(task_str: str = ''):
-    """Main coroutine to run the agent controller with task input flexibility."""
+async def main(task_str: str = '', exit_on_message: bool = False) -> None:
+    """
+    Main coroutine to run the agent controller with task input flexibility.
+    It's only used when you launch opendevin backend directly via cmdline.
+    """
 
     # Determine the task source
     if task_str:
@@ -73,7 +76,7 @@ async def main(task_str: str = ''):
         event_stream=event_stream,
     )
 
-    await controller.setup_task(task)
+    await event_stream.add_event(MessageAction(content=task), EventSource.USER)
     await event_stream.add_event(
         ChangeAgentStateAction(agent_state=AgentState.RUNNING), EventSource.USER
     )
@@ -81,8 +84,10 @@ async def main(task_str: str = ''):
     async def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
-                message = input('Request user input >> ')
-                action = MessageAction(content=message)
+                action = MessageAction(content='/exit')
+                if not exit_on_message:
+                    message = input('Request user input >> ')
+                    action = MessageAction(content=message)
                 await event_stream.add_event(action, EventSource.USER)
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
@@ -94,7 +99,7 @@ async def main(task_str: str = ''):
     ]:
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
-    return controller
+    await controller.close()
 
 
 if __name__ == '__main__':

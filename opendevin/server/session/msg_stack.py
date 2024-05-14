@@ -1,3 +1,4 @@
+import asyncio
 import atexit
 import json
 import os
@@ -49,6 +50,7 @@ class MessageStack:
         if sid not in self._messages:
             return
         del self._messages[sid]
+        asyncio.create_task(self._del_messages(sid))
 
     def get_messages(self, sid: str) -> list[dict[str, object]]:
         if sid not in self._messages:
@@ -80,11 +82,25 @@ class MessageStack:
 
     def _load_messages(self):
         try:
-            # TODO: delete useless messages
             with open(MSG_CACHE_FILE, 'r') as file:
                 data = json.load(file)
                 for sid, msgs in data.items():
                     self._messages[sid] = [Message.from_dict(msg) for msg in msgs]
+        except FileNotFoundError:
+            pass
+        except json.decoder.JSONDecodeError:
+            pass
+
+    async def _del_messages(self, del_sid: str):
+        logger.info('Deleting messages...')
+        try:
+            with open(MSG_CACHE_FILE, 'r+') as file:
+                data = json.load(file)
+                new_data = {}
+                for sid, msgs in data.items():
+                    if sid != del_sid:
+                        new_data[sid] = [msg.to_dict() for msg in msgs]
+                json.dump(new_data, file)
         except FileNotFoundError:
             pass
         except json.decoder.JSONDecodeError:
