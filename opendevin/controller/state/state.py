@@ -15,6 +15,7 @@ from opendevin.events.observation import (
 class State:
     root_task: RootTask = field(default_factory=RootTask)
     iteration: int = 0
+    max_iterations: int = 100
     # number of characters we have sent to and received from LLM so far for current task
     num_of_chars: int = 0
     background_commands_obs: list[CmdOutputObservation] = field(default_factory=list)

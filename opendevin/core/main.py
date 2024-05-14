@@ -13,6 +13,7 @@ from opendevin.events.event import Event
 from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.llm.llm import LLM
+from opendevin.runtime.server.runtime import ServerRuntime
 
 
 def read_task_from_file(file_path: str) -> str:
@@ -77,13 +78,14 @@ async def main(
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
 
-    event_stream = EventStream()
+    event_stream = EventStream('main')
     controller = AgentController(
         agent=agent,
         max_iterations=args.max_iterations,
         max_chars=args.max_chars,
         event_stream=event_stream,
     )
+    _ = ServerRuntime(event_stream=event_stream)
 
     await event_stream.add_event(MessageAction(content=task), EventSource.USER)
     await event_stream.add_event(
