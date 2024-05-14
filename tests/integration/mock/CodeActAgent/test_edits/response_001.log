@@ -1,4 +1,4 @@
-Certainly! Let's start by opening the file `bad.txt` to see what's inside and identify the typos that need fixing.
+Certainly! I will start by opening the file `bad.txt` to see the content and then proceed to fix the typos.
 
 <execute_bash>
 open bad.txt
