@@ -1,12 +1,7 @@
 {
-<<<<<<< HEAD
-  "action": "finish",
-  "args": {}
-=======
   "action": "write",
   "args": {
     "path": "hello.sh",
     "content": "echo 'hello'"
   }
->>>>>>> main
 }

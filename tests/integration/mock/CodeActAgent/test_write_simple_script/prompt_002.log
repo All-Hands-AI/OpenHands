@@ -224,27 +224,16 @@ ENVIRONMENT REMINDER: You have 99 turns left to complete the task.
 
 ----------
 
-<<<<<<< HEAD
-I will create a shell script named 'hello.sh' that prints 'hello' without asking for confirmation. Let me write the script for you:
-<execute_bash>
-echo 'echo hello' > hello.sh
-=======
 I will create a shell script named 'hello.sh' that prints 'hello' without asking for confirmation. Let's proceed with creating the script:
 
 <execute_bash>
 echo "echo 'hello'" > hello.sh
->>>>>>> main
 </execute_bash>
 
 ----------
 
 OBSERVATION:
 
-<<<<<<< HEAD
-
-ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
-=======
->>>>>>> main
 [Command -1 finished with exit code 0]]
 
 ENVIRONMENT REMINDER: You have 98 turns left to complete the task.

@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-I will create a shell script named 'hello.sh' that prints 'hello' without asking for confirmation. Let me write the script for you:
-<execute_bash>
-echo 'echo hello' > hello.sh
-=======
 I will create a shell script named 'hello.sh' that prints 'hello' without asking for confirmation. Let's proceed with creating the script:
 
 <execute_bash>
 echo "echo 'hello'" > hello.sh
->>>>>>> main

@@ -320,11 +320,6 @@ This is your internal monologue, in JSON format:
     }
   },
   {
-<<<<<<< HEAD
-    "source": "agent",
-    "action": "read",
-    "args": {
-=======
     "action": "message",
     "args": {
       "content": "Fix typos in bad.txt. Do not ask me for confirmation at any point.",
@@ -339,7 +334,6 @@ This is your internal monologue, in JSON format:
   {
     "action": "read",
     "args": {
->>>>>>> main
       "path": "bad.txt",
       "start": 0,
       "end": -1,
@@ -347,10 +341,6 @@ This is your internal monologue, in JSON format:
     }
   },
   {
-<<<<<<< HEAD
-    "source": "agent",
-=======
->>>>>>> main
     "observation": "read",
     "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n",
     "extras": {
@@ -358,31 +348,18 @@ This is your internal monologue, in JSON format:
     }
   },
   {
-<<<<<<< HEAD
-    "source": "agent",
-    "action": "read",
-    "args": {
-      "path": "bad.txt",
-=======
     "action": "write",
     "args": {
       "path": "bad.txt",
       "content": "This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!\n",
->>>>>>> main
       "start": 0,
       "end": -1,
       "thought": ""
     }
   },
   {
-<<<<<<< HEAD
-    "source": "agent",
-    "observation": "read",
-    "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n",
-=======
     "observation": "write",
     "content": "",
->>>>>>> main
     "extras": {
       "path": "bad.txt"
     }

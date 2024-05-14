@@ -1,9 +1,4 @@
 {
-<<<<<<< HEAD
-  "action": "read",
-  "args": {
-    "path": "bad.txt"
-=======
   "action": "write",
   "args": {
     "path": "bad.txt",
@@ -11,6 +6,5 @@
     "start": 0,
     "end": -1,
     "thought": ""
->>>>>>> main
   }
 }
