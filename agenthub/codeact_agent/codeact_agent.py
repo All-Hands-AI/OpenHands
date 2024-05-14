@@ -151,7 +151,7 @@ class CodeActAgent(Agent):
         Resets the CodeAct Agent.
         """
         super().reset()
-        self.messages: list[Mapping[str, str]] = [
+        self.messages: list[dict[str, str]] = [
             {'role': 'system', 'content': SYSTEM_MESSAGE},
             {
                 'role': 'user',

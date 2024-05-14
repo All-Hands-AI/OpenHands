@@ -163,12 +163,6 @@ class AgentController:
         if final_state == AgentState.RUNNING:
             await self.set_agent_state_to(AgentState.PAUSED)
 
-    async def setup_task(self, task: str, inputs: dict = {}):
-        """Sets up the agent controller with a task."""
-        await self.set_agent_state_to(AgentState.INIT)
-        self.state = State(Plan(task), max_iterations=self.max_iterations)
-        self.state.inputs = inputs
-
     async def on_event(self, event: Event):
         if isinstance(event, ChangeAgentStateAction):
             await self.set_agent_state_to(event.agent_state)  # type: ignore
