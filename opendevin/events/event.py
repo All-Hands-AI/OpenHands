@@ -1,5 +1,5 @@
 import datetime
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
@@ -11,16 +11,6 @@ class EventSource(str, Enum):
 
 @dataclass
 class Event:
-    def to_memory(self):
-        return asdict(self)
-
-    def to_dict(self):
-        d = self.to_memory()
-        if self.source:
-            d['source'] = self.source
-        d['message'] = self.message
-        return d
-
     @property
     def message(self) -> str:
         if hasattr(self, '_message'):

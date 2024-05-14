@@ -320,6 +320,7 @@ This is your internal monologue, in JSON format:
     }
   },
   {
+    "source": "user",
     "action": "message",
     "args": {
       "content": "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.",
@@ -332,6 +333,7 @@ This is your internal monologue, in JSON format:
     "extras": {}
   },
   {
+    "source": "agent",
     "action": "write",
     "args": {
       "path": "hello.sh",
@@ -342,6 +344,7 @@ This is your internal monologue, in JSON format:
     }
   },
   {
+    "source": "agent",
     "observation": "write",
     "content": "",
     "extras": {
