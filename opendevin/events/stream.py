@@ -5,7 +5,7 @@ from typing import Callable
 
 from opendevin.core.logger import opendevin_logger as logger
 
-from .event import Event
+from .event import Event, EventSource
 
 
 class EventStreamSubscriber(str, Enum):
@@ -13,11 +13,6 @@ class EventStreamSubscriber(str, Enum):
     SERVER = 'server'
     RUNTIME = 'runtime'
     MAIN = 'main'
-
-
-class EventSource(str, Enum):
-    AGENT = 'agent'
-    USER = 'user'
 
 
 class EventStream:
@@ -28,7 +23,7 @@ class EventStream:
 
     def subscribe(self, id: EventStreamSubscriber, callback: Callable):
         if id in self._subscribers:
-            logger.warning('Subscriber subscribed multiple times: ' + id)
+            raise ValueError('Subscriber already exists: ' + id)
         else:
             self._subscribers[id] = callback
 

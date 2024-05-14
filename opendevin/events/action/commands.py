@@ -28,7 +28,7 @@ class CmdRunAction(Action):
 
 @dataclass
 class CmdKillAction(Action):
-    id: int
+    command_id: int
     thought: str = ''
     action: str = ActionType.KILL
     runnable: ClassVar[bool] = True

@@ -70,6 +70,7 @@ class AgentConfig(metaclass=Singleton):
 class AppConfig(metaclass=Singleton):
     llm: LLMConfig = field(default_factory=LLMConfig)
     agent: AgentConfig = field(default_factory=AgentConfig)
+    runtime: str = 'server'
     workspace_base: str = os.getcwd()
     workspace_mount_path: str = os.getcwd()
     workspace_mount_path_in_sandbox: str = '/workspace'

@@ -59,7 +59,7 @@ class DummyAgent(Agent):
                 'observations': [NullObservation('')],
             },
             {
-                'action': ModifyTaskAction(id='0.0', state='in_progress'),
+                'action': ModifyTaskAction(task_id='0.0', state='in_progress'),
                 'observations': [NullObservation('')],
             },
             {
@@ -96,7 +96,7 @@ class DummyAgent(Agent):
                 'action': CmdRunAction(command=BACKGROUND_CMD, background=True),
                 'observations': [
                     CmdOutputObservation(
-                        'Background command started. To stop it, send a `kill` action with id 42',
+                        'Background command started. To stop it, send a `kill` action with command_id 42',
                         command_id='42',  # type: ignore[arg-type]
                         command=BACKGROUND_CMD,
                     ),
