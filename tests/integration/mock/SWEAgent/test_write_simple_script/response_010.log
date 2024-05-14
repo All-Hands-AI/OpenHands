@@ -1,7 +1,0 @@
-Thoughts:
-I have already opened the 'hello.sh' script and need to add the command to print 'hello' without any prompts for confirmation. I will use the `edit` command to insert the necessary code to achieve this.
-
-Action:
-```
-edit 0 -1 "echo 'hello'"
-```
