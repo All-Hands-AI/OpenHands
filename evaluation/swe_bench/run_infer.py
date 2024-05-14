@@ -175,35 +175,39 @@ def get_test_result(instance, sandbox, workspace_dir_name):
     return test_result
 
 
-def process_instance(instance, agent_class, metadata, skip_workspace_mount):
+def process_instance(
+    instance, agent_class, metadata, skip_workspace_mount, reset_logger: bool = True
+):
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
     if not skip_workspace_mount:
         workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
         pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
-    # Set up logger
-    log_file = os.path.join(
-        eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
-    )
-    # Remove all existing handlers from logger
-    for handler in logger.handlers[:]:
-        logger.removeHandler(handler)
-    # add back the console handler to print ONE line
-    logger.addHandler(get_console_handler())
-    logger.info(
-        f'Starting evaluation for instance {instance.instance_id}.\nLOG:   tail -f {log_file}'
-    )
+    if reset_logger:
+        # Set up logger
+        log_file = os.path.join(
+            eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
+        )
+        # Remove all existing handlers from logger
+        for handler in logger.handlers[:]:
+            logger.removeHandler(handler)
+        # add back the console handler to print ONE line
+        logger.addHandler(get_console_handler())
+        logger.info(
+            f'Starting evaluation for instance {instance.instance_id}.\nLOG:   tail -f {log_file}'
+        )
+        # Remove all existing handlers from logger
+        for handler in logger.handlers[:]:
+            logger.removeHandler(handler)
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(
+            logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        )
+        logger.addHandler(file_handler)
+
     if not skip_workspace_mount:
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
-    # Remove all existing handlers from logger
-    for handler in logger.handlers[:]:
-        logger.removeHandler(handler)
-    file_handler = logging.FileHandler(log_file)
-    file_handler.setFormatter(
-        logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    )
-    logger.addHandler(file_handler)
 
     workspace_dir_name = f'{instance.repo}__{instance.version}'.replace('/', '__')
     sandbox = SWEBenchSSHBox.get_box_for_instance(
@@ -377,6 +381,7 @@ if __name__ == '__main__':
                     agent_class,
                     metadata,
                     skip_workspace_mount,
+                    reset_logger=bool(num_workers > 1),
                 )
                 future.add_done_callback(update_progress)
                 futures.append(future)
