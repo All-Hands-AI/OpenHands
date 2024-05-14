@@ -35,10 +35,10 @@ class CmdKillAction(Action):
 
     @property
     def message(self) -> str:
-        return f'Killing command: {self.id}'
+        return f'Killing command: {self.command_id}'
 
     def __str__(self) -> str:
-        return f'**CmdKillAction**\n{self.id}'
+        return f'**CmdKillAction**\n{self.command_id}'
 
 
 @dataclass

@@ -3,7 +3,6 @@ from abc import abstractmethod
 
 from opendevin.core.config import config
 from opendevin.events.action import (
-    ACTION_TYPE_TO_CLASS,
     Action,
     AgentRecallAction,
     BrowseURLAction,
@@ -20,6 +19,7 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
+from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
 from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.runtime import (
     DockerExecBox,

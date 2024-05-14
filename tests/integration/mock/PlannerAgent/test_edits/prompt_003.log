@@ -53,6 +53,7 @@ ten actions--more happened before that.
 
 [
   {
+    "source": "user",
     "action": "message",
     "args": {
       "content": "Fix typos in bad.txt. Do not ask me for confirmation at any point.",
@@ -60,6 +61,7 @@ ten actions--more happened before that.
     }
   },
   {
+    "source": "agent",
     "action": "read",
     "args": {
       "path": "bad.txt",
@@ -69,6 +71,7 @@ ten actions--more happened before that.
     }
   },
   {
+    "source": "agent",
     "observation": "read",
     "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n",
     "extras": {
@@ -76,20 +79,11 @@ ten actions--more happened before that.
     }
   },
   {
-    "action": "write",
+    "source": "agent",
+    "action": "message",
     "args": {
-      "path": "bad.txt",
-      "content": "This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!\n",
-      "start": 0,
-      "end": -1,
-      "thought": ""
-    }
-  },
-  {
-    "observation": "write",
-    "content": "",
-    "extras": {
-      "path": "bad.txt"
+      "content": "I have read the content of bad.txt and identified the typos that need to be fixed. I will now proceed to fix the typos in the file.",
+      "wait_for_response": false
     }
   }
 ]
@@ -133,4 +127,4 @@ actions are all `message` actions, you should consider taking a different action
 
 What is your next thought or action? Again, you must reply with JSON, and only with JSON.
 
-You just changed a file. You should think about how it affects your plan.
+Look at your last thought in the history above. What does it suggest? Don't think anymore--take action.

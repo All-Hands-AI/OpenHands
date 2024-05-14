@@ -28,7 +28,7 @@ class ServerRuntime(Runtime):
         cmd = self.sandbox.kill_background(action.command_id)
         return CmdOutputObservation(
             content=f'Background command with id {action.command_id} has been killed.',
-            command_id=action.id,
+            command_id=action.command_id,
             command=cmd.command,
             exit_code=0,
         )

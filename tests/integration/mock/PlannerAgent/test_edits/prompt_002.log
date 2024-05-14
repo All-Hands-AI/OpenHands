@@ -53,6 +53,7 @@ ten actions--more happened before that.
 
 [
   {
+    "source": "user",
     "action": "message",
     "args": {
       "content": "Fix typos in bad.txt. Do not ask me for confirmation at any point.",
@@ -60,6 +61,7 @@ ten actions--more happened before that.
     }
   },
   {
+    "source": "agent",
     "action": "read",
     "args": {
       "path": "bad.txt",
@@ -69,6 +71,7 @@ ten actions--more happened before that.
     }
   },
   {
+    "source": "agent",
     "observation": "read",
     "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n",
     "extras": {
