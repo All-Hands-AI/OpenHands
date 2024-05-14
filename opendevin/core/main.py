@@ -87,7 +87,8 @@ async def main(
         max_chars=args.max_chars,
         event_stream=event_stream,
     )
-    _ = ServerRuntime(event_stream=event_stream, sandbox=sandbox)
+    runtime = ServerRuntime(event_stream=event_stream, sandbox=sandbox)
+    runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
 
     await event_stream.add_event(MessageAction(content=task), EventSource.USER)
     await event_stream.add_event(
