@@ -1,7 +1,7 @@
 Thoughts:
-I need to make the 'hello.sh' script executable so that it can be run without any issues.
+I have created the file 'hello.sh' but I have not yet written any content into it. The task requires me to write a shell script that prints 'hello'. I need to add the appropriate bash command to this file to fulfill the requirement. The command to print in bash is `echo`. I will write this command into 'hello.sh'.
 
 Action:
 ```
-chmod +x hello.sh
+write hello.sh echo "hello"
 ```

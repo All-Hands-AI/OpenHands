@@ -1,7 +1,8 @@
 Thoughts:
-I need to create a shell script named 'hello.sh' that will print 'hello' without asking for confirmation. I will need to ensure that the script is executable after creation.
+To begin solving the task, I need to create a new shell script named 'hello.sh'. This script should contain a simple command to print 'hello'. I will use the `write` command to create this file and insert the necessary bash script code.
 
 Action:
 ```
-write hello.sh "echo 'hello'"
+write hello.sh #!/bin/bash
+echo 'hello'
 ```
