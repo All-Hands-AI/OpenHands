@@ -1,7 +1,13 @@
 import re
 from typing import Mapping
 
-from agenthub.codeact_agent.prompt import EXAMPLES, SYSTEM_MESSAGE
+from agenthub.codeact_agent.prompt import (
+    EXAMPLES,
+    SYSTEM_PREFIX,
+    SYSTEM_SUFFIX,
+    COMMAND_DOCS,
+    GITHUB_MESSAGE,
+)
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.logger import opendevin_logger as logger
@@ -24,6 +30,8 @@ from opendevin.runtime.plugins import (
     PluginRequirement,
     SWEAgentCommandsRequirement,
 )
+
+ENABLE_GITHUB = True
 
 
 def parse_response(response) -> str:
@@ -80,7 +88,7 @@ def swe_agent_edit_hack(bash_command: str) -> str:
 
 
 class CodeActAgent(Agent):
-    VERSION = '1.1'
+    VERSION = '1.2'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
@@ -146,6 +154,11 @@ class CodeActAgent(Agent):
         """
         super().__init__(llm)
         self.reset()
+        self.system_message = (
+            f"""{SYSTEM_PREFIX}\n{GITHUB_MESSAGE}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}"""
+            if ENABLE_GITHUB
+            else f"""{SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}"""
+        )
 
     def reset(self) -> None:
         """
@@ -153,7 +166,7 @@ class CodeActAgent(Agent):
         """
         super().reset()
         self.messages: list[Mapping[str, str]] = [
-            {'role': 'system', 'content': SYSTEM_MESSAGE},
+            {'role': 'system', 'content': self.system_message},
             {
                 'role': 'user',
                 'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!",
