@@ -78,7 +78,7 @@ class MemoryCondenser:
 
             while attempt_count < 3 and not failed:
                 # attempt to condense the recent events
-                new_recent_events = self.attempt_condense(
+                new_recent_events = self._attempt_condense(
                     llm, default_events, recent_events
                 )
 
@@ -105,7 +105,7 @@ class MemoryCondenser:
             return [], False
         return [], False
 
-    def attempt_condense(
+    def _attempt_condense(
         self,
         llm: LLM,
         default_events: list[dict],
