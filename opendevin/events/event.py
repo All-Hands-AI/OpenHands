@@ -9,6 +9,7 @@ class Event:
     def to_dict(self):
         d = self.to_memory()
         d['message'] = self.message
+        d['source'] = self.source
         return d
 
     @property
