@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from opendevin.events.event import Event
 
 # TODO: move `content` into `extras`
-TOP_KEYS = ['id', 'timestamp', 'source', 'message', 'action', 'observation']
+TOP_KEYS = ['id', 'timestamp', 'source', 'message', 'cause', 'action', 'observation']
 
 DELETE_FROM_MEMORY_EXTRAS = {
     'screenshot',
@@ -45,10 +45,12 @@ def event_to_dict(event: 'Event') -> dict:
     props = asdict(event)
     d = {}
     for key in TOP_KEYS:
-        if hasattr(event, key) and getattr(event, key):
+        if hasattr(event, key) and getattr(event, key) is not None:
             d[key] = getattr(event, key)
-        elif hasattr(event, f'_{key}') and getattr(event, f'_{key}'):
+        elif hasattr(event, f'_{key}') and getattr(event, f'_{key}') is not None:
             d[key] = getattr(event, f'_{key}')
+        if key == 'id' and d.get('id') == -1:
+            d.pop('id', None)
         props.pop(key, None)
     if 'action' in d:
         d['args'] = props
