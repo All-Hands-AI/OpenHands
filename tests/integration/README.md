@@ -20,11 +20,10 @@ not possible with benchmarks.
 
 Known limitations:
 1. To avoid the potential impact of non-determinism, we remove all special
-characters and numbers (often used as PIDs) when doing the comparison. If two
-prompts for the same task only differ in non-alpha characters, a wrong mock
-response might be picked up.
-2. It is required that the agent itself doesn't do anything non-deterministic,
-including but not limited to using randomly generated numbers.
+characters when doing the comparison. If two prompts for the same task only
+differ in non-alphanumeric characters, a wrong mock response might be picked up.
+2. It is required that everything has to be deterministic. For example, agent
+must not use randomly generated numbers.
 
 The folder is organised as follows:
 
@@ -65,6 +64,19 @@ Note that this will run existing tests first and call real LLM_MODEL only for
 failed tests, but it still costs money! If you don't want
 to cover the cost, ask one of the maintainers to regenerate for you.
 You might also be able to fix the tests by hand.
+
+If you only want to run a specific test, set environment variable
+`ONLY_TEST_NAME` to the test name. If you only want to run a specific agent,
+set environment variable `ONLY_TEST_AGENT` to the agent. You could also use both,
+e.g.
+
+```bash
+TEST_ONLY=true ONLY_TEST_NAME="test_write_simple_script" ONLY_TEST_AGENT="MonologueAgent" ./tests/integration/regenerate.sh
+```
+
+Known issue: sometimes you might see transient errors like `pexpect.pxssh.ExceptionPxssh: Could not establish connection to host`.
+The regenerate.sh script doesn't know this is a transient error and would still regenerate the test artifacts. You could simply
+terminate the script by `ctrl+c` and rerun the script.
 
 ## Write a new Integration Test
 

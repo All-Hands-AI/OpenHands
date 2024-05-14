@@ -1,6 +1,7 @@
 import io
 import os
 import re
+import sys
 from functools import partial
 
 import pytest
@@ -11,7 +12,7 @@ workspace_path = os.getenv('WORKSPACE_BASE')
 
 
 def filter_out_symbols(input):
-    return ' '.join([char for char in input if char.isalpha()])
+    return ' '.join([char for char in input if char.isalnum()])
 
 
 def get_log_id(prompt_log_name):
@@ -79,7 +80,10 @@ def mock_completion(*args, test_name, **kwargs):
     for message in messages:
         message_str += message['content']
     mock_response = get_mock_response(test_name, message_str)
-    assert mock_response is not None, 'Mock response for prompt is not found'
+    if mock_response is None:
+        print('Mock response for prompt is not found:\n\n' + message_str)
+        print('Exiting...')
+        sys.exit(1)
     response = completion(**kwargs, mock_response=mock_response)
     return response
 
@@ -100,7 +104,7 @@ def patch_completion(monkeypatch, request):
         monkeypatch.setattr('sys.stdin', user_responses)
 
 
-def clean_up():
+def set_up():
     assert workspace_path is not None
     if os.path.exists(workspace_path):
         for file in os.listdir(workspace_path):
@@ -109,9 +113,8 @@ def clean_up():
 
 @pytest.fixture(autouse=True)
 def resource_setup():
-    clean_up()
+    set_up()
     if not os.path.exists(workspace_path):
         os.makedirs(workspace_path)
     # Yield to test execution
     yield
-    clean_up()

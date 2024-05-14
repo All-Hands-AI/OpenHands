@@ -72,10 +72,11 @@ class E2BBox(Sandbox):
         assert isinstance(proc, E2BProcess)
         return '\n'.join([m.line for m in proc.output_messages])
 
-    def execute(self, cmd: str) -> tuple[int, str]:
+    def execute(self, cmd: str, timeout: int | None = None) -> tuple[int, str]:
+        timeout = timeout if timeout is not None else self.timeout
         process = self.sandbox.process.start(cmd, env_vars=self._env)
         try:
-            process_output = process.wait(timeout=self.timeout)
+            process_output = process.wait(timeout=timeout)
         except TimeoutException:
             logger.info('Command timed out, killing process...')
             process.kill()
@@ -94,7 +95,7 @@ class E2BBox(Sandbox):
         tar_filename = self._archive(host_src, recursive)
 
         # Prepend the sandbox destination with our sandbox cwd
-        sandbox_dest = os.path.join(self._cwd, sandbox_dest.lstrip('/'))
+        sandbox_dest = os.path.join(self._cwd, sandbox_dest.removeprefix('/'))
 
         with open(tar_filename, 'rb') as tar_file:
             # Upload the archive to /home/user (default destination that always exists)
