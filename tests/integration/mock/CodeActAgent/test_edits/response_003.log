@@ -1,10 +1,4 @@
-It seems I forgot to open the file before attempting to edit it. Let me open `bad.txt` and then proceed with the corrections.
-
+I have viewed the content of the `bad.txt` file. Let me fix the typos without asking for confirmation:
 <execute_bash>
-open bad.txt
-edit 1:1
-This is a stupid typo.
-end_of_edit
-edit 3:3
-No more typos!
-end_of_edit
+sed -i 's/typoo/typo/g' bad.txt
+sed -i 's/mor/more/g' bad.txt

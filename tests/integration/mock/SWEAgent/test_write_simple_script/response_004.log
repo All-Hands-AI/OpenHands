@@ -1,7 +1,7 @@
 Thoughts:
-Based on the previous actions, it seems that the file 'hello.sh' has been created but the content has not been verified yet. The task requires a shell script that prints 'hello'. I need to read the content of 'hello.sh' to ensure that the correct command `echo "hello"` has been written into it. If the content is correct, I can then proceed to test the script to confirm it behaves as expected.
+I need to add the command in the shell script 'hello.sh' to print 'hello' without asking for confirmation. I will use the `echo` command to achieve this.
 
 Action:
 ```
-read hello.sh
+edit 0 -1 "echo 'hello'"
 ```

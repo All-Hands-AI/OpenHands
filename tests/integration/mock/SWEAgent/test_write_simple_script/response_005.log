@@ -1,7 +1,7 @@
 Thoughts:
-The content of 'hello.sh' has been verified and contains the correct command `echo "hello"` which fulfills the task requirement to print 'hello'. The next logical step is to test the script to ensure it behaves as expected when executed. This will confirm that the script is functional and meets the requirements specified.
+I need to add the command in the shell script 'hello.sh' to print 'hello' without asking for confirmation. Since the script is already created, I just need to add the `echo` command to print 'hello'.
 
 Action:
 ```
-bash hello.sh
+edit 0 -1 "echo 'hello'"
 ```

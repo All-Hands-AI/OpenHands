@@ -1,0 +1,7 @@
+Thoughts:
+I need to add the `echo` command to the shell script 'hello.sh' to print 'hello' without asking for confirmation. Since the file is already open, I will directly edit the content to include the `echo` command.
+
+Action:
+```
+edit 0 -1 "echo 'hello'"
+```
