@@ -7,7 +7,7 @@ Please be sure to run all commands inside your WSL terminal.
 
 ### Failed to create opendevin user
 
-If you encounter the following error during setup: `Exception: Failed to create opendevin user in sandbox: b'useradd: UID 0 is not unique\n'`
+If you encounter the following error during setup: `Exception: Failed to create opendevin user in sandbox: b'useradd: UID 0 is not unique\n'`.
 You can resolve it by running:
 `    export SANDBOX_USER_ID=1000
    `
@@ -20,7 +20,7 @@ If you face issues running Poetry even after installing it during the build proc
 
 ### NoneType object has no attribute 'request'
 
-If you experiencing issues related to networking, such as `NoneType object has no attribute 'request'` when executing `make run`, you may need to configure your WSL2 networking settings. Follow these steps:
+If you are experiencing issues related to networking, such as `NoneType object has no attribute 'request'` when executing `make run`, you may need to configure your WSL2 networking settings. Follow these steps:
 
 - Open or create the `.wslconfig` file located at `C:\Users\%username%\.wslconfig` on your Windows host machine.
 - Add the following configuration to the `.wslconfig` file:
