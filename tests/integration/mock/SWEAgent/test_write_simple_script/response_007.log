@@ -1,7 +1,7 @@
 Thoughts:
-I need to add the command to print 'hello' in the 'hello.sh' script without any prompts for confirmation. Since the script is already open, I will write the command to print 'hello' directly into the script.
+I have already added the code to the 'hello.sh' script that prints 'hello' without asking for confirmation. The script is also made executable. The next step is to run the script to ensure it functions as expected.
 
 Action:
 ```
-edit 0 -1 "echo 'hello'"
+bash hello.sh
 ```

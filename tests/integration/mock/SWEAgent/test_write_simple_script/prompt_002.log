@@ -61,6 +61,7 @@ These are your past 4 actions:
 
 Memory 0:
 Previous Action:
+source: EventSource.USER
 action: message
 args:
   wait_for_response: False
@@ -72,17 +73,19 @@ extras:
 
 Memory 1:
 Previous Action:
+source: EventSource.AGENT
 action: write
 args:
   path: hello.sh
   start: 0
   end: -1
   thought: Thoughts:
-  I need to create a shell script named 'hello.sh' that will print 'hello' when executed. I will need to ensure that the script does not prompt for any confirmation during execution.
+  I need to create a shell script named 'hello.sh' that prints 'hello' without asking for confirmation. I will need to ensure that the script is executable.
 
   Action:
 
 Output from Action:
+source: EventSource.AGENT
 observation: write
 content:
 extras:

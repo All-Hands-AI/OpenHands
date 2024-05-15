@@ -5,11 +5,12 @@ from opendevin.core.utils import json
 from opendevin.events.action import (
     Action,
     NullAction,
-    action_from_dict,
 )
 from opendevin.events.observation import (
     NullObservation,
 )
+from opendevin.events.serialization.action import action_from_dict
+from opendevin.events.serialization.event import event_to_memory
 
 HISTORY_SIZE = 10
 
@@ -78,17 +79,18 @@ It must be an object, and it must contain two fields:
   * `command` - the command to run
   * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.
 * `kill` - kills a background command
-  * `id` - the ID of the background command to kill
+  * `command_id` - the ID of the background command to kill
 * `browse` - opens a web page. Arguments:
   * `url` - the URL to open
-* `message` - make a plan, set a goal, or record your thoughts. Arguments:
+* `message` - make a plan, set a goal, record your thoughts, or ask for more input from the user. Arguments:
   * `content` - the message to record
+  * `wait_for_response` - set to `true` to wait for the user to respond before proceeding
 * `add_task` - add a task to your plan. Arguments:
   * `parent` - the ID of the parent task (leave empty if it should go at the top level)
   * `goal` - the goal of the task
   * `subtasks` - a list of subtasks, each of which is a map with a `goal` key.
 * `modify_task` - close a task. Arguments:
-  * `id` - the ID of the task to close
+  * `task_id` - the ID of the task to close
   * `state` - set to 'in_progress' to start the task, 'completed' to finish it, 'verified' to assert that it was successful, 'abandoned' to give up on it permanently, or `open` to stop working on it for now.
 * `finish` - if ALL of your tasks and subtasks have been verified or abandoned, and you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
@@ -139,10 +141,10 @@ def get_prompt(state: State) -> str:
     latest_action: Action = NullAction()
     for action, observation in sub_history:
         if not isinstance(action, NullAction):
-            history_dicts.append(action.to_memory())
+            history_dicts.append(event_to_memory(action))
             latest_action = action
         if not isinstance(observation, NullObservation):
-            observation_dict = observation.to_memory()
+            observation_dict = event_to_memory(observation)
             history_dicts.append(observation_dict)
     history_str = json.dumps(history_dicts, indent=2)
     current_task = state.root_task.get_current_task()
@@ -152,7 +154,7 @@ def get_prompt(state: State) -> str:
             plan_status += "\nIf it's not achievable AND verifiable with a SINGLE action, you MUST break it down into subtasks NOW."
     else:
         plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
-    hint = get_hint(latest_action.to_dict()['action'])
+    hint = get_hint(event_to_memory(latest_action).get('action', ''))
     logger.info('HINT:\n' + hint, extra={'msg_type': 'INFO'})
     task = state.get_current_user_intent()
     return prompt % {
@@ -174,12 +176,9 @@ def parse_response(response: str) -> Action:
     Returns:
     - Action: A valid next action to perform from model output
     """
-    # attempt to load the JSON dict from the response
     action_dict = json.loads(response)
-
     if 'contents' in action_dict:
         # The LLM gets confused here. Might as well be robust
         action_dict['content'] = action_dict.pop('contents')
-
     action = action_from_dict(action_dict)
     return action

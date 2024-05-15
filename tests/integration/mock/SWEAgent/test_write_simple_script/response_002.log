@@ -1,5 +1,5 @@
 Thoughts:
-I need to add the code to the 'hello.sh' script that will print 'hello' when executed without any prompts for confirmation.
+I need to add the code to the 'hello.sh' script that will print 'hello' without asking for confirmation. I will ensure that the script is executable after making the necessary changes.
 
 Action:
 ```
