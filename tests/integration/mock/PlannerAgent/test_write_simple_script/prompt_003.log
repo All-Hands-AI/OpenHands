@@ -18,19 +18,21 @@ track of your progress. Here's a JSON representation of your plan:
 {
   "id": "",
   "goal": "",
-  "state": "open",
+  "state": "in_progress",
   "subtasks": [
     {
       "id": "0",
       "goal": "Write a shell script 'hello.sh' that prints 'hello'",
-      "state": "open",
+      "state": "in_progress",
       "subtasks": []
     }
   ]
 }
 
 
-You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress.
+You're currently working on this task:
+Write a shell script 'hello.sh' that prints 'hello'.
+If it's not achievable AND verifiable with a SINGLE action, you MUST break it down into subtasks NOW.
 
 You're responsible for managing this plan and the status of tasks in
 it, by using the `add_task` and `modify_task` actions described below.
@@ -74,6 +76,15 @@ ten actions--more happened before that.
       "parent": "",
       "goal": "Write a shell script 'hello.sh' that prints 'hello'",
       "subtasks": [],
+      "thought": ""
+    }
+  },
+  {
+    "source": "agent",
+    "action": "modify_task",
+    "args": {
+      "task_id": "0",
+      "state": "in_progress",
       "thought": ""
     }
   }
