@@ -8,7 +8,7 @@ import {
 import { twMerge } from "tailwind-merge";
 import {
   WorkspaceFile,
-  getWorkspace,
+  listFiles,
   uploadFile,
 } from "#/services/fileService";
 import IconButton from "../IconButton";
@@ -90,18 +90,16 @@ interface FileExplorerProps {
 }
 
 function FileExplorer({ onFileClick }: FileExplorerProps) {
-  const [workspace, setWorkspace] = React.useState<WorkspaceFile>();
   const [isHidden, setIsHidden] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
-
-  const getWorkspaceData = async () => {
-    const wsFile = await getWorkspace();
-    setWorkspace(removeEmptyNodes(wsFile));
-  };
 
   const selectFileInput = () => {
     fileInputRef.current?.click(); // Trigger the file browser
   };
+
+  const refreshWorkspace = async () => {
+    // TODO: implement
+  }
 
   const uploadFileData = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files ? event.target.files[0] : null;
@@ -109,17 +107,10 @@ function FileExplorer({ onFileClick }: FileExplorerProps) {
 
     try {
       await uploadFile(file);
-      await getWorkspaceData(); // Refresh the workspace to show the new file
     } catch (error) {
       toast.stickyError("ws", "Error uploading file");
     }
   };
-
-  React.useEffect(() => {
-    (async () => {
-      await getWorkspaceData();
-    })();
-  }, []);
 
   return (
     <div
@@ -130,19 +121,16 @@ function FileExplorer({ onFileClick }: FileExplorerProps) {
     >
       <div className="flex p-2 items-center justify-between relative">
         <div style={{ display: isHidden ? "none" : "block" }}>
-          {workspace && (
-            <ExplorerTree
-              root={workspace}
-              onFileClick={onFileClick}
-              defaultOpen
-            />
-          )}
+          <ExplorerTree
+            onFileClick={onFileClick}
+            defaultOpen
+          />
         </div>
 
         <ExplorerActions
           isHidden={isHidden}
           toggleHidden={() => setIsHidden((prev) => !prev)}
-          onRefresh={getWorkspaceData}
+          onRefresh={refreshWorkspace}
           onUpload={selectFileInput}
         />
       </div>

@@ -185,8 +185,8 @@ async def get_agents():
     return agents
 
 
-@app.get('/api/refresh-files')
-def refresh_files(request: Request):
+@app.get('/api/list-files')
+def list_files(request: Request, path: str = '/'):
     """
     Refresh files.
 
@@ -196,7 +196,7 @@ def refresh_files(request: Request):
     ```
     """
     try:
-        return request.state.session.agent.runtime.file_store.list()
+        return request.state.session.agent.runtime.file_store.list(path)
     except Exception as e:
         logger.error(f'Error refreshing files: {e}', exc_info=False)
         error_msg = f'Error refreshing files: {e}'

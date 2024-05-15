@@ -2,7 +2,7 @@ import React from "react";
 import { twMerge } from "tailwind-merge";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
-import { WorkspaceFile } from "#/services/fileService";
+import { WorkspaceFile, listFiles } from "#/services/fileService";
 import { CodeEditorContext } from "../CodeEditorContext";
 
 interface TitleProps {
@@ -26,28 +26,43 @@ function Title({ name, type, isOpen, onClick }: TitleProps) {
 }
 
 interface TreeNodeProps {
-  node: WorkspaceFile;
   path: string;
   onFileClick: (path: string) => void;
   defaultOpen?: boolean;
 }
 
 function TreeNode({
-  node,
   path,
   onFileClick,
   defaultOpen = false,
 }: TreeNodeProps) {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
+  const [isDirectory, setIsDirectory] = React.useState(false);
+  const [children, setChildren] = React.useState<string[] | null>(null);
   const { selectedFileAbsolutePath } = React.useContext(CodeEditorContext);
 
+  React.useEffect(() => {
+    const isDir = path.endsWith("/");
+    setIsDirectory(isDir);
+  }, [path]);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      listFiles(path).then((files) => {
+        setChildren(files);
+      });
+    } else {
+      setChildren(null);
+    }
+  }, [isOpen]);
+
   const handleClick = React.useCallback(() => {
-    if (node.children) {
+    if (self.isDirectory) {
       setIsOpen((prev) => !prev);
     } else {
       onFileClick(path);
     }
-  }, [node, path, onFileClick]);
+  }, [path, onFileClick]);
 
   return (
     <div
@@ -57,19 +72,18 @@ function TreeNode({
       )}
     >
       <Title
-        name={node.name}
-        type={node.children ? "folder" : "file"}
+        name={path}
+        type={isDirectory ? "folder" : "file"}
         isOpen={isOpen}
         onClick={handleClick}
       />
 
-      {isOpen && node.children && (
+      {isOpen && children && (
         <div className="ml-5">
-          {node.children.map((child, index) => (
+          {children.map((child, index) => (
             <TreeNode
               key={index}
-              node={child}
-              path={`${path}/${child.name}`}
+              path={`${child}`}
               onFileClick={onFileClick}
             />
           ))}

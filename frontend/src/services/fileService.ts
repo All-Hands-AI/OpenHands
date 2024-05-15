@@ -21,6 +21,13 @@ export async function uploadFile(file: File) {
 }
 
 export async function getWorkspace(): Promise<WorkspaceFile> {
-  const res = await request("/api/refresh-files");
-  return res as WorkspaceFile;
+  const res = await request("/api/list-files");
+  const wsFile = {children: []};
+  wsFile.children = res.map(f => {name: f});
+  return wsFile;
+}
+
+export async function listFiles(basePath: string = '/'): Promise<string[]> {
+  const res = await request(`/api/list-files?path=${basePath}`);
+  return res;
 }

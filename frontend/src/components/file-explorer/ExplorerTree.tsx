@@ -9,15 +9,13 @@ interface ExplorerTreeProps {
 }
 
 function ExplorerTree({
-  root,
   onFileClick,
   defaultOpen = false,
 }: ExplorerTreeProps) {
   return (
     <div className="w-full overflow-x-auto h-full pt-[4px]">
       <TreeNode
-        node={root}
-        path={root.name}
+        path="/"
         onFileClick={onFileClick}
         defaultOpen={defaultOpen}
       />

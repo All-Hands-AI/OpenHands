@@ -5,5 +5,5 @@ export async function fetchModels() {
 }
 
 export async function fetchAgents() {
-  return await fetch(`/api/agents`);
+  return await request(`/api/agents`);
 }
