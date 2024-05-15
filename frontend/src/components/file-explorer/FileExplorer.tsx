@@ -13,7 +13,6 @@ import {
 } from "#/services/fileService";
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
-import { removeEmptyNodes } from "./utils";
 import toast from "#/utils/toast";
 
 interface ExplorerActionsProps {
@@ -91,6 +90,7 @@ interface FileExplorerProps {
 
 function FileExplorer({ onFileClick }: FileExplorerProps) {
   const [isHidden, setIsHidden] = React.useState(false);
+  const [files, setFiles] = React.useState<string[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const selectFileInput = () => {
@@ -98,8 +98,14 @@ function FileExplorer({ onFileClick }: FileExplorerProps) {
   };
 
   const refreshWorkspace = async () => {
-    // TODO: implement
+    listFiles().then((files) => {
+      setFiles(files);
+    });
   }
+
+  React.useEffect(() => {
+    refreshWorkspace();
+  }, []);
 
   const uploadFileData = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files ? event.target.files[0] : null;
@@ -122,6 +128,7 @@ function FileExplorer({ onFileClick }: FileExplorerProps) {
       <div className="flex p-2 items-center justify-between relative">
         <div style={{ display: isHidden ? "none" : "block" }}>
           <ExplorerTree
+            files={files}
             onFileClick={onFileClick}
             defaultOpen
           />
