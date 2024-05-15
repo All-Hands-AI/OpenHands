@@ -4,6 +4,7 @@ from opendevin.events.action import (
     AgentFinishAction,
     AgentRecallAction,
     AgentRejectAction,
+    BrowseInteractiveAction,
     BrowseURLAction,
     CmdKillAction,
     CmdRunAction,
@@ -96,7 +97,7 @@ def test_browse_interactive_action_serialization_deserialization():
         'action': 'browse_interactive',
         'args': {'thought': '', 'browser_actions': 'goto("https://www.example.com")'},
     }
-    serialization_deserialization(original_action_dict, BrowseURLAction)
+    serialization_deserialization(original_action_dict, BrowseInteractiveAction)
 
 
 def test_file_read_action_serialization_deserialization():
