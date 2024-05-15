@@ -19,6 +19,7 @@ from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import MessageAction
+from opendevin.events.serialization.event import event_to_dict
 
 
 def cleanup():
@@ -260,7 +261,9 @@ def process_instance(
         'instruction': instruction,
         'git_patch': git_patch,
         'metadata': metadata,
-        'history': [(action.to_dict(), obs.to_dict()) for action, obs in state.history],
+        'history': [
+            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
+        ],
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
