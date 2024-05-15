@@ -1,6 +1,6 @@
 import React from "react";
 import TreeNode from "./TreeNode";
-import { WorkspaceFile } from "#/services/fileService";
+import { WorkspaceFile, listFiles } from "#/services/fileService";
 
 interface ExplorerTreeProps {
   root: WorkspaceFile;
@@ -12,13 +12,24 @@ function ExplorerTree({
   onFileClick,
   defaultOpen = false,
 }: ExplorerTreeProps) {
+  const [files, setFiles] = React.useState<string[]>([]);
+
+  React.useEffect(() => {
+    listFiles().then((files) => {
+      setFiles(files);
+    });
+  }, []);
+
   return (
     <div className="w-full overflow-x-auto h-full pt-[4px]">
-      <TreeNode
-        path="/"
-        onFileClick={onFileClick}
-        defaultOpen={defaultOpen}
-      />
+      {files.map((file) => (
+        <TreeNode
+          key={file}
+          path={file}
+          onFileClick={onFileClick}
+          defaultOpen={defaultOpen}
+        />
+      ))}
     </div>
   );
 }

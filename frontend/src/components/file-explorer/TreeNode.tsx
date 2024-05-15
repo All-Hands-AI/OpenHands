@@ -37,17 +37,19 @@ function TreeNode({
   defaultOpen = false,
 }: TreeNodeProps) {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
-  const [isDirectory, setIsDirectory] = React.useState(false);
   const [children, setChildren] = React.useState<string[] | null>(null);
   const { selectedFileAbsolutePath } = React.useContext(CodeEditorContext);
 
-  React.useEffect(() => {
-    const isDir = path.endsWith("/");
-    setIsDirectory(isDir);
-  }, [path]);
+  const getNameFromPath = (path: string) => {
+    const parts = path.split("/");
+    return parts[parts.length - 1] || parts[parts.length - 2];
+  }
+
+  const name = getNameFromPath(path);
+  const isDirectory = path.endsWith("/");
 
   React.useEffect(() => {
-    if (isOpen) {
+    if (isOpen && isDirectory) {
       listFiles(path).then((files) => {
         setChildren(files);
       });
@@ -57,12 +59,13 @@ function TreeNode({
   }, [isOpen]);
 
   const handleClick = React.useCallback(() => {
-    if (self.isDirectory) {
+    console.log('click', isDirectory, path);
+    if (isDirectory) {
       setIsOpen((prev) => !prev);
     } else {
       onFileClick(path);
     }
-  }, [path, onFileClick]);
+  }, [onFileClick]);
 
   return (
     <div
@@ -72,7 +75,7 @@ function TreeNode({
       )}
     >
       <Title
-        name={path}
+        name={getNameFromPath(path)}
         type={isDirectory ? "folder" : "file"}
         isOpen={isOpen}
         onClick={handleClick}
