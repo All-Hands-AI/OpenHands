@@ -4,8 +4,7 @@ from typing import Callable
 from fastapi import WebSocket, WebSocketDisconnect
 
 from opendevin.core.logger import opendevin_logger as logger
-
-from .msg_stack import message_stack
+from opendevin.server.agent.agent import AgentSession
 
 DEL_DELT_SEC = 60 * 60 * 5
 
@@ -15,11 +14,13 @@ class Session:
     websocket: WebSocket | None
     last_active_ts: int = 0
     is_alive: bool = True
+    agent: AgentSession
 
     def __init__(self, sid: str, ws: WebSocket | None):
         self.sid = sid
         self.websocket = ws
         self.last_active_ts = int(time.time())
+        self.agent = AgentSession(sid)
 
     async def loop_recv(self, dispatch: Callable):
         try:
@@ -32,7 +33,6 @@ class Session:
                     await self.send_error('Invalid JSON')
                     continue
 
-                message_stack.add_message(self.sid, 'user', data)
                 action = data.get('action', None)
                 await dispatch(self.sid, action, data)
         except WebSocketDisconnect:

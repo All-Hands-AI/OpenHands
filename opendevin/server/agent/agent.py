@@ -26,7 +26,7 @@ from opendevin.runtime.server.runtime import ServerRuntime
 from opendevin.server.session import session_manager
 
 
-class AgentUnit:
+class AgentSession:
     """Represents a session with an agent.
 
     Attributes:

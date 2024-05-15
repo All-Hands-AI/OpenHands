@@ -6,10 +6,10 @@ from pathlib import Path
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
-from fastapi import Depends, FastAPI, Response, UploadFile, WebSocket, status
+from fastapi import FastAPI, Request, Response, UploadFile, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
@@ -18,9 +18,8 @@ from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.llm import bedrock
 from opendevin.runtime import files
-from opendevin.server.agent import agent_manager
 from opendevin.server.auth import get_sid_from_token, sign_token
-from opendevin.server.session import message_stack, session_manager
+from opendevin.server.session import session_manager
 
 app = FastAPI()
 app.add_middleware(
@@ -32,6 +31,39 @@ app.add_middleware(
 )
 
 security_scheme = HTTPBearer()
+
+
+@app.middleware('http')
+async def attach_session(request: Request, call_next):
+    if not request.headers.get('Authorization'):
+        response = JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={'error': 'Missing Authorization header'},
+        )
+        return response
+
+    auth_token = request.headers.get('Authorization')
+    if 'Bearer' in auth_token:
+        auth_token = auth_token.split('Bearer')[1].strip()
+
+    request.state.sid = get_sid_from_token(auth_token)
+    if request.state.sid == '':
+        response = JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={'error': 'Invalid token'},
+        )
+        return response
+
+    request.state.session = session_manager.get_session(request.state.sid)
+    if request.state.session is None:
+        response = JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={'error': 'Session not found'},
+        )
+        return response
+
+    response = await call_next(request)
+    return response
 
 
 # This endpoint receives events from the client (i.e. the browser)
@@ -99,13 +131,25 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     """
     await websocket.accept()
-    sid = get_sid_from_token(websocket.query_params.get('token') or '')
-    if sid == '':
-        logger.error('Failed to decode token')
-        return
-    session_manager.add_session(sid, websocket)
-    agent_manager.register_agent(sid)
-    await session_manager.loop_recv(sid, agent_manager.dispatch)
+
+    session = None
+    if websocket.query_params.get('token'):
+        token = websocket.query_params.get('token')
+        sid = get_sid_from_token(token)
+
+        if sid == '':
+            websocket.send_json({'error': 'Invalid token'})
+            return
+        session = session_manager.get_session(sid)
+    else:
+        sid = str(uuid.uuid4())
+        token = sign_token({'sid': sid})
+
+    if session is None:
+        session = session_manager.add_session(sid, websocket)
+
+    websocket.send_json({'token': token, 'status': 'ok'})
+    await session_manager.loop_recv(sid, session.agent.dispatch)
 
 
 @app.get('/api/litellm-models')
@@ -140,89 +184,6 @@ async def get_agents():
     """
     agents = Agent.list_agents()
     return agents
-
-
-@app.get('/api/auth')
-async def get_token(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
-):
-    """
-    Generate a JWT for authentication when starting a WebSocket connection. This endpoint checks if valid credentials
-    are provided and uses them to get a session ID. If no valid credentials are provided, it generates a new session ID.
-
-    To obtain an authentication token:
-    ```sh
-    curl -H "Authorization: Bearer 5ecRe7" http://localhost:3000/api/auth
-    ```
-    **Note:** If `JWT_SECRET` is set, use its value instead of `5ecRe7`.
-    """
-    if credentials and credentials.credentials:
-        sid = get_sid_from_token(credentials.credentials)
-        if not sid:
-            sid = str(uuid.uuid4())
-            logger.info(
-                f'Invalid or missing credentials, generating new session ID: {sid}'
-            )
-    else:
-        sid = str(uuid.uuid4())
-        logger.info(f'No credentials provided, generating new session ID: {sid}')
-
-    token = sign_token({'sid': sid})
-    return {'token': token, 'status': 'ok'}
-
-
-@app.get('/api/messages')
-async def get_messages(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
-):
-    """
-    Get messages.
-
-    To get messages:
-    ```sh
-    curl -H "Authorization: Bearer <TOKEN>" http://localhost:3000/api/messages
-    ```
-    """
-    data = []
-    sid = get_sid_from_token(credentials.credentials)
-    if sid != '':
-        data = message_stack.get_messages(sid)
-
-    return {'messages': data}
-
-
-@app.get('/api/messages/total')
-async def get_message_total(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
-):
-    """
-    Get total message count.
-
-    To get the total message count:
-    ```sh
-    curl -H "Authorization: Bearer <TOKEN>" http://localhost:3000/api/messages/total
-    ```
-    """
-    sid = get_sid_from_token(credentials.credentials)
-    return {'msg_total': message_stack.get_message_total(sid)}
-
-
-@app.delete('/api/messages')
-async def del_messages(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
-):
-    """
-    Delete messages.
-
-    To delete messages:
-    ```sh
-
-    curl -X DELETE -H "Authorization: Bearer <TOKEN>" http://localhost:3000/api/messages
-    ```
-    """
-    sid = get_sid_from_token(credentials.credentials)
-    message_stack.del_messages(sid)
-    return {'ok': True}
 
 
 @app.get('/api/refresh-files')
@@ -293,9 +254,7 @@ async def upload_file(file: UploadFile):
 
 
 @app.get('/api/root_task')
-def get_root_task(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
-):
+def get_root_task(request: Request):
     """
     Get root_task.
 
@@ -304,9 +263,7 @@ def get_root_task(
     curl -H "Authorization: Bearer <TOKEN>" http://localhost:3000/api/root_task
     ```
     """
-    sid = get_sid_from_token(credentials.credentials)
-    agent = agent_manager.sid_to_agent[sid]
-    controller = agent.controller
+    controller = request.state.session.agent.controller
     if controller is not None:
         state = controller.get_state()
         if state:

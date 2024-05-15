@@ -9,7 +9,6 @@ from fastapi import WebSocket
 
 from opendevin.core.logger import opendevin_logger as logger
 
-from .msg_stack import message_stack
 from .session import Session
 
 CACHE_DIR = os.getenv('CACHE_DIR', 'cache')
@@ -26,11 +25,17 @@ class SessionManager:
         atexit.register(self.close)
         asyncio.create_task(self._cleanup_sessions())
 
-    def add_session(self, sid: str, ws_conn: WebSocket):
+    def add_session(self, sid: str, ws_conn: WebSocket) -> Session:
         if sid not in self._sessions:
             self._sessions[sid] = Session(sid=sid, ws=ws_conn)
-            return
-        self._sessions[sid].update_connection(ws_conn)
+        else:
+            self._sessions[sid].update_connection(ws_conn)
+        return self._sessions[sid]
+
+    def get_session(self, sid: str) -> Session | None:
+        if sid not in self._sessions:
+            return None
+        return self._sessions.get(sid)
 
     async def loop_recv(self, sid: str, dispatch: Callable):
         print(f'Starting loop_recv for sid: {sid}')
@@ -45,7 +50,6 @@ class SessionManager:
 
     async def send(self, sid: str, data: dict[str, object]) -> bool:
         """Sends data to the client."""
-        message_stack.add_message(sid, 'assistant', data)
         if sid not in self._sessions:
             return False
         return await self._sessions[sid].send(data)
@@ -91,7 +95,10 @@ class SessionManager:
             session_ids_to_remove = []
             for sid, session in list(self._sessions.items()):
                 # if session inactive for a long time, remove it
-                if not session.is_alive and current_time - session.last_active_ts > self.session_timeout:
+                if (
+                    not session.is_alive
+                    and current_time - session.last_active_ts > self.session_timeout
+                ):
                     session_ids_to_remove.append(sid)
 
             for sid in session_ids_to_remove:
