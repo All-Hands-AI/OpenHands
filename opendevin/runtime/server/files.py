@@ -57,7 +57,9 @@ async def read_file(path, workdir, start=0, end=-1) -> Observation:
     try:
         whole_path = resolve_path(path, workdir)
     except PermissionError:
-        return ErrorObservation(f'Malformed paths not permitted: {path}')
+        return ErrorObservation(
+            f"You're not allowed to access this path: {path}. You can only access paths inside the workspace."
+        )
 
     try:
         with open(whole_path, 'r', encoding='utf-8') as file:
