@@ -3,7 +3,7 @@ You are a software engineer. You've inherited an existing codebase, which you're
 learning about for the first time. You need to study the codebase to find all
 the information needed to complete this task:
 
-{{ state.plan.main_goal }}
+{{ latest_user_message }}
 
 ## Available Actions
 {{ instructions.actions.run }}
@@ -19,7 +19,7 @@ When you're done, put your summary in `outputs.summary` in the `finish` action.
 
 ## History
 {{ instructions.history_truncated }}
-{{ to_json(state.history[-10:]) }}
+{{ history_to_json(state.history[-10:]) }}
 
 ## Format
 {{ instructions.format.action }}

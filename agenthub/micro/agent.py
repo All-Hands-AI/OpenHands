@@ -3,7 +3,9 @@ from jinja2 import BaseLoader, Environment
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.utils import json
-from opendevin.events.action import Action, action_from_dict
+from opendevin.events.action import Action
+from opendevin.events.serialization.action import action_from_dict
+from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
 
 from .instructions import instructions
@@ -25,6 +27,18 @@ def to_json(obj, **kwargs):
     return json.dumps(obj, **kwargs)
 
 
+def history_to_json(obj, **kwargs):
+    """
+    Serialize and simplify history to str format
+    """
+    if isinstance(obj, list):
+        # process history, make it simpler.
+        processed_history = []
+        for action, observation in obj:
+            processed_history.append((event_to_memory(action), event_to_memory(observation)))
+        return json.dumps(processed_history, **kwargs)
+
+
 class MicroAgent(Agent):
     prompt = ''
     agent_definition: dict = {}
@@ -38,11 +52,14 @@ class MicroAgent(Agent):
         del self.delegates[self.agent_definition['name']]
 
     def step(self, state: State) -> Action:
+        latest_user_message = state.get_current_user_intent()
         prompt = self.prompt_template.render(
             state=state,
             instructions=instructions,
             to_json=to_json,
+            history_to_json=history_to_json,
             delegates=self.delegates,
+            latest_user_message=latest_user_message,
         )
         messages = [{'content': prompt, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)

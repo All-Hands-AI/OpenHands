@@ -21,7 +21,7 @@ class Sandbox(ABC, PluginMixin):
 
     @abstractmethod
     def execute(
-        self, cmd: str, stream: bool = False
+        self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
         pass
 

@@ -178,8 +178,9 @@ class DockerExecBox(Sandbox):
         return bg_cmd.read_logs()
 
     def execute(
-        self, cmd: str, stream: bool = False
+        self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
+        timeout = timeout if timeout is not None else self.timeout
         wrapper = f'timeout {self.timeout}s bash -c {shlex.quote(cmd)}'
         _exit_code, _output = container_exec_run(
             self.container,

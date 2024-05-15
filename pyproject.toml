@@ -22,13 +22,16 @@ uvicorn = "*"
 types-toml = "*"
 numpy = "*"
 json-repair = "*"
-browsergym = "*" # integrate browsergym as the browsing interface
+browsergym = "0.1.0rc7" # integrate browsergym as the browsing interface
 html2text = "*"
 e2b = "^0.14.13"
 pexpect = "*"
 jinja2 = "^3.1.3"
 python-multipart = "*"
 boto3 = "*"
+minio = "^7.2.7"
+gevent = "^24.2.1"
+pyarrow = "16.0.0" # transitive dependency, pinned here to avoid conflicts
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
@@ -47,6 +50,9 @@ pre-commit = "3.7.0"
 pytest = "*"
 pytest-cov = "*"
 pytest-asyncio = "*"
+
+[tool.coverage.run]
+concurrency = ["gevent"]
 
 [tool.poetry.group.evaluation.dependencies]
 torch = "2.2.2"

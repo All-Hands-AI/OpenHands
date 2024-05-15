@@ -35,16 +35,16 @@ class LocalBox(Sandbox):
         super().__init__()
 
     def execute(
-        self, cmd: str, stream: bool = False
+        self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
-        print('---------localbox----------')
+        timeout = timeout if timeout is not None else self.timeout
         try:
             completed_process = subprocess.run(
                 cmd,
                 shell=True,
                 text=True,
                 capture_output=True,
-                timeout=self.timeout,
+                timeout=timeout,
                 cwd=config.workspace_base,
                 env=self._env,
             )
