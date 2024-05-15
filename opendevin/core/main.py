@@ -41,7 +41,8 @@ async def main(
     Args:
         task_str: The task to run.
         exit_on_message: quit if agent asks for a message from user (optional)
-        fake_user_response_fn: A optional function that receives the current state (could be None) and returns a fake user response.
+        fake_user_response_fn: An optional function that receives the current state (could be None) and returns a fake user response.
+        sandbox: An optional sandbox to run the agent in.
     """
 
     # Determine the task source
