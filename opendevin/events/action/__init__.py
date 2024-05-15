@@ -7,7 +7,7 @@ from .agent import (
     AgentSummarizeAction,
     ChangeAgentStateAction,
 )
-from .browse import BrowseURLAction
+from .browse import BrowseInteractiveAction, BrowseURLAction
 from .commands import CmdKillAction, CmdRunAction, IPythonRunCellAction
 from .empty import NullAction
 from .files import FileReadAction, FileWriteAction
@@ -20,6 +20,7 @@ __all__ = [
     'CmdRunAction',
     'CmdKillAction',
     'BrowseURLAction',
+    'BrowseInteractiveAction',
     'FileReadAction',
     'FileWriteAction',
     'AgentRecallAction',
