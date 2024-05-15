@@ -91,6 +91,14 @@ def test_browse_url_action_serialization_deserialization():
     serialization_deserialization(original_action_dict, BrowseURLAction)
 
 
+def test_browse_interactive_action_serialization_deserialization():
+    original_action_dict = {
+        'action': 'browse_interactive',
+        'args': {'thought': '', 'browser_actions': 'goto("https://www.example.com")'},
+    }
+    serialization_deserialization(original_action_dict, BrowseURLAction)
+
+
 def test_file_read_action_serialization_deserialization():
     original_action_dict = {
         'action': 'read',

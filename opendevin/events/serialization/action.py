@@ -7,7 +7,7 @@ from opendevin.events.action.agent import (
     AgentRejectAction,
     ChangeAgentStateAction,
 )
-from opendevin.events.action.browse import BrowseURLAction
+from opendevin.events.action.browse import BrowseInteractiveAction, BrowseURLAction
 from opendevin.events.action.commands import (
     CmdKillAction,
     CmdRunAction,
@@ -22,6 +22,7 @@ actions = (
     CmdRunAction,
     IPythonRunCellAction,
     BrowseURLAction,
+    BrowseInteractiveAction,
     FileReadAction,
     FileWriteAction,
     AgentRecallAction,
