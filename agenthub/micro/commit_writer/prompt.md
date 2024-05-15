@@ -18,7 +18,7 @@ the `reject` action with `outputs.answer` set to the reason.
 
 ## History
 {{ instructions.history_truncated }}
-{{ to_json(state.history[-10:]) }}
+{{ history_to_json(state.history[-10:]) }}
 
 If the last item in the history is an error, you should try to fix it.
 

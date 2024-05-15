@@ -17,7 +17,7 @@ provide the correct inputs for the delegate you select.
 
 ## History
 {{ instructions.history_truncated }}
-{{ to_json(state.history[-10:]) }}
+{{ history_to_json(state.history[-10:]) }}
 
 ## Available Actions
 {{ instructions.actions.delegate }}
