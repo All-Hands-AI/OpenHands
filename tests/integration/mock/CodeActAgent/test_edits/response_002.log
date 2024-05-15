@@ -1,8 +1,9 @@
-I will now correct the typos in the file `bad.txt`. Let me edit the file to fix the typos:
+I will now edit the file to correct the typos.
+
 <execute_bash>
-edit 1:3
+edit 1:1
 This is a stupid typo.
-Really?
+end_of_edit
+edit 3:3
 No more typos!
 end_of_edit
-

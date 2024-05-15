@@ -228,7 +228,8 @@ ENVIRONMENT REMINDER: You have 98 turns left to complete the task.
 
 ----------
 
-Let's start by opening the file `bad.txt` to identify and fix the typos. Let me open the file for you:
+Certainly! I will start by opening the file `bad.txt` to see the content and then proceed to fix the typos.
+
 <execute_bash>
 open bad.txt
 </execute_bash>
@@ -247,11 +248,13 @@ ENVIRONMENT REMINDER: You have 97 turns left to complete the task.
 
 ----------
 
-I will now correct the typos in the file `bad.txt`. Let me edit the file to fix the typos:
+I will now edit the file to correct the typos.
+
 <execute_bash>
-edit 1:3
+edit 1:1
 This is a stupid typo.
-Really?
+end_of_edit
+edit 3:3
 No more typos!
 end_of_edit
 </execute_bash>
@@ -259,7 +262,13 @@ end_of_edit
 ----------
 
 OBSERVATION:
-> > > > [File: /workspace/bad.txt (4 lines total)]
+> > [File: /workspace/bad.txt (4 lines total)]
+1:This is a stupid typo.
+2:Really?
+3:No mor typos!
+4:Enjoy!
+File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.
+> > [File: /workspace/bad.txt (4 lines total)]
 1:This is a stupid typo.
 2:Really?
 3:No more typos!
