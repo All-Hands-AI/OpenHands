@@ -1,7 +1,7 @@
 #!/bin/bash
 
 AGENT=CodeActAgent
-AGENT_VERSION=v1.2
+AGENT_VERSION=v1.3
 MODEL_CONFIG=$1
 
 # You should add $MODEL_CONFIG in your `config.toml`
