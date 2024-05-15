@@ -21,8 +21,4 @@ Check [this huggingface space](https://huggingface.co/spaces/OpenDevin/evaluatio
 
 ### Upload your results
 
-Run the followings to initialize submodule at `evaluation/evaluation_outputs` that links to the huggingface space where we store all the experiment outputs.
-
-```bash
-git submodule update --init --recursive
-```
+You can start your own fork of [our huggingface evaluation outputs](https://huggingface.co/spaces/OpenDevin/evaluation) and submit a PR of your evaluation results to our hosted huggingface repo via PR following the guide [here](https://huggingface.co/docs/hub/en/repositories-pull-requests-discussions#pull-requests-and-discussions).
