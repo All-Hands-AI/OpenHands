@@ -166,7 +166,12 @@ def get_test_result(instance, sandbox, workspace_dir_name):
         # try to parse output
         for line in output.strip().split('\n'):
             line = line.strip('-')
-            key, value = line.split(':')
+            try:
+                key, value = line.split(':')
+            except ValueError:
+                # skip this line
+                print(f'Error parsing result line: {line}')
+                continue
             value = value.strip()
             try:
                 value = int(value)
