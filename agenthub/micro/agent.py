@@ -5,6 +5,7 @@ from opendevin.controller.state.state import State
 from opendevin.core.utils import json
 from opendevin.events.action import Action
 from opendevin.events.serialization.action import action_from_dict
+from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
 
 from .instructions import instructions
@@ -34,9 +35,7 @@ def history_to_json(obj, **kwargs):
         # process history, make it simpler.
         processed_history = []
         for action, observation in obj:
-            action_memory = action.to_memory()
-            observation_memory = observation.to_memory()
-            processed_history.append((action_memory, observation_memory))
+            processed_history.append((event_to_memory(action), event_to_memory(observation)))
         return json.dumps(processed_history, **kwargs)
 
 
