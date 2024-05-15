@@ -11,7 +11,8 @@ from opendevin.events.event import Event, EventSource
 from opendevin.events.observation import NullObservation
 from opendevin.events.serialization import event_from_dict, event_to_dict
 from opendevin.events.stream import EventStreamSubscriber
-from opendevin.server.agent.agent import AgentSession
+
+from .agent import AgentSession
 
 DEL_DELT_SEC = 60 * 60 * 5
 
@@ -44,11 +45,13 @@ class Session:
                 await self.dispatch(data)
         except WebSocketDisconnect:
             self.is_alive = False
+            await self.agent.close()
             logger.info('WebSocket disconnected, sid: %s', self.sid)
         except RuntimeError as e:
             # WebSocket is not connected
             if 'WebSocket is not connected' in str(e):
                 self.is_alive = False
+            await self.agent.close()
             logger.exception('Error in loop_recv: %s', e)
 
     async def _initialize_agent(self, data: dict):
