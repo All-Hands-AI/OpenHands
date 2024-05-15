@@ -43,8 +43,7 @@ If the assistant encounters an import error in IPython for a newly installed pac
 <execute_ipython>
 import IPython
 IPython.Application.instance().kernel.do_shutdown(True)  # Restart the kernel
-</execute_ipython>
-"""
+</execute_ipython>"""
 
 GITHUB_MESSAGE = """To do any activities on GitHub, you should use the token in the $GITHUB_TOKEN environment variable.
 For instance, to push a local branch `my_branch` to the github repo `owner/repo`, you can use the following four commands:
