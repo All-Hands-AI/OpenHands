@@ -15,6 +15,7 @@ PROCESS_FILEPATH=$(realpath $PROCESS_FILEPATH)
 FILE_DIR=$(dirname $PROCESS_FILEPATH)
 FILE_NAME=$(basename $PROCESS_FILEPATH)
 mkdir -p $FILE_DIR/eval_logs
+mkdir -p $FILE_DIR/swe_bench_format
 
 echo "Evaluating $FILE_NAME @ $FILE_DIR"
 echo "Merged output file with fine-grained report will be saved to $FILE_DIR"
@@ -31,4 +32,4 @@ docker run --rm \
     --dataset swe-bench-test-lite \
     --experiment-name test_experiment \
     --merge-report && cp -r /swe_util/eval_data/eval_logs/test_experiment/* /swe_bench_output/eval_logs \
-    && cp -r /swe_util/outputs/test_experiment_swe-bench-test-lite.json /swe_bench_output/swe_bench_output.json"
+    && cp -r /swe_util/outputs/* /swe_bench_output/swe_bench_format/"
