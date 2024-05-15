@@ -9,7 +9,7 @@ RUN ln -sfn /bin/bash /bin/sh
 RUN mkdir -p /opendevin/logs && chmod 777 /opendevin/logs
 
 # Setup Git
-RUN git config --global user.email "swebench@pnlp.org"
+RUN git config --global user.email "swebench@swebench.ai"
 RUN git config --global user.name "swebench"
 
 CMD ["/bin/bash"]
