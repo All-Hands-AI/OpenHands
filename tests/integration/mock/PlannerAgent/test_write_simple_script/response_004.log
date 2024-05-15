@@ -1,7 +1,7 @@
 {
   "action": "run",
   "args": {
-    "command": "pwd",
+    "command": "bash hello.sh",
     "background": false
   }
 }
