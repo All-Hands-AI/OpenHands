@@ -1,5 +1,6 @@
 from typing import Optional
 
+from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
@@ -9,14 +10,19 @@ from opendevin.core.schema import ActionType, AgentState, ConfigType
 from opendevin.events.action import (
     ChangeAgentStateAction,
     NullAction,
-    action_from_dict,
 )
 from opendevin.events.event import Event
 from opendevin.events.observation import (
     NullObservation,
 )
+from opendevin.events.serialization.action import action_from_dict
+from opendevin.events.serialization.event import event_to_dict
 from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.llm.llm import LLM
+from opendevin.runtime import DockerSSHBox
+from opendevin.runtime.e2b.runtime import E2BRuntime
+from opendevin.runtime.runtime import Runtime
+from opendevin.runtime.server.runtime import ServerRuntime
 from opendevin.server.session import session_manager
 
 
@@ -30,14 +36,19 @@ class AgentUnit:
     sid: str
     event_stream: EventStream
     controller: Optional[AgentController] = None
-    # TODO: we will add the runtime here
-    # runtime: Optional[Runtime] = None
+    runtime: Optional[Runtime] = None
 
     def __init__(self, sid):
         """Initializes a new instance of the Session class."""
         self.sid = sid
-        self.event_stream = EventStream()
+        self.event_stream = EventStream(sid)
         self.event_stream.subscribe(EventStreamSubscriber.SERVER, self.on_event)
+        if config.runtime == 'server':
+            logger.info('Using server runtime')
+            self.runtime = ServerRuntime(self.event_stream, sid)
+        elif config.runtime == 'e2b':
+            logger.info('Using E2B runtime')
+            self.runtime = E2BRuntime(self.event_stream, sid)
 
     async def send_error(self, message):
         """Sends an error message to the client.
@@ -75,16 +86,6 @@ class AgentUnit:
                 ChangeAgentStateAction(AgentState.INIT), EventSource.USER
             )
             return
-        elif action == ActionType.START:
-            if self.controller is None:
-                await self.send_error('No agent started.')
-                return
-            task = data['args']['task']
-            await self.controller.setup_task(task)
-            await self.event_stream.add_event(
-                ChangeAgentStateAction(agent_state=AgentState.RUNNING), EventSource.USER
-            )
-            return
 
         action_dict = data.copy()
         action_dict['action'] = action
@@ -111,13 +112,23 @@ class AgentUnit:
 
         logger.info(f'Creating agent {agent_cls} using LLM {model}')
         llm = LLM(model=model, api_key=api_key, base_url=api_base)
+        agent = Agent.get_cls(agent_cls)(llm)
+        if isinstance(agent, CodeActAgent):
+            if not self.runtime or not isinstance(self.runtime.sandbox, DockerSSHBox):
+                logger.warning(
+                    'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful (LocalBox, DockerExecBox) will not work properly.'
+                )
+        # Initializing plugins into the runtime
+        assert self.runtime is not None, 'Runtime is not initialized'
+        self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
+
         if self.controller is not None:
             await self.controller.close()
         try:
             self.controller = AgentController(
                 sid=self.sid,
                 event_stream=self.event_stream,
-                agent=Agent.get_cls(agent_cls)(llm),
+                agent=agent,
                 max_iterations=int(max_iterations),
                 max_chars=int(max_chars),
             )
@@ -134,10 +145,17 @@ class AgentUnit:
         Args:
             event: The agent event (Observation or Action).
         """
-        if event.source == 'agent' and not isinstance(event, (NullAction, NullObservation)):
-            await self.send(event.to_dict())
-        return
+        if isinstance(event, NullAction):
+            return
+        if isinstance(event, NullObservation):
+            return
+        if event.source == 'agent' and not isinstance(
+            event, (NullAction, NullObservation)
+        ):
+            await self.send(event_to_dict(event))
 
-    def close(self):
+    async def close(self):
         if self.controller is not None:
-            self.controller.close()
+            await self.controller.close()
+        if self.runtime is not None:
+            self.runtime.close()

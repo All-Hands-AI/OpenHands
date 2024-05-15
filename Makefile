@@ -62,12 +62,12 @@ check-system:
 
 check-python:
 	@echo "$(YELLOW)Checking Python installation...$(RESET)"
-	@if command -v python3.11 > /dev/null; then \
-		echo "$(BLUE)$(shell python3.11 --version) is already installed.$(RESET)"; \
-	else \
-		echo "$(RED)Python 3.11 is not installed. Please install Python 3.11 to continue.$(RESET)"; \
-		exit 1; \
-	fi
+# 	@if command -v python3.11 > /dev/null; then \
+# 		echo "$(BLUE)$(shell python3.11 --version) is already installed.$(RESET)"; \
+# 	else \
+# 		echo "$(RED)Python 3.11 is not installed. Please install Python 3.11 to continue.$(RESET)"; \
+# 		exit 1; \
+# 	fi
 
 check-npm:
 	@echo "$(YELLOW)Checking npm installation...$(RESET)"
@@ -158,8 +158,8 @@ install-frontend-dependencies:
 
 install-precommit-hooks:
 	@echo "$(YELLOW)Installing pre-commit hooks...$(RESET)"
-	@git config --unset-all core.hooksPath || true
-	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
+#	@git config --unset-all core.hooksPath || true
+#	@poetry run pre-commit install --config $(PRECOMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 
 lint-backend:

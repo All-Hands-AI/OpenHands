@@ -5,7 +5,9 @@ import subprocess
 
 import pytest
 
+from opendevin.controller.state.state import State
 from opendevin.core.main import main
+from opendevin.core.schema import AgentState
 
 workspace_base = os.getenv('WORKSPACE_BASE')
 
@@ -17,8 +19,8 @@ workspace_base = os.getenv('WORKSPACE_BASE')
 )
 def test_write_simple_script():
     task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
-    controller = asyncio.run(main(task))
-    asyncio.run(controller.close())
+    final_state: State = asyncio.run(main(task, exit_on_message=True))
+    assert final_state.agent_state == AgentState.STOPPED
 
     # Verify the script file exists
     script_path = os.path.join(workspace_base, 'hello.sh')
@@ -54,13 +56,12 @@ def test_edits():
         dest_file = os.path.join(workspace_base, file)
         if os.path.exists(dest_file):
             os.remove(dest_file)
-        print('source = ', os.path.join(source_dir, file), ' dest = ', dest_file)
         shutil.copy(os.path.join(source_dir, file), dest_file)
 
     # Execute the task
     task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
-    controller = asyncio.run(main(task))
-    asyncio.run(controller.close())
+    final_state: State = asyncio.run(main(task, exit_on_message=True))
+    assert final_state.agent_state == AgentState.STOPPED
 
     # Verify bad.txt has been fixed
     text = """This is a stupid typo.
@@ -71,3 +72,29 @@ Enjoy!
     with open(os.path.join(workspace_base, 'bad.txt'), 'r') as f:
         content = f.read()
     assert content.strip() == text.strip()
+
+
+@pytest.mark.skipif(
+    os.getenv('AGENT') != 'CodeActAgent',
+    reason='currently only CodeActAgent defaults to have IPython (Jupyter) execution',
+)
+@pytest.mark.skipif(
+    os.getenv('SANDBOX_TYPE') != 'ssh',
+    reason='Currently, only ssh sandbox supports stateful tasks',
+)
+def test_ipython():
+    # Execute the task
+    task = "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point."
+    final_state: State = asyncio.run(main(task, exit_on_message=True))
+    assert final_state.agent_state == AgentState.STOPPED
+
+    # Verify the file exists
+    file_path = os.path.join(workspace_base, 'test.txt')
+    assert os.path.exists(file_path), 'The file "test.txt" does not exist'
+
+    # Verify the file contains the expected content
+    with open(file_path, 'r') as f:
+        content = f.read()
+    assert (
+        content.strip() == 'hello world'
+    ), f'Expected content "hello world", but got "{content.strip()}"'

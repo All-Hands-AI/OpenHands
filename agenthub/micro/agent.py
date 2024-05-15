@@ -1,11 +1,10 @@
-import json
-
 from jinja2 import BaseLoader, Environment
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.exceptions import LLMOutputError
-from opendevin.events.action import Action, action_from_dict
+from opendevin.core.utils import json
+from opendevin.events.action import Action
+from opendevin.events.serialization.action import action_from_dict
 from opendevin.llm.llm import LLM
 
 from .instructions import instructions
@@ -13,47 +12,18 @@ from .registry import all_microagents
 
 
 def parse_response(orig_response: str) -> Action:
-    depth = 0
-    start = -1
-    for i, char in enumerate(orig_response):
-        if char == '{':
-            if depth == 0:
-                start = i
-            depth += 1
-        elif char == '}':
-            depth -= 1
-            if depth == 0 and start != -1:
-                response = orig_response[start : i + 1]
-                try:
-                    action_dict = json.loads(response)
-                    action = action_from_dict(action_dict)
-                    return action
-                except json.JSONDecodeError as e:
-                    raise LLMOutputError(
-                        'Invalid JSON in response. Please make sure the response is a valid JSON object.'
-                    ) from e
-    raise LLMOutputError('No valid JSON object found in response.')
+    # attempt to load the JSON dict from the response
+    action_dict = json.loads(orig_response)
 
-
-def my_encoder(obj):
-    """
-    Encodes objects as dictionaries
-
-    Parameters:
-    - obj (Object): An object that will be converted
-
-    Returns:
-    - dict: If the object can be converted it is returned in dict format
-    """
-    if hasattr(obj, 'to_dict'):
-        return obj.to_dict()
+    # load the action from the dict
+    return action_from_dict(action_dict)
 
 
 def to_json(obj, **kwargs):
     """
     Serialize an object to str format
     """
-    return json.dumps(obj, default=my_encoder, **kwargs)
+    return json.dumps(obj, **kwargs)
 
 
 class MicroAgent(Agent):
@@ -69,11 +39,13 @@ class MicroAgent(Agent):
         del self.delegates[self.agent_definition['name']]
 
     def step(self, state: State) -> Action:
+        latest_user_message = state.get_current_user_intent()
         prompt = self.prompt_template.render(
             state=state,
             instructions=instructions,
             to_json=to_json,
             delegates=self.delegates,
+            latest_user_message=latest_user_message,
         )
         messages = [{'content': prompt, 'role': 'user'}]
         resp = self.llm.completion(messages=messages)

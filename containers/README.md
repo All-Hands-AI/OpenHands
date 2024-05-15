@@ -8,6 +8,4 @@ by the `ghcr.yml` workflow.
 ```
 docker build -f containers/app/Dockerfile -t opendevin .
 docker build -f containers/sandbox/Dockerfile -t sandbox .
-docker build -f containers/evaluation/Dockerfile -t evaluation evaluation/SWE-bench/
-
 ```

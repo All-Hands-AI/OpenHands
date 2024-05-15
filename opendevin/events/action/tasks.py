@@ -20,11 +20,11 @@ class AddTaskAction(Action):
 
 @dataclass
 class ModifyTaskAction(Action):
-    id: str
+    task_id: str
     state: str
     thought: str = ''
     action: str = ActionType.MODIFY_TASK
 
     @property
     def message(self) -> str:
-        return f'Set task {self.id} to {self.state}'
+        return f'Set task {self.task_id} to {self.state}'

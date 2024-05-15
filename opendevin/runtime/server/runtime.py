@@ -1,7 +1,3 @@
-import os
-import pathlib
-
-from opendevin.core.config import config
 from opendevin.events.action import (
     AgentRecallAction,
     BrowseURLAction,
@@ -29,31 +25,23 @@ class ServerRuntime(Runtime):
         return self._run_command(action.command, background=action.background)
 
     async def kill(self, action: CmdKillAction) -> Observation:
-        cmd = self.sandbox.kill_background(action.id)
+        cmd = self.sandbox.kill_background(action.command_id)
         return CmdOutputObservation(
-            content=f'Background command with id {action.id} has been killed.',
-            command_id=action.id,
+            content=f'Background command with id {action.command_id} has been killed.',
+            command_id=action.command_id,
             command=cmd.command,
             exit_code=0,
         )
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        # echo "import math" | execute_cli
-        # write code to a temporary file and pass it to `execute_cli` via stdin
-        tmp_filepath = os.path.join(
-            config.workspace_base, '.tmp', '.ipython_execution_tmp.py'
-        )
-        pathlib.Path(os.path.dirname(tmp_filepath)).mkdir(parents=True, exist_ok=True)
-        with open(tmp_filepath, 'w') as tmp_file:
-            tmp_file.write(action.code)
-
-        tmp_filepath_inside_sandbox = os.path.join(
-            config.workspace_mount_path_in_sandbox,
-            '.tmp',
-            '.ipython_execution_tmp.py',
-        )
         obs = self._run_command(
-            f'execute_cli < {tmp_filepath_inside_sandbox}', background=False
+            ('cat > /tmp/opendevin_jupyter_temp.py <<EOL\n' f'{action.code}\n' 'EOL'),
+            background=False,
+        )
+
+        # run the code
+        obs = self._run_command(
+            ('cat /tmp/opendevin_jupyter_temp.py | execute_cli'), background=False
         )
         return IPythonRunCellObservation(content=obs.content, code=action.code)
 
@@ -90,7 +78,7 @@ class ServerRuntime(Runtime):
 
     def _run_background(self, command: str) -> Observation:
         bg_cmd = self.sandbox.execute_in_background(command)
-        content = f'Background command started. To stop it, send a `kill` action with id {bg_cmd.pid}'
+        content = f'Background command started. To stop it, send a `kill` action with command_id {bg_cmd.pid}'
         return CmdOutputObservation(
             content=content,
             command_id=bg_cmd.pid,

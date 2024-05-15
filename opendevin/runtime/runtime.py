@@ -1,8 +1,8 @@
+import asyncio
 from abc import abstractmethod
 
 from opendevin.core.config import config
 from opendevin.events.action import (
-    ACTION_TYPE_TO_CLASS,
     Action,
     AgentRecallAction,
     BrowseURLAction,
@@ -12,12 +12,15 @@ from opendevin.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from opendevin.events.event import Event
 from opendevin.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
     NullObservation,
     Observation,
 )
+from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
+from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.runtime import (
     DockerExecBox,
     DockerSSHBox,
@@ -51,18 +54,40 @@ class Runtime:
     """
 
     sid: str
-    sandbox: Sandbox
 
     def __init__(
         self,
+        event_stream: EventStream,
         sid: str = 'default',
+        sandbox: Sandbox | None = None,
     ):
         self.sid = sid
-        self.sandbox = create_sandbox(sid, config.sandbox_type)
+        if sandbox is None:
+            self.sandbox = create_sandbox(sid, config.sandbox_type)
+            self._is_external_sandbox = False
+        else:
+            self.sandbox = sandbox
+            self._is_external_sandbox = True
         self.browser = BrowserEnv()
+        self.event_stream = event_stream
+        self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
+        self._bg_task = asyncio.create_task(self._start_background_observation_loop())
+
+    def close(self):
+        if not self._is_external_sandbox:
+            self.sandbox.close()
+        self.browser.close()
+        self._bg_task.cancel()
 
     def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
         self.sandbox.init_plugins(plugins)
+
+    async def on_event(self, event: Event) -> None:
+        if isinstance(event, Action):
+            observation = await self.run_action(event)
+            observation._cause = event.id  # type: ignore[attr-defined]
+            source = event.source if event.source else EventSource.AGENT
+            await self.event_stream.add_event(observation, source)
 
     async def run_action(self, action: Action) -> Observation:
         """
@@ -72,32 +97,38 @@ class Runtime:
         """
         if not action.runnable:
             return NullObservation('')
-        action_id = action.action  # type: ignore[attr-defined]
-        if action_id not in ACTION_TYPE_TO_CLASS:
-            return ErrorObservation(f'Action {action_id} does not exist.')
-        if not hasattr(self, action_id):
+        action_type = action.action  # type: ignore[attr-defined]
+        if action_type not in ACTION_TYPE_TO_CLASS:
+            return ErrorObservation(f'Action {action_type} does not exist.')
+        if not hasattr(self, action_type):
             return ErrorObservation(
-                f'Action {action_id} is not supported in the current runtime.'
+                f'Action {action_type} is not supported in the current runtime.'
             )
-        observation = await getattr(self, action_id)(action)
+        observation = await getattr(self, action_type)(action)
+        observation._parent = action.id  # type: ignore[attr-defined]
         return observation
 
-    def get_background_obs(self) -> list[CmdOutputObservation]:
+    async def _start_background_observation_loop(self):
+        while True:
+            await self.submit_background_obs()
+            await asyncio.sleep(1)
+
+    async def submit_background_obs(self):
         """
         Returns all observations that have accumulated in the runtime's background.
         Right now, this is just background commands, but could include e.g. asyncronous
         events happening in the browser.
         """
-        obs = []
         for _id, cmd in self.sandbox.background_commands.items():
             output = cmd.read_logs()
-            if output is not None and output != '':
-                obs.append(
+            if output:
+                await self.event_stream.add_event(
                     CmdOutputObservation(
                         content=output, command_id=_id, command=cmd.command
-                    )
+                    ),
+                    EventSource.AGENT,  # FIXME: use the original action's source
                 )
-        return obs
+        await asyncio.sleep(1)
 
     @abstractmethod
     async def run(self, action: CmdRunAction) -> Observation:

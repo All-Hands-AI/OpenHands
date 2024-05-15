@@ -17,7 +17,7 @@ import { getSettings } from "#/services/settings";
 
 function Workspace() {
   const { t } = useTranslation();
-  const plan = useSelector((state: RootState) => state.plan.plan);
+  const task = useSelector((state: RootState) => state.task.task);
   const code = useSelector((state: RootState) => state.code.code);
 
   const { AGENT } = getSettings();
@@ -69,18 +69,18 @@ function Workspace() {
   );
 
   useEffect(() => {
-    if (activeTab !== TabOption.PLANNER && plan.mainGoal !== undefined) {
+    if (activeTab !== TabOption.PLANNER && task) {
       setChanges((prev) => ({ ...prev, [TabOption.PLANNER]: true }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plan]);
+  }, [task]);
 
   useEffect(() => {
     if (activeTab !== TabOption.CODE && code !== initialCodeState.code) {
       setChanges((prev) => ({ ...prev, [TabOption.CODE]: true }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plan]);
+  }, [task]);
 
   useEffect(() => {
     if (

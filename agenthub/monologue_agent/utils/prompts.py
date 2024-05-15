@@ -1,17 +1,12 @@
-import re
-from json import JSONDecodeError
-
 from opendevin.core.config import config
-from opendevin.core.exceptions import LLMOutputError
+from opendevin.core.utils import json
 from opendevin.events.action import (
     Action,
-    action_from_dict,
 )
 from opendevin.events.observation import (
     CmdOutputObservation,
 )
-
-from . import json
+from opendevin.events.serialization.action import action_from_dict
 
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is this:
@@ -40,7 +35,7 @@ Here are the possible actions:
   * `command` - the command to run
   * `background` - if true, run the command in the background, so that other commands can be run concurrently. Useful for e.g. starting a server. You won't be able to see the logs. You don't need to end the command with `&`, just set this to true.
 * `kill` - kills a background command
-  * `id` - the ID of the background command to kill
+  * `command_id` - the ID of the background command to kill
 * `browse` - opens a web page. Arguments:
   * `url` - the URL to open
 * `push` - Push a branch from the current repo to github:
@@ -145,7 +140,7 @@ def get_request_action_prompt(
             bg_commands_message += (
                 f'\n`{command_obs.command_id}`: {command_obs.command}'
             )
-        bg_commands_message += '\nYou can end any process by sending a `kill` action with the numerical `id` above.'
+        bg_commands_message += '\nYou can end any process by sending a `kill` action with the numerical `command_id` above.'
 
     user = 'opendevin' if config.run_as_devin else 'root'
 
@@ -160,7 +155,7 @@ def get_request_action_prompt(
     }
 
 
-def parse_action_response(response: str) -> Action:
+def parse_action_response(orig_response: str) -> Action:
     """
     Parses a string to find an action within it
 
@@ -170,35 +165,13 @@ def parse_action_response(response: str) -> Action:
     Returns:
     - Action: The action that was found in the response string
     """
-    try:
-        action_dict = json.loads(response)
-    except JSONDecodeError:
-        # Find response-looking json in the output and use the more promising one. Helps with weak llms
-        response_json_matches = re.finditer(
-            r"""{\s*\"action\":\s?\"(\w+)\"(?:,?|,\s*\"args\":\s?{((?:.|\s)*?)})\s*}""",
-            response,
-        )  # Find all response-looking strings
+    # attempt to load the JSON dict from the response
+    action_dict = json.loads(orig_response)
 
-        def rank(match):
-            return (
-                len(match[2]) if match[1] == 'message' else 130
-            )  # Crudely rank multiple responses by length
-
-        try:
-            action_dict = json.loads(
-                max(response_json_matches, key=rank)[0]
-            )  # Use the highest ranked response
-        except (ValueError, JSONDecodeError):
-            raise LLMOutputError(
-                'Invalid JSON, the response must be well-formed JSON as specified in the prompt.'
-            )
-    except (ValueError, TypeError):
-        raise LLMOutputError(
-            'Invalid JSON, the response must be well-formed JSON as specified in the prompt.'
-        )
     if 'content' in action_dict:
         # The LLM gets confused here. Might as well be robust
         action_dict['contents'] = action_dict.pop('content')
+
     return action_from_dict(action_dict)
 
 

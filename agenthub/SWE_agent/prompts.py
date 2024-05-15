@@ -1,4 +1,3 @@
-
 DEFAULT_COMMANDS_DICT = {
     'exit': 'Executed when task is complete',
     'read <file_name> [<start_line>] [<end_line>]': "Shows a given file's contents starting from <start_line> up to <end_line>. Default: start_line = 0, end_line = -1. By default the whole file will be read.",
@@ -6,12 +5,12 @@ DEFAULT_COMMANDS_DICT = {
     'browse <url>': 'Returns the text version of any url, this can be useful to look up documentation or finding issues on github',
     'scroll_up': 'Takes no arguments. This will scroll up and show you the 100 lines above your current lines',
     'scroll_down': 'Takes no arguments. This will scroll down and show you the 100 lines below your current lines',
-    'edit <start_line> <end_line> <changes>': 'This will modify lines in the currently open file. use start_line and end_line to designate which lines to change and then write the multiline changes',
+    'edit <start_line> <end_line> <changes>': 'This will modify lines in the currently open file. use start_line and end_line to designate which lines to change and then write the multiline changes. Set end_line to -1 to denote the end of the file',
     'goto <line_num>': 'This will take you directly to a line and show you the 100 lines below it.',
     '<bash_command> <args>': 'You can use any bash command you need (cd, ls, rm, grep, dir, mv, wget, git, zip, etc.) with their arguments included',
     'pip install <package>': 'You can use this to import python packages. Make sure you include the correct package name when using this command.',
     'ls': 'Use the ls command to view all the files in your current directory, this is a good starting point.',
-    'NOT ALLOWED': 'You cannot use interactive commands like python or node'
+    'NOT ALLOWED': 'You cannot use interactive commands like python or node',
 }
 
 COMMAND_USAGE = {
@@ -25,8 +24,7 @@ COMMAND_USAGE = {
     'browse': 'Args:\n<url>\nUsage:\n```\nbrowse https://github.com/OpenDevin/OpenDevin\n```\nThis will fetch the Text elements from the given url and show them to you.',
 }
 
-DEFAULT_COMMANDS = '\n'.join(
-    [k + ' - ' + v for k, v in DEFAULT_COMMANDS_DICT.items()])
+DEFAULT_COMMANDS = '\n'.join([k + ' - ' + v for k, v in DEFAULT_COMMANDS_DICT.items()])
 
 # from opendevin.parse_commands import parse_command_file
 # USE parse_command_file(filepath) to get the custom commands
@@ -126,7 +124,8 @@ You have access to a variety of tools and commands that you can use to help you 
 """.strip()
 
 
-def NO_ACTION(latest): return f"""
+def NO_ACTION(latest):
+    return f"""
 You did not include any action to take in your most recent output:
 
 ===== Output ======
@@ -154,7 +153,8 @@ def file_info(file: str, line: int):
     """
 
 
-def STEP_PROMPT(task, file, line_num): return f"""
+def STEP_PROMPT(task, file, line_num):
+    return f"""
 {RESPONSE_FORMAT}
 You are currently trying to complete this task:
 {task}
@@ -185,7 +185,8 @@ def unpack_dict(data: dict, restrict: list[str] = []):
     return '\n'.join(lines)
 
 
-def MEMORY_FORMAT(act, obs): return f"""
+def MEMORY_FORMAT(act, obs):
+    return f"""
 Previous Action:
 {unpack_dict(act, ["content"])}
 
