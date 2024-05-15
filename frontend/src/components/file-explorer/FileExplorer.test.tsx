@@ -4,18 +4,18 @@ import userEvent from "@testing-library/user-event";
 import { act } from "react-dom/test-utils";
 import { describe, it, expect, vi, Mock } from "vitest";
 import FileExplorer from "./FileExplorer";
-import { getWorkspace, uploadFile } from "#/services/fileService";
+import { uploadFile, listFiles } from "#/services/fileService";
 import toast from "#/utils/toast";
 
 const toastSpy = vi.spyOn(toast, "stickyError");
 
 vi.mock("../../services/fileService", async () => ({
-  getWorkspace: vi.fn(async () => ({
-    name: "root",
-    children: [
-      { name: "file1.ts" },
-      { name: "folder1", children: [{ name: "file2.ts" }] },
-    ],
+  listFiles: vi.fn(async (path: str = '/') => (
+      if (path === "/") {
+          return ["folder1/", "file1.ts"];
+      } else if (path === "/folder1/") {
+          return ["file2.ts"];
+      }
   })),
 
   uploadFile: vi.fn(),
@@ -29,7 +29,7 @@ describe("FileExplorer", () => {
   it("should get the workspace directory", async () => {
     const { getByText } = render(<FileExplorer onFileClick={vi.fn} />);
 
-    expect(getWorkspace).toHaveBeenCalledTimes(1);
+    expect(listFiles).toHaveBeenCalledTimes(1);
     await waitFor(() => {
       expect(getByText("root")).toBeInTheDocument();
     });
@@ -68,7 +68,7 @@ describe("FileExplorer", () => {
       userEvent.click(screen.getByTestId("refresh"));
     });
 
-    expect(getWorkspace).toHaveBeenCalledTimes(2); // 1 from initial render, 1 from refresh button
+    expect(listFiles).toHaveBeenCalledTimes(2); // 1 from initial render, 1 from refresh button
   });
 
   it("should toggle the explorer visibility when clicking the close button", async () => {
@@ -101,7 +101,7 @@ describe("FileExplorer", () => {
     });
 
     expect(uploadFile).toHaveBeenCalledWith(file);
-    expect(getWorkspace).toHaveBeenCalled();
+    expect(listFiles).toHaveBeenCalled();
   });
 
   it.todo("should display an error toast if file upload fails", async () => {
