@@ -26,8 +26,9 @@ docker run --rm \
     -e EVAL_DATA_DIR=/swe_util/eval_data \
     -w /swe_util \
     ghcr.io/opendevin/eval-swe-bench:full-v1.0 \
-    ./get_agent_report.sh --output-file /swe_bench_output/$FILE_NAME \
+    bash -c "./get_agent_report.sh --output-file /swe_bench_output/$FILE_NAME \
     --agent-name CodeActAgent \
     --dataset swe-bench-test-lite \
     --experiment-name test_experiment \
-    --merge-report && cp -r /swe_util/eval_data/eval_logs/test_experiment/* /swe_bench_output/eval_logs
+    --merge-report && cp -r /swe_util/eval_data/eval_logs/test_experiment/* /swe_bench_output/eval_logs \
+    && cp -r /swe_util/outputs/test_experiment_swe-bench-test-lite.json /swe_bench_output/swe_bench_output.json"
