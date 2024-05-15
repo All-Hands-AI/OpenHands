@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { handleAssistantMessage } from "#/services/actions";
 import { addChatMessageFromEvent } from "#/services/chatService";
-import { clearMsgs, fetchMsgs } from "#/services/session";
 import toast from "#/utils/toast";
 import BaseModal from "../base-modal/BaseModal";
 
@@ -19,25 +18,11 @@ function LoadPreviousSessionModal({
   const { t } = useTranslation();
 
   const onStartNewSession = async () => {
-    await clearMsgs();
+    // TODO: implement
   };
 
   const onResumeSession = async () => {
-    try {
-      const { messages } = await fetchMsgs();
-
-      messages.forEach((message) => {
-        if (message.role === "user") {
-          addChatMessageFromEvent(message.payload);
-        }
-
-        if (message.role === "assistant") {
-          handleAssistantMessage(message.payload);
-        }
-      });
-    } catch (error) {
-      toast.stickyError("ws", "Error fetching the session");
-    }
+    // TODO: implement
   };
 
   return (

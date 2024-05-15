@@ -8,9 +8,7 @@ import { Container, Orientation } from "#/components/Resizable";
 import Workspace from "#/components/Workspace";
 import LoadPreviousSessionModal from "#/components/modals/load-previous-session/LoadPreviousSessionModal";
 import SettingsModal from "#/components/modals/settings/SettingsModal";
-import { fetchMsgTotal } from "#/services/session";
 import Socket from "#/services/socket";
-import { ResFetchMsgTotal } from "#/types/ResponseType";
 import "./App.css";
 import AgentControlBar from "./components/AgentControlBar";
 import AgentStatusBar from "./components/AgentStatusBar";
@@ -57,18 +55,6 @@ function App(): JSX.Element {
     onOpenChange: onLoadPreviousSessionModalOpenChange,
   } = useDisclosure();
 
-  const getMsgTotal = () => {
-    if (isWarned) return;
-    fetchMsgTotal()
-      .then((data: ResFetchMsgTotal) => {
-        if (data.msg_total > 0) {
-          onLoadPreviousSessionModalOpen();
-          setIsWarned(true);
-        }
-      })
-      .catch();
-  };
-
   useEffect(() => {
     if (initOnce) return;
     initOnce = true;
@@ -79,9 +65,6 @@ function App(): JSX.Element {
       initializeAgent();
     }
 
-    Socket.registerCallback("open", [getMsgTotal]);
-
-    getMsgTotal();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
