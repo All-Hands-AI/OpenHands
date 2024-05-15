@@ -1,10 +1,11 @@
 # SWE-Bench Evaluation with OpenDevin SWE-Bench Docker Image
 
-The documentation for this section is currently **under construction** and is expected to be completed and merged to `main` within the week. Subscribe to [this pr](https://github.com/OpenDevin/OpenDevin/pull/1468) to track its progress.
+
+This folder contains evaluation harness we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)). We create [a fork of SWE-Bench](https://github.com/OpenDevin/OD-SWE-bench.git) mostly build on top of [the original repo](https://github.com/princeton-nlp/SWE-bench) and [containerized](#opendevin-swe-bench-docker-image) it for easy evaluation.
 
 ## OpenDevin SWE-Bench Docker Image
 
-In [OpenDevin-SWE-Bench fork](https://github.com/OpenDevin/OD-SWE-bench.git), we try to pre-build the **testbed** (i.e., code of the repository we want the agent to edit) AND the **conda environment**, so that in evaluation (inference) time, we can directly leverage existing environments for effecienct evaluation.
+In [OpenDevin-SWE-Bench fork](https://github.com/OpenDevin/OD-SWE-bench.git) (mostly from [original repo](https://github.com/princeton-nlp/SWE-bench) with some fixes), we try to pre-build the **testbed** (i.e., code of the repository we want the agent to edit) AND the **conda environment**, so that in evaluation (inference) time, we can directly leverage existing environments for effecienct evaluation.
 
 **We pack everything you need for SWE-Bench evaluation into one, gigantic, docker image.** To use it:
 
@@ -79,10 +80,10 @@ You can replace `eval_gpt4_1106_preview` with any model you setted up in `config
 
 After running the inference described in the previous section, you will obtain a `output.jsonl` (by default it will save to `evaluation/evaluation_outputs`). Then you can run this one line script to evaluate generated patches, and produce a fine-grained report:
 
-If you want to evaluate existing results, you should first run this:
+If you want to evaluate existing results, you should first run this to clone existing outputs
 
 ```bash
-git submodule update --init --recursive
+git clone https://huggingface.co/spaces/OpenDevin/evaluation evaluation/evaluation_outputs
 ```
 
 Then you can run the following:
@@ -143,3 +144,7 @@ It will contains an additional field `fine_grained_report` (see example below) c
 ```
 
 Please refer to [EVAL_PATCH.md](./EVAL_PATCH.md) if you want to learn more about how to evaluate patches that are already generated (e.g., not by OpenDevin).
+
+## Submit your evaluation results
+
+You can start your own fork of [our huggingface evaluation outputs](https://huggingface.co/spaces/OpenDevin/evaluation) and submit a PR of your evaluation results following the guide [here](https://huggingface.co/docs/hub/en/repositories-pull-requests-discussions#pull-requests-and-discussions).
