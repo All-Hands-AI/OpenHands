@@ -32,4 +32,4 @@ docker run --rm \
     --dataset swe-bench-test-lite \
     --experiment-name test_experiment \
     --merge-report && cp -r /swe_util/eval_data/eval_logs/test_experiment/* /swe_bench_output/eval_logs \
-    && cp -r /swe_util/outputs/* /swe_bench_output/swe_bench_format/"
+    && cp -r /swe_util/eval_data/outputs/* /swe_bench_output/swe_bench_format/"
