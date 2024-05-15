@@ -16,10 +16,10 @@ describe("Auth Service", () => {
 
   describe("getToken", () => {
     it("should fetch and return a token", async () => {
-      const data = await getToken();
       (Storage.prototype.getItem as Mock).mockReturnValue("newToken");
+      const data = await getToken();
       expect(localStorage.getItem).toHaveBeenCalledWith("token"); // Used to set Authorization header
-      expect(data).toEqual({ token: "newToken" });
+      expect(data).toEqual("newToken");
     });
   });
 

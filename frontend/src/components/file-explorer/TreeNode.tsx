@@ -49,11 +49,14 @@ function TreeNode({
   const name = getNameFromPath(path);
   const isDirectory = path.endsWith("/");
 
+  const refreshChildren = async () => {
+    const files = await listFiles(path);
+    setChildren(files);
+  }
+
   React.useEffect(() => {
     if (isOpen && isDirectory) {
-      listFiles(path).then((files) => {
-        setChildren(files);
-      });
+      refreshChildren();
     } else {
       setChildren(null);
     }
