@@ -7,6 +7,7 @@ from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import args, get_llm_config_arg
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
 from opendevin.events.action import ChangeAgentStateAction, MessageAction
 from opendevin.events.event import Event
@@ -64,7 +65,7 @@ async def main(
         if llm_config is None:
             raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
 
-        print(
+        logger.info(
             f'Running agent {args.agent_cls} (model: {llm_config.model}, llm_config: {llm_config}) with task: "{task}"'
         )
 
@@ -72,7 +73,7 @@ async def main(
         llm = LLM(llm_config=llm_config)
     else:
         # --model-name model_name
-        print(
+        logger.info(
             f'Running agent {args.agent_cls} (model: {args.model_name}), with task: "{task}"'
         )
         llm = LLM(args.model_name)
