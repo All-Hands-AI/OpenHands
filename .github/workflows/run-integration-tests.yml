@@ -57,7 +57,6 @@ jobs:
           AGENT: ${{ matrix.agent }}
           MAX_ITERATIONS: 10
           LLM_EMBEDDING_MODEL: ${{ matrix.embedding-model }}
-          REMIND_ITERATIONS: ${{ (matrix.agent == 'CodeActAgent') && 'true' || 'false' }}
         run: |
           rm -rf workspace
           mkdir workspace

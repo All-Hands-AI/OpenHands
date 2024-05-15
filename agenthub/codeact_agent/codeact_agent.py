@@ -1,6 +1,12 @@
 import re
 
-from agenthub.codeact_agent.prompt import EXAMPLES, SYSTEM_MESSAGE
+from agenthub.codeact_agent.prompt import (
+    COMMAND_DOCS,
+    EXAMPLES,
+    GITHUB_MESSAGE,
+    SYSTEM_PREFIX,
+    SYSTEM_SUFFIX,
+)
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.logger import opendevin_logger as logger
@@ -21,6 +27,8 @@ from opendevin.runtime.plugins import (
     PluginRequirement,
     SWEAgentCommandsRequirement,
 )
+
+ENABLE_GITHUB = True
 
 
 def parse_response(response) -> str:
@@ -77,7 +85,7 @@ def swe_agent_edit_hack(bash_command: str) -> str:
 
 
 class CodeActAgent(Agent):
-    VERSION = '1.1'
+    VERSION = '1.2'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
@@ -119,6 +127,12 @@ class CodeActAgent(Agent):
         SWEAgentCommandsRequirement(),
     ]
 
+    system_message: str = (
+        f'{SYSTEM_PREFIX}\n{GITHUB_MESSAGE}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
+        if ENABLE_GITHUB
+        else f'{SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
+    )
+
     def __init__(
         self,
         llm: LLM,
@@ -138,7 +152,7 @@ class CodeActAgent(Agent):
         """
         super().reset()
         self.messages: list[dict[str, str]] = [
-            {'role': 'system', 'content': SYSTEM_MESSAGE},
+            {'role': 'system', 'content': self.system_message},
             {
                 'role': 'user',
                 'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!",
@@ -195,7 +209,7 @@ class CodeActAgent(Agent):
         latest_user_message = [m for m in self.messages if m['role'] == 'user'][-1]
         if latest_user_message:
             latest_user_message['content'] += (
-                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration - 1} turns left to complete the task.'
+                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
         response = self.llm.completion(

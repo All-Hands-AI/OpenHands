@@ -16,7 +16,11 @@ PORT = os.environ.get('JUPYTER_EXEC_SERVER_PORT')
 POST_URL = f'http://localhost:{PORT}/execute'
 
 for i in range(5):
-    response = requests.post(POST_URL, json={'kernel_id': kernel_id, 'code': code})
+    try:
+        response = requests.post(POST_URL, json={'kernel_id': kernel_id, 'code': code})
+    except requests.exceptions.ConnectionError:
+        time.sleep(1)
+        continue
     # if "500: Internal Server Error" is not in the response, break the loop
     if '500: Internal Server Error' not in response.text:
         break
