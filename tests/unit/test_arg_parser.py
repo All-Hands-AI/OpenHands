@@ -9,17 +9,20 @@ def test_help_message(capsys):
         parser.parse_args(['--help'])
     captured = capsys.readouterr()
     expected_help_message = """
-usage: pytest [-h] [-d DIRECTORY] [-t TASK] [-f FILE] [-c AGENT_CLS] [-m MODEL_NAME] [-i MAX_ITERATIONS] [-n MAX_CHARS] [--eval-output-dir EVAL_OUTPUT_DIR] [--eval-n-limit EVAL_N_LIMIT] [--eval-num-workers EVAL_NUM_WORKERS] [--eval-note EVAL_NOTE]
+usage: pytest [-h] [-d DIRECTORY] [-t TASK] [-f FILE] [-c AGENT_CLS]
+              [-m MODEL_NAME] [-i MAX_ITERATIONS] [-n MAX_CHARS]
+              [--eval-output-dir EVAL_OUTPUT_DIR]
+              [--eval-n-limit EVAL_N_LIMIT]
+              [--eval-num-workers EVAL_NUM_WORKERS] [--eval-note EVAL_NOTE]
               [-l LLM_CONFIG]
-
 Run an agent with a specific task
-
 options:
   -h, --help            show this help message and exit
   -d DIRECTORY, --directory DIRECTORY
                         The working directory for the agent
   -t TASK, --task TASK  The task for the agent to perform
-  -f FILE, --file FILE  Path to a file containing the task. Overrides -t if both are provided.
+  -f FILE, --file FILE  Path to a file containing the task. Overrides -t if
+                        both are provided.
   -c AGENT_CLS, --agent-cls AGENT_CLS
                         The agent class to use
   -m MODEL_NAME, --model-name MODEL_NAME
@@ -27,7 +30,8 @@ options:
   -i MAX_ITERATIONS, --max-iterations MAX_ITERATIONS
                         The maximum number of iterations to run the agent
   -n MAX_CHARS, --max-chars MAX_CHARS
-                        The maximum number of characters to send to and receive from LLM per task
+                        The maximum number of characters to send to and
+                        receive from LLM per task
   --eval-output-dir EVAL_OUTPUT_DIR
                         The directory to save evaluation output
   --eval-n-limit EVAL_N_LIMIT
@@ -37,7 +41,8 @@ options:
   --eval-note EVAL_NOTE
                         The note to add to the evaluation directory
   -l LLM_CONFIG, --llm-config LLM_CONFIG
-                        The group of llm settings, e.g. a [llama3] section in the toml file. Overrides model if both are provided.
+                        The group of llm settings, e.g. a [llama3] section in
+                        the toml file. Overrides model if both are provided.
 """
 
     actual_lines = captured.out.strip().split('\n')
