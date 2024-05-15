@@ -82,7 +82,6 @@ class AgentController:
             self.agent_task.cancel()
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
         await self.set_agent_state_to(AgentState.STOPPED)
-        return self.get_state()
 
     def update_state_before_step(self):
         self.state.iteration += 1
