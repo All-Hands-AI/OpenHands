@@ -10,8 +10,8 @@ from glob import glob
 
 import docker
 
-from opendevin.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.config import config
+from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.runtime.docker.process import DockerProcess, Process

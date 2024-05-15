@@ -3,7 +3,6 @@ import atexit
 import json
 import os
 import time
-from typing import Callable
 
 from fastapi import WebSocket
 
@@ -36,13 +35,6 @@ class SessionManager:
         if sid not in self._sessions:
             return None
         return self._sessions.get(sid)
-
-    async def loop_recv(self, sid: str, dispatch: Callable):
-        print(f'Starting loop_recv for sid: {sid}')
-        """Starts listening for messages from the client."""
-        if sid not in self._sessions:
-            return
-        await self._sessions[sid].loop_recv(dispatch)
 
     def close(self):
         logger.info('Saving sessions...')

@@ -30,7 +30,7 @@ from opendevin.runtime import (
 )
 from opendevin.runtime.browser.browser_env import BrowserEnv
 from opendevin.runtime.plugins import PluginRequirement
-from opendevin.storage.files.local import FileStore, InMemoryFileStore
+from opendevin.storage import FileStore, InMemoryFileStore
 
 
 def create_sandbox(sid: str = 'default', sandbox_type: str = 'exec') -> Sandbox:

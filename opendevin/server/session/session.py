@@ -1,9 +1,16 @@
 import time
-from typing import Callable
 
 from fastapi import WebSocket, WebSocketDisconnect
 
+from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema import AgentState
+from opendevin.core.schema.action import ActionType
+from opendevin.events.action import ChangeAgentStateAction, NullAction
+from opendevin.events.event import Event, EventSource
+from opendevin.events.observation import NullObservation
+from opendevin.events.serialization import event_from_dict, event_to_dict
+from opendevin.events.stream import EventStreamSubscriber
 from opendevin.server.agent.agent import AgentSession
 
 DEL_DELT_SEC = 60 * 60 * 5
@@ -21,8 +28,9 @@ class Session:
         self.websocket = ws
         self.last_active_ts = int(time.time())
         self.agent = AgentSession(sid)
+        self.agent.event_stream.subscribe(EventStreamSubscriber.SERVER, self.on_event)
 
-    async def loop_recv(self, dispatch: Callable):
+    async def loop_recv(self):
         try:
             if self.websocket is None:
                 return
@@ -33,8 +41,7 @@ class Session:
                     await self.send_error('Invalid JSON')
                     continue
 
-                action = data.get('action', None)
-                await dispatch(self.sid, action, data)
+                await self.dispatch(data)
         except WebSocketDisconnect:
             self.is_alive = False
             logger.info('WebSocket disconnected, sid: %s', self.sid)
@@ -43,6 +50,42 @@ class Session:
             if 'WebSocket is not connected' in str(e):
                 self.is_alive = False
             logger.exception('Error in loop_recv: %s', e)
+
+    async def _initialize_agent(self, data: dict):
+        try:
+            await self.agent.create_controller(data)
+        except Exception as e:
+            logger.exception(f'Error creating controller: {e}')
+            await self.send_error(
+                f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
+            )
+            return
+        await self.agent.event_stream.add_event(
+            ChangeAgentStateAction(AgentState.INIT), EventSource.USER
+        )
+
+    async def on_event(self, event: Event):
+        """Callback function for agent events.
+
+        Args:
+            event: The agent event (Observation or Action).
+        """
+        if isinstance(event, NullAction):
+            return
+        if isinstance(event, NullObservation):
+            return
+        if event.source == EventSource.AGENT and not isinstance(
+            event, (NullAction, NullObservation)
+        ):
+            await self.send(event_to_dict(event))
+
+    async def dispatch(self, data: dict):
+        action = data.get('action', '')
+        if action == ActionType.INIT:
+            await self._initialize_agent(data)
+            return
+        event = event_from_dict(data.copy())
+        await self.agent.event_stream.add_event(event, EventSource.USER)
 
     async def send(self, data: dict[str, object]) -> bool:
         try:

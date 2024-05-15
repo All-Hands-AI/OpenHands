@@ -41,7 +41,7 @@ class E2BRuntime(ServerRuntime):
             return FileWriteObservation(content='', path=action.path)
         files = self.file_store.list(action.path)
         if action.path in files:
-            all_lines = self.file_store.read(action.path)
+            all_lines = self.file_store.read(action.path).split('\n')
             new_file = insert_lines(
                 action.content.split('\n'), all_lines, action.start, action.end
             )

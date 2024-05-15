@@ -145,8 +145,8 @@ async def websocket_endpoint(websocket: WebSocket):
     if session is None:
         session = session_manager.add_session(sid, websocket)
 
+    await session.loop_recv()
     websocket.send_json({'token': token, 'status': 'ok'})
-    await session_manager.loop_recv(sid, session.agent.dispatch)
 
 
 @app.get('/api/litellm-models')
