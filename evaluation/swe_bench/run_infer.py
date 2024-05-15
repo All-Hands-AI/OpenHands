@@ -4,6 +4,7 @@ import logging
 import multiprocessing as mp
 import os
 import pathlib
+import subprocess
 import time
 from concurrent.futures import ProcessPoolExecutor
 
@@ -318,7 +319,12 @@ if __name__ == '__main__':
         'max_iterations': max_iterations,
         'eval_output_dir': eval_output_dir,
         'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
+        # get the commit id of current repo
+        'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+        .decode('utf-8')
+        .strip(),
     }
+    logger.info(f'Metadata: {metadata}')
     with open(os.path.join(eval_output_dir, 'metadata.json'), 'w') as f:
         json.dump(metadata, f)
 
