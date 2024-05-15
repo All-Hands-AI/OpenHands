@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 
 from opendevin.controller.state.task import RootTask
+from opendevin.core.schema import AgentState
 from opendevin.events.action import (
     Action,
     MessageAction,
@@ -23,6 +24,8 @@ class State:
     updated_info: list[tuple[Action, Observation]] = field(default_factory=list)
     inputs: dict = field(default_factory=dict)
     outputs: dict = field(default_factory=dict)
+    error: str | None = None
+    agent_state: AgentState = AgentState.LOADING
 
     def get_current_user_intent(self):
         # TODO: this is used to understand the user's main goal, but it's possible
