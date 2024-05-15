@@ -118,6 +118,9 @@ class AgentUnit:
                 logger.warning(
                     'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful (LocalBox, DockerExecBox) will not work properly.'
                 )
+        # Initializing plugins into the runtime
+        assert self.runtime is not None, 'Runtime is not initialized'
+        self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
 
         if self.controller is not None:
             await self.controller.close()
