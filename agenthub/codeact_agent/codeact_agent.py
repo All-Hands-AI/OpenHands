@@ -276,7 +276,10 @@ class CodeActAgent(Agent):
         raise NotImplementedError('Implement this abstract method')
 
     def log_cost(self, response):
-        cur_cost = self.llm.completion_cost(response)
+        try:
+            cur_cost = self.llm.completion_cost(response)
+        except Exception:
+            cur_cost = 0
         self.cost_accumulator += cur_cost
         logger.info(
             'Cost: %.2f USD | Accumulated Cost: %.2f USD',

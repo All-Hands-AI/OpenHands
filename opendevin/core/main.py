@@ -7,12 +7,14 @@ from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import args, get_llm_config_arg
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
 from opendevin.events.action import ChangeAgentStateAction, MessageAction
 from opendevin.events.event import Event
 from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.llm.llm import LLM
+from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.server.runtime import ServerRuntime
 
 
@@ -31,6 +33,7 @@ async def main(
     task_str: str = '',
     exit_on_message: bool = False,
     fake_user_response_fn: Optional[Callable[[Optional[State]], str]] = None,
+    sandbox: Optional[Sandbox] = None,
 ) -> Optional[State]:
     """Main coroutine to run the agent controller with task input flexibility.
     It's only used when you launch opendevin backend directly via cmdline.
@@ -39,6 +42,7 @@ async def main(
         task_str: The task to run.
         exit_on_message: quit if agent asks for a message from user (optional)
         fake_user_response_fn: An optional function that receives the current state (could be None) and returns a fake user response.
+        sandbox: An optional sandbox to run the agent in.
     """
 
     # Determine the task source
@@ -62,7 +66,7 @@ async def main(
         if llm_config is None:
             raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
 
-        print(
+        logger.info(
             f'Running agent {args.agent_cls} (model: {llm_config.model}, llm_config: {llm_config}) with task: "{task}"'
         )
 
@@ -70,7 +74,7 @@ async def main(
         llm = LLM(llm_config=llm_config)
     else:
         # --model-name model_name
-        print(
+        logger.info(
             f'Running agent {args.agent_cls} (model: {args.model_name}), with task: "{task}"'
         )
         llm = LLM(args.model_name)
@@ -85,7 +89,7 @@ async def main(
         max_chars=args.max_chars,
         event_stream=event_stream,
     )
-    runtime = ServerRuntime(event_stream=event_stream)
+    runtime = ServerRuntime(event_stream=event_stream, sandbox=sandbox)
     runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
 
     await event_stream.add_event(MessageAction(content=task), EventSource.USER)
