@@ -1,8 +1,10 @@
 import React from "react";
+import { useDispatch } from "react-redux";
 import { twMerge } from "tailwind-merge";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
-import { WorkspaceFile, listFiles } from "#/services/fileService";
+import { listFiles } from "#/services/fileService";
+import { setActiveFilepath } from "#/state/codeSlice";
 import { CodeEditorContext } from "../CodeEditorContext";
 
 interface TitleProps {
@@ -27,18 +29,17 @@ function Title({ name, type, isOpen, onClick }: TitleProps) {
 
 interface TreeNodeProps {
   path: string;
-  onFileClick: (path: string) => void;
   defaultOpen?: boolean;
 }
 
 function TreeNode({
   path,
-  onFileClick,
   defaultOpen = false,
 }: TreeNodeProps) {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
   const [children, setChildren] = React.useState<string[] | null>(null);
   const { selectedFileAbsolutePath } = React.useContext(CodeEditorContext);
+  const dispatch = useDispatch();
 
   const getNameFromPath = (path: string) => {
     const parts = path.split("/");
@@ -58,14 +59,13 @@ function TreeNode({
     }
   }, [isOpen]);
 
-  const handleClick = React.useCallback(() => {
-    console.log('click', isDirectory, path);
+  const handleClick = () => {
     if (isDirectory) {
       setIsOpen((prev) => !prev);
     } else {
-      onFileClick(path);
+      dispatch(setActiveFilepath(path));
     }
-  }, [onFileClick]);
+  };
 
   return (
     <div
@@ -87,7 +87,6 @@ function TreeNode({
             <TreeNode
               key={index}
               path={`${child}`}
-              onFileClick={onFileClick}
             />
           ))}
         </div>

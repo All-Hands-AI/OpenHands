@@ -1,16 +1,14 @@
 import React from "react";
 import TreeNode from "./TreeNode";
-import { WorkspaceFile, listFiles } from "#/services/fileService";
+import { listFiles } from "#/services/fileService";
 
 interface ExplorerTreeProps {
-  files: []string;
-  onFileClick: (path: string) => void;
+  files: string[];
   defaultOpen?: boolean;
 }
 
 function ExplorerTree({
   files,
-  onFileClick,
   defaultOpen = false,
 }: ExplorerTreeProps) {
 
@@ -20,7 +18,6 @@ function ExplorerTree({
         <TreeNode
           key={file}
           path={file}
-          onFileClick={onFileClick}
           defaultOpen={defaultOpen}
         />
       ))}

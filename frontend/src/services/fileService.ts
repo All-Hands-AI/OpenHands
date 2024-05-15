@@ -1,10 +1,5 @@
 import { request } from "./api";
 
-export type WorkspaceFile = {
-  name: string;
-  children?: WorkspaceFile[];
-};
-
 export async function selectFile(file: string): Promise<string> {
   const res = await request(`/api/select-file?file=${file}`);
   return res.code;

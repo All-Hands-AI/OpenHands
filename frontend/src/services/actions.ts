@@ -1,6 +1,6 @@
 import { setScreenshotSrc, setUrl } from "#/state/browserSlice";
 import { addAssistantMessage } from "#/state/chatSlice";
-import { setCode, updatePath } from "#/state/codeSlice";
+import { setCode, setActiveFilepath } from "#/state/codeSlice";
 import { appendInput } from "#/state/commandSlice";
 import { appendJupyterInput } from "#/state/jupyterSlice";
 import { setRootTask } from "#/state/taskSlice";
@@ -19,7 +19,7 @@ const messageActions = {
   },
   [ActionType.WRITE]: (message: ActionMessage) => {
     const { path, content } = message.args;
-    store.dispatch(updatePath(path));
+    store.dispatch(setActivePath(path));
     store.dispatch(setCode(content));
   },
   [ActionType.MESSAGE]: (message: ActionMessage) => {

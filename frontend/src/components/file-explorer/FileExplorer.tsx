@@ -84,11 +84,7 @@ function ExplorerActions({
   );
 }
 
-interface FileExplorerProps {
-  onFileClick: (path: string) => void;
-}
-
-function FileExplorer({ onFileClick }: FileExplorerProps) {
+function FileExplorer() {
   const [isHidden, setIsHidden] = React.useState(false);
   const [files, setFiles] = React.useState<string[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -129,7 +125,6 @@ function FileExplorer({ onFileClick }: FileExplorerProps) {
         <div style={{ display: isHidden ? "none" : "block" }}>
           <ExplorerTree
             files={files}
-            onFileClick={onFileClick}
             defaultOpen
           />
         </div>

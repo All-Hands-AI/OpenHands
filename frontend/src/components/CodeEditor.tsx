@@ -7,7 +7,7 @@ import { VscCode } from "react-icons/vsc";
 import { useDispatch, useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
 import { selectFile } from "#/services/fileService";
-import { setCode } from "#/state/codeSlice";
+import { setCode, setActiveFilepath } from "#/state/codeSlice";
 import { RootState } from "#/store";
 import FileExplorer from "./file-explorer/FileExplorer";
 import { CodeEditorContext } from "./CodeEditorContext";
@@ -26,6 +26,7 @@ function CodeEditor(): JSX.Element {
 
   const dispatch = useDispatch();
   const code = useSelector((state: RootState) => state.code.code);
+  const activeFilepath = useSelector((state: RootState) => state.code.path);
 
   const handleEditorDidMount = (
     editor: editor.IStandaloneCodeEditor,
@@ -45,20 +46,21 @@ function CodeEditor(): JSX.Element {
     monaco.editor.setTheme("my-theme");
   };
 
-  const onSelectFile = async (absolutePath: string) => {
-    const paths = absolutePath.split("/");
-    const rootlessPath = paths.slice(1).join("/");
-
-    setSelectedFileAbsolutePath(absolutePath);
-
-    const newCode = await selectFile(rootlessPath);
+  const updateCode = async () => {
+    const newCode = await selectFile(activeFilepath);
+    setSelectedFileAbsolutePath(activeFilepath);
     dispatch(setCode(newCode));
-  };
+  }
+
+  React.useEffect(() => {
+    // FIXME: we can probably move this out of the component and into state/service
+    if (activeFilepath) updateCode();
+  }, [activeFilepath]);
 
   return (
     <div className="flex h-full w-full bg-neutral-900 transition-all duration-500 ease-in-out">
       <CodeEditorContext.Provider value={codeEditorContext}>
-        <FileExplorer onFileClick={onSelectFile} />
+        <FileExplorer />
         <div className="flex flex-col min-h-0 w-full">
           <Tabs
             disableCursorAnimation
