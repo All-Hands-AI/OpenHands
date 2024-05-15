@@ -15,9 +15,6 @@ export enum TaskState {
 }
 
 export async function getRootTask(): Promise<Task | undefined> {
-  const res = await request("/api/root_task", { headers });
-  if (res.status !== 200 && res.status !== 204) {
-    return undefined;
-  }
+  const res = await request("/api/root_task");
   return res as Task;
 }

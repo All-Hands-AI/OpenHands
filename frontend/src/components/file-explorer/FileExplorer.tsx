@@ -7,7 +7,6 @@ import {
 } from "react-icons/io";
 import { twMerge } from "tailwind-merge";
 import {
-  WorkspaceFile,
   listFiles,
   uploadFile,
 } from "#/services/fileService";

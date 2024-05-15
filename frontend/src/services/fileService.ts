@@ -17,5 +17,5 @@ export async function uploadFile(file: File) {
 
 export async function listFiles(basePath: string = '/'): Promise<string[]> {
   const res = await request(`/api/list-files?path=${basePath}`);
-  return res;
+  return res as string[];
 }

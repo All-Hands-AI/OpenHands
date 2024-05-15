@@ -4,7 +4,7 @@ import { IFlatMetadata } from "react-accessible-treeview/dist/TreeView/utils";
 
 export const initialState = {
   code: "",
-  selectedIds: [] as number[],
+  path: "",
 };
 
 export const codeSlice = createSlice({

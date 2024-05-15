@@ -10,13 +10,13 @@ import toast from "#/utils/toast";
 const toastSpy = vi.spyOn(toast, "stickyError");
 
 vi.mock("../../services/fileService", async () => ({
-  listFiles: vi.fn(async (path: str = '/') => (
+  listFiles: vi.fn(async (path: string = '/') => {
       if (path === "/") {
           return ["folder1/", "file1.ts"];
       } else if (path === "/folder1/") {
           return ["file2.ts"];
       }
-  })),
+  }),
 
   uploadFile: vi.fn(),
 }));
@@ -27,7 +27,7 @@ describe("FileExplorer", () => {
   });
 
   it("should get the workspace directory", async () => {
-    const { getByText } = render(<FileExplorer onFileClick={vi.fn} />);
+    const { getByText } = render(<FileExplorer />);
 
     expect(listFiles).toHaveBeenCalledTimes(1);
     await waitFor(() => {
@@ -37,31 +37,8 @@ describe("FileExplorer", () => {
 
   it.todo("should render an empty workspace");
 
-  it("calls the onFileClick function when a file is clicked", async () => {
-    const onFileClickMock = vi.fn();
-    const { getByText } = render(
-      <FileExplorer onFileClick={onFileClickMock} />,
-    );
-
-    await waitFor(() => {
-      expect(getByText("folder1")).toBeInTheDocument();
-    });
-
-    act(() => {
-      userEvent.click(getByText("folder1"));
-    });
-
-    act(() => {
-      userEvent.click(getByText("file2.ts"));
-    });
-
-    const absPath = "root/folder1/file2.ts";
-    expect(onFileClickMock).toHaveBeenCalledWith(absPath);
-  });
-
   it("should refetch the workspace when clicking the refresh button", async () => {
-    const onFileClickMock = vi.fn();
-    render(<FileExplorer onFileClick={onFileClickMock} />);
+    render(<FileExplorer />);
 
     // The 'await' keyword is required here to avoid a warning during test runs
     await act(() => {
@@ -73,7 +50,7 @@ describe("FileExplorer", () => {
 
   it("should toggle the explorer visibility when clicking the close button", async () => {
     const { getByTestId, getByText, queryByText } = render(
-      <FileExplorer onFileClick={vi.fn} />,
+      <FileExplorer />,
     );
 
     await waitFor(() => {
@@ -90,7 +67,7 @@ describe("FileExplorer", () => {
   });
 
   it("should upload a file", async () => {
-    const { getByTestId } = render(<FileExplorer onFileClick={vi.fn} />);
+    const { getByTestId } = render(<FileExplorer />);
 
     const uploadFileInput = getByTestId("file-input");
     const file = new File([""], "test");
@@ -107,7 +84,7 @@ describe("FileExplorer", () => {
   it.todo("should display an error toast if file upload fails", async () => {
     (uploadFile as Mock).mockRejectedValue(new Error());
 
-    const { getByTestId } = render(<FileExplorer onFileClick={vi.fn} />);
+    const { getByTestId } = render(<FileExplorer />);
 
     const uploadFileInput = getByTestId("file-input");
     const file = new File([""], "test");

@@ -1,17 +1,8 @@
 import React from "react";
 import { render } from "@testing-library/react";
 import ExplorerTree from "./ExplorerTree";
-import { WorkspaceFile } from "#/services/fileService";
 
-const NODE: WorkspaceFile = {
-  name: "root-folder-1",
-  children: [
-    { name: "file-1-1.ts" },
-    { name: "folder-1-2", children: [{ name: "file-1-2.ts" }] },
-  ],
-};
-
-const onFileClick = vi.fn();
+const FILES = ["file-1-1.ts", "folder-1-2"];
 
 describe("ExplorerTree", () => {
   afterEach(() => {
@@ -20,7 +11,7 @@ describe("ExplorerTree", () => {
 
   it("should render the explorer", () => {
     const { getByText, queryByText } = render(
-      <ExplorerTree root={NODE} onFileClick={onFileClick} defaultOpen />,
+      <ExplorerTree files={FILES} defaultOpen />,
     );
 
     expect(getByText("root-folder-1")).toBeInTheDocument();
@@ -31,7 +22,7 @@ describe("ExplorerTree", () => {
 
   it("should render the explorer given the defaultExpanded prop", () => {
     const { getByText, queryByText } = render(
-      <ExplorerTree root={NODE} onFileClick={onFileClick} />,
+      <ExplorerTree files={FILES} />,
     );
 
     expect(getByText("root-folder-1")).toBeInTheDocument();

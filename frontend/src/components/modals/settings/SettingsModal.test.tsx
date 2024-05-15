@@ -12,7 +12,7 @@ import {
   getDefaultSettings,
 } from "#/services/settings";
 import { initializeAgent } from "#/services/agent";
-import { fetchAgents, fetchModels } from "#/api";
+import { fetchAgents, fetchModels } from "#/services/options";
 import SettingsModal from "./SettingsModal";
 
 const toastSpy = vi.spyOn(toast, "settingsChanged");
@@ -39,8 +39,8 @@ vi.mock("#/services/agent", async () => ({
   initializeAgent: vi.fn(),
 }));
 
-vi.mock("#/api", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("#/api")>()),
+vi.mock("#/services/options", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("#/services/options")>()),
   fetchModels: vi
     .fn()
     .mockResolvedValue(Promise.resolve(["model1", "model2", "model3"])),

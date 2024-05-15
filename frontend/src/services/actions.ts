@@ -19,7 +19,7 @@ const messageActions = {
   },
   [ActionType.WRITE]: (message: ActionMessage) => {
     const { path, content } = message.args;
-    store.dispatch(setActivePath(path));
+    store.dispatch(setActiveFilepath(path));
     store.dispatch(setCode(content));
   },
   [ActionType.MESSAGE]: (message: ActionMessage) => {
