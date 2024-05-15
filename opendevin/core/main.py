@@ -1,10 +1,11 @@
 import asyncio
 import sys
-from typing import Type
+from typing import Callable, Optional, Type
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
+from opendevin.controller.state.state import State
 from opendevin.core.config import args, get_llm_config_arg
 from opendevin.core.schema import AgentState
 from opendevin.events.action import ChangeAgentStateAction, MessageAction
@@ -12,6 +13,7 @@ from opendevin.events.event import Event
 from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.llm.llm import LLM
+from opendevin.runtime.server.runtime import ServerRuntime
 
 
 def read_task_from_file(file_path: str) -> str:
@@ -25,17 +27,18 @@ def read_task_from_stdin() -> str:
     return sys.stdin.read()
 
 
-async def main(task_str: str = '', exit_on_message: bool = False) -> AgentState:
-    """
-    Main coroutine to run the agent controller with task input flexibility.
+async def main(
+    task_str: str = '',
+    exit_on_message: bool = False,
+    fake_user_response_fn: Optional[Callable[[Optional[State]], str]] = None,
+) -> Optional[State]:
+    """Main coroutine to run the agent controller with task input flexibility.
     It's only used when you launch opendevin backend directly via cmdline.
 
     Args:
-        task_str: task string (optional)
+        task_str: The task to run.
         exit_on_message: quit if agent asks for a message from user (optional)
-
-    Returns:
-        The final agent state right before shutdown
+        fake_user_response_fn: An optional function that receives the current state (could be None) and returns a fake user response.
     """
 
     # Determine the task source
@@ -75,13 +78,15 @@ async def main(task_str: str = '', exit_on_message: bool = False) -> AgentState:
     AgentCls: Type[Agent] = Agent.get_cls(args.agent_cls)
     agent = AgentCls(llm=llm)
 
-    event_stream = EventStream()
+    event_stream = EventStream('main')
     controller = AgentController(
         agent=agent,
         max_iterations=args.max_iterations,
         max_chars=args.max_chars,
         event_stream=event_stream,
     )
+    runtime = ServerRuntime(event_stream=event_stream)
+    runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
 
     await event_stream.add_event(MessageAction(content=task), EventSource.USER)
     await event_stream.add_event(
@@ -91,10 +96,13 @@ async def main(task_str: str = '', exit_on_message: bool = False) -> AgentState:
     async def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
-                action = MessageAction(content='/exit')
-                if not exit_on_message:
+                if exit_on_message:
+                    message = '/exit'
+                elif fake_user_response_fn is None:
                     message = input('Request user input >> ')
-                    action = MessageAction(content=message)
+                else:
+                    message = fake_user_response_fn(controller.get_state())
+                action = MessageAction(content=message)
                 await event_stream.add_event(action, EventSource.USER)
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
@@ -106,10 +114,8 @@ async def main(task_str: str = '', exit_on_message: bool = False) -> AgentState:
     ]:
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
-    # retrieve the final state before we close the controller and agent
-    final_agent_state = controller.get_agent_state()
     await controller.close()
-    return final_agent_state
+    return controller.get_state()
 
 
 if __name__ == '__main__':
