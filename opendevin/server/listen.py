@@ -135,18 +135,20 @@ async def websocket_endpoint(websocket: WebSocket):
         sid = get_sid_from_token(token)
 
         if sid == '':
-            websocket.send_json({'error': 'Invalid token'})
+            await websocket.send_json({'error': 'Invalid token', 'error_code': 401})
+            await websocket.close()
             return
         session = session_manager.get_session(sid)
     else:
         sid = str(uuid.uuid4())
         token = sign_token({'sid': sid})
 
+    await websocket.send_json({'token': token, 'status': 'ok'})
+
     if session is None:
         session = session_manager.add_session(sid, websocket)
 
     await session.loop_recv()
-    websocket.send_json({'token': token, 'status': 'ok'})
 
 
 @app.get('/api/litellm-models')

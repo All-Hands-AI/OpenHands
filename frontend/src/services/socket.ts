@@ -1,7 +1,7 @@
 // import { toast } from "sonner";
 import toast from "#/utils/toast";
 import { handleAssistantMessage } from "./actions";
-import { getToken } from "./auth";
+import { getToken, setToken, clearToken } from "./auth";
 
 class Socket {
   private static _socket: WebSocket | null = null;
@@ -23,28 +23,22 @@ class Socket {
 
   public static tryInitialize(): void {
     if (Socket.initializing) return;
+    console.log("Trying to initialize socket...");
     Socket.initializing = true;
-    getToken()
-      .then((token) => {
-        Socket._initialize(token);
-      })
-      .catch(() => {
-        const msg = `Connection failed. Retry...`;
-        toast.stickyError("ws", msg);
-
-        setTimeout(() => {
-          this.tryInitialize();
-        }, 1500);
-      });
+    const token = getToken();
+    console.log("Token: ", token);
+    Socket._initialize(token);
   }
 
   private static _initialize(token: string): void {
+    console.log("Initializing socket...");
     if (Socket.isConnected()) return;
 
     const WS_URL = `ws://${window.location.host}/ws?token=${token}`;
     Socket._socket = new WebSocket(WS_URL);
 
     Socket._socket.onopen = (e) => {
+      console.log('socket opened');
       toast.stickySuccess("ws", "Connected to server.");
       Socket.initializing = false;
       Socket.callbacks.open?.forEach((callback) => {
@@ -53,7 +47,21 @@ class Socket {
     };
 
     Socket._socket.onmessage = (e) => {
-      handleAssistantMessage(e.data);
+      let data = null;
+      try {
+        data = JSON.parse(e.data);
+      } catch (err) {
+        // TODO: report the error
+        console.error("Error parsing JSON data", err);
+        return;
+      }
+      if (data.error && data.error_code === 401) {
+        clearToken();
+      } else if (data.token) {
+        setToken(data.token);
+      } else {
+        handleAssistantMessage(data);
+      }
     };
 
     Socket._socket.onerror = () => {
@@ -62,6 +70,7 @@ class Socket {
     };
 
     Socket._socket.onclose = () => {
+      console.log("Socket closed.");
       // Reconnect after a delay
       setTimeout(() => {
         Socket.tryInitialize();

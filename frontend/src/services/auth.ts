@@ -1,18 +1,4 @@
 import * as jose from "jose";
-import { ResFetchToken } from "#/types/ResponseType";
-
-const fetchToken = async (): Promise<ResFetchToken> => {
-  const headers = new Headers({
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-  });
-  const response = await fetch(`/api/auth`, { headers });
-  if (response.status !== 200) {
-    throw new Error("Get token failed.");
-  }
-  const data: ResFetchToken = await response.json();
-  return data;
-};
 
 export const validateToken = (token: string): boolean => {
   try {
@@ -23,22 +9,16 @@ export const validateToken = (token: string): boolean => {
   }
 };
 
-const getToken = async (): Promise<string> => {
-  const token = localStorage.getItem("token") ?? "";
-  if (validateToken(token)) {
-    return token;
-  }
-
-  const data = await fetchToken();
-  if (data.token === undefined || data.token === "") {
-    throw new Error("Get token failed.");
-  }
-  const newToken = data.token;
-  if (validateToken(newToken)) {
-    localStorage.setItem("token", newToken);
-    return newToken;
-  }
-  throw new Error("Token validation failed.");
+const getToken = (): string => {
+  return localStorage.getItem("token") ?? "";
 };
 
-export { getToken, fetchToken };
+const clearToken = (): void => {
+  localStorage.removeItem("token");
+}
+
+const setToken = (token: string): void => {
+  localStorage.setItem("token", token);
+}
+
+export { getToken, setToken, clearToken };
