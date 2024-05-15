@@ -4,7 +4,6 @@ from .action import (
 from .event import (
     event_from_dict,
     event_to_dict,
-    event_to_json,
     event_to_memory,
 )
 from .observation import (
@@ -15,7 +14,6 @@ __all__ = [
     'action_from_dict',
     'event_from_dict',
     'event_to_dict',
-    'event_to_json',
     'event_to_memory',
     'observation_from_dict',
 ]
