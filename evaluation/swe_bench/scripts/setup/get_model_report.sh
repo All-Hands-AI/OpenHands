@@ -48,7 +48,7 @@ export PYTHONPATH=$OD_SWE_BENCH && cd $OD_SWE_BENCH && . $MINICONDA3/etc/profile
     --log_dir $EVAL_DATA_DIR/eval_logs/$experiment_name \
     --num_processes $num_processes \
     --skip_existing \
-    --timeout 900 \
+    --timeout 1600 \
     --verbose
 
 # Get the report
