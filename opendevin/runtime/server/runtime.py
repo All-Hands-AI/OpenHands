@@ -59,10 +59,12 @@ class ServerRuntime(Runtime):
         return IPythonRunCellObservation(content=obs.content, code=action.code)
 
     async def read(self, action: FileReadAction) -> Observation:
+        # TODO: use self.file_store
         working_dir = self.sandbox.get_working_directory()
         return await read_file(action.path, working_dir, action.start, action.end)
 
     async def write(self, action: FileWriteAction) -> Observation:
+        # TODO: use self.file_store
         working_dir = self.sandbox.get_working_directory()
         return await write_file(
             action.path, working_dir, action.content, action.start, action.end
