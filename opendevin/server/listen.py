@@ -1,7 +1,5 @@
-import shutil
 import uuid
 import warnings
-from pathlib import Path
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -17,7 +15,6 @@ from opendevin.controller.agent import Agent
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.llm import bedrock
-from opendevin.runtime import files
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import session_manager
 
@@ -187,7 +184,7 @@ async def get_agents():
 
 
 @app.get('/api/refresh-files')
-def refresh_files():
+def refresh_files(request: Request):
     """
     Refresh files.
 
@@ -196,12 +193,19 @@ def refresh_files():
     curl http://localhost:3000/api/refresh-files
     ```
     """
-    structure = files.get_folder_structure(Path(str(config.workspace_base)))
-    return structure.to_dict()
+    try:
+        return request.state.session.agent.runtime.file_store.list()
+    except Exception as e:
+        logger.error(f'Error refreshing files: {e}', exc_info=False)
+        error_msg = f'Error refreshing files: {e}'
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': error_msg},
+        )
 
 
 @app.get('/api/select-file')
-def select_file(file: str):
+def select_file(file: str, request: Request):
     """
     Select a file.
 
@@ -211,12 +215,7 @@ def select_file(file: str):
     ```
     """
     try:
-        workspace_base = config.workspace_base
-        file_path = Path(workspace_base, file)
-        # The following will check if the file is within the workspace base and throw an exception if not
-        file_path.resolve().relative_to(Path(workspace_base).resolve())
-        with open(file_path, 'r') as selected_file:
-            content = selected_file.read()
+        content = request.state.session.agent.runtime.file_store.read(file)
     except Exception as e:
         logger.error(f'Error opening file {file}: {e}', exc_info=False)
         error_msg = f'Error opening file: {e}'
@@ -228,7 +227,7 @@ def select_file(file: str):
 
 
 @app.post('/api/upload-file')
-async def upload_file(file: UploadFile):
+async def upload_file(request: Request, file: UploadFile):
     """
     Upload a file.
 
@@ -237,20 +236,18 @@ async def upload_file(file: UploadFile):
     curl -X POST -F "file=@<file_path>" http://localhost:3000/api/upload-file
     ```
     """
+    file_contents = await file.read()
     try:
-        workspace_base = config.workspace_base
-        file_path = Path(workspace_base, file.filename)
-        # The following will check if the file is within the workspace base and throw an exception if not
-        file_path.resolve().relative_to(Path(workspace_base).resolve())
-        with open(file_path, 'wb') as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        request.state.session.agent.runtime.file_store.write(
+            file.filename, file_contents
+        )
     except Exception as e:
         logger.error(f'Error saving file {file.filename}: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': f'Error saving file: {e}'},
         )
-    return {'filename': file.filename, 'location': str(file_path)}
+    return {'filename': file.filename}
 
 
 @app.get('/api/root_task')
