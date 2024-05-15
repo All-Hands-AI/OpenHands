@@ -3,7 +3,7 @@ import i18next from "i18next";
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { fetchAgents, fetchModels } from "#/api";
+import { fetchAgents, fetchModels } from "#/services/options";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import { initializeAgent } from "#/services/agent";
