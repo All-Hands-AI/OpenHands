@@ -14,6 +14,7 @@ fi
 PROCESS_FILEPATH=$(realpath $PROCESS_FILEPATH)
 FILE_DIR=$(dirname $PROCESS_FILEPATH)
 FILE_NAME=$(basename $PROCESS_FILEPATH)
+mkdir -p $FILE_DIR/eval_logs
 
 echo "Evaluating $FILE_NAME @ $FILE_DIR"
 echo "Merged output file with fine-grained report will be saved to $FILE_DIR"
@@ -29,4 +30,4 @@ docker run --rm \
     --agent-name CodeActAgent \
     --dataset swe-bench-test-lite \
     --experiment-name test_experiment \
-    --merge-report && cp -r /swe_util/eval_data/eval_logs /swe_bench_output/eval_logs/test_experiment
+    --merge-report && cp -r /swe_util/eval_data/eval_logs/test_experiment/* /swe_bench_output/eval_logs
