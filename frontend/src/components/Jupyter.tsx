@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import { useSelector } from "react-redux";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import Markdown from "react-markdown";
