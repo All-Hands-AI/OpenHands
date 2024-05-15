@@ -15,7 +15,9 @@ usage: pytest [-h] [-d DIRECTORY] [-t TASK] [-f FILE] [-c AGENT_CLS]
               [--eval-n-limit EVAL_N_LIMIT]
               [--eval-num-workers EVAL_NUM_WORKERS] [--eval-note EVAL_NOTE]
               [-l LLM_CONFIG]
+
 Run an agent with a specific task
+
 options:
   -h, --help            show this help message and exit
   -d DIRECTORY, --directory DIRECTORY
