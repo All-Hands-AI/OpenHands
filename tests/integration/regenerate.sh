@@ -4,7 +4,6 @@ set -eo pipefail
 run_test() {
   SANDBOX_TYPE=$SANDBOX_TYPE \
     WORKSPACE_BASE=$WORKSPACE_BASE \
-    REMIND_ITERATIONS=$remind_iterations \
     MAX_ITERATIONS=$MAX_ITERATIONS \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     AGENT=$agent \
@@ -27,7 +26,6 @@ SANDBOX_TYPE="ssh"
 MAX_ITERATIONS=10
 
 agents=("MonologueAgent" "CodeActAgent" "PlannerAgent" "SWEAgent")
-remind_iterations_config=(false true false false)
 tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
@@ -41,11 +39,6 @@ test_names=(
 
 num_of_tests=${#test_names[@]}
 num_of_agents=${#agents[@]}
-
-if [ "$num_of_agents" -ne "${#remind_iterations_config[@]}" ]; then
-  echo "Every agent must have its own remind_iterations_config"
-  exit 1
-fi
 
 if [ "$num_of_tests" -ne "${#test_names[@]}" ]; then
   echo "Every task must correspond to one test case"
@@ -109,9 +102,6 @@ for ((i = 0; i < num_of_tests; i++)); do
         WORKSPACE_BASE=$WORKSPACE_BASE \
         DEBUG=true \
         WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
-        REMIND_ITERATIONS=$remind_iterations \
-        WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
-        AGENT=$agent \
         poetry run python ./opendevin/core/main.py \
         -i $MAX_ITERATIONS \
         -t "$task Do not ask me for confirmation at any point." \
