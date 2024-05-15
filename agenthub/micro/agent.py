@@ -25,6 +25,20 @@ def to_json(obj, **kwargs):
     return json.dumps(obj, **kwargs)
 
 
+def history_to_json(obj, **kwargs):
+    """
+    Serialize and simplify history to str format
+    """
+    if isinstance(obj, list):
+        # process history, make it simpler.
+        processed_history = []
+        for action, observation in obj:
+            action_memory = action.to_memory()
+            observation_memory = observation.to_memory()
+            processed_history.append((action_memory, observation_memory))
+        return json.dumps(processed_history, **kwargs)
+
+
 class MicroAgent(Agent):
     prompt = ''
     agent_definition: dict = {}
@@ -43,6 +57,7 @@ class MicroAgent(Agent):
             state=state,
             instructions=instructions,
             to_json=to_json,
+            history_to_json=history_to_json,
             delegates=self.delegates,
             latest_user_message=latest_user_message,
         )

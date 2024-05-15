@@ -23,7 +23,7 @@ Do NOT finish until you have fixed all the typos and generated a summary.
 
 ## History
 {{ instructions.history_truncated }}
-{{ to_json(state.history[-5:]) }}
+{{ history_to_json(state.history[-5:]) }}
 
 ## Format
 {{ instructions.format.action }}
