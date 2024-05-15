@@ -1,6 +1,9 @@
+```json
 {
-  "action": "message",
+  "action": "modify_task",
   "args": {
-    "content": "To fix the typos in bad.txt, I need to first read the content of the file to understand the extent of the errors and determine the necessary corrections."
+    "task_id": "0.0",
+    "state": "in_progress"
   }
 }
+```

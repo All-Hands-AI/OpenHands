@@ -1,9 +1,9 @@
 # Local LLM with Ollama
 
 Ensure that you have the Ollama server up and running.
-For detailed startup instructions, refer to the [here](https://github.com/ollama/ollama)
+For detailed startup instructions, refer to [here](https://github.com/ollama/ollama)
 
-This guide assumes you've started ollama with `ollama serve`. If you're running ollama differently (e.g. inside docker), the instructions might need to be modified. Please note that if you're running wsl the default ollama configuration blocks requests from docker containers. See [here](#4-configuring-the-ollama-service-wsl).
+This guide assumes you've started ollama with `ollama serve`. If you're running ollama differently (e.g. inside docker), the instructions might need to be modified. Please note that if you're running WSL the default ollama configuration blocks requests from docker containers. See [here](#configuring-the-ollama-service-wsl).
 
 ## Pull Models
 
@@ -44,6 +44,8 @@ For example:
 export WORKSPACE_BASE=$(pwd)/workspace
 
 docker run \
+    -it \
+    --pull=always \
     --add-host host.docker.internal:host-gateway \
     -e SANDBOX_USER_ID=$(id -u) \
     -e LLM_API_KEY="ollama" \
@@ -85,7 +87,7 @@ And now you're ready to go!
 
 ## Configuring the ollama service (WSL)
 
-The default configuration for ollama in wsl only serves localhost. This means you can't reach it from a docker container. eg. it wont work with OpenDevin. First let's test that ollama is running correctly.
+The default configuration for ollama in WSL only serves localhost. This means you can't reach it from a docker container. eg. it wont work with OpenDevin. First let's test that ollama is running correctly.
 
 ```bash
 ollama list # get list of installed models
@@ -94,7 +96,7 @@ curl http://localhost:11434/api/generate -d '{"model":"[NAME]","prompt":"hi"}'
 #ex. curl http://localhost:11434/api/generate -d '{"model":"codellama","prompt":"hi"}' #the tag is optional if there is only one
 ```
 
-Once that is done test that it allows "outside" requests, like those from inside a docker container.
+Once that is done, test that it allows "outside" requests, like those from inside a docker container.
 
 ```bash
 docker ps # get list of running docker containers, for most accurate test choose the open devin sandbox container.
@@ -104,7 +106,7 @@ docker exec [CONTAINER ID] curl http://host.docker.internal:11434/api/generate -
 
 ## Fixing it
 
-Now let's make it work, edit /etc/systemd/system/ollama.service with sudo privileges. (Path may vary depending on linux flavor)
+Now let's make it work. Edit /etc/systemd/system/ollama.service with sudo privileges. (Path may vary depending on linux flavor)
 
 ```bash
 sudo vi /etc/systemd/system/ollama.service

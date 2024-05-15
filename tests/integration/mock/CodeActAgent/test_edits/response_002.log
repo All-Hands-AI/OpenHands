@@ -1,9 +1,4 @@
-I see a few typos in the file `bad.txt`. Let's correct them:
-
-1. "typoo" should be "typo".
-2. "mor" should be "more".
-
-I will now edit the file to fix these typos.
+I will now edit the file to correct the typos.
 
 <execute_bash>
 edit 1:1
