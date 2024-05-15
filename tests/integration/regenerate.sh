@@ -65,7 +65,6 @@ for ((i = 0; i < num_of_tests; i++)); do
 
   for ((j = 0; j < num_of_agents; j++)); do
     agent=${agents[j]}
-    remind_iterations=${remind_iterations_config[j]}
 
     # skip other agents if only one agent is specified
     if [[ -n "$ONLY_TEST_AGENT" && "$ONLY_TEST_AGENT" != "$agent" ]]; then
@@ -109,6 +108,7 @@ for ((i = 0; i < num_of_tests; i++)); do
         SANDBOX_TYPE=$SANDBOX_TYPE \
         WORKSPACE_BASE=$WORKSPACE_BASE \
         DEBUG=true \
+        WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
         REMIND_ITERATIONS=$remind_iterations \
         WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
         AGENT=$agent \
