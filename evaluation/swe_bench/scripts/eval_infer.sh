@@ -29,4 +29,4 @@ docker run --rm \
     --agent-name CodeActAgent \
     --dataset swe-bench-test-lite \
     --experiment-name test_experiment \
-    --merge-report
+    --merge-report && cp -r /swe_util/eval_data/eval_logs /swe_bench_output/eval_logs/test_experiment
