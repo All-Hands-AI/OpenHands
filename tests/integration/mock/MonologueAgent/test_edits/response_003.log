@@ -1,4 +1,6 @@
 {
-  "action": "finish",
-  "args": {}
+  "action": "read",
+  "args": {
+    "path": "bad.txt"
+  }
 }

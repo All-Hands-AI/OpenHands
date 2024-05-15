@@ -215,7 +215,7 @@ class CodeActAgent(Agent):
         latest_user_message = [m for m in self.messages if m['role'] == 'user'][-1]
         if latest_user_message:
             latest_user_message['content'] += (
-                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration - 1} turns left to complete the task.'
+                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
         response = self.llm.completion(
