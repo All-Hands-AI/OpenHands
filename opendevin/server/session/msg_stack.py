@@ -100,9 +100,9 @@ class MessageStack:
                 for sid, msgs in data.items():
                     if sid != del_sid:
                         new_data[sid] = msgs
-                # 移动文件指针到文件开头以便覆盖原内容
+                # Move the file pointer to the beginning of the file to overwrite the original contents
                 file.seek(0)
-                # 清空文件原有内容
+                # clean previous content
                 file.truncate()
                 json.dump(new_data, file)
         except FileNotFoundError:
