@@ -100,6 +100,10 @@ class MessageStack:
                 for sid, msgs in data.items():
                     if sid != del_sid:
                         new_data[sid] = [Message.from_dict(msg) for msg in msgs]
+                # Move the file pointer to the beginning of the file to overwrite the original contents
+                file.seek(0)
+                # clean previous content
+                file.truncate()
                 json.dump(new_data, file)
         except FileNotFoundError:
             pass
