@@ -22,5 +22,4 @@ describe("Auth Service", () => {
       expect(data).toEqual("newToken");
     });
   });
-
 });

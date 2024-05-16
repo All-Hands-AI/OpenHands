@@ -4,6 +4,4 @@ type Role = "user" | "assistant";
 
 type SocketMessage = ActionMessage | ObservationMessage;
 
-export {
-  type SocketMessage,
-};
+export { type SocketMessage };

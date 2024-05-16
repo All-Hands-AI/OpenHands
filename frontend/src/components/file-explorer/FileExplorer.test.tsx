@@ -11,12 +11,13 @@ import toast from "#/utils/toast";
 const toastSpy = vi.spyOn(toast, "stickyError");
 
 vi.mock("../../services/fileService", async () => ({
-  listFiles: vi.fn(async (path: string = '/') => {
-      if (path === "/") {
-          return Promise.resolve(["folder1/", "file1.ts"]);
-      } else if (path === "/folder1/") {
-          return Promise.resolve(["file2.ts"]);
-      }
+  listFiles: vi.fn(async (path: string = "/") => {
+    if (path === "/") {
+      return Promise.resolve(["folder1/", "file1.ts"]);
+    }
+    if (path === "/folder1/") {
+      return Promise.resolve(["file2.ts"]);
+    }
   }),
 
   uploadFiles: vi.fn(),

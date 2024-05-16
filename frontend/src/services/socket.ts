@@ -38,7 +38,7 @@ class Socket {
     Socket._socket = new WebSocket(WS_URL);
 
     Socket._socket.onopen = (e) => {
-      console.log('socket opened');
+      console.log("socket opened");
       toast.stickySuccess("ws", "Connected to server.");
       Socket.initializing = false;
       Socket.callbacks.open?.forEach((callback) => {

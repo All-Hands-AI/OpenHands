@@ -23,7 +23,7 @@ export async function uploadFiles(files: FileList) {
   }
 }
 
-export async function listFiles(basePath: string = '/'): Promise<string[]> {
+export async function listFiles(basePath: string = "/"): Promise<string[]> {
   const res = await request(`/api/list-files?path=${basePath}`);
   return res as string[];
 }

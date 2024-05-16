@@ -7,10 +7,7 @@ import {
 } from "react-icons/io";
 import { IoFileTray } from "react-icons/io5";
 import { twMerge } from "tailwind-merge";
-import {
-  listFiles,
-  uploadFiles,
-} from "#/services/fileService";
+import { listFiles, uploadFiles } from "#/services/fileService";
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
 import toast from "#/utils/toast";
@@ -98,7 +95,7 @@ function FileExplorer() {
     listFiles().then((files) => {
       setFiles(files);
     });
-  }
+  };
 
   React.useEffect(() => {
     refreshWorkspace();
@@ -159,10 +156,7 @@ function FileExplorer() {
       >
         <div className="flex p-2 items-center justify-between relative">
           <div style={{ display: isHidden ? "none" : "block" }}>
-            <ExplorerTree
-              files={files}
-              defaultOpen
-            />
+            <ExplorerTree files={files} defaultOpen />
           </div>
 
           <ExplorerActions

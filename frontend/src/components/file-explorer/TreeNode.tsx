@@ -32,10 +32,7 @@ interface TreeNodeProps {
   defaultOpen?: boolean;
 }
 
-function TreeNode({
-  path,
-  defaultOpen = false,
-}: TreeNodeProps) {
+function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
   const [children, setChildren] = React.useState<string[] | null>(null);
   const { selectedFileAbsolutePath } = React.useContext(CodeEditorContext);
@@ -44,7 +41,7 @@ function TreeNode({
   const getNameFromPath = (path: string) => {
     const parts = path.split("/");
     return parts[parts.length - 1] || parts[parts.length - 2];
-  }
+  };
 
   const name = getNameFromPath(path);
   const isDirectory = path.endsWith("/");
@@ -52,7 +49,7 @@ function TreeNode({
   const refreshChildren = async () => {
     const files = await listFiles(path);
     setChildren(files);
-  }
+  };
 
   React.useEffect(() => {
     if (isOpen && isDirectory) {
@@ -87,10 +84,7 @@ function TreeNode({
       {isOpen && children && (
         <div className="ml-5">
           {children.map((child, index) => (
-            <TreeNode
-              key={index}
-              path={`${child}`}
-            />
+            <TreeNode key={index} path={`${child}`} />
           ))}
         </div>
       )}

@@ -50,7 +50,7 @@ function CodeEditor(): JSX.Element {
     const newCode = await selectFile(activeFilepath);
     setSelectedFileAbsolutePath(activeFilepath);
     dispatch(setCode(newCode));
-  }
+  };
 
   React.useEffect(() => {
     // FIXME: we can probably move this out of the component and into state/service
