@@ -31,14 +31,25 @@ class AgentSession:
         """Initializes a new instance of the Session class."""
         self.sid = sid
         self.event_stream = EventStream(sid)
+
+    async def start(self, start_event: dict):
+        """Starts the agent session.
+
+        Args:
+            start_event: The start event data (optional).
+        """
+        await self._create_runtime()
+        await self._create_controller(start_event)
+
+    async def _create_runtime(self):
         if config.runtime == 'server':
             logger.info('Using server runtime')
-            self.runtime = ServerRuntime(self.event_stream, sid)
+            self.runtime = ServerRuntime(self.event_stream, self.sid)
         elif config.runtime == 'e2b':
             logger.info('Using E2B runtime')
-            self.runtime = E2BRuntime(self.event_stream, sid)
+            self.runtime = E2BRuntime(self.event_stream, self.sid)
 
-    async def create_controller(self, start_event: dict):
+    async def _create_controller(self, start_event: dict):
         """Creates an AgentController instance.
 
         Args:

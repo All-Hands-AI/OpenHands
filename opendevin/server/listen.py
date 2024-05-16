@@ -203,6 +203,12 @@ def list_files(request: Request, path: str = '/'):
     curl http://localhost:3000/api/refresh-files
     ```
     """
+    if not request.state.session.agent.runtime:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={'error': 'Runtime not yet initialized'},
+        )
+
     try:
         return request.state.session.agent.runtime.file_store.list(path)
     except Exception as e:

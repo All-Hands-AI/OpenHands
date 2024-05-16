@@ -1,3 +1,4 @@
+import asyncio
 import time
 
 from fastapi import WebSocket, WebSocketDisconnect
@@ -8,7 +9,7 @@ from opendevin.core.schema import AgentState
 from opendevin.core.schema.action import ActionType
 from opendevin.events.action import ChangeAgentStateAction, NullAction
 from opendevin.events.event import Event
-from opendevin.events.observation import NullObservation
+from opendevin.events.observation import AgentStateChangedObservation, NullObservation
 from opendevin.events.serialization import EventSource, event_from_dict, event_to_dict
 from opendevin.events.stream import EventStreamSubscriber
 
@@ -54,8 +55,14 @@ class Session:
             logger.exception('Error in loop_recv: %s', e)
 
     async def _initialize_agent(self, data: dict):
+        await self.agent.event_stream.add_event(
+            ChangeAgentStateAction(AgentState.LOADING), EventSource.USER
+        )
+        await self.agent.event_stream.add_event(
+            AgentStateChangedObservation('', AgentState.LOADING), EventSource.AGENT
+        )
         try:
-            await self.agent.create_controller(data)
+            await self.agent.start(data)
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
             await self.send_error(
@@ -94,6 +101,7 @@ class Session:
             if self.websocket is None or not self.is_alive:
                 return False
             await self.websocket.send_json(data)
+            await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True
         except WebSocketDisconnect:
