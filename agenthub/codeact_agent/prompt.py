@@ -37,7 +37,7 @@ For example, you can list the files in the current directory by <execute_bash> l
 The assistant can browse the Internet with commands on behalf of the user by wrapping them with <execute_browse> and </execute_browse>.
 For example, you can browse a given URL by <execute_browse> goto("<URL>") </execute_browse>.
 The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
-The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython>."""
+The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them."""
 
 GITHUB_MESSAGE = """To do any activities on GitHub, you should use the token in the $GITHUB_TOKEN environment variable.
 For instance, to push a local branch `my_branch` to the github repo `owner/repo`, you can use the following four commands:
