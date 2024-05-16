@@ -5,7 +5,7 @@ import { act } from "react-dom/test-utils";
 import { renderWithProviders } from "test-utils";
 import { describe, it, expect, vi, Mock } from "vitest";
 import FileExplorer from "./FileExplorer";
-import { uploadFile, listFiles } from "#/services/fileService";
+import { uploadFiles, listFiles } from "#/services/fileService";
 import toast from "#/utils/toast";
 
 const toastSpy = vi.spyOn(toast, "stickyError");
@@ -19,7 +19,7 @@ vi.mock("../../services/fileService", async () => ({
       }
   }),
 
-  uploadFile: vi.fn(),
+  uploadFiles: vi.fn(),
 }));
 
 describe("FileExplorer", () => {
@@ -67,23 +67,43 @@ describe("FileExplorer", () => {
     expect(queryByText("root")).not.toBeVisible();
   });
 
-  it("should upload a file", async () => {
-    const { getByTestId } = renderWithProviders(<FileExplorer />);
+  it("should upload files", async () => {
+    // TODO: Improve this test by passing expected argument to `uploadFiles`
+    const { getByTestId } = renderWithProviders(<FileExplorer onFileClick={vi.fn} />);
+    const file = new File([""], "file-name");
+    const file2 = new File([""], "file-name-2");
 
     const uploadFileInput = getByTestId("file-input");
-    const file = new File([""], "test");
 
     // The 'await' keyword is required here to avoid a warning during test runs
     await act(() => {
       userEvent.upload(uploadFileInput, file);
     });
 
-    expect(uploadFile).toHaveBeenCalledWith(file);
+    expect(uploadFiles).toHaveBeenCalledOnce();
+    expect(listFiles).toHaveBeenCalled();
+
+    const uploadDirInput = getByTestId("file-input");
+
+    // The 'await' keyword is required here to avoid a warning during test runs
+    await act(() => {
+      userEvent.upload(uploadDirInput, [file, file2]);
+    });
+
+    expect(uploadFiles).toHaveBeenCalledTimes(2);
     expect(listFiles).toHaveBeenCalled();
   });
 
+  it.skip("should upload files when dragging them to the explorer", () => {
+    // It will require too much work to mock drag logic, especially for our case
+    // https://github.com/testing-library/user-event/issues/440#issuecomment-685010755
+    // TODO: should be tested in an e2e environment such as Cypress/Playwright
+  });
+
+  it.todo("should download a file");
+
   it.todo("should display an error toast if file upload fails", async () => {
-    (uploadFile as Mock).mockRejectedValue(new Error());
+    (uploadFiles as Mock).mockRejectedValue(new Error());
 
     const { getByTestId } = renderWithProviders(<FileExplorer />);
 
@@ -94,7 +114,7 @@ describe("FileExplorer", () => {
       userEvent.upload(uploadFileInput, file);
     });
 
-    expect(uploadFile).rejects.toThrow();
+    expect(uploadFiles).rejects.toThrow();
     // TODO: figure out why spy isnt called to pass test
     expect(toastSpy).toHaveBeenCalledWith("ws", "Error uploading file");
   });

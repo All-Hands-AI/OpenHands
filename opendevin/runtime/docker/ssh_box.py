@@ -292,7 +292,9 @@ class DockerSSHBox(Sandbox):
 
     def start_ssh_session(self):
         # start ssh session at the background
-        self.ssh = pxssh.pxssh(echo=False, timeout=self.timeout)
+        self.ssh = pxssh.pxssh(
+            echo=False, timeout=self.timeout, encoding='utf-8', codec_errors='replace'
+        )
         hostname = self.ssh_hostname
         if self.run_as_devin:
             username = 'opendevin'
@@ -336,7 +338,7 @@ class DockerSSHBox(Sandbox):
         self.ssh.prompt()
         command_output = prev_output
         if not ignore_last_output:
-            command_output += '\n' + self.ssh.before.decode('utf-8')
+            command_output += '\n' + self.ssh.before
         return (
             -1,
             f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}',
@@ -361,7 +363,7 @@ class DockerSSHBox(Sandbox):
         if not success:
             logger.exception('Command timed out, killing process...', exc_info=False)
             return self._send_interrupt(cmd)
-        command_output = self.ssh.before.decode('utf-8')
+        command_output = self.ssh.before
 
         # once out, make sure that we have *every* output, we while loop until we get an empty output
         while True:
@@ -372,7 +374,7 @@ class DockerSSHBox(Sandbox):
                 logger.debug('TIMEOUT REACHED')
                 break
             logger.debug('WAITING FOR .before')
-            output = self.ssh.before.decode('utf-8')
+            output = self.ssh.before
             logger.debug(
                 f'WAITING FOR END OF command output ({bool(output)}): {output}'
             )
@@ -384,11 +386,11 @@ class DockerSSHBox(Sandbox):
         # get the exit code
         self.ssh.sendline('echo $?')
         self.ssh.prompt()
-        exit_code_str = self.ssh.before.decode('utf-8')
+        exit_code_str = self.ssh.before
         _start_time = time.time()
         while not exit_code_str:
             self.ssh.prompt()
-            exit_code_str = self.ssh.before.decode('utf-8')
+            exit_code_str = self.ssh.before
             logger.debug(f'WAITING FOR exit code: {exit_code_str}')
             if time.time() - _start_time > timeout:
                 return self._send_interrupt(

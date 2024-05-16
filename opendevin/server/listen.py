@@ -228,28 +228,29 @@ def select_file(file: str, request: Request):
     return {'code': content}
 
 
-@app.post('/api/upload-file')
-async def upload_file(request: Request, file: UploadFile):
+@app.post('/api/upload-files')
+async def upload_file(request: Request, files: list[UploadFile]):
     """
-    Upload a file.
+    Upload files to the workspace.
 
-    To upload a file:
+    To upload files:
     ```sh
-    curl -X POST -F "file=@<file_path>" http://localhost:3000/api/upload-file
+    curl -X POST -F "file=@<file_path1>" -F "file=@<file_path2>" http://localhost:3000/api/upload-files
     ```
     """
-    file_contents = await file.read()
     try:
-        request.state.session.agent.runtime.file_store.write(
-            file.filename, file_contents
-        )
+        for file in files:
+            file_contents = await file.read()
+            request.state.session.agent.runtime.file_store.write(
+                file.filename, file_contents
+            )
     except Exception as e:
-        logger.error(f'Error saving file {file.filename}: {e}', exc_info=True)
+        logger.error(f'Error saving files: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': f'Error saving file: {e}'},
+            content={'error': f'Error saving file:s {e}'},
         )
-    return {'filename': file.filename}
+    return {'message': 'Files uploaded successfully', 'file_count': len(files)}
 
 
 @app.get('/api/root_task')

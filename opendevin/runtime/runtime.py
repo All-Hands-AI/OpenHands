@@ -5,6 +5,7 @@ from opendevin.core.config import config
 from opendevin.events.action import (
     Action,
     AgentRecallAction,
+    BrowseInteractiveAction,
     BrowseURLAction,
     CmdKillAction,
     CmdRunAction,
@@ -155,6 +156,10 @@ class Runtime:
 
     @abstractmethod
     async def browse(self, action: BrowseURLAction) -> Observation:
+        pass
+
+    @abstractmethod
+    async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         pass
 
     @abstractmethod
