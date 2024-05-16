@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
+import { getVersion } from "#/services/versionService";
 
 const AgentStatusMap: { [k: string]: { message: string; indicator: string } } =
   {
@@ -44,13 +45,23 @@ const AgentStatusMap: { [k: string]: { message: string; indicator: string } } =
 function AgentStatusBar() {
   const { t } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const [beVersion, setBeVersion] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // TODO: Extend the agent status, e.g.:
-  // - Agent is typing
-  // - Agent is initializing
-  // - Agent is thinking
-  // - Agent is ready
-  // - Agent is not available
+  useEffect(() => {
+    setLoading(true);
+    getVersion()
+      .then((version) => {
+        setBeVersion(version);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, []);
+
   return (
     <div className="flex items-center">
       {curAgentState !== AgentState.LOADING ? (
@@ -60,6 +71,9 @@ function AgentStatusBar() {
           />
           <span className="text-sm text-stone-400">
             {AgentStatusMap[curAgentState].message}
+          </span>
+          <span className="ml-4 text-sm text-stone-400">
+            FE Version: 0.1.0 | BE Version: {loading ? "Loading..." : error ? `Error: ${error}` : beVersion}
           </span>
         </>
       ) : (
