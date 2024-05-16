@@ -21,7 +21,4 @@ export interface ObservationMessage {
 
   // A friendly message that can be put in the chat log
   message: string;
-
-  // optional screenshot
-  screenshot?: string;
 }
