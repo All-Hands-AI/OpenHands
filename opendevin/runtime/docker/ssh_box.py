@@ -1,6 +1,7 @@
 import atexit
 import json
 import os
+import re
 import sys
 import tarfile
 import tempfile
@@ -10,12 +11,13 @@ from collections import namedtuple
 from glob import glob
 
 import docker
-from pexpect import pxssh
+from pexpect import exceptions, pxssh
 
 from opendevin.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.config import config
 from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema import CancellableStream
 from opendevin.runtime.docker.process import DockerProcess, Process
 from opendevin.runtime.plugins import (
     JupyterRequirement,
@@ -27,6 +29,71 @@ from opendevin.runtime.utils import find_available_tcp_port
 # FIXME: these are not used, can we remove them?
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
+
+
+class SSHExecCancellableStream(CancellableStream):
+    def __init__(self, ssh, cmd, timeout):
+        super().__init__(self.read_output())
+        self.ssh = ssh
+        self.cmd = cmd
+        self.timeout = timeout
+
+    def close(self):
+        self.closed = True
+
+    def exit_code(self):
+        self.ssh.sendline('echo $?')
+        success = self.ssh.prompt(timeout=self.timeout)
+        if not success:
+            return -1
+
+        _exit_code = self.ssh.before.strip()
+        return int(_exit_code)
+
+    def read_output(self):
+        st = time.time()
+        buf = ''
+        crlf = '\r\n'
+        lf = '\n'
+        prompt_len = len(self.ssh.PROMPT)
+        while True:
+            try:
+                if self.closed:
+                    break
+                _output = self.ssh.read_nonblocking(timeout=1)
+                if not _output:
+                    continue
+
+                buf += _output
+
+                if len(buf) < prompt_len:
+                    continue
+
+                match = re.search(self.ssh.PROMPT, buf)
+                if match:
+                    idx, _ = match.span()
+                    yield buf[:idx].replace(crlf, lf)
+                    buf = ''
+                    break
+
+                res = buf[:-prompt_len]
+                if len(res) == 0 or res.find(crlf) == -1:
+                    continue
+                buf = buf[-prompt_len:]
+                yield res.replace(crlf, lf)
+            except exceptions.TIMEOUT:
+                if time.time() - st < self.timeout:
+                    match = re.search(self.ssh.PROMPT, buf)
+                    if match:
+                        idx, _ = match.span()
+                        yield buf[:idx].replace(crlf, lf)
+                        break
+                    continue
+                else:
+                    yield buf.replace(crlf, lf)
+                break
+            except exceptions.EOF:
+                break
 
 
 def split_bash_commands(commands):
@@ -128,6 +195,7 @@ class DockerSSHBox(Sandbox):
 
     _ssh_password: str
     _ssh_port: int
+    ssh: pxssh.pxssh
 
     cur_background_id = 0
     background_commands: dict[int, Process] = {}
@@ -344,9 +412,10 @@ class DockerSSHBox(Sandbox):
             f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}',
         )
 
-    def execute(self, cmd: str, timeout: int | None = None) -> tuple[int, str]:
+    def execute(
+        self, cmd: str, stream: bool = False, timeout: int | None = None
+    ) -> tuple[int, str | CancellableStream]:
         timeout = timeout if timeout is not None else self.timeout
-
         commands = split_bash_commands(cmd)
         if len(commands) > 1:
             all_output = ''
@@ -354,11 +423,14 @@ class DockerSSHBox(Sandbox):
                 exit_code, output = self.execute(command)
                 if all_output:
                     all_output += '\r\n'
-                all_output += output
+                all_output += str(output)
                 if exit_code != 0:
                     return exit_code, all_output
             return 0, all_output
+
         self.ssh.sendline(cmd)
+        if stream:
+            return 0, SSHExecCancellableStream(self.ssh, cmd, self.timeout)
         success = self.ssh.prompt(timeout=timeout)
         if not success:
             logger.exception('Command timed out, killing process...', exc_info=False)
@@ -501,7 +573,7 @@ class DockerSSHBox(Sandbox):
         exit_code, result = self.execute('pwd')
         if exit_code != 0:
             raise Exception('Failed to get working directory')
-        return result.strip()
+        return str(result).strip()
 
     @property
     def user_id(self):
