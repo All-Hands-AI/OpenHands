@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from opendevin.core.config import config
-from opendevin.events.action import files
+from opendevin.runtime.server import files
 
 SANDBOX_PATH_PREFIX = '/workspace'
 
