@@ -1,8 +1,12 @@
 #!/bin/bash
 
 AGENT=CodeActAgent
-AGENT_VERSION=v1.3
+AGENT_VERSION=v$(python3 -c "from agenthub.codeact_agent import CodeActAgent; print(CodeActAgent.VERSION)")
 MODEL_CONFIG=$1
+
+echo "AGENT: $AGENT"
+echo "AGENT_VERSION: $AGENT_VERSION"
+echo "MODEL_CONFIG: $MODEL_CONFIG"
 
 # You should add $MODEL_CONFIG in your `config.toml`
 
