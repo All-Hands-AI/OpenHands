@@ -38,6 +38,7 @@ llama-index = "*"
 llama-index-vector-stores-chroma = "*"
 chromadb = "*"
 llama-index-embeddings-huggingface = "*"
+torch = "2.2.2"
 llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
@@ -53,7 +54,6 @@ pytest-asyncio = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
-
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
