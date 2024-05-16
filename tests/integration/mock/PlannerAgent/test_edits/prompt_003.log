@@ -1,8 +1,4 @@
 
-
-----------
-
-
 # Task
 You're a diligent software engineer AI. You can't see, draw, or interact with a
 browser, but you can read and write files, and you can run commands, and you can think.
@@ -18,12 +14,46 @@ track of your progress. Here's a JSON representation of your plan:
 {
   "id": "",
   "goal": "",
-  "state": "open",
-  "subtasks": []
+  "state": "in_progress",
+  "subtasks": [
+    {
+      "id": "0",
+      "goal": "Fix typos in bad.txt",
+      "state": "in_progress",
+      "subtasks": [
+        {
+          "id": "0.0",
+          "goal": "Read the content of bad.txt",
+          "state": "in_progress",
+          "subtasks": []
+        },
+        {
+          "id": "0.1",
+          "goal": "Identify and correct typos in the text",
+          "state": "open",
+          "subtasks": []
+        },
+        {
+          "id": "0.2",
+          "goal": "Write the corrected content back to bad.txt",
+          "state": "open",
+          "subtasks": []
+        },
+        {
+          "id": "0.3",
+          "goal": "Verify the corrections",
+          "state": "open",
+          "subtasks": []
+        }
+      ]
+    }
+  ]
 }
 
 
-You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress.
+You're currently working on this task:
+Read the content of bad.txt.
+If it's not achievable AND verifiable with a SINGLE action, you MUST break it down into subtasks NOW.
 
 You're responsible for managing this plan and the status of tasks in
 it, by using the `add_task` and `modify_task` actions described below.
@@ -62,28 +92,34 @@ ten actions--more happened before that.
   },
   {
     "source": "agent",
-    "action": "read",
+    "action": "add_task",
     "args": {
-      "path": "bad.txt",
-      "start": 0,
-      "end": -1,
+      "parent": "",
+      "goal": "Fix typos in bad.txt",
+      "subtasks": [
+        {
+          "goal": "Read the content of bad.txt"
+        },
+        {
+          "goal": "Identify and correct typos in the text"
+        },
+        {
+          "goal": "Write the corrected content back to bad.txt"
+        },
+        {
+          "goal": "Verify the corrections"
+        }
+      ],
       "thought": ""
     }
   },
   {
     "source": "agent",
-    "observation": "read",
-    "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n",
-    "extras": {
-      "path": "bad.txt"
-    }
-  },
-  {
-    "source": "agent",
-    "action": "message",
+    "action": "modify_task",
     "args": {
-      "content": "I have read the content of bad.txt and identified the typos that need to be fixed. I will now proceed to fix the typos in the file.",
-      "wait_for_response": false
+      "task_id": "0.0",
+      "state": "in_progress",
+      "thought": ""
     }
   }
 ]
@@ -110,8 +146,9 @@ It must be an object, and it must contain two fields:
   * `command_id` - the ID of the background command to kill
 * `browse` - opens a web page. Arguments:
   * `url` - the URL to open
-* `message` - make a plan, set a goal, or record your thoughts. Arguments:
+* `message` - make a plan, set a goal, record your thoughts, or ask for more input from the user. Arguments:
   * `content` - the message to record
+  * `wait_for_response` - set to `true` to wait for the user to respond before proceeding
 * `add_task` - add a task to your plan. Arguments:
   * `parent` - the ID of the parent task (leave empty if it should go at the top level)
   * `goal` - the goal of the task
@@ -121,10 +158,10 @@ It must be an object, and it must contain two fields:
   * `state` - set to 'in_progress' to start the task, 'completed' to finish it, 'verified' to assert that it was successful, 'abandoned' to give up on it permanently, or `open` to stop working on it for now.
 * `finish` - if ALL of your tasks and subtasks have been verified or abandoned, and you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
-You MUST take time to think in between read, write, run, browse, and recall actions--do this with the `message` action.
+You MUST take time to think in between read, write, run, kill, browse, and recall actions--do this with the `message` action.
 You should never act twice in a row without thinking. But if your last several
 actions are all `message` actions, you should consider taking a different action.
 
 What is your next thought or action? Again, you must reply with JSON, and only with JSON.
 
-Look at your last thought in the history above. What does it suggest? Don't think anymore--take action.
+You should think about the next action to take.

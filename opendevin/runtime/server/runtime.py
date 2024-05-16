@@ -1,5 +1,6 @@
 from opendevin.events.action import (
     AgentRecallAction,
+    BrowseInteractiveAction,
     BrowseURLAction,
     CmdKillAction,
     CmdRunAction,
@@ -58,6 +59,9 @@ class ServerRuntime(Runtime):
     async def browse(self, action: BrowseURLAction) -> Observation:
         return await browse(action, self.browser)
 
+    async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+        return await browse(action, self.browser)
+
     async def recall(self, action: AgentRecallAction) -> Observation:
         return NullObservation('')
 
@@ -71,7 +75,7 @@ class ServerRuntime(Runtime):
         try:
             exit_code, output = self.sandbox.execute(command)
             return CmdOutputObservation(
-                command_id=-1, content=output, command=command, exit_code=exit_code
+                command_id=-1, content=str(output), command=command, exit_code=exit_code
             )
         except UnicodeDecodeError:
             return ErrorObservation('Command output could not be decoded as utf-8')

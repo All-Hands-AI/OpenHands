@@ -1,3 +1,14 @@
-It seems that the `open` command is not available in this environment. Let's try to read the content of the file `bad.txt` to identify the typos. Let me display the content of the file for you:
+I'll correct the typos in the file `bad.txt`. Here are the corrections:
+- "typoo" should be "typo"
+- "mor" should be "more"
+
+Let me update the file accordingly.
+
 <execute_bash>
-cat bad.txt
+open bad.txt
+edit 1:1
+This is a stupid typo.
+end_of_edit
+edit 3:3
+No more typos!
+end_of_edit

@@ -17,6 +17,11 @@ const messageActions = {
     store.dispatch(setUrl(url));
     store.dispatch(setScreenshotSrc(screenshotSrc));
   },
+  [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
+    const { url, screenshotSrc } = message.args;
+    store.dispatch(setUrl(url));
+    store.dispatch(setScreenshotSrc(screenshotSrc));
+  },
   [ActionType.WRITE]: (message: ActionMessage) => {
     const { path, content } = message.args;
     store.dispatch(updatePath(path));

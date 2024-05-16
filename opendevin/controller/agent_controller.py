@@ -45,7 +45,6 @@ class AgentController:
     state: State
     agent_task: Optional[asyncio.Task] = None
     delegate: 'AgentController | None' = None
-    _agent_state: AgentState = AgentState.LOADING
     _pending_action: Action | None = None
 
     def __init__(
@@ -69,7 +68,7 @@ class AgentController:
         """
         self.id = sid
         self.agent = agent
-        self.state = State(inputs=inputs or {})
+        self.state = State(inputs=inputs or {}, max_iterations=max_iterations)
         self.event_stream = event_stream
         self.event_stream.subscribe(
             EventStreamSubscriber.AGENT_CONTROLLER, self.on_event
@@ -147,22 +146,22 @@ class AgentController:
 
     async def set_agent_state_to(self, new_state: AgentState):
         logger.info(
-            f'Setting agent({type(self.agent).__name__}) state from {self._agent_state} to {new_state}'
+            f'Setting agent({type(self.agent).__name__}) state from {self.state.agent_state} to {new_state}'
         )
-        if new_state == self._agent_state:
+        if new_state == self.state.agent_state:
             return
 
-        self._agent_state = new_state
+        self.state.agent_state = new_state
         if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
             self.reset_task()
 
         await self.event_stream.add_event(
-            AgentStateChangedObservation('', self._agent_state), EventSource.AGENT
+            AgentStateChangedObservation('', self.state.agent_state), EventSource.AGENT
         )
 
     def get_agent_state(self):
         """Returns the current state of the agent task."""
-        return self._agent_state
+        return self.state.agent_state
 
     async def start_delegate(self, action: AgentDelegateAction):
         AgentCls: Type[Agent] = Agent.get_cls(action.agent)

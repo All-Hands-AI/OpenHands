@@ -9,6 +9,7 @@ from opendevin.core.config import AppConfig, config
 from opendevin.runtime.docker.exec_box import DockerExecBox
 from opendevin.runtime.docker.local_box import LocalBox
 from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
+from opendevin.runtime.plugins import JupyterRequirement
 
 
 @pytest.fixture
@@ -144,7 +145,7 @@ def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
         config, 'sandbox_type', new='ssh'
     ):
         for box in [DockerSSHBox(), DockerExecBox()]:
-            exit_code, output = box.execute('pwd\nls -l')
+            exit_code, output = box.execute('pwd && ls -l')
             assert exit_code == 0, (
                 'The exit code should be 0 for ' + box.__class__.__name__
             )
@@ -273,3 +274,25 @@ def test_sandbox_whitespace(temp_dir):
                     'The output should be the same as the input for '
                     + box.__class__.__name__
                 )
+
+
+def test_sandbox_jupyter_plugin(temp_dir):
+    # get a temporary directory
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'workspace_mount_path', new=temp_dir
+    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+        config, 'sandbox_type', new='ssh'
+    ):
+        for box in [DockerSSHBox()]:
+            box.init_plugins([JupyterRequirement])
+
+            # test the ssh box
+            exit_code, output = box.execute('echo "print(1)" | execute_cli')
+            print(output)
+            assert exit_code == 0, (
+                'The exit code should be 0 for ' + box.__class__.__name__
+            )
+            assert output == '1\r\n', (
+                'The output should be the same as the input for '
+                + box.__class__.__name__
+            )
