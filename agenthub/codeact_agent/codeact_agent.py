@@ -180,13 +180,15 @@ class CodeActAgent(Agent):
 
         for prev_action, obs in state.history:
             if isinstance(prev_action, MessageAction) and prev_action.source == 'user':
-                messages.append({'role': 'user', 'content': prev_action.content})
                 if prev_action.content.strip() == '/exit':
-                    # User wants to exit
                     return AgentFinishAction()
+                messages.append({'role': 'user', 'content': prev_action.content})
             else:
                 messages.append(
-                    {'role': 'assistant', 'content': self.action_to_str(prev_action)}
+                    {
+                        'role': 'user' if prev_action.source == 'user' else 'system',
+                        'content': self.action_to_str(prev_action),
+                    }
                 )
 
             if isinstance(obs, CmdOutputObservation):
@@ -270,11 +272,13 @@ class CodeActAgent(Agent):
 
     def action_to_str(self, action: Action) -> str:
         if isinstance(action, CmdRunAction):
-            return f'{action.thought}\n<execute_bash>{action.command}</execute_bash>'
+            return (
+                f'{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>'
+            )
         elif isinstance(action, IPythonRunCellAction):
-            return f'{action.thought}\n<execute_ipython>{action.code}</execute_ipython>'
+            return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
         elif isinstance(action, BrowseInteractiveAction):
-            return f'{action.thought}\n<execute_browse>{action.browser_actions}</execute_browse>'
+            return f'{action.thought}\n<execute_browse>\n{action.browser_actions}\n</execute_browse>'
         elif isinstance(action, MessageAction):
             return action.content
         return ''

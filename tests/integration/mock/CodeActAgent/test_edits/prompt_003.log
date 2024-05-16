@@ -241,12 +241,9 @@ NOW, LET'S START!
 
 Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
-ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
-
 ----------
 
-Let's start by examining the contents of `bad.txt` to identify the typos. I'll read the file first.
-
+Let's first view the content of the file `bad.txt` to identify the typos that need to be fixed.
 <execute_bash>
 cat bad.txt
 </execute_bash>
@@ -260,24 +257,11 @@ No mor typos!
 Enjoy!
 [Command -1 finished with exit code 0]]
 
-ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
-
 ----------
 
-I'll correct the typos in the file `bad.txt`. Here are the corrections:
-- "typoo" should be "typo"
-- "mor" should be "more"
-
-Let me update the file accordingly.
-
+Let's correct the typos in the `bad.txt` file. I will open the file for editing and fix the typos.
 <execute_bash>
 open bad.txt
-edit 1:1
-This is a stupid typo.
-end_of_edit
-edit 3:3
-No more typos!
-end_of_edit
 </execute_bash>
 
 ----------
@@ -288,18 +272,6 @@ OBSERVATION:
 2:Really?
 3:No mor typos!
 4:Enjoy!
-> > [File: /workspace/bad.txt (4 lines total)]
-1:This is a stupid typo.
-2:Really?
-3:No mor typos!
-4:Enjoy!
-File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.
-> > [File: /workspace/bad.txt (4 lines total)]
-1:This is a stupid typo.
-2:Really?
-3:No more typos!
-4:Enjoy!
-File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.
 [Command -1 finished with exit code 0]]
 
 ENVIRONMENT REMINDER: You have 7 turns left to complete the task.

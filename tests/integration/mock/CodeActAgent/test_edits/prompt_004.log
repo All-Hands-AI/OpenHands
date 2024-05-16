@@ -239,25 +239,61 @@ NOW, LET'S START!
 
 ----------
 
-Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.
+Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ----------
 
-Sure! I will create a shell script named 'hello.sh' that prints 'hello' without asking for confirmation. Let me write the script for you:
-
-```bash
-echo "hello"
-```
-
-Let me create the 'hello.sh' script for you:
+Let's first view the content of the file `bad.txt` to identify the typos that need to be fixed.
 <execute_bash>
-echo 'echo "hello"' > hello.sh
+cat bad.txt
 </execute_bash>
 
 ----------
 
 OBSERVATION:
-
+This is a stupid typoo.
+Really?
+No mor typos!
+Enjoy!
 [Command -1 finished with exit code 0]]
 
-ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
+----------
+
+Let's correct the typos in the `bad.txt` file. I will open the file for editing and fix the typos.
+<execute_bash>
+open bad.txt
+</execute_bash>
+
+----------
+
+OBSERVATION:
+[File: /workspace/bad.txt (4 lines total)]
+1:This is a stupid typoo.
+2:Really?
+3:No mor typos!
+4:Enjoy!
+[Command -1 finished with exit code 0]]
+
+----------
+
+Let's correct the typos in the `bad.txt` file. I will edit the file to fix the typos.
+<execute_bash>
+edit 1:3 <<EOF
+This is a stupid typo.
+Really?
+No more typos!
+EOF
+</execute_bash>
+
+----------
+
+OBSERVATION:
+> > > > [File: /workspace/bad.txt (4 lines total)]
+1:This is a stupid typo.
+2:Really?
+3:No more typos!
+4:Enjoy!
+File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.
+[Command -1 finished with exit code 0]]
+
+ENVIRONMENT REMINDER: You have 6 turns left to complete the task.
