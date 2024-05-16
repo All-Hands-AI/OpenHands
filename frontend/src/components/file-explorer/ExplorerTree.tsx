@@ -1,6 +1,5 @@
 import React from "react";
 import TreeNode from "./TreeNode";
-import { listFiles } from "#/services/fileService";
 
 interface ExplorerTreeProps {
   files: string[];

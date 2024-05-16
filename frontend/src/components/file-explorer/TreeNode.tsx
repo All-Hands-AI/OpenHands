@@ -38,12 +38,10 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const { selectedFileAbsolutePath } = React.useContext(CodeEditorContext);
   const dispatch = useDispatch();
 
-  const getNameFromPath = (path: string) => {
-    const parts = path.split("/");
-    return parts[parts.length - 1] || parts[parts.length - 2];
-  };
+  const fileParts = path.split("/");
+  const filename =
+    fileParts[fileParts.length - 1] || fileParts[fileParts.length - 2];
 
-  const name = getNameFromPath(path);
   const isDirectory = path.endsWith("/");
 
   const refreshChildren = async () => {
@@ -75,7 +73,7 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
       )}
     >
       <Title
-        name={getNameFromPath(path)}
+        name={filename}
         type={isDirectory ? "folder" : "file"}
         isOpen={isOpen}
         onClick={handleClick}

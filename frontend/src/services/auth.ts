@@ -1,5 +1,3 @@
-import * as jose from "jose";
-
 const getToken = (): string => localStorage.getItem("token") ?? "";
 
 const clearToken = (): void => {

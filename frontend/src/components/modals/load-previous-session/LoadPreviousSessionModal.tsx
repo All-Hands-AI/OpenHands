@@ -1,9 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
-import { handleAssistantMessage } from "#/services/actions";
-import { addChatMessageFromEvent } from "#/services/chatService";
-import toast from "#/utils/toast";
 import BaseModal from "../base-modal/BaseModal";
 
 interface LoadPreviousSessionModalProps {

@@ -1,10 +1,5 @@
-import * as jose from "jose";
 import type { Mock } from "vitest";
 import { getToken } from "./auth";
-
-vi.mock("jose", () => ({
-  decodeJwt: vi.fn(),
-}));
 
 Storage.prototype.getItem = vi.fn();
 Storage.prototype.setItem = vi.fn();

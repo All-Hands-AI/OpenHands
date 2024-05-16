@@ -4,15 +4,17 @@ const WAIT_FOR_AUTH_DELAY_MS = 500;
 
 export async function request(
   url: string,
-  options: RequestInit = {},
+  options_in: RequestInit = {},
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 ): Promise<any> {
   const token = getToken();
   if (!token)
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       setTimeout(() => {
-        resolve(request(url, options));
+        resolve(request(url, options_in));
       }, WAIT_FOR_AUTH_DELAY_MS);
     });
+  const options = JSON.parse(JSON.stringify(options_in));
   options.headers = {
     ...(options.headers || {}),
     Authorization: `Bearer ${token}`,

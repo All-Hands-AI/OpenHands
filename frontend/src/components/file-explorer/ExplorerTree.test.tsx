@@ -1,5 +1,4 @@
 import React from "react";
-import { render } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
 import ExplorerTree from "./ExplorerTree";
 
@@ -11,7 +10,7 @@ describe("ExplorerTree", () => {
   });
 
   it("should render the explorer", () => {
-    const { getByText, queryByText } = renderWithProviders(
+    const { getByText } = renderWithProviders(
       <ExplorerTree files={FILES} defaultOpen />,
     );
 
@@ -21,9 +20,7 @@ describe("ExplorerTree", () => {
   });
 
   it("should render the explorer given the defaultExpanded prop", () => {
-    const { getByText, queryByText } = renderWithProviders(
-      <ExplorerTree files={FILES} />,
-    );
+    const { queryByText } = renderWithProviders(<ExplorerTree files={FILES} />);
 
     expect(queryByText("file-1-1.ts")).toBeInTheDocument();
     expect(queryByText("folder-1-2")).toBeInTheDocument();

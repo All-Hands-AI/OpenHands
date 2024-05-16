@@ -18,6 +18,7 @@ vi.mock("../../services/fileService", async () => ({
     if (path === "/folder1/") {
       return Promise.resolve(["file2.ts"]);
     }
+    return Promise.resolve([]);
   }),
 
   uploadFiles: vi.fn(),

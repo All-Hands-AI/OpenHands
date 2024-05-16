@@ -7,7 +7,7 @@ import { VscCode } from "react-icons/vsc";
 import { useDispatch, useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
 import { selectFile } from "#/services/fileService";
-import { setCode, setActiveFilepath } from "#/state/codeSlice";
+import { setCode } from "#/state/codeSlice";
 import { RootState } from "#/store";
 import FileExplorer from "./file-explorer/FileExplorer";
 import { CodeEditorContext } from "./CodeEditorContext";

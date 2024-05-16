@@ -20,7 +20,6 @@
     "i18next": "^23.10.1",
     "i18next-browser-languagedetector": "^7.2.1",
     "i18next-http-backend": "^2.5.0",
-    "jose": "^5.2.3",
     "monaco-editor": "^0.47.0",
     "react": "^18.2.0",
     "react-accessible-treeview": "^2.8.3",

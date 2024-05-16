@@ -8,7 +8,6 @@ import { Container, Orientation } from "#/components/Resizable";
 import Workspace from "#/components/Workspace";
 import LoadPreviousSessionModal from "#/components/modals/load-previous-session/LoadPreviousSessionModal";
 import SettingsModal from "#/components/modals/settings/SettingsModal";
-import Socket from "#/services/socket";
 import "./App.css";
 import AgentControlBar from "./components/AgentControlBar";
 import AgentStatusBar from "./components/AgentStatusBar";
@@ -41,8 +40,6 @@ function Controls({ setSettingOpen }: Props): JSX.Element {
 let initOnce = false;
 
 function App(): JSX.Element {
-  const [isWarned, setIsWarned] = useState(false);
-
   const {
     isOpen: settingsModalIsOpen,
     onOpen: onSettingsModalOpen,

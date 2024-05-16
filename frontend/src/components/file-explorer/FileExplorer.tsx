@@ -92,18 +92,16 @@ function FileExplorer() {
   };
 
   const refreshWorkspace = async () => {
-    listFiles().then((files) => {
-      setFiles(files);
-    });
+    setFiles(await listFiles());
   };
 
   React.useEffect(() => {
     refreshWorkspace();
   }, []);
 
-  const uploadFileData = async (files: FileList) => {
+  const uploadFileData = async (toAdd: FileList) => {
     try {
-      await uploadFiles(files);
+      await uploadFiles(toAdd);
       await refreshWorkspace();
     } catch (error) {
       toast.stickyError("ws", "Error uploading file");
