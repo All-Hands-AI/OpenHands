@@ -99,7 +99,11 @@ class MessageStack:
                 new_data = {}
                 for sid, msgs in data.items():
                     if sid != del_sid:
-                        new_data[sid] = [msg.to_dict() for msg in msgs]
+                        new_data[sid] = msgs
+                # 移动文件指针到文件开头以便覆盖原内容
+                file.seek(0)
+                # 清空文件原有内容
+                file.truncate()
                 json.dump(new_data, file)
         except FileNotFoundError:
             pass
