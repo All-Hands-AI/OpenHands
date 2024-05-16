@@ -105,6 +105,10 @@ set `FORCE_USE_LLM` environmental variable to true, or run the script like this:
 FORCE_USE_LLM=true ./tests/integration/regenerate.sh
 ```
 
+Note: FORCE_USE_LLM doesn't take effect if all tests are passing. If you want to
+regenerate regardless, you could remove everything under `tests/integration/mock/[agent]/[test_name]`
+folder.
+
 ### Known Issues
 
 Sometimes you might see transient errors like `pexpect.pxssh.ExceptionPxssh: Could not establish connection to host`.
