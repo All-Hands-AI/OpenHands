@@ -1,16 +1,9 @@
 #!/bin/bash
 set -eo pipefail
 
-run_test() {
-  SANDBOX_TYPE=$SANDBOX_TYPE \
-    WORKSPACE_BASE=$WORKSPACE_BASE \
-    MAX_ITERATIONS=$MAX_ITERATIONS \
-    WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
-    AGENT=$agent \
-    poetry run pytest -s ./tests/integration/test_agent.py::$test_name
-    # return exit code of pytest
-    return $?
-}
+##############################################################
+##           CONSTANTS AND ENVIRONMENTAL VARIABLES          ##
+##############################################################
 
 if [ -z $WORKSPACE_MOUNT_PATH ]; then
   WORKSPACE_MOUNT_PATH=$(pwd)
@@ -21,6 +14,7 @@ fi
 
 WORKSPACE_MOUNT_PATH+="/_test_workspace"
 WORKSPACE_BASE+="/_test_workspace"
+WORKSPACE_MOUNT_PATH_IN_SANDBOX="/workspace"
 
 SANDBOX_TYPE="ssh"
 MAX_ITERATIONS=10
@@ -39,6 +33,27 @@ test_names=(
 
 num_of_tests=${#test_names[@]}
 num_of_agents=${#agents[@]}
+
+##############################################################
+##                      FUNCTIONS                           ##
+##############################################################
+
+run_test() {
+  SANDBOX_TYPE=$SANDBOX_TYPE \
+    WORKSPACE_BASE=$WORKSPACE_BASE \
+    WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
+    WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
+    MAX_ITERATIONS=$MAX_ITERATIONS \
+    AGENT=$agent \
+    poetry run pytest -s ./tests/integration/test_agent.py::$test_name
+    # return exit code of pytest
+    return $?
+}
+
+##############################################################
+##                      MAIN PROGRAM                        ##
+##############################################################
+
 
 if [ "$num_of_tests" -ne "${#test_names[@]}" ]; then
   echo "Every task must correspond to one test case"
@@ -98,10 +113,11 @@ for ((i = 0; i < num_of_tests; i++)); do
       # set -x to print the command being executed
       set -x
       echo -e "/exit\n" | \
+        DEBUG=true \
         SANDBOX_TYPE=$SANDBOX_TYPE \
         WORKSPACE_BASE=$WORKSPACE_BASE \
-        DEBUG=true \
         WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
+        WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
         poetry run python ./opendevin/core/main.py \
         -i $MAX_ITERATIONS \
         -t "$task Do not ask me for confirmation at any point." \
