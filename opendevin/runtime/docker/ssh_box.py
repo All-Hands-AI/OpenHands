@@ -189,6 +189,9 @@ class DockerSSHBox(Sandbox):
         self.start_ssh_session()
         # make sure /tmp always exists
         self.execute('mkdir -p /tmp')
+        # set git config
+        self.execute('git config --global user.name "OpenDevin"')
+        self.execute('git config --global user.email "opendevin@opendevin.ai"')
         atexit.register(self.close)
         super().__init__()
 
