@@ -334,40 +334,39 @@ This is your internal monologue, in JSON format:
   },
   {
     "source": "agent",
-    "action": "run",
+    "action": "read",
     "args": {
-      "command": "pwd",
-      "background": false,
+      "path": "bad.txt",
+      "start": 0,
+      "end": -1,
       "thought": ""
     }
   },
   {
     "source": "agent",
-    "observation": "run",
-    "content": "/workspace",
+    "observation": "read",
+    "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n",
     "extras": {
-      "command_id": -1,
-      "command": "pwd",
-      "exit_code": 0
+      "path": "bad.txt"
     }
   },
   {
     "source": "agent",
-    "action": "run",
+    "action": "write",
     "args": {
-      "command": "ls",
-      "background": false,
+      "path": "bad.txt",
+      "content": "This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!\n",
+      "start": 0,
+      "end": -1,
       "thought": ""
     }
   },
   {
     "source": "agent",
-    "observation": "run",
-    "content": "bad.txt",
+    "observation": "write",
+    "content": "",
     "extras": {
-      "command_id": -1,
-      "command": "ls",
-      "exit_code": 0
+      "path": "bad.txt"
     }
   },
   {
@@ -383,7 +382,7 @@ This is your internal monologue, in JSON format:
   {
     "source": "agent",
     "observation": "read",
-    "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n",
+    "content": "This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!\n\n",
     "extras": {
       "path": "bad.txt"
     }
@@ -423,7 +422,7 @@ Here are the possible actions:
 
 
 
-You MUST take time to think in between read, write, run, browse, push, and recall actions--do this with the `message` action.
+You MUST take time to think in between read, write, run, kill, browse, push, and recall actions--do this with the `message` action.
 You should never act twice in a row without thinking. But if your last several
 actions are all `message` actions, you should consider taking a different action.
 
