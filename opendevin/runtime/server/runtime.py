@@ -102,7 +102,7 @@ class ServerRuntime(Runtime):
                 print(output)
                 output = 'Package installed successfully'
             return CmdOutputObservation(
-                command_id=-1, content=output, command=command, exit_code=exit_code
+                command_id=-1, content=str(output), command=command, exit_code=exit_code
             )
         except UnicodeDecodeError:
             return ErrorObservation('Command output could not be decoded as utf-8')
