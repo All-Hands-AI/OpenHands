@@ -55,7 +55,6 @@ class EventStream:
             if start_id <= id and (end_id is None or id <= end_id):
                 content = self._file_store.read(event_str)
                 data = json.loads(content)
-                print('event from dict', data)
                 event = event_from_dict(data)
                 yield event
 
@@ -79,7 +78,6 @@ class EventStream:
         event._timestamp = datetime.now()  # type: ignore [attr-defined]
         event._source = source  # type: ignore [attr-defined]
         data = event_to_dict(event)
-        print('event to dict', data)
         self._file_store.write(self._get_filename_for_event(event), json.dumps(data))
         for key, fn in self._subscribers.items():
             await fn(event)
