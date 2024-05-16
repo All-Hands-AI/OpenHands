@@ -28,17 +28,9 @@ To reproduce how we pack the image, check [this doc](./BUILD_TESTBED_AND_ENV.md)
 
 NOTE: We only support SWE-Bench lite for now. But modifying our existing scripts for full SWE-Bench should be quite straight forward.
 
-## Test if your environment works
+## Configure OpenDevin and your LLM
 
-```bash
-python3 evaluation/swe_bench/swe_env_box.py
-```
-
-If you get to the interactive shell successfully, it means success!
-
-## Configure your LLM
-
-Create a `config.toml` file if not exists at the root of workspace.
+Create a `config.toml` file if it does not exist at the root of the workspace.
 
 Add the following configurations:
 
@@ -51,7 +43,7 @@ sandbox_type = "ssh"
 use_host_network = true
 ssh_hostname = "localhost"
 sandbox_timeout = 120
-# eval specific
+# SWEBench eval specific
 run_as_devin = false
 
 # TODO: Change these to the model you want to evaluate
@@ -66,6 +58,14 @@ base_url = "https://OPENAI_COMPATIBLE_URL/v1"
 api_key = "XXX"
 temperature = 0.0
 ```
+
+## Test if your environment works
+
+```bash
+python3 evaluation/swe_bench/swe_env_box.py
+```
+
+If you get to the interactive shell successfully, it means success!
 
 ## Run Inference on SWE-Bench Instances
 
