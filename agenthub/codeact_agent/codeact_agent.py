@@ -215,6 +215,7 @@ class CodeActAgent(Agent):
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
+        print('SENDING MSGS', messages)
         response = self.llm.completion(
             messages=messages,
             stop=[
@@ -231,7 +232,6 @@ class CodeActAgent(Agent):
         state.num_of_chars += sum(
             len(message['content']) for message in messages
         ) + len(action_str)
-        messages.append({'role': 'assistant', 'content': action_str})
 
         if finish_command := re.search(r'<finish>.*</finish>', action_str, re.DOTALL):
             thought = action_str.replace(finish_command.group(0), '').strip()
