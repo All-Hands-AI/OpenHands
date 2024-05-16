@@ -99,7 +99,7 @@ class MessageStack:
                 new_data = {}
                 for sid, msgs in data.items():
                     if sid != del_sid:
-                        new_data[sid] = [msg.to_dict() for msg in msgs]
+                        new_data[sid] = [Message.from_dict(msg) for msg in msgs]
                 json.dump(new_data, file)
         except FileNotFoundError:
             pass
