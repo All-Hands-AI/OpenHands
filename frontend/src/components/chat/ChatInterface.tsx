@@ -7,6 +7,7 @@ import { twMerge } from "tailwind-merge";
 import { VscArrowDown } from "react-icons/vsc";
 import ChatInput from "./ChatInput";
 import Chat from "./Chat";
+import ChatMessage from "./ChatMessage";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import { sendChatMessage } from "#/services/chatService";
@@ -71,6 +72,9 @@ function ChatInterface() {
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
         >
           <Chat messages={messages} />
+          {curAgentState === AgentState.LOADING && (
+            <ChatMessage message={{ sender: "assistant", content: "..." }} />
+          )}
         </div>
         {/* Fade between messages and input */}
         <div
