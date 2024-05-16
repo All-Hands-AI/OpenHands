@@ -1,22 +1,27 @@
 import re
-from typing import Mapping
 
-from agenthub.codeact_agent.prompt import EXAMPLES, SYSTEM_MESSAGE
+from agenthub.codeact_agent.prompt import (
+    COMMAND_DOCS,
+    EXAMPLES,
+    GITHUB_MESSAGE,
+    SYSTEM_PREFIX,
+    SYSTEM_SUFFIX,
+)
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
+    BrowseInteractiveAction,
     CmdRunAction,
     IPythonRunCellAction,
     MessageAction,
-    NullAction,
 )
 from opendevin.events.observation import (
+    BrowserOutputObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
-    NullObservation,
 )
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
@@ -25,10 +30,12 @@ from opendevin.runtime.plugins import (
     SWEAgentCommandsRequirement,
 )
 
+ENABLE_GITHUB = True
+
 
 def parse_response(response) -> str:
     action = response.choices[0].message.content
-    for lang in ['bash', 'ipython']:
+    for lang in ['bash', 'ipython', 'browse']:
         if f'<execute_{lang}>' in action and f'</execute_{lang}>' not in action:
             action += f'</execute_{lang}>'
     return action
@@ -80,7 +87,7 @@ def swe_agent_edit_hack(bash_command: str) -> str:
 
 
 class CodeActAgent(Agent):
-    VERSION = '1.1'
+    VERSION = '1.3'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
@@ -121,18 +128,12 @@ class CodeActAgent(Agent):
         JupyterRequirement(),
         SWEAgentCommandsRequirement(),
     ]
-    SUPPORTED_ACTIONS = (
-        CmdRunAction,
-        IPythonRunCellAction,
-        MessageAction,
-        NullAction,
+
+    system_message: str = (
+        f'{SYSTEM_PREFIX}\n{GITHUB_MESSAGE}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
+        if ENABLE_GITHUB
+        else f'{SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
     )
-    SUPPORTED_OBSERVATIONS = (
-        CmdOutputObservation,
-        IPythonRunCellObservation,
-        NullObservation,
-    )
-    messages: list[dict] = []
 
     def __init__(
         self,
@@ -152,8 +153,8 @@ class CodeActAgent(Agent):
         Resets the CodeAct Agent.
         """
         super().reset()
-        self.messages: list[Mapping[str, str]] = [
-            {'role': 'system', 'content': SYSTEM_MESSAGE},
+        self.messages: list[dict[str, str]] = [
+            {'role': 'system', 'content': self.system_message},
             {
                 'role': 'user',
                 'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!",
@@ -172,6 +173,7 @@ class CodeActAgent(Agent):
         Returns:
         - CmdRunAction(command) - bash command to run
         - IPythonRunCellAction(code) - IPython code to run
+        - BrowseInteractiveAction(browsergym_command) - BrowserGym commands to run
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
@@ -179,9 +181,6 @@ class CodeActAgent(Agent):
         updated_info = state.updated_info
         if updated_info:
             for prev_action, obs in updated_info:
-                assert isinstance(
-                    prev_action, self.SUPPORTED_ACTIONS
-                ), f'{prev_action.__class__} is not supported (supported: {self.SUPPORTED_ACTIONS})'
                 if (
                     isinstance(prev_action, MessageAction)
                     and prev_action.source == 'user'
@@ -193,16 +192,10 @@ class CodeActAgent(Agent):
                         # User wants to exit
                         return AgentFinishAction()
 
-                # handle observations
-                assert isinstance(
-                    obs, self.SUPPORTED_OBSERVATIONS
-                ), f'{obs.__class__} is not supported (supported: {self.SUPPORTED_OBSERVATIONS})'
-
                 if isinstance(obs, CmdOutputObservation):
                     content = 'OBSERVATION:\n' + truncate_observation(obs.content)
                     content += f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
                     self.messages.append({'role': 'user', 'content': content})
-
                 elif isinstance(obs, IPythonRunCellObservation):
                     content = 'OBSERVATION:\n' + obs.content
                     # replace base64 images with a placeholder
@@ -215,18 +208,22 @@ class CodeActAgent(Agent):
                     content = '\n'.join(splitted)
                     content = truncate_observation(content)
                     self.messages.append({'role': 'user', 'content': content})
-                elif isinstance(obs, NullObservation):
-                    pass
-                else:
-                    raise NotImplementedError(
-                        f'Unknown observation type: {obs.__class__}'
-                    )
+                elif isinstance(obs, BrowserOutputObservation):
+                    content = 'OBSERVATION:\n' + truncate_observation(obs.content)
+                    self.messages.append({'role': 'user', 'content': content})
+
+        latest_user_message = [m for m in self.messages if m['role'] == 'user'][-1]
+        if latest_user_message:
+            latest_user_message['content'] += (
+                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
+            )
 
         response = self.llm.completion(
             messages=self.messages,
             stop=[
                 '</execute_ipython>',
                 '</execute_bash>',
+                '</execute_browse>',
             ],
             temperature=0.0,
         )
@@ -261,6 +258,15 @@ class CodeActAgent(Agent):
             code_group = python_code.group(1).strip()
             thought = action_str.replace(python_code.group(0), '').strip()
             return IPythonRunCellAction(code=code_group, thought=thought)
+        elif browse_command := re.search(
+            r'<execute_browse>(.*)</execute_browse>', action_str, re.DOTALL
+        ):
+            # BrowserGym actions was found
+            browse_actions = browse_command.group(1).strip()
+            thought = action_str.replace(browse_command.group(0), '').strip()
+            return BrowseInteractiveAction(
+                browser_actions=browse_actions, thought=thought
+            )
         else:
             # We assume the LLM is GOOD enough that when it returns pure natural language
             # it want to talk to the user
@@ -270,7 +276,10 @@ class CodeActAgent(Agent):
         raise NotImplementedError('Implement this abstract method')
 
     def log_cost(self, response):
-        cur_cost = self.llm.completion_cost(response)
+        try:
+            cur_cost = self.llm.completion_cost(response)
+        except Exception:
+            cur_cost = 0
         self.cost_accumulator += cur_cost
         logger.info(
             'Cost: %.2f USD | Accumulated Cost: %.2f USD',

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import { useSelector } from "react-redux";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import Markdown from "react-markdown";
@@ -84,17 +84,8 @@ function Jupyter(): JSX.Element {
   const { cells } = useSelector((state: RootState) => state.jupyter);
   const jupyterRef = useRef<HTMLDivElement>(null);
 
-  const [hitBottom, setHitBottom] = useState(true);
-  const { setAutoScroll, scrollDomToBottom } = useScrollToBottom(jupyterRef);
-
-  const onChatBodyScroll = (e: HTMLElement) => {
-    const bottomHeight = e.scrollTop + e.clientHeight;
-
-    const isHitBottom = bottomHeight >= e.scrollHeight - 10;
-
-    setHitBottom(isHitBottom);
-    setAutoScroll(isHitBottom);
-  };
+  const { hitBottom, scrollDomToBottom, onChatBodyScroll } =
+    useScrollToBottom(jupyterRef);
 
   return (
     <div className="flex-1">

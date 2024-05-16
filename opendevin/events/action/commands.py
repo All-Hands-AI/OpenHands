@@ -28,17 +28,17 @@ class CmdRunAction(Action):
 
 @dataclass
 class CmdKillAction(Action):
-    id: int
+    command_id: int
     thought: str = ''
     action: str = ActionType.KILL
     runnable: ClassVar[bool] = True
 
     @property
     def message(self) -> str:
-        return f'Killing command: {self.id}'
+        return f'Killing command: {self.command_id}'
 
     def __str__(self) -> str:
-        return f'**CmdKillAction**\n{self.id}'
+        return f'**CmdKillAction**\n{self.command_id}'
 
 
 @dataclass

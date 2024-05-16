@@ -1,5 +1,6 @@
 from opendevin.events.action import (
     AgentRecallAction,
+    BrowseInteractiveAction,
     BrowseURLAction,
     CmdKillAction,
     CmdRunAction,
@@ -25,10 +26,10 @@ class ServerRuntime(Runtime):
         return self._run_command(action.command, background=action.background)
 
     async def kill(self, action: CmdKillAction) -> Observation:
-        cmd = self.sandbox.kill_background(action.id)
+        cmd = self.sandbox.kill_background(action.command_id)
         return CmdOutputObservation(
-            content=f'Background command with id {action.id} has been killed.',
-            command_id=action.id,
+            content=f'Background command with id {action.command_id} has been killed.',
+            command_id=action.command_id,
             command=cmd.command,
             exit_code=0,
         )
@@ -58,6 +59,9 @@ class ServerRuntime(Runtime):
     async def browse(self, action: BrowseURLAction) -> Observation:
         return await browse(action, self.browser)
 
+    async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+        return await browse(action, self.browser)
+
     async def recall(self, action: AgentRecallAction) -> Observation:
         return NullObservation('')
 
@@ -78,7 +82,7 @@ class ServerRuntime(Runtime):
 
     def _run_background(self, command: str) -> Observation:
         bg_cmd = self.sandbox.execute_in_background(command)
-        content = f'Background command started. To stop it, send a `kill` action with id {bg_cmd.pid}'
+        content = f'Background command started. To stop it, send a `kill` action with command_id {bg_cmd.pid}'
         return CmdOutputObservation(
             content=content,
             command_id=bg_cmd.pid,
