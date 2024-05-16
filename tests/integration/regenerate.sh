@@ -4,7 +4,6 @@ set -eo pipefail
 run_test() {
   SANDBOX_TYPE=$SANDBOX_TYPE \
     WORKSPACE_BASE=$WORKSPACE_BASE \
-    REMIND_ITERATIONS=$remind_iterations \
     MAX_ITERATIONS=$MAX_ITERATIONS \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     AGENT=$agent \
@@ -27,7 +26,6 @@ SANDBOX_TYPE="ssh"
 MAX_ITERATIONS=10
 
 agents=("MonologueAgent" "CodeActAgent" "PlannerAgent" "SWEAgent")
-remind_iterations_config=(false true false false)
 tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
@@ -41,16 +39,8 @@ test_names=(
   "test_ipython_installation"
 )
 
-target_agent=${TARGET_AGENT:-"all"}
-target_test=${TARGET_TEST:-"all"}
-
 num_of_tests=${#test_names[@]}
 num_of_agents=${#agents[@]}
-
-if [ "$num_of_agents" -ne "${#remind_iterations_config[@]}" ]; then
-  echo "Every agent must have its own remind_iterations_config"
-  exit 1
-fi
 
 if [ "$num_of_tests" -ne "${#test_names[@]}" ]; then
   echo "Every task must correspond to one test case"
@@ -62,15 +52,14 @@ rm -rf $WORKSPACE_BASE
 for ((i = 0; i < num_of_tests; i++)); do
   task=${tasks[i]}
   test_name=${test_names[i]}
-  if [ "$target_test" != "all" ] && [ "$test_name" != "$target_test" ]; then
+
+  # skip other tests if only one test is specified
+  if [[ -n "$ONLY_TEST_NAME" && "$ONLY_TEST_NAME" != "$test_name" ]]; then
     continue
   fi
+
   for ((j = 0; j < num_of_agents; j++)); do
     agent=${agents[j]}
-    if [ "$target_agent" != "all" ] && [ "$agent" != "$target_agent" ]; then
-      continue
-    fi
-    remind_iterations=${remind_iterations_config[j]}
 
     # skip other agents if only one agent is specified
     if [[ -n "$ONLY_TEST_AGENT" && "$ONLY_TEST_AGENT" != "$agent" ]]; then
@@ -114,9 +103,7 @@ for ((i = 0; i < num_of_tests; i++)); do
         SANDBOX_TYPE=$SANDBOX_TYPE \
         WORKSPACE_BASE=$WORKSPACE_BASE \
         DEBUG=true \
-        REMIND_ITERATIONS=$remind_iterations \
-        WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
-        AGENT=$agent \
+        WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
         poetry run python ./opendevin/core/main.py \
         -i $MAX_ITERATIONS \
         -t "$task Do not ask me for confirmation at any point." \
