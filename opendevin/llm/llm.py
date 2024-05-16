@@ -1,9 +1,8 @@
+import warnings
 from functools import partial
 
-import warnings
-
 with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
+    warnings.simplefilter('ignore')
     import litellm
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost

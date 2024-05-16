@@ -40,6 +40,10 @@ class ActionTypeSchema(BaseModel):
     """Opens a web page.
     """
 
+    BROWSE_INTERACTIVE: str = Field(default='browse_interactive')
+    """Interact with the browser instance.
+    """
+
     RECALL: str = Field(default='recall')
     """Searches long-term memory
     """
