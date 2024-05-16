@@ -104,15 +104,10 @@ function FileExplorer() {
     refreshWorkspace();
   }, []);
 
-  const selectFileInput = async () => {
-    // Trigger the file browser
-    fileInputRef.current?.click();
-  };
-
   const uploadFileData = async (files: FileList) => {
     try {
       await uploadFiles(files);
-      await getWorkspaceData(); // Refresh the workspace to show the new file
+      await refreshWorkspace();
     } catch (error) {
       toast.stickyError("ws", "Error uploading file");
     }
@@ -164,12 +159,10 @@ function FileExplorer() {
       >
         <div className="flex p-2 items-center justify-between relative">
           <div style={{ display: isHidden ? "none" : "block" }}>
-            {workspace && (
-              <ExplorerTree
-                path="/"
-                defaultOpen
-              />
-            )}
+            <ExplorerTree
+              files={files}
+              defaultOpen
+            />
           </div>
 
           <ExplorerActions

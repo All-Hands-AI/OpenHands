@@ -69,7 +69,7 @@ describe("FileExplorer", () => {
 
   it("should upload files", async () => {
     // TODO: Improve this test by passing expected argument to `uploadFiles`
-    const { getByTestId } = renderWithProviders(<FileExplorer onFileClick={vi.fn} />);
+    const { getByTestId } = renderWithProviders(<FileExplorer />);
     const file = new File([""], "file-name");
     const file2 = new File([""], "file-name-2");
 
