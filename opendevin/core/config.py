@@ -267,6 +267,7 @@ def finalize_config(config: AppConfig):
     # Set workspace_mount_path if not set by the user
     if config.workspace_mount_path is None:
         config.workspace_mount_path = os.path.abspath(config.workspace_base)
+    config.workspace_base = os.path.abspath(config.workspace_base)
 
     # In local there is no sandbox, the workspace will have the same pwd as the host
     if config.sandbox_type == 'local':
