@@ -2582,13 +2582,13 @@ proxy = ["PyJWT (>=2.8.0,<3.0.0)", "apscheduler (>=3.10.4,<4.0.0)", "backoff", "
 
 [[package]]
 name = "llama-index"
-version = "0.10.36"
+version = "0.10.37"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index-0.10.36-py3-none-any.whl", hash = "sha256:e57779f332323b00576cf9e8fee0ab5b978aaf35902288691da01a7839b99e58"},
-    {file = "llama_index-0.10.36.tar.gz", hash = "sha256:275309a2317e9279b296e552c334e566c4f011223f6ed39e342f5264a05c4d9a"},
+    {file = "llama_index-0.10.37-py3-none-any.whl", hash = "sha256:da8871c5c8e5d038e56c0e5cb8c18a81ddc4117bf403bace95b4cec212f88fb9"},
+    {file = "llama_index-0.10.37.tar.gz", hash = "sha256:d5057fd609e2423e75a4695242ab030d1647e4f07cb46faf9476ab504005f033"},
 ]
 
 [package.dependencies]
