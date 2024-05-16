@@ -1,3 +1,7 @@
+
+
+----------
+
 A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
 The assistant can interact with an interactive Python (Jupyter Notebook) environment and receive the corresponding output when needed. The code should be enclosed using "<execute_ipython>" tag, for example:
 <execute_ipython>
@@ -38,6 +42,10 @@ Please note that THE EDIT COMMAND REQUIRES PROPER INDENTATION. If you'd like to 
 The assistant's response should be concise.
 You should include <execute_ipython> or <execute_bash> or <execute_browse> in every one of your responses, unless you are finished with the task or need more input or action from the user in order to proceed.
 IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> or <execute_browse> instead of providing it.
+
+
+----------
+
 Here is an example of how you can interact with the environment for task solving:
 
 --- START OF EXAMPLE ---
@@ -227,6 +235,10 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 --- END OF EXAMPLE ---
 
 
-NOW, LET'S START!Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.
+NOW, LET'S START!
+
+----------
+
+Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.
 
 ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
