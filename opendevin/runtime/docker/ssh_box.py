@@ -378,7 +378,7 @@ class DockerSSHBox(Sandbox):
             logger.debug(
                 f'WAITING FOR END OF command output ({bool(output)}): {output}'
             )
-            if output == '':
+            if output.strip() == '':
                 break
             command_output += output
         command_output = command_output.removesuffix('\r\n')
@@ -386,17 +386,19 @@ class DockerSSHBox(Sandbox):
         # get the exit code
         self.ssh.sendline('echo $?')
         self.ssh.prompt()
-        exit_code_str = self.ssh.before
+        exit_code_str = self.ssh.before.strip()
         _start_time = time.time()
         while not exit_code_str:
-            self.ssh.prompt()
-            exit_code_str = self.ssh.before
+            self.ssh.prompt(timeout=1)
+            exit_code_str = self.ssh.before.strip()
             logger.debug(f'WAITING FOR exit code: {exit_code_str}')
             if time.time() - _start_time > timeout:
                 return self._send_interrupt(
                     cmd, command_output, ignore_last_output=True
                 )
-        exit_code = int(exit_code_str.strip())
+        exit_code = int(
+            exit_code_str.replace('echo $?', '').replace('\r\n', '').strip()
+        )
         return exit_code, command_output
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
