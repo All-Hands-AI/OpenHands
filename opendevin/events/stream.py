@@ -42,8 +42,8 @@ class EventStream:
             if id >= self._cur_id:
                 self._cur_id = id + 1
 
-    def _get_filename_for_event(self, event: Event) -> str:
-        return f'sessions/{self.sid}/events/{event.id}.json'
+    def _get_filename_for_id(self, id: int) -> str:
+        return f'sessions/{self.sid}/events/{id}.json'
 
     def _get_id_from_filename(self, filename: str) -> int:
         return int(filename.split('/')[-1].split('.')[0])
@@ -53,10 +53,14 @@ class EventStream:
         for event_str in events:
             id = self._get_id_from_filename(event_str)
             if start_id <= id and (end_id is None or id <= end_id):
-                content = self._file_store.read(event_str)
-                data = json.loads(content)
-                event = event_from_dict(data)
+                event = self.get_event(id)
                 yield event
+
+    def get_event(self, id: int) -> Event:
+        filename = self._get_filename_for_id(id)
+        content = self._file_store.read(filename)
+        data = json.loads(content)
+        return event_from_dict(data)
 
     def subscribe(self, id: EventStreamSubscriber, callback: Callable):
         if id in self._subscribers:
@@ -78,6 +82,6 @@ class EventStream:
         event._timestamp = datetime.now()  # type: ignore [attr-defined]
         event._source = source  # type: ignore [attr-defined]
         data = event_to_dict(event)
-        self._file_store.write(self._get_filename_for_event(event), json.dumps(data))
+        self._file_store.write(self._get_filename_for_id(event.id), json.dumps(data))
         for key, fn in self._subscribers.items():
             await fn(event)
