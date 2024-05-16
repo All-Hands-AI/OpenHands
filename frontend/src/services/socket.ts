@@ -23,22 +23,18 @@ class Socket {
 
   public static tryInitialize(): void {
     if (Socket.initializing) return;
-    console.log("Trying to initialize socket...");
     Socket.initializing = true;
     const token = getToken();
-    console.log("Token: ", token);
     Socket._initialize(token);
   }
 
   private static _initialize(token: string): void {
-    console.log("Initializing socket...");
     if (Socket.isConnected()) return;
 
     const WS_URL = `ws://${window.location.host}/ws?token=${token}`;
     Socket._socket = new WebSocket(WS_URL);
 
     Socket._socket.onopen = (e) => {
-      console.log("socket opened");
       toast.stickySuccess("ws", "Connected to server.");
       Socket.initializing = false;
       Socket.callbacks.open?.forEach((callback) => {
@@ -70,7 +66,6 @@ class Socket {
     };
 
     Socket._socket.onclose = () => {
-      console.log("Socket closed.");
       // Reconnect after a delay
       setTimeout(() => {
         Socket.tryInitialize();

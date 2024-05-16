@@ -1,6 +1,4 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { INode, flattenTree } from "react-accessible-treeview";
-import { IFlatMetadata } from "react-accessible-treeview/dist/TreeView/utils";
 
 export const initialState = {
   code: "",
