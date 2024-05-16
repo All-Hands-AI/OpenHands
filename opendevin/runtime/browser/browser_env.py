@@ -23,7 +23,7 @@ class BrowserEnv:
     def __init__(self):
         self.html_text_converter = html2text.HTML2Text()
         # ignore links and images
-        self.html_text_converter.ignore_links = True
+        self.html_text_converter.ignore_links = False
         self.html_text_converter.ignore_images = True
         # use alt text for images
         self.html_text_converter.images_to_alt = True

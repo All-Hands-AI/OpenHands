@@ -334,20 +334,21 @@ This is your internal monologue, in JSON format:
   },
   {
     "source": "agent",
-    "action": "read",
+    "action": "run",
     "args": {
-      "path": "bad.txt",
-      "start": 0,
-      "end": -1,
+      "command": "pwd",
+      "background": false,
       "thought": ""
     }
   },
   {
     "source": "agent",
-    "observation": "read",
-    "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n",
+    "observation": "run",
+    "content": "/workspace",
     "extras": {
-      "path": "bad.txt"
+      "command_id": -1,
+      "command": "pwd",
+      "exit_code": 0
     }
   }
 ]
@@ -378,8 +379,9 @@ Here are the possible actions:
   * `branch` - the name of the branch to push
 * `recall` - recalls a past memory. Arguments:
   * `query` - the query to search for
-* `message` - make a plan, set a goal, or record your thoughts. Arguments:
+* `message` - make a plan, set a goal, record your thoughts, or ask for more input from the user. Arguments:
   * `content` - the message to record
+  * `wait_for_response` - set to `true` to wait for the user to respond before proceeding
 * `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working.
 
 
