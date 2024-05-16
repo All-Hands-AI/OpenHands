@@ -51,7 +51,7 @@ Here are the possible actions:
 
 %(background_commands)s
 
-You MUST take time to think in between read, write, run, browse, push, and recall actions--do this with the `message` action.
+You MUST take time to think in between read, write, run, kill, browse, push, and recall actions--do this with the `message` action.
 You should never act twice in a row without thinking. But if your last several
 actions are all `message` actions, you should consider taking a different action.
 
