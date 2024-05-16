@@ -450,7 +450,7 @@ class DockerSSHBox(Sandbox):
             logger.debug(
                 f'WAITING FOR END OF command output ({bool(output)}): {output}'
             )
-            if output.strip() == '':
+            if isinstance(output, str) and output.strip() == '':
                 break
             command_output += output
         command_output = command_output.removesuffix('\r\n')
