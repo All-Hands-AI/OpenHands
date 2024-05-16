@@ -215,7 +215,6 @@ class CodeActAgent(Agent):
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
-        print('SENDING MSGS', messages)
         response = self.llm.completion(
             messages=messages,
             stop=[
