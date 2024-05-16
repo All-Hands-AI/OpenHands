@@ -1,4 +1,4 @@
-It seems that the pandas module is not being recognized after installation. Let me try restarting the kernel and then import pandas again:
+It seems like the pandas library is not being recognized, even though it was installed. This can happen sometimes in Jupyter notebooks. A common solution is to restart the kernel. Let's try that:
 <execute_ipython>
 import IPython
 IPython.Application.instance().kernel.do_shutdown(True)  # Restart the kernel

@@ -65,27 +65,6 @@ failed tests, but it still costs money! If you don't want
 to cover the cost, ask one of the maintainers to regenerate for you.
 You might also be able to fix the tests by hand.
 
-## Run Specific Agent Tests or Test Cases
-
-To run specific agent tests or a specific test case, you can set the environment variables `TARGET_AGENT` and `TARGET_TEST`. For example, to run only the `test_ipython` test case for the `CodeActAgent`, use:
-
-```bash
-TARGET_AGENT="CodeActAgent" TARGET_TEST="test_ipython" ./tests/integration/regenerate.sh
-```
-
-If you only want to run all tests for the `CodeActAgent`:
-
-```bash
-TARGET_AGENT="CodeActAgent" ./tests/integration/regenerate.sh
-```
-
-Or if you want to run the `test_ipython` test case for all agents:
-
-```bash
-TARGET_TEST="test_ipython" ./tests/integration/regenerate.sh
-```
-
-If no specific agent or test case is provided, all tests will be run by default.
 
 ## Write a new Integration Test
 
@@ -100,3 +79,13 @@ That's it, you are good to go! When you launch an integration test, mock
 responses are loaded and used to replace a real LLM, so that we get
 deterministic and consistent behavior, and most importantly, without spending real
 money.
+
+## Run Specific Agent Tests or Test Cases
+
+To make it easier to write an integration test or to run a specific test case, you can set the environment variables `TARGET_AGENT` and `TARGET_TEST`. For example, to run only the `test_ipython` test case for the `CodeActAgent`, use:
+
+```bash
+TARGET_AGENT="CodeActAgent" TARGET_TEST="test_ipython" ./tests/integration/regenerate.sh
+```
+
+If no specific agent or test case is provided, all tests will be run by default.

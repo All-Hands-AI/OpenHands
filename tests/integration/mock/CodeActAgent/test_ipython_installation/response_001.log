@@ -1,3 +1,10 @@
-Let's start by installing the pandas library using pip in this Jupyter IPython environment:
+Sure, let's start by installing the pandas library using pip. Then, we will create a DataFrame and write it to the specified file. Let's do this in the following steps:
+
+1. Install pandas.
+2. Import pandas.
+3. Create a DataFrame.
+4. Write the DataFrame to a file.
+
+Let's start with the first step:
 <execute_ipython>
-!pip install pandas
+!pip install --no-cache-dir pandas > /dev/null 2>&1

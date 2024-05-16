@@ -1,9 +1,9 @@
-Now that pandas is installed, let's create a DataFrame with the given 'Names' and write it to '/workspace/names.txt':
+Great, the pandas library has been installed successfully. Now, let's import pandas and create a DataFrame with the specified names. After that, we'll write the DataFrame to the '/workspace/names.txt' file.
 <execute_ipython>
 import pandas as pd
 
-# Create a DataFrame with 'Names' ['Alice', 'Bob']
+# Create a DataFrame
 df = pd.DataFrame({'Names': ['Alice', 'Bob']})
 
-# Write the DataFrame to '/workspace/names.txt'
+# Write the DataFrame to a file
 df.to_csv('/workspace/names.txt', index=False)
