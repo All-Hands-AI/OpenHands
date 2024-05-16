@@ -153,13 +153,6 @@ class CodeActAgent(Agent):
         Resets the CodeAct Agent.
         """
         super().reset()
-        self.messages: list[dict[str, str]] = [
-            {'role': 'system', 'content': self.system_message},
-            {
-                'role': 'user',
-                'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!",
-            },
-        ]
         self.cost_accumulator = 0
 
     def step(self, state: State) -> Action:
@@ -177,49 +170,54 @@ class CodeActAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
+        messages: list[dict[str, str]] = [
+            {'role': 'system', 'content': self.system_message},
+            {
+                'role': 'user',
+                'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!",
+            },
+        ]
 
-        updated_info = state.updated_info
-        if updated_info:
-            for prev_action, obs in updated_info:
-                if (
-                    isinstance(prev_action, MessageAction)
-                    and prev_action.source == 'user'
-                ):
-                    self.messages.append(
-                        {'role': 'user', 'content': prev_action.content}
-                    )
-                    if prev_action.content.strip() == '/exit':
-                        # User wants to exit
-                        return AgentFinishAction()
+        for prev_action, obs in state.history:
+            if isinstance(prev_action, MessageAction) and prev_action.source == 'user':
+                messages.append({'role': 'user', 'content': prev_action.content})
+                if prev_action.content.strip() == '/exit':
+                    # User wants to exit
+                    return AgentFinishAction()
+            else:
+                messages.append(
+                    {'role': 'assistant', 'content': self.action_to_str(prev_action)}
+                )
 
-                if isinstance(obs, CmdOutputObservation):
-                    content = 'OBSERVATION:\n' + truncate_observation(obs.content)
-                    content += f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
-                    self.messages.append({'role': 'user', 'content': content})
-                elif isinstance(obs, IPythonRunCellObservation):
-                    content = 'OBSERVATION:\n' + obs.content
-                    # replace base64 images with a placeholder
-                    splitted = content.split('\n')
-                    for i, line in enumerate(splitted):
-                        if '![image](data:image/png;base64,' in line:
-                            splitted[i] = (
-                                '![image](data:image/png;base64, ...) already displayed to user'
-                            )
-                    content = '\n'.join(splitted)
-                    content = truncate_observation(content)
-                    self.messages.append({'role': 'user', 'content': content})
-                elif isinstance(obs, BrowserOutputObservation):
-                    content = 'OBSERVATION:\n' + truncate_observation(obs.content)
-                    self.messages.append({'role': 'user', 'content': content})
+            if isinstance(obs, CmdOutputObservation):
+                content = 'OBSERVATION:\n' + truncate_observation(obs.content)
+                content += f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
+                messages.append({'role': 'user', 'content': content})
+            elif isinstance(obs, IPythonRunCellObservation):
+                content = 'OBSERVATION:\n' + obs.content
+                # replace base64 images with a placeholder
+                splitted = content.split('\n')
+                for i, line in enumerate(splitted):
+                    if '![image](data:image/png;base64,' in line:
+                        splitted[i] = (
+                            '![image](data:image/png;base64, ...) already displayed to user'
+                        )
+                content = '\n'.join(splitted)
+                content = truncate_observation(content)
+                messages.append({'role': 'user', 'content': content})
+            elif isinstance(obs, BrowserOutputObservation):
+                content = 'OBSERVATION:\n' + truncate_observation(obs.content)
+                messages.append({'role': 'user', 'content': content})
 
-        latest_user_message = [m for m in self.messages if m['role'] == 'user'][-1]
+        latest_user_message = [m for m in messages if m['role'] == 'user'][-1]
         if latest_user_message:
             latest_user_message['content'] += (
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
+        print('SENDING MSGS', messages)
         response = self.llm.completion(
-            messages=self.messages,
+            messages=messages,
             stop=[
                 '</execute_ipython>',
                 '</execute_bash>',
@@ -232,9 +230,8 @@ class CodeActAgent(Agent):
 
         action_str: str = parse_response(response)
         state.num_of_chars += sum(
-            len(message['content']) for message in self.messages
+            len(message['content']) for message in messages
         ) + len(action_str)
-        self.messages.append({'role': 'assistant', 'content': action_str})
 
         if finish_command := re.search(r'<finish>.*</finish>', action_str, re.DOTALL):
             thought = action_str.replace(finish_command.group(0), '').strip()
@@ -271,6 +268,17 @@ class CodeActAgent(Agent):
             # We assume the LLM is GOOD enough that when it returns pure natural language
             # it want to talk to the user
             return MessageAction(content=action_str, wait_for_response=True)
+
+    def action_to_str(self, action: Action) -> str:
+        if isinstance(action, CmdRunAction):
+            return f'{action.thought}\n<execute_bash>{action.command}</execute_bash>'
+        elif isinstance(action, IPythonRunCellAction):
+            return f'{action.thought}\n<execute_ipython>{action.code}</execute_ipython>'
+        elif isinstance(action, BrowseInteractiveAction):
+            return f'{action.thought}\n<execute_browse>{action.browser_actions}</execute_browse>'
+        elif isinstance(action, MessageAction):
+            return action.content
+        return ''
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
