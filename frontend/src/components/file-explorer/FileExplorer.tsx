@@ -5,11 +5,12 @@ import {
   IoIosRefresh,
   IoIosCloudUpload,
 } from "react-icons/io";
+import { IoFileTray } from "react-icons/io5";
 import { twMerge } from "tailwind-merge";
 import {
   WorkspaceFile,
   getWorkspace,
-  uploadFile,
+  uploadFiles,
 } from "#/services/fileService";
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
@@ -92,6 +93,8 @@ interface FileExplorerProps {
 function FileExplorer({ onFileClick }: FileExplorerProps) {
   const [workspace, setWorkspace] = React.useState<WorkspaceFile>();
   const [isHidden, setIsHidden] = React.useState(false);
+  const [isDragging, setIsDragging] = React.useState(false);
+
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const getWorkspaceData = async () => {
@@ -99,16 +102,14 @@ function FileExplorer({ onFileClick }: FileExplorerProps) {
     setWorkspace(removeEmptyNodes(wsFile));
   };
 
-  const selectFileInput = () => {
-    fileInputRef.current?.click(); // Trigger the file browser
+  const selectFileInput = async () => {
+    // Trigger the file browser
+    fileInputRef.current?.click();
   };
 
-  const uploadFileData = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files ? event.target.files[0] : null;
-    if (!file) return;
-
+  const uploadFileData = async (files: FileList) => {
     try {
-      await uploadFile(file);
+      await uploadFiles(files);
       await getWorkspaceData(); // Refresh the workspace to show the new file
     } catch (error) {
       toast.stickyError("ws", "Error uploading file");
@@ -119,40 +120,77 @@ function FileExplorer({ onFileClick }: FileExplorerProps) {
     (async () => {
       await getWorkspaceData();
     })();
+
+    const enableDragging = () => {
+      setIsDragging(true);
+    };
+
+    const disableDragging = () => {
+      setIsDragging(false);
+    };
+
+    document.addEventListener("dragenter", enableDragging);
+    document.addEventListener("drop", disableDragging);
+
+    return () => {
+      document.removeEventListener("dragenter", enableDragging);
+      document.removeEventListener("drop", disableDragging);
+    };
   }, []);
 
   return (
-    <div
-      className={twMerge(
-        "bg-neutral-800 h-full border-r-1 border-r-neutral-600 flex flex-col transition-all ease-soft-spring overflow-auto",
-        isHidden ? "min-w-[48px]" : "min-w-[228px]",
-      )}
-    >
-      <div className="flex p-2 items-center justify-between relative">
-        <div style={{ display: isHidden ? "none" : "block" }}>
-          {workspace && (
-            <ExplorerTree
-              root={workspace}
-              onFileClick={onFileClick}
-              defaultOpen
-            />
-          )}
+    <div className="relative">
+      {isDragging && (
+        <div
+          data-testid="dropzone"
+          onDrop={(event) => {
+            event.preventDefault();
+            uploadFileData(event.dataTransfer.files);
+          }}
+          onDragOver={(event) => event.preventDefault()}
+          className="z-10 absolute flex flex-col justify-center items-center bg-black top-0 bottom-0 left-0 right-0 opacity-65"
+        >
+          <IoFileTray size={32} />
+          <p className="font-bold text-xl">Drop Files Here</p>
         </div>
+      )}
+      <div
+        className={twMerge(
+          "bg-neutral-800 h-full border-r-1 border-r-neutral-600 flex flex-col transition-all ease-soft-spring overflow-auto",
+          isHidden ? "min-w-[48px]" : "min-w-[228px]",
+        )}
+      >
+        <div className="flex p-2 items-center justify-between relative">
+          <div style={{ display: isHidden ? "none" : "block" }}>
+            {workspace && (
+              <ExplorerTree
+                root={workspace}
+                onFileClick={onFileClick}
+                defaultOpen
+              />
+            )}
+          </div>
 
-        <ExplorerActions
-          isHidden={isHidden}
-          toggleHidden={() => setIsHidden((prev) => !prev)}
-          onRefresh={getWorkspaceData}
-          onUpload={selectFileInput}
+          <ExplorerActions
+            isHidden={isHidden}
+            toggleHidden={() => setIsHidden((prev) => !prev)}
+            onRefresh={getWorkspaceData}
+            onUpload={selectFileInput}
+          />
+        </div>
+        <input
+          data-testid="file-input"
+          type="file"
+          multiple
+          ref={fileInputRef}
+          style={{ display: "none" }}
+          onChange={(event) => {
+            if (event.target.files) {
+              uploadFileData(event.target.files);
+            }
+          }}
         />
       </div>
-      <input
-        data-testid="file-input"
-        type="file"
-        ref={fileInputRef}
-        style={{ display: "none" }}
-        onChange={uploadFileData}
-      />
     </div>
   );
 }
