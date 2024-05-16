@@ -145,7 +145,7 @@ def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
         config, 'sandbox_type', new='ssh'
     ):
         for box in [DockerSSHBox(), DockerExecBox()]:
-            exit_code, output = box.execute('pwd\nls -l')
+            exit_code, output = box.execute('pwd && ls -l')
             assert exit_code == 0, (
                 'The exit code should be 0 for ' + box.__class__.__name__
             )
