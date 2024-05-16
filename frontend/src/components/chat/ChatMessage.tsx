@@ -14,7 +14,7 @@ function ChatMessage({ message, className: customClassName }: MessageProps) {
   const className = twMerge(
     "p-3 text-white max-w-[90%] overflow-y-auto rounded-lg",
     message.sender === "user" ? "bg-neutral-700 self-end" : "bg-neutral-500",
-    customClassName // Apply custom className if provided,
+    customClassName, // Apply custom className if provided
   );
 
   return (
