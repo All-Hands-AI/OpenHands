@@ -72,8 +72,8 @@ function ChatInterface() {
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
         >
           <Chat messages={messages} />
-          {curAgentState === AgentState.LOADING && (
-            <ChatMessage message={{ sender: "assistant", content: "..." }} />
+          {curAgentState === AgentState.RUNNING && (
+            <ChatMessage message={{ sender: "assistant", content: "..." }} className="mt-3" />
           )}
         </div>
         {/* Fade between messages and input */}
