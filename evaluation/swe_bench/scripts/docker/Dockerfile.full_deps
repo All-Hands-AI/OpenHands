@@ -1,0 +1,72 @@
+FROM ghcr.io/opendevin/eval-swe-bench:builder
+
+# This Dockefile is used to build the Docker image for the evaluation of the SWE-Bench.
+# YOU SHOULD ENSURE ./eval_workspace CONTAINS THE EVALUATION WORKSPACE (testbed, conda)
+# Check BUILD_TESTBED_AND_ENV.md for more details.
+
+RUN mkdir -p /swe_util
+
+# Use https://github.com/moby/moby/issues/15771#issuecomment-1762893340
+# to copy files from host to container with --exclude
+
+# # ================== Prepare Eval Data ==================
+# Copy everything in eval_data except the "testbeds"
+RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
+    rsync -ar --progress \
+    --exclude='testbeds' \
+    /eval_workspace/eval_data /swe_util/
+
+RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
+    rsync -ar --progress \
+    --exclude='matplotlib*' \
+    --exclude='scikit-learn*' \
+    /eval_workspace/eval_data/testbeds /swe_util/eval_data/
+
+# # copy the larger ones in separate layers
+# COPY ./eval_workspace/eval_data/testbeds/matplotlib* /swe_util/eval_data/testbeds/
+RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
+    rsync -ar --progress \
+    /eval_workspace/eval_data/testbeds/matplotlib* /swe_util/eval_data/testbeds/
+
+# COPY ./eval_workspace/eval_data/testbeds/scikit-learn* /swe_util/eval_data/testbeds/
+RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
+    rsync -ar --progress \
+    /eval_workspace/eval_data/testbeds/scikit-learn* /swe_util/eval_data/testbeds/
+
+# ================== Prepare Miniconda3 ==================
+# Copy the Miniconda3 environment
+# copy everything except the folder of `envs` & `pkgs` (two large folders)
+RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
+    rsync -ar --progress \
+    --exclude='envs' \
+    --exclude='pkgs' \
+    /eval_workspace/miniforge3 /swe_util/
+
+# copy pkgs in separate layers (~9.4GB)
+RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
+    rsync -ar --progress \
+    /eval_workspace/miniforge3/pkgs /swe_util/miniforge3/
+
+# copy envs in separate layers (except matplotlib & scikit-learn - larger ones)
+RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
+    rsync -ar --progress \
+    --exclude='matplotlib*' \
+    --exclude='scikit-learn*' \
+    --exclude='pydata*' \
+    /eval_workspace/miniforge3/envs /swe_util/miniforge3/
+
+# copy the larger ones in separate layers
+RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
+    rsync -ar --progress \
+    /eval_workspace/miniforge3/envs/matplotlib* /swe_util/miniforge3/envs/
+
+RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
+    rsync -ar --progress \
+    /eval_workspace/miniforge3/envs/scikit-learn* /swe_util/miniforge3/envs/
+
+RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
+    rsync -ar --progress \
+    /eval_workspace/miniforge3/envs/pydata* /swe_util/miniforge3/envs/
+
+# pushd evaluation/SWE-bench
+# docker build -t ghcr.io/opendevin/eval-swe-bench:full_deps -f ./scripts/docker/Dockerfile.full_deps .

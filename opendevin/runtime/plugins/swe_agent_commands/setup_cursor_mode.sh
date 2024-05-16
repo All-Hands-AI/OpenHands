@@ -1,5 +1,6 @@
 #!/bin/bash
 
+export PIP_CACHE_DIR=$HOME/.cache/pip
 pip install flake8
 
 # Cursor Mode from SWE-Bench

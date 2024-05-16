@@ -23,6 +23,9 @@ enum ActionType {
   // Opens a web page.
   BROWSE = "browse",
 
+  // Interact with the browser instance.
+  BROWSE_INTERACTIVE = "browse_interactive",
+
   // Searches long-term memory.
   RECALL = "recall",
 
