@@ -32,7 +32,7 @@ tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
   "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'."
-  "Use Jupyter IPython to install pandas, create a DataFrame with 'Names' ['Alice', 'Bob'], and write it to '/workspace/names.txt'."
+  "Use Jupyter IPython to install pandas, create a DataFrame with the 'Names' ['Alice', 'Bob'], and write it to '/workspace/names.txt'. Finally, uninstall pandas to ensure no side effects. "
 )
 test_names=(
   "test_edits"

@@ -1,3 +1,4 @@
-Let's start by installing the pandas library using pip in this Jupyter IPython environment:
+To begin, I will install the pandas package using pip in this Jupyter IPython environment. Let's proceed with the installation:
+
 <execute_ipython>
 !pip install pandas

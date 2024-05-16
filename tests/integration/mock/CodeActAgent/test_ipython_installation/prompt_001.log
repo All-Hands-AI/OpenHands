@@ -218,4 +218,4 @@ NOW, LET'S START!
 
 ----------
 
-Use Jupyter IPython to install pandas, create a DataFrame with 'Names' ['Alice', 'Bob'], and write it to '/workspace/names.txt'. Do not ask me for confirmation at any point.
+Use Jupyter IPython to install pandas, create a DataFrame with the 'Names' ['Alice', 'Bob'], and write it to '/workspace/names.txt'. Finally, uninstall pandas to ensure no side effects.  Do not ask me for confirmation at any point.

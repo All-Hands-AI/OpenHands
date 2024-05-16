@@ -218,11 +218,12 @@ NOW, LET'S START!
 
 ----------
 
-Use Jupyter IPython to install pandas, create a DataFrame with 'Names' ['Alice', 'Bob'], and write it to '/workspace/names.txt'. Do not ask me for confirmation at any point.
+Use Jupyter IPython to install pandas, create a DataFrame with the 'Names' ['Alice', 'Bob'], and write it to '/workspace/names.txt'. Finally, uninstall pandas to ensure no side effects.  Do not ask me for confirmation at any point.
 
 ----------
 
-Let's start by installing the pandas library using pip in this Jupyter IPython environment:
+To begin, I will install the pandas package using pip in this Jupyter IPython environment. Let's proceed with the installation:
+
 <execute_ipython>
 !pip install pandas
 </execute_ipython>
