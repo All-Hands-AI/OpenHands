@@ -99,7 +99,6 @@ def test_ipython():
     ), f'Expected content "hello world", but got "{content.strip()}"'
 
 
-# it is necessary to remove the installed packages and files after running the integration tests to ensure that the tests have no side effects.
 @pytest.mark.skipif(
     os.getenv('AGENT') != 'CodeActAgent',
     reason='currently only CodeActAgent defaults to have IPython (Jupyter) execution',
@@ -111,7 +110,9 @@ def test_ipython():
 def test_ipython_installation():
     try:
         # Execute the task
-        task = "Use Jupyter IPython to install pandas, create a DataFrame with the 'Names' ['Alice', 'Bob'], and write it to '/workspace/names.txt'. Finally, uninstall pandas to ensure no side effects. Do not ask me for confirmation at any point."
+        # 1. To ignore the cache to ensure that the tests are consistent on every run.
+        # 2. To ignore the installation log that is too long, which may cause the LLM completion to fail.
+        task = "Use Jupyter IPython to pip install --no-cache-dir pandas > /dev/null 2>&1, create a DataFrame with the 'Names' ['Alice', 'Bob'], and write it to '/workspace/names.txt'. Do not ask me for confirmation at any point."
         asyncio.run(main(task, exit_on_message=True))
 
         # Verify the file exists
