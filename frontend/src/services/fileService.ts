@@ -12,11 +12,13 @@ export async function selectFile(file: string): Promise<string> {
   return data.code as string;
 }
 
-export async function uploadFile(file: File) {
+export async function uploadFiles(files: FileList) {
   const formData = new FormData();
-  formData.append("file", file);
+  for (let i = 0; i < files.length; i += 1) {
+    formData.append("files", files[i]);
+  }
 
-  const res = await fetch("/api/upload-file", {
+  const res = await fetch("/api/upload-files", {
     method: "POST",
     body: formData,
   });
@@ -24,7 +26,7 @@ export async function uploadFile(file: File) {
   const data = await res.json();
 
   if (res.status !== 200) {
-    throw new Error(data.error || "Failed to upload file.");
+    throw new Error(data.error || "Failed to upload files.");
   }
 }
 
