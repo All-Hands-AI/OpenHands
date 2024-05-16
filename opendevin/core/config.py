@@ -371,6 +371,30 @@ def get_parser():
         help='The maximum number of characters to send to and receive from LLM per task',
     )
     parser.add_argument(
+        '--eval-output-dir',
+        default='evaluation/evaluation_outputs/outputs',
+        type=str,
+        help='The directory to save evaluation output',
+    )
+    parser.add_argument(
+        '--eval-n-limit',
+        default=None,
+        type=int,
+        help='The number of instances to evaluate',
+    )
+    parser.add_argument(
+        '--eval-num-workers',
+        default=4,
+        type=int,
+        help='The number of workers to use for evaluation',
+    )
+    parser.add_argument(
+        '--eval-note',
+        default=None,
+        type=str,
+        help='The note to add to the evaluation directory',
+    )
+    parser.add_argument(
         '-l',
         '--llm-config',
         default=None,

@@ -34,6 +34,8 @@ print("Hello World!")
 </execute_ipython>
 The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>.
 For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
+The assistant can browse the Internet with commands on behalf of the user by wrapping them with <execute_browse> and </execute_browse>.
+For example, you can browse a given URL by <execute_browse> goto("<URL>") </execute_browse>.
 The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
 The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython>."""
 
@@ -43,8 +45,8 @@ For instance, to push a local branch `my_branch` to the github repo `owner/repo`
 If you require access to GitHub but $GITHUB_TOKEN is not set, ask the user to set it for you."""
 
 SYSTEM_SUFFIX = """The assistant's response should be concise.
-You should include ONLY ONE <execute_ipython> or <execute_bash> in every one of your responses, unless you are finished with the task or need more input or action from the user in order to proceed.
-IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
+You should include ONLY ONE <execute_ipython> or <execute_bash> or <execute_browse> in every one of your responses, unless you are finished with the task or need more input or action from the user in order to proceed.
+IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> or <execute_browse> instead of providing it.
 """
 
 EXAMPLES = """
@@ -148,6 +150,21 @@ Press CTRL+C to quit
 ASSISTANT:
 The server is running on port 5000 with PID 124. You can access the list of numbers by visiting http://127.0.0.1:5000. If you have any further questions, feel free to ask!
 
+USER: Now browse the newly started server's homepage and show me the content.
+
+ASSISTANT:
+Sure! Let me browse the server's homepage at http://127.0.0.1:5000:
+<execute_browse>
+goto("http://127.0.0.1:5000")
+</execute_browse>
+
+USER:
+Observation:
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+ASSISTANT:
+The content of the server's homepage is "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]". If you have any further questions, feel free to ask!
+
 USER: Now kill the server, make it display the numbers in a table format.
 
 ASSISTANT:
@@ -224,4 +241,5 @@ INVALID_INPUT_MESSAGE = (
     "I don't understand your input. \n"
     'If you want to execute a bash command, please use <execute_bash> YOUR_COMMAND_HERE </execute_bash>.\n'
     'If you want to execute a block of Python code, please use <execute_ipython> YOUR_COMMAND_HERE </execute_ipython>.\n'
+    'If you want to browse the Internet, please use <execute_browse> YOUR_COMMAND_HERE </execute_browse>.\n'
 )
