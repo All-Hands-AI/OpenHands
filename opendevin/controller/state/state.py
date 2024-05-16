@@ -1,3 +1,5 @@
+import base64
+import pickle
 from dataclasses import dataclass, field
 
 from opendevin.controller.state.task import RootTask
@@ -10,6 +12,7 @@ from opendevin.events.observation import (
     CmdOutputObservation,
     Observation,
 )
+from opendevin.storage import get_file_store
 
 
 @dataclass
@@ -26,6 +29,19 @@ class State:
     outputs: dict = field(default_factory=dict)
     error: str | None = None
     agent_state: AgentState = AgentState.LOADING
+
+    def save_to_session(self, sid: str):
+        fs = get_file_store()
+        pickled = pickle.dumps(self)
+        encoded = base64.b64encode(pickled).decode('utf-8')
+        fs.write(f'sessions/{sid}/agent_state.pkl', encoded)
+
+    @staticmethod
+    def restore_from_session(sid: str) -> 'State':
+        fs = get_file_store()
+        encoded = fs.read(f'sessions/{sid}/agent_state.pkl')
+        pickled = base64.b64decode(encoded)
+        return pickle.loads(pickled)
 
     def get_current_user_intent(self):
         # TODO: this is used to understand the user's main goal, but it's possible

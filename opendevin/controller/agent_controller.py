@@ -233,6 +233,9 @@ class AgentController:
     def get_state(self):
         return self.state
 
+    def set_state(self, state: State):
+        self.state = state
+
     def _is_stuck(self):
         # check if delegate stuck
         if self.delegate and self.delegate._is_stuck():

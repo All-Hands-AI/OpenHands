@@ -3,6 +3,7 @@ from typing import Optional
 from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
+from opendevin.controller.state.state import State
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ConfigType
@@ -76,9 +77,17 @@ class AgentSession:
             max_iterations=int(max_iterations),
             max_chars=int(max_chars),
         )
+        try:
+            agent_state = State.restore_from_session(self.sid)
+            self.controller.set_state(agent_state)
+        except Exception as e:
+            print('Error restoring state', e)
+            pass
 
     async def close(self):
         if self.controller is not None:
+            end_state = self.controller.get_state()
+            end_state.save_to_session(self.sid)
             await self.controller.close()
         if self.runtime is not None:
             self.runtime.close()
