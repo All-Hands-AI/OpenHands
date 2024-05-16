@@ -56,7 +56,7 @@ to run all integration tests until the first failure.
 
 ## Regenerate Integration Tests
 When you make changes to an agent's prompt, the integration tests will fail. You'll need to regenerate them
-by running:
+by running the following command from project root directory:
 ```bash
 ./tests/integration/regenerate.sh
 ```
@@ -68,12 +68,14 @@ If we rerun OpenDevin against a real LLM, then due to LLM's non-deterministic na
 a series of different prompts and responses will be generated, causing a lot of
 unnecessary diffs and is hard to review. If you want to skip this step, see below
 sections.
-3. If step 2 fails, then rerun OpenDevin against a real LLM, record all prompts and
+3. Rerun the failed test again. If it succeeds, continue to the next test or agent.
+If it fails again, goto next step.
+4. Rerun OpenDevin against a real LLM, record all prompts and
 responses, and replace the existing test artifacts (if any).
-4. Rerun the failed test again. If it succeeds, continue to the next test or agent.
+5. Rerun the failed test again. If it succeeds, continue to the next test or agent.
 If it fails again, abort the script.
 
-Note that step 3 calls real LLM_MODEL only for failed tests that cannot be fixed
+Note that step 4 calls real LLM_MODEL only for failed tests that cannot be fixed
 by regenerating prompts alone, but it still costs money! If you don't want
 to cover the cost, ask one of the maintainers to regenerate for you. Before asking,
 please try running the script first without setting `LLM_API_KEY`. Chance is the
