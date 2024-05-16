@@ -53,8 +53,8 @@ TEST_ONLY=true ./tests/integration/regenerate.sh
 
 to run all integration tests until the first failure.
 
-## Regenerate Integration Tests
 
+## Regenerate Integration Tests
 When you make changes to an agent's prompt, the integration tests will fail. You'll need to regenerate them
 by running:
 ```bash
@@ -65,6 +65,18 @@ failed tests, but it still costs money! If you don't want
 to cover the cost, ask one of the maintainers to regenerate for you.
 You might also be able to fix the tests by hand.
 
+If you only want to run a specific test, set environment variable
+`ONLY_TEST_NAME` to the test name. If you only want to run a specific agent,
+set environment variable `ONLY_TEST_AGENT` to the agent. You could also use both,
+e.g.
+
+```bash
+TEST_ONLY=true ONLY_TEST_NAME="test_write_simple_script" ONLY_TEST_AGENT="MonologueAgent" ./tests/integration/regenerate.sh
+```
+
+Known issue: sometimes you might see transient errors like `pexpect.pxssh.ExceptionPxssh: Could not establish connection to host`.
+The regenerate.sh script doesn't know this is a transient error and would still regenerate the test artifacts. You could simply
+terminate the script by `ctrl+c` and rerun the script.
 
 ## Write a new Integration Test
 
@@ -79,13 +91,3 @@ That's it, you are good to go! When you launch an integration test, mock
 responses are loaded and used to replace a real LLM, so that we get
 deterministic and consistent behavior, and most importantly, without spending real
 money.
-
-## Run Specific Agent Tests or Test Cases
-
-To make it easier to write an integration test or to run a specific test case, you can set the environment variables `TARGET_AGENT` and `TARGET_TEST`. For example, to run only the `test_ipython` test case for the `CodeActAgent`, use:
-
-```bash
-TARGET_AGENT="CodeActAgent" TARGET_TEST="test_ipython" ./tests/integration/regenerate.sh
-```
-
-If no specific agent or test case is provided, all tests will be run by default.
