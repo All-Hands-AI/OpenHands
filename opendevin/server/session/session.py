@@ -31,6 +31,10 @@ class Session:
         self.agent = AgentSession(sid)
         self.agent.event_stream.subscribe(EventStreamSubscriber.SERVER, self.on_event)
 
+    async def close(self):
+        self.is_alive = False
+        await self.agent.close()
+
     async def loop_recv(self):
         try:
             if self.websocket is None:
@@ -41,17 +45,12 @@ class Session:
                 except ValueError:
                     await self.send_error('Invalid JSON')
                     continue
-
                 await self.dispatch(data)
         except WebSocketDisconnect:
-            self.is_alive = False
-            await self.agent.close()
+            await self.close()
             logger.info('WebSocket disconnected, sid: %s', self.sid)
         except RuntimeError as e:
-            # WebSocket is not connected
-            if 'WebSocket is not connected' in str(e):
-                self.is_alive = False
-            await self.agent.close()
+            await self.close()
             logger.exception('Error in loop_recv: %s', e)
 
     async def _initialize_agent(self, data: dict):

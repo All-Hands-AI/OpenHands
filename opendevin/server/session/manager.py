@@ -16,11 +16,10 @@ class SessionManager:
     def __init__(self):
         asyncio.create_task(self._cleanup_sessions())
 
-    def add_session(self, sid: str, ws_conn: WebSocket) -> Session:
-        if sid not in self._sessions:
-            self._sessions[sid] = Session(sid=sid, ws=ws_conn)
-        else:
-            self._sessions[sid].update_connection(ws_conn)
+    def add_or_restart_session(self, sid: str, ws_conn: WebSocket) -> Session:
+        if sid in self._sessions:
+            asyncio.create_task(self._sessions[sid].close())
+        self._sessions[sid] = Session(sid=sid, ws=ws_conn)
         return self._sessions[sid]
 
     def get_session(self, sid: str) -> Session | None:

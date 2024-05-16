@@ -14,6 +14,9 @@ import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller.agent import Agent
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.events.action import NullAction
+from opendevin.events.observation import NullObservation
+from opendevin.events.serialization import event_to_dict
 from opendevin.llm import bedrock
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import session_manager
@@ -138,15 +141,20 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.send_json({'error': 'Invalid token', 'error_code': 401})
             await websocket.close()
             return
-        session = session_manager.get_session(sid)
     else:
         sid = str(uuid.uuid4())
         token = sign_token({'sid': sid})
 
+    session = session_manager.add_or_restart_session(sid, websocket)
     await websocket.send_json({'token': token, 'status': 'ok'})
 
-    if session is None:
-        session = session_manager.add_session(sid, websocket)
+    last_event_id = -1
+    if websocket.query_params.get('last_event_id'):
+        last_event_id = int(websocket.query_params.get('last_event_id'))
+    for event in session.agent.event_stream.get_events(start_id=last_event_id + 1):
+        if isinstance(event, NullAction) or isinstance(event, NullObservation):
+            continue
+        await websocket.send_json(event_to_dict(event))
 
     await session.loop_recv()
 
