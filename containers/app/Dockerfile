@@ -39,6 +39,7 @@ ENV USE_HOST_NETWORK=false
 ENV SSH_HOSTNAME=host.docker.internal
 ENV WORKSPACE_BASE=/opt/workspace_base
 ENV OPEN_DEVIN_BUILD_VERSION=$OPEN_DEVIN_BUILD_VERSION
+RUN mkdir -p $WORKSPACE_BASE
 
 RUN apt-get update -y \
     && apt-get install -y curl ssh sudo
@@ -52,8 +53,8 @@ RUN useradd -l -m -u $OPENDEVIN_USER_ID -s /bin/bash opendevin && \
     usermod -aG sudo opendevin && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 RUN chown -R opendevin:app /app && chmod -R 770 /app
+RUN sudo chown -R opendevin:app $WORKSPACE_BASE && chmod -R 770 $WORKSPACE_BASE
 USER opendevin
-RUN mkdir -p $WORKSPACE_BASE
 
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH" \
