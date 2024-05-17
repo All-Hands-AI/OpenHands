@@ -79,14 +79,14 @@ def get_mock_response(test_name: str, messages: str):
                             return resp_file.read()
                     else:
                         # print the mismatched lines
-                        print(file_path)
+                        print('File path', file_path)
                         print('---' * 10)
                         print(messages)
                         print('---' * 10)
                         for i, (c1, c2) in enumerate(zip(file_content, prompt)):
                             if c1 != c2:
                                 print(
-                                    f'1Mismatch at index {i}: {c1[max(0,i-100):i+100]} vs {c2[max(0,i-100):i+100]}'
+                                    f'Mismatch at index {i}: {c1[max(0,i-100):i+100]} vs {c2[max(0,i-100):i+100]}'
                                 )
                                 break
 

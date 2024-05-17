@@ -24,7 +24,7 @@ tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
   "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'."
-  "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt."
+  "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point."
 )
 test_names=(
   "test_edits"

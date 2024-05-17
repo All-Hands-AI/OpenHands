@@ -110,7 +110,7 @@ def test_ipython():
 )
 def test_ipython_module():
     # Execute the task
-    task = "Install and import pymsgbox==1.0.9 and print it's version in test.txt."
+    task = "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point."
     final_state: State = asyncio.run(main(task, exit_on_message=True))
     assert final_state.agent_state == AgentState.STOPPED
 
