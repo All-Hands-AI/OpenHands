@@ -1,6 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 
+from opendevin.core.config import config
 from opendevin.core.schema import CancellableStream
 from opendevin.runtime.docker.process import Process
 from opendevin.runtime.plugins.mixin import PluginMixin
@@ -15,6 +16,8 @@ class Sandbox(ABC, PluginMixin):
             if key.startswith('SANDBOX_ENV_'):
                 sandbox_key = key.removeprefix('SANDBOX_ENV_')
                 self.add_to_env(sandbox_key, os.environ[key])
+        if config.enable_auto_lint:
+            self.add_to_env('RUN_LINT_AFTER_EDIT', 'true')
 
     def add_to_env(self, key: str, value: str):
         self._env[key] = value
