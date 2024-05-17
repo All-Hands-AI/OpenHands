@@ -187,8 +187,10 @@ class MonologueAgent(Agent):
 
         # add the messages from state.history
         for prev_action, obs in state.history:
-            messages.append(event_to_memory(prev_action))
-            messages.append(truncate_output(event_to_memory(obs)))
+            if not isinstance(prev_action, NullAction):
+                messages.append(event_to_memory(prev_action))
+            if not isinstance(obs, NullObservation):
+                messages.append(truncate_output(event_to_memory(obs)))
 
         # add the last messages to long term memory
         if self.memory is not None and state.history and len(state.history) > 0:
@@ -196,17 +198,6 @@ class MonologueAgent(Agent):
             self.memory.add_event(
                 truncate_output(event_to_memory(state.history[-1][1]))
             )
-
-        # FIXME this has to go
-        # Test monologue token length
-        token_count = self.llm.get_token_count(messages[1:])
-        if token_count + MAX_TOKEN_COUNT_PADDING > self.llm.max_input_tokens:
-            prompt = prompts.get_summarize_monologue_prompt(messages[1:])
-            summary_response = self.memory_condenser.condense(
-                summarize_prompt=prompt, llm=self.llm
-            )
-            prompts.parse_summary_response(summary_response)
-        # end FIXME
 
         # request the next action from the LLM
         resp = self.llm.completion(messages=messages)

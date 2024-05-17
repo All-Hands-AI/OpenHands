@@ -18,8 +18,8 @@ This is your internal monologue, in JSON format:
 
 %(monologue)s
 
-
-Your most recent thought is at the bottom of that monologue. Continue your train of thought.
+Additional messages will follow this prompt, containing your recent thoughts and events.
+Your most recent thoughts will be at the bottom of those additional messages. Continue your train of thought.
 What is your next single thought or action? Your response must be in JSON format.
 It must be a single object, and it must contain two fields:
 * `action`, which is one of the actions below
@@ -153,6 +153,7 @@ def get_summarize_monologue_prompt(thoughts: list[dict]):
 def get_request_action_prompt(
     task: str,
     thoughts: list[dict],
+    recent_events: list[dict],
     background_commands_obs: list[CmdOutputObservation] = [],
 ):
     """
@@ -168,15 +169,15 @@ def get_request_action_prompt(
     """
 
     hint = ''
-    if len(thoughts) > 0:
-        latest_thought = thoughts[-1]
-        if 'action' in latest_thought:
-            if latest_thought['action'] == 'message':
-                if latest_thought['args']['content'].startswith('OK so my task is'):
+    if len(recent_events) > 0:
+        latest_event = recent_events[-1]
+        if 'action' in latest_event:
+            if latest_event['action'] == 'message':
+                if latest_event['args']['content'].startswith('OK so my task is'):
                     hint = "You're just getting started! What should you do first?"
                 else:
                     hint = "You've been thinking a lot lately. Maybe it's time to take action?"
-            elif latest_thought['action'] == 'error':
+            elif latest_event['action'] == 'error':
                 hint = 'Looks like that last command failed. Maybe you need to fix it, or try something else.'
 
     bg_commands_message = ''
@@ -190,9 +191,11 @@ def get_request_action_prompt(
 
     user = 'opendevin' if config.run_as_devin else 'root'
 
+    monologue = thoughts + recent_events
+
     return ACTION_PROMPT % {
         'task': task,
-        'monologue': json.dumps(thoughts, indent=2),
+        'monologue': json.dumps(monologue, indent=2),
         'background_commands': bg_commands_message,
         'hint': hint,
         'user': user,
