@@ -9,6 +9,7 @@ from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import MessageAction
 from opendevin.events.observation import NullObservation
+from opendevin.events.serialization import EventSource
 
 
 def test_all_agents_are_loaded():
@@ -37,7 +38,7 @@ def test_coder_agent_with_summary():
 
     task = 'This is a dummy task'
     history = [(MessageAction(content=task), NullObservation(''))]
-    history[0][0]._source = 'user'
+    history[0][0]._source = EventSource.USER
     summary = 'This is a dummy summary about this repo'
     state = State(history=history, inputs={'summary': summary})
     coder_agent.step(state)
@@ -64,7 +65,7 @@ def test_coder_agent_without_summary():
 
     task = 'This is a dummy task'
     history = [(MessageAction(content=task), NullObservation(''))]
-    history[0][0]._source = 'user'
+    history[0][0]._source = EventSource.USER
     state = State(history=history)
     coder_agent.step(state)
 

@@ -1,7 +1,3 @@
-
-
-----------
-
 SYSTEM INFO:
 You am an autonomous coding agent, here to provide solutions for coding issues.
 You have been designed to assist you with a wide range of programming tasks, from code editing and debugging to testing and deployment.
@@ -52,16 +48,12 @@ None
 
 The following commands require an open file to be used: edit, scroll_up, scroll_down, goto
 To modify the current file use 'edit'. To move through the current file use 'goto' or 'scroll_up'/'scroll_down'
-when using write and edit do not surround the code with any "" just write the code.
-
-----------
-
-These are your past 4 actions:
+when using write and edit do not surround the code with any "" just write the code.These are your past 4 actions:
 ===== Previous Actions =====
 
 Memory 0:
 Previous Action:
-source: EventSource.AGENT
+source: agent
 action: write
 args:
   path: hello.sh
@@ -73,7 +65,7 @@ args:
   Action:
 
 Output from Action:
-source: EventSource.AGENT
+source: agent
 observation: write
 content:
 extras:
@@ -81,7 +73,7 @@ extras:
 
 Memory 1:
 Previous Action:
-source: EventSource.AGENT
+source: agent
 action: write
 args:
   path: hello.sh
@@ -93,7 +85,7 @@ args:
   Action:
 
 Output from Action:
-source: EventSource.AGENT
+source: agent
 observation: write
 content:
 extras:
@@ -101,7 +93,7 @@ extras:
 
 Memory 2:
 Previous Action:
-source: EventSource.AGENT
+source: agent
 action: write
 args:
   path: hello.sh
@@ -113,7 +105,7 @@ args:
   Action:
 
 Output from Action:
-source: EventSource.AGENT
+source: agent
 observation: write
 content:
 extras:
@@ -121,7 +113,7 @@ extras:
 
 Memory 3:
 Previous Action:
-source: EventSource.AGENT
+source: agent
 action: run
 args:
   command: chmod +x hello.sh
@@ -129,7 +121,7 @@ args:
   thought:
 
 Output from Action:
-source: EventSource.AGENT
+source: agent
 observation: run
 content:
 extras:
@@ -138,11 +130,7 @@ extras:
   exit_code: 0
 ======= End Actions =======
 Use these memories to provide additional context to the problem you are solving.
-Remember that you have already completed these steps so you do not need to perform them again.
-
-----------
-
-RESPONSE FORMAT:
+Remember that you have already completed these steps so you do not need to perform them again.RESPONSE FORMAT:
 This is the format of the response you will make in order to solve the current issue.
 You will be given multiple iterations to complete this task so break it into steps and solve them one by one.
 

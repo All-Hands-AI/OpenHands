@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y \
     jq \
     g++ \
     make \
+    iproute2 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p -m0755 /var/run/sshd
