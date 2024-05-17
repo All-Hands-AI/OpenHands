@@ -68,7 +68,7 @@ At the end of the above screenshot, OpenDevin actually requests user inputs when
 
 ## The `main` function
 
-The signature of `main` (in file [[`opendevin/core/main.py`](../opendevin/core/main.py)]):
+The signature of `main` (in file [[`opendevin/core/main.py`](../opendevin/core/main.py)]) is as follows:
 
 ```python
 async def main(
