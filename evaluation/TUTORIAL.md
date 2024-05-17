@@ -64,19 +64,7 @@ After running the script, you will observe the following:
 
 You can see the agent uses bash to write a script, makes it executable, and then tests it by running it to make sure it is working.
 
-## What is "Request user input"?
-
-At the end of the above screenshot, OpenDevin actually requests user inputs when it think it finishes the task. There are multiple motivations for this design:
-
-1. If the agent did something wrong, the user can follow-up with language feedback to correct it.
-
-2. If the agent did something good, the user may want to follow-up with additional problem for it to solve.
-
-3. If the agent completes the user's task -- in a realistic setting, the user might just turn off OpenDevin application and work on something else. User could also type in "/exit" to gracefully shutdown the OpenDevin agent.
-
-However, this will actually causes issues in evaluation, since most evaluation don't actually assume additional user input.
-
-To fix this, we introduce the functionality of `fake_user_response_fn` in the `main` fucntion. Check the section below for more details!
+At the end of the above screenshot, OpenDevin actually requests user inputs when it think it finishes the task. This will cause issues in evaluation, since most evaluation don't assume additional user input. To fix this, we introduce the functionality of `fake_user_response_fn` in the `main` function, which we describe in the next section.
 
 ## How does `main` work?
 
