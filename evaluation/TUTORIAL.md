@@ -43,7 +43,7 @@ api_key = "sk-XXX"
 
 ### How to use OpenDevin programmatically
 
-In this section, for the purpose of building an evaluation task, we omit details on the frontend and backend that mostly contains logic for user interface, and mainly focus on a function `main` (i.e., a command line interface) that allows you to complete a task end-to-end.
+In this section, for the purpose of building an evaluation task, we don't use the standard OpenDevin interface, but rather run OpenDevin programmatically.
 
 For example, *without any frontend/backend server*, you can run ([setup the environment first](#before-everything-begins) if you haven't) the following to get a simple task solved (with max number of 10 iterations, `CodeActAgent` as the agent, and `gpt-4o-2024-05-13` as the LLM):
 
