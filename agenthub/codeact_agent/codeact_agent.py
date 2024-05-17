@@ -41,6 +41,58 @@ def parse_response(response) -> str:
     return action
 
 
+def action_to_str(action: Action) -> str:
+    if isinstance(action, CmdRunAction):
+        return f'{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>'
+    elif isinstance(action, IPythonRunCellAction):
+        return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
+    elif isinstance(action, BrowseInteractiveAction):
+        return f'{action.thought}\n<execute_browse>\n{action.browser_actions}\n</execute_browse>'
+    elif isinstance(action, MessageAction):
+        return action.content
+    return ''
+
+
+def get_action_message(action: Action) -> dict[str, str] | None:
+    if isinstance(action, MessageAction) and action.source == 'user':
+        return {'role': 'user', 'content': action.content}
+    elif (
+        isinstance(action, BrowseInteractiveAction)
+        or isinstance(action, CmdRunAction)
+        or isinstance(action, IPythonRunCellAction)
+    ):
+        return {
+            'role': 'user' if action.source == 'user' else 'assistant',
+            'content': action_to_str(action),
+        }
+    return None
+
+
+def get_observation_message(obs) -> dict[str, str] | None:
+    if isinstance(obs, CmdOutputObservation):
+        content = 'OBSERVATION:\n' + truncate_observation(obs.content)
+        content += (
+            f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
+        )
+        return {'role': 'user', 'content': content}
+    elif isinstance(obs, IPythonRunCellObservation):
+        content = 'OBSERVATION:\n' + obs.content
+        # replace base64 images with a placeholder
+        splitted = content.split('\n')
+        for i, line in enumerate(splitted):
+            if '![image](data:image/png;base64,' in line:
+                splitted[i] = (
+                    '![image](data:image/png;base64, ...) already displayed to user'
+                )
+        content = '\n'.join(splitted)
+        content = truncate_observation(content)
+        return {'role': 'user', 'content': content}
+    elif isinstance(obs, BrowserOutputObservation):
+        content = 'OBSERVATION:\n' + truncate_observation(obs.content)
+        return {'role': 'user', 'content': content}
+    return None
+
+
 def truncate_observation(observation: str, max_chars: int = 10_000) -> str:
     """
     Truncate the middle of the observation if it is too long.
@@ -179,40 +231,18 @@ class CodeActAgent(Agent):
         ]
 
         for prev_action, obs in state.history:
-            if isinstance(prev_action, MessageAction) and prev_action.source == 'user':
-                if prev_action.content.strip() == '/exit':
-                    return AgentFinishAction()
-                messages.append({'role': 'user', 'content': prev_action.content})
-            else:
-                messages.append(
-                    {
-                        'role': 'user' if prev_action.source == 'user' else 'system',
-                        'content': self.action_to_str(prev_action),
-                    }
-                )
+            action_message = get_action_message(prev_action)
+            if action_message:
+                messages.append(action_message)
 
-            if isinstance(obs, CmdOutputObservation):
-                content = 'OBSERVATION:\n' + truncate_observation(obs.content)
-                content += f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
-                messages.append({'role': 'user', 'content': content})
-            elif isinstance(obs, IPythonRunCellObservation):
-                content = 'OBSERVATION:\n' + obs.content
-                # replace base64 images with a placeholder
-                splitted = content.split('\n')
-                for i, line in enumerate(splitted):
-                    if '![image](data:image/png;base64,' in line:
-                        splitted[i] = (
-                            '![image](data:image/png;base64, ...) already displayed to user'
-                        )
-                content = '\n'.join(splitted)
-                content = truncate_observation(content)
-                messages.append({'role': 'user', 'content': content})
-            elif isinstance(obs, BrowserOutputObservation):
-                content = 'OBSERVATION:\n' + truncate_observation(obs.content)
-                messages.append({'role': 'user', 'content': content})
+            obs_message = get_observation_message(obs)
+            if obs_message:
+                messages.append(obs_message)
 
         latest_user_message = [m for m in messages if m['role'] == 'user'][-1]
         if latest_user_message:
+            if latest_user_message['content'].strip() == '/exit':
+                return AgentFinishAction()
             latest_user_message['content'] += (
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
@@ -269,19 +299,6 @@ class CodeActAgent(Agent):
             # We assume the LLM is GOOD enough that when it returns pure natural language
             # it want to talk to the user
             return MessageAction(content=action_str, wait_for_response=True)
-
-    def action_to_str(self, action: Action) -> str:
-        if isinstance(action, CmdRunAction):
-            return (
-                f'{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>'
-            )
-        elif isinstance(action, IPythonRunCellAction):
-            return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
-        elif isinstance(action, BrowseInteractiveAction):
-            return f'{action.thought}\n<execute_browse>\n{action.browser_actions}\n</execute_browse>'
-        elif isinstance(action, MessageAction):
-            return action.content
-        return ''
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
