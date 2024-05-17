@@ -22,12 +22,12 @@ class MemoryCondenser:
 
         action_prompt is a callable that returns the prompt that is about to be sent to the LLM.
         The prompt callable will be called with default events and recent events as arguments.
-        summarize_prompt, which is optional, is a callable that returns a specific prompt to tell the LLM to summarize the recent events.
+        summarize_prompt is a callable that returns a specific prompt that tells the LLM to summarize the recent events.
         The prompt callable will be called with default events and recent events as arguments.
 
         Parameters:
-        - action_prompt (Callable): The function to generate an action prompt. The function should accept core events and recent events as arguments.
-        - summarize_prompt (Callable): The function to generate a summarize prompt. The function should accept core events and recent events as arguments.
+        - action_prompt: The function to generate an action prompt. The function should accept default events and recent events as arguments.
+        - summarize_prompt: The function to generate a summarize prompt. The function should accept default events and recent events as arguments.
         """
         self.action_prompt = action_prompt
         self.summarize_prompt = summarize_prompt
@@ -48,13 +48,13 @@ class MemoryCondenser:
         Returns unmodified list of recent events if it is already short enough.
 
         Parameters:
-        - llm (LLM): LLM to be used for summarization.
-        - default_events (list[dict]): List of default events that should remain unchanged.
-        - recent_events (list[dict]): List of recent events that may be condensed.
-        - background_commands (list): List of background commands to be included in the prompt.
+        - llm: LLM to be used for summarization.
+        - default_events: List of default events that should remain unchanged.
+        - recent_events: List of recent events that may be condensed.
+        - background_commands: List of background commands to be included in the prompt.
 
         Returns:
-        - list[dict] | bool: The condensed recent events if successful, unmodified list if unnecessary, or False if condensation failed.
+        - The condensed recent events if successful, unmodified list if unnecessary, or False if condensation failed.
         """
 
         if not background_commands:
@@ -115,12 +115,12 @@ class MemoryCondenser:
         Attempts to condense the recent events by splitting them in half and summarizing the first half.
 
         Parameters:
-        - llm (LLM): The llm to use for summarization.
-        - default_events (list[dict]): The list of default events to include in the prompt.
-        - recent_events (list[dict]): The list of recent events to include in the prompt.
+        - llm: The llm to use for summarization.
+        - default_events: The list of default events to include in the prompt.
+        - recent_events: The list of recent events to include in the prompt.
 
         Returns:
-        - list[dict] | None: The condensed recent events if successful, None otherwise.
+        - The condensed recent events if successful, None otherwise.
         """
 
         # Split events
@@ -157,14 +157,14 @@ class MemoryCondenser:
         Checks if the prompt needs to be condensed based on the token count against the limits of the llm passed in the call.
 
         Parameters:
-        - llm (LLM): The llm to use for checking the token count.
-        - action_prompt (str, optional): The prompt to check for token count. If not provided, it will attempt to generate it using the available arguments.
-        - default_events (list[dict], optional): The list of default events to include in the prompt.
-        - recent_events (list[dict], optional): The list of recent events to include in the prompt.
-        - background_commands (list, optional): The list of background commands to include in the prompt.
+        - llm: The llm to use for checking the token count.
+        - action_prompt: The prompt to check for token count. If not provided, it will attempt to generate it using the available arguments.
+        - default_events: The list of default events to include in the prompt.
+        - recent_events: The list of recent events to include in the prompt.
+        - background_commands: The list of background commands to include in the prompt.
 
         Returns:
-        - bool: True if the prompt needs to be condensed, False otherwise.
+        - True if the prompt needs to be condensed, False otherwise.
         """
         llm = kwargs.get('llm')
         action_prompt = kwargs.get('action_prompt')
@@ -191,9 +191,9 @@ class MemoryCondenser:
         Returns the token limit to use for the llm passed in the call.
 
         Parameters:
-        - llm (LLM): The llm to get the token limit from.
+        - llm: The llm to get the token limit from.
 
         Returns:
-        - int: The token limit of the llm.
+        - The token limit of the llm.
         """
         return llm.max_input_tokens - MAX_TOKEN_COUNT_PADDING

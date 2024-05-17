@@ -106,7 +106,7 @@ class MonologueAgent(Agent):
         Default events are not condensed and are used to give the LLM context and examples.
 
         Parameters:
-        - event_dict (dict): The event that will be added to monologue and memory
+        - event_dict: The event that will be added to monologue and memory
         """
         self.monologue.add_default_event(event_dict)
         if self.memory is not None:
@@ -118,7 +118,7 @@ class MonologueAgent(Agent):
         Monologue automatically condenses when it gets too large.
 
         Parameters:
-        - event (dict): The event that will be added to monologue and memory
+        - event_dict: The event that will be added to monologue and memory
         """
 
         # truncate output if it's too long
@@ -161,7 +161,7 @@ class MonologueAgent(Agent):
         Will execute again when called after reset.
 
         Parameters:
-        - task (str): The initial goal statement provided by the user
+        - task: The initial goal statement provided by the user
 
         Raises:
         - AgentNoInstructionError: If task is not provided
@@ -239,10 +239,10 @@ class MonologueAgent(Agent):
         Modifies the current state by adding the most recent actions and observations, then prompts the model to think about it's next action to take using monologue, memory, and hint.
 
         Parameters:
-        - state (State): The current state based on previous steps taken
+        - state: The current state based on previous steps taken
 
         Returns:
-        - Action: The next action to take based on LLM response
+        - The next action to take based on LLM response
         """
 
         goal = state.get_current_user_intent()
@@ -276,10 +276,10 @@ class MonologueAgent(Agent):
         Uses search to produce top 10 results.
 
         Parameters:
-        - query (str): The query that we want to find related memories for
+        - The query that we want to find related memories for
 
         Returns:
-        - list[str]: A list of top 10 text results that matched the query
+        - A list of top 10 text results that matched the query
         """
         if self.memory is None:
             return []

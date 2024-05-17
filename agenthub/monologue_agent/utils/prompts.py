@@ -108,7 +108,7 @@ def get_summarize_prompt(default_events: list[dict], recent_events: list[dict]):
     Gets the prompt for summarizing the monologue
 
     Returns:
-    - str: A formatted string with the current monologue within the prompt
+    - A formatted string with the current monologue within the prompt
     """
     return MONOLOGUE_SUMMARY_PROMPT % {
         'monologue': json.dumps(
@@ -128,9 +128,9 @@ def get_action_prompt(
     Gets the action prompt formatted with appropriate values.
 
     Parameters:
-    - task (str): The current task the agent is trying to accomplish
-    - thoughts (list[dict]): The agent's current thoughts
-    - background_commands_obs (list[CmdOutputObservation]): list of all observed background commands running
+    - task: The current task the agent is trying to accomplish
+    - thoughts: The agent's current thoughts
+    - background_commands_obs: list of all observed background commands running
 
     Returns:
     - str: Formatted prompt string with hint, task, monologue, and background included
@@ -170,10 +170,10 @@ def format_background_commands(
     Formats the background commands for sending in the prompt
 
     Parameters:
-    - background_commands_obs (list[CmdOutputObservation]): list of all background commands running
+    - background_commands_obs: list of all background commands running
 
     Returns:
-    - str: Formatted string with all background commands
+    - Formatted string with all background commands
     """
     if background_commands_obs is None or len(background_commands_obs) == 0:
         return ''
@@ -191,10 +191,10 @@ def parse_action_response(orig_response: str) -> Action:
     Parses a string to find an action within it
 
     Parameters:
-    - response (str): The string to be parsed
+    - orig_response: The string to be parsed
 
     Returns:
-    - Action: The action that was found in the response string
+    - The action that was found in the response string
     """
     # attempt to load the JSON dict from the response
     action_dict = json.loads(orig_response)
@@ -211,40 +211,10 @@ def parse_summary_response(response: str) -> list[dict]:
     Parses a summary of the monologue
 
     Parameters:
-    - response (str): The response string to be parsed
+    - response: The response string to be parsed
 
     Returns:
-    - list[dict]: The list of summaries output by the model
+    - The list of summaries output by the model
     """
     parsed = json.loads(response)
     return parsed['new_monologue']
-
-
-def generate_action_prompt_with_defaults(**kwargs):
-    # prepare the placeholders dict
-    placeholders = {
-        'task': '%(task)s',
-        'background_commands': '%(background_commands)s',
-        'hint': '%(hint)s',
-        'user': '%(user)s',
-        'timeout': '%(timeout)s',
-        'workspace_mount_path_in_sandbox': '%(workspace_mount_path_in_sandbox)s',
-    }
-
-    # update the placeholders with the provided values
-    monologue = []
-    formatted_kwargs = {}
-    for key, value in kwargs.items():
-        if key in ['default_events', 'recent_events'] and value is not None:
-            monologue.extend(value)
-        elif key == 'background_commands':
-            formatted_kwargs[key] = format_background_commands(value)
-        else:
-            formatted_kwargs[key] = value
-    formatted_kwargs['monologue'] = json.dumps(monologue, indent=2)
-
-    placeholders.update(formatted_kwargs)
-
-    # format the template with what we have
-    # FIXME the split of default and recent events
-    return ACTION_PROMPT % placeholders
