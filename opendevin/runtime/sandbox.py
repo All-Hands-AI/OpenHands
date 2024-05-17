@@ -18,7 +18,7 @@ class Sandbox(ABC, PluginMixin):
                 sandbox_key = key.removeprefix('SANDBOX_ENV_')
                 self.add_to_env(sandbox_key, os.environ[key])
         if config.enable_auto_lint:
-            self.add_to_env('RUN_LINT_AFTER_EDIT', 'true')
+            self.add_to_env('ENABLE_AUTO_LINT', 'true')
 
     def add_to_env(self, key: str, value: str):
         self._env[key] = value
