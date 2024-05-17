@@ -76,7 +76,7 @@ To fix this, we introduce the functionality of `fake_user_response_fn` in the `m
 
 ## How does `main` work?
 
-The signature of `main` (in file [[`opendevin/core/main.py`](opendevin/core/main.py)]):
+The signature of `main` (in file [[`opendevin/core/main.py`](../opendevin/core/main.py)]):
 
 ```python
 async def main(
@@ -94,7 +94,7 @@ async def main(
 
 ### `fake_user_response_fn`
 
-Here's an example of `fake_user_response_fn` in the implementation for SWE-Bench in [`evaluation/swe_bench/run_infer.py`](evaluation/swe_bench/run_infer.py):
+Here's an example of `fake_user_response_fn` in the implementation for SWE-Bench in [`evaluation/swe_bench/run_infer.py`](swe_bench/run_infer.py):
 
 ```python
 def codeact_user_response(state: State) -> str:
@@ -118,9 +118,9 @@ def codeact_user_response(state: State) -> str:
     return msg
 ```
 
-It receives a `State`, which is defined in [`opendevin/controller/state/state.py`](opendevin/controller/state/state.py). We are mainly using `state.history` here, which is the most important field of data. You can imagine it is being a more structured version of OpenAI's chat completion [messages](https://platform.openai.com/docs/guides/text-generation/chat-completions-api).
+It receives a `State`, which is defined in [`opendevin/controller/state/state.py`](../opendevin/controller/state/state.py). We are mainly using `state.history` here, which is the most important field of data. You can imagine it is being a more structured version of OpenAI's chat completion [messages](https://platform.openai.com/docs/guides/text-generation/chat-completions-api).
 
-`history: list[tuple[Action, Observation]] = field(default_factory=list)` is a list of (action, observation) tuple. All the actions are defined at [`opendevin/events/action`](opendevin/events/action) and observations are defined at [`opendevin/events/observation`](opendevin/events/action).
+`history: list[tuple[Action, Observation]] = field(default_factory=list)` is a list of (action, observation) tuple. All the actions are defined at [`opendevin/events/action`](../opendevin/events/action) and observations are defined at [`opendevin/events/observation`](../opendevin/events/action).
 
 The agent can emit different actions like `CmdRunAction`  (`opendevin/events/action/commands.py`) to execute bash commands and receive `CmdOutputObservation` (`opendevin/events/observation/commands.py`), `IPythonRunCellAction` to receive `IPythonRunCellObservation`, `BrowseInteractiveAction` (`opendevin/events/action/browse.py`) to browse the web and receive `BrowserOutputObservation` (`opendevin/events/observation/browse.py`).
 
