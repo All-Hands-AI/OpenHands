@@ -62,7 +62,7 @@ After running the script, you will observe the following:
 
 ![](./static/example_task_1.png)
 
-You can see the agent uses bash to write a script, making it executable, and then tested it by running it to make sure it is working.
+You can see the agent uses bash to write a script, makes it executable, and then tests it by running it to make sure it is working.
 
 ## What is "Request user input"?
 
