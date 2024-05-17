@@ -111,20 +111,20 @@ describe("TreeNode", () => {
     expect(await findByText("file2.ts")).toBeInTheDocument();
   });
 
-  it.skip("should render all children as collapsed when defaultOpen is false", () => {
-    const { getByText, queryByText } = renderWithProviders(
+  it("should render all children as collapsed when defaultOpen is false", async () => {
+    const { findByText, getByText, queryByText } = renderWithProviders(
       <TreeNode path="/folder1/" />,
     );
 
-    expect(getByText("folder1")).toBeInTheDocument();
-    expect(queryByText("file1.ts")).not.toBeInTheDocument();
+    expect(await findByText("folder1")).toBeInTheDocument();
+    expect(await queryByText("file2.ts")).not.toBeInTheDocument();
 
     act(() => {
       userEvent.click(getByText("folder1"));
     });
     expect(listFiles).toHaveBeenCalledWith("/folder1/");
 
-    expect(getByText("folder1")).toBeInTheDocument();
-    expect(getByText("file1.ts")).toBeInTheDocument();
+    expect(await findByText("folder1")).toBeInTheDocument();
+    expect(await findByText("file2.ts")).toBeInTheDocument();
   });
 });
