@@ -13,11 +13,13 @@ from opendevin.events.action.commands import (
     CmdRunAction,
     IPythonRunCellAction,
 )
+from opendevin.events.action.empty import NullAction
 from opendevin.events.action.files import FileReadAction, FileWriteAction
 from opendevin.events.action.message import MessageAction
 from opendevin.events.action.tasks import AddTaskAction, ModifyTaskAction
 
 actions = (
+    NullAction,
     CmdKillAction,
     CmdRunAction,
     IPythonRunCellAction,
