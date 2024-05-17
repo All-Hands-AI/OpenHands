@@ -148,10 +148,12 @@ When you fully understand the `run_infer.py`, you can be ready to actually start
 
 ## Run the evaluation!
 
-Similar to SWE-Bench's [`run_infer.sh`](https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/swe_bench/scripts/run_infer.sh), you can write your script similarily:
+You can write your `run_infer.sh` script mimicking SWE-Bench's [`run_infer.sh`](https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/swe_bench/scripts/run_infer.sh).
 
 
 You can start the evaluation by running:
 
 ```bash
 ./run_infer.sh eval_gpt_4o_2024_05_13
+```
+Where `eval_gpt_4o_2024_05_13` is the model config you defined on the config.toml.
