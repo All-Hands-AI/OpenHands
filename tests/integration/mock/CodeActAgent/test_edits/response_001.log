@@ -1,3 +1,4 @@
-Let's first view the content of the file `bad.txt` to identify the typos that need to be fixed.
+Let's start by examining the contents of `bad.txt` to identify the typos. I'll read the file first.
+
 <execute_bash>
 cat bad.txt

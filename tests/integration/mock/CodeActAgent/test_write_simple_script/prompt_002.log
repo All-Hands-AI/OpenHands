@@ -243,15 +243,9 @@ Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmat
 
 ----------
 
-Sure! I will create a shell script named 'hello.sh' that prints 'hello' without asking for confirmation. Let me write the script for you:
-
-```bash
-echo "hello"
-```
-
-Let me create the 'hello.sh' script for you:
+I will create and write the shell script `hello.sh` that prints "hello". Let's proceed with that.
 <execute_bash>
-echo 'echo "hello"' > hello.sh
+echo "echo hello" > hello.sh
 </execute_bash>
 
 ----------
