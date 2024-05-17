@@ -378,7 +378,10 @@ class MainPrompt(Shrinkable):
             )
         else:
             if (
-                sum([msg['role'] == 'user' for msg in obs_history[-1]['chat_messages']])
+                'chat_messages' in obs_history[-1]
+                and sum(
+                    [msg['role'] == 'user' for msg in obs_history[-1]['chat_messages']]
+                )
                 > 1
             ):
                 logging.warning(
@@ -759,6 +762,7 @@ if __name__ == '__main__':
         html_type='pruned_html',
         use_concrete_example=True,
         use_abstract_example=True,
+        use_screenshot=False,
         multi_actions=True,
     )
 
