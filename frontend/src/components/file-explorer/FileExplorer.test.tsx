@@ -59,13 +59,13 @@ describe("FileExplorer", () => {
     expect(listFiles).toHaveBeenCalledTimes(4); // 2 from initial render, 2 from refresh button
   });
 
-  it.skip("should toggle the explorer visibility when clicking the close button", async () => {
+  it("should toggle the explorer visibility when clicking the close button", async () => {
     const { getByTestId, getByText, queryByText } = renderWithProviders(
       <FileExplorer />,
     );
 
     await waitFor(() => {
-      expect(getByText("root")).toBeInTheDocument();
+      expect(getByText("folder1")).toBeInTheDocument();
     });
 
     act(() => {
@@ -73,8 +73,8 @@ describe("FileExplorer", () => {
     });
 
     // it should be hidden rather than removed from the DOM
-    expect(queryByText("root")).toBeInTheDocument();
-    expect(queryByText("root")).not.toBeVisible();
+    expect(queryByText("folder1")).toBeInTheDocument();
+    expect(queryByText("folder1")).not.toBeVisible();
   });
 
   it("should upload files", async () => {
