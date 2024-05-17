@@ -12,10 +12,11 @@ const toastSpy = vi.spyOn(toast, "stickyError");
 
 vi.mock("../../services/fileService", async () => ({
   listFiles: vi.fn(async (path: string = "/") => {
+    console.log("LIST", path);
     if (path === "/") {
       return Promise.resolve(["folder1/", "file1.ts"]);
     }
-    if (path === "/folder1/") {
+    if (path === "/folder1/" || path === "folder1/") {
       return Promise.resolve(["file2.ts"]);
     }
     return Promise.resolve([]);
@@ -29,26 +30,33 @@ describe("FileExplorer", () => {
     vi.clearAllMocks();
   });
 
-  it.skip("should get the workspace directory", async () => {
+  it("should get the workspace directory", async () => {
     const { getByText } = renderWithProviders(<FileExplorer />);
 
-    expect(listFiles).toHaveBeenCalledTimes(1);
     await waitFor(() => {
-      expect(getByText("root")).toBeInTheDocument();
+      expect(getByText("folder1")).toBeInTheDocument();
+      expect(getByText("file2.ts")).toBeInTheDocument();
     });
+    expect(listFiles).toHaveBeenCalledTimes(2); // once for root, once for folder1
   });
 
   it.todo("should render an empty workspace");
 
-  it.skip("should refetch the workspace when clicking the refresh button", async () => {
-    renderWithProviders(<FileExplorer />);
+  it.only("should refetch the workspace when clicking the refresh button", async () => {
+    const { getByText } = renderWithProviders(<FileExplorer />);
+    await waitFor(() => {
+      expect(getByText("folder1")).toBeInTheDocument();
+      expect(getByText("file2.ts")).toBeInTheDocument();
+    });
+    expect(listFiles).toHaveBeenCalledTimes(2); // once for root, once for folder 1
 
+    console.log("ABOUT TO CLICK");
     // The 'await' keyword is required here to avoid a warning during test runs
     await act(() => {
       userEvent.click(screen.getByTestId("refresh"));
     });
 
-    expect(listFiles).toHaveBeenCalledTimes(2); // 1 from initial render, 1 from refresh button
+    expect(listFiles).toHaveBeenCalledTimes(4); // 2 from initial render, 2 from refresh button
   });
 
   it.skip("should toggle the explorer visibility when clicking the close button", async () => {

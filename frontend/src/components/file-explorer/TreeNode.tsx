@@ -47,14 +47,14 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const isDirectory = path.endsWith("/");
 
   const refreshChildren = async () => {
-    console.log("REFRESH CHILDREN", path, isDirectory, isOpen);
+    console.log('refreshing children', path, isDirectory, isOpen);
     if (!isDirectory || !isOpen) {
       setChildren(null);
       return;
     }
     const files = await listFiles(path);
+    console.log("got children", files);
     setChildren(files);
-    console.log("CHILDREN", files);
   };
 
   React.useEffect(() => {
@@ -62,15 +62,12 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   }, [refreshID, isOpen]);
 
   const handleClick = () => {
-    console.log("CLICK")
     if (isDirectory) {
-      console.log("CLICK DIRECTORY")
       setIsOpen((prev) => !prev);
     } else {
       dispatch(setActiveFilepath(path));
     }
   };
-  console.log("RENDER", path, isOpen, children);
 
   return (
     <div
