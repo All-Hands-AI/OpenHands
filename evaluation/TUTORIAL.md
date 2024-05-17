@@ -66,7 +66,7 @@ You can see the agent uses bash to write a script, makes it executable, and then
 
 At the end of the above screenshot, OpenDevin actually requests user inputs when it think it finishes the task. This will cause issues in evaluation, since most evaluation don't assume additional user input. To fix this, we introduce the functionality of `fake_user_response_fn` in the `main` function, which we describe in the next section.
 
-## How does `main` work?
+## The `main` function
 
 The signature of `main` (in file [[`opendevin/core/main.py`](../opendevin/core/main.py)]):
 
