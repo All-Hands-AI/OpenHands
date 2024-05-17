@@ -18,8 +18,7 @@ This is your internal monologue, in JSON format:
 
 %(monologue)s
 
-Additional messages will follow this prompt, containing your recent thoughts and events.
-Your most recent thoughts will be at the bottom of those additional messages. Continue your train of thought.
+Your most recent thoughts will be at the bottom of that monologue. Continue your train of thought.
 What is your next single thought or action? Your response must be in JSON format.
 It must be a single object, and it must contain two fields:
 * `action`, which is one of the actions below
@@ -165,20 +164,25 @@ def get_request_action_prompt(
     - background_commands_obs (list[CmdOutputObservation]): list of all observed background commands running
 
     Returns:
-    - str: Formatted prompt string with hint, task, monologue, and background included
+    - str: Formatted prompt string with hint, task, monologue, and background commands included
     """
 
     hint = ''
     if len(recent_events) > 0:
         latest_event = recent_events[-1]
         if 'action' in latest_event:
-            if latest_event['action'] == 'message':
-                if latest_event['args']['content'].startswith('OK so my task is'):
-                    hint = "You're just getting started! What should you do first?"
-                else:
-                    hint = "You've been thinking a lot lately. Maybe it's time to take action?"
+            if (
+                latest_event['action'] == 'message'
+                and 'source' in latest_event
+                and latest_event['source'] == 'agent'
+            ):
+                hint = (
+                    "You've been thinking a lot lately. Maybe it's time to take action?"
+                )
             elif latest_event['action'] == 'error':
                 hint = 'Looks like that last command failed. Maybe you need to fix it, or try something else.'
+    else:
+        hint = "You're just getting started! What should you do first?"
 
     bg_commands_message = ''
     if len(background_commands_obs) > 0:

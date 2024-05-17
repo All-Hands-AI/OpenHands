@@ -175,22 +175,16 @@ class MonologueAgent(Agent):
         goal = state.get_current_user_intent()
         self._initialize(goal)
 
-        # the action prompt starts with the initial thoughts
-        prompt = prompts.get_request_action_prompt(
-            goal,
-            self.monologue,
-            state.background_commands_obs,
-        )
-        messages: list[dict[str, str]] = [
-            {'role': 'system', 'content': prompt},
-        ]
+        recent_events: list[dict[str, str]] = []
 
-        # add the messages from state.history
+        # add the events from state.history
         for prev_action, obs in state.history:
             if not isinstance(prev_action, NullAction):
-                messages.append(event_to_memory(prev_action))
+                recent_events.append(event_to_memory(prev_action))
+                print(event_to_memory(prev_action))
             if not isinstance(obs, NullObservation):
-                messages.append(truncate_output(event_to_memory(obs)))
+                recent_events.append(truncate_output(event_to_memory(obs)))
+                print(truncate_output(event_to_memory(obs)))
 
         # add the last messages to long term memory
         if self.memory is not None and state.history and len(state.history) > 0:
@@ -199,13 +193,25 @@ class MonologueAgent(Agent):
                 truncate_output(event_to_memory(state.history[-1][1]))
             )
 
-        # request the next action from the LLM
+        # the action prompt with initial thoughts and recent events
+        prompt = prompts.get_request_action_prompt(
+            goal,
+            self.monologue,
+            recent_events,
+            state.background_commands_obs,
+        )
+
+        messages: list[dict[str, str]] = [
+            {'role': 'user', 'content': prompt},
+        ]
+
+        # format all as a single message, a monologue
         resp = self.llm.completion(messages=messages)
 
         # get the next action from the response
         action_resp = resp['choices'][0]['message']['content']
 
-        # keep track of a fallback option to stop the prompting when it gets too large
+        # keep track of max_chars fallback option
         state.num_of_chars += len(prompt) + len(action_resp)
 
         action = prompts.parse_action_response(action_resp)
