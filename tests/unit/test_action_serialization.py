@@ -14,14 +14,14 @@ from opendevin.events.action import (
     ModifyTaskAction,
 )
 from opendevin.events.serialization import (
-    action_from_dict,
+    event_from_dict,
     event_to_dict,
     event_to_memory,
 )
 
 
 def serialization_deserialization(original_action_dict, cls):
-    action_instance = action_from_dict(original_action_dict)
+    action_instance = event_from_dict(original_action_dict)
     assert isinstance(
         action_instance, Action
     ), 'The action instance should be an instance of Action.'
@@ -34,9 +34,26 @@ def serialization_deserialization(original_action_dict, cls):
     assert (
         serialized_action_dict == original_action_dict
     ), 'The serialized action should match the original action dict.'
+    original_memory_dict = original_action_dict.copy()
+    original_memory_dict.pop('id', None)
+    original_memory_dict.pop('timestamp', None)
     assert (
-        serialized_action_memory == original_action_dict
+        serialized_action_memory == original_memory_dict
     ), 'The serialized action in memory should match the original action dict.'
+
+
+def test_event_props_serialization_deserialization():
+    original_action_dict = {
+        'id': 42,
+        'source': 'agent',
+        'timestamp': '2021-08-01T12:00:00',
+        'action': 'message',
+        'args': {
+            'content': 'This is a test.',
+            'wait_for_response': False,
+        },
+    }
+    serialization_deserialization(original_action_dict, MessageAction)
 
 
 def test_message_action_serialization_deserialization():
