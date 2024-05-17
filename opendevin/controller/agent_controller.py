@@ -254,6 +254,7 @@ class AgentController:
                 for i in range(1, 4)
             ):
                 # same (Action, NullObservation): like 'think' the same thought over and over
+                # TODO remove this, this one should be obsolete now or soon
                 logger.warning('Action, NullObservation loop detected')
                 return True
             elif all(
@@ -263,6 +264,16 @@ class AgentController:
                 # (NullAction, ErrorObservation): errors coming from an exception
                 # (Action, ErrorObservation): the same action getting an error, even if not necessarily the same error
                 logger.warning('Action, ErrorObservation loop detected')
+                return True
+
+            # TODO in the last six (Action, Observation) tuples,
+            # the agent repeats the same (Action, Observation) every other step
+            if len(self.state.history) >= 6 and all(
+                self.state.history[-i][0] == self.state.history[-i - 2][0]
+                and self.state.history[-i][1] == self.state.history[-i - 2][1]
+                for i in range(1, 3, 5)
+            ):
+                logger.warning('Repeating (Action, Observation) pattern detected')
                 return True
 
         return False
