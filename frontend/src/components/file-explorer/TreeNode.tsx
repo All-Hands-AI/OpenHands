@@ -47,7 +47,7 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const refreshChildren = async () => {
     console.log("REFRESH CHILDREN", path);
     const files = await listFiles(path);
-    setChildren(files.map(f => f));
+    setChildren(files);
     console.log("CHILDREN", files);
   };
 
@@ -61,13 +61,15 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   }, [isOpen]);
 
   const handleClick = () => {
+    console.log("CLICK")
     if (isDirectory) {
+      console.log("CLICK DIRECTORY")
       setIsOpen((prev) => !prev);
     } else {
       dispatch(setActiveFilepath(path));
     }
   };
-  console.log("RENDER", isOpen, children);
+  console.log("RENDER", path, isOpen, children);
 
   return (
     <div

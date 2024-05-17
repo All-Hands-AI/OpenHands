@@ -21,7 +21,7 @@ vi.mock("../../services/fileService", async () => ({
 
 describe("TreeNode", () => {
   afterEach(() => {
-    vi.resetAllMocks();
+    vi.clearAllMocks();
   });
 
   it("should render a file if property has no children", () => {
@@ -33,45 +33,46 @@ describe("TreeNode", () => {
   });
 
   it("should render a folder if it's in a subdir", async () => {
-    const { getByText } = renderWithProviders(
+    const { findByText } = renderWithProviders(
       <TreeNode path="/folder1/" defaultOpen />,
     );
     expect(listFiles).toHaveBeenCalledWith("/folder1/");
 
-    expect(await getByText("folder1")).toBeInTheDocument();
-    expect(await getByText("file2.ts")).toBeInTheDocument();
+    expect(await findByText("folder1")).toBeInTheDocument();
+    expect(await findByText("file2.ts")).toBeInTheDocument();
   });
 
-  it.skip("should close a folder when clicking on it", () => {
-    const { getByText, queryByText } = renderWithProviders(
+  it.skip("should close a folder when clicking on it", async () => {
+    const { findByText, queryByText } = renderWithProviders(
       <TreeNode path="/folder1/" defaultOpen />,
     );
 
-    expect(queryByText("folder1")).toBeInTheDocument();
-    expect(getByText("file2.ts")).toBeInTheDocument();
+    expect(await findByText("folder1")).toBeInTheDocument();
+    expect(await findByText("file2.ts")).toBeInTheDocument();
 
-    act(() => {
-      userEvent.click(getByText("folder"));
+    act(async () => {
+      userEvent.click(await findByText("folder1"));
     });
 
-    expect(queryByText("folder1")).toBeInTheDocument();
-    expect(queryByText("file2.ts")).not.toBeInTheDocument();
+    expect(await findByText("folder1")).toBeInTheDocument();
+    expect(await queryByText("file2.ts")).not.toBeInTheDocument();
   });
 
-  it.skip("should open a folder when clicking on it", () => {
-    const { getByText, queryByText } = renderWithProviders(
+  it("should open a folder when clicking on it", async () => {
+    const { getByText, findByText, queryByText } = renderWithProviders(
       <TreeNode path="/folder1/" />,
     );
 
-    expect(queryByText("folder1")).toBeInTheDocument();
-    expect(queryByText("file2.ts")).not.toBeInTheDocument();
+    expect(await findByText("folder1")).toBeInTheDocument();
+    expect(await queryByText("file2.ts")).not.toBeInTheDocument();
 
     act(() => {
       userEvent.click(getByText("folder1"));
     });
+    expect(listFiles).toHaveBeenCalledWith("/folder1/");
 
-    expect(getByText("folder1")).toBeInTheDocument();
-    expect(getByText("file2.ts")).toBeInTheDocument();
+    expect(await findByText("folder1")).toBeInTheDocument();
+    expect(await findByText("file2.ts")).toBeInTheDocument();
   });
 
   it.skip("should call a fn and return the full path of a file when clicking on it", () => {
