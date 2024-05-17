@@ -45,7 +45,7 @@ api_key = "sk-XXX"
 
 In this section, for the purpose of building an evaluation task, we don't use the standard OpenDevin interface, but rather run OpenDevin programmatically.
 
-For example, *without any frontend/backend server*, you can run ([setup the environment first](#before-everything-begins) if you haven't) the following to get a simple task solved (with max number of 10 iterations, `CodeActAgent` as the agent, and `gpt-4o-2024-05-13` as the LLM):
+For example, you can run the following, which performs the specified task `-t`, with a particular model `-m` and agent `-c`, for a maximum number of iterations `-i`:
 
 ```bash
 poetry run python ./opendevin/core/main.py \
