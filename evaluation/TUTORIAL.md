@@ -36,6 +36,7 @@ ssh_hostname = "localhost"
 sandbox_timeout = 120
 
 [llm]
+# IMPORTANT: add your API key here, and set the model to the one you want to evaluate
 model = "gpt-4o-2024-05-13"
 api_key = "sk-XXX"
 ```
