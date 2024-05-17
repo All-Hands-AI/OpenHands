@@ -44,7 +44,7 @@ describe("TreeNode", () => {
     expect(await findByText("file2.ts")).toBeInTheDocument();
   });
 
-  it.skip("should close a folder when clicking on it", async () => {
+  it("should close a folder when clicking on it", async () => {
     const { findByText, queryByText } = renderWithProviders(
       <TreeNode path="/folder1/" defaultOpen />,
     );
