@@ -1,3 +1,4 @@
+import json
 import os
 from abc import ABC, abstractmethod
 
@@ -21,6 +22,8 @@ class Sandbox(ABC, PluginMixin):
 
     def add_to_env(self, key: str, value: str):
         self._env[key] = value
+        # Note: json.dumps gives us nice escaping for free
+        self.execute(f'export {key}={json.dumps(value)}')
 
     @abstractmethod
     def execute(
