@@ -7,6 +7,8 @@ from functools import partial
 import pytest
 from litellm import completion
 
+from opendevin.llm.llm import message_separator
+
 script_dir = os.path.dirname(os.path.realpath(__file__))
 workspace_path = os.getenv('WORKSPACE_BASE')
 
@@ -114,7 +116,7 @@ def mock_completion(*args, test_name, **kwargs):
     messages = kwargs['messages']
     message_str = ''
     for message in messages:
-        message_str += message['content']
+        message_str += message_separator + message['content']
     if os.environ.get('FORCE_APPLY_PROMPTS') == 'true':
         # this assumes all response_(*).log filenames are in numerical order, starting from one
         cur_id += 1
