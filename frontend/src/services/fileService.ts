@@ -30,8 +30,8 @@ export async function uploadFiles(files: FileList) {
   }
 }
 
-export async function getWorkspace(): Promise<WorkspaceFile> {
-  const res = await fetch("/api/refresh-files");
+export async function listFiles(): Promise<string[]> {
+  const res = await fetch("/api/list-files");
   const data = await res.json();
   return data as WorkspaceFile;
 }
