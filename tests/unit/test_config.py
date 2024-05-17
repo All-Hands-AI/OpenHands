@@ -28,6 +28,20 @@ def setup_env():
     os.remove('new_style_config.toml')
 
 
+@pytest.fixture
+def temp_toml_file(tmp_path):
+    # Fixture to create a temporary directory and TOML file for testing
+    tmp_toml_file = os.path.join(tmp_path, 'config.toml')
+    yield tmp_toml_file
+
+
+@pytest.fixture
+def default_config(monkeypatch):
+    # Fixture to provide a default AppConfig instance
+    AppConfig.reset()
+    yield AppConfig()
+
+
 def test_compat_env_to_config(monkeypatch, setup_env):
     # Use `monkeypatch` to set environment variables for this specific test
     monkeypatch.setenv('WORKSPACE_BASE', '/repos/opendevin/workspace')
@@ -47,20 +61,6 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     assert isinstance(config.agent, AgentConfig)
     assert isinstance(config.agent.memory_max_threads, int)
     assert config.agent.memory_max_threads == 4
-
-
-@pytest.fixture
-def temp_toml_file(tmp_path):
-    # Fixture to create a temporary directory and TOML file for testing
-    tmp_toml_file = os.path.join(tmp_path, 'config.toml')
-    yield tmp_toml_file
-
-
-@pytest.fixture
-def default_config(monkeypatch):
-    # Fixture to provide a default AppConfig instance
-    AppConfig.reset()
-    yield AppConfig()
 
 
 def test_load_from_old_style_env(monkeypatch, default_config):
@@ -171,3 +171,42 @@ def test_finalize_config(default_config):
         default_config.workspace_mount_path_in_sandbox
         == default_config.workspace_mount_path
     )
+
+
+# tests for workspace, mount path, path in sandbox, cache dir
+def test_workspace_mount_path_default(default_config):
+    assert default_config.workspace_mount_path is None
+    finalize_config(default_config)
+    assert default_config.workspace_mount_path == os.path.abspath(
+        default_config.workspace_base
+    )
+
+
+def test_workspace_mount_path_in_sandbox_local(default_config):
+    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
+    default_config.sandbox_type = 'local'
+    finalize_config(default_config)
+    assert (
+        default_config.workspace_mount_path_in_sandbox
+        == default_config.workspace_mount_path
+    )
+
+
+def test_workspace_mount_rewrite(default_config, monkeypatch):
+    default_config.workspace_base = '/home/user/project'
+    default_config.workspace_mount_rewrite = '/home/user:/sandbox'
+    monkeypatch.setattr('os.getcwd', lambda: '/current/working/directory')
+    finalize_config(default_config)
+    assert default_config.workspace_mount_path == '/sandbox/project'
+
+
+def test_embedding_base_url_default(default_config):
+    default_config.llm.base_url = 'https://api.exampleapi.com'
+    finalize_config(default_config)
+    assert default_config.llm.embedding_base_url == 'https://api.exampleapi.com'
+
+
+def test_cache_dir_creation(default_config, tmpdir):
+    default_config.cache_dir = str(tmpdir.join('test_cache'))
+    finalize_config(default_config)
+    assert os.path.exists(default_config.cache_dir)
