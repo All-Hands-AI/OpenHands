@@ -89,7 +89,7 @@ async def main(
 ```
 
 - `task_str`: The task instruction to run. In the above example, it is "Write me a bash script that print hello world."
-- `exit_on_message`: quit if agent asks for a message from user (optional)
+- `exit_on_message`: whether to quit if the agent asks for a message from user
 - `fake_user_response_fn`: An optional function that receives the current state (could be None) and returns a fake user response.
 - `sandbox`: An optional sandbox to run the agent in.
 
