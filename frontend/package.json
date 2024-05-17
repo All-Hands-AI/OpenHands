@@ -34,7 +34,7 @@
     "react-syntax-highlighter": "^15.5.0",
     "tailwind-merge": "^2.2.2",
     "vite": "^5.1.6",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^3.5.2"
   },
   "scripts": {
     "start": "vite",
@@ -44,6 +44,7 @@
     "make-i18n": "node scripts/make-i18n-translations.cjs",
     "prelint": "npm run make-i18n",
     "lint": "eslint src --ext .ts,.tsx,.js && prettier --check src/**/*.{ts,tsx}",
+    "lint:fix": "eslint src --ext .ts,.tsx,.js --fix && prettier --write src/**/*.{ts,tsx}",
     "prepare": "cd .. && husky install frontend/.husky"
   },
   "husky": {
@@ -58,7 +59,7 @@
     ]
   },
   "devDependencies": {
-    "@tailwindcss/typography": "^0.5.12",
+    "@tailwindcss/typography": "^0.5.13",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
@@ -87,7 +88,7 @@
     "tailwindcss": "^3.4.2",
     "typescript": "^5.4.3",
     "vite-tsconfig-paths": "^4.3.2",
-    "vitest": "^1.5.0"
+    "vitest": "^1.6.0"
   },
   "packageManager": "npm@10.5.0",
   "volta": {

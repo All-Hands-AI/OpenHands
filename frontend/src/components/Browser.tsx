@@ -24,7 +24,12 @@ function Browser(): JSX.Element {
       </div>
       <div className="overflow-y-auto grow scrollbar-hide rounded-xl">
         {screenshotSrc ? (
-          <img src={imgSrc} className="rounded-xl" alt="Browser Screenshot" />
+          <img
+            src={imgSrc}
+            style={{ objectFit: "contain", width: "100%", height: "auto" }}
+            className="rounded-xl"
+            alt="Browser Screenshot"
+          />
         ) : (
           <div className="flex flex-col items-center h-full justify-center">
             <IoIosGlobe size={100} />
