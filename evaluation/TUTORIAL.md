@@ -136,7 +136,7 @@ Sandbox is a fully functioning docker container where the agent can perform all 
 
 In SWE-Bench, we need to copy the proper repository directory to the workspace and activate the right python virtual environment before the agent can start performing the task, so we actually defined a custom [`SWEBenchSSHBox`](https://github.com/OpenDevin/OpenDevin/blob/7ca560471bd262f22513f3863995d0a8e6121c07/evaluation/swe_bench/swe_env_box.py#L12-L118) that inherit from the default sandbox [`SSHBox`](https://github.com/OpenDevin/OpenDevin/blob/main/opendevin/runtime/docker/ssh_box.py#L188) and handles all these initial setup. If you need to configure the `sandbox` for your evaluation, check `SWEBenchSSHBox` for a reference of implementation.
 
-## How to put together an evaluation scripts?
+## How to put together an evaluation script?
 
 Now we have know how to start running the agent end-to-end, and how `fake_user_response_fn` and `sandbox` works. We will walk through a piece of dummy code (simplified version of SWE-Bench's [`run_infer.py`](https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/swe_bench/run_infer.py)) that outline the general workflow:
 
