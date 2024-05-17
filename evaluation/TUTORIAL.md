@@ -2,6 +2,9 @@
 
 This tutorial provides a general guide on how to integrate your own evaluation benchmark into the OpenDevin framework.
 
+You can read this for details, and also learn by example by looking at our existing evaluations:
+- [swe_bench](swe_bench/)
+
 
 ## A quick walk-through of OpenDevin architecture
 
