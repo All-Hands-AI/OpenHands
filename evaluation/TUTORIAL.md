@@ -24,8 +24,8 @@ cache_dir = "/tmp/cache"
 # which will be mounted into Sandbox for agent to interact with!
 # The OpenDevin agent will be able to read/write files whatever they like (even rm -rf)
 # in this directory, so be careful!!
-workspace_base = "/home/xingyaow/OpenDevin-dev/workspace"
-workspace_mount_path = "/home/xingyaow/OpenDevin-dev/workspace"
+workspace_base = "/path/to/your/workspace"
+workspace_mount_path = "/path/to/your/workspace"
 # ==========================
 
 sandbox_container_image = "ghcr.io/opendevin/sandbox:latest"
