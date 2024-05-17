@@ -1,5 +1,6 @@
 from dataclasses import asdict
 from datetime import datetime
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from .action import action_from_dict
@@ -9,8 +10,15 @@ from .utils import remove_fields
 if TYPE_CHECKING:
     from opendevin.events.event import Event
 
+
+class EventSource(str, Enum):
+    AGENT = 'agent'
+    USER = 'user'
+
+
 # TODO: move `content` into `extras`
 TOP_KEYS = ['id', 'timestamp', 'source', 'message', 'cause', 'action', 'observation']
+UNDERSCORE_KEYS = ['id', 'timestamp', 'source', 'cause']
 
 DELETE_FROM_MEMORY_EXTRAS = {
     'screenshot',
@@ -23,21 +31,23 @@ DELETE_FROM_MEMORY_EXTRAS = {
 }
 
 
-def json_serial(obj):
-    if isinstance(obj, datetime):
-        return obj.isoformat()
-    if obj is None:
-        return None
-    return str(obj)
-
-
 def event_from_dict(data) -> 'Event':
+    evt: Event
     if 'action' in data:
-        return action_from_dict(data)
+        evt = action_from_dict(data)
     elif 'observation' in data:
-        return observation_from_dict(data)
+        evt = observation_from_dict(data)
     else:
         raise ValueError('Unknown event type: ' + data)
+    for key in UNDERSCORE_KEYS:
+        if key in data:
+            value = data[key]
+            if key == 'timestamp':
+                value = datetime.fromisoformat(value)
+            if key == 'source':
+                value = EventSource(value)
+            setattr(evt, '_' + key, value)
+    return evt
 
 
 def event_to_dict(event: 'Event') -> dict:
@@ -51,7 +61,9 @@ def event_to_dict(event: 'Event') -> dict:
         if key == 'id' and d.get('id') == -1:
             d.pop('id', None)
         if key == 'timestamp' and 'timestamp' in d:
-            d['timestamp'] = json_serial(d['timestamp'])
+            d['timestamp'] = d['timestamp'].isoformat()
+        if key == 'source' and 'source' in d:
+            d['source'] = d['source'].value
         props.pop(key, None)
     if 'action' in d:
         d['args'] = props
