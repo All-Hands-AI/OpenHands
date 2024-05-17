@@ -32,13 +32,14 @@ describe("TreeNode", () => {
     expect(getByText("file.ts")).toBeInTheDocument();
   });
 
-  it.skip("should render a folder if it's in a subdir", () => {
+  it("should render a folder if it's in a subdir", async () => {
     const { getByText } = renderWithProviders(
       <TreeNode path="/folder1/" defaultOpen />,
     );
+    expect(listFiles).toHaveBeenCalledWith("/folder1/");
 
-    expect(getByText("folder1")).toBeInTheDocument();
-    expect(getByText("file2.ts")).toBeInTheDocument();
+    expect(await getByText("folder1")).toBeInTheDocument();
+    expect(await getByText("file2.ts")).toBeInTheDocument();
   });
 
   it.skip("should close a folder when clicking on it", () => {

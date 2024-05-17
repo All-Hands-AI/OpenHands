@@ -45,11 +45,14 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const isDirectory = path.endsWith("/");
 
   const refreshChildren = async () => {
+    console.log("REFRESH CHILDREN", path);
     const files = await listFiles(path);
-    setChildren(files);
+    setChildren(files.map(f => f));
+    console.log("CHILDREN", files);
   };
 
   React.useEffect(() => {
+    console.log("EFFECT", path, isOpen, isDirectory);
     if (isOpen && isDirectory) {
       refreshChildren();
     } else {
@@ -64,6 +67,7 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
       dispatch(setActiveFilepath(path));
     }
   };
+  console.log("RENDER", isOpen, children);
 
   return (
     <div
