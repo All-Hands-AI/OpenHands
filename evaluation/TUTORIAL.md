@@ -62,7 +62,7 @@ You can see the agent uses bash to write a script, making it executable, and the
 
 ## What is "Request user input"?
 
-At the end of the above screenshot, OpenDevin actually requests user inputs when it think it finishes the task. There's multiple motivation for this design:
+At the end of the above screenshot, OpenDevin actually requests user inputs when it think it finishes the task. There are multiple motivations for this design:
 
 1. If the agent did something wrong, the user can follow-up with language feedback to correct it.
 
