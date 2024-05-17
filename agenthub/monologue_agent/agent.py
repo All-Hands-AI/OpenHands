@@ -106,7 +106,7 @@ class MonologueAgent(Agent):
         Default events are not condensed and are used to give the LLM context and examples.
 
         Parameters:
-        - event (dict): The event that will be added to monologue and memory
+        - event_dict (dict): The event that will be added to monologue and memory
         """
         self.monologue.add_default_event(event_dict)
         if self.memory is not None:
