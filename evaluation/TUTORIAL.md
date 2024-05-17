@@ -41,7 +41,7 @@ model = "gpt-4o-2024-05-13"
 api_key = "sk-XXX"
 ```
 
-### How do OpenDevin solves a task?
+### How to use OpenDevin programmatically
 
 In this section, for the purpose of building an evaluation task, we omit details on the frontend and backend that mostly contains logic for user interface, and mainly focus on a function `main` (i.e., a command line interface) that allows you to complete a task end-to-end.
 
