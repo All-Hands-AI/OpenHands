@@ -1,5 +1,5 @@
 import React from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { twMerge } from "tailwind-merge";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
@@ -36,6 +36,8 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
   const [children, setChildren] = React.useState<string[] | null>(null);
   const { selectedFileAbsolutePath } = React.useContext(CodeEditorContext);
+  const refreshID = useSelector((state: RootState) => state.code.refreshID);
+
   const dispatch = useDispatch();
 
   const fileParts = path.split("/");
@@ -45,20 +47,19 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const isDirectory = path.endsWith("/");
 
   const refreshChildren = async () => {
-    console.log("REFRESH CHILDREN", path);
+    console.log("REFRESH CHILDREN", path, isDirectory, isOpen);
+    if (!isDirectory || !isOpen) {
+      setChildren(null);
+      return;
+    }
     const files = await listFiles(path);
     setChildren(files);
     console.log("CHILDREN", files);
   };
 
   React.useEffect(() => {
-    console.log("EFFECT", path, isOpen, isDirectory);
-    if (isOpen && isDirectory) {
-      refreshChildren();
-    } else {
-      setChildren(null);
-    }
-  }, [isOpen]);
+    refreshChildren();
+  }, [refreshID, isOpen]);
 
   const handleClick = () => {
     console.log("CLICK")
