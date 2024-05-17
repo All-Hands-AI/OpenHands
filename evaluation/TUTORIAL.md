@@ -154,7 +154,4 @@ Similar to SWE-Bench's [`run_infer.sh`](https://github.com/OpenDevin/OpenDevin/b
 You can start the evaluation by running:
 
 ```bash
-./run_infer.sh eval_gpt4_1106_preview
-```
-
-Where `eval_gpt4_1106_preview` is the model config you defined on the `config.toml`.
+./run_infer.sh eval_gpt_4o_2024_05_13
