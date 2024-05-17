@@ -54,12 +54,11 @@ def action_to_str(action: Action) -> str:
 
 
 def get_action_message(action: Action) -> dict[str, str] | None:
-    if isinstance(action, MessageAction) and action.source == 'user':
-        return {'role': 'user', 'content': action.content}
-    elif (
+    if (
         isinstance(action, BrowseInteractiveAction)
         or isinstance(action, CmdRunAction)
         or isinstance(action, IPythonRunCellAction)
+        or isinstance(action, MessageAction)
     ):
         return {
             'role': 'user' if action.source == 'user' else 'assistant',
