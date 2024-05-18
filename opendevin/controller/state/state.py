@@ -3,6 +3,7 @@ import pickle
 from dataclasses import dataclass, field
 
 from opendevin.controller.state.task import RootTask
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
     Action,
@@ -34,14 +35,23 @@ class State:
         fs = get_file_store()
         pickled = pickle.dumps(self)
         encoded = base64.b64encode(pickled).decode('utf-8')
-        fs.write(f'sessions/{sid}/agent_state.pkl', encoded)
+        try:
+            fs.write(f'sessions/{sid}/agent_state.pkl', encoded)
+        except Exception as e:
+            logger.error(f'Failed to save state to session: {e}')
+            raise e
 
     @staticmethod
     def restore_from_session(sid: str) -> 'State':
         fs = get_file_store()
-        encoded = fs.read(f'sessions/{sid}/agent_state.pkl')
-        pickled = base64.b64decode(encoded)
-        return pickle.loads(pickled)
+        try:
+            encoded = fs.read(f'sessions/{sid}/agent_state.pkl')
+            pickled = base64.b64decode(encoded)
+            state = pickle.loads(pickled)
+        except Exception as e:
+            logger.error(f'Failed to restore state from session: {e}')
+            raise e
+        return state
 
     def get_current_user_intent(self):
         # TODO: this is used to understand the user's main goal, but it's possible
