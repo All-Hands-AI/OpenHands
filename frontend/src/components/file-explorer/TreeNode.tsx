@@ -1,8 +1,11 @@
 import React from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { twMerge } from "tailwind-merge";
+import { RootState } from "#/store";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
-import { WorkspaceFile } from "#/services/fileService";
+import { listFiles } from "#/services/fileService";
+import { setActiveFilepath } from "#/state/codeSlice";
 import { CodeEditorContext } from "../CodeEditorContext";
 
 interface TitleProps {
@@ -26,28 +29,44 @@ function Title({ name, type, isOpen, onClick }: TitleProps) {
 }
 
 interface TreeNodeProps {
-  node: WorkspaceFile;
   path: string;
-  onFileClick: (path: string) => void;
   defaultOpen?: boolean;
 }
 
-function TreeNode({
-  node,
-  path,
-  onFileClick,
-  defaultOpen = false,
-}: TreeNodeProps) {
+function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
+  const [children, setChildren] = React.useState<string[] | null>(null);
   const { selectedFileAbsolutePath } = React.useContext(CodeEditorContext);
+  const refreshID = useSelector((state: RootState) => state.code.refreshID);
 
-  const handleClick = React.useCallback(() => {
-    if (node.children) {
+  const dispatch = useDispatch();
+
+  const fileParts = path.split("/");
+  const filename =
+    fileParts[fileParts.length - 1] || fileParts[fileParts.length - 2];
+
+  const isDirectory = path.endsWith("/");
+
+  const refreshChildren = async () => {
+    if (!isDirectory || !isOpen) {
+      setChildren(null);
+      return;
+    }
+    const files = await listFiles(path);
+    setChildren(files);
+  };
+
+  React.useEffect(() => {
+    refreshChildren();
+  }, [refreshID, isOpen]);
+
+  const handleClick = () => {
+    if (isDirectory) {
       setIsOpen((prev) => !prev);
     } else {
-      onFileClick(path);
+      dispatch(setActiveFilepath(path));
     }
-  }, [node, path, onFileClick]);
+  };
 
   return (
     <div
@@ -57,21 +76,16 @@ function TreeNode({
       )}
     >
       <Title
-        name={node.name}
-        type={node.children ? "folder" : "file"}
+        name={filename}
+        type={isDirectory ? "folder" : "file"}
         isOpen={isOpen}
         onClick={handleClick}
       />
 
-      {isOpen && node.children && (
+      {isOpen && children && (
         <div className="ml-5">
-          {node.children.map((child, index) => (
-            <TreeNode
-              key={index}
-              node={child}
-              path={`${path}/${child.name}`}
-              onFileClick={onFileClick}
-            />
+          {children.map((child, index) => (
+            <TreeNode key={index} path={`${child}`} />
           ))}
         </div>
       )}
