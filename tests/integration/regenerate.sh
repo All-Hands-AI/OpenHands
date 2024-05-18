@@ -16,7 +16,8 @@ WORKSPACE_MOUNT_PATH+="/_test_workspace"
 WORKSPACE_BASE+="/_test_workspace"
 WORKSPACE_MOUNT_PATH_IN_SANDBOX="/workspace"
 
-SANDBOX_TYPE="ssh"
+# use environmental variable if exist, otherwise use "ssh"
+SANDBOX_TYPE="${SANDBOX_TYPE:-ssh}"
 MAX_ITERATIONS=10
 
 agents=("MonologueAgent" "CodeActAgent" "PlannerAgent" "SWEAgent")
