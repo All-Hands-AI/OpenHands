@@ -87,7 +87,7 @@ def swe_agent_edit_hack(bash_command: str) -> str:
 
 
 class CodeActAgent(Agent):
-    VERSION = '1.3'
+    VERSION = '1.4'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
@@ -157,7 +157,7 @@ class CodeActAgent(Agent):
             {'role': 'system', 'content': self.system_message},
             {
                 'role': 'user',
-                'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!",
+                'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!\n",
             },
         ]
         self.cost_accumulator = 0
@@ -240,7 +240,7 @@ class CodeActAgent(Agent):
             thought = action_str.replace(finish_command.group(0), '').strip()
             return AgentFinishAction(thought=thought)
         if bash_command := re.search(
-            r'<execute_bash>(.*)</execute_bash>', action_str, re.DOTALL
+            r'<execute_bash>(.*?)</execute_bash>', action_str, re.DOTALL
         ):
             # remove the command from the action string to get thought
             thought = action_str.replace(bash_command.group(0), '').strip()
@@ -252,7 +252,7 @@ class CodeActAgent(Agent):
                 return AgentFinishAction()
             return CmdRunAction(command=command_group, thought=thought)
         elif python_code := re.search(
-            r'<execute_ipython>(.*)</execute_ipython>', action_str, re.DOTALL
+            r'<execute_ipython>(.*?)</execute_ipython>', action_str, re.DOTALL
         ):
             # a code block was found
             code_group = python_code.group(1).strip()
