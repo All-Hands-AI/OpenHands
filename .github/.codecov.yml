@@ -12,3 +12,5 @@ coverage:
         threshold: 5% # allow project coverage to drop at most 5%
 
 comment: false
+github_checks:
+    annotations: false
