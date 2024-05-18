@@ -50,7 +50,7 @@ api_key = "sk-XXX"
 
 ### How to use OpenDevin programmatically
 
-In this section, for the purpose of building an evaluation task, we don't use the standard OpenDevin interface, but rather run OpenDevin programmatically.
+In this section, for the purpose of building an evaluation task, we don't use the standard OpenDevin web-based GUI, but rather run OpenDevin backend from CLI.
 
 For example, you can run the following, which performs the specified task `-t`, with a particular model `-m` and agent `-c`, for a maximum number of iterations `-i`:
 
