@@ -47,7 +47,7 @@ run_test() {
 
   # Check if TEST_IN_CI is defined
   if [ -n "$TEST_IN_CI" ]; then
-    pytest_cmd+=" --cov=agenthub --cov=opendevin --cov-report=xml --cov-report=xml:coverage_$agent_$test_name.xml"
+    pytest_cmd+=" --cov=agenthub --cov=opendevin --cov-report=xml:coverage_$agent_$test_name.xml"
   fi
 
   SANDBOX_TYPE=$SANDBOX_TYPE \
