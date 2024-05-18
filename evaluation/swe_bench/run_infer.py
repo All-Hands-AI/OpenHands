@@ -266,7 +266,7 @@ def process_instance(
     # TODO: if you need to do something in the sandbox to get the correctness metric, modify this function
     test_result = get_test_result(instance, sandbox, workspace_dir_name)
 
-    # If you are working on simplier benchmark that only evaluates the final model output (e.g., in a MessageAction)
+    # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
 
     if state is None:
