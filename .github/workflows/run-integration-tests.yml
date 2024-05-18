@@ -11,8 +11,8 @@ on:
   pull_request:
 
 jobs:
-  integration-tests:
-    name: Integration Tests
+  integration-tests-on-linux:
+    name: Integration Tests on Linux
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -68,9 +68,43 @@ jobs:
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  integration-tests-on-mac:
+    name: Integration Tests on MacOS
+    # run a subset of tests on MacOS for a different python version
+    # uses regenerate.sh that runs all tests & agents, but only on ssh sandbox
+    # this also partially checks the correctness of regenerate.sh, which is used
+    # a lot of generate mock prompts and/or responses
+    runs-on: macos-13
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install poetry via pipx
+        run: pipx install poetry
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'poetry'
+
+      - name: Install Python dependencies using Poetry
+        run: poetry install
+
+      - name: Build Environment
+        run: make build
+
+      - name: Run Integration Tests
+        run: |
+          TEST_ONLY=true ./tests/integration/regenerate.sh
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   test_matrix_success:
     name: All Integration Tests Passed
     runs-on: ubuntu-latest
-    needs: [integration-tests]
+    needs: [integration-tests-on-linux, integration-tests-on-mac]
     steps:
     - run: echo Done!
