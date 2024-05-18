@@ -24,6 +24,8 @@ from opendevin.core.logger import opendevin_logger as logger
 
 __all__ = ['LLM']
 
+message_separator = '\n\n----------\n\n'
+
 
 class LLM:
     """
@@ -182,7 +184,7 @@ class LLM:
                 messages = args[1]
             debug_message = ''
             for message in messages:
-                debug_message += '\n\n----------\n\n' + message['content']
+                debug_message += message_separator + message['content']
             llm_prompt_logger.debug(debug_message)
             resp = completion_unwrapped(*args, **kwargs)
             message_back = resp['choices'][0]['message']['content']
