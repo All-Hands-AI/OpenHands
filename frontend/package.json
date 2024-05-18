@@ -37,7 +37,7 @@
     "web-vitals": "^3.5.2"
   },
   "scripts": {
-    "start": "vite",
+    "start": "npm run make-i18n && vite",
     "build": "tsc && vite build",
     "test": "vitest run",
     "preview": "vite preview",
