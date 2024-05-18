@@ -2,8 +2,9 @@ import React from "react";
 import { Button } from "@nextui-org/react";
 import { useOAuth2 } from "@tasoskakour/react-use-oauth2";
 import { GrGithub, GrGoogle } from "react-icons/gr";
+import { FaUserCircle } from "react-icons/fa";
 import BaseModal from "#/components/modals/base-modal/BaseModal";
-import { fetchTokenByCode } from "#/services/auth";
+import { fetchTokenByCode, fetchToken } from "#/services/auth";
 import toast from "#/utils/toast";
 
 interface SigninProps {
@@ -15,6 +16,7 @@ function SigninModal({ isOpen, onOpenChange }: SigninProps) {
   const onSuccess = (token: string) => {
     localStorage.setItem("token", token);
     toast.info("Sign in success");
+    onOpenChange(false);
   };
   const onError = (err: string) => {
     toast.error(`Sign in failed: ${err}`);
@@ -48,8 +50,20 @@ function SigninModal({ isOpen, onOpenChange }: SigninProps) {
     onError,
   });
 
+  const getToken = async () => {
+    try {
+      const data = await fetchToken();
+      onSuccess(data.token);
+    } catch (error) {
+      onError(String(error));
+    }
+  };
+
   return (
     <BaseModal isOpen={isOpen} title="Sign in" onOpenChange={onOpenChange}>
+      <Button onClick={getToken} startContent={<FaUserCircle size={20} />}>
+        Refresh Guest Info
+      </Button>
       <Button
         disabled={githubLoading || googleLoading}
         onClick={getGithubAuth}

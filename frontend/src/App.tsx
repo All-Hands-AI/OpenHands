@@ -148,10 +148,7 @@ function App(): JSX.Element {
       .catch();
   };
 
-  useEffect(() => {
-    if (initOnce) return;
-    initOnce = true;
-
+  const loadUserInfo = () => {
     const data = parseJwt(localStorage.getItem("token") || "");
     if (data.username) {
       setUsername(data.username);
@@ -160,6 +157,13 @@ function App(): JSX.Element {
     if (data.provider) {
       setIsGuest(false);
     }
+  };
+
+  useEffect(() => {
+    if (initOnce) return;
+    initOnce = true;
+
+    loadUserInfo();
 
     if (!settingsAreUpToDate()) {
       onSettingsModalOpen();
@@ -222,7 +226,10 @@ function App(): JSX.Element {
               <Toaster />
               <SigninModal
                 isOpen={authModalIsOpen}
-                onOpenChange={onAuthModalOpenChange}
+                onOpenChange={() => {
+                  loadUserInfo();
+                  onAuthModalOpenChange();
+                }}
               />
             </div>
           }
