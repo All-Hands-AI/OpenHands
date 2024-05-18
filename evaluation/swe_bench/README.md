@@ -64,7 +64,7 @@ temperature = 0.0
 ## Test if your environment works
 
 ```bash
-python3 evaluation/swe_bench/swe_env_box.py
+poetry run python evaluation/swe_bench/swe_env_box.py
 ```
 
 If you get to the interactive shell successfully, it means success!
