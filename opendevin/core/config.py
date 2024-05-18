@@ -93,6 +93,11 @@ class AppConfig(metaclass=Singleton):
     sandbox_user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     sandbox_timeout: int = 120
     github_token: str | None = None
+    github_client_id: str | None = None
+    github_client_secret: str | None = None
+    google_client_id: str | None = None
+    google_client_secret: str | None = None
+    google_redirect_uri: str | None = None
     debug: bool = False
 
     defaults_dict: ClassVar[dict] = {}

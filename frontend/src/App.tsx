@@ -1,7 +1,18 @@
-import { useDisclosure } from "@nextui-org/react";
+import {
+  Dropdown,
+  DropdownItem,
+  DropdownMenu,
+  DropdownSection,
+  DropdownTrigger,
+  useDisclosure,
+  User,
+} from "@nextui-org/react";
 import React, { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
-import CogTooth from "#/assets/cog-tooth";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { OAuthPopup } from "@tasoskakour/react-use-oauth2";
+import { IoMdLogIn, IoMdLogOut } from "react-icons/io";
+import { AiOutlineSetting } from "react-icons/ai";
 import ChatInterface from "#/components/chat/ChatInterface";
 import Errors from "#/components/Errors";
 import { Container, Orientation } from "#/components/Resizable";
@@ -17,24 +28,83 @@ import AgentStatusBar from "./components/AgentStatusBar";
 import Terminal from "./components/terminal/Terminal";
 import { initializeAgent } from "./services/agent";
 import { settingsAreUpToDate } from "./services/settings";
+import SigninModal from "#/components/modals/auth/SigninModal";
+import { parseJwt } from "#/utils/auth";
 
 interface Props {
+  isGuest: boolean;
+  username: string;
+  avatarUrl: string;
+  setAuthOpen: (isOpen: boolean) => void;
   setSettingOpen: (isOpen: boolean) => void;
 }
 
-function Controls({ setSettingOpen }: Props): JSX.Element {
+function Controls({
+  isGuest,
+  username,
+  avatarUrl,
+  setAuthOpen,
+  setSettingOpen,
+}: Props): JSX.Element {
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    window.location.reload();
+  };
+
   return (
     <div className="flex w-full p-4 bg-neutral-900 items-center shrink-0 justify-between">
       <div className="flex items-center gap-4">
         <AgentControlBar />
       </div>
       <AgentStatusBar />
-      <div
-        className="cursor-pointer hover:opacity-80 transition-all"
-        onClick={() => setSettingOpen(true)}
-      >
-        <CogTooth />
-      </div>
+      <Dropdown>
+        <DropdownTrigger>
+          <User
+            name={
+              <div className="font-bold text-base max-w-[30px] sm:max-w-[70px] md:max-w-[110px] lg:max-w-[180px] truncate">
+                {username || "Guest"}
+              </div>
+            }
+            avatarProps={{
+              src: avatarUrl,
+            }}
+            className="cursor-pointer hover:opacity-80 transition-all mr-4"
+          />
+        </DropdownTrigger>
+        <DropdownMenu aria-label="Static Actions">
+          <DropdownSection showDivider>
+            <DropdownItem
+              onClick={() => setSettingOpen(true)}
+              className="py-2 px-4 "
+              key="setting"
+              startContent={<AiOutlineSetting size={20} />}
+            >
+              Settings
+            </DropdownItem>
+          </DropdownSection>
+          <DropdownSection className="mb-0">
+            {isGuest ? (
+              <DropdownItem
+                onClick={() => setAuthOpen(true)}
+                className="py-2 px-4"
+                key="login"
+                startContent={<IoMdLogIn size={20} />}
+              >
+                Login
+              </DropdownItem>
+            ) : (
+              <DropdownItem
+                onClick={handleLogout}
+                className="py-2 px-4"
+                key="logout"
+                startContent={<IoMdLogOut size={20} />}
+              >
+                Logout
+              </DropdownItem>
+            )}
+          </DropdownSection>
+        </DropdownMenu>
+      </Dropdown>
     </div>
   );
 }
@@ -44,6 +114,9 @@ let initOnce = false;
 
 function App(): JSX.Element {
   const [isWarned, setIsWarned] = useState(false);
+  const [username, setUsername] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [isGuest, setIsGuest] = useState(true);
 
   const {
     isOpen: settingsModalIsOpen,
@@ -55,6 +128,12 @@ function App(): JSX.Element {
     isOpen: loadPreviousSessionModalIsOpen,
     onOpen: onLoadPreviousSessionModalOpen,
     onOpenChange: onLoadPreviousSessionModalOpenChange,
+  } = useDisclosure();
+
+  const {
+    isOpen: authModalIsOpen,
+    onOpen: onAuthModalOpen,
+    onOpenChange: onAuthModalOpenChange,
   } = useDisclosure();
 
   const getMsgTotal = () => {
@@ -73,6 +152,15 @@ function App(): JSX.Element {
     if (initOnce) return;
     initOnce = true;
 
+    const data = parseJwt(localStorage.getItem("token") || "");
+    if (data.username) {
+      setUsername(data.username);
+      setAvatarUrl(data.avatar_url);
+    }
+    if (data.provider) {
+      setIsGuest(false);
+    }
+
     if (!settingsAreUpToDate()) {
       onSettingsModalOpen();
     } else {
@@ -86,40 +174,61 @@ function App(): JSX.Element {
   }, []);
 
   return (
-    <div className="h-screen w-screen flex flex-col">
-      <div className="flex grow bg-neutral-900 text-white min-h-0">
-        <Container
-          orientation={Orientation.HORIZONTAL}
-          className="grow h-full min-h-0 min-w-0 px-3 pt-3"
-          initialSize={500}
-          firstChild={<ChatInterface />}
-          firstClassName="min-w-[500px] rounded-xl overflow-hidden border border-neutral-600"
-          secondChild={
-            <Container
-              orientation={Orientation.VERTICAL}
-              className="grow h-full min-h-0 min-w-0"
-              initialSize={window.innerHeight - 300}
-              firstChild={<Workspace />}
-              firstClassName="min-h-72 rounded-xl border border-neutral-600 bg-neutral-800 flex flex-col overflow-hidden"
-              secondChild={<Terminal />}
-              secondClassName="min-h-72 rounded-xl border border-neutral-600 bg-neutral-800"
-            />
+    <BrowserRouter>
+      <Routes>
+        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="/auth/callback" element={<OAuthPopup />} />
+        <Route
+          path="/"
+          element={
+            <div className="h-screen w-screen flex flex-col">
+              <div className="flex grow bg-neutral-900 text-white min-h-0">
+                <Container
+                  orientation={Orientation.HORIZONTAL}
+                  className="grow h-full min-h-0 min-w-0 px-3 pt-3"
+                  initialSize={500}
+                  firstChild={<ChatInterface />}
+                  firstClassName="min-w-[500px] rounded-xl overflow-hidden border border-neutral-600"
+                  secondChild={
+                    <Container
+                      orientation={Orientation.VERTICAL}
+                      className="grow h-full min-h-0 min-w-0"
+                      initialSize={window.innerHeight - 300}
+                      firstChild={<Workspace />}
+                      firstClassName="min-h-72 rounded-xl border border-neutral-600 bg-neutral-800 flex flex-col overflow-hidden"
+                      secondChild={<Terminal />}
+                      secondClassName="min-h-72 rounded-xl border border-neutral-600 bg-neutral-800"
+                    />
+                  }
+                  secondClassName="flex flex-col overflow-hidden grow min-w-[500px]"
+                />
+              </div>
+              <Controls
+                isGuest={isGuest}
+                username={username}
+                avatarUrl={avatarUrl}
+                setAuthOpen={onAuthModalOpen}
+                setSettingOpen={onSettingsModalOpen}
+              />
+              <SettingsModal
+                isOpen={settingsModalIsOpen}
+                onOpenChange={onSettingsModalOpenChange}
+              />
+              <LoadPreviousSessionModal
+                isOpen={loadPreviousSessionModalIsOpen}
+                onOpenChange={onLoadPreviousSessionModalOpenChange}
+              />
+              <Errors />
+              <Toaster />
+              <SigninModal
+                isOpen={authModalIsOpen}
+                onOpenChange={onAuthModalOpenChange}
+              />
+            </div>
           }
-          secondClassName="flex flex-col overflow-hidden grow min-w-[500px]"
         />
-      </div>
-      <Controls setSettingOpen={onSettingsModalOpen} />
-      <SettingsModal
-        isOpen={settingsModalIsOpen}
-        onOpenChange={onSettingsModalOpenChange}
-      />
-      <LoadPreviousSessionModal
-        isOpen={loadPreviousSessionModalIsOpen}
-        onOpenChange={onLoadPreviousSessionModalOpenChange}
-      />
-      <Errors />
-      <Toaster />
-    </div>
+      </Routes>
+    </BrowserRouter>
   );
 }
 

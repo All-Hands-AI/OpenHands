@@ -6,7 +6,16 @@ from pathlib import Path
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
-from fastapi import Depends, FastAPI, Response, UploadFile, WebSocket, status
+from fastapi import (
+    Depends,
+    FastAPI,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+    WebSocket,
+    status,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -19,8 +28,14 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.llm import bedrock
 from opendevin.runtime import files
 from opendevin.server.agent import agent_manager
-from opendevin.server.auth import get_sid_from_token, sign_token
-from opendevin.server.session import message_stack, session_manager
+from opendevin.server.auth import (
+    auth_github,
+    auth_google,
+    get_sid_from_token,
+    parse_token,
+    sign_token,
+)
+from opendevin.server.session import message_stack
 
 app = FastAPI()
 app.add_middleware(
@@ -98,14 +113,14 @@ async def websocket_endpoint(websocket: WebSocket):
         {"action": "finish", "args": {}}
         ```
     """
-    await websocket.accept()
-    sid = get_sid_from_token(websocket.query_params.get('token') or '')
-    if sid == '':
-        logger.error('Failed to decode token')
-        return
-    session_manager.add_session(sid, websocket)
-    agent_manager.register_agent(sid)
-    await session_manager.loop_recv(sid, agent_manager.dispatch)
+    # await websocket.accept()
+    # sid = get_sid_from_token(websocket.query_params.get('token') or '')
+    # if sid == '':
+    #     logger.error('Failed to decode token')
+    #     return
+    # session_manager.add_session(sid, websocket)
+    # agent_manager.register_agent(sid)
+    # await session_manager.loop_recv(sid, agent_manager.dispatch)
 
 
 @app.get('/api/litellm-models')
@@ -167,7 +182,60 @@ async def get_token(
         sid = str(uuid.uuid4())
         logger.info(f'No credentials provided, generating new session ID: {sid}')
 
-    token = sign_token({'sid': sid})
+    token = sign_token(
+        {
+            'uid': str(uuid.uuid4()),
+            'provider': '',
+            'username': 'Guest' + sid[-4:],
+            'email': '',
+            'avatar_url': '',
+        }
+    )
+    return {'token': token, 'status': 'ok'}
+
+
+@app.get('/api/auth/callback')
+async def oauth_callback(
+    provider: str,
+    code: str,
+    request: Request,
+):
+    try:
+        uid = str(uuid.uuid4())
+        auth_header = request.headers.get('Authorization')
+        if auth_header:
+            ss = auth_header.split(' ')
+            if len(ss) == 2 and ss[0] == 'Bearer':
+                token = ss[1]
+                old_payload = parse_token(token)
+                if 'uid' in old_payload:
+                    uid = old_payload['uid']
+
+        if provider == 'github':
+            res = auth_github(code)
+            payload = {
+                'uid': uid,
+                'provider': provider,
+                'username': res['name'],
+                'email': res['email'],
+                'avatar_url': res['avatar_url'],
+            }
+        elif provider == 'google':
+            res = auth_google(code)
+            payload = {
+                'uid': uid,
+                'provider': provider,
+                'username': res['name'],
+                'email': res['email'],
+                'avatar_url': res['picture'],
+            }
+        else:
+            raise HTTPException(status_code=400, detail='Invalid provider')
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # token will never expire for now.
+    token = sign_token(payload)
     return {'token': token, 'status': 'ok'}
 
 

@@ -69,4 +69,17 @@ export default {
       },
     });
   },
+
+  error: (msg: string) => {
+    toast.error(msg, {
+      position: "top-center",
+      className: "bg-red-700",
+
+      style: {
+        background: "#333",
+        color: "#fff",
+        lineBreak: "anywhere",
+      },
+    });
+  },
 };

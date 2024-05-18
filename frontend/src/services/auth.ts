@@ -14,10 +14,31 @@ const fetchToken = async (): Promise<ResFetchToken> => {
   return data;
 };
 
+const fetchTokenByCode = async (
+  provider: "github" | "google",
+  code: string,
+): Promise<ResFetchToken> => {
+  const headers = new Headers({
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${localStorage.getItem("token") ?? ""}`,
+  });
+  const response = await fetch(
+    `/api/auth/callback?provider=${provider}&code=${code}`,
+    {
+      headers,
+    },
+  );
+  if (response.status !== 200) {
+    throw new Error("Get token failed.");
+  }
+  const data: ResFetchToken = await response.json();
+  return data;
+};
+
 export const validateToken = (token: string): boolean => {
   try {
     const claims = jose.decodeJwt(token);
-    return !(claims.sid === undefined || claims.sid === "");
+    return !(claims.uid === undefined || claims.uid === "");
   } catch (error) {
     return false;
   }
@@ -41,4 +62,4 @@ const getToken = async (): Promise<string> => {
   throw new Error("Token validation failed.");
 };
 
-export { getToken, fetchToken };
+export { getToken, fetchToken, fetchTokenByCode };

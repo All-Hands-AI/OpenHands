@@ -43,7 +43,7 @@ describe("Auth Service", () => {
 
   describe("validateToken", () => {
     it("returns true for a valid token", () => {
-      (jose.decodeJwt as Mock).mockReturnValue({ sid: "123" });
+      (jose.decodeJwt as Mock).mockReturnValue({ uid: "123" });
       expect(validateToken("validToken")).toBe(true);
     });
 
@@ -62,7 +62,7 @@ describe("Auth Service", () => {
 
   describe("getToken", () => {
     it("returns existing valid token from localStorage", async () => {
-      (jose.decodeJwt as Mock).mockReturnValue({ sid: "123" });
+      (jose.decodeJwt as Mock).mockReturnValue({ uid: "123" });
       (Storage.prototype.getItem as Mock).mockReturnValue("existingToken");
 
       const token = await getToken();
@@ -72,7 +72,7 @@ describe("Auth Service", () => {
     it("fetches, validates, and stores a new token when existing token is invalid", async () => {
       (jose.decodeJwt as Mock)
         .mockReturnValueOnce({})
-        .mockReturnValueOnce({ sid: "123" });
+        .mockReturnValueOnce({ uid: "123" });
 
       const token = await getToken();
       expect(token).toBe("newToken");

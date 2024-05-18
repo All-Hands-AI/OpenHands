@@ -35,6 +35,22 @@ def get_sid_from_token(token: str) -> str:
     return ''
 
 
+def parse_token(token: str) -> dict[str, str]:
+    """
+    Parses a JWT token.
+
+    Parameters:
+        token (str): The JWT token to be parsed.
+
+    Returns:
+        dict[str, str]: The payload of the token if valid, otherwise an empty dictionary.
+    """
+    try:
+        return jwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+    except Exception:
+        return {}
+
+
 def sign_token(payload: dict[str, object]) -> str:
     """Signs a JWT token."""
     # payload = {
