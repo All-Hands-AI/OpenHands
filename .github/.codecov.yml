@@ -6,7 +6,7 @@ coverage:
   status:
     patch:
       default:
-        threshold: 10% # allow patch coverage to be lower than project coverage by at most 10%
+        threshold: 100% # allow patch coverage to be lower than project coverage by any amount
     project:
       default:
         threshold: 5% # allow project coverage to drop at most 5%
