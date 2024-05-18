@@ -18,7 +18,7 @@ This is your internal monologue, in JSON format:
 
 %(monologue)s
 
-Your most recent thoughts will be at the bottom of that monologue. Continue your train of thought.
+Your most recent thought is at the bottom of that monologue. Continue your train of thought.
 What is your next single thought or action? Your response must be in JSON format.
 It must be a single object, and it must contain two fields:
 * `action`, which is one of the actions below
