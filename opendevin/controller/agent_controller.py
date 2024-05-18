@@ -237,43 +237,43 @@ class AgentController:
         # check if delegate stuck
         if self.delegate and self.delegate._is_stuck():
             return True
-        if len(self.state.history) < 3:
+
+        # filter out MessageAction with source='user' from history
+        filtered_history = [
+            _tuple
+            for _tuple in self.state.history
+            if not (
+                isinstance(_tuple[0], MessageAction)
+                and _tuple[0].source == EventSource.USER
+            )
+        ]
+
+        if len(filtered_history) < 4:
             return False
 
-        # if the last three (Action, Observation) tuples are too repetitive
-        # the agent got stuck in a loop
-        if all(
-            [
-                self.state.history[-i][0] == self.state.history[-3][0]
-                for i in range(1, 3)
-            ]
-        ):
-            # it repeats same action, give it a chance, but not if:
+        # Check if the last four (Action, Observation) tuples are too repetitive
+        last_four_tuples = filtered_history[-4:]
+        if all(last_four_tuples[-1] == _tuple for _tuple in last_four_tuples):
+            logger.warning('Action, Observation loop detected')
+            return True
+
+        if all(last_four_tuples[-1][0] == _tuple[0] for _tuple in last_four_tuples):
+            # It repeats the same action, give it a chance, but not if:
             if all(
-                isinstance(self.state.history[-i][1], NullObservation)
-                for i in range(1, 4)
+                isinstance(_tuple[1], ErrorObservation) for _tuple in last_four_tuples
             ):
-                # same (Action, NullObservation): like 'think' the same thought over and over
-                # TODO remove this, this one should be obsolete now or soon
-                logger.warning('Action, NullObservation loop detected')
-                return True
-            elif all(
-                isinstance(self.state.history[-i][1], ErrorObservation)
-                for i in range(1, 4)
-            ):
-                # (NullAction, ErrorObservation): errors coming from an exception
-                # (Action, ErrorObservation): the same action getting an error, even if not necessarily the same error
                 logger.warning('Action, ErrorObservation loop detected')
                 return True
 
-            # TODO in the last six (Action, Observation) tuples,
-            # the agent repeats the same (Action, Observation) every other step
-            if len(self.state.history) >= 6 and all(
-                self.state.history[-i][0] == self.state.history[-i - 2][0]
-                and self.state.history[-i][1] == self.state.history[-i - 2][1]
-                for i in range(1, 3, 5)
+        # check if the agent repeats the same (Action, Observation)
+        # every other step in the last six tuples
+        if len(filtered_history) >= 6:
+            last_six_tuples = filtered_history[-6:]
+            if (
+                last_six_tuples[-1] == last_six_tuples[-3] == last_six_tuples[-5]
+                and last_six_tuples[-2] == last_six_tuples[-4] == last_six_tuples[-6]
             ):
-                logger.warning('Repeating (Action, Observation) pattern detected')
+                logger.warning('Repeating Action, Observation pattern detected')
                 return True
 
         return False
