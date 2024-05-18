@@ -1,5 +1,5 @@
 import { useDisclosure } from "@nextui-org/react";
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import CogTooth from "#/assets/cog-tooth";
 import ChatInterface from "#/components/chat/ChatInterface";
