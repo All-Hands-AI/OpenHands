@@ -153,10 +153,8 @@ class MonologueAgent(Agent):
         for prev_action, obs in state.history:
             if not isinstance(prev_action, NullAction):
                 recent_events.append(event_to_memory(prev_action))
-                print(event_to_memory(prev_action))
             if not isinstance(obs, NullObservation):
                 recent_events.append(self._truncate_output(event_to_memory(obs)))
-                print(self._truncate_output(event_to_memory(obs)))
 
         # add the last messages to long term memory
         if self.memory is not None and state.history and len(state.history) > 0:
