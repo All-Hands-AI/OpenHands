@@ -12,7 +12,6 @@ const toastSpy = vi.spyOn(toast, "stickyError");
 
 vi.mock("../../services/fileService", async () => ({
   listFiles: vi.fn(async (path: string = "/") => {
-    console.log("LIST", path);
     if (path === "/") {
       return Promise.resolve(["folder1/", "file1.ts"]);
     }
@@ -50,7 +49,6 @@ describe("FileExplorer", () => {
     });
     expect(listFiles).toHaveBeenCalledTimes(2); // once for root, once for folder 1
 
-    console.log("ABOUT TO CLICK");
     // The 'await' keyword is required here to avoid a warning during test runs
     await act(() => {
       userEvent.click(screen.getByTestId("refresh"));
