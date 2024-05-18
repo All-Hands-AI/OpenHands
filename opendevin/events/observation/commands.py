@@ -27,6 +27,15 @@ class CmdOutputObservation(Observation):
     def __str__(self) -> str:
         return f'**CmdOutputObservation (exit code={self.exit_code})**\n{self.content}'
 
+    def __eq__(self, other: object) -> bool:
+        """
+        Compare two CmdOutputObservation objects ignoring the command_id/pid.
+        """
+        if isinstance(other, CmdOutputObservation):
+            # for loop detection purpose, we care about running the same command, not the same pid
+            return self.command == other.command and self.exit_code == other.exit_code
+        return False
+
 
 @dataclass
 class IPythonRunCellObservation(Observation):

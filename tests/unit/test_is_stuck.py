@@ -115,8 +115,9 @@ class TestAgentController:
             ),
             (
                 CmdRunAction(command='ls'),
+                # command_id is ignored for the eq check, it could be a pid
                 CmdOutputObservation(
-                    command_id=1, command='ls', content='file1.txt\nfile2.txt'
+                    command_id=2, command='ls', content='file1.txt\nfile2.txt'
                 ),
             ),
             (
@@ -128,7 +129,7 @@ class TestAgentController:
             (
                 CmdRunAction(command='ls'),
                 CmdOutputObservation(
-                    command_id=1, command='ls', content='file1.txt\nfile2.txt'
+                    command_id=3, command='ls', content='file1.txt\nfile2.txt'
                 ),
             ),
             (
@@ -160,7 +161,8 @@ class TestAgentController:
             ),
             (
                 CmdRunAction(command='pwd'),
-                CmdOutputObservation(command_id=1, command='pwd', content='/home/user'),
+                # command_id is ignored for the eq check, it could be a pid
+                CmdOutputObservation(command_id=2, command='pwd', content='/home/user'),
             ),
             (
                 FileReadAction(path='file2.txt'),
@@ -170,7 +172,7 @@ class TestAgentController:
             (message_action, NullObservation(content='')),
             (
                 CmdRunAction(command='pwd'),
-                CmdOutputObservation(command_id=1, command='pwd', content='/home/user'),
+                CmdOutputObservation(command_id=3, command='pwd', content='/home/user'),
             ),
             (
                 FileReadAction(path='file2.txt'),
@@ -195,8 +197,9 @@ class TestAgentController:
             ),
             (
                 CmdRunAction(command='ls'),
+                # command_id is ignored for the eq check, it could be a pid
                 CmdOutputObservation(
-                    command_id=1, command='ls', content='file1.txt\nfile2.txt'
+                    command_id=2, command='ls', content='file1.txt\nfile2.txt'
                 ),
             ),
             # message from the user
@@ -204,13 +207,13 @@ class TestAgentController:
             (
                 CmdRunAction(command='ls'),
                 CmdOutputObservation(
-                    command_id=1, command='ls', content='file1.txt\nfile2.txt'
+                    command_id=3, command='ls', content='file1.txt\nfile2.txt'
                 ),
             ),
             (
                 CmdRunAction(command='ls'),
                 CmdOutputObservation(
-                    command_id=1, command='ls', content='file1.txt\nfile2.txt'
+                    command_id=4, command='ls', content='file1.txt\nfile2.txt'
                 ),
             ),
         ]
