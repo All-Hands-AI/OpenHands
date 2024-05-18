@@ -34,34 +34,6 @@ MAX_TOKEN_COUNT_PADDING = 512
 MAX_OUTPUT_LENGTH = 5000
 
 
-def truncate_output(
-    observation: dict, max_chars: int = MAX_OUTPUT_LENGTH
-) -> dict[str, str]:
-    """
-    Truncates the output of an observation to a maximum number of characters.
-
-    Parameters:
-    - output (str): The observation whose output to truncate
-    - max_chars (int): The maximum number of characters to allow
-
-    Returns:
-    - str: The truncated output
-    """
-    if (
-        'args' in observation
-        and 'output' in observation['args']
-        and len(observation['args']['output']) > max_chars
-    ):
-        output = observation['args']['output']
-        half = max_chars // 2
-        observation['args']['output'] = (
-            output[:half]
-            + '\n[... Output truncated due to length...]\n'
-            + output[-half:]
-        )
-    return observation
-
-
 class MonologueAgent(Agent):
     """
     The Monologue Agent utilizes long and short term memory to complete tasks.
@@ -183,14 +155,14 @@ class MonologueAgent(Agent):
                 recent_events.append(event_to_memory(prev_action))
                 print(event_to_memory(prev_action))
             if not isinstance(obs, NullObservation):
-                recent_events.append(truncate_output(event_to_memory(obs)))
-                print(truncate_output(event_to_memory(obs)))
+                recent_events.append(self._truncate_output(event_to_memory(obs)))
+                print(self._truncate_output(event_to_memory(obs)))
 
         # add the last messages to long term memory
         if self.memory is not None and state.history and len(state.history) > 0:
             self.memory.add_event(event_to_memory(state.history[-1][0]))
             self.memory.add_event(
-                truncate_output(event_to_memory(state.history[-1][1]))
+                self._truncate_output(event_to_memory(state.history[-1][1]))
             )
 
         # the action prompt with initial thoughts and recent events
@@ -217,6 +189,33 @@ class MonologueAgent(Agent):
         action = prompts.parse_action_response(action_resp)
         self.latest_action = action
         return action
+
+    def _truncate_output(
+        self, observation: dict, max_chars: int = MAX_OUTPUT_LENGTH
+    ) -> dict[str, str]:
+        """
+        Truncates the output of an observation to a maximum number of characters.
+
+        Parameters:
+        - output (str): The observation whose output to truncate
+        - max_chars (int): The maximum number of characters to allow
+
+        Returns:
+        - str: The truncated output
+        """
+        if (
+            'args' in observation
+            and 'output' in observation['args']
+            and len(observation['args']['output']) > max_chars
+        ):
+            output = observation['args']['output']
+            half = max_chars // 2
+            observation['args']['output'] = (
+                output[:half]
+                + '\n[... Output truncated due to length...]\n'
+                + output[-half:]
+            )
+        return observation
 
     def search_memory(self, query: str) -> list[str]:
         """
