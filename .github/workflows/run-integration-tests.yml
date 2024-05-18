@@ -43,6 +43,11 @@ jobs:
         run: |
           TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
 
+      - name: Merge coverage reports
+        run: |
+          coverage combine
+          coverage xml
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
@@ -88,6 +93,11 @@ jobs:
           SANDBOX_TYPE: ${{ matrix.sandbox }}
         run: |
           TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
+
+      - name: Merge coverage reports
+        run: |
+          coverage combine
+          coverage xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
