@@ -1250,13 +1250,13 @@ websockets = ["websocket-client (>=1.3.0)"]
 
 [[package]]
 name = "e2b"
-version = "0.14.14"
+version = "0.17.0"
 description = "E2B SDK that give agents cloud environments"
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "e2b-0.14.14-py3-none-any.whl", hash = "sha256:b4918a5f926f96033a5c340af3f657a8c9d04fe0487549e9e27dffbbcc963dbb"},
-    {file = "e2b-0.14.14.tar.gz", hash = "sha256:f940ce0cc405e85984ad8079a1b9916eedb8d7416766835d16e02184dc4ba857"},
+    {file = "e2b-0.17.0-py3-none-any.whl", hash = "sha256:4ac1905ba9801d566d8c4fca2558c74e622c06757b43550cf31f66055acc43c5"},
+    {file = "e2b-0.17.0.tar.gz", hash = "sha256:64b71ff10fe5183ec3c9c7a643de9a89f3e4f00180c7732c6a2beb5c090d04b8"},
 ]
 
 [package.dependencies]
@@ -7311,4 +7311,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "2132505be7b8fb3eb0b7b8f79e54f208d7bf6a271b4a76b025636afb0dee5e24"
+content-hash = "bcfa49191da4d4c12763384203bf1921ffff301f2bee6b4a6cc417fbffcaf781"
