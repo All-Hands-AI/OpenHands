@@ -285,7 +285,7 @@
     "zh-CN": "开始新会话",
     "zh-TW": "開始新會話"
   },
-  "CHAT_INTERFACE$INITIALZING_AGENT_LOADING_MESSAGE": {
+  "CHAT_INTERFACE$INITIALIZING_AGENT_LOADING_MESSAGE": {
     "en": "Initializing agent (may take up to 10 seconds)...",
     "zh-CN": "初始化智能体（可能需要 10 秒以上时间）",
     "de": "Agent wird initialisiert (kann bis zu 10 Sekunden dauern)...",

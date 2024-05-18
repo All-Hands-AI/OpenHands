@@ -66,7 +66,7 @@ function AgentStatusBar() {
         <>
           <div className="w-3 h-3 mr-3 bg-orange-800 rounded-full animate-pulse" />
           <span className="text-sm text-stone-400">
-            {t(I18nKey.CHAT_INTERFACE$INITIALZING_AGENT_LOADING_MESSAGE)}
+            {t(I18nKey.CHAT_INTERFACE$INITIALIZING_AGENT_LOADING_MESSAGE)}
           </span>
         </>
       )}
