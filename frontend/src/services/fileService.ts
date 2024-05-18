@@ -1,8 +1,3 @@
-export type WorkspaceFile = {
-  name: string;
-  children?: WorkspaceFile[];
-};
-
 export async function selectFile(file: string): Promise<string> {
   const res = await fetch(`/api/select-file?file=${file}`);
   const data = await res.json();
@@ -30,8 +25,8 @@ export async function uploadFiles(files: FileList) {
   }
 }
 
-export async function getWorkspace(): Promise<WorkspaceFile> {
-  const res = await fetch("/api/refresh-files");
+export async function listFiles(path: string = "/"): Promise<string[]> {
+  const res = await fetch(`/api/list-files?path=${path}`);
   const data = await res.json();
-  return data as WorkspaceFile;
+  return data as string[];
 }

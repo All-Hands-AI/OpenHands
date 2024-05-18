@@ -23,7 +23,6 @@
     "jose": "^5.2.3",
     "monaco-editor": "^0.47.0",
     "react": "^18.2.0",
-    "react-accessible-treeview": "^2.8.3",
     "react-dom": "^18.2.0",
     "react-highlight": "^0.15.0",
     "react-hot-toast": "^2.4.1",
@@ -37,7 +36,7 @@
     "web-vitals": "^3.5.2"
   },
   "scripts": {
-    "start": "vite",
+    "start": "npm run make-i18n && vite",
     "build": "tsc && vite build",
     "test": "vitest run",
     "preview": "vite preview",

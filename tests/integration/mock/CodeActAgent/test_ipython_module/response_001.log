@@ -1,0 +1,10 @@
+Understood! Let's proceed by installing the `pymsgbox` package version 1.0.9:
+
+
+```
+pythonCopy code`<execute_ipython>
+# Install pymsgbox version 1.0.9
+%pip install pymsgbox==1.0.9
+</execute_ipython>`
+```
+Once the installation is complete, we'll import `pymsgbox` and print its version to a file named `test.txt` in the `/workspace` directory. Let's continue!
