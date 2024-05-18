@@ -47,13 +47,11 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const isDirectory = path.endsWith("/");
 
   const refreshChildren = async () => {
-    console.log('refreshing children', path, isDirectory, isOpen);
     if (!isDirectory || !isOpen) {
       setChildren(null);
       return;
     }
     const files = await listFiles(path);
-    console.log("got children", files);
     setChildren(files);
   };
 

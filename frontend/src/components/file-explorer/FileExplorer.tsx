@@ -95,7 +95,6 @@ function FileExplorer() {
   };
 
   const refreshWorkspace = async () => {
-    console.log('refreshing workspace')
     dispatch(setRefreshID(Math.random()));
     setFiles(await listFiles('/'));
   };
