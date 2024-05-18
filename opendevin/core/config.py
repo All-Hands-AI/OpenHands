@@ -96,6 +96,9 @@ class AppConfig(metaclass=Singleton):
     github_token: str | None = None
     jwt_secret: str = uuid.uuid4().hex
     debug: bool = False
+    enable_auto_lint: bool = (
+        False  # once enabled, OpenDevin would lint files after editing
+    )
 
     defaults_dict: ClassVar[dict] = {}
 

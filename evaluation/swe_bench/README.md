@@ -43,8 +43,10 @@ sandbox_type = "ssh"
 use_host_network = true
 ssh_hostname = "localhost"
 sandbox_timeout = 120
+
 # SWEBench eval specific
 run_as_devin = false
+enable_auto_lint = true
 
 # TODO: Change these to the model you want to evaluate
 [eval_gpt4_1106_preview]

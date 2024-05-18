@@ -1,6 +1,7 @@
 import React from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { twMerge } from "tailwind-merge";
+import { RootState } from "#/store";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
 import { listFiles } from "#/services/fileService";
@@ -36,6 +37,8 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
   const [children, setChildren] = React.useState<string[] | null>(null);
   const { selectedFileAbsolutePath } = React.useContext(CodeEditorContext);
+  const refreshID = useSelector((state: RootState) => state.code.refreshID);
+
   const dispatch = useDispatch();
 
   const fileParts = path.split("/");
@@ -45,17 +48,17 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const isDirectory = path.endsWith("/");
 
   const refreshChildren = async () => {
+    if (!isDirectory || !isOpen) {
+      setChildren(null);
+      return;
+    }
     const files = await listFiles(path);
     setChildren(files);
   };
 
   React.useEffect(() => {
-    if (isOpen && isDirectory) {
-      refreshChildren();
-    } else {
-      setChildren(null);
-    }
-  }, [isOpen]);
+    refreshChildren();
+  }, [refreshID, isOpen]);
 
   const handleClick = () => {
     if (isDirectory) {

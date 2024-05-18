@@ -57,7 +57,31 @@ class ServerRuntime(Runtime):
         obs = self._run_command(
             ('cat /tmp/opendevin_jupyter_temp.py | execute_cli'), background=False
         )
-        return IPythonRunCellObservation(content=obs.content, code=action.code)
+        output = obs.content
+        if 'pip install' in action.code and 'Successfully installed' in output:
+            print(output)
+            restart_kernel = 'import IPython\nIPython.Application.instance().kernel.do_shutdown(True)'
+            if (
+                'Note: you may need to restart the kernel to use updated packages.'
+                in output
+            ):
+                obs = self._run_command(
+                    (
+                        'cat > /tmp/opendevin_jupyter_temp.py <<EOL\n'
+                        f'{restart_kernel}\n'
+                        'EOL'
+                    ),
+                    background=False,
+                )
+                obs = self._run_command(
+                    ('cat /tmp/opendevin_jupyter_temp.py | execute_cli'),
+                    background=False,
+                )
+                output = 'Package installed successfully'
+                if "{'status': 'ok', 'restart': True}" != obs.content.strip():
+                    print(obs.content)
+                    output += '\n But failed to restart the kernel'
+        return IPythonRunCellObservation(content=output, code=action.code)
 
     async def read(self, action: FileReadAction) -> Observation:
         # TODO: use self.file_store
@@ -89,6 +113,9 @@ class ServerRuntime(Runtime):
     def _run_immediately(self, command: str) -> Observation:
         try:
             exit_code, output = self.sandbox.execute(command)
+            if 'pip install' in command and 'Successfully installed' in output:
+                print(output)
+                output = 'Package installed successfully'
             return CmdOutputObservation(
                 command_id=-1, content=str(output), command=command, exit_code=exit_code
             )

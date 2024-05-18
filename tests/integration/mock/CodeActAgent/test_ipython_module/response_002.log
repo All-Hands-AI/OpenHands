@@ -1,0 +1,16 @@
+Now that `pymsgbox` is installed, let's import it and print its version to a file named `test.txt`:
+
+
+```
+pythonCopy code`<execute_ipython>
+import pymsgbox
+
+# Get the version of pymsgbox
+pymsgbox_version = pymsgbox.__version__
+
+# Write the version to a file
+with open("/workspace/test.txt", "w") as f:
+    f.write(pymsgbox_version)
+</execute_ipython>`
+```
+This will import `pymsgbox`, retrieve its version, and then write the version to the `test.txt` file in the `/workspace` directory.

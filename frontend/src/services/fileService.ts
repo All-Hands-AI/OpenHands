@@ -1,8 +1,10 @@
-import { request } from "./api";
-
 export async function selectFile(file: string): Promise<string> {
-  const res = await request(`/api/select-file?file=${file}`);
-  return res.code;
+  const res = await fetch(`/api/select-file?file=${file}`);
+  const data = await res.json();
+  if (res.status !== 200) {
+    throw new Error(data.error);
+  }
+  return data.code as string;
 }
 
 export async function uploadFiles(files: FileList) {
@@ -11,7 +13,7 @@ export async function uploadFiles(files: FileList) {
     formData.append("files", files[i]);
   }
 
-  const res = await request("/api/upload-files", {
+  const res = await fetch("/api/upload-files", {
     method: "POST",
     body: formData,
   });
@@ -23,7 +25,8 @@ export async function uploadFiles(files: FileList) {
   }
 }
 
-export async function listFiles(basePath: string = "/"): Promise<string[]> {
-  const res = await request(`/api/list-files?path=${basePath}`);
-  return res as string[];
+export async function listFiles(path: string = "/"): Promise<string[]> {
+  const res = await fetch(`/api/list-files?path=${path}`);
+  const data = await res.json();
+  return data as string[];
 }

@@ -5,8 +5,10 @@ import {
   IoIosRefresh,
   IoIosCloudUpload,
 } from "react-icons/io";
+import { useDispatch } from "react-redux";
 import { IoFileTray } from "react-icons/io5";
 import { twMerge } from "tailwind-merge";
+import { setRefreshID } from "#/state/codeSlice";
 import { listFiles, uploadFiles } from "#/services/fileService";
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
@@ -86,18 +88,16 @@ function FileExplorer() {
   const [isDragging, setIsDragging] = React.useState(false);
   const [files, setFiles] = React.useState<string[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const dispatch = useDispatch();
 
   const selectFileInput = () => {
     fileInputRef.current?.click(); // Trigger the file browser
   };
 
   const refreshWorkspace = async () => {
-    setFiles(await listFiles());
+    dispatch(setRefreshID(Math.random()));
+    setFiles(await listFiles("/"));
   };
-
-  React.useEffect(() => {
-    refreshWorkspace();
-  }, []);
 
   const uploadFileData = async (toAdd: FileList) => {
     try {
