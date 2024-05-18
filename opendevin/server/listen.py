@@ -228,11 +228,11 @@ async def del_messages(
 @app.get('/api/list-files')
 def list_files(request: Request, path: str = '/'):
     """
-    Refresh files.
+    List files.
 
-    To refresh files:
+    To list files:
     ```sh
-    curl http://localhost:3000/api/refresh-files
+    curl http://localhost:3000/api/list-files
     ```
     """
     if path.startswith('/'):

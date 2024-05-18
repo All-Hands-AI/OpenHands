@@ -62,14 +62,9 @@ async def get_message_total():
     return {'msg_total': 0}
 
 
-@app.get('/api/refresh-files')
+@app.get('/api/list-files')
 def refresh_files():
-    return {
-        'name': 'workspace',
-        'children': [
-            {'name': 'hello_world.py', 'children': []},
-        ],
-    }
+    return ['hello_world.py']
 
 
 if __name__ == '__main__':
