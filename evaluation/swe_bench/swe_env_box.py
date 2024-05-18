@@ -74,7 +74,7 @@ class SWEBenchSSHBox(DockerSSHBox):
         config.workspace_base = workspace_mount_path
         config.workspace_mount_path = workspace_mount_path
 
-        # linting after editing boosts benchmark scores
+        # linting python after editing helps LLM fix indentations
         config.enable_auto_lint = True
 
         sandbox = cls(
