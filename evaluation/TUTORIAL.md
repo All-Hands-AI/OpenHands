@@ -32,11 +32,13 @@ workspace_mount_path = "/path/to/your/workspace"
 # ==========================
 
 sandbox_container_image = "ghcr.io/opendevin/sandbox:latest"
-run_as_devin = true
 sandbox_type = "ssh"
-use_host_network = true
-ssh_hostname = "localhost"
 sandbox_timeout = 120
+ssh_hostname = "localhost"
+
+# SWEBench eval specific - but you can tweak it to your needs
+use_host_network = false
+run_as_devin = false
 
 [llm]
 # IMPORTANT: add your API key here, and set the model to the one you want to evaluate
