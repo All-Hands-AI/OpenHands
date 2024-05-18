@@ -253,7 +253,13 @@ class DockerSSHBox(Sandbox):
                     raise e
                 time.sleep(5)
         self.setup_user()
-        self.start_ssh_session()
+
+        try:
+            self.start_ssh_session()
+        except pxssh.ExceptionPxssh as e:
+            self.close()
+            raise e
+
         # make sure /tmp always exists
         self.execute('mkdir -p /tmp')
         # set git config
