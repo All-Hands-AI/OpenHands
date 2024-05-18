@@ -7,6 +7,8 @@ from functools import partial
 import pytest
 from litellm import completion
 
+from opendevin.llm.llm import message_separator
+
 script_dir = os.path.dirname(os.path.realpath(__file__))
 workspace_path = os.getenv('WORKSPACE_BASE')
 
@@ -77,6 +79,18 @@ def get_mock_response(test_name: str, messages: str):
                         # Read the response file and return its content
                         with open(resp_file_path, 'r') as resp_file:
                             return resp_file.read()
+                    else:
+                        # print the mismatched lines
+                        print('File path', file_path)
+                        print('---' * 10)
+                        print(messages)
+                        print('---' * 10)
+                        for i, (c1, c2) in enumerate(zip(file_content, prompt)):
+                            if c1 != c2:
+                                print(
+                                    f'Mismatch at index {i}: {c1[max(0,i-100):i+100]} vs {c2[max(0,i-100):i+100]}'
+                                )
+                                break
 
 
 def mock_user_response(*args, test_name, **kwargs):
@@ -102,7 +116,7 @@ def mock_completion(*args, test_name, **kwargs):
     messages = kwargs['messages']
     message_str = ''
     for message in messages:
-        message_str += message['content']
+        message_str += message_separator + message['content']
     if os.environ.get('FORCE_APPLY_PROMPTS') == 'true':
         # this assumes all response_(*).log filenames are in numerical order, starting from one
         cur_id += 1
