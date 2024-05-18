@@ -1,5 +1,4 @@
 import atexit
-import json
 import os
 import re
 import sys
@@ -265,8 +264,6 @@ class DockerSSHBox(Sandbox):
 
     def add_to_env(self, key: str, value: str):
         super().add_to_env(key, value)
-        # Note: json.dumps gives us nice escaping for free
-        self.execute(f'export {key}={json.dumps(value)}')
 
     def setup_user(self):
         # Make users sudoers passwordless
