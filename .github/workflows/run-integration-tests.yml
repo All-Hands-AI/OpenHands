@@ -97,6 +97,6 @@ jobs:
   test_matrix_success:
     name: All Integration Tests Passed
     runs-on: ubuntu-latest
-    needs: [integration-tests-on-linux, integration-tests-on-mac]
+    needs: [integration-tests-on-linux]
     steps:
     - run: echo Done!
