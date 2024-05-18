@@ -91,6 +91,15 @@ jobs:
       - name: Install Python dependencies using Poetry
         run: poetry install
 
+      - name: Install & Start Docker
+        run: |
+          brew install colima docker
+          colima start
+
+          # For testcontainers to find the Colima socket
+          # https://github.com/abiosoft/colima/blob/main/docs/FAQ.md#cannot-connect-to-the-docker-daemon-at-unixvarrundockersock-is-the-docker-daemon-running
+          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
+
       - name: Build Environment
         run: make build
 
