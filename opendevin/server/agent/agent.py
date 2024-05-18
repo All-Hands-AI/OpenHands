@@ -7,6 +7,7 @@ from opendevin.controller.agent import Agent
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import ActionType, AgentState, ConfigType
+from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     ChangeAgentStateAction,
     NullAction,
@@ -17,7 +18,6 @@ from opendevin.events.observation import (
 )
 from opendevin.events.serialization.action import action_from_dict
 from opendevin.events.serialization.event import event_to_dict
-from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.llm.llm import LLM
 from opendevin.runtime import DockerSSHBox
 from opendevin.runtime.e2b.runtime import E2BRuntime

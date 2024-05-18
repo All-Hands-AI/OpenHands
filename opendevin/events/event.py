@@ -1,9 +1,11 @@
 import datetime
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from enum import Enum
 
-if TYPE_CHECKING:
-    from opendevin.events.serialization.event import EventSource
+
+class EventSource(str, Enum):
+    AGENT = 'agent'
+    USER = 'user'
 
 
 @dataclass
@@ -27,7 +29,7 @@ class Event:
         return None
 
     @property
-    def source(self) -> 'EventSource' | None:
+    def source(self) -> EventSource | None:
         if hasattr(self, '_source'):
             return self._source  # type: ignore [attr-defined]
         return None

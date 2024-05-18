@@ -12,6 +12,7 @@ from opendevin.core.exceptions import (
 )
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
+from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
     AddTaskAction,
@@ -31,7 +32,6 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
-from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 
 MAX_ITERATIONS = config.max_iterations
 MAX_CHARS = config.llm.max_chars

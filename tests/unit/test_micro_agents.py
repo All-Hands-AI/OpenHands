@@ -7,9 +7,9 @@ import yaml
 from agenthub.micro.registry import all_microagents
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.events import EventSource
 from opendevin.events.action import MessageAction
 from opendevin.events.observation import NullObservation
-from opendevin.events.serialization import EventSource
 
 
 def test_all_agents_are_loaded():
