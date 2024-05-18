@@ -73,8 +73,8 @@ class AppConfig(metaclass=Singleton):
     runtime: str = 'server'
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
-    workspace_base: str = os.getcwd()
-    workspace_mount_path: str = os.getcwd()
+    workspace_base: str = os.path.join(os.getcwd(), 'workspace')
+    workspace_mount_path: str | None = None
     workspace_mount_path_in_sandbox: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
@@ -94,6 +94,9 @@ class AppConfig(metaclass=Singleton):
     sandbox_timeout: int = 120
     github_token: str | None = None
     debug: bool = False
+    enable_auto_lint: bool = (
+        False  # once enabled, OpenDevin would lint files after editing
+    )
 
     defaults_dict: ClassVar[dict] = {}
 
@@ -263,6 +266,11 @@ def finalize_config(config: AppConfig):
     """
     More tweaks to the config after it's been loaded.
     """
+
+    # Set workspace_mount_path if not set by the user
+    if config.workspace_mount_path is None:
+        config.workspace_mount_path = os.path.abspath(config.workspace_base)
+    config.workspace_base = os.path.abspath(config.workspace_base)
 
     # In local there is no sandbox, the workspace will have the same pwd as the host
     if config.sandbox_type == 'local':

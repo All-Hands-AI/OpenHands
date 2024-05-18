@@ -142,8 +142,10 @@ class AgentController:
             if self._pending_action and self._pending_action.id == event.cause:
                 await self.add_history(self._pending_action, event)
                 self._pending_action = None
+                logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, CmdOutputObservation):
                 await self.add_history(NullAction(), event)
+                logger.info(event, extra={'msg_type': 'OBSERVATION'})
 
     def reset_task(self):
         self.agent.reset()

@@ -3,6 +3,11 @@
 
 This folder contains evaluation harness we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)). We create [a fork of SWE-Bench](https://github.com/OpenDevin/OD-SWE-bench.git) mostly build on top of [the original repo](https://github.com/princeton-nlp/SWE-bench) and [containerized](#opendevin-swe-bench-docker-image) it for easy evaluation.
 
+## Setup Environment
+
+Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to setup local develop environment for OpenDevin.
+
+
 ## OpenDevin SWE-Bench Docker Image
 
 In [OpenDevin-SWE-Bench fork](https://github.com/OpenDevin/OD-SWE-bench.git) (mostly from [original repo](https://github.com/princeton-nlp/SWE-bench) with some fixes), we try to pre-build the **testbed** (i.e., code of the repository we want the agent to edit) AND the **conda environment**, so that in evaluation (inference) time, we can directly leverage existing environments for effecienct evaluation.
@@ -28,17 +33,9 @@ To reproduce how we pack the image, check [this doc](./BUILD_TESTBED_AND_ENV.md)
 
 NOTE: We only support SWE-Bench lite for now. But modifying our existing scripts for full SWE-Bench should be quite straight forward.
 
-## Test if your environment works
+## Configure OpenDevin and your LLM
 
-```bash
-python3 evaluation/swe_bench/swe_env_box.py
-```
-
-If you get to the interactive shell successfully, it means success!
-
-## Configure your LLM
-
-Create a `config.toml` file if not exists at the root of workspace.
+Create a `config.toml` file if it does not exist at the root of the workspace.
 
 Add the following configurations:
 
@@ -48,11 +45,13 @@ max_iterations = 100
 cache_dir = "/tmp/cache"
 sandbox_container_image = "ghcr.io/opendevin/sandbox:latest"
 sandbox_type = "ssh"
-use_host_network = true
 ssh_hostname = "localhost"
 sandbox_timeout = 120
-# eval specific
+
+# SWEBench eval specific
+use_host_network = false
 run_as_devin = false
+enable_auto_lint = true
 
 # TODO: Change these to the model you want to evaluate
 [eval_gpt4_1106_preview]
@@ -66,6 +65,14 @@ base_url = "https://OPENAI_COMPATIBLE_URL/v1"
 api_key = "XXX"
 temperature = 0.0
 ```
+
+## Test if your environment works
+
+```bash
+python3 evaluation/swe_bench/swe_env_box.py
+```
+
+If you get to the interactive shell successfully, it means success!
 
 ## Run Inference on SWE-Bench Instances
 

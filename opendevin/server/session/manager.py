@@ -91,7 +91,10 @@ class SessionManager:
             session_ids_to_remove = []
             for sid, session in list(self._sessions.items()):
                 # if session inactive for a long time, remove it
-                if not session.is_alive and current_time - session.last_active_ts > self.session_timeout:
+                if (
+                    not session.is_alive
+                    and current_time - session.last_active_ts > self.session_timeout
+                ):
                     session_ids_to_remove.append(sid)
 
             for sid in session_ids_to_remove:

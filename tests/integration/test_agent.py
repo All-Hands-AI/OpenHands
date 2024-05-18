@@ -114,3 +114,29 @@ def test_simple_task_rejection():
     task = 'Write a git commit message for the current staging area. Do not ask me for confirmation at any point.'
     final_agent_state = asyncio.run(main(task))
     assert final_agent_state == AgentState.FINISHED
+
+
+@pytest.mark.skipif(
+    os.getenv('AGENT') != 'CodeActAgent',
+    reason='currently only CodeActAgent defaults to have IPython (Jupyter) execution',
+)
+@pytest.mark.skipif(
+    os.getenv('SANDBOX_TYPE') != 'ssh',
+    reason='Currently, only ssh sandbox supports stateful tasks',
+)
+def test_ipython_module():
+    # Execute the task
+    task = "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point."
+    final_state: State = asyncio.run(main(task, exit_on_message=True))
+    assert final_state.agent_state == AgentState.STOPPED
+
+    # Verify the file exists
+    file_path = os.path.join(workspace_base, 'test.txt')
+    assert os.path.exists(file_path), 'The file "test.txt" does not exist'
+
+    # Verify the file contains the expected content
+    with open(file_path, 'r') as f:
+        content = f.read()
+    assert (
+        content.strip() == '1.0.9'
+    ), f'Expected content "1.0.9", but got "{content.strip()}"'

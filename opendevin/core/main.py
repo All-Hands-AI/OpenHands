@@ -120,6 +120,7 @@ async def main(
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
     await controller.close()
+    runtime.close()
     return controller.get_state()
 
 

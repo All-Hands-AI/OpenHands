@@ -73,6 +73,10 @@ class SWEBenchSSHBox(DockerSSHBox):
             )
         config.workspace_base = workspace_mount_path
         config.workspace_mount_path = workspace_mount_path
+
+        # linting python after editing helps LLM fix indentations
+        config.enable_auto_lint = True
+
         sandbox = cls(
             container_image=SWE_BENCH_CONTAINER_IMAGE,
             swe_instance_id=instance['instance_id'],
