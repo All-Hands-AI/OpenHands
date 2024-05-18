@@ -328,11 +328,6 @@ This is your internal monologue, in JSON format:
     }
   },
   {
-    "observation": "null",
-    "content": "",
-    "extras": {}
-  },
-  {
     "source": "agent",
     "action": "write",
     "args": {
@@ -377,14 +372,8 @@ This is your internal monologue, in JSON format:
       "content": "I have successfully created and executed the 'hello.sh' script, which printed 'hello' as expected. I believe I have completed the task as specified.",
       "wait_for_response": false
     }
-  },
-  {
-    "observation": "null",
-    "content": "",
-    "extras": {}
   }
 ]
-
 
 Your most recent thought is at the bottom of that monologue. Continue your train of thought.
 What is your next single thought or action? Your response must be in JSON format.
@@ -432,3 +421,5 @@ Notes:
 * whenever an action fails, always send a `message` about why it may have happened before acting again.
 
 What is your next single thought or action? Again, you must reply with JSON, and only with JSON. You must respond with exactly one 'action' object.
+
+You've been thinking a lot lately. Maybe it's time to take action?

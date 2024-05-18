@@ -170,17 +170,15 @@ def get_request_action_prompt(
     hint = ''
     if len(recent_events) > 0:
         latest_event = recent_events[-1]
-        if 'action' in latest_event:
-            if (
-                latest_event['action'] == 'message'
-                and 'source' in latest_event
-                and latest_event['source'] == 'agent'
-            ):
-                hint = (
-                    "You've been thinking a lot lately. Maybe it's time to take action?"
-                )
-            elif latest_event['action'] == 'error':
-                hint = 'Looks like that last command failed. Maybe you need to fix it, or try something else.'
+        if (
+            'action' in latest_event
+            and latest_event['action'] == 'message'
+            and 'source' in latest_event
+            and latest_event['source'] == 'agent'
+        ):
+            hint = "You've been thinking a lot lately. Maybe it's time to take action?"
+        elif latest_event['action'] == 'error':
+            hint = 'Looks like that last command failed. Maybe you need to fix it, or try something else.'
     else:
         hint = "You're just getting started! What should you do first?"
 
