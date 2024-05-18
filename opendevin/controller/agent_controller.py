@@ -273,7 +273,7 @@ class AgentController:
                 last_six_tuples[-1] == last_six_tuples[-3] == last_six_tuples[-5]
                 and last_six_tuples[-2] == last_six_tuples[-4] == last_six_tuples[-6]
             ):
-                logger.warning('Repeating Action, Observation pattern detected')
+                logger.warning('Action, Observation pattern detected')
                 return True
 
         return False
