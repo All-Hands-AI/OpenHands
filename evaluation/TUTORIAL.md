@@ -114,7 +114,10 @@ def codeact_user_response(state: State) -> str:
     return msg
 ```
 
-It receives a `State`, which is defined in [`opendevin/controller/state/state.py`](../opendevin/controller/state/state.py). We are mainly using `state.history` here, which is the most important field of data. You can imagine it is being a more structured version of OpenAI's chat completion [messages](https://platform.openai.com/docs/guides/text-generation/chat-completions-api).
+
+### Return value
+
+The main function returns a `State`, which is defined in [`opendevin/controller/state/state.py`](../opendevin/controller/state/state.py). We are mainly using `state.history` here, which is the most important field of data. You can imagine it is being a more structured version of OpenAI's chat completion [messages](https://platform.openai.com/docs/guides/text-generation/chat-completions-api).
 
 `history: list[tuple[Action, Observation]] = field(default_factory=list)` is a list of (action, observation) tuple. All the actions are defined at [`opendevin/events/action`](../opendevin/events/action) and observations are defined at [`opendevin/events/observation`](../opendevin/events/action).
 
