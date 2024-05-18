@@ -15,9 +15,7 @@ vi.mock("../../services/fileService", async () => ({
     }
     return Promise.resolve([]);
   }),
-  selectFile: vi.fn(async () => {
-    return Promise.resolve({ code: "Hello world!" })
-  }),
+  selectFile: vi.fn(async () => Promise.resolve({ code: "Hello world!" })),
   uploadFile: vi.fn(),
 }));
 

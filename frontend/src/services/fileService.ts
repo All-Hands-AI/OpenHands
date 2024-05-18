@@ -25,7 +25,7 @@ export async function uploadFiles(files: FileList) {
   }
 }
 
-export async function listFiles(path: string="/"): Promise<string[]> {
+export async function listFiles(path: string = "/"): Promise<string[]> {
   const res = await fetch(`/api/list-files?path=${path}`);
   const data = await res.json();
   return data as string[];

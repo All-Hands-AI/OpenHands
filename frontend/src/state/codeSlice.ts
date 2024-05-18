@@ -3,7 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 export const initialState = {
   code: "",
   path: "",
-  refreshID: 0
+  refreshID: 0,
 };
 
 export const codeSlice = createSlice({
@@ -18,7 +18,7 @@ export const codeSlice = createSlice({
     },
     setRefreshID: (state, action) => {
       state.refreshID = action.payload;
-    }
+    },
   },
 });
 

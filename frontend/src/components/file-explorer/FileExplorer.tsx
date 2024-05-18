@@ -7,8 +7,8 @@ import {
 } from "react-icons/io";
 import { useDispatch } from "react-redux";
 import { IoFileTray } from "react-icons/io5";
-import { setRefreshID } from "#/state/codeSlice";
 import { twMerge } from "tailwind-merge";
+import { setRefreshID } from "#/state/codeSlice";
 import { listFiles, uploadFiles } from "#/services/fileService";
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
@@ -96,7 +96,7 @@ function FileExplorer() {
 
   const refreshWorkspace = async () => {
     dispatch(setRefreshID(Math.random()));
-    setFiles(await listFiles('/'));
+    setFiles(await listFiles("/"));
   };
 
   const uploadFileData = async (toAdd: FileList) => {
