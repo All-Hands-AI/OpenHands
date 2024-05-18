@@ -94,6 +94,9 @@ class AppConfig(metaclass=Singleton):
     sandbox_timeout: int = 120
     github_token: str | None = None
     debug: bool = False
+    enable_auto_lint: bool = (
+        False  # once enabled, OpenDevin would lint files after editing
+    )
 
     defaults_dict: ClassVar[dict] = {}
 

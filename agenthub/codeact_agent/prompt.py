@@ -37,13 +37,7 @@ For example, you can list the files in the current directory by <execute_bash> l
 The assistant can browse the Internet with commands on behalf of the user by wrapping them with <execute_browse> and </execute_browse>.
 For example, you can browse a given URL by <execute_browse> goto("<URL>") </execute_browse>.
 The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
-The assistant can install Python packages through bash by <execute_bash> pip install [package needed] </execute_bash> and should always import packages and define variables before starting to use them.
-The assistant should stop <execute> and provide an answer when they have already obtained the answer from the execution result.
-If the assistant encounters an import error in IPython for a newly installed package, they should try to restart the kernel and import the package again. IPython kernel can be re-started by:
-<execute_ipython>
-import IPython
-IPython.Application.instance().kernel.do_shutdown(True)  # Restart the kernel
-</execute_ipython>"""
+The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them."""
 
 GITHUB_MESSAGE = """To do any activities on GitHub, you should use the token in the $GITHUB_TOKEN environment variable.
 For instance, to push a local branch `my_branch` to the github repo `owner/repo`, you can use the following four commands:
@@ -51,7 +45,7 @@ For instance, to push a local branch `my_branch` to the github repo `owner/repo`
 If you require access to GitHub but $GITHUB_TOKEN is not set, ask the user to set it for you."""
 
 SYSTEM_SUFFIX = """The assistant's response should be concise.
-You should include <execute_ipython> or <execute_bash> or <execute_browse> in every one of your responses, unless you are finished with the task or need more input or action from the user in order to proceed.
+You should include ONLY ONE <execute_ipython> or <execute_bash> or <execute_browse> in every one of your responses, unless you are finished with the task or need more input or action from the user in order to proceed.
 IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> or <execute_browse> instead of providing it.
 """
 
