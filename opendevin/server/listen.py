@@ -1,3 +1,4 @@
+import os
 import shutil
 import uuid
 import warnings
@@ -6,7 +7,7 @@ from pathlib import Path
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
-from fastapi import Depends, FastAPI, Response, UploadFile, WebSocket, status
+from fastapi import Depends, FastAPI, Request, Response, UploadFile, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -17,7 +18,6 @@ from opendevin.controller.agent import Agent
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.llm import bedrock
-from opendevin.runtime import files
 from opendevin.server.agent import agent_manager
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import message_stack, session_manager
@@ -225,18 +225,33 @@ async def del_messages(
     return {'ok': True}
 
 
-@app.get('/api/refresh-files')
-def refresh_files():
+@app.get('/api/list-files')
+def list_files(request: Request, path: str = '/'):
     """
-    Refresh files.
+    List files.
 
-    To refresh files:
+    To list files:
     ```sh
-    curl http://localhost:3000/api/refresh-files
+    curl http://localhost:3000/api/list-files
     ```
     """
-    structure = files.get_folder_structure(Path(str(config.workspace_base)))
-    return structure.to_dict()
+    if path.startswith('/'):
+        path = path[1:]
+    abs_path = os.path.join(config.workspace_base, path)
+    try:
+        files = os.listdir(abs_path)
+    except Exception as e:
+        logger.error(f'Error listing files: {e}', exc_info=False)
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={'error': 'Path not found'},
+        )
+    files = [os.path.join(path, f) for f in files]
+    files = [
+        f + '/' if os.path.isdir(os.path.join(config.workspace_base, f)) else f
+        for f in files
+    ]
+    return files
 
 
 @app.get('/api/select-file')
