@@ -402,7 +402,7 @@ if __name__ == '__main__':
     num_workers = args.eval_num_workers
     logger.info(f'Using {num_workers} workers for evaluation.')
 
-    # This is SWE-Bench specific - CodeActAgent don't requires mounted workspace to work
+    # This is SWE-Bench specific - CodeActAgent doesn't require mounted workspace to work
     skip_workspace_mount = agent_class == 'CodeActAgent'
     logger.info(f'Skipping workspace mount: {skip_workspace_mount}')
 
