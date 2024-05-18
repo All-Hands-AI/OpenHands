@@ -130,7 +130,7 @@ In SWE-Bench, we need to copy the proper repository directory to the workspace a
 
 ## How to put together an evaluation script?
 
-Now we have know how to start running the agent end-to-end, and how `fake_user_response_fn` and `sandbox` works. We will walk through a piece of dummy code (simplified version of SWE-Bench's [`run_infer.py`](https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/swe_bench/run_infer.py)) that outline the general workflow:
+Now we know how to start running the agent end-to-end, and how `fake_user_response_fn` and `sandbox` work. We will walk through a piece of dummy code (simplified version of SWE-Bench's [`run_infer.py`](https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/swe_bench/run_infer.py)) that outline the general workflow:
 
 - Load the dataset and prepare the evaluation configuration.
 - Filter out any instances that have already been processed.
