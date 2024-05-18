@@ -70,7 +70,6 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   integration-tests-on-mac:
     name: Integration Tests on MacOS
-    # run a subset of tests on MacOS for a different python version
     # uses regenerate.sh that runs all tests & agents, but only on ssh sandbox
     # this also partially checks the correctness of regenerate.sh, which is used
     # a lot of generate mock prompts and/or responses
@@ -86,7 +85,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.11'
           cache: 'poetry'
 
       - name: Install Python dependencies using Poetry
