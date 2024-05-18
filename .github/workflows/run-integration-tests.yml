@@ -41,7 +41,7 @@ jobs:
         env:
           SANDBOX_TYPE: ${{ matrix.sandbox }}
         run: |
-          TEST_ONLY=true ./tests/integration/regenerate.sh
+          TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -87,7 +87,7 @@ jobs:
         env:
           SANDBOX_TYPE: ${{ matrix.sandbox }}
         run: |
-          TEST_ONLY=true ./tests/integration/regenerate.sh
+          TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

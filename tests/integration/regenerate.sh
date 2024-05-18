@@ -43,13 +43,20 @@ num_of_agents=${#agents[@]}
 
 # run integration test against a specific agent & test
 run_test() {
+  local pytest_cmd="poetry run pytest -s ./tests/integration/test_agent.py::$test_name"
+
+  # Check if TEST_IN_CI is defined
+  if [ -n "$TEST_IN_CI" ]; then
+    pytest_cmd+=" --cov=agenthub --cov=opendevin --cov-report=xml"
+  fi
+
   SANDBOX_TYPE=$SANDBOX_TYPE \
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
     MAX_ITERATIONS=$MAX_ITERATIONS \
     AGENT=$agent \
-    poetry run pytest -s ./tests/integration/test_agent.py::$test_name
+    $pytest_cmd
     # return exit code of pytest
     return $?
 }
