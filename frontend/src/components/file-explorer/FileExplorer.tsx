@@ -5,16 +5,13 @@ import {
   IoIosRefresh,
   IoIosCloudUpload,
 } from "react-icons/io";
+import { useDispatch } from "react-redux";
 import { IoFileTray } from "react-icons/io5";
 import { twMerge } from "tailwind-merge";
-import {
-  WorkspaceFile,
-  getWorkspace,
-  uploadFiles,
-} from "#/services/fileService";
+import { setRefreshID } from "#/state/codeSlice";
+import { listFiles, uploadFiles } from "#/services/fileService";
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
-import { removeEmptyNodes } from "./utils";
 import toast from "#/utils/toast";
 
 interface ExplorerActionsProps {
@@ -86,31 +83,26 @@ function ExplorerActions({
   );
 }
 
-interface FileExplorerProps {
-  onFileClick: (path: string) => void;
-}
-
-function FileExplorer({ onFileClick }: FileExplorerProps) {
-  const [workspace, setWorkspace] = React.useState<WorkspaceFile>();
+function FileExplorer() {
   const [isHidden, setIsHidden] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
-
+  const [files, setFiles] = React.useState<string[]>([]);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const dispatch = useDispatch();
 
-  const getWorkspaceData = async () => {
-    const wsFile = await getWorkspace();
-    setWorkspace(removeEmptyNodes(wsFile));
+  const selectFileInput = () => {
+    fileInputRef.current?.click(); // Trigger the file browser
   };
 
-  const selectFileInput = async () => {
-    // Trigger the file browser
-    fileInputRef.current?.click();
+  const refreshWorkspace = async () => {
+    dispatch(setRefreshID(Math.random()));
+    setFiles(await listFiles("/"));
   };
 
-  const uploadFileData = async (files: FileList) => {
+  const uploadFileData = async (toAdd: FileList) => {
     try {
-      await uploadFiles(files);
-      await getWorkspaceData(); // Refresh the workspace to show the new file
+      await uploadFiles(toAdd);
+      await refreshWorkspace();
     } catch (error) {
       toast.stickyError("ws", "Error uploading file");
     }
@@ -118,7 +110,7 @@ function FileExplorer({ onFileClick }: FileExplorerProps) {
 
   React.useEffect(() => {
     (async () => {
-      await getWorkspaceData();
+      await refreshWorkspace();
     })();
 
     const enableDragging = () => {
@@ -162,19 +154,13 @@ function FileExplorer({ onFileClick }: FileExplorerProps) {
       >
         <div className="flex p-2 items-center justify-between relative">
           <div style={{ display: isHidden ? "none" : "block" }}>
-            {workspace && (
-              <ExplorerTree
-                root={workspace}
-                onFileClick={onFileClick}
-                defaultOpen
-              />
-            )}
+            <ExplorerTree files={files} defaultOpen />
           </div>
 
           <ExplorerActions
             isHidden={isHidden}
             toggleHidden={() => setIsHidden((prev) => !prev)}
-            onRefresh={getWorkspaceData}
+            onRefresh={refreshWorkspace}
             onUpload={selectFileInput}
           />
         </div>
