@@ -39,6 +39,8 @@ ssh_hostname = "localhost"
 # SWEBench eval specific - but you can tweak it to your needs
 use_host_network = false
 run_as_devin = false
+# linting python after editing helps LLM fix indentations
+enable_auto_lint = true
 
 [llm]
 # IMPORTANT: add your API key here, and set the model to the one you want to evaluate
