@@ -66,4 +66,4 @@ body:
     id: additional-context
     attributes:
       label: Logs, Errors, Screenshots, and Additional Context
-      description: If you set DEBUG = 1 in config or env, LLM logs will be stored in the `logs/llm` folder. Please add any additional context about the problem here.
+      description: LLM logs will be stored in the `logs/llm/default` folder. Please add any additional context about the problem here.

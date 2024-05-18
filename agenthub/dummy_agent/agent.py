@@ -9,6 +9,7 @@ from opendevin.events.action import (
     AgentFinishAction,
     AgentRecallAction,
     AgentRejectAction,
+    BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
     FileReadAction,
@@ -117,6 +118,14 @@ class DummyAgent(Agent):
             },
             {
                 'action': BrowseURLAction(url='https://google.com'),
+                'observations': [
+                    # BrowserOutputObservation('<html></html>', url='https://google.com', screenshot=""),
+                ],
+            },
+            {
+                'action': BrowseInteractiveAction(
+                    browser_actions='goto("https://google.com")'
+                ),
                 'observations': [
                     # BrowserOutputObservation('<html></html>', url='https://google.com', screenshot=""),
                 ],
