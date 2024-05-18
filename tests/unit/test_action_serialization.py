@@ -28,10 +28,6 @@ def serialization_deserialization(original_action_dict, cls):
     assert isinstance(
         action_instance, cls
     ), f'The action instance should be an instance of {cls.__name__}.'
-    print('got action_instance', action_instance)
-    print('id', action_instance.id)
-    print('source', action_instance.source)
-    print('timestamp', action_instance.timestamp)
     serialized_action_dict = event_to_dict(action_instance)
     serialized_action_memory = event_to_memory(action_instance)
     serialized_action_dict.pop('message')
