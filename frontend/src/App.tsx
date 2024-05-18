@@ -1,18 +1,8 @@
-import {
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownSection,
-  DropdownTrigger,
-  useDisclosure,
-  User,
-} from "@nextui-org/react";
+import { useDisclosure } from "@nextui-org/react";
 import React, { useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { OAuthPopup } from "@tasoskakour/react-use-oauth2";
-import { IoMdLogIn, IoMdLogOut } from "react-icons/io";
-import { AiOutlineSetting } from "react-icons/ai";
 import ChatInterface from "#/components/chat/ChatInterface";
 import Errors from "#/components/Errors";
 import { Container, Orientation } from "#/components/Resizable";
@@ -23,91 +13,12 @@ import { fetchMsgTotal } from "#/services/session";
 import Socket from "#/services/socket";
 import { ResFetchMsgTotal } from "#/types/ResponseType";
 import "./App.css";
-import AgentControlBar from "./components/AgentControlBar";
-import AgentStatusBar from "./components/AgentStatusBar";
 import Terminal from "./components/terminal/Terminal";
 import { initializeAgent } from "./services/agent";
 import { settingsAreUpToDate } from "./services/settings";
 import SigninModal from "#/components/modals/auth/SigninModal";
 import { parseJwt } from "#/utils/auth";
-
-interface Props {
-  isGuest: boolean;
-  username: string;
-  avatarUrl: string;
-  setAuthOpen: (isOpen: boolean) => void;
-  setSettingOpen: (isOpen: boolean) => void;
-}
-
-function Controls({
-  isGuest,
-  username,
-  avatarUrl,
-  setAuthOpen,
-  setSettingOpen,
-}: Props): JSX.Element {
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    window.location.reload();
-  };
-
-  return (
-    <div className="flex w-full p-4 bg-neutral-900 items-center shrink-0 justify-between">
-      <div className="flex items-center gap-4">
-        <AgentControlBar />
-      </div>
-      <AgentStatusBar />
-      <Dropdown>
-        <DropdownTrigger>
-          <User
-            name={
-              <div className="font-bold text-base max-w-[30px] sm:max-w-[70px] md:max-w-[110px] lg:max-w-[180px] truncate">
-                {username || "Guest"}
-              </div>
-            }
-            avatarProps={{
-              src: avatarUrl,
-            }}
-            className="cursor-pointer hover:opacity-80 transition-all mr-4"
-          />
-        </DropdownTrigger>
-        <DropdownMenu aria-label="Static Actions">
-          <DropdownSection showDivider>
-            <DropdownItem
-              onClick={() => setSettingOpen(true)}
-              className="py-2 px-4 "
-              key="setting"
-              startContent={<AiOutlineSetting size={20} />}
-            >
-              Settings
-            </DropdownItem>
-          </DropdownSection>
-          <DropdownSection className="mb-0">
-            {isGuest ? (
-              <DropdownItem
-                onClick={() => setAuthOpen(true)}
-                className="py-2 px-4"
-                key="login"
-                startContent={<IoMdLogIn size={20} />}
-              >
-                Login
-              </DropdownItem>
-            ) : (
-              <DropdownItem
-                onClick={handleLogout}
-                className="py-2 px-4"
-                key="logout"
-                startContent={<IoMdLogOut size={20} />}
-              >
-                Logout
-              </DropdownItem>
-            )}
-          </DropdownSection>
-        </DropdownMenu>
-      </Dropdown>
-    </div>
-  );
-}
+import Controls from "#/components/Controls";
 
 // React.StrictMode will cause double rendering, use this to prevent it
 let initOnce = false;
