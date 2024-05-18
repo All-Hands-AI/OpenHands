@@ -45,10 +45,10 @@ max_iterations = 100
 cache_dir = "/tmp/cache"
 sandbox_container_image = "ghcr.io/opendevin/sandbox:latest"
 sandbox_type = "ssh"
-use_host_network = true
 ssh_hostname = "localhost"
 sandbox_timeout = 120
 # SWEBench eval specific
+use_host_network = false
 run_as_devin = false
 
 # TODO: Change these to the model you want to evaluate
