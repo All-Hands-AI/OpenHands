@@ -1,5 +1,5 @@
 import React from "react";
-import { act } from "@testing-library/react";
+import { waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import TreeNode from "./TreeNode";
@@ -77,7 +77,7 @@ describe("TreeNode", () => {
     expect(await findByText("file2.ts")).toBeInTheDocument();
   });
 
-  it.skip("should call a fn and return the full path of a file when clicking on it", () => {
+  it.only("should call a fn and return the full path of a file when clicking on it", () => {
     const { getByText } = renderWithProviders(
       <TreeNode path="/folder1/file2.ts" defaultOpen />,
     );
@@ -86,7 +86,9 @@ describe("TreeNode", () => {
       userEvent.click(getByText("file2.ts"));
     });
 
-    expect(selectFile).toHaveBeenCalledWith("/folder1/file2.ts");
+    waitFor(() => {
+      expect(selectFile).toHaveBeenCalledWith("/folder1/file2.ts");
+    });
   });
 
   it("should render the explorer given the defaultOpen prop", async () => {
