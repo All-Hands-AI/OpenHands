@@ -79,6 +79,18 @@ def get_mock_response(test_name: str, messages: str):
                         # Read the response file and return its content
                         with open(resp_file_path, 'r') as resp_file:
                             return resp_file.read()
+                    else:
+                        # print the mismatched lines
+                        print('File path', file_path)
+                        print('---' * 10)
+                        print(messages)
+                        print('---' * 10)
+                        for i, (c1, c2) in enumerate(zip(file_content, prompt)):
+                            if c1 != c2:
+                                print(
+                                    f'Mismatch at index {i}: {c1[max(0,i-100):i+100]} vs {c2[max(0,i-100):i+100]}'
+                                )
+                                break
 
 
 def mock_user_response(*args, test_name, **kwargs):

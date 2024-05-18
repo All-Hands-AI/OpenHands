@@ -99,6 +99,9 @@ class AppConfig(metaclass=Singleton):
     google_client_secret: str | None = None
     google_redirect_uri: str | None = None
     debug: bool = False
+    enable_auto_lint: bool = (
+        False  # once enabled, OpenDevin would lint files after editing
+    )
 
     defaults_dict: ClassVar[dict] = {}
 
