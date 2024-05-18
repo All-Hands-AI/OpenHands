@@ -166,11 +166,11 @@ for ((i = 0; i < num_of_tests; i++)); do
       else
         echo -e "\n\n\n\n========STEP 2: $test_name failed, regenerating prompts for $agent WITHOUT money cost========\n\n\n\n"
 
+        # Temporarily disable 'exit on error'
+        set +e
         regenerate_without_llm
 
         echo -e "\n\n\n\n========STEP 3: $test_name prompts regenerated for $agent, rerun test again to verify========\n\n\n\n"
-        # Temporarily disable 'exit on error'
-        set +e
         run_test
         TEST_STATUS=$?
         # Re-enable 'exit on error'
