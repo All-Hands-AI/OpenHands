@@ -72,16 +72,31 @@ temperature = 0.0
 poetry run python evaluation/swe_bench/swe_env_box.py
 ```
 
-If you get to the interactive shell successfully, it means success!
+If you get to the interactive shell successfully, it means your environment works!
+If you see an error, please make sure your `config.toml` contains all
+`SWEBench eval specific` settings as shown in the previous section.
 
 ## Run Inference on SWE-Bench Instances
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview
+./evaluation/swe_bench/scripts/run_infer.sh [model_name] [eval_limit]
 ```
 
-`eval_gpt4_1106_preview` is the model name you want to run benchmarks with. This
+where both `model_name` and `eval_limit` parameters are optional.
+
+`model_name`, e.g. `eval_gpt4_1106_preview`, is the model name you want to run benchmarks with. This
 overrides the value you have in `config.toml`, if any.
+
+`eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By
+default, the script evaluates the entire SWE-bench_Lite test set (300 issues).
+Note: in order to set this parameter, you must also set `model_name` parameter.
+
+Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview`, then your
+command would be:
+
+```bash
+./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview 10
+```
 
 ## Evaluate Generated Patches
 
