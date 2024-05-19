@@ -149,6 +149,7 @@ def get_action_prompt(
             elif latest_thought['action'] == 'error':
                 hint = 'Looks like that last command failed. Maybe you need to fix it, or try something else.'
 
+    # FIXME are background commands already in recent events?
     bg_commands_message = format_background_commands(background_commands_obs)
 
     user = 'opendevin' if config.run_as_devin else 'root'

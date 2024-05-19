@@ -4,7 +4,9 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.utils import json
 from opendevin.llm.llm import LLM
 
-MAX_TOKEN_COUNT_PADDING = 1024
+MAX_TOKEN_COUNT_PADDING = (
+    512  # estimation of tokens to add to the prompt for the max token count
+)
 
 
 class MemoryCondenser:
@@ -37,7 +39,6 @@ class MemoryCondenser:
         llm: LLM,
         default_events: list[dict],
         recent_events: list[dict],
-        background_commands: list | None = None,
     ) -> tuple[list[dict], bool]:
         """
         Attempts to condense the recent events of the monologue by using the llm, if necessary. Returns the condensed recent events if successful, or False if not.
@@ -51,22 +52,16 @@ class MemoryCondenser:
         - llm: LLM to be used for summarization.
         - default_events: List of default events that should remain unchanged.
         - recent_events: List of recent events that may be condensed.
-        - background_commands: List of background commands to be included in the prompt.
 
         Returns:
         - The condensed recent events if successful, unmodified list if unnecessary, or False if condensation failed.
         """
 
-        if not background_commands:
-            background_commands = []
-
         # generate the action prompt with the default and recent events
-        action_prompt = self.action_prompt(
-            '', default_events, recent_events, background_commands
-        )
+        action_prompt = self.action_prompt('', default_events, recent_events)
 
         # test prompt token length
-        if not self.needs_condense(llm=llm, action_prompt=action_prompt):
+        if not self._needs_condense(llm=llm, action_prompt=action_prompt):
             return recent_events, False
 
         logger.debug('Condensing recent events')
@@ -88,11 +83,11 @@ class MemoryCondenser:
 
                 # re-generate the action prompt with the condensed events
                 new_action_prompt = self.action_prompt(
-                    '', default_events, new_recent_events, background_commands
+                    '', default_events, new_recent_events
                 )
 
                 # check if the new prompt still needs to be condensed
-                if self.needs_condense(llm=llm, action_prompt=new_action_prompt):
+                if self._needs_condense(llm=llm, action_prompt=new_action_prompt):
                     attempt_count += 1
                     recent_events = new_recent_events.copy()
                     continue
@@ -152,7 +147,7 @@ class MemoryCondenser:
         condensed_events.extend(second_half)
         return condensed_events
 
-    def needs_condense(self, **kwargs):
+    def _needs_condense(self, **kwargs):
         """
         Checks if the prompt needs to be condensed based on the token count against the limits of the llm passed in the call.
 
@@ -161,7 +156,6 @@ class MemoryCondenser:
         - action_prompt: The prompt to check for token count. If not provided, it will attempt to generate it using the available arguments.
         - default_events: The list of default events to include in the prompt.
         - recent_events: The list of recent events to include in the prompt.
-        - background_commands: The list of background commands to include in the prompt.
 
         Returns:
         - True if the prompt needs to be condensed, False otherwise.
@@ -177,11 +171,8 @@ class MemoryCondenser:
             # Attempt to generate the action_prompt using the available arguments
             default_events = kwargs.get('default_events', [])
             recent_events = kwargs.get('recent_events', [])
-            background_commands = kwargs.get('background_commands', [])
 
-            action_prompt = self.action_prompt(
-                '', default_events, recent_events, background_commands
-            )
+            action_prompt = self.action_prompt('', default_events, recent_events)
 
         token_count = llm.get_token_count([{'content': action_prompt, 'role': 'user'}])
         return token_count >= self.get_token_limit(llm)

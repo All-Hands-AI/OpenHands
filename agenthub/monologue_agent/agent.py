@@ -1,3 +1,5 @@
+from litellm.exceptions import ContextWindowExceededError
+
 import agenthub.monologue_agent.utils.prompts as prompts
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
@@ -138,21 +140,6 @@ class MonologueAgent(Agent):
         if self.memory is not None:
             self.memory.add_event(event_dict)
 
-        # summarize the short term history (events) if necessary
-        if self.memory_condenser.needs_condense(
-            llm=self.llm,
-            default_events=self.monologue.get_default_events(),
-            recent_events=self.monologue.get_recent_events(),
-        ):
-            condensed_events, was_summarized = self.memory_condenser.condense(
-                llm=self.llm,
-                default_events=self.monologue.get_default_events(),
-                recent_events=self.monologue.get_recent_events(),
-                background_commands=None,
-            )
-            if was_summarized is True and condensed_events is not None:
-                self.monologue.recent_events = condensed_events.copy()
-
     def _initialize(self, task: str):
         """
         Utilizes the INITIAL_THOUGHTS list to give the agent a context for its capabilities
@@ -261,9 +248,36 @@ class MonologueAgent(Agent):
             self.monologue.get_default_events(),
             self.monologue.get_recent_events(),
             state.background_commands_obs,
+            # FIXME: are background_commands_obs included in recent_events?
         )
         messages = [{'content': prompt, 'role': 'user'}]
-        resp = self.llm.completion(messages=messages)
+
+        try:
+            resp = self.llm.completion(messages=messages)
+        except (ContextWindowExceededError, Exception) as e:
+            if (
+                isinstance(e, ContextWindowExceededError)
+                or 'context window' in str(e)
+                or 'tokens' in str(e)
+            ):
+                # if the context window is exceeded, we need to condense the recent events
+                condensed_events, _ = self.memory_condenser.condense(
+                    llm=self.llm,
+                    default_events=self.monologue.get_default_events(),
+                    recent_events=self.monologue.get_recent_events(),
+                )
+                self.monologue.recent_events = condensed_events.copy()
+
+                # try again
+                prompt = prompts.get_action_prompt(
+                    goal,
+                    self.monologue.get_default_events(),
+                    self.monologue.get_recent_events(),
+                    state.background_commands_obs,
+                )
+                messages = [{'content': prompt, 'role': 'user'}]
+                resp = self.llm.completion(messages=messages)
+
         action_resp = resp['choices'][0]['message']['content']
         state.num_of_chars += len(prompt) + len(action_resp)
         action = prompts.parse_action_response(action_resp)
