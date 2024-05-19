@@ -1,9 +1,8 @@
+import warnings
 from functools import partial
 
-import warnings
-
 with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
+    warnings.simplefilter('ignore')
     import litellm
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
@@ -24,6 +23,8 @@ from opendevin.core.logger import llm_prompt_logger, llm_response_logger
 from opendevin.core.logger import opendevin_logger as logger
 
 __all__ = ['LLM']
+
+message_separator = '\n\n----------\n\n'
 
 
 class LLM:
@@ -183,7 +184,7 @@ class LLM:
                 messages = args[1]
             debug_message = ''
             for message in messages:
-                debug_message += '\n\n----------\n\n' + message['content']
+                debug_message += message_separator + message['content']
             llm_prompt_logger.debug(debug_message)
             resp = completion_unwrapped(*args, **kwargs)
             message_back = resp['choices'][0]['message']['content']

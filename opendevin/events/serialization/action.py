@@ -7,21 +7,24 @@ from opendevin.events.action.agent import (
     AgentRejectAction,
     ChangeAgentStateAction,
 )
-from opendevin.events.action.browse import BrowseURLAction
+from opendevin.events.action.browse import BrowseInteractiveAction, BrowseURLAction
 from opendevin.events.action.commands import (
     CmdKillAction,
     CmdRunAction,
     IPythonRunCellAction,
 )
+from opendevin.events.action.empty import NullAction
 from opendevin.events.action.files import FileReadAction, FileWriteAction
 from opendevin.events.action.message import MessageAction
 from opendevin.events.action.tasks import AddTaskAction, ModifyTaskAction
 
 actions = (
+    NullAction,
     CmdKillAction,
     CmdRunAction,
     IPythonRunCellAction,
     BrowseURLAction,
+    BrowseInteractiveAction,
     FileReadAction,
     FileWriteAction,
     AgentRecallAction,

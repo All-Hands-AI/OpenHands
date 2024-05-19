@@ -16,9 +16,9 @@ create <filename> - creates and opens a new file with the given name
 search_dir <search_term> [<dir>] - searches for search_term in all files in dir. If dir is not provided, searches in the current directory
 search_file <search_term> [<file>] - searches for search_term in file. If file is not provided, searches in the current open file
 find_file <file_name> [<dir>] - finds all files with the given name in dir. If dir is not provided, searches in the current directory
-edit <start_line>:<end_line>
+edit <start_line>:<end_line> <<EOF
 <replacement_text>
-end_of_edit - replaces lines <start_line> through <end_line> (inclusive) with the given text in the open file. The replacement text is terminated by a line with only end_of_edit on it. All of the <replacement text> will be entered, so make sure your indentation is formatted properly. Python files will be checked for syntax errors after the edit. If the system detects a syntax error, the edit will not be executed. Simply try to edit the file again, but make sure to read the error message and modify the edit command you issue accordingly. Issuing the same command a second time will just lead to the same error message again. Remember, the file must be open before editing.
+EOF - replaces lines <start_line> through <end_line> (inclusive) with the given text in the open file. The replacement text is delineated using heredoc syntax. All of the <replacement text> will be entered, so make sure your indentation is formatted properly. Python files will be checked for syntax errors after the edit. If the system detects a syntax error, the edit will not be executed. Simply try to edit the file again, but make sure to read the error message and modify the edit command you issue accordingly. Issuing the same command a second time will just lead to the same error message again. Remember, the file must be open before editing.
 """
 
 COMMAND_DOCS = (
@@ -34,14 +34,10 @@ print("Hello World!")
 </execute_ipython>
 The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>.
 For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
+The assistant can browse the Internet with commands on behalf of the user by wrapping them with <execute_browse> and </execute_browse>.
+For example, you can browse a given URL by <execute_browse> goto("<URL>") </execute_browse>.
 The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
-The assistant can install Python packages through bash by <execute_bash> pip install [package needed] </execute_bash> and should always import packages and define variables before starting to use them.
-The assistant should stop <execute> and provide an answer when they have already obtained the answer from the execution result.
-If the assistant encounters an import error in IPython for a newly installed package, they should try to restart the kernel and import the package again. IPython kernel can be re-started by:
-<execute_ipython>
-import IPython
-IPython.Application.instance().kernel.do_shutdown(True)  # Restart the kernel
-</execute_ipython>"""
+The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them."""
 
 GITHUB_MESSAGE = """To do any activities on GitHub, you should use the token in the $GITHUB_TOKEN environment variable.
 For instance, to push a local branch `my_branch` to the github repo `owner/repo`, you can use the following four commands:
@@ -49,8 +45,8 @@ For instance, to push a local branch `my_branch` to the github repo `owner/repo`
 If you require access to GitHub but $GITHUB_TOKEN is not set, ask the user to set it for you."""
 
 SYSTEM_SUFFIX = """The assistant's response should be concise.
-You should include <execute_ipython> or <execute_bash> in every one of your responses, unless you are finished with the task or need more input or action from the user in order to proceed.
-IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
+You should include ONLY ONE <execute_ipython> or <execute_bash> or <execute_browse> in every one of your responses, unless you are finished with the task or need more input or action from the user in order to proceed.
+IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> or <execute_browse> instead of providing it.
 """
 
 EXAMPLES = """
@@ -154,6 +150,21 @@ Press CTRL+C to quit
 ASSISTANT:
 The server is running on port 5000 with PID 124. You can access the list of numbers by visiting http://127.0.0.1:5000. If you have any further questions, feel free to ask!
 
+USER: Now browse the newly started server's homepage and show me the content.
+
+ASSISTANT:
+Sure! Let me browse the server's homepage at http://127.0.0.1:5000:
+<execute_browse>
+goto("http://127.0.0.1:5000")
+</execute_browse>
+
+USER:
+Observation:
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+ASSISTANT:
+The content of the server's homepage is "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]". If you have any further questions, feel free to ask!
+
 USER: Now kill the server, make it display the numbers in a table format.
 
 ASSISTANT:
@@ -189,9 +200,9 @@ USER:
 ASSISTANT:
 I should edit the file to display the numbers in a table format. I should include correct indentation. Let me update the file:
 <execute_bash>
-edit 8:8
+edit 8:8 <<EOF
     return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
-end_of_edit
+EOF
 </execute_bash>
 
 USER:
@@ -230,4 +241,5 @@ INVALID_INPUT_MESSAGE = (
     "I don't understand your input. \n"
     'If you want to execute a bash command, please use <execute_bash> YOUR_COMMAND_HERE </execute_bash>.\n'
     'If you want to execute a block of Python code, please use <execute_ipython> YOUR_COMMAND_HERE </execute_ipython>.\n'
+    'If you want to browse the Internet, please use <execute_browse> YOUR_COMMAND_HERE </execute_browse>.\n'
 )

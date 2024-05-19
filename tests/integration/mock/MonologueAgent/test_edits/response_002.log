@@ -2,9 +2,6 @@
   "action": "write",
   "args": {
     "path": "bad.txt",
-    "content": "This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!\n",
-    "start": 0,
-    "end": -1,
-    "thought": ""
+    "content": "This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!\n"
   }
 }

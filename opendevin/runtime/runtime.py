@@ -5,6 +5,7 @@ from opendevin.core.config import config
 from opendevin.events.action import (
     Action,
     AgentRecallAction,
+    BrowseInteractiveAction,
     BrowseURLAction,
     CmdKillAction,
     CmdRunAction,
@@ -64,15 +65,18 @@ class Runtime:
         self.sid = sid
         if sandbox is None:
             self.sandbox = create_sandbox(sid, config.sandbox_type)
+            self._is_external_sandbox = False
         else:
             self.sandbox = sandbox
+            self._is_external_sandbox = True
         self.browser = BrowserEnv()
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
         self._bg_task = asyncio.create_task(self._start_background_observation_loop())
 
     def close(self):
-        self.sandbox.close()
+        if not self._is_external_sandbox:
+            self.sandbox.close()
         self.browser.close()
         self._bg_task.cancel()
 
@@ -149,6 +153,10 @@ class Runtime:
 
     @abstractmethod
     async def browse(self, action: BrowseURLAction) -> Observation:
+        pass
+
+    @abstractmethod
+    async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         pass
 
     @abstractmethod

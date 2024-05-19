@@ -1,5 +1,6 @@
 from opendevin.events.action import (
     AgentRecallAction,
+    BrowseInteractiveAction,
     BrowseURLAction,
     CmdKillAction,
     CmdRunAction,
@@ -43,7 +44,31 @@ class ServerRuntime(Runtime):
         obs = self._run_command(
             ('cat /tmp/opendevin_jupyter_temp.py | execute_cli'), background=False
         )
-        return IPythonRunCellObservation(content=obs.content, code=action.code)
+        output = obs.content
+        if 'pip install' in action.code and 'Successfully installed' in output:
+            print(output)
+            restart_kernel = 'import IPython\nIPython.Application.instance().kernel.do_shutdown(True)'
+            if (
+                'Note: you may need to restart the kernel to use updated packages.'
+                in output
+            ):
+                obs = self._run_command(
+                    (
+                        'cat > /tmp/opendevin_jupyter_temp.py <<EOL\n'
+                        f'{restart_kernel}\n'
+                        'EOL'
+                    ),
+                    background=False,
+                )
+                obs = self._run_command(
+                    ('cat /tmp/opendevin_jupyter_temp.py | execute_cli'),
+                    background=False,
+                )
+                output = 'Package installed successfully'
+                if "{'status': 'ok', 'restart': True}" != obs.content.strip():
+                    print(obs.content)
+                    output += '\n But failed to restart the kernel'
+        return IPythonRunCellObservation(content=output, code=action.code)
 
     async def read(self, action: FileReadAction) -> Observation:
         working_dir = self.sandbox.get_working_directory()
@@ -58,6 +83,9 @@ class ServerRuntime(Runtime):
     async def browse(self, action: BrowseURLAction) -> Observation:
         return await browse(action, self.browser)
 
+    async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+        return await browse(action, self.browser)
+
     async def recall(self, action: AgentRecallAction) -> Observation:
         return NullObservation('')
 
@@ -70,8 +98,11 @@ class ServerRuntime(Runtime):
     def _run_immediately(self, command: str) -> Observation:
         try:
             exit_code, output = self.sandbox.execute(command)
+            if 'pip install' in command and 'Successfully installed' in output:
+                print(output)
+                output = 'Package installed successfully'
             return CmdOutputObservation(
-                command_id=-1, content=output, command=command, exit_code=exit_code
+                command_id=-1, content=str(output), command=command, exit_code=exit_code
             )
         except UnicodeDecodeError:
             return ErrorObservation('Command output could not be decoded as utf-8')

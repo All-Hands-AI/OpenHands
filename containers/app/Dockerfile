@@ -45,6 +45,7 @@ RUN apt-get update -y \
     && apt-get install -y curl ssh sudo
 
 RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs # Default is 1000, but OSX is often 501
+RUN sed -i 's/^UID_MAX.*/UID_MAX 1000000/' /etc/login.defs # Default is 60000, but we've seen up to 200000
 
 RUN groupadd app
 RUN useradd -l -m -u $OPENDEVIN_USER_ID -s /bin/bash opendevin && \
@@ -52,6 +53,7 @@ RUN useradd -l -m -u $OPENDEVIN_USER_ID -s /bin/bash opendevin && \
     usermod -aG sudo opendevin && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 RUN chown -R opendevin:app /app && chmod -R 770 /app
+RUN sudo chown -R opendevin:app $WORKSPACE_BASE && sudo chmod -R 770 $WORKSPACE_BASE
 USER opendevin
 
 ENV VIRTUAL_ENV=/app/.venv \
