@@ -40,6 +40,7 @@ class Socket {
 
   private static _initialize(token: string): void {
     if (Socket.isConnected()) return;
+
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const WS_URL = `${protocol}//${window.location.host}/ws?token=${token}`;
     Socket._socket = new WebSocket(WS_URL);
