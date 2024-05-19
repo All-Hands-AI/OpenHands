@@ -349,6 +349,20 @@ class DockerSSHBox(Sandbox):
                 logger.warning(
                     f'Failed to chown workspace directory for opendevin in sandbox: {logs}. But this should be fine if the {self.sandbox_workspace_dir=} is mounted by the app docker container.'
                 )
+            
+            # Create .bashrc file for the opendevin user
+            exit_code, logs = self.container.exec_run(
+                [
+                    '/bin/bash',
+                    '-c',
+                    f'cp /etc/skel/.bashrc /home/opendevin/.bashrc && chown opendevin:root /home/opendevin/.bashrc',
+                ],
+                workdir=self.sandbox_workspace_dir,
+                environment=self._env,
+            )
+            if exit_code != 0:
+                raise Exception(f'Failed to create .bashrc file for opendevin user in sandbox: {logs}')
+            
         else:
             exit_code, logs = self.container.exec_run(
                 # change password for root
