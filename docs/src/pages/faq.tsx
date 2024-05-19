@@ -50,6 +50,26 @@ export default function FAQ() {
           scenarios, producing works that significantly contribute to the
           community and pave the way for future advancements.
         </p>
+        <h3>How to fix an issue on OpenDevin?</h3>
+        <p>
+          To fix an issue on GitHub using OpenDevin, send a prompt to OpenDevin asking it to follow these steps:
+          <ol>
+            <li>Read the issue on <a href="https://github.com/OpenDevin/OpenDevin/issues/1611">GitHub</a></li>
+            <li>Clone the repository and check out a new branch</li>
+            <li>Based on the instructions in the issue description, modify files to fix the issue</li>
+            <li>Push the resulting output to GitHub using the GITHUB_TOKEN environment variable</li>
+            <li>Tell me the link that I need to go to to send a pull request</li>
+          </ol>
+          Before you run OpenDevin, you can do:
+          <pre>
+            export SANDBOX_ENV_GITHUB_TOKEN=XXX
+          </pre>
+          where XXX is a GitHub token that you created that has permissions to push to the OpenDevin repo. If you don’t have write permission to the OpenDevin repo, you might need to change that to:
+          <pre>
+            4. Push the resulting output to my fork at https://github.com/USERNAME/OpenDevin/ using the GITHUB_TOKEN environment variable
+          </pre>
+          where USERNAME is your GitHub username.
+        </p>
       </div>
     </Layout>
   );
