@@ -211,7 +211,7 @@ def process_instance(
         # add back the console handler to print ONE line
         logger.addHandler(get_console_handler())
         logger.info(
-            f'Starting evaluation for instance {instance.instance_id}.\nLOG:   tail -f {log_file}'
+            f'Starting evaluation for instance {instance.instance_id}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
