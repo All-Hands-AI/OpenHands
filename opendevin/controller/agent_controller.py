@@ -90,6 +90,7 @@ class AgentController:
         self.state.updated_info = []
 
     async def report_error(self, message: str):
+        self.state.error = message
         await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def add_history(self, action: Action, observation: Observation):
@@ -108,9 +109,8 @@ class AgentController:
             except Exception as e:
                 logger.error(f'Error while running the agent: {e}')
                 await self.report_error(
-                    'There was an unexpected error while running the agent'
+                    'There was an unexpected error while running the agent: {e}'
                 )
-                self.state.error = str(e)
                 await self.set_agent_state_to(AgentState.ERROR)
                 break
 
@@ -192,7 +192,6 @@ class AgentController:
         logger.info(f'STEP {self.state.iteration}', extra={'msg_type': 'STEP'})
         if self.state.iteration >= self.max_iterations:
             await self.report_error('Agent reached maximum number of iterations')
-            self.state.error = 'Agent reached maximum number of iterations'
             await self.set_agent_state_to(AgentState.ERROR)
             return
 
@@ -232,7 +231,6 @@ class AgentController:
 
         if self._is_stuck():
             await self.report_error('Agent got stuck in a loop')
-            self.state.error = 'Agent got stuck in a loop'
             await self.set_agent_state_to(AgentState.ERROR)
 
     def get_state(self):
