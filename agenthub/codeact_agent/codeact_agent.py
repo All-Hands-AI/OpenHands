@@ -41,6 +41,57 @@ def parse_response(response) -> str:
     return action
 
 
+def action_to_str(action: Action) -> str:
+    if isinstance(action, CmdRunAction):
+        return f'{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>'
+    elif isinstance(action, IPythonRunCellAction):
+        return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
+    elif isinstance(action, BrowseInteractiveAction):
+        return f'{action.thought}\n<execute_browse>\n{action.browser_actions}\n</execute_browse>'
+    elif isinstance(action, MessageAction):
+        return action.content
+    return ''
+
+
+def get_action_message(action: Action) -> dict[str, str] | None:
+    if (
+        isinstance(action, BrowseInteractiveAction)
+        or isinstance(action, CmdRunAction)
+        or isinstance(action, IPythonRunCellAction)
+        or isinstance(action, MessageAction)
+    ):
+        return {
+            'role': 'user' if action.source == 'user' else 'assistant',
+            'content': action_to_str(action),
+        }
+    return None
+
+
+def get_observation_message(obs) -> dict[str, str] | None:
+    if isinstance(obs, CmdOutputObservation):
+        content = 'OBSERVATION:\n' + truncate_observation(obs.content)
+        content += (
+            f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
+        )
+        return {'role': 'user', 'content': content}
+    elif isinstance(obs, IPythonRunCellObservation):
+        content = 'OBSERVATION:\n' + obs.content
+        # replace base64 images with a placeholder
+        splitted = content.split('\n')
+        for i, line in enumerate(splitted):
+            if '![image](data:image/png;base64,' in line:
+                splitted[i] = (
+                    '![image](data:image/png;base64, ...) already displayed to user'
+                )
+        content = '\n'.join(splitted)
+        content = truncate_observation(content)
+        return {'role': 'user', 'content': content}
+    elif isinstance(obs, BrowserOutputObservation):
+        content = 'OBSERVATION:\n' + truncate_observation(obs.content)
+        return {'role': 'user', 'content': content}
+    return None
+
+
 def truncate_observation(observation: str, max_chars: int = 10_000) -> str:
     """
     Truncate the middle of the observation if it is too long.
@@ -53,37 +104,6 @@ def truncate_observation(observation: str, max_chars: int = 10_000) -> str:
         + '\n[... Observation truncated due to length ...]\n'
         + observation[-half:]
     )
-
-
-def swe_agent_edit_hack(bash_command: str) -> str:
-    """
-    Hack to handle the SWE-agent edit command. The vanilla edit command will hang the SSHBox.
-
-    REPLACE THIS:
-    edit 683:693
-            try:
-                return list(urlsplit(url))
-            except ValueError:
-                raise ValidationError(self.error_messages['invalid'], code='invalid')
-    end_of_edit
-
-    WITH THIS:
-    edit 683:693 <<EOF
-            try:
-                return list(urlsplit(url))
-            except ValueError:
-                raise ValidationError(self.error_messages['invalid'], code='invalid')
-    EOF
-    """
-    if 'edit' in bash_command:
-        # edit\s(\d+):(\d+)([\s\S]*)end_of_edit
-        # replace
-        bash_command = re.sub(
-            r'edit\s(\d+):(\d+)([\s\S]*?)end_of_edit',
-            r'edit \1:\2 <<EOF\3EOF',
-            bash_command,
-        )
-    return bash_command
 
 
 class CodeActAgent(Agent):
@@ -153,13 +173,6 @@ class CodeActAgent(Agent):
         Resets the CodeAct Agent.
         """
         super().reset()
-        self.messages: list[dict[str, str]] = [
-            {'role': 'system', 'content': self.system_message},
-            {
-                'role': 'user',
-                'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!\n",
-            },
-        ]
         self.cost_accumulator = 0
 
     def step(self, state: State) -> Action:
@@ -177,49 +190,33 @@ class CodeActAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
+        messages: list[dict[str, str]] = [
+            {'role': 'system', 'content': self.system_message},
+            {
+                'role': 'user',
+                'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!",
+            },
+        ]
 
-        updated_info = state.updated_info
-        if updated_info:
-            for prev_action, obs in updated_info:
-                if (
-                    isinstance(prev_action, MessageAction)
-                    and prev_action.source == 'user'
-                ):
-                    self.messages.append(
-                        {'role': 'user', 'content': prev_action.content}
-                    )
-                    if prev_action.content.strip() == '/exit':
-                        # User wants to exit
-                        return AgentFinishAction()
+        for prev_action, obs in state.history:
+            action_message = get_action_message(prev_action)
+            if action_message:
+                messages.append(action_message)
 
-                if isinstance(obs, CmdOutputObservation):
-                    content = 'OBSERVATION:\n' + truncate_observation(obs.content)
-                    content += f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
-                    self.messages.append({'role': 'user', 'content': content})
-                elif isinstance(obs, IPythonRunCellObservation):
-                    content = 'OBSERVATION:\n' + obs.content
-                    # replace base64 images with a placeholder
-                    splitted = content.split('\n')
-                    for i, line in enumerate(splitted):
-                        if '![image](data:image/png;base64,' in line:
-                            splitted[i] = (
-                                '![image](data:image/png;base64, ...) already displayed to user'
-                            )
-                    content = '\n'.join(splitted)
-                    content = truncate_observation(content)
-                    self.messages.append({'role': 'user', 'content': content})
-                elif isinstance(obs, BrowserOutputObservation):
-                    content = 'OBSERVATION:\n' + truncate_observation(obs.content)
-                    self.messages.append({'role': 'user', 'content': content})
+            obs_message = get_observation_message(obs)
+            if obs_message:
+                messages.append(obs_message)
 
-        latest_user_message = [m for m in self.messages if m['role'] == 'user'][-1]
+        latest_user_message = [m for m in messages if m['role'] == 'user'][-1]
         if latest_user_message:
+            if latest_user_message['content'].strip() == '/exit':
+                return AgentFinishAction()
             latest_user_message['content'] += (
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
         response = self.llm.completion(
-            messages=self.messages,
+            messages=messages,
             stop=[
                 '</execute_ipython>',
                 '</execute_bash>',
@@ -232,9 +229,8 @@ class CodeActAgent(Agent):
 
         action_str: str = parse_response(response)
         state.num_of_chars += sum(
-            len(message['content']) for message in self.messages
+            len(message['content']) for message in messages
         ) + len(action_str)
-        self.messages.append({'role': 'assistant', 'content': action_str})
 
         if finish_command := re.search(r'<finish>.*</finish>', action_str, re.DOTALL):
             thought = action_str.replace(finish_command.group(0), '').strip()
@@ -246,7 +242,6 @@ class CodeActAgent(Agent):
             thought = action_str.replace(bash_command.group(0), '').strip()
             # a command was found
             command_group = bash_command.group(1).strip()
-            command_group = swe_agent_edit_hack(command_group)
 
             if command_group.strip() == 'exit':
                 return AgentFinishAction()

@@ -233,19 +233,61 @@ NOW, LET'S START!
 
 ----------
 
-Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point.
+Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ----------
 
-Sure! Let me write 'hello world' to a text file named 'test.txt' in the '/workspace' directory without asking for confirmation:
-<execute_ipython>
-with open('/workspace/test.txt', 'w') as f:
-    f.write('hello world')
-</execute_ipython>
+Let's first view the content of the file `bad.txt` to identify the typos that need to be fixed.
+<execute_bash>
+cat bad.txt
+</execute_bash>
 
 ----------
 
 OBSERVATION:
-[Code executed successfully with no output]
+This is a stupid typoo.
+Really?
+No mor typos!
+Enjoy!
+[Command -1 finished with exit code 0]]
 
-ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
+----------
+
+Let's correct the typos in the file `bad.txt`. I will open the file for editing and fix the typos without asking for confirmation.
+<execute_bash>
+open bad.txt
+</execute_bash>
+
+----------
+
+OBSERVATION:
+[File: /workspace/bad.txt (4 lines total)]
+1:This is a stupid typoo.
+2:Really?
+3:No mor typos!
+4:Enjoy!
+[Command -1 finished with exit code 0]]
+
+----------
+
+I will now fix the typos in the file `bad.txt` without asking for confirmation. Let me edit the file and correct the typos.
+<execute_bash>
+edit 1:3 <<EOF
+This is a stupid typo.
+Really?
+No more typos!
+EOF
+</execute_bash>
+
+----------
+
+OBSERVATION:
+> > > > [File: /workspace/bad.txt (4 lines total)]
+1:This is a stupid typo.
+2:Really?
+3:No more typos!
+4:Enjoy!
+File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.
+[Command -1 finished with exit code 0]]
+
+ENVIRONMENT REMINDER: You have 6 turns left to complete the task.
