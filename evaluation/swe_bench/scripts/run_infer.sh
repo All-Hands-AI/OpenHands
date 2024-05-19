@@ -1,6 +1,8 @@
 #!/bin/bash
 
 AGENT=CodeActAgent
+# IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of OpenDevin
+# We need to track the version of Agent in the evaluation to make sure results are comparable
 AGENT_VERSION=v$(python3 -c "from agenthub.codeact_agent import CodeActAgent; print(CodeActAgent.VERSION)")
 MODEL_CONFIG=$1
 
