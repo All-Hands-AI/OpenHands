@@ -51,7 +51,6 @@ export default function FAQ() {
           community and pave the way for future advancements.
         <h2 style={{ fontSize: "2rem" }}>Fixing GitHub Issues</h2>
         <h3>How to fix an issue on OpenDevin?</h3>
-        <h3>How to fix an issue on OpenDevin?</h3>
         <p>
           To fix an issue on GitHub using OpenDevin, send a prompt to OpenDevin asking it to follow these steps:
           <ol>
