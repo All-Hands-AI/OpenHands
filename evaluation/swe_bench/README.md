@@ -80,8 +80,8 @@ If you get to the interactive shell successfully, it means success!
 ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview
 ```
 
-You can replace `eval_gpt4_1106_preview` with any model you setted up in `config.toml`.
-
+`eval_gpt4_1106_preview` is the model name you want to run benchmarks with. This
+overrides the value you have in `config.toml`, if any.
 
 ## Evaluate Generated Patches
 
