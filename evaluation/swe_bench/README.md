@@ -79,17 +79,16 @@ If you see an error, please make sure your `config.toml` contains all
 ## Run Inference on SWE-Bench Instances
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh [model_name] [eval_limit]
+./evaluation/swe_bench/scripts/run_infer.sh [model_config] [eval_limit]
 ```
 
-where both `model_name` and `eval_limit` parameters are optional.
+where `model_config` is mandatory and `eval_limit` is optional.
 
-`model_name`, e.g. `eval_gpt4_1106_preview`, is the model name you want to run benchmarks with. This
-overrides the value you have in `config.toml`, if any.
+`model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
+LLM settings, as defined in your `config.toml`.
 
 `eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By
 default, the script evaluates the entire SWE-bench_Lite test set (300 issues).
-Note: in order to set this parameter, you must also set `model_name` parameter.
 
 Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview`, then your
 command would be:
