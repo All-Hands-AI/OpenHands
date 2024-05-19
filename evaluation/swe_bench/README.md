@@ -68,7 +68,8 @@ temperature = 0.0
 
 ## Test if your environment works
 
-Make sure your Docker daemon is running. Then run this python script:
+Make sure your Docker daemon is running, and you have pulled the `eval-swe-bench:full-v1.0`
+docker image. Then run this python script:
 
 ```bash
 poetry run python evaluation/swe_bench/swe_env_box.py
