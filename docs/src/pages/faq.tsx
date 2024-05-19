@@ -49,7 +49,7 @@ export default function FAQ() {
           , we aim to tackle the challenges faced by Code LLMs in practical
           scenarios, producing works that significantly contribute to the
           community and pave the way for future advancements.
-        <h2 style={{ fontSize: "2rem" }}>Fixing GitHub Issues</h2>
+        </p>
         <h3>How to fix an issue on OpenDevin?</h3>
         <p>
           To fix an issue on GitHub using OpenDevin, send a prompt to OpenDevin asking it to follow these steps:
