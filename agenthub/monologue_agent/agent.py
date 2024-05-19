@@ -166,10 +166,7 @@ class MonologueAgent(Agent):
         else:
             self.memory = None
 
-        self.memory_condenser = MemoryCondenser(
-            action_prompt=prompts.get_action_prompt,
-            summarize_prompt=prompts.get_summarize_prompt,
-        )
+        self.memory_condenser = MemoryCondenser(action_prompt=prompts.get_action_prompt)
 
         self._add_initial_thoughts(task)
         self._initialized = True
@@ -260,10 +257,17 @@ class MonologueAgent(Agent):
                 or 'context window' in str(e)
                 or 'tokens' in str(e)
             ):
-                # if the context window is exceeded, we need to condense the recent events
+                # we need to condense the recent events
+                action_prompt_template = prompts.get_action_prompt_template(
+                    task=goal,
+                    default_events=self.monologue.get_default_events(),
+                    background_commands_obs=state.background_commands_obs,
+                )
+
+                self.memory_condenser.action_prompt = lambda: action_prompt_template
+
                 condensed_events, _ = self.memory_condenser.condense(
                     llm=self.llm,
-                    default_events=self.monologue.get_default_events(),
                     recent_events=self.monologue.get_recent_events(),
                 )
                 self.monologue.recent_events = condensed_events.copy()

@@ -3,7 +3,7 @@ from typing import Callable
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.llm.llm import LLM
 
-from . import parse_summary_response
+from . import get_summarize_prompt, parse_summary_response
 
 MAX_TOKEN_COUNT_PADDING = (
     512  # estimation of tokens to add to the prompt for the max token count
@@ -18,19 +18,20 @@ class MemoryCondenser:
     def __init__(
         self,
         action_prompt: Callable[..., str],
-        summarize_prompt: Callable[[list[dict], list[dict]], str],
+        summarize_prompt: Callable[[list[dict]], str] = get_summarize_prompt,
     ):
         """
         Initialize the MemoryCondenser with the action and summarize prompts.
 
         action_prompt is a callable that returns the prompt that is about to be sent to the LLM.
-        The prompt callable will be called with default events and recent events as arguments.
+        The prompt callable will be called with recent events as arguments.
         summarize_prompt is a callable that returns a specific prompt that tells the LLM to summarize the recent events.
-        The prompt callable will be called with default events and recent events as arguments.
+        The prompt callable will be called with events as argument.
+        If not provided, the default summarize prompt will be used.
 
         Parameters:
-        - action_prompt: The function to generate an action prompt. The function should accept default events and recent events as arguments.
-        - summarize_prompt: The function to generate a summarize prompt. The function should accept default events and recent events as arguments.
+        - action_prompt: The function to generate an action prompt. The function should accept recent events as arguments.
+        - summarize_prompt: The function to generate a summarize prompt. The function should accept srecent events as arguments.
         """
         self.action_prompt = action_prompt
         self.summarize_prompt = summarize_prompt
@@ -38,7 +39,6 @@ class MemoryCondenser:
     def condense(
         self,
         llm: LLM,
-        default_events: list[dict],
         recent_events: list[dict],
     ) -> tuple[list[dict], bool]:
         """
@@ -46,19 +46,17 @@ class MemoryCondenser:
 
         It includes default events in the prompt for context, but does not alter them.
         Condenses the events using a summary prompt.
-        Returns unmodified list of recent events if it is already short enough.
 
         Parameters:
         - llm: LLM to be used for summarization.
-        - default_events: List of default events that should remain unchanged.
         - recent_events: List of recent events that may be condensed.
 
         Returns:
-        - The condensed recent events if successful, unmodified list if unnecessary, or False if condensation failed.
+        - The condensed recent events if successful, or False if condensation failed.
         """
 
-        # generate the action prompt with the default and recent events
-        action_prompt = self.action_prompt('', default_events, recent_events)
+        # generate the action prompt with the recent events
+        action_prompt = self.action_prompt(recent_events)
 
         # test prompt token length
         if not self._needs_condense(llm=llm, action_prompt=action_prompt):
@@ -73,18 +71,14 @@ class MemoryCondenser:
 
             while attempt_count < 3 and not failed:
                 # attempt to condense the recent events
-                new_recent_events = self._attempt_condense(
-                    llm, default_events, recent_events
-                )
+                new_recent_events = self._attempt_condense(llm, recent_events)
 
                 if not new_recent_events or len(new_recent_events) == 0:
                     logger.debug('Condensation failed: new_recent_events is empty')
                     return [], False
 
                 # re-generate the action prompt with the condensed events
-                new_action_prompt = self.action_prompt(
-                    '', default_events, new_recent_events
-                )
+                new_action_prompt = self.action_prompt(new_recent_events)
 
                 # check if the new prompt still needs to be condensed
                 if self._needs_condense(llm=llm, action_prompt=new_action_prompt):
@@ -103,7 +97,6 @@ class MemoryCondenser:
     def _attempt_condense(
         self,
         llm: LLM,
-        default_events: list[dict],
         recent_events: list[dict],
     ) -> list[dict] | None:
         """
@@ -124,7 +117,7 @@ class MemoryCondenser:
         second_half = recent_events[midpoint:].copy()
 
         # attempt to condense the first half of the recent events
-        summarize_prompt = self.summarize_prompt(default_events, first_half)
+        summarize_prompt = self.summarize_prompt(first_half)
 
         # send the summarize prompt to the LLM
         messages = [{'content': summarize_prompt, 'role': 'user'}]
@@ -167,10 +160,9 @@ class MemoryCondenser:
 
         if not action_prompt:
             # Attempt to generate the action_prompt using the available arguments
-            default_events = kwargs.get('default_events', [])
             recent_events = kwargs.get('recent_events', [])
 
-            action_prompt = self.action_prompt('', default_events, recent_events)
+            action_prompt = self.action_prompt(recent_events)
 
         token_count = llm.get_token_count([{'content': action_prompt, 'role': 'user'}])
         return token_count >= self.get_token_limit(llm)
