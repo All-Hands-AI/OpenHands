@@ -316,7 +316,8 @@ def get_llm_config_arg(llm_config_arg: str):
     try:
         with open('config.toml', 'r', encoding='utf-8') as toml_file:
             toml_config = toml.load(toml_file)
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+        logger.error(f'Config file not found: {e}')
         return None
     except toml.TomlDecodeError as e:
         logger.error(f'Cannot parse llm group from {llm_config_arg}. Exception: {e}')
