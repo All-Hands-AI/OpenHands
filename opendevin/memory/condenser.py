@@ -1,8 +1,9 @@
 from typing import Callable
 
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.utils import json
 from opendevin.llm.llm import LLM
+
+from . import parse_summary_response
 
 MAX_TOKEN_COUNT_PADDING = (
     512  # estimation of tokens to add to the prompt for the max token count
@@ -41,11 +42,10 @@ class MemoryCondenser:
         recent_events: list[dict],
     ) -> tuple[list[dict], bool]:
         """
-        Attempts to condense the recent events of the monologue by using the llm, if necessary. Returns the condensed recent events if successful, or False if not.
+        Attempts to condense the recent events of the monologue by using the llm. Returns the condensed recent events if successful, or False if not.
 
         It includes default events in the prompt for context, but does not alter them.
-        Condenses the monologue using a summary prompt.
-        Checks if the action_prompt (including events) needs condensation based on token count, and doesn't attempt condensing if not.
+        Condenses the events using a summary prompt.
         Returns unmodified list of recent events if it is already short enough.
 
         Parameters:
@@ -130,11 +130,9 @@ class MemoryCondenser:
         messages = [{'content': summarize_prompt, 'role': 'user'}]
         response = llm.completion(messages=messages)
         response_content = response['choices'][0]['message']['content']
-        parsed_summary = json.loads(response_content)
 
         # the new list of recent events will be source events or summarize actions
-        # in the 'new_monologue' key
-        condensed_events = parsed_summary['new_monologue']
+        condensed_events = parse_summary_response(response_content)
 
         # new recent events list
         if (

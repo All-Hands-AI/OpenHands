@@ -104,21 +104,6 @@ Remember you must only summarize the old monologue, not the default memories.
 """
 
 
-def get_summarize_prompt(default_events: list[dict], recent_events: list[dict]):
-    """
-    Gets the prompt for summarizing the monologue
-
-    Returns:
-    - A formatted string with the current monologue within the prompt
-    """
-    return MONOLOGUE_SUMMARY_PROMPT % {
-        'monologue': json.dumps(
-            {'default_memories': default_events, 'old_monologue': recent_events},
-            indent=2,
-        ),
-    }
-
-
 def get_action_prompt(
     task: str,
     default_events: list[dict],
@@ -165,6 +150,67 @@ def get_action_prompt(
     }
 
 
+def get_action_prompt_template(
+    task: str,
+    default_events: list[dict],
+    background_commands_obs: list[CmdOutputObservation],
+) -> str:
+    """
+    Gets the action prompt template with default_events pre-filled and a placeholder for recent_events and hint.
+
+    Parameters:
+    - task: The current task the agent is trying to accomplish
+    - default_events: The default events to include in the prompt
+    - background_commands_obs: list of all observed background commands running
+
+    Returns:
+    - str: Formatted prompt template string with default_events pre-filled and placeholders for recent_events and hint
+    """
+    bg_commands_message = format_background_commands(background_commands_obs)
+    user = 'opendevin' if config.run_as_devin else 'root'
+
+    return ACTION_PROMPT % {
+        'task': task,
+        'monologue': json.dumps(default_events, indent=2) + '%(recent_events)s',
+        'background_commands': bg_commands_message,
+        'hint': '%(hint)s',
+        'user': user,
+        'timeout': config.sandbox_timeout,
+    }
+
+
+def get_action_prompt_for_summarization(
+    prompt_template: str,
+    recent_events: list[dict],
+) -> str:
+    """
+    Gets the action prompt formatted with recent_events and a generated hint.
+
+    Parameters:
+    - prompt_template: The prompt template with placeholders for recent_events and hint
+    - recent_events: The recent events to include in the prompt
+
+    Returns:
+    - str: Formatted prompt string with recent_events and a generated hint included
+    """
+    hint = ''
+    if recent_events is not None and len(recent_events) > 0:
+        latest_thought = recent_events[-1]
+        if 'action' in latest_thought:
+            if latest_thought['action'] == 'message':
+                if latest_thought['args']['content'].startswith('OK so my task is'):
+                    hint = "You're just getting started! What should you do first?"
+                else:
+                    hint = "You've been thinking a lot lately. Maybe it's time to take action?"
+            elif latest_thought['action'] == 'error':
+                hint = 'Looks like that last command failed. Maybe you need to fix it, or try something else.'
+
+    return prompt_template % {
+        'recent_events': json.dumps(recent_events, indent=2),
+        'hint': hint,
+    }
+
+
 def format_background_commands(
     background_commands_obs: list[CmdOutputObservation] | None,
 ) -> str:
@@ -206,6 +252,21 @@ def parse_action_response(orig_response: str) -> Action:
         action_dict['contents'] = action_dict.pop('content')
 
     return action_from_dict(action_dict)
+
+
+def get_summarize_prompt(default_events: list[dict], recent_events: list[dict]):
+    """
+    Gets the prompt for summarizing the monologue
+
+    Returns:
+    - A formatted string with the current monologue within the prompt
+    """
+    return MONOLOGUE_SUMMARY_PROMPT % {
+        'monologue': json.dumps(
+            {'default_memories': default_events, 'old_monologue': recent_events},
+            indent=2,
+        ),
+    }
 
 
 def parse_summary_response(response: str) -> list[dict]:
