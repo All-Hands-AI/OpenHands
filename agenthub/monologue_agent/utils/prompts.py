@@ -161,7 +161,7 @@ def get_action_prompt(
         'hint': hint,
         'user': user,
         'timeout': config.sandbox_timeout,
-        'workspace_mount_path_in_sandbox': config.workspace_mount_path_in_sandbox,
+        # unused 'workspace_mount_path_in_sandbox': config.workspace_mount_path_in_sandbox,
     }
 
 
