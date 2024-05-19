@@ -79,22 +79,26 @@ If you see an error, please make sure your `config.toml` contains all
 ## Run Inference on SWE-Bench Instances
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh [model_config] [eval_limit]
+./evaluation/swe_bench/scripts/run_infer.sh [model_config] [agent] [eval_limit]
 ```
 
-where `model_config` is mandatory and `eval_limit` is optional.
+where `model_config` is mandatory, while `agent` and `eval_limit` are optional.
 
 `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
 LLM settings, as defined in your `config.toml`.
 
-`eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By
-default, the script evaluates the entire SWE-bench_Lite test set (300 issues).
+`agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
+to `CodeActAgent`.
 
-Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview`, then your
-command would be:
+`eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By
+default, the script evaluates the entire SWE-bench_Lite test set (300 issues). Note:
+in order to use `eval_limit`, you must also set `agent`.
+
+Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview` and CodeActAgent,
+then your command would be:
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview 10
+./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview CodeActAgent 10
 ```
 
 ## Evaluate Generated Patches
