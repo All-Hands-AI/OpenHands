@@ -141,8 +141,11 @@ for ((i = 0; i < num_of_tests; i++)); do
       set +e
     fi
 
-    run_test
-    TEST_STATUS=$?
+    TEST_STATUS=1
+    if [ -z $SKIP_TEST ]; then
+      run_test
+      TEST_STATUS=$?
+    fi
     # Re-enable 'exit on error'
     set -e
 
