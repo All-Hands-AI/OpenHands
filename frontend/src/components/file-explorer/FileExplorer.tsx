@@ -5,7 +5,7 @@ import {
   IoIosRefresh,
   IoIosCloudUpload,
 } from "react-icons/io";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { IoFileTray } from "react-icons/io5";
 import { twMerge } from "tailwind-merge";
 import AgentState from "#/types/AgentState";
@@ -14,7 +14,6 @@ import { listFiles, uploadFiles } from "#/services/fileService";
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
 import toast from "#/utils/toast";
-import { useSelector } from "react-redux";
 import { RootState } from "#/store";
 
 interface ExplorerActionsProps {
@@ -135,7 +134,7 @@ function FileExplorer() {
   }, []);
 
   if (curAgentState === AgentState.LOADING) {
-    return <></>;
+    return null;
   }
 
   return (
