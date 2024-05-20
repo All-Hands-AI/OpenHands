@@ -474,9 +474,15 @@ class DockerSSHBox(Sandbox):
                 return self._send_interrupt(
                     cmd, command_output, ignore_last_output=True
                 )
-        exit_code = int(
-            exit_code_str.replace('echo $?', '').replace('\r\n', '').strip()
-        )
+        cleaned_exit_code_str = exit_code_str.replace('echo $?', '').strip()
+
+        try:
+            exit_code = int(cleaned_exit_code_str)
+        except ValueError:
+            logger.error(f'Invalid exit code: {cleaned_exit_code_str}')
+            # Handle the invalid exit code appropriately (e.g., raise an exception or set a default value)
+            exit_code = -1  # or some other appropriate default value
+
         return exit_code, command_output
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
