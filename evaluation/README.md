@@ -13,7 +13,7 @@ all the preprocessing/evaluation/analysis scripts.
 ## Supported Benchmarks
 
 - SWE-Bench: [`evaluation/swe_bench`](./swe_bench)
-- HumanEvalFix: [`evaluation/human_eval_fix`](./human_eval_fix)
+- HumanEvalFix: [`evaluation/humanevalfix`](./humanevalfix)
 
 ### Result Visualization
 

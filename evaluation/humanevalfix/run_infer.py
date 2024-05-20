@@ -329,7 +329,6 @@ if __name__ == '__main__':
     num_workers = args.eval_num_workers
     logger.info(f'Using {num_workers} workers for evaluation.')
 
-    # This is SWE-Bench specific - CodeActAgent doesn't require mounted workspace to work
     try:
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
