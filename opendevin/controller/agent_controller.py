@@ -89,7 +89,12 @@ class AgentController:
     def update_state_after_step(self):
         self.state.updated_info = []
 
-    async def report_error(self, message: str):
+
+    def aggregate_costs(self):
+        total_cost = sum(cost['total_cost'] for cost in self.agent.llm.costs)
+        self.state.costs = self.agent.llm.costs
+        self.state.total_cost_usd = total_cost
+        logger.info(f"Total cost aggregated: {total_cost}")
         await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def add_history(self, action: Action, observation: Observation):
@@ -132,8 +137,7 @@ class AgentController:
         elif isinstance(event, ModifyTaskAction):
             self.state.root_task.set_subtask_state(event.task_id, event.state)
         elif isinstance(event, AgentFinishAction):
-            self.state.outputs = event.outputs  # type: ignore[attr-defined]
-            await self.set_agent_state_to(AgentState.FINISHED)
+            self.aggregate_costs()
         elif isinstance(event, Observation):
             if self._pending_action and self._pending_action.id == event.cause:
                 await self.add_history(self._pending_action, event)

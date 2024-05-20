@@ -25,8 +25,7 @@ from opendevin.core.logger import opendevin_logger as logger
 __all__ = ['LLM']
 
 
-class LLM:
-    """
+import json
     The LLM class represents a Language Model instance.
 
     Attributes:
@@ -41,7 +40,7 @@ class LLM:
     """
 
     def __init__(
-        self,
+        self.costs = []
         model=None,
         api_key=None,
         base_url=None,
@@ -153,7 +152,11 @@ class LLM:
             custom_llm_provider=custom_llm_provider,
             max_tokens=self.max_output_tokens,
             timeout=self.llm_timeout,
-            temperature=llm_temperature,
+
+    def log_cost(self, response):
+        cost = litellm_completion_cost(response)
+        self.costs.append(cost)
+        logger.info(f"Logged cost: {json.dumps(cost)}")
             top_p=llm_top_p,
         )
 
@@ -187,7 +190,7 @@ class LLM:
             resp = completion_unwrapped(*args, **kwargs)
             message_back = resp['choices'][0]['message']['content']
             llm_response_logger.debug(message_back)
-            return resp
+            self.log_cost(resp)
 
         self._completion = wrapper  # type: ignore
 
