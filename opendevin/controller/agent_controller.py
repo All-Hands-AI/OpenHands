@@ -89,7 +89,10 @@ class AgentController:
     def update_state_after_step(self):
         self.state.updated_info = []
 
-    async def report_error(self, message: str):
+    async def report_error(self, message: str, exception: Exception | None = None):
+        self.state.error = message
+        if exception:
+            self.state.error += f': {str(exception)}'
         await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def add_history(self, action: Action, observation: Observation):
@@ -108,7 +111,7 @@ class AgentController:
             except Exception as e:
                 logger.error(f'Error while running the agent: {e}')
                 await self.report_error(
-                    'There was an unexpected error while running the agent'
+                    'There was an unexpected error while running the agent', exception=e
                 )
                 await self.set_agent_state_to(AgentState.ERROR)
                 break
