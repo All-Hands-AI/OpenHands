@@ -83,6 +83,7 @@ If you see an error, please make sure your `config.toml` contains all
 
 ```bash
 ./evaluation/swe_bench/scripts/run_infer.sh [model_config] [agent] [eval_limit]
+# e.g., ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview CodeActAgent 300
 ```
 
 where `model_config` is mandatory, while `agent` and `eval_limit` are optional.
