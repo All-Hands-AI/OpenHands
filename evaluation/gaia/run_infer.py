@@ -38,7 +38,7 @@ def cleanup():
 def codeact_user_response(state: State) -> str:
     msg = (
         'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have modified the code in a way that fixes the issue, please run the following command: <execute_bash> exit </execute_bash>.\n'
+        'If you think you have solved the task, please run the following command: <execute_bash> exit </execute_bash>.\n'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK.\n'
     )
     if state.history:
@@ -66,7 +66,7 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': 'When you think you have solved the question, please exit with a message that follows the format defined above.\n'
+    'CodeActAgent': 'When you think you have solved the question, please first send your answer to user through message and then exit.\n'
 }
 
 
@@ -108,7 +108,6 @@ def process_instance(
     if not skip_workspace_mount:
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
 
-    workspace_dir_name = f'{instance["task_id"]}'.replace('/', '__')
     sandbox = DockerSSHBox()
     if instance['file_name'] != '':
         # if this question comes with a file, we need to save it to the workspace
@@ -116,7 +115,7 @@ def process_instance(
             DATASET_CACHE_DIR, '2023', metadata['data_split'], instance['file_name']
         )
         extension_name = instance['file_name'].split('.')[-1]
-        dest_file = os.path.join(workspace_dir_name, f'file.{extension_name}')
+        dest_file = os.path.join(workspace_mount_path, f'file.{extension_name}')
         shutil.copyfile(src_file, dest_file)
         logger.info(f'File copied to {dest_file}')
     else:
@@ -124,6 +123,7 @@ def process_instance(
 
     # Prepare instruction
     instruction = f"{instance['Question']}"
+    logger.info(f'Instruction: {instruction}')
     if dest_file:
         instruction += f"\n\nThe mentioned file is provided in the workspace at: {dest_file.split('/')[-1]}"
 
