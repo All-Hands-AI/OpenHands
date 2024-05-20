@@ -25,12 +25,7 @@ from opendevin.events.action import (
 from opendevin.events.event import Event
 from opendevin.events.observation import (
     AgentDelegateObservation,
-    AgentStateChangedObservation,
-    CmdOutputObservation,
-    ErrorObservation,
-    NullObservation,
-    Observation,
-)
+class LLM:
 from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 
 MAX_ITERATIONS = config.max_iterations
