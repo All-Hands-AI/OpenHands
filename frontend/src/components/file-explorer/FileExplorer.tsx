@@ -98,7 +98,10 @@ function FileExplorer() {
   };
 
   const refreshWorkspace = async () => {
-    if (curAgentState === AgentState.LOADING || curAgentState === AgentState.STOPPED) {
+    if (
+      curAgentState === AgentState.LOADING ||
+      curAgentState === AgentState.STOPPED
+    ) {
       return;
     }
     dispatch(setRefreshID(Math.random()));
