@@ -26,13 +26,17 @@ if [[ "$SANDBOX_USER_ID" -eq 0 ]]; then
   "$@"
 else
   echo "Setting up enduser with id $SANDBOX_USER_ID"
-  if ! useradd -l -m -u $SANDBOX_USER_ID -s /bin/bash enduser; then
-    echo "Failed to create user enduser with id $SANDBOX_USER_ID. Moving opendevin user."
-    incremented_id=$(($SANDBOX_USER_ID + 1))
-    usermod -u $incremented_id opendevin
+  if id "enduser" &>/dev/null; then
+    echo "User enduser already exists. Skipping creation."
+  else
     if ! useradd -l -m -u $SANDBOX_USER_ID -s /bin/bash enduser; then
-      echo "Failed to create user enduser with id $SANDBOX_USER_ID for a second time. Exiting."
-      exit 1
+      echo "Failed to create user enduser with id $SANDBOX_USER_ID. Moving opendevin user."
+      incremented_id=$(($SANDBOX_USER_ID + 1))
+      usermod -u $incremented_id opendevin
+      if ! useradd -l -m -u $SANDBOX_USER_ID -s /bin/bash enduser; then
+        echo "Failed to create user enduser with id $SANDBOX_USER_ID for a second time. Exiting."
+        exit 1
+      fi
     fi
   fi
   usermod -aG app enduser

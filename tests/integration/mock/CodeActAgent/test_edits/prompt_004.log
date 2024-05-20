@@ -268,4 +268,26 @@ OBSERVATION:
 4:Enjoy!
 [Command -1 finished with exit code 0]]
 
-ENVIRONMENT REMINDER: You have 7 turns left to complete the task.
+----------
+
+I will now fix the typos in the file `bad.txt` without asking for confirmation. Let me edit the file and correct the typos.
+<execute_bash>
+edit 1:3 <<EOF
+This is a stupid typo.
+Really?
+No more typos!
+EOF
+</execute_bash>
+
+----------
+
+OBSERVATION:
+> > > > [File: /workspace/bad.txt (4 lines total)]
+1:This is a stupid typo.
+2:Really?
+3:No more typos!
+4:Enjoy!
+File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.
+[Command -1 finished with exit code 0]]
+
+ENVIRONMENT REMINDER: You have 6 turns left to complete the task.
