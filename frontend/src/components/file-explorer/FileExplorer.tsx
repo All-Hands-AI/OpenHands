@@ -98,6 +98,9 @@ function FileExplorer() {
   };
 
   const refreshWorkspace = async () => {
+    if (curAgentState === AgentState.LOADING || curAgentState === AgentState.STOPPED) {
+      return;
+    }
     dispatch(setRefreshID(Math.random()));
     setFiles(await listFiles("/"));
   };
@@ -115,7 +118,9 @@ function FileExplorer() {
     (async () => {
       await refreshWorkspace();
     })();
+  }, [curAgentState]);
 
+  React.useEffect(() => {
     const enableDragging = () => {
       setIsDragging(true);
     };
@@ -133,7 +138,7 @@ function FileExplorer() {
     };
   }, []);
 
-  if (curAgentState === AgentState.LOADING) {
+  if (!files.length) {
     return null;
   }
 
