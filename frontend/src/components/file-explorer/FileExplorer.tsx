@@ -8,11 +8,14 @@ import {
 import { useDispatch } from "react-redux";
 import { IoFileTray } from "react-icons/io5";
 import { twMerge } from "tailwind-merge";
+import AgentState from "#/types/AgentState";
 import { setRefreshID } from "#/state/codeSlice";
 import { listFiles, uploadFiles } from "#/services/fileService";
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
 import toast from "#/utils/toast";
+import { useSelector } from "react-redux";
+import { RootState } from "#/store";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
@@ -87,6 +90,7 @@ function FileExplorer() {
   const [isHidden, setIsHidden] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
   const [files, setFiles] = React.useState<string[]>([]);
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const dispatch = useDispatch();
 
@@ -129,6 +133,10 @@ function FileExplorer() {
       document.removeEventListener("drop", disableDragging);
     };
   }, []);
+
+  if (curAgentState === AgentState.LOADING) {
+    return <></>;
+  }
 
   return (
     <div className="relative">

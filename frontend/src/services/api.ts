@@ -5,17 +5,18 @@ const WAIT_FOR_AUTH_DELAY_MS = 500;
 
 export async function request(
   url: string,
-  options_in: RequestInit = {},
+  optionsIn: RequestInit = {},
+  disableToast: boolean = false
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 ): Promise<any> {
-  const options = JSON.parse(JSON.stringify(options_in));
+  const options = JSON.parse(JSON.stringify(optionsIn));
 
   const needsAuth = !url.startsWith("/api/options/");
   const token = getToken();
   if (!token && needsAuth) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve(request(url, options_in));
+        resolve(request(url, optionsIn));
       }, WAIT_FOR_AUTH_DELAY_MS);
     });
   } else if (token) {
@@ -26,11 +27,15 @@ export async function request(
   }
   const response = await fetch(url, options);
   if (response.status && response.status >= 400) {
-    toast.error("api", `${response.status} error while fetching ${url}: ${response.statusText}`);
+    if (!disableToast) {
+      toast.error("api", `${response.status} error while fetching ${url}: ${response.statusText}`);
+    }
     throw new Error(response.statusText);
   }
   if (!response.ok) {
-    toast.error("api", "Error fetching " + url);
+    if (!disableToast) {
+      toast.error("api", "Error fetching " + url);
+    }
     throw new Error(response.statusText);
   }
   return response.json();
