@@ -80,6 +80,7 @@ INITIAL_THOUGHTS = [
 
 
 class MonologueAgent(Agent):
+    VERSION = '1.0'
     """
     The Monologue Agent utilizes long and short term memory to complete tasks.
     Long term memory is stored as a LongTermMemory object and the model uses it to search for examples from the past.

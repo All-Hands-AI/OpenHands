@@ -184,7 +184,12 @@ def get_test_result(instance, sandbox, workspace_dir_name):
 
 
 def process_instance(
-    instance, agent_class, metadata, skip_workspace_mount, reset_logger: bool = True
+    instance,
+    agent_class,
+    metadata,
+    skip_workspace_mount,
+    eval_output_dir,
+    reset_logger: bool = True,
 ):
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
@@ -206,7 +211,7 @@ def process_instance(
         # add back the console handler to print ONE line
         logger.addHandler(get_console_handler())
         logger.info(
-            f'Starting evaluation for instance {instance.instance_id}.\nLOG:   tail -f {log_file}'
+            f'Starting evaluation for instance {instance.instance_id}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -417,6 +422,7 @@ if __name__ == '__main__':
                     agent_class,
                     metadata,
                     skip_workspace_mount,
+                    eval_output_dir,
                     reset_logger=bool(num_workers > 1),
                 )
                 future.add_done_callback(update_progress)
