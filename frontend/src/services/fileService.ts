@@ -1,9 +1,7 @@
+import { request } from "./api";
+
 export async function selectFile(file: string): Promise<string> {
-  const res = await fetch(`/api/select-file?file=${file}`);
-  const data = await res.json();
-  if (res.status !== 200) {
-    throw new Error(data.error);
-  }
+  const data = await request(`/api/select-file?file=${file}`);
   return data.code as string;
 }
 
@@ -13,20 +11,13 @@ export async function uploadFiles(files: FileList) {
     formData.append("files", files[i]);
   }
 
-  const res = await fetch("/api/upload-files", {
+  const data = await request("/api/upload-files", {
     method: "POST",
     body: formData,
   });
-
-  const data = await res.json();
-
-  if (res.status !== 200) {
-    throw new Error(data.error || "Failed to upload files.");
-  }
 }
 
 export async function listFiles(path: string = "/"): Promise<string[]> {
-  const res = await fetch(`/api/list-files?path=${path}`);
-  const data = await res.json();
+  const data = await request(`/api/list-files?path=${path}`);
   return data as string[];
 }
