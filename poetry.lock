@@ -454,30 +454,31 @@ crt = ["awscrt (==0.20.9)"]
 
 [[package]]
 name = "browsergym"
-version = "0.2.2"
+version = "0.2.6"
 description = "BrowserGym: a gym environment for web task automation in the Chromium browser"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym-0.2.2-py3-none-any.whl", hash = "sha256:7995224f2991f31ed1dbfb6bd94bab4358e14d42e2ff602e38de21e74befe0d6"},
-    {file = "browsergym-0.2.2.tar.gz", hash = "sha256:61120ded22ce40128bcb1e8b69e46ebd596b4c7a99005de75a07de60a943d01a"},
+    {file = "browsergym-0.2.6-py3-none-any.whl", hash = "sha256:89a6d4197164fc80fdf37b07956f5145848d444113ed8126619f3fa24ca2cf0d"},
+    {file = "browsergym-0.2.6.tar.gz", hash = "sha256:43e1078a1335bdef86f21db2b9caab38404335b00a8566e2335a5e47e0a323b8"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.2.2"
-browsergym-miniwob = "0.2.2"
-browsergym-webarena = "0.2.2"
+browsergym-core = "0.2.6"
+browsergym-experiments = "0.2.6"
+browsergym-miniwob = "0.2.6"
+browsergym-webarena = "0.2.6"
 browsergym-workarena = "*"
 
 [[package]]
 name = "browsergym-core"
-version = "0.2.2"
+version = "0.2.6"
 description = "BrowserGym: a gym environment for web task automation in the Chromium browser"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_core-0.2.2-py3-none-any.whl", hash = "sha256:2d8eac0d93cc6ffee411f6e6cde27572514e546e1965f21735ad19b79be8d97d"},
-    {file = "browsergym_core-0.2.2.tar.gz", hash = "sha256:e816b8eef7da51f30c94dc39d7c2014ceea6e852f6c771a4479530fefdb66526"},
+    {file = "browsergym_core-0.2.6-py3-none-any.whl", hash = "sha256:4283c486c26109626f7f6706673247b3ef1068078f7cd1a83eb56e73a25a9284"},
+    {file = "browsergym_core-0.2.6.tar.gz", hash = "sha256:c9716666de6943193d1b9bcf386eba180214843d18858af6605dbfb643c58e34"},
 ]
 
 [package.dependencies]
@@ -490,32 +491,47 @@ playwright = ">=1.32,<1.40"
 pyparsing = ">=3"
 
 [[package]]
+name = "browsergym-experiments"
+version = "0.2.6"
+description = "Experimentation tools for BrowserGym"
+optional = false
+python-versions = ">3.7"
+files = [
+    {file = "browsergym_experiments-0.2.6-py3-none-any.whl", hash = "sha256:12f60e30d47cf480b1d4a3a77255cc30b3fcd47513daf5c696a3574513d7d203"},
+    {file = "browsergym_experiments-0.2.6.tar.gz", hash = "sha256:ec54bb62d09f7511c482bd06ba9f768401478bfbad66e009db15ba3b13b73586"},
+]
+
+[package.dependencies]
+browsergym-core = "0.2.6"
+tiktoken = ">=0.4"
+
+[[package]]
 name = "browsergym-miniwob"
-version = "0.2.2"
+version = "0.2.6"
 description = "MiniWoB++ benchmark for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_miniwob-0.2.2-py3-none-any.whl", hash = "sha256:9a58701a8b8fcc3deb5ed5714591b7a37608221b57f5ebb19a9a86ac98c92664"},
-    {file = "browsergym_miniwob-0.2.2.tar.gz", hash = "sha256:bd5ac109987097da27dceb8e16a661c93e5ba3cb7e2f7cf1307208aa14189bf8"},
+    {file = "browsergym_miniwob-0.2.6-py3-none-any.whl", hash = "sha256:f44308e1fd44ecdcaa2d512de4c7bacf48ac448b45a4a7b9fca7e8812ab48fbd"},
+    {file = "browsergym_miniwob-0.2.6.tar.gz", hash = "sha256:27d03a7984791abe7226e53e8698de38ab3de6309358150d76a229d8021ed330"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.2.2"
+browsergym-core = "0.2.6"
 
 [[package]]
 name = "browsergym-webarena"
-version = "0.2.2"
+version = "0.2.6"
 description = "WebArena benchmark for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_webarena-0.2.2-py3-none-any.whl", hash = "sha256:dd757fec16880da4e37419a9f79e822df4b3b50202c35fa6dff2cc48de8e191b"},
-    {file = "browsergym_webarena-0.2.2.tar.gz", hash = "sha256:83cf6c1e40a96bb34edc9d3b52f0337b5632f4b14e7c164c14586f6d8a1c0053"},
+    {file = "browsergym_webarena-0.2.6-py3-none-any.whl", hash = "sha256:28b0b7e7f43f9f66a185871600f5d15c97022b60ae9645980040eaeb8e7c233a"},
+    {file = "browsergym_webarena-0.2.6.tar.gz", hash = "sha256:f1cfac00c2c73e393b7f81c1e6f6f0e0c723b74f0937b4666fec7a29ed048edc"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.2.2"
+browsergym-core = "0.2.6"
 libwebarena = "0.0.3"
 
 [[package]]
@@ -7311,4 +7327,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "ed32723fb4593edc1773ce2832be56956a1565727235be276fc91662c862b3ab"
+content-hash = "56eda3b68982ff0d01c77ef11e591fb12c4d0b786357638ca65d5008f9b6d65a"
