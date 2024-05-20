@@ -35,6 +35,10 @@ security_scheme = HTTPBearer()
 
 @app.middleware('http')
 async def attach_session(request: Request, call_next):
+    if request.url.path.startswith('/api/options/'):
+        response = await call_next(request)
+        return response
+
     if not request.headers.get('Authorization'):
         response = JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -159,7 +163,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await session.loop_recv()
 
 
-@app.get('/api/litellm-models')
+@app.get('/api/options/models')
 async def get_litellm_models():
     """
     Get all models supported by LiteLLM.
@@ -179,7 +183,7 @@ async def get_litellm_models():
     return list(set(model_list))
 
 
-@app.get('/api/agents')
+@app.get('/api/options/agents')
 async def get_agents():
     """
     Get all agents supported by LiteLLM.

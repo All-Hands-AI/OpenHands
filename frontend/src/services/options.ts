@@ -1,9 +1,10 @@
 import { request } from "./api";
 
 export async function fetchModels() {
-  return request(`/api/litellm-models`);
+  console.log('fetch models');
+  return request(`/api/options/models`);
 }
 
 export async function fetchAgents() {
-  return request(`/api/agents`);
+  return request(`/api/options/agents`);
 }

@@ -84,7 +84,7 @@ describe("LoadPreviousSession", () => {
       expect(addChatMessageFromEvent).not.toHaveBeenCalled();
       // error toast should be shown
       /*
-      expect(toast.stickyError).toHaveBeenCalledWith(
+      expect(toast.error).toHaveBeenCalledWith(
         "ws",
         "Error fetching the session",
       );

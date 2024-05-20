@@ -36,7 +36,7 @@ class Socket {
     Socket._socket = new WebSocket(WS_URL);
 
     Socket._socket.onopen = (e) => {
-      toast.stickySuccess("ws", "Connected to server.");
+      toast.success("ws", "Connected to server.");
       Socket.initializing = false;
       Socket.callbacks.open?.forEach((callback) => {
         callback(e);
@@ -63,7 +63,7 @@ class Socket {
 
     Socket._socket.onerror = () => {
       const msg = "Connection failed. Retry...";
-      toast.stickyError("ws", msg);
+      toast.error("ws", msg);
     };
 
     Socket._socket.onclose = () => {
@@ -93,7 +93,7 @@ class Socket {
       Socket._socket?.send(message);
     } else {
       const msg = "Connection failed. Retry...";
-      toast.stickyError("ws", msg);
+      toast.error("ws", msg);
     }
   }
 

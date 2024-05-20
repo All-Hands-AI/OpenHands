@@ -1,4 +1,5 @@
 import { getToken } from "./auth";
+import toast from "#/utils/toast";
 
 const WAIT_FOR_AUTH_DELAY_MS = 500;
 
@@ -7,23 +8,29 @@ export async function request(
   options_in: RequestInit = {},
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 ): Promise<any> {
+  const options = JSON.parse(JSON.stringify(options_in));
+
+  const needsAuth = !url.startsWith("/api/options/");
   const token = getToken();
-  if (!token)
+  if (!token && needsAuth) {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve(request(url, options_in));
       }, WAIT_FOR_AUTH_DELAY_MS);
     });
-  const options = JSON.parse(JSON.stringify(options_in));
-  options.headers = {
-    ...(options.headers || {}),
-    Authorization: `Bearer ${token}`,
-  };
+  } else if (token) {
+    options.headers = {
+      ...(options.headers || {}),
+      Authorization: `Bearer ${token}`,
+    };
+  }
   const response = await fetch(url, options);
-  if (!response.ok) {
+  if (response.status && response.status >= 400) {
+    toast.error("api", `${response.status} error while fetching ${url}: ${response.statusText}`);
     throw new Error(response.statusText);
   }
-  if (response.status >= 400) {
+  if (!response.ok) {
+    toast.error("api", "Error fetching " + url);
     throw new Error(response.statusText);
   }
   return response.json();

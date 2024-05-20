@@ -8,7 +8,7 @@ import FileExplorer from "./FileExplorer";
 import { uploadFiles, listFiles } from "#/services/fileService";
 import toast from "#/utils/toast";
 
-const toastSpy = vi.spyOn(toast, "stickyError");
+const toastSpy = vi.spyOn(toast, "error");
 
 vi.mock("../../services/fileService", async () => ({
   listFiles: vi.fn(async (path: string = "/") => {

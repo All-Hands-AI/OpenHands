@@ -104,7 +104,7 @@ function FileExplorer() {
       await uploadFiles(toAdd);
       await refreshWorkspace();
     } catch (error) {
-      toast.stickyError("ws", "Error uploading file");
+      toast.error("ws", "Error uploading file");
     }
   };
 
