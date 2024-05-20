@@ -11,6 +11,7 @@ function ChatMessage({ message }: MessageProps) {
   // const text = useTyping(message.content);
 
   const className = twMerge(
+    "markdown-body",
     "p-3 text-white max-w-[90%] overflow-y-auto rounded-lg",
     message.sender === "user" ? "bg-neutral-700 self-end" : "bg-neutral-500",
   );
