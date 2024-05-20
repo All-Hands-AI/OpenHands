@@ -11,7 +11,7 @@ export async function uploadFiles(files: FileList) {
     formData.append("files", files[i]);
   }
 
-  const data = await request("/api/upload-files", {
+  await request("/api/upload-files", {
     method: "POST",
     body: formData,
   });
