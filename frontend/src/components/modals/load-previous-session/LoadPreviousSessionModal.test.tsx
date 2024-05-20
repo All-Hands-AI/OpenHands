@@ -4,7 +4,6 @@ import userEvent from "@testing-library/user-event";
 import LoadPreviousSessionModal from "./LoadPreviousSessionModal";
 import { addChatMessageFromEvent } from "../../../services/chatService";
 import { handleAssistantMessage } from "../../../services/actions";
-import toast from "../../../utils/toast";
 
 const RESUME_SESSION_BUTTON_LABEL_KEY =
   "LOAD_SESSION$RESUME_SESSION_MODAL_ACTION_LABEL";
@@ -19,13 +18,6 @@ vi.mock("../../../services/chatService", async (importOriginal) => ({
 vi.mock("../../../services/actions", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../services/actions")>()),
   handleAssistantMessage: vi.fn(),
-}));
-
-vi.mock("../../../utils/toast", () => ({
-  default: {
-    stickyError: vi.fn(),
-    stickySuccess: vi.fn(),
-  },
 }));
 
 describe("LoadPreviousSession", () => {

@@ -13,7 +13,7 @@ import AgentControlBar from "./components/AgentControlBar";
 import AgentStatusBar from "./components/AgentStatusBar";
 import Terminal from "./components/terminal/Terminal";
 import { initializeAgent } from "./services/agent";
-import { Socket } from "#/services/socket";
+import Socket from "#/services/socket";
 import { getToken } from "#/services/auth";
 import { settingsAreUpToDate } from "#/services/settings";
 
