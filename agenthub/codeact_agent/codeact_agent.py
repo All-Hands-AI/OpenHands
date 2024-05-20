@@ -215,7 +215,6 @@ class CodeActAgent(Agent):
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
-        print('SENDING MSGS', messages)
         response = self.llm.completion(
             messages=messages,
             stop=[
@@ -267,17 +266,6 @@ class CodeActAgent(Agent):
             # We assume the LLM is GOOD enough that when it returns pure natural language
             # it want to talk to the user
             return MessageAction(content=action_str, wait_for_response=True)
-
-    def action_to_str(self, action: Action) -> str:
-        if isinstance(action, CmdRunAction):
-            return f'{action.thought}\n<execute_bash>{action.command}</execute_bash>'
-        elif isinstance(action, IPythonRunCellAction):
-            return f'{action.thought}\n<execute_ipython>{action.code}</execute_ipython>'
-        elif isinstance(action, BrowseInteractiveAction):
-            return f'{action.thought}\n<execute_browse>{action.browser_actions}</execute_browse>'
-        elif isinstance(action, MessageAction):
-            return action.content
-        return ''
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
