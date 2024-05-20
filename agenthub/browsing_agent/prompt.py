@@ -12,10 +12,10 @@ from browsergym.core.action.base import AbstractActionSet
 from browsergym.core.action.highlevel import HighLevelActionSet
 from browsergym.core.action.python import PythonActionSet
 
+from opendevin.runtime.browser.browser_env import BrowserEnv
+
 from .utils import (
     ParseError,
-    count_tokens,
-    image_to_jpg_base64_url,
     parse_html_tags_raise,
 )
 
@@ -177,9 +177,8 @@ class Trunkater(Shrinkable):
 
 def fit_tokens(
     shrinkable: Shrinkable,
-    max_prompt_tokens=None,
+    max_prompt_chars=None,
     max_iterations=20,
-    model_name='openai/gpt-4',
 ):
     """Shrink a prompt element until it fits max_tokens.
 
@@ -187,8 +186,8 @@ def fit_tokens(
     ----------
     shrinkable : Shrinkable
         The prompt element to shrink.
-    max_tokens : int
-        The maximum number of tokens allowed.
+    max_prompt_chars : int
+        The maximum number of chars allowed.
     max_iterations : int, optional
         The maximum number of shrink iterations, by default 20.
     model_name : str, optional
@@ -199,7 +198,7 @@ def fit_tokens(
     str : the prompt after shrinking.
     """
 
-    if max_prompt_tokens is None:
+    if max_prompt_chars is None:
         return shrinkable.prompt
 
     for _ in range(max_iterations):
@@ -210,8 +209,8 @@ def fit_tokens(
             prompt_str = '\n'.join([p['text'] for p in prompt if p['type'] == 'text'])
         else:
             raise ValueError(f'Unrecognized type for prompt: {type(prompt)}')
-        n_token = count_tokens(prompt_str, model=model_name)
-        if n_token <= max_prompt_tokens:
+        n_chars = len(prompt_str)
+        if n_chars <= max_prompt_chars:
             return prompt
         shrinkable.shrink()
 
@@ -219,7 +218,7 @@ def fit_tokens(
         dedent(
             f"""\
             After {max_iterations} shrink iterations, the prompt is still
-            {count_tokens(prompt_str)} tokens (greater than {max_prompt_tokens}). Returning the prompt as is."""
+            {len(prompt_str)} chars (greater than {max_prompt_chars}). Returning the prompt as is."""
         )
     )
     return prompt
@@ -290,7 +289,7 @@ class Observation(Shrinkable):
         if self.flags.use_screenshot:
             if isinstance(prompt, str):
                 prompt = [{'type': 'text', 'text': prompt}]
-            img_url = image_to_jpg_base64_url(self.obs['screenshot'])
+            img_url = BrowserEnv.image_to_jpg_base64_url(self.obs['screenshot'])
             prompt.append({'type': 'image_url', 'image_url': img_url})
 
         return prompt

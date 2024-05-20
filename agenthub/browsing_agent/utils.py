@@ -1,82 +1,8 @@
-import base64
 import collections
-import io
 import re
-from functools import cache
-from pathlib import Path
 from warnings import warn
 
-import numpy as np
-import tiktoken
 import yaml
-from joblib import Memory
-from PIL import Image
-from transformers import AutoModel, AutoTokenizer
-
-
-def _extract_wait_time(error_message, min_retry_wait_time=60):
-    """Extract the wait time from an OpenAI RateLimitError message."""
-    match = re.search(r'try again in (\d+(\.\d+)?)s', error_message)
-    if match:
-        return max(min_retry_wait_time, float(match.group(1)))
-    return min_retry_wait_time
-
-
-def truncate_tokens(text, max_tokens=8000, start=0, model_name='gpt-4'):
-    """Use tiktoken to truncate a text to a maximum number of tokens."""
-    enc = tiktoken.encoding_for_model(model_name)
-    tokens = enc.encode(text)
-    if len(tokens) - start > max_tokens:
-        return enc.decode(tokens[start : (start + max_tokens)])
-    else:
-        return text
-
-
-@cache
-def get_tokenizer(model_name='openai/gpt-4'):
-    if model_name.startswith('openai'):
-        return tiktoken.encoding_for_model(model_name.split('/')[-1])
-    else:
-        return AutoTokenizer.from_pretrained(model_name)
-
-
-def count_tokens(text, model='openai/gpt-4'):
-    enc = get_tokenizer(model)
-    return len(enc.encode(text))
-
-
-def count_messages_token(messages, model='openai/gpt-4'):
-    """Count the number of tokens in a list of messages.
-
-    Args:
-        messages (list): a list of messages, each message can be a string or a
-            list of dicts or an object with a content attribute.
-        model (str): the model to use for tokenization.
-
-    Returns:
-        int: the number of tokens.
-    """
-    token_count = 0
-    for message in messages:
-        if hasattr(message, 'content'):
-            message = message.content
-
-        if isinstance(message, str):
-            token_count += count_tokens(message, model)
-        # handles messages with image content
-        elif isinstance(message, (list, tuple)):
-            for part in message:
-                if not isinstance(part, dict):
-                    raise ValueError(
-                        f'The message is expected to be a list of dicts, but got list of {type(message)}'
-                    )
-                if part['type'] == 'text':
-                    token_count += count_tokens(part['text'], model)
-        else:
-            raise ValueError(
-                f'The message is expected to be a string or a list of dicts, but got {type(message)}'
-            )
-    return token_count
 
 
 def yaml_parser(message):
@@ -232,41 +158,3 @@ def parse_html_tags(text, keys=(), optional_keys=(), merge_multiple=False):
     valid = len(retry_messages) == 0
     retry_message = '\n'.join(retry_messages)
     return content_dict, valid, retry_message
-
-
-class ChatCached:
-    # I wish I could extend ChatOpenAI, but it is somehow locked, I don't know if it's pydantic soercey.
-
-    def __init__(self, chat, memory=None):
-        self.chat = chat
-        self.memory = (
-            memory if memory else Memory(location=Path.home() / 'llm-cache', verbose=10)
-        )
-        self._call = self.memory.cache(self.chat.__call__, ignore=['self'])
-        self._generate = self.memory.cache(self.chat.generate, ignore=['self'])
-
-    def __call__(self, messages):
-        return self._call(messages)
-
-    def generate(self, messages):
-        return self._generate(messages)
-
-
-def download_and_save_model(model_name: str, save_dir: str = '.'):
-    model = AutoModel.from_pretrained(model_name)
-    model.save_pretrained(save_dir)
-    print(f'Model downloaded and saved to {save_dir}')
-
-
-def image_to_jpg_base64_url(image: np.ndarray | Image.Image):
-    """Convert a numpy array to a base64 encoded image url."""
-
-    if isinstance(image, np.ndarray):
-        image = Image.fromarray(image)
-    if image.mode in ('RGBA', 'LA'):
-        image = image.convert('RGB')
-    buffered = io.BytesIO()
-    image.save(buffered, format='JPEG')
-
-    image_base64 = base64.b64encode(buffered.getvalue()).decode()
-    return f'data:image/jpeg;base64,{image_base64}'
