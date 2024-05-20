@@ -37,6 +37,8 @@ class BrowserEnv:
         )
         logger.info('Starting browser env...')
         self.process.start()
+        if not self.check_alive():
+            raise BrowserException('Failed to start browser environment.')
         atexit.register(self.close)
 
     def browser_process(self):
@@ -58,6 +60,9 @@ class BrowserEnv:
                         logger.info('SHUTDOWN recv, shutting down browser env...')
                         env.close()
                         return
+                    elif unique_request_id == 'IS_ALIVE':
+                        self.browser_side.send(('ALIVE', None))
+                        continue
                     action = action_data['action']
                     obs, reward, terminated, truncated, info = env.step(action)
                     # add text content of the page
@@ -86,9 +91,14 @@ class BrowserEnv:
             if self.agent_side.poll(timeout=0.01):
                 response_id, obs = self.agent_side.recv()
                 if response_id == unique_request_id:
-                    if obs['last_action_error']:
-                        raise BrowserException(obs['last_action_error'])
                     return obs
+
+    def check_alive(self, timeout: float = 10):
+        self.agent_side.send(('IS_ALIVE', None))
+        if self.agent_side.poll(timeout=timeout):
+            response_id, _ = self.agent_side.recv()
+            if response_id == 'ALIVE':
+                return True
 
     def close(self):
         try:
