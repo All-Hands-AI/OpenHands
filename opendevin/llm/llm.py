@@ -37,7 +37,6 @@ class LLM:
     """
 
     def __init__(
-        self.costs = []
         model=None,
         api_key=None,
         base_url=None,
@@ -151,13 +150,11 @@ class LLM:
             timeout=self.llm_timeout,
 
     def log_cost(self, response):
+        if not hasattr(self, 'costs'):
+            self.costs = []
         cost = litellm_completion_cost(response)
         self.costs.append(cost)
         logger.info(f"Logged cost: {json.dumps(cost)}")
-            top_p=llm_top_p,
-        )
-
-        completion_unwrapped = self._completion
 
         def attempt_on_error(retry_state):
             logger.error(
