@@ -54,45 +54,25 @@ class MemoryCondenser:
         Returns:
         - The condensed recent events if successful, or False if condensation failed.
         """
-
-        # generate the action prompt with the recent events
-        action_prompt = self.action_prompt(recent_events)
-
-        # test prompt token length
-        if not self._needs_condense(llm=llm, action_prompt=action_prompt):
-            return recent_events, False
-
-        logger.debug('Condensing recent events')
-
         try:
-            # try 3 times to condense
-            attempt_count = 0
-            failed = False
+            logger.debug('Condensing recent events')
 
-            while attempt_count < 3 and not failed:
-                # attempt to condense the recent events
-                new_recent_events = self._attempt_condense(llm, recent_events)
+            # attempt to condense the recent events
+            new_recent_events = self._attempt_condense(llm, recent_events)
 
-                if not new_recent_events or len(new_recent_events) == 0:
-                    logger.debug('Condensation failed: new_recent_events is empty')
-                    return [], False
+            if not new_recent_events or len(new_recent_events) == 0:
+                logger.debug('Condensation failed: new_recent_events is empty')
+                return [], False
 
-                # re-generate the action prompt with the condensed events
-                new_action_prompt = self.action_prompt(new_recent_events)
+            # re-generate the action prompt with the condensed events
+            new_action_prompt = self.action_prompt(new_recent_events)
 
-                # check if the new prompt still needs to be condensed
-                if self._needs_condense(llm=llm, action_prompt=new_action_prompt):
-                    attempt_count += 1
-                    recent_events = new_recent_events.copy()
-                    continue
-
-                # the new prompt is within the token limit
-                return new_recent_events, True
+            # hope for the best
+            return new_recent_events, True
 
         except Exception as e:
             logger.error('Condensation failed: %s', str(e), exc_info=False)
             return [], False
-        return [], False
 
     def _attempt_condense(
         self,
