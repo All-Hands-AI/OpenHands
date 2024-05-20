@@ -35,7 +35,9 @@ security_scheme = HTTPBearer()
 
 @app.middleware('http')
 async def attach_session(request: Request, call_next):
-    if request.url.path.startswith('/api/options/'):
+    if request.url.path.startswith('/api/options/') or not request.url.path.startswith(
+        '/api/'
+    ):
         response = await call_next(request)
         return response
 
