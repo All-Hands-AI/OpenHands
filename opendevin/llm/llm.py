@@ -25,10 +25,7 @@ from opendevin.core.logger import opendevin_logger as logger
 __all__ = ['LLM']
 
 
-import json
-    The LLM class represents a Language Model instance.
-
-    Attributes:
+class LLM:
         model_name (str): The name of the language model.
         api_key (str): The API key for accessing the language model.
         base_url (str): The base URL for the language model API.
