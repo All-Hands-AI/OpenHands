@@ -3,7 +3,7 @@ import toast from "#/utils/toast";
 import { handleAssistantMessage } from "./actions";
 import { getToken, setToken, clearToken } from "./auth";
 
-class Socket {
+export class Socket {
   private static _socket: WebSocket | null = null;
 
   // callbacks contain a list of callable functions
@@ -127,7 +127,5 @@ class Socket {
     Socket.callbacks[event].push(...callbacks);
   }
 }
-
-Socket.tryInitialize();
 
 export default Socket;

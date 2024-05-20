@@ -266,12 +266,12 @@
     "en": "Please stop the agent before editing these settings."
   },
   "LOAD_SESSION$MODAL_TITLE": {
-    "en": "Unfinished Session Detected",
+    "en": "Return to existing session?",
     "zh-CN": "检测到有未完成的会话",
     "zh-TW": "偵測到未完成的會話"
   },
   "LOAD_SESSION$MODAL_CONTENT": {
-    "en": "You seem to have an unfinished task. Would you like to pick up where you left off or start fresh?",
+    "en": "You seem to have an ongoing session. Would you like to pick up where you left off, or start fresh?",
     "zh-CN": "您似乎有一个未完成的任务。您想继续之前的工作还是重新开始？",
     "zh-TW": "您似乎有一個未完成的任務。您想從上次離開的地方繼續還是重新開始？"
   },

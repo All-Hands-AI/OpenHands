@@ -2,6 +2,9 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import BaseModal from "../base-modal/BaseModal";
+import { clearToken } from "#/services/auth";
+import { Socket } from "#/services/socket";
+import { initializeAgent } from "#/services/agent";
 
 interface LoadPreviousSessionModalProps {
   isOpen: boolean;
@@ -14,12 +17,14 @@ function LoadPreviousSessionModal({
 }: LoadPreviousSessionModalProps) {
   const { t } = useTranslation();
 
-  const onStartNewSession = async () => {
-    // TODO: implement
+  const onResumeSession = async () => {
+    Socket.tryInitialize();
+    initializeAgent();
   };
 
-  const onResumeSession = async () => {
-    // TODO: implement
+  const onStartNewSession = async () => {
+    clearToken();
+    onResumeSession();
   };
 
   return (

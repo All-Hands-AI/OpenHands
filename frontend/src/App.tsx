@@ -13,7 +13,9 @@ import AgentControlBar from "./components/AgentControlBar";
 import AgentStatusBar from "./components/AgentStatusBar";
 import Terminal from "./components/terminal/Terminal";
 import { initializeAgent } from "./services/agent";
-import { settingsAreUpToDate } from "./services/settings";
+import { Socket } from "#/services/socket";
+import { getToken } from "#/services/auth";
+import { settingsAreUpToDate } from "#/services/settings";
 
 interface Props {
   setSettingOpen: (isOpen: boolean) => void;
@@ -58,7 +60,10 @@ function App(): JSX.Element {
 
     if (!settingsAreUpToDate()) {
       onSettingsModalOpen();
+    } else if (getToken()) {
+      onLoadPreviousSessionModalOpen();
     } else {
+      Socket.tryInitialize();
       initializeAgent();
     }
 
