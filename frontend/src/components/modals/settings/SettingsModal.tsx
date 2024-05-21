@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import { fetchAgents, fetchModels } from "#/services/options";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
-import { initializeAgent } from "#/services/agent";
+import Session from "#/services/session";
 import { RootState } from "../../../store";
 import AgentState from "../../../types/AgentState";
 import {
@@ -100,7 +100,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     const updatedSettings = getSettingsDifference(settings);
     saveSettings(settings);
     i18next.changeLanguage(settings.LANGUAGE);
-    initializeAgent(); // reinitialize the agent with the new settings
+    Session.startNewSession();
 
     const sensitiveKeys = ["LLM_API_KEY"];
 

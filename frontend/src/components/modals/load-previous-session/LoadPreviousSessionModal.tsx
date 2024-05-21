@@ -3,8 +3,7 @@ import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import BaseModal from "../base-modal/BaseModal";
 import { clearToken } from "#/services/auth";
-import Socket from "#/services/socket";
-import { initializeAgent } from "#/services/agent";
+import Session from "#/services/session";
 
 interface LoadPreviousSessionModalProps {
   isOpen: boolean;
@@ -17,16 +16,6 @@ function LoadPreviousSessionModal({
 }: LoadPreviousSessionModalProps) {
   const { t } = useTranslation();
 
-  const onResumeSession = async () => {
-    Socket.tryInitialize();
-    initializeAgent();
-  };
-
-  const onStartNewSession = async () => {
-    clearToken();
-    onResumeSession();
-  };
-
   return (
     <BaseModal
       isOpen={isOpen}
@@ -37,13 +26,13 @@ function LoadPreviousSessionModal({
         {
           label: t(I18nKey.LOAD_SESSION$RESUME_SESSION_MODAL_ACTION_LABEL),
           className: "bg-primary rounded-lg",
-          action: onResumeSession,
+          action: Session.restoreOrStartNewSession,
           closeAfterAction: true,
         },
         {
           label: t(I18nKey.LOAD_SESSION$START_NEW_SESSION_MODAL_ACTION_LABEL),
           className: "bg-neutral-500 rounded-lg",
-          action: onStartNewSession,
+          action: Session.startNewSession,
           closeAfterAction: true,
         },
       ]}

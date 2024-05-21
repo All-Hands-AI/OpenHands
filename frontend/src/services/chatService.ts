@@ -2,13 +2,13 @@ import store from "#/store";
 import ActionType from "#/types/ActionType";
 import { SocketMessage } from "#/types/ResponseType";
 import { ActionMessage } from "#/types/Message";
-import Socket from "./socket";
+import Session from "./session";
 import { addUserMessage } from "#/state/chatSlice";
 
 export function sendChatMessage(message: string): void {
   const event = { action: ActionType.MESSAGE, args: { content: message } };
   const eventString = JSON.stringify(event);
-  Socket.send(eventString);
+  Session.send(eventString);
 }
 
 export function addChatMessageFromEvent(event: string | SocketMessage): void {

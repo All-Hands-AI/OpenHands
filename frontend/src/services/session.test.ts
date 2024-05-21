@@ -1,14 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 
 import ActionType from "#/types/ActionType";
-import { initializeAgent } from "./agent";
 import { Settings, saveSettings } from "./settings";
-import Socket from "./socket";
+import Session from "./session";
 
-const sendSpy = vi.spyOn(Socket, "send");
+const sendSpy = vi.spyOn(Session, "send");
 
-describe("initializeAgent", () => {
-  it("Should initialize the agent with the current settings", () => {
+describe("startNewSession", () => {
+  it("Should start a new session with the current settings", () => {
     const settings: Settings = {
       LLM_MODEL: "llm_value",
       AGENT: "agent_value",
@@ -22,7 +21,7 @@ describe("initializeAgent", () => {
     };
 
     saveSettings(settings);
-    initializeAgent();
+    Session.startNewSession();
 
     expect(sendSpy).toHaveBeenCalledWith(JSON.stringify(event));
   });

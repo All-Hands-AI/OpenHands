@@ -12,8 +12,7 @@ import "./App.css";
 import AgentControlBar from "./components/AgentControlBar";
 import AgentStatusBar from "./components/AgentStatusBar";
 import Terminal from "./components/terminal/Terminal";
-import { initializeAgent } from "./services/agent";
-import Socket from "#/services/socket";
+import Session from "#/services/session";
 import { getToken } from "#/services/auth";
 import { settingsAreUpToDate } from "#/services/settings";
 
@@ -63,8 +62,7 @@ function App(): JSX.Element {
     } else if (getToken()) {
       onLoadPreviousSessionModalOpen();
     } else {
-      Socket.tryInitialize();
-      initializeAgent();
+      Session.startNewSession();
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps

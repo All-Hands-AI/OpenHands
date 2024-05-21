@@ -2,8 +2,10 @@
 import toast from "#/utils/toast";
 import { handleAssistantMessage } from "./actions";
 import { getToken, setToken, clearToken } from "./auth";
+import ActionType from "#/types/ActionType";
+import { getSettings } from "./settings";
 
-class Socket {
+class Session {
   private static _socket: WebSocket | null = null;
 
   // callbacks contain a list of callable functions
@@ -19,31 +21,50 @@ class Socket {
     close: [],
   };
 
-  private static initializing = false;
+  private static _connecting = false;
 
-  public static tryInitialize(): void {
-    if (Socket.initializing) return;
-    Socket.initializing = true;
+  public static restoreOrStartNewSession() {
     const token = getToken();
-    Socket._initialize(token);
+    console.log('restoreOrStartNewSession', token);
+    if (Session.isConnected()) {
+      Session.disconnect();
+    }
+    Session._connect(token);
   }
 
-  private static _initialize(token: string): void {
-    if (Socket.isConnected()) return;
+  public static startNewSession() {
+    console.log("start new session");
+    clearToken();
+    Session.restoreOrStartNewSession();
+  }
+
+  private static _initializeAgent = () => {
+    const settings = getSettings();
+    const event = { action: ActionType.INIT, args: settings };
+    const eventString = JSON.stringify(event);
+    Session.send(eventString);
+  };
+
+  private static _connect(token: string=""): void {
+    console.log('connect', token);
+    if (Session.isConnected()) return;
+    Session._connecting = true;
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const WS_URL = `${protocol}//${window.location.host}/ws?token=${token}`;
-    Socket._socket = new WebSocket(WS_URL);
+    Session._socket = new WebSocket(WS_URL);
 
-    Socket._socket.onopen = (e) => {
+    Session._socket.onopen = (e) => {
+      console.log('connected');
       toast.success("ws", "Connected to server.");
-      Socket.initializing = false;
-      Socket.callbacks.open?.forEach((callback) => {
+      Session._connecting = false;
+      Session._initializeAgent();
+      Session.callbacks.open?.forEach((callback) => {
         callback(e);
       });
     };
 
-    Socket._socket.onmessage = (e) => {
+    Session._socket.onmessage = (e) => {
       let data = null;
       try {
         data = JSON.parse(e.data);
@@ -61,36 +82,43 @@ class Socket {
       }
     };
 
-    Socket._socket.onerror = () => {
+    Session._socket.onerror = () => {
       const msg = "Connection failed. Retry...";
       toast.error("ws", msg);
     };
 
-    Socket._socket.onclose = () => {
+    Session._socket.onclose = () => {
       // Reconnect after a delay
       setTimeout(() => {
-        Socket.tryInitialize();
+        Session.restoreOrStartNewSession();
       }, 3000); // Reconnect after 3 seconds
     };
   }
 
   static isConnected(): boolean {
     return (
-      Socket._socket !== null && Socket._socket.readyState === WebSocket.OPEN
+      Session._socket !== null && Session._socket.readyState === WebSocket.OPEN
     );
   }
 
-  static send(message: string): void {
-    if (!Socket.isConnected()) {
-      Socket.tryInitialize();
+  static disconnect(): void {
+    if (Session._socket) {
+      Session._socket.close();
     }
-    if (Socket.initializing) {
-      setTimeout(() => Socket.send(message), 1000);
+    Session._socket = null;
+  }
+
+  static send(message: string): void {
+    if (Session._connecting) {
+      setTimeout(() => Session.send(message), 1000);
       return;
     }
+    if (!Session.isConnected()) {
+      throw new Error("Not connected to server.");
+    }
 
-    if (Socket.isConnected()) {
-      Socket._socket?.send(message);
+    if (Session.isConnected()) {
+      Session._socket?.send(message);
     } else {
       const msg = "Connection failed. Retry...";
       toast.error("ws", msg);
@@ -101,7 +129,7 @@ class Socket {
     event: string,
     callback: (e: MessageEvent) => void,
   ): void {
-    Socket._socket?.addEventListener(
+    Session._socket?.addEventListener(
       event as keyof WebSocketEventMap,
       callback as (
         this: WebSocket,
@@ -114,18 +142,18 @@ class Socket {
     event: string,
     listener: (e: Event) => void,
   ): void {
-    Socket._socket?.removeEventListener(event, listener);
+    Session._socket?.removeEventListener(event, listener);
   }
 
   static registerCallback<K extends keyof WebSocketEventMap>(
     event: K,
     callbacks: ((data: WebSocketEventMap[K]) => void)[],
   ): void {
-    if (Socket.callbacks[event] === undefined) {
+    if (Session.callbacks[event] === undefined) {
       return;
     }
-    Socket.callbacks[event].push(...callbacks);
+    Session.callbacks[event].push(...callbacks);
   }
 }
 
-export default Socket;
+export default Session;
