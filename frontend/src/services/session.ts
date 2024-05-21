@@ -3,6 +3,7 @@ import toast from "#/utils/toast";
 import { handleAssistantMessage } from "./actions";
 import { getToken, setToken, clearToken } from "./auth";
 import ActionType from "#/types/ActionType";
+import { SocketMessage } from "#/types/ResponseType";
 import { getSettings } from "./settings";
 
 class Session {
