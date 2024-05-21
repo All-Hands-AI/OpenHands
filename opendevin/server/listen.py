@@ -157,7 +157,9 @@ async def websocket_endpoint(websocket: WebSocket):
     last_event_id = -1
     if websocket.query_params.get('last_event_id'):
         last_event_id = int(websocket.query_params.get('last_event_id'))
-    for event in session.agent.event_stream.get_events(start_id=last_event_id + 1):
+    for event in session.agent_session.event_stream.get_events(
+        start_id=last_event_id + 1
+    ):
         if isinstance(event, NullAction) or isinstance(event, NullObservation):
             continue
         if isinstance(event, ChangeAgentStateAction) or isinstance(
@@ -213,14 +215,14 @@ def list_files(request: Request, path: str = '/'):
     curl http://localhost:3000/api/list-files
     ```
     """
-    if not request.state.session.agent.runtime:
+    if not request.state.session.agent_session.runtime:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Runtime not yet initialized'},
         )
 
     try:
-        return request.state.session.agent.runtime.file_store.list(path)
+        return request.state.session.agent_session.runtime.file_store.list(path)
     except Exception as e:
         logger.error(f'Error refreshing files: {e}', exc_info=False)
         error_msg = f'Error refreshing files: {e}'
@@ -241,7 +243,7 @@ def select_file(file: str, request: Request):
     ```
     """
     try:
-        content = request.state.session.agent.runtime.file_store.read(file)
+        content = request.state.session.agent_session.runtime.file_store.read(file)
     except Exception as e:
         logger.error(f'Error opening file {file}: {e}', exc_info=False)
         error_msg = f'Error opening file: {e}'
@@ -265,7 +267,7 @@ async def upload_file(request: Request, files: list[UploadFile]):
     try:
         for file in files:
             file_contents = await file.read()
-            request.state.session.agent.runtime.file_store.write(
+            request.state.session.agent_session.runtime.file_store.write(
                 file.filename, file_contents
             )
     except Exception as e:
@@ -287,7 +289,7 @@ def get_root_task(request: Request):
     curl -H "Authorization: Bearer <TOKEN>" http://localhost:3000/api/root_task
     ```
     """
-    controller = request.state.session.agent.controller
+    controller = request.state.session.agent_session.controller
     if controller is not None:
         state = controller.get_state()
         if state:

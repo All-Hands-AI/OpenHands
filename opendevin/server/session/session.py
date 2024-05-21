@@ -29,12 +29,14 @@ class Session:
         self.sid = sid
         self.websocket = ws
         self.last_active_ts = int(time.time())
-        self.agent = AgentSession(sid)
-        self.agent.event_stream.subscribe(EventStreamSubscriber.SERVER, self.on_event)
+        self.agent_session = AgentSession(sid)
+        self.agent_session.event_stream.subscribe(
+            EventStreamSubscriber.SERVER, self.on_event
+        )
 
     async def close(self):
         self.is_alive = False
-        await self.agent.close()
+        await self.agent_session.close()
 
     async def loop_recv(self):
         try:
@@ -55,21 +57,21 @@ class Session:
             logger.exception('Error in loop_recv: %s', e)
 
     async def _initialize_agent(self, data: dict):
-        await self.agent.event_stream.add_event(
+        await self.agent_session.event_stream.add_event(
             ChangeAgentStateAction(AgentState.LOADING), EventSource.USER
         )
-        await self.agent.event_stream.add_event(
+        await self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING), EventSource.AGENT
         )
         try:
-            await self.agent.start(data)
+            await self.agent_session.start(data)
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
             await self.send_error(
                 f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
             )
             return
-        await self.agent.event_stream.add_event(
+        await self.agent_session.event_stream.add_event(
             ChangeAgentStateAction(AgentState.INIT), EventSource.USER
         )
 
@@ -94,7 +96,7 @@ class Session:
             await self._initialize_agent(data)
             return
         event = event_from_dict(data.copy())
-        await self.agent.event_stream.add_event(event, EventSource.USER)
+        await self.agent_session.event_stream.add_event(event, EventSource.USER)
 
     async def send(self, data: dict[str, object]) -> bool:
         try:
