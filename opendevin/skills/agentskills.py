@@ -92,7 +92,10 @@ def goto_line(line_number: int):
         raise ValueError(f'Line number must be between 1 and {total_lines}')
 
     CURRENT_LINE = line_number
-    _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW)
+
+    output = f'[File: {os.path.abspath(CURRENT_FILE)} ({total_lines} lines total)]\n'
+    output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True)
+    print(output)
 
 
 def scroll_down():

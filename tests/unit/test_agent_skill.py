@@ -1,10 +1,10 @@
+import contextlib
 import io
 import os
-import sys
 import tempfile
 import unittest
 
-from opendevin.skills.agentskills import create_file, edit_file, open_file
+from opendevin.skills.agentskills import create_file, edit_file, goto_line, open_file
 
 
 class TestAgentSkills(unittest.TestCase):
@@ -15,9 +15,8 @@ class TestAgentSkills(unittest.TestCase):
                 file.write('Line 1\nLine 2\nLine 3\nLine 4\nLine 5')
 
             with io.StringIO() as buf:
-                sys.stdout = buf
-                open_file(temp_file_path)
-                sys.stdout = sys.__stdout__
+                with contextlib.redirect_stdout(buf):
+                    open_file(temp_file_path)
                 result = buf.getvalue()
             self.assertIsNotNone(result)
             expected = (
@@ -40,9 +39,8 @@ class TestAgentSkills(unittest.TestCase):
                 file.write('\n'.join([f'Line {i}' for i in range(1, 1001)]))
 
             with io.StringIO() as buf:
-                sys.stdout = buf
-                open_file(temp_file_path)
-                sys.stdout = sys.__stdout__
+                with contextlib.redirect_stdout(buf):
+                    open_file(temp_file_path)
                 result = buf.getvalue()
             self.assertIsNotNone(result)
             expected = f'[File: {temp_file_path} (1000 lines total)]\n'
@@ -61,9 +59,8 @@ class TestAgentSkills(unittest.TestCase):
                 file.write('\n'.join([f'Line {i}' for i in range(1, 1001)]))
 
             with io.StringIO() as buf:
-                sys.stdout = buf
-                open_file(temp_file_path, 100)
-                sys.stdout = sys.__stdout__
+                with contextlib.redirect_stdout(buf):
+                    open_file(temp_file_path, 100)
                 result = buf.getvalue()
             self.assertIsNotNone(result)
 
@@ -79,9 +76,8 @@ class TestAgentSkills(unittest.TestCase):
     def test_create_file(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             with io.StringIO() as buf:
-                sys.stdout = buf
-                create_file(os.path.join(temp_dir, 'a.txt'))
-                sys.stdout = sys.__stdout__
+                with contextlib.redirect_stdout(buf):
+                    create_file(os.path.join(temp_dir, 'a.txt'))
                 result = buf.getvalue()
 
                 expected = (
@@ -94,6 +90,42 @@ class TestAgentSkills(unittest.TestCase):
                     list(filter(None, expected.split('\n'))),
                 )
 
+    def test_goto_line(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_file_path = os.path.join(temp_dir, 'a.txt')
+            with open(temp_file_path, 'w') as file:
+                file.write('\n'.join([f'Line {i}' for i in range(1, 1001)]))
+
+            with io.StringIO() as buf:
+                with contextlib.redirect_stdout(buf):
+                    open_file(temp_file_path)
+                result = buf.getvalue()
+            self.assertIsNotNone(result)
+
+            expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+            # for WINDOW = 100
+            for i in range(1, 52):
+                expected += f'{i}: Line {i}\n'
+            self.assertEqual(
+                list(filter(None, result.split('\n'))),
+                list(filter(None, expected.split('\n'))),
+            )
+
+            with io.StringIO() as buf:
+                with contextlib.redirect_stdout(buf):
+                    goto_line(100)
+                result = buf.getvalue()
+            self.assertIsNotNone(result)
+
+            expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+            # for WINDOW = 100
+            for i in range(51, 151):
+                expected += f'{i}: Line {i}\n'
+            self.assertEqual(
+                list(filter(None, result.split('\n'))),
+                list(filter(None, expected.split('\n'))),
+            )
+
     def test_edit_file(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_file_path = os.path.join(temp_dir, 'a.txt')
@@ -102,12 +134,9 @@ class TestAgentSkills(unittest.TestCase):
 
             open_file(temp_file_path)
 
-            # Test editing a file
-            # capture stdout
             with io.StringIO() as buf:
-                sys.stdout = buf
-                edit_file(start=1, end=3, content='REPLACE TEXT')
-                sys.stdout = sys.__stdout__
+                with contextlib.redirect_stdout(buf):
+                    edit_file(start=1, end=3, content='REPLACE TEXT')
                 result = buf.getvalue()
                 expected = (
                     f'[File: {temp_file_path} (3 lines total after edit)]\n'
