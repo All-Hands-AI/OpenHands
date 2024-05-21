@@ -45,3 +45,5 @@ class Metrics:
         for key, value in metrics.items():
             logs += f'{key}: {value}\n'
         return logs
+
+opendevin_metrics = Metrics()

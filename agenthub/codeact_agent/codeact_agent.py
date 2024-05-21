@@ -10,6 +10,7 @@ from agenthub.codeact_agent.prompt import (
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.metrics import opendevin_metrics as metrics
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
@@ -173,7 +174,6 @@ class CodeActAgent(Agent):
         Resets the CodeAct Agent.
         """
         super().reset()
-        self.cost_accumulator = 0
 
     def step(self, state: State) -> Action:
         """
@@ -275,9 +275,9 @@ class CodeActAgent(Agent):
             cur_cost = self.llm.completion_cost(response)
         except Exception:
             cur_cost = 0
-        self.cost_accumulator += cur_cost
+        metrics.add_cost(cur_cost)
         logger.info(
             'Cost: %.2f USD | Accumulated Cost: %.2f USD',
             cur_cost,
-            self.cost_accumulator,
+            metrics.total_cost,
         )
