@@ -267,8 +267,8 @@
   },
   "LOAD_SESSION$MODAL_TITLE": {
     "en": "Return to existing session?",
-    "zh-CN": "检测到有未完成的会话",
-    "zh-TW": "偵測到未完成的會話"
+    "zh-CN": "是否继续未完成的会话?",
+    "zh-TW": "是否繼續未完成的會話?"
   },
   "LOAD_SESSION$MODAL_CONTENT": {
     "en": "You seem to have an ongoing session. Would you like to pick up where you left off, or start fresh?",
