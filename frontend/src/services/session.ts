@@ -3,7 +3,6 @@ import toast from "#/utils/toast";
 import { handleAssistantMessage } from "./actions";
 import { getToken, setToken, clearToken } from "./auth";
 import ActionType from "#/types/ActionType";
-import { SocketMessage } from "#/types/ResponseType";
 import { getSettings } from "./settings";
 
 class Session {
@@ -23,6 +22,7 @@ class Session {
   };
 
   private static _connecting = false;
+
   private static _disconnecting = false;
 
   public static restoreOrStartNewSession() {
@@ -45,7 +45,7 @@ class Session {
     Session.send(eventString);
   };
 
-  private static _connect(token: string=""): void {
+  private static _connect(token: string = ""): void {
     if (Session.isConnected()) return;
     Session._connecting = true;
 

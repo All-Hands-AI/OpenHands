@@ -62,7 +62,7 @@ function ChatInterface() {
     if (curAgentState === AgentState.INIT && messages.length === 0) {
       dispatch(addAssistantMessage(t(I18nKey.CHAT_INTERFACE$INITIAL_MESSAGE)));
     }
-  }, [curAgentState])
+  }, [curAgentState]);
 
   return (
     <div className="flex flex-col h-full bg-neutral-800">
