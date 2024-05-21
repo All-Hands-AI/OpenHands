@@ -49,7 +49,12 @@ class BrowsingAgent(Agent):
         """
         super().__init__(llm)
         self.action_space = HighLevelActionSet(
-            subsets=['chat', 'bid', 'nav'],  # define a subset of the action space
+            # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
+            subsets=[
+                'chat',
+                'bid',
+                'nav',
+            ],  # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
             strict=False,  # less strict on the parsing of the actions
             multiaction=True,  # enable to agent to take multiple actions at once
         )
@@ -137,6 +142,7 @@ In order to accomplish my goal I need to click on the button with bid 12
         raise NotImplementedError('Implement this abstract method')
 
     def log_cost(self, response):
+        # TODO: refactor to unified cost tracking
         try:
             cur_cost = self.llm.completion_cost(response)
         except Exception:

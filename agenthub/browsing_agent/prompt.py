@@ -153,16 +153,23 @@ class Shrinkable(PromptElement, abc.ABC):
         pass
 
 
-class Trunkater(Shrinkable):
-    def __init__(self, visible, shrink_speed=0.3, start_trunkate_iteration=10):
+class Truncater(Shrinkable):
+    """A prompt element that can be truncated to fit the context length of the LLM.
+    Of course, it will be great that we never have to use the functionality here to `shrink()` the prompt.
+    Extend this class for prompt elements that can be truncated. Usually long observations such as AxTree or HTML.
+    """
+
+    def __init__(self, visible, shrink_speed=0.3, start_truncate_iteration=10):
         super().__init__(visible=visible)
-        self.shrink_speed = shrink_speed
-        self.start_trunkate_iteration = start_trunkate_iteration
+        self.shrink_speed = shrink_speed  # the percentage shrinked in each iteration
+        self.start_truncate_iteration = (
+            start_truncate_iteration  # the iteration to start truncating
+        )
         self.shrink_calls = 0
         self.deleted_lines = 0
 
     def shrink(self) -> None:
-        if self.is_visible and self.shrink_calls >= self.start_trunkate_iteration:
+        if self.is_visible and self.shrink_calls >= self.start_truncate_iteration:
             # remove the fraction of _prompt
             lines = self._prompt.splitlines()
             new_line_count = int(len(lines) * (1 - self.shrink_speed))
@@ -224,17 +231,17 @@ def fit_tokens(
     return prompt
 
 
-class HTML(Trunkater):
+class HTML(Truncater):
     def __init__(self, html, visible: bool = True, prefix='') -> None:
-        super().__init__(visible=visible, start_trunkate_iteration=5)
+        super().__init__(visible=visible, start_truncate_iteration=5)
         self._prompt = f'\n{prefix}HTML:\n{html}\n'
 
 
-class AXTree(Trunkater):
+class AXTree(Truncater):
     def __init__(
         self, ax_tree, visible: bool = True, coord_type=None, prefix=''
     ) -> None:
-        super().__init__(visible=visible, start_trunkate_iteration=10)
+        super().__init__(visible=visible, start_truncate_iteration=10)
         if coord_type == 'center':
             coord_note = """\
 Note: center coordinates are provided in parenthesis and are
