@@ -211,7 +211,7 @@ class LLM:
         resp = self._completion(*args, **kwargs)
         self.post_completion(resp)
         return resp
-    
+
     def post_completion(self, response: str) -> None:
         """
         Post-process the completion response.
@@ -225,7 +225,6 @@ class LLM:
             cur_cost,
             self.metrics.total_cost,
         )
-        
 
     def get_token_count(self, messages):
         """
