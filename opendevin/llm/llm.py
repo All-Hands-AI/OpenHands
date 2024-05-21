@@ -204,6 +204,29 @@ class LLM:
         """
         return self._completion
 
+    def do_completion(self, *args, **kwargs):
+        """
+        Wrapper for the litellm completion function.
+        """
+        resp = self._completion(*args, **kwargs)
+        self.post_completion(resp)
+        return resp
+    
+    def post_completion(self, response: str) -> None:
+        """
+        Post-process the completion response.
+        """
+        try:
+            cur_cost = self.completion_cost(response)
+        except Exception:
+            cur_cost = 0
+        logger.info(
+            'Cost: %.2f USD | Accumulated Cost: %.2f USD',
+            cur_cost,
+            self.metrics.total_cost,
+        )
+        
+
     def get_token_count(self, messages):
         """
         Get the number of tokens in a list of messages.

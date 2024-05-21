@@ -214,7 +214,7 @@ class CodeActAgent(Agent):
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
-        response = self.llm.completion(
+        response = self.llm.do_completion(
             messages=messages,
             stop=[
                 '</execute_ipython>',
@@ -223,8 +223,6 @@ class CodeActAgent(Agent):
             ],
             temperature=0.0,
         )
-
-        self.log_cost(response)
 
         action_str: str = parse_response(response)
         state.num_of_chars += sum(
@@ -268,14 +266,3 @@ class CodeActAgent(Agent):
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
-
-    def log_cost(self, response):
-        try:
-            cur_cost = self.llm.completion_cost(response)
-        except Exception:
-            cur_cost = 0
-        logger.info(
-            'Cost: %.2f USD | Accumulated Cost: %.2f USD',
-            cur_cost,
-            self.llm.metrics.total_cost,
-        )
