@@ -8,6 +8,7 @@ TODOs:
 - Potentially support other HumanEvalPack datasets (Explain & Synthesize)
 - Support other languages (currently only Python)
 """
+
 import asyncio
 import json
 import logging
@@ -18,9 +19,9 @@ import subprocess
 import time
 from concurrent.futures import ProcessPoolExecutor
 
-from evaluate import load
 import pandas as pd
 from datasets import load_dataset
+from evaluate import load
 from tqdm import tqdm
 
 from opendevin.controller.state.state import State
@@ -32,33 +33,34 @@ from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
 
 IMPORT_HELPER = {
-    "python": [
-        "import math",
-        "import re",
-        "import sys",
-        "import copy",
-        "import datetime",
-        "import itertools",
-        "import collections",
-        "import heapq",
-        "import statistics",
-        "import functools",
-        "import hashlib",
-        "import numpy",
-        "import numpy as np",
-        "import string",
-        "from typing import *",
-        "from collections import *",
+    'python': [
+        'import math',
+        'import re',
+        'import sys',
+        'import copy',
+        'import datetime',
+        'import itertools',
+        'import collections',
+        'import heapq',
+        'import statistics',
+        'import functools',
+        'import hashlib',
+        'import numpy',
+        'import numpy as np',
+        'import string',
+        'from typing import *',
+        'from collections import *',
     ],
 }
 
 LANGUAGE_TO_TIMEOUT = {
-    "python": 10,
+    'python': 10,
 }
 
 LANGUAGE_TO_NUM_WORKERS = {
-    "python": 4,
+    'python': 4,
 }
+
 
 def cleanup():
     print('Cleaning up child processes...')
@@ -66,6 +68,7 @@ def cleanup():
         print(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
+
 
 def codeact_user_response(state: State) -> str:
     msg = (
@@ -105,15 +108,15 @@ AGENT_CLS_TO_INST_SUFFIX = {
 def get_test_result(instance, path, language='python', timeout=10):
     # Evaluation reference: https://github.com/bigcode-project/bigcode-evaluation-harness/blob/84b96da31b7f840b55c5733325346176140cdb6b/bigcode_eval/tasks/humanevalpack.py#L347
     test_result = {'result': {}, 'metadata': {}}
-    code_metric = load("Muennighoff/code_eval_octopack")
+    code_metric = load('Muennighoff/code_eval_octopack')
     timeout = LANGUAGE_TO_TIMEOUT[language]
-    python_imports = "\n".join(IMPORT_HELPER[language])
+    python_imports = '\n'.join(IMPORT_HELPER[language])
 
     # Load function from path
     with open(path, 'r') as f:
         function = f.read()
 
-    function = [[python_imports + "\n" + function.strip()]]
+    function = [[python_imports + '\n' + function.strip()]]
 
     results, logs = code_metric.compute(
         references=[instance.test],
@@ -130,6 +133,7 @@ def get_test_result(instance, path, language='python', timeout=10):
     }
     return test_result
 
+
 def process_instance(
     instance, agent_class, metadata, skip_workspace_mount, reset_logger: bool = True
 ):
@@ -141,11 +145,17 @@ def process_instance(
         workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
         pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
+    # reset workspace to config
+    config.workspace_base = workspace_mount_path
+    config.workspace_mount_path = workspace_mount_path
+
     # Setup the logger properly, so you can run multi-processing to parallize the evaluation
     if reset_logger:
         # Set up logger
         log_file = os.path.join(
-            eval_output_dir, 'logs', f'instance_{instance.task_id}.log'
+            eval_output_dir,
+            'logs',
+            f'instance_{instance.task_id.replace("/", "__")}.log',
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -169,14 +179,18 @@ def process_instance(
 
     # Create file with HumanEvalFix problem
     # Prompt reference: https://github.com/bigcode-project/bigcode-evaluation-harness/blob/84b96da31b7f840b55c5733325346176140cdb6b/bigcode_eval/tasks/humanevalpack.py#L509
-    problem_statement = instance.declaration + instance.buggy_solution + "\n" + instance.test
-    path = os.path.join(workspace_mount_path, f'{instance.task_id}.py')
+    problem_statement = (
+        instance.declaration + instance.buggy_solution + '\n' + instance.test
+    )
+    path = os.path.join(
+        workspace_mount_path, f'{instance.task_id.replace("/", "__")}.py'
+    )
     with open(path, 'w') as f:
         f.write(problem_statement)
 
     # Prepare instruction
     instruction = (
-        f'Please fix the function in {instance.task_id}.py such that all test cases pass.\n'
+        f'Please fix the function in {instance.task_id.replace("/", "__")}.py such that all test cases pass.\n'
         'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
         '# Problem Statement\n'
         f'{problem_statement}\n\n'
@@ -218,10 +232,13 @@ def process_instance(
     }
     return output
 
+
 if __name__ == '__main__':
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
-    dataset = load_dataset('bigcode/humanevalpack', 'python') # TODO: Support other languages
+    dataset = load_dataset(
+        'bigcode/humanevalpack', 'python'
+    )  # TODO: Support other languages
     hefix_tests = dataset['test'].to_pandas()
 
     # Check https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/humanevalfix/README.md#configure-opendevin-and-your-llm
