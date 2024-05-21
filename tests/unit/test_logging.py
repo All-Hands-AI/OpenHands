@@ -94,3 +94,43 @@ def test_app_config_attributes_masking(test_handler):
 
     # reset the AppConfig
     AppConfig.reset()
+
+
+def test_sensitive_env_vars_masking(test_handler):
+    logger, stream = test_handler
+    sensitive_data = {
+        'API_KEY': 'API_KEY_VALUE',
+        'AWS_ACCESS_KEY_ID': 'AWS_ACCESS_KEY_ID_VALUE',
+        'AWS_SECRET_ACCESS_KEY': 'AWS_SECRET_ACCESS_KEY_VALUE',
+        'E2B_API_KEY': 'E2B_API_KEY_VALUE',
+        'GITHUB_TOKEN': 'GITHUB_TOKEN_VALUE',
+    }
+
+    log_message = ' '.join(
+        f"{attr}='{value}'" for attr, value in sensitive_data.items()
+    )
+    logger.info(log_message)
+
+    log_output = stream.getvalue()
+    for attr, value in sensitive_data.items():
+        assert f"{attr}='******'" in log_output
+        assert value not in log_output
+
+
+def test_special_cases_masking(test_handler):
+    logger, stream = test_handler
+    sensitive_data = {
+        'LLM_API_KEY': 'LLM_API_KEY_VALUE',
+        'SANDBOX_ENV_GITHUB_TOKEN': 'SANDBOX_ENV_GITHUB_TOKEN_VALUE',
+    }
+
+    log_message = ' '.join(
+        f"{attr}={value} with no single quotes' and something"
+        for attr, value in sensitive_data.items()
+    )
+    logger.info(log_message)
+
+    log_output = stream.getvalue()
+    for attr, value in sensitive_data.items():
+        assert f"{attr}='******'" in log_output
+        assert value not in log_output

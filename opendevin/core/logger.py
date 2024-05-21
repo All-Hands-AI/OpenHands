@@ -74,15 +74,25 @@ llm_formatter = logging.Formatter('%(message)s')
 
 class SensitiveDataFilter(logging.Filter):
     def filter(self, record):
-        sensitive_attributes = [
+        # start with attributes
+        sensitive_patterns = [
             'api_key',
             'aws_access_key_id',
             'aws_secret_access_key',
             'e2b_api_key',
             'github_token',
         ]
-        for attr in sensitive_attributes:
-            pattern = rf"{attr}='([\w-]+)'"
+
+        # add env var names
+        env_vars = [attr.upper() for attr in sensitive_patterns]
+        sensitive_patterns.extend(env_vars)
+
+        # and some special cases
+        sensitive_patterns.append('LLM_API_KEY')
+        sensitive_patterns.append('SANDBOX_ENV_GITHUB_TOKEN')
+
+        for attr in sensitive_patterns:
+            pattern = rf"{attr}='?([\w-]+)'?"
             record.msg = re.sub(pattern, f"{attr}='******'", record.getMessage())
         return True
 
