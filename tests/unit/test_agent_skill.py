@@ -294,6 +294,64 @@ class TestAgentSkills(unittest.TestCase):
             self.assertEqual(lines[2].rstrip(), 'Line 5')
             # Add more assertions based on expected output
 
+    def test_edit_file_from_scratch(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_file_path = os.path.join(temp_dir, 'a.txt')
+            create_file(temp_file_path)
+            open_file(temp_file_path)
+
+            with io.StringIO() as buf:
+                with contextlib.redirect_stdout(buf):
+                    edit_file(start=1, end=1, content='REPLACE TEXT')
+                result = buf.getvalue()
+                expected = (
+                    f'[File: {temp_file_path} (1 lines total after edit)]\n'
+                    '1: REPLACE TEXT\n'
+                    '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+                )
+                self.assertEqual(
+                    list(filter(None, result.split('\n'))),
+                    list(filter(None, expected.split('\n'))),
+                )
+
+            with open(temp_file_path, 'r') as file:
+                lines = file.readlines()
+            self.assertEqual(len(lines), 1)
+            self.assertEqual(lines[0].rstrip(), 'REPLACE TEXT')
+
+    def test_edit_file_from_scratch_multiline(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_file_path = os.path.join(temp_dir, 'a.txt')
+            create_file(temp_file_path)
+            open_file(temp_file_path)
+
+            with io.StringIO() as buf:
+                with contextlib.redirect_stdout(buf):
+                    edit_file(
+                        start=1,
+                        end=1,
+                        content='REPLACE TEXT1\nREPLACE TEXT2\nREPLACE TEXT3',
+                    )
+                result = buf.getvalue()
+                expected = (
+                    f'[File: {temp_file_path} (3 lines total after edit)]\n'
+                    '1: REPLACE TEXT1\n'
+                    '2: REPLACE TEXT2\n'
+                    '3: REPLACE TEXT3\n'
+                    '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+                )
+                self.assertEqual(
+                    list(filter(None, result.split('\n'))),
+                    list(filter(None, expected.split('\n'))),
+                )
+
+            with open(temp_file_path, 'r') as file:
+                lines = file.readlines()
+            self.assertEqual(len(lines), 3)
+            self.assertEqual(lines[0].rstrip(), 'REPLACE TEXT1')
+            self.assertEqual(lines[1].rstrip(), 'REPLACE TEXT2')
+            self.assertEqual(lines[2].rstrip(), 'REPLACE TEXT3')
+
     def test_edit_file_not_opened(self):
         with self.assertRaises(FileNotFoundError):
             edit_file(start=1, end=3, content='REPLACE TEXT')

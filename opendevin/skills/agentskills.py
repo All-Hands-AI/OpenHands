@@ -189,9 +189,19 @@ def edit_file(start: int, end: int, content: str) -> None:
     with open(CURRENT_FILE, 'r') as file:
         lines = file.readlines()
 
-    if not (1 <= start <= len(lines)) or not (1 <= end <= len(lines)) or start > end:
+    if not (1 <= start <= len(lines)):
         raise ValueError(
-            f'Invalid line range: {start}-{end}. Line numbers must be between 1 and {len(lines)} (inclusive).'
+            f'Invalid start line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).'
+        )
+
+    if not (1 <= end <= len(lines)):
+        raise ValueError(
+            f'Invalid end line number: {end}. Line numbers must be between 1 and {len(lines)} (inclusive).'
+        )
+
+    if start > end:
+        raise ValueError(
+            f'Invalid line range: {start}-{end}. Start must be less than or equal to end.'
         )
 
     new_lines = lines[: start - 1] + [content + '\n'] + lines[end:]
@@ -200,11 +210,12 @@ def edit_file(start: int, end: int, content: str) -> None:
 
     with open(CURRENT_FILE, 'w') as file:
         file.writelines(new_lines)
-
+    with open(CURRENT_FILE, 'r') as file:
+        n_total_lines = len(file.readlines())
     # set current line to the center of the edited lines
     CURRENT_LINE = (start + end) // 2
     print(
-        f'[File: {os.path.abspath(CURRENT_FILE)} ({len(new_lines)} lines total after edit)]'
+        f'[File: {os.path.abspath(CURRENT_FILE)} ({n_total_lines} lines total after edit)]'
     )
     _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW)
     print(
