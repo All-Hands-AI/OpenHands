@@ -43,7 +43,7 @@ class IPythonRunCellObservation(Observation):
 
     @property
     def message(self) -> str:
-        return 'Coded executed in IPython cell.'
+        return 'Code executed in IPython cell.'
 
     def __str__(self) -> str:
         return f'**IPythonRunCellObservation**\n{self.content}'
