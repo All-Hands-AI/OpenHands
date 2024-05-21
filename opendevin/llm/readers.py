@@ -29,8 +29,7 @@ from pylatexenc.latex2text import LatexNodes2Text
 
 from opendevin.core.logger import opendevin_logger as logger
 
-# TODO: Double-check where the interface for the stored API key is in OpenDevin.
-# TODO: Or ask someone familiar to change it with litellm.
+# TODO: Find way to directly get the API key from ConfigType.LLM_API_KEY or change it with litellm.
 OPENAI_API_KEY = 'PUT_YOUR_OPEN_AI_API'
 
 
