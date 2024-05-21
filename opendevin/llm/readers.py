@@ -22,15 +22,16 @@ import yaml
 from bs4 import BeautifulSoup
 
 # from litellm import completion as litellm_completion
-# from opendevin.llm.llm import LLM
 from openai import OpenAI
 from pptx import Presentation
 from pylatexenc.latex2text import LatexNodes2Text
 
+# from opendevin.llm.llm import LLM
+from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 
 # TODO: Find way to directly get the API key from ConfigType.LLM_API_KEY or change it with litellm.
-OPENAI_API_KEY = 'PUT_YOUR_OPEN_AI_API'
+OPENAI_API_KEY = config.llm.api_key
 
 
 class Reader(ABC):
