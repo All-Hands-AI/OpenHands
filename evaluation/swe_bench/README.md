@@ -68,20 +68,53 @@ temperature = 0.0
 
 ## Test if your environment works
 
+Make sure your Docker daemon is running, and you have pulled the `eval-swe-bench:full-v1.0`
+docker image. Then run this python script:
+
 ```bash
-python3 evaluation/swe_bench/swe_env_box.py
+poetry run python evaluation/swe_bench/swe_env_box.py
 ```
 
-If you get to the interactive shell successfully, it means success!
+If you get to the interactive shell successfully, it means your environment works!
+If you see an error, please make sure your `config.toml` contains all
+`SWEBench eval specific` settings as shown in the previous section.
 
 ## Run Inference on SWE-Bench Instances
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview
+./evaluation/swe_bench/scripts/run_infer.sh [model_config] [agent] [eval_limit]
+# e.g., ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview CodeActAgent 300
 ```
 
-You can replace `eval_gpt4_1106_preview` with any model you setted up in `config.toml`.
+where `model_config` is mandatory, while `agent` and `eval_limit` are optional.
 
+`model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
+LLM settings, as defined in your `config.toml`.
+
+`agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
+to `CodeActAgent`.
+
+`eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By
+default, the script evaluates the entire SWE-bench_Lite test set (300 issues). Note:
+in order to use `eval_limit`, you must also set `agent`.
+
+Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview` and CodeActAgent,
+then your command would be:
+
+```bash
+./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview CodeActAgent 10
+```
+
+If you would like to specify a list of tasks you'd like to benchmark on, you could
+create a `config.toml` under `./evaluation/swe_bench/` folder, and put a list
+attribute named `selected_ids`, e.g.
+
+```toml
+selected_ids = ['sphinx-doc__sphinx-8721', 'sympy__sympy-14774', 'scikit-learn__scikit-learn-10508']
+```
+
+Then only these tasks (rows whose `instance_id` is in the above list) will be evaluated.
+In this case, `eval_limit` option applies to tasks that are in the `selected_ids` list.
 
 ## Evaluate Generated Patches
 

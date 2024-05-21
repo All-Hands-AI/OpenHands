@@ -22,7 +22,7 @@ uvicorn = "*"
 types-toml = "*"
 numpy = "*"
 json-repair = "*"
-browsergym = "0.2.2" # integrate browsergym as the browsing interface
+browsergym = "0.2.6" # integrate browsergym as the browsing interface
 html2text = "*"
 e2b = "^0.17.0"
 pexpect = "*"
@@ -44,7 +44,7 @@ llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.4.4"
-mypy = "1.9.0"
+mypy = "1.10.0"
 pre-commit = "3.7.1"
 
 [tool.poetry.group.test.dependencies]
