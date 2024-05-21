@@ -1,4 +1,4 @@
-# GAIA Evaluation
+# EDA Evaluation
 
 This folder contains evaluation harness for evaluating agents on the Entity-deduction-Arena Benchmark, from the paper [Probing the Multi-turn Planning Capabilities of LLMs via 20 Question Games](https://arxiv.org/abs/2310.01468), presented in ACL 2024 main conference.
 
