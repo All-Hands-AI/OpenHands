@@ -38,6 +38,10 @@ class AgentSession:
         Args:
             start_event: The start event data (optional).
         """
+        if self.controller or self.runtime:
+            raise Exception(
+                'Session already started. You need to close this session and start a new one.'
+            )
         await self._create_runtime()
         await self._create_controller(start_event)
 
