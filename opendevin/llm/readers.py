@@ -1,22 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""
-INSTALL
--------
-pip install openai --upgrade
-pip install python-docx
-pip install markdown
-pip install PyPDF2
-pip install openpyxl
-pip install beautifulsoup4
-pip install pylatexenc
-pip install python-pptx
-pip install xlrd
-pip install base64
-pip install opencv-python
-"""
-
 import base64
 import json
 import subprocess
@@ -164,6 +148,7 @@ class AudioReader(Reader):
         logger.info(f'Transcribing audio file from {file_path}.')
         client = OpenAI(api_key=api_key)
         try:
+            # TODO: record the COST of the API call
             client = OpenAI()
             with open(file_path, 'rb') as audio_file:
                 transcript = client.audio.translations.create(
@@ -304,7 +289,7 @@ class IMGReader(Reader):
         self, file_path: Path, task: str = 'Describe this image as detail as possible.'
     ) -> str:
         logger.info(f'Reading image file from {file_path}.')
-
+        # TODO: record the COST of the API call
         try:
             openai_proxy: str = 'https://api.openai.com/v1/chat/completions'
             base64_image = self.base64_img(Path(file_path))
@@ -394,7 +379,7 @@ class VideoReader(Reader):
             logger.info(
                 f'Process the {file_path}, current No. {idx * frame_interval} frame...'
             )
-
+            # TODO: record the COST of the API call
             api_call = self.prepare_api_call(task, base64_frame)
             try:
                 openai_proxy: str = 'https://api.openai.com/v1/chat/completions'
