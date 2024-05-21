@@ -221,7 +221,7 @@ def process_instance(
 
     # Save the output
     output = {
-        'instance_id': instance.task_id,
+        'task_id': instance.task_id,
         'instruction': instruction,
         'metadata': metadata,
         'history': [
