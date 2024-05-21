@@ -8,6 +8,10 @@ from opendevin.skills.agentskills import create_file, edit_file, goto_line, open
 
 
 class TestAgentSkills(unittest.TestCase):
+    def test_open_file_unexist_path(self):
+        with self.assertRaises(FileNotFoundError):
+            open_file('/unexist/path/a.txt')
+
     def test_open_file(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_file_path = os.path.join(temp_dir, 'a.txt')
@@ -73,6 +77,10 @@ class TestAgentSkills(unittest.TestCase):
                 list(filter(None, expected.split('\n'))),
             )
 
+    def test_create_file_unexist_path(self):
+        with self.assertRaises(FileNotFoundError):
+            create_file('/unexist/path/a.txt')
+
     def test_create_file(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             with io.StringIO() as buf:
@@ -125,6 +133,28 @@ class TestAgentSkills(unittest.TestCase):
                 list(filter(None, result.split('\n'))),
                 list(filter(None, expected.split('\n'))),
             )
+
+    def test_goto_line_negative(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_file_path = os.path.join(temp_dir, 'a.txt')
+            with open(temp_file_path, 'w') as file:
+                file.write('\n'.join([f'Line {i}' for i in range(1, 5)]))
+            with io.StringIO() as buf:
+                with contextlib.redirect_stdout(buf):
+                    open_file(temp_file_path)
+            with self.assertRaises(ValueError):
+                goto_line(-1)
+
+    def test_goto_line_out_of_bound(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_file_path = os.path.join(temp_dir, 'a.txt')
+            with open(temp_file_path, 'w') as file:
+                file.write('\n'.join([f'Line {i}' for i in range(1, 5)]))
+            with io.StringIO() as buf:
+                with contextlib.redirect_stdout(buf):
+                    open_file(temp_file_path)
+            with self.assertRaises(ValueError):
+                goto_line(100)
 
     def test_edit_file(self):
         with tempfile.TemporaryDirectory() as temp_dir:
