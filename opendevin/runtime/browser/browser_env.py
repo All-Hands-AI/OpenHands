@@ -103,6 +103,9 @@ class BrowserEnv:
                 )
                 self.process.terminate()
                 self.process.join(5)  # Wait for the process to terminate
+                if self.process.is_alive():
+                    self.process.kill()
+                    self.process.join(5)  # Wait for the process to terminate
             self.agent_side.close()
             self.browser_side.close()
         except Exception:

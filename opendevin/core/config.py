@@ -379,6 +379,7 @@ def get_parser():
         type=int,
         help='The maximum number of characters to send to and receive from LLM per task',
     )
+    # --eval configs are for evaluations only
     parser.add_argument(
         '--eval-output-dir',
         default='evaluation/evaluation_outputs/outputs',
