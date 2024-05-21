@@ -1,101 +1,117 @@
+"""
+agentskills.py
+
+This module provides various file manipulation skills for the OpenDevin agent.
+
+Functions:
+- open_file(path, line_number=None): Opens a file and optionally moves to a specific line.
+- goto_line(line_number): Moves the window to show the specified line number.
+- scroll_down(): Moves the window down by the number of lines specified in WINDOW.
+- scroll_up(): Moves the window up by the number of lines specified in WINDOW.
+- create_file(filename): Creates and opens a new file with the given name.
+- search_dir(search_term, dir_path='./'): Searches for a term in all files in the specified directory.
+- search_file(search_term, file_path=None): Searches for a term in the specified file or the currently open file.
+- find_file(file_name, dir_path='./'): Finds all files with the given name in the specified directory.
+- edit_file(path, start, end, content): Replaces lines in a file with the given content.
+"""
+
 import os
+from typing import Optional
 
 CURRENT_FILE = None
 CURRENT_LINE = 1
-WINDOW = 10
+WINDOW = 100
 
-def open_file(path, line_number=None):
-    global CURRENT_FILE, CURRENT_LINE
-    if not os.path.isfile(path):
-        raise FileNotFoundError(f"File {path} not found")
-    
-    CURRENT_FILE = path
-    total_lines = sum(1 for _ in open(CURRENT_FILE))
-    
-    if line_number is not None:
-        if not isinstance(line_number, int) or line_number < 1 or line_number > total_lines:
-            raise ValueError(f"Line number must be between 1 and {total_lines}")
-        CURRENT_LINE = line_number
-    else:
-        CURRENT_LINE = 1
-    
-    print(f"[File: {os.path.abspath(CURRENT_FILE)} ({total_lines} lines total)]")
-    _print_window()
 
-def _print_window():
-    global CURRENT_FILE, CURRENT_LINE, WINDOW
+def _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=False):
+    if CURRENT_FILE is None:
+        raise FileNotFoundError('No file open. Use the open_file function first.')
     with open(CURRENT_FILE, 'r') as file:
         lines = file.readlines()
         start = max(0, CURRENT_LINE - WINDOW // 2)
         end = min(len(lines), CURRENT_LINE + WINDOW // 2)
+        output = ''
         for i in range(start, end):
-            print(f"{i + 1}: {lines[i].strip()}")
+            output += f'{i + 1}: {lines[i].strip()}\n'
+        if return_str:
+            return output
+        else:
+            print(output)
+
+
+def open_file(path: str, line_number: Optional[int] = None) -> str:
+    global CURRENT_FILE, CURRENT_LINE
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f'File {path} not found')
+
+    CURRENT_FILE = path
+    assert os.path.isfile(CURRENT_FILE)
+    with open(CURRENT_FILE) as file:
+        total_lines = sum(1 for _ in file)
+
+    if line_number is not None:
+        if (
+            not isinstance(line_number, int)
+            or line_number < 1
+            or line_number > total_lines
+        ):
+            raise ValueError(f'Line number must be between 1 and {total_lines}')
+        CURRENT_LINE = line_number
+    else:
+        CURRENT_LINE = 1
+
+    output = f'[File: {os.path.abspath(CURRENT_FILE)} ({total_lines} lines total)]'
+    output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True)
+    return output
+
 
 def goto_line(line_number):
     global CURRENT_FILE, CURRENT_LINE, WINDOW
     if CURRENT_FILE is None:
-        raise FileNotFoundError("No file open. Use the open_file function first.")
-    
+        raise FileNotFoundError('No file open. Use the open_file function first.')
+
     total_lines = sum(1 for _ in open(CURRENT_FILE))
     if not isinstance(line_number, int) or line_number < 1 or line_number > total_lines:
-        raise ValueError(f"Line number must be between 1 and {total_lines}")
-    
+        raise ValueError(f'Line number must be between 1 and {total_lines}')
+
     CURRENT_LINE = line_number
-    _print_window()
+    _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW)
+
 
 def scroll_down():
     global CURRENT_FILE, CURRENT_LINE, WINDOW
     if CURRENT_FILE is None:
-        raise FileNotFoundError("No file open. Use the open_file function first.")
-    
+        raise FileNotFoundError('No file open. Use the open_file function first.')
+
     total_lines = sum(1 for _ in open(CURRENT_FILE))
     CURRENT_LINE = min(CURRENT_LINE + WINDOW, total_lines)
-    _print_window()
+    _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW)
+
 
 def scroll_up():
     global CURRENT_FILE, CURRENT_LINE, WINDOW
     if CURRENT_FILE is None:
-        raise FileNotFoundError("No file open. Use the open_file function first.")
-    
+        raise FileNotFoundError('No file open. Use the open_file function first.')
+
     CURRENT_LINE = max(CURRENT_LINE - WINDOW, 1)
-    _print_window()
+    _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW)
+
 
 def create_file(filename):
     global CURRENT_FILE, CURRENT_LINE
     if os.path.exists(filename):
         raise FileExistsError(f"File '{filename}' already exists.")
-    
+
     with open(filename, 'w') as file:
-        file.write("\n")
-    
+        file.write('\n')
+
     open_file(filename)
 
-def submit():
-    import subprocess
-    import shutil
 
-    root_dir = os.getenv('ROOT', '/workspace')
-    swe_cmd_work_dir = os.getenv('SWE_CMD_WORK_DIR', '/workspace')
-
-    os.chdir(root_dir)
-
-    patch_file = os.path.join(swe_cmd_work_dir, 'test.patch')
-    if os.path.exists(patch_file) and os.path.getsize(patch_file) > 0:
-        subprocess.run(['git', 'apply', '-R', patch_file], check=True)
-
-    subprocess.run(['git', 'add', '-A'], check=True)
-    with open('model.patch', 'w') as patch:
-        subprocess.run(['git', 'diff', '--cached'], stdout=patch, check=True)
-
-    with open('model.patch', 'r') as patch:
-        print("<<SUBMISSION||")
-        print(patch.read())
-        print("||SUBMISSION>>")
-
-def search_dir(search_term, dir_path='./'):
+def search_dir(search_term: str, dir_path: str = './') -> None:
     if not os.path.isdir(dir_path):
-        raise FileNotFoundError(f"Directory {dir_path} not found")
-    
+        raise FileNotFoundError(f'Directory {dir_path} not found')
+
     matches = []
     for root, _, files in os.walk(dir_path):
         for file in files:
@@ -106,71 +122,86 @@ def search_dir(search_term, dir_path='./'):
                 for line_num, line in enumerate(f, 1):
                     if search_term in line:
                         matches.append((file_path, line_num, line.strip()))
-    
+
     if not matches:
-        print(f"No matches found for \"{search_term}\" in {dir_path}")
+        print(f'No matches found for "{search_term}" in {dir_path}')
         return
-    
+
     num_matches = len(matches)
     num_files = len(set(match[0] for match in matches))
-    
+
     if num_files > 100:
-        print(f"More than {num_files} files matched for \"{search_term}\" in {dir_path}. Please narrow your search.")
+        print(
+            f'More than {num_files} files matched for "{search_term}" in {dir_path}. Please narrow your search.'
+        )
         return
-    
-    print(f"Found {num_matches} matches for \"{search_term}\" in {dir_path}:")
+
+    print(f'Found {num_matches} matches for "{search_term}" in {dir_path}:')
     for file_path, line_num, line in matches:
-        print(f"{file_path} (Line {line_num}): {line}")
-    print(f"End of matches for \"{search_term}\" in {dir_path}")
+        print(f'{file_path} (Line {line_num}): {line}')
+    print(f'End of matches for "{search_term}" in {dir_path}')
     for match in matches:
         print(match)
 
-def search_file(search_term, file_path=None):
+
+def edit_file(path: str, start: int, end: int, content: str) -> None:
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f'File {path} not found')
+
+    with open(path, 'r') as file:
+        lines = file.readlines()
+
+    if not (1 <= start <= len(lines)) or not (1 <= end <= len(lines)) or start > end:
+        raise ValueError(f'Invalid line range: {start}-{end}')
+
+    new_lines = lines[: start - 1] + [content + '\n'] + lines[end:]
+
+    with open(path, 'w') as file:
+        file.writelines(new_lines)
+
+    print(f'Edited lines {start} to {end} in {path}')
+
+
+def search_file(search_term: str, file_path: Optional[str] = None) -> str:
     global CURRENT_FILE
     if file_path is None:
-        if CURRENT_FILE is None:
-            raise FileNotFoundError("No file open. Use the open_file function first.")
         file_path = CURRENT_FILE
-    
+    if file_path is None:
+        raise FileNotFoundError(
+            'No file specified or open. Use the open_file function first.'
+        )
     if not os.path.isfile(file_path):
-        raise FileNotFoundError(f"File {file_path} not found")
-    
+        raise FileNotFoundError(f'File {file_path} not found')
+
     matches = []
-    with open(file_path, 'r', errors='ignore') as f:
-        for line_num, line in enumerate(f, 1):
+    with open(file_path, 'r') as file:
+        for i, line in enumerate(file, 1):
             if search_term in line:
-                matches.append((line_num, line.strip()))
-    
-    if not matches:
-        print(f"No matches found for \"{search_term}\" in {file_path}")
-        return
-    
-    num_matches = len(matches)
-    num_lines = len(set(match[0] for match in matches))
-    
-    if num_lines > 100:
-        print(f"More than {num_lines} lines matched for \"{search_term}\" in {file_path}. Please narrow your search.")
-        return
-    
-    print(f"Found {num_matches} matches for \"{search_term}\" in {file_path}:")
-    for line_num, line in matches:
-        print(f"Line {line_num}: {line}")
+                matches.append((i, line.strip()))
+
+    if matches:
+        output = f"Found {len(matches)} matches for '{search_term}' in {file_path}:\n"
+        for match in matches:
+            output += f'Line {match[0]}: {match[1]}\n'
+        return output
+    else:
+        return f"No matches found for '{search_term}' in {file_path}"
+
 
 def find_file(file_name, dir_path='./'):
     if not os.path.isdir(dir_path):
-        raise FileNotFoundError(f"Directory {dir_path} not found")
-    
+        raise FileNotFoundError(f'Directory {dir_path} not found')
+
     matches = []
     for root, _, files in os.walk(dir_path):
         for file in files:
-            if file == file_name:
+            if file_name in file:
                 matches.append(os.path.join(root, file))
-    
-    if not matches:
-        print(f"No matches found for \"{file_name}\" in {dir_path}")
-        return
-    
-    num_matches = len(matches)
-    print(f"Found {num_matches} matches for \"{file_name}\" in {dir_path}:")
-    for match in matches:
-        print(match)
+
+    if matches:
+        output = f"Found {len(matches)} matches for '{file_name}' in {dir_path}:\n"
+        for match in matches:
+            output += f'{match}\n'
+        return output
+    else:
+        return f"No matches found for '{file_name}' in {dir_path}"
