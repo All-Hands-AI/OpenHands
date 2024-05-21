@@ -89,6 +89,8 @@ class AgentController:
 
     def update_state_after_step(self):
         self.state.updated_info = []
+        # update metrics especially for cost
+        self.state.metrics = self.agent.llm.metrics
 
     async def report_error(self, message: str, exception: Exception | None = None):
         self.state.error = message

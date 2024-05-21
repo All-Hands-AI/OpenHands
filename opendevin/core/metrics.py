@@ -7,11 +7,16 @@ class Metrics:
 
     def __init__(self) -> None:
         self._total_cost = 0.0
+        self._costs = []
         self.reset()
 
     @property
     def total_cost(self) -> float:
         return self._total_cost
+
+    @property
+    def costs(self) -> list:
+        return self._costs
 
     @total_cost.setter
     def total_cost(self, value: float) -> None:
@@ -23,18 +28,20 @@ class Metrics:
         if value < 0:
             raise ValueError('Added cost cannot be negative.')
         self._total_cost += value
+        self._costs.append(value)
 
     def reset(self):
         """
         Reset all metrics to zero value.
         """
         self._total_cost = 0
+        self._costs = []
 
     def get(self):
         """
         Return the metrics in a dictionary.
         """
-        return {'total_cost': self._total_cost}
+        return {'total_cost': self._total_cost, 'costs': self._costs}
 
     def log(self):
         """
@@ -46,4 +53,3 @@ class Metrics:
             logs += f'{key}: {value}\n'
         return logs
 
-opendevin_metrics = Metrics()
