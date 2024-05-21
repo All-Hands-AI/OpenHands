@@ -9,6 +9,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 
 import pandas as pd
+import toml
 import whatthepatch
 from datasets import load_dataset
 from tqdm import tqdm
@@ -296,11 +297,27 @@ def process_instance(
     return output
 
 
+def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
+    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.toml')
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as file:
+            data = toml.load(file)
+            if 'selected_ids' in data:
+                selected_ids = data['selected_ids']
+                logger.info(
+                    f'Filtering {len(selected_ids)} tasks from "selected_ids"...'
+                )
+                subset = dataset[dataset[filter_column].isin(selected_ids)]
+                logger.info(f'Retained {subset.shape[0]} tasks after filtering')
+                return subset
+    return dataset
+
+
 if __name__ == '__main__':
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
     dataset = load_dataset('princeton-nlp/SWE-bench_Lite')
-    swe_bench_tests = dataset['test'].to_pandas()
+    swe_bench_tests = filter_dataset(dataset['test'].to_pandas(), 'instance_id')
 
     # Check https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/swe_bench/README.md#configure-opendevin-and-your-llm
     # for details of how to set `llm_config`
