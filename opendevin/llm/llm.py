@@ -255,3 +255,6 @@ class LLM:
         elif self.base_url:
             return f'LLM(model={self.model_name}, base_url={self.base_url})'
         return f'LLM(model={self.model_name})'
+
+    def __repr__(self):
+        return str(self)
