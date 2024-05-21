@@ -1,5 +1,4 @@
 import atexit
-import json
 import os
 import re
 import sys
@@ -254,16 +253,23 @@ class DockerSSHBox(Sandbox):
                     raise e
                 time.sleep(5)
         self.setup_user()
-        self.start_ssh_session()
+
+        try:
+            self.start_ssh_session()
+        except pxssh.ExceptionPxssh as e:
+            self.close()
+            raise e
+
         # make sure /tmp always exists
         self.execute('mkdir -p /tmp')
+        # set git config
+        self.execute('git config --global user.name "OpenDevin"')
+        self.execute('git config --global user.email "opendevin@opendevin.ai"')
         atexit.register(self.close)
         super().__init__()
 
     def add_to_env(self, key: str, value: str):
         super().add_to_env(key, value)
-        # Note: json.dumps gives us nice escaping for free
-        self.execute(f'export {key}={json.dumps(value)}')
 
     def setup_user(self):
         # Make users sudoers passwordless
@@ -450,7 +456,7 @@ class DockerSSHBox(Sandbox):
             logger.debug(
                 f'WAITING FOR END OF command output ({bool(output)}): {output}'
             )
-            if output == '':
+            if isinstance(output, str) and output.strip() == '':
                 break
             command_output += output
         command_output = command_output.removesuffix('\r\n')
@@ -458,17 +464,25 @@ class DockerSSHBox(Sandbox):
         # get the exit code
         self.ssh.sendline('echo $?')
         self.ssh.prompt()
-        exit_code_str = self.ssh.before
+        exit_code_str = self.ssh.before.strip()
         _start_time = time.time()
         while not exit_code_str:
-            self.ssh.prompt()
-            exit_code_str = self.ssh.before
+            self.ssh.prompt(timeout=1)
+            exit_code_str = self.ssh.before.strip()
             logger.debug(f'WAITING FOR exit code: {exit_code_str}')
             if time.time() - _start_time > timeout:
                 return self._send_interrupt(
                     cmd, command_output, ignore_last_output=True
                 )
-        exit_code = int(exit_code_str.strip())
+        cleaned_exit_code_str = exit_code_str.replace('echo $?', '').strip()
+
+        try:
+            exit_code = int(cleaned_exit_code_str)
+        except ValueError:
+            logger.error(f'Invalid exit code: {cleaned_exit_code_str}')
+            # Handle the invalid exit code appropriately (e.g., raise an exception or set a default value)
+            exit_code = -1  # or some other appropriate default value
+
         return exit_code, command_output
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):

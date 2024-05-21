@@ -1,4 +1,7 @@
 export interface ActionMessage {
+  // Either 'agent' or 'user'
+  source: string;
+
   // The action to be taken
   action: string;
 

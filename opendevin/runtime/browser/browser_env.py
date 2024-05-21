@@ -42,7 +42,7 @@ class BrowserEnv:
     def browser_process(self):
         env = gym.make(
             'browsergym/openended',
-            start_url='about:blank',
+            task_kwargs={'start_url': 'about:blank'},
             wait_for_user_message=False,
             headless=True,
             disable_env_checker=True,
@@ -91,13 +91,25 @@ class BrowserEnv:
                     return obs
 
     def close(self):
+        if not self.process.is_alive():
+            logger.info('BrowserEnv already closed, no need to close again')
+            return
         try:
             self.agent_side.send(('SHUTDOWN', None))
-            self.process.join()
+            self.process.join(5)  # Wait for the process to terminate
+            if self.process.is_alive():
+                logger.error(
+                    'Browser process did not terminate, forcefully terminating...'
+                )
+                self.process.terminate()
+                self.process.join(5)  # Wait for the process to terminate
+                if self.process.is_alive():
+                    self.process.kill()
+                    self.process.join(5)  # Wait for the process to terminate
             self.agent_side.close()
             self.browser_side.close()
         except Exception:
-            pass
+            logger.error('Encountered an error when closing browser env', exc_info=True)
 
     @staticmethod
     def image_to_png_base64_url(image: np.ndarray | Image.Image):
