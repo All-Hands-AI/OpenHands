@@ -45,7 +45,9 @@ describe("FileExplorer", () => {
   it.only("should refetch the workspace when clicking the refresh button", async () => {
     const { getByText } = renderWithProviders(<FileExplorer />, {
       preloadedState: {
-        curAgentState: AgentState.RUNNING,
+        agent: {
+          curAgentState: AgentState.RUNNING,
+        },
       },
     });
     await waitFor(() => {
