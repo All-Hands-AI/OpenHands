@@ -5,7 +5,7 @@ import { Settings, saveSettings } from "./settings";
 import Session from "./session";
 
 const sendSpy = vi.spyOn(Session, "send");
-const setupSpy = vi.spyOn(Session, "_setupSocket").mockImplementation(() => {
+const setupSpy = vi.spyOn(Session as any, "_setupSocket").mockImplementation(() => {
   Session["_initializeAgent"](); // fix complaint about private fn
 });
 
