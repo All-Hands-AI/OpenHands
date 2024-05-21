@@ -171,8 +171,9 @@ Begin with your thought about the next step and then come up with an action to p
 """.strip()
 
 
-def unpack_dict(data: dict, restrict: list[str] = []):
+def unpack_dict(data: dict, restrict: list[str] | None = None):
     lines = []
+    restrict = [] if restrict is None else restrict
     for key, value in data.items():
         if key in restrict:
             continue
@@ -191,7 +192,7 @@ Previous Action:
 {unpack_dict(act, ["content"])}
 
 Output from Action:
-{unpack_dict(obs)}
+{unpack_dict(obs), ["content"]}
 """.strip()
 
 

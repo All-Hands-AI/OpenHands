@@ -29,7 +29,7 @@ class Task:
         parent: 'Task',
         goal: str,
         state: str = OPEN_STATE,
-        subtasks: list = [],
+        subtasks: list | None = None,
     ):
         """Initializes a new instance of the Task class.
 
@@ -39,13 +39,13 @@ class Task:
             state: The initial state of the task.
             subtasks: A list of subtasks associated with this task.
         """
+        self.subtasks = [] if subtasks is None else subtasks
         if parent.id:
             self.id = parent.id + '.' + str(len(parent.subtasks))
         else:
             self.id = str(len(parent.subtasks))
         self.parent = parent
         self.goal = goal
-        self.subtasks = []
         for subtask in subtasks or []:
             if isinstance(subtask, Task):
                 self.subtasks.append(subtask)
@@ -190,7 +190,7 @@ class RootTask(Task):
             task = task.subtasks[part]
         return task
 
-    def add_subtask(self, parent_id: str, goal: str, subtasks: list = []):
+    def add_subtask(self, parent_id: str, goal: str, subtasks: list | None = None):
         """Adds a subtask to a parent task.
 
         Args:
@@ -198,6 +198,7 @@ class RootTask(Task):
             goal: The goal of the subtask.
             subtasks: A list of subtasks associated with the new subtask.
         """
+        subtasks = subtasks or []
         parent = self.get_task_by_id(parent_id)
         child = Task(parent=parent, goal=goal, subtasks=subtasks)
         parent.subtasks.append(child)
