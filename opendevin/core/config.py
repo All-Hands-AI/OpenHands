@@ -84,7 +84,7 @@ class AgentConfig(metaclass=Singleton):
     Attributes:
         name: The name of the agent.
         memory_enabled: Whether long-term memory (embeddings) is enabled.
-        memory_max_threads: The maximum number of threads indexing in the same time for embeddings.
+        memory_max_threads: The maximum number of threads indexing at the same time for embeddings.
     """
 
     name: str = 'CodeActAgent'
