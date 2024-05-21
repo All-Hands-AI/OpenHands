@@ -39,10 +39,6 @@ def test_write_simple_script():
     reason='CodeActAgent only supports ssh sandbox which is stateful',
 )
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'SWEAgent',
-    reason='SWEAgent is not capable of this task right now',
-)
-@pytest.mark.skipif(
     os.getenv('SANDBOX_TYPE') == 'local',
     reason='local sandbox shows environment-dependent absolute path for pwd command',
 )
