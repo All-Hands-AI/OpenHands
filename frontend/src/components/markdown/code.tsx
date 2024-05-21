@@ -21,7 +21,12 @@ export function code({
   }
 
   return (
-    <SyntaxHighlighter style={vscDarkPlus} language={match?.[1]} PreTag="div">
+    <SyntaxHighlighter
+      className="rounded-lg"
+      style={vscDarkPlus}
+      language={match?.[1]}
+      PreTag="div"
+    >
       {String(children).replace(/\n$/, "")}
     </SyntaxHighlighter>
   );

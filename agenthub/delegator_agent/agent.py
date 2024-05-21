@@ -6,6 +6,7 @@ from opendevin.llm.llm import LLM
 
 
 class DelegatorAgent(Agent):
+    VERSION = '1.0'
     """
     The planner agent utilizes a special prompting strategy to create long term plans for solving problems.
     The agent is given its previous action-observation pairs, current task, and hint based on last action taken at every step.

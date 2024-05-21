@@ -9,6 +9,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 
 import pandas as pd
+import toml
 import whatthepatch
 from datasets import load_dataset
 from tqdm import tqdm
@@ -184,7 +185,12 @@ def get_test_result(instance, sandbox, workspace_dir_name):
 
 
 def process_instance(
-    instance, agent_class, metadata, skip_workspace_mount, reset_logger: bool = True
+    instance,
+    agent_class,
+    metadata,
+    skip_workspace_mount,
+    eval_output_dir,
+    reset_logger: bool = True,
 ):
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
@@ -206,7 +212,7 @@ def process_instance(
         # add back the console handler to print ONE line
         logger.addHandler(get_console_handler())
         logger.info(
-            f'Starting evaluation for instance {instance.instance_id}.\nLOG:   tail -f {log_file}'
+            f'Starting evaluation for instance {instance.instance_id}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -291,11 +297,27 @@ def process_instance(
     return output
 
 
+def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
+    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.toml')
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as file:
+            data = toml.load(file)
+            if 'selected_ids' in data:
+                selected_ids = data['selected_ids']
+                logger.info(
+                    f'Filtering {len(selected_ids)} tasks from "selected_ids"...'
+                )
+                subset = dataset[dataset[filter_column].isin(selected_ids)]
+                logger.info(f'Retained {subset.shape[0]} tasks after filtering')
+                return subset
+    return dataset
+
+
 if __name__ == '__main__':
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
     dataset = load_dataset('princeton-nlp/SWE-bench_Lite')
-    swe_bench_tests = dataset['test'].to_pandas()
+    swe_bench_tests = filter_dataset(dataset['test'].to_pandas(), 'instance_id')
 
     # Check https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/swe_bench/README.md#configure-opendevin-and-your-llm
     # for details of how to set `llm_config`
@@ -417,6 +439,7 @@ if __name__ == '__main__':
                     agent_class,
                     metadata,
                     skip_workspace_mount,
+                    eval_output_dir,
                     reset_logger=bool(num_workers > 1),
                 )
                 future.add_done_callback(update_progress)
