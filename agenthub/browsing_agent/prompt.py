@@ -296,7 +296,9 @@ class Observation(Shrinkable):
         if self.flags.use_screenshot:
             if isinstance(prompt, str):
                 prompt = [{'type': 'text', 'text': prompt}]
-            img_url = BrowserEnv.image_to_jpg_base64_url(self.obs['screenshot'])
+            img_url = BrowserEnv.image_to_jpg_base64_url(
+                self.obs['screenshot'], add_data_prefix=True
+            )
             prompt.append({'type': 'image_url', 'image_url': img_url})
 
         return prompt
