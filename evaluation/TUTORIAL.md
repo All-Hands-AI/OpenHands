@@ -164,4 +164,3 @@ You can start the evaluation by running:
 ./run_infer.sh eval_gpt_4o_2024_05_13
 ```
 Where `eval_gpt_4o_2024_05_13` is the model config you defined on the config.toml.
-
