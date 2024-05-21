@@ -36,10 +36,20 @@ def _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=False):
         if return_str:
             return output
         else:
-            print(output)
+            print(output.rstrip())
 
 
-def open_file(path: str, line_number: Optional[int] = None) -> str:
+def open_file(path: str, line_number: Optional[int] = None):
+    """
+    Open a file and optionally move to a specific line.
+
+    Args:
+        path: str: The path to the file to open.
+        line_number: Optional[int]: The line number to move to.
+
+    Returns:
+        str: A string representation of the file and window.
+    """
     global CURRENT_FILE, CURRENT_LINE
     if not os.path.isfile(path):
         raise FileNotFoundError(f'File {path} not found')
@@ -60,12 +70,18 @@ def open_file(path: str, line_number: Optional[int] = None) -> str:
     else:
         CURRENT_LINE = 1
 
-    output = f'[File: {os.path.abspath(CURRENT_FILE)} ({total_lines} lines total)]'
+    output = f'[File: {os.path.abspath(CURRENT_FILE)} ({total_lines} lines total)]\n'
     output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True)
-    return output
+    print(output)
 
 
-def goto_line(line_number):
+def goto_line(line_number: int):
+    """
+    Moves the window to show the specified line number.
+
+    Args:
+        line_number: int: The line number to move to.
+    """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
     if CURRENT_FILE is None:
         raise FileNotFoundError('No file open. Use the open_file function first.')
@@ -144,25 +160,45 @@ def search_dir(search_term: str, dir_path: str = './') -> None:
         print(match)
 
 
-def edit_file(path: str, start: int, end: int, content: str) -> None:
-    if not os.path.isfile(path):
-        raise FileNotFoundError(f'File {path} not found')
+def edit_file(start: int, end: int, content: str) -> None:
+    """Edit a file.
 
-    with open(path, 'r') as file:
+    Args:
+        start: int: The start line number. Must be greater or equal to 1.
+        end: int: The end line number. Must be greater or equal to 1 AND greater than start AND less than or equal to the number of lines in the file.
+        content: str: The content to replace the lines with.
+    """
+    global CURRENT_FILE, CURRENT_LINE, WINDOW
+    if not CURRENT_FILE or not os.path.isfile(CURRENT_FILE):
+        raise FileNotFoundError('No file open. Use the open_file function first.')
+
+    with open(CURRENT_FILE, 'r') as file:
         lines = file.readlines()
 
     if not (1 <= start <= len(lines)) or not (1 <= end <= len(lines)) or start > end:
-        raise ValueError(f'Invalid line range: {start}-{end}')
+        raise ValueError(
+            f'Invalid line range: {start}-{end}. Line numbers must be between 1 and {len(lines)} (inclusive).'
+        )
 
     new_lines = lines[: start - 1] + [content + '\n'] + lines[end:]
 
-    with open(path, 'w') as file:
+    # TODO: add linting from SWE-Bench
+
+    with open(CURRENT_FILE, 'w') as file:
         file.writelines(new_lines)
 
-    print(f'Edited lines {start} to {end} in {path}')
+    # set current line to the center of the edited lines
+    CURRENT_LINE = (start + end) // 2
+    print(
+        f'[File: {os.path.abspath(CURRENT_FILE)} ({len(new_lines)} lines total after edit)]'
+    )
+    _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW)
+    print(
+        '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]'
+    )
 
 
-def search_file(search_term: str, file_path: Optional[str] = None) -> str:
+def search_file(search_term: str, file_path: Optional[str] = None):
     global CURRENT_FILE
     if file_path is None:
         file_path = CURRENT_FILE
@@ -180,12 +216,11 @@ def search_file(search_term: str, file_path: Optional[str] = None) -> str:
                 matches.append((i, line.strip()))
 
     if matches:
-        output = f"Found {len(matches)} matches for '{search_term}' in {file_path}:\n"
+        print(f"Found {len(matches)} matches for '{search_term}' in {file_path}:")
         for match in matches:
-            output += f'Line {match[0]}: {match[1]}\n'
-        return output
+            print(f'Line {match[0]}: {match[1]}')
     else:
-        return f"No matches found for '{search_term}' in {file_path}"
+        print(f"No matches found for '{search_term}' in {file_path}")
 
 
 def find_file(file_name, dir_path='./'):
