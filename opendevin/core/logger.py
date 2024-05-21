@@ -74,8 +74,10 @@ llm_formatter = logging.Formatter('%(message)s')
 
 class SensitiveDataFilter(logging.Filter):
     def filter(self, record):
-        api_key_pattern = r'sk-\w+'
-        desensitized_message = re.sub(api_key_pattern, '******', record.getMessage())
+        api_key_pattern = r"api_key='([^']+)'"
+        desensitized_message = re.sub(
+            api_key_pattern, "api_key='******'", record.getMessage()
+        )
         record.msg = desensitized_message
         return True
 
@@ -87,7 +89,6 @@ def get_console_handler():
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(console_formatter)
-    console_handler.addFilter(SensitiveDataFilter())
     return console_handler
 
 
@@ -102,7 +103,6 @@ def get_file_handler(log_dir=os.path.join(os.getcwd(), 'logs')):
     if config.debug:
         file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(file_formatter)
-    file_handler.addFilter(SensitiveDataFilter())
     return file_handler
 
 
@@ -132,6 +132,7 @@ opendevin_logger = logging.getLogger('opendevin')
 opendevin_logger.setLevel(logging.INFO)
 opendevin_logger.addHandler(get_file_handler())
 opendevin_logger.addHandler(get_console_handler())
+opendevin_logger.addFilter(SensitiveDataFilter())
 opendevin_logger.propagate = False
 opendevin_logger.debug('Logging initialized')
 opendevin_logger.debug(
