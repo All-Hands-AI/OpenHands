@@ -3,6 +3,7 @@ from io import StringIO
 
 import pytest
 
+from opendevin.core.config import AppConfig, LLMConfig
 from opendevin.core.logger import opendevin_logger as opendevin_logger
 
 
@@ -51,9 +52,45 @@ def test_google_vertex_api_key_masking(test_handler):
 
 def test_anthropic_api_key_masking(test_handler):
     logger, stream = test_handler
-    api_key = 'sk-ant-1234567890abcdef'
+    api_key = 'sk-ant-1234567890abcdef-some-more-stuff-here'
     message = f"Anthropic API key: api_key='{api_key}' and there's some 'stuff' here"
     logger.info(message)
     log_output = stream.getvalue()
     assert "api_key='******'" in log_output
     assert api_key not in log_output
+
+
+def test_llm_config_attributes_masking(test_handler):
+    logger, stream = test_handler
+    llm_config = LLMConfig(
+        api_key='sk-abc123',
+        aws_access_key_id='AKIAIOSFODNN7EXAMPLE',
+        aws_secret_access_key='wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
+    )
+    logger.info(f'LLM Config: {llm_config}')
+    log_output = stream.getvalue()
+    assert "api_key='******'" in log_output
+    assert "aws_access_key_id='******'" in log_output
+    assert "aws_secret_access_key='******'" in log_output
+    assert 'sk-abc123' not in log_output
+    assert 'AKIAIOSFODNN7EXAMPLE' not in log_output
+    assert 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' not in log_output
+
+    # reset the LLMConfig
+    LLMConfig.reset()
+
+
+def test_app_config_attributes_masking(test_handler):
+    logger, stream = test_handler
+    app_config = AppConfig(
+        e2b_api_key='e2b-xyz789', github_token='ghp_abcdefghijklmnopqrstuvwxyz'
+    )
+    logger.info(f'App Config: {app_config}')
+    log_output = stream.getvalue()
+    assert "e2b_api_key='******'" in log_output
+    assert "github_token='******'" in log_output
+    assert 'e2b-xyz789' not in log_output
+    assert 'ghp_abcdefghijklmnopqrstuvwxyz' not in log_output
+
+    # reset the AppConfig
+    AppConfig.reset()

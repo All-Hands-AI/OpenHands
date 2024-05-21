@@ -82,7 +82,7 @@ class LLMConfig(metaclass=Singleton):
             attr_value = getattr(self, f.name)
 
             if attr_name in ['api_key', 'aws_access_key_id', 'aws_secret_access_key']:
-                attr_value = '***' if attr_value else None
+                attr_value = '******' if attr_value else None
 
             attr_str.append(f'{attr_name}={repr(attr_value)}')
 
@@ -208,7 +208,7 @@ class AppConfig(metaclass=Singleton):
             attr_value = getattr(self, f.name)
 
             if attr_name in ['e2b_api_key', 'github_token']:
-                attr_value = '***' if attr_value else None
+                attr_value = '******' if attr_value else None
 
             attr_str.append(f'{attr_name}={repr(attr_value)}')
 
