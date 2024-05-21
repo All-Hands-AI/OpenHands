@@ -22,10 +22,10 @@ class Session {
   };
 
   private static _connecting = false;
+  private static _disconnecting = false;
 
   public static restoreOrStartNewSession() {
     const token = getToken();
-    console.log('restoreOrStartNewSession', token);
     if (Session.isConnected()) {
       Session.disconnect();
     }
@@ -33,7 +33,6 @@ class Session {
   }
 
   public static startNewSession() {
-    console.log("start new session");
     clearToken();
     Session.restoreOrStartNewSession();
   }
@@ -46,7 +45,6 @@ class Session {
   };
 
   private static _connect(token: string=""): void {
-    console.log('connect', token);
     if (Session.isConnected()) return;
     Session._connecting = true;
 
@@ -55,7 +53,6 @@ class Session {
     Session._socket = new WebSocket(WS_URL);
 
     Session._socket.onopen = (e) => {
-      console.log('connected');
       toast.success("ws", "Connected to server.");
       Session._connecting = false;
       Session._initializeAgent();
@@ -88,10 +85,12 @@ class Session {
     };
 
     Session._socket.onclose = () => {
-      // Reconnect after a delay
-      setTimeout(() => {
-        Session.restoreOrStartNewSession();
-      }, 3000); // Reconnect after 3 seconds
+      if (!Session._disconnecting) {
+        setTimeout(() => {
+          Session.restoreOrStartNewSession();
+        }, 3000); // Reconnect after 3 seconds
+      }
+      Session._disconnecting = false;
     };
   }
 
@@ -102,6 +101,7 @@ class Session {
   }
 
   static disconnect(): void {
+    Session._disconnecting = true;
     if (Session._socket) {
       Session._socket.close();
     }
