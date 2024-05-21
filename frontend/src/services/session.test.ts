@@ -6,7 +6,7 @@ import Session from "./session";
 
 const sendSpy = vi.spyOn(Session, "send");
 const setupSpy = vi.spyOn(Session, "_setupSocket").mockImplementation(() => {
-  Session._initializeAgent();
+  Session["_initializeAgent"](); // fix complaint about private fn
 });
 
 describe("startNewSession", () => {

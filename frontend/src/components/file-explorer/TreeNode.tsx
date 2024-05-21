@@ -6,7 +6,6 @@ import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
 import { listFiles, selectFile } from "#/services/fileService";
 import { setCode, setActiveFilepath } from "#/state/codeSlice";
-import { CodeEditorContext } from "../CodeEditorContext";
 
 interface TitleProps {
   name: string;
@@ -36,8 +35,8 @@ interface TreeNodeProps {
 function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
   const [children, setChildren] = React.useState<string[] | null>(null);
-  const { selectedFileAbsolutePath } = React.useContext(CodeEditorContext);
   const refreshID = useSelector((state: RootState) => state.code.refreshID);
+  const activeFilepath = useSelector((state: RootState) => state.code.path);
 
   const dispatch = useDispatch();
 
@@ -74,7 +73,7 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
     <div
       className={twMerge(
         "text-sm text-neutral-400",
-        path === selectedFileAbsolutePath ? "bg-gray-700" : "",
+        path === activeFilepath ? "bg-gray-700" : "",
       )}
     >
       <Title

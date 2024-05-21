@@ -8,7 +8,6 @@ import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import FileExplorer from "./file-explorer/FileExplorer";
-import { CodeEditorContext } from "./CodeEditorContext";
 
 function CodeEditor(): JSX.Element {
   const { t } = useTranslation();
@@ -19,10 +18,6 @@ function CodeEditor(): JSX.Element {
     const paths = activeFilepath.split("/");
     return paths[paths.length - 1];
   }, [activeFilepath]);
-  const codeEditorContext = useMemo(
-    () => ({ activeFilepath }),
-    [activeFilepath],
-  );
 
   const handleEditorDidMount = (
     editor: editor.IStandaloneCodeEditor,
@@ -44,44 +39,42 @@ function CodeEditor(): JSX.Element {
 
   return (
     <div className="flex h-full w-full bg-neutral-900 transition-all duration-500 ease-in-out">
-      <CodeEditorContext.Provider value={codeEditorContext}>
-        <FileExplorer />
-        <div className="flex flex-col min-h-0 w-full">
-          <Tabs
-            disableCursorAnimation
-            classNames={{
-              base: "border-b border-divider border-neutral-600 mb-4",
-              tabList:
-                "w-full relative rounded-none bg-neutral-900 p-0 border-divider",
-              cursor: "w-full bg-neutral-600 rounded-none",
-              tab: "max-w-fit px-4 h-[36px]",
-              tabContent: "group-data-[selected=true]:text-white",
-            }}
-            aria-label="Options"
-          >
-            <Tab
-              key={selectedFileName.toLocaleLowerCase()}
-              title={selectedFileName}
+      <FileExplorer />
+      <div className="flex flex-col min-h-0 w-full">
+        <Tabs
+          disableCursorAnimation
+          classNames={{
+            base: "border-b border-divider border-neutral-600 mb-4",
+            tabList:
+              "w-full relative rounded-none bg-neutral-900 p-0 border-divider",
+            cursor: "w-full bg-neutral-600 rounded-none",
+            tab: "max-w-fit px-4 h-[36px]",
+            tabContent: "group-data-[selected=true]:text-white",
+          }}
+          aria-label="Options"
+        >
+          <Tab
+            key={selectedFileName.toLocaleLowerCase()}
+            title={selectedFileName}
+          />
+        </Tabs>
+        <div className="flex grow items-center justify-center">
+          {selectedFileName === "" ? (
+            <div className="flex flex-col items-center text-neutral-400">
+              <VscCode size={100} />
+              {t(I18nKey.CODE_EDITOR$EMPTY_MESSAGE)}
+            </div>
+          ) : (
+            <Editor
+              height="100%"
+              path={selectedFileName.toLocaleLowerCase()}
+              defaultValue=""
+              value={code}
+              onMount={handleEditorDidMount}
             />
-          </Tabs>
-          <div className="flex grow items-center justify-center">
-            {selectedFileName === "" ? (
-              <div className="flex flex-col items-center text-neutral-400">
-                <VscCode size={100} />
-                {t(I18nKey.CODE_EDITOR$EMPTY_MESSAGE)}
-              </div>
-            ) : (
-              <Editor
-                height="100%"
-                path={selectedFileName.toLocaleLowerCase()}
-                defaultValue=""
-                value={code}
-                onMount={handleEditorDidMount}
-              />
-            )}
-          </div>
+          )}
         </div>
-      </CodeEditorContext.Provider>
+      </div>
     </div>
   );
 }

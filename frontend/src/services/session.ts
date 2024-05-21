@@ -56,6 +56,9 @@ class Session {
   }
 
   private static _setupSocket(): void {
+    if (!Session._socket) {
+      throw new Error("Socket is not initialized.");
+    }
     Session._socket.onopen = (e) => {
       toast.success("ws", "Connected to server.");
       Session._connecting = false;
