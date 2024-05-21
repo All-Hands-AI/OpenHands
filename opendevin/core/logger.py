@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import sys
 import traceback
 from datetime import datetime
@@ -71,6 +72,14 @@ file_formatter = logging.Formatter(
 llm_formatter = logging.Formatter('%(message)s')
 
 
+class SensitiveDataFilter(logging.Filter):
+    def filter(self, record):
+        api_key_pattern = r'sk-\w+'
+        desensitized_message = re.sub(api_key_pattern, '******', record.getMessage())
+        record.msg = desensitized_message
+        return True
+
+
 def get_console_handler():
     """
     Returns a console handler for logging.
@@ -78,6 +87,7 @@ def get_console_handler():
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(console_formatter)
+    console_handler.addFilter(SensitiveDataFilter())
     return console_handler
 
 
