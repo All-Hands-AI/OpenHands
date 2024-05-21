@@ -33,10 +33,11 @@ def _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=False):
         output = ''
         for i in range(start, end):
             output += f'{i + 1}: {lines[i].strip()}\n'
+        output = output.rstrip()
         if return_str:
             return output
         else:
-            print(output.rstrip())
+            print(output)
 
 
 def open_file(path: str, line_number: Optional[int] = None):
@@ -122,6 +123,7 @@ def create_file(filename):
         file.write('\n')
 
     open_file(filename)
+    print(f'[File {filename} created.]')
 
 
 def search_dir(search_term: str, dir_path: str = './') -> None:
