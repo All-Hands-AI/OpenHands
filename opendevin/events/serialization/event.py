@@ -27,6 +27,7 @@ DELETE_FROM_MEMORY_EXTRAS = {
     'open_pages_urls',
     'active_page_index',
     'last_browser_action',
+    'last_browser_action_error',
     'focused_element_bid',
 }
 
