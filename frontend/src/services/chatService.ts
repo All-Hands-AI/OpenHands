@@ -10,19 +10,3 @@ export function sendChatMessage(message: string): void {
   const eventString = JSON.stringify(event);
   Session.send(eventString);
 }
-
-export function addChatMessageFromEvent(event: string | SocketMessage): void {
-  try {
-    let data: ActionMessage;
-    if (typeof event === "string") {
-      data = JSON.parse(event);
-    } else {
-      data = event as ActionMessage;
-    }
-    if (data && data.args && data.args.task) {
-      store.dispatch(addUserMessage(data.args.task));
-    }
-  } catch (error) {
-    //
-  }
-}

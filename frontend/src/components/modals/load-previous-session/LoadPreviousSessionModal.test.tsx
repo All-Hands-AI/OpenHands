@@ -2,23 +2,21 @@ import React from "react";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import LoadPreviousSessionModal from "./LoadPreviousSessionModal";
-import { addChatMessageFromEvent } from "../../../services/chatService";
 import { handleAssistantMessage } from "../../../services/actions";
+import Session from "../../../services/session";
 
 const RESUME_SESSION_BUTTON_LABEL_KEY =
   "LOAD_SESSION$RESUME_SESSION_MODAL_ACTION_LABEL";
 const START_NEW_SESSION_BUTTON_LABEL_KEY =
   "LOAD_SESSION$START_NEW_SESSION_MODAL_ACTION_LABEL";
 
-vi.mock("../../../services/chatService", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../services/chatService")>()),
-  addChatMessageFromEvent: vi.fn(),
-}));
-
 vi.mock("../../../services/actions", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../services/actions")>()),
   handleAssistantMessage: vi.fn(),
 }));
+
+vi.spyOn(Session, "isConnected").mockImplementation(() => true);
+const restoreOrStartNewSessionSpy = vi.spyOn(Session, "restoreOrStartNewSession");
 
 describe("LoadPreviousSession", () => {
   afterEach(() => {
@@ -32,7 +30,7 @@ describe("LoadPreviousSession", () => {
     screen.getByRole("button", { name: RESUME_SESSION_BUTTON_LABEL_KEY });
   });
 
-  it.skip("should clear messages if user chooses to start a new session", () => {
+  it("should clear messages if user chooses to start a new session", () => {
     const onOpenChangeMock = vi.fn();
     render(<LoadPreviousSessionModal isOpen onOpenChange={onOpenChangeMock} />);
 
@@ -48,7 +46,7 @@ describe("LoadPreviousSession", () => {
     expect(onOpenChangeMock).toHaveBeenCalledWith(false);
   });
 
-  it.skip("should load previous messages if user chooses to resume session", async () => {
+  it("should load previous messages if user chooses to resume session", async () => {
     const onOpenChangeMock = vi.fn();
     render(<LoadPreviousSessionModal isOpen onOpenChange={onOpenChangeMock} />);
 
@@ -61,34 +59,10 @@ describe("LoadPreviousSession", () => {
     });
 
     await waitFor(() => {
-      expect(addChatMessageFromEvent).toHaveBeenCalledTimes(1);
-      expect(handleAssistantMessage).toHaveBeenCalledTimes(1);
+      expect(restoreOrStartNewSessionSpy).toHaveBeenCalledTimes(1);
     });
     // modal should close right after fetching messages
     expect(onOpenChangeMock).toHaveBeenCalledWith(false);
   });
 
-  it.skip("should show an error toast if there is an error fetching the session", async () => {
-    render(<LoadPreviousSessionModal isOpen onOpenChange={vi.fn} />);
-
-    const resumeSessionButton = screen.getByRole("button", {
-      name: RESUME_SESSION_BUTTON_LABEL_KEY,
-    });
-
-    act(() => {
-      userEvent.click(resumeSessionButton);
-    });
-
-    await waitFor(async () => {
-      expect(handleAssistantMessage).not.toHaveBeenCalled();
-      expect(addChatMessageFromEvent).not.toHaveBeenCalled();
-      // error toast should be shown
-      /*
-      expect(toast.error).toHaveBeenCalledWith(
-        "ws",
-        "Error fetching the session",
-      );
-      */
-    });
-  });
 });

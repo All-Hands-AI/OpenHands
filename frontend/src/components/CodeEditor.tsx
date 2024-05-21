@@ -6,27 +6,24 @@ import { useTranslation } from "react-i18next";
 import { VscCode } from "react-icons/vsc";
 import { useDispatch, useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
-import { selectFile } from "#/services/fileService";
-import { setCode } from "#/state/codeSlice";
 import { RootState } from "#/store";
 import FileExplorer from "./file-explorer/FileExplorer";
 import { CodeEditorContext } from "./CodeEditorContext";
 
 function CodeEditor(): JSX.Element {
   const { t } = useTranslation();
-  const [selectedFileAbsolutePath, setSelectedFileAbsolutePath] = useState("");
-  const selectedFileName = useMemo(() => {
-    const paths = selectedFileAbsolutePath.split("/");
-    return paths[paths.length - 1];
-  }, [selectedFileAbsolutePath]);
-  const codeEditorContext = useMemo(
-    () => ({ selectedFileAbsolutePath }),
-    [selectedFileAbsolutePath],
-  );
-
   const dispatch = useDispatch();
   const code = useSelector((state: RootState) => state.code.code);
   const activeFilepath = useSelector((state: RootState) => state.code.path);
+
+  const selectedFileName = useMemo(() => {
+    const paths = activeFilepath.split("/");
+    return paths[paths.length - 1];
+  }, [activeFilepath]);
+  const codeEditorContext = useMemo(
+    () => ({ activeFilepath }),
+    [activeFilepath],
+  );
 
   const handleEditorDidMount = (
     editor: editor.IStandaloneCodeEditor,
@@ -45,17 +42,6 @@ function CodeEditor(): JSX.Element {
     // 应用自定义主题 - English: apply custom theme
     monaco.editor.setTheme("my-theme");
   };
-
-  const updateCode = async () => {
-    const newCode = await selectFile(activeFilepath);
-    setSelectedFileAbsolutePath(activeFilepath);
-    dispatch(setCode(newCode));
-  };
-
-  React.useEffect(() => {
-    // FIXME: we can probably move this out of the component and into state/service
-    if (activeFilepath) updateCode();
-  }, [activeFilepath]);
 
   return (
     <div className="flex h-full w-full bg-neutral-900 transition-all duration-500 ease-in-out">

@@ -16,15 +16,16 @@ vi.mock("#/hooks/useTyping", () => ({
 }));
 
 const sessionSpy = vi.spyOn(Session, "send");
+vi.spyOn(Session, "isConnected").mockImplementation(() => true);
 
 // This is for the scrollview ref in Chat.tsx
 // TODO: Move this into test setup
 HTMLElement.prototype.scrollTo = vi.fn(() => {});
 
 describe("ChatInterface", () => {
-  it("should render the messages and input", () => {
+  it("should render empty message list and input", () => {
     renderWithProviders(<ChatInterface />);
-    expect(screen.queryAllByTestId("message")).toHaveLength(1); // initial welcome message only
+    expect(screen.queryAllByTestId("message")).toHaveLength(0);
   });
 
   it("should render the new message the user has typed", async () => {

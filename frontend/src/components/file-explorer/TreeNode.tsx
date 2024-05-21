@@ -4,8 +4,8 @@ import { twMerge } from "tailwind-merge";
 import { RootState } from "#/store";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
-import { listFiles } from "#/services/fileService";
-import { setActiveFilepath } from "#/state/codeSlice";
+import { listFiles, selectFile } from "#/services/fileService";
+import { setCode, setActiveFilepath } from "#/state/codeSlice";
 import { CodeEditorContext } from "../CodeEditorContext";
 
 interface TitleProps {
@@ -60,10 +60,12 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
     refreshChildren();
   }, [refreshID, isOpen]);
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (isDirectory) {
       setIsOpen((prev) => !prev);
     } else {
+      const newCode = await selectFile(path);
+      dispatch(setCode(newCode));
       dispatch(setActiveFilepath(path));
     }
   };

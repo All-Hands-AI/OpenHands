@@ -7,6 +7,7 @@ import { describe, it, expect, vi, Mock } from "vitest";
 import FileExplorer from "./FileExplorer";
 import { uploadFiles, listFiles } from "#/services/fileService";
 import toast from "#/utils/toast";
+import AgentState from "#/types/AgentState";
 
 const toastSpy = vi.spyOn(toast, "error");
 
@@ -42,7 +43,11 @@ describe("FileExplorer", () => {
   it.todo("should render an empty workspace");
 
   it.only("should refetch the workspace when clicking the refresh button", async () => {
-    const { getByText } = renderWithProviders(<FileExplorer />);
+    const { getByText } = renderWithProviders(<FileExplorer />, {
+      preloadedState: {
+        curAgentState: AgentState.RUNNING,
+      }
+    });
     await waitFor(() => {
       expect(getByText("folder1")).toBeInTheDocument();
       expect(getByText("file2.ts")).toBeInTheDocument();

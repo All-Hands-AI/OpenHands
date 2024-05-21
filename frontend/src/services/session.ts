@@ -52,7 +52,10 @@ class Session {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const WS_URL = `${protocol}//${window.location.host}/ws?token=${token}`;
     Session._socket = new WebSocket(WS_URL);
+    Session._setupSocket();
+  }
 
+  private static _setupSocket(): void {
     Session._socket.onopen = (e) => {
       toast.success("ws", "Connected to server.");
       Session._connecting = false;

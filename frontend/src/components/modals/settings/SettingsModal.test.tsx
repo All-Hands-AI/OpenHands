@@ -18,6 +18,7 @@ import SettingsModal from "./SettingsModal";
 const toastSpy = vi.spyOn(toast, "settingsChanged");
 const i18nSpy = vi.spyOn(i18next, "changeLanguage");
 const startNewSessionSpy = vi.spyOn(Session, "startNewSession");
+vi.spyOn(Session, "isConnected").mockImplementation(() => true);
 
 vi.mock("#/services/settings", async (importOriginal) => ({
   ...(await importOriginal<typeof import("#/services/settings")>()),

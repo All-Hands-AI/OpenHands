@@ -5,6 +5,9 @@ import { Settings, saveSettings } from "./settings";
 import Session from "./session";
 
 const sendSpy = vi.spyOn(Session, "send");
+const setupSpy = vi.spyOn(Session, "_setupSocket").mockImplementation(() => {
+  Session._initializeAgent();
+});
 
 describe("startNewSession", () => {
   it("Should start a new session with the current settings", () => {
