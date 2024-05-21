@@ -45,7 +45,17 @@ class AgentSession:
         await self._create_runtime()
         await self._create_controller(start_event)
 
+    async def close(self):
+        if self.controller is not None:
+            end_state = self.controller.get_state()
+            end_state.save_to_session(self.sid)
+            await self.controller.close()
+        if self.runtime is not None:
+            self.runtime.close()
+
     async def _create_runtime(self):
+        if self.runtime is not None:
+            raise Exception('Runtime already created')
         if config.runtime == 'server':
             logger.info('Using server runtime')
             self.runtime = ServerRuntime(self.event_stream, self.sid)
@@ -59,6 +69,10 @@ class AgentSession:
         Args:
             start_event: The start event data (optional).
         """
+        if self.controller is not None:
+            raise Exception('Controller already created')
+        if self.runtime is None:
+            raise Exception('Runtime must be initialized before the agent controller')
         args = {
             key: value
             for key, value in start_event.get('args', {}).items()
@@ -79,12 +93,8 @@ class AgentSession:
                 logger.warning(
                     'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful (LocalBox, DockerExecBox) will not work properly.'
                 )
-        # Initializing plugins into the runtime
-        assert self.runtime is not None, 'Runtime is not initialized'
         self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
 
-        if self.controller is not None:
-            await self.controller.close()
         self.controller = AgentController(
             sid=self.sid,
             event_stream=self.event_stream,
@@ -98,11 +108,3 @@ class AgentSession:
         except Exception as e:
             print('Error restoring state', e)
             pass
-
-    async def close(self):
-        if self.controller is not None:
-            end_state = self.controller.get_state()
-            end_state.save_to_session(self.sid)
-            await self.controller.close()
-        if self.runtime is not None:
-            self.runtime.close()
