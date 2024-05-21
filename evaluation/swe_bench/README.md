@@ -105,6 +105,17 @@ then your command would be:
 ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview CodeActAgent 10
 ```
 
+If you would like to specify a list of tasks you'd like to benchmark on, you could
+create a `config.toml` under `./evaluation/swe_bench/` folder, and put a list
+attribute named `selected_ids`, e.g.
+
+```toml
+selected_ids = ['sphinx-doc__sphinx-8721', 'sympy__sympy-14774', 'scikit-learn__scikit-learn-10508']
+```
+
+Then only these tasks (rows whose `instance_id` is in the above list) will be evaluated.
+In this case, `eval_limit` option applies to tasks that are in the `selected_ids` list.
+
 ## Evaluate Generated Patches
 
 After running the inference described in the previous section, you will obtain a `output.jsonl` (by default it will save to `evaluation/evaluation_outputs`). Then you can run this one line script to evaluate generated patches, and produce a fine-grained report:
