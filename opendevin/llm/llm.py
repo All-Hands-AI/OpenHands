@@ -21,6 +21,7 @@ from tenacity import (
 from opendevin.core.config import config
 from opendevin.core.logger import llm_prompt_logger, llm_response_logger
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.metrics import Metrics
 
 __all__ = ['LLM']
 
@@ -58,6 +59,7 @@ class LLM:
         max_input_tokens=None,
         max_output_tokens=None,
         llm_config=None,
+        metrics=None,
     ):
         """
         Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
@@ -77,7 +79,7 @@ class LLM:
             custom_llm_provider (str, optional): A custom LLM provider. Defaults to LLM_CUSTOM_LLM_PROVIDER.
             llm_timeout (int, optional): The maximum time to wait for a response in seconds. Defaults to LLM_TIMEOUT.
             llm_temperature (float, optional): The temperature for LLM sampling. Defaults to LLM_TEMPERATURE.
-
+            metrics (Metrics, optional): The metrics object to use. Defaults to None.
         """
         if llm_config is None:
             llm_config = config.llm
@@ -112,6 +114,7 @@ class LLM:
             if max_output_tokens is not None
             else llm_config.max_output_tokens
         )
+        metrics = metrics if metrics is not None else Metrics()
 
         logger.info(f'Initializing LLM with model: {model}')
         self.model_name = model
@@ -122,6 +125,7 @@ class LLM:
         self.max_output_tokens = max_output_tokens
         self.llm_timeout = llm_timeout
         self.custom_llm_provider = custom_llm_provider
+        self.metrics = metrics
 
         # litellm actually uses base Exception here for unknown model
         self.model_info = None
@@ -234,6 +238,7 @@ class LLM:
     def completion_cost(self, response):
         """
         Calculate the cost of a completion response based on the model.  Local models are treated as free.
+        Add the current cost into total cost in metrics.
 
         Args:
             response (list): A response from a model invocation.
@@ -244,6 +249,7 @@ class LLM:
         if not self.is_local():
             try:
                 cost = litellm_completion_cost(completion_response=response)
+                self.metrics.add_cost(cost)
                 return cost
             except Exception:
                 logger.warning('Cost calculation not supported for this model.')

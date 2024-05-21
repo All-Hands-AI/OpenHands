@@ -10,7 +10,6 @@ from agenthub.codeact_agent.prompt import (
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.metrics import opendevin_metrics as metrics
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
@@ -275,9 +274,8 @@ class CodeActAgent(Agent):
             cur_cost = self.llm.completion_cost(response)
         except Exception:
             cur_cost = 0
-        metrics.add_cost(cur_cost)
         logger.info(
             'Cost: %.2f USD | Accumulated Cost: %.2f USD',
             cur_cost,
-            metrics.total_cost,
+            self.llm.metrics.total_cost,
         )
