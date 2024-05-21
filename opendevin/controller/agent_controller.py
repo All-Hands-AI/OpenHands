@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 from typing import Optional, Type
 
 from opendevin.controller.agent import Agent
@@ -109,6 +110,7 @@ class AgentController:
                 logger.info('AgentController task was cancelled')
                 break
             except Exception as e:
+                traceback.print_exc()
                 logger.error(f'Error while running the agent: {e}')
                 await self.report_error(
                     'There was an unexpected error while running the agent', exception=e
