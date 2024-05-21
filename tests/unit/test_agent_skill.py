@@ -4,7 +4,14 @@ import os
 import tempfile
 import unittest
 
-from opendevin.skills.agentskills import create_file, edit_file, goto_line, open_file
+from opendevin.skills.agentskills import (
+    create_file,
+    edit_file,
+    goto_line,
+    open_file,
+    scroll_down,
+    scroll_up,
+)
 
 
 class TestAgentSkills(unittest.TestCase):
@@ -155,6 +162,105 @@ class TestAgentSkills(unittest.TestCase):
                     open_file(temp_file_path)
             with self.assertRaises(ValueError):
                 goto_line(100)
+
+    def test_scroll_down(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_file_path = os.path.join(temp_dir, 'a.txt')
+            with open(temp_file_path, 'w') as file:
+                file.write('\n'.join([f'Line {i}' for i in range(1, 1001)]))
+
+            with io.StringIO() as buf:
+                with contextlib.redirect_stdout(buf):
+                    open_file(temp_file_path)
+                result = buf.getvalue()
+            self.assertIsNotNone(result)
+
+            expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+            # for WINDOW = 100
+            for i in range(1, 52):
+                expected += f'{i}: Line {i}\n'
+            self.assertEqual(
+                list(filter(None, result.split('\n'))),
+                list(filter(None, expected.split('\n'))),
+            )
+
+            with io.StringIO() as buf:
+                with contextlib.redirect_stdout(buf):
+                    scroll_down()
+                result = buf.getvalue()
+            self.assertIsNotNone(result)
+
+            expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+            # for WINDOW = 100
+            for i in range(52, 152):
+                expected += f'{i}: Line {i}\n'
+            self.assertEqual(
+                list(filter(None, result.split('\n'))),
+                list(filter(None, expected.split('\n'))),
+            )
+
+    def test_scroll_up(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_file_path = os.path.join(temp_dir, 'a.txt')
+            with open(temp_file_path, 'w') as file:
+                file.write('\n'.join([f'Line {i}' for i in range(1, 1001)]))
+
+            with io.StringIO() as buf:
+                with contextlib.redirect_stdout(buf):
+                    open_file(temp_file_path, 300)
+                result = buf.getvalue()
+            self.assertIsNotNone(result)
+
+            expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+            for i in range(251, 351):
+                expected += f'{i}: Line {i}\n'
+            self.assertEqual(
+                list(filter(None, result.split('\n'))),
+                list(filter(None, expected.split('\n'))),
+            )
+
+            with io.StringIO() as buf:
+                with contextlib.redirect_stdout(buf):
+                    scroll_up()
+                result = buf.getvalue()
+            self.assertIsNotNone(result)
+
+            expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+            # for WINDOW = 100
+            for i in range(151, 251):
+                expected += f'{i}: Line {i}\n'
+            self.assertEqual(
+                list(filter(None, result.split('\n'))),
+                list(filter(None, expected.split('\n'))),
+            )
+
+    def test_scroll_down_edge(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_file_path = os.path.join(temp_dir, 'a.txt')
+            with open(temp_file_path, 'w') as file:
+                file.write('\n'.join([f'Line {i}' for i in range(1, 10)]))
+
+            with io.StringIO() as buf:
+                with contextlib.redirect_stdout(buf):
+                    open_file(temp_file_path)
+                result = buf.getvalue()
+            self.assertIsNotNone(result)
+
+            expected = f'[File: {temp_file_path} (9 lines total)]\n'
+            for i in range(1, 10):
+                expected += f'{i}: Line {i}\n'
+
+            with io.StringIO() as buf:
+                with contextlib.redirect_stdout(buf):
+                    scroll_down()
+                result = buf.getvalue()
+            self.assertIsNotNone(result)
+
+            # expected should be unchanged
+            self.assertEqual(
+                list(filter(None, result.split('\n'))),
+                list(filter(None, expected.split('\n'))),
+            )
 
     def test_edit_file(self):
         with tempfile.TemporaryDirectory() as temp_dir:

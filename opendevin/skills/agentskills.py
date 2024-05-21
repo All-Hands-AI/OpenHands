@@ -40,6 +40,10 @@ def _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=False):
             print(output)
 
 
+def _cur_file_header(CURRENT_FILE, total_lines):
+    return f'[File: {os.path.abspath(CURRENT_FILE)} ({total_lines} lines total)]\n'
+
+
 def open_file(path: str, line_number: Optional[int] = None):
     """
     Open a file and optionally move to a specific line.
@@ -71,7 +75,7 @@ def open_file(path: str, line_number: Optional[int] = None):
     else:
         CURRENT_LINE = 1
 
-    output = f'[File: {os.path.abspath(CURRENT_FILE)} ({total_lines} lines total)]\n'
+    output = _cur_file_header(CURRENT_FILE, total_lines)
     output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True)
     print(output)
 
@@ -93,7 +97,7 @@ def goto_line(line_number: int):
 
     CURRENT_LINE = line_number
 
-    output = f'[File: {os.path.abspath(CURRENT_FILE)} ({total_lines} lines total)]\n'
+    output = _cur_file_header(CURRENT_FILE, total_lines)
     output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True)
     print(output)
 
@@ -105,7 +109,9 @@ def scroll_down():
 
     total_lines = sum(1 for _ in open(CURRENT_FILE))
     CURRENT_LINE = min(CURRENT_LINE + WINDOW, total_lines)
-    _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW)
+    output = _cur_file_header(CURRENT_FILE, total_lines)
+    output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True)
+    print(output)
 
 
 def scroll_up():
@@ -114,7 +120,10 @@ def scroll_up():
         raise FileNotFoundError('No file open. Use the open_file function first.')
 
     CURRENT_LINE = max(CURRENT_LINE - WINDOW, 1)
-    _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW)
+    total_lines = sum(1 for _ in open(CURRENT_FILE))
+    output = _cur_file_header(CURRENT_FILE, total_lines)
+    output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True)
+    print(output)
 
 
 def create_file(filename):
