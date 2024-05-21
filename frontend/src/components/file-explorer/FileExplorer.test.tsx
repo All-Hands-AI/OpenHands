@@ -46,7 +46,7 @@ describe("FileExplorer", () => {
     const { getByText } = renderWithProviders(<FileExplorer />, {
       preloadedState: {
         curAgentState: AgentState.RUNNING,
-      }
+      },
     });
     await waitFor(() => {
       expect(getByText("folder1")).toBeInTheDocument();

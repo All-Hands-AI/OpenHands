@@ -1,10 +1,10 @@
 import Editor, { Monaco } from "@monaco-editor/react";
 import { Tab, Tabs } from "@nextui-org/react";
 import type { editor } from "monaco-editor";
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { VscCode } from "react-icons/vsc";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import FileExplorer from "./file-explorer/FileExplorer";
@@ -12,7 +12,6 @@ import { CodeEditorContext } from "./CodeEditorContext";
 
 function CodeEditor(): JSX.Element {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
   const code = useSelector((state: RootState) => state.code.code);
   const activeFilepath = useSelector((state: RootState) => state.code.path);
 

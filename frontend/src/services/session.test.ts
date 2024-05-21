@@ -26,6 +26,7 @@ describe("startNewSession", () => {
     saveSettings(settings);
     Session.startNewSession();
 
+    expect(setupSpy).toHaveBeenCalledTimes(1);
     expect(sendSpy).toHaveBeenCalledWith(JSON.stringify(event));
   });
 });
