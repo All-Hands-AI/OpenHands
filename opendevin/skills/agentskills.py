@@ -138,42 +138,6 @@ def create_file(filename):
     print(f'[File {filename} created.]')
 
 
-def search_dir(search_term: str, dir_path: str = './') -> None:
-    if not os.path.isdir(dir_path):
-        raise FileNotFoundError(f'Directory {dir_path} not found')
-
-    matches = []
-    for root, _, files in os.walk(dir_path):
-        for file in files:
-            if file.startswith('.'):
-                continue
-            file_path = os.path.join(root, file)
-            with open(file_path, 'r', errors='ignore') as f:
-                for line_num, line in enumerate(f, 1):
-                    if search_term in line:
-                        matches.append((file_path, line_num, line.strip()))
-
-    if not matches:
-        print(f'No matches found for "{search_term}" in {dir_path}')
-        return
-
-    num_matches = len(matches)
-    num_files = len(set(match[0] for match in matches))
-
-    if num_files > 100:
-        print(
-            f'More than {num_files} files matched for "{search_term}" in {dir_path}. Please narrow your search.'
-        )
-        return
-
-    print(f'Found {num_matches} matches for "{search_term}" in {dir_path}:')
-    for file_path, line_num, line in matches:
-        print(f'{file_path} (Line {line_num}): {line}')
-    print(f'End of matches for "{search_term}" in {dir_path}')
-    for match in matches:
-        print(match)
-
-
 def edit_file(start: int, end: int, content: str) -> None:
     """Edit a file.
 
@@ -221,6 +185,46 @@ def edit_file(start: int, end: int, content: str) -> None:
     print(
         '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]'
     )
+
+
+def search_dir(search_term: str, dir_path: str = './') -> None:
+    """Search a directory for a term.
+
+    Args:
+        search_term: str: The term to search for.
+        dir_path: Optional[str]: The path to the directory to search.
+    """
+    if not os.path.isdir(dir_path):
+        raise FileNotFoundError(f'Directory {dir_path} not found')
+
+    matches = []
+    for root, _, files in os.walk(dir_path):
+        for file in files:
+            if file.startswith('.'):
+                continue
+            file_path = os.path.join(root, file)
+            with open(file_path, 'r', errors='ignore') as f:
+                for line_num, line in enumerate(f, 1):
+                    if search_term in line:
+                        matches.append((file_path, line_num, line.strip()))
+
+    if not matches:
+        print(f'No matches found for "{search_term}" in {dir_path}')
+        return
+
+    num_matches = len(matches)
+    num_files = len(set(match[0] for match in matches))
+
+    if num_files > 100:
+        print(
+            f'More than {num_files} files matched for "{search_term}" in {dir_path}. Please narrow your search.'
+        )
+        return
+
+    print(f'[Found {num_matches} matches for "{search_term}" in {dir_path}]')
+    for file_path, line_num, line in matches:
+        print(f'{file_path} (Line {line_num}): {line}')
+    print(f'[End of matches for "{search_term}" in {dir_path}]')
 
 
 def search_file(search_term: str, file_path: Optional[str] = None):

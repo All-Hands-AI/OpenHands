@@ -11,6 +11,7 @@ from opendevin.skills.agentskills import (
     open_file,
     scroll_down,
     scroll_up,
+    search_dir,
 )
 
 
@@ -355,6 +356,104 @@ class TestAgentSkills(unittest.TestCase):
     def test_edit_file_not_opened(self):
         with self.assertRaises(FileNotFoundError):
             edit_file(start=1, end=3, content='REPLACE TEXT')
+
+    def test_search_dir(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # create a file with the search term "bingo"
+            for i in range(1, 101):
+                temp_file_path = os.path.join(temp_dir, f'a{i}.txt')
+                with open(temp_file_path, 'w') as file:
+                    file.write('Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n')
+                    if i == 50:
+                        file.write('bingo')
+
+            # test
+            with io.StringIO() as buf:
+                with contextlib.redirect_stdout(buf):
+                    search_dir('bingo', temp_dir)
+                result = buf.getvalue()
+            print(result)
+            self.assertIsNotNone(result)
+
+            expected = (
+                f'[Found 1 matches for "bingo" in {temp_dir}]\n'
+                f'{temp_dir}/a50.txt (Line 6): bingo\n'
+                f'[End of matches for "bingo" in {temp_dir}]\n'
+            )
+            self.assertEqual(
+                list(filter(None, result.split('\n'))),
+                list(filter(None, expected.split('\n'))),
+            )
+
+    def test_search_dir_not_exist_term(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # create a file with the search term "bingo"
+            for i in range(1, 101):
+                temp_file_path = os.path.join(temp_dir, f'a{i}.txt')
+                with open(temp_file_path, 'w') as file:
+                    file.write('Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n')
+
+            # test
+            with io.StringIO() as buf:
+                with contextlib.redirect_stdout(buf):
+                    search_dir('non-exist', temp_dir)
+                result = buf.getvalue()
+            print(result)
+            self.assertIsNotNone(result)
+
+            expected = f'No matches found for "non-exist" in {temp_dir}\n'
+            self.assertEqual(
+                list(filter(None, result.split('\n'))),
+                list(filter(None, expected.split('\n'))),
+            )
+
+    def test_search_dir_too_much_match(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # create a file with the search term "bingo"
+            for i in range(1, 1000):
+                temp_file_path = os.path.join(temp_dir, f'a{i}.txt')
+                with open(temp_file_path, 'w') as file:
+                    file.write('Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n')
+
+            with io.StringIO() as buf:
+                with contextlib.redirect_stdout(buf):
+                    search_dir('Line 5', temp_dir)
+                result = buf.getvalue()
+            self.assertIsNotNone(result)
+
+            expected = f'More than 999 files matched for "Line 5" in {temp_dir}. Please narrow your search.\n'
+            self.assertEqual(
+                list(filter(None, result.split('\n'))),
+                list(filter(None, expected.split('\n'))),
+            )
+
+    def test_search_dir_cwd(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            os.chdir(temp_dir)
+            # create a file with the search term "bingo"
+            for i in range(1, 101):
+                temp_file_path = os.path.join(temp_dir, f'a{i}.txt')
+                with open(temp_file_path, 'w') as file:
+                    file.write('Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n')
+                    if i == 50:
+                        file.write('bingo')
+
+            # test
+            with io.StringIO() as buf:
+                with contextlib.redirect_stdout(buf):
+                    search_dir('bingo')
+                result = buf.getvalue()
+            self.assertIsNotNone(result)
+
+            expected = (
+                '[Found 1 matches for "bingo" in ./]\n'
+                './a50.txt (Line 6): bingo\n'
+                '[End of matches for "bingo" in ./]\n'
+            )
+            self.assertEqual(
+                list(filter(None, result.split('\n'))),
+                list(filter(None, expected.split('\n'))),
+            )
 
 
 if __name__ == '__main__':
