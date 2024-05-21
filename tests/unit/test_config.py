@@ -219,12 +219,12 @@ def test_api_keys_repr_str():
         aws_access_key_id='my_access_key',
         aws_secret_access_key='my_secret_key',
     )
-    assert "api_key='***'" in repr(llm_config)
-    assert "aws_access_key_id='***'" in repr(llm_config)
-    assert "aws_secret_access_key='***'" in repr(llm_config)
-    assert "api_key='***'" in str(llm_config)
-    assert "aws_access_key_id='***'" in str(llm_config)
-    assert "aws_secret_access_key='***'" in str(llm_config)
+    assert "api_key='******'" in repr(llm_config)
+    assert "aws_access_key_id='******'" in repr(llm_config)
+    assert "aws_secret_access_key='******'" in repr(llm_config)
+    assert "api_key='******'" in str(llm_config)
+    assert "aws_access_key_id='******'" in str(llm_config)
+    assert "aws_secret_access_key='******'" in str(llm_config)
 
     # Check that no other attrs in LLMConfig have 'key' or 'token' in their name
     # This will fail when new attrs are added, and attract attention
@@ -266,10 +266,10 @@ def test_api_keys_repr_str():
         e2b_api_key='my_e2b_api_key',
         github_token='my_github_token',
     )
-    assert "e2b_api_key='***'" in repr(app_config)
-    assert "github_token='***'" in repr(app_config)
-    assert "e2b_api_key='***'" in str(app_config)
-    assert "github_token='***'" in str(app_config)
+    assert "e2b_api_key='******'" in repr(app_config)
+    assert "github_token='******'" in repr(app_config)
+    assert "e2b_api_key='******'" in str(app_config)
+    assert "github_token='******'" in str(app_config)
 
     # Check that no other attrs in AppConfig have 'key' or 'token' in their name
     # This will fail when new attrs are added, and attract attention
