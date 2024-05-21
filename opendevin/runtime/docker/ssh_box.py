@@ -729,14 +729,14 @@ if __name__ == '__main__':
     )
 
     bg_cmd = ssh_box.execute_in_background(
-        "while true; do echo 'dot ' && sleep 10; done"
+        "while true; do echo -n '.' && sleep 10; done"
     )
 
     sys.stdout.flush()
     try:
         while True:
             try:
-                user_input = input('>>> ')
+                user_input = input('$ ')
             except EOFError:
                 logger.info('Exiting...')
                 break

@@ -112,6 +112,7 @@ class AgentController:
             except Exception as e:
                 traceback.print_exc()
                 logger.error(f'Error while running the agent: {e}')
+                logger.error(traceback.format_exc())
                 await self.report_error(
                     'There was an unexpected error while running the agent', exception=e
                 )
