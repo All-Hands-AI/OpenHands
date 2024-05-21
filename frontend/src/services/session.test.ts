@@ -9,7 +9,8 @@ const setupSpy = vi
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   .spyOn(Session as any, "_setupSocket")
   .mockImplementation(() => {
-    Session._initializeAgent(); // fix complaint about private fn
+    /* eslint-disable-next-line @typescript-eslint/dot-notation */
+    Session["_initializeAgent"](); // use key syntax to fix complaint about private fn
   });
 
 describe("startNewSession", () => {
