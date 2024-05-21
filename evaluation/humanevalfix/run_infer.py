@@ -137,6 +137,8 @@ def get_test_result(instance, path, language='python', timeout=10):
 def process_instance(
     instance, agent_class, metadata, skip_workspace_mount, reset_logger: bool = True
 ):
+    old_workspace_mount_path = config.workspace_mount_path
+    old_workspace_base = config.workspace_base
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
     # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
@@ -230,6 +232,9 @@ def process_instance(
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
+
+    config.workspace_mount_path = old_workspace_mount_path
+    config.workspace_base = old_workspace_base
     return output
 
 
