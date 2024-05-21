@@ -102,6 +102,7 @@ def get_file_handler(log_dir=os.path.join(os.getcwd(), 'logs')):
     if config.debug:
         file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(file_formatter)
+    file_handler.addFilter(SensitiveDataFilter())
     return file_handler
 
 
