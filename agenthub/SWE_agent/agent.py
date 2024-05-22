@@ -21,6 +21,7 @@ from .prompts import (
 
 
 class SWEAgent(Agent):
+    VERSION = '1.0'
     """
     An attempt to recreate swe_agent with output parsing, prompting style, and Application Computer Interface (ACI).
 
@@ -41,7 +42,7 @@ class SWEAgent(Agent):
         self.running_memory.append(memory)
 
     def _think_act(self, messages: list[dict]) -> tuple[Action, str]:
-        resp = self.llm.completion(
+        resp = self.llm.do_completion(
             messages=messages,
             temperature=0.05,
         )

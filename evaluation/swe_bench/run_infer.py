@@ -9,6 +9,7 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 
 import pandas as pd
+import toml
 import whatthepatch
 from datasets import load_dataset
 from tqdm import tqdm
@@ -68,6 +69,7 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 def get_test_result(instance, sandbox, workspace_dir_name):
     test_result = {'result': {}, 'metadata': {}}
+    # NOTE: if you need to do something in the sandbox to get the correctness metric, modify this function
     try:
         test_patch_parsed = whatthepatch.parse_patch(instance.test_patch)
         # get a list of filepaths that are involved in the patch
@@ -183,14 +185,22 @@ def get_test_result(instance, sandbox, workspace_dir_name):
 
 
 def process_instance(
-    instance, agent_class, metadata, skip_workspace_mount, reset_logger: bool = True
+    instance,
+    agent_class,
+    metadata,
+    skip_workspace_mount,
+    eval_output_dir,
+    reset_logger: bool = True,
 ):
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
+    # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
+    # so that different agent don't interfere with each other.
     if not skip_workspace_mount:
         workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
         pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
+    # Setup the logger properly, so you can run multi-processing to parallize the evaluation
     if reset_logger:
         # Set up logger
         log_file = os.path.join(
@@ -202,7 +212,7 @@ def process_instance(
         # add back the console handler to print ONE line
         logger.addHandler(get_console_handler())
         logger.info(
-            f'Starting evaluation for instance {instance.instance_id}.\nLOG:   tail -f {log_file}'
+            f'Starting evaluation for instance {instance.instance_id}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -216,6 +226,8 @@ def process_instance(
     if not skip_workspace_mount:
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
 
+    # NOTE: this is something special we do for SWE-Bench due to the reason described in the previous section
+    # You can omit this if you don't need to setup specialized sandbox
     workspace_dir_name = f'{instance.repo}__{instance.version}'.replace('/', '__')
     sandbox = SWEBenchSSHBox.get_box_for_instance(
         instance,
@@ -238,9 +250,10 @@ def process_instance(
         'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
         'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
     )
+    # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
-    # Run the agent
+    # Here's how you can run the agent (similar to the `main` function) and get the final task state
     state: State = asyncio.run(
         main(
             instruction,
@@ -249,13 +262,18 @@ def process_instance(
         )
     )
 
+    # ======= THIS IS SWE-Bench specific =======
     # Get git patch
     git_patch = sandbox.get_diff_patch()
     logger.info(f'Got git diff for instance {instance.instance_id}')
+    # ==========================================
 
     # ======= Attempt to evaluate the agent's edits =======
-    # Attempt to analyze the test patch to get involved filepaths
+    # TODO: if you need to do something in the sandbox to get the correctness metric, modify this function
     test_result = get_test_result(instance, sandbox, workspace_dir_name)
+
+    # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
+    # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
 
     if state is None:
         raise ValueError('State should not be None.')
@@ -263,9 +281,9 @@ def process_instance(
     # Save the output
     output = {
         'instance_id': instance.instance_id,
-        'swe_instance': instance.to_dict(),
+        'swe_instance': instance.to_dict(),  # SWE Bench specific
         'instruction': instruction,
-        'git_patch': git_patch,
+        'git_patch': git_patch,  # SWE Bench specific
         'metadata': metadata,
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
@@ -279,11 +297,30 @@ def process_instance(
     return output
 
 
-if __name__ == '__main__':
-    # Load the dataset
-    dataset = load_dataset('princeton-nlp/SWE-bench_Lite')
-    swe_bench_tests = dataset['test'].to_pandas()
+def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
+    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.toml')
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as file:
+            data = toml.load(file)
+            if 'selected_ids' in data:
+                selected_ids = data['selected_ids']
+                logger.info(
+                    f'Filtering {len(selected_ids)} tasks from "selected_ids"...'
+                )
+                subset = dataset[dataset[filter_column].isin(selected_ids)]
+                logger.info(f'Retained {subset.shape[0]} tasks after filtering')
+                return subset
+    return dataset
 
+
+if __name__ == '__main__':
+    # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
+    # so we don't need to manage file uploading to OpenDevin's repo
+    dataset = load_dataset('princeton-nlp/SWE-bench_Lite')
+    swe_bench_tests = filter_dataset(dataset['test'].to_pandas(), 'instance_id')
+
+    # Check https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/swe_bench/README.md#configure-opendevin-and-your-llm
+    # for details of how to set `llm_config`
     if args.llm_config:
         specified_llm_config = get_llm_config_arg(args.llm_config)
         if specified_llm_config:
@@ -319,7 +356,7 @@ if __name__ == '__main__':
         'max_iterations': max_iterations,
         'eval_output_dir': eval_output_dir,
         'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
-        # get the commit id of current repo
+        # get the commit id of current repo for reproduciblity
         'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
         .decode('utf-8')
         .strip(),
@@ -352,6 +389,7 @@ if __name__ == '__main__':
         f'Evaluation started with Agent {agent_class}, model {model_name}, max iterations {max_iterations}.'
     )
 
+    # =============================================
     # filter out finished instances
     new_swe_bench_tests = []
     for idx, instance in swe_bench_tests.iterrows():
@@ -366,9 +404,11 @@ if __name__ == '__main__':
     logger.info(
         f'Finished instances: {len(finished_instance_ids)}, Remaining instances: {len(swe_bench_tests)}'
     )
+    # =============================================
 
     pbar = tqdm(total=len(swe_bench_tests))
 
+    # This function tracks the progress AND write the output to a JSONL file
     def update_progress(future):
         pbar.update(1)
         output = future.result()
@@ -380,14 +420,18 @@ if __name__ == '__main__':
         output_fp.write(json.dumps(output) + '\n')
         output_fp.flush()
 
+    # This sets the multi-processing
     num_workers = args.eval_num_workers
     logger.info(f'Using {num_workers} workers for evaluation.')
 
+    # This is SWE-Bench specific - CodeActAgent doesn't require mounted workspace to work
     skip_workspace_mount = agent_class == 'CodeActAgent'
     logger.info(f'Skipping workspace mount: {skip_workspace_mount}')
+
     try:
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
+            # This is how we perform multi-processing
             for row_idx, instance in swe_bench_tests.iterrows():
                 future = executor.submit(
                     process_instance,
@@ -395,6 +439,7 @@ if __name__ == '__main__':
                     agent_class,
                     metadata,
                     skip_workspace_mount,
+                    eval_output_dir,
                     reset_logger=bool(num_workers > 1),
                 )
                 future.add_done_callback(update_progress)

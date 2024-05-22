@@ -80,6 +80,7 @@ INITIAL_THOUGHTS = [
 
 
 class MonologueAgent(Agent):
+    VERSION = '1.0'
     """
     The Monologue Agent utilizes long and short term memory to complete tasks.
     Long term memory is stored as a LongTermMemory object and the model uses it to search for examples from the past.
@@ -241,7 +242,7 @@ class MonologueAgent(Agent):
             state.background_commands_obs,
         )
         messages = [{'content': prompt, 'role': 'user'}]
-        resp = self.llm.completion(messages=messages)
+        resp = self.llm.do_completion(messages=messages)
         action_resp = resp['choices'][0]['message']['content']
         state.num_of_chars += len(prompt) + len(action_resp)
         action = prompts.parse_action_response(action_resp)

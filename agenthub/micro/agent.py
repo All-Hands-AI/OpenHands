@@ -35,11 +35,14 @@ def history_to_json(obj, **kwargs):
         # process history, make it simpler.
         processed_history = []
         for action, observation in obj:
-            processed_history.append((event_to_memory(action), event_to_memory(observation)))
+            processed_history.append(
+                (event_to_memory(action), event_to_memory(observation))
+            )
         return json.dumps(processed_history, **kwargs)
 
 
 class MicroAgent(Agent):
+    VERSION = '1.0'
     prompt = ''
     agent_definition: dict = {}
 
@@ -62,7 +65,7 @@ class MicroAgent(Agent):
             latest_user_message=latest_user_message,
         )
         messages = [{'content': prompt, 'role': 'user'}]
-        resp = self.llm.completion(messages=messages)
+        resp = self.llm.do_completion(messages=messages)
         action_resp = resp['choices'][0]['message']['content']
         state.num_of_chars += len(prompt) + len(action_resp)
         action = parse_response(action_resp)
