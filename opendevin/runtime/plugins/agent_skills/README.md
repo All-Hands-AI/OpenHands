@@ -16,10 +16,10 @@ We are walking a fine line here.
 We DON't want to *wrap* every possible python packages and re-teach agent their usage (e.g., LLM already knows `pandas` pretty well, so we don't really need create a skill that reads `csv` - it can just use `pandas`).
 
 We ONLY want to add a new skill, when:
-- Such skill is not easily achivable for LLM to write code directly (e.g., edit code and replace certain line)
+- Such skill is not easily achievable for LLM to write code directly (e.g., edit code and replace certain line)
 - It involves calling an external model (e.g., you need to call a speech to text model, editor model for speculative editing)
 
-# Intend functionality
+# Intended functionality
 
 - Tool/skill usage (through `IPythonRunAction`)
 
