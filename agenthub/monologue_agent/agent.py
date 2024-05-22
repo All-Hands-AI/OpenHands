@@ -42,13 +42,13 @@ class MonologueAgent(Agent):
     """
 
     _initialized = False
-    monologue: list[dict[str, str]]  # initial thoughts ONLY
+    initial_thoughts: list[dict[str, str]]
     memory: 'LongTermMemory | None'
     memory_condenser: MemoryCondenser
 
     def __init__(self, llm: LLM):
         """
-        Initializes the Monologue Agent with an llm, monologue, and memory.
+        Initializes the Monologue Agent with an llm.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
@@ -75,7 +75,7 @@ class MonologueAgent(Agent):
         if task is None or task == '':
             raise AgentNoInstructionError()
 
-        self.monologue = []
+        self.initial_thoughts = []
         if config.agent.memory_enabled:
             self.memory = LongTermMemory()
         else:
@@ -104,7 +104,7 @@ class MonologueAgent(Agent):
                     observation = BrowserOutputObservation(
                         content=thought, url='', screenshot=''
                     )
-                self.monologue.append(event_to_memory(observation))
+                self.initial_thoughts.append(event_to_memory(observation))
                 previous_action = ''
             else:
                 action: Action = NullAction()
@@ -131,7 +131,7 @@ class MonologueAgent(Agent):
                     previous_action = ActionType.BROWSE
                 else:
                     action = MessageAction(thought)
-                self.monologue.append(event_to_memory(action))
+                self.initial_thoughts.append(event_to_memory(action))
 
     def step(self, state: State) -> Action:
         """
@@ -166,7 +166,7 @@ class MonologueAgent(Agent):
         # the action prompt with initial thoughts and recent events
         prompt = prompts.get_request_action_prompt(
             goal,
-            self.monologue,
+            self.initial_thoughts,
             recent_events,
             state.background_commands_obs,
         )
