@@ -91,9 +91,13 @@ class SensitiveDataFilter(logging.Filter):
         sensitive_patterns.append('LLM_API_KEY')
         sensitive_patterns.append('SANDBOX_ENV_GITHUB_TOKEN')
 
+        # this also formats the message with % args
+        msg = record.getMessage()
+        record.args = ()
+
         for attr in sensitive_patterns:
             pattern = rf"{attr}='?([\w-]+)'?"
-            record.msg = re.sub(pattern, f"{attr}='******'", record.getMessage())
+            record.msg = re.sub(pattern, f"{attr}='******'", msg)
         return True
 
 
@@ -147,7 +151,7 @@ opendevin_logger = logging.getLogger('opendevin')
 opendevin_logger.setLevel(logging.INFO)
 opendevin_logger.addHandler(get_file_handler())
 opendevin_logger.addHandler(get_console_handler())
-opendevin_logger.addFilter(SensitiveDataFilter())
+opendevin_logger.addFilter(SensitiveDataFilter(opendevin_logger.name))
 opendevin_logger.propagate = False
 opendevin_logger.debug('Logging initialized')
 opendevin_logger.debug(
