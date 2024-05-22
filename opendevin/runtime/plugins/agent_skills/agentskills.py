@@ -16,12 +16,48 @@ Functions:
 """
 
 import os
+import subprocess
 from inspect import signature
 from typing import Optional
 
 CURRENT_FILE = None
 CURRENT_LINE = 1
 WINDOW = 100
+
+ENABLE_AUTO_LINT = os.getenv('ENABLE_AUTO_LINT', 'false').lower() == 'true'
+
+
+def _lint_file(file_path: str) -> Optional[str]:
+    """
+    Lint the file at the given path.
+
+    Returns:
+        Optional[str]: A string containing the linting report if the file failed to lint, None otherwise.
+    """
+
+    # Check if the file ends with .py and if auto-linting is enabled
+    if file_path.endswith('.py'):
+        # Define the flake8 command with selected error codes
+        command = [
+            'flake8',
+            '--isolated',
+            '--select=F821,F822,F831,E112,E113,E999,E902',
+            file_path,
+        ]
+
+        # Run the command using subprocess and redirect stderr to stdout
+        result = subprocess.run(
+            command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+        )
+        if result.returncode == 0:
+            # Linting successful. No issues found.
+            return None
+        else:
+            ret = 'ERRORS:\n'
+            ret += result.stdout.strip()
+            return ret.rstrip('\n')
+    # Linting skipped. Either the file is not a Python file or auto-linting is disabled.
+    return None
 
 
 def _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=False):
@@ -168,9 +204,11 @@ def edit_file(start: int, end: int, content: str) -> None:
     if not CURRENT_FILE or not os.path.isfile(CURRENT_FILE):
         raise FileNotFoundError('No file open. Use the open_file function first.')
 
+    # Load the file
     with open(CURRENT_FILE, 'r') as file:
         lines = file.readlines()
 
+    # Check arguments
     if not (1 <= start <= len(lines)):
         raise ValueError(
             f'Invalid start line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).'
@@ -186,12 +224,51 @@ def edit_file(start: int, end: int, content: str) -> None:
             f'Invalid line range: {start}-{end}. Start must be less than or equal to end.'
         )
 
-    new_lines = lines[: start - 1] + [content + '\n'] + lines[end:]
+    edited_content = content + '\n'
+    n_edited_lines = len(edited_content.split('\n'))
+    new_lines = lines[: start - 1] + [edited_content] + lines[end:]
 
-    # TODO: add linting from SWE-Bench
-
+    # directly write editted lines to the file
     with open(CURRENT_FILE, 'w') as file:
         file.writelines(new_lines)
+
+    # Handle linting
+    if ENABLE_AUTO_LINT:
+        # BACKUP the original file
+        original_file_backup_path = os.path.join(
+            os.path.dirname(CURRENT_FILE), f'.backup.{os.path.basename(CURRENT_FILE)}'
+        )
+        with open(original_file_backup_path, 'w') as f:
+            f.writelines(lines)
+
+        lint_error = _lint_file(CURRENT_FILE)
+        if lint_error:
+            print(
+                '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]'
+            )
+            print(lint_error)
+
+            print('[This is how your edit would have looked if applied]')
+            print('-------------------------------------------------')
+            cur_line = (n_edited_lines // 2) + start
+            _print_window(CURRENT_FILE, cur_line, WINDOW)
+            print('-------------------------------------------------\n')
+
+            print('[This is the original code before your edit]')
+            print('-------------------------------------------------')
+            _print_window(original_file_backup_path, CURRENT_LINE, WINDOW)
+            print('-------------------------------------------------')
+
+            # recover the original file
+            with open(original_file_backup_path, 'r') as fin, open(
+                CURRENT_FILE, 'w'
+            ) as fout:
+                fout.write(fin.read())
+            os.remove(original_file_backup_path)
+            return
+
+        os.remove(original_file_backup_path)
+
     with open(CURRENT_FILE, 'r') as file:
         n_total_lines = len(file.readlines())
     # set current line to the center of the edited lines

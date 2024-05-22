@@ -497,3 +497,94 @@ def test_find_file_not_exist_file_specific_path(tmp_path):
 
     expected = f'[No matches found for "unexist.txt" in {tmp_path}]\n'
     assert result.split('\n') == expected.split('\n')
+
+
+def test_edit_lint_file_pass(tmp_path, monkeypatch):
+    # Create a Python file with correct syntax
+    file_path = tmp_path / 'test_file.py'
+    file_path.write_text('\n')
+
+    # patch ENABLE_AUTO_LINT
+    monkeypatch.setattr(
+        'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
+    )
+
+    # Test linting functionality
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            open_file(str(file_path))
+            edit_file(1, 1, "print('hello')\n")
+        result = buf.getvalue()
+
+    assert result is not None
+    expected = (
+        f'[File: {file_path} (1 lines total)]\n'
+        '1|\n'
+        f'[File: {file_path} (2 lines total after edit)]\n'
+        "1|print('hello')\n"
+        '2|\n'
+        '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+    )
+    assert result.split('\n') == expected.split('\n')
+
+
+def test_lint_file_fail_undefined_name(tmp_path, monkeypatch, capsys):
+    # Create a Python file with a syntax error
+    file_path = tmp_path / 'test_file.py'
+    file_path.write_text('\n')
+
+    # Set environment variable to enable linting
+    monkeypatch.setattr(
+        'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
+    )
+
+    open_file(str(file_path))
+    edit_file(1, 1, 'undefined_name()\n')
+
+    result = capsys.readouterr().out
+    print(result)
+
+    assert result is not None
+    expected = (
+        f'[File: {file_path} (1 lines total)]\n'
+        '1|\n'
+        '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
+        'ERRORS:\n'
+        f"{file_path}:1:1: F821 undefined name 'undefined_name'\n"
+        '[This is how your edit would have looked if applied]\n'
+        '-------------------------------------------------\n'
+        '1|undefined_name()\n'
+        '2|\n'
+        '-------------------------------------------------\n\n'
+        '[This is the original code before your edit]\n'
+        '-------------------------------------------------\n'
+        '1|\n'
+        '-------------------------------------------------\n'
+    )
+    assert result.split('\n') == expected.split('\n')
+
+
+def test_lint_file_disabled_undefined_name(tmp_path, monkeypatch, capsys):
+    # Create a Python file with a syntax error
+    file_path = tmp_path / 'test_file.py'
+    file_path.write_text('\n')
+
+    # Set environment variable to enable linting
+    monkeypatch.setattr(
+        'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', False
+    )
+
+    open_file(str(file_path))
+    edit_file(1, 1, 'undefined_name()\n')
+
+    result = capsys.readouterr().out
+    assert result is not None
+    expected = (
+        f'[File: {file_path} (1 lines total)]\n'
+        '1|\n'
+        f'[File: {file_path} (2 lines total after edit)]\n'
+        '1|undefined_name()\n'
+        '2|\n'
+        '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+    )
+    assert result.split('\n') == expected.split('\n')
