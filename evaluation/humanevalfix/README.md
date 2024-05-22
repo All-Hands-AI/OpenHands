@@ -6,10 +6,6 @@ Implements evaluation of agents on HumanEvalFix from the HumanEvalPack benchmark
 
 Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to setup local develop environment for OpenDevin.
 
-In addition, evaluation requires the `evaluate` package installable via:
-```bash
-pip install evaluate
-```
 
 ## Configure OpenDevin and your LLM
 
