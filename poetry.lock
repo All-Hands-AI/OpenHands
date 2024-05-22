@@ -416,17 +416,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.34.109"
+version = "1.34.110"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.34.109-py3-none-any.whl", hash = "sha256:50a0f24dd737529ae489a3586f260b9220c6aede1ae7851fa4f33878c8805ef8"},
-    {file = "boto3-1.34.109.tar.gz", hash = "sha256:98d389562e03a46fd79fea5f988e9e6032674a0c3e9e42c06941ec588b7e1070"},
+    {file = "boto3-1.34.110-py3-none-any.whl", hash = "sha256:2fc871b4a5090716c7a71af52c462e539529227f4d4888fd04896d5028f9cedc"},
+    {file = "boto3-1.34.110.tar.gz", hash = "sha256:83ffe2273da7bdfdb480d85b0705f04e95bd110e9741f23328b7c76c03e6d53c"},
 ]
 
 [package.dependencies]
-botocore = ">=1.34.109,<1.35.0"
+botocore = ">=1.34.110,<1.35.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -435,13 +435,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.34.109"
+version = "1.34.110"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.34.109-py3-none-any.whl", hash = "sha256:647059a81acbfab85c694b9b57b0ef200dde071449fb8837f10aef9c6472730d"},
-    {file = "botocore-1.34.109.tar.gz", hash = "sha256:804821252597821f7223cb3bfca2a2a513ae0bb9a71e8e22605aff6866e13e71"},
+    {file = "botocore-1.34.110-py3-none-any.whl", hash = "sha256:1edf3a825ec0a5edf238b2d42ad23305de11d5a71bb27d6f9a58b7e8862df1b6"},
+    {file = "botocore-1.34.110.tar.gz", hash = "sha256:b2c98c40ecf0b1facb9e61ceb7dfa28e61ae2456490554a16c8dbf99f20d6a18"},
 ]
 
 [package.dependencies]
@@ -2604,13 +2604,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.37.19"
+version = "1.37.20"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.37.19-py3-none-any.whl", hash = "sha256:5a45b99d6c16a91ba66db6c69d1f406098dbca566be1c2256df5c21c3eb4e4e9"},
-    {file = "litellm-1.37.19.tar.gz", hash = "sha256:9ec9260edaf16476dcff6d91a405364fb994200afa725ed46e7be7c3e54d4515"},
+    {file = "litellm-1.37.20-py3-none-any.whl", hash = "sha256:aa1e290fbdffe3e1fe32da2bbb95dfda2076cc85af7aa6a1fff53e296d287f03"},
+    {file = "litellm-1.37.20.tar.gz", hash = "sha256:1addb206df6e824ef15d1697d36d3e9943ff5dd3db9681d8e7a526e31fb85744"},
 ]
 
 [package.dependencies]
@@ -2618,7 +2618,7 @@ aiohttp = "*"
 click = "*"
 importlib-metadata = ">=6.8.0"
 jinja2 = ">=3.1.2,<4.0.0"
-openai = ">=1.0.0"
+openai = ">=1.27.0"
 python-dotenv = ">=0.2.0"
 requests = ">=2.31.0,<3.0.0"
 tiktoken = ">=0.4.0"

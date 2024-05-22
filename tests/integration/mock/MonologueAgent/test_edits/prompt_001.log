@@ -381,3 +381,5 @@ Notes:
 * whenever an action fails, always send a `message` about why it may have happened before acting again.
 
 What is your next single thought or action? Again, you must reply with JSON, and only with JSON. You must respond with exactly one 'action' object.
+
+
