@@ -225,7 +225,7 @@ class LLM:
         logger.info(
             'Cost: %.2f USD | Accumulated Cost: %.2f USD',
             cur_cost,
-            self.metrics.total_cost,
+            self.metrics.accumulated_cost,
         )
 
     def get_token_count(self, messages):
