@@ -3,7 +3,7 @@ import io
 
 import pytest
 
-from opendevin.skills.agentskills import (
+from opendevin.runtime.plugins.agent_skills.agentskills import (
     create_file,
     edit_file,
     find_file,
