@@ -9,6 +9,8 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 
 from datasets import load_dataset
+from prompts import ToolPromptTemplate
+from task import ReasoningTask, Task
 from tqdm import tqdm
 
 from evaluation.swe_bench.swe_env_box import DockerSSHBox
@@ -64,7 +66,7 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 
 def process_instance(
-    instance,
+    instance: Task,
     agent_class,
     metadata,
     skip_workspace_mount,
@@ -85,7 +87,7 @@ def process_instance(
     if reset_logger:
         # Set up logger
         log_file = os.path.join(
-            eval_output_dir, 'logs', f'instance_{instance['id']}.log'
+            eval_output_dir, 'logs', f'instance_{instance.task_id}.log'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -93,7 +95,7 @@ def process_instance(
         # add back the console handler to print ONE line
         logger.addHandler(get_console_handler())
         logger.info(
-            f'Starting evaluation for instance {instance['id']}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
+            f'Starting evaluation for instance {instance.task_id}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -110,73 +112,19 @@ def process_instance(
     sandbox = DockerSSHBox()
 
     # Prepare instruction
-    instruction = (
-        """You are a helpful assistant assigned with the task of problem-solving.
-To solve the task, you can only interact with the interactive Python (Jupyter Notebook) environment using <execute_ipython> tag. Other tools cannot be used.
-At each turn, you should first provide your step-by-step thinking for solving the task. Your thought process should be enclosed using "<thought>" tag, for example: <thought> I need to print "Hello World!" </thought>.
-After that, you have two options:
-1) Interact with a Python programming environment and receive the corresponding output.
-2) Directly provide a solution by sending your answer to user through message that adheres to the required format for the given task. Your solution should be enclosed using "<solution>" tag, for example: The answer is <solution> A </solution>.
-
----
-
-Task:
-Evaluate $\\int\\int_C (x+y)^2 dx,dy$, where C is the circle defined by $x^2 + y^2 = M$, and M is the birth year of Li Bai.
-Output format requirement: Round to three decimal places, using half up rounding rule.
-
-Assistant:
-<thought> To solve this problem, let's start by determining Li Bai's birth year. </thought>
-<execute> print(wikipedia_search('Li Bai')) </execute>
-
-Observation:
-Page: Li Bai
-Summary: Li Bai (Chinese: 李白; pinyin: Lǐ Bái, 701–762), also pronounced as Li Bo, courtesy name Taibai (Chinese: 太白), was a Chinese poet, acclaimed from his own time to the present as a brilliant and romantic figure who took traditional poetic forms to new heights.
-
-Assistant:
-<thought>
-From the wiki_search result, we can see that Li Bai was born in 701, thus M = 701.
-To evaluate the double integral of $(x+y)^2$ over the region $C$, where $C$ is the circle defined by $x^2 + y^2 = 701$, we should use polar coordinates.
-In polar coordinates, $x = r\\cos(\theta)$ and $y = r\\sin(\theta)$, and the differential area element $dx,dy$ becomes $r,dr,d\theta$.
-$\\int\\int_C (x+y)^2 dx,dy = \\int_0^{2\\pi}\\int_0^{\\sqrt{701}} (r\\cos(\theta) + r\\sin(\theta))^2r,dr,d\theta$
-Let's use the SymPy package to calculate this.
-</thought>
-<execute>
-from sympy import symbols, integrate, cos, sin, pi
-
-r, theta = symbols('r theta')
-
-# the integrand
-integrand = (r*cos(theta) + r*sin(theta))**2 * r
-
-# perform the double integration
-double_integral = integrate(integrate(integrand, (r, 0, 701 ** 0.5)), (theta, 0, 2*pi))
-print(double_integral)
-</execute>
-
-Observation:
-Out[2]: 245700.5*pi
-
-Assistant:
-<thought> Let's round this result to three decimal places using half up rounding rule. </thought>
-<execute>
-import math
-print(round(245700.5*math.pi, 3))
-</execute>
-
-Observation:
-771890.886
-
-Assistant:
-The answer is <solution> 771890.886 </solution>.
-
----"""
-        f'You have {5} chances to interact with the environment or propose a solution. You can only propose a solution {2} times.'
-        '# Problem statement: \n'
-        f"{instance['prompt']}\n\n"
+    instruction = ToolPromptTemplate(use_tool=True)(
+        max_total_steps=metadata['max_iterations'],
+        max_propose_solution=metadata['max_propose_solution'],
+        in_context_example=instance.in_context_example(
+            use_tool=True, with_feedback=False
+        ),
+        task_prompt='Task:\n' + instance.prompt,
     )
     instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you or provide the solution inside <solution> tag AND NEVER ASK FOR HUMAN HELP.\n'
+
     # NOTE: You can actually set slightly different instruction for different agents
-    instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
+    # FIXME: test
+    # instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
     logger.info('Instruction:', instruction)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
@@ -261,6 +209,12 @@ if __name__ == '__main__':
         type=str,
         help='subset of the dataset to be used',
     )
+    parser.add_argument(
+        '--max_propose_solution',
+        default=2,
+        type=int,
+        help='maximum number of times the agent can propose a solution',
+    )
 
     args, _ = parser.parse_known_args()
 
@@ -306,6 +260,7 @@ if __name__ == '__main__':
         'agent_class': agent_class,
         'model_name': model_name,
         'max_iterations': max_iterations,
+        'max_propose_solution': args.max_propose_solution,
         'eval_output_dir': eval_output_dir,
         'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
         # get the commit id of current repo for reproduciblity
@@ -320,7 +275,7 @@ if __name__ == '__main__':
     # LIMIT EVALUATION
     eval_n_limit = args.eval_n_limit
     if eval_n_limit:
-        mint_dataset = mint_dataset.select(range(1, 1 + eval_n_limit))
+        mint_dataset = mint_dataset.select(range(eval_n_limit))
         logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
 
     # OUTPUT FILE
@@ -343,11 +298,14 @@ if __name__ == '__main__':
 
     # =============================================
     # filter out finished instances
-    new_mint_tests = []
+    task_class = ReasoningTask
+    new_mint_tests: list[ReasoningTask] = []
     for instance in mint_dataset:
         if instance['id'] in finished_instance_ids:
             logger.info(f'Skipping instance {instance.id} as it is already finished.')
             continue
+        # convert to Task object
+        instance = ReasoningTask(**instance)
         new_mint_tests.append(instance)
 
     mint_dataset = new_mint_tests
