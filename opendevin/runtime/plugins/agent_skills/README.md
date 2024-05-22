@@ -19,7 +19,7 @@ We ONLY want to add a new skill, when:
 - Such skill is not easily achievable for LLM to write code directly (e.g., edit code and replace certain line)
 - It involves calling an external model (e.g., you need to call a speech to text model, editor model for speculative editing)
 
-# Intend functionality
+# Intended functionality
 
 - Tool/skill usage (through `IPythonRunAction`)
 
