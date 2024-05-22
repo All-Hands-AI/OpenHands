@@ -62,7 +62,9 @@ class AgentSession:
         elif config.runtime == 'e2b':
             logger.info('Using E2B runtime')
             self.runtime = E2BRuntime(self.event_stream, self.sid)
-
+else:
+    raise Exception(f'Runtime not defined in config, or is invalid: {config.runtime}')
+   
     async def _create_controller(self, start_event: dict):
         """Creates an AgentController instance.
 
