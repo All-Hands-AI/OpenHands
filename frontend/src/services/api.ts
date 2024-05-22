@@ -16,7 +16,7 @@ export async function request(
       toast.error("api", msg);
     }
     throw new Error(msg);
-  }
+  };
 
   const needsAuth = !url.startsWith("/api/options/");
   const token = getToken();
@@ -41,15 +41,18 @@ export async function request(
     onFail(`Error fetching ${url}`);
   }
   if (response?.status && response?.status >= 400) {
-    onFail(`${response.status} error while fetching ${url}: ${response?.statusText}`);
+    onFail(
+      `${response.status} error while fetching ${url}: ${response?.statusText}`,
+    );
   }
   if (!response?.ok) {
     onFail(`Error fetching ${url}: ${response?.statusText}`);
   }
 
   try {
-    return response && response.json();
+    return await (response && response.json());
   } catch (e) {
     onFail(`Error parsing JSON from ${url}`);
   }
+  return null;
 }
