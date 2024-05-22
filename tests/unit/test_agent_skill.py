@@ -1,8 +1,7 @@
 import contextlib
 import io
-import os
-import tempfile
-import unittest
+
+import pytest
 
 from opendevin.skills.agentskills import (
     create_file,
@@ -15,446 +14,380 @@ from opendevin.skills.agentskills import (
 )
 
 
-class TestAgentSkills(unittest.TestCase):
-    def test_open_file_unexist_path(self):
-        with self.assertRaises(FileNotFoundError):
-            open_file('/unexist/path/a.txt')
+def test_open_file_unexist_path():
+    with pytest.raises(FileNotFoundError):
+        open_file('/unexist/path/a.txt')
 
-    def test_open_file(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_file_path = os.path.join(temp_dir, 'a.txt')
-            with open(temp_file_path, 'w') as file:
-                file.write('Line 1\nLine 2\nLine 3\nLine 4\nLine 5')
 
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    open_file(temp_file_path)
-                result = buf.getvalue()
-            self.assertIsNotNone(result)
-            expected = (
-                f'[File: {temp_file_path} (5 lines total)]\n'
-                '1: Line 1\n'
-                '2: Line 2\n'
-                '3: Line 3\n'
-                '4: Line 4\n'
-                '5: Line 5\n'
-            )
-            self.assertEqual(
-                list(filter(None, result.split('\n'))),
-                list(filter(None, expected.split('\n'))),
-            )
+def test_open_file(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    temp_file_path.write_text('Line 1\nLine 2\nLine 3\nLine 4\nLine 5')
 
-    def test_open_file_long(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_file_path = os.path.join(temp_dir, 'a.txt')
-            with open(temp_file_path, 'w') as file:
-                file.write('\n'.join([f'Line {i}' for i in range(1, 1001)]))
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            open_file(str(temp_file_path))
+        result = buf.getvalue()
+    assert result is not None
+    expected = (
+        f'[File: {temp_file_path} (5 lines total)]\n'
+        '1: Line 1\n'
+        '2: Line 2\n'
+        '3: Line 3\n'
+        '4: Line 4\n'
+        '5: Line 5\n'
+    )
+    assert result.split() == expected.split()
 
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    open_file(temp_file_path)
-                result = buf.getvalue()
-            self.assertIsNotNone(result)
-            expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-            # for WINDOW = 100
-            for i in range(1, 52):
-                expected += f'{i}: Line {i}\n'
-            self.assertEqual(
-                list(filter(None, result.split('\n'))),
-                list(filter(None, expected.split('\n'))),
-            )
 
-    def test_open_file_long_with_lineno(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_file_path = os.path.join(temp_dir, 'a.txt')
-            with open(temp_file_path, 'w') as file:
-                file.write('\n'.join([f'Line {i}' for i in range(1, 1001)]))
+def test_open_file_long(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = '\n'.join([f'Line {i}' for i in range(1, 1001)])
+    temp_file_path.write_text(content)
 
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    open_file(temp_file_path, 100)
-                result = buf.getvalue()
-            self.assertIsNotNone(result)
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            open_file(str(temp_file_path))
+        result = buf.getvalue()
+    assert result is not None
+    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    for i in range(1, 52):
+        expected += f'{i}: Line {i}\n'
+    assert result.split() == expected.split()
 
-            expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-            # for WINDOW = 100
-            for i in range(51, 151):
-                expected += f'{i}: Line {i}\n'
-            self.assertEqual(
-                list(filter(None, result.split('\n'))),
-                list(filter(None, expected.split('\n'))),
-            )
 
-    def test_create_file_unexist_path(self):
-        with self.assertRaises(FileNotFoundError):
-            create_file('/unexist/path/a.txt')
+def test_open_file_long_with_lineno(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = '\n'.join([f'Line {i}' for i in range(1, 1001)])
+    temp_file_path.write_text(content)
 
-    def test_create_file(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    create_file(os.path.join(temp_dir, 'a.txt'))
-                result = buf.getvalue()
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            open_file(str(temp_file_path), 100)
+        result = buf.getvalue()
+    assert result is not None
+    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    for i in range(51, 151):
+        expected += f'{i}: Line {i}\n'
+    assert result.split() == expected.split()
 
-                expected = (
-                    f'[File: {os.path.join(temp_dir, "a.txt")} (1 lines total)]\n'
-                    '1:\n'
-                    f'[File {os.path.join(temp_dir, "a.txt")} created.]\n'
-                )
-                self.assertEqual(
-                    list(filter(None, result.split('\n'))),
-                    list(filter(None, expected.split('\n'))),
-                )
 
-    def test_goto_line(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_file_path = os.path.join(temp_dir, 'a.txt')
-            with open(temp_file_path, 'w') as file:
-                file.write('\n'.join([f'Line {i}' for i in range(1, 1001)]))
+def test_create_file_unexist_path():
+    with pytest.raises(FileNotFoundError):
+        create_file('/unexist/path/a.txt')
 
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    open_file(temp_file_path)
-                result = buf.getvalue()
-            self.assertIsNotNone(result)
 
-            expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-            # for WINDOW = 100
-            for i in range(1, 52):
-                expected += f'{i}: Line {i}\n'
-            self.assertEqual(
-                list(filter(None, result.split('\n'))),
-                list(filter(None, expected.split('\n'))),
-            )
+def test_create_file(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            create_file(str(temp_file_path))
+        result = buf.getvalue()
 
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    goto_line(100)
-                result = buf.getvalue()
-            self.assertIsNotNone(result)
+    expected = (
+        f'[File: {temp_file_path} (1 lines total)]\n'
+        '1:\n'
+        f'[File {temp_file_path} created.]\n'
+    )
+    assert result.split() == expected.split()
 
-            expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-            # for WINDOW = 100
-            for i in range(51, 151):
-                expected += f'{i}: Line {i}\n'
-            self.assertEqual(
-                list(filter(None, result.split('\n'))),
-                list(filter(None, expected.split('\n'))),
-            )
 
-    def test_goto_line_negative(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_file_path = os.path.join(temp_dir, 'a.txt')
-            with open(temp_file_path, 'w') as file:
-                file.write('\n'.join([f'Line {i}' for i in range(1, 5)]))
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    open_file(temp_file_path)
-            with self.assertRaises(ValueError):
-                goto_line(-1)
+def test_goto_line(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = '\n'.join([f'Line {i}' for i in range(1, 1001)])
+    temp_file_path.write_text(content)
 
-    def test_goto_line_out_of_bound(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_file_path = os.path.join(temp_dir, 'a.txt')
-            with open(temp_file_path, 'w') as file:
-                file.write('\n'.join([f'Line {i}' for i in range(1, 5)]))
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    open_file(temp_file_path)
-            with self.assertRaises(ValueError):
-                goto_line(100)
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            open_file(str(temp_file_path))
+        result = buf.getvalue()
+    assert result is not None
 
-    def test_scroll_down(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_file_path = os.path.join(temp_dir, 'a.txt')
-            with open(temp_file_path, 'w') as file:
-                file.write('\n'.join([f'Line {i}' for i in range(1, 1001)]))
+    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    for i in range(1, 52):
+        expected += f'{i}: Line {i}\n'
+    assert result.split() == expected.split()
 
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    open_file(temp_file_path)
-                result = buf.getvalue()
-            self.assertIsNotNone(result)
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            goto_line(100)
+        result = buf.getvalue()
+    assert result is not None
 
-            expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-            # for WINDOW = 100
-            for i in range(1, 52):
-                expected += f'{i}: Line {i}\n'
-            self.assertEqual(
-                list(filter(None, result.split('\n'))),
-                list(filter(None, expected.split('\n'))),
-            )
+    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    for i in range(51, 151):
+        expected += f'{i}: Line {i}\n'
+    assert result.split() == expected.split()
 
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    scroll_down()
-                result = buf.getvalue()
-            self.assertIsNotNone(result)
 
-            expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-            # for WINDOW = 100
-            for i in range(52, 152):
-                expected += f'{i}: Line {i}\n'
-            self.assertEqual(
-                list(filter(None, result.split('\n'))),
-                list(filter(None, expected.split('\n'))),
-            )
+def test_goto_line_negative(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = '\n'.join([f'Line {i}' for i in range(1, 5)])
+    temp_file_path.write_text(content)
 
-    def test_scroll_up(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_file_path = os.path.join(temp_dir, 'a.txt')
-            with open(temp_file_path, 'w') as file:
-                file.write('\n'.join([f'Line {i}' for i in range(1, 1001)]))
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            open_file(str(temp_file_path))
+    with pytest.raises(ValueError):
+        goto_line(-1)
 
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    open_file(temp_file_path, 300)
-                result = buf.getvalue()
-            self.assertIsNotNone(result)
 
-            expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-            for i in range(251, 351):
-                expected += f'{i}: Line {i}\n'
-            self.assertEqual(
-                list(filter(None, result.split('\n'))),
-                list(filter(None, expected.split('\n'))),
-            )
+def test_goto_line_out_of_bound(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = '\n'.join([f'Line {i}' for i in range(1, 5)])
+    temp_file_path.write_text(content)
 
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    scroll_up()
-                result = buf.getvalue()
-            self.assertIsNotNone(result)
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            open_file(str(temp_file_path))
+    with pytest.raises(ValueError):
+        goto_line(100)
 
-            expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-            # for WINDOW = 100
-            for i in range(151, 251):
-                expected += f'{i}: Line {i}\n'
-            self.assertEqual(
-                list(filter(None, result.split('\n'))),
-                list(filter(None, expected.split('\n'))),
-            )
 
-    def test_scroll_down_edge(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_file_path = os.path.join(temp_dir, 'a.txt')
-            with open(temp_file_path, 'w') as file:
-                file.write('\n'.join([f'Line {i}' for i in range(1, 10)]))
+def test_scroll_down(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = '\n'.join([f'Line {i}' for i in range(1, 1001)])
+    temp_file_path.write_text(content)
 
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    open_file(temp_file_path)
-                result = buf.getvalue()
-            self.assertIsNotNone(result)
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            open_file(str(temp_file_path))
+        result = buf.getvalue()
+    assert result is not None
 
-            expected = f'[File: {temp_file_path} (9 lines total)]\n'
-            for i in range(1, 10):
-                expected += f'{i}: Line {i}\n'
+    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    for i in range(1, 52):
+        expected += f'{i}: Line {i}\n'
+    assert result.split() == expected.split()
 
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    scroll_down()
-                result = buf.getvalue()
-            self.assertIsNotNone(result)
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            scroll_down()
+        result = buf.getvalue()
+    assert result is not None
 
-            # expected should be unchanged
-            self.assertEqual(
-                list(filter(None, result.split('\n'))),
-                list(filter(None, expected.split('\n'))),
-            )
+    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    for i in range(52, 152):
+        expected += f'{i}: Line {i}\n'
+    assert result.split() == expected.split()
 
-    def test_edit_file(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_file_path = os.path.join(temp_dir, 'a.txt')
-            with open(temp_file_path, 'w') as file:
-                file.write('Line 1\nLine 2\nLine 3\nLine 4\nLine 5')
 
-            open_file(temp_file_path)
+def test_scroll_up(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = '\n'.join([f'Line {i}' for i in range(1, 1001)])
+    temp_file_path.write_text(content)
 
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    edit_file(start=1, end=3, content='REPLACE TEXT')
-                result = buf.getvalue()
-                expected = (
-                    f'[File: {temp_file_path} (3 lines total after edit)]\n'
-                    '1: REPLACE TEXT\n'
-                    '2: Line 4\n'
-                    '3: Line 5\n'
-                    '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
-                )
-                self.assertEqual(
-                    list(filter(None, result.split('\n'))),
-                    list(filter(None, expected.split('\n'))),
-                )
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            open_file(str(temp_file_path), 300)
+        result = buf.getvalue()
+    assert result is not None
 
-            with open(temp_file_path, 'r') as file:
-                lines = file.readlines()
-            self.assertEqual(len(lines), 3)
-            self.assertEqual(lines[0].rstrip(), 'REPLACE TEXT')
-            self.assertEqual(lines[1].rstrip(), 'Line 4')
-            self.assertEqual(lines[2].rstrip(), 'Line 5')
-            # Add more assertions based on expected output
+    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    for i in range(251, 351):
+        expected += f'{i}: Line {i}\n'
+    assert result.split() == expected.split()
 
-    def test_edit_file_from_scratch(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_file_path = os.path.join(temp_dir, 'a.txt')
-            create_file(temp_file_path)
-            open_file(temp_file_path)
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            scroll_up()
+        result = buf.getvalue()
+    assert result is not None
 
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    edit_file(start=1, end=1, content='REPLACE TEXT')
-                result = buf.getvalue()
-                expected = (
-                    f'[File: {temp_file_path} (1 lines total after edit)]\n'
-                    '1: REPLACE TEXT\n'
-                    '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
-                )
-                self.assertEqual(
-                    list(filter(None, result.split('\n'))),
-                    list(filter(None, expected.split('\n'))),
-                )
+    expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    for i in range(151, 251):
+        expected += f'{i}: Line {i}\n'
+    assert result.split() == expected.split()
 
-            with open(temp_file_path, 'r') as file:
-                lines = file.readlines()
-            self.assertEqual(len(lines), 1)
-            self.assertEqual(lines[0].rstrip(), 'REPLACE TEXT')
 
-    def test_edit_file_from_scratch_multiline(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_file_path = os.path.join(temp_dir, 'a.txt')
-            create_file(temp_file_path)
-            open_file(temp_file_path)
+def test_scroll_down_edge(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = '\n'.join([f'Line {i}' for i in range(1, 10)])
+    temp_file_path.write_text(content)
 
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    edit_file(
-                        start=1,
-                        end=1,
-                        content='REPLACE TEXT1\nREPLACE TEXT2\nREPLACE TEXT3',
-                    )
-                result = buf.getvalue()
-                expected = (
-                    f'[File: {temp_file_path} (3 lines total after edit)]\n'
-                    '1: REPLACE TEXT1\n'
-                    '2: REPLACE TEXT2\n'
-                    '3: REPLACE TEXT3\n'
-                    '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
-                )
-                self.assertEqual(
-                    list(filter(None, result.split('\n'))),
-                    list(filter(None, expected.split('\n'))),
-                )
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            open_file(str(temp_file_path))
+        result = buf.getvalue()
+    assert result is not None
 
-            with open(temp_file_path, 'r') as file:
-                lines = file.readlines()
-            self.assertEqual(len(lines), 3)
-            self.assertEqual(lines[0].rstrip(), 'REPLACE TEXT1')
-            self.assertEqual(lines[1].rstrip(), 'REPLACE TEXT2')
-            self.assertEqual(lines[2].rstrip(), 'REPLACE TEXT3')
+    expected = f'[File: {temp_file_path} (9 lines total)]\n'
+    for i in range(1, 10):
+        expected += f'{i}: Line {i}\n'
 
-    def test_edit_file_not_opened(self):
-        with self.assertRaises(FileNotFoundError):
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            scroll_down()
+        result = buf.getvalue()
+    assert result is not None
+
+    # expected should be unchanged
+    assert result.split() == expected.split()
+
+
+def test_edit_file(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5'
+    temp_file_path.write_text(content)
+
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
             edit_file(start=1, end=3, content='REPLACE TEXT')
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '1: REPLACE TEXT\n'
+            '2: Line 4\n'
+            '3: Line 5\n'
+            '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+        )
+        assert result.split() == expected.split()
 
-    def test_search_dir(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # create a file with the search term "bingo"
-            for i in range(1, 101):
-                temp_file_path = os.path.join(temp_dir, f'a{i}.txt')
-                with open(temp_file_path, 'w') as file:
-                    file.write('Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n')
-                    if i == 50:
-                        file.write('bingo')
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 3
+    assert lines[0].rstrip() == 'REPLACE TEXT'
+    assert lines[1].rstrip() == 'Line 4'
+    assert lines[2].rstrip() == 'Line 5'
 
-            # test
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    search_dir('bingo', temp_dir)
-                result = buf.getvalue()
-            print(result)
-            self.assertIsNotNone(result)
 
-            expected = (
-                f'[Found 1 matches for "bingo" in {temp_dir}]\n'
-                f'{temp_dir}/a50.txt (Line 6): bingo\n'
-                f'[End of matches for "bingo" in {temp_dir}]\n'
+def test_edit_file_from_scratch(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    create_file(str(temp_file_path))
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            edit_file(start=1, end=1, content='REPLACE TEXT')
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (1 lines total after edit)]\n'
+            '1: REPLACE TEXT\n'
+            '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+        )
+        assert result.split() == expected.split()
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 1
+    assert lines[0].rstrip() == 'REPLACE TEXT'
+
+
+def test_edit_file_from_scratch_multiline(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    create_file(str(temp_file_path))
+    open_file(temp_file_path)
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            edit_file(
+                start=1,
+                end=1,
+                content='REPLACE TEXT1\nREPLACE TEXT2\nREPLACE TEXT3',
             )
-            self.assertEqual(
-                list(filter(None, result.split('\n'))),
-                list(filter(None, expected.split('\n'))),
-            )
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '1: REPLACE TEXT1\n'
+            '2: REPLACE TEXT2\n'
+            '3: REPLACE TEXT3\n'
+            '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+        )
+        assert result.split() == expected.split()
 
-    def test_search_dir_not_exist_term(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # create a file with the search term "bingo"
-            for i in range(1, 101):
-                temp_file_path = os.path.join(temp_dir, f'a{i}.txt')
-                with open(temp_file_path, 'w') as file:
-                    file.write('Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n')
-
-            # test
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    search_dir('non-exist', temp_dir)
-                result = buf.getvalue()
-            print(result)
-            self.assertIsNotNone(result)
-
-            expected = f'No matches found for "non-exist" in {temp_dir}\n'
-            self.assertEqual(
-                list(filter(None, result.split('\n'))),
-                list(filter(None, expected.split('\n'))),
-            )
-
-    def test_search_dir_too_much_match(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            # create a file with the search term "bingo"
-            for i in range(1, 1000):
-                temp_file_path = os.path.join(temp_dir, f'a{i}.txt')
-                with open(temp_file_path, 'w') as file:
-                    file.write('Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n')
-
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    search_dir('Line 5', temp_dir)
-                result = buf.getvalue()
-            self.assertIsNotNone(result)
-
-            expected = f'More than 999 files matched for "Line 5" in {temp_dir}. Please narrow your search.\n'
-            self.assertEqual(
-                list(filter(None, result.split('\n'))),
-                list(filter(None, expected.split('\n'))),
-            )
-
-    def test_search_dir_cwd(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            os.chdir(temp_dir)
-            # create a file with the search term "bingo"
-            for i in range(1, 101):
-                temp_file_path = os.path.join(temp_dir, f'a{i}.txt')
-                with open(temp_file_path, 'w') as file:
-                    file.write('Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n')
-                    if i == 50:
-                        file.write('bingo')
-
-            # test
-            with io.StringIO() as buf:
-                with contextlib.redirect_stdout(buf):
-                    search_dir('bingo')
-                result = buf.getvalue()
-            self.assertIsNotNone(result)
-
-            expected = (
-                '[Found 1 matches for "bingo" in ./]\n'
-                './a50.txt (Line 6): bingo\n'
-                '[End of matches for "bingo" in ./]\n'
-            )
-            self.assertEqual(
-                list(filter(None, result.split('\n'))),
-                list(filter(None, expected.split('\n'))),
-            )
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 3
+    assert lines[0].rstrip() == 'REPLACE TEXT1'
+    assert lines[1].rstrip() == 'REPLACE TEXT2'
+    assert lines[2].rstrip() == 'REPLACE TEXT3'
 
 
-if __name__ == '__main__':
-    unittest.main()
+def test_edit_file_not_opened():
+    with pytest.raises(FileNotFoundError):
+        edit_file(start=1, end=3, content='REPLACE TEXT')
+
+
+def test_search_dir(tmp_path):
+    # create files with the search term "bingo"
+    for i in range(1, 101):
+        temp_file_path = tmp_path / f'a{i}.txt'
+        with open(temp_file_path, 'w') as file:
+            file.write('Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n')
+            if i == 50:
+                file.write('bingo')
+
+    # test
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            search_dir('bingo', str(tmp_path))
+        result = buf.getvalue()
+    assert result is not None
+
+    expected = (
+        f'[Found 1 matches for "bingo" in {tmp_path}]\n'
+        f'{tmp_path}/a50.txt (Line 6): bingo\n'
+        f'[End of matches for "bingo" in {tmp_path}]\n'
+    )
+    assert result.split() == expected.split()
+
+
+def test_search_dir_not_exist_term(tmp_path):
+    # create files with the search term "bingo"
+    for i in range(1, 101):
+        temp_file_path = tmp_path / f'a{i}.txt'
+        with open(temp_file_path, 'w') as file:
+            file.write('Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n')
+
+    # test
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            search_dir('non-exist', str(tmp_path))
+        result = buf.getvalue()
+    assert result is not None
+
+    expected = f'No matches found for "non-exist" in {tmp_path}\n'
+    assert result.split() == expected.split()
+
+
+def test_search_dir_too_much_match(tmp_path):
+    # create files with the search term "Line 5"
+    for i in range(1, 1000):
+        temp_file_path = tmp_path / f'a{i}.txt'
+        with open(temp_file_path, 'w') as file:
+            file.write('Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n')
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            search_dir('Line 5', str(tmp_path))
+        result = buf.getvalue()
+    assert result is not None
+
+    expected = f'More than 999 files matched for "Line 5" in {tmp_path}. Please narrow your search.\n'
+    assert result.split() == expected.split()
+
+
+def test_search_dir_cwd(tmp_path, monkeypatch):
+    # Using pytest's monkeypatch to change directory without affecting other tests
+    monkeypatch.chdir(tmp_path)
+    # create files with the search term "bingo"
+    for i in range(1, 101):
+        temp_file_path = tmp_path / f'a{i}.txt'
+        with open(temp_file_path, 'w') as file:
+            file.write('Line 1\nLine 2\nLine 3\nLine 4\nLine 5\n')
+            if i == 50:
+                file.write('bingo')
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            search_dir('bingo')
+        result = buf.getvalue()
+    assert result is not None
+
+    expected = (
+        '[Found 1 matches for "bingo" in ./]\n'
+        './a50.txt (Line 6): bingo\n'
+        '[End of matches for "bingo" in ./]\n'
+    )
+    assert result.split() == expected.split()
