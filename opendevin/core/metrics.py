@@ -1,7 +1,7 @@
 class Metrics:
     """
     Metrics class can record various metrics during running and evaluation.
-    Currently we definte the following metrics:
+    Currently we define the following metrics:
         total_cost: the total cost of the current LLM.
     """
 
