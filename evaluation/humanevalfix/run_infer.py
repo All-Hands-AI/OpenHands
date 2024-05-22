@@ -110,6 +110,7 @@ def get_test_result(instance, path, language='python', timeout=10):
     test_result = {'result': {}, 'metadata': {}}
     code_metric = load('Muennighoff/code_eval_octopack')
     timeout = LANGUAGE_TO_TIMEOUT[language]
+    num_workers = LANGUAGE_TO_NUM_WORKERS[language]
     python_imports = '\n'.join(IMPORT_HELPER[language])
 
     # Load function from path
