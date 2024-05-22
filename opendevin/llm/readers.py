@@ -1,4 +1,3 @@
-
 import base64
 import json
 import subprocess
@@ -18,7 +17,6 @@ import PyPDF2
 import requests
 import yaml
 from bs4 import BeautifulSoup
-
 from openai import OpenAI
 from pptx import Presentation
 from pylatexenc.latex2text import LatexNodes2Text
@@ -447,7 +445,7 @@ class FileReader:
         logger.info(f'Setting Reader to {type(self.reader).__name__}')
 
     def read_file(self, file_path: Path, task='describe the file') -> str:
-        suffix = path.suffix
+        suffix = file_path.suffix
         self.set_reader(suffix)
         if isinstance(self.reader, IMGReader) or isinstance(self.reader, VideoReader):
             file_content = self.reader.parse(file_path, task)
