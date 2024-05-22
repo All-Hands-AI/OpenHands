@@ -33,7 +33,6 @@ export async function request(
       Authorization: `Bearer ${token}`,
     };
   }
-  let response = null;
 
   let response = null;
   try {
@@ -41,15 +40,15 @@ export async function request(
   } catch (e) {
     onFail(`Error fetching ${url}`);
   }
-  if (response.status && response.status >= 400) {
-    onFail(`${response.status} error while fetching ${url}: ${response.statusText}`);
+  if (response?.status && response?.status >= 400) {
+    onFail(`${response.status} error while fetching ${url}: ${response?.statusText}`);
   }
-  if (!response.ok) {
-    onFail(`Error fetching ${url}: ${response.statusText}`);
+  if (!response?.ok) {
+    onFail(`Error fetching ${url}: ${response?.statusText}`);
   }
 
   try {
-    return response.json();
+    return response && response.json();
   } catch (e) {
     onFail(`Error parsing JSON from ${url}`);
   }
