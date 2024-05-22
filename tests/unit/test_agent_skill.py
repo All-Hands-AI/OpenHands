@@ -6,11 +6,13 @@ import pytest
 from opendevin.skills.agentskills import (
     create_file,
     edit_file,
+    find_file,
     goto_line,
     open_file,
     scroll_down,
     scroll_up,
     search_dir,
+    search_file,
 )
 
 
@@ -390,4 +392,88 @@ def test_search_dir_cwd(tmp_path, monkeypatch):
         './a50.txt (Line 6): bingo\n'
         '[End of matches for "bingo" in ./]\n'
     )
+    assert result.split() == expected.split()
+
+
+def test_search_file(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    temp_file_path.write_text('Line 1\nLine 2\nLine 3\nLine 4\nLine 5')
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            search_file('Line 5', str(temp_file_path))
+        result = buf.getvalue()
+    assert result is not None
+    expected = f'[Found 1 matches for "Line 5" in {temp_file_path}]\n'
+    expected += 'Line 5: Line 5\n'
+    expected += f'[End of matches for "Line 5" in {temp_file_path}]\n'
+    assert result.split() == expected.split()
+
+
+def test_search_file_not_exist_term(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    temp_file_path.write_text('Line 1\nLine 2\nLine 3\nLine 4\nLine 5')
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            search_file('Line 6', str(temp_file_path))
+        result = buf.getvalue()
+    assert result is not None
+
+    expected = f'[No matches found for "Line 6" in {temp_file_path}]\n'
+    assert result.split() == expected.split()
+
+
+def test_search_file_not_exist_file():
+    with pytest.raises(FileNotFoundError):
+        search_file('Line 6', '/unexist/path/a.txt')
+
+
+def test_find_file(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    temp_file_path.write_text('Line 1\nLine 2\nLine 3\nLine 4\nLine 5')
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            find_file('a.txt', str(tmp_path))
+        result = buf.getvalue()
+    assert result is not None
+
+    expected = f'[Found 1 matches for "a.txt" in {tmp_path}]\n'
+    expected += f'{tmp_path}/a.txt\n'
+    expected += f'[End of matches for "a.txt" in {tmp_path}]\n'
+    assert result.split() == expected.split()
+
+
+def test_find_file_cwd(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    temp_file_path = tmp_path / 'a.txt'
+    temp_file_path.write_text('Line 1\nLine 2\nLine 3\nLine 4\nLine 5')
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            find_file('a.txt')
+        result = buf.getvalue()
+    assert result is not None
+
+
+def test_find_file_not_exist_file():
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            find_file('unexist.txt')
+        result = buf.getvalue()
+    assert result is not None
+
+    expected = '[No matches found for "unexist.txt" in ./]\n'
+    assert result.split() == expected.split()
+
+
+def test_find_file_not_exist_file_specific_path(tmp_path):
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            find_file('unexist.txt', str(tmp_path))
+        result = buf.getvalue()
+    assert result is not None
+
+    expected = f'[No matches found for "unexist.txt" in {tmp_path}]\n'
     assert result.split() == expected.split()

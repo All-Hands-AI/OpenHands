@@ -268,11 +268,12 @@ def search_file(search_term: str, file_path: Optional[str] = None):
                 matches.append((i, line.strip()))
 
     if matches:
-        print(f"Found {len(matches)} matches for '{search_term}' in {file_path}:")
+        print(f'[Found {len(matches)} matches for "{search_term}" in {file_path}]')
         for match in matches:
             print(f'Line {match[0]}: {match[1]}')
+        print(f'[End of matches for "{search_term}" in {file_path}]')
     else:
-        print(f"No matches found for '{search_term}' in {file_path}")
+        print(f'[No matches found for "{search_term}" in {file_path}]')
 
 
 def find_file(file_name, dir_path='./'):
@@ -292,9 +293,9 @@ def find_file(file_name, dir_path='./'):
                 matches.append(os.path.join(root, file))
 
     if matches:
-        output = f"Found {len(matches)} matches for '{file_name}' in {dir_path}:\n"
+        print(f'[Found {len(matches)} matches for "{file_name}" in {dir_path}]')
         for match in matches:
-            output += f'{match}\n'
-        return output
+            print(f'{match}')
+        print(f'[End of matches for "{file_name}" in {dir_path}]')
     else:
-        return f"No matches found for '{file_name}' in {dir_path}"
+        print(f'[No matches found for "{file_name}" in {dir_path}]')
