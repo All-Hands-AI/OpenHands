@@ -47,14 +47,16 @@ def _lint_file(file_path: str) -> Optional[str]:
 
         # Run the command using subprocess and redirect stderr to stdout
         result = subprocess.run(
-            command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
         )
         if result.returncode == 0:
             # Linting successful. No issues found.
             return None
         else:
             ret = 'ERRORS:\n'
-            ret += result.stdout.strip()
+            ret += result.stdout.decode().strip()
             return ret.rstrip('\n')
     # Linting skipped. Either the file is not a Python file or auto-linting is disabled.
     return None
