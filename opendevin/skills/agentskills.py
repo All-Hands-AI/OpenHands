@@ -46,7 +46,7 @@ def _cur_file_header(CURRENT_FILE, total_lines):
 
 def open_file(path: str, line_number: Optional[int] = None):
     """
-    Open a file and optionally move to a specific line.
+    Opens the file at the given path in the editor. If line_number is provided, the window will be move to include that line.
 
     Args:
         path: str: The path to the file to open.
@@ -103,6 +103,11 @@ def goto_line(line_number: int):
 
 
 def scroll_down():
+    """Moves the window down by 100 lines.
+
+    Args:
+        None
+    """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
     if CURRENT_FILE is None:
         raise FileNotFoundError('No file open. Use the open_file function first.')
@@ -115,6 +120,11 @@ def scroll_down():
 
 
 def scroll_up():
+    """Moves the window up by 100 lines.
+
+    Args:
+        None
+    """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
     if CURRENT_FILE is None:
         raise FileNotFoundError('No file open. Use the open_file function first.')
@@ -127,6 +137,11 @@ def scroll_up():
 
 
 def create_file(filename):
+    """Creates and opens a new file with the given name.
+
+    Args:
+        filename: str: The name of the file to create.
+    """
     global CURRENT_FILE, CURRENT_LINE
     if os.path.exists(filename):
         raise FileExistsError(f"File '{filename}' already exists.")
@@ -140,6 +155,8 @@ def create_file(filename):
 
 def edit_file(start: int, end: int, content: str) -> None:
     """Edit a file.
+
+    It replaces lines `start` through `end` (inclusive) with the given text `content` in the open file. Remember, the file must be open before editing.
 
     Args:
         start: int: The start line number. Must be greater or equal to 1.
@@ -188,7 +205,7 @@ def edit_file(start: int, end: int, content: str) -> None:
 
 
 def search_dir(search_term: str, dir_path: str = './') -> None:
-    """Search a directory for a term.
+    """Searches for search_term in all files in dir. If dir is not provided, searches in the current directory.
 
     Args:
         search_term: str: The term to search for.
@@ -228,6 +245,12 @@ def search_dir(search_term: str, dir_path: str = './') -> None:
 
 
 def search_file(search_term: str, file_path: Optional[str] = None):
+    """Searches for search_term in file. If file is not provided, searches in the current open file.
+
+    Args:
+        search_term: str: The term to search for.
+        file_path: Optional[str]: The path to the file to search.
+    """
     global CURRENT_FILE
     if file_path is None:
         file_path = CURRENT_FILE
@@ -253,6 +276,12 @@ def search_file(search_term: str, file_path: Optional[str] = None):
 
 
 def find_file(file_name, dir_path='./'):
+    """Finds all files with the given name in the specified directory.
+
+    Args:
+        file_name: str: The name of the file to find.
+        dir_path: Optional[str]: The path to the directory to search.
+    """
     if not os.path.isdir(dir_path):
         raise FileNotFoundError(f'Directory {dir_path} not found')
 
