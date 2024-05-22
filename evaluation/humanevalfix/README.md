@@ -22,6 +22,7 @@ Add the following configurations:
 max_iterations = 100
 cache_dir = "/tmp/cache"
 ssh_hostname = "localhost"
+enable_auto_lint = true
 
 # TODO: Change these to the model you want to evaluate
 [eval_gpt4_1106_preview]
