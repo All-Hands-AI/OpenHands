@@ -3,15 +3,10 @@ import toast from "react-hot-toast";
 const idMap = new Map<string, string>();
 
 export default {
-  stickyError: (id: string, msg: string) => {
+  error: (id: string, msg: string) => {
     if (idMap.has(id)) return; // prevent duplicate toast
-    const toastId = toast.loading(msg, {
-      // icon: "👏",
-      // style: {
-      //   borderRadius: "10px",
-      //   background: "#333",
-      //   color: "#fff",
-      // },
+    const toastId = toast(msg, {
+      duration: 4000,
       style: {
         background: "#ef4444",
         color: "#fff",
@@ -24,12 +19,13 @@ export default {
     });
     idMap.set(id, toastId);
   },
-  stickySuccess: (id: string, msg: string) => {
+  success: (id: string, msg: string) => {
     const toastId = idMap.get(id);
     if (toastId === undefined) return;
     if (toastId) {
       toast.success(msg, {
         id: toastId,
+        duration: 4000,
         style: {
           background: "#333",
           color: "#fff",
