@@ -65,7 +65,7 @@ class MicroAgent(Agent):
             latest_user_message=latest_user_message,
         )
         messages = [{'content': prompt, 'role': 'user'}]
-        resp = self.llm.completion(messages=messages)
+        resp = self.llm.do_completion(messages=messages)
         action_resp = resp['choices'][0]['message']['content']
         state.num_of_chars += len(prompt) + len(action_resp)
         action = parse_response(action_resp)
