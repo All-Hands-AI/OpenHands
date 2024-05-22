@@ -32,11 +32,11 @@ def test_open_file(tmp_path):
     assert result is not None
     expected = (
         f'[File: {temp_file_path} (5 lines total)]\n'
-        '1: Line 1\n'
-        '2: Line 2\n'
-        '3: Line 3\n'
-        '4: Line 4\n'
-        '5: Line 5\n'
+        '1|Line 1\n'
+        '2|Line 2\n'
+        '3|Line 3\n'
+        '4|Line 4\n'
+        '5|Line 5\n'
     )
     assert result.split('\n') == expected.split('\n')
 
@@ -52,11 +52,11 @@ def test_open_file_with_indentation(tmp_path):
     assert result is not None
     expected = (
         f'[File: {temp_file_path} (5 lines total)]\n'
-        '1: Line 1\n'
-        '2:     Line 2\n'
-        '3: Line 3\n'
-        '4: Line 4\n'
-        '5: Line 5\n'
+        '1|Line 1\n'
+        '2|    Line 2\n'
+        '3|Line 3\n'
+        '4|Line 4\n'
+        '5|Line 5\n'
     )
     assert result.split('\n') == expected.split('\n')
 
@@ -73,7 +73,7 @@ def test_open_file_long(tmp_path):
     assert result is not None
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(1, 52):
-        expected += f'{i}: Line {i}\n'
+        expected += f'{i}|Line {i}\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -89,7 +89,7 @@ def test_open_file_long_with_lineno(tmp_path):
     assert result is not None
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(51, 151):
-        expected += f'{i}: Line {i}\n'
+        expected += f'{i}|Line {i}\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -107,7 +107,7 @@ def test_create_file(tmp_path):
 
     expected = (
         f'[File: {temp_file_path} (1 lines total)]\n'
-        '1:\n'
+        '1|\n'
         f'[File {temp_file_path} created.]\n'
     )
     assert result.split('\n') == expected.split('\n')
@@ -126,7 +126,7 @@ def test_goto_line(tmp_path):
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(1, 52):
-        expected += f'{i}: Line {i}\n'
+        expected += f'{i}|Line {i}\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -137,7 +137,7 @@ def test_goto_line(tmp_path):
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(51, 151):
-        expected += f'{i}: Line {i}\n'
+        expected += f'{i}|Line {i}\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -178,7 +178,7 @@ def test_scroll_down(tmp_path):
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(1, 52):
-        expected += f'{i}: Line {i}\n'
+        expected += f'{i}|Line {i}\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -189,7 +189,7 @@ def test_scroll_down(tmp_path):
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(52, 152):
-        expected += f'{i}: Line {i}\n'
+        expected += f'{i}|Line {i}\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -206,7 +206,7 @@ def test_scroll_up(tmp_path):
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(251, 351):
-        expected += f'{i}: Line {i}\n'
+        expected += f'{i}|Line {i}\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -217,7 +217,7 @@ def test_scroll_up(tmp_path):
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(151, 251):
-        expected += f'{i}: Line {i}\n'
+        expected += f'{i}|Line {i}\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -234,7 +234,7 @@ def test_scroll_down_edge(tmp_path):
 
     expected = f'[File: {temp_file_path} (9 lines total)]\n'
     for i in range(1, 10):
-        expected += f'{i}: Line {i}\n'
+        expected += f'{i}|Line {i}\n'
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
@@ -259,9 +259,9 @@ def test_edit_file(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
-            '1: REPLACE TEXT\n'
-            '2: Line 4\n'
-            '3: Line 5\n'
+            '1|REPLACE TEXT\n'
+            '2|Line 4\n'
+            '3|Line 5\n'
             '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
         )
         assert result.split('\n') == expected.split('\n')
@@ -285,7 +285,7 @@ def test_edit_file_from_scratch(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (1 lines total after edit)]\n'
-            '1: REPLACE TEXT\n'
+            '1|REPLACE TEXT\n'
             '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
         )
         assert result.split('\n') == expected.split('\n')
@@ -311,9 +311,9 @@ def test_edit_file_from_scratch_multiline(tmp_path):
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
-            '1: REPLACE TEXT1\n'
-            '2: REPLACE TEXT2\n'
-            '3: REPLACE TEXT3\n'
+            '1|REPLACE TEXT1\n'
+            '2|REPLACE TEXT2\n'
+            '3|REPLACE TEXT3\n'
             '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
         )
         assert result.split('\n') == expected.split('\n')
