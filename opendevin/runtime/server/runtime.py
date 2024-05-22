@@ -64,10 +64,28 @@ class ServerRuntime(Runtime):
                     ('cat /tmp/opendevin_jupyter_temp.py | execute_cli'),
                     background=False,
                 )
-                output = 'Package installed successfully'
+                output = '[Package installed successfully]'
                 if "{'status': 'ok', 'restart': True}" != obs.content.strip():
                     print(obs.content)
-                    output += '\n But failed to restart the kernel'
+                    output += '\n[But failed to restart the kernel to load the package]'
+                else:
+                    output += '\n[Kernel restarted successfully to load the package]'
+
+                # re-init the kernel after restart
+                if action.kernel_init_code:
+                    obs = self._run_command(
+                        (
+                            f'cat > /tmp/opendevin_jupyter_init.py <<EOL\n'
+                            f'{action.kernel_init_code}\n'
+                            'EOL'
+                        ),
+                        background=False,
+                    )
+                    obs = self._run_command(
+                        'cat /tmp/opendevin_jupyter_init.py | execute_cli',
+                        background=False,
+                    )
+
         return IPythonRunCellObservation(content=output, code=action.code)
 
     async def read(self, action: FileReadAction) -> Observation:
