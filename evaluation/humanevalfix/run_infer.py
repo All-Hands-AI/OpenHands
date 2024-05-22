@@ -63,9 +63,9 @@ LANGUAGE_TO_NUM_WORKERS = {
 
 
 def cleanup():
-    print('Cleaning up child processes...')
+    logger.info('Cleaning up child processes...')
     for process in mp.active_children():
-        print(f'Terminating child process: {process.name}')
+        logger.info(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
 
