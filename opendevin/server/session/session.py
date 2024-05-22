@@ -23,7 +23,7 @@ class Session:
     websocket: WebSocket | None
     last_active_ts: int = 0
     is_alive: bool = True
-    agent: AgentSession
+    agent_session: AgentSession
 
     def __init__(self, sid: str, ws: WebSocket | None):
         self.sid = sid
