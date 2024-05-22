@@ -52,6 +52,7 @@ pre-commit = "3.7.1"
 pytest = "*"
 pytest-cov = "*"
 pytest-asyncio = "*"
+pytest-forked = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
