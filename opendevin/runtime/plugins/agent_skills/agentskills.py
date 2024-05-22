@@ -16,6 +16,7 @@ Functions:
 """
 
 import os
+from inspect import signature
 from typing import Optional
 
 CURRENT_FILE = None
@@ -44,7 +45,7 @@ def _cur_file_header(CURRENT_FILE, total_lines):
     return f'[File: {os.path.abspath(CURRENT_FILE)} ({total_lines} lines total)]\n'
 
 
-def open_file(path: str, line_number: Optional[int] = None):
+def open_file(path: str, line_number: Optional[int] = None) -> None:
     """
     Opens the file at the given path in the editor. If line_number is provided, the window will be move to include that line.
 
@@ -80,7 +81,7 @@ def open_file(path: str, line_number: Optional[int] = None):
     print(output)
 
 
-def goto_line(line_number: int):
+def goto_line(line_number: int) -> None:
     """
     Moves the window to show the specified line number.
 
@@ -102,7 +103,7 @@ def goto_line(line_number: int):
     print(output)
 
 
-def scroll_down():
+def scroll_down() -> None:
     """Moves the window down by 100 lines.
 
     Args:
@@ -119,7 +120,7 @@ def scroll_down():
     print(output)
 
 
-def scroll_up():
+def scroll_up() -> None:
     """Moves the window up by 100 lines.
 
     Args:
@@ -136,7 +137,7 @@ def scroll_up():
     print(output)
 
 
-def create_file(filename):
+def create_file(filename: str) -> None:
     """Creates and opens a new file with the given name.
 
     Args:
@@ -244,7 +245,7 @@ def search_dir(search_term: str, dir_path: str = './') -> None:
     print(f'[End of matches for "{search_term}" in {dir_path}]')
 
 
-def search_file(search_term: str, file_path: Optional[str] = None):
+def search_file(search_term: str, file_path: Optional[str] = None) -> None:
     """Searches for search_term in file. If file is not provided, searches in the current open file.
 
     Args:
@@ -276,7 +277,7 @@ def search_file(search_term: str, file_path: Optional[str] = None):
         print(f'[No matches found for "{search_term}" in {file_path}]')
 
 
-def find_file(file_name, dir_path='./'):
+def find_file(file_name: str, dir_path: str = './') -> None:
     """Finds all files with the given name in the specified directory.
 
     Args:
@@ -299,3 +300,30 @@ def find_file(file_name, dir_path='./'):
         print(f'[End of matches for "{file_name}" in {dir_path}]')
     else:
         print(f'[No matches found for "{file_name}" in {dir_path}]')
+
+
+__all__ = [
+    'open_file',
+    'goto_line',
+    'scroll_down',
+    'scroll_up',
+    'create_file',
+    'edit_file',
+    'search_dir',
+    'search_file',
+    'find_file',
+]
+
+
+DOCUMENTATION = ''
+for func_name in __all__:
+    func = globals()[func_name]
+
+    cur_doc = func.__doc__
+    # remove indentation from docstring and extra empty lines
+    cur_doc = '\n'.join(filter(None, map(lambda x: x.strip(), cur_doc.split('\n'))))
+    # now add a consistent 4 indentation
+    cur_doc = '\n'.join(map(lambda x: ' ' * 4 + x, cur_doc.split('\n')))
+
+    fn_signature = f'{func.__name__}' + str(signature(func))
+    DOCUMENTATION += f'{fn_signature}:\n{cur_doc}\n\n'
