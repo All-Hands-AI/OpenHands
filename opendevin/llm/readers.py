@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 
 import base64
 import json
@@ -21,12 +19,10 @@ import requests
 import yaml
 from bs4 import BeautifulSoup
 
-# from litellm import completion as litellm_completion
 from openai import OpenAI
 from pptx import Presentation
 from pylatexenc.latex2text import LatexNodes2Text
 
-# from opendevin.llm.llm import LLM
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 
@@ -37,12 +33,13 @@ OPENAI_API_KEY = config.llm.api_key
 class Reader(ABC):
     """
     @Desc: Implementation to support reading 41 multimodal files efficiently.
-    @Ref: https://github.com/mczhuge/GPTSwarm/blob/main/swarm/environment/tools/reader/readers.py
+    @Ref: https://github.com/metauto-ai/GPTSwarm/blob/main/swarm/environment/tools/reader/readers.py
     """
 
     @abstractmethod
     def parse(self, file_path: Path) -> str:
         """To be overriden by the descendant class"""
+        pass
 
 
 class TXTReader(Reader):
@@ -228,8 +225,6 @@ class PythonReader(Reader):
     def parse(self, file_path: Path) -> str:
         logger.info(f'Executing and reading Python file from {file_path}.')
         execution_result = ''
-        # error = ''
-        # file_content = ''
         try:
             completed_process = subprocess.run(
                 ['python', file_path], capture_output=True, text=True, check=True
@@ -452,7 +447,7 @@ class FileReader:
         logger.info(f'Setting Reader to {type(self.reader).__name__}')
 
     def read_file(self, file_path: Path, task='describe the file') -> str:
-        suffix = '.' + str(file_path).split('.')[-1]
+        suffix = path.suffix
         self.set_reader(suffix)
         if isinstance(self.reader, IMGReader) or isinstance(self.reader, VideoReader):
             file_content = self.reader.parse(file_path, task)
