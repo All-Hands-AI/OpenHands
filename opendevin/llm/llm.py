@@ -207,6 +207,8 @@ class LLM:
     def do_completion(self, *args, **kwargs):
         """
         Wrapper for the litellm completion function.
+
+        Check the complete documentation at https://litellm.vercel.app/docs/completion
         """
         resp = self._completion(*args, **kwargs)
         self.post_completion(resp)
