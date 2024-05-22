@@ -117,7 +117,7 @@ class Runtime:
     async def submit_background_obs(self):
         """
         Returns all observations that have accumulated in the runtime's background.
-        Right now, this is just background commands, but could include e.g. asyncronous
+        Right now, this is just background commands, but could include e.g. asynchronous
         events happening in the browser.
         """
         for _id, cmd in self.sandbox.background_commands.items():
