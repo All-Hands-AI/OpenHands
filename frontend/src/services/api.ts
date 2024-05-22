@@ -11,6 +11,13 @@ export async function request(
 ): Promise<any> {
   const options = JSON.parse(JSON.stringify(optionsIn));
 
+  const onFail = (msg: string) => {
+    if (!disableToast) {
+      toast.error("api", msg);
+    }
+    throw new Error(msg);
+  }
+
   const needsAuth = !url.startsWith("/api/options/");
   const token = getToken();
   if (!token && needsAuth) {
@@ -26,21 +33,24 @@ export async function request(
       Authorization: `Bearer ${token}`,
     };
   }
-  const response = await fetch(url, options);
+  let response = null;
+
+  let response = null;
+  try {
+    response = await fetch(url, options);
+  } catch (e) {
+    onFail(`Error fetching ${url}`);
+  }
   if (response.status && response.status >= 400) {
-    if (!disableToast) {
-      toast.error(
-        "api",
-        `${response.status} error while fetching ${url}: ${response.statusText}`,
-      );
-    }
-    throw new Error(response.statusText);
+    onFail(`${response.status} error while fetching ${url}: ${response.statusText}`);
   }
   if (!response.ok) {
-    if (!disableToast) {
-      toast.error("api", `Error fetching ${url}`);
-    }
-    throw new Error(response.statusText);
+    onFail(`Error fetching ${url}: ${response.statusText}`);
   }
-  return response.json();
+
+  try {
+    return response.json();
+  } catch (e) {
+    onFail(`Error parsing JSON from ${url}`);
+  }
 }
