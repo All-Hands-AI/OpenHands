@@ -5,7 +5,6 @@ import ArrowIcon from "#/assets/arrow";
 import PauseIcon from "#/assets/pause";
 import PlayIcon from "#/assets/play";
 import { changeAgentState } from "#/services/agentStateService";
-import { clearMsgs } from "#/services/session";
 import store, { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import { clearMessages } from "#/state/chatSlice";
@@ -73,7 +72,6 @@ function AgentControlBar() {
     }
 
     if (action === AgentState.STOPPED) {
-      clearMsgs().then().catch();
       store.dispatch(clearMessages());
     } else {
       setIsLoading(true);
@@ -86,7 +84,6 @@ function AgentControlBar() {
   useEffect(() => {
     if (curAgentState === desiredState) {
       if (curAgentState === AgentState.STOPPED) {
-        clearMsgs().then().catch();
         store.dispatch(clearMessages());
       }
       setIsLoading(false);
