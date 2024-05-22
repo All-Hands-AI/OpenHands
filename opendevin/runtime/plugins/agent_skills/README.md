@@ -47,7 +47,7 @@ edit_file(
 # In[1]
 from agentskills import help_me
 
-help_me("I want to solve a tasks that involves reading a bunch of PDFs and reason about it")
+help_me("I want to solve a task that involves reading a bunch of PDFs and reason about them")
 
 # Out[1]
 "Here's the top skills that maybe helpful to you:
