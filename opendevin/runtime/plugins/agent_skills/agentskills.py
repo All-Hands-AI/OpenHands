@@ -52,9 +52,6 @@ def open_file(path: str, line_number: Optional[int] = None) -> None:
     Args:
         path: str: The path to the file to open.
         line_number: Optional[int]: The line number to move to.
-
-    Returns:
-        str: A string representation of the file and window.
     """
     global CURRENT_FILE, CURRENT_LINE
     if not os.path.isfile(path):
