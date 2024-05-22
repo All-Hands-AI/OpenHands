@@ -94,3 +94,8 @@ poetry run pytest ./tests/unit/test_sandbox.py
 #### Integration tests
 
 Please refer to [this README](./tests/integration/README.md) for details.
+
+### 9. Add or update dependency
+
+1. Add your dependency in `pyproject.toml` or use `peotry add xxx`
+2. Update the poetry.lock file via `poetry lock --no-update`
