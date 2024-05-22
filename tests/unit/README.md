@@ -14,7 +14,7 @@ Run specific test file:
 poetry run pytest ./tests/unit/test_micro_agents.py
 ```
 
-Run spefic unit test
+Run specific unit test
 
 ```bash
 poetry run pytest ./tests/unit/test_micro_agents.py:test_coder_agent_with_summary
