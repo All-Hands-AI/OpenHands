@@ -1,10 +1,9 @@
 # @yaml
 # signature: |-
-#   edit
+#   edit <<EOF
 #   <replacement_text>
-#   end_of_edit
-# docstring: replaces *all* of the text between the START CURSOR and the END CURSOR with the replacement_text. The replacement text is terminated by a line with only end_of_edit on it. All of the <replacement_text> will be entered, so make sure your indentation is formatted properly. To enter text at the beginning of the file, set START CURSOR and END CURSOR to 0. Use set_cursors to move the cursors around. Python files will be checked for syntax errors after the edit.
-# end_name: end_of_edit
+#   EOF
+# docstring: replaces *all* of the text between the START CURSOR and the END CURSOR with the replacement_text. The replacement text is delineated using heredoc syntax. All of the <replacement_text> will be entered, so make sure your indentation is formatted properly. To enter text at the beginning of the file, set START CURSOR and END CURSOR to 0. Use set_cursors to move the cursors around. Python files will be checked for syntax errors after the edit.
 # arguments:
 #   replacement_text:
 #     type: string
@@ -13,7 +12,7 @@
 edit() {
     if [ -z "$CURRENT_FILE" ]
     then
-        echo 'No file open. Use the `open` command first.'
+        echo 'No file is opened. Use the `open` command first.'
         return
     fi
     local start_line=$((START_CURSOR - 1))
@@ -35,8 +34,8 @@ edit() {
     local new_lines=("${lines[@]:0:$start_line}" "${replacement[@]}" "${lines[@]:$((end_line))}")
     # Write the new stuff directly back into the original file
     printf "%s\n" "${new_lines[@]}" >| "$CURRENT_FILE"
-    # Run linter
-    if [[ $CURRENT_FILE == *.py ]]; then
+    # Run linter if enabled
+    if [[ $CURRENT_FILE == *.py && -n "$ENABLE_AUTO_LINT" ]]; then
         lint_output=$(flake8 --isolated --select=F821,F822,F831,E111,E112,E113,E999,E902 "$CURRENT_FILE" 2>&1)
     else
         # do nothing

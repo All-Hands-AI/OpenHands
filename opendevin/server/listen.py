@@ -1,3 +1,4 @@
+import os
 import shutil
 import uuid
 import warnings
@@ -6,7 +7,7 @@ from pathlib import Path
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
-from fastapi import Depends, FastAPI, Response, UploadFile, WebSocket, status
+from fastapi import Depends, FastAPI, Request, Response, UploadFile, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -17,7 +18,6 @@ from opendevin.controller.agent import Agent
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.llm import bedrock
-from opendevin.runtime import files
 from opendevin.server.agent import agent_manager
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import message_stack, session_manager
@@ -225,18 +225,33 @@ async def del_messages(
     return {'ok': True}
 
 
-@app.get('/api/refresh-files')
-def refresh_files():
+@app.get('/api/list-files')
+def list_files(request: Request, path: str = '/'):
     """
-    Refresh files.
+    List files.
 
-    To refresh files:
+    To list files:
     ```sh
-    curl http://localhost:3000/api/refresh-files
+    curl http://localhost:3000/api/list-files
     ```
     """
-    structure = files.get_folder_structure(Path(str(config.workspace_base)))
-    return structure.to_dict()
+    if path.startswith('/'):
+        path = path[1:]
+    abs_path = os.path.join(config.workspace_base, path)
+    try:
+        files = os.listdir(abs_path)
+    except Exception as e:
+        logger.error(f'Error listing files: {e}', exc_info=False)
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={'error': 'Path not found'},
+        )
+    files = [os.path.join(path, f) for f in files]
+    files = [
+        f + '/' if os.path.isdir(os.path.join(config.workspace_base, f)) else f
+        for f in files
+    ]
+    return files
 
 
 @app.get('/api/select-file')
@@ -266,30 +281,31 @@ def select_file(file: str):
     return {'code': content}
 
 
-@app.post('/api/upload-file')
-async def upload_file(file: UploadFile):
+@app.post('/api/upload-files')
+async def upload_files(files: list[UploadFile]):
     """
-    Upload a file.
+    Upload files to the workspace.
 
-    To upload a file:
+    To upload files:
     ```sh
-    curl -X POST -F "file=@<file_path>" http://localhost:3000/api/upload-file
+    curl -X POST -F "file=@<file_path1>" -F "file=@<file_path2>" http://localhost:3000/api/upload-files
     ```
     """
     try:
         workspace_base = config.workspace_base
-        file_path = Path(workspace_base, file.filename)
-        # The following will check if the file is within the workspace base and throw an exception if not
-        file_path.resolve().relative_to(Path(workspace_base).resolve())
-        with open(file_path, 'wb') as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        for file in files:
+            file_path = Path(workspace_base, file.filename)
+            # The following will check if the file is within the workspace base and throw an exception if not
+            file_path.resolve().relative_to(Path(workspace_base).resolve())
+            with open(file_path, 'wb') as buffer:
+                shutil.copyfileobj(file.file, buffer)
     except Exception as e:
-        logger.error(f'Error saving file {file.filename}: {e}', exc_info=True)
+        logger.error(f'Error saving files: {e}', exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': f'Error saving file: {e}'},
+            content={'error': f'Error saving file:s {e}'},
         )
-    return {'filename': file.filename, 'location': str(file_path)}
+    return {'message': 'Files uploaded successfully', 'file_count': len(files)}
 
 
 @app.get('/api/root_task')

@@ -1,0 +1,2 @@
+[pytest]
+addopts = -p no:warnings

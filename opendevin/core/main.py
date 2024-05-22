@@ -67,7 +67,7 @@ async def main(
             raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
 
         logger.info(
-            f'Running agent {args.agent_cls} (model: {llm_config.model}, llm_config: {llm_config}) with task: "{task}"'
+            f'Running agent {args.agent_cls} (model: {llm_config.model}, llm_config: {args.llm_config}) with task: "{task}"'
         )
 
         # create LLM instance with the given config
@@ -119,6 +119,7 @@ async def main(
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
     await controller.close()
+    runtime.close()
     return controller.get_state()
 
 

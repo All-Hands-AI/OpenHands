@@ -1,4 +1,7 @@
 export interface ActionMessage {
+  // Either 'agent' or 'user'
+  source: string;
+
   // The action to be taken
   action: string;
 
@@ -21,7 +24,4 @@ export interface ObservationMessage {
 
   // A friendly message that can be put in the chat log
   message: string;
-
-  // optional screenshot
-  screenshot?: string;
 }
