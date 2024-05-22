@@ -50,7 +50,7 @@ from agentskills import help_me
 help_me("I want to solve a task that involves reading a bunch of PDFs and reason about them")
 
 # Out[1]
-"Here's the top skills that maybe helpful to you:
+"Here are the top skills that may be helpful to you:
 - `pdf_to_text`: [documentation about the tools]
 ...
 "
