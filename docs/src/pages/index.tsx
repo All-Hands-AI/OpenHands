@@ -1,7 +1,6 @@
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import Layout from "@theme/Layout";
 
-import { Code } from "../components/Code/Code";
 import { HomepageHeader } from "../components/HomepageHeader/HomepageHeader";
 import { Welcome } from "../components/Welcome/Welcome";
 
@@ -25,7 +24,6 @@ export default function Home(): JSX.Element {
         <HomepageHeader />
         <div>
           <Welcome />
-          <Code />
         </div>
       </div>
     </Layout>
