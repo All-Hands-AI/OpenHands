@@ -3,6 +3,7 @@ import logging
 import os
 import pathlib
 import platform
+import uuid
 from dataclasses import dataclass, field, fields, is_dataclass
 from types import UnionType
 from typing import Any, ClassVar, get_args, get_origin
@@ -173,6 +174,7 @@ class AppConfig(metaclass=Singleton):
     sandbox_user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     sandbox_timeout: int = 120
     github_token: str | None = None
+    jwt_secret: str = uuid.uuid4().hex
     debug: bool = False
     enable_auto_lint: bool = (
         False  # once enabled, OpenDevin would lint files after editing

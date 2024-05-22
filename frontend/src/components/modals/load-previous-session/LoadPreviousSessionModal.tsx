@@ -1,11 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
-import { handleAssistantMessage } from "#/services/actions";
-import { addChatMessageFromEvent } from "#/services/chatService";
-import { clearMsgs, fetchMsgs } from "#/services/session";
-import toast from "#/utils/toast";
 import BaseModal from "../base-modal/BaseModal";
+import Session from "#/services/session";
 
 interface LoadPreviousSessionModalProps {
   isOpen: boolean;
@@ -18,28 +15,6 @@ function LoadPreviousSessionModal({
 }: LoadPreviousSessionModalProps) {
   const { t } = useTranslation();
 
-  const onStartNewSession = async () => {
-    await clearMsgs();
-  };
-
-  const onResumeSession = async () => {
-    try {
-      const { messages } = await fetchMsgs();
-
-      messages.forEach((message) => {
-        if (message.role === "user") {
-          addChatMessageFromEvent(message.payload);
-        }
-
-        if (message.role === "assistant") {
-          handleAssistantMessage(message.payload);
-        }
-      });
-    } catch (error) {
-      toast.stickyError("ws", "Error fetching the session");
-    }
-  };
-
   return (
     <BaseModal
       isOpen={isOpen}
@@ -50,13 +25,13 @@ function LoadPreviousSessionModal({
         {
           label: t(I18nKey.LOAD_SESSION$RESUME_SESSION_MODAL_ACTION_LABEL),
           className: "bg-primary rounded-lg",
-          action: onResumeSession,
+          action: Session.restoreOrStartNewSession,
           closeAfterAction: true,
         },
         {
           label: t(I18nKey.LOAD_SESSION$START_NEW_SESSION_MODAL_ACTION_LABEL),
           className: "bg-neutral-500 rounded-lg",
-          action: onStartNewSession,
+          action: Session.startNewSession,
           closeAfterAction: true,
         },
       ]}
