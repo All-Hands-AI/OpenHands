@@ -19,8 +19,8 @@ export function addChatMessageFromEvent(event: string | SocketMessage): void {
     } else {
       data = event as ActionMessage;
     }
-    if (data && data.args && data.args.task) {
-      store.dispatch(addUserMessage(data.args.task));
+    if (data?.args?.content) {
+      store.dispatch(addUserMessage(data.args.content));
     }
   } catch (error) {
     //
