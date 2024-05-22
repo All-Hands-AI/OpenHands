@@ -192,7 +192,7 @@ Previous Action:
 {unpack_dict(act, ["content"])}
 
 Output from Action:
-{unpack_dict(obs, ["content"])}
+{unpack_dict(obs)}
 """.strip()
 
 
