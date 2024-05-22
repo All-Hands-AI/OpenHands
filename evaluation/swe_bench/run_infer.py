@@ -278,6 +278,8 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
+    metrics = state.metrics.get() if state.metrics else None
+
     # Save the output
     output = {
         'instance_id': instance.instance_id,
@@ -288,6 +290,7 @@ def process_instance(
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
+        'metrics': metrics,
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
