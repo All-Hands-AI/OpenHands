@@ -26,6 +26,7 @@ class AgentSession:
     event_stream: EventStream
     controller: Optional[AgentController] = None
     runtime: Optional[Runtime] = None
+    _closed: bool = False
 
     def __init__(self, sid):
         """Initializes a new instance of the Session class."""
@@ -46,12 +47,15 @@ class AgentSession:
         await self._create_controller(start_event)
 
     async def close(self):
+        if self._closed:
+            return
         if self.controller is not None:
             end_state = self.controller.get_state()
             end_state.save_to_session(self.sid)
             await self.controller.close()
         if self.runtime is not None:
             self.runtime.close()
+        self._closed = True
 
     async def _create_runtime(self):
         if self.runtime is not None:
