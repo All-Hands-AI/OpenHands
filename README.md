@@ -27,14 +27,14 @@
   <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2i1iqdag6-bVmvamiPA9EZUu7oCO6KhA"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="Join our Slack community"></a>
   <a href="https://discord.gg/ESHStjSjD4"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community"></a>
   <br/>
-  <a href="https://xwang.dev/blog/2024/opendevin-codeact-1.0-swebench/"><img src="https://img.shields.io/badge/SWE--bench%20Lite-21.0%25-green?style=for-the-badge" alt="SWE-bench "></a>
+  <a href="https://huggingface.co/spaces/OpenDevin/evaluation"><img src="https://img.shields.io/badge/SWE--bench%20Lite-25.0%25-green?style=for-the-badge" alt="SWE-bench "></a>
 </div>
 
 <!-- PROJECT LOGO -->
 <div align="center">
   <img src="./docs/static/img/logo.png" alt="Logo" width="200" height="200">
   <h1 align="center">OpenDevin: Code Less, Make More</h1>
-  <a href="https://opendevin.github.io/OpenDevin/"><img src="https://img.shields.io/badge/Documenation-OpenDevin-blue?logo=googledocs&logoColor=white&style=for-the-badge" alt="Check out the documentation"></a>
+  <a href="https://opendevin.github.io/OpenDevin/"><img src="https://img.shields.io/badge/Documentation-OpenDevin-blue?logo=googledocs&logoColor=white&style=for-the-badge" alt="Check out the documentation"></a>
 </div>
 <hr>
 
@@ -44,14 +44,22 @@ OpenDevin agents collaborate with human developers to write code, fix bugs, and 
 
 ![App screenshot](./docs/static/img/screenshot.png)
 
-## ⚡ Quick Start
-You can run OpenDevin with Docker. It works best with the most recent
-version of Docker, `26.0.0`.
+## ⚡ Getting Started
+The easiest way to run OpenDevin is inside a Docker container. It works best with the most recent version of Docker, `26.0.0`.
+You must be using Linux, Mac OS, or WSL on Windows.
+
+To start the app, run these commands, replacing `$(pwd)/workspace` with the directory you want OpenDevin to work with.
 
 ```bash
-#The directory you want OpenDevin to modify. MUST be an absolute path!
+# The directory you want OpenDevin to work with. MUST be an absolute path!
 export WORKSPACE_BASE=$(pwd)/workspace;
+```
 
+> [!WARNING]  
+> OpenDevin runs bash commands within a Docker sandbox, so it should not affect your machine. 
+> But your workspace directory will be attached to that sandbox, and files in the directory may be modified or deleted.
+
+```bash
 docker run \
     -it \
     --pull=always \
@@ -63,6 +71,8 @@ docker run \
     --add-host host.docker.internal:host-gateway \
     ghcr.io/opendevin/opendevin:0.5
 ```
+
+You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000).
 
 ## 🚀 Documentation
 

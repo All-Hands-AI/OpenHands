@@ -35,6 +35,7 @@ MAX_OUTPUT_LENGTH = 5000
 
 
 class MonologueAgent(Agent):
+    VERSION = '1.0'
     """
     The Monologue Agent utilizes long and short term memory to complete tasks.
     Long term memory is stored as a LongTermMemory object and the model uses it to search for examples from the past.
@@ -176,7 +177,7 @@ class MonologueAgent(Agent):
         ]
 
         # format all as a single message, a monologue
-        resp = self.llm.completion(messages=messages)
+        resp = self.llm.do_completion(messages=messages)
 
         # get the next action from the response
         action_resp = resp['choices'][0]['message']['content']

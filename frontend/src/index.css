@@ -10,6 +10,7 @@
   --bg-editor-active: #31343D;
   --border-editor-sidebar: #3C3C4A;
   background-color: var(--neutral-900) !important;
+  --bg-neutral-muted: #afb8c133;
 }
 
 body {
@@ -24,4 +25,18 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
+}
+
+.markdown-body code {
+  padding: 0.2em 0.4em;
+  margin: 0;
+  font-size: 85%;
+  white-space: break-spaces;
+  background-color: var(--bg-neutral-muted);
+  border-radius: 6px;
+}
+
+.markdown-body pre code {
+  padding: 0;
+  background-color: inherit;
 }

@@ -37,6 +37,8 @@ class BrowserEnv:
         )
         logger.info('Starting browser env...')
         self.process.start()
+        if not self.check_alive():
+            raise BrowserException('Failed to start browser environment.')
         atexit.register(self.close)
 
     def browser_process(self):
@@ -58,6 +60,9 @@ class BrowserEnv:
                         logger.info('SHUTDOWN recv, shutting down browser env...')
                         env.close()
                         return
+                    elif unique_request_id == 'IS_ALIVE':
+                        self.browser_side.send(('ALIVE', None))
+                        continue
                     action = action_data['action']
                     obs, reward, terminated, truncated, info = env.step(action)
                     # add text content of the page
@@ -86,21 +91,40 @@ class BrowserEnv:
             if self.agent_side.poll(timeout=0.01):
                 response_id, obs = self.agent_side.recv()
                 if response_id == unique_request_id:
-                    if obs['last_action_error']:
-                        raise BrowserException(obs['last_action_error'])
                     return obs
 
+    def check_alive(self, timeout: float = 10):
+        self.agent_side.send(('IS_ALIVE', None))
+        if self.agent_side.poll(timeout=timeout):
+            response_id, _ = self.agent_side.recv()
+            if response_id == 'ALIVE':
+                return True
+
     def close(self):
+        if not self.process.is_alive():
+            logger.info('BrowserEnv already closed, no need to close again')
+            return
         try:
             self.agent_side.send(('SHUTDOWN', None))
-            self.process.join()
+            self.process.join(5)  # Wait for the process to terminate
+            if self.process.is_alive():
+                logger.error(
+                    'Browser process did not terminate, forcefully terminating...'
+                )
+                self.process.terminate()
+                self.process.join(5)  # Wait for the process to terminate
+                if self.process.is_alive():
+                    self.process.kill()
+                    self.process.join(5)  # Wait for the process to terminate
             self.agent_side.close()
             self.browser_side.close()
         except Exception:
-            pass
+            logger.error('Encountered an error when closing browser env', exc_info=True)
 
     @staticmethod
-    def image_to_png_base64_url(image: np.ndarray | Image.Image):
+    def image_to_png_base64_url(
+        image: np.ndarray | Image.Image, add_data_prefix: bool = False
+    ):
         """Convert a numpy array to a base64 encoded png image url."""
 
         if isinstance(image, np.ndarray):
@@ -111,4 +135,28 @@ class BrowserEnv:
         image.save(buffered, format='PNG')
 
         image_base64 = base64.b64encode(buffered.getvalue()).decode()
-        return f'{image_base64}'
+        return (
+            f'data:image/png;base64,{image_base64}'
+            if add_data_prefix
+            else f'{image_base64}'
+        )
+
+    @staticmethod
+    def image_to_jpg_base64_url(
+        image: np.ndarray | Image.Image, add_data_prefix: bool = False
+    ):
+        """Convert a numpy array to a base64 encoded jpeg image url."""
+
+        if isinstance(image, np.ndarray):
+            image = Image.fromarray(image)
+        if image.mode in ('RGBA', 'LA'):
+            image = image.convert('RGB')
+        buffered = io.BytesIO()
+        image.save(buffered, format='JPEG')
+
+        image_base64 = base64.b64encode(buffered.getvalue()).decode()
+        return (
+            f'data:image/jpeg;base64,{image_base64}'
+            if add_data_prefix
+            else f'{image_base64}'
+        )
