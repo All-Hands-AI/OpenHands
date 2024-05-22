@@ -16,7 +16,7 @@ export async function request(
   if (!token && needsAuth) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve(request(url, optionsIn));
+        resolve(request(url, optionsIn, disableToast));
       }, WAIT_FOR_AUTH_DELAY_MS);
     });
   }
