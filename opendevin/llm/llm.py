@@ -220,12 +220,9 @@ class LLM:
             boolean: True if executing a local model.
         """
         if self.base_url is not None:
-            if (
-                'localhost' not in self.base_url
-                and '127.0.0.1' not in self.base_url
-                and '0.0.0.0' not in self.base_url
-            ):
-                return True
+            for substring in ['localhost', '127.0.0.1' '0.0.0.0']:
+                if substring in self.base_url:
+                    return True
         elif self.model_name is not None:
             if self.model_name.startswith('ollama'):
                 return True
