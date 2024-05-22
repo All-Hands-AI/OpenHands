@@ -30,6 +30,8 @@ class InMemoryFileStore(FileStore):
                 files.append(file)
             else:
                 dir_path = os.path.join(path, parts[0])
+                if not dir_path.endswith('/'):
+                    dir_path += '/'
                 if dir_path not in files:
                     files.append(dir_path)
         return files
