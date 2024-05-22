@@ -38,7 +38,27 @@ def test_open_file(tmp_path):
         '4: Line 4\n'
         '5: Line 5\n'
     )
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
+
+
+def test_open_file_with_indentation(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    temp_file_path.write_text('Line 1\n    Line 2\nLine 3\nLine 4\nLine 5')
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            open_file(str(temp_file_path))
+        result = buf.getvalue()
+    assert result is not None
+    expected = (
+        f'[File: {temp_file_path} (5 lines total)]\n'
+        '1: Line 1\n'
+        '2:     Line 2\n'
+        '3: Line 3\n'
+        '4: Line 4\n'
+        '5: Line 5\n'
+    )
+    assert result.split('\n') == expected.split('\n')
 
 
 def test_open_file_long(tmp_path):
@@ -54,7 +74,7 @@ def test_open_file_long(tmp_path):
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(1, 52):
         expected += f'{i}: Line {i}\n'
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
 
 
 def test_open_file_long_with_lineno(tmp_path):
@@ -70,7 +90,7 @@ def test_open_file_long_with_lineno(tmp_path):
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(51, 151):
         expected += f'{i}: Line {i}\n'
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
 
 
 def test_create_file_unexist_path():
@@ -90,7 +110,7 @@ def test_create_file(tmp_path):
         '1:\n'
         f'[File {temp_file_path} created.]\n'
     )
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
 
 
 def test_goto_line(tmp_path):
@@ -107,7 +127,7 @@ def test_goto_line(tmp_path):
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(1, 52):
         expected += f'{i}: Line {i}\n'
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
@@ -118,7 +138,7 @@ def test_goto_line(tmp_path):
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(51, 151):
         expected += f'{i}: Line {i}\n'
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
 
 
 def test_goto_line_negative(tmp_path):
@@ -159,7 +179,7 @@ def test_scroll_down(tmp_path):
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(1, 52):
         expected += f'{i}: Line {i}\n'
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
@@ -170,7 +190,7 @@ def test_scroll_down(tmp_path):
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(52, 152):
         expected += f'{i}: Line {i}\n'
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
 
 
 def test_scroll_up(tmp_path):
@@ -187,7 +207,7 @@ def test_scroll_up(tmp_path):
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(251, 351):
         expected += f'{i}: Line {i}\n'
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
@@ -198,7 +218,7 @@ def test_scroll_up(tmp_path):
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(151, 251):
         expected += f'{i}: Line {i}\n'
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
 
 
 def test_scroll_down_edge(tmp_path):
@@ -223,7 +243,7 @@ def test_scroll_down_edge(tmp_path):
     assert result is not None
 
     # expected should be unchanged
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
 
 
 def test_edit_file(tmp_path):
@@ -244,7 +264,7 @@ def test_edit_file(tmp_path):
             '3: Line 5\n'
             '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
         )
-        assert result.split() == expected.split()
+        assert result.split('\n') == expected.split('\n')
 
     with open(temp_file_path, 'r') as file:
         lines = file.readlines()
@@ -268,7 +288,7 @@ def test_edit_file_from_scratch(tmp_path):
             '1: REPLACE TEXT\n'
             '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
         )
-        assert result.split() == expected.split()
+        assert result.split('\n') == expected.split('\n')
 
     with open(temp_file_path, 'r') as file:
         lines = file.readlines()
@@ -296,7 +316,7 @@ def test_edit_file_from_scratch_multiline(tmp_path):
             '3: REPLACE TEXT3\n'
             '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
         )
-        assert result.split() == expected.split()
+        assert result.split('\n') == expected.split('\n')
 
     with open(temp_file_path, 'r') as file:
         lines = file.readlines()
@@ -332,7 +352,7 @@ def test_search_dir(tmp_path):
         f'{tmp_path}/a50.txt (Line 6): bingo\n'
         f'[End of matches for "bingo" in {tmp_path}]\n'
     )
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
 
 
 def test_search_dir_not_exist_term(tmp_path):
@@ -350,7 +370,7 @@ def test_search_dir_not_exist_term(tmp_path):
     assert result is not None
 
     expected = f'No matches found for "non-exist" in {tmp_path}\n'
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
 
 
 def test_search_dir_too_much_match(tmp_path):
@@ -367,7 +387,7 @@ def test_search_dir_too_much_match(tmp_path):
     assert result is not None
 
     expected = f'More than 999 files matched for "Line 5" in {tmp_path}. Please narrow your search.\n'
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
 
 
 def test_search_dir_cwd(tmp_path, monkeypatch):
@@ -392,7 +412,7 @@ def test_search_dir_cwd(tmp_path, monkeypatch):
         './a50.txt (Line 6): bingo\n'
         '[End of matches for "bingo" in ./]\n'
     )
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
 
 
 def test_search_file(tmp_path):
@@ -407,7 +427,7 @@ def test_search_file(tmp_path):
     expected = f'[Found 1 matches for "Line 5" in {temp_file_path}]\n'
     expected += 'Line 5: Line 5\n'
     expected += f'[End of matches for "Line 5" in {temp_file_path}]\n'
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
 
 
 def test_search_file_not_exist_term(tmp_path):
@@ -421,7 +441,7 @@ def test_search_file_not_exist_term(tmp_path):
     assert result is not None
 
     expected = f'[No matches found for "Line 6" in {temp_file_path}]\n'
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
 
 
 def test_search_file_not_exist_file():
@@ -442,7 +462,7 @@ def test_find_file(tmp_path):
     expected = f'[Found 1 matches for "a.txt" in {tmp_path}]\n'
     expected += f'{tmp_path}/a.txt\n'
     expected += f'[End of matches for "a.txt" in {tmp_path}]\n'
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
 
 
 def test_find_file_cwd(tmp_path, monkeypatch):
@@ -465,7 +485,7 @@ def test_find_file_not_exist_file():
     assert result is not None
 
     expected = '[No matches found for "unexist.txt" in ./]\n'
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')
 
 
 def test_find_file_not_exist_file_specific_path(tmp_path):
@@ -476,4 +496,4 @@ def test_find_file_not_exist_file_specific_path(tmp_path):
     assert result is not None
 
     expected = f'[No matches found for "unexist.txt" in {tmp_path}]\n'
-    assert result.split() == expected.split()
+    assert result.split('\n') == expected.split('\n')

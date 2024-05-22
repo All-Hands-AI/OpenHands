@@ -33,7 +33,10 @@ def _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=False):
         end = min(len(lines), CURRENT_LINE + WINDOW // 2)
         output = ''
         for i in range(start, end):
-            output += f'{i + 1}: {lines[i].strip()}\n'
+            _new_line = f'{i + 1}: {lines[i]}'
+            if not _new_line.endswith('\n'):
+                _new_line += '\n'
+            output += _new_line
         output = output.rstrip()
         if return_str:
             return output
