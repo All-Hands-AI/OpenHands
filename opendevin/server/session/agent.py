@@ -109,4 +109,3 @@ else:
             self.controller.set_state(agent_state)
         except Exception as e:
             print('Error restoring state', e)
-            pass
