@@ -153,7 +153,7 @@ def get_request_action_prompt(
     task: str,
     thoughts: list[dict],
     recent_events: list[dict],
-    background_commands_obs: list[CmdOutputObservation] = [],
+    background_commands_obs: list[CmdOutputObservation] | None = None,
 ):
     """
     Gets the action prompt formatted with appropriate values.
@@ -166,6 +166,9 @@ def get_request_action_prompt(
     Returns:
     - str: Formatted prompt string with hint, task, monologue, and background commands included
     """
+
+    if background_commands_obs is None:
+        background_commands_obs = []
 
     hint = ''
     if len(recent_events) > 0:
