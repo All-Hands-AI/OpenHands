@@ -2,6 +2,7 @@ from opendevin.events.observation.agent import AgentStateChangedObservation
 from opendevin.events.observation.browse import BrowserOutputObservation
 from opendevin.events.observation.commands import (
     CmdOutputObservation,
+    IPythonRunCellObservation,
 )
 from opendevin.events.observation.delegate import AgentDelegateObservation
 from opendevin.events.observation.empty import NullObservation
@@ -14,6 +15,7 @@ from opendevin.events.observation.success import SuccessObservation
 observations = (
     NullObservation,
     CmdOutputObservation,
+    IPythonRunCellObservation,
     BrowserOutputObservation,
     FileReadObservation,
     FileWriteObservation,
