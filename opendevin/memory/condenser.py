@@ -1,7 +1,10 @@
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events.event import Event, EventSource
+from opendevin.events.action.action import Action
+from opendevin.events.event import EventSource
+from opendevin.events.observation.observation import Observation
 from opendevin.events.observation.summary import SummaryObservation
 from opendevin.llm.llm import LLM
+from opendevin.memory.prompts import parse_summary_response
 
 MAX_TOKEN_COUNT_PADDING = (
     512  # estimation of tokens to add to the prompt for the max token count
@@ -29,11 +32,10 @@ class MemoryCondenser:
         """
         self.llm = llm
 
-
     def condense(
         self,
-        events: list[Event],
-    ) -> list[Event]:
+        events: list[tuple[Action, Observation]],
+    ) -> list[tuple[Action, Observation]]:
         """
         Condenses the given list of events using the llm. Returns the condensed list of events.
 
@@ -51,49 +53,47 @@ class MemoryCondenser:
         - The condensed list of events.
         """
         condensed_events = []
-        chunk: list[Event] = []
+        chunk: list[tuple[Action, Observation]] = []
 
-        for event in events:
-            if event.source == EventSource.USER:
+        for action, observation in events:
+            if action.source == EventSource.USER:
                 # event.should_condense = False
-                condensed_events.append(event)
+                condensed_events.append((action, observation))
                 if chunk:
                     # Summarize the previous chunk
-                    summary = self._summarize_chunk(chunk)
-                    summary_observation = SummaryObservation(
-                        content=summary,
-                        priority='low',
-                    )
-                    summary_observation._source = EventSource.USER  # type: ignore [attr-defined]
-                    condensed_events.append(summary_observation)
+                    actions, summary_observation = self._summarize_chunk(chunk)
+                    if actions and summary_observation:
+                        assert isinstance(
+                            summary_observation, SummaryObservation
+                        )  # FIXME we don't actually want assert
+                        summary_observation._source = EventSource.USER  # type: ignore [attr-defined]
+                        condensed_events.append((action, summary_observation))
                     chunk = []
-            elif hasattr(event, 'priority') and getattr(event, 'priority') == 'high':
-                condensed_events.append(event)
+            elif hasattr(action, 'priority') and getattr(action, 'priority') == 'high':
+                condensed_events.append((action, observation))
                 if chunk:
                     # Summarize the previous chunk
-                    summary = self._summarize_chunk(chunk)
-                    summary_observation = SummaryObservation(
-                        content=summary,
-                        priority='low',
-                    )
-                    summary_observation._source = (EventSource.USER,)  # type: ignore [attr-defined]
-                    condensed_events.append(summary_observation)
+                    actions, summary_observation = self._summarize_chunk(chunk)
+                    if actions and summary_observation:
+                        assert isinstance(summary_observation, SummaryObservation)
+                        summary_observation._source = (EventSource.USER,)  # type: ignore [attr-defined]
+                        condensed_events.append((action, summary_observation))
                     chunk = []
-                chunk.append(event)
+            chunk.append((action, observation))
 
-        # Summarize the last chunk if needed
+        # Summarize the last chunk if any
         if chunk:
-            summary = self._summarize_chunk(chunk)
-            summary_observation = SummaryObservation(
-                content=summary,
-                priority='low',
-            )
-            summary_observation._source = EventSource.USER  # type: ignore [attr-defined]
-            condensed_events.append(summary_observation)
+            actions, summary_observation = self._summarize_chunk(chunk)
+            if actions and summary_observation:
+                assert isinstance(summary_observation, SummaryObservation)
+                summary_observation._source = EventSource.USER  # type: ignore [attr-defined]
+                condensed_events.append((action, summary_observation))
 
         return condensed_events
 
-    def _summarize_chunk(self, chunk: list[Event]) -> str:
+    def _summarize_chunk(
+        self, chunk: list[tuple[Action, Observation]]
+    ) -> tuple[Action, Observation]:
         """
         Summarizes the given chunk of events into a single sentence.
 
@@ -104,15 +104,22 @@ class MemoryCondenser:
         - The summary sentence.
         """
         try:
-            prompt = f'Please summarize the following events into a single sentence:\n\n{chunk}\n\nSummary:'
+            prompt = f"""
+            Given the following actions and observations, create a JSON response with:
+                - "action": "Summarize"
+                - "content": A comma-separated list of all the action names from the provided actions
+                - "summary": A single sentence summarizing all the provided observations
+
+                {chunk}
+            """
             messages = [{'role': 'user', 'content': prompt}]
             response = self.llm.do_completion(messages=messages)
-            summary = response['choices'][0]['message']['content']
-            return summary
+            action, observation = parse_summary_response(response)
+            return action, observation
         except Exception as e:
             logger.error(f'Failed to summarize chunk: {e}')
-            # TODO: Implement proper error handling logic here.
-        return ''  # FIXME should this be an obs directly?
+
+        raise Exception  # could return NullAction / NullObservation... and ignore them, or just some exception
 
     def _estimate_token_count(self, events: list[dict]) -> int:
         """

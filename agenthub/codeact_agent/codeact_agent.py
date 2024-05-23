@@ -11,10 +11,12 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
+    AgentSummarizeAction,
     BrowseInteractiveAction,
     CmdRunAction,
     IPythonRunCellAction,
@@ -25,6 +27,7 @@ from opendevin.events.observation import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
+from opendevin.events.observation.summary import SummaryObservation
 from opendevin.llm.llm import LLM
 from opendevin.memory.condenser import MemoryCondenser
 from opendevin.runtime.plugins import (
@@ -62,6 +65,7 @@ def get_action_message(action: Action) -> dict[str, str] | None:
         or isinstance(action, CmdRunAction)
         or isinstance(action, IPythonRunCellAction)
         or isinstance(action, MessageAction)
+        or isinstance(action, AgentSummarizeAction)
     ):
         return {
             'role': 'user' if action.source == 'user' else 'assistant',
@@ -92,7 +96,11 @@ def get_observation_message(obs) -> dict[str, str] | None:
     elif isinstance(obs, BrowserOutputObservation):
         content = 'OBSERVATION:\n' + truncate_observation(obs.content)
         return {'role': 'user', 'content': content}
+    elif isinstance(obs, SummaryObservation):
+        content = 'OBSERVATION:\n' + truncate_observation(obs.content)
+        return {'role': 'user', 'content': obs.content}
     return None
+
 
 def truncate_observation(observation: str, max_chars: int = 10000) -> str:
     """
@@ -166,6 +174,9 @@ class CodeActAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
+        self.memory_condenser = (
+            MemoryCondenser(llm) if config.agent.memory_condensation_enabled else None
+        )
         self.reset()
 
     def reset(self) -> None:
@@ -174,8 +185,7 @@ class CodeActAgent(Agent):
         """
         super().reset()
 
-
-    def run(self, state: State) -> Action:
+    def step(self, state: State) -> Action:
         """
         Run the agent for one step.
 
@@ -212,23 +222,6 @@ class CodeActAgent(Agent):
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
-        
-        events = state.events
-        condensed_events = self.memory_condenser.condense(events)
-        
-        messages = [
-            {'role': 'system', 'content': SYSTEM_PREFIX},
-            {'role': 'user', 'content': state.instruction},
-        ]
-        for event in condensed_events:
-            if isinstance(event, SummaryObservation):
-                messages.append({'role': 'user', 'content': event.content})
-            else:
-                message = get_action_message(event) or get_observation_message(event)
-                if message:
-                    messages.append(message)
-        messages.append({'role': 'system', 'content': SYSTEM_SUFFIX})
-        
         try:
             response = self.llm.do_completion(
                 messages=messages,
@@ -241,9 +234,8 @@ class CodeActAgent(Agent):
             )
         except ContextWindowExceededError:
             logger.warning('Context window exceeded. Condensing memory.')
-            self.events = self.memory_condenser.condense(self.events)
             # Retry processing events with condensed memory
-            return self.step(state)
+            response = self.retry_with_condense(state)
 
         action_str: str = parse_response(response)
         state.num_of_chars += sum(
@@ -287,3 +279,26 @@ class CodeActAgent(Agent):
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
+
+    def retry_with_condense(self, state: State) -> list[dict[str, str]] | bool:
+        events = state.history
+        if self.memory_condenser:
+            condensed_events = self.memory_condenser.condense(events)
+
+            messages: list[dict[str, str]] = [
+                {'role': 'system', 'content': self.system_message},
+                {
+                    'role': 'user',
+                    'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!",
+                },
+            ]
+            for action, observation in condensed_events:
+                action_message = get_action_message(action)
+                if action_message:
+                    messages.append(action_message)
+                observation_message = get_observation_message(observation)
+                if observation_message:
+                    messages.append(observation_message)
+            messages.append({'role': 'system', 'content': SYSTEM_SUFFIX})
+            return messages
+        return False

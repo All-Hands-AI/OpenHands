@@ -1,4 +1,10 @@
+from opendevin.core.exceptions import LLMOutputError
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.utils import json
+from opendevin.events.action.action import Action
+from opendevin.events.action.agent import AgentSummarizeAction
+from opendevin.events.observation.summary import SummaryObservation
+from opendevin.events.serialization.action import action_from_dict
 
 SUMMARY_PROMPT = """
 Below is a list of events representing the history of an automated agent. Each event is an item in a JSON array.
@@ -35,7 +41,7 @@ def get_summarize_prompt(events: list[dict]) -> str:
     }
 
 
-def parse_summary_response(response: str) -> list[dict]:
+def parse_summary_response(response: str) -> tuple[Action, SummaryObservation]:
     """
     Parses a summary of the events
 
@@ -45,5 +51,20 @@ def parse_summary_response(response: str) -> list[dict]:
     Returns:
     - The list of summarized events output by the model
     """
-    parsed = json.loads(response)
-    return parsed['summarized_events']
+    action_dict = json.loads(response)
+    action = action_from_dict(action_dict)
+    if action is None or not isinstance(action, AgentSummarizeAction):
+        logger.error(
+            f"Expected 'summarize' action, got {str(type(action)) if action else None}"
+        )
+        raise LLMOutputError(
+            'Expected a summarize action, but the LLM response was invalid'
+        )
+
+    # the summarize action should have a 'summary' key
+    # FIXME what kind of errors should we have or how lenient can we be?
+    observation = SummaryObservation(
+        content=action.summary,
+        priority='low',
+    )
+    return action, observation
