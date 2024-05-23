@@ -16,21 +16,19 @@ class MemoryCondenser:
     def __init__(
         self,
         llm: LLM,
-        max_context_limit: int | None = None,
     ):
         """
         Initialize the MemoryCondenser.
 
         llm is the language model to use for summarization.
-        max_context_limit is an optional integer specifying the maximum context limit for the LLM.
+        config.max_input_tokens is an optional configuration setting specifying the maximum context limit for the LLM.
         If not provided, the condenser will act lazily and only condense when a context window limit error occurs.
 
         Parameters:
         - llm: The language model to use for summarization.
-        - max_context_limit: Optional integer specifying the maximum context limit for the LLM.
         """
         self.llm = llm
-        self.max_context_limit = max_context_limit
+
 
     def condense(
         self,
@@ -40,11 +38,11 @@ class MemoryCondenser:
         Condenses the given list of events using the llm. Returns the condensed list of events.
 
         Condensation heuristics:
-        - Keep initial messages (system, user instruction)
+        - Keep initial messages (system, user message setting task)
         - Prioritize more recent history
         - Lazily summarize between initial instruction and most recent, starting with earliest condensable turns
         - Introduce a SummaryObservation event type for textual summaries
-        - Split events into chunks delimited by user message actions, condense each chunk into a sentence
+        - Split events into chunks delimited by user message actions (messages with EventSource.USER), condense each chunk into a sentence
 
         Parameters:
         - events: List of events to condense.

@@ -94,8 +94,7 @@ def get_observation_message(obs) -> dict[str, str] | None:
         return {'role': 'user', 'content': content}
     return None
 
-
-def truncate_observation(observation: str, max_chars: int = 10_000) -> str:
+def truncate_observation(observation: str, max_chars: int = 10000) -> str:
     """
     Truncate the middle of the observation if it is too long.
     """
@@ -161,14 +160,12 @@ class CodeActAgent(Agent):
         self,
         llm: LLM,
     ) -> None:
-        """
-        Initializes a new instance of the CodeActAgent class.
+        """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
-        self.memory_condenser = MemoryCondenser(llm=self.llm)
         self.reset()
 
     def reset(self) -> None:
@@ -177,21 +174,19 @@ class CodeActAgent(Agent):
         """
         super().reset()
 
-    def step(self, state: State) -> Action:
+
+    def run(self, state: State) -> Action:
         """
-        Performs one step using the CodeAct Agent.
-        This includes gathering info on previous steps and prompting the model to make a command to execute.
+        Run the agent for one step.
 
         Parameters:
-        - state (State): used to get updated info and background commands
+        - state: The current state of the environment.
 
         Returns:
-        - CmdRunAction(command) - bash command to run
-        - IPythonRunCellAction(code) - IPython code to run
-        - BrowseInteractiveAction(browsergym_command) - BrowserGym commands to run
-        - MessageAction(content) - Message action to run (e.g. ask for clarification)
-        - AgentFinishAction() - end the interaction
+        - The action to take.
         """
+        logger.info(f'Running CodeActAgent v{self.VERSION}')
+
         messages: list[dict[str, str]] = [
             {'role': 'system', 'content': self.system_message},
             {
@@ -199,6 +194,7 @@ class CodeActAgent(Agent):
                 'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!",
             },
         ]
+
         for prev_action, obs in state.history:
             action_message = get_action_message(prev_action)
             if action_message:
@@ -216,6 +212,23 @@ class CodeActAgent(Agent):
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
+        
+        events = state.events
+        condensed_events = self.memory_condenser.condense(events)
+        
+        messages = [
+            {'role': 'system', 'content': SYSTEM_PREFIX},
+            {'role': 'user', 'content': state.instruction},
+        ]
+        for event in condensed_events:
+            if isinstance(event, SummaryObservation):
+                messages.append({'role': 'user', 'content': event.content})
+            else:
+                message = get_action_message(event) or get_observation_message(event)
+                if message:
+                    messages.append(message)
+        messages.append({'role': 'system', 'content': SYSTEM_SUFFIX})
+        
         try:
             response = self.llm.do_completion(
                 messages=messages,
