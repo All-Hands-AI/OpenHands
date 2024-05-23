@@ -19,7 +19,7 @@ echo "MODEL_CONFIG: $MODEL_CONFIG"
 COMMAND="poetry run python evaluation/swe_bench/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
-  --max-iterations 50 \
+  --max-iterations 30 \
   --max-chars 10000000 \
   --eval-num-workers 8 \
   --eval-note $AGENT_VERSION"
