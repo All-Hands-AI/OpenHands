@@ -2,9 +2,9 @@ import json
 
 import pytest
 
+from opendevin.events import EventSource, EventStream
 from opendevin.events.action import NullAction
 from opendevin.events.observation import NullObservation
-from opendevin.events.stream import EventSource, EventStream
 
 
 def collect_events(stream):
