@@ -71,7 +71,6 @@ class SWEBenchSSHBox(DockerSSHBox):
         cls,
         instance,
         workspace_dir_name=None,
-        n_tries=5,
         skip_workspace_mount: bool = True,
         workspace_mount_path: str | None = None,
         sandbox_plugins: list[PluginRequirement] = [],  # noqa: B006
