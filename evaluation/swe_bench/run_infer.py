@@ -14,7 +14,6 @@ import whatthepatch
 from datasets import load_dataset
 from tqdm import tqdm
 
-import agenthub
 from evaluation.swe_bench.swe_env_box import SWEBenchSSHBox
 from opendevin.controller.state.state import State
 from opendevin.core.config import args, config, get_llm_config_arg
@@ -186,11 +185,11 @@ def get_test_result(instance, sandbox, workspace_dir_name):
 
 
 def process_instance(
-    instance: dict,
-    agent_class: str,
-    metadata: dict,
-    skip_workspace_mount: bool,
-    eval_output_dir: str,
+    instance,
+    agent_class,
+    metadata,
+    skip_workspace_mount,
+    eval_output_dir,
     reset_logger: bool = True,
 ):
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
@@ -237,7 +236,6 @@ def process_instance(
         workspace_dir_name,
         skip_workspace_mount=skip_workspace_mount,
         workspace_mount_path=workspace_mount_path,
-        sandbox_plugins=agenthub.Agent.get_cls(agent_class).sandbox_plugins,
     )
 
     # Prepare instruction
