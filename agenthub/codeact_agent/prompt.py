@@ -102,7 +102,7 @@ OBSERVATION:
 [File app.py created.]
 
 ASSISTANT:
-Now I will write the Python code for starting a web server and save it to a file `app.py`:
+Now I will write the Python code for starting a web server and save it to the file `app.py`:
 <execute_ipython>
 EDITED_CODE=\"\"\"from flask import Flask
 app = Flask(__name__)
