@@ -328,11 +328,6 @@ This is your internal monologue, in JSON format:
     }
   },
   {
-    "observation": "null",
-    "content": "",
-    "extras": {}
-  },
-  {
     "source": "agent",
     "action": "write",
     "args": {
@@ -371,7 +366,6 @@ This is your internal monologue, in JSON format:
     }
   }
 ]
-
 
 Your most recent thought is at the bottom of that monologue. Continue your train of thought.
 What is your next single thought or action? Your response must be in JSON format.

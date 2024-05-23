@@ -3,6 +3,7 @@ import logging
 import os
 import pathlib
 import platform
+import uuid
 from dataclasses import dataclass, field, fields, is_dataclass
 from types import UnionType
 from typing import Any, ClassVar, get_args, get_origin
@@ -74,6 +75,22 @@ class LLMConfig(metaclass=Singleton):
         for f in fields(self):
             dict[f.name] = get_field_info(f)
         return dict
+
+    def __str__(self):
+        attr_str = []
+        for f in fields(self):
+            attr_name = f.name
+            attr_value = getattr(self, f.name)
+
+            if attr_name in ['api_key', 'aws_access_key_id', 'aws_secret_access_key']:
+                attr_value = '******' if attr_value else None
+
+            attr_str.append(f'{attr_name}={repr(attr_value)}')
+
+        return f"LLMConfig({', '.join(attr_str)})"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 @dataclass
@@ -157,6 +174,7 @@ class AppConfig(metaclass=Singleton):
     sandbox_user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     sandbox_timeout: int = 120
     github_token: str | None = None
+    jwt_secret: str = uuid.uuid4().hex
     debug: bool = False
     enable_auto_lint: bool = (
         False  # once enabled, OpenDevin would lint files after editing
@@ -184,6 +202,22 @@ class AppConfig(metaclass=Singleton):
             else:
                 dict[f.name] = get_field_info(f)
         return dict
+
+    def __str__(self):
+        attr_str = []
+        for f in fields(self):
+            attr_name = f.name
+            attr_value = getattr(self, f.name)
+
+            if attr_name in ['e2b_api_key', 'github_token']:
+                attr_value = '******' if attr_value else None
+
+            attr_str.append(f'{attr_name}={repr(attr_value)}')
+
+        return f"AppConfig({', '.join(attr_str)}"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 def get_field_info(field):

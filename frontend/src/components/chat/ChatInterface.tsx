@@ -10,7 +10,7 @@ import Chat from "./Chat";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import { sendChatMessage } from "#/services/chatService";
-import { addUserMessage } from "#/state/chatSlice";
+import { addUserMessage, addAssistantMessage } from "#/state/chatSlice";
 import { I18nKey } from "#/i18n/declaration";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 
@@ -57,6 +57,12 @@ function ChatInterface() {
 
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
+
+  React.useEffect(() => {
+    if (curAgentState === AgentState.INIT && messages.length === 0) {
+      dispatch(addAssistantMessage(t(I18nKey.CHAT_INTERFACE$INITIAL_MESSAGE)));
+    }
+  }, [curAgentState]);
 
   return (
     <div className="flex flex-col h-full bg-neutral-800">

@@ -18,7 +18,6 @@ This is your internal monologue, in JSON format:
 
 %(monologue)s
 
-
 Your most recent thought is at the bottom of that monologue. Continue your train of thought.
 What is your next single thought or action? Your response must be in JSON format.
 It must be a single object, and it must contain two fields:
@@ -92,6 +91,51 @@ The action key may be `summarize`, and `args.summary` should contain the summary
 You can also use the same action and args from the source monologue.
 """
 
+INITIAL_THOUGHTS = [
+    'I exist!',
+    'Hmm...looks like I can type in a command line prompt',
+    'Looks like I have a web browser too!',
+    "Here's what I want to do: $TASK",
+    'How am I going to get there though?',
+    'It seems like I have some kind of short term memory.',
+    'Each of my thoughts seems to be stored in a JSON array.',
+    'It seems whatever I say next will be added as an object to the list.',
+    'But no one has perfect short-term memory. My list of thoughts will be summarized and condensed over time, losing information in the process.',
+    'Fortunately I have long term memory!',
+    'I can just perform a recall action, followed by the thing I want to remember. And then related thoughts just spill out!',
+    "Sometimes they're random thoughts that don't really have to do with what I wanted to remember. But usually they're exactly what I need!",
+    "Let's try it out!",
+    'RECALL what it is I want to do',
+    "Here's what I want to do: $TASK",
+    'How am I going to get there though?',
+    "Neat! And it looks like it's easy for me to use the command line too! I just have to perform a run action and include the command I want to run in the command argument. The command output just jumps into my head!",
+    'RUN echo "hello world"',
+    'hello world',
+    'Cool! I bet I can write files too using the write action.',
+    'WRITE echo "console.log(\'hello world\')" > test.js',
+    '',
+    "I just created test.js. I'll try and run it now.",
+    'RUN node test.js',
+    'hello world',
+    'It works!',
+    "I'm going to try reading it now using the read action.",
+    'READ test.js',
+    "console.log('hello world')",
+    'Nice! I can read files too!',
+    'And if I want to use the browser, I just need to use the browse action and include the url I want to visit in the url argument',
+    "Let's try that...",
+    'BROWSE google.com',
+    '<form><input type="text"></input><button type="submit"></button></form>',
+    'I can browse the web too!',
+    'And once I have completed my task, I can use the finish action to stop working.',
+    "But I should only use the finish action when I'm absolutely certain that I've completed my task and have tested my work.",
+    'Very cool. Now to accomplish my task.',
+    "I'll need a strategy. And as I make progress, I'll need to keep refining that strategy. I'll need to set goals, and break them into sub-goals.",
+    'In between actions, I must always take some time to think, strategize, and set new goals. I should never take two actions in a row.',
+    "OK so my task is to $TASK. I haven't made any progress yet. Where should I start?",
+    'It seems like there might be an existing project here. I should probably start by running `pwd` and `ls` to orient myself.',
+]
+
 
 def get_summarize_monologue_prompt(thoughts: list[dict]):
     """
@@ -108,7 +152,8 @@ def get_summarize_monologue_prompt(thoughts: list[dict]):
 def get_request_action_prompt(
     task: str,
     thoughts: list[dict],
-    background_commands_obs: list[CmdOutputObservation] = [],
+    recent_events: list[dict],
+    background_commands_obs: list[CmdOutputObservation] | None = None,
 ):
     """
     Gets the action prompt formatted with appropriate values.
@@ -119,20 +164,28 @@ def get_request_action_prompt(
     - background_commands_obs (list[CmdOutputObservation]): list of all observed background commands running
 
     Returns:
-    - str: Formatted prompt string with hint, task, monologue, and background included
+    - str: Formatted prompt string with hint, task, monologue, and background commands included
     """
 
+    if background_commands_obs is None:
+        background_commands_obs = []
+
     hint = ''
-    if len(thoughts) > 0:
-        latest_thought = thoughts[-1]
-        if 'action' in latest_thought:
-            if latest_thought['action'] == 'message':
-                if latest_thought['args']['content'].startswith('OK so my task is'):
-                    hint = "You're just getting started! What should you do first?"
-                else:
-                    hint = "You've been thinking a lot lately. Maybe it's time to take action?"
-            elif latest_thought['action'] == 'error':
+    if len(recent_events) > 0:
+        latest_event = recent_events[-1]
+        if 'action' in latest_event:
+            if (
+                latest_event['action'] == 'message'
+                and 'source' in latest_event
+                and latest_event['source'] == 'agent'
+            ):
+                hint = (
+                    "You've been thinking a lot lately. Maybe it's time to take action?"
+                )
+            elif latest_event['action'] == 'error':
                 hint = 'Looks like that last command failed. Maybe you need to fix it, or try something else.'
+    else:
+        hint = "You're just getting started! What should you do first?"
 
     bg_commands_message = ''
     if len(background_commands_obs) > 0:
@@ -145,9 +198,11 @@ def get_request_action_prompt(
 
     user = 'opendevin' if config.run_as_devin else 'root'
 
+    monologue = thoughts + recent_events
+
     return ACTION_PROMPT % {
         'task': task,
-        'monologue': json.dumps(thoughts, indent=2),
+        'monologue': json.dumps(monologue, indent=2),
         'background_commands': bg_commands_message,
         'hint': hint,
         'user': user,
