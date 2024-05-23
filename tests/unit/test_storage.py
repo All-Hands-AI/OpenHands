@@ -54,10 +54,8 @@ def test_deep_list(setup_env):
         store.write('foo/bar/baz.txt', 'Hello, world!')
         store.write('foo/bar/qux.txt', 'Hello, world!')
         store.write('foo/bar/quux.txt', 'Hello, world!')
-        assert store.list('') == ['foo'], 'Expected foo, got {} for class {}'.format(
-            store.list(''), store.__class__
-        )
-        assert store.list('foo') == ['foo/bar']
+        assert store.list('') == ['foo/'], f'for class {store.__class__}'
+        assert store.list('foo') == ['foo/bar/']
         assert (
             store.list('foo/bar').sort()
             == ['foo/bar/baz.txt', 'foo/bar/qux.txt', 'foo/bar/quux.txt'].sort()

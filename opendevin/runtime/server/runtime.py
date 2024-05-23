@@ -1,3 +1,4 @@
+from opendevin.core.config import config
 from opendevin.events.action import (
     AgentRecallAction,
     BrowseInteractiveAction,
@@ -15,13 +16,25 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
+from opendevin.events.stream import EventStream
+from opendevin.runtime import Sandbox
 from opendevin.runtime.runtime import Runtime
+from opendevin.storage.local import LocalFileStore
 
 from .browse import browse
 from .files import read_file, write_file
 
 
 class ServerRuntime(Runtime):
+    def __init__(
+        self,
+        event_stream: EventStream,
+        sid: str = 'default',
+        sandbox: Sandbox | None = None,
+    ):
+        super().__init__(event_stream, sid, sandbox)
+        self.file_store = LocalFileStore(config.workspace_base)
+
     async def run(self, action: CmdRunAction) -> Observation:
         return self._run_command(action.command, background=action.background)
 
@@ -71,10 +84,12 @@ class ServerRuntime(Runtime):
         return IPythonRunCellObservation(content=output, code=action.code)
 
     async def read(self, action: FileReadAction) -> Observation:
+        # TODO: use self.file_store
         working_dir = self.sandbox.get_working_directory()
         return await read_file(action.path, working_dir, action.start, action.end)
 
     async def write(self, action: FileWriteAction) -> Observation:
+        # TODO: use self.file_store
         working_dir = self.sandbox.get_working_directory()
         return await write_file(
             action.path, working_dir, action.content, action.start, action.end
