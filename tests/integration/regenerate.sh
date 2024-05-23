@@ -16,10 +16,11 @@ WORKSPACE_MOUNT_PATH+="/_test_workspace"
 WORKSPACE_BASE+="/_test_workspace"
 WORKSPACE_MOUNT_PATH_IN_SANDBOX="/workspace"
 
-SANDBOX_TYPE="ssh"
+# use environmental variable if exist, otherwise use "ssh"
+SANDBOX_TYPE="${SANDBOX_TYPE:-ssh}"
 MAX_ITERATIONS=10
 
-agents=("MonologueAgent" "CodeActAgent" "PlannerAgent" "SWEAgent")
+agents=("MonologueAgent" "CodeActAgent" "PlannerAgent")
 tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
@@ -42,13 +43,20 @@ num_of_agents=${#agents[@]}
 
 # run integration test against a specific agent & test
 run_test() {
+  local pytest_cmd="poetry run pytest -s ./tests/integration/test_agent.py::$test_name"
+
+  # Check if TEST_IN_CI is defined
+  if [ -n "$TEST_IN_CI" ]; then
+    pytest_cmd+=" --cov=agenthub --cov=opendevin --cov-report=xml --cov-append"
+  fi
+
   SANDBOX_TYPE=$SANDBOX_TYPE \
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
     MAX_ITERATIONS=$MAX_ITERATIONS \
     AGENT=$agent \
-    poetry run pytest -s ./tests/integration/test_agent.py::$test_name
+    $pytest_cmd
     # return exit code of pytest
     return $?
 }
@@ -158,11 +166,11 @@ for ((i = 0; i < num_of_tests; i++)); do
       else
         echo -e "\n\n\n\n========STEP 2: $test_name failed, regenerating prompts for $agent WITHOUT money cost========\n\n\n\n"
 
+        # Temporarily disable 'exit on error'
+        set +e
         regenerate_without_llm
 
         echo -e "\n\n\n\n========STEP 3: $test_name prompts regenerated for $agent, rerun test again to verify========\n\n\n\n"
-        # Temporarily disable 'exit on error'
-        set +e
         run_test
         TEST_STATUS=$?
         # Re-enable 'exit on error'

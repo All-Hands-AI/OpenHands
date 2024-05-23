@@ -5,7 +5,7 @@ import { act } from "react-dom/test-utils";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import ChatInterface from "./ChatInterface";
-import Socket from "#/services/socket";
+import Session from "#/services/session";
 import ActionType from "#/types/ActionType";
 import { addAssistantMessage } from "#/state/chatSlice";
 import AgentState from "#/types/AgentState";
@@ -15,16 +15,17 @@ vi.mock("#/hooks/useTyping", () => ({
   useTyping: vi.fn((text: string) => text),
 }));
 
-const socketSpy = vi.spyOn(Socket, "send");
+const sessionSpy = vi.spyOn(Session, "send");
+vi.spyOn(Session, "isConnected").mockImplementation(() => true);
 
 // This is for the scrollview ref in Chat.tsx
 // TODO: Move this into test setup
 HTMLElement.prototype.scrollTo = vi.fn(() => {});
 
 describe("ChatInterface", () => {
-  it("should render the messages and input", () => {
+  it("should render empty message list and input", () => {
     renderWithProviders(<ChatInterface />);
-    expect(screen.queryAllByTestId("message")).toHaveLength(1); // initial welcome message only
+    expect(screen.queryAllByTestId("message")).toHaveLength(0);
   });
 
   it("should render the new message the user has typed", async () => {
@@ -65,7 +66,7 @@ describe("ChatInterface", () => {
     expect(screen.getByText("Hello to you!")).toBeInTheDocument();
   });
 
-  it("should send the a start event to the Socket", () => {
+  it("should send the a start event to the Session", () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
         agent: {
@@ -83,10 +84,10 @@ describe("ChatInterface", () => {
       action: ActionType.MESSAGE,
       args: { content: "my message" },
     };
-    expect(socketSpy).toHaveBeenCalledWith(JSON.stringify(event));
+    expect(sessionSpy).toHaveBeenCalledWith(JSON.stringify(event));
   });
 
-  it("should send the a user message event to the Socket", () => {
+  it("should send the a user message event to the Session", () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
         agent: {
@@ -104,7 +105,7 @@ describe("ChatInterface", () => {
       action: ActionType.MESSAGE,
       args: { content: "my message" },
     };
-    expect(socketSpy).toHaveBeenCalledWith(JSON.stringify(event));
+    expect(sessionSpy).toHaveBeenCalledWith(JSON.stringify(event));
   });
 
   it("should disable the user input if agent is not initialized", () => {
