@@ -30,7 +30,6 @@ from opendevin.memory.condenser import MemoryCondenser
 if config.agent.memory_enabled:
     from opendevin.memory.memory import LongTermMemory
 
-MAX_TOKEN_COUNT_PADDING = 512
 MAX_OUTPUT_LENGTH = 5000
 
 
@@ -45,7 +44,7 @@ class MonologueAgent(Agent):
     _initialized = False
     initial_thoughts: list[dict[str, str]]
     memory: 'LongTermMemory | None'
-    memory_condenser: MemoryCondenser
+    memory_condenser: MemoryCondenser | None
 
     def __init__(self, llm: LLM):
         """
@@ -55,6 +54,8 @@ class MonologueAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
+        self.memory = None
+        self.memory_condenser = None
 
     def _initialize(self, task: str):
         """
@@ -64,7 +65,7 @@ class MonologueAgent(Agent):
         Will execute again when called after reset.
 
         Parameters:
-        - task (str): The initial goal statement provided by the user
+        - task: The initial goal statement provided by the user
 
         Raises:
         - AgentNoInstructionError: If task is not provided
@@ -82,7 +83,7 @@ class MonologueAgent(Agent):
         else:
             self.memory = None
 
-        self.memory_condenser = MemoryCondenser()
+        # self.memory_condenser = MemoryCondenser(action_prompt=prompts.get_action_prompt)
 
         self._add_initial_thoughts(task)
         self._initialized = True
@@ -139,10 +140,10 @@ class MonologueAgent(Agent):
         Modifies the current state by adding the most recent actions and observations, then prompts the model to think about it's next action to take using monologue, memory, and hint.
 
         Parameters:
-        - state (State): The current state based on previous steps taken
+        - state: The current state based on previous steps taken
 
         Returns:
-        - Action: The next action to take based on LLM response
+        - The next action to take based on LLM response
         """
 
         goal = state.get_current_user_intent()
@@ -169,7 +170,7 @@ class MonologueAgent(Agent):
             goal,
             self.initial_thoughts,
             recent_events,
-            state.background_commands_obs,
+            state.background_commands_obs,  # FIXME is this part of recent_events?
         )
 
         messages: list[dict[str, str]] = [
@@ -222,10 +223,10 @@ class MonologueAgent(Agent):
         Uses search to produce top 10 results.
 
         Parameters:
-        - query (str): The query that we want to find related memories for
+        - The query that we want to find related memories for
 
         Returns:
-        - list[str]: A list of top 10 text results that matched the query
+        - A list of top 10 text results that matched the query
         """
         if self.memory is None:
             return []
