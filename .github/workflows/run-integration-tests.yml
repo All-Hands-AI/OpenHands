@@ -7,8 +7,12 @@ concurrency:
 on:
   push:
     branches:
-    - main
+      - main
+    paths-ignore:
+      - '**/*.md'
   pull_request:
+    paths-ignore:
+      - '**/*.md'
 
 jobs:
   integration-tests-on-linux:
@@ -100,4 +104,4 @@ jobs:
     # make mac tests as optional as they are too slow
     needs: [integration-tests-on-linux]
     steps:
-    - run: echo Done!
+      - run: echo Done!
