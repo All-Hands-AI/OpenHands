@@ -218,28 +218,28 @@ class DockerSSHBox(Sandbox):
             )
             raise ex
 
-        self.instance_id = (
-            sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
-        )
+        if config.persist_session:
+            self.instance_id = 'persisted'
+        else:
+            self.instance_id = (sid or '') + str(uuid.uuid4())
 
         # TODO: this timeout is actually essential - need a better way to set it
         # if it is too short, the container may still waiting for previous
         # command to finish (e.g. apt-get update)
         # if it is too long, the user may have to wait for a unnecessary long time
         self.timeout = timeout
-        self.container_image = (
-            config.sandbox_container_image
-            if container_image is None
-            else container_image
-        )
-        self.container_name = (
-            config.container_id or self.container_name_prefix + self.instance_id
-        )
+        self.container_image = container_image or config.sandbox_container_image
+        self.container_name = self.container_name_prefix + self.instance_id
 
         # set up random user password
         self._ssh_password = config.ssh_password or str(uuid.uuid4())
         self._ssh_port = config.ssh_port or find_available_tcp_port()
-        if not config.persist_session:
+        try:
+            docker.DockerClient().containers.get(self.container_name)
+            is_initial_session = False
+        except docker.errors.NotFound:
+            is_initial_session = True
+        if not config.persist_session or is_initial_session:
             n_tries = 5
             while n_tries > 0:
                 try:

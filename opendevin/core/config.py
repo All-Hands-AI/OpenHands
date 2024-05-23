@@ -173,10 +173,10 @@ class AppConfig(metaclass=Singleton):
     disable_color: bool = False
     sandbox_user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     sandbox_timeout: int = 120
-    persist_session: bool = False
-    ssh_port: int | None = None
-    ssh_password: str | None = None
-    container_id: str | None = None
+    persist_session: bool = True
+    ssh_port: int = 63710
+    # https://xkcd.com/936/
+    ssh_password: str = 'correct horse battery staple1'
     github_token: str | None = None
     jwt_secret: str = uuid.uuid4().hex
     debug: bool = False
