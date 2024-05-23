@@ -6,6 +6,7 @@ import { getSettings } from "./settings";
 
 class Session {
   private static _socket: WebSocket | null = null;
+
   private static _latest_event_id: number = -1;
 
   // callbacks contain a list of callable functions
@@ -49,15 +50,15 @@ class Session {
     Session._connecting = true;
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    let ws_url = `${protocol}//${window.location.host}/ws`
-    let token = getToken();
+    let wsURL = `${protocol}//${window.location.host}/ws`;
+    const token = getToken();
     if (token) {
-      ws_url += `?token=${token}`;
+      wsURL += `?token=${token}`;
       if (Session._latest_event_id !== -1) {
-        ws_url += `&latest_event_id=${Session._latest_event_id}`;
+        wsURL += `&latest_event_id=${Session._latest_event_id}`;
       }
     }
-    Session._socket = new WebSocket(ws_url);
+    Session._socket = new WebSocket(wsURL);
     Session._setupSocket();
   }
 
