@@ -1,0 +1,7 @@
+Thoughts:
+I have already created the 'hello.sh' script that prints 'hello' without asking for confirmation. The script is also made executable. The next step is to ensure that the script runs successfully without any issues.
+
+Action:
+```
+bash hello.sh
+```

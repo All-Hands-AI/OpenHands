@@ -1,0 +1,8 @@
+{
+  "action": "add_task",
+  "args": {
+    "parent": "",
+    "goal": "Write a shell script 'hello.sh' that prints 'hello'",
+    "subtasks": []
+  }
+}

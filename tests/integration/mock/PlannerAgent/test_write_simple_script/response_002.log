@@ -1,0 +1,7 @@
+{
+  "action": "modify_task",
+  "args": {
+    "task_id": "0",
+    "state": "in_progress"
+  }
+}
