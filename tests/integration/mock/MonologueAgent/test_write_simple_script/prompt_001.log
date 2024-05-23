@@ -326,14 +326,8 @@ This is your internal monologue, in JSON format:
       "content": "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.",
       "wait_for_response": false
     }
-  },
-  {
-    "observation": "null",
-    "content": "",
-    "extras": {}
   }
 ]
-
 
 Your most recent thought is at the bottom of that monologue. Continue your train of thought.
 What is your next single thought or action? Your response must be in JSON format.

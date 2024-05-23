@@ -155,7 +155,7 @@ def get_prompt(state: State) -> str:
     else:
         plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
     hint = get_hint(event_to_memory(latest_action).get('action', ''))
-    logger.info('HINT:\n' + hint, extra={'msg_type': 'INFO'})
+    logger.info('HINT:\n' + hint, extra={'msg_type': 'DETAIL'})
     task = state.get_current_user_intent()
     return prompt % {
         'task': task,

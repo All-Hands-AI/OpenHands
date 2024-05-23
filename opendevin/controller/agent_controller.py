@@ -13,6 +13,7 @@ from opendevin.core.exceptions import (
 )
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
+from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
     AddTaskAction,
@@ -32,7 +33,6 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
-from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 
 MAX_ITERATIONS = config.max_iterations
 MAX_CHARS = config.llm.max_chars
@@ -89,6 +89,8 @@ class AgentController:
 
     def update_state_after_step(self):
         self.state.updated_info = []
+        # update metrics especially for cost
+        self.state.metrics = self.agent.llm.metrics
 
     async def report_error(self, message: str, exception: Exception | None = None):
         self.state.error = message
@@ -240,6 +242,9 @@ class AgentController:
 
     def get_state(self):
         return self.state
+
+    def set_state(self, state: State):
+        self.state = state
 
     def _is_stuck(self):
         # check if delegate stuck

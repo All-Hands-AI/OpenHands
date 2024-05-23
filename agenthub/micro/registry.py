@@ -13,8 +13,7 @@ for dir in os.listdir(os.path.dirname(__file__)):
     promptFile = base + '/prompt.md'
     agentFile = base + '/agent.yaml'
     if not os.path.isfile(promptFile) or not os.path.isfile(agentFile):
-        raise Exception(
-            f'Missing prompt or agent file in {base}. Please create them.')
+        raise Exception(f'Missing prompt or agent file in {base}. Please create them.')
     with open(promptFile, 'r') as f:
         prompt = f.read()
     with open(agentFile, 'r') as f:
