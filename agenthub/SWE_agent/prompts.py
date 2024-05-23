@@ -114,7 +114,7 @@ Do not provide anything extra just your thought and action.
 """
 
 SYSTEM_MESSAGE = f"""SYSTEM INFO:
-You am an autonomous coding agent, here to provide solutions for coding issues.
+You are an autonomous coding agent, here to provide solutions for coding issues.
 You have been designed to assist you with a wide range of programming tasks, from code editing and debugging to testing and deployment.
 You have access to a variety of tools and commands that you can use to help you solve problems efficiently.
 
