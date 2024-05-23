@@ -38,8 +38,8 @@ def cleanup():
 def codeact_user_response(state: State) -> str:
     msg = (
         'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have solved the task, please run the following command: <execute_bash> exit </execute_bash>.\n'
-        'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK.\n'
+        'If you think you have solved the task, please first send your answer to user through message and then exit.\n'
+        'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
     )
     if state.history:
         user_msgs = [
@@ -70,16 +70,14 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def process_instance(
-    instance, agent_class, metadata, skip_workspace_mount, reset_logger: bool = True
-):
-    workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
+def process_instance(instance, agent_class, metadata, reset_logger: bool = True):
     # create process-specific workspace dir
-    # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
+    # we will create a workspace directory for EACH process
     # so that different agent don't interfere with each other.
-    if not skip_workspace_mount:
-        workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
-        pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
+    workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
+    workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
+    pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
+    config.workspace_mount_path = workspace_mount_path
 
     # Setup the logger properly, so you can run multi-processing to parallize the evaluation
     eval_output_dir = metadata['eval_output_dir']
@@ -105,9 +103,7 @@ def process_instance(
         )
         logger.addHandler(file_handler)
 
-    if not skip_workspace_mount:
-        logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
-
+    logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
     sandbox = DockerSSHBox()
     if instance['file_name'] != '':
         # if this question comes with a file, we need to save it to the workspace
@@ -146,16 +142,16 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    final_message = ''
-    for act in reversed(state.history):
-        if isinstance(act, MessageAction):
-            final_message = act.content
+    model_answer = ''
+    for act, _ in reversed(state.history):
+        if isinstance(act, MessageAction) and act.source == 'model':
+            model_answer = act.content
             break
     logger.info(
-        f'Final message: {final_message} | Ground truth: {instance["Final answer"]}'
+        f'Final message: {model_answer} | Ground truth: {instance["Final answer"]}'
     )
     test_result = question_scorer(
-        model_answer=final_message, ground_truth=instance['Final answer']
+        model_answer=model_answer, ground_truth=instance['Final answer']
     )
 
     # Save the output
@@ -169,6 +165,7 @@ def process_instance(
         ],
         'error': state.error if state and state.error else None,
         'test_result': test_result,
+        'model_answer': model_answer,
     }
 
     # Close the sandbox
@@ -268,7 +265,7 @@ if __name__ == '__main__':
         with open(output_file, 'r') as f:
             for line in f:
                 data = json.loads(line)
-                finished_task_ids.add(data['task_id'])
+                finished_task_ids.add(data['instance_id'])
         logger.warning(
             f'Output file {output_file} already exists. Loaded {len(finished_task_ids)} finished instances.'
         )
@@ -302,9 +299,9 @@ if __name__ == '__main__':
         pbar.update(1)
         output = future.result()
         pbar.set_description(f'Instance {output["instance_id"]}')
-        pbar.set_postfix_str(f'Test Result: {output["test_result"]["result"]}')
+        pbar.set_postfix_str(f'Test Result: {output["test_result"]}')
         logger.info(
-            f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]["result"]}'
+            f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]}'
         )
         output_fp.write(json.dumps(output) + '\n')
         output_fp.flush()
@@ -312,10 +309,6 @@ if __name__ == '__main__':
     # This sets the multi-processing
     num_workers = args.eval_num_workers
     logger.info(f'Using {num_workers} workers for evaluation.')
-
-    # This is SWE-Bench specific - CodeActAgent don't requires mounted workspace to work
-    skip_workspace_mount = False
-    logger.info(f'Skipping workspace mount: {skip_workspace_mount}')
 
     try:
         with ProcessPoolExecutor(num_workers) as executor:
@@ -327,7 +320,6 @@ if __name__ == '__main__':
                     instance,
                     agent_class,
                     metadata,
-                    skip_workspace_mount,
                     reset_logger=bool(num_workers > 1),
                 )
                 future.add_done_callback(update_progress)
