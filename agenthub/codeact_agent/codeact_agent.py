@@ -31,9 +31,9 @@ from opendevin.events.observation.summary import SummaryObservation
 from opendevin.llm.llm import LLM
 from opendevin.memory.condenser import MemoryCondenser
 from opendevin.runtime.plugins import (
+    AgentSkillsRequirement,
     JupyterRequirement,
     PluginRequirement,
-    SWEAgentCommandsRequirement,
 )
 
 ENABLE_GITHUB = True
@@ -117,7 +117,7 @@ def truncate_observation(observation: str, max_chars: int = 10000) -> str:
 
 
 class CodeActAgent(Agent):
-    VERSION = '1.4'
+    VERSION = '1.5'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
@@ -154,9 +154,13 @@ class CodeActAgent(Agent):
     """
 
     sandbox_plugins: list[PluginRequirement] = [
+        # NOTE: AgentSkillsRequirement need to go before JupyterRequirement, since
+        # AgentSkillsRequirement provides a lot of Python functions
+        # and it need to be initialized before Jupyter for Jupyter to use those functions.
+        AgentSkillsRequirement(),
         JupyterRequirement(),
-        SWEAgentCommandsRequirement(),
     ]
+    jupyter_kernel_init_code: str = 'from agentskills import *'
 
     system_message: str = (
         f'{SYSTEM_PREFIX}\n{GITHUB_MESSAGE}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
@@ -262,7 +266,11 @@ class CodeActAgent(Agent):
             # a code block was found
             code_group = python_code.group(1).strip()
             thought = action_str.replace(python_code.group(0), '').strip()
-            return IPythonRunCellAction(code=code_group, thought=thought)
+            return IPythonRunCellAction(
+                code=code_group,
+                thought=thought,
+                kernel_init_code=self.jupyter_kernel_init_code,
+            )
         elif browse_command := re.search(
             r'<execute_browse>(.*)</execute_browse>', action_str, re.DOTALL
         ):

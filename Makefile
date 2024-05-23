@@ -130,8 +130,9 @@ pull-docker-image:
 
 install-python-dependencies:
 	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
+	poetry env use python3.11
 	@if [ "$(shell uname)" = "Darwin" ]; then \
-		echo "$(BLUE)Installing `chroma-hnswlib`...$(RESET)"; \
+		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
 		export HNSWLIB_NO_NATIVE=1; \
 		poetry run pip install chroma-hnswlib; \
 	fi

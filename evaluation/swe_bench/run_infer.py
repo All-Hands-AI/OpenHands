@@ -14,6 +14,7 @@ import whatthepatch
 from datasets import load_dataset
 from tqdm import tqdm
 
+import agenthub
 from evaluation.swe_bench.swe_env_box import SWEBenchSSHBox
 from opendevin.controller.state.state import State
 from opendevin.core.config import args, config, get_llm_config_arg
@@ -185,11 +186,11 @@ def get_test_result(instance, sandbox, workspace_dir_name):
 
 
 def process_instance(
-    instance,
-    agent_class,
-    metadata,
-    skip_workspace_mount,
-    eval_output_dir,
+    instance: dict,
+    agent_class: str,
+    metadata: dict,
+    skip_workspace_mount: bool,
+    eval_output_dir: str,
     reset_logger: bool = True,
 ):
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
@@ -222,6 +223,8 @@ def process_instance(
             logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         )
         logger.addHandler(file_handler)
+    else:
+        logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
     if not skip_workspace_mount:
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
@@ -234,6 +237,7 @@ def process_instance(
         workspace_dir_name,
         skip_workspace_mount=skip_workspace_mount,
         workspace_mount_path=workspace_mount_path,
+        sandbox_plugins=agenthub.Agent.get_cls(agent_class).sandbox_plugins,
     )
 
     # Prepare instruction
@@ -278,6 +282,8 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
+    metrics = state.metrics.get() if state.metrics else None
+
     # Save the output
     output = {
         'instance_id': instance.instance_id,
@@ -288,6 +294,7 @@ def process_instance(
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
+        'metrics': metrics,
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
