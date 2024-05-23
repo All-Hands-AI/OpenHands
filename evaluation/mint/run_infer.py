@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import json
 import logging
 import multiprocessing as mp
@@ -7,8 +8,11 @@ import pathlib
 import subprocess
 import time
 from concurrent.futures import ProcessPoolExecutor
+from typing import Dict
 
 from datasets import load_dataset
+from datatypes import TaskState
+from env import SimplifiedEnv
 from prompts import ToolPromptTemplate
 from task import ReasoningTask, Task
 from tqdm import tqdm
@@ -30,24 +34,39 @@ def cleanup():
         process.join()
 
 
-def codeact_user_response(state: State):
-    msg = (
-        'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have modified the code in a way that fixes the issue, please run the following command: <execute_bash> exit </execute_bash>.\n'
-        'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK.\n'
+def codeact_user_response(state: State, task: Task, task_config: Dict[str, int]):
+    logger.info(f'Gold reference: {task.reference}')
+    logger.info(f'Task config: {task_config}')
+
+    env = SimplifiedEnv(
+        agent_state=state,
+        task=task,
+        task_config=task_config,
     )
-    if state.history:
-        user_msgs = [
-            action
-            for action, obs in state.history
-            if isinstance(action, MessageAction) and action.source == 'user'
-        ]
-        if len(user_msgs) >= 2:
-            # let the agent know that it can give up when it has tried 3 times
-            return (
-                msg
-                + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
-            )
+    result_state: TaskState = env.step()
+
+    logger.info('Result state: ' + result_state.__dict__)
+    logger.info('Latest output: ' + result_state.latest_output)
+
+    msg = result_state.latest_output['content']
+    logger.info('User response:' + msg)
+    # msg += (
+    #     'Please continue working on the task on whatever approach you think is suitable.\n'
+    #     'If you think you have finished the task, please run the following command: <execute_bash> exit </execute_bash>.\n'
+    #     'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK.\n'
+    # )
+    # if state.history:
+    #     user_msgs = [
+    #         action
+    #         for action, obs in state.history
+    #         if isinstance(action, MessageAction) and action.source == 'user'
+    #     ]
+    #     if len(user_msgs) >= 2:
+    #         # let the agent know that it can give up when it has tried 3 times
+    #         return (
+    #             msg
+    #             + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
+    #         )
     return msg
 
 
@@ -73,8 +92,6 @@ def process_instance(
     eval_output_dir,
     reset_logger: bool = True,
 ):
-    print('Processing instance:', instance)
-
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
     # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
@@ -125,13 +142,21 @@ def process_instance(
     # NOTE: You can actually set slightly different instruction for different agents
     # FIXME: test
     # instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
-    logger.info('Instruction:', instruction)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
+    fake_user_response_fn = functools.partial(
+        AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+        task=instance,
+        task_config={
+            'max_iterations': metadata['max_iterations'],
+            'max_propose_solution': metadata['max_propose_solution'],
+        },
+    )
+
     state: State = asyncio.run(
         main(
             instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+            fake_user_response_fn,
             sandbox=sandbox,
         )
     )
@@ -139,14 +164,22 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
+    logger.info('Msgs: ' + str(state.history))
+    err_code, output = sandbox.execute('ls /workspace')
+    logger.info(f'ls: Error code: {err_code} | Output: {output}')
+    err_code, output = sandbox.execute('tree /workspace')
+    logger.info(f'tree: Error code: {err_code} | Output: {output}')
+    for action, obs in reversed(state.history):
+        if isinstance(action, MessageAction) and action.source == 'user':
+            logger.info(f'User message: {action.content}')
+            break
+
     final_message = ''
     for act in reversed(state.history):
         if isinstance(act, MessageAction):
             final_message = act.content
             break
-    logger.info(
-        f'Final message: {final_message} | Ground truth: {instance["reference"]}'
-    )
+    logger.info(f'Final message: {final_message} | Ground truth: {instance.reference}')
 
     # FIXME: uncomment this
     # test_result = {'result': final_message}
@@ -293,7 +326,7 @@ if __name__ == '__main__':
     output_fp = open(output_file, 'a')
 
     logger.info(
-        f'Evaluation started with Agent {agent_class}, model {model_name}, max iterations {max_iterations}.'
+        f'Evaluation started with Agent {agent_class}, model {model_name}, max iterations {max_iterations}, max propose solution {args.max_propose_solution}.'
     )
 
     # =============================================
@@ -320,7 +353,7 @@ if __name__ == '__main__':
     def update_progress(future):
         pbar.update(1)
         output = future.result()
-        logger.info('Output: ', output)
+        logger.info('Output: ' + output)
         # pbar.set_description(f'Instance {output["instance_id"]}')
         # pbar.set_postfix_str(f'Test Result: {output["test_result"]["result"]}')
         # logger.info(
