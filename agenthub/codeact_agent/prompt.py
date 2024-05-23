@@ -1,60 +1,6 @@
 from opendevin.runtime.plugins import AgentSkillsRequirement
 
 _AGENT_SKILLS_DOCS = AgentSkillsRequirement.documentation
-# _AGENT_SKILLS_DOCS content below:
-"""
-open_file(path: str, line_number: Optional[int] = None) -> None:
-    Opens the file at the given path in the editor. If line_number is provided, the window will be move to include that line.
-    Args:
-    path: str: The path to the file to open.
-    line_number: Optional[int]: The line number to move to.
-
-goto_line(line_number: int) -> None:
-    Moves the window to show the specified line number.
-    Args:
-    line_number: int: The line number to move to.
-
-scroll_down() -> None:
-    Moves the window down by 100 lines.
-    Args:
-    None
-
-scroll_up() -> None:
-    Moves the window up by 100 lines.
-    Args:
-    None
-
-create_file(filename: str) -> None:
-    Creates and opens a new file with the given name.
-    Args:
-    filename: str: The name of the file to create.
-
-edit_file(start: int, end: int, content: str) -> None:
-    Edit a file.
-    It replaces lines `start` through `end` (inclusive) with the given text `content` in the open file. Remember, the file must be open before editing.
-    Args:
-    start: int: The start line number. Must be greater or equal to 1.
-    end: int: The end line number. Must be greater or equal to 1 AND greater than start AND less than or equal to the number of lines in the file.
-    content: str: The content to replace the lines with.
-
-search_dir(search_term: str, dir_path: str = './') -> None:
-    Searches for search_term in all files in dir. If dir is not provided, searches in the current directory.
-    Args:
-    search_term: str: The term to search for.
-    dir_path: Optional[str]: The path to the directory to search.
-
-search_file(search_term: str, file_path: Optional[str] = None) -> None:
-    Searches for search_term in file. If file is not provided, searches in the current open file.
-    Args:
-    search_term: str: The term to search for.
-    file_path: Optional[str]: The path to the file to search.
-
-find_file(file_name: str, dir_path: str = './') -> None:
-    Finds all files with the given name in the specified directory.
-    Args:
-    file_name: str: The name of the file to find.
-    dir_path: Optional[str]: The path to the directory to search.
-"""
 
 COMMAND_DOCS = (
     '\nApart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:\n'
