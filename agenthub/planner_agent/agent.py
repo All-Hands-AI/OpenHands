@@ -8,7 +8,6 @@ from .prompt import get_prompt, parse_response
 
 class PlannerAgent(Agent):
     VERSION = '1.0'
-    DEPRECATED = True
     """
     The planner agent utilizes a special prompting strategy to create long term plans for solving problems.
     The agent is given its previous action-observation pairs, current task, and hint based on last action taken at every step.

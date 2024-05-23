@@ -39,8 +39,8 @@ def test_write_simple_script():
     reason='CodeActAgent only supports ssh sandbox which is stateful',
 )
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'SWEAgent',
-    reason='SWEAgent is not capable of this task right now',
+    os.getenv('AGENT') == 'MonologueAgent' or os.getenv('AGENT') == 'PlannerAgent',
+    reason='We only keep basic tests for MonologueAgent and PlannerAgent',
 )
 @pytest.mark.skipif(
     os.getenv('SANDBOX_TYPE') == 'local',

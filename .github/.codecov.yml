@@ -17,4 +17,3 @@ github_checks:
 
 ignore:
   - "agenthub/SWE_agent/**" # SWE agent is deprecated
-  - "agenthub/planner_agent/**" # planner agent is deprecated
