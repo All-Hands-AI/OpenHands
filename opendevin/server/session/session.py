@@ -8,9 +8,9 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
 from opendevin.core.schema.action import ActionType
 from opendevin.events.action import ChangeAgentStateAction, NullAction
-from opendevin.events.event import Event
+from opendevin.events.event import Event, EventSource
 from opendevin.events.observation import AgentStateChangedObservation, NullObservation
-from opendevin.events.serialization import EventSource, event_from_dict, event_to_dict
+from opendevin.events.serialization import event_from_dict, event_to_dict
 from opendevin.events.stream import EventStreamSubscriber
 
 from .agent import AgentSession
