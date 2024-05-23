@@ -13,6 +13,7 @@ all the preprocessing/evaluation/analysis scripts.
 ## Supported Benchmarks
 
 - SWE-Bench: [`evaluation/swe_bench`](./swe_bench)
+- ML-Bench: [`evaluation/ml_bench`](./ml_bench)
 
 ### Result Visualization
 
