@@ -7,8 +7,12 @@ concurrency:
 on:
   push:
     branches:
-    - main
+      - main
+    paths-ignore:
+      - '**/*.md'
   pull_request:
+    paths-ignore:
+      - '**/*.md'
 
 jobs:
   integration-tests:
@@ -64,13 +68,15 @@ jobs:
             WORKSPACE_MOUNT_PATH="$GITHUB_WORKSPACE/workspace" \
             poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml \
             -s ./tests/integration
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
   test_matrix_success:
     name: All Integration Tests Passed
     runs-on: ubuntu-latest
     needs: [integration-tests]
     steps:
-    - run: echo Done!
+      - run: echo Done!
