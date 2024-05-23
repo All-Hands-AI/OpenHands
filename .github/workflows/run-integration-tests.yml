@@ -15,28 +15,14 @@ on:
       - '**/*.md'
 
 jobs:
-  integration-tests:
-    name: Integration Tests
+  integration-tests-on-linux:
+    name: Integration Tests on Linux
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.11"]
-        agent: ["SWEAgent", "PlannerAgent", "MonologueAgent", "CodeActAgent"]
-        sandbox: ["ssh", "exec"]
-        include:
-          - agent: "MonologueAgent"
-            embedding-model: "local"
-          - agent: "MonologueAgent"
-            # sufficient to have one agent testing against local sandbox
-            sandbox: "local"
-            embedding-model: "local"
-          - agent: "SWEAgent"
-            embedding-model: "none"
-          - agent: "PlannerAgent"
-            embedding-model: "none"
-          - agent: "CodeActAgent"
-            embedding-model: "none"
+        sandbox: ["ssh", "exec", "local"]
     steps:
       - uses: actions/checkout@v4
 
@@ -46,7 +32,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python-version }}
           cache: 'poetry'
 
       - name: Install Python dependencies using Poetry
@@ -58,16 +44,54 @@ jobs:
       - name: Run Integration Tests
         env:
           SANDBOX_TYPE: ${{ matrix.sandbox }}
-          AGENT: ${{ matrix.agent }}
-          MAX_ITERATIONS: 10
-          LLM_EMBEDDING_MODEL: ${{ matrix.embedding-model }}
         run: |
-          rm -rf workspace
-          mkdir workspace
-          WORKSPACE_BASE="$GITHUB_WORKSPACE/workspace" \
-            WORKSPACE_MOUNT_PATH="$GITHUB_WORKSPACE/workspace" \
-            poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml \
-            -s ./tests/integration
+          TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  integration-tests-on-mac:
+    name: Integration Tests on MacOS
+    runs-on: macos-13
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11"]
+        sandbox: ["ssh"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install poetry via pipx
+        run: pipx install poetry
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+
+      - name: Install Python dependencies using Poetry
+        run: poetry install
+
+      - name: Install & Start Docker
+        run: |
+          brew install colima docker
+          colima start
+
+          # For testcontainers to find the Colima socket
+          # https://github.com/abiosoft/colima/blob/main/docs/FAQ.md#cannot-connect-to-the-docker-daemon-at-unixvarrundockersock-is-the-docker-daemon-running
+          sudo ln -sf $HOME/.colima/default/docker.sock /var/run/docker.sock
+
+      - name: Build Environment
+        run: make build
+
+      - name: Run Integration Tests
+        env:
+          SANDBOX_TYPE: ${{ matrix.sandbox }}
+        run: |
+          TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -77,6 +101,7 @@ jobs:
   test_matrix_success:
     name: All Integration Tests Passed
     runs-on: ubuntu-latest
-    needs: [integration-tests]
+    # make mac tests as optional as they are too slow
+    needs: [integration-tests-on-linux]
     steps:
       - run: echo Done!
