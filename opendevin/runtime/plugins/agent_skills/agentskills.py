@@ -99,7 +99,6 @@ def open_file(path: str, line_number: Optional[int] = None) -> None:
         raise FileNotFoundError(f'File {path} not found')
 
     CURRENT_FILE = path
-    assert os.path.isfile(CURRENT_FILE)
     with open(CURRENT_FILE) as file:
         total_lines = sum(1 for _ in file)
 
