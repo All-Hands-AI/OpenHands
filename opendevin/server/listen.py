@@ -154,11 +154,11 @@ async def websocket_endpoint(websocket: WebSocket):
     session = session_manager.add_or_restart_session(sid, websocket)
     await websocket.send_json({'token': token, 'status': 'ok'})
 
-    last_event_id = -1
-    if websocket.query_params.get('last_event_id'):
-        last_event_id = int(websocket.query_params.get('last_event_id'))
+    latest_event_id = -1
+    if websocket.query_params.get('latest_event_id'):
+        latest_event_id = int(websocket.query_params.get('latest_event_id'))
     for event in session.agent_session.event_stream.get_events(
-        start_id=last_event_id + 1
+        start_id=latest_event_id + 1
     ):
         if isinstance(event, NullAction) or isinstance(event, NullObservation):
             continue
