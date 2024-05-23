@@ -202,7 +202,7 @@ class DockerSSHBox(Sandbox):
     def __init__(
         self,
         container_image: str | None = None,
-        timeout: int = 120,
+        timeout: int = 180,
         sid: str | None = None,
     ):
         logger.info(
@@ -232,28 +232,32 @@ class DockerSSHBox(Sandbox):
             if container_image is None
             else container_image
         )
-        self.container_name = self.container_name_prefix + self.instance_id
+        self.container_name = (
+            config.container_id or self.container_name_prefix + self.instance_id
+        )
 
         # set up random user password
-        self._ssh_password = str(uuid.uuid4())
-        self._ssh_port = find_available_tcp_port()
-
+        self._ssh_password = config.ssh_password or str(uuid.uuid4())
+        self._ssh_port = config.ssh_port or find_available_tcp_port()
         # always restart the container, cuz the initial be regarded as a new session
-        n_tries = 5
-        while n_tries > 0:
-            try:
-                self.restart_docker_container()
-                break
-            except Exception as e:
-                logger.exception(
-                    'Failed to start Docker container, retrying...', exc_info=False
-                )
-                n_tries -= 1
-                if n_tries == 0:
-                    raise e
-                time.sleep(5)
-        self.setup_user()
-
+        if not config.persist_session:
+            n_tries = 5
+            while n_tries > 0:
+                try:
+                    self.restart_docker_container()
+                    break
+                except Exception as e:
+                    logger.exception(
+                        'Failed to start Docker container, retrying...', exc_info=False
+                    )
+                    n_tries -= 1
+                    if n_tries == 0:
+                        raise e
+                    time.sleep(5)
+            self.setup_user()
+        else:
+            self.container = self.docker_client.containers.get(self.container_name)
+            logger.info('Using existing Docker container')
         try:
             self.start_ssh_session()
         except pxssh.ExceptionPxssh as e:
