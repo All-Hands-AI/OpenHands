@@ -222,6 +222,8 @@ def process_instance(
             logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         )
         logger.addHandler(file_handler)
+    else:
+        logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
     if not skip_workspace_mount:
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
