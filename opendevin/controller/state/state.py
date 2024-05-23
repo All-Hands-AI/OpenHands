@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 
 from opendevin.controller.state.task import RootTask
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.metrics import Metrics
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
     Action,
@@ -30,6 +31,7 @@ class State:
     outputs: dict = field(default_factory=dict)
     error: str | None = None
     agent_state: AgentState = AgentState.LOADING
+    metrics: Metrics = Metrics()
 
     def save_to_session(self, sid: str):
         fs = get_file_store()

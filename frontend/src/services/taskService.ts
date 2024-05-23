@@ -1,3 +1,5 @@
+import { request } from "./api";
+
 export type Task = {
   id: string;
   goal: string;
@@ -14,14 +16,6 @@ export enum TaskState {
 }
 
 export async function getRootTask(): Promise<Task | undefined> {
-  const headers = new Headers({
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${localStorage.getItem("token")}`,
-  });
-  const res = await fetch("/api/root_task", { headers });
-  if (res.status !== 200 && res.status !== 204) {
-    return undefined;
-  }
-  const data = (await res.json()) as Task;
-  return data;
+  const res = await request("/api/root_task");
+  return res as Task;
 }
