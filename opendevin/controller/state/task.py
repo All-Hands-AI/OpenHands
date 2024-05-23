@@ -29,7 +29,7 @@ class Task:
         parent: 'Task',
         goal: str,
         state: str = OPEN_STATE,
-        subtasks: list = [],
+        subtasks: list = [],  # noqa: B006
     ):
         """Initializes a new instance of the Task class.
 
@@ -45,6 +45,7 @@ class Task:
             self.id = str(len(parent.subtasks))
         self.parent = parent
         self.goal = goal
+        logger.debug('Creating task {self.id} with parent={parent.id}, goal={goal}')
         self.subtasks = []
         for subtask in subtasks or []:
             if isinstance(subtask, Task):
@@ -53,6 +54,7 @@ class Task:
                 goal = subtask.get('goal')
                 state = subtask.get('state')
                 subtasks = subtask.get('subtasks')
+                logger.debug('Reading: {goal}, {state}, {subtasks}')
                 self.subtasks.append(Task(self, goal, state, subtasks))
 
         self.state = OPEN_STATE
@@ -190,7 +192,7 @@ class RootTask(Task):
             task = task.subtasks[part]
         return task
 
-    def add_subtask(self, parent_id: str, goal: str, subtasks: list = []):
+    def add_subtask(self, parent_id: str, goal: str, subtasks: list | None = None):
         """Adds a subtask to a parent task.
 
         Args:
@@ -198,6 +200,7 @@ class RootTask(Task):
             goal: The goal of the subtask.
             subtasks: A list of subtasks associated with the new subtask.
         """
+        subtasks = subtasks or []
         parent = self.get_task_by_id(parent_id)
         child = Task(parent=parent, goal=goal, subtasks=subtasks)
         parent.subtasks.append(child)
@@ -210,6 +213,7 @@ class RootTask(Task):
             state: The new state of the subtask.
         """
         task = self.get_task_by_id(id)
+        logger.debug('Setting task {task.id} from state {task.state} to {state}')
         task.set_state(state)
         unfinished_tasks = [
             t

@@ -12,8 +12,8 @@ from glob import glob
 import docker
 from pexpect import exceptions, pxssh
 
-from opendevin.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.config import config
+from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
@@ -729,14 +729,14 @@ if __name__ == '__main__':
     )
 
     bg_cmd = ssh_box.execute_in_background(
-        "while true; do echo 'dot ' && sleep 10; done"
+        "while true; do echo -n '.' && sleep 10; done"
     )
 
     sys.stdout.flush()
     try:
         while True:
             try:
-                user_input = input('>>> ')
+                user_input = input('$ ')
             except EOFError:
                 logger.info('Exiting...')
                 break

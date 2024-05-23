@@ -1,7 +1,0 @@
-Thoughts:
-I have already created the 'hello.sh' script that prints 'hello' without asking for confirmation. The script is executable, and I have run it successfully. The next step is to finalize the task and exit the current environment.
-
-Action:
-```
-exit
-```
