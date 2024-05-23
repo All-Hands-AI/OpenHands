@@ -4,6 +4,7 @@ import logging
 import multiprocessing as mp
 import os
 import pathlib
+import shutil
 import subprocess
 import time
 from concurrent.futures import ProcessPoolExecutor
@@ -103,6 +104,8 @@ def process_instance(
     eval_output_dir,
     reset_logger: bool = True,
 ):
+    old_workspace_mount_path = config.workspace_mount_path
+    old_workspace_base = config.workspace_base
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
     # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
@@ -111,8 +114,11 @@ def process_instance(
         workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
         pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
+    # reset workspace to config
+    config.workspace_base = workspace_mount_path
+    config.workspace_mount_path = workspace_mount_path
+    
     # Setup the logger properly, so you can run multi-processing to parallize the evaluation
-    eval_output_dir = metadata['eval_output_dir']
     if reset_logger:
         # Set up logger
         log_file = os.path.join(
@@ -138,24 +144,30 @@ def process_instance(
     if not skip_workspace_mount:
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
 
-    sandbox = DockerSSHBox()
-
+    # sandbox = DockerSSHBox()
+    shutil.copyfile(os.path.join(os.path.dirname(__file__), 'logic_inference.py'), workspace_mount_path)
+    logger.info(f'logic_inference.py copied to {workspace_mount_path}')
+    logic_inference_path = os.path.join(workspace_mount_path, 'logic_inference.py')
     # Prepare instruction
-    instruction = f"{instance['Question']}"
-    logger.info(f'Instruction: {instruction}')
-    # if dest_file:
-    #     instruction += f"\n\nThe mentioned file is provided in the workspace at: {dest_file.split('/')[-1]}"
+    
+    with open(os.path.join(os.path.dirname(__file__), 'instruction.txt'), 'w') as f:
+        instruction = f.read()
 
-    instruction += 'IMPORTANT: You should ONLY use the python package pyke and interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+    instance_logic_programs = instance['raw_logic_programs'][0].strip()
+    instruction = instruction.replace("[[dataset_name]]", metadata['dataset'])
+    instruction = instruction.replace("[[logic_programs]]", instance_logic_programs)
+    instruction = instruction.replace("[[logic_inference_path.py]]", logic_inference_path)
+    
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
-
+    logger.info(f'Instruction: {instruction}')
+    
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     state: State = asyncio.run(
         main(
             instruction,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
-            sandbox=sandbox,
+            # sandbox=sandbox,
         )
     )
     # ======= Attempt to evaluate the agent's edits =======
@@ -170,10 +182,12 @@ def process_instance(
         if isinstance(act, MessageAction):
             final_message = act.content
             break
+        
     logger.info(
-        f'Final message: {final_message} | Ground truth: {instance["Final answer"]}'
+        f'Final message: {final_message}'
     )
-    test_result = question_scorer(
+
+    test_result = get_test_result(
         model_answer=final_message, ground_truth=instance['answer']
     )
 
@@ -191,7 +205,7 @@ def process_instance(
     }
 
     # Close the sandbox
-    sandbox.close()
+    # sandbox.close()
     return output
 
 
@@ -207,6 +221,11 @@ if __name__ == '__main__':
         type=str,
         help='data split to evaluate on {validation\}', # right now we only support validation split
         default='validation',
+    )
+    parser.add_argument(
+        '--eval_n_limit',
+        type=int,
+        default=1,
     )
 
     args, _ = parser.parse_known_args()
@@ -254,7 +273,7 @@ if __name__ == '__main__':
     logger.info(f'Using evaluation output directory: {eval_output_dir}')
 
     metadata = {
-        'dataset': dataset,
+        'dataset': args.dataset,
         'data_split': data_split,
         'agent_class': agent_class,
         'model_name': model_name,
@@ -262,9 +281,9 @@ if __name__ == '__main__':
         # 'eval_output_dir': eval_output_dir,
         'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
         # get the commit id of current repo for reproduciblity
-        'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
-        .decode('utf-8')
-        .strip(),
+        # 'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+        # .decode('utf-8')
+        # .strip(),
     }
     logger.info(f'Metadata: {metadata}')
     with open(os.path.join(eval_output_dir, 'metadata.json'), 'w') as f:
