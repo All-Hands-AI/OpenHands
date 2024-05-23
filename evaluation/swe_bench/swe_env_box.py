@@ -4,7 +4,11 @@ import uuid
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
-from opendevin.runtime.plugins import JupyterRequirement, SWEAgentCommandsRequirement
+from opendevin.runtime.plugins import (
+    AgentSkillsRequirement,
+    JupyterRequirement,
+    PluginRequirement,
+)
 
 SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.0'
 
@@ -18,6 +22,7 @@ class SWEBenchSSHBox(DockerSSHBox):
         swe_instance_id: str | None = None,
         swe_instance: dict | None = None,
         skip_workspace_mount: bool = True,
+        sandbox_plugins: list[PluginRequirement] = [],  # noqa: B006
     ):
         if swe_instance_id is None:
             raise ValueError('swe_instance_id must be provided!')
@@ -31,6 +36,7 @@ class SWEBenchSSHBox(DockerSSHBox):
         # Need to run as root to use SWEBench container
         sid = f'swe_bench_{swe_instance_id}' + str(uuid.uuid4())
         super().__init__(container_image, timeout, sid)
+        self.init_plugins(sandbox_plugins)
 
         exit_code, output = self.execute('mv ~/.bashrc ~/.bashrc.bak')
         assert exit_code == 0, f'Failed to backup ~/.bashrc: {output}'
@@ -66,6 +72,7 @@ class SWEBenchSSHBox(DockerSSHBox):
         n_tries=5,
         skip_workspace_mount: bool = True,
         workspace_mount_path: str | None = None,
+        sandbox_plugins: list[PluginRequirement] = [],  # noqa: B006
     ) -> 'SWEBenchSSHBox':
         if workspace_dir_name is None:
             workspace_dir_name = f"{instance['repo']}__{instance['version']}".replace(
@@ -82,6 +89,7 @@ class SWEBenchSSHBox(DockerSSHBox):
             swe_instance_id=instance['instance_id'],
             swe_instance=instance,
             skip_workspace_mount=skip_workspace_mount,
+            sandbox_plugins=sandbox_plugins,
         )
         logger.info(f"SSH box started for instance {instance['instance_id']}.")
 
@@ -138,10 +146,10 @@ if __name__ == '__main__':
         'environment_setup_commit': '419a78300f7cd27611196e1e464d50fd0385ff27',
     }
 
-    sandbox = SWEBenchSSHBox.get_box_for_instance(instance=EXAMPLE_INSTANCE)
-
-    # in actual eval, this will be initialized by the controller
-    sandbox.init_plugins([JupyterRequirement(), SWEAgentCommandsRequirement()])
+    sandbox = SWEBenchSSHBox.get_box_for_instance(
+        instance=EXAMPLE_INSTANCE,
+        sandbox_plugins=[AgentSkillsRequirement(), JupyterRequirement()],
+    )
 
     # PRE TEST
     exit_code, output = sandbox.execute('cd $REPO_PATH')
