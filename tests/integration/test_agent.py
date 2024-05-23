@@ -13,9 +13,8 @@ workspace_base = os.getenv('WORKSPACE_BASE')
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'CodeActAgent'
-    and os.getenv('SANDBOX_TYPE').lower() == 'exec',
-    reason='CodeActAgent does not support exec sandbox since exec sandbox is NOT stateful',
+    os.getenv('AGENT') == 'CodeActAgent' and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    reason='CodeActAgent only supports ssh sandbox which is stateful',
 )
 def test_write_simple_script():
     task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
@@ -36,13 +35,12 @@ def test_write_simple_script():
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'CodeActAgent'
-    and os.getenv('SANDBOX_TYPE').lower() == 'exec',
-    reason='CodeActAgent does not support exec sandbox since exec sandbox is NOT stateful',
+    os.getenv('AGENT') == 'CodeActAgent' and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    reason='CodeActAgent only supports ssh sandbox which is stateful',
 )
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'SWEAgent',
-    reason='SWEAgent is not capable of this task right now',
+    os.getenv('AGENT') == 'MonologueAgent' or os.getenv('AGENT') == 'PlannerAgent',
+    reason='We only keep basic tests for MonologueAgent and PlannerAgent',
 )
 @pytest.mark.skipif(
     os.getenv('SANDBOX_TYPE') == 'local',

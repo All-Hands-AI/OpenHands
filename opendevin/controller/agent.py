@@ -13,6 +13,7 @@ from opendevin.runtime.plugins import PluginRequirement
 
 
 class Agent(ABC):
+    DEPRECATED = False
     """
     This abstract base class is an general interface for an agent dedicated to
     executing a specific instruction and allowing human interaction with the

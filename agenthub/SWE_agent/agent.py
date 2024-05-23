@@ -22,6 +22,7 @@ from .prompts import (
 
 class SWEAgent(Agent):
     VERSION = '1.0'
+    DEPRECATED = True
     """
     An attempt to recreate swe_agent with output parsing, prompting style, and Application Computer Interface (ACI).
 
