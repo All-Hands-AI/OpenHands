@@ -1,5 +1,7 @@
 import re
 
+from litellm.exceptions import ContextWindowExceededError
+
 from agenthub.codeact_agent.prompt import (
     COMMAND_DOCS,
     EXAMPLES,
@@ -9,6 +11,7 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
@@ -23,6 +26,7 @@ from opendevin.events.observation import (
     IPythonRunCellObservation,
 )
 from opendevin.llm.llm import LLM
+from opendevin.memory.condenser import MemoryCondenser
 from opendevin.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
@@ -129,7 +133,6 @@ class CodeActAgent(Agent):
     To make the CodeAct agent more powerful with only access to `bash` action space, CodeAct agent leverages OpenDevin's plugin system:
     - [Jupyter plugin](https://github.com/OpenDevin/OpenDevin/tree/main/opendevin/runtime/plugins/jupyter): for IPython execution via bash command
     - [SWE-agent tool plugin](https://github.com/OpenDevin/OpenDevin/tree/main/opendevin/runtime/plugins/swe_agent_commands): Powerful bash command line tools for software development tasks introduced by [swe-agent](https://github.com/princeton-nlp/swe-agent).
-
     ### Demo
 
     https://github.com/OpenDevin/OpenDevin/assets/38853559/f592a192-e86c-4f48-ad31-d69282d5f6ac
@@ -165,6 +168,7 @@ class CodeActAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
+        self.memory_condenser = MemoryCondenser(llm=self.llm)
         self.reset()
 
     def reset(self) -> None:
@@ -195,7 +199,6 @@ class CodeActAgent(Agent):
                 'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!",
             },
         ]
-
         for prev_action, obs in state.history:
             action_message = get_action_message(prev_action)
             if action_message:
@@ -213,15 +216,21 @@ class CodeActAgent(Agent):
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
-        response = self.llm.do_completion(
-            messages=messages,
-            stop=[
-                '</execute_ipython>',
-                '</execute_bash>',
-                '</execute_browse>',
-            ],
-            temperature=0.0,
-        )
+        try:
+            response = self.llm.do_completion(
+                messages=messages,
+                stop=[
+                    '</execute_ipython>',
+                    '</execute_bash>',
+                    '</execute_browse>',
+                ],
+                temperature=0.0,
+            )
+        except ContextWindowExceededError:
+            logger.warning('Context window exceeded. Condensing memory.')
+            self.events = self.memory_condenser.condense(self.events)
+            # Retry processing events with condensed memory
+            return self.step(state)
 
         action_str: str = parse_response(response)
         state.num_of_chars += sum(
