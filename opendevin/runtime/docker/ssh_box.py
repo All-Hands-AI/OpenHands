@@ -239,7 +239,6 @@ class DockerSSHBox(Sandbox):
         # set up random user password
         self._ssh_password = config.ssh_password or str(uuid.uuid4())
         self._ssh_port = config.ssh_port or find_available_tcp_port()
-        # always restart the container, cuz the initial be regarded as a new session
         if not config.persist_session:
             n_tries = 5
             while n_tries > 0:
