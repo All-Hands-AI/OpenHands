@@ -7,14 +7,20 @@ This folder contains evaluation harness for evaluating agents on the Entity-dedu
 Create a `config.toml` file if it does not exist at the root of the workspace. Please check [README.md](../../README.md) for how to set this up.
 
 ## Start the evaluation
-Following is the basic command to start the evaluation. Here we are only evaluating the first instance of the validation set for the 2023_level1 split.
-
+There are two tasks in this evaluation. Specify `--dataset` to test on either `things` or `celebs` task.
 
 You can remove the `--eval-n-limit 1` argument to evaluate all instances in the validation set. Or change `--data-split` `--data-split` to test other splits.
+
+The `--max-iterations` should be set to 20 to be comparable to other LLMs in the [leaderboard](https://github.com/apple/ml-entity-deduction-arena?tab=readme-ov-file#highlights).
+
 ```bash
-python ./evaluation/gaia/run_infer.py \
---level 2023_level1 \
---data-split validation \
+pip install retry
+
+python ./evaluation/EDA/run_infer.py \
+--dataset things \
+--data-split test \
+--max-iterations 20 \
+--OPENAI_API_KEY sk-xxx \
 --eval-n-limit 1
 ```
 

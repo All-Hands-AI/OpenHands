@@ -1,4 +1,3 @@
-import asyncio
 import json
 import logging
 import multiprocessing as mp
@@ -11,7 +10,6 @@ from concurrent.futures import ProcessPoolExecutor
 # import huggingface_hub
 from datasets import load_dataset
 from tqdm import tqdm
-from transformers import AutoTokenizer
 
 from evaluation.EDA.game import Q20Game, Q20GameCelebrity
 
@@ -20,10 +18,7 @@ from opendevin.controller.state.state import State
 from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.main import main
 from opendevin.events.action import MessageAction
-from opendevin.events.serialization.event import event_to_dict
-from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
 DATASET_CACHE_DIR = '~/.cache/open-devin/evals/eda'
 DATASET_CACHE_DIR = os.path.expanduser(DATASET_CACHE_DIR)
@@ -110,7 +105,7 @@ def process_instance(
     if not skip_workspace_mount:
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
 
-    sandbox = DockerSSHBox()
+    # sandbox = DockerSSHBox()
 
     # Prepare instruction
     _game_class = {'things': Q20Game, 'celebs': Q20GameCelebrity}
@@ -122,16 +117,14 @@ def process_instance(
         'do_sample': True,
     }  # no penalty
 
-    # TODO: use codeactagent as guesser_model, and set up openai_api
+    # TODO: use codeactagent as guesser_model
     guesser_model = 'gpt-3.5-turbo'
-    openai_api = config.config['OPENAI_API_KEY']
     game = _game_class[metadata['dataset']](
         item=instance['text'],
         answerer_model=metadata['answerer_model'],
         guesser_model=guesser_model,
-        guesser_tokenizer=AutoTokenizer.from_pretrained(guesser_model, use_fast=False),
         num_turns=metadata['max_iterations'],
-        openai_api=openai_api,
+        openai_api_key=metadata['openai_api'],
         guesser_kargs=guesser_kargs,
     )
 
@@ -143,28 +136,29 @@ def process_instance(
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     # TODO: convert Q20 game logic into codeactagent
-    state: State = asyncio.run(
-        main(
-            instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
-            sandbox=sandbox,
-        )
-    )
+    game.game_play()
+
+    # state: State = asyncio.run(
+    #     main(
+    #         instruction,
+    #         fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+    #     )
+    # )
     # ======= Attempt to evaluate the agent's edits =======
     # If you are working on simplier benchmark that only evaluates the final model output (e.g., in a MessageAction)
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
 
-    if state is None:
-        raise ValueError('State should not be None.')
+    # if state is None:
+    #     raise ValueError('State should not be None.')
 
-    final_message = ''
-    for act in reversed(state.history):
-        if isinstance(act, MessageAction):
-            final_message = act.content
-            break
-    logger.info(
-        f'Final message: {final_message} | Ground truth: {instance["Final answer"]}'
-    )
+    # final_message = ''
+    # for act in reversed(state.history):
+    #     if isinstance(act, MessageAction):
+    #         final_message = act.content
+    #         break
+    state = None
+    final_message = game.guesser_messages[-2]['content']
+    logger.info(f'Final message: {final_message} | Ground truth: {instance["text"]}')
     test_result = game.reward()
 
     # Save the output
@@ -173,15 +167,11 @@ def process_instance(
         'instance': instance,
         'instruction': instruction,
         'metadata': metadata,
-        'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-        ],
+        'history': game.dialog_history(),
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
 
-    # Close the sandbox
-    sandbox.close()
     return output
 
 
@@ -199,6 +189,9 @@ if __name__ == '__main__':
         choices=['things', 'celebs'],
         type=str,
         help='dataset to be used',
+    )
+    parser.add_argument(
+        '--OPENAI_API_KEY', type=str, required=True, help='Your OpenAI API key'
     )
     parser.add_argument(
         '--data-split',
@@ -255,6 +248,7 @@ if __name__ == '__main__':
         'data_split': args.data_split,
         'answerer_model': args.answerer_model,
         'agent_class': agent_class,
+        'openai_api': args.OPENAI_API_KEY,
         'model_name': model_name,
         'max_iterations': max_iterations,
         'eval_output_dir': eval_output_dir,
@@ -316,9 +310,9 @@ if __name__ == '__main__':
         pbar.update(1)
         output = future.result()
         pbar.set_description(f'Instance {output["instance_id"]}')
-        pbar.set_postfix_str(f'Test Result: {output["test_result"]["result"]}')
+        pbar.set_postfix_str(f'Test Result: {output["test_result"]}')
         logger.info(
-            f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]["result"]}'
+            f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]}'
         )
         output_fp.write(json.dumps(output) + '\n')
         output_fp.flush()

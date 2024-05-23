@@ -4,17 +4,26 @@ import os
 import re
 from typing import Optional
 
-import anthropic
 import openai
-import openai.api_requestor
 import requests.exceptions
 import torch
-from anthropic import AI_PROMPT, HUMAN_PROMPT, Anthropic
+from openai import OpenAI
 from retry import retry
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 LOGGER = logging.getLogger(__name__)
 
-openai.api_requestor.TIMEOUT_SECS = 20
+
+def load_model(path):
+    print('Loading model...')
+    tokenizer = AutoTokenizer.from_pretrained(path, use_fast=False)
+    print('Tokenizer loaded.')
+    model = AutoModelForCausalLM.from_pretrained(
+        path, low_cpu_mem_usage=True, torch_dtype=torch.float16
+    ).cuda()
+    print('Model loaded.')
+    # model.half().cuda()
+    return model, tokenizer
 
 
 class Q20Game:
@@ -25,7 +34,6 @@ class Q20Game:
         guesser_model: str = 'gpt-3.5-turbo-0613',
         num_turns: int = 20,
         temperature: float = 0.8,
-        guesser_tokenizer=None,
         openai_api: bool = True,
         openai_api_key: Optional[str] = None,
         guesser_kargs={},
@@ -36,7 +44,6 @@ class Q20Game:
         self.num_turns = num_turns
         self.temperature = temperature
         self.openai_api = openai_api
-        self.guesser_tokenizer = guesser_tokenizer
         self.guesser_kargs = guesser_kargs
         self.vicuna_prompt = "A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions."
         self.first_user_utterance = (
@@ -59,8 +66,6 @@ class Q20Game:
             self.guesser_api_base = 'http://0.0.0.0:8000/v1'
         else:
             self.guesser_api_base = 'https://api.openai.com/v1'
-
-        self.anthropic_api = Anthropic()
 
         self.guesser_messages = []
 
@@ -98,13 +103,12 @@ class Q20Game:
 
     @retry(
         (
-            openai.error.Timeout,
+            openai.Timeout,
             requests.exceptions.ReadTimeout,
-            openai.error.ServiceUnavailableError,
-            openai.error.RateLimitError,
-            openai.error.APIError,
+            openai.RateLimitError,
+            openai.APIError,
             requests.exceptions.HTTPError,
-            openai.error.APIConnectionError,
+            openai.APIConnectionError,
         ),
         tries=5,
         delay=0.5,
@@ -113,30 +117,9 @@ class Q20Game:
         logger=LOGGER,
     )
     def guesser(self, messages):
-        if isinstance(self.guesser_model, str) and self.guesser_model.startswith(
-            'claude'
-        ):
-            ## convert to claude type
-            prompt = ''
-            for item in messages:
-                if item['role'].upper() == 'USER':
-                    prompt += f"{HUMAN_PROMPT} {item['content']}"
-                elif item['role'].upper() == 'ASSISTANT':
-                    prompt += f"{AI_PROMPT} {item['content']}"
-            prompt += f'{AI_PROMPT}'
+        if not self.guesser_model.startswith('gpt'):  # hf model
+            self.guesser_model, self.guesser_tokenizer = load_model(self.guesser_model)
 
-            completion = self.anthropic_api.completions.create(
-                model=self.guesser_model,
-                max_tokens_to_sample=256,
-                prompt=prompt,
-                temperature=self.temperature,
-            )
-            return {
-                'role': 'assistant',
-                'content': completion.completion.lstrip(),
-            }
-
-        if not isinstance(self.guesser_model, str):  # hf model
             # """Wraps hf's `generate` adding some specific method's defaults"""
             assert not self.openai_api
             prompt = self.dialog_history() + ' ASSISTANT:'
@@ -166,7 +149,8 @@ class Q20Game:
                 }
         else:
             openai.api_base = self.guesser_api_base
-            response = openai.ChatCompletion.create(
+            client = OpenAI(api_key=openai.api_key)
+            response = client.chat.completions.create(
                 model=self.guesser_model,
                 messages=messages,
                 max_tokens=64,
@@ -266,13 +250,11 @@ class Q20Game:
 
     @retry(
         (
-            openai.error.Timeout,
+            openai.Timeout,
             requests.exceptions.ReadTimeout,
-            openai.error.ServiceUnavailableError,
-            openai.error.RateLimitError,
-            openai.error.APIError,
-            openai.error.APIConnectionError,
-            anthropic.InternalServerError,
+            openai.RateLimitError,
+            openai.APIError,
+            openai.APIConnectionError,
         ),
         tries=5,
         delay=0.5,
@@ -282,6 +264,7 @@ class Q20Game:
     )
     def answerer(self, question):
         openai.api_base = self.user_api_base
+        client = OpenAI(api_key=openai.api_key)
         user_messages = [
             {
                 'role': 'user',
@@ -297,7 +280,7 @@ class Q20Game:
             },
         ]
 
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model=self.answerer_model,
             messages=user_messages,
             max_tokens=6,
@@ -336,12 +319,11 @@ class Q20GameCelebrity(Q20Game):
 
     @retry(
         (
-            openai.error.Timeout,
+            openai.Timeout,
             requests.exceptions.ReadTimeout,
-            openai.error.ServiceUnavailableError,
-            openai.error.RateLimitError,
-            openai.error.APIError,
-            openai.error.APIConnectionError,
+            openai.RateLimitError,
+            openai.APIError,
+            openai.APIConnectionError,
         ),
         tries=5,
         delay=0.5,
