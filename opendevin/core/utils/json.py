@@ -31,6 +31,10 @@ def loads(json_str, **kwargs):
     """
     Create a JSON object from str
     """
+    try:
+        return json.loads(json_str, **kwargs)
+    except json.JSONDecodeError:
+        pass
     depth = 0
     start = -1
     for i, char in enumerate(json_str):
