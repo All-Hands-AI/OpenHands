@@ -8,6 +8,7 @@ from opendevin.controller.state.state import State
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
+    AgentFinishAction,
     BrowseInteractiveAction,
     MessageAction,
 )
@@ -21,10 +22,12 @@ from opendevin.runtime.plugins import (
 def parse_response(response: str) -> Action:
     thought = response.split('```')[0].strip()
     action_str = response.split('```')[1].strip()
-    if 'send_msg_to_user(' in action_str:
-        tree = ast.parse(action_str)
-        args = tree.body[0].value.args  # type: ignore
-        return MessageAction(args[0].value)
+    # handle send message to user function call in BrowserGym
+    for sub_action in action_str.split('\n'):
+        if 'send_msg_to_user(' in sub_action:
+            tree = ast.parse(sub_action)
+            args = tree.body[0].value.args  # type: ignore
+            return MessageAction(args[0].value)
 
     return BrowseInteractiveAction(browser_actions=action_str, thought=thought)
 
@@ -83,6 +86,25 @@ class BrowsingAgent(Agent):
         """
         goal = state.get_current_user_intent()
         messages = []
+        prev_actions = ''
+        cur_axtree_txt = ''
+        error_prefix = ''
+        last_obs = None
+        for prev_action, obs in state.history:
+            if isinstance(prev_action, BrowseInteractiveAction):
+                prev_actions += f'{prev_action.browser_actions}\n'
+                last_obs = obs
+            elif (
+                isinstance(prev_action, MessageAction) and prev_action.source != 'user'
+            ):
+                # agent has responded, task finish.
+                return AgentFinishAction()
+
+        if isinstance(last_obs, BrowserOutputObservation):
+            if last_obs.error:
+                # add error recovery prompt prefix
+                error_prefix = f'IMPORTANT! Last action is incorrect:\n{last_obs.last_browser_action}\nThink again with the current observation of the page.\n'
+            cur_axtree_txt = flatten_axtree_to_str(last_obs.axtree_object)
 
         system_msg = f"""\
 # Instructions
@@ -96,21 +118,8 @@ and executed by a program, make sure to follow the formatting instructions.
 # Action Space
 {self.action_space.describe(with_long_description=False, with_examples=True)}
 """
-        messages.append({'role': 'system', 'content': system_msg})
-        prev_actions = ''
-        cur_axtree_txt = ''
-        error_prefix = ''
-        last_obs = None
-        for prev_action, obs in state.history:
-            if isinstance(prev_action, BrowseInteractiveAction):
-                prev_actions += f'{prev_action.browser_actions}\n'
-                last_obs = obs
 
-        if isinstance(last_obs, BrowserOutputObservation):
-            if last_obs.error:
-                # add error recovery prompt prefix
-                error_prefix = f'Last action failed:\n{last_obs.last_browser_action}\nTry again with the current state of the page.\n'
-            cur_axtree_txt = flatten_axtree_to_str(last_obs.axtree_object)
+        messages.append({'role': 'system', 'content': system_msg})
 
         prompt = f"""\
 {error_prefix}
@@ -126,7 +135,7 @@ Here is an example with chain of thought of a valid action when clicking on a bu
 In order to accomplish my goal I need to click on the button with bid 12
 ```click("12")```
 "
-"""
+""".strip()
         messages.append({'role': 'user', 'content': prompt})
         response = self.llm.completion(
             messages=messages,
