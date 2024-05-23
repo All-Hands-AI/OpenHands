@@ -17,7 +17,7 @@ import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import Session from "#/services/session";
 import { getToken } from "#/services/auth";
 import toast from "#/utils/toast";
-import { FeedbackData } from "#/api";
+import { FeedbackData, sendFeedback } from "#/api";
 import { removeApiKey } from "#/utils/utils";
 
 interface ScrollButtonProps {
@@ -60,7 +60,7 @@ function ChatInterface() {
     };
 
     try {
-      // await sendFeedback(data);
+      await sendFeedback(data);
     } catch (e) {
       console.error(e);
       toast.error("share-error", "Failed to share, see console for details.");
