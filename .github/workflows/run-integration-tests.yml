@@ -10,9 +10,15 @@ on:
       - main
     paths-ignore:
       - '**/*.md'
+      - 'frontend/**'
+      - 'docs/**'
+      - 'evaluation/**'
   pull_request:
     paths-ignore:
       - '**/*.md'
+      - 'frontend/**'
+      - 'docs/**'
+      - 'evaluation/**'
 
 jobs:
   integration-tests-on-linux:

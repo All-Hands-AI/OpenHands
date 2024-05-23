@@ -9,10 +9,16 @@ on:
     branches:
       - main
     paths-ignore:
-      - "**/*.md"
+      - '**/*.md'
+      - 'frontend/**'
+      - 'docs/**'
+      - 'evaluation/**'
   pull_request:
     paths-ignore:
-      - "**/*.md"
+      - '**/*.md'
+      - 'frontend/**'
+      - 'docs/**'
+      - 'evaluation/**'
 
 jobs:
   test-on-macos:
