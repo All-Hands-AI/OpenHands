@@ -20,6 +20,13 @@ import subprocess
 from inspect import signature
 from typing import Optional
 
+import PyPDF2
+import docx
+import openpyxl
+import pandas as pd
+from pptx import Presentation
+from pylatexenc.latex2text import LatexNodes2Text
+
 CURRENT_FILE = None
 CURRENT_LINE = 1
 WINDOW = 100
@@ -67,7 +74,7 @@ def _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=False):
         raise FileNotFoundError('No file open. Use the open_file function first.')
     with open(CURRENT_FILE, 'r') as file:
         lines = file.readlines()
-        start = max(0, CURRENT_LINE - WINDOW // 2)
+        start = max(0, CURRENT_LINE - WINDOW // 2 - 1)
         end = min(len(lines), CURRENT_LINE + WINDOW // 2)
         output = ''
         for i in range(start, end):
@@ -104,9 +111,9 @@ def open_file(path: str, line_number: Optional[int] = None) -> None:
 
     if line_number is not None:
         if (
-            not isinstance(line_number, int)
-            or line_number < 1
-            or line_number > total_lines
+                not isinstance(line_number, int)
+                or line_number < 1
+                or line_number > total_lines
         ):
             raise ValueError(f'Line number must be between 1 and {total_lines}')
         CURRENT_LINE = line_number
@@ -262,7 +269,7 @@ def edit_file(start: int, end: int, content: str) -> None:
 
             # recover the original file
             with open(original_file_backup_path, 'r') as fin, open(
-                CURRENT_FILE, 'w'
+                    CURRENT_FILE, 'w'
             ) as fout:
                 fout.write(fin.read())
             os.remove(original_file_backup_path)
@@ -380,7 +387,138 @@ def find_file(file_name: str, dir_path: str = './') -> None:
         print(f'[No matches found for "{file_name}" in {dir_path}]')
 
 
+def parse_pdf(file_path: str) -> None:
+    """Parses the content of a PDF file and prints it.
+
+    Args:
+        file_path: str: The path to the file to open.
+    """
+    print(f'[Reading PDF file from {file_path}]')
+    content = PyPDF2.PdfReader(file_path)
+    text = ''
+    for page_idx in range(len(content.pages)):
+        text += f'@@ Page {page_idx + 1} @@\n' + content.pages[page_idx].extract_text() + f'\n\n'
+    print(text.strip())
+
+
+def parse_docx(file_path: str) -> None:
+    """
+    Parses the content of a DOCX file and prints it.
+
+    Args:
+        file_path: str: The path to the file to open.
+    """
+    print(f'[Reading DOCX file from {file_path}]')
+    content = docx.Document(file_path)
+    text = ''
+    for i, para in enumerate(content.paragraphs):
+        text += f'@@ Page {i + 1} @@\n' + para.text + f'\n\n'
+    print(text)
+
+
+def parse_latex(file_path: str) -> None:
+    """
+    Parses the content of a LaTex file and prints it.
+
+    Args:
+        file_path: str: The path to the file to open.
+    """
+    print(f'[Reading LaTex file from {file_path}]')
+    with open(file_path, 'r') as f:
+        data = f.read()
+    text = LatexNodes2Text().latex_to_text(data)
+    print(text)
+
+
+def parse_audio(file_path: str) -> None:
+    """
+    As the current plugin cannot access the configuration, LLM cannot be utilized.
+    Therefore, it will not be implemented for now, pending further improvements.
+    """
+    pass
+
+
+def parse_image(file_path: str) -> None:
+    """
+    As the current plugin cannot access the configuration, LLM cannot be utilized.
+    Therefore, it will not be implemented for now, pending further improvements.
+    """
+    pass
+
+
+def parse_video(file_path: str) -> None:
+    """
+    As the current plugin cannot access the configuration, LLM cannot be utilized.
+    Therefore, it will not be implemented for now, pending further improvements.
+    """
+    pass
+
+
+def parse_pptx(file_path: str) -> None:
+    """
+    Parses the content of a pptx file and prints it.
+
+    Args:
+        file_path: str: The path to the file to open.
+    """
+    print(f'[Reading PowerPoint file from {file_path}]')
+    try:
+        pres = Presentation(str(file_path))
+        text = []
+        for slide_idx, slide in enumerate(pres.slides):
+            text.append(f'@@ Slide {slide_idx + 1} @@\n')
+            for shape in slide.shapes:
+                if hasattr(shape, 'text'):
+                    text.append(shape.text + '\n\n')
+        print('\n'.join(text))
+
+    except Exception as e:
+        print(f'Error reading PowerPoint file: {e}')
+
+
+def parse_excel(file_path: str) -> None:
+    """
+    Parses the content of a EXCEL file and prints it.
+
+    Args:
+        file_path: str: The path to the file to open.
+    """
+    print(f'[Reading Excel file from {file_path}]')
+    try:
+        excel_data = pd.read_excel(file_path, sheet_name=None)
+
+        all_sheets_text = []
+        for sheet_name, data in excel_data.items():
+            all_sheets_text.append(
+                f'@@ Sheet Name: {sheet_name} @@\n{data.to_string()}\n'
+            )
+        print('\n'.join(all_sheets_text))
+
+    except Exception as e:
+        print(f'Error reading Excel file: {e}')
+
+
+def parse_xlsx(file_path: str) -> None:
+    """
+    Parses the content of a XLSX file and prints it.
+
+    Args:
+        file_path: str: The path to the file to open.
+    """
+    print(f'Reading XLSX file from {file_path}')
+    workbook = openpyxl.load_workbook(file_path, data_only=True)
+    text = ''
+
+    for sheet in workbook:
+        text += f'@@ Sheet: {sheet.title} @@\n'
+        for row in sheet.iter_rows(values_only=True):
+            row_data = [str(cell) if cell is not None else '' for cell in row]
+            text += '\t'.join(row_data) + '\n'
+    print(text)
+
+
 __all__ = [
+    # file operation
     'open_file',
     'goto_line',
     'scroll_down',
@@ -390,6 +528,13 @@ __all__ = [
     'search_dir',
     'search_file',
     'find_file',
+    # readers
+    'parse_pdf',
+    'parse_docx',
+    'parse_latex',
+    'parse_pptx',
+    'parse_xlsx',
+    'parse_excel'
 ]
 
 
