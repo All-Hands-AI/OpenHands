@@ -1,8 +1,0 @@
-{
-  "action": "read",
-  "args": {
-    "path": "bad.txt",
-    "start": 0,
-    "end": -1
-  }
-}

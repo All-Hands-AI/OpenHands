@@ -5,14 +5,16 @@ import {
   IoIosRefresh,
   IoIosCloudUpload,
 } from "react-icons/io";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { IoFileTray } from "react-icons/io5";
 import { twMerge } from "tailwind-merge";
+import AgentState from "#/types/AgentState";
 import { setRefreshID } from "#/state/codeSlice";
 import { listFiles, uploadFiles } from "#/services/fileService";
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
 import toast from "#/utils/toast";
+import { RootState } from "#/store";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
@@ -87,6 +89,7 @@ function FileExplorer() {
   const [isHidden, setIsHidden] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
   const [files, setFiles] = React.useState<string[]>([]);
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const dispatch = useDispatch();
 
@@ -95,6 +98,12 @@ function FileExplorer() {
   };
 
   const refreshWorkspace = async () => {
+    if (
+      curAgentState === AgentState.LOADING ||
+      curAgentState === AgentState.STOPPED
+    ) {
+      return;
+    }
     dispatch(setRefreshID(Math.random()));
     setFiles(await listFiles("/"));
   };
@@ -104,7 +113,7 @@ function FileExplorer() {
       await uploadFiles(toAdd);
       await refreshWorkspace();
     } catch (error) {
-      toast.stickyError("ws", "Error uploading file");
+      toast.error("ws", "Error uploading file");
     }
   };
 
@@ -112,7 +121,9 @@ function FileExplorer() {
     (async () => {
       await refreshWorkspace();
     })();
+  }, [curAgentState]);
 
+  React.useEffect(() => {
     const enableDragging = () => {
       setIsDragging(true);
     };
@@ -129,6 +140,10 @@ function FileExplorer() {
       document.removeEventListener("drop", disableDragging);
     };
   }, []);
+
+  if (!files.length) {
+    return null;
+  }
 
   return (
     <div className="relative">

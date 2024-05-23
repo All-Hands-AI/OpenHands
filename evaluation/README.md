@@ -14,6 +14,7 @@ all the preprocessing/evaluation/analysis scripts.
 
 - SWE-Bench: [`evaluation/swe_bench`](./swe_bench)
 - ML-Bench: [`evaluation/ml_bench`](./ml_bench)
+- HumanEvalFix: [`evaluation/humanevalfix`](./humanevalfix)
 
 ### Result Visualization
 

@@ -47,6 +47,7 @@ class IPythonRunCellAction(Action):
     thought: str = ''
     action: str = ActionType.RUN_IPYTHON
     runnable: ClassVar[bool] = True
+    kernel_init_code: str = ''  # code to run in the kernel (if the kernel is restarted)
 
     def __str__(self) -> str:
         ret = '**IPythonRunCellAction**\n'

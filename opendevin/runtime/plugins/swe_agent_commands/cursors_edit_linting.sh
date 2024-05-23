@@ -12,7 +12,7 @@
 edit() {
     if [ -z "$CURRENT_FILE" ]
     then
-        echo 'No file open. Use the `open` command first.'
+        echo 'No file is opened. Use the `open` command first.'
         return
     fi
     local start_line=$((START_CURSOR - 1))

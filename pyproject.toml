@@ -51,13 +51,17 @@ pre-commit = "3.7.1"
 pytest = "*"
 pytest-cov = "*"
 pytest-asyncio = "*"
+pytest-forked = "*"
+flake8 = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
+evaluate = "*"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
