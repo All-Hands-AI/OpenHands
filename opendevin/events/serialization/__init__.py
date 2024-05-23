@@ -2,7 +2,6 @@ from .action import (
     action_from_dict,
 )
 from .event import (
-    EventSource,
     event_from_dict,
     event_to_dict,
     event_to_memory,
@@ -17,5 +16,4 @@ __all__ = [
     'event_to_dict',
     'event_to_memory',
     'observation_from_dict',
-    'EventSource',
 ]

@@ -8,8 +8,7 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.serialization.event import event_from_dict, event_to_dict
 from opendevin.storage import FileStore, get_file_store
 
-from .event import Event
-from .serialization.event import EventSource
+from .event import Event, EventSource
 
 
 class EventStreamSubscriber(str, Enum):
@@ -82,6 +81,9 @@ class EventStream:
         event._timestamp = datetime.now()  # type: ignore [attr-defined]
         event._source = source  # type: ignore [attr-defined]
         data = event_to_dict(event)
-        self._file_store.write(self._get_filename_for_id(event.id), json.dumps(data))
+        if event.id is not None:
+            self._file_store.write(
+                self._get_filename_for_id(event.id), json.dumps(data)
+            )
         for key, fn in self._subscribers.items():
             await fn(event)
