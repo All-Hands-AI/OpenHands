@@ -7,18 +7,19 @@ def main():
     parser.add_argument('--file', type=str, help="Path to the agent's output.jsonl")
     args = parser.parse_args()
     this_log = args.file
-    print(f'Reading {this_log}')
     outs = []
     with open(this_log, 'r') as f:
         lines = f.readlines()
         for line in lines:
             outs.append(json.loads(line))
+    print(f'Reading {this_log}')
+    print(f'Metadata:\n {outs[0]["metadata"]}')
 
     total = 0
     success = 0
     for out in outs:
         total += 1
-        if out['test_result']:
+        if out['test_result']['score']:
             success += 1
     print(f'Success rate: {success}/{total} = {success/total}')
 

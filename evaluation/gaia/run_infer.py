@@ -21,7 +21,6 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
-from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
 DATASET_CACHE_DIR = '~/.cache/open-devin/evals/gaia'
 DATASET_CACHE_DIR = os.path.expanduser(DATASET_CACHE_DIR)
@@ -74,6 +73,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
     # create process-specific workspace dir
     # we will create a workspace directory for EACH process
     # so that different agent don't interfere with each other.
+    old_workspace_mount_path = config.workspace_mount_path
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
     pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
@@ -104,7 +104,6 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         logger.addHandler(file_handler)
 
     logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
-    sandbox = DockerSSHBox()
     if instance['file_name'] != '':
         # if this question comes with a file, we need to save it to the workspace
         src_file = os.path.join(
@@ -132,7 +131,6 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         main(
             instruction,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
-            sandbox=sandbox,
         )
     )
     # ======= Attempt to evaluate the agent's edits =======
@@ -144,15 +142,20 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
 
     model_answer = ''
     for act, _ in reversed(state.history):
-        if isinstance(act, MessageAction) and act.source == 'model':
+        if isinstance(act, MessageAction) and act.source == 'agent':
             model_answer = act.content
             break
     logger.info(
         f'Final message: {model_answer} | Ground truth: {instance["Final answer"]}'
     )
-    test_result = question_scorer(
+    score = question_scorer(
         model_answer=model_answer, ground_truth=instance['Final answer']
     )
+    test_result = {
+        'score': score,
+        'model_answer': model_answer,
+        'ground_truth': instance['Final answer'],
+    }
 
     # Save the output
     output = {
@@ -165,11 +168,10 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         ],
         'error': state.error if state and state.error else None,
         'test_result': test_result,
-        'model_answer': model_answer,
     }
 
     # Close the sandbox
-    sandbox.close()
+    config.workspace_mount_path = old_workspace_mount_path
     return output
 
 
@@ -197,7 +199,6 @@ if __name__ == '__main__':
     huggingface_hub.snapshot_download(
         'gaia-benchmark/GAIA',
         repo_type='dataset',
-        token='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',
         local_dir=DATASET_CACHE_DIR,
     )
     gaia_tests = dataset[data_split]
@@ -299,7 +300,7 @@ if __name__ == '__main__':
         pbar.update(1)
         output = future.result()
         pbar.set_description(f'Instance {output["instance_id"]}')
-        pbar.set_postfix_str(f'Test Result: {output["test_result"]}')
+        pbar.set_postfix_str(f'Test Result: {output["test_result"]["score"]}')
         logger.info(
             f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]}'
         )
