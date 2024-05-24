@@ -199,7 +199,7 @@ class DockerSSHBox(Sandbox):
     def __init__(
         self,
         container_image: str | None = None,
-        timeout: int = 120,
+        timeout: int = config.sandbox_timeout,
         sid: str | None = None,
     ):
         logger.info(
@@ -219,10 +219,6 @@ class DockerSSHBox(Sandbox):
             sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
 
-        # TODO: this timeout is actually essential - need a better way to set it
-        # if it is too short, the container may still waiting for previous
-        # command to finish (e.g. apt-get update)
-        # if it is too long, the user may have to wait for a unnecessary long time
         self.timeout = timeout
         self.container_image = (
             config.sandbox_container_image
@@ -432,7 +428,7 @@ class DockerSSHBox(Sandbox):
     def execute(
         self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
-        timeout = timeout if timeout is not None else self.timeout
+        timeout = timeout or self.timeout
         commands = split_bash_commands(cmd)
         if len(commands) > 1:
             all_output = ''
