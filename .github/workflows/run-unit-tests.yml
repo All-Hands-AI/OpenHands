@@ -14,11 +14,6 @@ on:
       - 'docs/**'
       - 'evaluation/**'
   pull_request:
-    paths-ignore:
-      - '**/*.md'
-      - 'frontend/**'
-      - 'docs/**'
-      - 'evaluation/**'
 
 jobs:
   test-on-macos:
