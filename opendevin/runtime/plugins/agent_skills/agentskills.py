@@ -437,7 +437,7 @@ def parse_latex(file_path: str) -> None:
     with open(file_path, 'r') as f:
         data = f.read()
     text = LatexNodes2Text().latex_to_text(data)
-    print(text)
+    print(text.strip())
 
 
 def _base64_img(file_path: str) -> str:
@@ -595,10 +595,10 @@ def parse_pptx(file_path: str) -> None:
         pres = Presentation(str(file_path))
         text = []
         for slide_idx, slide in enumerate(pres.slides):
-            text.append(f'@@ Slide {slide_idx + 1} @@\n')
+            text.append(f'@@ Slide {slide_idx + 1} @@')
             for shape in slide.shapes:
                 if hasattr(shape, 'text'):
-                    text.append(shape.text + '\n\n')
+                    text.append(shape.text)
         print('\n'.join(text))
 
     except Exception as e:
@@ -681,3 +681,6 @@ for func_name in __all__:
 
     fn_signature = f'{func.__name__}' + str(signature(func))
     DOCUMENTATION += f'{fn_signature}:\n{cur_doc}\n\n'
+
+if __name__ == '__main__':
+    parse_excel('/Users/zhengmingzhang/PycharmProjects/OpenDevin/tests/unit/agent_skills/test.xlsx')

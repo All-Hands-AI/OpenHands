@@ -71,6 +71,7 @@ pylatexenc = "*"
 python-pptx = "*"
 opencv-python = "*"
 pandas = "*"
+reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
