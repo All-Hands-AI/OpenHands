@@ -92,7 +92,7 @@ def process_instance(instance, agent_class, metadata, eval_output_dir):
         f'The task is: {instance["task"]}\n\n'
         f'{instance["instruction"]}\n\n'
         'You should only modify files under the specified path in the repo.\n\n'
-        f'You can find the task repo at: {instance['path']}\n\n'
+        f'You can find the task repo at: {instance["path"]}\n\n'
         + (
             'Here is the prefix code for the task:\n'
             '```python\n'
@@ -214,7 +214,7 @@ if __name__ == '__main__':
         with open(output_file, 'r') as f:
             for line in f:
                 data = json.loads(line)
-                finished_instance_ids.add(data['id'])
+                finished_instance_ids.add(data['instance_id'])
         logger.warning(
             f'Output file {output_file} already exists. Loaded {len(finished_instance_ids)} finished instances.'
         )
