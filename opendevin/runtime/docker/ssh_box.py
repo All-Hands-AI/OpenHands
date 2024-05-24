@@ -218,7 +218,7 @@ class DockerSSHBox(Sandbox):
             )
             raise ex
 
-        if config.persist_session:
+        if config.persist_sandbox:
             self.instance_id = 'persisted'
         else:
             self.instance_id = (sid or '') + str(uuid.uuid4())
@@ -232,14 +232,18 @@ class DockerSSHBox(Sandbox):
         self.container_name = self.container_name_prefix + self.instance_id
 
         # set up random user password
-        self._ssh_password = config.ssh_password or str(uuid.uuid4())
-        self._ssh_port = config.ssh_port or find_available_tcp_port()
+        if config.persist_sandbox:
+            self._ssh_password = config.ssh_password
+            self._ssh_port = config.ssh_port
+        else:
+            self._ssh_password = str(uuid.uuid4())
+            self._ssh_port = find_available_tcp_port()
         try:
             docker.DockerClient().containers.get(self.container_name)
             is_initial_session = False
         except docker.errors.NotFound:
             is_initial_session = True
-        if not config.persist_session or is_initial_session:
+        if not config.persist_sandbox or is_initial_session:
             n_tries = 5
             while n_tries > 0:
                 try:

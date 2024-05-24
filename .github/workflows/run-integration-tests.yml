@@ -21,6 +21,8 @@ on:
       - 'evaluation/**'
 
 jobs:
+  env:
+    PERSIST_SANDBOX = "false"
   integration-tests-on-linux:
     name: Integration Tests on Linux
     runs-on: ubuntu-latest

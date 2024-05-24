@@ -22,6 +22,9 @@ class Singleton(type):
         for instance_type, instance in cls._instances.items():
             print('resetting... ', instance_type)
             for field in dataclasses.fields(instance_type):
+                if field.name == 'persist_sandbox':
+                    # do not reset the persist_sandbox flag
+                    continue
                 if dataclasses.is_dataclass(field.type):
                     setattr(instance, field.name, field.type())
                 else:
