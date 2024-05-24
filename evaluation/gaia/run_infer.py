@@ -4,6 +4,7 @@ import logging
 import multiprocessing as mp
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import time
@@ -19,7 +20,7 @@ from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
-from opendevin.events.action import MessageAction
+from opendevin.events.action import CmdRunAction, MessageAction
 from opendevin.events.serialization.event import event_to_dict
 
 DATASET_CACHE_DIR = '~/.cache/open-devin/evals/gaia'
@@ -37,7 +38,9 @@ def cleanup():
 def codeact_user_response(state: State) -> str:
     msg = (
         'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have solved the task, please first send your answer to user through message and then exit.\n'
+        'If you think you have solved the task, please first send your answer to user through message and then <execute_bash> exit </execute_bash>.\n'
+        'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
+        'For example: The answer to the question is <solution> 42 </solution>.\n'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
     )
     if state.history:
@@ -117,14 +120,19 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         dest_file = None
 
     # Prepare instruction
-    instruction = f"{instance['Question']}"
+    instruction = f"{instance['Question']}\n"
     logger.info(f'Instruction: {instruction}')
     if dest_file:
         instruction += f"\n\nThe mentioned file is provided in the workspace at: {dest_file.split('/')[-1]}"
 
     instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+    instruction += 'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
+    instruction += (
+        'For example: The answer to the question is <solution> 42 </solution>.\n'
+    )
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
+    logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     state: State = asyncio.run(
@@ -140,11 +148,22 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
     if state is None:
         raise ValueError('State should not be None.')
 
-    model_answer = ''
+    model_answer_raw = ''
     for act, _ in reversed(state.history):
-        if isinstance(act, MessageAction) and act.source == 'agent':
-            model_answer = act.content
+        if isinstance(act, CmdRunAction) and act.source == 'agent':
+            model_answer_raw = act.thought
+        elif isinstance(act, MessageAction) and act.source == 'agent':
+            model_answer_raw = act.content
             break
+
+    # attempt to parse model_answer
+    model_answer = re.findall(r'<solution>(.*?)</solution>', model_answer_raw)
+    if len(model_answer) == 0:
+        logger.warning(f'Failed to parse model answer: {model_answer_raw}')
+        model_answer = model_answer_raw
+    else:
+        model_answer = model_answer[0]
+
     logger.info(
         f'Final message: {model_answer} | Ground truth: {instance["Final answer"]}'
     )
@@ -153,6 +172,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
     )
     test_result = {
         'score': score,
+        'model_answer_raw': model_answer_raw,
         'model_answer': model_answer,
         'ground_truth': instance['Final answer'],
     }
