@@ -25,7 +25,6 @@ import PyPDF2
 import docx
 from pptx import Presentation
 from pylatexenc.latex2text import LatexNodes2Text
-import requests
 from openai import OpenAI
 
 CURRENT_FILE = None
@@ -41,6 +40,8 @@ OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-2024-05-13')
 MAX_TOKEN = os.getenv('MAX_TOKEN', 500)
 
 OPENAI_PROXY = f'{OPENAI_BASE_URL}/chat/completions'
+
+client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
 
 
 def _lint_file(file_path: str) -> Optional[str]:
@@ -461,32 +462,21 @@ def _base64_video(file_path: str, frame_interval: int = 10) -> list[str]:
     return base64_frames
 
 
-def _prepare_api_call(task: str, base64_frame: str, model='gpt-4o-2024-05-13', max_token=500):
-    return {
-        'model': model,
-        'messages': [
-            {
-                'role': 'user',
-                'content': [
-                    {'type': 'text', 'text': task},
-                    {
-                        'type': 'image_url',
-                        'image_url': {
-                            'url': f'data:image/jpeg;base64,{base64_frame}'
-                        },
+def _prepare_image_messages(task: str, base64_image: str):
+    return [
+        {
+            'role': 'user',
+            'content': [
+                {'type': 'text', 'text': task},
+                {
+                    'type': 'image_url',
+                    'image_url': {
+                        'url': f'data:image/jpeg;base64,{base64_image}'
                     },
-                ],
-            }
-        ],
-        'max_tokens': max_token,
-    }
-
-
-def _get_openai_headers() -> dict:
-    return {
-        'Content-Type': 'application/json',
-        'Authorization': f'Bearer {OPENAI_API_KEY}',
-    }
+                },
+            ],
+        }
+    ]
 
 
 def parse_audio(file_path: str, model: str = 'whisper-1') -> None:
@@ -523,12 +513,12 @@ def parse_image(file_path: str, task: str = 'Describe this image as detail as po
     # TODO: record the COST of the API call
     try:
         base64_image = _base64_img(file_path)
-        api_call = _prepare_api_call(task, base64_image)
-        response = requests.post(
-            OPENAI_PROXY, headers=_get_openai_headers(), json=api_call
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=_prepare_image_messages(task, base64_image),
+            max_tokens=MAX_TOKEN
         )
-        out = response.json()
-        content = out['choices'][0]['message']['content']
+        content = response.choices[0].message.content
         print(content)
 
     except Exception as error:
@@ -565,12 +555,14 @@ def parse_video(file_path: str,
         idx += 1
         print(f'[Process the {file_path}, current No. {idx * frame_interval} frame...]')
         # TODO: record the COST of the API call
-        api_call = _prepare_api_call(task, base64_frame)
         try:
-            response = requests.post(
-                OPENAI_PROXY, headers=_get_openai_headers(), json=api_call
+            response = client.chat.completions.create(
+                model=OPENAI_MODEL,
+                messages=_prepare_image_messages(task, base64_frame),
+                max_tokens=MAX_TOKEN
             )
-            content = response.json()['choices'][0]['message']['content']
+
+            content = response.choices[0].message.content
             current_frame_content = f"Frame {idx}'s content: {content}\n"
             video_summary += current_frame_content
             print(current_frame_content)
