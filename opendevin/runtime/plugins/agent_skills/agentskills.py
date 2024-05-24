@@ -35,7 +35,6 @@ def _lint_file(file_path: str) -> Optional[str]:
         Optional[str]: A string containing the linting report if the file failed to lint, None otherwise.
     """
 
-    # Check if the file ends with .py and if auto-linting is enabled
     if file_path.endswith('.py'):
         # Define the flake8 command with selected error codes
         command = [
