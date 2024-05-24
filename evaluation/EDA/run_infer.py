@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import multiprocessing as mp
@@ -19,10 +20,11 @@ from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import MessageAction
+from opendevin.core.main import main
 
 DATASET_CACHE_DIR = '~/.cache/open-devin/evals/eda'
 DATASET_CACHE_DIR = os.path.expanduser(DATASET_CACHE_DIR)
-
+game = None
 
 def cleanup():
     print('Cleaning up child processes...')
@@ -33,23 +35,17 @@ def cleanup():
 
 
 def codeact_user_response(state: State) -> str:
-    msg = (
-        'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have solved the task, please run the following command: <execute_bash> exit </execute_bash>.\n'
-        'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK.\n'
-    )
+    global game
+    model_guess = ""
     if state.history:
-        user_msgs = [
-            action
-            for action, _ in state.history
-            if isinstance(action, MessageAction) and action.source == 'user'
-        ]
-        if len(user_msgs) >= 2:
-            # let the agent know that it can give up when it has tried 3 times
-            return (
-                msg
-                + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
-            )
+        for act, _ in reversed(state.history):
+            if isinstance(act, MessageAction) and act.source == 'agent':
+                model_guess = act.content
+                break
+    msg = game.generate_user_response(model_guess)
+    game.curr_turn += 1
+    logger.info(f"Model guess: {model_guess}")
+    logger.info(f'Anwser response: {msg}')
     return msg
 
 
@@ -119,6 +115,7 @@ def process_instance(
 
     # TODO: use codeactagent as guesser_model
     guesser_model = 'gpt-3.5-turbo'
+    global game
     game = _game_class[metadata['dataset']](
         item=instance['text'],
         answerer_model=metadata['answerer_model'],
@@ -136,28 +133,27 @@ def process_instance(
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     # TODO: convert Q20 game logic into codeactagent
-    game.game_play()
+    # game.game_play()
 
-    # state: State = asyncio.run(
-    #     main(
-    #         instruction,
-    #         fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
-    #     )
-    # )
+    state: State = asyncio.run(
+        main(
+            instruction,
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+        )
+    )
     # ======= Attempt to evaluate the agent's edits =======
     # If you are working on simplier benchmark that only evaluates the final model output (e.g., in a MessageAction)
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
 
-    # if state is None:
-    #     raise ValueError('State should not be None.')
+    if state is None:
+        raise ValueError('State should not be None.')
 
-    # final_message = ''
-    # for act in reversed(state.history):
-    #     if isinstance(act, MessageAction):
-    #         final_message = act.content
-    #         break
-    state = None
-    final_message = game.guesser_messages[-2]['content']
+    final_message = ''
+    for act, _ in reversed(state.history):
+        if isinstance(act, MessageAction) and act.source == 'agent':
+            final_message = act.content
+            break
+
     logger.info(f'Final message: {final_message} | Ground truth: {instance["text"]}')
     test_result = game.reward()
 
@@ -167,7 +163,7 @@ def process_instance(
         'instance': instance,
         'instruction': instruction,
         'metadata': metadata,
-        'history': game.dialog_history(),
+        # 'history': game.dialog_history(),
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
