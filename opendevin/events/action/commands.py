@@ -40,6 +40,15 @@ class CmdKillAction(Action):
     def __str__(self) -> str:
         return f'**CmdKillAction**\n{self.command_id}'
 
+    def __eq__(self, other: object) -> bool:
+        """
+        Compare two CmdKillAction objects ignoring the command_id/pid.
+        """
+        if isinstance(other, CmdKillAction):
+            # for loop detection purpose, we care about running the same command, not the same pid
+            return self.thought == other.thought
+        return False
+
 
 @dataclass
 class IPythonRunCellAction(Action):
