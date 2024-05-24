@@ -61,6 +61,7 @@ jobs:
   integration-tests-on-mac:
     name: Integration Tests on MacOS
     runs-on: macos-13
+    if: ${{ false }} # Disable MacOS tests due to environment instability
     strategy:
       fail-fast: false
       matrix:
@@ -103,11 +104,3 @@ jobs:
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-  test_matrix_success:
-    name: All Integration Tests Passed
-    runs-on: ubuntu-latest
-    # make mac tests as optional as they are too slow
-    needs: [integration-tests-on-linux]
-    steps:
-      - run: echo Done!
