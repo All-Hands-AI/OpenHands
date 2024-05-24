@@ -6,6 +6,7 @@ from concurrent.futures import ProcessPoolExecutor
 from typing import Dict
 
 from datasets import load_dataset
+from tqdm import tqdm
 
 from opendevin.controller.state.state import State
 from opendevin.core.config import config, get_llm_config_arg, get_parser
@@ -59,21 +60,6 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def get_opendevin_config():
-    parser = get_parser()
-    args, _ = parser.parse_known_args()
-    if args.llm_config:
-        specified_llm_config = get_llm_config_arg(args.llm_config)
-        if specified_llm_config:
-            config.llm = specified_llm_config
-    return config
-
-
-def get_sandbox(config):
-    sandbox = DockerSSHBox(image=config.DOCKER_IMAGE, container_name='sandbox')
-    return sandbox
-
-
 def parse_eval_output(output: str) -> Dict[str, float]:
     metrics = {}
     for line in output.split('\n'):
@@ -87,21 +73,18 @@ def parse_eval_output(output: str) -> Dict[str, float]:
 
 
 def process_instance(instance, agent_class, metadata, eval_output_dir):
-    # Get the OpenDevin config
-    config = get_opendevin_config()
-
     # Create a sandbox
-    sandbox = get_sandbox(config)
+    sandbox = DockerSSHBox()
 
     # Clone the task repo into the sandbox
     repo_url = instance['github']
     repo_name = repo_url.split('/')[-1]
-    sandbox.exec(f'git clone {repo_url} /workspace/{repo_name}')
-    sandbox.exec(f'chmod -R 777 /workspace/{repo_name}')
+    sandbox.execute(f'git clone {repo_url} /workspace/{repo_name}')
+    sandbox.execute(f'chmod -R 777 /workspace/{repo_name}')
 
     # Navigate to the task's code path
     task_path = os.path.join('/workspace', repo_name, instance['path'])
-    sandbox.exec(f'cd {task_path}')
+    sandbox.execute(f'cd {task_path}')
 
     # Prepare the task instruction
     instruction = (
@@ -132,7 +115,7 @@ def process_instance(instance, agent_class, metadata, eval_output_dir):
     logger.info(f'Running evaluation command: {eval_cmd}')
 
     try:
-        exit_code, eval_output = sandbox.exec(eval_cmd)
+        exit_code, eval_output = sandbox.execute(eval_cmd)
     except Exception as e:
         logger.error(f'Error running evaluation command: {e}')
         exit_code = -1
@@ -170,7 +153,7 @@ if __name__ == '__main__':
     parser = get_parser()
     parser.add_argument(
         '-s',
-        '--data-split',
+        '--eval-split',
         type=str,
         default='full',
         choices=['full', 'quarter'],
@@ -178,7 +161,7 @@ if __name__ == '__main__':
     )
     args, _ = parser.parse_known_args()
 
-    data_split = args.data_split
+    data_split = args.eval_split
     agent_class = args.agent_cls
     num_workers = args.eval_num_workers
 
@@ -192,13 +175,23 @@ if __name__ == '__main__':
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
-    ml_bench = load_dataset('DanielShao/ml-bench')
+    ml_bench = load_dataset('DanielShao/ml-bench', split=data_split).to_pandas()
 
-    eval_output_dir = f'evaluation/ml_bench/eval_output_{data_split}'
+    # TEST METADATA
+    model_name = config.llm.model.split('/')[-1]
+    max_iterations = args.max_iterations
+    eval_note = ''
+    if args.eval_note is not None:
+        eval_note += '_N_' + args.eval_note
+    eval_output_dir = os.path.join(
+        args.eval_output_dir,
+        'ml_bench',
+        agent_class,
+        model_name + '_maxiter_' + str(max_iterations) + eval_note,
+    )
     os.makedirs(eval_output_dir, exist_ok=True)
     os.makedirs(os.path.join(eval_output_dir, 'logs'), exist_ok=True)
-
-    model_name = config.llm.model.split('/')[-1]
+    logger.info(f'Using evaluation output directory: {eval_output_dir}')
 
     metadata = {
         'agent_class': agent_class,
@@ -207,20 +200,62 @@ if __name__ == '__main__':
         'num_workers': num_workers,
     }
 
-    logger.info(f'Using evaluation output directory: {eval_output_dir}')
+    output_file = os.path.join(eval_output_dir, 'output.jsonl')
     logger.info(f'Evaluating on data split: {data_split}')
     logger.info(f'Using {num_workers} worker processes')
+    logger.info(f'Writing evaluation output to {output_file}')
 
-    output_file = os.path.join(eval_output_dir, f'results_{data_split}.jsonl')
-    logger.info(f'Writing results to {output_file}')
+    finished_instance_ids = set()
+    if os.path.exists(output_file):
+        with open(output_file, 'r') as f:
+            for line in f:
+                data = json.loads(line)
+                finished_instance_ids.add(data['id'])
+        logger.warning(
+            f'Output file {output_file} already exists. Loaded {len(finished_instance_ids)} finished instances.'
+        )
+    output_fp = open(output_file, 'a')
+
+    logger.info(
+        f'Evaluation started with Agent {agent_class}, model {model_name}, data split {data_split}.'
+    )
+
+    # Filter out finished instances
+    new_instances = [
+        instance
+        for _, instance in ml_bench.iterrows()
+        if instance['id'] not in finished_instance_ids
+    ]
+    logger.info(
+        f'Finished instances: {len(finished_instance_ids)}, Remaining instances: {len(new_instances)}'
+    )
+
+    pbar = tqdm(total=len(new_instances))
+
+    # This function tracks the progress AND writes the output to a JSONL file
+    def update_progress(future):
+        pbar.update(1)
+        output = future.result()
+        pbar.set_description(f'Instance {output["instance_id"]}')
+        pbar.set_postfix_str(f'Metrics: {output["metrics"]}')
+        logger.info(
+            f'Finished evaluation for instance {output["instance_id"]}: {output["metrics"]}'
+        )
+        output_fp.write(json.dumps(output) + '\n')
+        output_fp.flush()
+
+    # This sets the multi-processing
+    num_workers = args.eval_num_workers
+    logger.info(f'Using {num_workers} workers for evaluation.')
 
     with open(output_file, 'w') as f:
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
-            for instance in ml_bench[data_split]:
+            for _, instance in ml_bench.iterrows():
                 future = executor.submit(
                     process_instance, instance, agent_class, metadata, eval_output_dir
                 )
+                future.add_done_callback(update_progress)
                 futures.append(future)
 
             for future in futures:
