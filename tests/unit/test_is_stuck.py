@@ -4,6 +4,7 @@ import pytest
 
 from opendevin.controller.agent_controller import AgentController
 from opendevin.events.action import CmdRunAction, FileReadAction, MessageAction
+from opendevin.events.action.commands import CmdKillAction
 from opendevin.events.observation import (
     CmdOutputObservation,
     FileReadObservation,
@@ -202,7 +203,7 @@ class TestAgentController:
                     command_id=2, command='ls', content='file1.txt\nfile2.txt'
                 ),
             ),
-            # message from the user
+            # message from the user shouldn't interfere with the detection
             (message_action, NullObservation(content='')),
             (
                 CmdRunAction(command='ls'),
@@ -214,6 +215,71 @@ class TestAgentController:
                 CmdRunAction(command='ls'),
                 CmdOutputObservation(
                     command_id=4, command='ls', content='file1.txt\nfile2.txt'
+                ),
+            ),
+        ]
+        with patch('logging.Logger.warning') as mock_warning:
+            assert controller._is_stuck() is True
+            mock_warning.assert_called_once_with('Action, Observation loop detected')
+
+    def test_is_stuck_four_tuples_cmd_kill_and_output(self, controller):
+        message_action = MessageAction(content='Done', wait_for_response=False)
+        message_action._source = EventSource.USER
+        controller.state.history = [
+            (
+                MessageAction(content='Hello', wait_for_response=False),
+                Observation(content='Response 1'),
+            ),
+            (
+                CmdKillAction(
+                    command_id=1,
+                    thought='It looks like storybook is stuck, lets kill it',
+                ),
+                CmdOutputObservation(
+                    content='Background command with id 1 has been killed.',
+                    command_id=1,
+                    command='storybook',
+                    exit_code=0,
+                ),
+            ),
+            (
+                # command_id is ignored for the eq check, it's the pid
+                CmdKillAction(
+                    command_id=2,
+                    thought='It looks like storybook is stuck, lets kill it',
+                ),
+                # command_id here too
+                CmdOutputObservation(
+                    content='Background command with id 2 has been killed.',
+                    command_id=2,
+                    command='storybook',
+                    exit_code=0,
+                ),
+            ),
+            # message from the user
+            (message_action, NullObservation(content='')),
+            (
+                CmdKillAction(
+                    command_id=3,
+                    thought='It looks like storybook is stuck, lets kill it',
+                ),
+                CmdOutputObservation(
+                    content='Background command with id 3 has been killed.',
+                    command_id=3,
+                    command='storybook',
+                    exit_code=0,
+                ),
+            ),
+            (
+                CmdKillAction(
+                    command_id=4,
+                    thought='It looks like storybook is stuck, lets kill it',
+                ),
+                CmdOutputObservation(
+                    content='Background command with id 4 has been killed.',
+                    command_id=4,
+                    command='storybook',
+                    exit_code=0,
                 ),
             ),
         ]
