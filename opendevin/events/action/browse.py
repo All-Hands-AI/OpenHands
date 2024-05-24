@@ -17,6 +17,13 @@ class BrowseURLAction(Action):
     def message(self) -> str:
         return f'Browsing URL: {self.url}'
 
+    def __str__(self) -> str:
+        ret = '**BrowseURLAction**\n'
+        if self.thought:
+            ret += f'THOUGHT: {self.thought}\n'
+        ret += f'URL: {self.url}'
+        return ret
+
 
 @dataclass
 class BrowseInteractiveAction(Action):
@@ -28,3 +35,10 @@ class BrowseInteractiveAction(Action):
     @property
     def message(self) -> str:
         return f'Executing browser actions: {self.browser_actions}'
+
+    def __str__(self) -> str:
+        ret = '**BrowseInteractiveAction**\n'
+        if self.thought:
+            ret += f'THOUGHT: {self.thought}\n'
+        ret += f'BROWSER_ACTIONS: {self.browser_actions}'
+        return ret
