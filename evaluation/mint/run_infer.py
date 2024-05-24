@@ -50,23 +50,6 @@ def codeact_user_response(state: State, task: Task, task_config: Dict[str, int])
 
     msg = result_state.latest_output['content']
     logger.info('User response:' + msg)
-    # msg += (
-    #     'Please continue working on the task on whatever approach you think is suitable.\n'
-    #     'If you think you have finished the task, please run the following command: <execute_bash> exit </execute_bash>.\n'
-    #     'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK.\n'
-    # )
-    # if state.history:
-    #     user_msgs = [
-    #         action
-    #         for action, obs in state.history
-    #         if isinstance(action, MessageAction) and action.source == 'user'
-    #     ]
-    #     if len(user_msgs) >= 2:
-    #         # let the agent know that it can give up when it has tried 3 times
-    #         return (
-    #             msg
-    #             + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
-    #         )
     return msg
 
 
