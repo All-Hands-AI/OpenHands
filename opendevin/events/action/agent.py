@@ -40,6 +40,11 @@ class AgentSummarizeAction(Action):
     def message(self) -> str:
         return self.summary
 
+    def __str__(self) -> str:
+        ret = '**AgentSummarizeAction**\n'
+        ret += f'SUMMARY: {self.summary}'
+        return ret
+
 
 @dataclass
 class AgentFinishAction(Action):

@@ -18,10 +18,7 @@ from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
 from opendevin.runtime.docker.process import DockerProcess, Process
-from opendevin.runtime.plugins import (
-    JupyterRequirement,
-    SWEAgentCommandsRequirement,
-)
+from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.utils import find_available_tcp_port
 
@@ -202,7 +199,7 @@ class DockerSSHBox(Sandbox):
     def __init__(
         self,
         container_image: str | None = None,
-        timeout: int = 120,
+        timeout: int = config.sandbox_timeout,
         sid: str | None = None,
     ):
         logger.info(
@@ -222,10 +219,6 @@ class DockerSSHBox(Sandbox):
             sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
 
-        # TODO: this timeout is actually essential - need a better way to set it
-        # if it is too short, the container may still waiting for previous
-        # command to finish (e.g. apt-get update)
-        # if it is too long, the user may have to wait for a unnecessary long time
         self.timeout = timeout
         self.container_image = (
             config.sandbox_container_image
@@ -364,11 +357,25 @@ class DockerSSHBox(Sandbox):
             environment=self._env,
         )
 
-    def start_ssh_session(self):
-        # start ssh session at the background
-        self.ssh = pxssh.pxssh(
-            echo=False, timeout=self.timeout, encoding='utf-8', codec_errors='replace'
-        )
+    def start_ssh_session(self, n_retries=5):
+        while n_retries > 0:
+            try:
+                self.ssh = pxssh.pxssh(
+                    echo=False,
+                    timeout=self.timeout,
+                    encoding='utf-8',
+                    codec_errors='replace',
+                )
+                break
+            except pxssh.ExceptionPxssh as e:
+                logger.exception(
+                    'Failed to start SSH session, retrying...', exc_info=False
+                )
+                n_retries -= 1
+                if n_retries == 0:
+                    raise e
+                time.sleep(5)
+
         hostname = self.ssh_hostname
         if self.run_as_devin:
             username = 'opendevin'
@@ -421,7 +428,7 @@ class DockerSSHBox(Sandbox):
     def execute(
         self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
-        timeout = timeout if timeout is not None else self.timeout
+        timeout = timeout or self.timeout
         commands = split_bash_commands(cmd)
         if len(commands) > 1:
             all_output = ''
@@ -721,10 +728,10 @@ if __name__ == '__main__':
     )
 
     # Initialize required plugins
-    ssh_box.init_plugins([JupyterRequirement(), SWEAgentCommandsRequirement()])
+    ssh_box.init_plugins([AgentSkillsRequirement(), JupyterRequirement()])
     logger.info(
-        '--- SWE-AGENT COMMAND DOCUMENTATION ---\n'
-        f'{SWEAgentCommandsRequirement().documentation}\n'
+        '--- AgentSkills COMMAND DOCUMENTATION ---\n'
+        f'{AgentSkillsRequirement().documentation}\n'
         '---'
     )
 

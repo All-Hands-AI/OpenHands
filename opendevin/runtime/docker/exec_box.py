@@ -107,7 +107,7 @@ class DockerExecBox(Sandbox):
     def __init__(
         self,
         container_image: str | None = None,
-        timeout: int = 120,
+        timeout: int = config.sandbox_timeout,
         sid: str | None = None,
     ):
         # Initialize docker client. Throws an exception if Docker is not reachable.
