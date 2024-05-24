@@ -1,9 +1,7 @@
 from opendevin.core.exceptions import LLMOutputError
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.utils import json
-from opendevin.events.action.action import Action
 from opendevin.events.action.agent import AgentSummarizeAction
-from opendevin.events.observation.summary import SummaryObservation
 from opendevin.events.serialization.action import action_from_dict
 
 SUMMARY_PROMPT = """
@@ -41,7 +39,7 @@ def get_summarize_prompt(events: list[dict]) -> str:
     }
 
 
-def parse_summary_response(response: str) -> tuple[Action, SummaryObservation]:
+def parse_summary_response(response: str) -> AgentSummarizeAction:
     """
     Parses a summary of the events
 
@@ -63,8 +61,5 @@ def parse_summary_response(response: str) -> tuple[Action, SummaryObservation]:
 
     # the summarize action should have a 'summary' key
     # FIXME what kind of errors should we have or how lenient can we be?
-    observation = SummaryObservation(
-        content=action.summary,
-        priority='low',
-    )
-    return action, observation
+
+    return action

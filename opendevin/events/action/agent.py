@@ -44,6 +44,8 @@ class AgentSummarizeAction(Action):
     summarized_actions: str = ''
     summary: str = ''
     action: str = ActionType.SUMMARIZE
+    _chunk_start: int = -1
+    _chunk_end: int = -1
 
     @property
     def message(self) -> str:

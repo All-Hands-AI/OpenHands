@@ -5,6 +5,8 @@ from enum import Enum
 from typing import Callable, Iterable
 
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.events.action.agent import AgentSummarizeAction
+from opendevin.events.observation.summary import SummaryObservation
 from opendevin.events.serialization.event import event_from_dict, event_to_dict
 from opendevin.storage import FileStore, get_file_store
 
@@ -53,11 +55,13 @@ class EventStream:
 
     def get_events(self, start_id=0, end_id=None) -> Iterable[Event]:
         event_id = start_id
+        logger.debug(f'Getting events from {start_id} to {end_id}')
         while True:
             if end_id is not None and event_id > end_id:
                 break
             try:
                 event = self.get_event(event_id)
+                logger.debug(f'{event_id}: {event}')
             except FileNotFoundError:
                 break
             yield event
@@ -86,12 +90,32 @@ class EventStream:
         async with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1
-        event._timestamp = datetime.now()  # type: ignore [attr-defined]
-        event._source = source  # type: ignore [attr-defined]
-        data = event_to_dict(event)
-        if event.id is not None:
-            self._file_store.write(
-                self._get_filename_for_id(event.id), json.dumps(data)
-            )
-        for key, fn in self._subscribers.items():
-            await fn(event)
+            event._timestamp = datetime.now()  # type: ignore [attr-defined]
+            event._source = source  # type: ignore [attr-defined]
+
+            data = event_to_dict(event)
+            if event.id is not None:
+                self._file_store.write(
+                    self._get_filename_for_id(event.id), json.dumps(data)
+                )
+
+            if isinstance(event, AgentSummarizeAction):
+                await self.replace_events_with_summary(event)
+
+            for key, fn in self._subscribers.items():
+                await fn(event)
+
+    async def replace_events_with_summary(self, summary_action: AgentSummarizeAction):
+        async with self._lock:
+            start_id = summary_action._chunk_start
+            end_id = summary_action._chunk_end
+
+            # Remove the events that were summarized
+            for event_id in range(start_id, end_id):
+                filename = self._get_filename_for_id(event_id)
+                self._file_store.delete(filename)
+
+            # Add the summary action and observation to the event stream
+            summary_observation = SummaryObservation(content=summary_action.summary)
+            await self.add_event(summary_action, EventSource.AGENT)
+            await self.add_event(summary_observation, EventSource.AGENT)

@@ -218,7 +218,9 @@ class CodeActAgent(Agent):
             if obs_message:
                 messages.append(obs_message)
 
-        latest_user_message = [m for m in messages if m['role'] == 'user'][-1]
+        latest_user_message = latest_user_message = next(
+            (m for m in reversed(messages) if m['role'] == 'user'), None
+        )
         if latest_user_message:
             if latest_user_message['content'].strip() == '/exit':
                 return AgentFinishAction()
@@ -239,7 +241,9 @@ class CodeActAgent(Agent):
         except ContextWindowExceededError:
             logger.warning('Context window exceeded. Condensing memory.')
             # Retry processing events with condensed memory
-            response = self.retry_with_condense(state)
+            if self.memory_condenser:
+                action = self._retry_with_condense(state)
+                return action
 
         action_str: str = parse_response(response)
         state.num_of_chars += sum(
@@ -282,31 +286,19 @@ class CodeActAgent(Agent):
             )
         else:
             # We assume the LLM is GOOD enough that when it returns pure natural language
-            # it want to talk to the user
+            # it wants to talk to the user
             return MessageAction(content=action_str, wait_for_response=True)
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
 
-    def retry_with_condense(self, state: State) -> list[dict[str, str]] | bool:
+    def _retry_with_condense(self, state: State) -> AgentSummarizeAction:
         events = state.history
-        if self.memory_condenser:
-            condensed_events = self.memory_condenser.condense(events)
 
-            messages: list[dict[str, str]] = [
-                {'role': 'system', 'content': self.system_message},
-                {
-                    'role': 'user',
-                    'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!",
-                },
-            ]
-            for action, observation in condensed_events:
-                action_message = get_action_message(action)
-                if action_message:
-                    messages.append(action_message)
-                observation_message = get_observation_message(observation)
-                if observation_message:
-                    messages.append(observation_message)
-            messages.append({'role': 'system', 'content': SYSTEM_SUFFIX})
-            return messages
-        return False
+        if self.memory_condenser:
+            summary_action = self.memory_condenser.condense(events)
+
+            if summary_action:
+                return summary_action
+
+        raise Exception('Memory condensation could not be performed.')

@@ -109,7 +109,10 @@ def get_console_handler():
     Returns a console handler for logging.
     """
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
+    if config.debug:
+        console_handler.setLevel(logging.DEBUG)
+    else:
+        console_handler.setLevel(logging.INFO)
     console_handler.setFormatter(console_formatter)
     return console_handler
 
@@ -157,6 +160,10 @@ opendevin_logger.addHandler(get_file_handler())
 opendevin_logger.addHandler(get_console_handler())
 opendevin_logger.addFilter(SensitiveDataFilter(opendevin_logger.name))
 opendevin_logger.propagate = False
+if config.debug:
+    opendevin_logger.setLevel(logging.DEBUG)
+else:
+    opendevin_logger.setLevel(logging.INFO)
 opendevin_logger.debug('Logging initialized')
 opendevin_logger.debug(
     'Logging to %s', os.path.join(os.getcwd(), 'logs', 'opendevin.log')

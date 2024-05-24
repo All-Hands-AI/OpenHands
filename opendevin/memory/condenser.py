@@ -1,8 +1,8 @@
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action.action import Action
+from opendevin.events.action.agent import AgentSummarizeAction
 from opendevin.events.event import EventSource
 from opendevin.events.observation.observation import Observation
-from opendevin.events.observation.summary import SummaryObservation
 from opendevin.llm.llm import LLM
 from opendevin.memory.prompts import parse_summary_response
 
@@ -35,7 +35,7 @@ class MemoryCondenser:
     def condense(
         self,
         events: list[tuple[Action, Observation]],
-    ) -> list[tuple[Action, Observation]]:
+    ) -> AgentSummarizeAction | None:
         """
         Condenses the given list of events using the llm. Returns the condensed list of events.
 
@@ -52,48 +52,41 @@ class MemoryCondenser:
         Returns:
         - The condensed list of events.
         """
-        condensed_events = []
+        # chunk of (action, observation) to summarize
         chunk: list[tuple[Action, Observation]] = []
+        chunk_start_index = 0
 
-        for action, observation in events:
+        for i, (action, observation) in enumerate(events):
             if action.source == EventSource.USER:
-                # event.should_condense = False
-                condensed_events.append((action, observation))
                 if chunk:
-                    # Summarize the previous chunk
-                    actions, summary_observation = self._summarize_chunk(chunk)
-                    if actions and summary_observation:
-                        assert isinstance(
-                            summary_observation, SummaryObservation
-                        )  # FIXME we don't actually want assert
-                        summary_observation._source = EventSource.USER  # type: ignore [attr-defined]
-                        condensed_events.append((action, summary_observation))
-                    chunk = []
+                    summary_action = self._summarize_chunk(chunk)
+                    summary_action._chunk_start = chunk_start_index
+                    summary_action._chunk_end = i
+                    return summary_action
+                else:
+                    chunk_start_index = i + 1
             elif hasattr(action, 'priority') and getattr(action, 'priority') == 'high':
-                condensed_events.append((action, observation))
                 if chunk:
-                    # Summarize the previous chunk
-                    actions, summary_observation = self._summarize_chunk(chunk)
-                    if actions and summary_observation:
-                        assert isinstance(summary_observation, SummaryObservation)
-                        summary_observation._source = (EventSource.USER,)  # type: ignore [attr-defined]
-                        condensed_events.append((action, summary_observation))
-                    chunk = []
-            chunk.append((action, observation))
+                    summary_action = self._summarize_chunk(chunk)
+                    summary_action._chunk_start = chunk_start_index
+                    summary_action._chunk_end = i
+                    return summary_action
+                else:
+                    chunk_start_index = i + 1
+            else:
+                chunk.append((action, observation))
 
-        # Summarize the last chunk if any
         if chunk:
-            actions, summary_observation = self._summarize_chunk(chunk)
-            if actions and summary_observation:
-                assert isinstance(summary_observation, SummaryObservation)
-                summary_observation._source = EventSource.USER  # type: ignore [attr-defined]
-                condensed_events.append((action, summary_observation))
-
-        return condensed_events
+            summary_action = self._summarize_chunk(chunk)
+            summary_action._chunk_start = chunk_start_index
+            summary_action._chunk_end = len(events)
+            return summary_action
+        else:
+            return None
 
     def _summarize_chunk(
         self, chunk: list[tuple[Action, Observation]]
-    ) -> tuple[Action, Observation]:
+    ) -> AgentSummarizeAction:
         """
         Summarizes the given chunk of events into a single sentence.
 
@@ -106,20 +99,19 @@ class MemoryCondenser:
         try:
             prompt = f"""
             Given the following actions and observations, create a JSON response with:
-                - "action": "Summarize"
-                - "content": A comma-separated list of all the action names from the provided actions
+                - "action_type": "SUMMARIZE"
+                - "actions": A comma-separated list of all the action names from the provided actions
                 - "summary": A single sentence summarizing all the provided observations
 
                 {chunk}
             """
             messages = [{'role': 'user', 'content': prompt}]
             response = self.llm.do_completion(messages=messages)
-            action, observation = parse_summary_response(response)
-            return action, observation
+            action = parse_summary_response(response)
+            return action
         except Exception as e:
             logger.error(f'Failed to summarize chunk: {e}')
-
-        raise Exception  # could return NullAction / NullObservation... and ignore them, or just some exception
+            raise Exception
 
     def _estimate_token_count(self, events: list[dict]) -> int:
         """

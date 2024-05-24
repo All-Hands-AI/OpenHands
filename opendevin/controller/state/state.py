@@ -44,6 +44,7 @@ class State:
     def save_to_session(self, sid: str):
         fs = get_file_store()
         pickled = pickle.dumps(self)
+        logger.debug(f'Saving state to session {sid}:{self.agent_state}')
         encoded = base64.b64encode(pickled).decode('utf-8')
         try:
             fs.write(f'sessions/{sid}/agent_state.pkl', encoded)
