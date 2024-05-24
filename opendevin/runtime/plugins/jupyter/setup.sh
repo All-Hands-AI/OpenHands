@@ -2,7 +2,7 @@
 
 set -e
 
-
+source ~/.bashrc
 # ADD /opendevin/plugins to PATH to make `jupyter_cli` available
 echo 'export PATH=$PATH:/opendevin/plugins/jupyter' >> ~/.bashrc
 export PATH=/opendevin/plugins/jupyter:$PATH

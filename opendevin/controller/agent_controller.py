@@ -13,6 +13,7 @@ from opendevin.core.exceptions import (
 )
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
+from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
     AddTaskAction,
@@ -32,7 +33,6 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
-from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 
 MAX_ITERATIONS = config.max_iterations
 MAX_CHARS = config.llm.max_chars
@@ -158,6 +158,7 @@ class AgentController:
         logger.info(
             f'Setting agent({type(self.agent).__name__}) state from {self.state.agent_state} to {new_state}'
         )
+
         if new_state == self.state.agent_state:
             return
 
@@ -168,6 +169,10 @@ class AgentController:
         await self.event_stream.add_event(
             AgentStateChangedObservation('', self.state.agent_state), EventSource.AGENT
         )
+
+        if new_state == AgentState.INIT and self.state.resume_state:
+            await self.set_agent_state_to(self.state.resume_state)
+            self.state.resume_state = None
 
     def get_agent_state(self):
         """Returns the current state of the agent task."""

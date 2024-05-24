@@ -1,3 +1,7 @@
-Let's correct the typos in the file `bad.txt`. I will open the file for editing and fix the typos without asking for confirmation.
-<execute_bash>
-open bad.txt
+Let's correct the typos in the `bad.txt` file.
+
+<execute_ipython>
+edit_file(start=1, end=4, content="""This is a stupid typo.
+Really?
+No more typos!
+Enjoy!""")
