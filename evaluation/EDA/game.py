@@ -54,6 +54,7 @@ class Q20Game:
             'Now start asking a question.'
         )
         self.guesser_win = False
+        self.curr_turn = 0
         if openai_api_key is not None:
             openai.api_key = openai_api_key
 
@@ -171,6 +172,47 @@ class Q20Game:
             elif item['role'].upper() == 'ASSISTANT':
                 history += ' ' + 'ASSISTANT: ' + item['content'] + '</s>'
         return history
+
+
+    def preprocess_response(self,response):
+        response = re.sub(
+            r'the entity you are thinking of', 'it', response
+        )
+        response = re.sub(
+            r"the entity you're thinking of", 'it', response
+        )
+        response = re.sub(
+            r" you're thinking of", '', response
+        )
+        response = re.sub(
+            r' you are thinking of', '', response
+        )
+        self.guesser_messages.append(response)
+        return response
+
+    def judge_winner(self, response):
+        guesser_question = response.strip()
+
+        if self.curr_turn == self.num_turns - 1:
+            guesser_question += ' Is it right?'
+        # ask for answer
+        usr_msg = self.answerer(guesser_question)
+
+        if 'bingo' in usr_msg['content'].lower():
+            self.guesser_win = True
+            return True, ""
+        
+        return False, usr_msg['content'].strip()
+    
+    def generate_user_response(self, response):
+        response = self.preprocess_response(response)
+        # others
+        bingo, anwser_reply = self.judge_winner(response)
+        if bingo:
+            return "You are bingo! quit now, run: <execute_bash> exit </execute_bash>.\n"
+        if self.curr_turn == self.num_turns - 2:
+            anwser_reply += " You must guess now, what's it?"
+        return anwser_reply
 
     def game_play(self, user_mode=False):
         self.reset()
@@ -299,6 +341,7 @@ class Q20Game:
 
     def reset(self):
         # Initialize the conversation
+        self.curr_turn = 0
         self.guesser_messages = [
             {
                 'role': 'user',
