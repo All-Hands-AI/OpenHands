@@ -14,12 +14,12 @@ Following is the basic command to start the evaluation. Here we are only evaluat
 
 You can remove the `--eval-n-limit 1` argument to evaluate all instances in that subset. Or change `--data-split` `--data-split` to test other splits.
 ```bash
-python ./evaluation/gaia/run_infer.py \
---level 2023_level1 \
---data-split validation \
---eval-n-limit 1 \
---max-iterations 30 \
----eval-output-dir <output_dir>
+poetry run python ./evaluation/gaia/run_infer.py \
+        --level 2023_level1 \
+        --data-split validation \
+        --eval-n-limit 1 \
+        --max-iterations 30 \
+        --eval-output-dir <output_dir>
 ```
 
 Then you can get stats by running the following command:

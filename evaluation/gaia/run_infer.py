@@ -27,9 +27,9 @@ DATASET_CACHE_DIR = os.path.expanduser(DATASET_CACHE_DIR)
 
 
 def cleanup():
-    print('Cleaning up child processes...')
+    logger.info('Cleaning up child processes...')
     for process in mp.active_children():
-        print(f'Terminating child process: {process.name}')
+        logger.info(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
 
@@ -190,7 +190,7 @@ if __name__ == '__main__':
     args, _ = parser.parse_known_args()
     if args.directory:
         config.workspace_base = os.path.abspath(args.directory)
-        print(f'Setting workspace base to {config.workspace_base}')
+        logger.info(f'Setting workspace base to {config.workspace_base}')
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
     level = args.level
@@ -330,7 +330,7 @@ if __name__ == '__main__':
             for future in futures:
                 future.result()
     except KeyboardInterrupt:
-        print('KeyboardInterrupt received. Cleaning up...')
+        logger.info('KeyboardInterrupt received. Cleaning up...')
         cleanup()
 
     output_fp.close()
