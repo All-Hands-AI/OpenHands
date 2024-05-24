@@ -16,6 +16,6 @@ class MessageAction(Action):
         return self.content
 
     def __str__(self) -> str:
-        ret = f'**MessageAction** ({self.action})\n'
-        ret += f'CONTENT:{self.content}'
+        ret = f'**MessageAction** (source={self.source})\n'
+        ret += f'CONTENT: {self.content}'
         return ret
