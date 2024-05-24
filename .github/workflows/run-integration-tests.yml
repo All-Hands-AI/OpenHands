@@ -56,7 +56,7 @@ jobs:
   integration-tests-on-mac:
     name: Integration Tests on MacOS
     runs-on: macos-13
-    if: ${{ false }} # Disable MacOS tests due to environment instability
+    if: contains(github.event.pull_request.title, 'mac')
     strategy:
       fail-fast: false
       matrix:
