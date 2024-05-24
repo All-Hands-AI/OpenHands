@@ -20,6 +20,9 @@ from opendevin.runtime.plugins import (
 
 
 def parse_response(response: str) -> Action:
+    if '```' not in response:
+        # unexpected response format, message back to user
+        return MessageAction(response)
     thought = response.split('```')[0].strip()
     action_str = response.split('```')[1].strip()
     # handle send message to user function call in BrowserGym
