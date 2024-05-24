@@ -454,31 +454,31 @@ crt = ["awscrt (==0.20.9)"]
 
 [[package]]
 name = "browsergym"
-version = "0.2.6"
+version = "0.3.2"
 description = "BrowserGym: a gym environment for web task automation in the Chromium browser"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym-0.2.6-py3-none-any.whl", hash = "sha256:89a6d4197164fc80fdf37b07956f5145848d444113ed8126619f3fa24ca2cf0d"},
-    {file = "browsergym-0.2.6.tar.gz", hash = "sha256:43e1078a1335bdef86f21db2b9caab38404335b00a8566e2335a5e47e0a323b8"},
+    {file = "browsergym-0.3.2-py3-none-any.whl", hash = "sha256:1e4380392804542c328bf990584ad7090f77d15c035c8160d6a15fc9dbba11d7"},
+    {file = "browsergym-0.3.2.tar.gz", hash = "sha256:8c11a6a5540af2ea8924fc00b5ee8ab18fca970aa7205568dffbccf6fffc74c5"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.2.6"
-browsergym-experiments = "0.2.6"
-browsergym-miniwob = "0.2.6"
-browsergym-webarena = "0.2.6"
+browsergym-core = "0.3.2"
+browsergym-experiments = "0.3.2"
+browsergym-miniwob = "0.3.2"
+browsergym-webarena = "0.3.2"
 browsergym-workarena = "*"
 
 [[package]]
 name = "browsergym-core"
-version = "0.2.6"
+version = "0.3.2"
 description = "BrowserGym: a gym environment for web task automation in the Chromium browser"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_core-0.2.6-py3-none-any.whl", hash = "sha256:4283c486c26109626f7f6706673247b3ef1068078f7cd1a83eb56e73a25a9284"},
-    {file = "browsergym_core-0.2.6.tar.gz", hash = "sha256:c9716666de6943193d1b9bcf386eba180214843d18858af6605dbfb643c58e34"},
+    {file = "browsergym_core-0.3.2-py3-none-any.whl", hash = "sha256:b444d0297896ab9d1c5b04991286c6e52023673214302117cbd20ec3b4bb9279"},
+    {file = "browsergym_core-0.3.2.tar.gz", hash = "sha256:ff4750ffeb63ca96a6eb71fa30048175cf59cd5a27278238355118001b96730e"},
 ]
 
 [package.dependencies]
@@ -492,46 +492,46 @@ pyparsing = ">=3"
 
 [[package]]
 name = "browsergym-experiments"
-version = "0.2.6"
+version = "0.3.2"
 description = "Experimentation tools for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_experiments-0.2.6-py3-none-any.whl", hash = "sha256:12f60e30d47cf480b1d4a3a77255cc30b3fcd47513daf5c696a3574513d7d203"},
-    {file = "browsergym_experiments-0.2.6.tar.gz", hash = "sha256:ec54bb62d09f7511c482bd06ba9f768401478bfbad66e009db15ba3b13b73586"},
+    {file = "browsergym_experiments-0.3.2-py3-none-any.whl", hash = "sha256:d27775ea401fc297111ccbb922a27be0f877ae021a824c1a918438454989fe8f"},
+    {file = "browsergym_experiments-0.3.2.tar.gz", hash = "sha256:47dce382162faf62c859a37b853e38bdac83e85b28a7c9bed36cb32391d412a8"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.2.6"
+browsergym-core = "0.3.2"
 tiktoken = ">=0.4"
 
 [[package]]
 name = "browsergym-miniwob"
-version = "0.2.6"
+version = "0.3.2"
 description = "MiniWoB++ benchmark for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_miniwob-0.2.6-py3-none-any.whl", hash = "sha256:f44308e1fd44ecdcaa2d512de4c7bacf48ac448b45a4a7b9fca7e8812ab48fbd"},
-    {file = "browsergym_miniwob-0.2.6.tar.gz", hash = "sha256:27d03a7984791abe7226e53e8698de38ab3de6309358150d76a229d8021ed330"},
+    {file = "browsergym_miniwob-0.3.2-py3-none-any.whl", hash = "sha256:d63d4eee2426bbf0557a0f81b35fd712ac8a478faa18559b1e763d808c1d9062"},
+    {file = "browsergym_miniwob-0.3.2.tar.gz", hash = "sha256:fb74866423c1b3f957aca6ce65e318cf852ca51f21aa3d828c00bed79c824c67"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.2.6"
+browsergym-core = "0.3.2"
 
 [[package]]
 name = "browsergym-webarena"
-version = "0.2.6"
+version = "0.3.2"
 description = "WebArena benchmark for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_webarena-0.2.6-py3-none-any.whl", hash = "sha256:28b0b7e7f43f9f66a185871600f5d15c97022b60ae9645980040eaeb8e7c233a"},
-    {file = "browsergym_webarena-0.2.6.tar.gz", hash = "sha256:f1cfac00c2c73e393b7f81c1e6f6f0e0c723b74f0937b4666fec7a29ed048edc"},
+    {file = "browsergym_webarena-0.3.2-py3-none-any.whl", hash = "sha256:bb706929d4c1e95f53592af58e4314d2775051b91800d0f2fb11f51a38b5b127"},
+    {file = "browsergym_webarena-0.3.2.tar.gz", hash = "sha256:a65013a98903bb14ad999dbedb0313ac35a21a3fb35984df2c76c8f7d423b95e"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.2.6"
+browsergym-core = "0.3.2"
 libwebarena = "0.0.3"
 
 [[package]]
@@ -3082,9 +3082,13 @@ files = [
     {file = "lxml-5.2.2-cp36-cp36m-win_amd64.whl", hash = "sha256:edcfa83e03370032a489430215c1e7783128808fd3e2e0a3225deee278585196"},
     {file = "lxml-5.2.2-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:28bf95177400066596cdbcfc933312493799382879da504633d16cf60bba735b"},
     {file = "lxml-5.2.2-cp37-cp37m-manylinux_2_12_i686.manylinux2010_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3a745cc98d504d5bd2c19b10c79c61c7c3df9222629f1b6210c0368177589fb8"},
+    {file = "lxml-5.2.2-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1b590b39ef90c6b22ec0be925b211298e810b4856909c8ca60d27ffbca6c12e6"},
     {file = "lxml-5.2.2-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b336b0416828022bfd5a2e3083e7f5ba54b96242159f83c7e3eebaec752f1716"},
+    {file = "lxml-5.2.2-cp37-cp37m-manylinux_2_28_aarch64.whl", hash = "sha256:c2faf60c583af0d135e853c86ac2735ce178f0e338a3c7f9ae8f622fd2eb788c"},
     {file = "lxml-5.2.2-cp37-cp37m-manylinux_2_28_x86_64.whl", hash = "sha256:4bc6cb140a7a0ad1f7bc37e018d0ed690b7b6520ade518285dc3171f7a117905"},
+    {file = "lxml-5.2.2-cp37-cp37m-musllinux_1_1_aarch64.whl", hash = "sha256:7ff762670cada8e05b32bf1e4dc50b140790909caa8303cfddc4d702b71ea184"},
     {file = "lxml-5.2.2-cp37-cp37m-musllinux_1_1_x86_64.whl", hash = "sha256:57f0a0bbc9868e10ebe874e9f129d2917750adf008fe7b9c1598c0fbbfdde6a6"},
+    {file = "lxml-5.2.2-cp37-cp37m-musllinux_1_2_aarch64.whl", hash = "sha256:a6d2092797b388342c1bc932077ad232f914351932353e2e8706851c870bca1f"},
     {file = "lxml-5.2.2-cp37-cp37m-musllinux_1_2_x86_64.whl", hash = "sha256:60499fe961b21264e17a471ec296dcbf4365fbea611bf9e303ab69db7159ce61"},
     {file = "lxml-5.2.2-cp37-cp37m-win32.whl", hash = "sha256:d9b342c76003c6b9336a80efcc766748a333573abf9350f4094ee46b006ec18f"},
     {file = "lxml-5.2.2-cp37-cp37m-win_amd64.whl", hash = "sha256:b16db2770517b8799c79aa80f4053cd6f8b716f21f8aca962725a9565ce3ee40"},
@@ -7399,4 +7403,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "2edc090faaececb3de4b4b797fa7c20367cd39afd2d793e8d943eba6040e2697"
+content-hash = "88e3460ca1c6f4701a50151678654b73457623d514f071a785562299f17bad53"

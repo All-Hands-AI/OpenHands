@@ -12,7 +12,7 @@ Functions:
 - search_dir(search_term, dir_path='./'): Searches for a term in all files in the specified directory.
 - search_file(search_term, file_path=None): Searches for a term in the specified file or the currently open file.
 - find_file(file_name, dir_path='./'): Finds all files with the given name in the specified directory.
-- edit_file(path, start, end, content): Replaces lines in a file with the given content.
+- edit_file(start, end, content): Replaces lines in a file with the given content.
 """
 
 import os
@@ -35,7 +35,6 @@ def _lint_file(file_path: str) -> Optional[str]:
         Optional[str]: A string containing the linting report if the file failed to lint, None otherwise.
     """
 
-    # Check if the file ends with .py and if auto-linting is enabled
     if file_path.endswith('.py'):
         # Define the flake8 command with selected error codes
         command = [
@@ -58,7 +57,7 @@ def _lint_file(file_path: str) -> Optional[str]:
             ret = 'ERRORS:\n'
             ret += result.stdout.decode().strip()
             return ret.rstrip('\n')
-    # Linting skipped. Either the file is not a Python file or auto-linting is disabled.
+    # Not a python file, skip linting
     return None
 
 
@@ -88,7 +87,7 @@ def _cur_file_header(CURRENT_FILE, total_lines):
 
 def open_file(path: str, line_number: Optional[int] = None) -> None:
     """
-    Opens the file at the given path in the editor. If line_number is provided, the window will be move to include that line.
+    Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
 
     Args:
         path: str: The path to the file to open.
@@ -197,8 +196,8 @@ def edit_file(start: int, end: int, content: str) -> None:
     It replaces lines `start` through `end` (inclusive) with the given text `content` in the open file. Remember, the file must be open before editing.
 
     Args:
-        start: int: The start line number. Must be greater or equal to 1.
-        end: int: The end line number. Must be greater or equal to 1 AND greater than start AND less than or equal to the number of lines in the file.
+        start: int: The start line number. Must satisfy start >= 1.
+        end: int: The end line number. Must satisfy start <= end <= number of lines in the file.
         content: str: The content to replace the lines with.
     """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
