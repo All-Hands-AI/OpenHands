@@ -20,18 +20,20 @@ WORKSPACE_MOUNT_PATH_IN_SANDBOX="/workspace"
 SANDBOX_TYPE="${SANDBOX_TYPE:-ssh}"
 MAX_ITERATIONS=10
 
-agents=("MonologueAgent" "CodeActAgent" "PlannerAgent")
+agents=("BrowsingAgent" "MonologueAgent" "CodeActAgent" "PlannerAgent")
 tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
   "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'."
   "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt."
+  "Browse localhost:8000, and tell me the ultimate answer to life."
 )
 test_names=(
   "test_edits"
   "test_write_simple_script"
   "test_ipython"
   "test_ipython_module"
+  "test_browse_internet"
 )
 
 num_of_tests=${#test_names[@]}
@@ -61,6 +63,13 @@ run_test() {
     return $?
 }
 
+# browsing capability needs a local http server
+launch_http_server() {
+  poetry run python tests/integration/start_http_server.py &
+  HTTP_SERVER_PID=$!
+  sleep 10
+}
+
 # generate prompts again, using existing LLM responses under tests/integration/mock/[agent]/[test_name]/response_*.log
 # this is a compromise; the prompts might be non-sense yet still pass the test, because we don't use a real LLM to
 # respond to the prompts. The benefit is developers don't have to regenerate real responses from LLM, if they only
@@ -80,6 +89,10 @@ regenerate_without_llm() {
 }
 
 regenerate_with_llm() {
+  if [[ "$test_name" = "test_browse_internet" ]]; then
+    launch_http_server
+  fi
+
   rm -rf $WORKSPACE_BASE
   mkdir -p $WORKSPACE_BASE
   if [ -d "tests/integration/workspace/$test_name" ]; then
@@ -104,6 +117,13 @@ regenerate_with_llm() {
 
   mkdir -p tests/integration/mock/$agent/$test_name/
   mv logs/llm/**/* tests/integration/mock/$agent/$test_name/
+
+  if [[ "$test_name" = "test_browse_internet" ]]; then
+    # Terminate the HTTP server
+    kill $HTTP_SERVER_PID
+  fi
+
+
 }
 
 ##############################################################
