@@ -240,6 +240,7 @@ class DockerSSHBox(Sandbox):
             is_initial_session = False
         except docker.errors.NotFound:
             is_initial_session = True
+            logger.info('Creating new Docker container')
         if not config.persist_sandbox or is_initial_session:
             n_tries = 5
             while n_tries > 0:
@@ -718,7 +719,10 @@ class DockerSSHBox(Sandbox):
         containers = self.docker_client.containers.list(all=True)
         for container in containers:
             try:
-                if container.name.startswith(self.container_name):
+                if (
+                    container.name.startswith(self.container_name)
+                    and not config.persist_sandbox
+                ):
                     # only remove the container we created
                     # otherwise all other containers with the same prefix will be removed
                     # which will mess up with parallel evaluation
