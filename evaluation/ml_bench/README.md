@@ -1,5 +1,3 @@
-Certainly! Here's an updated README with a brief introduction to the ML-Bench task based on the provided paper:
-
 # ML-Bench Evaluation with OpenDevin
 
 This project implements the evaluation of agents on the ML-Bench dataset using OpenDevin. ML-Bench is a comprehensive benchmark designed to assess the effectiveness of Large Language Models (LLMs) in leveraging existing functions in open-source libraries for machine learning tasks. The benchmark consists of 10,040 samples spanning 130 tasks over 14 notable machine learning GitHub repositories.
@@ -95,7 +93,7 @@ Feel free to adjust the configuration, logging, and output formatting to suit yo
 
 ## Contributing
 
-If you encounter any issues or have suggestions for improvements, please open an issue or submit a pull request on the [GitHub repository](https://github.com/yourusername/ml-bench-evaluation).
+If you encounter any issues or have suggestions for improvements, please open an issue or submit a pull request on the [GitHub repository](https://github.com/yourusername/ML-Bench).
 
 ## License
 
