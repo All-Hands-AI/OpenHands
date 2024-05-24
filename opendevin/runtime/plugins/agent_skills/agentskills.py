@@ -681,6 +681,3 @@ for func_name in __all__:
 
     fn_signature = f'{func.__name__}' + str(signature(func))
     DOCUMENTATION += f'{fn_signature}:\n{cur_doc}\n\n'
-
-if __name__ == '__main__':
-    open_file('/Users/zhengmingzhang/PycharmProjects/OpenDevin/Dockerfile')
