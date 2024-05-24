@@ -28,9 +28,9 @@ class SimplifiedEnv:
         self.check_max_iteration()
 
         turn_info = (
-            self.config['max_steps'] - sum(self.state.agent_action_count.values()),
-            self.config['max_propose_solution']
-            - self.state.agent_action_count['propose_solution'],
+            self.task_config['max_iterations'] - self.agent_state.iteration,
+            self.task_config['max_propose_solution']
+            - self.task_state.agent_action_count['propose_solution'],
         )
 
         output = StepOutput(
@@ -112,8 +112,8 @@ class SimplifiedEnv:
         elif (
             # (propose_solution + use_tool) > max iteration limit
             sum(self.task_state.agent_action_count.values())
-            >= self.task_config['max_steps']
+            >= self.task_config['max_iterations']
         ):
             self.task_state.finished = True
             self.task_state.success = False
-            self.task_state.terminate_reason = 'max_steps'
+            self.task_state.terminate_reason = 'max_iterations'

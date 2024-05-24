@@ -24,6 +24,7 @@ from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import MessageAction
+from opendevin.events.serialization.event import event_to_dict
 
 
 def cleanup():
@@ -43,10 +44,9 @@ def codeact_user_response(state: State, task: Task, task_config: Dict[str, int])
         task=task,
         task_config=task_config,
     )
-    result_state: TaskState = env.step()
-
-    logger.info('Result state: ' + result_state.__dict__)
-    logger.info('Latest output: ' + result_state.latest_output)
+    last_action, _ = state.history[-1]
+    result_state: TaskState = env.step(last_action.message)
+    state.task_state = result_state
 
     msg = result_state.latest_output['content']
     logger.info('User response:' + msg)
@@ -80,7 +80,7 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': 'When you think you have solved the question, please first send your answer to user through message, remember to wrap it inside <solution> tag, and then exit using the following command: <execute_bash> exit </execute_bash>.\n'
+    'CodeActAgent': 'IMPORTANT: When you think you have solved the question, you NEED TO SEND YOUR PROPOSE ANSWER TO USER THROUGHT MESSAGE, remember to wrap it inside <solution> tag, and only then you can exit using the following command: <execute_bash> exit </execute_bash>.\n'
 }
 
 
@@ -156,7 +156,7 @@ def process_instance(
     state: State = asyncio.run(
         main(
             instruction,
-            fake_user_response_fn,
+            fake_user_response_fn=fake_user_response_fn,
             sandbox=sandbox,
         )
     )
@@ -165,71 +165,34 @@ def process_instance(
         raise ValueError('State should not be None.')
 
     logger.info('Msgs: ' + str(state.history))
-    err_code, output = sandbox.execute('ls /workspace')
-    logger.info(f'ls: Error code: {err_code} | Output: {output}')
-    err_code, output = sandbox.execute('tree /workspace')
-    logger.info(f'tree: Error code: {err_code} | Output: {output}')
-    for action, obs in reversed(state.history):
-        if isinstance(action, MessageAction) and action.source == 'user':
-            logger.info(f'User message: {action.content}')
-            break
 
     final_message = ''
     for act in reversed(state.history):
         if isinstance(act, MessageAction):
             final_message = act.content
             break
+
+    task_state: TaskState = state.task_state
+    logger.info('Task state: ' + str(task_state.to_dict()))
     logger.info(f'Final message: {final_message} | Ground truth: {instance.reference}')
-
-    # FIXME: uncomment this
-    # test_result = {'result': final_message}
-
-    # FIXME: uncomment this
-    # Save the output
-    # output = {
-    #     'id': instance['id'],
-    #     'instance': instance,
-    #     'instruction': instance['prompt'],
-    #     'metadata': metadata,
-    #     # 'history': [
-    #     #     (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-    #     # ],
-    #     'error': state.error if state and state.error else None,
-    #     'test_result': test_result,
-    # }
-
-    """
-    # ======= Attempt to evaluate the agent's edits =======
-    # TODO: if you need to do something in the sandbox to get the correctness metric, modify this function
-    test_result = get_test_result(instance, sandbox, workspace_dir_name)
-
-    # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
-    # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
-
-    if state is None:
-        raise ValueError('State should not be None.')
 
     # Save the output
     output = {
-        'instance_id': instance.instance_id,
-        'swe_instance': instance.to_dict(),  # SWE Bench specific
+        'id': instance.task_id,
+        'instance': instance.to_dict(),
         'instruction': instruction,
-        'git_patch': git_patch,  # SWE Bench specific
         'metadata': metadata,
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
         'error': state.error if state and state.error else None,
-        'test_result': test_result,
+        'test_result': task_state.success,
     }
-    """
 
     # Close the sandbox
     sandbox.close()
-    # TODO:
-    # return output
 
-    return {}
+    return output
 
 
 if __name__ == '__main__':
@@ -353,7 +316,7 @@ if __name__ == '__main__':
     def update_progress(future):
         pbar.update(1)
         output = future.result()
-        logger.info('Output: ' + output)
+        # logger.info('Output: ', output)
         # pbar.set_description(f'Instance {output["instance_id"]}')
         # pbar.set_postfix_str(f'Test Result: {output["test_result"]["result"]}')
         # logger.info(

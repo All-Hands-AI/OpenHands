@@ -44,6 +44,7 @@ async def main(
         fake_user_response_fn: An optional function that receives the current state (could be None) and returns a fake user response.
         sandbox: An optional sandbox to run the agent in.
     """
+    logger.info(f'Inside main: fake_fn {fake_user_response_fn}')
 
     # Determine the task source
     if task_str:

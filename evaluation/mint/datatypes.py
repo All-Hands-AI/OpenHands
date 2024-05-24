@@ -21,6 +21,15 @@ class TaskState:
         self.terminate_reason = terminate_reason
         self.latest_output = latest_output
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'finished': self.finished,
+            'success': self.success,
+            'agent_action_count': self.agent_action_count,
+            'terminate_reason': self.terminate_reason,
+            'latest_output': self.latest_output,
+        }
+
 
 class ParseError(Exception):
     pass
