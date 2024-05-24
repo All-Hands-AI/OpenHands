@@ -22,14 +22,13 @@ from typing import Optional
 
 import base64
 import PyPDF2
-import cv2
 import docx
 import openpyxl
+from pptx import Presentation
+from pylatexenc.latex2text import LatexNodes2Text
 import pandas as pd
 import requests
 from openai import OpenAI
-from pptx import Presentation
-from pylatexenc.latex2text import LatexNodes2Text
 
 CURRENT_FILE = None
 CURRENT_LINE = 1
@@ -448,6 +447,7 @@ def _base64_img(file_path: str) -> str:
 
 
 def _base64_video(file_path: str, frame_interval: int = 10) -> list[str]:
+    import cv2
     video = cv2.VideoCapture(file_path)
     base64_frames = []
     frame_count = 0
