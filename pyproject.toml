@@ -63,6 +63,12 @@ pytest-cov = "*"
 pytest-asyncio = "*"
 pytest-forked = "*"
 flake8 = "*"
+openai = "*"
+python-docx = "*"
+PyPDF2 = "*"
+openpyxl = "*"
+pylatexenc = "*"
+python-pptx = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
