@@ -16,8 +16,12 @@ const messageActions = {
     const { url, screenshotSrc } = message.args;
     store.dispatch(setUrl(url));
     store.dispatch(setScreenshotSrc(screenshotSrc));
+    store.dispatch(addAssistantMessage(message.message));
   },
   [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
+    if (message.args.thought) {
+      store.dispatch(addAssistantMessage(message.args.thought));
+    }
     const { url, screenshotSrc } = message.args;
     store.dispatch(setUrl(url));
     store.dispatch(setScreenshotSrc(screenshotSrc));

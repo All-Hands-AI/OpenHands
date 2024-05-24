@@ -18,10 +18,7 @@ from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
 from opendevin.runtime.docker.process import DockerProcess, Process
-from opendevin.runtime.plugins import (
-    JupyterRequirement,
-    SWEAgentCommandsRequirement,
-)
+from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.utils import find_available_tcp_port
 
@@ -371,11 +368,25 @@ class DockerSSHBox(Sandbox):
             environment=self._env,
         )
 
-    def start_ssh_session(self):
-        # start ssh session at the background
-        self.ssh = pxssh.pxssh(
-            echo=False, timeout=self.timeout, encoding='utf-8', codec_errors='replace'
-        )
+    def start_ssh_session(self, n_retries=5):
+        while n_retries > 0:
+            try:
+                self.ssh = pxssh.pxssh(
+                    echo=False,
+                    timeout=self.timeout,
+                    encoding='utf-8',
+                    codec_errors='replace',
+                )
+                break
+            except pxssh.ExceptionPxssh as e:
+                logger.exception(
+                    'Failed to start SSH session, retrying...', exc_info=False
+                )
+                n_retries -= 1
+                if n_retries == 0:
+                    raise e
+                time.sleep(5)
+
         hostname = self.ssh_hostname
         if self.run_as_devin:
             username = 'opendevin'
@@ -728,10 +739,10 @@ if __name__ == '__main__':
     )
 
     # Initialize required plugins
-    ssh_box.init_plugins([JupyterRequirement(), SWEAgentCommandsRequirement()])
+    ssh_box.init_plugins([AgentSkillsRequirement(), JupyterRequirement()])
     logger.info(
-        '--- SWE-AGENT COMMAND DOCUMENTATION ---\n'
-        f'{SWEAgentCommandsRequirement().documentation}\n'
+        '--- AgentSkills COMMAND DOCUMENTATION ---\n'
+        f'{AgentSkillsRequirement().documentation}\n'
         '---'
     )
 
