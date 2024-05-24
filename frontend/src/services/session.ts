@@ -9,6 +9,8 @@ class Session {
 
   private static _latest_event_id: number = -1;
 
+  public static _history: Record<string, unknown>[] = [];
+
   // callbacks contain a list of callable functions
   // event: function, like:
   // open: [function1, function2]
@@ -79,6 +81,7 @@ class Session {
       let data = null;
       try {
         data = JSON.parse(e.data);
+        Session._history.push(data);
       } catch (err) {
         // TODO: report the error
         console.error("Error parsing JSON data", err);
@@ -137,6 +140,7 @@ class Session {
 
     if (Session.isConnected()) {
       Session._socket?.send(message);
+      Session._history.push(JSON.parse(message));
     } else {
       const msg = "Connection failed. Retry...";
       toast.error("ws", msg);
