@@ -45,7 +45,8 @@ temperature = 0.0
 To run the evaluation on the ML-Bench dataset, use the following command:
 
 ```bash
-./evaluation/ml_bench/scripts/run_infer.sh eval_gpt4_1106_preview
+./evaluation/ml_bench/scripts/run_infer.sh [model_config] [split] [agent] [eval_limit]
+# e.g., ./evaluation/ml_bench/scripts/run_infer.sh eval_gpt4_1106_preview full CodeActAgent 10
 ```
 
 You can replace `eval_gpt4_1106_preview` with any model you set up in `config.toml`.

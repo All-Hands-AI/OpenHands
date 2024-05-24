@@ -91,13 +91,17 @@ def process_instance(instance, agent_class, metadata, eval_output_dir):
         f'Please complete the Machine Learning task in the following repository: {repo_url}\n\n'
         f'The task is: {instance["task"]}\n\n'
         f'{instance["instruction"]}\n\n'
-        'You should only modify files under the specified path in the repo.\n'
-        f'You can find the task repo at: {instance['path']}\n'
-        'Here is the prefix code for the task:'
-        '```python\n'
-        f'{instance["prefix_code"]}\n'
-        '```\n'
-        'You should terminate the subprocess after running the task (e.g., call subprocess.Popen(args).wait()).'
+        'You should only modify files under the specified path in the repo.\n\n'
+        f'You can find the task repo at: {instance['path']}\n\n'
+        + (
+            'Here is the prefix code for the task:\n'
+            '```python\n'
+            f'{instance["prefix_code"]}\n'
+            '```\n\n'
+            if instance['prefix_code']
+            else ''
+        )
+        + 'You should terminate the subprocess after running the task (e.g., call subprocess.Popen(args).wait()).'
     )
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
