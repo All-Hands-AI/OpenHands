@@ -24,6 +24,7 @@ interface ScrollButtonProps {
   onClick: () => void;
   icon: JSX.Element;
   label: string;
+  // eslint-disable-next-line react/require-default-props
   disabled?: boolean;
 }
 
