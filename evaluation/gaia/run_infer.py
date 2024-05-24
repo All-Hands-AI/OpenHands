@@ -152,6 +152,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
     for act, _ in reversed(state.history):
         if isinstance(act, CmdRunAction) and act.source == 'agent':
             model_answer_raw = act.thought
+            break
         elif isinstance(act, MessageAction) and act.source == 'agent':
             model_answer_raw = act.content
             break
