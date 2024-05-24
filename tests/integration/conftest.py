@@ -3,6 +3,8 @@ import os
 import re
 import sys
 from functools import partial
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+from threading import Thread
 
 import pytest
 from litellm import completion
@@ -143,6 +145,25 @@ def patch_completion(monkeypatch, request):
     if user_responses_str:
         user_responses = io.StringIO(user_responses_str)
         monkeypatch.setattr('sys.stdin', user_responses)
+
+
+@pytest.fixture
+def http_server():
+    web_dir = os.path.join(os.path.dirname(__file__), 'static')
+    os.chdir(web_dir)
+    handler = SimpleHTTPRequestHandler
+
+    # Start the server
+    server = HTTPServer(('localhost', 8000), handler)
+    thread = Thread(target=server.serve_forever)
+    thread.setDaemon(True)
+    thread.start()
+
+    yield server
+
+    # Stop the server
+    server.shutdown()
+    thread.join()
 
 
 def set_up():
