@@ -1,3 +1,14 @@
+"""
+Implements evaluation of agents on HumanEvalFix from the HumanEvalPack benchmark introduced in
+"OctoPack: Instruction Tuning Code Large Language Models" (https://arxiv.org/abs/2308.07124).
+Please see https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/bigcode_eval/tasks/humanevalpack.py
+for the reference implementation used in the paper.
+
+TODOs:
+- Potentially support other HumanEvalPack datasets (Explain & Synthesize)
+- Support other languages (currently only Python)
+"""
+
 import asyncio
 import json
 import logging
@@ -9,13 +20,10 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 
 import pandas as pd
-import toml
-import whatthepatch
 from datasets import load_dataset
+from evaluate import load
 from tqdm import tqdm
 
-import agenthub
-from evaluation.swe_bench.swe_env_box import SWEBenchSSHBox
 from opendevin.controller.state.state import State
 from opendevin.core.config import args, config, get_llm_config_arg
 from opendevin.core.logger import get_console_handler
@@ -24,11 +32,40 @@ from opendevin.core.main import main
 from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
 
+IMPORT_HELPER = {
+    'python': [
+        'import math',
+        'import re',
+        'import sys',
+        'import copy',
+        'import datetime',
+        'import itertools',
+        'import collections',
+        'import heapq',
+        'import statistics',
+        'import functools',
+        'import hashlib',
+        'import numpy',
+        'import numpy as np',
+        'import string',
+        'from typing import *',
+        'from collections import *',
+    ],
+}
+
+LANGUAGE_TO_TIMEOUT = {
+    'python': 10,
+}
+
+LANGUAGE_TO_NUM_WORKERS = {
+    'python': 4,
+}
+
 
 def cleanup():
-    print('Cleaning up child processes...')
+    logger.info('Cleaning up child processes...')
     for process in mp.active_children():
-        print(f'Terminating child process: {process.name}')
+        logger.info(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
 
@@ -68,131 +105,41 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def get_test_result(instance, sandbox, workspace_dir_name):
+def get_test_result(instance, path, language='python', timeout=10):
+    # Evaluation reference: https://github.com/bigcode-project/bigcode-evaluation-harness/blob/84b96da31b7f840b55c5733325346176140cdb6b/bigcode_eval/tasks/humanevalpack.py#L347
     test_result = {'result': {}, 'metadata': {}}
-    # NOTE: if you need to do something in the sandbox to get the correctness metric, modify this function
-    try:
-        test_patch_parsed = whatthepatch.parse_patch(instance.test_patch)
-        # get a list of filepaths that are involved in the patch
-        involved_filepaths = set()
-        for patch in test_patch_parsed:
-            involved_filepaths.add(patch.header.old_path.removeprefix('a/'))
-            involved_filepaths.add(patch.header.new_path.removeprefix('b/'))
-        involved_filepaths = list(involved_filepaths)
-        test_result['metadata']['1_test_patch_parse_success'] = True
-        test_result['metadata']['1_test_involved_filepaths'] = involved_filepaths
-    except Exception as e:
-        logger.error(
-            f'Error parsing test patch for instance {instance.instance_id}: {e}'
-        )
-        test_result['metadata']['1_test_patch_parse_success'] = False
-        test_result['metadata']['1_test_patch_parse_error'] = str(e)
-        test_result['metadata']['1_test_involved_filepaths'] = None
-        involved_filepaths = []
+    code_metric = load('Muennighoff/code_eval_octopack')
+    timeout = LANGUAGE_TO_TIMEOUT[language]
+    num_workers = LANGUAGE_TO_NUM_WORKERS[language]
+    python_imports = '\n'.join(IMPORT_HELPER[language])
 
-    # Try to revert the changes for involved filepaths
-    err_code, output = sandbox.execute(f'cd /workspace/{workspace_dir_name}')
-    test_result['metadata']['2_revert_test_involved_filepaths_success'] = []
-    for filepath in involved_filepaths:
-        err_code, output = sandbox.execute(
-            f'git checkout {instance["base_commit"]} -- {filepath}'
-        )
-        if err_code != 0:
-            logger.error(f'Error reverting changes for {filepath}: {output}')
-            test_result['metadata']['2_revert_test_involved_filepaths_success'].append(
-                False
-            )
-        else:
-            test_result['metadata']['2_revert_test_involved_filepaths_success'].append(
-                True
-            )
+    # Load function from path
+    with open(path, 'r') as f:
+        function = f.read()
 
-    # Apply the testcase
-    err_code, output = sandbox.execute('git apply $SWE_TASK_DIR/test.patch')
-    if err_code != 0:
-        logger.error(f'Error applying test patch: {output}')
-        test_result['metadata']['3_apply_test_patch_success'] = False
-        test_result['metadata']['3_apply_test_patch_error'] = output
-    else:
-        test_result['metadata']['3_apply_test_patch_success'] = True
+    function = [[python_imports + '\n' + function.strip()]]
 
-    # Run the test command
-    err_code, output = sandbox.execute(
-        '$TEST_CMD > /workspace/$SWE_INSTANCE_ID.log 2>&1'
+    results, logs = code_metric.compute(
+        references=[instance.test],
+        predictions=function,
+        language=language,
+        timeout=timeout,
+        num_workers=num_workers,
     )
-    if err_code != 0:
-        logger.error(f'Error running test command: {output}')
-        test_result['metadata']['4_run_test_command_success'] = False
-        test_result['metadata']['4_run_test_command_error'] = output
-    else:
-        test_result['metadata']['4_run_test_command_success'] = True
-
-    # Get the test output
-    err_code, output = sandbox.execute('cat /workspace/$SWE_INSTANCE_ID.log')
-    if err_code != 0:
-        logger.error(f'Error getting test output: {output}')
-        test_result['metadata']['4_get_test_output_success'] = False
-        test_result['metadata']['4_get_test_output_error'] = output
-    else:
-        test_result['metadata']['4_get_test_output_success'] = True
-        test_result['test_output'] = output
-
-    # Reformat instance.json
-    # $SWE_TASK_DIR/instance.json is a dict {"XXX": "YYY"}, add a [ before and a ] after
-    err_code, output = sandbox.execute(
-        (
-            'cat $SWE_TASK_DIR/instance.json | sed "s/^{/[{/" | sed "s/}$/}]/" > /workspace/instance.json'
-        )
-    )
-    if err_code != 0:
-        logger.error(f'Error creating instance.json: {output}')
-        test_result['metadata']['5_reformat_instance_json_success'] = False
-        test_result['metadata']['5_reformat_instance_json_error'] = output
-    else:
-        test_result['metadata']['5_reformat_instance_json_success'] = True
-
-    # Get the instance report
-    err_code, output = sandbox.execute(
-        (
-            'cd /swe_util/OD-SWE-bench '
-            '&& export PYTHONPATH=$(pwd):$PYTHONPATH '
-            '&& conda run -n swe-bench-eval python swebench/metrics/get_instance_report.py --swe_bench_task /workspace/instance.json --log_path /workspace/$SWE_INSTANCE_ID.log'
-        )
-    )
-    if err_code != 0:
-        logger.error(f'Error getting instance report: {output}')
-        test_result['metadata']['6_get_instance_report_success'] = False
-        test_result['metadata']['6_get_instance_report_error'] = output
-    else:
-        test_result['metadata']['6_get_instance_report_success'] = True
-        test_result['result_raw'] = output
-
-        # try to parse output
-        for line in output.strip().split('\n'):
-            line = line.strip('-')
-            try:
-                key, value = line.split(':')
-            except ValueError:
-                # skip this line
-                print(f'Error parsing result line: {line}')
-                continue
-            value = value.strip()
-            try:
-                value = int(value)
-            except ValueError:
-                pass
-            test_result['result'][key.strip()] = value
+    test_result['result'] = results
+    test_result['metadata'] = {
+        'logs': logs,
+        'timeout': timeout,
+        'num_workers': num_workers,
+    }
     return test_result
 
 
 def process_instance(
-    instance: dict,
-    agent_class: str,
-    metadata: dict,
-    skip_workspace_mount: bool,
-    eval_output_dir: str,
-    reset_logger: bool = True,
+    instance, agent_class, metadata, skip_workspace_mount, reset_logger: bool = True
 ):
+    old_workspace_mount_path = config.workspace_mount_path
+    old_workspace_base = config.workspace_base
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
     # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
@@ -201,11 +148,17 @@ def process_instance(
         workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
         pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
+    # reset workspace to config
+    config.workspace_base = workspace_mount_path
+    config.workspace_mount_path = workspace_mount_path
+
     # Setup the logger properly, so you can run multi-processing to parallize the evaluation
     if reset_logger:
         # Set up logger
         log_file = os.path.join(
-            eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
+            eval_output_dir,
+            'logs',
+            f'instance_{instance.task_id.replace("/", "__")}.log',
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -213,7 +166,7 @@ def process_instance(
         # add back the console handler to print ONE line
         logger.addHandler(get_console_handler())
         logger.info(
-            f'Starting evaluation for instance {instance.instance_id}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
+            f'Starting evaluation for instance {instance.task_id}.\nLOG:   tail -f {log_file}'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -223,32 +176,28 @@ def process_instance(
             logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         )
         logger.addHandler(file_handler)
-    else:
-        logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
     if not skip_workspace_mount:
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
 
-    # NOTE: this is something special we do for SWE-Bench due to the reason described in the previous section
-    # You can omit this if you don't need to setup specialized sandbox
-    workspace_dir_name = f'{instance.repo}__{instance.version}'.replace('/', '__')
-    sandbox = SWEBenchSSHBox.get_box_for_instance(
-        instance,
-        workspace_dir_name,
-        skip_workspace_mount=skip_workspace_mount,
-        workspace_mount_path=workspace_mount_path,
-        sandbox_plugins=agenthub.Agent.get_cls(agent_class).sandbox_plugins,
+    # Create file with HumanEvalFix problem
+    # Prompt reference: https://github.com/bigcode-project/bigcode-evaluation-harness/blob/84b96da31b7f840b55c5733325346176140cdb6b/bigcode_eval/tasks/humanevalpack.py#L509
+    problem_statement = (
+        instance.declaration + instance.buggy_solution + '\n' + instance.test
     )
+    path = os.path.join(
+        workspace_mount_path, f'{instance.task_id.replace("/", "__")}.py'
+    )
+    with open(path, 'w') as f:
+        f.write(problem_statement)
 
     # Prepare instruction
     instruction = (
-        f'Please fix the following issue for the repository in /workspace/{workspace_dir_name}.\n'
+        f'Please fix the function in {instance.task_id.replace("/", "__")}.py such that all test cases pass.\n'
         'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
         '# Problem Statement\n'
-        f'{instance.problem_statement}\n\n'
+        f'{problem_statement}\n\n'
     )
-    if instance.hints_text:
-        instruction += f'# Hints\n{instance.hints_text}\n\n'
     instruction += (
         'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
         'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
@@ -262,71 +211,43 @@ def process_instance(
         main(
             instruction,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
-            sandbox=sandbox,
         )
     )
 
-    # ======= THIS IS SWE-Bench specific =======
-    # Get git patch
-    git_patch = sandbox.get_diff_patch()
-    logger.info(f'Got git diff for instance {instance.instance_id}')
-    # ==========================================
-
     # ======= Attempt to evaluate the agent's edits =======
-    # TODO: if you need to do something in the sandbox to get the correctness metric, modify this function
-    test_result = get_test_result(instance, sandbox, workspace_dir_name)
+    test_result = get_test_result(instance, path)
 
     # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
-
     if state is None:
         raise ValueError('State should not be None.')
 
-    metrics = state.metrics.get() if state.metrics else None
-
     # Save the output
     output = {
-        'instance_id': instance.instance_id,
-        'swe_instance': instance.to_dict(),  # SWE Bench specific
+        'task_id': instance.task_id,
         'instruction': instruction,
-        'git_patch': git_patch,  # SWE Bench specific
         'metadata': metadata,
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
-        'metrics': metrics,
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
 
-    # Close the sandbox
-    sandbox.close()
+    config.workspace_mount_path = old_workspace_mount_path
+    config.workspace_base = old_workspace_base
     return output
-
-
-def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
-    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.toml')
-    if os.path.exists(file_path):
-        with open(file_path, 'r') as file:
-            data = toml.load(file)
-            if 'selected_ids' in data:
-                selected_ids = data['selected_ids']
-                logger.info(
-                    f'Filtering {len(selected_ids)} tasks from "selected_ids"...'
-                )
-                subset = dataset[dataset[filter_column].isin(selected_ids)]
-                logger.info(f'Retained {subset.shape[0]} tasks after filtering')
-                return subset
-    return dataset
 
 
 if __name__ == '__main__':
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
-    dataset = load_dataset('princeton-nlp/SWE-bench_Lite')
-    swe_bench_tests = filter_dataset(dataset['test'].to_pandas(), 'instance_id')
+    dataset = load_dataset(
+        'bigcode/humanevalpack', 'python'
+    )  # TODO: Support other languages
+    hefix_tests = dataset['test'].to_pandas()
 
-    # Check https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/swe_bench/README.md#configure-opendevin-and-your-llm
+    # Check https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/humanevalfix/README.md#configure-opendevin-and-your-llm
     # for details of how to set `llm_config`
     if args.llm_config:
         specified_llm_config = get_llm_config_arg(args.llm_config)
@@ -346,7 +267,7 @@ if __name__ == '__main__':
         eval_note += '_N_' + args.eval_note
     eval_output_dir = os.path.join(
         args.eval_output_dir,
-        'swe_bench',
+        'humanevalfix',
         agent_class,
         model_name + '_maxiter_' + str(max_iterations) + eval_note,
     )
@@ -375,7 +296,7 @@ if __name__ == '__main__':
     # LIMIT EVALUATION
     eval_n_limit = args.eval_n_limit
     if eval_n_limit:
-        swe_bench_tests = swe_bench_tests.head(eval_n_limit)
+        hefix_tests = hefix_tests.head(eval_n_limit)
         logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
 
     # OUTPUT FILE
@@ -386,7 +307,7 @@ if __name__ == '__main__':
         with open(output_file, 'r') as f:
             for line in f:
                 data = json.loads(line)
-                finished_instance_ids.add(data['instance_id'])
+                finished_instance_ids.add(data['task_id'])
         logger.warning(
             f'Output file {output_file} already exists. Loaded {len(finished_instance_ids)} finished instances.'
         )
@@ -398,31 +319,31 @@ if __name__ == '__main__':
 
     # =============================================
     # filter out finished instances
-    new_swe_bench_tests = []
-    for idx, instance in swe_bench_tests.iterrows():
-        if instance.instance_id in finished_instance_ids:
+    new_hefix_tests = []
+    for idx, instance in hefix_tests.iterrows():
+        if instance.task_id in finished_instance_ids:
             logger.info(
-                f'Skipping instance {instance.instance_id} as it is already finished.'
+                f'Skipping instance {instance.task_id} as it is already finished.'
             )
             continue
-        new_swe_bench_tests.append(instance)
+        new_hefix_tests.append(instance)
 
-    swe_bench_tests = pd.DataFrame(new_swe_bench_tests)
+    hefix_tests = pd.DataFrame(new_hefix_tests)
     logger.info(
-        f'Finished instances: {len(finished_instance_ids)}, Remaining instances: {len(swe_bench_tests)}'
+        f'Finished instances: {len(finished_instance_ids)}, Remaining instances: {len(hefix_tests)}'
     )
     # =============================================
 
-    pbar = tqdm(total=len(swe_bench_tests))
+    pbar = tqdm(total=len(hefix_tests))
 
     # This function tracks the progress AND write the output to a JSONL file
     def update_progress(future):
         pbar.update(1)
         output = future.result()
-        pbar.set_description(f'Instance {output["instance_id"]}')
+        pbar.set_description(f'Instance {output["task_id"]}')
         pbar.set_postfix_str(f'Test Result: {output["test_result"]["result"]}')
         logger.info(
-            f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]["result"]}'
+            f'Finished evaluation for instance {output["task_id"]}: {output["test_result"]["result"]}'
         )
         output_fp.write(json.dumps(output) + '\n')
         output_fp.flush()
@@ -431,22 +352,17 @@ if __name__ == '__main__':
     num_workers = args.eval_num_workers
     logger.info(f'Using {num_workers} workers for evaluation.')
 
-    # This is SWE-Bench specific - CodeActAgent doesn't require mounted workspace to work
-    skip_workspace_mount = agent_class == 'CodeActAgent'
-    logger.info(f'Skipping workspace mount: {skip_workspace_mount}')
-
     try:
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
             # This is how we perform multi-processing
-            for row_idx, instance in swe_bench_tests.iterrows():
+            for row_idx, instance in hefix_tests.iterrows():
                 future = executor.submit(
                     process_instance,
                     instance,
                     agent_class,
                     metadata,
-                    skip_workspace_mount,
-                    eval_output_dir,
+                    skip_workspace_mount=False,
                     reset_logger=bool(num_workers > 1),
                 )
                 future.add_done_callback(update_progress)

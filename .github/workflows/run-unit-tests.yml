@@ -9,10 +9,16 @@ on:
     branches:
       - main
     paths-ignore:
-      - "**/*.md"
+      - '**/*.md'
+      - 'frontend/**'
+      - 'docs/**'
+      - 'evaluation/**'
   pull_request:
     paths-ignore:
-      - "**/*.md"
+      - '**/*.md'
+      - 'frontend/**'
+      - 'docs/**'
+      - 'evaluation/**'
 
 jobs:
   test-on-macos:
@@ -53,7 +59,7 @@ jobs:
         run: make build
 
       - name: Run Tests
-        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox"
+        run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -87,7 +93,7 @@ jobs:
         run: make build
 
       - name: Run Tests
-        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox"
+        run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

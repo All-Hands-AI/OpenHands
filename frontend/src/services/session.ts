@@ -7,6 +7,8 @@ import { getSettings } from "./settings";
 class Session {
   private static _socket: WebSocket | null = null;
 
+  private static _latest_event_id: number = -1;
+
   // callbacks contain a list of callable functions
   // event: function, like:
   // open: [function1, function2]
@@ -25,11 +27,10 @@ class Session {
   private static _disconnecting = false;
 
   public static restoreOrStartNewSession() {
-    const token = getToken();
     if (Session.isConnected()) {
       Session.disconnect();
     }
-    Session._connect(token);
+    Session._connect();
   }
 
   public static startNewSession() {
@@ -44,13 +45,20 @@ class Session {
     Session.send(eventString);
   };
 
-  private static _connect(token: string = ""): void {
+  private static _connect(): void {
     if (Session.isConnected()) return;
     Session._connecting = true;
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const WS_URL = `${protocol}//${window.location.host}/ws?token=${token}`;
-    Session._socket = new WebSocket(WS_URL);
+    let wsURL = `${protocol}//${window.location.host}/ws`;
+    const token = getToken();
+    if (token) {
+      wsURL += `?token=${token}`;
+      if (Session._latest_event_id !== -1) {
+        wsURL += `&latest_event_id=${Session._latest_event_id}`;
+      }
+    }
+    Session._socket = new WebSocket(wsURL);
     Session._setupSocket();
   }
 
@@ -77,10 +85,14 @@ class Session {
         return;
       }
       if (data.error && data.error_code === 401) {
+        Session._latest_event_id = -1;
         clearToken();
       } else if (data.token) {
         setToken(data.token);
       } else {
+        if (data.id !== undefined) {
+          Session._latest_event_id = data.id;
+        }
         handleAssistantMessage(data);
       }
     };
