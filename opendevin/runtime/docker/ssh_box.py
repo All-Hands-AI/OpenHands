@@ -199,7 +199,7 @@ class DockerSSHBox(Sandbox):
     def __init__(
         self,
         container_image: str | None = None,
-        timeout: int = 180,
+        timeout: int = 120,
         sid: str | None = None,
     ):
         logger.info(
