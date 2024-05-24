@@ -23,9 +23,9 @@ COMMAND="poetry run python ./evaluation/gaia/run_infer.py \
   --level 2023_all \
   --data-split validation \
   --max-chars 10000000 \
+  --eval-num-workers 1 \
   --eval-note $AGENT_VERSION"
 
-#   --eval-num-workers 8 \
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"
   COMMAND="$COMMAND --eval-n-limit $EVAL_LIMIT"
