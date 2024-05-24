@@ -6,21 +6,37 @@ This folder contains evaluation harness for evaluating agents on the [GAIA bench
 
 Create a `config.toml` file if it does not exist at the root of the workspace. Please check [README.md](../../README.md) for how to set this up.
 
-## Start the evaluation
+## Run the evaluation
 We are using the GAIA dataset hosted on [Hugging Face](https://huggingface.co/datasets/gaia-benchmark/GAIA).
 Please accept the terms and make sure to have logged in on your computer by `huggingface-cli login` before running the evaluation.
 
-Following is the basic command to start the evaluation. Here we are only evaluating the first instance of the validation set for the 2023_level1 split.
+Following is the basic command to start the evaluation. Here we are evaluating on the validation set for the `2023_all` split. You can adjust `./evaluation/gaia/scripts/run_infer.sh` to change the subset you want to evaluate on.
 
-You can remove the `--eval-n-limit 1` argument to evaluate all instances in that subset. Or change `--data-split` `--data-split` to test other splits.
 ```bash
-poetry run python ./evaluation/gaia/run_infer.py \
-        --level 2023_level1 \
-        --data-split validation \
-        --eval-n-limit 1 \
-        --max-iterations 30 \
-        --eval-output-dir <output_dir>
+./evaluation/gaia/scripts/run_infer.sh [model_config] [agent] [eval_limit]
+# e.g., ./evaluation/gaia/scripts/run_infer.sh eval_gpt4_1106_preview CodeActAgent 300
 ```
+
+where `model_config` is mandatory, while `agent` and `eval_limit` are optional.
+
+`model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
+LLM settings, as defined in your `config.toml`.
+
+`agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
+to `CodeActAgent`.
+
+`eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By
+default, the script evaluates the entire SWE-bench_Lite test set (300 issues). Note:
+in order to use `eval_limit`, you must also set `agent`.
+
+Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview` and CodeActAgent,
+then your command would be:
+
+```bash
+./evaluation/gaia/scripts/run_infer.sh eval_gpt4_1106_preview CodeActAgent 10
+```
+
+## Get score
 
 Then you can get stats by running the following command:
 ```bash
