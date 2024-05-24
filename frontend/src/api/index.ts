@@ -5,15 +5,13 @@ export interface FeedbackData {
   trajectory: unknown[];
 }
 
+
 export const sendFeedback = async (data: FeedbackData) =>
-  fetch(
-    "https://kttkfkoju5.execute-api.us-east-2.amazonaws.com/od-share-trajectory",
-    {
-      method: "POST",
-      mode: "no-cors",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
+  fetch("/api/submit_feedback", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify(data),
+  });
+

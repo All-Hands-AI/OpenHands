@@ -21,6 +21,12 @@ from opendevin.llm import bedrock
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import session_manager
 
+def store_feedback(feedback: dict):
+    # Implement the logic to store feedback in the storage service
+    # For example, you can use a database or an external storage service
+    # Here, we will just log the feedback for demonstration purposes
+    logger.info(f"Storing feedback: {feedback}")
+
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -148,7 +154,18 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.close()
             return
     else:
-        sid = str(uuid.uuid4())
+
+@app.post('/api/submit_feedback')
+async def submit_feedback(feedback: dict):
+    # Assuming the storage service is already configured in the backend
+    # and there is a function  to handle the storage.
+    try:
+        store_feedback(feedback)
+        return JSONResponse(status_code=200, content={"message": "Feedback submitted successfully"})
+    except Exception as e:
+        logger.error(f"Error submitting feedback: {e}")
+        return JSONResponse(status_code=500, content={"error": "Failed to submit feedback"})
+
         token = sign_token({'sid': sid})
 
     session = session_manager.add_or_restart_session(sid, websocket)
