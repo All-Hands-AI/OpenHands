@@ -20,8 +20,8 @@ class BrowseURLAction(Action):
     def __str__(self) -> str:
         ret = '**BrowseURLAction**\n'
         if self.thought:
-            ret += f'THOUGHT:{self.thought}\n'
-        ret += f'URL:{self.url}'
+            ret += f'THOUGHT: {self.thought}\n'
+        ret += f'URL: {self.url}'
         return ret
 
 
@@ -39,6 +39,6 @@ class BrowseInteractiveAction(Action):
     def __str__(self) -> str:
         ret = '**BrowseInteractiveAction**\n'
         if self.thought:
-            ret += f'THOUGHT:{self.thought}\n'
-        ret += f'BROWSER_ACTIONS:{self.browser_actions}'
+            ret += f'THOUGHT: {self.thought}\n'
+        ret += f'BROWSER_ACTIONS: {self.browser_actions}'
         return ret

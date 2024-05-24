@@ -42,7 +42,7 @@ class AgentSummarizeAction(Action):
 
     def __str__(self) -> str:
         ret = '**AgentSummarizeAction**\n'
-        ret += f'SUMMARY:{self.summary}'
+        ret += f'SUMMARY: {self.summary}'
         return ret
 
 
