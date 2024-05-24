@@ -93,7 +93,7 @@ Feel free to adjust the configuration, logging, and output formatting to suit yo
 
 ## Contributing
 
-If you encounter any issues or have suggestions for improvements, please open an issue or submit a pull request on the [GitHub repository](https://github.com/yourusername/ML-Bench).
+If you encounter any issues or have suggestions for improvements, please open an issue or submit a pull request on the [GitHub repository](https://github.com/gersteinlab/ML-bench).
 
 ## License
 
