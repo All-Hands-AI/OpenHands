@@ -21,7 +21,7 @@ class CmdRunAction(Action):
     def __str__(self) -> str:
         ret = '**CmdRunAction**\n'
         if self.thought:
-            ret += f'THOUGHT:{self.thought}\n'
+            ret += f'THOUGHT: {self.thought}\n'
         ret += f'COMMAND:\n{self.command}'
         return ret
 
@@ -52,7 +52,7 @@ class IPythonRunCellAction(Action):
     def __str__(self) -> str:
         ret = '**IPythonRunCellAction**\n'
         if self.thought:
-            ret += f'THOUGHT:{self.thought}\n'
+            ret += f'THOUGHT: {self.thought}\n'
         ret += f'CODE:\n{self.code}'
         return ret
 
