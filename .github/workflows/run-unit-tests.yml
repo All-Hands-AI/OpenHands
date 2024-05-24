@@ -14,11 +14,6 @@ on:
       - 'docs/**'
       - 'evaluation/**'
   pull_request:
-    paths-ignore:
-      - '**/*.md'
-      - 'frontend/**'
-      - 'docs/**'
-      - 'evaluation/**'
 
 jobs:
   test-on-macos:
@@ -129,9 +124,3 @@ jobs:
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-  test_matrix_success:
-    name: All Mac/Linux Tests Passed
-    runs-on: ubuntu-latest
-    needs: [test-on-macos, test-on-linux, test-for-sandbox]
-    steps:
-      - run: echo Done!

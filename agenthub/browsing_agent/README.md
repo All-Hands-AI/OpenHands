@@ -9,7 +9,7 @@ Note that for browsing tasks, GPT-4 is usually a requirement to get reasonable r
 
 ```
 poetry run python ./opendevin/core/main.py \
-           -i 5 \
+           -i 10 \
            -t "tell me the usa's president using google search" \
            -c BrowsingAgent \
            -m gpt-4o-2024-05-13
