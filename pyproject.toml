@@ -69,6 +69,8 @@ PyPDF2 = "*"
 openpyxl = "*"
 pylatexenc = "*"
 python-pptx = "*"
+opencv-python = "*"
+pandas = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
