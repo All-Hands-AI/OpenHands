@@ -2,7 +2,6 @@ import contextlib
 import io
 
 import docx
-import pandas as pd
 import pytest
 import sys
 
@@ -16,7 +15,11 @@ from opendevin.runtime.plugins.agent_skills.agentskills import (
     scroll_up,
     search_dir,
     search_file,
-    parse_excel, parse_docx, parse_latex, parse_pdf, parse_pptx
+    parse_docx,
+    parse_latex,
+    parse_pdf,
+    parse_pptx,
+    parse_image
 )
 
 
@@ -594,35 +597,6 @@ def test_lint_file_disabled_undefined_name(tmp_path, monkeypatch, capsys):
     assert result.split('\n') == expected.split('\n')
 
 
-def test_parse_excel(tmp_path):
-    test_excel_path = tmp_path / "test.xlsx"
-    df = pd.DataFrame({
-        'Name': ['Alice', 'Bob', 'Charlie'],
-        'Age': [25, 30, 35],
-        'Occupation': ['Engineer', 'Doctor', 'Artist']
-    })
-    df.to_excel(test_excel_path, index=False)
-
-    old_stdout = sys.stdout
-    sys.stdout = io.StringIO()
-
-    parse_excel(str(test_excel_path))
-
-    output = sys.stdout.getvalue()
-    sys.stdout = old_stdout
-
-    expected_output = (
-        f'[Reading Excel file from {test_excel_path}]\n'
-        '@@ Sheet Name: Sheet1 @@\n'
-        '      Name  Age Occupation\n'
-        '0    Alice   25   Engineer\n'
-        '1      Bob   30     Doctor\n'
-        '2  Charlie   35     Artist\n\n'
-    )
-
-    assert output == expected_output, f"Expected output does not match. Got: {output}"
-
-
 def test_parse_docx(tmp_path):
     # Create a DOCX file with some content
     test_docx_path = tmp_path / "test.docx"
@@ -712,15 +686,15 @@ def test_parse_pptx(tmp_path):
     test_pptx_path = tmp_path / "test.pptx"
     from pptx import Presentation
     pres = Presentation()
-    
+
     slide1 = pres.slides.add_slide(pres.slide_layouts[0])
     title1 = slide1.shapes.title
     title1.text = "Hello, this is the first test PPTX slide."
-    
+
     slide2 = pres.slides.add_slide(pres.slide_layouts[0])
     title2 = slide2.shapes.title
     title2.text = "Hello, this is the second test PPTX slide."
-    
+
     pres.save(str(test_pptx_path))
 
     old_stdout = sys.stdout
@@ -739,3 +713,30 @@ def test_parse_pptx(tmp_path):
         'Hello, this is the second test PPTX slide.\n\n'
     )
     assert output == expected_output, f"Expected output does not match. Got: {output}"
+
+
+def test_parse_image(tmp_path):
+    from unittest.mock import patch
+
+    test_image_path = tmp_path / "test_image.jpg"
+    test_image_path.write_bytes(b'test image data')
+
+    expected_description = "This is a description of the image."
+    mock_response = {
+        'choices': [{
+            'message': {'content': expected_description}
+        }]
+    }
+
+    with patch('requests.post') as mock_post:
+        mock_post.return_value.json.return_value = mock_response
+
+        old_stdout = sys.stdout
+        sys.stdout = io.StringIO()
+
+        parse_image(str(test_image_path))
+
+        output = sys.stdout.getvalue()
+        sys.stdout = old_stdout
+
+        assert expected_description in output, f"Expected description does not match. Got: {output}"

@@ -23,10 +23,8 @@ from typing import Optional
 import base64
 import PyPDF2
 import docx
-import openpyxl
 from pptx import Presentation
 from pylatexenc.latex2text import LatexNodes2Text
-import pandas as pd
 import requests
 from openai import OpenAI
 
@@ -531,7 +529,7 @@ def parse_image(file_path: str, task: str = 'Describe this image as detail as po
         )
         out = response.json()
         content = out['choices'][0]['message']['content']
-        return content
+        print(content)
 
     except Exception as error:
         print(f'Error with the request: {error}')
@@ -605,47 +603,6 @@ def parse_pptx(file_path: str) -> None:
         print(f'Error reading PowerPoint file: {e}')
 
 
-def parse_excel(file_path: str) -> None:
-    """
-    Parses the content of a EXCEL file and prints it.
-
-    Args:
-        file_path: str: The path to the file to open.
-    """
-    print(f'[Reading Excel file from {file_path}]')
-    try:
-        excel_data = pd.read_excel(file_path, sheet_name=None)
-
-        all_sheets_text = []
-        for sheet_name, data in excel_data.items():
-            all_sheets_text.append(
-                f'@@ Sheet Name: {sheet_name} @@\n{data.to_string()}\n'
-            )
-        print('\n'.join(all_sheets_text))
-
-    except Exception as e:
-        print(f'Error reading Excel file: {e}')
-
-
-def parse_xlsx(file_path: str) -> None:
-    """
-    Parses the content of a XLSX file and prints it.
-
-    Args:
-        file_path: str: The path to the file to open.
-    """
-    print(f'Reading XLSX file from {file_path}')
-    workbook = openpyxl.load_workbook(file_path, data_only=True)
-    text = ''
-
-    for sheet in workbook:
-        text += f'@@ Sheet: {sheet.title} @@\n'
-        for row in sheet.iter_rows(values_only=True):
-            row_data = [str(cell) if cell is not None else '' for cell in row]
-            text += '\t'.join(row_data) + '\n'
-    print(text)
-
-
 __all__ = [
     # file operation
     'open_file',
@@ -662,8 +619,6 @@ __all__ = [
     'parse_docx',
     'parse_latex',
     'parse_pptx',
-    'parse_xlsx',
-    'parse_excel',
     'parse_audio',
     'parse_video',
     'parse_image'
@@ -681,6 +636,3 @@ for func_name in __all__:
 
     fn_signature = f'{func.__name__}' + str(signature(func))
     DOCUMENTATION += f'{fn_signature}:\n{cur_doc}\n\n'
-
-if __name__ == '__main__':
-    parse_excel('/Users/zhengmingzhang/PycharmProjects/OpenDevin/tests/unit/agent_skills/test.xlsx')
