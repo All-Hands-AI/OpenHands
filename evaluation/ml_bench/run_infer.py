@@ -169,29 +169,35 @@ def process_instance(instance, agent_class, metadata, eval_output_dir):
 if __name__ == '__main__':
     parser = get_parser()
     parser.add_argument(
+        '-s',
         '--data-split',
         type=str,
         default='full',
         choices=['full', 'quarter'],
         help='data split to evaluate on, either full or quarter',
     )
-    parser.add_argument(
-        '--num-workers', type=int, default=1, help='number of parallel worker processes'
-    )
     args, _ = parser.parse_known_args()
 
     data_split = args.data_split
-    num_workers = args.num_workers
+    agent_class = args.agent_cls
+    num_workers = args.eval_num_workers
+
+    # Check https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/swe_bench/README.md#configure-opendevin-and-your-llm
+    # for details of how to set `llm_config`
+    if args.llm_config:
+        specified_llm_config = get_llm_config_arg(args.llm_config)
+        if specified_llm_config:
+            config.llm = specified_llm_config
+    logger.info(f'Config for evaluation: {config}')
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
-    ml_bench = load_dataset('DanielShao/ml-bench', split=data_split)
+    ml_bench = load_dataset('DanielShao/ml-bench')
 
     eval_output_dir = f'evaluation/ml_bench/eval_output_{data_split}'
     os.makedirs(eval_output_dir, exist_ok=True)
     os.makedirs(os.path.join(eval_output_dir, 'logs'), exist_ok=True)
 
-    agent_class = 'CodeActAgent'  # Replace with your agent class
     model_name = config.llm.model.split('/')[-1]
 
     metadata = {
@@ -211,7 +217,7 @@ if __name__ == '__main__':
     with open(output_file, 'w') as f:
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
-            for _, instance in ml_bench[data_split].iterrows():
+            for instance in ml_bench[data_split]:
                 future = executor.submit(
                     process_instance, instance, agent_class, metadata, eval_output_dir
                 )
