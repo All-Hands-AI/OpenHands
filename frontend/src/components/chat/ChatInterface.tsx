@@ -24,18 +24,21 @@ interface ScrollButtonProps {
   onClick: () => void;
   icon: JSX.Element;
   label: string;
+  disabled?: boolean;
 }
 
 function ScrollButton({
   onClick,
   icon,
   label,
+  disabled = false,
 }: ScrollButtonProps): JSX.Element {
   return (
     <button
       type="button"
       className="relative border-1 text-xs rounded px-2 py-1 border-neutral-600 bg-neutral-700 cursor-pointer select-none"
       onClick={onClick}
+      disabled={disabled}
     >
       <div className="flex items-center">
         {icon} <span className="inline-block">{label}</span>
@@ -50,6 +53,7 @@ function ChatInterface() {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const [feedbackShared, setFeedbackShared] = React.useState(false);
+  const [feedbackLoading, setFeedbackLoading] = React.useState(false);
 
   const shareFeedback = async (feedback: "positive" | "negative") => {
     const data: FeedbackData = {
@@ -60,13 +64,15 @@ function ChatInterface() {
     };
 
     try {
+      setFeedbackLoading(true);
       await sendFeedback(data);
+      toast.info("Feedback shared successfully.");
     } catch (e) {
       console.error(e);
       toast.error("share-error", "Failed to share, see console for details.");
     } finally {
-      toast.info("Feedback shared successfully.");
       setFeedbackShared(true);
+      setFeedbackLoading(false);
     }
   };
 
@@ -135,11 +141,13 @@ function ChatInterface() {
         {!feedbackShared && messages.length > 3 && (
           <div className="flex justify-start gap-2 p-2">
             <ScrollButton
+              disabled={feedbackLoading}
               onClick={() => shareFeedback("positive")}
               icon={<FaRegThumbsUp className="inline mr-2 w-3 h-3" />}
               label=""
             />
             <ScrollButton
+              disabled={feedbackLoading}
               onClick={() => shareFeedback("negative")}
               icon={<FaRegThumbsDown className="inline mr-2 w-3 h-3" />}
               label=""
