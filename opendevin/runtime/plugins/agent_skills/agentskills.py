@@ -488,7 +488,6 @@ def parse_audio(file_path: str, model: str = 'whisper-1') -> None:
         model: Optional[str]: The audio model to use for transcription. Defaults to 'whisper-1'.
     """
     print(f'[Transcribing audio file from {file_path}]')
-    client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
     try:
         # TODO: record the COST of the API call
         with open(file_path, 'rb') as audio_file:
@@ -548,12 +547,12 @@ def parse_video(file_path: str,
         new_interval = len(base64_frames) // 30
         selected_frames = base64_frames[::new_interval]
 
-    print(f'[Totally {len(selected_frames)} would be analyze...]')
+    print(f'Totally {len(selected_frames)} would be analyze...\n')
 
     idx = 0
     for base64_frame in selected_frames:
         idx += 1
-        print(f'[Process the {file_path}, current No. {idx * frame_interval} frame...]')
+        print(f'Process the {file_path}, current No. {idx * frame_interval} frame...')
         # TODO: record the COST of the API call
         try:
             response = client.chat.completions.create(
@@ -564,13 +563,10 @@ def parse_video(file_path: str,
 
             content = response.choices[0].message.content
             current_frame_content = f"Frame {idx}'s content: {content}\n"
-            video_summary += current_frame_content
             print(current_frame_content)
 
         except Exception as error:
             print(f'Error with the request: {error}')
-
-    print(f'video summary: {video_summary}')
 
 
 def parse_pptx(file_path: str) -> None:
