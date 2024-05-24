@@ -13,11 +13,11 @@ Please accept the terms and make sure to have logged in on your computer by `hug
 Following is the basic command to start the evaluation. Here we are evaluating on the validation set for the `2023_all` split. You can adjust `./evaluation/gaia/scripts/run_infer.sh` to change the subset you want to evaluate on.
 
 ```bash
-./evaluation/gaia/scripts/run_infer.sh [model_config] [agent] [eval_limit]
+./evaluation/gaia/scripts/run_infer.sh [model_config] [agent] [eval_limit] [gaia_subset]
 # e.g., ./evaluation/gaia/scripts/run_infer.sh eval_gpt4_1106_preview CodeActAgent 300
 ```
 
-where `model_config` is mandatory, while `agent` and `eval_limit` are optional.
+where `model_config` is mandatory, while `agent`, `eval_limit` and `gaia_subset` are optional.
 
 `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
 LLM settings, as defined in your `config.toml`.
@@ -28,6 +28,8 @@ to `CodeActAgent`.
 `eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By
 default, the script evaluates the entire SWE-bench_Lite test set (300 issues). Note:
 in order to use `eval_limit`, you must also set `agent`.
+
+`gaia_subset`, GAIA benchmark has multiple subsets: `2023_level1`, `2023_level2`, `2023_level3`, `2023_all`. If not provided, it will defaults to `2023_level1`.
 
 Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview` and CodeActAgent,
 then your command would be:

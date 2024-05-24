@@ -2,10 +2,16 @@
 MODEL_CONFIG=$1
 AGENT=$2
 EVAL_LIMIT=$3
+LEVELS=$4
 
 if [ -z "$AGENT" ]; then
   echo "Agent not specified, use default CodeActAgent"
   AGENT="CodeActAgent"
+fi
+
+if [ -z "$LEVELS" ]; then
+  echo "Levels not specified, use default 2023_all"
+  LEVELS="2023_level1"
 fi
 
 # IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of OpenDevin
@@ -20,7 +26,7 @@ COMMAND="poetry run python ./evaluation/gaia/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 30 \
-  --level 2023_all \
+  --level $LEVELS \
   --data-split validation \
   --max-chars 10000000 \
   --eval-num-workers 1 \
