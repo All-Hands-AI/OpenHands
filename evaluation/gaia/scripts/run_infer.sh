@@ -10,8 +10,8 @@ if [ -z "$AGENT" ]; then
 fi
 
 if [ -z "$LEVELS" ]; then
-  echo "Levels not specified, use default 2023_all"
   LEVELS="2023_level1"
+  echo "Levels not specified, use default $LEVELS"
 fi
 
 # IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of OpenDevin
@@ -21,6 +21,7 @@ AGENT_VERSION=v$(poetry run python -c "import agenthub; from opendevin.controlle
 echo "AGENT: $AGENT"
 echo "AGENT_VERSION: $AGENT_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
+echo "LEVELS: $LEVELS"
 
 COMMAND="poetry run python ./evaluation/gaia/run_infer.py \
   --agent-cls $AGENT \
@@ -30,7 +31,7 @@ COMMAND="poetry run python ./evaluation/gaia/run_infer.py \
   --data-split validation \
   --max-chars 10000000 \
   --eval-num-workers 1 \
-  --eval-note $AGENT_VERSION"
+  --eval-note ${AGENT_VERSION}_${LEVELS}"
 
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"
