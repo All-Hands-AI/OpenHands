@@ -85,7 +85,7 @@ def _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=False):
         raise FileNotFoundError('No file open. Use the open_file function first.')
     with open(CURRENT_FILE, 'r') as file:
         lines = file.readlines()
-        start = max(0, CURRENT_LINE - WINDOW // 2 - 1)
+        start = max(0, CURRENT_LINE - WINDOW // 2)
         end = min(len(lines), CURRENT_LINE + WINDOW // 2)
         output = ''
         for i in range(start, end):
@@ -681,3 +681,6 @@ for func_name in __all__:
 
     fn_signature = f'{func.__name__}' + str(signature(func))
     DOCUMENTATION += f'{fn_signature}:\n{cur_doc}\n\n'
+
+if __name__ == '__main__':
+    open_file('/Users/zhengmingzhang/PycharmProjects/OpenDevin/Dockerfile')
