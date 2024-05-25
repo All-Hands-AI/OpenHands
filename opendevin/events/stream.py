@@ -117,16 +117,14 @@ class EventStream:
             summary_observation = SummaryObservation(content=summary_action.summary)
 
             # update the summary action and observation with timestamp and source
-            # timestamp is the timestamp of the first event in the chunk
-            summary_action._id = self._cur_id  # type: ignore [attr-defined]
-            self._cur_id += 1
+            # id, timestamp are those of the first event in the chunk
+            summary_action._id = start_id  # type: ignore [attr-defined]
             summary_action._timestamp = first_event_dict['_timestamp']  # type: ignore [attr-defined]
             # AgentSummarizeAction enumerates agent actions
             summary_action._source = EventSource.AGENT  # type: ignore [attr-defined]
 
             # timestamp is the timestamp of the first event in the chunk
-            summary_observation._id = self._cur_id  # type: ignore [attr-defined]
-            self._cur_id += 1
+            summary_observation._id = start_id + 1  # type: ignore [attr-defined]
             summary_observation._timestamp = first_event_dict['_timestamp']  # type: ignore [attr-defined]
             # SummaryObservation is set as user, like other observations of the output
             summary_observation._source = EventSource.USER  # type: ignore [attr-defined]
@@ -140,7 +138,7 @@ class EventStream:
             summary_action_dict = event_to_dict(summary_action)
             summary_observation_dict = event_to_dict(summary_observation)
 
-            # the filenames will not be in order, ids here are current ids
+            # the filenames will be in order, ids here are first/second event in the replaced chunk
             if summary_action.id is not None and summary_observation.id is not None:
                 self._file_store.write(
                     self._get_filename_for_id(summary_action.id),
