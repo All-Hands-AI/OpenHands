@@ -24,7 +24,7 @@ class E2BBox(Sandbox):
     def __init__(
         self,
         template: str = 'open-devin',
-        timeout: int = 120,
+        timeout: int = config.sandbox_timeout,
     ):
         self.sandbox = E2BSandbox(
             api_key=config.e2b_api_key,

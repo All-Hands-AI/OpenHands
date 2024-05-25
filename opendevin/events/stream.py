@@ -52,15 +52,16 @@ class EventStream:
         return int(filename.split('/')[-1].split('.')[0])
 
     def get_events(self, start_id=0, end_id=None) -> Iterable[Event]:
-        try:
-            events = self._file_store.list(f'sessions/{self.sid}/events')
-        except FileNotFoundError:
-            return
-        for event_str in events:
-            id = self._get_id_from_filename(event_str)
-            if start_id <= id and (end_id is None or id <= end_id):
-                event = self.get_event(id)
-                yield event
+        event_id = start_id
+        while True:
+            if end_id is not None and event_id > end_id:
+                break
+            try:
+                event = self.get_event(event_id)
+            except FileNotFoundError:
+                break
+            yield event
+            event_id += 1
 
     def get_event(self, id: int) -> Event:
         filename = self._get_filename_for_id(id)
