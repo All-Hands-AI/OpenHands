@@ -23,8 +23,6 @@ from opendevin.core.main import main
 from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
 
-DATASET_CACHE_DIR = '~/.cache/open-devin/evals/eda'
-DATASET_CACHE_DIR = os.path.expanduser(DATASET_CACHE_DIR)
 game = None
 
 
@@ -65,17 +63,7 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def process_instance(
-    instance, agent_class, metadata, skip_workspace_mount, reset_logger: bool = True
-):
-    workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
-    # create process-specific workspace dir
-    # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
-    # so that different agent don't interfere with each other.
-    if not skip_workspace_mount:
-        workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
-        pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
-
+def process_instance(instance, agent_class, metadata, reset_logger: bool = True):
     # Setup the logger properly, so you can run multi-processing to parallize the evaluation
     eval_output_dir = metadata['eval_output_dir']
     if reset_logger:
@@ -100,9 +88,6 @@ def process_instance(
         )
         logger.addHandler(file_handler)
 
-    if not skip_workspace_mount:
-        logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
-
     # Prepare instruction
     _game_class = {'things': Q20Game, 'celebs': Q20GameCelebrity}
 
@@ -126,12 +111,12 @@ def process_instance(
 
     instruction = f'{game.first_user_utterance}'
     logger.info(f'Instruction: {instruction}')
+
     # instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    # game.game_play()
 
     state: State = asyncio.run(
         main(
@@ -176,9 +161,6 @@ if __name__ == '__main__':
     parser.add_argument(
         '--answerer_model', '-a', default='gpt-3.5-turbo', help='answerer model'
     )
-    # parser.add_argument(
-    #     "--turns", type=int, default=20, help="Set the maximum number of turns for the game"
-    # )
     parser.add_argument(
         '--dataset',
         default='things',
@@ -317,10 +299,6 @@ if __name__ == '__main__':
     num_workers = args.eval_num_workers
     logger.info(f'Using {num_workers} workers for evaluation.')
 
-    # This is SWE-Bench specific - CodeActAgent don't requires mounted workspace to work
-    skip_workspace_mount = False
-    logger.info(f'Skipping workspace mount: {skip_workspace_mount}')
-
     try:
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
@@ -331,7 +309,6 @@ if __name__ == '__main__':
                     instance,
                     agent_class,
                     metadata,
-                    skip_workspace_mount,
                     reset_logger=bool(num_workers > 1),
                 )
                 future.add_done_callback(update_progress)
