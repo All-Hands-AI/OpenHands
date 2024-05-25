@@ -34,4 +34,4 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN pip3 install --upgrade pip
 RUN pip3 install jupyterlab notebook jupyter_kernel_gateway flake8
 # TODO: those dependencies are needed for agentskills, we should pack them in a new sandbox image
-RUN pip3 install python-docx PyPDF2 openpyxl python-pptx pylatexenc requests pandas openai opencv-python
+RUN pip3 install python-docx PyPDF2 python-pptx pylatexenc openai opencv-python
