@@ -27,7 +27,7 @@ to `CodeActAgent`.
 
 - `eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances, defaulting to all instances.
 
-- `gaia_subset`, GAIA benchmark has multiple subsets: `2023_level1`, `2023_level2`, `2023_level3`, `2023_all`. If not provided, it will defaults to `2023_level1`.
+- `gaia_subset`, GAIA benchmark has multiple subsets: `2023_level1`, `2023_level2`, `2023_level3`, `2023_all`, defaulting to `2023_level1`.
 
 Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview` and CodeActAgent,
 then your command would be:
