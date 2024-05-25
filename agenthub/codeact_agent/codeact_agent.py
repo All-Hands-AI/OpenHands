@@ -229,6 +229,16 @@ class CodeActAgent(Agent):
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
+        # if the user has configured config.llm.max_input_tokens, we should start condensing when we hit it, to limit the costs
+        if (
+            config.llm.max_input_tokens is not None
+            and self.memory_condenser is not None
+            and self.memory_condenser.is_over_token_limit(messages)
+        ):
+            logger.info('Configured token limit exceeded. Condensing memory.')
+            action = self._retry_with_condense(state)
+            return action
+
         try:
             response = self.llm.do_completion(
                 messages=messages,

@@ -124,20 +124,19 @@ class MemoryCondenser:
             logger.error(f'Failed to summarize chunk: {e}')
             raise Exception
 
-    def _estimate_token_count(self, events: list[dict]) -> int:
+    def is_over_token_limit(self, messages: list[dict]) -> int:
         """
-        Estimates the token count of the given events using a rough tokenizer.
+        Estimates the token count of the given events using litellm tokenizer.
 
         Parameters:
-        - events: List of events to estimate the token count for.
+        - events: List of messages to estimate the token count for.
 
         Returns:
         - Estimated token count.
         """
-        token_count = 0
-        for event in events:
-            token_count += len(event['content'].split())
-        return token_count + MAX_TOKEN_COUNT_PADDING
+
+        token_count = self.llm.get_token_count(messages) + MAX_TOKEN_COUNT_PADDING
+        return token_count >= self.llm.max_input_tokens
 
     def _summarizable_actions(self):
         """
