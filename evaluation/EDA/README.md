@@ -7,19 +7,30 @@ This folder contains evaluation harness for evaluating agents on the Entity-dedu
 Create a `config.toml` file if it does not exist at the root of the workspace. Please check [README.md](../../README.md) for how to set this up.
 
 ## Start the evaluation
-There are two tasks in this evaluation. Specify `--dataset` to test on either `things` or `celebs` task.
 
-You can remove the `--eval-n-limit 1` argument to evaluate all instances in the validation set. Alternatively, you can change `--data-split` to test other splits (see https://huggingface.co/docs/datasets/main/en/loading#slice-splits for available options).
-
-The `--max-iterations` should be set to 20 to be comparable to other LLMs in the [leaderboard](https://github.com/apple/ml-entity-deduction-arena?tab=readme-ov-file#highlights).
 
 ```bash
-poetry run python ./evaluation/EDA/run_infer.py \
---dataset things \
---data-split test \
---max-iterations 20 \
---OPENAI_API_KEY sk-xxx \
---eval-n-limit 1
+export OPENAI_API_KEY="sk-XXX"; # This is required for evaluation (to simulate another party of conversation)
+./evaluation/EDA/scripts/run_infer.sh [model_config] [agent] [dataset] [eval_limit]
+```
+
+where `model_config` is mandatory, while `agent`, `dataset` and `eval_limit` are optional.
+
+- `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
+LLM settings, as defined in your `config.toml`.
+
+- `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
+to `CodeActAgent`.
+
+- `dataset`: There are two tasks in this evaluation. Specify `dataset` to test on either `things` or `celebs` task.
+
+- `eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By default it infers all instances.
+
+Let's say you'd like to run 10 instances using `eval_gpt4_1106_eval_gpt4o_2024_05_13preview` and CodeActAgent,
+then your command would be:
+
+```bash
+./evaluation/EDA/scripts/run_infer.sh eval_gpt4o_2024_05_13 CodeActAgent things
 ```
 
 ## Reference
