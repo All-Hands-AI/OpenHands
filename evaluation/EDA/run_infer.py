@@ -113,12 +113,12 @@ def process_instance(
         'do_sample': True,
     }  # no penalty
 
-    # TODO: use codeactagent as guesser_model
+    # Use codeactagent as guesser_model
     global game
     game = _game_class[metadata['dataset']](
         item=instance['text'].strip(),
         answerer_model=metadata['answerer_model'],
-        guesser_model=None,  # use codeactagent as guesser_model
+        guesser_model=None,
         num_turns=metadata['max_iterations'],
         openai_api_key=metadata['openai_api'],
         guesser_kargs=guesser_kargs,
