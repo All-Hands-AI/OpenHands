@@ -2,6 +2,8 @@ import asyncio
 from abc import abstractmethod
 
 from opendevin.core.config import config
+from opendevin.core.exceptions import BrowserInitException
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
@@ -38,11 +40,11 @@ def create_sandbox(sid: str = 'default', sandbox_type: str = 'exec') -> Sandbox:
     if sandbox_type == 'exec':
         return DockerExecBox(sid=sid)
     elif sandbox_type == 'local':
-        return LocalBox()
+        return LocalBox(timeout=config.sandbox_timeout)
     elif sandbox_type == 'ssh':
-        return DockerSSHBox(sid=sid)
+        return DockerSSHBox(sid=sid, timeout=config.sandbox_timeout)
     elif sandbox_type == 'e2b':
-        return E2BBox()
+        return E2BBox(timeout=config.sandbox_timeout)
     else:
         raise ValueError(f'Invalid sandbox type: {sandbox_type}')
 
@@ -71,7 +73,13 @@ class Runtime:
         else:
             self.sandbox = sandbox
             self._is_external_sandbox = True
-        self.browser = BrowserEnv()
+        self.browser: BrowserEnv | None = None
+        try:
+            self.browser = BrowserEnv()
+        except BrowserInitException:
+            logger.warn(
+                'Failed to start browser environment, web browsing functionality will not work'
+            )
         self.file_store = InMemoryFileStore()
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
@@ -80,7 +88,8 @@ class Runtime:
     def close(self):
         if not self._is_external_sandbox:
             self.sandbox.close()
-        self.browser.close()
+        if self.browser is not None:
+            self.browser.close()
         self._bg_task.cancel()
 
     def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
