@@ -387,6 +387,7 @@ class DockerSSHBox(Sandbox):
             f"If you started OpenDevin with `docker run`, you should try `ssh -v -p {self._ssh_port} {username}@localhost` with the password '{self._ssh_password} on the host machine (where you started the container)."
         )
 
+        # TODO there's a similar block nearby, replace with some retry decorator instead or something
         n_retries = 5
         while n_retries > 0:
             try:
