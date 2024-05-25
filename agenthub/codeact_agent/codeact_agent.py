@@ -229,6 +229,7 @@ class CodeActAgent(Agent):
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
+        # FIXME move it out to LLM class
         # if the user has configured config.llm.max_input_tokens, we should start condensing when we hit it, to limit the costs
         if (
             config.llm.max_input_tokens is not None
@@ -240,7 +241,7 @@ class CodeActAgent(Agent):
             return action
 
         try:
-            response = self.llm.do_completion(
+            response = self.llm.completion(
                 messages=messages,
                 stop=[
                     '</execute_ipython>',
@@ -250,6 +251,7 @@ class CodeActAgent(Agent):
                 temperature=0.0,
             )
         except ContextWindowExceededError:
+            # FIXME move it to LLM class
             logger.warning('Context window exceeded. Condensing memory.')
             # Retry processing events with condensed memory
             if self.memory_condenser:

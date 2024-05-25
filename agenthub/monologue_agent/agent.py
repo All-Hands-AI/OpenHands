@@ -178,7 +178,7 @@ class MonologueAgent(Agent):
         ]
 
         # format all as a single message, a monologue
-        resp = self.llm.do_completion(messages=messages)
+        resp = self.llm.completion(messages=messages)
 
         # get the next action from the response
         action_resp = resp['choices'][0]['message']['content']

@@ -117,7 +117,7 @@ class MemoryCondenser:
                 {chunk}
             """
             messages = [{'role': 'user', 'content': prompt}]
-            response = self.llm.do_completion(messages=messages)
+            response = self.llm.completion(messages=messages)
             action = parse_summary_response(response)
             return action
         except Exception as e:

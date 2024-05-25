@@ -8,6 +8,7 @@ from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     APIConnectionError,
+    ContextWindowExceededError,
     RateLimitError,
     ServiceUnavailableError,
 )
@@ -182,17 +183,37 @@ class LLM:
             after=attempt_on_error,
         )
         def wrapper(*args, **kwargs):
+            """
+            Wrapper for the litellm completion function. Logs the input and output of the completion function.
+            """
+
+            # some callers might just send the messages directly
             if 'messages' in kwargs:
                 messages = kwargs['messages']
             else:
                 messages = args[1]
+
+            # FIXME pre-process to check token count against user-configured limit
+
+            # log the prompt
             debug_message = ''
             for message in messages:
                 debug_message += message_separator + message['content']
             llm_prompt_logger.debug(debug_message)
-            resp = completion_unwrapped(*args, **kwargs)
-            message_back = resp['choices'][0]['message']['content']
-            llm_response_logger.debug(message_back)
+
+            try:
+                # call the completion function
+                resp = completion_unwrapped(*args, **kwargs)
+
+                # log the response
+                message_back = resp['choices'][0]['message']['content']
+                llm_response_logger.debug(message_back)
+            except ContextWindowExceededError:
+                # TODO
+                pass
+
+            # post-process to log costs
+            self._post_completion(resp)
             return resp
 
         self._completion = wrapper  # type: ignore
@@ -204,17 +225,7 @@ class LLM:
         """
         return self._completion
 
-    def do_completion(self, *args, **kwargs):
-        """
-        Wrapper for the litellm completion function.
-
-        Check the complete documentation at https://litellm.vercel.app/docs/completion
-        """
-        resp = self._completion(*args, **kwargs)
-        self.post_completion(resp)
-        return resp
-
-    def post_completion(self, response: str) -> None:
+    def _post_completion(self, response: str) -> None:
         """
         Post-process the completion response.
         """
