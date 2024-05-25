@@ -20,10 +20,6 @@ pip install flake8 python-docx PyPDF2 python-pptx pylatexenc openai opencv-pytho
 # Jupyter
 # ======================
 source ~/.bashrc
-# ADD /opendevin/plugins to PATH to make `jupyter_cli` available
-echo 'export PATH=$PATH:/opendevin/plugins/jupyter' >> ~/.bashrc
-export PATH=/opendevin/plugins/jupyter:$PATH
-
 # if user name is `opendevin`, add '/home/opendevin/.local/bin' to PATH
 if [ "$USER" = "opendevin" ]; then
     echo 'export PATH=$PATH:/home/opendevin/.local/bin' >> ~/.bashrc
