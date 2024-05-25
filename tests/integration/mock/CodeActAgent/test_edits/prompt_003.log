@@ -92,16 +92,6 @@ parse_pptx(file_path: str) -> None:
     Args:
     file_path: str: The path to the file to open.
 
-parse_xlsx(file_path: str) -> None:
-    Parses the content of a XLSX file and prints it.
-    Args:
-    file_path: str: The path to the file to open.
-
-parse_excel(file_path: str) -> None:
-    Parses the content of a EXCEL file and prints it.
-    Args:
-    file_path: str: The path to the file to open.
-
 parse_audio(file_path: str, model: str = 'whisper-1') -> None:
     Parses the content of an audio file and prints it.
     Args:
