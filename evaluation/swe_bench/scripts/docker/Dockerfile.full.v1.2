@@ -1,0 +1,9 @@
+FROM ghcr.io/opendevin/eval-swe-bench:full-v1.1
+
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    && rm -rf /var/lib/apt/lists/*
+
+# TODO: those dependencies are needed for agentskills, we should pack them in a new sandbox image
+RUN pip3 install python-docx PyPDF2 python-pptx pylatexenc openai opencv-python
+# docker build -t ghcr.io/opendevin/eval-swe-bench:full-v1.2 -f ./scripts/docker/Dockerfile.full.v1.2 .
