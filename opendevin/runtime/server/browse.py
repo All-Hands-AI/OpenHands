@@ -6,7 +6,7 @@ from opendevin.events.observation import BrowserOutputObservation
 from opendevin.runtime.browser.browser_env import BrowserEnv
 
 
-async def browse(action, browser: BrowserEnv | None) -> BrowserOutputObservation:  # type: ignore
+async def browse(action, browser: BrowserEnv | None) -> BrowserOutputObservation:
     if browser is None:
         raise BrowserUnavailableException()
     if action.action == ActionType.BROWSE:
