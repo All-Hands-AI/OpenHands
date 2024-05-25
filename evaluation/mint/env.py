@@ -11,7 +11,7 @@ from opendevin.controller.state.state import State
 class SimplifiedEnv:
     INVALID_INPUT_MESSAGE = (
         "I don't understand your input. \n"
-        'If you want to execute code, please use <execute> YOUR_CODE_HERE </execute>.\n'
+        'If you want to execute code, please use <execute_ipython> YOUR_CODE_HERE </execute_ipython>.\n'
         'If you want to give me an answer, please use <solution> YOUR_SOLUTION_HERE </solution>.\n'
         'For example: The answer to the question is <solution> 42 </solution>. \n'
     )
