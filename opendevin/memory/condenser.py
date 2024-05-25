@@ -1,6 +1,15 @@
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action.action import Action
-from opendevin.events.action.agent import AgentSummarizeAction
+from opendevin.events.action.agent import AgentRecallAction, AgentSummarizeAction
+from opendevin.events.action.browse import BrowseInteractiveAction, BrowseURLAction
+from opendevin.events.action.commands import (
+    CmdKillAction,
+    CmdRunAction,
+    IPythonRunCellAction,
+)
+from opendevin.events.action.empty import NullAction
+from opendevin.events.action.files import FileReadAction, FileWriteAction
+from opendevin.events.action.message import MessageAction
 from opendevin.events.event import EventSource
 from opendevin.events.observation.observation import Observation
 from opendevin.llm.llm import LLM
@@ -57,7 +66,9 @@ class MemoryCondenser:
         chunk_start_index = 0
 
         for i, (action, observation) in enumerate(events):
-            if action.source == EventSource.USER:
+            # user messages should be kept if possible
+            # FIXME what to do about NullAction?
+            if action.source == EventSource.USER or isinstance(action, NullAction):
                 if chunk:
                     summary_action = self._summarize_chunk(chunk)
                     summary_action._chunk_start = chunk_start_index
@@ -65,7 +76,7 @@ class MemoryCondenser:
                     return summary_action
                 else:
                     chunk_start_index = i + 1
-            elif hasattr(action, 'priority') and getattr(action, 'priority') == 'high':
+            elif isinstance(action, self._summarizable_actions()):
                 if chunk:
                     summary_action = self._summarize_chunk(chunk)
                     summary_action._chunk_start = chunk_start_index
@@ -127,3 +138,28 @@ class MemoryCondenser:
         for event in events:
             token_count += len(event['content'].split())
         return token_count + MAX_TOKEN_COUNT_PADDING
+
+    def _summarizable_actions(self):
+        """
+        Returns the list of actions that can be summarized.
+        """
+        actions = (
+            NullAction,
+            CmdKillAction,
+            CmdRunAction,
+            IPythonRunCellAction,
+            BrowseURLAction,
+            BrowseInteractiveAction,
+            FileReadAction,
+            FileWriteAction,
+            AgentRecallAction,
+            # AgentFinishAction,
+            # AgentRejectAction,
+            # AgentDelegateAction,
+            # AddTaskAction,
+            # ModifyTaskAction,
+            # ChangeAgentStateAction,
+            MessageAction,
+            AgentSummarizeAction,
+        )
+        return actions
