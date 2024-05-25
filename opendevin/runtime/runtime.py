@@ -40,11 +40,11 @@ def create_sandbox(sid: str = 'default', sandbox_type: str = 'exec') -> Sandbox:
     if sandbox_type == 'exec':
         return DockerExecBox(sid=sid)
     elif sandbox_type == 'local':
-        return LocalBox(timeout=config.sandbox_timeout)
+        return LocalBox()
     elif sandbox_type == 'ssh':
-        return DockerSSHBox(sid=sid, timeout=config.sandbox_timeout)
+        return DockerSSHBox(sid=sid)
     elif sandbox_type == 'e2b':
-        return E2BBox(timeout=config.sandbox_timeout)
+        return E2BBox()
     else:
         raise ValueError(f'Invalid sandbox type: {sandbox_type}')
 
