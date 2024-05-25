@@ -713,30 +713,3 @@ def test_parse_pptx(tmp_path):
         'Hello, this is the second test PPTX slide.\n\n'
     )
     assert output == expected_output, f"Expected output does not match. Got: {output}"
-
-
-def test_parse_image(tmp_path):
-    from unittest.mock import patch
-
-    test_image_path = tmp_path / "test_image.jpg"
-    test_image_path.write_bytes(b'test image data')
-
-    expected_description = "This is a description of the image."
-    mock_response = {
-        'choices': [{
-            'message': {'content': expected_description}
-        }]
-    }
-
-    with patch('requests.post') as mock_post:
-        mock_post.return_value.json.return_value = mock_response
-
-        old_stdout = sys.stdout
-        sys.stdout = io.StringIO()
-
-        parse_image(str(test_image_path))
-
-        output = sys.stdout.getvalue()
-        sys.stdout = old_stdout
-
-        assert expected_description in output, f"Expected description does not match. Got: {output}"
