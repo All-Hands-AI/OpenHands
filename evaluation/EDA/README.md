@@ -16,7 +16,7 @@ The `--max-iterations` should be set to 20 to be comparable to other LLMs in the
 ```bash
 pip install retry
 
-python ./evaluation/EDA/run_infer.py \
+poetry run python ./evaluation/EDA/run_infer.py \
 --dataset things \
 --data-split test \
 --max-iterations 20 \
