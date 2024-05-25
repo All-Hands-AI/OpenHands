@@ -150,7 +150,11 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
         'error': state.error if state and state.error else None,
-        'test_result': test_result,
+        'test_result': {
+            'success': test_result,
+            'final_message': final_message,
+            'ground_truth': instance['text'],
+        },
     }
 
     return output

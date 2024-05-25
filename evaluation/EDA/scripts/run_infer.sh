@@ -28,7 +28,6 @@ echo "AGENT: $AGENT"
 echo "AGENT_VERSION: $AGENT_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 echo "DATASET: $DATASET"
-echo "EVAL_LIMIT: $EVAL_LIMIT"
 
 COMMAND="poetry run python evaluation/EDA/run_infer.py \
   --agent-cls $AGENT \
