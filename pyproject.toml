@@ -53,6 +53,14 @@ pytest-cov = "*"
 pytest-asyncio = "*"
 pytest-forked = "*"
 flake8 = "*"
+openai = "*"
+python-docx = "*"
+PyPDF2 = "*"
+pylatexenc = "*"
+python-pptx = "*"
+opencv-python = "*"
+pandas = "*"
+reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
