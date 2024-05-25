@@ -12,6 +12,7 @@ from agenthub.codeact_agent.prompt import (
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config
+from opendevin.core.exceptions import ContextWindowLimit
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
@@ -295,10 +296,16 @@ class CodeActAgent(Agent):
     def _retry_with_condense(self, state: State) -> AgentSummarizeAction:
         events = state.history
 
+        # FIXME retry?
         if self.memory_condenser:
             summary_action = self.memory_condenser.condense(events)
 
             if summary_action:
                 return summary_action
 
-        raise Exception('Memory condensation could not be performed.')
+        # this is bad, we can't perform further LLM calls
+        # raise an exception that we can use to set agent in ERROR state
+        # and, perhaps, wipe the current task history?
+        raise ContextWindowLimit(
+            'Context window limit exceeded. Unable to condense memory.'
+        )
