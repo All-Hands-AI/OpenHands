@@ -4,11 +4,11 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import { Provider } from "react-redux";
 import { NextUIProvider } from "@nextui-org/react";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import store from "#/store";
 import "#/i18n";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 const router = createBrowserRouter([
   {
