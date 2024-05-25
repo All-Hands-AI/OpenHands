@@ -57,10 +57,12 @@ class Task(ABC):
         assert hasattr(self, '_reference'), 'Task does not have a reference solution.'
         return self._reference
 
+    @abstractmethod
     def extract_answer(self, solution: str) -> Optional[str]:
         """Extract the answer from the given solution."""
         pass
 
+    @abstractmethod
     def success(self, solution: str) -> bool:
         """This checks whether the given solution can complete the current task.
 
