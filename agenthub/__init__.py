@@ -14,6 +14,7 @@ from . import (  # noqa: E402
     codeact_agent,
     delegator_agent,
     dummy_agent,
+    light_codeact_agent,
     monologue_agent,
     planner_agent,
 )
@@ -21,6 +22,7 @@ from . import (  # noqa: E402
 __all__ = [
     'monologue_agent',
     'codeact_agent',
+    'light_codeact_agent',
     'planner_agent',
     'SWE_agent',
     'delegator_agent',
