@@ -606,11 +606,11 @@ __all__ = [
     'parse_pdf',
     'parse_docx',
     'parse_latex',
-    'parse_pptx',
-    'parse_audio',
-    'parse_video',
-    'parse_image'
+    'parse_pptx'
 ]
+
+if OPENAI_API_KEY and OPENAI_BASE_URL:
+    __all__ += ['parse_audio', 'parse_video', 'parse_image']
 
 DOCUMENTATION = ''
 for func_name in __all__:
