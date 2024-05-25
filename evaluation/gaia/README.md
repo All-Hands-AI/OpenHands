@@ -20,7 +20,7 @@ Following is the basic command to start the evaluation. Here we are evaluating o
 where `model_config` is mandatory, while `agent`, `eval_limit` and `gaia_subset` are optional.
 
 - `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
-LLM settings, as defined in your `config.toml`.
+LLM settings, as defined in your `config.toml`, defaulting to `gpt-3.5-turbo`
 
 - `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
 to `CodeActAgent`.
