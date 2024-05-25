@@ -109,15 +109,51 @@ class EventStream:
             start_id = summary_action._chunk_start
             end_id = summary_action._chunk_end
 
-            # Remove the events that were summarized
+            # get the first event in the chunk
+            first_event = self.get_event(start_id)
+            first_event_dict = event_to_dict(first_event)
+
+            # create the summary observation
+            summary_observation = SummaryObservation(content=summary_action.summary)
+
+            # update the summary action and observation with timestamp and source
+            # timestamp is the timestamp of the first event in the chunk
+            summary_action._id = self._cur_id  # type: ignore [attr-defined]
+            self._cur_id += 1
+            summary_action._timestamp = first_event_dict['_timestamp']  # type: ignore [attr-defined]
+            # AgentSummarizeAction enumerates agent actions
+            summary_action._source = EventSource.AGENT  # type: ignore [attr-defined]
+
+            # timestamp is the timestamp of the first event in the chunk
+            summary_observation._id = self._cur_id  # type: ignore [attr-defined]
+            self._cur_id += 1
+            summary_observation._timestamp = first_event_dict['_timestamp']  # type: ignore [attr-defined]
+            # SummaryObservation is set as user, like other observations of the output
+            summary_observation._source = EventSource.USER  # type: ignore [attr-defined]
+
+            # remove the events that were summarized
             for event_id in range(start_id, end_id):
                 filename = self._get_filename_for_id(event_id)
                 self._file_store.delete(filename)
 
-            # Add the summary action and observation to the event stream
-            summary_observation = SummaryObservation(content=summary_action.summary)
-            logger.debug(
-                f'Calling stuff with summary action: {summary_action} and observation: {summary_observation}'
-            )
-            # await self.add_event(summary_action, EventSource.AGENT)
-            # await self.add_event(summary_observation, EventSource.AGENT)
+            # save the summary action and observation to the file store
+            summary_action_dict = event_to_dict(summary_action)
+            summary_observation_dict = event_to_dict(summary_observation)
+
+            # the filenames will not be in order, ids here are current ids
+            if summary_action.id is not None and summary_observation.id is not None:
+                self._file_store.write(
+                    self._get_filename_for_id(summary_action.id),
+                    json.dumps(summary_action_dict),
+                )
+                self._file_store.write(
+                    self._get_filename_for_id(summary_observation.id),
+                    json.dumps(summary_observation_dict),
+                )
+
+            # notify subscribers of the addition of the summary action and observation
+            for key, fn in self._subscribers.items():
+                logger.debug(f'Notifying subscriber {key} of summary action')
+                asyncio.create_task(fn(summary_action))
+                logger.debug(f'Notifying subscriber {key} of summary observation')
+                asyncio.create_task(fn(summary_observation))
