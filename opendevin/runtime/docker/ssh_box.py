@@ -11,6 +11,7 @@ from glob import glob
 
 import docker
 from pexpect import exceptions, pxssh
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 from opendevin.core.config import config
 from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
@@ -357,52 +358,44 @@ class DockerSSHBox(Sandbox):
             environment=self._env,
         )
 
-    def start_ssh_session(self, n_retries=5):
-        while n_retries > 0:
-            try:
-                self.ssh = pxssh.pxssh(
+    @retry(stop=stop_after_attempt(5), wait=wait_fixed(5))
+    def __create_ssh(self):
+        try:
+            return pxssh.pxssh(
                     echo=False,
                     timeout=self.timeout,
                     encoding='utf-8',
                     codec_errors='replace',
                 )
-                break
-            except pxssh.ExceptionPxssh as e:
-                logger.exception(
-                    'Failed to start SSH session, retrying...', exc_info=False
-                )
-                n_retries -= 1
-                if n_retries == 0:
-                    raise e
-                time.sleep(5)
+        except pxssh.ExceptionPxssh as e:
+            logger.exception(
+                'Failed to create SSH session, retrying...', exc_info=False
+            )
+            raise e
 
+    # Use the retry decorator, with a maximum of 5 attempts and a fixed wait time of 5 seconds between attempts
+    @retry(stop=stop_after_attempt(5), wait=wait_fixed(5))
+    def __ssh_login(self, hostname, username, ssh_password, ssh_port):
+        try:
+            self.ssh.login(
+                hostname, username, ssh_password, port=ssh_port
+            )
+        except pxssh.ExceptionPxssh as e:
+            logger.exception(
+                'Failed to login to SSH session, retrying...', exc_info=False
+            )
+            raise e
+
+    def start_ssh_session(self):
+        self.ssh = self.__create_ssh()
         hostname = self.ssh_hostname
-        if self.run_as_devin:
-            username = 'opendevin'
-        else:
-            username = 'root'
+        username = 'opendevin' if self.run_as_devin else 'root'
         logger.info(
             f'Connecting to {username}@{hostname} via ssh. '
             f"If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub. "
             f"If you started OpenDevin with `docker run`, you should try `ssh -v -p {self._ssh_port} {username}@localhost` with the password '{self._ssh_password} on the host machine (where you started the container)."
         )
-
-        # TODO there's a similar block nearby, replace with some retry decorator instead or something
-        n_retries = 5
-        while n_retries > 0:
-            try:
-                self.ssh.login(
-                    hostname, username, self._ssh_password, port=self._ssh_port
-                )
-                break
-            except pxssh.ExceptionPxssh as e:
-                logger.exception(
-                    'Failed to login to SSH session, retrying...', exc_info=False
-                )
-                n_retries -= 1
-                if n_retries == 0:
-                    raise e
-                time.sleep(5)
+        self.__ssh_login(hostname, username, self._ssh_password, self._ssh_port)
 
         # Fix: https://github.com/pexpect/pexpect/issues/669
         self.ssh.sendline("bind 'set enable-bracketed-paste off'")
@@ -424,10 +417,10 @@ class DockerSSHBox(Sandbox):
         return bg_cmd.read_logs()
 
     def _send_interrupt(
-        self,
-        cmd: str,
-        prev_output: str = '',
-        ignore_last_output: bool = False,
+            self,
+            cmd: str,
+            prev_output: str = '',
+            ignore_last_output: bool = False,
     ) -> tuple[int, str]:
         logger.exception('Command timed out, killing process...', exc_info=False)
         # send a SIGINT to the process
@@ -442,7 +435,7 @@ class DockerSSHBox(Sandbox):
         )
 
     def execute(
-        self, cmd: str, stream: bool = False, timeout: int | None = None
+            self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
         timeout = timeout or self.timeout
         commands = split_bash_commands(cmd)
