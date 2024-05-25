@@ -49,7 +49,7 @@ def codeact_user_response(state: State, task: Task, task_config: Dict[str, int])
 
     if not result_state.latest_output:
         if result_state.success:
-            msg = 'Your answer is correct.'
+            msg = 'Your answer is correct. You can now exit using the following command: <execute_bash> exit </execute_bash>'
         else:
             msg = 'Something went wrong! No output from the model.'
     else:
