@@ -1,1 +1,4 @@
-The shell script 'hello.sh' that prints 'hello' has been successfully created. If you have any more requests or need further assistance, feel free to let me know!
+The shell script `hello.sh` has been created and made executable. Let's run it to ensure it works correctly.
+
+<execute_bash>
+./hello.sh

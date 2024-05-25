@@ -113,6 +113,7 @@ def process_instance(
         'do_sample': True,
     }  # no penalty
 
+    # TODO: use codeactagent as guesser_model
     global game
     game = _game_class[metadata['dataset']](
         item=instance['text'].strip(),
@@ -151,9 +152,7 @@ def process_instance(
             final_message = act.content
             break
 
-    logger.info(
-        f'Final message: {final_message} | Ground truth: {instance["text"].strip()}'
-    )
+    logger.info(f'Final message: {final_message} | Ground truth: {instance["text"]}')
     test_result = game.reward()
 
     # Save the output
