@@ -25,7 +25,7 @@ LLM settings, as defined in your `config.toml`.
 - `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
 to `CodeActAgent`.
 
-- `eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By default it infers all instances.
+- `eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances, defaulting to all instances.
 
 - `gaia_subset`, GAIA benchmark has multiple subsets: `2023_level1`, `2023_level2`, `2023_level3`, `2023_all`. If not provided, it will defaults to `2023_level1`.
 
