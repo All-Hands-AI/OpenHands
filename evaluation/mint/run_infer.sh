@@ -2,12 +2,8 @@
 
 SUBSET=$1
 EVAL_LIMIT=$2
-AGENT=$3
-
-if [ -z "$AGENT" ]; then
-  echo "Agent not specified, use default CodeActAgent"
-  AGENT="CodeActAgent"
-fi
+# Only 'CodeActAgent' is supported for MINT now
+AGENT="CodeActAgent"
 
 # We need to track the version of Agent in the evaluation to make sure results are comparable
 AGENT_VERSION=v$(poetry run python -c "import agenthub; from opendevin.controller.agent import Agent; print(Agent.get_cls('$AGENT').VERSION)")

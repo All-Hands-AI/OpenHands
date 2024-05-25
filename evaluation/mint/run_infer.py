@@ -23,7 +23,6 @@ from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
-from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
 
 
@@ -123,7 +122,6 @@ def process_instance(
     instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you or provide the solution inside <solution> tag AND NEVER ASK FOR HUMAN HELP.\n'
 
     # NOTE: You can actually set slightly different instruction for different agents
-    # FIXME: test
     # instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
@@ -149,15 +147,8 @@ def process_instance(
 
     logger.info('Msgs: ' + str(state.history))
 
-    final_message = ''
-    for act in reversed(state.history):
-        if isinstance(act, MessageAction):
-            final_message = act.content
-            break
-
     task_state: TaskState = state.task_state
     logger.info('Task state: ' + str(task_state.to_dict()))
-    logger.info(f'Final message: {final_message} | Ground truth: {instance.reference}')
 
     # Save the output
     output = {
