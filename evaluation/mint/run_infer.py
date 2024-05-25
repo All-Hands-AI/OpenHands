@@ -47,7 +47,14 @@ def codeact_user_response(state: State, task: Task, task_config: Dict[str, int])
     result_state: TaskState = env.step(last_action.message)
     state.task_state = result_state
 
-    msg = result_state.latest_output['content']
+    if not result_state.latest_output:
+        if result_state.success:
+            msg = 'Your answer is correct.'
+        else:
+            msg = 'Something went wrong! No output from the model.'
+    else:
+        msg = result_state.latest_output['content']
+
     logger.info('User response:' + msg)
     return msg
 
