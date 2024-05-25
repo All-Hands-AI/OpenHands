@@ -15,7 +15,7 @@ print("Hello World!")
 </execute_ipython>
 The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>.
 For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
-The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block."""
+The assistant should attempt only ONE thing at a time, using either <execute_ipython> or <execute_bash>, and wait for the observation before proceeding to the next step."""
 
 GITHUB_MESSAGE = """To do any activities on GitHub, the assistant should use the token in the $GITHUB_TOKEN environment variable.
 For instance, to push a local branch `my_branch` to the github repo `owner/repo`, the assistant can use the following four commands:
@@ -23,11 +23,11 @@ For instance, to push a local branch `my_branch` to the github repo `owner/repo`
 If the assistant require access to GitHub but $GITHUB_TOKEN is not set, ask the user to set it."""
 
 SYSTEM_SUFFIX = """The assistant's response should be concise.
-The assistant should include ONLY ONE <execute_ipython> or <execute_bash> in every one of the responses, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
-IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
+The assistant MUST include ONLY ONE <execute_ipython> or <execute_bash> in every one of the responses, unless the assistant is finished with the task or needs more input or action from the user in order to proceed.
+IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it. The assistant should always wait for the observation after each action before deciding on the next step.
 """
 
-EXAMPLES = EXAMPLES = """
+EXAMPLES = """
 --- START OF EXAMPLE ---
 
 USER: Create a Python script that prints numbers from 1 to 10.
@@ -85,4 +85,5 @@ INVALID_INPUT_MESSAGE = (
     "I don't understand your input. \n"
     'If you want to execute a bash command, please use <execute_bash> YOUR_COMMAND_HERE </execute_bash>.\n'
     'If you want to execute a block of Python code, please use <execute_ipython> YOUR_COMMAND_HERE </execute_ipython>.\n'
+    'Remember to provide only one <execute_bash> or <execute_ipython> block in each response and wait for the observation before proceeding.'
 )

@@ -4,6 +4,7 @@ from agenthub.light_codeact_agent.prompt import (
     COMMAND_DOCS,
     EXAMPLES,
     GITHUB_MESSAGE,
+    INVALID_INPUT_MESSAGE,
     SYSTEM_PREFIX,
     SYSTEM_SUFFIX,
 )
@@ -197,7 +198,7 @@ class LightCodeActAgent(Agent):
                 '</execute_ipython>',
                 '</execute_bash>',
             ],
-            temperature=0.3,
+            temperature=0.2,
         )
 
         action_str: str = parse_response(response)
@@ -231,9 +232,14 @@ class LightCodeActAgent(Agent):
                 kernel_init_code=self.jupyter_kernel_init_code,
             )
         else:
-            # We assume the LLM is GOOD enough that when it returns pure natural language
-            # it want to talk to the user
-            return MessageAction(content=action_str, wait_for_response=True)
+            # Check if the action_str is a valid message action
+            if action_str.strip():
+                return MessageAction(content=action_str, wait_for_response=True)
+            else:
+                # If the action_str is empty or invalid, return the INVALID_INPUT_MESSAGE
+                return MessageAction(
+                    content=INVALID_INPUT_MESSAGE, wait_for_response=False
+                )
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
