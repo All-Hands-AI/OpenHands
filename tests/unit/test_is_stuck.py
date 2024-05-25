@@ -22,6 +22,9 @@ class TestAgentController:
         controller._is_stuck = AgentController._is_stuck.__get__(
             controller, AgentController
         )
+        controller.eq_no_pid = AgentController.eq_no_pid.__get__(
+            controller, AgentController
+        )
         controller.delegate = None
         controller.state = Mock()
         controller.state.history = []
@@ -76,7 +79,7 @@ class TestAgentController:
             ),
             (
                 CmdRunAction(command='invalid_command'),
-                ErrorObservation(content='Command not found'),
+                ErrorObservation(content='Command still not found or another error'),
             ),
             # user message shouldn't break detection
             (message_action, NullObservation(content='')),
@@ -116,7 +119,7 @@ class TestAgentController:
             ),
             (
                 CmdRunAction(command='ls'),
-                # command_id is ignored for the eq check, it could be a pid
+                # command_id is ignored for the eq check, it's a pid
                 CmdOutputObservation(
                     command_id=2, command='ls', content='file1.txt\nfile2.txt'
                 ),
@@ -236,7 +239,7 @@ class TestAgentController:
                     thought='It looks like storybook is stuck, lets kill it',
                 ),
                 CmdOutputObservation(
-                    content='Background command with id 1 has been killed.',
+                    content='Background command storybook has been killed.',
                     command_id=1,
                     command='storybook',
                     exit_code=0,
@@ -250,7 +253,7 @@ class TestAgentController:
                 ),
                 # command_id here too
                 CmdOutputObservation(
-                    content='Background command with id 2 has been killed.',
+                    content='Background command storybook has been killed.',
                     command_id=2,
                     command='storybook',
                     exit_code=0,
@@ -264,7 +267,7 @@ class TestAgentController:
                     thought='It looks like storybook is stuck, lets kill it',
                 ),
                 CmdOutputObservation(
-                    content='Background command with id 3 has been killed.',
+                    content='Background command storybook has been killed.',
                     command_id=3,
                     command='storybook',
                     exit_code=0,
@@ -276,7 +279,7 @@ class TestAgentController:
                     thought='It looks like storybook is stuck, lets kill it',
                 ),
                 CmdOutputObservation(
-                    content='Background command with id 4 has been killed.',
+                    content='Background command storybook has been killed.',
                     command_id=4,
                     command='storybook',
                     exit_code=0,
