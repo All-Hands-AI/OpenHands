@@ -16,6 +16,14 @@ echo "AGENT: $AGENT"
 echo "AGENT_VERSION: $AGENT_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 
+# Default to NOT use Hint
+export USE_HINT_TEXT=false
+
+EVAL_NOTE="$AGENT_VERSION"
+if [ -n "$USE_HINT_TEXT" ]; then
+  EVAL_NOTE="${EVAL_NOTE}-use-hint"
+fi
+
 COMMAND="poetry run python evaluation/swe_bench/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
