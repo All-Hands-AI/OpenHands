@@ -280,11 +280,11 @@ class AgentController:
         if all(
             # (Action, Observation) tuples
             # compare the last action to the last four actions
-            self.eq_no_pid(last_four_tuples[-1][0], _tuple[0])
+            self._eq_no_pid(last_four_tuples[-1][0], _tuple[0])
             for _tuple in last_four_tuples
         ) and all(
             # compare the last observation to the last four observations
-            self.eq_no_pid(last_four_tuples[-1][1], _tuple[1])
+            self._eq_no_pid(last_four_tuples[-1][1], _tuple[1])
             for _tuple in last_four_tuples
         ):
             logger.warning('Action, Observation loop detected')
@@ -292,7 +292,7 @@ class AgentController:
 
         # (action, error) tuples
         if all(
-            self.eq_no_pid(last_four_tuples[-1][0], _tuple[0])
+            self._eq_no_pid(last_four_tuples[-1][0], _tuple[0])
             for _tuple in last_four_tuples
         ):
             # It repeats the same action, give it a chance, but not if:
@@ -310,21 +310,21 @@ class AgentController:
             if (
                 # this pattern is every other step, like:
                 # (action_1, obs_1), (action_2, obs_2), (action_1, obs_1), (action_2, obs_2),...
-                self.eq_no_pid(last_six_tuples[-1][0], last_six_tuples[-3][0])
-                and self.eq_no_pid(last_six_tuples[-1][0], last_six_tuples[-5][0])
-                and self.eq_no_pid(last_six_tuples[-2][0], last_six_tuples[-4][0])
-                and self.eq_no_pid(last_six_tuples[-2][0], last_six_tuples[-6][0])
-                and self.eq_no_pid(last_six_tuples[-1][1], last_six_tuples[-3][1])
-                and self.eq_no_pid(last_six_tuples[-1][1], last_six_tuples[-5][1])
-                and self.eq_no_pid(last_six_tuples[-2][1], last_six_tuples[-4][1])
-                and self.eq_no_pid(last_six_tuples[-2][1], last_six_tuples[-6][1])
+                self._eq_no_pid(last_six_tuples[-1][0], last_six_tuples[-3][0])
+                and self._eq_no_pid(last_six_tuples[-1][0], last_six_tuples[-5][0])
+                and self._eq_no_pid(last_six_tuples[-2][0], last_six_tuples[-4][0])
+                and self._eq_no_pid(last_six_tuples[-2][0], last_six_tuples[-6][0])
+                and self._eq_no_pid(last_six_tuples[-1][1], last_six_tuples[-3][1])
+                and self._eq_no_pid(last_six_tuples[-1][1], last_six_tuples[-5][1])
+                and self._eq_no_pid(last_six_tuples[-2][1], last_six_tuples[-4][1])
+                and self._eq_no_pid(last_six_tuples[-2][1], last_six_tuples[-6][1])
             ):
                 logger.warning('Action, Observation pattern detected')
                 return True
 
         return False
 
-    def eq_no_pid(self, obj1, obj2):
+    def _eq_no_pid(self, obj1, obj2):
         if isinstance(obj1, CmdOutputObservation) and isinstance(
             obj2, CmdOutputObservation
         ):

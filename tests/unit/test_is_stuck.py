@@ -22,7 +22,7 @@ class TestAgentController:
         controller._is_stuck = AgentController._is_stuck.__get__(
             controller, AgentController
         )
-        controller.eq_no_pid = AgentController.eq_no_pid.__get__(
+        controller._eq_no_pid = AgentController._eq_no_pid.__get__(
             controller, AgentController
         )
         controller.delegate = None
