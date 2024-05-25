@@ -109,7 +109,7 @@ class LightCodeActAgent(Agent):
     At each turn, the agent can:
 
     1. **Converse**: Communicate with humans in natural language for clarification, confirmation, etc.
-    2. **CodeAct**: Perform tasks by executing code
+    2. **LightCodeAct**: Perform tasks by executing code
         - Execute any valid Linux `bash` command
         - Execute any valid `Python` code with an interactive Python interpreter, simulated through bash commands.
 
