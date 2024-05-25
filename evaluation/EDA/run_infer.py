@@ -21,6 +21,7 @@ from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import MessageAction
+from opendevin.events.serialization.event import event_to_dict
 
 DATASET_CACHE_DIR = '~/.cache/open-devin/evals/eda'
 DATASET_CACHE_DIR = os.path.expanduser(DATASET_CACHE_DIR)
@@ -80,7 +81,7 @@ def process_instance(
     if reset_logger:
         # Set up logger
         log_file = os.path.join(
-            eval_output_dir, 'logs', f'instance_{instance["text"]}.log'
+            eval_output_dir, 'logs', f'instance_{instance["text"].strip()}.log'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -88,7 +89,7 @@ def process_instance(
         # add back the console handler to print ONE line
         logger.addHandler(get_console_handler())
         logger.info(
-            f'Starting evaluation for instance {instance["text"]}.\nLOG:   tail -f {log_file}'
+            f'Starting evaluation for instance {instance["text"].strip()}.\nLOG:   tail -f {log_file}'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -102,8 +103,6 @@ def process_instance(
     if not skip_workspace_mount:
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
 
-    # sandbox = DockerSSHBox()
-
     # Prepare instruction
     _game_class = {'things': Q20Game, 'celebs': Q20GameCelebrity}
 
@@ -114,13 +113,11 @@ def process_instance(
         'do_sample': True,
     }  # no penalty
 
-    # TODO: use codeactagent as guesser_model
-    guesser_model = None  #'gpt-3.5-turbo'
     global game
     game = _game_class[metadata['dataset']](
         item=instance['text'].strip(),
         answerer_model=metadata['answerer_model'],
-        guesser_model=guesser_model,
+        guesser_model=None,  # use codeactagent as guesser_model
         num_turns=metadata['max_iterations'],
         openai_api_key=metadata['openai_api'],
         guesser_kargs=guesser_kargs,
@@ -133,7 +130,6 @@ def process_instance(
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    # TODO: convert Q20 game logic into codeactagent
     # game.game_play()
 
     state: State = asyncio.run(
@@ -155,7 +151,9 @@ def process_instance(
             final_message = act.content
             break
 
-    logger.info(f'Final message: {final_message} | Ground truth: {instance["text"]}')
+    logger.info(
+        f'Final message: {final_message} | Ground truth: {instance["text"].strip()}'
+    )
     test_result = game.reward()
 
     # Save the output
@@ -164,7 +162,9 @@ def process_instance(
         'instance': instance,
         'instruction': instruction,
         'metadata': metadata,
-        # 'history': game.dialog_history(),
+        'history': [
+            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
+        ],
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
@@ -289,7 +289,7 @@ if __name__ == '__main__':
     for instance in eda_dataset:
         if instance['text'].strip() in finished_items:
             logger.info(
-                f'Skipping instance {instance["text"]} as it is already finished.'
+                f'Skipping instance {instance["text"].strip()} as it is already finished.'
             )
             continue
         new_eda_dataset.append(instance)
