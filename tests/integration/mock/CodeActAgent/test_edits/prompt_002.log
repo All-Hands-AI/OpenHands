@@ -72,6 +72,26 @@ find_file(file_name: str, dir_path: str = './') -> None:
     file_name: str: The name of the file to find.
     dir_path: Optional[str]: The path to the directory to search.
 
+parse_pdf(file_path: str) -> None:
+    Parses the content of a PDF file and prints it.
+    Args:
+    file_path: str: The path to the file to open.
+
+parse_docx(file_path: str) -> None:
+    Parses the content of a DOCX file and prints it.
+    Args:
+    file_path: str: The path to the file to open.
+
+parse_latex(file_path: str) -> None:
+    Parses the content of a LaTex file and prints it.
+    Args:
+    file_path: str: The path to the file to open.
+
+parse_pptx(file_path: str) -> None:
+    Parses the content of a pptx file and prints it.
+    Args:
+    file_path: str: The path to the file to open.
+
 Please note that THE `edit_file` FUNCTION REQUIRES PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
 
 The assistant's response should be concise.
