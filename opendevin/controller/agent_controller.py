@@ -96,7 +96,7 @@ class AgentController:
         self.state.error = message
         if exception:
             self.state.error += f': {str(exception)}'
-        await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
+        self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def add_history(self, action: Action, observation: Observation):
         if isinstance(action, NullAction) and isinstance(observation, NullObservation):
@@ -124,6 +124,7 @@ class AgentController:
             await asyncio.sleep(0.1)
 
     async def on_event(self, event: Event):
+        logger.debug(f'AgentController on_event: {event}')
         if isinstance(event, ChangeAgentStateAction):
             await self.set_agent_state_to(event.agent_state)  # type: ignore
         elif isinstance(event, MessageAction):
@@ -168,7 +169,7 @@ class AgentController:
         if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
             self.reset_task()
 
-        await self.event_stream.add_event(
+        self.event_stream.add_event(
             AgentStateChangedObservation('', self.state.agent_state), EventSource.AGENT
         )
 
@@ -214,7 +215,7 @@ class AgentController:
             if delegate_done:
                 outputs = self.delegate.state.outputs if self.delegate.state else {}
                 obs: Observation = AgentDelegateObservation(content='', outputs=outputs)
-                await self.event_stream.add_event(obs, EventSource.AGENT)
+                self.event_stream.add_event(obs, EventSource.AGENT)
                 self.delegate = None
                 self.delegateAction = None
             return
@@ -241,7 +242,7 @@ class AgentController:
             await self.add_history(action, NullObservation(''))
 
         if not isinstance(action, NullAction):
-            await self.event_stream.add_event(action, EventSource.AGENT)
+            self.event_stream.add_event(action, EventSource.AGENT)
 
         if self._is_stuck():
             await self.report_error('Agent got stuck in a loop')

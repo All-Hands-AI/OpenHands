@@ -91,7 +91,7 @@ class Runtime:
             observation = await self.run_action(event)
             observation._cause = event.id  # type: ignore[attr-defined]
             source = event.source if event.source else EventSource.AGENT
-            await self.event_stream.add_event(observation, source)
+            self.event_stream.add_event(observation, source)
 
     async def run_action(self, action: Action) -> Observation:
         """
@@ -126,7 +126,7 @@ class Runtime:
         for _id, cmd in self.sandbox.background_commands.items():
             output = cmd.read_logs()
             if output:
-                await self.event_stream.add_event(
+                self.event_stream.add_event(
                     CmdOutputObservation(
                         content=output, command_id=_id, command=cmd.command
                     ),

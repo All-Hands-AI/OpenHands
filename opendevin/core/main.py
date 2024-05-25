@@ -92,8 +92,8 @@ async def main(
     runtime = ServerRuntime(event_stream=event_stream, sandbox=sandbox)
     runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
 
-    await event_stream.add_event(MessageAction(content=task), EventSource.USER)
-    await event_stream.add_event(
+    event_stream.add_event(MessageAction(content=task), EventSource.USER)
+    event_stream.add_event(
         ChangeAgentStateAction(agent_state=AgentState.RUNNING), EventSource.USER
     )
 
@@ -107,7 +107,7 @@ async def main(
                 else:
                     message = fake_user_response_fn(controller.get_state())
                 action = MessageAction(content=message)
-                await event_stream.add_event(action, EventSource.USER)
+                event_stream.add_event(action, EventSource.USER)
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
     while controller.get_agent_state() not in [

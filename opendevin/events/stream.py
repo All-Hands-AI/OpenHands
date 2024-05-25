@@ -1,5 +1,6 @@
 import asyncio
 import json
+import threading
 from datetime import datetime
 from enum import Enum
 from typing import Callable, Iterable
@@ -25,7 +26,7 @@ class EventStream:
     sid: str
     _subscribers: dict[str, Callable]
     _cur_id: int
-    _lock: asyncio.Lock
+    _lock: threading.Lock
     _file_store: FileStore
 
     def __init__(self, sid: str):
@@ -33,7 +34,7 @@ class EventStream:
         self._file_store = get_file_store()
         self._subscribers = {}
         self._cur_id = 0
-        self._lock = asyncio.Lock()
+        self._lock = threading.Lock()
         self._reinitialize_from_file_store()
 
     def _reinitialize_from_file_store(self):
@@ -85,28 +86,26 @@ class EventStream:
         else:
             del self._subscribers[id]
 
-    # TODO: make this not async
-    async def add_event(self, event: Event, source: EventSource):
-        async with self._lock:
+    def add_event(self, event: Event, source: EventSource):
+        with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1
             event._timestamp = datetime.now()  # type: ignore [attr-defined]
             event._source = source  # type: ignore [attr-defined]
-
             data = event_to_dict(event)
             if event.id is not None:
                 self._file_store.write(
                     self._get_filename_for_id(event.id), json.dumps(data)
                 )
-
             if isinstance(event, AgentSummarizeAction):
-                await self.replace_events_with_summary(event)
-
+                self.replace_events_with_summary(event)
             for key, fn in self._subscribers.items():
-                await fn(event)
+                logger.debug(f'Notifying subscriber {key}')
+                asyncio.create_task(fn(event))
+        logger.debug(f'Done with self._lock for event: {event}')
 
-    async def replace_events_with_summary(self, summary_action: AgentSummarizeAction):
-        async with self._lock:
+    def replace_events_with_summary(self, summary_action: AgentSummarizeAction):
+        with self._lock:
             start_id = summary_action._chunk_start
             end_id = summary_action._chunk_end
 
@@ -117,5 +116,8 @@ class EventStream:
 
             # Add the summary action and observation to the event stream
             summary_observation = SummaryObservation(content=summary_action.summary)
-            await self.add_event(summary_action, EventSource.AGENT)
-            await self.add_event(summary_observation, EventSource.AGENT)
+            logger.debug(
+                f'Calling stuff with summary action: {summary_action} and observation: {summary_observation}'
+            )
+            # await self.add_event(summary_action, EventSource.AGENT)
+            # await self.add_event(summary_observation, EventSource.AGENT)
