@@ -9,7 +9,7 @@ from opendevin.core.config import AppConfig, config
 from opendevin.runtime.docker.exec_box import DockerExecBox
 from opendevin.runtime.docker.local_box import LocalBox
 from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
-from opendevin.runtime.plugins import JupyterRequirement
+from opendevin.runtime.plugins import AgentSkillsRequirement
 
 
 @pytest.fixture
@@ -284,7 +284,7 @@ def test_sandbox_jupyter_plugin(temp_dir):
         config, 'sandbox_type', new='ssh'
     ):
         for box in [DockerSSHBox()]:
-            box.init_plugins([JupyterRequirement])
+            box.init_plugins([AgentSkillsRequirement()])
 
             # test the ssh box
             exit_code, output = box.execute('echo "print(1)" | execute_cli')

@@ -25,7 +25,6 @@ from opendevin.events.observation import (
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     AgentSkillsRequirement,
-    JupyterRequirement,
     PluginRequirement,
 )
 
@@ -148,7 +147,6 @@ class CodeActAgent(Agent):
         # AgentSkillsRequirement provides a lot of Python functions
         # and it need to be initialized before Jupyter for Jupyter to use those functions.
         AgentSkillsRequirement(),
-        JupyterRequirement(),
     ]
     jupyter_kernel_init_code: str = 'from agentskills import *'
 

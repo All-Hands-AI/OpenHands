@@ -8,7 +8,6 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.plugins import (
     AgentSkillsRequirement,
-    JupyterRequirement,
     PluginRequirement,
 )
 
@@ -144,7 +143,7 @@ if __name__ == '__main__':
 
     sandbox = SWEBenchSSHBox.get_box_for_instance(
         instance=EXAMPLE_INSTANCE,
-        sandbox_plugins=[AgentSkillsRequirement(), JupyterRequirement()],
+        sandbox_plugins=[AgentSkillsRequirement()],
     )
 
     # PRE TEST
