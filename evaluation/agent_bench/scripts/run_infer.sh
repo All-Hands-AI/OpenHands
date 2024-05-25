@@ -16,10 +16,10 @@ echo "AGENT: $AGENT"
 echo "AGENT_VERSION: $AGENT_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 
-COMMAND="poetry run python evaluation/agent_bench/run_infer.py \
+COMMAND="export PYTHONPATH=evaluation/agent_bench:\$PYTHONPATH && poetry run python evaluation/agent_bench/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
-  --max-iterations 20 \
+  --max-iterations 1 \
   --max-chars 10000000 \
   --eval-num-workers 1 \
   --eval-note $AGENT_VERSION"

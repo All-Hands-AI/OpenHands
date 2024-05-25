@@ -12,6 +12,7 @@ from concurrent.futures import ProcessPoolExecutor
 from huggingface_hub import snapshot_download
 from tqdm import tqdm
 
+from evaluation.agent_bench.helper import compare_results, get_check_method, get_post_cmd, get_pre_cmd
 from opendevin.controller.state.state import State
 from opendevin.core.config import args, config, get_llm_config_arg
 from opendevin.core.logger import get_console_handler
@@ -129,24 +130,35 @@ def process_instance(
     # =============================================
 
     sandbox = DockerSSHBox()
+    if config.is_mock:
+        sandbox.start_ssh_session()
 
     # pre start
-    if 'create' in instance:
-        if 'init' in instance['create']:
-            if 'file' in instance['create']['init']:
-                sh_file = instance['create']['init']['file']
-                cmd = f'bash ./scripts/{instance["task_idx"]}/{sh_file}'
-                logger.info(f'Running init script: {cmd}')
-                sandbox.execute(cmd)
+    pre_cmd = get_pre_cmd(instance)
+    if pre_cmd != '':
+        logger.info(f'Running pre stage script: {pre_cmd}')
+        sandbox.execute(pre_cmd)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State = asyncio.run(
-        main(
-            instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
-            sandbox=sandbox,
+    if config.is_mock:
+        fake_state = State()
+        act = MessageAction(content='Alice', wait_for_response=False)
+        act._source = 'agent'
+        fake_state.history = [
+            (
+                act,
+                None,
+            ),
+        ]
+        state = fake_state
+    else:
+        state: State = asyncio.run(
+            main(
+                instruction,
+                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+                sandbox=sandbox,
+            )
         )
-    )
 
     if state is None:
         raise ValueError('State should not be None.')
@@ -160,23 +172,28 @@ def process_instance(
 
     # post end
     final_ans = ''
-    if 'evaluation' in instance:
-        if 'example' in instance['evaluation']:
-            if 'code' in instance['evaluation']['example']:
-                cmd = instance['evaluation']['example']['code']
-                logger.info(f'Running init script: {cmd}')
-                _, final_ans = sandbox.execute(cmd)
+    post_cmd = get_post_cmd(instance)
+    check_method = get_check_method(instance)
+    if post_cmd != '':
+        logger.info(f'Running post stage script: {post_cmd}')
+        _, final_ans = sandbox.execute(post_cmd)
 
     model_answer = ''
     for act, _ in reversed(state.history):
-        if isinstance(act, MessageAction) and act.source == 'model':
+        if isinstance(act, MessageAction) and act.source == 'agent':
             logger.info(act.content)
             model_answer = act.content
             break
     logger.info(f'Final message: {model_answer} | Ground truth: {final_ans}')
 
-    # TODO: Compare the model_answer with the final_ans
-    test_result = model_answer == final_ans
+    test_result = compare_results(check_method, model_answer, final_ans)
+
+    if config.is_mock:
+        histories = ['mock history']
+    else:
+        histories = [
+            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
+        ]
 
     # Save the output
     output = {
@@ -184,9 +201,7 @@ def process_instance(
         'instance': instance,
         'instruction': instruction,
         'metadata': metadata,
-        'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-        ],
+        'history': histories,
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
@@ -236,7 +251,7 @@ if __name__ == '__main__':
     snapshot_download(
         repo_id='iFurySt/test', repo_type='dataset', local_dir=dst_script_dir
     )
-    data_dir = os.path.join(dst_script_dir, 'os_interactive/data')
+    data_dir = os.path.join(dst_script_dir, 'os_interaction/data')
     dirs = find_subdirectories(data_dir)
     dirs.sort(key=int)
 
@@ -349,9 +364,9 @@ if __name__ == '__main__':
         pbar.update(1)
         output = fut.result()
         pbar.set_description(f'Instance {output["instance_id"]}')
-        pbar.set_postfix_str(f'Test Result: {output["test_result"]["result"]}')
+        pbar.set_postfix_str(f'Test Result: {output["test_result"]}')
         logger.info(
-            f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]["result"]}'
+            f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]}'
         )
         output_fp.write(json.dumps(output) + '\n')
         output_fp.flush()
