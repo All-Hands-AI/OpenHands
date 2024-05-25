@@ -250,7 +250,7 @@ def process_instance(
         '# Problem Statement\n'
         f'{instance.problem_statement}\n\n'
     )
-    if instance.hints_text:
+    if USE_HINT_TEXT and instance.hints_text:
         instruction += f'# Hints\n{instance.hints_text}\n\n'
     instruction += (
         'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
