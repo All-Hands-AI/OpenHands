@@ -8,6 +8,14 @@ import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import store from "#/store";
 import "#/i18n";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <App />,
+  },
+]);
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement,
@@ -16,7 +24,7 @@ root.render(
   <React.StrictMode>
     <Provider store={store}>
       <NextUIProvider>
-        <App />
+        <RouterProvider router={router} />
       </NextUIProvider>
     </Provider>
   </React.StrictMode>,
