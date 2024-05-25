@@ -22,11 +22,17 @@ class ShortTermHistory(list[tuple[Action, Observation]]):
 
         action = event[0]
         observation = event[1]
-        if isinstance(action, AgentSummarizeAction) or isinstance(
+        if isinstance(action, AgentSummarizeAction) and isinstance(
             observation, SummaryObservation
         ):
             self.replace_chunk_with_summary(
                 action._chunk_start, action._chunk_end, action, observation
+            )
+        elif isinstance(action, AgentSummarizeAction) or isinstance(
+            observation, SummaryObservation
+        ):
+            logger.warning(
+                'AgentSummarizeAction and SummaryObservation are not paired together'
             )
         else:
             super().append(event)
