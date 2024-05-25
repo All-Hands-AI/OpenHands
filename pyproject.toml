@@ -55,9 +55,11 @@ pytest-asyncio = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
+retry = "*"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"

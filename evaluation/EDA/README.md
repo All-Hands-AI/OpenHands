@@ -14,8 +14,6 @@ You can remove the `--eval-n-limit 1` argument to evaluate all instances in the 
 The `--max-iterations` should be set to 20 to be comparable to other LLMs in the [leaderboard](https://github.com/apple/ml-entity-deduction-arena?tab=readme-ov-file#highlights).
 
 ```bash
-pip install retry
-
 poetry run python ./evaluation/EDA/run_infer.py \
 --dataset things \
 --data-split test \
