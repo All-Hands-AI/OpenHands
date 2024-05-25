@@ -281,7 +281,9 @@ if __name__ == '__main__':
     new_mint_tests: list[ReasoningTask] = []
     for instance in mint_dataset:
         if instance['id'] in finished_instance_ids:
-            logger.info(f'Skipping instance {instance.id} as it is already finished.')
+            logger.info(
+                f'Skipping instance {instance['id']} as it is already finished.'
+            )
             continue
         # convert to Task object
         instance = ReasoningTask(**instance)

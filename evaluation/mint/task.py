@@ -26,9 +26,6 @@ class Task(ABC):
         # pre-load the in-context example
         task_dir = os.path.join(self.in_context_example_dir, self.task_name)
         self._in_context_example = {
-            'with_tool_and_feedback': load_file(
-                os.path.join(task_dir, 'with_tool_and_feedback.txt')
-            ),
             'with_tool': load_file(os.path.join(task_dir, 'with_tool.txt')),
         }
         self.metadata = {}
@@ -43,9 +40,7 @@ class Task(ABC):
         self, use_tool: bool = True, with_feedback: bool = False
     ) -> str:
         """Return the in-context example for the task."""
-        if use_tool and with_feedback:
-            return self._in_context_example['with_tool_and_feedback']
-        elif use_tool and not with_feedback:
+        if use_tool and not with_feedback:
             return self._in_context_example['with_tool']
         else:
             raise NotImplementedError

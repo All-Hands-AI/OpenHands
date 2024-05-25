@@ -8,4 +8,6 @@ Create a `config.toml` file if it does not exist at the root of the workspace. P
 
 ## Start the evaluation
 
-<!-- TODO: -->
+```
+bash ./evaluation/mint/run_infer.sh math 2
+```
