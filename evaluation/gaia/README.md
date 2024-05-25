@@ -19,17 +19,15 @@ Following is the basic command to start the evaluation. Here we are evaluating o
 
 where `model_config` is mandatory, while `agent`, `eval_limit` and `gaia_subset` are optional.
 
-`model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
+- `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
 LLM settings, as defined in your `config.toml`.
 
-`agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
+- `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
 to `CodeActAgent`.
 
-`eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By
-default, the script evaluates the entire SWE-bench_Lite test set (300 issues). Note:
-in order to use `eval_limit`, you must also set `agent`.
+- `eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By default it infers all instances.
 
-`gaia_subset`, GAIA benchmark has multiple subsets: `2023_level1`, `2023_level2`, `2023_level3`, `2023_all`. If not provided, it will defaults to `2023_level1`.
+- `gaia_subset`, GAIA benchmark has multiple subsets: `2023_level1`, `2023_level2`, `2023_level3`, `2023_all`. If not provided, it will defaults to `2023_level1`.
 
 Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview` and CodeActAgent,
 then your command would be:
