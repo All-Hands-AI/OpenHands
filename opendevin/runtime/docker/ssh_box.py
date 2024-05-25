@@ -402,6 +402,9 @@ class DockerSSHBox(Sandbox):
         # cd to workspace
         self.ssh.sendline(f'cd {self.sandbox_workspace_dir}')
         self.ssh.prompt()
+        # load bashrc
+        self.ssh.sendline('source ~/.bashrc')
+        self.ssh.prompt()
 
     def get_exec_cmd(self, cmd: str) -> list[str]:
         if self.run_as_devin:
