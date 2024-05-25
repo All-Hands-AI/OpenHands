@@ -14,6 +14,7 @@ from opendevin.events.observation import (
     CmdOutputObservation,
     Observation,
 )
+from opendevin.memory.history import ShortTermHistory
 from opendevin.storage import get_file_store
 
 RESUMABLE_STATES = [
@@ -32,7 +33,7 @@ class State:
     # number of characters we have sent to and received from LLM so far for current task
     num_of_chars: int = 0
     background_commands_obs: list[CmdOutputObservation] = field(default_factory=list)
-    history: list[tuple[Action, Observation]] = field(default_factory=list)
+    history: ShortTermHistory = field(default_factory=ShortTermHistory)
     updated_info: list[tuple[Action, Observation]] = field(default_factory=list)
     inputs: dict = field(default_factory=dict)
     outputs: dict = field(default_factory=dict)

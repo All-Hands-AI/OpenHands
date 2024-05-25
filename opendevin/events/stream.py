@@ -128,6 +128,7 @@ class EventStream:
             summary_observation._timestamp = first_event_dict['_timestamp']  # type: ignore [attr-defined]
             # SummaryObservation is set as user, like other observations of the output
             summary_observation._source = EventSource.USER  # type: ignore [attr-defined]
+            summary_observation._cause = summary_action.id  # type: ignore [attr-defined]
 
             # remove the events that were summarized
             for event_id in range(start_id, end_id):
