@@ -10,7 +10,6 @@ AGENT_VERSION=v$(poetry run python -c "import agenthub; from opendevin.controlle
 
 echo "AGENT: $AGENT"
 echo "AGENT_VERSION: $AGENT_VERSION"
-echo "MODEL_NAME: $MODEL_NAME"
 
 export PYTHONPATH=$(pwd)
 

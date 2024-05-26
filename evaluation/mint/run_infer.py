@@ -49,7 +49,7 @@ def codeact_user_response(state: State, task: Task, task_config: Dict[str, int])
 
     if not result_state.latest_output:
         if result_state.success:
-            msg = 'Your answer is correct. You can now exit using the following command: <execute_bash> exit </execute_bash>'
+            msg = 'Your answer is correct. Please EXIT using the following command: <execute_bash> exit </execute_bash>.'
         else:
             msg = 'Something went wrong! No output from the model.'
     else:
@@ -69,7 +69,7 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': 'IMPORTANT: When you think you have solved the question, you NEED TO SEND YOUR PROPOSE ANSWER TO USER THROUGHT MESSAGE, remember to wrap it inside <solution> tag, and only then you can exit using the following command: <execute_bash> exit </execute_bash>.\n'
+    'CodeActAgent': '\nIMPORTANT: When your answer is confirmed by the user to be correct, you can exit using the following command: <execute_bash> exit </execute_bash>.\n'
 }
 
 
@@ -117,6 +117,18 @@ def process_instance(
 
     sandbox = DockerSSHBox()
 
+    requirements_host_src = 'evaluation/mint/requirements.txt'
+    requirements_sandbox_dest = '/opendevin/plugins/mint/requirements.txt'
+    sandbox.copy_to(
+        host_src=requirements_host_src,
+        sandbox_dest=requirements_sandbox_dest,
+        recursive=False,
+    )
+    logger.info(
+        f'Copied files from [{requirements_host_src}] to [{requirements_sandbox_dest}] inside sandbox.'
+    )
+    exit_code, output = sandbox.execute(f'pip install -r {requirements_sandbox_dest}')
+
     # Prepare instruction
     instruction = ToolPromptTemplate(use_tool=True)(
         max_total_steps=metadata['max_iterations'],
@@ -129,7 +141,7 @@ def process_instance(
     instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you or provide the solution inside <solution> tag AND NEVER ASK FOR HUMAN HELP.\n'
 
     # NOTE: You can actually set slightly different instruction for different agents
-    # instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
+    instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     fake_user_response_fn = functools.partial(
