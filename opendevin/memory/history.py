@@ -26,6 +26,10 @@ class ShortTermHistory(list[Event]):
         if isinstance(item, tuple):
             action, observation = item
             self.append(action)
+
+            # FIXME this is not right
+            observation._cause = action.id  # type: ignore[attr-defined]
+
             self.append(observation)
         elif isinstance(item, Event):
             if isinstance(item, AgentSummarizeAction):
