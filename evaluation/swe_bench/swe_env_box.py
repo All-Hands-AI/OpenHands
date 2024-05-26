@@ -12,7 +12,7 @@ from opendevin.runtime.plugins import (
     PluginRequirement,
 )
 
-SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2'
+SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2.1'
 
 
 class SWEBenchSSHBox(DockerSSHBox):
