@@ -7,7 +7,7 @@ EVAL_LIMIT=$4
 
 if [ -z "$MODEL_CONFIG" ]; then
   echo "Model config not specified, use default"
-  MODEL_CONFIG="eval_gpt4_1106_preview"
+  MODEL_CONFIG="eval_gpt_35_turbo"
 fi
 
 if [ -z "$AGENT" ]; then
@@ -27,7 +27,7 @@ COMMAND="poetry run python evaluation/ml_bench/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 10 \
-  --eval-num-workers 1 \
+  --eval-num-workers 4 \
   --eval-note $AGENT_VERSION"
 
 if [ -n "$EVAL_LIMIT" ]; then

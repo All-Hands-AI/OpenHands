@@ -1,7 +1,11 @@
 import asyncio
 import json
+import logging
 import multiprocessing as mp
 import os
+import pathlib
+import subprocess
+import time
 from concurrent.futures import ProcessPoolExecutor
 from typing import Dict
 
@@ -10,6 +14,7 @@ from tqdm import tqdm
 
 from opendevin.controller.state.state import State
 from opendevin.core.config import config, get_llm_config_arg, get_parser
+from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import MessageAction
@@ -72,9 +77,48 @@ def parse_eval_output(output: str) -> Dict[str, float]:
     return metrics
 
 
-def process_instance(instance, agent_class, metadata, eval_output_dir):
-    # Create a sandbox
-    sandbox = DockerSSHBox()
+def process_instance(instance, agent_class, metadata, reset_logger: bool = True):
+    old_workspace_mount_path = config.workspace_mount_path
+    old_workspace_base = config.workspace_base
+    workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
+    # create process-specific workspace dir
+    # so that different agent don't interfere with each other.
+    workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
+    pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
+
+    # reset workspace to config
+    config.workspace_base = workspace_mount_path
+    config.workspace_mount_path = workspace_mount_path
+
+    # Setup the logger properly, so you can run multi-processing to parallize the evaluation
+    if reset_logger:
+        # Set up logger
+        log_file = os.path.join(
+            eval_output_dir,
+            'logs',
+            f"instance_{instance['id']}_pid_{os.getpid()}.log",
+        )
+        # Remove all existing handlers from logger
+        for handler in logger.handlers[:]:
+            logger.removeHandler(handler)
+        # add back the console handler to print ONE line
+        logger.addHandler(get_console_handler())
+        logger.info(
+            f"Starting evaluation for instance {instance['id']}.\nLOG:   tail -f {log_file}"
+        )
+        # Remove all existing handlers from logger
+        for handler in logger.handlers[:]:
+            logger.removeHandler(handler)
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(
+            logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        )
+        logger.addHandler(file_handler)
+
+    logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
+
+    # Create a sandbox, using the instance ID as the session ID to avoid conflicts
+    sandbox = DockerSSHBox(sid=str(instance['id']) + '_' + str(os.getpid()))
 
     # Clone the task repo into the sandbox
     repo_url = instance['github']
@@ -149,7 +193,8 @@ def process_instance(instance, agent_class, metadata, eval_output_dir):
 
     # Shutdown the sandbox
     sandbox.close()
-
+    config.workspace_mount_path = old_workspace_mount_path
+    config.workspace_base = old_workspace_base
     return output
 
 
@@ -181,6 +226,12 @@ if __name__ == '__main__':
     # so we don't need to manage file uploading to OpenDevin's repo
     ml_bench = load_dataset('DanielShao/ml-bench', split=data_split).to_pandas()
 
+    # LIMIT EVALUATION
+    eval_n_limit = args.eval_n_limit
+    if eval_n_limit:
+        ml_bench = ml_bench.head(eval_n_limit)
+        logger.info(f'Limiting evaluation to {eval_n_limit} instances.')
+
     # TEST METADATA
     model_name = config.llm.model.split('/')[-1]
     max_iterations = args.max_iterations
@@ -200,9 +251,15 @@ if __name__ == '__main__':
     metadata = {
         'agent_class': agent_class,
         'model_name': model_name,
-        'data_split': data_split,
-        'num_workers': num_workers,
+        'max_iterations': max_iterations,
+        'eval_output_dir': eval_output_dir,
+        'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
+        # get the commit id of current repo for reproduciblity
+        'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+        .decode('utf-8')
+        .strip(),
     }
+    logger.info(f'Metadata: {metadata}')
 
     output_file = os.path.join(eval_output_dir, 'output.jsonl')
     logger.info(f'Evaluating on data split: {data_split}')
@@ -252,22 +309,30 @@ if __name__ == '__main__':
     num_workers = args.eval_num_workers
     logger.info(f'Using {num_workers} workers for evaluation.')
 
-    with open(output_file, 'w') as f:
-        with ProcessPoolExecutor(num_workers) as executor:
-            futures = []
-            for _, instance in ml_bench.iterrows():
-                future = executor.submit(
-                    process_instance, instance, agent_class, metadata, eval_output_dir
-                )
-                future.add_done_callback(update_progress)
-                futures.append(future)
+    try:
+        with open(output_file, 'w') as f:
+            with ProcessPoolExecutor(num_workers) as executor:
+                futures = []
+                for _, instance in ml_bench.iterrows():
+                    future = executor.submit(
+                        process_instance,
+                        instance,
+                        agent_class,
+                        metadata,
+                        eval_output_dir,
+                    )
+                    future.add_done_callback(update_progress)
+                    futures.append(future)
 
-            for future in futures:
-                try:
-                    output = future.result()
-                    f.write(json.dumps(output) + '\n')
-                    logger.info(f'Finished instance {output["instance_id"]}')
-                except Exception as e:
-                    logger.exception(f'Error processing instance: {e}')
+                for future in futures:
+                    try:
+                        output = future.result()
+                        f.write(json.dumps(output, indent=2) + '\n')
+                        logger.info(f'Finished instance {output["instance_id"]}')
+                    except Exception as e:
+                        logger.exception(f'Error processing instance: {e}')
+    except KeyboardInterrupt:
+        print('KeyboardInterrupt received. Cleaning up...')
+        cleanup()
 
     logger.info('Evaluation completed.')
