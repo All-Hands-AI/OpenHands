@@ -137,6 +137,7 @@ class AppConfig(metaclass=Singleton):
         sandbox_container_image: The container image to use for the sandbox.
         run_as_devin: Whether to run as devin.
         max_iterations: The maximum number of iterations.
+        max_budget_per_task: The maximum budget allowed per task, beyond which the agent will stop.
         e2b_api_key: The E2B API key.
         sandbox_type: The type of sandbox to use. Options are: ssh, exec, e2b, local.
         use_host_network: Whether to use the host network.
@@ -166,6 +167,7 @@ class AppConfig(metaclass=Singleton):
     )
     run_as_devin: bool = True
     max_iterations: int = 100
+    max_budget_per_task: float | None = None
     e2b_api_key: str = ''
     sandbox_type: str = 'ssh'  # Can be 'ssh', 'exec', or 'e2b'
     use_host_network: bool = False
@@ -489,6 +491,13 @@ def get_parser():
         default=config.max_iterations,
         type=int,
         help='The maximum number of iterations to run the agent',
+    )
+    parser.add_argument(
+        '-b',
+        '--max-budget-per-task',
+        default=config.max_budget_per_task,
+        type=float,
+        help='The maximum budget allowed per task, beyond which the agent will stop.',
     )
     parser.add_argument(
         '-n',

@@ -285,3 +285,20 @@ def test_api_keys_repr_str():
             assert (
                 'token' not in attr_name.lower() or 'tokens' in attr_name.lower()
             ), f"Unexpected attribute '{attr_name}' contains 'token' in AppConfig"
+
+
+def test_max_iterations_and_max_budget_per_task_from_toml(temp_toml_file):
+    temp_toml = """
+[core]
+max_iterations = 100
+max_budget_per_task = 4.0
+"""
+
+    config = AppConfig()
+    with open(temp_toml_file, 'w') as f:
+        f.write(temp_toml)
+
+    load_from_toml(config, temp_toml_file)
+
+    assert config.max_iterations == 100
+    assert config.max_budget_per_task == 4.0
