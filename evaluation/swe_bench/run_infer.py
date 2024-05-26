@@ -254,11 +254,6 @@ def process_instance(
     instruction += (
         'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
         'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
-        'Always start by trying to replicate the bug that the issues discussed.\n'
-        'If the issue includes code for reproducing the bug, we recommend that you re-implement that in your environment, and run it to make sure you can reproduce the bug.\n'
-        'Then start trying to fix it.\n'
-        "When you think you've fixed the bug, re-run the bug reproduction script to make sure the bug has indeed been fixed.\n"
-        'You should never push your solution to any git repository. When you are done, exit the environment.\n'
         'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
     )
     # NOTE: You can actually set slightly different instruction for different agents
