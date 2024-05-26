@@ -37,6 +37,7 @@ from opendevin.events.observation import (
 
 MAX_ITERATIONS = config.max_iterations
 MAX_CHARS = config.llm.max_chars
+MAX_BUDGET_PER_TASK = config.max_budget_per_task
 
 
 class AgentController:
@@ -56,6 +57,7 @@ class AgentController:
         sid: str = 'default',
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
+        max_budget_per_task: float | None = MAX_BUDGET_PER_TASK,
         inputs: dict | None = None,
     ):
         """Initializes a new instance of the AgentController class.
@@ -66,6 +68,7 @@ class AgentController:
             sid: The session ID of the agent.
             max_iterations: The maximum number of iterations the agent can run.
             max_chars: The maximum number of characters the agent can output.
+            max_budget_per_task: The maximum budget (in USD) allowed per task, beyond which the agent will stop.
             inputs: The initial inputs to the agent.
         """
         self.id = sid
@@ -77,6 +80,7 @@ class AgentController:
         )
         self.max_iterations = max_iterations
         self.max_chars = max_chars
+        self.max_budget_per_task = max_budget_per_task
         self.agent_task = asyncio.create_task(self._start_step_loop())
 
     async def close(self):
@@ -88,10 +92,17 @@ class AgentController:
     def update_state_before_step(self):
         self.state.iteration += 1
 
-    def update_state_after_step(self):
+    async def update_state_after_step(self):
         self.state.updated_info = []
         # update metrics especially for cost
         self.state.metrics = self.agent.llm.metrics
+        if self.max_budget_per_task is not None:
+            current_cost = self.state.metrics.accumulated_cost
+            if current_cost > self.max_budget_per_task:
+                await self.report_error(
+                    f'Task budget exceeded. Current cost: {current_cost}, Max budget: {self.max_budget_per_task}'
+                )
+                await self.set_agent_state_to(AgentState.ERROR)
 
     async def report_error(self, message: str, exception: Exception | None = None):
         self.state.error = message
@@ -235,7 +246,7 @@ class AgentController:
 
         logger.info(action, extra={'msg_type': 'ACTION'})
 
-        self.update_state_after_step()
+        await self.update_state_after_step()
         if action.runnable:
             self._pending_action = action
         else:
