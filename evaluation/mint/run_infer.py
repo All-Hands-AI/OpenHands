@@ -293,7 +293,7 @@ if __name__ == '__main__':
     for instance in mint_dataset:
         if instance['id'] in finished_instance_ids:
             logger.info(
-                f'Skipping instance {instance['id']} as it is already finished.'
+                f'Skipping instance {instance["id"]} as it is already finished.'
             )
             continue
         # convert to Task object
