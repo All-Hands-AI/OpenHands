@@ -24,6 +24,7 @@ from opendevin.events.action import (
     ModifyTaskAction,
     NullAction,
 )
+from opendevin.events.action.commands import CmdKillAction
 from opendevin.events.event import Event
 from opendevin.events.observation import (
     AgentDelegateObservation,
@@ -271,13 +272,29 @@ class AgentController:
         if len(filtered_history) < 4:
             return False
 
+        # FIXME rewrite this to be more readable
+
         # Check if the last four (Action, Observation) tuples are too repetitive
         last_four_tuples = filtered_history[-4:]
-        if all(last_four_tuples[-1] == _tuple for _tuple in last_four_tuples):
+
+        if all(
+            # (Action, Observation) tuples
+            # compare the last action to the last four actions
+            self._eq_no_pid(last_four_tuples[-1][0], _tuple[0])
+            for _tuple in last_four_tuples
+        ) and all(
+            # compare the last observation to the last four observations
+            self._eq_no_pid(last_four_tuples[-1][1], _tuple[1])
+            for _tuple in last_four_tuples
+        ):
             logger.warning('Action, Observation loop detected')
             return True
 
-        if all(last_four_tuples[-1][0] == _tuple[0] for _tuple in last_four_tuples):
+        # (action, error) tuples
+        if all(
+            self._eq_no_pid(last_four_tuples[-1][0], _tuple[0])
+            for _tuple in last_four_tuples
+        ):
             # It repeats the same action, give it a chance, but not if:
             if all(
                 isinstance(_tuple[1], ErrorObservation) for _tuple in last_four_tuples
@@ -287,13 +304,35 @@ class AgentController:
 
         # check if the agent repeats the same (Action, Observation)
         # every other step in the last six tuples
+
         if len(filtered_history) >= 6:
             last_six_tuples = filtered_history[-6:]
             if (
-                last_six_tuples[-1] == last_six_tuples[-3] == last_six_tuples[-5]
-                and last_six_tuples[-2] == last_six_tuples[-4] == last_six_tuples[-6]
+                # this pattern is every other step, like:
+                # (action_1, obs_1), (action_2, obs_2), (action_1, obs_1), (action_2, obs_2),...
+                self._eq_no_pid(last_six_tuples[-1][0], last_six_tuples[-3][0])
+                and self._eq_no_pid(last_six_tuples[-1][0], last_six_tuples[-5][0])
+                and self._eq_no_pid(last_six_tuples[-2][0], last_six_tuples[-4][0])
+                and self._eq_no_pid(last_six_tuples[-2][0], last_six_tuples[-6][0])
+                and self._eq_no_pid(last_six_tuples[-1][1], last_six_tuples[-3][1])
+                and self._eq_no_pid(last_six_tuples[-1][1], last_six_tuples[-5][1])
+                and self._eq_no_pid(last_six_tuples[-2][1], last_six_tuples[-4][1])
+                and self._eq_no_pid(last_six_tuples[-2][1], last_six_tuples[-6][1])
             ):
                 logger.warning('Action, Observation pattern detected')
                 return True
 
         return False
+
+    def _eq_no_pid(self, obj1, obj2):
+        if isinstance(obj1, CmdOutputObservation) and isinstance(
+            obj2, CmdOutputObservation
+        ):
+            # for loop detection, ignore command_id, which is the pid
+            return obj1.command == obj2.command and obj1.exit_code == obj2.exit_code
+        elif isinstance(obj1, CmdKillAction) and isinstance(obj2, CmdKillAction):
+            # for loop detection, ignore command_id, which is the pid
+            return obj1.thought == obj2.thought
+        else:
+            # this is the default comparison
+            return obj1 == obj2
