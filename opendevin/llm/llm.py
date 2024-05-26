@@ -210,7 +210,7 @@ class LLM:
                 llm_response_logger.debug(message_back)
             except ContextWindowExceededError:
                 # TODO
-                pass
+                raise
 
             # post-process to log costs
             self._post_completion(resp)

@@ -77,15 +77,9 @@ class MemoryCondenser:
                 else:
                     chunk_start_index = i + 1
             elif isinstance(action, self._summarizable_actions()):
-                if chunk:
-                    summary_action = self._summarize_chunk(chunk)
-                    summary_action._chunk_start = chunk_start_index
-                    summary_action._chunk_end = i
-                    return summary_action
-                else:
-                    chunk_start_index = i + 1
-            else:
                 chunk.append((action, observation))
+            else:
+                chunk_start_index = i + 1
 
         if chunk:
             summary_action = self._summarize_chunk(chunk)
@@ -110,19 +104,21 @@ class MemoryCondenser:
         try:
             prompt = f"""
             Given the following actions and observations, create a JSON response with:
-                - "action_type": "SUMMARIZE"
-                - "actions": A comma-separated list of all the action names from the provided actions
-                - "summary": A single sentence summarizing all the provided observations
+                - "action": "summarize"
+                - args:
+                  - "summarized_actions": A comma-separated list of all the action names from the provided actions
+                  - "summary": A single sentence summarizing all the provided observations
 
                 {chunk}
             """
             messages = [{'role': 'user', 'content': prompt}]
             response = self.llm.completion(messages=messages)
-            action = parse_summary_response(response)
+            action_response = response['choices'][0]['message']['content']
+            action = parse_summary_response(action_response)
             return action
         except Exception as e:
             logger.error(f'Failed to summarize chunk: {e}')
-            raise Exception
+            raise
 
     def is_over_token_limit(self, messages: list[dict]) -> int:
         """
@@ -159,6 +155,6 @@ class MemoryCondenser:
             # ModifyTaskAction,
             # ChangeAgentStateAction,
             MessageAction,
-            AgentSummarizeAction,
+            # AgentSummarizeAction, # this is actually fine but separate
         )
         return actions

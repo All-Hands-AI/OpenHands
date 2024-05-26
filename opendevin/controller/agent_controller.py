@@ -24,7 +24,6 @@ from opendevin.events.action import (
     ModifyTaskAction,
     NullAction,
 )
-from opendevin.events.action.agent import AgentSummarizeAction
 from opendevin.events.event import Event
 from opendevin.events.observation import (
     AgentDelegateObservation,
@@ -239,12 +238,8 @@ class AgentController:
             return
 
         logger.info(action, extra={'msg_type': 'ACTION'})
-
         self.update_state_after_step()
         if action.runnable:
-            self._pending_action = action
-        elif isinstance(action, AgentSummarizeAction):
-            # FIXME do we need to wait 1 sec for an obs that already exists?
             self._pending_action = action
         else:
             await self.add_history(action, NullObservation(''))

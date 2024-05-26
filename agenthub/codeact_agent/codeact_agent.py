@@ -180,7 +180,9 @@ class CodeActAgent(Agent):
         """
         super().__init__(llm)
         self.memory_condenser = (
-            MemoryCondenser(llm) if config.agent.memory_condensation_enabled else None
+            MemoryCondenser(
+                llm
+            )  # if config.agent.memory_condensation_enabled else None
         )
         self.reset()
 
@@ -221,23 +223,27 @@ class CodeActAgent(Agent):
         if latest_user_message and latest_user_message['content'].strip() == '/exit':
             return AgentFinishAction()
 
-        try:
-            response = self.llm.completion(
-                messages=messages,
-                stop=[
-                    '</execute_ipython>',
-                    '</execute_bash>',
-                    '</execute_browse>',
-                ],
-                temperature=0.0,
-            )
-        except ContextWindowExceededError:
-            # FIXME move it to LLM class
-            logger.warning('Context window exceeded. Condensing memory.')
-            # Retry processing events with condensed memory
-            if self.memory_condenser:
-                self._retry_with_condense(state)
-                messages = self._get_messages(state)
+        response = None
+        # give it 3 tries
+        attempt = 0
+        while not response and attempt < 3:
+            try:
+                response = self.llm.completion(
+                    messages=messages,
+                    stop=[
+                        '</execute_ipython>',
+                        '</execute_bash>',
+                        '</execute_browse>',
+                    ],
+                    temperature=0.0,
+                )
+            except ContextWindowExceededError:
+                # FIXME move it to LLM class
+                logger.warning('Context window exceeded. Condensing memory.')
+                # Retry processing events with condensed memory
+                if self.memory_condenser:
+                    self._retry_with_condense(state)
+                    messages = self._get_messages(state)
 
         action_str: str = parse_response(response)
         state.num_of_chars += sum(
