@@ -67,7 +67,7 @@ class AgentController:
             sid: The session ID of the agent.
             max_iterations: The maximum number of iterations the agent can run.
             max_chars: The maximum number of characters the agent can output.
-            max_budget_per_task: The maximum budget allowed per task, beyond which the agent will stop.
+            max_budget_per_task: The maximum budget (in USD) allowed per task, beyond which the agent will stop.
             inputs: The initial inputs to the agent.
         """
         self.id = sid
