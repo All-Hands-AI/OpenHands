@@ -12,7 +12,7 @@ from opendevin.runtime.plugins import (
     PluginRequirement,
 )
 
-SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2'
+SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2.1'
 
 
 class SWEBenchSSHBox(DockerSSHBox):
@@ -86,7 +86,8 @@ class SWEBenchSSHBox(DockerSSHBox):
 
         # linting python after editing helps LLM fix indentations
         config.enable_auto_lint = True
-
+        # Need to run as root to use SWEBench container
+        config.run_as_devin = False
         sandbox = cls(
             container_image=SWE_BENCH_CONTAINER_IMAGE,
             swe_instance_id=instance['instance_id'],
