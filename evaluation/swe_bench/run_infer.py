@@ -25,7 +25,6 @@ from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false') == 'true'
-logger.info(f'Using hint text: {USE_HINT_TEXT}')
 
 
 def cleanup():
