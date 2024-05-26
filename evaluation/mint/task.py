@@ -110,7 +110,7 @@ class ReasoningTask(Task):
         try:
             float(reference)
             float(answer)
-            return abs(float(reference) - float(answer)) <= 0.05 * float(reference)
+            return abs(float(reference) - float(answer)) <= 0.05 * abs(float(reference))
         except ValueError:
             return reference in answer
         except Exception:
