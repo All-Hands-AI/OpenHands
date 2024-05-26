@@ -366,11 +366,11 @@ class DockerSSHBox(Sandbox):
     def __create_ssh(self):
         try:
             return pxssh.pxssh(
-                    echo=False,
-                    timeout=self.timeout,
-                    encoding='utf-8',
-                    codec_errors='replace',
-                )
+                echo=False,
+                timeout=self.timeout,
+                encoding='utf-8',
+                codec_errors='replace',
+            )
         except pxssh.ExceptionPxssh as e:
             logger.exception(
                 'Failed to create SSH session, retrying...', exc_info=False
@@ -381,9 +381,7 @@ class DockerSSHBox(Sandbox):
     @retry(stop=stop_after_attempt(5), wait=wait_fixed(5))
     def __ssh_login(self, hostname, username, ssh_password, ssh_port):
         try:
-            self.ssh.login(
-                hostname, username, ssh_password, port=ssh_port
-            )
+            self.ssh.login(hostname, username, ssh_password, port=ssh_port)
         except pxssh.ExceptionPxssh as e:
             logger.exception(
                 'Failed to login to SSH session, retrying...', exc_info=False
@@ -421,10 +419,10 @@ class DockerSSHBox(Sandbox):
         return bg_cmd.read_logs()
 
     def _send_interrupt(
-            self,
-            cmd: str,
-            prev_output: str = '',
-            ignore_last_output: bool = False,
+        self,
+        cmd: str,
+        prev_output: str = '',
+        ignore_last_output: bool = False,
     ) -> tuple[int, str]:
         logger.exception('Command timed out, killing process...', exc_info=False)
         # send a SIGINT to the process
@@ -439,7 +437,7 @@ class DockerSSHBox(Sandbox):
         )
 
     def execute(
-            self, cmd: str, stream: bool = False, timeout: int | None = None
+        self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
         timeout = timeout or self.timeout
         commands = split_bash_commands(cmd)
@@ -469,6 +467,9 @@ class DockerSSHBox(Sandbox):
             try:
                 # Wait for one of the prompts
                 index = self.ssh.expect(prompts, timeout=1)
+                line = self.ssh.before
+                logger.info(line)
+                command_output += line
                 if index == 0:
                     self.ssh.sendline('Y')
                 elif index == 1:
@@ -486,9 +487,6 @@ class DockerSSHBox(Sandbox):
             except ExceptionPexpect as e:
                 logger.exception(f'Unexpected exception: {e}')
                 break
-            line = self.ssh.before
-            print(line)
-            command_output += line
 
         # once out, make sure that we have *every* output, we while loop until we get an empty output
         while True:
@@ -794,7 +792,6 @@ if __name__ == '__main__':
                 continue
             exit_code, output = ssh_box.execute(user_input)
             logger.info('exit code: %d', exit_code)
-            logger.info(output)
             if bg_cmd.pid in ssh_box.background_commands:
                 logs = ssh_box.read_logs(bg_cmd.pid)
                 logger.info('background logs: %s', logs)
