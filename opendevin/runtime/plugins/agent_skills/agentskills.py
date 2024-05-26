@@ -15,17 +15,17 @@ Functions:
 - edit_file(start, end, content): Replaces lines in a file with the given content.
 """
 
+import base64
 import os
 import subprocess
 from inspect import signature
 from typing import Optional
 
-import base64
-import PyPDF2
 import docx
+import PyPDF2
+from openai import OpenAI
 from pptx import Presentation
 from pylatexenc.latex2text import LatexNodes2Text
-from openai import OpenAI
 
 CURRENT_FILE = None
 CURRENT_LINE = 1
@@ -34,7 +34,9 @@ WINDOW = 100
 ENABLE_AUTO_LINT = os.getenv('ENABLE_AUTO_LINT', 'false').lower() == 'true'
 
 # OPENAI
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
+OPENAI_API_KEY = os.getenv(
+    'OPENAI_API_KEY', os.getenv('SANDBOX_ENV_OPENAI_API_KEY', '')
+)
 OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL', 'https://api.openai.com/v1')
 OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-2024-05-13')
 MAX_TOKEN = os.getenv('MAX_TOKEN', 500)
@@ -120,9 +122,9 @@ def open_file(path: str, line_number: Optional[int] = None) -> None:
 
     if line_number is not None:
         if (
-                not isinstance(line_number, int)
-                or line_number < 1
-                or line_number > total_lines
+            not isinstance(line_number, int)
+            or line_number < 1
+            or line_number > total_lines
         ):
             raise ValueError(f'Line number must be between 1 and {total_lines}')
         CURRENT_LINE = line_number
@@ -278,7 +280,7 @@ def edit_file(start: int, end: int, content: str) -> None:
 
             # recover the original file
             with open(original_file_backup_path, 'r') as fin, open(
-                    CURRENT_FILE, 'w'
+                CURRENT_FILE, 'w'
             ) as fout:
                 fout.write(fin.read())
             os.remove(original_file_backup_path)
@@ -406,7 +408,11 @@ def parse_pdf(file_path: str) -> None:
     content = PyPDF2.PdfReader(file_path)
     text = ''
     for page_idx in range(len(content.pages)):
-        text += f'@@ Page {page_idx + 1} @@\n' + content.pages[page_idx].extract_text() + f'\n\n'
+        text += (
+            f'@@ Page {page_idx + 1} @@\n'
+            + content.pages[page_idx].extract_text()
+            + '\n\n'
+        )
     print(text.strip())
 
 
@@ -421,7 +427,7 @@ def parse_docx(file_path: str) -> None:
     content = docx.Document(file_path)
     text = ''
     for i, para in enumerate(content.paragraphs):
-        text += f'@@ Page {i + 1} @@\n' + para.text + f'\n\n'
+        text += f'@@ Page {i + 1} @@\n' + para.text + '\n\n'
     print(text)
 
 
@@ -447,6 +453,7 @@ def _base64_img(file_path: str) -> str:
 
 def _base64_video(file_path: str, frame_interval: int = 10) -> list[str]:
     import cv2
+
     video = cv2.VideoCapture(file_path)
     base64_frames = []
     frame_count = 0
@@ -470,9 +477,7 @@ def _prepare_image_messages(task: str, base64_image: str):
                 {'type': 'text', 'text': task},
                 {
                     'type': 'image_url',
-                    'image_url': {
-                        'url': f'data:image/jpeg;base64,{base64_image}'
-                    },
+                    'image_url': {'url': f'data:image/jpeg;base64,{base64_image}'},
                 },
             ],
         }
@@ -491,16 +496,16 @@ def parse_audio(file_path: str, model: str = 'whisper-1') -> None:
     try:
         # TODO: record the COST of the API call
         with open(file_path, 'rb') as audio_file:
-            transcript = client.audio.translations.create(
-                model=model, file=audio_file
-            )
+            transcript = client.audio.translations.create(model=model, file=audio_file)
         print(transcript.text)
 
     except Exception as e:
         print(f'Error transcribing audio file: {e}')
 
 
-def parse_image(file_path: str, task: str = 'Describe this image as detail as possible.') -> None:
+def parse_image(
+    file_path: str, task: str = 'Describe this image as detail as possible.'
+) -> None:
     """
     Parses the content of an image file and prints the description.
 
@@ -515,7 +520,7 @@ def parse_image(file_path: str, task: str = 'Describe this image as detail as po
         response = client.chat.completions.create(
             model=OPENAI_MODEL,
             messages=_prepare_image_messages(task, base64_image),
-            max_tokens=MAX_TOKEN
+            max_tokens=MAX_TOKEN,
         )
         content = response.choices[0].message.content
         print(content)
@@ -524,9 +529,11 @@ def parse_image(file_path: str, task: str = 'Describe this image as detail as po
         print(f'Error with the request: {error}')
 
 
-def parse_video(file_path: str,
-                task: str = 'Describe this image as detail as possible.',
-                frame_interval: int = 30) -> None:
+def parse_video(
+    file_path: str,
+    task: str = 'Describe this image as detail as possible.',
+    frame_interval: int = 30,
+) -> None:
     """
     Parses the content of an image file and prints the description.
 
@@ -536,9 +543,10 @@ def parse_video(file_path: str,
         frame_interval: Optional[int]: The interval between frames to analyze. Defaults to 30.
 
     """
-    print(f'[Processing video file from {file_path} with frame interval {frame_interval}]')
+    print(
+        f'[Processing video file from {file_path} with frame interval {frame_interval}]'
+    )
 
-    video_summary = ''
     task = task or 'This is one frame from a video, please summarize this frame.'
     base64_frames = _base64_video(file_path)
     selected_frames = base64_frames[::frame_interval]
@@ -558,7 +566,7 @@ def parse_video(file_path: str,
             response = client.chat.completions.create(
                 model=OPENAI_MODEL,
                 messages=_prepare_image_messages(task, base64_frame),
-                max_tokens=MAX_TOKEN
+                max_tokens=MAX_TOKEN,
             )
 
             content = response.choices[0].message.content
@@ -606,7 +614,7 @@ __all__ = [
     'parse_pdf',
     'parse_docx',
     'parse_latex',
-    'parse_pptx'
+    'parse_pptx',
 ]
 
 if OPENAI_API_KEY and OPENAI_BASE_URL:
