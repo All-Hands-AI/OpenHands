@@ -362,26 +362,24 @@ class DockerSSHBox(Sandbox):
             environment=self._env,
         )
 
+    # Use the retry decorator, with a maximum of 5 attempts and a fixed wait time of 5 seconds between attempts
     @retry(stop=stop_after_attempt(5), wait=wait_fixed(5))
-    def __create_ssh(self):
+    def __ssh_login(self):
         try:
-            return pxssh.pxssh(
+            self.ssh = pxssh.pxssh(
                 echo=False,
                 timeout=self.timeout,
                 encoding='utf-8',
                 codec_errors='replace',
             )
-        except pxssh.ExceptionPxssh as e:
-            logger.exception(
-                'Failed to create SSH session, retrying...', exc_info=False
+            hostname = self.ssh_hostname
+            username = 'opendevin' if self.run_as_devin else 'root'
+            logger.info(
+                f'Connecting to {username}@{hostname} via ssh. '
+                f"If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub. "
+                f"If you started OpenDevin with `docker run`, you should try `ssh -v -p {self._ssh_port} {username}@localhost` with the password '{self._ssh_password} on the host machine (where you started the container)."
             )
-            raise e
-
-    # Use the retry decorator, with a maximum of 5 attempts and a fixed wait time of 5 seconds between attempts
-    @retry(stop=stop_after_attempt(5), wait=wait_fixed(5))
-    def __ssh_login(self, hostname, username, ssh_password, ssh_port):
-        try:
-            self.ssh.login(hostname, username, ssh_password, port=ssh_port)
+            self.ssh.login(hostname, username, self._ssh_password, port=self._ssh_port)
         except pxssh.ExceptionPxssh as e:
             logger.exception(
                 'Failed to login to SSH session, retrying...', exc_info=False
@@ -389,15 +387,7 @@ class DockerSSHBox(Sandbox):
             raise e
 
     def start_ssh_session(self):
-        self.ssh = self.__create_ssh()
-        hostname = self.ssh_hostname
-        username = 'opendevin' if self.run_as_devin else 'root'
-        logger.info(
-            f'Connecting to {username}@{hostname} via ssh. '
-            f"If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub. "
-            f"If you started OpenDevin with `docker run`, you should try `ssh -v -p {self._ssh_port} {username}@localhost` with the password '{self._ssh_password} on the host machine (where you started the container)."
-        )
-        self.__ssh_login(hostname, username, self._ssh_password, self._ssh_port)
+        self.__ssh_login()
 
         # Fix: https://github.com/pexpect/pexpect/issues/669
         self.ssh.sendline("bind 'set enable-bracketed-paste off'")

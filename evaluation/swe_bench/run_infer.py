@@ -24,6 +24,8 @@ from opendevin.core.main import main
 from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
 
+USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false') == 'true'
+
 
 def cleanup():
     print('Cleaning up child processes...')
@@ -247,7 +249,7 @@ def process_instance(
         '# Problem Statement\n'
         f'{instance.problem_statement}\n\n'
     )
-    if instance.hints_text:
+    if USE_HINT_TEXT and instance.hints_text:
         instruction += f'# Hints\n{instance.hints_text}\n\n'
     instruction += (
         'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
@@ -346,7 +348,7 @@ if __name__ == '__main__':
         eval_note += '_N_' + args.eval_note
     eval_output_dir = os.path.join(
         args.eval_output_dir,
-        'swe_bench',
+        'swe_bench_lite',
         agent_class,
         model_name + '_maxiter_' + str(max_iterations) + eval_note,
     )
