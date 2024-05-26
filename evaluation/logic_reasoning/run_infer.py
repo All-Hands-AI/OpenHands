@@ -21,11 +21,10 @@ from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
-
 def cleanup():
-    print('Cleaning up child processes...')
+    logger.info('Cleaning up child processes...')
     for process in mp.active_children():
-        print(f'Terminating child process: {process.name}')
+        logger.info(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
 
@@ -94,7 +93,9 @@ def get_test_result(
                 prediction = get_choice(answer_str)
                 break
 
-    return prediction == gold_answer
+    isTrue = prediction == gold_answer
+    test_result = {"result": isTrue}
+    return test_result
 
 def process_instance(
     instance,
@@ -117,7 +118,7 @@ def process_instance(
     # reset workspace to config
     config.workspace_base = workspace_mount_path
     config.workspace_mount_path = workspace_mount_path
-    
+
     # Setup the logger properly, so you can run multi-processing to parallize the evaluation
     if reset_logger:
         # Set up logger
@@ -145,12 +146,18 @@ def process_instance(
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
 
     # sandbox = DockerSSHBox()
-    shutil.copyfile(os.path.join(os.path.dirname(__file__), 'logic_inference.py'), workspace_mount_path)
-    logger.info(f'logic_inference.py copied to {workspace_mount_path}')
     logic_inference_path = os.path.join(workspace_mount_path, 'logic_inference.py')
+    if not os.path.exists(logic_inference_path):
+        shutil.copyfile('./evaluation/logic_reasoning/logic_inference.py', logic_inference_path)
+    logger.info(f'logic_inference.py copied to {workspace_mount_path}')
+
+    cache_dir = os.path.join(workspace_mount_path, '.cache_program')
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir)
+            
     # Prepare instruction
     
-    with open(os.path.join(os.path.dirname(__file__), 'instruction.txt'), 'w') as f:
+    with open('./evaluation/logic_reasoning/instruction.txt', 'r') as f:
         instruction = f.read()
 
     instance_logic_programs = instance['raw_logic_programs'][0].strip()
@@ -160,8 +167,7 @@ def process_instance(
     
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
-    logger.info(f'Instruction: {instruction}')
-    
+
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     state: State = asyncio.run(
         main(
@@ -203,7 +209,8 @@ def process_instance(
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
-
+    config.workspace_mount_path = old_workspace_mount_path
+    config.workspace_base = old_workspace_base
     # Close the sandbox
     # sandbox.close()
     return output
@@ -215,6 +222,7 @@ if __name__ == '__main__':
         '--dataset',
         type=str,
         help='the logic reasoning dataset to evaluate on {ProntoQA, ProofWriter}',
+        default='ProntoQA',
     )
     parser.add_argument(
         '--data_split',
@@ -222,11 +230,7 @@ if __name__ == '__main__':
         help='data split to evaluate on {validation\}', # right now we only support validation split
         default='validation',
     )
-    parser.add_argument(
-        '--eval_n_limit',
-        type=int,
-        default=1,
-    )
+
 
     args, _ = parser.parse_known_args()
     if args.directory:
@@ -346,6 +350,7 @@ if __name__ == '__main__':
 
     # This sets the multi-processing
     num_workers = args.eval_num_workers
+    # num_workers = 1
     logger.info(f'Using {num_workers} workers for evaluation.')
 
     # This is SWE-Bench specific - CodeActAgent don't requires mounted workspace to work

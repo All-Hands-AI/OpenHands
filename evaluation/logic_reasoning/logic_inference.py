@@ -4,16 +4,11 @@ import random
 import re
 
 class Pyke_Program:
-    def __init__(self, logic_program:str, dataset_name = 'ProntoQA') -> None:
+    def __init__(self, logic_program:str, dataset_name = 'ProntoQA', workspace_mount_path="./") -> None:
         self.logic_program = logic_program
         self.flag = self.parse_logic_program()
         self.dataset_name = dataset_name
-        
-        # create the folder to save the Pyke program
-        cache_dir = os.path.join(os.path.dirname(__file__), '.cache_program')
-        if not os.path.exists(cache_dir):
-            os.makedirs(cache_dir)
-        self.cache_dir = cache_dir
+        self.cache_dir = os.path.join(workspace_mount_path, '.cache_program')
 
         # prepare the files for facts and rules
         try:
@@ -181,8 +176,9 @@ class Pyke_Program:
             return 'B'
 
 class LogicInferenceEngine:
-    def __init__(self, dataset_name):
+    def __init__(self, dataset_name, workspace_mount_path):
         self.dataset_name = dataset_name
+        self.workspace_mount_path = workspace_mount_path
 
     def random_backup(self):
         if self.dataset_name == 'ProntoQA':
@@ -191,7 +187,7 @@ class LogicInferenceEngine:
             return random.choice(['A', 'B', 'C'])
         
     def safe_execute_program(self, logic_program):
-        program = Pyke_Program(logic_program, self.dataset_name)
+        program = Pyke_Program(logic_program, self.dataset_name, self.workspace_mount_path)
         # cannot parse the program
         if program.flag == False:
             answer = self.random_backup()
