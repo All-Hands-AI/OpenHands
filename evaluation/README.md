@@ -16,6 +16,7 @@ all the preprocessing/evaluation/analysis scripts.
 - ML-Bench: [`evaluation/ml_bench`](./ml_bench)
 - HumanEvalFix: [`evaluation/humanevalfix`](./humanevalfix)
 - GAIA: [`evaluation/gaia`](./gaia)
+- Entity deduction Arena (EDA): [`evaluation/EDA`](./EDA)
 
 ### Result Visualization
 

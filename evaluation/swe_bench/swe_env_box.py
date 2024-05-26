@@ -12,7 +12,7 @@ from opendevin.runtime.plugins import (
     PluginRequirement,
 )
 
-SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.1'
+SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2'
 
 
 class SWEBenchSSHBox(DockerSSHBox):
@@ -79,12 +79,15 @@ class SWEBenchSSHBox(DockerSSHBox):
             workspace_dir_name = f"{instance['repo']}__{instance['version']}".replace(
                 '/', '__'
             )
+        old_workspace_base = config.workspace_base
+        old_workspace_mount_path = config.workspace_mount_path
         config.workspace_base = workspace_mount_path
         config.workspace_mount_path = workspace_mount_path
 
         # linting python after editing helps LLM fix indentations
         config.enable_auto_lint = True
-
+        # Need to run as root to use SWEBench container
+        config.run_as_devin = False
         sandbox = cls(
             container_image=SWE_BENCH_CONTAINER_IMAGE,
             swe_instance_id=instance['instance_id'],
@@ -112,6 +115,10 @@ class SWEBenchSSHBox(DockerSSHBox):
         if exit_code != 0:
             logger.error(f'Failed to remove remote: {output}')
             sys.exit(1)
+
+        # restore workspace_base and workspace_mount_path
+        config.workspace_base = old_workspace_base
+        config.workspace_mount_path = old_workspace_mount_path
         return sandbox
 
     def get_diff_patch(self):
