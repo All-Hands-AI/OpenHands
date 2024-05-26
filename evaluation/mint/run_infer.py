@@ -237,6 +237,7 @@ if __name__ == '__main__':
         'mint',
         agent_class,
         model_name + '_maxiter_' + str(max_iterations) + eval_note,
+        args.subset,
     )
 
     pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
