@@ -259,6 +259,7 @@ def process_instance(
         'If the issue includes code for reproducing the bug, we recommend that you re-implement that in your environment, and run it to make sure you can reproduce the bug.\n'
         'Then start trying to fix it.\n'
         "When you think you've fixed the bug, re-run the bug reproduction script to make sure the bug has indeed been fixed.\n"
+        'You should never push your solution to any git repository. When you are done, exit the environment.\n'
         'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
     )
     # NOTE: You can actually set slightly different instruction for different agents
@@ -353,7 +354,7 @@ if __name__ == '__main__':
         eval_note += '_N_' + args.eval_note
     eval_output_dir = os.path.join(
         args.eval_output_dir,
-        'swe_bench',
+        'swe_bench_lite',
         agent_class,
         model_name + '_maxiter_' + str(max_iterations) + eval_note,
     )
