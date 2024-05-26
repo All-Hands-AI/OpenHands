@@ -769,18 +769,16 @@ if __name__ == '__main__':
     except Exception as e:
         logger.exception('Failed to start Docker container: %s', e)
         sys.exit(1)
-    logger.setLevel('DEBUG')
     logger.info(
         "Interactive Docker container started. Type 'exit' or use Ctrl+C to exit."
     )
-    if 1:
-        # Initialize required plugins
-        ssh_box.init_plugins([AgentSkillsRequirement(), JupyterRequirement()])
-        logger.info(
-            '--- AgentSkills COMMAND DOCUMENTATION ---\n'
-            f'{AgentSkillsRequirement().documentation}\n'
-            '---'
-        )
+    # Initialize required plugins
+    ssh_box.init_plugins([AgentSkillsRequirement(), JupyterRequirement()])
+    logger.info(
+        '--- AgentSkills COMMAND DOCUMENTATION ---\n'
+        f'{AgentSkillsRequirement().documentation}\n'
+        '---'
+    )
 
     bg_cmd = ssh_box.execute_in_background(
         "while true; do echo -n '.' && sleep 20; done"
