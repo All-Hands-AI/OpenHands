@@ -1,7 +1,9 @@
 import contextlib
 import io
 
+import docx
 import pytest
+import sys
 
 from opendevin.runtime.plugins.agent_skills.agentskills import (
     create_file,
@@ -13,6 +15,11 @@ from opendevin.runtime.plugins.agent_skills.agentskills import (
     scroll_up,
     search_dir,
     search_file,
+    parse_docx,
+    parse_latex,
+    parse_pdf,
+    parse_pptx,
+    parse_image
 )
 
 
@@ -588,3 +595,121 @@ def test_lint_file_disabled_undefined_name(tmp_path, monkeypatch, capsys):
         '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
     )
     assert result.split('\n') == expected.split('\n')
+
+
+def test_parse_docx(tmp_path):
+    # Create a DOCX file with some content
+    test_docx_path = tmp_path / "test.docx"
+    doc = docx.Document()
+    doc.add_paragraph('Hello, this is a test document.')
+    doc.add_paragraph('This is the second paragraph.')
+    doc.save(str(test_docx_path))
+
+    old_stdout = sys.stdout
+    sys.stdout = io.StringIO()
+
+    # Call the parse_docx function
+    parse_docx(str(test_docx_path))
+
+    # Capture the output
+    output = sys.stdout.getvalue()
+    sys.stdout = old_stdout
+
+    # Check if the output is correct
+    expected_output = (
+        f'[Reading DOCX file from {test_docx_path}]\n'
+        '@@ Page 1 @@\nHello, this is a test document.\n\n'
+        '@@ Page 2 @@\nThis is the second paragraph.\n\n\n'
+    )
+    assert output == expected_output, f"Expected output does not match. Got: {output}"
+
+
+def test_parse_latex(tmp_path):
+    # Create a LaTeX file with some content
+    test_latex_path = tmp_path / "test.tex"
+    with open(test_latex_path, 'w') as f:
+        f.write(r'''
+        \documentclass{article}
+        \begin{document}
+        Hello, this is a test LaTeX document.
+        \end{document}
+        ''')
+
+    old_stdout = sys.stdout
+    sys.stdout = io.StringIO()
+
+    # Call the parse_latex function
+    parse_latex(str(test_latex_path))
+
+    # Capture the output
+    output = sys.stdout.getvalue()
+    sys.stdout = old_stdout
+
+    # Check if the output is correct
+    expected_output = (
+        f'[Reading LaTex file from {test_latex_path}]\n'
+        'Hello, this is a test LaTeX document.\n'
+    )
+    assert output == expected_output, f"Expected output does not match. Got: {output}"
+
+
+def test_parse_pdf(tmp_path):
+    # Create a PDF file with some content
+    test_pdf_path = tmp_path / "test.pdf"
+    from reportlab.lib.pagesizes import letter
+    from reportlab.pdfgen import canvas
+
+    c = canvas.Canvas(str(test_pdf_path), pagesize=letter)
+    c.drawString(100, 750, "Hello, this is a test PDF document.")
+    c.save()
+
+    old_stdout = sys.stdout
+    sys.stdout = io.StringIO()
+
+    # Call the parse_pdf function
+    parse_pdf(str(test_pdf_path))
+
+    # Capture the output
+    output = sys.stdout.getvalue()
+    sys.stdout = old_stdout
+
+    # Check if the output is correct
+    expected_output = (
+        f'[Reading PDF file from {test_pdf_path}]\n'
+        '@@ Page 1 @@\n'
+        'Hello, this is a test PDF document.\n'
+    )
+    assert output == expected_output, f"Expected output does not match. Got: {output}"
+
+
+def test_parse_pptx(tmp_path):
+    test_pptx_path = tmp_path / "test.pptx"
+    from pptx import Presentation
+    pres = Presentation()
+
+    slide1 = pres.slides.add_slide(pres.slide_layouts[0])
+    title1 = slide1.shapes.title
+    title1.text = "Hello, this is the first test PPTX slide."
+
+    slide2 = pres.slides.add_slide(pres.slide_layouts[0])
+    title2 = slide2.shapes.title
+    title2.text = "Hello, this is the second test PPTX slide."
+
+    pres.save(str(test_pptx_path))
+
+    old_stdout = sys.stdout
+    sys.stdout = io.StringIO()
+
+    parse_pptx(str(test_pptx_path))
+
+    output = sys.stdout.getvalue()
+    sys.stdout = old_stdout
+
+    expected_output = (
+        f'[Reading PowerPoint file from {test_pptx_path}]\n'
+        '@@ Slide 1 @@\n'
+        'Hello, this is the first test PPTX slide.\n\n'
+        '@@ Slide 2 @@\n'
+        'Hello, this is the second test PPTX slide.\n\n'
+    )
+    assert output == expected_output, f"Expected output does not match. Got: {output}"

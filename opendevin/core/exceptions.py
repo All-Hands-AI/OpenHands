@@ -58,6 +58,19 @@ class TaskInvalidStateError(Exception):
         super().__init__(message)
 
 
+class BrowserInitException(Exception):
+    def __init__(self, message='Failed to initialize browser environment'):
+        super().__init__(message)
+
+
+class BrowserUnavailableException(Exception):
+    def __init__(
+        self,
+        message='Browser environment is not available, please check if has been initialized',
+    ):
+        super().__init__(message)
+
+
 # These exceptions get sent back to the LLM
 class AgentMalformedActionError(Exception):
     def __init__(self, message='Malformed response'):

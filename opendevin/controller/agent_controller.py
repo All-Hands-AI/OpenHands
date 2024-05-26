@@ -24,6 +24,7 @@ from opendevin.events.action import (
     ModifyTaskAction,
     NullAction,
 )
+from opendevin.events.action.commands import CmdKillAction
 from opendevin.events.event import Event
 from opendevin.events.observation import (
     AgentDelegateObservation,
@@ -36,6 +37,7 @@ from opendevin.events.observation import (
 
 MAX_ITERATIONS = config.max_iterations
 MAX_CHARS = config.llm.max_chars
+MAX_BUDGET_PER_TASK = config.max_budget_per_task
 
 
 class AgentController:
@@ -55,6 +57,7 @@ class AgentController:
         sid: str = 'default',
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
+        max_budget_per_task: float | None = MAX_BUDGET_PER_TASK,
         inputs: dict | None = None,
     ):
         """Initializes a new instance of the AgentController class.
@@ -65,6 +68,7 @@ class AgentController:
             sid: The session ID of the agent.
             max_iterations: The maximum number of iterations the agent can run.
             max_chars: The maximum number of characters the agent can output.
+            max_budget_per_task: The maximum budget (in USD) allowed per task, beyond which the agent will stop.
             inputs: The initial inputs to the agent.
         """
         self.id = sid
@@ -76,6 +80,7 @@ class AgentController:
         )
         self.max_iterations = max_iterations
         self.max_chars = max_chars
+        self.max_budget_per_task = max_budget_per_task
         self.agent_task = asyncio.create_task(self._start_step_loop())
 
     async def close(self):
@@ -87,10 +92,17 @@ class AgentController:
     def update_state_before_step(self):
         self.state.iteration += 1
 
-    def update_state_after_step(self):
+    async def update_state_after_step(self):
         self.state.updated_info = []
         # update metrics especially for cost
         self.state.metrics = self.agent.llm.metrics
+        if self.max_budget_per_task is not None:
+            current_cost = self.state.metrics.accumulated_cost
+            if current_cost > self.max_budget_per_task:
+                await self.report_error(
+                    f'Task budget exceeded. Current cost: {current_cost}, Max budget: {self.max_budget_per_task}'
+                )
+                await self.set_agent_state_to(AgentState.ERROR)
 
     async def report_error(self, message: str, exception: Exception | None = None):
         self.state.error = message
@@ -238,7 +250,7 @@ class AgentController:
             return
 
         logger.info(action, extra={'msg_type': 'ACTION'})
-        self.update_state_after_step()
+        await self.update_state_after_step()
         if action.runnable:
             self._pending_action = action
         else:
@@ -275,13 +287,29 @@ class AgentController:
         if len(filtered_history) < 4:
             return False
 
+        # FIXME rewrite this to be more readable
+
         # Check if the last four (Action, Observation) tuples are too repetitive
         last_four_tuples = filtered_history[-4:]
-        if all(last_four_tuples[-1] == _tuple for _tuple in last_four_tuples):
+
+        if all(
+            # (Action, Observation) tuples
+            # compare the last action to the last four actions
+            self._eq_no_pid(last_four_tuples[-1][0], _tuple[0])
+            for _tuple in last_four_tuples
+        ) and all(
+            # compare the last observation to the last four observations
+            self._eq_no_pid(last_four_tuples[-1][1], _tuple[1])
+            for _tuple in last_four_tuples
+        ):
             logger.warning('Action, Observation loop detected')
             return True
 
-        if all(last_four_tuples[-1][0] == _tuple[0] for _tuple in last_four_tuples):
+        # (action, error) tuples
+        if all(
+            self._eq_no_pid(last_four_tuples[-1][0], _tuple[0])
+            for _tuple in last_four_tuples
+        ):
             # It repeats the same action, give it a chance, but not if:
             if all(
                 isinstance(_tuple[1], ErrorObservation) for _tuple in last_four_tuples
@@ -291,13 +319,35 @@ class AgentController:
 
         # check if the agent repeats the same (Action, Observation)
         # every other step in the last six tuples
+
         if len(filtered_history) >= 6:
             last_six_tuples = filtered_history[-6:]
             if (
-                last_six_tuples[-1] == last_six_tuples[-3] == last_six_tuples[-5]
-                and last_six_tuples[-2] == last_six_tuples[-4] == last_six_tuples[-6]
+                # this pattern is every other step, like:
+                # (action_1, obs_1), (action_2, obs_2), (action_1, obs_1), (action_2, obs_2),...
+                self._eq_no_pid(last_six_tuples[-1][0], last_six_tuples[-3][0])
+                and self._eq_no_pid(last_six_tuples[-1][0], last_six_tuples[-5][0])
+                and self._eq_no_pid(last_six_tuples[-2][0], last_six_tuples[-4][0])
+                and self._eq_no_pid(last_six_tuples[-2][0], last_six_tuples[-6][0])
+                and self._eq_no_pid(last_six_tuples[-1][1], last_six_tuples[-3][1])
+                and self._eq_no_pid(last_six_tuples[-1][1], last_six_tuples[-5][1])
+                and self._eq_no_pid(last_six_tuples[-2][1], last_six_tuples[-4][1])
+                and self._eq_no_pid(last_six_tuples[-2][1], last_six_tuples[-6][1])
             ):
                 logger.warning('Action, Observation pattern detected')
                 return True
 
         return False
+
+    def _eq_no_pid(self, obj1, obj2):
+        if isinstance(obj1, CmdOutputObservation) and isinstance(
+            obj2, CmdOutputObservation
+        ):
+            # for loop detection, ignore command_id, which is the pid
+            return obj1.command == obj2.command and obj1.exit_code == obj2.exit_code
+        elif isinstance(obj1, CmdKillAction) and isinstance(obj2, CmdKillAction):
+            # for loop detection, ignore command_id, which is the pid
+            return obj1.thought == obj2.thought
+        else:
+            # this is the default comparison
+            return obj1 == obj2

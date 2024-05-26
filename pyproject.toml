@@ -32,6 +32,7 @@ boto3 = "*"
 minio = "^7.2.7"
 gevent = "^24.2.1"
 pyarrow = "16.1.0" # transitive dependency, pinned here to avoid conflicts
+tenacity = "^8.3.0"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
@@ -53,14 +54,24 @@ pytest-cov = "*"
 pytest-asyncio = "*"
 pytest-forked = "*"
 flake8 = "*"
+openai = "*"
+python-docx = "*"
+PyPDF2 = "*"
+pylatexenc = "*"
+python-pptx = "*"
+opencv-python = "*"
+pandas = "*"
+reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
 
 
+
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
+retry = "*"
 evaluate = "*"
 
 [build-system]
