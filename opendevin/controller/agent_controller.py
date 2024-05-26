@@ -36,6 +36,7 @@ from opendevin.events.observation import (
 
 MAX_ITERATIONS = config.max_iterations
 MAX_CHARS = config.llm.max_chars
+MAX_BUDGET_PER_TASK = config.max_budget_per_task
 
 
 class AgentController:
@@ -55,7 +56,7 @@ class AgentController:
         sid: str = 'default',
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
-        max_budget_per_task: float | None = None,
+        max_budget_per_task: float | None = MAX_BUDGET_PER_TASK,
         inputs: dict | None = None,
     ):
         """Initializes a new instance of the AgentController class.
