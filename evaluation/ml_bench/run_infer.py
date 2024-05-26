@@ -224,7 +224,7 @@ if __name__ == '__main__':
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
-    ml_bench = load_dataset('DanielShao/ml-bench', split=data_split).to_pandas()
+    ml_bench = load_dataset('super-dainiu/ml-bench', split=data_split).to_pandas()
 
     # LIMIT EVALUATION
     eval_n_limit = args.eval_n_limit
