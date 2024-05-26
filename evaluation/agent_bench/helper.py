@@ -25,6 +25,16 @@ def get_post_cmd(instance: dict) -> str:
         if 'example' in instance['evaluation']:
             if 'code' in instance['evaluation']['example']:
                 return instance['evaluation']['example']['code']
+            else:
+                return instance['evaluation']['example']
+    return ''
+
+
+def get_retriv_agent_answer_cmd(instance: dict) -> str:
+    if 'evaluation' in instance:
+        if 'check' in instance['evaluation']:
+            if len(instance['evaluation']['check']) == 1 and instance['evaluation']['check'][0] is not None:
+                return instance['evaluation']['check'][0]
     return ''
 
 

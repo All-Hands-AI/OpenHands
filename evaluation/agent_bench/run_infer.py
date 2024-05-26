@@ -12,7 +12,8 @@ from concurrent.futures import ProcessPoolExecutor
 from huggingface_hub import snapshot_download
 from tqdm import tqdm
 
-from evaluation.agent_bench.helper import compare_results, get_check_method, get_post_cmd, get_pre_cmd
+from evaluation.agent_bench.helper import compare_results, get_check_method, get_post_cmd, get_pre_cmd, \
+    get_retriv_agent_answer_cmd
 from opendevin.controller.state.state import State
 from opendevin.core.config import args, config, get_llm_config_arg
 from opendevin.core.logger import get_console_handler
@@ -178,15 +179,20 @@ def process_instance(
         logger.info(f'Running post stage script: {post_cmd}')
         _, final_ans = sandbox.execute(post_cmd)
 
-    model_answer = ''
-    for act, _ in reversed(state.history):
-        if isinstance(act, MessageAction) and act.source == 'agent':
-            logger.info(act.content)
-            model_answer = act.content
-            break
-    logger.info(f'Final message: {model_answer} | Ground truth: {final_ans}')
+    agent_answer = ''
+    retriv_agent_answer_cmd = get_retriv_agent_answer_cmd(instance)
+    if retriv_agent_answer_cmd != '':
+        logger.info(f'Running retriv agent answer script: {retriv_agent_answer_cmd}')
+        _, agent_answer = sandbox.execute(retriv_agent_answer_cmd)
+    else:
+        for act, _ in reversed(state.history):
+            if isinstance(act, MessageAction) and act.source == 'agent':
+                logger.info(act.content)
+                agent_answer = act.content
+                break
 
-    test_result = compare_results(check_method, model_answer, final_ans)
+    logger.info(f'Final message: {agent_answer} | Ground truth: {final_ans}')
+    test_result = compare_results(check_method, agent_answer, final_ans)
 
     if config.is_mock:
         histories = ['mock history']
@@ -203,7 +209,12 @@ def process_instance(
         'metadata': metadata,
         'history': histories,
         'error': state.error if state and state.error else None,
-        'test_result': test_result,
+        'test_result': {
+            'agent_answer': agent_answer,
+            'final_answer': final_ans,
+            'check_method': check_method,
+            'result': test_result,
+        },
     }
 
     # Close the sandbox
@@ -364,9 +375,9 @@ if __name__ == '__main__':
         pbar.update(1)
         output = fut.result()
         pbar.set_description(f'Instance {output["instance_id"]}')
-        pbar.set_postfix_str(f'Test Result: {output["test_result"]}')
+        pbar.set_postfix_str(f'Test Result: {output["test_result"]["result"]}')
         logger.info(
-            f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]}'
+            f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]["result"]}'
         )
         output_fp.write(json.dumps(output) + '\n')
         output_fp.flush()
