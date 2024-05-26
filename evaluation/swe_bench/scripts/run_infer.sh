@@ -27,13 +27,15 @@ if [ "$USE_HINT_TEXT" = false ]; then
   EVAL_NOTE="$EVAL_NOTE-no-hint"
 fi
 
+unset SANDBOX_ENV_GITHUB_TOKEN # prevent the agent from using the github token to push
+
 COMMAND="poetry run python evaluation/swe_bench/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
-  --max-iterations 30 \
+  --max-iterations 50 \
   --max-chars 10000000 \
-  --eval-num-workers 1 \
-  --eval-note $AGENT_VERSION"
+  --eval-num-workers 8 \
+  --eval-note $EVAL_NOTE"
 
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"
