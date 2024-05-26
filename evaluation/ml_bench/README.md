@@ -61,24 +61,44 @@ Here's an example of the evaluation output for a single task instance:
 
 ```json
 {
-    "instance_id": 1,
-    "repo": "https://github.com/example/repo",
-    "instruction": "Please complete the ML task specified in the README: https://github.com/example/repo/README.md\nThe task is: Implement a GNN model using DGL\n\nI am eager to utilize the Citeseer dataset as the training data to empower the ARMA Model with the learning rate set to a commendably small value of 0.Additionally, I'd like to incorporate 5 stacks into this model. Your assistance in formulating the necessary code to accomplish this task would be of tremendous help.\n\nReference:\nThe following commands learn a neural network and predict on the test set. Train an ARMA model which follows the original hyperparameters on different datasets.\n\n# Cora:\npython citation.py --gpu 0\n\n# Citeseer:\npython citation.py --gpu 0 --dataset Citeseer --num-stacks 3\n\n# Pubmed:\npython citation.py --gpu 0 --dataset Pubmed --dropout 0.25 --num-stacks 1\n\nYou should only modify files under the specified path in the repo.\nFollow the task arguments when running the training script:\n{\n  \"dataset\": \"Citeseer\",\n  \"lr\": \"0\",\n  \"num-stacks\": \"5\"\n}\n\nYou should terminate the subprocess after running the task (e.g., call subprocess.Popen(args).wait()).\nWhen you think you have completed the task, please run the following command: <execute_bash> exit </execute_bash>.\n",
-    "metadata": {
-        "agent_class": "CodeActAgent",
-        "model_name": "gpt-4",
-        "data_split": "test",
-        "num_workers": 4
-    },
-    "history": [
-        // ... agent's actions and observations ...
+  "instance_id": 3,
+  "repo": "https://github.com/dmlc/dgl",
+  "instruction": "Please complete the Machine Learning task in the following repository: dgl\n\nThe task is: DGL Implementation of NGCF model\n\nI have a deep desire to embark on a journey brimming with knowledge and expertise. My objective is to train a cutting-edge NGCF Model, known for its unparalleled capabilities, on the illustrious dataset known as gowalla. To ensure swift execution, I kindly request your assistance in crafting the code, making use of the powerful GPU #3 and an embedding size of 32. Can you lend a helping hand to transform this dream into a reality?\n\nYou should create a script named `run.sh` under the specified path in the repo to run the task.\n\nYou can find the task repo at: /workspace/dgl/examples/pytorch/NGCF/NGCF\n\nYou should terminate the subprocess after running the task (e.g., call subprocess.Popen(args).wait()).When you think you have completed the task, please run the following command: <execute_bash> exit </execute_bash>.\n",
+  "metadata": {
+    "agent_class": "CodeActAgent",
+    "model_name": "gpt-4-1106-preview",
+    "max_iterations": 10,
+    "eval_output_dir": "evaluation/evaluation_outputs/outputs/ml_bench/CodeActAgent/gpt-4-1106-preview_maxiter_10_N_v1.5",
+    "start_time": "2024-05-26 17:39:59",
+    "git_commit": "dd8ee9044a94a213dc2e31d2085dbf2924ee80a1"
+  },
+  "history": [
+    [
+      {
+        "id": 0,
+        "timestamp": "2024-05-26T17:40:41.060009",
+        "source": "user",
+        "message": "Please complete the Machine Learning task in the following repository: dgl\n\nThe task is: DGL Implementation of NGCF model\n\nI have a deep desire to embark on a journey brimming with knowledge and expertise. My objective is to train a cutting-edge NGCF Model, known for its unparalleled capabilities, on the illustrious dataset known as gowalla. To ensure swift execution, I kindly request your assistance in crafting the code, making use of the powerful GPU #3 and an embedding size of 32. Can you lend a helping hand to transform this dream into a reality?\n\nYou should create a script named `run.sh` under the specified path in the repo to run the task.\n\nYou can find the task repo at: /workspace/dgl/examples/pytorch/NGCF/NGCF\n\nYou should terminate the subprocess after running the task (e.g., call subprocess.Popen(args).wait()).When you think you have completed the task, please run the following command: <execute_bash> exit </execute_bash>.\n",
+        "action": "message",
+        "args": {
+          "content": "Please complete the Machine Learning task in the following repository: dgl\n\nThe task is: DGL Implementation of NGCF model\n\nI have a deep desire to embark on a journey brimming with knowledge and expertise. My objective is to train a cutting-edge NGCF Model, known for its unparalleled capabilities, on the illustrious dataset known as gowalla. To ensure swift execution, I kindly request your assistance in crafting the code, making use of the powerful GPU #3 and an embedding size of 32. Can you lend a helping hand to transform this dream into a reality?\n\nYou should create a script named `run.sh` under the specified path in the repo to run the task.\n\nYou can find the task repo at: /workspace/dgl/examples/pytorch/NGCF/NGCF\n\nYou should terminate the subprocess after running the task (e.g., call subprocess.Popen(args).wait()).When you think you have completed the task, please run the following command: <execute_bash> exit </execute_bash>.\n",
+          "wait_for_response": false
+        }
+      },
+      {
+        "message": "No observation",
+        "observation": "null",
+        "content": "",
+        "extras": {}
+      }
     ],
-    "eval_exit_code": 0,
-    "eval_output": "Accuracy: 0.85\nF1 Score: 0.92\n",
-    "metrics": {
-        "Accuracy": 0.85,
-        "F1 Score": 0.92
-    }
+    // ... more iterations
+  ],
+  "eval_exit_code": 134,
+  "eval_output": "/workspace/dgl/examples/pytorch/NGCF/NGCF/run.sh: line 1:   197 Aborted                 (core dumped) python3 main.py --dataset gowalla --embed_size 32 --device cuda:3",
+  "metrics": {
+    "success": 0
+  }
 }
 ```
 
