@@ -265,7 +265,7 @@ class AgentController:
         # filter out MessageAction with source='user' from history
         filtered_history = [
             _tuple
-            for _tuple in self.state.history
+            for _tuple in self.state.history.get_tuples()
             if not (
                 isinstance(_tuple[0], MessageAction)
                 and _tuple[0].source == EventSource.USER

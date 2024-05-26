@@ -152,18 +152,35 @@ class MonologueAgent(Agent):
         recent_events: list[dict[str, str]] = []
 
         # add the events from state.history
-        for prev_action, obs in state.history:
-            if not isinstance(prev_action, NullAction):
-                recent_events.append(event_to_memory(prev_action))
-            if not isinstance(obs, NullObservation):
-                recent_events.append(self._truncate_output(event_to_memory(obs)))
+        for event in state.history:
+            recent_events.append(self._truncate_output(event_to_memory(event)))
 
         # add the last messages to long term memory
-        if self.memory is not None and state.history and len(state.history) > 0:
-            self.memory.add_event(event_to_memory(state.history[-1][0]))
-            self.memory.add_event(
-                self._truncate_output(event_to_memory(state.history[-1][1]))
+        # FIXME can't this be simplified or done elsewhere where we know what to save
+        if self.memory is not None and state.history:
+            last_action = next(
+                (
+                    event
+                    for event in reversed(state.history)
+                    if isinstance(event, Action)
+                ),
+                None,
             )
+            last_observation = next(
+                (
+                    event
+                    for event in reversed(state.history)
+                    if isinstance(event, Observation)
+                ),
+                None,
+            )
+
+            if last_action:
+                self.memory.add_event(event_to_memory(last_action))
+            if last_observation:
+                self.memory.add_event(
+                    self._truncate_output(event_to_memory(last_observation))
+                )
 
         # the action prompt with initial thoughts and recent events
         prompt = prompts.get_request_action_prompt(

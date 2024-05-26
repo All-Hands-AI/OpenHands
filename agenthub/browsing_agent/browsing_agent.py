@@ -13,6 +13,7 @@ from opendevin.events.action import (
     MessageAction,
 )
 from opendevin.events.observation import BrowserOutputObservation
+from opendevin.events.observation.observation import Observation
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     PluginRequirement,
@@ -93,15 +94,15 @@ class BrowsingAgent(Agent):
         cur_axtree_txt = ''
         error_prefix = ''
         last_obs = None
-        for prev_action, obs in state.history:
-            if isinstance(prev_action, BrowseInteractiveAction):
-                prev_actions += f'{prev_action.browser_actions}\n'
-                last_obs = obs
-            elif (
-                isinstance(prev_action, MessageAction) and prev_action.source != 'user'
-            ):
+
+        for event in state.history:
+            if isinstance(event, BrowseInteractiveAction):
+                prev_actions += f'{event.browser_actions}\n'
+            elif isinstance(event, MessageAction) and event.source != 'user':
                 # agent has responded, task finish.
                 return AgentFinishAction()
+            elif isinstance(event, Observation):
+                last_obs = event
 
         if isinstance(last_obs, BrowserOutputObservation):
             if last_obs.error:

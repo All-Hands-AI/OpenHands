@@ -6,13 +6,10 @@ from opendevin.events.action import (
     Action,
     NullAction,
 )
-from opendevin.events.observation import (
-    NullObservation,
-)
 from opendevin.events.serialization.action import action_from_dict
 from opendevin.events.serialization.event import event_to_memory
 
-HISTORY_SIZE = 10
+HISTORY_SIZE = 20
 
 prompt = """
 # Task
@@ -139,13 +136,11 @@ def get_prompt(state: State) -> str:
     sub_history = state.history[-HISTORY_SIZE:]
     history_dicts = []
     latest_action: Action = NullAction()
-    for action, observation in sub_history:
-        if not isinstance(action, NullAction):
-            history_dicts.append(event_to_memory(action))
-            latest_action = action
-        if not isinstance(observation, NullObservation):
-            observation_dict = event_to_memory(observation)
-            history_dicts.append(observation_dict)
+    for event in sub_history:
+        if isinstance(event, Action):
+            latest_action = event
+        history_dicts.append(event_to_memory(event))
+
     history_str = json.dumps(history_dicts, indent=2)
     current_task = state.root_task.get_current_task()
     if current_task is not None:

@@ -10,9 +10,9 @@ from opendevin.events.action.commands import (
 from opendevin.events.action.empty import NullAction
 from opendevin.events.action.files import FileReadAction, FileWriteAction
 from opendevin.events.action.message import MessageAction
-from opendevin.events.event import EventSource
-from opendevin.events.observation.observation import Observation
+from opendevin.events.event import Event, EventSource
 from opendevin.llm.llm import LLM
+from opendevin.memory.history import ShortTermHistory
 from opendevin.memory.prompts import parse_summary_response
 
 MAX_TOKEN_COUNT_PADDING = (
@@ -43,7 +43,7 @@ class MemoryCondenser:
 
     def condense(
         self,
-        events: list[tuple[Action, Observation]],
+        events: ShortTermHistory,
     ) -> AgentSummarizeAction | None:
         """
         Condenses the given list of events using the llm. Returns the condensed list of events.
@@ -61,37 +61,39 @@ class MemoryCondenser:
         Returns:
         - The condensed list of events.
         """
-        # chunk of (action, observation) to summarize
-        chunk: list[tuple[Action, Observation]] = []
+        # chunk of actions, observations to summarize
+        chunk: list[Event] = []
         chunk_start_index = 0
 
-        for i, (action, observation) in enumerate(events):
+        for i, event in enumerate(events):
             # user messages should be kept if possible
             # FIXME what to do about NullAction?
-            if action.source == EventSource.USER or isinstance(action, NullAction):
+            if (
+                isinstance(event, Action)
+                and event.source == EventSource.USER
+                or isinstance(event, NullAction)
+            ):
                 if chunk:
                     summary_action = self._summarize_chunk(chunk)
                     summary_action._chunk_start = chunk_start_index
-                    summary_action._chunk_end = i
+                    summary_action._chunk_end = i - 1
                     return summary_action
                 else:
                     chunk_start_index = i + 1
-            elif isinstance(action, self._summarizable_actions()):
-                chunk.append((action, observation))
+            elif isinstance(event, self._summarizable_actions()):
+                chunk.append(event)
             else:
                 chunk_start_index = i + 1
 
         if chunk:
             summary_action = self._summarize_chunk(chunk)
             summary_action._chunk_start = chunk_start_index
-            summary_action._chunk_end = len(events)
+            summary_action._chunk_end = len(events) - 1
             return summary_action
         else:
             return None
 
-    def _summarize_chunk(
-        self, chunk: list[tuple[Action, Observation]]
-    ) -> AgentSummarizeAction:
+    def _summarize_chunk(self, chunk: list[Event]) -> AgentSummarizeAction:
         """
         Summarizes the given chunk of events into a single sentence.
 

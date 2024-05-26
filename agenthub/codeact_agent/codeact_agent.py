@@ -301,14 +301,14 @@ class CodeActAgent(Agent):
             },
         ]
 
-        for prev_action, obs in state.history:
-            action_message = get_action_message(prev_action)
-            if action_message:
-                messages.append(action_message)
-
-            obs_message = get_observation_message(obs)
-            if obs_message:
-                messages.append(obs_message)
+        for event in state.history:
+            message = (
+                get_action_message(event)
+                if isinstance(event, Action)
+                else get_observation_message(event)
+            )
+            if message:
+                messages.append(message)
 
         latest_user_message = latest_user_message = next(
             (m for m in reversed(messages) if m['role'] == 'user'), None
