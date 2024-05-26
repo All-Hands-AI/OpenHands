@@ -1,3 +1,17 @@
+"""
+Implements evaluation of agents on ML-Bench, a benchmark for assessing the effectiveness of
+Large Language Models (LLMs) in leveraging existing functions in open-source libraries for
+machine learning tasks. The benchmark is introduced in the paper "ML-BENCH: LARGE LANGUAGE
+MODELS LEVERAGE OPEN-SOURCE LIBRARIES FOR MACHINE LEARNING TASKS" (https://arxiv.org/abs/2311.09835).
+
+Please see https://ghcr.io/super-dainiu/ml_bench and https://huggingface.co/datasets/super-dainiu/ml-bench
+for more details on the dataset and docker image used in this evaluation script.
+
+TODOs:
+- Support additional evaluation settings, such as providing raw README content or using a
+  retriever to extract relevant segments.
+"""
+
 import asyncio
 import json
 import logging
