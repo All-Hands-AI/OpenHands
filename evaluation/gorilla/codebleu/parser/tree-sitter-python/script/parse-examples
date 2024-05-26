@@ -1,0 +1,36 @@
+#!/bin/bash
+
+set -e
+
+cd "$(dirname "$0")/.."
+
+function checkout() {
+  repo=$1; url=$2; sha=$3
+
+  if [ ! -d "$repo" ]; then
+    git clone "https://github.com/$url" "$repo"
+  fi
+
+  pushd "$repo"
+  git fetch && git reset --hard "$sha"
+  popd
+}
+
+checkout examples/numpy numpy/numpy 058851c5cfc98f50f11237b1c13d77cfd1f40475
+checkout examples/django django/django 01974d7f7549b2dca2a729c3c1a1ea7d4585eb3a
+checkout examples/flask pallets/flask de464c03e134127140e5622e230790806a133ff9
+
+known_failures="$(cat script/known_failures.txt)"
+
+tree-sitter parse -q \
+  'examples/**/*.py' \
+  $(for file in $known_failures; do echo "!${file}"; done)
+
+example_count=$(find examples -name '*.py' | wc -l)
+failure_count=$(wc -w <<< "$known_failures")
+success_count=$(( $example_count - $failure_count ))
+success_percent=$(bc -l <<< "100*${success_count}/${example_count}")
+
+printf \
+  "Successfully parsed %d of %d example files (%.1f%%)\n" \
+  $success_count $example_count $success_percent

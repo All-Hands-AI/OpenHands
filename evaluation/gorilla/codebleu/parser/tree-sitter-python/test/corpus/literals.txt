@@ -1,0 +1,828 @@
+================================================================================
+Integers
+================================================================================
+
+-1
+0xDEAD
+0XDEAD
+1j
+-1j
+0o123
+0O123
+0b001
+0B001
+1_1
+0B1_1
+0O1_1
+0L
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (unary_operator
+      (integer)))
+  (expression_statement
+    (integer))
+  (expression_statement
+    (integer))
+  (expression_statement
+    (integer))
+  (expression_statement
+    (unary_operator
+      (integer)))
+  (expression_statement
+    (integer))
+  (expression_statement
+    (integer))
+  (expression_statement
+    (integer))
+  (expression_statement
+    (integer))
+  (expression_statement
+    (integer))
+  (expression_statement
+    (integer))
+  (expression_statement
+    (integer))
+  (expression_statement
+    (integer)))
+
+================================================================================
+Floats
+================================================================================
+
+-.6_6
++.1_1
+123.4123
+123.123J
+1_1.3_1
+1_1.
+1e+3_4j
+.3e1_4
+1_0.l
+.1l
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (unary_operator
+      (float)))
+  (expression_statement
+    (unary_operator
+      (float)))
+  (expression_statement
+    (float))
+  (expression_statement
+    (float))
+  (expression_statement
+    (float))
+  (expression_statement
+    (float))
+  (expression_statement
+    (float))
+  (expression_statement
+    (float))
+  (expression_statement
+    (float))
+  (expression_statement
+    (float)))
+
+================================================================================
+Scientific Notation Floats
+================================================================================
+
+1e322
+1e-3
+1e+3
+1.8e10
+1.e10
+-1e10
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (float))
+  (expression_statement
+    (float))
+  (expression_statement
+    (float))
+  (expression_statement
+    (float))
+  (expression_statement
+    (float))
+  (expression_statement
+    (unary_operator
+      (float))))
+
+================================================================================
+Strings
+================================================================================
+
+"I'm ok"
+'"ok"'
+UR'bye'
+b'sup'
+B"sup"
+`1`
+"\\"
+"/"
+"multiline \
+string"
+b"\x12\u12\U12\x13\N{WINKING FACE}"
+"\xab\123\'\"\a\b\f\r\n\t\v\\"
+"\xgh\o123\p\q\c\d\e\u12\U1234"
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (string (string_content)))
+  (expression_statement
+    (string (string_content)))
+  (expression_statement
+    (string (string_content)))
+  (expression_statement
+    (string (string_content)))
+  (expression_statement
+    (string (string_content)))
+  (expression_statement
+    (string (string_content)))
+  (expression_statement
+    (string (string_content
+      (escape_sequence))))
+  (expression_statement
+    (string (string_content)))
+  (expression_statement
+    (string (string_content
+      (escape_sequence))))
+  (expression_statement
+    (string (string_content
+      (escape_sequence)
+      (escape_sequence))))
+  (expression_statement
+    (string (string_content
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence))))
+  (expression_statement
+    (string (string_content))))
+
+================================================================================
+Raw strings
+================================================================================
+
+'ab\x00cd'
+"\n"
+
+# no escape sequences in these
+r'ab\x00cd'
+ur"\n"
+
+# raw f-string
+fr"\{0}"
+
+r"\\"
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (string (string_content
+      (escape_sequence))))
+  (expression_statement
+    (string (string_content
+      (escape_sequence))))
+  (comment)
+  (expression_statement
+    (string (string_content)))
+  (expression_statement
+    (string (string_content)))
+  (comment)
+  (expression_statement
+    (string
+      (string_content)
+      (interpolation
+        (integer))))
+  (expression_statement
+    (string)))
+
+================================================================================
+Raw strings with escaped quotes
+================================================================================
+
+re.compile(r"(\n|\A)#include\s*['\"]"
+           r"(?P<name>[\w\d./\\]+[.]src)['\"]")
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (call
+      (attribute
+        (identifier)
+        (identifier))
+      (argument_list
+        (concatenated_string
+          (string (string_content))
+          (string (string_content)))))))
+
+================================================================================
+Format strings
+================================================================================
+
+# nested!
+f"a {b(f'c {e} d')} e"
+f"""a"{b}c"""
+f"""a""{b}c"""
+f"a {{}} e"
+f"a {b}}}"
+f"a {{{b}"
+f"a {{b}}"
+f"a {{{b}}}"
+f"{c,}"
+f"{yield d}"
+
+--------------------------------------------------------------------------------
+
+(module
+  (comment)
+  (expression_statement
+    (string
+      (string_content)
+      (interpolation
+        (call
+          (identifier)
+          (argument_list
+            (string
+              (string_content)
+              (interpolation
+                (identifier))
+              (string_content)))))
+      (string_content)))
+  (expression_statement
+    (string
+      (string_content)
+      (interpolation
+        (identifier))
+      (string_content)))
+  (expression_statement
+    (string
+      (string_content)
+      (interpolation
+        (identifier))
+      (string_content)))
+  (expression_statement
+    (string (string_content)))
+  (expression_statement
+    (string
+      (string_content)
+      (interpolation
+        (identifier))
+      (string_content)))
+  (expression_statement
+    (string
+      (string_content)
+      (interpolation
+        (identifier))))
+  (expression_statement
+    (string (string_content)))
+  (expression_statement
+    (string
+      (string_content)
+      (interpolation
+        (identifier))
+      (string_content)))
+  (expression_statement
+    (string
+      (interpolation
+        (expression_list (identifier)))))
+  (expression_statement
+    (string
+      (interpolation
+        (yield
+          (identifier))))))
+
+================================================================================
+Format strings with format specifiers
+================================================================================
+
+f"a {b:2} {c:34.5}"
+f"{b:{c.d}.{d.e}}"
+f"{a:#06x}"
+f"{a=}"
+f"{a=:.2f}"
+f"{value:{width + padding!r}.{precision}}"
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (string
+      (string_content)
+      (interpolation
+        (identifier)
+        (format_specifier))
+      (string_content)
+      (interpolation
+        (identifier)
+        (format_specifier))))
+  (expression_statement
+    (string
+      (interpolation
+        (identifier)
+        (format_specifier
+          (format_expression
+            (attribute
+              (identifier)
+              (identifier)))
+          (format_expression
+            (attribute
+              (identifier)
+              (identifier)))))))
+  (expression_statement
+    (string
+      (interpolation (identifier) (format_specifier))))
+  (expression_statement
+    (string (interpolation (identifier))))
+  (expression_statement
+    (string
+      (interpolation (identifier) (format_specifier))))
+  (expression_statement
+    (string
+      (interpolation
+        (identifier)
+        (format_specifier
+          (format_expression
+            (binary_operator
+              (identifier)
+              (identifier))
+            (type_conversion))
+          (format_expression
+            (identifier)))))))
+
+================================================================================
+Unicode escape sequences
+================================================================================
+
+"\x12 \123 \u1234"
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (string (string_content
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)))))
+
+================================================================================
+Other primitives
+================================================================================
+
+True
+False
+None
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (true))
+  (expression_statement
+    (false))
+  (expression_statement
+    (none)))
+
+================================================================================
+Concatenated strings
+================================================================================
+
+"one" "two" "three"
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (concatenated_string
+      (string (string_content))
+      (string (string_content))
+      (string (string_content)))))
+
+================================================================================
+Multi-line strings
+================================================================================
+
+"""
+A double quote hello,
+without double or single quotes.
+"""
+
+"""
+A double quote "hello",
+with double quotes.
+"""
+
+"""
+A double quote 'hello',
+with single quotes.
+"""
+
+'''
+A single quote hello,
+without double or single quotes.
+'''
+
+'''
+A single quote 'hello',
+with single quotes.
+'''
+
+'''
+A single quote "hello",
+with double quotes.
+'''
+
+"""
+A double quote hello\n\
+with an escaped newline\n\
+and another escaped newline\n\
+"""
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (string (string_content)))
+  (expression_statement
+    (string (string_content)))
+  (expression_statement
+    (string (string_content)))
+  (expression_statement
+    (string (string_content)))
+  (expression_statement
+    (string (string_content)))
+  (expression_statement
+    (string (string_content)))
+  (expression_statement
+    (string (string_content
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)
+      (escape_sequence)))))
+
+================================================================================
+Lists
+================================================================================
+
+[a, b, [c, d]]
+[*()]
+[*[]]
+[*a]
+[*a.b]
+[*a[b].c]
+[*a()]
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (list
+      (identifier)
+      (identifier)
+      (list
+        (identifier)
+        (identifier))))
+  (expression_statement
+    (list
+      (list_splat
+        (tuple))))
+  (expression_statement
+    (list
+      (list_splat
+        (list))))
+  (expression_statement
+    (list
+      (list_splat
+        (identifier))))
+  (expression_statement
+    (list
+      (list_splat
+        (attribute
+          (identifier)
+          (identifier)))))
+  (expression_statement
+    (list
+      (list_splat
+        (attribute
+          (subscript
+            (identifier)
+            (identifier))
+          (identifier)))))
+  (expression_statement
+    (list
+      (list_splat
+        (call
+          (identifier)
+          (argument_list))))))
+
+================================================================================
+List comprehensions
+================================================================================
+
+[a + b for (a, b) in items]
+[a for b in c for a in b]
+[(x,y) for x in [1,2,3] for y in [1,2,3] if True]
+[a for a in lambda: True, lambda: False if a()]
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (list_comprehension
+      (binary_operator
+        (identifier)
+        (identifier))
+      (for_in_clause
+        (tuple_pattern
+          (identifier)
+          (identifier))
+        (identifier))))
+  (expression_statement
+    (list_comprehension
+      (identifier)
+      (for_in_clause
+        (identifier)
+        (identifier))
+      (for_in_clause
+        (identifier)
+        (identifier))))
+  (expression_statement
+    (list_comprehension
+      (tuple
+        (identifier)
+        (identifier))
+      (for_in_clause
+        (identifier)
+        (list
+          (integer)
+          (integer)
+          (integer)))
+      (for_in_clause
+        (identifier)
+        (list
+          (integer)
+          (integer)
+          (integer)))
+      (if_clause
+        (true))))
+  (expression_statement
+    (list_comprehension
+      (identifier)
+      (for_in_clause
+        (identifier)
+        (lambda
+          (true))
+        (lambda
+          (false)))
+      (if_clause
+        (call
+          (identifier)
+          (argument_list))))))
+
+================================================================================
+Dictionaries
+================================================================================
+
+{a: 1, b: 2}
+{}
+{**{}}
+{**a}
+{**a.b}
+{**a[b].c}
+{**a()}
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (dictionary
+      (pair
+        (identifier)
+        (integer))
+      (pair
+        (identifier)
+        (integer))))
+  (expression_statement
+    (dictionary))
+  (expression_statement
+    (dictionary
+      (dictionary_splat
+        (dictionary))))
+  (expression_statement
+    (dictionary
+      (dictionary_splat
+        (identifier))))
+  (expression_statement
+    (dictionary
+      (dictionary_splat
+        (attribute
+          (identifier)
+          (identifier)))))
+  (expression_statement
+    (dictionary
+      (dictionary_splat
+        (attribute
+          (subscript
+            (identifier)
+            (identifier))
+          (identifier)))))
+  (expression_statement
+    (dictionary
+      (dictionary_splat
+        (call
+          (identifier)
+          (argument_list))))))
+
+================================================================================
+Dictionary comprehensions
+================================================================================
+
+{a: b for a, b in items}
+{a: b for c in d for e in items}
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (dictionary_comprehension
+      (pair
+        (identifier)
+        (identifier))
+      (for_in_clause
+        (pattern_list
+          (identifier)
+          (identifier))
+        (identifier))))
+  (expression_statement
+    (dictionary_comprehension
+      (pair
+        (identifier)
+        (identifier))
+      (for_in_clause
+        (identifier)
+        (identifier))
+      (for_in_clause
+        (identifier)
+        (identifier)))))
+
+================================================================================
+Sets
+================================================================================
+
+{a, b, c,}
+{*{}}
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (set
+      (identifier)
+      (identifier)
+      (identifier)))
+  (expression_statement
+    (set
+      (list_splat
+        (dictionary)))))
+
+================================================================================
+Set comprehensions
+================================================================================
+
+{a[b][c] for a, b, c in items}
+{r for s in qs for n in ms}
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (set_comprehension
+      (subscript
+        (subscript
+          (identifier)
+          (identifier))
+        (identifier))
+      (for_in_clause
+        (pattern_list
+          (identifier)
+          (identifier)
+          (identifier))
+        (identifier))))
+  (expression_statement
+    (set_comprehension
+      (identifier)
+      (for_in_clause
+        (identifier)
+        (identifier))
+      (for_in_clause
+        (identifier)
+        (identifier)))))
+
+================================================================================
+Simple Tuples
+================================================================================
+
+()
+(a, b)
+(a, b, c,)
+(print, exec)
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (tuple))
+  (expression_statement
+    (tuple
+      (identifier)
+      (identifier)))
+  (expression_statement
+    (tuple
+      (identifier)
+      (identifier)
+      (identifier)))
+  (expression_statement
+    (tuple
+      (identifier)
+      (identifier))))
+
+================================================================================
+Generator expression
+================================================================================
+
+(a[b][c] for a, b, c in items)
+dict((a, b) for a, b in d)
+(a for b in c for d in e,)
+(x for x in range(1, 10))
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (generator_expression
+      (subscript
+        (subscript
+          (identifier)
+          (identifier))
+        (identifier))
+      (for_in_clause
+        (pattern_list
+          (identifier)
+          (identifier)
+          (identifier))
+        (identifier))))
+  (expression_statement
+    (call
+      (identifier)
+      (generator_expression
+        (tuple
+          (identifier)
+          (identifier))
+        (for_in_clause
+          (pattern_list
+            (identifier)
+            (identifier))
+          (identifier)))))
+  (expression_statement
+    (generator_expression
+      (identifier)
+      (for_in_clause
+        (identifier)
+        (identifier))
+      (for_in_clause
+        (identifier)
+        (identifier))))
+  (expression_statement
+    (generator_expression
+      (identifier)
+      (for_in_clause
+        (identifier)
+        (call
+          (identifier)
+          (argument_list
+            (integer)
+            (integer)))))))

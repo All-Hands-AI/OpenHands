@@ -1,0 +1,31 @@
+name: Build/test
+on:
+  pull_request:
+    branches:
+      - "**"
+  push:
+    branches:
+      - "master"
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16
+      - run: npm install
+      - run: npm test
+  test_windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16
+      - run: npm install
+      - run: npm run-script test-windows

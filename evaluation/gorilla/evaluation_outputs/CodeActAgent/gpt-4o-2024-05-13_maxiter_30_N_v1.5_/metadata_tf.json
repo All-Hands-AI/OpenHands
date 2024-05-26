@@ -1,0 +1,1 @@
+{"hub": "tf", "agent_class": "CodeActAgent", "model_name": "gpt-4o-2024-05-13", "max_iterations": 30, "eval_output_dir": "evaluation/evaluation_outputs/outputs/gorilla/CodeActAgent/gpt-4o-2024-05-13_maxiter_30_N_v1.5_", "start_time": "2024-05-26 12:16:49", "git_commit": "e731048ccff698e723e48ad43f6a7d1868daf4b4"}

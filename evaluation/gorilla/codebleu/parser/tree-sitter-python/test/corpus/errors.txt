@@ -1,0 +1,27 @@
+====================================
+An error before a string literal
+====================================
+
+def a(b):
+    c.
+
+    """
+    d
+    """
+
+    e
+
+---
+
+(module
+  (function_definition
+    (identifier)
+    (parameters
+      (identifier))
+    (ERROR
+      (identifier))
+    (block
+      (expression_statement
+        (string (string_content)))
+      (expression_statement
+        (identifier)))))
