@@ -34,10 +34,8 @@ def history_to_json(obj, **kwargs):
     if isinstance(obj, list):
         # process history, make it simpler.
         processed_history = []
-        for action, observation in obj:
-            processed_history.append(
-                (event_to_memory(action), event_to_memory(observation))
-            )
+        for event in obj:
+            processed_history.append(event_to_memory(event))
         return json.dumps(processed_history, **kwargs)
 
 

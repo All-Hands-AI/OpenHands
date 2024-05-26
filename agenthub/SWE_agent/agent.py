@@ -30,7 +30,7 @@ class SWEAgent(Agent):
 
     def __init__(self, llm: LLM):
         super().__init__(llm)
-        self.memory_window = 8
+        self.memory_window = 4
         self.max_retries = 2
         self.cur_file: str = ''
         self.cur_line: int = 0
@@ -63,7 +63,7 @@ class SWEAgent(Agent):
             3. Catch errors - ensure model takes action (5 attempts max)
         """
         # retrieve short term memories from state.history, up to memory_window
-        memory_window = min(self.memory_window, len(state.history))
+        memory_window = min(self.memory_window, len(state.history.get_tuples()))
         running_memory: list[str] = []
         for prev_action, obs in state.history.get_tuples()[-memory_window:]:
             running_memory.append(

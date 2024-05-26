@@ -21,7 +21,7 @@ explaining what the problem is.
 
 ## History
 {{ instructions.history_truncated }}
-{{ history_to_json(state.history[-10:]) }}
+{{ history_to_json(state.history[-20:]) }}
 
 ## Format
 {{ instructions.format.action }}

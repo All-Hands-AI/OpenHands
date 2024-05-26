@@ -45,9 +45,9 @@ def codeact_user_response(state: State) -> str:
     )
     if state.history:
         user_msgs = [
-            action
-            for action, _ in state.history
-            if isinstance(action, MessageAction) and action.source == 'user'
+            event
+            for event in state.history
+            if isinstance(event, MessageAction) and event.source == 'user'
         ]
         if len(user_msgs) >= 2:
             # let the agent know that it can give up when it has tried 3 times
@@ -142,14 +142,14 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         )
     )
     # ======= Attempt to evaluate the agent's edits =======
-    # If you are working on simplier benchmark that only evaluates the final model output (e.g., in a MessageAction)
+    # If you are working on a simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
 
     if state is None:
         raise ValueError('State should not be None.')
 
     model_answer_raw = ''
-    for act, _ in reversed(state.history):
+    for act in reversed(state.history):
         if isinstance(act, CmdRunAction) and act.source == 'agent':
             model_answer_raw = act.thought
             break
@@ -185,7 +185,8 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         'instruction': instance['Question'],
         'metadata': metadata,
         'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
+            (event_to_dict(action), event_to_dict(obs))
+            for action, obs in state.history.get_tuples()
         ],
         'error': state.error if state and state.error else None,
         'test_result': test_result,
