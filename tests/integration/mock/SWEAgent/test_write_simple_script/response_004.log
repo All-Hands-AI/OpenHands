@@ -1,7 +1,0 @@
-Thoughts:
-I need to add the code to the 'hello.sh' script that will print 'hello' without asking for confirmation. I will ensure that the script is executable after making the necessary changes.
-
-Action:
-```
-edit 0 -1 "echo 'hello'"
-```

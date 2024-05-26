@@ -9,10 +9,10 @@ from opendevin.controller.state.state import State
 from opendevin.core.config import args, get_llm_config_arg
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
-from opendevin.events.action import ChangeAgentStateAction, MessageAction
+from opendevin.events import EventSource, EventStream, EventStreamSubscriber
+from opendevin.events.action import MessageAction
 from opendevin.events.event import Event
 from opendevin.events.observation import AgentStateChangedObservation
-from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.llm.llm import LLM
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.server.runtime import ServerRuntime
@@ -93,9 +93,6 @@ async def main(
     runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
 
     await event_stream.add_event(MessageAction(content=task), EventSource.USER)
-    await event_stream.add_event(
-        ChangeAgentStateAction(agent_state=AgentState.RUNNING), EventSource.USER
-    )
 
     async def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):

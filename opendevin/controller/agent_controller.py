@@ -13,6 +13,7 @@ from opendevin.core.exceptions import (
 )
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
+from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
     AddTaskAction,
@@ -32,7 +33,6 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
-from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 
 MAX_ITERATIONS = config.max_iterations
 MAX_CHARS = config.llm.max_chars
@@ -128,10 +128,12 @@ class AgentController:
             await self.set_agent_state_to(event.agent_state)  # type: ignore
         elif isinstance(event, MessageAction):
             if event.source == EventSource.USER:
+                logger.info(event, extra={'msg_type': 'OBSERVATION'})
                 await self.add_history(event, NullObservation(''))
                 if self.get_agent_state() != AgentState.RUNNING:
                     await self.set_agent_state_to(AgentState.RUNNING)
             elif event.source == EventSource.AGENT and event.wait_for_response:
+                logger.info(event, extra={'msg_type': 'ACTION'})
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
         elif isinstance(event, AgentDelegateAction):
             await self.start_delegate(event)
@@ -158,6 +160,7 @@ class AgentController:
         logger.info(
             f'Setting agent({type(self.agent).__name__}) state from {self.state.agent_state} to {new_state}'
         )
+
         if new_state == self.state.agent_state:
             return
 
@@ -168,6 +171,10 @@ class AgentController:
         await self.event_stream.add_event(
             AgentStateChangedObservation('', self.state.agent_state), EventSource.AGENT
         )
+
+        if new_state == AgentState.INIT and self.state.resume_state:
+            await self.set_agent_state_to(self.state.resume_state)
+            self.state.resume_state = None
 
     def get_agent_state(self):
         """Returns the current state of the agent task."""
@@ -242,6 +249,9 @@ class AgentController:
 
     def get_state(self):
         return self.state
+
+    def set_state(self, state: State):
+        self.state = state
 
     def _is_stuck(self):
         # check if delegate stuck

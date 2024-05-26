@@ -28,8 +28,8 @@ body:
   - type: textarea
     id: current-version
     attributes:
-      label: Current Version
-      description: What version are you using? If you're running in docker, tell us the tag you're using (e.g. ghcr.io/opendevin/opendevin:0.3.1).
+      label: Current OpenDevin version
+      description: What version of OpenDevin are you using? If you're running in docker, tell us the tag you're using (e.g. ghcr.io/opendevin/opendevin:0.3.1).
       render: bash
     validations:
       required: true
@@ -51,6 +51,12 @@ body:
       placeholder: |
         - Model:
         - Agent:
+
+  - type: textarea
+    id: os-version
+    attributes:
+      label: Operating System
+      description: What Operating System are you using? Linux, Mac OS, WSL on Windows
 
   - type: textarea
     id: repro-steps
