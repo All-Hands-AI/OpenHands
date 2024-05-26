@@ -19,20 +19,16 @@ pip install flake8 python-docx PyPDF2 python-pptx pylatexenc openai opencv-pytho
 # ======================
 # Jupyter
 # ======================
-source ~/.bashrc
 # if user name is `opendevin`, add '/home/opendevin/.local/bin' to PATH
 if [ "$USER" = "opendevin" ]; then
     echo 'export PATH=$PATH:/home/opendevin/.local/bin' >> ~/.bashrc
-    export PATH=$PATH:/home/opendevin/.local/bin
-    export PIP_CACHE_DIR=$HOME/.cache/pip
 fi
 # if user name is `root`, add '/root/.local/bin' to PATH
 if [ "$USER" = "root" ]; then
     echo 'export PATH=$PATH:/root/.local/bin' >> ~/.bashrc
-    export PATH=$PATH:/root/.local/bin
-    export PIP_CACHE_DIR=$HOME/.cache/pip
-
 fi
+
+export PIP_CACHE_DIR=$HOME/.cache/pip
 
 # Install dependencies
 pip install jupyterlab notebook jupyter_kernel_gateway
@@ -72,6 +68,8 @@ echo "export JUPYTER_EXEC_SERVER_PORT=$JUPYTER_EXEC_SERVER_PORT" >> ~/.bashrc
 export JUPYTER_EXEC_SERVER_PID=$!
 echo "export JUPYTER_EXEC_SERVER_PID=$JUPYTER_EXEC_SERVER_PID" >> ~/.bashrc
 echo "Execution server started with PID: $JUPYTER_EXEC_SERVER_PID"
+
+source ~/.bashrc
 
 # Wait until /opendevin/logs/jupyter_kernel_gateway.log contains "is available"
 while ! grep -q "at" /opendevin/logs/jupyter_kernel_gateway.log; do
