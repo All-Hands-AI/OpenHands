@@ -15,6 +15,7 @@ all the preprocessing/evaluation/analysis scripts.
 - SWE-Bench: [`evaluation/swe_bench`](./swe_bench)
 - HumanEvalFix: [`evaluation/humanevalfix`](./humanevalfix)
 - GAIA: [`evaluation/gaia`](./gaia)
+- Entity deduction Arena (EDA): [`evaluation/EDA`](./EDA)
 
 ### Result Visualization
 
