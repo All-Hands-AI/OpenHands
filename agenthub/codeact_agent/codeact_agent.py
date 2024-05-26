@@ -202,32 +202,7 @@ class CodeActAgent(Agent):
         """
         logger.info(f'Running CodeActAgent v{self.VERSION}')
 
-        messages: list[dict[str, str]] = [
-            {'role': 'system', 'content': self.system_message},
-            {
-                'role': 'user',
-                'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!",
-            },
-        ]
-
-        for prev_action, obs in state.history:
-            action_message = get_action_message(prev_action)
-            if action_message:
-                messages.append(action_message)
-
-            obs_message = get_observation_message(obs)
-            if obs_message:
-                messages.append(obs_message)
-
-        latest_user_message = latest_user_message = next(
-            (m for m in reversed(messages) if m['role'] == 'user'), None
-        )
-        if latest_user_message:
-            if latest_user_message['content'].strip() == '/exit':
-                return AgentFinishAction()
-            latest_user_message['content'] += (
-                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
-            )
+        messages: list[dict[str, str]] = self._get_messages(state)
 
         # FIXME move it out to LLM class
         # if the user has configured config.llm.max_input_tokens, we should start condensing when we hit it, to limit the costs
@@ -237,8 +212,14 @@ class CodeActAgent(Agent):
             and self.memory_condenser.is_over_token_limit(messages)
         ):
             logger.info('Configured token limit exceeded. Condensing memory.')
-            action = self._retry_with_condense(state)
-            return action
+            self._retry_with_condense(state)
+            messages = self._get_messages(state)
+
+        latest_user_message = next(
+            (m for m in reversed(messages) if m['role'] == 'user'), None
+        )
+        if latest_user_message and latest_user_message['content'].strip() == '/exit':
+            return AgentFinishAction()
 
         try:
             response = self.llm.completion(
@@ -255,8 +236,8 @@ class CodeActAgent(Agent):
             logger.warning('Context window exceeded. Condensing memory.')
             # Retry processing events with condensed memory
             if self.memory_condenser:
-                action = self._retry_with_condense(state)
-                return action
+                self._retry_with_condense(state)
+                messages = self._get_messages(state)
 
         action_str: str = parse_response(response)
         state.num_of_chars += sum(
@@ -305,7 +286,37 @@ class CodeActAgent(Agent):
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
 
-    def _retry_with_condense(self, state: State) -> AgentSummarizeAction:
+    def _get_messages(self, state: State) -> list[dict[str, str]]:
+        messages = [
+            {'role': 'system', 'content': self.system_message},
+            {
+                'role': 'user',
+                'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!",
+            },
+        ]
+
+        for prev_action, obs in state.history:
+            action_message = get_action_message(prev_action)
+            if action_message:
+                messages.append(action_message)
+
+            obs_message = get_observation_message(obs)
+            if obs_message:
+                messages.append(obs_message)
+
+        latest_user_message = latest_user_message = next(
+            (m for m in reversed(messages) if m['role'] == 'user'), None
+        )
+        if latest_user_message:
+            if latest_user_message['content'].strip() == '/exit':
+                return messages
+            latest_user_message['content'] += (
+                f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
+            )
+
+        return messages
+
+    def _retry_with_condense(self, state: State):
         events = state.history
 
         # FIXME retry?
@@ -313,7 +324,8 @@ class CodeActAgent(Agent):
             summary_action = self.memory_condenser.condense(events)
 
             if summary_action:
-                return summary_action
+                state.history.replace_events_with_summary(summary_action)
+                return
 
         # this is bad, we can't perform further LLM calls
         # raise an exception that we can use to set agent in ERROR state

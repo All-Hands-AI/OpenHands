@@ -1,4 +1,3 @@
-from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action.action import Action
 from opendevin.events.action.agent import AgentSummarizeAction
 from opendevin.events.observation.observation import Observation
@@ -21,55 +20,32 @@ class ShortTermHistory(list[tuple[Action, Observation]]):
             raise TypeError(f'Event must be a tuple, got {type(event)}')
 
         action = event[0]
-        observation = event[1]
-        if isinstance(action, AgentSummarizeAction) and isinstance(
-            observation, SummaryObservation
-        ):
-            self.replace_chunk_with_summary(
-                action._chunk_start, action._chunk_end, action, observation
-            )
-        elif isinstance(action, AgentSummarizeAction) or isinstance(
-            observation, SummaryObservation
-        ):
-            logger.warning(
-                'AgentSummarizeAction and SummaryObservation are not paired together'
-            )
+        # we're not making an obs just yet
+        # observation = event[1]
+        if isinstance(action, AgentSummarizeAction):
+            self.replace_events_with_summary(action)
         else:
             super().append(event)
 
-    def replace_chunk_with_summary(
-        self,
-        start_id: int,
-        end_id: int,
-        summary_action: AgentSummarizeAction,
-        summary_observation: SummaryObservation,
-    ):
-        """
-        Replace a chunk of events determined by start_id and end_id with the summary events.
-
-        Args:
-            start_id: The ID of the first event in the chunk to be replaced.
-            end_id: The ID of the last event in the chunk to be replaced.
-            summary_action: The summary action event to replace the chunk.
-            summary_observation: The summary observation event to replace the chunk.
-
-        Returns:
-            The updated ShortTermHistory.
-        """
-        chunk_start = None
-        chunk_end = None
+    def replace_events_with_summary(self, summary_action: AgentSummarizeAction):
+        start_id = None
+        end_id = None
 
         for i, event in enumerate(self):
-            if event[0].id == start_id:
-                chunk_start = i
-            if event[1].id == end_id:
-                chunk_end = i
+            if event[0].id == summary_action._chunk_start:
+                start_id = i
+            if event[1].id == summary_action._chunk_end:
+                end_id = i
                 break
 
-        if chunk_start is not None and chunk_end is not None:
-            logger.debug(
-                f'Replacing chunk from {chunk_start} to {chunk_end} with summary'
-            )
-            self[chunk_start : chunk_end + 1] = [(summary_action, summary_observation)]
+        if start_id is not None and end_id is not None:
+            # create the SummaryObservation based on the AgentSummarizeAction
+            summary_observation = SummaryObservation(content=summary_action.summary)
+
+            # clean up the action if we're doing it this way, this is odd
+            summary_action.summary = ''
+
+            # replace the events in the specified range with the summary action and observation
+            self[start_id:end_id] = [(summary_action, summary_observation)]
 
         # we didn't have the chunk, just return
