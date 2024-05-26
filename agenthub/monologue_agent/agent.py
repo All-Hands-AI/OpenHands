@@ -1,4 +1,5 @@
 import agenthub.monologue_agent.utils.prompts as prompts
+from agenthub.monologue_agent.utils.prompts import INITIAL_THOUGHTS
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config
@@ -25,58 +26,12 @@ from opendevin.events.observation import (
 from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
 from opendevin.memory.condenser import MemoryCondenser
-from opendevin.memory.history import ShortTermHistory
 
 if config.agent.memory_enabled:
     from opendevin.memory.memory import LongTermMemory
 
 MAX_TOKEN_COUNT_PADDING = 512
 MAX_OUTPUT_LENGTH = 5000
-
-INITIAL_THOUGHTS = [
-    'I exist!',
-    'Hmm...looks like I can type in a command line prompt',
-    'Looks like I have a web browser too!',
-    "Here's what I want to do: $TASK",
-    'How am I going to get there though?',
-    'It seems like I have some kind of short term memory.',
-    'Each of my thoughts seems to be stored in a JSON array.',
-    'It seems whatever I say next will be added as an object to the list.',
-    'But no one has perfect short-term memory. My list of thoughts will be summarized and condensed over time, losing information in the process.',
-    'Fortunately I have long term memory!',
-    'I can just perform a recall action, followed by the thing I want to remember. And then related thoughts just spill out!',
-    "Sometimes they're random thoughts that don't really have to do with what I wanted to remember. But usually they're exactly what I need!",
-    "Let's try it out!",
-    'RECALL what it is I want to do',
-    "Here's what I want to do: $TASK",
-    'How am I going to get there though?',
-    "Neat! And it looks like it's easy for me to use the command line too! I just have to perform a run action and include the command I want to run in the command argument. The command output just jumps into my head!",
-    'RUN echo "hello world"',
-    'hello world',
-    'Cool! I bet I can write files too using the write action.',
-    'WRITE echo "console.log(\'hello world\')" > test.js',
-    '',
-    "I just created test.js. I'll try and run it now.",
-    'RUN node test.js',
-    'hello world',
-    'It works!',
-    "I'm going to try reading it now using the read action.",
-    'READ test.js',
-    "console.log('hello world')",
-    'Nice! I can read files too!',
-    'And if I want to use the browser, I just need to use the browse action and include the url I want to visit in the url argument',
-    "Let's try that...",
-    'BROWSE google.com',
-    '<form><input type="text"></input><button type="submit"></button></form>',
-    'I can browse the web too!',
-    'And once I have completed my task, I can use the finish action to stop working.',
-    "But I should only use the finish action when I'm absolutely certain that I've completed my task and have tested my work.",
-    'Very cool. Now to accomplish my task.',
-    "I'll need a strategy. And as I make progress, I'll need to keep refining that strategy. I'll need to set goals, and break them into sub-goals.",
-    'In between actions, I must always take some time to think, strategize, and set new goals. I should never take two actions in a row.',
-    "OK so my task is to $TASK. I haven't made any progress yet. Where should I start?",
-    'It seems like there might be an existing project here. I should probably start by running `pwd` and `ls` to orient myself.',
-]
 
 
 class MonologueAgent(Agent):
@@ -88,56 +43,18 @@ class MonologueAgent(Agent):
     """
 
     _initialized = False
-    monologue: ShortTermHistory
+    initial_thoughts: list[dict[str, str]]
     memory: 'LongTermMemory | None'
     memory_condenser: MemoryCondenser
 
     def __init__(self, llm: LLM):
         """
-        Initializes the Monologue Agent with an llm, monologue, and memory.
+        Initializes the Monologue Agent with an llm.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
-
-    def _add_event(self, event_dict: dict):
-        """
-        Adds a new event to the agent's monologue and memory.
-        Monologue automatically condenses when it gets too large.
-
-        Parameters:
-        - event (dict): The event that will be added to monologue and memory
-        """
-
-        if (
-            'args' in event_dict
-            and 'output' in event_dict['args']
-            and len(event_dict['args']['output']) > MAX_OUTPUT_LENGTH
-        ):
-            event_dict['args']['output'] = (
-                event_dict['args']['output'][:MAX_OUTPUT_LENGTH] + '...'
-            )
-
-        self.monologue.add_event(event_dict)
-        if self.memory is not None:
-            self.memory.add_event(event_dict)
-
-        # Test monologue token length
-        prompt = prompts.get_request_action_prompt(
-            '',
-            self.monologue.get_events(),
-            [],
-        )
-        messages = [{'content': prompt, 'role': 'user'}]
-        token_count = self.llm.get_token_count(messages)
-
-        if token_count + MAX_TOKEN_COUNT_PADDING > self.llm.max_input_tokens:
-            prompt = prompts.get_summarize_monologue_prompt(self.monologue.events)
-            summary_response = self.memory_condenser.condense(
-                summarize_prompt=prompt, llm=self.llm
-            )
-            self.monologue.events = prompts.parse_summary_response(summary_response)
 
     def _initialize(self, task: str):
         """
@@ -159,7 +76,7 @@ class MonologueAgent(Agent):
         if task is None or task == '':
             raise AgentNoInstructionError()
 
-        self.monologue = ShortTermHistory()
+        self.initial_thoughts = []
         if config.agent.memory_enabled:
             self.memory = LongTermMemory()
         else:
@@ -188,7 +105,7 @@ class MonologueAgent(Agent):
                     observation = BrowserOutputObservation(
                         content=thought, url='', screenshot=''
                     )
-                self._add_event(event_to_memory(observation))
+                self.initial_thoughts.append(event_to_memory(observation))
                 previous_action = ''
             else:
                 action: Action = NullAction()
@@ -215,7 +132,7 @@ class MonologueAgent(Agent):
                     previous_action = ActionType.BROWSE
                 else:
                     action = MessageAction(thought)
-                self._add_event(event_to_memory(action))
+                self.initial_thoughts.append(event_to_memory(action))
 
     def step(self, state: State) -> Action:
         """
@@ -230,24 +147,74 @@ class MonologueAgent(Agent):
 
         goal = state.get_current_user_intent()
         self._initialize(goal)
-        for prev_action, obs in state.updated_info:
-            self._add_event(event_to_memory(prev_action))
-            self._add_event(event_to_memory(obs))
 
-        state.updated_info = []
+        recent_events: list[dict[str, str]] = []
 
+        # add the events from state.history
+        for prev_action, obs in state.history:
+            if not isinstance(prev_action, NullAction):
+                recent_events.append(event_to_memory(prev_action))
+            if not isinstance(obs, NullObservation):
+                recent_events.append(self._truncate_output(event_to_memory(obs)))
+
+        # add the last messages to long term memory
+        if self.memory is not None and state.history and len(state.history) > 0:
+            self.memory.add_event(event_to_memory(state.history[-1][0]))
+            self.memory.add_event(
+                self._truncate_output(event_to_memory(state.history[-1][1]))
+            )
+
+        # the action prompt with initial thoughts and recent events
         prompt = prompts.get_request_action_prompt(
             goal,
-            self.monologue.get_events(),
+            self.initial_thoughts,
+            recent_events,
             state.background_commands_obs,
         )
-        messages = [{'content': prompt, 'role': 'user'}]
-        resp = self.llm.completion(messages=messages)
+
+        messages: list[dict[str, str]] = [
+            {'role': 'user', 'content': prompt},
+        ]
+
+        # format all as a single message, a monologue
+        resp = self.llm.do_completion(messages=messages)
+
+        # get the next action from the response
         action_resp = resp['choices'][0]['message']['content']
+
+        # keep track of max_chars fallback option
         state.num_of_chars += len(prompt) + len(action_resp)
+
         action = prompts.parse_action_response(action_resp)
         self.latest_action = action
         return action
+
+    def _truncate_output(
+        self, observation: dict, max_chars: int = MAX_OUTPUT_LENGTH
+    ) -> dict[str, str]:
+        """
+        Truncates the output of an observation to a maximum number of characters.
+
+        Parameters:
+        - output (str): The observation whose output to truncate
+        - max_chars (int): The maximum number of characters to allow
+
+        Returns:
+        - str: The truncated output
+        """
+        if (
+            'args' in observation
+            and 'output' in observation['args']
+            and len(observation['args']['output']) > max_chars
+        ):
+            output = observation['args']['output']
+            half = max_chars // 2
+            observation['args']['output'] = (
+                output[:half]
+                + '\n[... Output truncated due to length...]\n'
+                + output[-half:]
+            )
+        return observation
 
     def search_memory(self, query: str) -> list[str]:
         """

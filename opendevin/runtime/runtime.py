@@ -2,6 +2,9 @@ import asyncio
 from abc import abstractmethod
 
 from opendevin.core.config import config
+from opendevin.core.exceptions import BrowserInitException
+from opendevin.core.logger import opendevin_logger as logger
+from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
     AgentRecallAction,
@@ -21,7 +24,6 @@ from opendevin.events.observation import (
     Observation,
 )
 from opendevin.events.serialization.action import ACTION_TYPE_TO_CLASS
-from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.runtime import (
     DockerExecBox,
     DockerSSHBox,
@@ -31,17 +33,18 @@ from opendevin.runtime import (
 )
 from opendevin.runtime.browser.browser_env import BrowserEnv
 from opendevin.runtime.plugins import PluginRequirement
+from opendevin.storage import FileStore, InMemoryFileStore
 
 
 def create_sandbox(sid: str = 'default', sandbox_type: str = 'exec') -> Sandbox:
     if sandbox_type == 'exec':
-        return DockerExecBox(sid=sid, timeout=config.sandbox_timeout)
+        return DockerExecBox(sid=sid)
     elif sandbox_type == 'local':
-        return LocalBox(timeout=config.sandbox_timeout)
+        return LocalBox()
     elif sandbox_type == 'ssh':
-        return DockerSSHBox(sid=sid, timeout=config.sandbox_timeout)
+        return DockerSSHBox(sid=sid)
     elif sandbox_type == 'e2b':
-        return E2BBox(timeout=config.sandbox_timeout)
+        return E2BBox()
     else:
         raise ValueError(f'Invalid sandbox type: {sandbox_type}')
 
@@ -55,6 +58,7 @@ class Runtime:
     """
 
     sid: str
+    file_store: FileStore
 
     def __init__(
         self,
@@ -69,7 +73,14 @@ class Runtime:
         else:
             self.sandbox = sandbox
             self._is_external_sandbox = True
-        self.browser = BrowserEnv()
+        self.browser: BrowserEnv | None = None
+        try:
+            self.browser = BrowserEnv()
+        except BrowserInitException:
+            logger.warn(
+                'Failed to start browser environment, web browsing functionality will not work'
+            )
+        self.file_store = InMemoryFileStore()
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
         self._bg_task = asyncio.create_task(self._start_background_observation_loop())
@@ -77,7 +88,8 @@ class Runtime:
     def close(self):
         if not self._is_external_sandbox:
             self.sandbox.close()
-        self.browser.close()
+        if self.browser is not None:
+            self.browser.close()
         self._bg_task.cancel()
 
     def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
@@ -117,7 +129,7 @@ class Runtime:
     async def submit_background_obs(self):
         """
         Returns all observations that have accumulated in the runtime's background.
-        Right now, this is just background commands, but could include e.g. asyncronous
+        Right now, this is just background commands, but could include e.g. asynchronous
         events happening in the browser.
         """
         for _id, cmd in self.sandbox.background_commands.items():

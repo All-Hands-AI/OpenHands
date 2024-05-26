@@ -126,6 +126,7 @@ env/
 venv/
 ENV/
 env.bak/
+.env.bak
 venv.bak/
 *venv/
 
@@ -202,7 +203,8 @@ cache
 
 # configuration
 config.toml
-evaluation/swe_bench/eval_workspace
+config.toml.bak
+evaluation/swe_bench/eval_workspace*
 evaluation/outputs
 evaluation/evaluation_outputs
 test_results*
