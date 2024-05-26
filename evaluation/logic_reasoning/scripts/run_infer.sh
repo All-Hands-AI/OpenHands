@@ -2,7 +2,7 @@
 DATASET=$1
 MODEL_CONFIG=$2
 EVAL_LIMIT=$3
-AGENT=$3
+AGENT=$4
 
 echo "WARNING: You are about to enable the execution of untrusted model-generated code by setting the environment variable HF_ALLOW_CODE_EVAL to '1'."
 echo "It is highly unlikely that model-generated code will do something overtly malicious in response to this test suite, however, it may act destructively due to a lack of model capability or alignment."
