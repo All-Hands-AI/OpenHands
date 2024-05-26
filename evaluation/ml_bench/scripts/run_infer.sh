@@ -7,7 +7,7 @@ EVAL_LIMIT=$4
 
 if [ -z "$MODEL_CONFIG" ]; then
   echo "Model config not specified, use default"
-  MODEL_CONFIG="eval_gpt_35_turbo"
+  MODEL_CONFIG="eval_gpt4_1106_preview"
 fi
 
 if [ -z "$AGENT" ]; then

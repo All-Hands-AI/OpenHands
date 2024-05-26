@@ -11,6 +11,7 @@ for more details on the dataset and docker image used in this evaluation script.
 TODOs:
 - Support additional evaluation settings, such as providing raw README content or using a
   retriever to extract relevant segments.
+- Clean up the code and docker image used for evaluation.
 """
 
 import asyncio
@@ -79,6 +80,24 @@ AGENT_CLS_TO_INST_SUFFIX = {
     'CodeActAgent': 'When you think you have completed the task, please run the following command: <execute_bash> exit </execute_bash>.\n'
 }
 
+ID2CONDA = {
+    1: 'dgl_DS',
+    2: 'bert_DS',
+    3: 'lavis_DS',
+    4: 'if_DS',
+    5: 'V2V_DS',
+    6: 'esm_DS',
+    7: 'OP_DS',
+    8: 'TSL_DS',
+    9: 'EAP_DS',
+    10: 'PG_DS',
+    11: 'PIM_DS',
+    12: 'AD2_DS',
+    13: 'L3_DS',
+    14: 'MZ2_DS',
+    15: 'GSA2_DS',
+}
+
 
 def parse_eval_output(output: str) -> Dict[str, float]:
     metrics = {}
@@ -135,6 +154,9 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
     # Create a sandbox, using the instance ID as the session ID to avoid conflicts
     sandbox = DockerSSHBox(sid=str(instance['id']) + '_' + str(os.getpid()))
 
+    # Set up the task environment (TODO(super-dainiu): add support for conda environments. Currently, we use the default environment and it's very slow)
+    # sandbox.execute(f'conda activate {ID2CONDA[instance["github_id"]]}')
+
     # Clone the task repo into the sandbox
     repo_url = instance['github']
     repo_name = repo_url.split('/')[-1]
@@ -142,16 +164,16 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
     sandbox.execute(f'chmod -R 777 /workspace/{repo_name}')
 
     # Navigate to the task's code path
-    task_path = os.path.join('/workspace', repo_name, instance['path'])
+    task_path = os.path.join('/workspace', repo_name, instance['path'][2:])
     sandbox.execute(f'cd {task_path}')
 
     # Prepare the task instruction
     instruction = (
-        f'Please complete the Machine Learning task in the following repository: {repo_url}\n\n'
+        f'Please complete the Machine Learning task in the following repository: {repo_name}\n\n'
         f'The task is: {instance["task"]}\n\n'
         f'{instance["instruction"]}\n\n'
-        'You should only modify files under the specified path in the repo.\n\n'
-        f'You can find the task repo at: {instance["path"]}\n\n'
+        'You should create a script named `run.sh` under the specified path in the repo to run the task.\n\n'
+        f'You can find the task repo at: {task_path}\n\n'
         + (
             'Here is the prefix code for the task:\n'
             '```python\n'
@@ -173,24 +195,29 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         )
     )
 
-    # Evaluate the agent's changes
-    eval_cmd = instance['output']
-    logger.info(f'Running evaluation command: {eval_cmd}')
+    # Evaluate the agent's script
+    eval_script = os.path.join(task_path, 'run.sh')
+    logger.info(f'Running evaluation script: {eval_script}')
 
     try:
-        exit_code, eval_output = sandbox.execute(eval_cmd)
+        exit_code, eval_output = sandbox.execute(f'bash {eval_script}')
     except Exception as e:
-        logger.error(f'Error running evaluation command: {e}')
+        logger.error(f'Error running evaluation script: {e}')
         exit_code = -1
         eval_output = ''
 
     if exit_code != 0:
-        logger.warning(f'Evaluation command failed with exit code {exit_code}')
+        logger.warning(f'Evaluation script failed with exit code {exit_code}')
         logger.warning(f'Output: {eval_output}')
-        metrics = {}
+        metrics = {
+            'success': 0,
+        }
     else:
-        metrics = parse_eval_output(eval_output)
-        logger.info(f'Evaluation metrics: {metrics}')
+        logger.info(f'Evaluation script succeeded with exit code {exit_code}')
+        logger.info(f'Output: {eval_output}')
+        metrics = {
+            'success': 1,
+        }
 
     # Save the output
     output = {
@@ -219,7 +246,7 @@ if __name__ == '__main__':
         '-s',
         '--eval-split',
         type=str,
-        default='full',
+        default='quarter',
         choices=['full', 'quarter'],
         help='data split to evaluate on, either full or quarter',
     )
@@ -285,7 +312,10 @@ if __name__ == '__main__':
     if os.path.exists(output_file):
         with open(output_file, 'r') as f:
             for line in f:
-                data = json.loads(line)
+                try:
+                    data = json.loads(line)
+                except json.JSONDecodeError:
+                    print(f'Error parsing line: {line}')
                 finished_instance_ids.add(data['instance_id'])
         logger.warning(
             f'Output file {output_file} already exists. Loaded {len(finished_instance_ids)} finished instances.'
@@ -325,27 +355,21 @@ if __name__ == '__main__':
     logger.info(f'Using {num_workers} workers for evaluation.')
 
     try:
-        with open(output_file, 'w') as f:
-            with ProcessPoolExecutor(num_workers) as executor:
-                futures = []
-                for _, instance in ml_bench.iterrows():
-                    future = executor.submit(
-                        process_instance,
-                        instance,
-                        agent_class,
-                        metadata,
-                        eval_output_dir,
-                    )
-                    future.add_done_callback(update_progress)
-                    futures.append(future)
+        with ProcessPoolExecutor(num_workers) as executor:
+            futures = []
+            for _, instance in ml_bench.iterrows():
+                future = executor.submit(
+                    process_instance,
+                    instance,
+                    agent_class,
+                    metadata,
+                    eval_output_dir,
+                )
+                future.add_done_callback(update_progress)
+                futures.append(future)
 
-                for future in futures:
-                    try:
-                        output = future.result()
-                        f.write(json.dumps(output, indent=2) + '\n')
-                        logger.info(f'Finished instance {output["instance_id"]}')
-                    except Exception as e:
-                        logger.exception(f'Error processing instance: {e}')
+            for future in futures:
+                output = future.result()
     except KeyboardInterrupt:
         print('KeyboardInterrupt received. Cleaning up...')
         cleanup()

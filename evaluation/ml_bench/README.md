@@ -26,6 +26,7 @@ max_iterations = 100
 cache_dir = "/tmp/cache"
 ssh_hostname = "localhost"
 enable_auto_lint = true
+run_as_devin = false
 sandbox_container_image = "ghcr.io/super-dainiu/ml_bench:latest" # Use the [latest/stable] image from the ML-Bench repository
 
 # TODO: Change these to the model you want to evaluate
