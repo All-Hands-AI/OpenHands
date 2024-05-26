@@ -28,24 +28,19 @@ class ShortTermHistory(list[tuple[Action, Observation]]):
             super().append(event)
 
     def replace_events_with_summary(self, summary_action: AgentSummarizeAction):
-        start_id = None
-        end_id = None
+        start_id = summary_action._chunk_start
+        end_id = summary_action._chunk_end
 
-        for i, event in enumerate(self):
-            if event[0].id == summary_action._chunk_start:
-                start_id = i
-            if event[1].id == summary_action._chunk_end:
-                end_id = i
-                break
+        # valid start and end indices for the chunk
+        if start_id == -1 or end_id == -1 or start_id > end_id or end_id > len(self):
+            # weird, but just return
+            return
 
-        if start_id is not None and end_id is not None:
-            # create the SummaryObservation based on the AgentSummarizeAction
-            summary_observation = SummaryObservation(content=summary_action.summary)
+        # create the SummaryObservation based on the AgentSummarizeAction
+        summary_observation = SummaryObservation(content=summary_action.summary)
 
-            # clean up the action if we're doing it this way, this is odd
-            summary_action.summary = ''
+        # clean up the action if we're doing it this way, this is odd
+        summary_action.summary = ''
 
-            # replace the events in the specified range with the summary action and observation
-            self[start_id:end_id] = [(summary_action, summary_observation)]
-
-        # we didn't have the chunk, just return
+        # replace the events in the specified range with the summary action and observation
+        self[start_id:end_id] = [(summary_action, summary_observation)]
