@@ -20,16 +20,26 @@ mkdir -p $FILE_DIR/swe_bench_format
 echo "Evaluating $FILE_NAME @ $FILE_DIR"
 echo "Merged output file with fine-grained report will be saved to $FILE_DIR"
 
-docker run --rm \
-    -v $FILE_DIR:/swe_bench_output \
-    -e MINICONDA3=/swe_util/miniforge3 \
-    -e OD_SWE_BENCH=/swe_util/OD-SWE-bench \
-    -e EVAL_DATA_DIR=/swe_util/eval_data \
-    -w /swe_util \
-    ghcr.io/opendevin/eval-swe-bench:full-v1.2.1 \
-    bash -c "./get_agent_report.sh --output-file /swe_bench_output/$FILE_NAME \
-    --agent-name CodeActAgent \
-    --dataset swe-bench-test-lite \
-    --experiment-name test_experiment \
-    --merge-report && cp -r /swe_util/eval_data/eval_logs/test_experiment/* /swe_bench_output/eval_logs \
-    && cp -r /swe_util/eval_data/outputs/* /swe_bench_output/swe_bench_format/"
+SWEBENCH_TASKS=$(realpath evaluation/swe_bench/eval_workspace/eval_data/instances/swe-bench-test-lite.json)
+python3 evaluation/swe_bench/scripts/eval/convert_od_output_to_swe_json.py $PROCESS_FILEPATH
+# replace .jsonl with .swebench.jsonl in filename
+SWEBENCH_FORMAT_JSONL=${PROCESS_FILEPATH/.jsonl/.swebench.jsonl}
+echo "SWEBENCH_FORMAT_JSONL: $SWEBENCH_FORMAT_JSONL"
+# assert that the file exists
+if [ ! -f $SWEBENCH_FORMAT_JSONL ]; then
+    echo "Error: $SWEBENCH_FORMAT_JSONL does not exist. There is probably an error in the conversion process."
+    exit 1
+fi
+SWEBENCH_FORMAT_JSONL=$(realpath $SWEBENCH_FORMAT_JSONL)
+
+python evaluation/swe_bench/eval_workspace/SWE-bench-docker/run_evaluation.py \
+    --predictions_path $SWEBENCH_FORMAT_JSONL \
+    --log_dir $FILE_DIR/eval_logs \
+    --swe_bench_tasks $SWEBENCH_TASKS \
+    --namespace aorwall
+
+python evaluation/swe_bench/eval_workspace/SWE-bench-docker/generate_report.py \
+ --predictions_path $SWEBENCH_FORMAT_JSONL \
+ --log_dir $FILE_DIR/eval_logs \
+ --output_dir $FILE_DIR \
+ --swe_bench_tasks $SWEBENCH_TASKS

@@ -126,6 +126,12 @@ If you want to evaluate existing results, you should first run this to clone exi
 git clone https://huggingface.co/spaces/OpenDevin/evaluation evaluation/evaluation_outputs
 ```
 
+To prepare for swe-bench evaluation, you should pull evaluation docker from [aorwall/SWE-bench-docker](https://github.com/aorwall/SWE-bench-docker) and download swe-bench data by running:
+
+```bash
+evaluation/swe_bench/scripts/eval/prep_eval.sh
+```
+
 Then you can run the following:
 ```bash
 # ./evaluation/swe_bench/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL

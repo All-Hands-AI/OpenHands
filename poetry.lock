@@ -1438,6 +1438,23 @@ typer = ">=0.12.3"
 uvicorn = {version = ">=0.15.0", extras = ["standard"]}
 
 [[package]]
+name = "fastcore"
+version = "1.5.38"
+description = "Python supercharged for fastai development"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "fastcore-1.5.38-py3-none-any.whl", hash = "sha256:327f011613c986e7f627f63d1d9993c8d6de116c586df94d85806fbfbe45e52a"},
+    {file = "fastcore-1.5.38.tar.gz", hash = "sha256:7732403778de9bc2b25bf52617c7fbb9e7ae96010f534a5f00f7e6dee73f1d39"},
+]
+
+[package.dependencies]
+packaging = "*"
+
+[package.extras]
+dev = ["matplotlib", "nbclassic", "nbdev (>=0.2.39)", "numpy", "pandas", "pillow", "torch"]
+
+[[package]]
 name = "filelock"
 version = "3.14.0"
 description = "A platform independent file lock."
@@ -1753,6 +1770,25 @@ docs = ["furo", "repoze.sphinx.autointerface", "sphinx", "sphinxcontrib-programo
 monitor = ["psutil (>=5.7.0)"]
 recommended = ["cffi (>=1.12.2)", "dnspython (>=1.16.0,<2.0)", "idna", "psutil (>=5.7.0)"]
 test = ["cffi (>=1.12.2)", "coverage (>=5.0)", "dnspython (>=1.16.0,<2.0)", "idna", "objgraph", "psutil (>=5.7.0)", "requests"]
+
+[[package]]
+name = "ghapi"
+version = "1.0.5"
+description = "A python client for the GitHub API"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "ghapi-1.0.5-py3-none-any.whl", hash = "sha256:24a851b7a256861f173437c807701beac3857a84979067ddc25a8555868ce6dc"},
+    {file = "ghapi-1.0.5.tar.gz", hash = "sha256:57f170d50d4e6cbf475d234056c54b1ea7bb917b96b0a19798f6127d8a0c40b1"},
+]
+
+[package.dependencies]
+fastcore = ">=1.5.4"
+packaging = "*"
+pip = "*"
+
+[package.extras]
+dev = ["jsonref", "matplotlib"]
 
 [[package]]
 name = "gitdb"
@@ -4505,6 +4541,17 @@ typing = ["typing-extensions"]
 xmp = ["defusedxml"]
 
 [[package]]
+name = "pip"
+version = "24.0"
+description = "The PyPA recommended tool for installing Python packages."
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pip-24.0-py3-none-any.whl", hash = "sha256:ba0d021a166865d2265246961bec0152ff124de910c5cc39f1156ce3fa7c69dc"},
+    {file = "pip-24.0.tar.gz", hash = "sha256:ea9bd1a847e8c5774a5777bb398c19e80bcd4e2aa16a4b301b718fe6f593aba2"},
+]
+
+[[package]]
 name = "platformdirs"
 version = "4.2.2"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a `user data dir`."
@@ -6175,6 +6222,28 @@ files = [
 ]
 
 [[package]]
+name = "swebench"
+version = "1.1.5"
+description = "The official SWE-bench package - a benchmark for evaluating LMs on software engineering"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "swebench-1.1.5-py3-none-any.whl", hash = "sha256:02043774baf2320b25a94963b5085de8a3b2dcdb356e7bfb71b1e4e8b677141f"},
+    {file = "swebench-1.1.5.tar.gz", hash = "sha256:d01d5fb329ce7f85c0572712372b71766248a4a635646ad5c53dadab25ee3fe0"},
+]
+
+[package.dependencies]
+beautifulsoup4 = "*"
+chardet = "*"
+datasets = "*"
+ghapi = "*"
+GitPython = "*"
+python-dotenv = "*"
+requests = "*"
+rich = "*"
+tqdm = "*"
+
+[[package]]
 name = "sympy"
 version = "1.12"
 description = "Computer algebra system (CAS) in Python"
@@ -7548,4 +7617,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "05410bbac602e5b5a91986d9f58c06bab86f63a87ffa62f5e52de94b472a1910"
+content-hash = "d7e9c7e55757fd1db64aef7128f95741bc1ccffb35c953508b53c6d13b489d8b"

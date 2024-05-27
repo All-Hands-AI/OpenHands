@@ -67,12 +67,12 @@ reportlab = "*"
 concurrency = ["gevent"]
 
 
-
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
 retry = "*"
 evaluate = "*"
+swebench = "*"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
