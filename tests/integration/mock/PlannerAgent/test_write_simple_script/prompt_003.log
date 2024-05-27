@@ -70,6 +70,11 @@ ten actions--more happened before that.
     }
   },
   {
+    "observation": "null",
+    "content": "",
+    "extras": {}
+  },
+  {
     "source": "agent",
     "action": "add_task",
     "args": {
@@ -80,6 +85,11 @@ ten actions--more happened before that.
     }
   },
   {
+    "observation": "null",
+    "content": "",
+    "extras": {}
+  },
+  {
     "source": "agent",
     "action": "modify_task",
     "args": {
@@ -87,6 +97,11 @@ ten actions--more happened before that.
       "state": "in_progress",
       "thought": ""
     }
+  },
+  {
+    "observation": "null",
+    "content": "",
+    "extras": {}
   }
 ]
 

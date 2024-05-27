@@ -68,6 +68,11 @@ ten actions--more happened before that.
     }
   },
   {
+    "observation": "null",
+    "content": "",
+    "extras": {}
+  },
+  {
     "source": "agent",
     "action": "add_task",
     "args": {
@@ -76,6 +81,11 @@ ten actions--more happened before that.
       "subtasks": [],
       "thought": ""
     }
+  },
+  {
+    "observation": "null",
+    "content": "",
+    "extras": {}
   }
 ]
 
