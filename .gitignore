@@ -204,7 +204,7 @@ cache
 # configuration
 config.toml
 config.toml.bak
-evaluation/swe_bench/eval_workspace
+evaluation/swe_bench/eval_workspace*
 evaluation/outputs
 evaluation/evaluation_outputs
 test_results*
