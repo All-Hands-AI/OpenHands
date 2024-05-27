@@ -16,7 +16,6 @@ from datasets import load_dataset
 from tqdm import tqdm
 
 import agenthub
-from evaluation.swe_bench.swe_env_box import SWEBenchSSHBox
 from opendevin.controller.state.state import State
 from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
