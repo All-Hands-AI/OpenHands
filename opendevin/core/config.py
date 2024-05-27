@@ -66,6 +66,8 @@ class LLMConfig(metaclass=Singleton):
     custom_llm_provider: str | None = None
     max_input_tokens: int | None = None
     max_output_tokens: int | None = None
+    input_cost_per_token: float | None = None
+    output_cost_per_token: float | None = None
 
     def defaults_to_dict(self) -> dict:
         """
