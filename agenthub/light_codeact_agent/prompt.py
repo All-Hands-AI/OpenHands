@@ -19,7 +19,7 @@ ls
 ```
 When using the echo command to write code to a file, you should use the -e flag to interpret backslash escapes, like this:
 ```bash
-echo -e "import os\nprint(os.getcwd())" > script.py
+echo -e "for i in range(1, 11, 2):\n    print(i)" > odd_numbers.py
 ```
 You should attempt only ONE thing at a time, using either python or bash, and wait for the observation before proceeding to the next step.
 To ensure the code runs without errors, you should always:
