@@ -278,7 +278,7 @@ IMPORTANT TIPS:
 
 6. When editing files, it is easy to accidentally specify a wrong line number or to write code with incorrect indentation. Always check the code after you issue an edit to make sure that it reflects what you wanted to accomplish. If it didn't, issue another command to fix it.
 
-(Current directory: /workspace/{workspace_dir_name})
+[Current directory: /workspace/{workspace_dir_name}]
 """
 
     # NOTE: You can actually set slightly different instruction for different agents
