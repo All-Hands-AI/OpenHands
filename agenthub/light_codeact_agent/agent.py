@@ -195,8 +195,8 @@ class LightCodeActAgent(Agent):
         response = self.llm.do_completion(
             messages=messages,
             stop=[
-                '```python',
-                '```bash',
+                '</execute_ipython>',
+                '</execute_bash>',
             ],
             temperature=0.2,
         )
@@ -209,7 +209,9 @@ class LightCodeActAgent(Agent):
         if finish_command := re.search(r'<finish>.*</finish>', action_str, re.DOTALL):
             thought = action_str.replace(finish_command.group(0), '').strip()
             return AgentFinishAction(thought=thought)
-        if bash_command := re.search(r'```bash\n(.*?)\n```', action_str, re.DOTALL):
+        if bash_command := re.search(
+            r'<execute_bash>(.*?)</execute_bash>', action_str, re.DOTALL
+        ):
             # remove the command from the action string to get thought
             thought = action_str.replace(bash_command.group(0), '').strip()
             # a command was found
@@ -218,7 +220,9 @@ class LightCodeActAgent(Agent):
             if command_group.strip() == 'exit':
                 return AgentFinishAction()
             return CmdRunAction(command=command_group, thought=thought)
-        elif python_code := re.search(r'```python\n(.*?)\n```', action_str, re.DOTALL):
+        elif python_code := re.search(
+            r'<execute_ipython>(.*?)</execute_ipython>', action_str, re.DOTALL
+        ):
             # a code block was found
             code_group = python_code.group(1).strip()
             thought = action_str.replace(python_code.group(0), '').strip()
