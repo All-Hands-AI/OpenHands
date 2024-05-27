@@ -125,7 +125,7 @@ def split_bash_commands(commands):
                 if not heredoc_trigger and current_command:
                     result.append(''.join(current_command).strip())
                     current_command = []
-            elif char == '<' and commands[i : i + 2] == '<<':
+            elif char == '<' and commands[i: i + 2] == '<<':
                 # Detect heredoc
                 state = IN_HEREDOC
                 i += 2  # Skip '<<'
@@ -135,7 +135,7 @@ def split_bash_commands(commands):
                 while commands[i] not in [' ', '\n']:
                     i += 1
                 heredoc_trigger = commands[start:i]
-                current_command.append(commands[start - 2 : i])  # Include '<<'
+                current_command.append(commands[start - 2: i])  # Include '<<'
                 continue  # Skip incrementing i at the end of the loop
             current_command.append(char)
 
@@ -152,14 +152,14 @@ def split_bash_commands(commands):
         elif state == IN_HEREDOC:
             current_command.append(char)
             if (
-                char == '\n'
-                and heredoc_trigger
-                and commands[i + 1 : i + 1 + len(heredoc_trigger) + 1]
-                == heredoc_trigger + '\n'
+                    char == '\n'
+                    and heredoc_trigger
+                    and commands[i + 1: i + 1 + len(heredoc_trigger) + 1]
+                    == heredoc_trigger + '\n'
             ):
                 # Check if the next line starts with the heredoc trigger followed by a newline
                 i += (
-                    len(heredoc_trigger) + 1
+                        len(heredoc_trigger) + 1
                 )  # Move past the heredoc trigger and newline
                 current_command.append(
                     heredoc_trigger + '\n'
@@ -181,8 +181,9 @@ def split_bash_commands(commands):
 
     return result
 
+
 # CACHE_IMAGE = 'sandbox_ubuntu18:cache'
-CACHE_IMAGE = 'sd12:cache'
+CACHE_IMAGE = 'sandbox:cache'
 
 
 class DockerSSHBox(Sandbox):
@@ -201,11 +202,11 @@ class DockerSSHBox(Sandbox):
     background_commands: dict[int, Process] = {}
 
     def __init__(
-        self,
-        container_image: str | None = None,
-        timeout: int = config.sandbox_timeout,
-        sid: str | None = None,
-        use_cache: bool = False,
+            self,
+            container_image: str | None = None,
+            timeout: int = config.sandbox_timeout,
+            sid: str | None = None,
+            use_cache: bool = False,
     ):
         logger.info(
             f'SSHBox is running as {"opendevin" if self.run_as_devin else "root"} user with USER_ID={self.user_id} in the sandbox'
@@ -427,10 +428,10 @@ class DockerSSHBox(Sandbox):
         return bg_cmd.read_logs()
 
     def _send_interrupt(
-        self,
-        cmd: str,
-        prev_output: str = '',
-        ignore_last_output: bool = False,
+            self,
+            cmd: str,
+            prev_output: str = '',
+            ignore_last_output: bool = False,
     ) -> tuple[int, str]:
         logger.exception('Command timed out, killing process...', exc_info=False)
         # send a SIGINT to the process
@@ -445,7 +446,7 @@ class DockerSSHBox(Sandbox):
         )
 
     def execute(
-        self, cmd: str, stream: bool = False, timeout: int | None = None
+            self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
         timeout = timeout or self.timeout
         commands = split_bash_commands(cmd)
@@ -755,7 +756,7 @@ if __name__ == '__main__':
     plugins = [MambaRequirement()]
     # plugins_str = get_requirements_str(plugins)
     ssh_box.init_plugins(plugins)
-    ssh_box.commit_docker_cache('sd12','cache')
+    ssh_box.commit_docker_cache('sandbox', 'cache')
     logger.info(
         '--- AgentSkills COMMAND DOCUMENTATION ---\n'
         f'{AgentSkillsRequirement().documentation}\n'
