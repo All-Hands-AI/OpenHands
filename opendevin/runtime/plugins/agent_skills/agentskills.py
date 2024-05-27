@@ -88,12 +88,21 @@ def _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=False):
         start = max(0, CURRENT_LINE - WINDOW // 2)
         end = min(len(lines), CURRENT_LINE + WINDOW // 2)
         output = ''
+
+        # only display this when there's line above
+        if start > 0:
+            n_above_lines = start
+            output += f'({n_above_lines} more lines above)\n'
         for i in range(start, end):
             _new_line = f'{i + 1}|{lines[i]}'
             if not _new_line.endswith('\n'):
                 _new_line += '\n'
             output += _new_line
+        if end < len(lines):
+            n_below_lines = len(lines) - end
+            output += f'({n_below_lines} more lines below)\n'
         output = output.rstrip()
+
         if return_str:
             return output
         else:
@@ -270,13 +279,19 @@ def edit_file(start: int, end: int, content: str) -> None:
             print('[This is how your edit would have looked if applied]')
             print('-------------------------------------------------')
             cur_line = (n_edited_lines // 2) + start
-            _print_window(CURRENT_FILE, cur_line, WINDOW)
+            _print_window(CURRENT_FILE, cur_line, 10)
             print('-------------------------------------------------\n')
 
             print('[This is the original code before your edit]')
             print('-------------------------------------------------')
-            _print_window(original_file_backup_path, CURRENT_LINE, WINDOW)
+            _print_window(original_file_backup_path, cur_line, 10)
             print('-------------------------------------------------')
+
+            print(
+                'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+                'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
+                'DO NOT re-run the same failed edit command. Running it again will lead to the same error.'
+            )
 
             # recover the original file
             with open(original_file_backup_path, 'r') as fin, open(
