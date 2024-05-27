@@ -21,7 +21,7 @@ COMMAND="export PYTHONPATH=evaluation/agent_bench:\$PYTHONPATH && poetry run pyt
   --llm-config $MODEL_CONFIG \
   --max-iterations 1 \
   --max-chars 10000000 \
-  --eval-num-workers 1 \
+  --eval-num-workers 5 \
   --eval-note $AGENT_VERSION"
 
 if [ -n "$EVAL_LIMIT" ]; then

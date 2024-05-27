@@ -62,16 +62,6 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def copytree(src, dst, symlinks=False, ignore=None):
-    for item in os.listdir(src):
-        s = os.path.join(src, item)
-        d = os.path.join(dst, item)
-        if os.path.isdir(s):
-            shutil.copytree(s, d, symlinks, ignore)
-        else:
-            shutil.copy2(s, d)
-
-
 def process_instance(
     instance,
     agent_class,
@@ -85,6 +75,11 @@ def process_instance(
 
     inst_id = instance.instance_id
     question = instance.description
+    # create a directory for the instance's workspace
+    instance_workspace = str(os.path.join(config.workspace_base, inst_id))
+    if os.path.exists(instance_workspace):
+        shutil.rmtree(instance_workspace)
+    os.makedirs(instance_workspace, exist_ok=True)
 
     # Set up the logger properly, so you can run multiprocessing to parallel the evaluation
     if reset_logger:
@@ -132,14 +127,16 @@ def process_instance(
     sandbox = DockerSSHBox()
     if config.is_mock:
         sandbox.start_ssh_session()
+    sandbox.execute(f'cd {inst_id}')
 
     init_cmd = instance.init
     if init_cmd is not None:
         scpt_name = os.path.join('.', f'{instance.instance_id}_init.sh')
-        host_scpt_name = os.path.join(config.workspace_base, scpt_name)
+        host_scpt_name = os.path.join(instance_workspace, scpt_name)
         create_sh_file(host_scpt_name, init_cmd)
         logger.info(f'Running init script: {scpt_name}')
-        sandbox.execute(scpt_name)
+        _, init_res = sandbox.execute(scpt_name)
+        logger.info(f'Init script result: {init_res}')
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     if config.is_mock:
@@ -178,7 +175,7 @@ def process_instance(
     get_agent_result_cmd = instance.get_agent_result
     if get_agent_result_cmd is not None:
         scpt_name = os.path.join('.', f'{instance.instance_id}_get_agent_result.sh')
-        host_scpt_name = os.path.join(config.workspace_base, scpt_name)
+        host_scpt_name = os.path.join(instance_workspace, scpt_name)
         create_sh_file(host_scpt_name, get_agent_result_cmd)
         logger.info(f'Running get agent result cmd: {scpt_name}')
         _, agent_answer = sandbox.execute(scpt_name)
@@ -197,7 +194,7 @@ def process_instance(
         get_ground_truth_cmd = instance.get_ground_truth
         if get_ground_truth_cmd is not None:
             scpt_name = os.path.join('.', f'{instance.instance_id}_get_ground_truth.sh')
-            host_scpt_name = os.path.join(config.workspace_base, scpt_name)
+            host_scpt_name = os.path.join(instance_workspace, scpt_name)
             create_sh_file(host_scpt_name, get_ground_truth_cmd)
             logger.info(f'Running get ground truth cmd: {scpt_name}')
             _, final_ans = sandbox.execute(scpt_name)
