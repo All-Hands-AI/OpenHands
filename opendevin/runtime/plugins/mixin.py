@@ -42,7 +42,8 @@ class PluginMixin:
             logger.info(
                 f'Initializing plugin [{requirement.name}] by executing [{abs_path_to_bash_script}] in the sandbox.'
             )
-            exit_code, output = self.execute(abs_path_to_bash_script, stream=True)
+            # exit_code, output = self.execute(abs_path_to_bash_script, stream=True)
+            exit_code, output = self.execute(f'{abs_path_to_bash_script} > /workspace/output_and_error.txt 2>&1', stream=True)
             if isinstance(output, CancellableStream):
                 for line in output:
                     if line.endswith('\n'):

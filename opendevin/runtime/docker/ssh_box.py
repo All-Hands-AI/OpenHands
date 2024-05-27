@@ -19,7 +19,7 @@ from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
 from opendevin.runtime.docker.process import DockerProcess, Process
-from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
+from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement, MambaRequirement, PluginRequirement
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.utils import find_available_tcp_port
 
@@ -181,6 +181,9 @@ def split_bash_commands(commands):
 
     return result
 
+# CACHE_IMAGE = 'sandbox_ubuntu18:cache'
+CACHE_IMAGE = 'sd12:cache'
+
 
 class DockerSSHBox(Sandbox):
     instance_id: str
@@ -202,6 +205,7 @@ class DockerSSHBox(Sandbox):
         container_image: str | None = None,
         timeout: int = config.sandbox_timeout,
         sid: str | None = None,
+        use_cache: bool = False,
     ):
         logger.info(
             f'SSHBox is running as {"opendevin" if self.run_as_devin else "root"} user with USER_ID={self.user_id} in the sandbox'
@@ -226,6 +230,15 @@ class DockerSSHBox(Sandbox):
             if container_image is None
             else container_image
         )
+        logger.info(self.container_image)
+
+        images = self.docker_client.images.list()
+        for image in images:
+            if CACHE_IMAGE in image.tags:
+                self.container_image = CACHE_IMAGE
+                logger.info("use local image cache:" + self.container_image)
+                break
+
         self.container_name = self.container_name_prefix + self.instance_id
 
         # set up random user password
@@ -261,6 +274,15 @@ class DockerSSHBox(Sandbox):
         self.execute('git config --global user.email "opendevin@opendevin.ai"')
         atexit.register(self.close)
         super().__init__()
+
+    def commit_docker_cache(self, repo, tag):
+        try:
+            commit_result = self.container.commit(repository=repo, tag=tag)
+            logger.info("image cache build successfully!")
+            logger.info(f"Docker container committed: {commit_result}")
+        except Exception as e:
+            logger.exception("Failed to commit Docker container", exc_info=True)
+            raise e
 
     def add_to_env(self, key: str, value: str):
         super().add_to_env(key, value)
@@ -677,7 +699,7 @@ class DockerSSHBox(Sandbox):
             )
             logger.info('Container started')
         except Exception as ex:
-            logger.exception('Failed to start container', exc_info=False)
+            logger.exception('Failed to start container: ' + str(ex), exc_info=False)
             raise ex
 
         # wait for container to be ready
@@ -713,6 +735,10 @@ class DockerSSHBox(Sandbox):
                 pass
 
 
+def get_requirements_str(requirements: list[PluginRequirement]) -> str:
+    return '#'.join(map(lambda x: x.name, requirements))
+
+
 if __name__ == '__main__':
     try:
         ssh_box = DockerSSHBox()
@@ -725,7 +751,11 @@ if __name__ == '__main__':
     )
 
     # Initialize required plugins
-    ssh_box.init_plugins([AgentSkillsRequirement(), JupyterRequirement()])
+    # plugins = [MambaRequirement(), AgentSkillsRequirement(), JupyterRequirement()]
+    plugins = [MambaRequirement()]
+    # plugins_str = get_requirements_str(plugins)
+    ssh_box.init_plugins(plugins)
+    ssh_box.commit_docker_cache('sd12','cache')
     logger.info(
         '--- AgentSkills COMMAND DOCUMENTATION ---\n'
         f'{AgentSkillsRequirement().documentation}\n'
