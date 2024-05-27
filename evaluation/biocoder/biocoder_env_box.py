@@ -1,52 +1,32 @@
 import sys
-import uuid
 
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.plugins import JupyterRequirement, SWEAgentCommandsRequirement
 
-SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.0'
+BIOCODER_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.0'
 
 
-class SWEBenchSSHBox(DockerSSHBox):
+class BiocoderSSHBox(DockerSSHBox):
     def __init__(
         self,
         container_image: str,
         timeout: int = 120,
         sid: str | None = None,
-        swe_instance_id: str | None = None,
-        swe_instance: dict | None = None,
+        biocoder_instance_id: str | None = None,
+        biocoder_instance: dict | None = None,
         skip_workspace_mount: bool = True,
     ):
-        if swe_instance_id is None:
-            raise ValueError('swe_instance_id must be provided!')
-        self.swe_instance_id = swe_instance_id
-        self.swe_instance = swe_instance
+        if biocoder_instance_id is None:
+            raise ValueError('biocoder_instance_id must be provided')
+        self.biocoder_instance_id = biocoder_instance_id
+        self.biocoder_instance = biocoder_instance
         self.skip_workspace_mount = skip_workspace_mount
 
         assert (
             container_image is not None
-        ), 'container_image is required for SWEBenchSSHBox!'
-        # Need to run as root to use SWEBench container
-        sid = f'swe_bench_{swe_instance_id}' + str(uuid.uuid4())  # unique session id
-        super().__init__(container_image, timeout, sid)
-
-        exit_code, output = self.execute('mv ~/.bashrc ~/.bashrc.bak')
-        assert exit_code == 0, f'Failed to backup ~/.bashrc: {output}'
-
-        exit_code, output = self.execute(
-            f"echo 'export SWE_INSTANCE_ID={self.swe_instance_id}' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo \"alias git='git --no-pager'\" >> ~/.bashrc"
-        )
-        assert exit_code == 0, f'Failed to set SWE_INSTANCE_ID in ~/.bashrc: {output}'
-
-        logger.info('Sourcing swe_entry.sh to set up environment variables')
-        # larger timeout for SWEBench init to account for long-running installations (e.g., require compilation)
-        exit_code, output = self.execute('source /swe_util/swe_entry.sh', timeout=600)
-        logger.info('exit code: %d', exit_code)
-        logger.info(output)
-        assert exit_code == 0, f'Failed to source swe_entry.sh: {output}'
-        logger.info('Sourced swe_entry.sh successfully')
+        ), 'container_image is required for BiocoderBenchSSHBox!'
 
     @property
     def volumes(self):
@@ -58,19 +38,22 @@ class SWEBenchSSHBox(DockerSSHBox):
             }
         return super().volumes
 
+    def execute_and_check(self, cmd: str, error_msg: str) -> tuple[int, str]:
+        exit_code, output = self.execute(cmd)
+        if exit_code != 0:
+            logger.error(error_msg)
+            sys.exit(1)
+        return exit_code, output
+
     @classmethod
     def get_box_for_instance(
         cls,
         instance,
-        workspace_dir_name=None,
         n_tries=5,
         skip_workspace_mount: bool = True,
         workspace_mount_path: str | None = None,
-    ) -> 'SWEBenchSSHBox':
-        if workspace_dir_name is None:
-            workspace_dir_name = f"{instance['repo']}__{instance['version']}".replace(
-                '/', '__'
-            )
+    ) -> 'BiocoderSSHBox':
+        """This method initializes a container image, then runs some initialization commands"""
         config.workspace_base = workspace_mount_path
         config.workspace_mount_path = workspace_mount_path
 
@@ -78,48 +61,33 @@ class SWEBenchSSHBox(DockerSSHBox):
         config.enable_auto_lint = True
 
         sandbox = cls(
-            container_image=SWE_BENCH_CONTAINER_IMAGE,
+            container_image=BIOCODER_BENCH_CONTAINER_IMAGE,
             swe_instance_id=instance['instance_id'],
             swe_instance=instance,
             skip_workspace_mount=skip_workspace_mount,
         )
+
         logger.info(f"SSH box started for instance {instance['instance_id']}.")
-
-        # cd to the repo
-        exit_code, output = sandbox.execute(f'cd /workspace/{workspace_dir_name}')
-        if exit_code != 0:
-            logger.error(f'Failed to cd to the repo: {output}')
-            sys.exit(1)
-
-        # remove all future commits & remote following Devin
-        # https://www.cognition-labs.com/post/swe-bench-technical-report
-        exit_code, output = sandbox.execute('git reset --hard')
-        if exit_code != 0:
-            logger.error(f'Failed to reset the repo: {output}')
-            sys.exit(1)
-        exit_code, output = sandbox.execute(
-            'for remote_name in $(git remote); do git remote remove "${remote_name}"; done'
+        # cd to the workspace
+        exit_code, output = sandbox.execute_and_check(
+            'cd /workspace', 'Failed to cd to workspace'
         )
-        if exit_code != 0:
-            logger.error(f'Failed to remove remote: {output}')
-            sys.exit(1)
+        logger.info(f'cd to workspace: {output}')
+
+        # download repository archive
+        repository_url = (
+            f"https://biocoder.lilbillbiscuit.com/repositories/{instance['repo']}.zip"
+        )
+        exit_code, output = sandbox.execute_and_check(
+            'wget -O repo.zip ' + repository_url, 'Failed to download the repository'
+        )
+        logger.info(f'Downloaded the repository: {output}')
+        exit_code, output = sandbox.execute_and_check(
+            'unzip repo.zip', 'Failed to unzip the repository'
+        )
+        logger.info(f'Unzipped the repository: {output}')
+
         return sandbox
-
-    def get_diff_patch(self):
-        # add everything to the index
-        exit_code, output = self.execute('git add --all')
-        if exit_code != 0:
-            logger.error('Failed to add everything to the index')
-            return ''
-
-        # get the git diff
-        exit_code, git_patch = self.execute(
-            f'git diff --no-color --cached {self.swe_instance["base_commit"]}'
-        )
-        if exit_code != 0:
-            logger.error('Failed to get git diff')
-            return ''
-        return git_patch
 
 
 if __name__ == '__main__':
@@ -138,7 +106,7 @@ if __name__ == '__main__':
         'environment_setup_commit': '419a78300f7cd27611196e1e464d50fd0385ff27',
     }
 
-    sandbox = SWEBenchSSHBox.get_box_for_instance(instance=EXAMPLE_INSTANCE)
+    sandbox = BiocoderSSHBox.get_box_for_instance(instance=EXAMPLE_INSTANCE)
 
     # in actual eval, this will be initialized by the controller
     sandbox.init_plugins([JupyterRequirement(), SWEAgentCommandsRequirement()])
