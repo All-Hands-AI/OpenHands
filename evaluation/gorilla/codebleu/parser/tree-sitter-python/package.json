@@ -1,0 +1,33 @@
+{
+  "name": "tree-sitter-python",
+  "version": "0.20.2",
+  "description": "Python grammar for tree-sitter",
+  "main": "bindings/node",
+  "keywords": [
+    "parser",
+    "lexer"
+  ],
+  "author": "Max Brunsfeld",
+  "license": "MIT",
+  "dependencies": {
+    "nan": "^2.15.0"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.20.1"
+  },
+  "scripts": {
+    "build": "tree-sitter generate && node-gyp build",
+    "test": "tree-sitter test && script/parse-examples",
+    "parse": "tree-sitter parse",
+    "test-windows": "tree-sitter test"
+  },
+  "repository": "https://github.com/tree-sitter/tree-sitter-python",
+  "tree-sitter": [
+    {
+      "scope": "source.python",
+      "file-types": [
+        "py"
+      ]
+    }
+  ]
+}

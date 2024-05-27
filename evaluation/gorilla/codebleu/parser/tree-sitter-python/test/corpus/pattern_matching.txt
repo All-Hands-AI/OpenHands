@@ -1,0 +1,588 @@
+================================================================================
+Matching specific values
+================================================================================
+
+match command.split():
+    case ["quit"]:
+        print("Goodbye!")
+        quit_game()
+    case ["look"]:
+        current_room.describe()
+    case ["get", obj]:
+        character.get(obj, current_room)
+    case ["go", direction]:
+        current_room = current_room.neighbor(direction)
+    # The rest of your commands go here
+--------------------------------------------------------------------------------
+
+(module
+  (match_statement
+    (call
+      (attribute
+        (identifier)
+        (identifier))
+      (argument_list))
+    (case_clause
+      (case_pattern
+        (list
+          (string (string_content))))
+      (block
+        (expression_statement
+          (call
+            (identifier)
+            (argument_list
+              (string (string_content)))))
+        (expression_statement
+          (call
+            (identifier)
+            (argument_list)))))
+    (case_clause
+      (case_pattern
+        (list
+          (string (string_content))))
+      (block
+        (expression_statement
+          (call
+            (attribute
+              (identifier)
+              (identifier))
+            (argument_list)))))
+    (case_clause
+      (case_pattern
+        (list
+          (string (string_content))
+          (identifier)))
+      (block
+        (expression_statement
+          (call
+            (attribute
+              (identifier)
+              (identifier))
+            (argument_list
+              (identifier)
+              (identifier))))))
+    (case_clause
+      (case_pattern
+        (list
+          (string (string_content))
+          (identifier)))
+      (block
+        (expression_statement
+          (assignment
+            (identifier)
+            (call
+              (attribute
+                (identifier)
+                (identifier))
+              (argument_list
+                (identifier))))))))
+  (comment))
+
+================================================================================
+Matching multiple values
+================================================================================
+
+match command.split():
+    case ["drop", *objects]:
+        for obj in objects:
+            character.drop(obj, current_room)
+--------------------------------------------------------------------------------
+
+(module
+  (match_statement
+    (call
+      (attribute
+        (identifier)
+        (identifier))
+      (argument_list))
+    (case_clause
+      (case_pattern
+        (list
+          (string (string_content))
+          (list_splat
+            (identifier))))
+      (block
+        (for_statement
+          (identifier)
+          (identifier)
+          (block
+            (expression_statement
+              (call
+                (attribute
+                  (identifier)
+                  (identifier))
+                (argument_list
+                  (identifier)
+                  (identifier))))))))))
+
+================================================================================
+Adding a wild card
+================================================================================
+
+match command.split():
+# ^ conditional
+    case ["quit"]: ... # Code omitted for brevity
+    case ["go", direction]: pass
+    case ["drop", *objects]: pass
+    case _:
+        print(f"Sorry, I couldn't understand {command!r}")
+
+--------------------------------------------------------------------------------
+
+(module
+  (match_statement
+    (call
+      (attribute
+        (identifier)
+        (identifier))
+      (argument_list))
+    (comment)
+    (case_clause
+      (case_pattern
+        (list
+          (string (string_content))))
+      (block
+        (expression_statement
+          (ellipsis))
+        (comment)))
+    (case_clause
+      (case_pattern
+        (list
+          (string (string_content))
+          (identifier)))
+      (block
+        (pass_statement)))
+    (case_clause
+      (case_pattern
+        (list
+          (string (string_content))
+          (list_splat
+            (identifier))))
+      (block
+        (pass_statement)))
+    (case_clause
+      (case_pattern
+        (identifier))
+      (block
+        (expression_statement
+          (call
+            (identifier)
+            (argument_list
+              (string
+                (string_content)
+                (interpolation
+                  (identifier)
+                  (type_conversion))))))))))
+
+================================================================================
+Or patterns
+================================================================================
+
+match command.split():
+    case ["north"] | ["go", "north"]:
+        current_room = current_room.neighbor("north")
+    case ["get", obj] | ["pick", "up", obj] | ["pick", obj, "up"]:
+        pass
+--------------------------------------------------------------------------------
+
+(module
+  (match_statement
+    (call
+      (attribute
+        (identifier)
+        (identifier))
+      (argument_list))
+    (case_clause
+      (case_pattern
+        (binary_operator
+          (list
+            (string (string_content)))
+          (list
+            (string (string_content))
+            (string (string_content)))))
+      (block
+        (expression_statement
+          (assignment
+            (identifier)
+            (call
+              (attribute
+                (identifier)
+                (identifier))
+              (argument_list
+                (string (string_content))))))))
+    (case_clause
+      (case_pattern
+        (binary_operator
+          (binary_operator
+            (list
+              (string (string_content))
+              (identifier))
+            (list
+              (string (string_content))
+              (string (string_content))
+              (identifier)))
+          (list
+            (string (string_content))
+            (identifier)
+            (string (string_content)))))
+      (block
+        (pass_statement)))))
+
+================================================================================
+As patterns
+================================================================================
+match command.split():
+    case ["go", ("north" | "south" | "east" | "west") as direction]:
+        current_room = current_room.neighbor(direction)
+
+--------------------------------------------------------------------------------
+
+(module
+  (match_statement
+    (call
+      (attribute
+        (identifier)
+        (identifier))
+      (argument_list))
+    (case_clause
+      (case_pattern
+        (list
+          (string (string_content))
+          (as_pattern
+            (parenthesized_expression
+              (binary_operator
+                (binary_operator
+                  (binary_operator
+                    (string (string_content))
+                    (string (string_content)))
+                  (string (string_content)))
+                (string (string_content))))
+            (as_pattern_target
+              (identifier)))))
+      (block
+        (expression_statement
+          (assignment
+            (identifier)
+            (call
+              (attribute
+                (identifier)
+                (identifier))
+              (argument_list
+                (identifier)))))))))
+
+================================================================================
+Actually not match
+================================================================================
+match = 2
+match, a = 2, 3
+match: int = secret
+x, match = 2, "hey, what's up?"
+*match, last = [1, 2, 3]
+def foo(**match): pass
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (assignment
+      (identifier)
+      (integer)))
+  (expression_statement
+    (assignment
+      (pattern_list
+        (identifier)
+        (identifier))
+      (expression_list
+        (integer)
+        (integer))))
+  (expression_statement
+    (assignment
+      (identifier)
+      (type
+        (identifier))
+      (identifier)))
+  (expression_statement
+    (assignment
+      (pattern_list
+        (identifier)
+        (identifier))
+      (expression_list
+        (integer)
+        (string (string_content)))))
+  (expression_statement
+    (assignment
+      (pattern_list
+        (list_splat_pattern
+          (identifier))
+        (identifier))
+      (list
+        (integer)
+        (integer)
+        (integer))))
+  (function_definition
+    (identifier)
+    (parameters
+      (dictionary_splat_pattern
+        (identifier)))
+    (block
+      (pass_statement))))
+
+================================================================================
+Match is match but not pattern matching
+================================================================================
+
+a = [match]
+match = [match]
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (assignment
+      (identifier)
+      (list
+        (identifier))))
+  (expression_statement
+    (assignment
+      (identifier)
+      (list
+        (identifier)))))
+
+================================================================================
+Match kwargs
+================================================================================
+
+field = call(match=r".*\.txt$")
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (assignment
+      (identifier)
+      (call
+        (identifier)
+        (argument_list
+          (keyword_argument
+            (identifier)
+            (string (string_content))))))))
+
+================================================================================
+Match kwargs 2
+================================================================================
+
+field = match(match=match, match)
+
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (assignment
+      (identifier)
+      (call
+        (identifier)
+        (argument_list
+          (keyword_argument
+            (identifier)
+            (identifier))
+          (identifier))))))
+
+================================================================================
+Case used as identifier
+================================================================================
+
+a = [case]
+case = [case]
+just_in_case = call_me(case=True)
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (assignment
+      (identifier)
+      (list
+        (identifier))))
+  (expression_statement
+    (assignment
+      (identifier)
+      (list
+        (identifier))))
+  (expression_statement
+    (assignment
+      (identifier)
+      (call
+        (identifier)
+        (argument_list
+          (keyword_argument
+            (identifier)
+            (true)))))))
+
+================================================================================
+If guards
+================================================================================
+
+match 0:
+    case 0 if False:
+        x = False
+    case 0 if True:
+        x = True
+--------------------------------------------------------------------------------
+
+(module
+  (match_statement
+    (integer)
+    (case_clause
+      (case_pattern
+        (integer))
+      (if_clause
+        (false))
+      (block
+        (expression_statement
+          (assignment
+            (identifier)
+            (false)))))
+    (case_clause
+      (case_pattern
+        (integer))
+      (if_clause
+        (true))
+      (block
+        (expression_statement
+          (assignment
+            (identifier)
+            (true)))))))
+
+================================================================================
+Comma separated cases
+================================================================================
+match (0, 1, 2):
+    case 0,1:
+        x = 0
+    case 0, *x:
+        x = 0
+--------------------------------------------------------------------------------
+
+(module
+  (match_statement
+    (tuple
+      (integer)
+      (integer)
+      (integer))
+    (case_clause
+      (case_pattern
+        (integer))
+      (case_pattern
+        (integer))
+      (block
+        (expression_statement
+          (assignment
+            (identifier)
+            (integer)))))
+    (case_clause
+      (case_pattern
+        (integer))
+      (case_pattern
+        (identifier))
+      (block
+        (expression_statement
+          (assignment
+            (identifier)
+            (integer)))))))
+
+================================================================================
+case terminating in comma
+================================================================================
+match x,:
+    case *x,:
+        y = 0
+--------------------------------------------------------------------------------
+
+(module
+  (match_statement
+    (identifier)
+    (case_clause
+      (case_pattern
+        (identifier))
+      (block
+        (expression_statement
+          (assignment
+            (identifier)
+            (integer)))))))
+
+================================================================================
+Multiple match patterns
+================================================================================
+
+match ..., ...:
+    case a, b:
+        return locals()
+
+--------------------------------------------------------------------------------
+
+(module
+  (match_statement
+    (ellipsis)
+    (ellipsis)
+    (case_clause
+      (case_pattern
+        (identifier))
+      (case_pattern
+        (identifier))
+      (block
+        (return_statement
+          (call
+            (identifier)
+            (argument_list)))))))
+
+================================================================================
+Match match, case case
+================================================================================
+match = case = 0
+match match:
+    case case:
+        x = 0
+--------------------------------------------------------------------------------
+
+(module
+  (expression_statement
+    (assignment
+      (identifier)
+      (assignment
+        (identifier)
+        (integer))))
+  (match_statement
+    (identifier)
+    (case_clause
+      (case_pattern
+        (identifier))
+      (block
+        (expression_statement
+          (assignment
+            (identifier)
+            (integer)))))))
+
+================================================================================
+Walrus match (Issue #150)
+================================================================================
+if match := re.fullmatch(r"(-)?(\d+:)?\d?\d:\d\d(\.\d*)?", time, flags=re.ASCII):
+    return 42
+--------------------------------------------------------------------------------
+
+(module
+  (if_statement
+    (named_expression
+      (identifier)
+      (call
+        (attribute
+          (identifier)
+          (identifier))
+        (argument_list
+          (string (string_content))
+          (identifier)
+          (keyword_argument
+            (identifier)
+            (attribute
+              (identifier)
+              (identifier))))))
+    (block
+      (return_statement
+        (integer)))))
