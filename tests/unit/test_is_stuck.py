@@ -55,18 +55,22 @@ class TestAgentController:
 
         hello_action = MessageAction(content='Hello', wait_for_response=False)
         hello_action._id = 2
-        hello_observation = Observation(content='Response 1')
+        hello_observation = NullObservation('')
         controller.state.history.append((hello_action, hello_observation))
 
         cmd_action_1 = CmdRunAction(command='ls')
         cmd_action_1._id = 3
-        null_observation_1 = NullObservation(content='')
+        null_observation_1 = CmdOutputObservation(
+            content='', command='ls', command_id=cmd_action_1._id
+        )
         null_observation_1._cause = cmd_action_1._id
         controller.state.history.append((cmd_action_1, null_observation_1))
 
         cmd_action_2 = CmdRunAction(command='ls')
         cmd_action_2._id = 4
-        null_observation_2 = NullObservation(content='')
+        null_observation_2 = CmdOutputObservation(
+            content='', command='ls', command_id=cmd_action_2._id
+        )
         null_observation_2._cause = cmd_action_2._id
         controller.state.history.append((cmd_action_2, null_observation_2))
 
@@ -75,13 +79,17 @@ class TestAgentController:
 
         cmd_action_3 = CmdRunAction(command='ls')
         cmd_action_3._id = 5
-        null_observation_3 = NullObservation(content='')
+        null_observation_3 = CmdOutputObservation(
+            content='', command='ls', command_id=cmd_action_3._id
+        )
         null_observation_3._cause = cmd_action_3._id
         controller.state.history.append((cmd_action_3, null_observation_3))
 
         cmd_action_4 = CmdRunAction(command='ls')
         cmd_action_4._id = 6
-        null_observation_4 = NullObservation(content='')
+        null_observation_4 = CmdOutputObservation(
+            content='', command='ls', command_id=cmd_action_4._id
+        )
         null_observation_4._cause = cmd_action_4._id
         controller.state.history.append((cmd_action_4, null_observation_4))
 

@@ -276,64 +276,108 @@ class AgentController:
 
         # filter out MessageAction with source='user' from history
         filtered_history = [
-            _tuple
-            for _tuple in self.state.history.get_tuples()
+            event
+            for event in self.state.history
             if not (
-                isinstance(_tuple[0], MessageAction)
-                and _tuple[0].source == EventSource.USER
+                (isinstance(event, MessageAction) and event.source == EventSource.USER)
+                or
+                # there might be some NullAction or NullObservation in the history at least for now
+                isinstance(event, NullAction)
+                or isinstance(event, NullObservation)
             )
         ]
 
-        if len(filtered_history) < 4:
-            return False
+        # check if the last four actions or observations are too repetitive
+        last_actions: list[Event] = []
+        last_observations: list[Event] = []
+        # retrieve the last four actions and observations starting from the end of history, wherever they are
+        for event in reversed(filtered_history):
+            if isinstance(event, Action) and len(last_actions) < 4:
+                last_actions.append(event)
+            elif isinstance(event, Observation) and len(last_observations) < 4:
+                last_observations.append(event)
 
-        # FIXME rewrite this to be more readable
+            if len(last_actions) == 4 and len(last_observations) == 4:
+                break
 
-        # Check if the last four (Action, Observation) tuples are too repetitive
-        last_four_tuples = filtered_history[-4:]
-
-        if all(
-            # (Action, Observation) tuples
-            # compare the last action to the last four actions
-            self._eq_no_pid(last_four_tuples[-1][0], _tuple[0])
-            for _tuple in last_four_tuples
-        ) and all(
-            # compare the last observation to the last four observations
-            self._eq_no_pid(last_four_tuples[-1][1], _tuple[1])
-            for _tuple in last_four_tuples
+        # are the last four actions the same?
+        if len(last_actions) == 4 and all(
+            self._eq_no_pid(last_actions[0], action) for action in last_actions
         ):
-            logger.warning('Action, Observation loop detected')
-            return True
-
-        # (action, error) tuples
-        if all(
-            self._eq_no_pid(last_four_tuples[-1][0], _tuple[0])
-            for _tuple in last_four_tuples
-        ):
-            # It repeats the same action, give it a chance, but not if:
-            if all(
-                isinstance(_tuple[1], ErrorObservation) for _tuple in last_four_tuples
+            # and the last four observations the same?
+            if len(last_observations) == 4 and all(
+                self._eq_no_pid(last_observations[0], observation)
+                for observation in last_observations
             ):
+                logger.warning('Action, Observation loop detected')
+                return True
+            # or, are the last four observations all errors?
+            elif all(isinstance(obs, ErrorObservation) for obs in last_observations):
                 logger.warning('Action, ErrorObservation loop detected')
                 return True
 
-        # check if the agent repeats the same (Action, Observation)
-        # every other step in the last six tuples
+        # check for repeated MessageActions with source=AGENT
+        # see if the agent is engaged in a good old monologue, telling itself the same thing over and over
+        agent_message_actions = [
+            event
+            for event in filtered_history
+            if isinstance(event, MessageAction) and event.source == EventSource.AGENT
+        ]
 
-        if len(filtered_history) >= 6:
-            last_six_tuples = filtered_history[-6:]
-            if (
-                # this pattern is every other step, like:
-                # (action_1, obs_1), (action_2, obs_2), (action_1, obs_1), (action_2, obs_2),...
-                self._eq_no_pid(last_six_tuples[-1][0], last_six_tuples[-3][0])
-                and self._eq_no_pid(last_six_tuples[-1][0], last_six_tuples[-5][0])
-                and self._eq_no_pid(last_six_tuples[-2][0], last_six_tuples[-4][0])
-                and self._eq_no_pid(last_six_tuples[-2][0], last_six_tuples[-6][0])
-                and self._eq_no_pid(last_six_tuples[-1][1], last_six_tuples[-3][1])
-                and self._eq_no_pid(last_six_tuples[-1][1], last_six_tuples[-5][1])
-                and self._eq_no_pid(last_six_tuples[-2][1], last_six_tuples[-4][1])
-                and self._eq_no_pid(last_six_tuples[-2][1], last_six_tuples[-6][1])
+        # last three message actions will do for this check
+        if len(agent_message_actions) >= 3:
+            last_agent_message_actions = agent_message_actions[-3:]
+            if all(
+                self._eq_no_pid(last_agent_message_actions[0], action)
+                for action in last_agent_message_actions
             ):
+                # check if there are any observations between the repeated MessageActions
+                # then it's not yet a loop, maybe it can recover
+                start_index = filtered_history.index(last_agent_message_actions[0])
+                end_index = filtered_history.index(last_agent_message_actions[-1])
+                if not any(
+                    isinstance(event, Observation)
+                    for event in filtered_history[start_index : end_index + 1]
+                ):
+                    logger.warning('Repeated MessageAction with source=AGENT detected')
+                    return True
+
+        # check if the agent repeats the same (Action, Observation)
+        # every other step in the last six steps
+        last_six_actions: list[Event] = []
+        last_six_observations: list[Event] = []
+
+        # the end of history is most interesting
+        for event in reversed(filtered_history):
+            if isinstance(event, Action) and len(last_six_actions) < 6:
+                last_six_actions.append(event)
+            elif isinstance(event, Observation) and len(last_six_observations) < 6:
+                last_six_observations.append(event)
+
+            if len(last_six_actions) == 6 and len(last_six_observations) == 6:
+                break
+
+        # this pattern is every other step, like:
+        # (action_1, obs_1), (action_2, obs_2), (action_1, obs_1), (action_2, obs_2),...
+        if len(last_six_actions) == 6 and len(last_six_observations) == 6:
+            actions_equal = (
+                # action_0 == action_2 == action_4
+                self._eq_no_pid(last_six_actions[0], last_six_actions[2])
+                and self._eq_no_pid(last_six_actions[0], last_six_actions[4])
+                # action_1 == action_3 == action_5
+                and self._eq_no_pid(last_six_actions[1], last_six_actions[3])
+                and self._eq_no_pid(last_six_actions[1], last_six_actions[5])
+            )
+            observations_equal = (
+                # obs_0 == obs_2 == obs_4
+                self._eq_no_pid(last_six_observations[0], last_six_observations[2])
+                and self._eq_no_pid(last_six_observations[0], last_six_observations[4])
+                # obs_1 == obs_3 == obs_5
+                and self._eq_no_pid(last_six_observations[1], last_six_observations[3])
+                and self._eq_no_pid(last_six_observations[1], last_six_observations[5])
+            )
+
+            if actions_equal and observations_equal:
                 logger.warning('Action, Observation pattern detected')
                 return True
 
