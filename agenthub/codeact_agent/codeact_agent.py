@@ -35,9 +35,6 @@ MINIMAL_MODE = True
 ENABLE_GITHUB = True
 SWE_MODE = True  # False
 
-print(f'MINIMAL_MODE: {MINIMAL_MODE}')
-print(f'SWE_MODE: {SWE_MODE}')
-
 
 def parse_response(response) -> str:
     action = response.choices[0].message.content
