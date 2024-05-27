@@ -80,7 +80,7 @@ def get_test_result(
 ) -> bool:
 
     gold_answer = ground_truth.replace('(', '').replace(')', '').strip()
-    answer_str = model_answer.strip() if model_answer is not None else ''
+    answer_str = model_answer.strip("'") if model_answer is not None else ''
     prediction = get_choice(answer_str)
 
     indicators = ['the correct option is', 'the correct answer is', 
@@ -184,9 +184,13 @@ def process_instance(
         raise ValueError('State should not be None.')
 
     final_message = ''
-    for act in reversed(state.history):
-        if isinstance(act, MessageAction):
-            final_message = act.content
+    messages = []
+    for action, obs in reversed(state.history):
+        # if isinstance(act, MessageAction):
+        messages.append(obs.content)
+        # print("obs.content:", obs.content)
+        if str(obs.content) in ["'A'", "'B'", "'C'"]:
+            final_message = obs.content
             break
         
     logger.info(
@@ -206,6 +210,8 @@ def process_instance(
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
+        "final_message": final_message,
+        "messages": messages,
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
@@ -263,11 +269,14 @@ if __name__ == '__main__':
     eval_note = ''
     if args.eval_note is not None:
         eval_note += '_N_' + args.eval_note
+    
+    start_time = time.strftime('%Y-%m-%d %H:%M:%S')
     eval_output_dir = os.path.join(
         args.eval_output_dir,
         'logic_reasoning',
         agent_class,
         model_name + '_maxiter_' + str(max_iterations) + eval_note,
+        # start_time
     )
 
     pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
@@ -283,7 +292,7 @@ if __name__ == '__main__':
         'model_name': model_name,
         'max_iterations': max_iterations,
         # 'eval_output_dir': eval_output_dir,
-        'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
+        'start_time': start_time,
         # get the commit id of current repo for reproduciblity
         # 'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
         # .decode('utf-8')
@@ -346,6 +355,7 @@ if __name__ == '__main__':
             f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]["result"]}'
         )
         output_fp.write(json.dumps(output) + '\n')
+        # json.dump(output, output_fp, indent=4)
         output_fp.flush()
 
     # This sets the multi-processing
