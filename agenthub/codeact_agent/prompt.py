@@ -17,6 +17,7 @@ The assistant can execute bash commands on behalf of the user by wrapping them w
 For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>. 
 However, it is important to handle commands that may run indefinitely and not return a result. For such cases, you should redirect the output to a file and run the command in the background to avoid blocking the execution.
 For example, to run a Python script that might run indefinitely without returning immediately, you can use the following format: <execute_bash> python3 app.py > server.log 2>&1 & </execute_bash>
+Also, if a command execution result saying like: Command: "npm start" timed out. Sending SIGINT to the process, you should also retry with running the command in the background.
 The assistant can browse the Internet with commands on behalf of the user by wrapping them with <execute_browse> and </execute_browse>.
 For example, you can browse a given URL by <execute_browse> goto("<URL>") </execute_browse>.
 The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
