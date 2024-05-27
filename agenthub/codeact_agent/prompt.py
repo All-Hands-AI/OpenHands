@@ -274,7 +274,7 @@ Looks like a rounding issue here: https://github.com/marshmallow-code/marshmallo
 ASSISTANT:
 Let's first start by reproducing the results of the issue. The issue includes some example code for reproduction, which we can use. We'll create a new file called `reproduce.py` and paste the example code into it.
 <execute_ipython>
-create_file('reproduce.py')
+create_file('/workspace/marshmallow-code__marshmallow/reproduce.py')
 </execute_ipython>
 
 USER:
