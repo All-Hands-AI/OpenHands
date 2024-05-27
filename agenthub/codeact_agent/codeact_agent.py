@@ -2,8 +2,9 @@ import re
 
 from agenthub.codeact_agent.prompt import (
     COMMAND_DOCS,
-    EXAMPLES,
+    COMPREHENSIVE_EXAMPLE,
     GITHUB_MESSAGE,
+    MINIMAL_SYSTEM_PREFIX,
     SYSTEM_PREFIX,
     SYSTEM_SUFFIX,
 )
@@ -29,6 +30,7 @@ from opendevin.runtime.plugins import (
     PluginRequirement,
 )
 
+MINIMAL_MODE = True
 ENABLE_GITHUB = True
 
 
@@ -105,6 +107,15 @@ def truncate_observation(observation: str, max_chars: int = 10_000) -> str:
     )
 
 
+def get_system_message() -> str:
+    if MINIMAL_MODE:
+        return f'{MINIMAL_SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
+    elif ENABLE_GITHUB:
+        return f'{SYSTEM_PREFIX}\n{GITHUB_MESSAGE}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
+    else:
+        return f'{SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
+
+
 class CodeActAgent(Agent):
     VERSION = '1.5'
     """
@@ -152,11 +163,7 @@ class CodeActAgent(Agent):
     ]
     jupyter_kernel_init_code: str = 'from agentskills import *'
 
-    system_message: str = (
-        f'{SYSTEM_PREFIX}\n{GITHUB_MESSAGE}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
-        if ENABLE_GITHUB
-        else f'{SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
-    )
+    system_message: str = get_system_message()
 
     def __init__(
         self,
@@ -170,6 +177,11 @@ class CodeActAgent(Agent):
         """
         super().__init__(llm)
         self.reset()
+        print(
+            '====== SYSTEM MESSAGE ======\n'
+            f'{self.system_message}\n'
+            '====== END ======'
+        )
 
     def reset(self) -> None:
         """
@@ -196,7 +208,7 @@ class CodeActAgent(Agent):
             {'role': 'system', 'content': self.system_message},
             {
                 'role': 'user',
-                'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!",
+                'content': f"Here is an example of how you can interact with the environment for task solving:\n{COMPREHENSIVE_EXAMPLE}\n\nNOW, LET'S START!",
             },
         ]
 
