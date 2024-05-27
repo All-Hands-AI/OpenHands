@@ -142,14 +142,19 @@ class DummyAgent(Agent):
 
     def step(self, state: State) -> Action:
         time.sleep(0.1)
-        history = state.history.get_tuples().copy()
+        history = state.history
         if state.iteration > 0:
             prev_step = self.steps[state.iteration - 1]
+
+            # a step is (action, observations list)
             if 'observations' in prev_step:
+                # one obs, or multiple obs if action is a background command
                 expected_observations = prev_step['observations']
+
+                # check if the history matches the expected observations
                 hist_start = len(history) - len(expected_observations)
                 for i in range(len(expected_observations)):
-                    hist_obs = event_to_dict(history[hist_start + i][1])
+                    hist_obs = event_to_dict(history[hist_start + i])
                     expected_obs = event_to_dict(expected_observations[i])
                     if (
                         'command_id' in hist_obs['extras']

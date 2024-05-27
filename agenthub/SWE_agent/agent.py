@@ -6,6 +6,7 @@ from opendevin.events.action import (
     FileWriteAction,
     MessageAction,
 )
+from opendevin.events.observation.observation import Observation
 from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
 
@@ -30,7 +31,7 @@ class SWEAgent(Agent):
 
     def __init__(self, llm: LLM):
         super().__init__(llm)
-        self.memory_window = 4
+        self.memory_window = 8
         self.max_retries = 2
         self.cur_file: str = ''
         self.cur_line: int = 0
@@ -62,13 +63,19 @@ class SWEAgent(Agent):
             2. Perform think-act - prompt model for action and reasoning
             3. Catch errors - ensure model takes action (5 attempts max)
         """
+
         # retrieve short term memories from state.history, up to memory_window
-        memory_window = min(self.memory_window, len(state.history.get_tuples()))
+        memory_window = min(self.memory_window, len(state.history))
         running_memory: list[str] = []
-        for prev_action, obs in state.history.get_tuples()[-memory_window:]:
-            running_memory.append(
-                MEMORY_FORMAT(event_to_memory(prev_action), event_to_memory(obs))
-            )
+        events = state.history[-memory_window:]
+        for event in events:
+            if isinstance(event, Action):
+                prev_action = event
+            elif isinstance(event, Observation):
+                obs = event
+                running_memory.append(
+                    MEMORY_FORMAT(event_to_memory(prev_action), event_to_memory(obs))
+                )
 
         goal = state.get_current_user_intent()
 

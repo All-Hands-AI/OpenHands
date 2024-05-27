@@ -21,6 +21,8 @@ from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import CmdRunAction, MessageAction
+from opendevin.events.action.action import Action
+from opendevin.events.observation.observation import Observation
 from opendevin.events.serialization.event import event_to_dict
 
 DATASET_CACHE_DIR = '~/.cache/open-devin/evals/gaia'
@@ -178,16 +180,25 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         'ground_truth': instance['Final answer'],
     }
 
+    # history is now available as a list[Event], rather than list of pairs of (Action, Observation)
+    # for compatibility with the existing output format, we can remake the pairs here
+    # remove when it becomes unnecessary
+    history_tuples = []
+    prev_action = None
+    for event in state.history:
+        if isinstance(event, Action):
+            prev_action = event
+        elif isinstance(event, Observation):
+            history_tuples.append((event_to_dict(prev_action), event_to_dict(event)))
+            prev_action = None
+
     # Save the output
     output = {
         'instance_id': instance['task_id'],
         'instance': instance,
         'instruction': instance['Question'],
         'metadata': metadata,
-        'history': [
-            (event_to_dict(action), event_to_dict(obs))
-            for action, obs in state.history.get_tuples()
-        ],
+        'history': history_tuples,
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
