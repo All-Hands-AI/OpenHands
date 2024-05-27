@@ -200,7 +200,9 @@ def create_file(filename: str) -> None:
     """
     global CURRENT_FILE, CURRENT_LINE
     if os.path.exists(filename):
-        raise FileExistsError(f"File '{filename}' already exists.")
+        raise FileExistsError(
+            f"File '{filename}' already exists. Use a different name."
+        )
 
     with open(filename, 'w') as file:
         file.write('\n')
