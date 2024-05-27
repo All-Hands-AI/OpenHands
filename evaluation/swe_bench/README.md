@@ -15,7 +15,7 @@ In [OpenDevin-SWE-Bench fork](https://github.com/OpenDevin/OD-SWE-bench.git) (mo
 **We pack everything you need for SWE-Bench evaluation into one, gigantic, docker image.** To use it:
 
 ```bash
-docker pull ghcr.io/opendevin/eval-swe-bench:full-v1.0
+docker pull ghcr.io/opendevin/eval-swe-bench:full-v1.2.1
 ```
 
 The Docker image contains several important directories:
@@ -68,7 +68,7 @@ temperature = 0.0
 
 ## Test if your environment works
 
-Make sure your Docker daemon is running, and you have pulled the `eval-swe-bench:full-v1.0`
+Make sure your Docker daemon is running, and you have pulled the `eval-swe-bench:full-v1.2`
 docker image. Then run this python script:
 
 ```bash
@@ -104,6 +104,17 @@ then your command would be:
 ```bash
 ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview CodeActAgent 10
 ```
+
+If you would like to specify a list of tasks you'd like to benchmark on, you could
+create a `config.toml` under `./evaluation/swe_bench/` folder, and put a list
+attribute named `selected_ids`, e.g.
+
+```toml
+selected_ids = ['sphinx-doc__sphinx-8721', 'sympy__sympy-14774', 'scikit-learn__scikit-learn-10508']
+```
+
+Then only these tasks (rows whose `instance_id` is in the above list) will be evaluated.
+In this case, `eval_limit` option applies to tasks that are in the `selected_ids` list.
 
 ## Evaluate Generated Patches
 

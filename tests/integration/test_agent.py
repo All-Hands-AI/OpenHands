@@ -8,14 +8,21 @@ import pytest
 from opendevin.controller.state.state import State
 from opendevin.core.main import main
 from opendevin.core.schema import AgentState
+from opendevin.events.action import (
+    AgentFinishAction,
+    MessageAction,
+)
 
 workspace_base = os.getenv('WORKSPACE_BASE')
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'CodeActAgent'
-    and os.getenv('SANDBOX_TYPE').lower() == 'exec',
-    reason='CodeActAgent does not support exec sandbox since exec sandbox is NOT stateful',
+    os.getenv('AGENT') == 'BrowsingAgent',
+    reason='BrowsingAgent is a specialized agent',
+)
+@pytest.mark.skipif(
+    os.getenv('AGENT') == 'CodeActAgent' and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    reason='CodeActAgent only supports ssh sandbox which is stateful',
 )
 def test_write_simple_script():
     task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
@@ -36,13 +43,16 @@ def test_write_simple_script():
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'CodeActAgent'
-    and os.getenv('SANDBOX_TYPE').lower() == 'exec',
-    reason='CodeActAgent does not support exec sandbox since exec sandbox is NOT stateful',
+    os.getenv('AGENT') == 'BrowsingAgent',
+    reason='BrowsingAgent is a specialized agent',
 )
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'SWEAgent',
-    reason='SWEAgent is not capable of this task right now',
+    os.getenv('AGENT') == 'CodeActAgent' and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    reason='CodeActAgent only supports ssh sandbox which is stateful',
+)
+@pytest.mark.skipif(
+    os.getenv('AGENT') == 'MonologueAgent' or os.getenv('AGENT') == 'PlannerAgent',
+    reason='We only keep basic tests for MonologueAgent and PlannerAgent',
 )
 @pytest.mark.skipif(
     os.getenv('SANDBOX_TYPE') == 'local',
@@ -124,3 +134,17 @@ def test_ipython_module():
     assert (
         content.strip() == '1.0.9'
     ), f'Expected content "1.0.9", but got "{content.strip()}"'
+
+
+@pytest.mark.skipif(
+    os.getenv('AGENT') != 'BrowsingAgent',
+    reason='currently only BrowsingAgent is capable of searching the internet',
+)
+def test_browse_internet(http_server):
+    # Execute the task
+    task = 'Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.'
+    final_state: State = asyncio.run(main(task, exit_on_message=True))
+    assert final_state.agent_state == AgentState.STOPPED
+    assert isinstance(final_state.history[-1][0], AgentFinishAction)
+    assert isinstance(final_state.history[-2][0], MessageAction)
+    assert 'OpenDevin is all you need!' in final_state.history[-2][0].content

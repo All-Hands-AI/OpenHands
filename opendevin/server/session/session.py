@@ -1,11 +1,19 @@
+import asyncio
 import time
-from typing import Callable
 
 from fastapi import WebSocket, WebSocketDisconnect
 
+from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.schema import AgentState
+from opendevin.core.schema.action import ActionType
+from opendevin.events.action import ChangeAgentStateAction, NullAction
+from opendevin.events.event import Event, EventSource
+from opendevin.events.observation import AgentStateChangedObservation, NullObservation
+from opendevin.events.serialization import event_from_dict, event_to_dict
+from opendevin.events.stream import EventStreamSubscriber
 
-from .msg_stack import message_stack
+from .agent import AgentSession
 
 DEL_DELT_SEC = 60 * 60 * 5
 
@@ -15,13 +23,22 @@ class Session:
     websocket: WebSocket | None
     last_active_ts: int = 0
     is_alive: bool = True
+    agent_session: AgentSession
 
     def __init__(self, sid: str, ws: WebSocket | None):
         self.sid = sid
         self.websocket = ws
         self.last_active_ts = int(time.time())
+        self.agent_session = AgentSession(sid)
+        self.agent_session.event_stream.subscribe(
+            EventStreamSubscriber.SERVER, self.on_event
+        )
 
-    async def loop_recv(self, dispatch: Callable):
+    async def close(self):
+        self.is_alive = False
+        await self.agent_session.close()
+
+    async def loop_recv(self):
         try:
             if self.websocket is None:
                 return
@@ -31,24 +48,62 @@ class Session:
                 except ValueError:
                     await self.send_error('Invalid JSON')
                     continue
-
-                message_stack.add_message(self.sid, 'user', data)
-                action = data.get('action', None)
-                await dispatch(self.sid, action, data)
+                await self.dispatch(data)
         except WebSocketDisconnect:
-            self.is_alive = False
+            await self.close()
             logger.info('WebSocket disconnected, sid: %s', self.sid)
         except RuntimeError as e:
-            # WebSocket is not connected
-            if 'WebSocket is not connected' in str(e):
-                self.is_alive = False
+            await self.close()
             logger.exception('Error in loop_recv: %s', e)
+
+    async def _initialize_agent(self, data: dict):
+        await self.agent_session.event_stream.add_event(
+            ChangeAgentStateAction(AgentState.LOADING), EventSource.USER
+        )
+        await self.agent_session.event_stream.add_event(
+            AgentStateChangedObservation('', AgentState.LOADING), EventSource.AGENT
+        )
+        try:
+            await self.agent_session.start(data)
+        except Exception as e:
+            logger.exception(f'Error creating controller: {e}')
+            await self.send_error(
+                f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
+            )
+            return
+        await self.agent_session.event_stream.add_event(
+            ChangeAgentStateAction(AgentState.INIT), EventSource.USER
+        )
+
+    async def on_event(self, event: Event):
+        """Callback function for agent events.
+
+        Args:
+            event: The agent event (Observation or Action).
+        """
+        if isinstance(event, NullAction):
+            return
+        if isinstance(event, NullObservation):
+            return
+        if event.source == EventSource.AGENT and not isinstance(
+            event, (NullAction, NullObservation)
+        ):
+            await self.send(event_to_dict(event))
+
+    async def dispatch(self, data: dict):
+        action = data.get('action', '')
+        if action == ActionType.INIT:
+            await self._initialize_agent(data)
+            return
+        event = event_from_dict(data.copy())
+        await self.agent_session.event_stream.add_event(event, EventSource.USER)
 
     async def send(self, data: dict[str, object]) -> bool:
         try:
             if self.websocket is None or not self.is_alive:
                 return False
             await self.websocket.send_json(data)
+            await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True
         except WebSocketDisconnect:

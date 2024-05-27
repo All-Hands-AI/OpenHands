@@ -3,6 +3,7 @@ import logging
 import os
 import pathlib
 import platform
+import uuid
 from dataclasses import dataclass, field, fields, is_dataclass
 from types import UnionType
 from typing import Any, ClassVar, get_args, get_origin
@@ -19,6 +20,32 @@ load_dotenv()
 
 @dataclass
 class LLMConfig(metaclass=Singleton):
+    """
+    Configuration for the LLM model.
+
+    Attributes:
+        model: The model to use.
+        api_key: The API key to use.
+        base_url: The base URL for the API. This is necessary for local LLMs. It is also used for Azure embeddings.
+        api_version: The version of the API.
+        embedding_model: The embedding model to use.
+        embedding_base_url: The base URL for the embedding API.
+        embedding_deployment_name: The name of the deployment for the embedding API. This is used for Azure OpenAI.
+        aws_access_key_id: The AWS access key ID.
+        aws_secret_access_key: The AWS secret access key.
+        aws_region_name: The AWS region name.
+        num_retries: The number of retries to attempt.
+        retry_min_wait: The minimum time to wait between retries, in seconds. This is exponential backoff minimum. For models with very low limits, this can be set to 15-20.
+        retry_max_wait: The maximum time to wait between retries, in seconds. This is exponential backoff maximum.
+        timeout: The timeout for the API.
+        max_chars: The maximum number of characters to send to and receive from the API. This is a fallback for token counting, which doesn't work in all cases.
+        temperature: The temperature for the API.
+        top_p: The top p for the API.
+        custom_llm_provider: The custom LLM provider to use. This is undocumented in opendevin, and normally not used. It is documented on the litellm side.
+        max_input_tokens: The maximum number of input tokens. Note that this is currently unused, and the value at runtime is actually the total tokens in OpenAI (e.g. 128,000 tokens for GPT-4).
+        max_output_tokens: The maximum number of output tokens. This is sent to the LLM.
+    """
+
     model: str = 'gpt-3.5-turbo'
     api_key: str | None = None
     base_url: str | None = None
@@ -49,9 +76,34 @@ class LLMConfig(metaclass=Singleton):
             dict[f.name] = get_field_info(f)
         return dict
 
+    def __str__(self):
+        attr_str = []
+        for f in fields(self):
+            attr_name = f.name
+            attr_value = getattr(self, f.name)
+
+            if attr_name in ['api_key', 'aws_access_key_id', 'aws_secret_access_key']:
+                attr_value = '******' if attr_value else None
+
+            attr_str.append(f'{attr_name}={repr(attr_value)}')
+
+        return f"LLMConfig({', '.join(attr_str)})"
+
+    def __repr__(self):
+        return self.__str__()
+
 
 @dataclass
 class AgentConfig(metaclass=Singleton):
+    """
+    Configuration for the agent.
+
+    Attributes:
+        name: The name of the agent.
+        memory_enabled: Whether long-term memory (embeddings) is enabled.
+        memory_max_threads: The maximum number of threads indexing at the same time for embeddings.
+    """
+
     name: str = 'CodeActAgent'
     memory_enabled: bool = False
     memory_max_threads: int = 2
@@ -68,6 +120,36 @@ class AgentConfig(metaclass=Singleton):
 
 @dataclass
 class AppConfig(metaclass=Singleton):
+    """
+    Configuration for the app.
+
+    Attributes:
+        llm: The LLM configuration.
+        agent: The agent configuration.
+        runtime: The runtime environment.
+        file_store: The file store to use.
+        file_store_path: The path to the file store.
+        workspace_base: The base path for the workspace. Defaults to ./workspace as an absolute path.
+        workspace_mount_path: The path to mount the workspace. This is set to the workspace base by default.
+        workspace_mount_path_in_sandbox: The path to mount the workspace in the sandbox. Defaults to /workspace.
+        workspace_mount_rewrite: The path to rewrite the workspace mount path to.
+        cache_dir: The path to the cache directory. Defaults to /tmp/cache.
+        sandbox_container_image: The container image to use for the sandbox.
+        run_as_devin: Whether to run as devin.
+        max_iterations: The maximum number of iterations.
+        max_budget_per_task: The maximum budget allowed per task, beyond which the agent will stop.
+        e2b_api_key: The E2B API key.
+        sandbox_type: The type of sandbox to use. Options are: ssh, exec, e2b, local.
+        use_host_network: Whether to use the host network.
+        ssh_hostname: The SSH hostname.
+        disable_color: Whether to disable color. For terminals that don't support color.
+        sandbox_user_id: The user ID for the sandbox.
+        sandbox_timeout: The timeout for the sandbox.
+        github_token: The GitHub token.
+        debug: Whether to enable debugging.
+        enable_auto_lint: Whether to enable auto linting. This is False by default, for regular runs of the app. For evaluation, please set this to True.
+    """
+
     llm: LLMConfig = field(default_factory=LLMConfig)
     agent: AgentConfig = field(default_factory=AgentConfig)
     runtime: str = 'server'
@@ -85,6 +167,7 @@ class AppConfig(metaclass=Singleton):
     )
     run_as_devin: bool = True
     max_iterations: int = 100
+    max_budget_per_task: float | None = None
     e2b_api_key: str = ''
     sandbox_type: str = 'ssh'  # Can be 'ssh', 'exec', or 'e2b'
     use_host_network: bool = False
@@ -93,6 +176,7 @@ class AppConfig(metaclass=Singleton):
     sandbox_user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     sandbox_timeout: int = 120
     github_token: str | None = None
+    jwt_secret: str = uuid.uuid4().hex
     debug: bool = False
     enable_auto_lint: bool = (
         False  # once enabled, OpenDevin would lint files after editing
@@ -120,6 +204,22 @@ class AppConfig(metaclass=Singleton):
             else:
                 dict[f.name] = get_field_info(f)
         return dict
+
+    def __str__(self):
+        attr_str = []
+        for f in fields(self):
+            attr_name = f.name
+            attr_value = getattr(self, f.name)
+
+            if attr_name in ['e2b_api_key', 'github_token']:
+                attr_value = '******' if attr_value else None
+
+            attr_str.append(f'{attr_name}={repr(attr_value)}')
+
+        return f"AppConfig({', '.join(attr_str)}"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 def get_field_info(field):
@@ -306,6 +406,26 @@ finalize_config(config)
 def get_llm_config_arg(llm_config_arg: str):
     """
     Get a group of llm settings from the config file.
+
+    A group in config.toml can look like this:
+
+    ```
+    [gpt-3.5-for-eval]
+    model = 'gpt-3.5-turbo'
+    api_key = '...'
+    temperature = 0.5
+    num_retries = 10
+    ...
+    ```
+
+    The user-defined group name, like "gpt-3.5-for-eval", is the argument to this function. The function will load the LLMConfig object
+    with the settings of this group, from the config file, and set it as the LLMConfig object for the app.
+
+    Args:
+        llm_config_arg: The group of llm settings to get from the config.toml file.
+
+    Returns:
+        LLMConfig: The LLMConfig object with the settings from the config file.
     """
 
     # keep only the name, just in case
@@ -371,6 +491,13 @@ def get_parser():
         default=config.max_iterations,
         type=int,
         help='The maximum number of iterations to run the agent',
+    )
+    parser.add_argument(
+        '-b',
+        '--max-budget-per-task',
+        default=config.max_budget_per_task,
+        type=float,
+        help='The maximum budget allowed per task, beyond which the agent will stop.',
     )
     parser.add_argument(
         '-n',

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Ultimate Answer</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(to right, #1e3c72, #2a5298);
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+        #showButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #1e3c72;
+            background: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        #showButton:hover {
+            background: #f0f0f0;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>The Ultimate Answer</h1>
+        <p>Click the button to reveal the answer to life, the universe, and everything.</p>
+        <button id="showButton">Click me</button>
+        <div id="result"></div>
+    </div>
+    <script>
+        document.getElementById('showButton').addEventListener('click', function() {
+            document.getElementById('result').innerText = 'The answer is OpenDevin is all you need!';
+        });
+    </script>
+</body>
+</html>

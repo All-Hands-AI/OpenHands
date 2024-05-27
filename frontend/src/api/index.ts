@@ -1,9 +1,19 @@
-export async function fetchModels() {
-  const response = await fetch(`/api/litellm-models`);
-  return response.json();
+export interface FeedbackData {
+  email: string;
+  token: string;
+  feedback: "positive" | "negative";
+  trajectory: unknown[];
 }
 
-export async function fetchAgents() {
-  const response = await fetch(`/api/agents`);
-  return response.json();
-}
+export const sendFeedback = async (data: FeedbackData) =>
+  fetch(
+    "https://kttkfkoju5.execute-api.us-east-2.amazonaws.com/od-share-trajectory",
+    {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    },
+  );

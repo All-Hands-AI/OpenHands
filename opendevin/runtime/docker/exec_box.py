@@ -10,8 +10,8 @@ from glob import glob
 
 import docker
 
-from opendevin.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.config import config
+from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
@@ -107,7 +107,7 @@ class DockerExecBox(Sandbox):
     def __init__(
         self,
         container_image: str | None = None,
-        timeout: int = 120,
+        timeout: int = config.sandbox_timeout,
         sid: str | None = None,
     ):
         # Initialize docker client. Throws an exception if Docker is not reachable.

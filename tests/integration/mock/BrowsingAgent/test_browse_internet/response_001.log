@@ -1,0 +1,2 @@
+In order to accomplish my goal, I need to navigate to the localhost:8000 page.
+```goto('http://localhost:8000')```

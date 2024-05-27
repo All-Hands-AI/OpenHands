@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import sys
 import traceback
 from datetime import datetime
@@ -33,7 +34,7 @@ LOG_COLORS: Mapping[str, ColorType] = {
     'BACKGROUND LOG': 'blue',
     'ACTION': 'green',
     'OBSERVATION': 'yellow',
-    'INFO': 'cyan',
+    'DETAIL': 'cyan',
     'ERROR': 'red',
     'PLAN': 'light_magenta',
 }
@@ -48,9 +49,9 @@ class ColoredFormatter(logging.Formatter):
             time_str = colored(
                 self.formatTime(record, self.datefmt), LOG_COLORS[msg_type]
             )
-            name_str = colored(record.name, 'cyan')
-            level_str = colored(record.levelname, 'yellow')
-            if msg_type in ['ERROR', 'INFO']:
+            name_str = colored(record.name, LOG_COLORS[msg_type])
+            level_str = colored(record.levelname, LOG_COLORS[msg_type])
+            if msg_type in ['ERROR']:
                 return f'{time_str} - {name_str}:{level_str}: {record.filename}:{record.lineno}\n{msg_type_color}\n{msg}'
             return f'{time_str} - {msg_type_color}\n{msg}'
         elif msg_type == 'STEP':
@@ -71,6 +72,38 @@ file_formatter = logging.Formatter(
 llm_formatter = logging.Formatter('%(message)s')
 
 
+class SensitiveDataFilter(logging.Filter):
+    def filter(self, record):
+        # start with attributes
+        sensitive_patterns = [
+            'api_key',
+            'aws_access_key_id',
+            'aws_secret_access_key',
+            'e2b_api_key',
+            'github_token',
+        ]
+
+        # add env var names
+        env_vars = [attr.upper() for attr in sensitive_patterns]
+        sensitive_patterns.extend(env_vars)
+
+        # and some special cases
+        sensitive_patterns.append('LLM_API_KEY')
+        sensitive_patterns.append('SANDBOX_ENV_GITHUB_TOKEN')
+
+        # this also formats the message with % args
+        msg = record.getMessage()
+        record.args = ()
+
+        for attr in sensitive_patterns:
+            pattern = rf"{attr}='?([\w-]+)'?"
+            msg = re.sub(pattern, f"{attr}='******'", msg)
+
+        # passed with msg
+        record.msg = msg
+        return True
+
+
 def get_console_handler():
     """
     Returns a console handler for logging.
@@ -81,10 +114,11 @@ def get_console_handler():
     return console_handler
 
 
-def get_file_handler(log_dir=os.path.join(os.getcwd(), 'logs')):
+def get_file_handler(log_dir=None):
     """
     Returns a file handler for logging.
     """
+    log_dir = os.path.join(os.getcwd(), 'logs') if log_dir is None else log_dir
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime('%Y-%m-%d')
     file_name = f'opendevin_{timestamp}.log'
@@ -121,6 +155,7 @@ opendevin_logger = logging.getLogger('opendevin')
 opendevin_logger.setLevel(logging.INFO)
 opendevin_logger.addHandler(get_file_handler())
 opendevin_logger.addHandler(get_console_handler())
+opendevin_logger.addFilter(SensitiveDataFilter(opendevin_logger.name))
 opendevin_logger.propagate = False
 opendevin_logger.debug('Logging initialized')
 opendevin_logger.debug(

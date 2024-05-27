@@ -9,10 +9,10 @@ from opendevin.controller.state.state import State
 from opendevin.core.config import args, get_llm_config_arg
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
-from opendevin.events.action import ChangeAgentStateAction, MessageAction
+from opendevin.events import EventSource, EventStream, EventStreamSubscriber
+from opendevin.events.action import MessageAction
 from opendevin.events.event import Event
 from opendevin.events.observation import AgentStateChangedObservation
-from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 from opendevin.llm.llm import LLM
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.server.runtime import ServerRuntime
@@ -67,7 +67,7 @@ async def main(
             raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
 
         logger.info(
-            f'Running agent {args.agent_cls} (model: {llm_config.model}, llm_config: {llm_config}) with task: "{task}"'
+            f'Running agent {args.agent_cls} (model: {llm_config.model}, llm_config: {args.llm_config}) with task: "{task}"'
         )
 
         # create LLM instance with the given config
@@ -86,6 +86,7 @@ async def main(
     controller = AgentController(
         agent=agent,
         max_iterations=args.max_iterations,
+        max_budget_per_task=args.max_budget_per_task,
         max_chars=args.max_chars,
         event_stream=event_stream,
     )
@@ -93,9 +94,6 @@ async def main(
     runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
 
     await event_stream.add_event(MessageAction(content=task), EventSource.USER)
-    await event_stream.add_event(
-        ChangeAgentStateAction(agent_state=AgentState.RUNNING), EventSource.USER
-    )
 
     async def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):

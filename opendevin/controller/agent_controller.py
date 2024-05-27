@@ -13,6 +13,7 @@ from opendevin.core.exceptions import (
 )
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
+from opendevin.events import EventSource, EventStream, EventStreamSubscriber
 from opendevin.events.action import (
     Action,
     AddTaskAction,
@@ -23,6 +24,7 @@ from opendevin.events.action import (
     ModifyTaskAction,
     NullAction,
 )
+from opendevin.events.action.commands import CmdKillAction
 from opendevin.events.event import Event
 from opendevin.events.observation import (
     AgentDelegateObservation,
@@ -32,10 +34,10 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
-from opendevin.events.stream import EventSource, EventStream, EventStreamSubscriber
 
 MAX_ITERATIONS = config.max_iterations
 MAX_CHARS = config.llm.max_chars
+MAX_BUDGET_PER_TASK = config.max_budget_per_task
 
 
 class AgentController:
@@ -55,6 +57,7 @@ class AgentController:
         sid: str = 'default',
         max_iterations: int = MAX_ITERATIONS,
         max_chars: int = MAX_CHARS,
+        max_budget_per_task: float | None = MAX_BUDGET_PER_TASK,
         inputs: dict | None = None,
     ):
         """Initializes a new instance of the AgentController class.
@@ -65,6 +68,7 @@ class AgentController:
             sid: The session ID of the agent.
             max_iterations: The maximum number of iterations the agent can run.
             max_chars: The maximum number of characters the agent can output.
+            max_budget_per_task: The maximum budget (in USD) allowed per task, beyond which the agent will stop.
             inputs: The initial inputs to the agent.
         """
         self.id = sid
@@ -76,6 +80,7 @@ class AgentController:
         )
         self.max_iterations = max_iterations
         self.max_chars = max_chars
+        self.max_budget_per_task = max_budget_per_task
         self.agent_task = asyncio.create_task(self._start_step_loop())
 
     async def close(self):
@@ -87,8 +92,17 @@ class AgentController:
     def update_state_before_step(self):
         self.state.iteration += 1
 
-    def update_state_after_step(self):
+    async def update_state_after_step(self):
         self.state.updated_info = []
+        # update metrics especially for cost
+        self.state.metrics = self.agent.llm.metrics
+        if self.max_budget_per_task is not None:
+            current_cost = self.state.metrics.accumulated_cost
+            if current_cost > self.max_budget_per_task:
+                await self.report_error(
+                    f'Task budget exceeded. Current cost: {current_cost}, Max budget: {self.max_budget_per_task}'
+                )
+                await self.set_agent_state_to(AgentState.ERROR)
 
     async def report_error(self, message: str, exception: Exception | None = None):
         self.state.error = message
@@ -112,6 +126,7 @@ class AgentController:
             except Exception as e:
                 traceback.print_exc()
                 logger.error(f'Error while running the agent: {e}')
+                logger.error(traceback.format_exc())
                 await self.report_error(
                     'There was an unexpected error while running the agent', exception=e
                 )
@@ -125,10 +140,12 @@ class AgentController:
             await self.set_agent_state_to(event.agent_state)  # type: ignore
         elif isinstance(event, MessageAction):
             if event.source == EventSource.USER:
+                logger.info(event, extra={'msg_type': 'OBSERVATION'})
                 await self.add_history(event, NullObservation(''))
                 if self.get_agent_state() != AgentState.RUNNING:
                     await self.set_agent_state_to(AgentState.RUNNING)
             elif event.source == EventSource.AGENT and event.wait_for_response:
+                logger.info(event, extra={'msg_type': 'ACTION'})
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
         elif isinstance(event, AgentDelegateAction):
             await self.start_delegate(event)
@@ -155,6 +172,7 @@ class AgentController:
         logger.info(
             f'Setting agent({type(self.agent).__name__}) state from {self.state.agent_state} to {new_state}'
         )
+
         if new_state == self.state.agent_state:
             return
 
@@ -165,6 +183,10 @@ class AgentController:
         await self.event_stream.add_event(
             AgentStateChangedObservation('', self.state.agent_state), EventSource.AGENT
         )
+
+        if new_state == AgentState.INIT and self.state.resume_state:
+            await self.set_agent_state_to(self.state.resume_state)
+            self.state.resume_state = None
 
     def get_agent_state(self):
         """Returns the current state of the agent task."""
@@ -224,7 +246,7 @@ class AgentController:
 
         logger.info(action, extra={'msg_type': 'ACTION'})
 
-        self.update_state_after_step()
+        await self.update_state_after_step()
         if action.runnable:
             self._pending_action = action
         else:
@@ -240,36 +262,88 @@ class AgentController:
     def get_state(self):
         return self.state
 
+    def set_state(self, state: State):
+        self.state = state
+
     def _is_stuck(self):
         # check if delegate stuck
         if self.delegate and self.delegate._is_stuck():
             return True
-        if len(self.state.history) < 3:
+
+        # filter out MessageAction with source='user' from history
+        filtered_history = [
+            _tuple
+            for _tuple in self.state.history
+            if not (
+                isinstance(_tuple[0], MessageAction)
+                and _tuple[0].source == EventSource.USER
+            )
+        ]
+
+        if len(filtered_history) < 4:
             return False
 
-        # if the last three (Action, Observation) tuples are too repetitive
-        # the agent got stuck in a loop
+        # FIXME rewrite this to be more readable
+
+        # Check if the last four (Action, Observation) tuples are too repetitive
+        last_four_tuples = filtered_history[-4:]
+
         if all(
-            [
-                self.state.history[-i][0] == self.state.history[-3][0]
-                for i in range(1, 3)
-            ]
+            # (Action, Observation) tuples
+            # compare the last action to the last four actions
+            self._eq_no_pid(last_four_tuples[-1][0], _tuple[0])
+            for _tuple in last_four_tuples
+        ) and all(
+            # compare the last observation to the last four observations
+            self._eq_no_pid(last_four_tuples[-1][1], _tuple[1])
+            for _tuple in last_four_tuples
         ):
-            # it repeats same action, give it a chance, but not if:
+            logger.warning('Action, Observation loop detected')
+            return True
+
+        # (action, error) tuples
+        if all(
+            self._eq_no_pid(last_four_tuples[-1][0], _tuple[0])
+            for _tuple in last_four_tuples
+        ):
+            # It repeats the same action, give it a chance, but not if:
             if all(
-                isinstance(self.state.history[-i][1], NullObservation)
-                for i in range(1, 4)
+                isinstance(_tuple[1], ErrorObservation) for _tuple in last_four_tuples
             ):
-                # same (Action, NullObservation): like 'think' the same thought over and over
-                logger.warning('Action, NullObservation loop detected')
-                return True
-            elif all(
-                isinstance(self.state.history[-i][1], ErrorObservation)
-                for i in range(1, 4)
-            ):
-                # (NullAction, ErrorObservation): errors coming from an exception
-                # (Action, ErrorObservation): the same action getting an error, even if not necessarily the same error
                 logger.warning('Action, ErrorObservation loop detected')
                 return True
 
+        # check if the agent repeats the same (Action, Observation)
+        # every other step in the last six tuples
+
+        if len(filtered_history) >= 6:
+            last_six_tuples = filtered_history[-6:]
+            if (
+                # this pattern is every other step, like:
+                # (action_1, obs_1), (action_2, obs_2), (action_1, obs_1), (action_2, obs_2),...
+                self._eq_no_pid(last_six_tuples[-1][0], last_six_tuples[-3][0])
+                and self._eq_no_pid(last_six_tuples[-1][0], last_six_tuples[-5][0])
+                and self._eq_no_pid(last_six_tuples[-2][0], last_six_tuples[-4][0])
+                and self._eq_no_pid(last_six_tuples[-2][0], last_six_tuples[-6][0])
+                and self._eq_no_pid(last_six_tuples[-1][1], last_six_tuples[-3][1])
+                and self._eq_no_pid(last_six_tuples[-1][1], last_six_tuples[-5][1])
+                and self._eq_no_pid(last_six_tuples[-2][1], last_six_tuples[-4][1])
+                and self._eq_no_pid(last_six_tuples[-2][1], last_six_tuples[-6][1])
+            ):
+                logger.warning('Action, Observation pattern detected')
+                return True
+
         return False
+
+    def _eq_no_pid(self, obj1, obj2):
+        if isinstance(obj1, CmdOutputObservation) and isinstance(
+            obj2, CmdOutputObservation
+        ):
+            # for loop detection, ignore command_id, which is the pid
+            return obj1.command == obj2.command and obj1.exit_code == obj2.exit_code
+        elif isinstance(obj1, CmdKillAction) and isinstance(obj2, CmdKillAction):
+            # for loop detection, ignore command_id, which is the pid
+            return obj1.thought == obj2.thought
+        else:
+            # this is the default comparison
+            return obj1 == obj2
