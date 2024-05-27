@@ -14,7 +14,7 @@ def collect_events(stream):
 @pytest.mark.asyncio
 async def test_basic_flow():
     stream = EventStream('abc')
-    await stream.add_event(NullAction(), EventSource.AGENT)
+    stream.add_event(NullAction(), EventSource.AGENT)
     assert len(collect_events(stream)) == 1
 
 
@@ -41,8 +41,8 @@ async def test_stream_storage():
 @pytest.mark.asyncio
 async def test_rehydration():
     stream1 = EventStream('es1')
-    await stream1.add_event(NullObservation('obs1'), EventSource.AGENT)
-    await stream1.add_event(NullObservation('obs2'), EventSource.AGENT)
+    stream1.add_event(NullObservation('obs1'), EventSource.AGENT)
+    stream1.add_event(NullObservation('obs2'), EventSource.AGENT)
     assert len(collect_events(stream1)) == 2
 
     stream2 = EventStream('es2')

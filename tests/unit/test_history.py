@@ -140,6 +140,7 @@ def test_history_iterate_tuples():
 
     history.append((read_action, read_observation))
     history.append(message_action)
+    history.append(message_action_1)
     history.append((write_action, write_observation))
 
     tuples: list[tuple[Action, Observation]] = []
