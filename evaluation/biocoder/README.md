@@ -1,4 +1,4 @@
-# HumanEvalFix Evaluation with BioCoder
+# BioCoder Evaluation with Opendevin
 
 Implements evaluation of agents on BioCoder from the BioCoder benchmark introduced in [BioCoder: A Benchmark for Bioinformatics Code Generation with Large Language Models](https://arxiv.org/abs/2308.16458). Please see [here](https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/bigcode_eval/tasks/humanevalpack.py) for the reference implementation used in the paper.
 
