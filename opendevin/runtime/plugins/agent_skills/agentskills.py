@@ -239,17 +239,17 @@ def edit_file(start: int, end: int, content: str) -> None:
     # Check arguments
     if not (1 <= start <= len(lines)):
         raise ValueError(
-            f'Invalid start line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).'
+            f'Error editing opened file {CURRENT_FILE}: Invalid start line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).'
         )
 
     if not (1 <= end <= len(lines)):
         raise ValueError(
-            f'Invalid end line number: {end}. Line numbers must be between 1 and {len(lines)} (inclusive).'
+            f'Error editing opened file {CURRENT_FILE}: Invalid end line number: {end}. Line numbers must be between 1 and {len(lines)} (inclusive).'
         )
 
     if start > end:
         raise ValueError(
-            f'Invalid line range: {start}-{end}. Start must be less than or equal to end.'
+            f'Error editing opened file {CURRENT_FILE}: Invalid line range: {start}-{end}. Start must be less than or equal to end.'
         )
 
     edited_content = content + '\n'
