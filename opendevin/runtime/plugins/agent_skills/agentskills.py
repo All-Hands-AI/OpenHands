@@ -259,21 +259,35 @@ def edit_file(start: int, end: int, content: str) -> None:
     with open(CURRENT_FILE, 'r') as file:
         lines = file.readlines()
 
+    ERROR_MSG = f'[Error editing opened file {CURRENT_FILE}. Please confirm the opened file is correct.]'
+    ERROR_MSG_SUFFIX = (
+        'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+        'You either need to 1) Open the correct file and try again or 2) Specify the correct start/end line arguments.\n'
+        'DO NOT re-run the same failed edit command. Running it again will lead to the same error.'
+    )
     # Check arguments
     if not (1 <= start <= len(lines)):
-        raise ValueError(
-            f'Error editing opened file {CURRENT_FILE}: Invalid start line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).'
+        print(
+            f'{ERROR_MSG}\n'
+            f'Invalid start line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
+            f'{ERROR_MSG_SUFFIX}'
         )
+        return
 
     if not (1 <= end <= len(lines)):
-        raise ValueError(
-            f'Error editing opened file {CURRENT_FILE}: Invalid end line number: {end}. Line numbers must be between 1 and {len(lines)} (inclusive).'
+        print(
+            f'{ERROR_MSG}\n'
+            f'Invalid end line number: {end}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
+            f'{ERROR_MSG_SUFFIX}'
         )
-
+        return
     if start > end:
-        raise ValueError(
-            f'Error editing opened file {CURRENT_FILE}: Invalid line range: {start}-{end}. Start must be less than or equal to end.'
+        print(
+            f'{ERROR_MSG}\n'
+            f'Invalid line range: {start}-{end}. Start must be less than or equal to end.\n'
+            f'{ERROR_MSG_SUFFIX}'
         )
+        return
 
     edited_content = content + '\n'
     n_edited_lines = len(edited_content.split('\n'))
