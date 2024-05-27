@@ -39,6 +39,6 @@ def compare_results(check_method: str, model_answer: str, final_ans: str) -> boo
 
 
 def create_sh_file(filename: str, cmds: str) -> None:
-    with open(filename, 'w') as file:
-        file.write(f'{cmds}\n')
+    with open(filename, 'w', encoding='utf-8') as file:
+        file.write(cmds.replace('\r\n', '\n'))
     os.chmod(filename, 0o755)
