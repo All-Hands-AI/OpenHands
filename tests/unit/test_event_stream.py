@@ -21,7 +21,7 @@ async def test_basic_flow():
 @pytest.mark.asyncio
 async def test_stream_storage():
     stream = EventStream('def')
-    await stream.add_event(NullObservation(''), EventSource.AGENT)
+    stream.add_event(NullObservation(''), EventSource.AGENT)
     assert len(collect_events(stream)) == 1
     content = stream._file_store.read('sessions/def/events/0.json')
     assert content is not None
