@@ -28,6 +28,7 @@ We have a few guides for running OpenDevin with specific model providers:
 
 - [ollama](llms/localLLMs)
 - [Azure](llms/azureLLMs)
+- [Keywords AI](llms/keywordsaiLLMs)
 
 If you're using another provider, we encourage you to open a PR to share your setup!
 
