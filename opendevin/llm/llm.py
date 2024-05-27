@@ -11,6 +11,7 @@ from litellm.exceptions import (
     RateLimitError,
     ServiceUnavailableError,
 )
+from litellm.types.utils import CostPerToken
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -267,9 +268,23 @@ class LLM:
         Returns:
             number: The cost of the response.
         """
+        extra_kwargs = {}
+        if (
+            config.llm.input_cost_per_token is not None
+            and config.llm.output_cost_per_token is not None
+        ):
+            cost_per_token = CostPerToken(
+                input_cost_per_token=config.llm.input_cost_per_token,
+                output_cost_per_token=config.llm.output_cost_per_token,
+            )
+            logger.info(f'Using custom cost per token: {cost_per_token}')
+            extra_kwargs['custom_cost_per_token'] = cost_per_token
+
         if not self.is_local():
             try:
-                cost = litellm_completion_cost(completion_response=response)
+                cost = litellm_completion_cost(
+                    completion_response=response, **extra_kwargs
+                )
                 self.metrics.add_cost(cost)
                 return cost
             except Exception:
