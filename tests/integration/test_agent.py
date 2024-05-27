@@ -145,6 +145,6 @@ def test_browse_internet(http_server):
     task = 'Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.'
     final_state: State = asyncio.run(main(task, exit_on_message=True))
     assert final_state.agent_state == AgentState.STOPPED
-    assert isinstance(final_state.history[-1][0], AgentFinishAction)
-    assert isinstance(final_state.history[-2][0], MessageAction)
-    assert 'OpenDevin is all you need!' in final_state.history[-2][0].content
+    assert isinstance(final_state.history[-1], AgentFinishAction)
+    assert isinstance(final_state.history[-2], MessageAction)
+    assert 'OpenDevin is all you need!' in final_state.history[-2].content
