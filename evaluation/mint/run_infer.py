@@ -199,7 +199,7 @@ if __name__ == '__main__':
         help='subset of the dataset to be used',
     )
     parser.add_argument(
-        '--max_propose_solution',
+        '--max-propose-solution',
         default=2,
         type=int,
         help='maximum number of times the agent can propose a solution',
