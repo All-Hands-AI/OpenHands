@@ -398,6 +398,8 @@ if __name__ == '__main__':
     _agent_cls = agenthub.Agent.get_cls(agent_class)
     if hasattr(_agent_cls, 'system_message'):
         metadata['system_message'] = _agent_cls.system_message
+    if hasattr(_agent_cls, 'in_context_example'):
+        metadata['in_context_example'] = _agent_cls.in_context_example
     logger.info(f'Metadata: {metadata}')
     with open(os.path.join(eval_output_dir, 'metadata.json'), 'w') as f:
         json.dump(metadata, f)

@@ -5,6 +5,7 @@ from agenthub.codeact_agent.prompt import (
     COMPREHENSIVE_EXAMPLE,
     GITHUB_MESSAGE,
     MINIMAL_SYSTEM_PREFIX,
+    SWE_EXAMPLE,
     SYSTEM_PREFIX,
     SYSTEM_SUFFIX,
 )
@@ -32,6 +33,10 @@ from opendevin.runtime.plugins import (
 
 MINIMAL_MODE = True
 ENABLE_GITHUB = True
+SWE_MODE = True  # False
+
+print(f'MINIMAL_MODE: {MINIMAL_MODE}')
+print(f'SWE_MODE: {SWE_MODE}')
 
 
 def parse_response(response) -> str:
@@ -107,6 +112,7 @@ def truncate_observation(observation: str, max_chars: int = 10_000) -> str:
     )
 
 
+# FIXME: We can tweak these two settings to create MicroAgents specialized toward different area
 def get_system_message() -> str:
     if MINIMAL_MODE:
         return f'{MINIMAL_SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
@@ -114,6 +120,13 @@ def get_system_message() -> str:
         return f'{SYSTEM_PREFIX}\n{GITHUB_MESSAGE}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
     else:
         return f'{SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
+
+
+def get_in_context_example() -> str:
+    if SWE_MODE:
+        return SWE_EXAMPLE
+    else:
+        return COMPREHENSIVE_EXAMPLE
 
 
 class CodeActAgent(Agent):
@@ -164,6 +177,7 @@ class CodeActAgent(Agent):
     jupyter_kernel_init_code: str = 'from agentskills import *'
 
     system_message: str = get_system_message()
+    in_context_example: str = f"Here is an example of how you can interact with the environment for task solving:\n{get_in_context_example()}\n\nNOW, LET'S START!"
 
     def __init__(
         self,
@@ -206,10 +220,7 @@ class CodeActAgent(Agent):
         """
         messages: list[dict[str, str]] = [
             {'role': 'system', 'content': self.system_message},
-            {
-                'role': 'user',
-                'content': f"Here is an example of how you can interact with the environment for task solving:\n{COMPREHENSIVE_EXAMPLE}\n\nNOW, LET'S START!",
-            },
+            {'role': 'user', 'content': self.in_context_example},
         ]
 
         for prev_action, obs in state.history:
