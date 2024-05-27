@@ -235,9 +235,23 @@ class CodeActAgent(Agent):
         if finish_command := re.search(r'<finish>.*</finish>', action_str, re.DOTALL):
             thought = action_str.replace(finish_command.group(0), '').strip()
             return AgentFinishAction(thought=thought)
-        if bash_command := re.search(
-            r'<execute_bash>(.*?)</execute_bash>', action_str, re.DOTALL
-        ):
+        commands = ('<execute_bash>', '<execute_ipython>', '<execute_browse>')
+        # check for the first command that appears in the action string
+        command_indexes = sorted(
+            (
+                (command, action_str.find(command))
+                for command in commands
+                if command in action_str
+            ),
+            key=lambda x: x[1],
+        )
+        first_command = command_indexes[0][0] if command_indexes else ''
+
+        if (
+            bash_command := re.search(
+                r'<execute_bash>(.*?)</execute_bash>', action_str, re.DOTALL
+            )
+        ) and first_command == '<execute_bash>':
             # remove the command from the action string to get thought
             thought = action_str.replace(bash_command.group(0), '').strip()
             # a command was found
@@ -246,9 +260,11 @@ class CodeActAgent(Agent):
             if command_group.strip() == 'exit':
                 return AgentFinishAction()
             return CmdRunAction(command=command_group, thought=thought)
-        elif python_code := re.search(
-            r'<execute_ipython>(.*?)</execute_ipython>', action_str, re.DOTALL
-        ):
+        elif (
+            python_code := re.search(
+                r'<execute_ipython>(.*?)</execute_ipython>', action_str, re.DOTALL
+            )
+        ) and first_command == '<execute_ipython>':
             # a code block was found
             code_group = python_code.group(1).strip()
             thought = action_str.replace(python_code.group(0), '').strip()
@@ -257,9 +273,11 @@ class CodeActAgent(Agent):
                 thought=thought,
                 kernel_init_code=self.jupyter_kernel_init_code,
             )
-        elif browse_command := re.search(
-            r'<execute_browse>(.*)</execute_browse>', action_str, re.DOTALL
-        ):
+        elif (
+            browse_command := re.search(
+                r'<execute_browse>(.*)</execute_browse>', action_str, re.DOTALL
+            )
+        ) and first_command == '<execute_browse>':
             # BrowserGym actions was found
             browse_actions = browse_command.group(1).strip()
             thought = action_str.replace(browse_command.group(0), '').strip()
