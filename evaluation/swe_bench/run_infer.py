@@ -244,7 +244,7 @@ def process_instance(
 
     # Prepare instruction
     instruction = (
-        'We are currently solving the following issue within our repository. Here is the issue text:\n\n'
+        'We are currently solving the following issue within our repository. Here is the issue text:\n'
         '--- BEGIN ISSUE ---\n'
         f'{instance.problem_statement}\n'
         '--- END ISSUE ---\n\n'
@@ -252,7 +252,7 @@ def process_instance(
     if USE_HINT_TEXT and instance.hints_text:
         instruction += f'# Hints\n{instance.hints_text}\n\n'
 
-    instruction += """Now, you're going to solve this issue on your own. Your terminal session has started and you're in the repository's root directory. You can use any bash commands or the special interface to help you. Edit all the files you need to and run any checks or tests that you want.
+    instruction += f"""Now, you're going to solve this issue on your own. Your terminal session has started and you're in the repository's root directory. You can use any bash commands or the special interface to help you. Edit all the files you need to and run any checks or tests that you want.
 Remember, YOU CAN ONLY ENTER ONE COMMAND AT A TIME. You should always wait for feedback after every command.
 When you're satisfied with all of the changes you've made, you can run the following command: <execute_bash> exit </execute_bash>.
 Note however that you cannot use any interactive session commands (e.g. vim) in this environment, but you can write scripts and run them. E.g. you can write a python script and then run it with `python <script_name>.py`.
@@ -278,7 +278,7 @@ IMPORTANT TIPS:
 
 6. When editing files, it is easy to accidentally specify a wrong line number or to write code with incorrect indentation. Always check the code after you issue an edit to make sure that it reflects what you wanted to accomplish. If it didn't, issue another command to fix it.
 
-(Current directory: /workspace)
+(Current directory: /workspace/{workspace_dir_name})
 """
 
     # NOTE: You can actually set slightly different instruction for different agents
