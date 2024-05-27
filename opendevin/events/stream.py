@@ -88,15 +88,15 @@ class EventStream:
         with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1
-            event._timestamp = datetime.now()  # type: ignore [attr-defined]
-            event._source = source  # type: ignore [attr-defined]
-            data = event_to_dict(event)
-            if event.id is not None:
-                self._file_store.write(
-                    self._get_filename_for_id(event.id), json.dumps(data)
-                )
+        event._timestamp = datetime.now()  # type: ignore [attr-defined]
+        event._source = source  # type: ignore [attr-defined]
+        data = event_to_dict(event)
+        if event.id is not None:
+            self._file_store.write(
+                self._get_filename_for_id(event.id), json.dumps(data)
+            )
 
-            for key, fn in self._subscribers.items():
-                logger.debug(f'Notifying subscriber {key}')
-                asyncio.create_task(fn(event))
+        for key, fn in self._subscribers.items():
+            logger.debug(f'Notifying subscriber {key}')
+            asyncio.create_task(fn(event))
         logger.debug(f'Done with self._lock for event: {event}')
