@@ -9,11 +9,10 @@ import subprocess
 import time
 from concurrent.futures import ProcessPoolExecutor
 
-from huggingface_hub import snapshot_download
+from datasets import load_dataset
 from tqdm import tqdm
 
-from evaluation.agent_bench.helper import compare_results, get_check_method, get_post_cmd, get_pre_cmd, \
-    get_retriv_agent_answer_cmd
+from evaluation.agent_bench.helper import compare_results, create_sh_file
 from opendevin.controller.state.state import State
 from opendevin.core.config import args, config, get_llm_config_arg
 from opendevin.core.logger import get_console_handler
@@ -84,8 +83,8 @@ def process_instance(
     # preparation
     # =============================================
 
-    inst_id = instance['instance_id']
-    question = instance['description']
+    inst_id = instance.instance_id
+    question = instance.description
 
     # Set up the logger properly, so you can run multiprocessing to parallel the evaluation
     if reset_logger:
@@ -134,16 +133,18 @@ def process_instance(
     if config.is_mock:
         sandbox.start_ssh_session()
 
-    # pre start
-    pre_cmd = get_pre_cmd(instance)
-    if pre_cmd != '':
-        logger.info(f'Running pre stage script: {pre_cmd}')
-        sandbox.execute(pre_cmd)
+    init_cmd = instance.init
+    if init_cmd is not None:
+        scpt_name = os.path.join('.', f'{instance.instance_id}_init.sh')
+        host_scpt_name = os.path.join(config.workspace_base, scpt_name)
+        create_sh_file(host_scpt_name, init_cmd)
+        logger.info(f'Running init script: {scpt_name}')
+        sandbox.execute(scpt_name)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     if config.is_mock:
         fake_state = State()
-        act = MessageAction(content='Alice', wait_for_response=False)
+        act = MessageAction(content='12', wait_for_response=False)
         act._source = 'agent'
         fake_state.history = [
             (
@@ -156,7 +157,9 @@ def process_instance(
         state: State = asyncio.run(
             main(
                 instruction,
-                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
+                    agent_class
+                ),
                 sandbox=sandbox,
             )
         )
@@ -171,28 +174,39 @@ def process_instance(
     # result evaluation
     # =============================================
 
-    # post end
-    final_ans = ''
-    post_cmd = get_post_cmd(instance)
-    check_method = get_check_method(instance)
-    if post_cmd != '':
-        logger.info(f'Running post stage script: {post_cmd}')
-        _, final_ans = sandbox.execute(post_cmd)
-
     agent_answer = ''
-    retriv_agent_answer_cmd = get_retriv_agent_answer_cmd(instance)
-    if retriv_agent_answer_cmd != '':
-        logger.info(f'Running retriv agent answer script: {retriv_agent_answer_cmd}')
-        _, agent_answer = sandbox.execute(retriv_agent_answer_cmd)
+    get_agent_result_cmd = instance.get_agent_result
+    if get_agent_result_cmd is not None:
+        scpt_name = os.path.join('.', f'{instance.instance_id}_get_agent_result.sh')
+        host_scpt_name = os.path.join(config.workspace_base, scpt_name)
+        create_sh_file(host_scpt_name, get_agent_result_cmd)
+        logger.info(f'Running get agent result cmd: {scpt_name}')
+        _, agent_answer = sandbox.execute(scpt_name)
     else:
+        logger.info('Retrieving agent answer from history.')
         for act, _ in reversed(state.history):
             if isinstance(act, MessageAction) and act.source == 'agent':
                 logger.info(act.content)
                 agent_answer = act.content
                 break
 
-    logger.info(f'Final message: {agent_answer} | Ground truth: {final_ans}')
-    test_result = compare_results(check_method, agent_answer, final_ans)
+    final_ans = ''
+    if instance.ground_truth is not None:
+        final_ans = instance.ground_truth
+    else:
+        get_ground_truth_cmd = instance.get_ground_truth
+        if get_ground_truth_cmd is not None:
+            scpt_name = os.path.join('.', f'{instance.instance_id}_get_ground_truth.sh')
+            host_scpt_name = os.path.join(config.workspace_base, scpt_name)
+            create_sh_file(host_scpt_name, get_ground_truth_cmd)
+            logger.info(f'Running get ground truth cmd: {scpt_name}')
+            _, final_ans = sandbox.execute(scpt_name)
+
+    comparison_method = instance.comparison_method
+    logger.info(
+        f'Final message: {agent_answer} | Ground truth: {final_ans} | Comparison method: {comparison_method}'
+    )
+    test_result = compare_results(comparison_method, agent_answer, final_ans)
 
     if config.is_mock:
         histories = ['mock history']
@@ -204,7 +218,7 @@ def process_instance(
     # Save the output
     output = {
         'instance_id': inst_id,
-        'instance': instance,
+        'instance': instance.to_dict(),
         'instruction': instruction,
         'metadata': metadata,
         'history': histories,
@@ -212,7 +226,7 @@ def process_instance(
         'test_result': {
             'agent_answer': agent_answer,
             'final_answer': final_ans,
-            'check_method': check_method,
+            'check_method': comparison_method,
             'result': test_result,
         },
     }
@@ -258,18 +272,8 @@ if __name__ == '__main__':
     # load datasets
     # =============================================
 
-    dst_script_dir = config.workspace_base
-    snapshot_download(
-        repo_id='iFurySt/test', repo_type='dataset', local_dir=dst_script_dir
-    )
-    data_dir = os.path.join(dst_script_dir, 'os_interaction/data')
-    dirs = find_subdirectories(data_dir)
-    dirs.sort(key=int)
-
-    agent_bench_tests = []
-    for idx in dirs:
-        data = load_datasets_from_local(idx, os.path.join(data_dir, idx))
-        agent_bench_tests.extend(data)
+    dataset = load_dataset('iFurySt/test')
+    agent_bench_tests = dataset['test'].to_pandas()
     logger.info(f'Loaded {len(agent_bench_tests)} tests.')
 
     # =============================================
@@ -351,10 +355,10 @@ if __name__ == '__main__':
     # =============================================
 
     new_agent_bench_tests = []
-    for idx, inst in enumerate(agent_bench_tests):
-        if inst['instance_id'] in finished_instance_ids:
+    for idx, inst in agent_bench_tests.iterrows():
+        if inst.instance_id in finished_instance_ids:
             logger.info(
-                f'Skipping instance {inst['instance_id']} as it is already finished.'
+                f'Skipping instance {inst.instance_id} as it is already finished.'
             )
             continue
         new_agent_bench_tests.append(inst)
