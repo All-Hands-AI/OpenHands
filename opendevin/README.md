@@ -2,6 +2,7 @@
 
 This directory contains the core components of OpenDevin.
 
+## Classes
 The key classes in OpenDevin are:
 * LLM: brokers all interactions with large language models. Works with any underlying completion model, thanks to LiteLLM.
 * Agent: responsible for looking at the current State, and producing an Action that moves one step closer toward the end-goal.
@@ -18,15 +19,32 @@ The key classes in OpenDevin are:
     * SessionManager: keeps a list of active sessions, and ensures requests are routed to the correct Session
 
 ## Control Flow
+Here's the basic loop (in pseudocode) that drives agents.
+```python
+while True:
+  prompt = agent.generate_prompt(state)
+  response = llm.completion(prompt)
+  action = agent.parse_response(response)
+  observation = runtime.run(action)
+  state = state.update(action, observation)
+```
+
+In reality, most of this is achieved through message passing, via the EventStream.
 The EventStream serves as the backbone for all communication in OpenDevin.
 
 ```mermaid
 flowchart LR
   Agent--Actions-->AgentController
-  AgentController--Observations-->Agent
+  AgentController--State-->Agent
   AgentController--Actions-->EventStream
   EventStream--Observations-->AgentController
   Runtime--Observations-->EventStream
   EventStream--Actions-->Runtime
   Frontend--Actions-->EventStream
 ```
+
+## Runtime
+The Runtime class is abstract, and has a few different implementations:
+* We have a LocalRuntime, which runs commands and edits files directly on the user's machine
+* We have a DockerRuntime, which runs commands inside of a docker sandbox, and edits files directly on the user's machine
+* We have an E2BRuntime, which uses e2b.dev containers to sandbox file and command operations
