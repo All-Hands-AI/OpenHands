@@ -232,6 +232,8 @@ def test_api_keys_repr_str():
         'api_key',
         'aws_access_key_id',
         'aws_secret_access_key',
+        'input_cost_per_token',
+        'output_cost_per_token',
     ]
     for attr_name in dir(LLMConfig):
         if (

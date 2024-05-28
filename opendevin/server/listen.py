@@ -6,7 +6,7 @@ with warnings.catch_warnings():
     import litellm
 from fastapi import FastAPI, Request, Response, UploadFile, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 
@@ -313,13 +313,4 @@ async def appconfig_defaults():
     return config.defaults_dict
 
 
-@app.get('/')
-async def docs_redirect():
-    """
-    Redirect to the API documentation.
-    """
-    response = RedirectResponse(url='/index.html')
-    return response
-
-
-app.mount('/', StaticFiles(directory='./frontend/dist'), name='dist')
+app.mount('/', StaticFiles(directory='./frontend/dist', html=True), name='dist')
