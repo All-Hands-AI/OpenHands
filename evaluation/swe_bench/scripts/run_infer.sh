@@ -32,7 +32,7 @@ unset SANDBOX_ENV_GITHUB_TOKEN # prevent the agent from using the github token t
 COMMAND="poetry run python evaluation/swe_bench/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
-  --max-iterations 50 \
+  --max-iterations 30 \
   --max-chars 10000000 \
   --eval-num-workers 8 \
   --eval-note $EVAL_NOTE"
