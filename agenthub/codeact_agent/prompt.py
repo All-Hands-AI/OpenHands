@@ -38,7 +38,7 @@ IMPORTANT: Whenever possible, execute the code for the user using <execute_ipyth
 
 
 # ======= EXAMPLE MESSAGE =======
-COMPREHENSIVE_EXAMPLE = """
+EXAMPLES = """
 --- START OF EXAMPLE ---
 
 USER: Can you create a list of numbers from 1 to 10, and create a web page to display them at port 5000?

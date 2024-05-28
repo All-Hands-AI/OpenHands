@@ -2,7 +2,7 @@ import re
 
 from agenthub.codeact_agent.prompt import (
     COMMAND_DOCS,
-    COMPREHENSIVE_EXAMPLE,
+    EXAMPLES,
     GITHUB_MESSAGE,
     SYSTEM_PREFIX,
     SYSTEM_SUFFIX,
@@ -29,9 +29,7 @@ from opendevin.runtime.plugins import (
     PluginRequirement,
 )
 
-MINIMAL_MODE = True
 ENABLE_GITHUB = True
-SWE_MODE = True  # False
 
 
 def parse_response(response) -> str:
@@ -116,7 +114,7 @@ def get_system_message() -> str:
 
 
 def get_in_context_example() -> str:
-    return COMPREHENSIVE_EXAMPLE
+    return EXAMPLES
 
 
 class CodeActAgent(Agent):
@@ -181,11 +179,6 @@ class CodeActAgent(Agent):
         """
         super().__init__(llm)
         self.reset()
-        print(
-            '====== SYSTEM MESSAGE ======\n'
-            f'{self.system_message}\n'
-            '====== END ======'
-        )
 
     def reset(self) -> None:
         """
