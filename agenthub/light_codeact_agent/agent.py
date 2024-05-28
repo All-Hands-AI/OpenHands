@@ -28,7 +28,7 @@ from opendevin.runtime.plugins import (
     PluginRequirement,
 )
 
-ENABLE_GITHUB = True
+ENABLE_GITHUB = False
 
 
 def parse_response(response) -> str:
