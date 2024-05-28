@@ -243,18 +243,19 @@ def process_instance(
     )
 
     # Prepare instruction
-    instruction = (
-        'We are currently solving the following issue within our repository. Here is the issue text:\n'
-        '--- BEGIN ISSUE ---\n'
-        f'{instance.problem_statement}\n'
-        '--- END ISSUE ---\n\n'
-    )
-    if USE_HINT_TEXT and instance.hints_text:
-        instruction += (
-            f'--- BEGIN HINTS ---\n{instance.hints_text}\n--- END HINTS ---\n'
+    if agent_class == 'CodeActSWEAgent':
+        instruction = (
+            'We are currently solving the following issue within our repository. Here is the issue text:\n'
+            '--- BEGIN ISSUE ---\n'
+            f'{instance.problem_statement}\n'
+            '--- END ISSUE ---\n\n'
         )
 
-    instruction += f"""Now, you're going to solve this issue on your own. Your terminal session has started and you're in the repository's root directory. You can use any bash commands or the special interface to help you. Edit all the files you need to and run any checks or tests that you want.
+        if USE_HINT_TEXT and instance.hints_text:
+            instruction += (
+                f'--- BEGIN HINTS ---\n{instance.hints_text}\n--- END HINTS ---\n'
+            )
+        instruction += f"""Now, you're going to solve this issue on your own. Your terminal session has started and you're in the repository's root directory. You can use any bash commands or the special interface to help you. Edit all the files you need to and run any checks or tests that you want.
 Remember, YOU CAN ONLY ENTER ONE COMMAND AT A TIME. You should always wait for feedback after every command.
 When you're satisfied with all of the changes you've made, you can run the following command: <execute_bash> exit </execute_bash>.
 Note however that you cannot use any interactive session commands (e.g. vim) in this environment, but you can write scripts and run them. E.g. you can write a python script and then run it with `python <script_name>.py`.
@@ -282,6 +283,21 @@ IMPORTANT TIPS:
 
 [Current directory: /workspace/{workspace_dir_name}]
 """
+    else:
+        # Testing general agents
+        instruction = (
+            f'Please fix the following issue for the repository in /workspace/{workspace_dir_name}\n'
+            'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n'
+            '# Problem Statement\n'
+            f'{instance.problem_statement}\n'
+        )
+        if USE_HINT_TEXT and instance.hints_text:
+            instruction += f'# Hints\n{instance.hints_text}\n\n'
+        instruction += (
+            'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+            'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
+            'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
+        )
 
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
