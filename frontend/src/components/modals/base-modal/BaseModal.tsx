@@ -24,9 +24,9 @@ function BaseModal({
   onOpenChange,
   title,
   isDismissable = true,
-  subtitle,
-  actions,
-  children,
+  subtitle = undefined, //defined here
+  actions = [], //defined here
+  children = null,// defined here
 }: BaseModalProps) {
   return (
     <Modal
@@ -60,11 +60,6 @@ function BaseModal({
   );
 }
 
-BaseModal.defaultProps = {
-  isDismissable: true,
-  subtitle: undefined,
-  actions: [],
-  children: null,
-};
+//Removed the BaseModal.defaultProps block
 
 export default BaseModal;
