@@ -78,7 +78,4 @@ export function AutocompleteCombobox({
   );
 }
 
-AutocompleteCombobox.defaultProps = {
-  allowCustomValue: false,
-  disabled: false,
-};
+//Removed AutocompleteCombobox.defaultProps block

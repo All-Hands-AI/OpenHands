@@ -12,7 +12,7 @@ function IconButton({
   icon,
   onClick,
   ariaLabel,
-  testId,
+  testId = "",
 }: IconButtonProps): React.ReactElement {
   return (
     <Button
@@ -28,8 +28,6 @@ function IconButton({
   );
 }
 
-IconButton.defaultProps = {
-  testId: "",
-};
+// Removed IconButton.defaultProps block
 
 export default IconButton;

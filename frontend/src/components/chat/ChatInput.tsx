@@ -10,7 +10,7 @@ interface ChatInputProps {
   onSendMessage: (message: string) => void;
 }
 
-function ChatInput({ disabled, onSendMessage }: ChatInputProps) {
+function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
   const { t } = useTranslation();
 
   const [message, setMessage] = React.useState("");
@@ -70,8 +70,6 @@ function ChatInput({ disabled, onSendMessage }: ChatInputProps) {
   );
 }
 
-ChatInput.defaultProps = {
-  disabled: false,
-};
+//Removed the chatInput.defaultProps block
 
 export default ChatInput;
