@@ -22,6 +22,8 @@ The EventStream serves as the backbone for all communication in OpenDevin.
 
 ```mermaid
 flowchart LR
+  Agent--Actions-->AgentController
+  AgentController--Observations-->Agent
   AgentController--Actions-->EventStream
   EventStream--Observations-->AgentController
   Runtime--Observations-->EventStream
