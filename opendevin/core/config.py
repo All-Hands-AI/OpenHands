@@ -181,8 +181,7 @@ class AppConfig(metaclass=Singleton):
     sandbox_timeout: int = 120
     persist_sandbox: bool = True
     ssh_port: int = 63710
-    # https://xkcd.com/936/
-    ssh_password: str = 'correct horse battery staple1'
+    ssh_password: str | None = None
     github_token: str | None = None
     jwt_secret: str = uuid.uuid4().hex
     debug: bool = False
