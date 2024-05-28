@@ -1,4 +1,4 @@
-# CodeAct Agent Framework
+# CodeAct (SWE Edit Specialized)
 
 This agent is an adaptation of the original [SWE Agent](https://swe-agent.com/) based on CodeAct using the `agentskills` library of OpenDevin.
 
