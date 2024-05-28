@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
-    "@nextui-org/react": "^2.3.6",
+    "@nextui-org/react": "^2.4.0",
     "@react-types/shared": "^3.23.1",
     "@reduxjs/toolkit": "^2.2.5",
     "@vitejs/plugin-react": "^4.3.0",
