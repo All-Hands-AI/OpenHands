@@ -286,10 +286,10 @@ IMPORTANT TIPS:
     else:
         # Testing general agents
         instruction = (
-            f'Please fix the following issue for the repository in /workspace/{workspace_dir_name}\n'
-            'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n'
+            f'Please fix the following issue for the repository in /workspace/{workspace_dir_name}.\n'
+            'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
             '# Problem Statement\n'
-            f'{instance.problem_statement}\n'
+            f'{instance.problem_statement}\n\n'
         )
         if USE_HINT_TEXT and instance.hints_text:
             instruction += f'# Hints\n{instance.hints_text}\n\n'
