@@ -17,6 +17,7 @@ all the preprocessing/evaluation/analysis scripts.
 - HumanEvalFix: [`evaluation/humanevalfix`](./humanevalfix)
 - GAIA: [`evaluation/gaia`](./gaia)
 - Entity deduction Arena (EDA): [`evaluation/EDA`](./EDA)
+- MINT: [`evaluation/mint`](./mint)
 
 ### Result Visualization
 
