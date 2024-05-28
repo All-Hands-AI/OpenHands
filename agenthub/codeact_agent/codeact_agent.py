@@ -11,6 +11,7 @@ from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import (
     Action,
+    AgentDelegateAction,
     AgentFinishAction,
     BrowseInteractiveAction,
     CmdRunAction,
@@ -18,6 +19,7 @@ from opendevin.events.action import (
     MessageAction,
 )
 from opendevin.events.observation import (
+    AgentDelegateObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
@@ -88,6 +90,9 @@ def get_observation_message(obs) -> dict[str, str] | None:
     elif isinstance(obs, BrowserOutputObservation):
         content = 'OBSERVATION:\n' + truncate_observation(obs.content)
         return {'role': 'user', 'content': content}
+    elif isinstance(obs, AgentDelegateObservation):
+        content = 'OBSERVATION:\n' + truncate_observation(str(obs.outputs))
+        return {'role': 'user', 'content': content}
     return None
 
 
@@ -106,7 +111,7 @@ def truncate_observation(observation: str, max_chars: int = 10_000) -> str:
 
 
 class CodeActAgent(Agent):
-    VERSION = '1.5'
+    VERSION = '1.6'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
@@ -188,7 +193,7 @@ class CodeActAgent(Agent):
         Returns:
         - CmdRunAction(command) - bash command to run
         - IPythonRunCellAction(code) - IPython code to run
-        - BrowseInteractiveAction(browsergym_command) - BrowserGym commands to run
+        - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
@@ -260,12 +265,10 @@ class CodeActAgent(Agent):
         elif browse_command := re.search(
             r'<execute_browse>(.*)</execute_browse>', action_str, re.DOTALL
         ):
-            # BrowserGym actions was found
-            browse_actions = browse_command.group(1).strip()
             thought = action_str.replace(browse_command.group(0), '').strip()
-            return BrowseInteractiveAction(
-                browser_actions=browse_actions, thought=thought
-            )
+            browse_actions = browse_command.group(1).strip()
+            task = f'{thought}. I should start with: {browse_actions}'
+            return AgentDelegateAction(agent='BrowsingAgent', inputs={'task': task})
         else:
             # We assume the LLM is GOOD enough that when it returns pure natural language
             # it want to talk to the user

@@ -10,7 +10,6 @@ from opendevin.core.main import main
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
     AgentFinishAction,
-    MessageAction,
 )
 
 workspace_base = os.getenv('WORKSPACE_BASE')
@@ -137,8 +136,12 @@ def test_ipython_module():
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') != 'BrowsingAgent',
-    reason='currently only BrowsingAgent is capable of searching the internet',
+    os.getenv('AGENT') != 'BrowsingAgent' and os.getenv('AGENT') != 'CodeActAgent',
+    reason='currently only BrowsingAgent and CodeActAgent are capable of searching the internet',
+)
+@pytest.mark.skipif(
+    os.getenv('AGENT') == 'CodeActAgent' and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    reason='CodeActAgent only supports ssh sandbox which is stateful',
 )
 def test_browse_internet(http_server):
     # Execute the task
@@ -146,5 +149,4 @@ def test_browse_internet(http_server):
     final_state: State = asyncio.run(main(task, exit_on_message=True))
     assert final_state.agent_state == AgentState.STOPPED
     assert isinstance(final_state.history[-1][0], AgentFinishAction)
-    assert isinstance(final_state.history[-2][0], MessageAction)
-    assert 'OpenDevin is all you need!' in final_state.history[-2][0].content
+    assert 'OpenDevin is all you need!' in str(final_state.history)
