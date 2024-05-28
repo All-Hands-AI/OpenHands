@@ -144,11 +144,6 @@ class CodeActSWEAgent(Agent):
         """
         super().__init__(llm)
         self.reset()
-        print(
-            '====== SYSTEM MESSAGE ======\n'
-            f'{self.system_message}\n'
-            '====== END ======'
-        )
 
     def reset(self) -> None:
         """
