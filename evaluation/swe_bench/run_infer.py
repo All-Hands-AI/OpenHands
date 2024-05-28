@@ -250,7 +250,9 @@ def process_instance(
         '--- END ISSUE ---\n\n'
     )
     if USE_HINT_TEXT and instance.hints_text:
-        instruction += f'# Hints\n{instance.hints_text}\n\n'
+        instruction += (
+            f'--- BEGIN HINTS ---\n{instance.hints_text}\n--- END HINTS ---\n'
+        )
 
     instruction += f"""Now, you're going to solve this issue on your own. Your terminal session has started and you're in the repository's root directory. You can use any bash commands or the special interface to help you. Edit all the files you need to and run any checks or tests that you want.
 Remember, YOU CAN ONLY ENTER ONE COMMAND AT A TIME. You should always wait for feedback after every command.
