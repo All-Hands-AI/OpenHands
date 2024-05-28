@@ -70,6 +70,4 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
   );
 }
 
-//Removed the chatInput.defaultProps block
-
 export default ChatInput;

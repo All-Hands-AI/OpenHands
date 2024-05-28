@@ -28,6 +28,4 @@ function IconButton({
   );
 }
 
-// Removed IconButton.defaultProps block
-
 export default IconButton;

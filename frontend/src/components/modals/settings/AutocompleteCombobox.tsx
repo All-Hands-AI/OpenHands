@@ -78,4 +78,3 @@ export function AutocompleteCombobox({
   );
 }
 
-//Removed AutocompleteCombobox.defaultProps block

@@ -16,6 +16,4 @@ function ExplorerTree({ files, defaultOpen = false }: ExplorerTreeProps) {
   );
 }
 
-// Removed ExplorerTree.defaultProps block
-
 export default ExplorerTree;

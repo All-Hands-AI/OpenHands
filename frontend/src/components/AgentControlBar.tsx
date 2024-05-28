@@ -57,8 +57,6 @@ function ActionButton({
   );
 }
 
-// Removed ActionButton.defaultProps block
-
 function AgentControlBar() {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const [desiredState, setDesiredState] = React.useState(AgentState.INIT);

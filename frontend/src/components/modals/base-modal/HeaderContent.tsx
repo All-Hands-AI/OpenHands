@@ -15,5 +15,3 @@ export function HeaderContent({ title, subtitle = undefined }: HeaderContentProp
     </>
   );
 }
-
-//Removed HeaderContent.defaultProps block
