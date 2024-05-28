@@ -2,20 +2,25 @@
 
 set -e
 
-
+source ~/.bashrc
 # ADD /opendevin/plugins to PATH to make `jupyter_cli` available
 echo 'export PATH=$PATH:/opendevin/plugins/jupyter' >> ~/.bashrc
 export PATH=/opendevin/plugins/jupyter:$PATH
 
+# get current PythonInterpreter
+OPENDEVIN_PYTHON_INTERPRETER=$(which python3)
+
 # if user name is `opendevin`, add '/home/opendevin/.local/bin' to PATH
 if [ "$USER" = "opendevin" ]; then
     echo 'export PATH=$PATH:/home/opendevin/.local/bin' >> ~/.bashrc
+    echo "export OPENDEVIN_PYTHON_INTERPRETER=$OPENDEVIN_PYTHON_INTERPRETER" >> ~/.bashrc
     export PATH=$PATH:/home/opendevin/.local/bin
     export PIP_CACHE_DIR=$HOME/.cache/pip
 fi
 # if user name is `root`, add '/root/.local/bin' to PATH
 if [ "$USER" = "root" ]; then
     echo 'export PATH=$PATH:/root/.local/bin' >> ~/.bashrc
+    echo "export OPENDEVIN_PYTHON_INTERPRETER=$OPENDEVIN_PYTHON_INTERPRETER" >> ~/.bashrc
     export PATH=$PATH:/root/.local/bin
     export PIP_CACHE_DIR=$HOME/.cache/pip
 

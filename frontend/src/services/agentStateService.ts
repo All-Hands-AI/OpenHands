@@ -1,7 +1,6 @@
 import ActionType from "#/types/ActionType";
 import AgentState from "#/types/AgentState";
-import Socket from "./socket";
-import { initializeAgent } from "./agent";
+import Session from "./session";
 
 const INIT_DELAY = 1000;
 
@@ -10,10 +9,10 @@ export function changeAgentState(state: AgentState): void {
     action: ActionType.CHANGE_AGENT_STATE,
     args: { agent_state: state },
   });
-  Socket.send(eventString);
+  Session.send(eventString);
   if (state === AgentState.STOPPED) {
     setTimeout(() => {
-      initializeAgent();
+      Session.startNewSession();
     }, INIT_DELAY);
   }
 }

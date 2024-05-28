@@ -9,7 +9,6 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
@@ -25,9 +24,9 @@ from opendevin.events.observation import (
 )
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
+    AgentSkillsRequirement,
     JupyterRequirement,
     PluginRequirement,
-    SWEAgentCommandsRequirement,
 )
 
 ENABLE_GITHUB = True
@@ -107,7 +106,7 @@ def truncate_observation(observation: str, max_chars: int = 10_000) -> str:
 
 
 class CodeActAgent(Agent):
-    VERSION = '1.4'
+    VERSION = '1.5'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
@@ -145,9 +144,13 @@ class CodeActAgent(Agent):
     """
 
     sandbox_plugins: list[PluginRequirement] = [
+        # NOTE: AgentSkillsRequirement need to go before JupyterRequirement, since
+        # AgentSkillsRequirement provides a lot of Python functions
+        # and it need to be initialized before Jupyter for Jupyter to use those functions.
+        AgentSkillsRequirement(),
         JupyterRequirement(),
-        SWEAgentCommandsRequirement(),
     ]
+    jupyter_kernel_init_code: str = 'from agentskills import *'
 
     system_message: str = (
         f'{SYSTEM_PREFIX}\n{GITHUB_MESSAGE}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
@@ -173,7 +176,6 @@ class CodeActAgent(Agent):
         Resets the CodeAct Agent.
         """
         super().reset()
-        self.cost_accumulator = 0
 
     def step(self, state: State) -> Action:
         """
@@ -215,7 +217,7 @@ class CodeActAgent(Agent):
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
 
-        response = self.llm.completion(
+        response = self.llm.do_completion(
             messages=messages,
             stop=[
                 '</execute_ipython>',
@@ -224,8 +226,6 @@ class CodeActAgent(Agent):
             ],
             temperature=0.0,
         )
-
-        self.log_cost(response)
 
         action_str: str = parse_response(response)
         state.num_of_chars += sum(
@@ -252,7 +252,11 @@ class CodeActAgent(Agent):
             # a code block was found
             code_group = python_code.group(1).strip()
             thought = action_str.replace(python_code.group(0), '').strip()
-            return IPythonRunCellAction(code=code_group, thought=thought)
+            return IPythonRunCellAction(
+                code=code_group,
+                thought=thought,
+                kernel_init_code=self.jupyter_kernel_init_code,
+            )
         elif browse_command := re.search(
             r'<execute_browse>(.*)</execute_browse>', action_str, re.DOTALL
         ):
@@ -269,15 +273,3 @@ class CodeActAgent(Agent):
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
-
-    def log_cost(self, response):
-        try:
-            cur_cost = self.llm.completion_cost(response)
-        except Exception:
-            cur_cost = 0
-        self.cost_accumulator += cur_cost
-        logger.info(
-            'Cost: %.2f USD | Accumulated Cost: %.2f USD',
-            cur_cost,
-            self.cost_accumulator,
-        )

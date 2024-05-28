@@ -1,0 +1,13 @@
+FROM ghcr.io/opendevin/eval-swe-bench:full_deps
+
+# ================== COPY Smaller things ==================
+# copy everything except the folder of `eval_data` or `miniforge3`
+# typically, this should be the OD codebase
+RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
+    rsync -ar --progress \
+    --exclude='eval_data' \
+    --exclude='miniforge3' \
+    /eval_workspace/ /swe_util/
+
+# pushd evaluation/SWE-bench
+# docker build -t ghcr.io/opendevin/eval-swe-bench:full-v1.1 -f ./scripts/docker/Dockerfile.full.v1.1 .

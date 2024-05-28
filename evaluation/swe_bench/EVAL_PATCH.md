@@ -117,7 +117,7 @@ Before evaluating generated patches, you need to set up the Docker environment. 
 ```shell
 docker run -it \
 -v DIR_TO_YOUR_PATCH_FILES_ON_HOST:/swe_bench_output \
-ghcr.io/opendevin/eval-swe-bench:full-v1.0 /bin/bash
+ghcr.io/opendevin/eval-swe-bench:full-v1.2.1 /bin/bash
 ```
 
 ### Evaluate Model Generated Patches

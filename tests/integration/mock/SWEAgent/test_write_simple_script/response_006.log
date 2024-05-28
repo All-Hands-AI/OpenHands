@@ -1,7 +1,0 @@
-Thoughts:
-I have already written the initial version of the 'hello.sh' script that prints 'hello' without asking for confirmation. I need to ensure that the script is executable to run successfully.
-
-Action:
-```
-chmod +x hello.sh
-```

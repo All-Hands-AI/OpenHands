@@ -16,21 +16,24 @@ WORKSPACE_MOUNT_PATH+="/_test_workspace"
 WORKSPACE_BASE+="/_test_workspace"
 WORKSPACE_MOUNT_PATH_IN_SANDBOX="/workspace"
 
-SANDBOX_TYPE="ssh"
+# use environmental variable if exist, otherwise use "ssh"
+SANDBOX_TYPE="${SANDBOX_TYPE:-ssh}"
 MAX_ITERATIONS=10
 
-agents=("MonologueAgent" "CodeActAgent" "PlannerAgent" "SWEAgent")
+agents=("BrowsingAgent" "MonologueAgent" "CodeActAgent" "PlannerAgent")
 tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
   "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'."
   "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt."
+  "Browse localhost:8000, and tell me the ultimate answer to life."
 )
 test_names=(
   "test_edits"
   "test_write_simple_script"
   "test_ipython"
   "test_ipython_module"
+  "test_browse_internet"
 )
 
 num_of_tests=${#test_names[@]}
@@ -42,15 +45,29 @@ num_of_agents=${#agents[@]}
 
 # run integration test against a specific agent & test
 run_test() {
+  local pytest_cmd="poetry run pytest -s ./tests/integration/test_agent.py::$test_name"
+
+  # Check if TEST_IN_CI is defined
+  if [ -n "$TEST_IN_CI" ]; then
+    pytest_cmd+=" --cov=agenthub --cov=opendevin --cov-report=xml --cov-append"
+  fi
+
   SANDBOX_TYPE=$SANDBOX_TYPE \
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
     MAX_ITERATIONS=$MAX_ITERATIONS \
     AGENT=$agent \
-    poetry run pytest -s ./tests/integration/test_agent.py::$test_name
+    $pytest_cmd
     # return exit code of pytest
     return $?
+}
+
+# browsing capability needs a local http server
+launch_http_server() {
+  poetry run python tests/integration/start_http_server.py &
+  HTTP_SERVER_PID=$!
+  sleep 10
 }
 
 # generate prompts again, using existing LLM responses under tests/integration/mock/[agent]/[test_name]/response_*.log
@@ -72,6 +89,10 @@ regenerate_without_llm() {
 }
 
 regenerate_with_llm() {
+  if [[ "$test_name" = "test_browse_internet" ]]; then
+    launch_http_server
+  fi
+
   rm -rf $WORKSPACE_BASE
   mkdir -p $WORKSPACE_BASE
   if [ -d "tests/integration/workspace/$test_name" ]; then
@@ -96,6 +117,13 @@ regenerate_with_llm() {
 
   mkdir -p tests/integration/mock/$agent/$test_name/
   mv logs/llm/**/* tests/integration/mock/$agent/$test_name/
+
+  if [[ "$test_name" = "test_browse_internet" ]]; then
+    # Terminate the HTTP server
+    kill $HTTP_SERVER_PID
+  fi
+
+
 }
 
 ##############################################################
@@ -158,11 +186,11 @@ for ((i = 0; i < num_of_tests; i++)); do
       else
         echo -e "\n\n\n\n========STEP 2: $test_name failed, regenerating prompts for $agent WITHOUT money cost========\n\n\n\n"
 
+        # Temporarily disable 'exit on error'
+        set +e
         regenerate_without_llm
 
         echo -e "\n\n\n\n========STEP 3: $test_name prompts regenerated for $agent, rerun test again to verify========\n\n\n\n"
-        # Temporarily disable 'exit on error'
-        set +e
         run_test
         TEST_STATUS=$?
         # Re-enable 'exit on error'

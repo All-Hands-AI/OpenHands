@@ -6,7 +6,6 @@ from opendevin.events.action import (
     FileWriteAction,
     MessageAction,
 )
-from opendevin.events.observation import Observation
 from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
 
@@ -22,6 +21,7 @@ from .prompts import (
 
 class SWEAgent(Agent):
     VERSION = '1.0'
+    DEPRECATED = True
     """
     An attempt to recreate swe_agent with output parsing, prompting style, and Application Computer Interface (ACI).
 
@@ -32,17 +32,11 @@ class SWEAgent(Agent):
         super().__init__(llm)
         self.memory_window = 4
         self.max_retries = 2
-        self.running_memory: list[str] = []
         self.cur_file: str = ''
         self.cur_line: int = 0
 
-    def _remember(self, action: Action, observation: Observation) -> None:
-        """Agent has a limited memory of the few steps implemented as a queue"""
-        memory = MEMORY_FORMAT(event_to_memory(action), event_to_memory(observation))
-        self.running_memory.append(memory)
-
     def _think_act(self, messages: list[dict]) -> tuple[Action, str]:
-        resp = self.llm.completion(
+        resp = self.llm.do_completion(
             messages=messages,
             temperature=0.05,
         )
@@ -68,24 +62,36 @@ class SWEAgent(Agent):
             2. Perform think-act - prompt model for action and reasoning
             3. Catch errors - ensure model takes action (5 attempts max)
         """
-        for prev_action, obs in state.updated_info:
-            self._remember(prev_action, obs)
+        # retrieve short term memories from state.history, up to memory_window
+        memory_window = min(self.memory_window, len(state.history))
+        running_memory: list[str] = []
+        for prev_action, obs in state.history[-memory_window:]:
+            running_memory.append(
+                MEMORY_FORMAT(event_to_memory(prev_action), event_to_memory(obs))
+            )
 
         goal = state.get_current_user_intent()
+
+        # always in the prompt if they exist: file and line
         prompt = STEP_PROMPT(goal, self.cur_file, self.cur_line)
 
+        # prepare messages
         msgs = [
             {'content': SYSTEM_MESSAGE, 'role': 'system'},
             {'content': prompt, 'role': 'user'},
         ]
 
-        if len(self.running_memory) > 0:
-            context = CONTEXT_PROMPT(self.running_memory, self.memory_window)
+        # insert memories
+        if len(running_memory) > 0:
+            context = CONTEXT_PROMPT(running_memory, self.memory_window)
             msgs.insert(1, {'content': context, 'role': 'user'})
         # clrs = [''] * (len(msgs)-2) + ['\033[0;36m', '\033[0;35m']
         # print('\n\n'.join([c+m['content']+'\033[0m' for c, m in zip(clrs, msgs)]))
+
+        # send it over
         action, thought = self._think_act(messages=msgs)
 
+        # be robust with malformed responses
         start_msg_len = len(msgs)
         while not action and len(msgs) < self.max_retries + start_msg_len:
             error = NO_ACTION(thought)
@@ -101,9 +107,9 @@ class SWEAgent(Agent):
         return action
 
     def search_memory(self, query: str) -> list[str]:
-        return [item for item in self.running_memory if query in item]
+        # return [item for item in self.running_memory if query in item]
+        raise NotImplementedError('Search_memory not implemented currently')
 
     def reset(self) -> None:
         """Used to reset the agent"""
-        self.running_memory = []
         super().reset()
