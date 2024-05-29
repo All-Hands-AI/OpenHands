@@ -1,4 +1,4 @@
-# GAIA Evaluation
+# AgentBench Evaluation
 
 This folder contains evaluation harness for evaluating agents on
 the [AgentBench: Evaluating LLMs as Agents](https://arxiv.org/abs/2308.03688).
@@ -15,5 +15,5 @@ Following is the basic command to start the evaluation. Here we are only evaluat
 You can update the arguments in the script `evaluation/agent_bench/scripts/run_infer.sh`, such as `--max-iterations`, `--eval-num-workers` and so on.
 
 ```bash
- evaluation/agent_bench/scripts/run_infer.sh eval_gpt35_turbo CodeActAgent 1
+./evaluation/agent_bench/scripts/run_infer.sh eval_gpt35_turbo CodeActAgent 1
 ```
