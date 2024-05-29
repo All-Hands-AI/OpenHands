@@ -24,8 +24,8 @@ function BaseModal({
   onOpenChange,
   title,
   isDismissable = true,
-  subtitle = undefined, 
-  actions = [], 
+  subtitle = undefined,
+  actions = [],
   children = null,
 }: BaseModalProps) {
   return (
@@ -59,6 +59,5 @@ function BaseModal({
     </Modal>
   );
 }
-
 
 export default BaseModal;
