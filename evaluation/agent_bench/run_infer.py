@@ -9,6 +9,7 @@ import subprocess
 import time
 from concurrent.futures import ProcessPoolExecutor
 
+import docker
 from datasets import load_dataset
 from tqdm import tqdm
 
@@ -125,7 +126,7 @@ def process_instance(
     # =============================================
 
     sandbox = DockerSSHBox()
-    if config.is_mock:
+    if hasattr(config, 'is_mock') and config.is_mock:
         sandbox.start_ssh_session()
     sandbox.execute(f'cd {inst_id}')
 
@@ -139,7 +140,7 @@ def process_instance(
         logger.info(f'Init script result: {init_res}')
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    if config.is_mock:
+    if hasattr(config, 'is_mock') and config.is_mock:
         fake_state = State()
         act = MessageAction(content='12', wait_for_response=False)
         act._source = 'agent'
@@ -205,7 +206,7 @@ def process_instance(
     )
     test_result = compare_results(comparison_method, agent_answer, final_ans)
 
-    if config.is_mock:
+    if hasattr(config, 'is_mock') and config.is_mock:
         histories = ['mock history']
     else:
         histories = [
@@ -228,8 +229,14 @@ def process_instance(
         },
     }
 
+    # clean up
+    if os.path.exists(instance_workspace):
+        shutil.rmtree(instance_workspace)
     # Close the sandbox
-    sandbox.close()
+    try:
+        sandbox.close()
+    except docker.errors.NotFound as e:
+        logger.error(f'Failed to close sandbox: {e}')
     return output
 
 
@@ -269,8 +276,8 @@ if __name__ == '__main__':
     # load datasets
     # =============================================
 
-    dataset = load_dataset('iFurySt/test')
-    agent_bench_tests = dataset['test'].to_pandas()
+    dataset = load_dataset('iFurySt/AgentBench')
+    agent_bench_tests = dataset['osbench'].to_pandas()
     logger.info(f'Loaded {len(agent_bench_tests)} tests.')
 
     # =============================================
