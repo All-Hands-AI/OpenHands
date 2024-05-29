@@ -1,0 +1,12 @@
+```json
+{
+  "action": "delegate",
+  "args": {
+    "agent": "CoderAgent",
+    "inputs": {
+      "task": "Write a shell script 'hello.sh' that prints 'hello'.",
+      "summary": ""
+    }
+  }
+}
+```
