@@ -33,7 +33,7 @@ api_key = "XXX"
 temperature = 0.0
 ```
 
-## Run Inference on HumanEvalFix
+## Run Inference on Bird
 
 ```bash
 ./evaluation/bird/scripts/run_infer.sh eval_gpt4_1106_preview
