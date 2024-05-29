@@ -129,7 +129,8 @@ def get_test_result(
 def process_instance(
     instance,
     agent_class,
-    metadata,
+    # metadata,
+    dataset_name,
     skip_workspace_mount,
     eval_output_dir,
     reset_logger: bool = True,
@@ -192,7 +193,7 @@ def process_instance(
         instruction = f.read()
 
     instance_logic_programs = instance['raw_logic_programs'][0].strip()
-    instruction = instruction.replace('[[dataset_name]]', metadata['dataset'])
+    instruction = instruction.replace('[[dataset_name]]', dataset_name)
     instruction = instruction.replace('[[logic_programs]]', instance_logic_programs)
     instruction = instruction.replace(
         '[[logic_inference_path.py]]', logic_inference_path
@@ -275,11 +276,11 @@ if __name__ == '__main__':
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
 
-    dataset = args.dataset
+    dataset_name = args.dataset
     data_split = args.data_split
-    dataset = load_dataset(f'renma/{dataset}')
+    dataset = load_dataset(f'renma/{dataset_name}')
     logic_reasoning_tests = dataset[data_split]
-    logger.info(f'Evaluating logic reasoning dataset {dataset} {data_split} split')
+    logger.info(f'Evaluating logic reasoning dataset {dataset_name} {data_split} split')
 
     # Check https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/swe_bench/README.md#configure-opendevin-and-your-llm
     # for details of how to set `llm_config`
@@ -300,13 +301,12 @@ if __name__ == '__main__':
     if args.eval_note is not None:
         eval_note += '_N_' + args.eval_note
 
-    start_time = time.strftime('%Y-%m-%d %H:%M:%S')
     eval_output_dir = os.path.join(
         args.eval_output_dir,
         'logic_reasoning',
         agent_class,
-        model_name + '_maxiter_' + str(max_iterations) + eval_note,
-        # start_time
+        dataset_name,
+        model_name + '_maxiter_' + str(max_iterations) + eval_note
     )
 
     pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
@@ -315,28 +315,13 @@ if __name__ == '__main__':
     )
     logger.info(f'Using evaluation output directory: {eval_output_dir}')
 
-    metadata = {
-        'dataset': args.dataset,
-        'data_split': data_split,
-        'agent_class': agent_class,
-        'model_name': model_name,
-        'max_iterations': max_iterations,
-        # 'eval_output_dir': eval_output_dir,
-        'start_time': start_time,
-        # get the commit id of current repo for reproduciblity
-        # 'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
-        # .decode('utf-8')
-        # .strip(),
-    }
-    logger.info(f'Metadata: {metadata}')
-    with open(os.path.join(eval_output_dir, 'metadata.json'), 'w') as f:
-        json.dump(metadata, f)
-
     # LIMIT EVALUATION
     eval_n_limit = args.eval_n_limit
     if eval_n_limit:
         logic_reasoning_tests = logic_reasoning_tests.select(list(range(eval_n_limit)))
         logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
+
+    start_time = time.strftime('%Y-%m-%d %H:%M:%S')
 
     # OUTPUT FILE
     output_file = os.path.join(eval_output_dir, 'output.jsonl')
@@ -406,7 +391,7 @@ if __name__ == '__main__':
                     process_instance,
                     instance,
                     agent_class,
-                    metadata,
+                    dataset_name,
                     skip_workspace_mount,
                     eval_output_dir,
                     reset_logger=bool(num_workers > 1),
@@ -422,4 +407,28 @@ if __name__ == '__main__':
         cleanup()
 
     output_fp.close()
-    logger.info('Evaluation finished.')
+    
+    test_result = []
+    n_sample = 0
+    with open(output_file, 'r') as f:
+        for line in f:
+            n_sample += 1
+            data = json.loads(line)
+            test_result.append(data["test_result"]["result"])
+            
+    metadata = {
+        "Dataset": dataset_name,
+        "Data split": data_split,
+        "Number of Samples": n_sample,
+        'Agent class': agent_class,
+        'Model name': model_name,
+        'Start_time': start_time,
+        "End_time": time.strftime('%Y-%m-%d %H:%M:%S'),
+        "Final Accuracy": f"{sum(test_result)/len(test_result):.2f}",
+        }
+    
+    with open(os.path.join(eval_output_dir, 'metadata.json'), 'w') as f:
+        json.dump(metadata, f, indent=4)
+        
+    logger.info(f'Metadata: {json.dumps(metadata, indent=4)}')
+    logger.info(f'Evaluation finished. Metadata saved to {eval_output_dir}/metadata.json')
