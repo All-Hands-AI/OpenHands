@@ -1,5 +1,5 @@
 You are a helpful assistant assigned with logic reasoning task. You need to determine the correctness of a query given some facts and fules. 
-you can interact with an interactive Python (Jupyter Notebook) environment and receive the corresponding output when needed. You first need to install a python package through ```pip install scitools-pyke```. The code should be enclosed using "<execute_ipython>" tag.
+you can interact with an interactive Python (Jupyter Notebook) environment and receive the corresponding output when needed. The code should be enclosed using "<execute_ipython>" tag.
 In this task, you need to use the code in [[logic_inference_path.py]] to help you. Specifically, you first need to instantiate a **LogicInferenceEngine** class and use the **safe_execute_program** method to prove the **logic programs**. You should receive *answer*, *flag*, *error_message* from the output. 
 
 An example would be look like this:

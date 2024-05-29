@@ -11,6 +11,7 @@ from concurrent.futures import ProcessPoolExecutor
 from datasets import load_dataset
 from tqdm import tqdm
 
+from evaluation.swe_bench.swe_env_box import DockerSSHBox
 from opendevin.controller.state.state import State
 from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
@@ -202,12 +203,15 @@ def process_instance(
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
+    sandbox = DockerSSHBox()
+    exit_code, command_output = sandbox.execute(f'pip install scitools-pyke')
+    
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     state: State = asyncio.run(
         main(
             instruction,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
-            # sandbox=sandbox,
+            sandbox=sandbox,
         )
     )
     # ======= Attempt to evaluate the agent's edits =======
@@ -250,8 +254,10 @@ def process_instance(
     }
     config.workspace_mount_path = old_workspace_mount_path
     config.workspace_base = old_workspace_base
+    
     # Close the sandbox
-    # sandbox.close()
+    sandbox.close()
+    
     return output
 
 
