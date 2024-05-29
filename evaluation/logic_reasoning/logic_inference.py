@@ -20,7 +20,7 @@ class PykeProgram:
             self.create_fact_file(self.Facts)
             self.create_rule_file(self.Rules)
             self.flag = True
-        except Exception as err:
+        except Exception:
             self.flag = False
 
         self.answer_map = {
@@ -35,7 +35,7 @@ class PykeProgram:
             try:
                 program_str, segment_list = self._parse_segment(program_str, keyword)
                 setattr(self, keyword[:-1], segment_list)
-            except Exception as err:
+            except Exception:
                 setattr(self, keyword[:-1], None)
 
         return self.validate_program()
