@@ -192,7 +192,7 @@ def process_instance(
             return result
 
     if __name__ == '__main__':
-        sql = "" # filling your SQL here
+        sql = "" # fill in your SQL here
         db_path = "{database_path}"
         print(db_path)
         result = execute_sql(db_path, sql)
