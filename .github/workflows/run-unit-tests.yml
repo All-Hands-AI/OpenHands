@@ -15,6 +15,9 @@ on:
       - 'evaluation/**'
   pull_request:
 
+env:
+  PERSIST_SANDBOX : "false"
+
 jobs:
   test-on-macos:
     name: Test on macOS
