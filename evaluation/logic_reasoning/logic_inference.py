@@ -139,7 +139,7 @@ class Pyke_Program:
         complied_krb_dir = './models/compiled_krb'
         if os.path.exists(complied_krb_dir):
             print('removing compiled_krb')
-            os.system(f'rm -rf {complied_krb_dir}/*')
+            shutil.rmtree(complied_krb_dir)
 
         # absolute_path = os.path.abspath(complied_krb_dir)
         # print(absolute_path)
