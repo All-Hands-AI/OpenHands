@@ -104,7 +104,7 @@ def get_test_result(
     ground_truth: str,
 ) -> bool:
     gold_answer = ground_truth.replace('(', '').replace(')', '').strip()
-    answer_str = model_answer.strip("'") if model_answer is not None else ''
+    answer_str = model_answer if model_answer is not None else ''
     prediction = get_choice(answer_str)
 
     indicators = [
@@ -226,8 +226,9 @@ def process_instance(
         if str(obs.content) in ["'A'", "'B'", "'C'"]:
             final_message = obs.content
             break
-
-    logger.info(f'Final message: {final_message}')
+    
+    final_message = final_message.strip("'")
+    logger.info(f'Predicted answer: {final_message}, Ground truth: {instance["answer"]}')
 
     test_result = get_test_result(
         model_answer=final_message, ground_truth=instance['answer']
@@ -238,7 +239,7 @@ def process_instance(
         'id': instance['id'],
         'instance': instance,
         'instruction': instruction,
-        'metadata': metadata,
+        # 'metadata': metadata,
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
@@ -408,18 +409,13 @@ if __name__ == '__main__':
 
     output_fp.close()
     
-    test_result = []
-    n_sample = 0
     with open(output_file, 'r') as f:
-        for line in f:
-            n_sample += 1
-            data = json.loads(line)
-            test_result.append(data["test_result"]["result"])
+        test_result = [(json.loads(line))["test_result"]["result"] for line in f]
             
     metadata = {
         "Dataset": dataset_name,
         "Data split": data_split,
-        "Number of Samples": n_sample,
+        "Number of Samples": len(test_result),
         'Agent class': agent_class,
         'Model name': model_name,
         'Start_time': start_time,
