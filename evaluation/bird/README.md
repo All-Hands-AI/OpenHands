@@ -1,6 +1,6 @@
 # BIRD Evaluation with OpenDevin
 
-Implements evaluation of agents on BIRD introducted in [Can LLM Already Serve as A Database Interface? A BIg Bench for Large-Scale Database Grounded Text-to-SQLs](https://arxiv.org/abs/2305.03111). Please see [here](https://bird-bench.github.io/) for the reference implementation used in the paper.
+Implements evaluation of agents on BIRD introduced in [Can LLM Already Serve as A Database Interface? A BIg Bench for Large-Scale Database Grounded Text-to-SQLs](https://arxiv.org/abs/2305.03111). Please see [here](https://bird-bench.github.io/) for the reference implementation used in the paper.
 
 ## Setup Environment
 
