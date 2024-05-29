@@ -1,0 +1,8 @@
+{
+  "action": "finish",
+  "args": {
+    "outputs": {
+      "summary": "The codebase contains a single file named 'bad.txt' with some typos. The content of 'bad.txt' is:\n\nThis is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n\nThe engineering team needs to correct the typos in this file."
+    }
+  }
+}

@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from opendevin.core.config import AppConfig, config
+from opendevin.core.config import config
 from opendevin.runtime.docker.exec_box import DockerExecBox
 from opendevin.runtime.docker.local_box import LocalBox
 from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
@@ -18,14 +18,6 @@ def temp_dir(monkeypatch):
     with tempfile.TemporaryDirectory() as temp_dir:
         pathlib.Path().mkdir(parents=True, exist_ok=True)
         yield temp_dir
-
-    # make sure os.environ is clean
-    monkeypatch.delenv('RUN_AS_DEVIN', raising=False)
-    monkeypatch.delenv('SANDBOX_TYPE', raising=False)
-    monkeypatch.delenv('WORKSPACE_BASE', raising=False)
-
-    # make sure config is clean
-    AppConfig.reset()
 
 
 def test_env_vars(temp_dir):

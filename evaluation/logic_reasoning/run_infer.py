@@ -264,7 +264,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--data_split',
         type=str,
-        help=r'data split to evaluate on {validation\}',  # right now we only support validation split
+        help='data split to evaluate on {validation}', # right now we only support validation split
         default='validation',
     )
 
