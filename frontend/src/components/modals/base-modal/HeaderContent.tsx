@@ -5,7 +5,10 @@ interface HeaderContentProps {
   subtitle?: string;
 }
 
-export function HeaderContent({ title, subtitle }: HeaderContentProps) {
+export function HeaderContent({
+  title,
+  subtitle = undefined,
+}: HeaderContentProps) {
   return (
     <>
       <h3>{title}</h3>
@@ -15,7 +18,3 @@ export function HeaderContent({ title, subtitle }: HeaderContentProps) {
     </>
   );
 }
-
-HeaderContent.defaultProps = {
-  subtitle: undefined,
-};
