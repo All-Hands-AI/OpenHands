@@ -2770,13 +2770,13 @@ llama-index-llms-azure-openai = ">=0.1.3,<0.2.0"
 
 [[package]]
 name = "llama-index-embeddings-huggingface"
-version = "0.2.0"
+version = "0.2.1"
 description = "llama-index embeddings huggingface integration"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_embeddings_huggingface-0.2.0-py3-none-any.whl", hash = "sha256:e8beb7cbdea36bcee26a0282809f8329b0c55b2b4949a590a8da0f348aac066e"},
-    {file = "llama_index_embeddings_huggingface-0.2.0.tar.gz", hash = "sha256:dcf0a99455f37c4e1a2fdd5cd65c9dd1a451bb868c3f80c335c4d0c9b69d0071"},
+    {file = "llama_index_embeddings_huggingface-0.2.1-py3-none-any.whl", hash = "sha256:326468966e269acc7fbc77cad4f65ec061133ea91b0063fe181e72d01a6a8511"},
+    {file = "llama_index_embeddings_huggingface-0.2.1.tar.gz", hash = "sha256:bac68a13ad5131a055da3ef174cca70e15230426eec7d471b372e81e8489d888"},
 ]
 
 [package.dependencies]
