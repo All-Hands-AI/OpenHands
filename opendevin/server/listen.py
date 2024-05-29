@@ -6,7 +6,7 @@ with warnings.catch_warnings():
     import litellm
 from fastapi import FastAPI, Request, Response, UploadFile, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 
@@ -154,11 +154,11 @@ async def websocket_endpoint(websocket: WebSocket):
     session = session_manager.add_or_restart_session(sid, websocket)
     await websocket.send_json({'token': token, 'status': 'ok'})
 
-    last_event_id = -1
-    if websocket.query_params.get('last_event_id'):
-        last_event_id = int(websocket.query_params.get('last_event_id'))
+    latest_event_id = -1
+    if websocket.query_params.get('latest_event_id'):
+        latest_event_id = int(websocket.query_params.get('latest_event_id'))
     for event in session.agent_session.event_stream.get_events(
-        start_id=last_event_id + 1
+        start_id=latest_event_id + 1
     ):
         if isinstance(event, NullAction) or isinstance(event, NullObservation):
             continue
@@ -313,13 +313,4 @@ async def appconfig_defaults():
     return config.defaults_dict
 
 
-@app.get('/')
-async def docs_redirect():
-    """
-    Redirect to the API documentation.
-    """
-    response = RedirectResponse(url='/index.html')
-    return response
-
-
-app.mount('/', StaticFiles(directory='./frontend/dist'), name='dist')
+app.mount('/', StaticFiles(directory='./frontend/dist', html=True), name='dist')

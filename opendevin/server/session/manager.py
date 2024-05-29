@@ -1,5 +1,6 @@
 import asyncio
 import time
+from typing import Optional
 
 from fastapi import WebSocket
 
@@ -54,7 +55,11 @@ class SessionManager:
                     session_ids_to_remove.append(sid)
 
             for sid in session_ids_to_remove:
-                del self._sessions[sid]
-                logger.info(f'Session {sid} has been removed due to inactivity.')
+                to_del_session: Optional[Session] = self._sessions.pop(sid, None)
+                if to_del_session is not None:
+                    await to_del_session.close()
+                    logger.info(
+                        f'Session {sid} and related resource have been removed due to inactivity.'
+                    )
 
             await asyncio.sleep(self.cleanup_interval)

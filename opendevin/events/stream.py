@@ -21,7 +21,9 @@ class EventStreamSubscriber(str, Enum):
 
 class EventStream:
     sid: str
-    _subscribers: dict[str, Callable]
+    # For each subscriber ID, there is a stack of callback functions - useful
+    # when there are agent delegates
+    _subscribers: dict[str, list[Callable]]
     _cur_id: int
     _lock: asyncio.Lock
     _file_store: FileStore
@@ -52,15 +54,16 @@ class EventStream:
         return int(filename.split('/')[-1].split('.')[0])
 
     def get_events(self, start_id=0, end_id=None) -> Iterable[Event]:
-        try:
-            events = self._file_store.list(f'sessions/{self.sid}/events')
-        except FileNotFoundError:
-            return
-        for event_str in events:
-            id = self._get_id_from_filename(event_str)
-            if start_id <= id and (end_id is None or id <= end_id):
-                event = self.get_event(id)
-                yield event
+        event_id = start_id
+        while True:
+            if end_id is not None and event_id > end_id:
+                break
+            try:
+                event = self.get_event(event_id)
+            except FileNotFoundError:
+                break
+            yield event
+            event_id += 1
 
     def get_event(self, id: int) -> Event:
         filename = self._get_filename_for_id(id)
@@ -68,17 +71,22 @@ class EventStream:
         data = json.loads(content)
         return event_from_dict(data)
 
-    def subscribe(self, id: EventStreamSubscriber, callback: Callable):
+    def subscribe(self, id: EventStreamSubscriber, callback: Callable, append=False):
         if id in self._subscribers:
-            raise ValueError('Subscriber already exists: ' + id)
+            if append:
+                self._subscribers[id].append(callback)
+            else:
+                raise ValueError('Subscriber already exists: ' + id)
         else:
-            self._subscribers[id] = callback
+            self._subscribers[id] = [callback]
 
     def unsubscribe(self, id: EventStreamSubscriber):
         if id not in self._subscribers:
             logger.warning('Subscriber not found during unsubscribe: ' + id)
         else:
-            del self._subscribers[id]
+            self._subscribers[id].pop()
+            if len(self._subscribers[id]) == 0:
+                del self._subscribers[id]
 
     # TODO: make this not async
     async def add_event(self, event: Event, source: EventSource):
@@ -92,5 +100,6 @@ class EventStream:
             self._file_store.write(
                 self._get_filename_for_id(event.id), json.dumps(data)
             )
-        for key, fn in self._subscribers.items():
-            await fn(event)
+        for key, stack in self._subscribers.items():
+            callback = stack[-1]
+            await callback(event)

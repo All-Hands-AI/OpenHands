@@ -44,6 +44,7 @@
         }],
         // For https://stackoverflow.com/questions/55844608/stuck-with-eslint-error-i-e-separately-loops-should-be-avoided-in-favor-of-arra
         "no-restricted-syntax": "off",
+        "react/require-default-props": "off",
         "import/prefer-default-export": "off",
         "no-underscore-dangle": "off",
         "jsx-a11y/no-static-element-interactions": "off",

@@ -12,11 +12,8 @@ import numpy as np
 from browsergym.utils.obs import flatten_dom_to_str
 from PIL import Image
 
+from opendevin.core.exceptions import BrowserInitException
 from opendevin.core.logger import opendevin_logger as logger
-
-
-class BrowserException(Exception):
-    pass
 
 
 class BrowserEnv:
@@ -38,7 +35,8 @@ class BrowserEnv:
         logger.info('Starting browser env...')
         self.process.start()
         if not self.check_alive():
-            raise BrowserException('Failed to start browser environment.')
+            self.close()
+            raise BrowserInitException('Failed to start browser environment.')
         atexit.register(self.close)
 
     def browser_process(self):
@@ -93,7 +91,7 @@ class BrowserEnv:
                 if response_id == unique_request_id:
                     return obs
 
-    def check_alive(self, timeout: float = 10):
+    def check_alive(self, timeout: float = 60):
         self.agent_side.send(('IS_ALIVE', None))
         if self.agent_side.poll(timeout=timeout):
             response_id, _ = self.agent_side.recv()
