@@ -5,7 +5,6 @@ import multiprocessing as mp
 import os
 import pathlib
 import shutil
-import subprocess
 import time
 from concurrent.futures import ProcessPoolExecutor
 
@@ -19,7 +18,7 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
-from opendevin.runtime.docker.ssh_box import DockerSSHBox
+
 
 def cleanup():
     logger.info('Cleaning up child processes...')
@@ -63,39 +62,69 @@ AGENT_CLS_TO_INST_SUFFIX = {
     'CodeActAgent': 'When you think you have solved the question, please first send your answer to user through message and then exit.\n'
 }
 
+
 def get_choice(answer_str):
-    choices = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'A)', 'B)', 'C)', 'D)', 'E)', 'F)', 'G)', 'H)', 
-               'A.', 'B.', 'C.', 'D.', 'E.', 'F.', 'G.', 'H.']
+    choices = [
+        'A',
+        'B',
+        'C',
+        'D',
+        'E',
+        'F',
+        'G',
+        'H',
+        'A)',
+        'B)',
+        'C)',
+        'D)',
+        'E)',
+        'F)',
+        'G)',
+        'H)',
+        'A.',
+        'B.',
+        'C.',
+        'D.',
+        'E.',
+        'F.',
+        'G.',
+        'H.',
+    ]
     for c in choices:
         if answer_str.startswith(c):
             return c.replace(')', '')
 
     if answer_str.startswith(':'):
-       return answer_str.replace(':', '').replace('.', '').strip()
+        return answer_str.replace(':', '').replace('.', '').strip()
     return None
+
 
 def get_test_result(
     model_answer: str,
     ground_truth: str,
 ) -> bool:
-
     gold_answer = ground_truth.replace('(', '').replace(')', '').strip()
     answer_str = model_answer.strip("'") if model_answer is not None else ''
     prediction = get_choice(answer_str)
 
-    indicators = ['the correct option is', 'the correct answer is', 
-                    'The correct answer is', 'The correct option is',
-                    'Thus, the answer is']
+    indicators = [
+        'the correct option is',
+        'the correct answer is',
+        'The correct answer is',
+        'The correct option is',
+        'Thus, the answer is',
+    ]
     if prediction is None:
         for indicator in indicators:
-            if answer_str.find(indicator)>=0:
+            if answer_str.find(indicator) >= 0:
                 answer_str = answer_str.split(indicator)[1].strip()
                 prediction = get_choice(answer_str)
                 break
 
     isTrue = prediction == gold_answer
-    test_result = {"result": isTrue}
+    test_result = {'result': isTrue}
     return test_result
+
 
 def process_instance(
     instance,
@@ -148,23 +177,27 @@ def process_instance(
     # sandbox = DockerSSHBox()
     logic_inference_path = os.path.join(workspace_mount_path, 'logic_inference.py')
     if not os.path.exists(logic_inference_path):
-        shutil.copyfile('./evaluation/logic_reasoning/logic_inference.py', logic_inference_path)
+        shutil.copyfile(
+            './evaluation/logic_reasoning/logic_inference.py', logic_inference_path
+        )
     logger.info(f'logic_inference.py copied to {workspace_mount_path}')
 
     cache_dir = os.path.join(workspace_mount_path, '.cache_program')
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
-            
+
     # Prepare instruction
-    
+
     with open('./evaluation/logic_reasoning/instruction.txt', 'r') as f:
         instruction = f.read()
 
     instance_logic_programs = instance['raw_logic_programs'][0].strip()
-    instruction = instruction.replace("[[dataset_name]]", metadata['dataset'])
-    instruction = instruction.replace("[[logic_programs]]", instance_logic_programs)
-    instruction = instruction.replace("[[logic_inference_path.py]]", logic_inference_path)
-    
+    instruction = instruction.replace('[[dataset_name]]', metadata['dataset'])
+    instruction = instruction.replace('[[logic_programs]]', instance_logic_programs)
+    instruction = instruction.replace(
+        '[[logic_inference_path.py]]', logic_inference_path
+    )
+
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
@@ -192,10 +225,8 @@ def process_instance(
         if str(obs.content) in ["'A'", "'B'", "'C'"]:
             final_message = obs.content
             break
-        
-    logger.info(
-        f'Final message: {final_message}'
-    )
+
+    logger.info(f'Final message: {final_message}')
 
     test_result = get_test_result(
         model_answer=final_message, ground_truth=instance['answer']
@@ -203,15 +234,15 @@ def process_instance(
 
     # Save the output
     output = {
-        'instance_id': instance['id'],
+        'id': instance['id'],
         'instance': instance,
         'instruction': instruction,
         'metadata': metadata,
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
-        "final_message": final_message,
-        "messages": messages,
+        'final_message': final_message,
+        'messages': messages,
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
@@ -233,10 +264,9 @@ if __name__ == '__main__':
     parser.add_argument(
         '--data_split',
         type=str,
-        help='data split to evaluate on {validation\}', # right now we only support validation split
+        help=r'data split to evaluate on {validation\}',  # right now we only support validation split
         default='validation',
     )
-
 
     args, _ = parser.parse_known_args()
     if args.directory:
@@ -244,7 +274,7 @@ if __name__ == '__main__':
         print(f'Setting workspace base to {config.workspace_base}')
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
-    
+
     dataset = args.dataset
     data_split = args.data_split
     dataset = load_dataset(f'renma/{dataset}')
@@ -269,7 +299,7 @@ if __name__ == '__main__':
     eval_note = ''
     if args.eval_note is not None:
         eval_note += '_N_' + args.eval_note
-    
+
     start_time = time.strftime('%Y-%m-%d %H:%M:%S')
     eval_output_dir = os.path.join(
         args.eval_output_dir,
@@ -349,10 +379,10 @@ if __name__ == '__main__':
     def update_progress(future):
         pbar.update(1)
         output = future.result()
-        pbar.set_description(f'Instance {output["instance_id"]}')
+        pbar.set_description(f'Instance {output["id"]}')
         pbar.set_postfix_str(f'Test Result: {output["test_result"]["result"]}')
         logger.info(
-            f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]["result"]}'
+            f'Finished evaluation for instance {output["id"]}: {output["test_result"]["result"]}'
         )
         output_fp.write(json.dumps(output) + '\n')
         # json.dump(output, output_fp, indent=4)

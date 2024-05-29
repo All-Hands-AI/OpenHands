@@ -1,10 +1,15 @@
 import os
-from pyke import knowledge_engine
 import random
 import re
+import shutil
 
-class Pyke_Program:
-    def __init__(self, logic_program:str, dataset_name = 'ProntoQA', workspace_mount_path="./") -> None:
+from pyke import knowledge_engine
+
+
+class PykeProgram:
+    def __init__(
+        self, logic_program: str, dataset_name='ProntoQA', workspace_mount_path='./'
+    ) -> None:
         self.logic_program = logic_program
         self.flag = self.parse_logic_program()
         self.dataset_name = dataset_name
@@ -15,11 +20,13 @@ class Pyke_Program:
             self.create_fact_file(self.Facts)
             self.create_rule_file(self.Rules)
             self.flag = True
-        except:
+        except Exception as err:
             self.flag = False
 
-        self.answer_map = {'ProntoQA': self.answer_map_prontoqa, 
-                           'ProofWriter': self.answer_map_proofwriter}
+        self.answer_map = {
+            'ProntoQA': self.answer_map_prontoqa,
+            'ProofWriter': self.answer_map_proofwriter,
+        }
 
     def parse_logic_program(self):
         keywords = ['Query:', 'Rules:', 'Facts:', 'Predicates:']
@@ -28,7 +35,7 @@ class Pyke_Program:
             try:
                 program_str, segment_list = self._parse_segment(program_str, keyword)
                 setattr(self, keyword[:-1], segment_list)
-            except:
+            except Exception as err:
                 setattr(self, keyword[:-1], None)
 
         return self.validate_program()
@@ -42,7 +49,7 @@ class Pyke_Program:
 
     # check if the program is valid; if not, try to fix it
     def validate_program(self):
-        if not self.Rules is None and not self.Facts is None:
+        if self.Rules is not None and self.Facts is not None:
             if not self.Rules[0] == '' and not self.Facts[0] == '':
                 return True
         # try to fix the program
@@ -51,16 +58,16 @@ class Pyke_Program:
         statements = self.Facts if self.Facts is not None else self.Rules
         if statements is None:
             return False
-        
+
         for fact in statements:
-            if fact.find('>>>') >= 0: # this is a rule
+            if fact.find('>>>') >= 0:  # this is a rule
                 tmp_rules.append(fact)
             else:
                 tmp_facts.append(fact)
         self.Rules = tmp_rules
         self.Facts = tmp_facts
         return False
-    
+
     def create_fact_file(self, facts):
         with open(os.path.join(self.cache_dir, 'facts.kfb'), 'w') as f:
             for fact in facts:
@@ -90,25 +97,30 @@ class Pyke_Program:
         conclusion_list = [c.strip() for c in conclusion]
 
         # create the Pyke rule
-        pyke_rule = f'''fact{f_index}\n\tforeach'''
+        pyke_rule = f"""fact{f_index}\n\tforeach"""
         for p in premise_list:
-            pyke_rule += f'''\n\t\tfacts.{p}'''
-        pyke_rule += f'''\n\tassert'''
+            pyke_rule += f"""\n\t\tfacts.{p}"""
+        pyke_rule += """\n\tassert"""
         for c in conclusion_list:
-            pyke_rule += f'''\n\t\tfacts.{c}'''
+            pyke_rule += f"""\n\t\tfacts.{c}"""
         return pyke_rule
-    
-    '''
+
+    """
     for example: Is Marvin from Mars?
     Query: FromMars(Marvin, $label)
-    '''
+    """
+
     def check_specific_predicate(self, subject_name, predicate_name, engine):
         results = []
-        with engine.prove_goal(f'facts.{predicate_name}({subject_name}, $label)') as gen:
+        with engine.prove_goal(
+            f'facts.{predicate_name}({subject_name}, $label)'
+        ) as gen:
             for vars, plan in gen:
                 results.append(vars['label'])
 
-        with engine.prove_goal(f'rules.{predicate_name}({subject_name}, $label)') as gen:
+        with engine.prove_goal(
+            f'rules.{predicate_name}({subject_name}, $label)'
+        ) as gen:
             for vars, plan in gen:
                 results.append(vars['label'])
 
@@ -119,9 +131,10 @@ class Pyke_Program:
         elif len(results) == 0:
             return None
 
-    '''
+    """
     Input Example: Metallic(Wren, False)
-    '''
+    """
+
     def parse_query(self, query):
         pattern = r'(\w+)\(([^,]+),\s*([^)]+)\)'
         match = re.match(pattern, query)
@@ -139,7 +152,8 @@ class Pyke_Program:
         complied_krb_dir = './models/compiled_krb'
         if os.path.exists(complied_krb_dir):
             print('removing compiled_krb')
-            os.system(f'rm -rf {complied_krb_dir}/*')
+            # os.system(f'rm -rf {complied_krb_dir}/*')
+            shutil.rmtree(complied_krb_dir)
 
         # absolute_path = os.path.abspath(complied_krb_dir)
         # print(absolute_path)
@@ -153,14 +167,14 @@ class Pyke_Program:
             predicate, subject, value_to_check = self.parse_query(self.Query[0])
             result = self.check_specific_predicate(subject, predicate, engine)
             answer = self.answer_map[self.dataset_name](result, value_to_check)
-        except Exception as e:
-            return None, e
-        
-        return answer, ""
+        except Exception as err:
+            return None, err
+
+        return answer, ''
 
     def answer_mapping(self, answer):
         return answer
-        
+
     def answer_map_prontoqa(self, result, value_to_check):
         if result == value_to_check:
             return 'A'
@@ -175,6 +189,7 @@ class Pyke_Program:
         else:
             return 'B'
 
+
 class LogicInferenceEngine:
     def __init__(self, dataset_name, workspace_mount_path):
         self.dataset_name = dataset_name
@@ -185,11 +200,13 @@ class LogicInferenceEngine:
             return random.choice(['A', 'B'])
         elif self.dataset_name == 'ProofWriter':
             return random.choice(['A', 'B', 'C'])
-        
+
     def safe_execute_program(self, logic_program):
-        program = Pyke_Program(logic_program, self.dataset_name, self.workspace_mount_path)
+        program = PykeProgram(
+            logic_program, self.dataset_name, self.workspace_mount_path
+        )
         # cannot parse the program
-        if program.flag == False:
+        if not program.flag:
             answer = self.random_backup()
             return answer, 'parsing error', ''
         # execuate the program
