@@ -4,6 +4,7 @@ import logging
 import multiprocessing as mp
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import time
@@ -19,7 +20,7 @@ from opendevin.core.config import args, config, get_llm_config_arg
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
-from opendevin.events.action import MessageAction
+from opendevin.events.action import MessageAction, CmdRunAction
 from opendevin.events.serialization.event import event_to_dict
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
@@ -35,7 +36,10 @@ def cleanup():
 def codeact_user_response(state: State) -> str:
     msg = (
         'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have solved the task, please first send your answer to user through message and then exit.\n'
+        'If you think you have solved the task, please first send your answer to user through '
+        'message and then <execute_bash> exit </execute_bash>.\n'
+        'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
+        'For example: The answer to the question is <solution> 42 </solution>.\n'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
     )
     if state.history:
@@ -110,7 +114,9 @@ def process_instance(
     # Prepare instruction
     instruction = (
         f'Please fix the following issue.\n'
-        'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
+        'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+        'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
+        'For example: The answer to the question is <solution> 42 </solution>.\n'
         '# Problem \n'
         f'{question}\n\n'
     )
@@ -182,11 +188,20 @@ def process_instance(
         _, agent_answer = sandbox.execute(scpt_name)
     else:
         logger.info('Retrieving agent answer from history.')
+        raw_ans = ''
         for act, _ in reversed(state.history):
             if isinstance(act, MessageAction) and act.source == 'agent':
-                logger.info(act.content)
-                agent_answer = act.content
+                raw_ans = act.content
                 break
+            if isinstance(act, CmdRunAction) and act.source == 'agent':
+                raw_ans = act.thought
+                break
+        agent_answer = re.findall(r'<solution>(.*?)</solution>', raw_ans)
+        if len(agent_answer) == 0:
+            logger.warning(f'Failed to parse model answer: {raw_ans}')
+            agent_answer = raw_ans
+        else:
+            agent_answer = agent_answer[0]
 
     final_ans = ''
     if instance.ground_truth is not None:
