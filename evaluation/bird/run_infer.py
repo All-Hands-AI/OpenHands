@@ -153,7 +153,7 @@ def process_instance(
     # Set up the database path
     database_path = os.path.join(instance.db_id, f'{instance.db_id}.sqlite')
 
-    # Setup the logger properly, so you can run multi-processing to parallize the evaluation
+    # Set up the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
         # Set up logger
         log_file = os.path.join(
