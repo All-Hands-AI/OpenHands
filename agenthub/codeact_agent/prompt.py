@@ -8,17 +8,23 @@ COMMAND_DOCS = (
     "Please note that THE `edit_file` FUNCTION REQUIRES PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run."
 )
 
-SYSTEM_PREFIX = """A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
+# ======= SYSTEM MESSAGE =======
+MINIMAL_SYSTEM_PREFIX = """A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
 The assistant can interact with an interactive Python (Jupyter Notebook) environment and receive the corresponding output when needed. The code should be enclosed using "<execute_ipython>" tag, for example:
 <execute_ipython>
 print("Hello World!")
 </execute_ipython>
 The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>.
 For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
-The assistant can browse the Internet with commands on behalf of the user by wrapping them with <execute_browse> and </execute_browse>.
+"""
+
+BROWSING_PREFIX = """The assistant can browse the Internet with commands on behalf of the user by wrapping them with <execute_browse> and </execute_browse>.
 For example, you can browse a given URL by <execute_browse> goto("<URL>") </execute_browse>.
 The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
-The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them."""
+"""
+PIP_INSTALL_PREFIX = """The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them."""
+
+SYSTEM_PREFIX = MINIMAL_SYSTEM_PREFIX + BROWSING_PREFIX + PIP_INSTALL_PREFIX
 
 GITHUB_MESSAGE = """To do any activities on GitHub, the assistant should use the token in the $GITHUB_TOKEN environment variable.
 For instance, to push a local branch `my_branch` to the github repo `owner/repo`, the assistant can use the following four commands:
@@ -30,6 +36,8 @@ The assistant should include ONLY ONE <execute_ipython> or <execute_bash> or <ex
 IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> or <execute_browse> instead of providing it.
 """
 
+
+# ======= EXAMPLE MESSAGE =======
 EXAMPLES = """
 --- START OF EXAMPLE ---
 

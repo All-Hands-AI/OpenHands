@@ -51,22 +51,20 @@ You must be using Linux, Mac OS, or WSL on Windows.
 
 To start the app, run these commands, replacing `$(pwd)/workspace` with the directory you want OpenDevin to work with.
 
-```bash
-# The directory you want OpenDevin to work with. MUST be an absolute path!
-export WORKSPACE_BASE=$(pwd)/workspace;
-export SSH_PASSWORD="set some long password here";
-```
-
 > [!WARNING]
 > OpenDevin runs bash commands within a Docker sandbox, so it should not affect your machine.
 > But your workspace directory will be attached to that sandbox, and files in the directory may be modified or deleted.
 
 ```bash
-docker run \
-    -it \
+# The directory you want OpenDevin to work with. MUST be an absolute path!
+export WORKSPACE_BASE=$(pwd)/workspace;
+```
+
+```bash
+docker run -it \
     --pull=always \
     -e SANDBOX_USER_ID=$(id -u) \
-    -e SSH_PASSWORD=$SSH_PASSWORD \
+    -e SSH_PASSWORD="make something up here" \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
     -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
