@@ -10,12 +10,10 @@ def extract_test_results(json_file_path):
             data = json.loads(line.strip())
             instance_id = data['instance_id']
             resolved = False
-            try:
+            if 'fine_grained_report' in data:
+                resolved = data['fine_grained_report']['resolved']
+            else:
                 resolved = data['test_result']['result']['resolved']
-            except Exception:
-                print(
-                    f'Test {instance_id} has no "resolved" attribute, error message is: {data["error"]}'
-                )
             if resolved:
                 passed_tests.append(instance_id)
             else:
@@ -26,7 +24,7 @@ def extract_test_results(json_file_path):
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         print(
-            'Usage: poetry run python summarise_results.py <path_to_output.jsonl_file>'
+            'Usage: poetry run python summarise_results.py <path_to_output_merged_jsonl_file>'
         )
         sys.exit(1)
     json_file_path = sys.argv[1]
