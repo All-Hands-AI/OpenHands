@@ -226,6 +226,9 @@ setup-config-prompts:
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
 	 echo "workspace_base=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
 
+	@read -p "Enter a password for the sandbox container: " ssh_password; \
+	 echo "ssh_password=\"$$ssh_password\"" >> $(CONFIG_FILE).tmp
+
 	@echo "" >> $(CONFIG_FILE).tmp
 
 	@echo "[llm]" >> $(CONFIG_FILE).tmp
