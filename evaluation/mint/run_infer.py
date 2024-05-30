@@ -47,7 +47,13 @@ def codeact_user_response(state: State, task: Task, task_config: Dict[str, int])
     )
     last_action, _ = state.history[-1]
     result_state: TaskState = env.step(last_action.message)
-    state.task_state = result_state
+
+    # HACK: Update the state if from false to true, otherwise keep the state
+    if not hasattr(state, 'task_state'):  # first set
+        state.task_state = result_state
+    else:
+        if result_state.success:
+            state.task_state = result_state
 
     if not result_state.latest_output:
         if result_state.success:
@@ -140,7 +146,7 @@ def process_instance(
         ),
         task_prompt='Task:\n' + instance.prompt,
     )
-    instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you or provide the solution inside <solution> tag AND NEVER ASK FOR HUMAN HELP.\n'
+    instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you or provide the concise RESULT inside <solution> tag AND NEVER ASK FOR HUMAN HELP.\n'
 
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
@@ -166,8 +172,10 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    task_state: TaskState = state.task_state
-    logger.info('Task state: ' + str(task_state.to_dict()))
+    task_state = None
+    if hasattr(state, 'task_state'):
+        task_state = state.task_state
+        logger.info('Task state: ' + str(task_state.to_dict()))
 
     # Save the output
     output = {
@@ -179,7 +187,7 @@ def process_instance(
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
         'error': state.error if state and state.error else None,
-        'test_result': task_state.success,
+        'test_result': task_state.success if task_state else False,
     }
 
     # Close the sandbox
