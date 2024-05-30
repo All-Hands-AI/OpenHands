@@ -46,6 +46,7 @@ class MonologueAgent(Agent):
     initial_thoughts: list[dict[str, str]]
     memory: 'LongTermMemory | None'
     memory_condenser: MemoryCondenser
+    runtime_tools: list[str] = ['browser']
 
     def __init__(self, llm: LLM):
         """

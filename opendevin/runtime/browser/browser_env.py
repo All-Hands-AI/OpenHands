@@ -4,6 +4,7 @@ import io
 import multiprocessing
 import time
 import uuid
+import asyncio
 
 import browsergym.core  # noqa F401 (we register the openended task as a gym environment)
 import gymnasium as gym
@@ -32,12 +33,17 @@ class BrowserEnv:
         self.process = multiprocessing.Process(
             target=self.browser_process,
         )
-        logger.info('Starting browser env...')
-        self.process.start()
-        if not self.check_alive():
-            self.close()
-            raise BrowserInitException('Failed to start browser environment.')
+        logger.info('Starting browser env async...')
+        asyncio.create_task(self.start_browser_env())
         atexit.register(self.close)
+
+    async def start_browser_env(self):
+        self.process.start()
+        started = await self.check_alive_async()
+        if not started:
+            self.close()
+            logger.error('Failed to start browser environment.')
+            raise BrowserInitException('Failed to start browser environment.')
 
     def browser_process(self):
         env = gym.make(
@@ -91,12 +97,20 @@ class BrowserEnv:
                 if response_id == unique_request_id:
                     return obs
 
-    def check_alive(self, timeout: float = 60):
+    async def check_alive_async(self, timeout: float = 60):
         self.agent_side.send(('IS_ALIVE', None))
-        if self.agent_side.poll(timeout=timeout):
-            response_id, _ = self.agent_side.recv()
-            if response_id == 'ALIVE':
-                return True
+        started = False
+        end_time = time.time() + timeout
+
+        while time.time() < end_time:
+            await asyncio.sleep(0.1)
+            if self.agent_side.poll(timeout=0.01):
+                response_id, _ = self.agent_side.recv()
+                if response_id == 'ALIVE':
+                    started = True
+                    break
+
+        return started
 
     def close(self):
         if not self.process.is_alive():

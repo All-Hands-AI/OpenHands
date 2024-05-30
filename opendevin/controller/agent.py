@@ -23,6 +23,7 @@ class Agent(ABC):
 
     _registry: dict[str, Type['Agent']] = {}
     sandbox_plugins: list[PluginRequirement] = []
+    runtime_tools: list[str] = []
 
     def __init__(
         self,

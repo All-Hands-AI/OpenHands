@@ -42,6 +42,7 @@ class BrowsingAgent(Agent):
     """
 
     sandbox_plugins: list[PluginRequirement] = []
+    runtime_tools: list[str] = ['browser']
 
     def __init__(
         self,

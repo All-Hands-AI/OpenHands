@@ -12,6 +12,7 @@ class PlannerAgent(Agent):
     The planner agent utilizes a special prompting strategy to create long term plans for solving problems.
     The agent is given its previous action-observation pairs, current task, and hint based on last action taken at every step.
     """
+    runtime_tools: list[str] = ['browser']
 
     def __init__(self, llm: LLM):
         """

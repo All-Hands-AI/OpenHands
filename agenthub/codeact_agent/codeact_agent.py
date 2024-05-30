@@ -162,6 +162,7 @@ class CodeActAgent(Agent):
         AgentSkillsRequirement(),
         JupyterRequirement(),
     ]
+    runtime_tools: list[str] = ['browser']
     jupyter_kernel_init_code: str = 'from agentskills import *'
 
     system_message: str = get_system_message()
