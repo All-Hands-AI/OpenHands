@@ -1,0 +1,20 @@
+{
+  "action": "finish",
+  "args": {
+    "outputs": {
+      "summary": {
+        "file": "./bad.txt",
+        "typos_fixed": [
+          {
+            "original": "typoo",
+            "fixed": "typo"
+          },
+          {
+            "original": "mor",
+            "fixed": "more"
+          }
+        ]
+      }
+    }
+  }
+}

@@ -2,6 +2,8 @@ import io
 import os
 import re
 import sys
+import tempfile
+import subprocess
 from functools import partial
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from threading import Thread
@@ -81,14 +83,24 @@ def get_mock_response(test_name: str, messages: str, id: int) -> str:
             # print the mismatched lines
             print('Mismatched Prompt File path', prompt_file_path)
             print('---' * 10)
-            print(messages)
+            # Create a temporary file to store messages
+            with tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8') as tmp_file:
+                tmp_file_path = tmp_file.name
+                tmp_file.write(messages)
+
+            try:
+                # Use diff command to compare files and capture the output
+                result = subprocess.run(['diff', '-u', prompt_file_path, tmp_file_path], capture_output=True, text=True)
+                if result.returncode != 0:
+                    print('Diff:')
+                    print(result.stdout)
+                else:
+                    print('No differences found.')
+            finally:
+                # Clean up the temporary file
+                os.remove(tmp_file_path)
+
             print('---' * 10)
-            for i, (c1, c2) in enumerate(zip(file_content, prompt)):
-                if c1 != c2:
-                    print(
-                        f'Mismatch at index {i}: {c1[max(0,i-100):i+100]} vs {c2[max(0,i-100):i+100]}'
-                    )
-                    break
 
 
 def mock_user_response(*args, test_name, **kwargs):
