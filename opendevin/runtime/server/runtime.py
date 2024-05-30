@@ -55,7 +55,10 @@ class ServerRuntime(Runtime):
 
         # run the code
         obs = self._run_command(
-            ('cat /tmp/opendevin_jupyter_temp.py | execute_cli'), background=False
+            (
+                'export JUPYTER_PWD=$(pwd) && cat /tmp/opendevin_jupyter_temp.py | execute_cli'
+            ),
+            background=False,
         )
         output = obs.content
         if 'pip install' in action.code and 'Successfully installed' in output:

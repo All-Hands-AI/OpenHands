@@ -1,17 +1,15 @@
 import re
 
-from agenthub.codeact_agent.prompt import (
+from agenthub.codeact_swe_agent.prompt import (
     COMMAND_DOCS,
-    EXAMPLES,
-    GITHUB_MESSAGE,
-    SYSTEM_PREFIX,
+    MINIMAL_SYSTEM_PREFIX,
+    SWE_EXAMPLE,
     SYSTEM_SUFFIX,
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import (
     Action,
-    AgentDelegateAction,
     AgentFinishAction,
     BrowseInteractiveAction,
     CmdRunAction,
@@ -19,7 +17,6 @@ from opendevin.events.action import (
     MessageAction,
 )
 from opendevin.events.observation import (
-    AgentDelegateObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
@@ -30,8 +27,6 @@ from opendevin.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
 )
-
-ENABLE_GITHUB = True
 
 
 def parse_response(response) -> str:
@@ -90,9 +85,6 @@ def get_observation_message(obs) -> dict[str, str] | None:
     elif isinstance(obs, BrowserOutputObservation):
         content = 'OBSERVATION:\n' + truncate_observation(obs.content)
         return {'role': 'user', 'content': content}
-    elif isinstance(obs, AgentDelegateObservation):
-        content = 'OBSERVATION:\n' + truncate_observation(str(obs.outputs))
-        return {'role': 'user', 'content': content}
     return None
 
 
@@ -110,54 +102,22 @@ def truncate_observation(observation: str, max_chars: int = 10_000) -> str:
     )
 
 
-# FIXME: We can tweak these two settings to create MicroAgents specialized toward different area
 def get_system_message() -> str:
-    if ENABLE_GITHUB:
-        return f'{SYSTEM_PREFIX}\n{GITHUB_MESSAGE}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
-    else:
-        return f'{SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
+    return f'{MINIMAL_SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
 
 
 def get_in_context_example() -> str:
-    return EXAMPLES
+    return SWE_EXAMPLE
 
 
-class CodeActAgent(Agent):
-    VERSION = '1.6'
+class CodeActSWEAgent(Agent):
+    VERSION = '1.5'
     """
-    The Code Act Agent is a minimalist agent.
-    The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
+    This agent is an adaptation of the original [SWE Agent](https://swe-agent.com/) based on CodeAct 1.5 using the `agentskills` library of OpenDevin.
 
-    ### Overview
+    It is intended use is **solving Github issues**.
 
-    This agent implements the CodeAct idea ([paper](https://arxiv.org/abs/2402.13463), [tweet](https://twitter.com/xingyaow_/status/1754556835703751087)) that consolidates LLM agents’ **act**ions into a unified **code** action space for both *simplicity* and *performance* (see paper for more details).
-
-    The conceptual idea is illustrated below. At each turn, the agent can:
-
-    1. **Converse**: Communicate with humans in natural language to ask for clarification, confirmation, etc.
-    2. **CodeAct**: Choose to perform the task by executing code
-    - Execute any valid Linux `bash` command
-    - Execute any valid `Python` code with [an interactive Python interpreter](https://ipython.org/). This is simulated through `bash` command, see plugin system below for more details.
-
-    ![image](https://github.com/OpenDevin/OpenDevin/assets/38853559/92b622e3-72ad-4a61-8f41-8c040b6d5fb3)
-
-    ### Plugin System
-
-    To make the CodeAct agent more powerful with only access to `bash` action space, CodeAct agent leverages OpenDevin's plugin system:
-    - [Jupyter plugin](https://github.com/OpenDevin/OpenDevin/tree/main/opendevin/runtime/plugins/jupyter): for IPython execution via bash command
-    - [SWE-agent tool plugin](https://github.com/OpenDevin/OpenDevin/tree/main/opendevin/runtime/plugins/swe_agent_commands): Powerful bash command line tools for software development tasks introduced by [swe-agent](https://github.com/princeton-nlp/swe-agent).
-
-    ### Demo
-
-    https://github.com/OpenDevin/OpenDevin/assets/38853559/f592a192-e86c-4f48-ad31-d69282d5f6ac
-
-    *Example of CodeActAgent with `gpt-4-turbo-2024-04-09` performing a data science task (linear regression)*
-
-    ### Work-in-progress & Next step
-
-    [] Support web-browsing
-    [] Complete the workflow for CodeAct agent to submit Github PRs
-
+    It removes web-browsing and Github capability from the original CodeAct agent to avoid confusion to the agent.
     """
 
     sandbox_plugins: list[PluginRequirement] = [
@@ -202,7 +162,7 @@ class CodeActAgent(Agent):
         Returns:
         - CmdRunAction(command) - bash command to run
         - IPythonRunCellAction(code) - IPython code to run
-        - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
+        - BrowseInteractiveAction(browsergym_command) - BrowserGym commands to run
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
@@ -271,10 +231,12 @@ class CodeActAgent(Agent):
         elif browse_command := re.search(
             r'<execute_browse>(.*)</execute_browse>', action_str, re.DOTALL
         ):
-            thought = action_str.replace(browse_command.group(0), '').strip()
+            # BrowserGym actions was found
             browse_actions = browse_command.group(1).strip()
-            task = f'{thought}. I should start with: {browse_actions}'
-            return AgentDelegateAction(agent='BrowsingAgent', inputs={'task': task})
+            thought = action_str.replace(browse_command.group(0), '').strip()
+            return BrowseInteractiveAction(
+                browser_actions=browse_actions, thought=thought
+            )
         else:
             # We assume the LLM is GOOD enough that when it returns pure natural language
             # it want to talk to the user
