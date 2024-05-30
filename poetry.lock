@@ -2403,13 +2403,13 @@ files = [
 
 [[package]]
 name = "json-repair"
-version = "0.20.1"
+version = "0.21.0"
 description = "A package to repair broken json strings"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "json_repair-0.20.1-py3-none-any.whl", hash = "sha256:95352e3246958984790647a3f1cbfd21c9792eba8e3e165a3eaab626579866a2"},
-    {file = "json_repair-0.20.1.tar.gz", hash = "sha256:6938bf245abe5e67c63d09c1c062d9c77e8e0b28664b82018bc626d805949437"},
+    {file = "json_repair-0.21.0-py3-none-any.whl", hash = "sha256:b432d5f4a09c75c279e7185381d6ac600154793def0367a5df56f267038d39b0"},
+    {file = "json_repair-0.21.0.tar.gz", hash = "sha256:6df5b381b08a0cc386aefd4ddeabdb071f22345101d64ca2b34cbb32dfdf2eec"},
 ]
 
 [[package]]
