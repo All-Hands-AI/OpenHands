@@ -260,37 +260,6 @@ def process_instance(
     return output
 
 
-def find_subdirectories(directory):
-    return [
-        name
-        for name in os.listdir(directory)
-        if os.path.isdir(os.path.join(directory, name))
-    ]
-
-
-def load_datasets_from_local(key: str, _dir: str) -> [dict]:
-    _datasets = {}
-    if os.path.exists(_dir):
-        for filename in os.listdir(_dir):
-            if filename.endswith('.json'):  # assuming the datasets are in csv format
-                file_path = os.path.join(_dir, filename)
-                with open(file_path, 'r') as r:
-                    _datasets[filename] = json.load(r)
-    return flatten(key, _datasets)
-
-
-def flatten(key: str, _data: dict) -> [dict]:
-    flat_data = []
-    for subkey, values in _data.items():
-        if isinstance(values, list):
-            for i in range(len(values)):
-                value = values[i]
-                value['instance_id'] = f'{key}_{subkey}_{i}'
-                value['task_idx'] = key
-                flat_data.append(value)
-    return flat_data
-
-
 if __name__ == '__main__':
     # =============================================
     # load datasets
