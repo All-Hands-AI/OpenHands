@@ -116,9 +116,20 @@ selected_ids = ['sphinx-doc__sphinx-8721', 'sympy__sympy-14774', 'scikit-learn__
 Then only these tasks (rows whose `instance_id` is in the above list) will be evaluated.
 In this case, `eval_limit` option applies to tasks that are in the `selected_ids` list.
 
+After running the inference, you will obtain a `output.jsonl` (by default it will save to `evaluation/evaluation_outputs`).
+
+## View Result Summary
+
+If you just want to know the resolve rate, and/or a summary of what tests pass and what don't, you could run
+
+```bash
+poetry run python summarise_results.py <path_to_output_jsonl_file>
+# e.g. poetry run python summarise_results.py ../evaluation_outputs/outputs/swe_bench_lite/CodeActSWEAgent/gpt-4o-2024-05-13_maxiter_50_N_v1.5-no-hint/output.jsonl
+```
+
 ## Evaluate Generated Patches
 
-After running the inference described in the previous section, you will obtain a `output.jsonl` (by default it will save to `evaluation/evaluation_outputs`). Then you can run this one line script to evaluate generated patches, and produce a fine-grained report:
+With `output.jsonl` file, you can run `eval_infer.sh` to evaluate generated patches, and produce a fine-grained report.
 
 If you want to evaluate existing results, you should first run this to clone existing outputs
 
