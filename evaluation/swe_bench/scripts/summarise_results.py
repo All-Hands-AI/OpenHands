@@ -28,9 +28,6 @@ if __name__ == '__main__':
         print(
             'Usage: poetry run python summarise_results.py <path_to_output.jsonl_file>'
         )
-        print(
-            'Example: poetry run python summarise_results.py ../evaluation_outputs/outputs/swe_bench_lite/CodeActSWEAgent/gpt-4o-2024-05-13_maxiter_50_N_v1.5-no-hint/output.jsonl'
-        )
         sys.exit(1)
     json_file_path = sys.argv[1]
     passed_tests, failed_tests = extract_test_results(json_file_path)
