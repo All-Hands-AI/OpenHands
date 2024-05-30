@@ -15,11 +15,11 @@ export default function FAQ() {
         <div>How can I report an issue with OpenDevin?</div>
         <div>
           Please file a bug on{" "}
-          <a href="https://github.com/OpenDevin/OpenDevin/issues">GitHub</a> if
+          <a href="https://github.com/OpenDevin/OpenDevin/issues" target="_blank">GitHub</a> if
           you notice a problem that likely affects others.
           If you're having trouble installing, or have general questions, reach out on{" "}
-          <a href="https://discord.gg/mBuDGRzzES">Discord</a> or{" "}
-          <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw">Slack</a>.
+          <a href="https://discord.gg/mBuDGRzzES" target="_blank">Discord</a> or{" "}
+          <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw" target="_blank">Slack</a>.
         </div>
 
         </div>
