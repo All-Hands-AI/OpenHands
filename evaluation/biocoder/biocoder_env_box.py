@@ -5,7 +5,7 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.plugins import JupyterRequirement, SWEAgentCommandsRequirement
 
-BIOCODER_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.0'
+BIOCODER_BENCH_CONTAINER_IMAGE = 'public.ecr.aws/i5g0m1f6/eval_biocoder:v1.0'
 
 
 class BiocoderSSHBox(DockerSSHBox):
@@ -50,7 +50,7 @@ class BiocoderSSHBox(DockerSSHBox):
         cls,
         instance,
         n_tries=5,
-        skip_workspace_mount: bool = True,
+        skip_workspace_mount: bool = False,
         workspace_mount_path: str | None = None,
     ) -> 'BiocoderSSHBox':
         """This method initializes a container image, then runs some initialization commands"""
@@ -62,12 +62,12 @@ class BiocoderSSHBox(DockerSSHBox):
 
         sandbox = cls(
             container_image=BIOCODER_BENCH_CONTAINER_IMAGE,
-            swe_instance_id=instance['instance_id'],
-            swe_instance=instance,
+            biocoder_instance_id=instance['test_case_id'],
+            biocoder_instance=instance,
             skip_workspace_mount=skip_workspace_mount,
         )
 
-        logger.info(f"SSH box started for instance {instance['instance_id']}.")
+        logger.info(f"SSH box started for instance {instance['test_case_id']}.")
         # cd to the workspace
         exit_code, output = sandbox.execute_and_check(
             'cd /workspace', 'Failed to cd to workspace'
@@ -92,21 +92,26 @@ class BiocoderSSHBox(DockerSSHBox):
 
 if __name__ == '__main__':
     EXAMPLE_INSTANCE = {
-        'repo': 'django/django',
-        'instance_id': 'django__django-11099',
-        'base_commit': 'd26b2424437dabeeca94d7900b37d2df4410da0c',
-        'patch': "diff --git a/django/contrib/auth/validators.py b/django/contrib/auth/validators.py\n--- a/django/contrib/auth/validators.py\n+++ b/django/contrib/auth/validators.py\n@@ -7,7 +7,7 @@\n \n @deconstructible\n class ASCIIUsernameValidator(validators.RegexValidator):\n-    regex = r'^[\\w.@+-]+$'\n+    regex = r'^[\\w.@+-]+\\Z'\n     message = _(\n         'Enter a valid username. This value may contain only English letters, '\n         'numbers, and @/./+/-/_ characters.'\n@@ -17,7 +17,7 @@ class ASCIIUsernameValidator(validators.RegexValidator):\n \n @deconstructible\n class UnicodeUsernameValidator(validators.RegexValidator):\n-    regex = r'^[\\w.@+-]+$'\n+    regex = r'^[\\w.@+-]+\\Z'\n     message = _(\n         'Enter a valid username. This value may contain only letters, '\n         'numbers, and @/./+/-/_ characters.'\n",
-        'test_patch': "diff --git a/tests/auth_tests/test_validators.py b/tests/auth_tests/test_validators.py\n--- a/tests/auth_tests/test_validators.py\n+++ b/tests/auth_tests/test_validators.py\n@@ -237,7 +237,7 @@ def test_unicode_validator(self):\n         invalid_usernames = [\n             \"o'connell\", \"عبد ال\",\n             \"zerowidth\\u200Bspace\", \"nonbreaking\\u00A0space\",\n-            \"en\\u2013dash\",\n+            \"en\\u2013dash\", 'trailingnewline\\u000A',\n         ]\n         v = validators.UnicodeUsernameValidator()\n         for valid in valid_usernames:\n@@ -250,7 +250,7 @@ def test_unicode_validator(self):\n \n     def test_ascii_validator(self):\n         valid_usernames = ['glenn', 'GLEnN', 'jean-marc']\n-        invalid_usernames = [\"o'connell\", 'Éric', 'jean marc', \"أحمد\"]\n+        invalid_usernames = [\"o'connell\", 'Éric', 'jean marc', \"أحمد\", 'trailingnewline\\n']\n         v = validators.ASCIIUsernameValidator()\n         for valid in valid_usernames:\n             with self.subTest(valid=valid):\n",
-        'problem_statement': "UsernameValidator allows trailing newline in usernames\nDescription\n\t\nASCIIUsernameValidator and UnicodeUsernameValidator use the regex \nr'^[\\w.@+-]+$'\nThe intent is to only allow alphanumeric characters as well as ., @, +, and -. However, a little known quirk of Python regexes is that $ will also match a trailing newline. Therefore, the user name validators will accept usernames which end with a newline. You can avoid this behavior by instead using \\A and \\Z to terminate regexes. For example, the validator regex could be changed to\nr'\\A[\\w.@+-]+\\Z'\nin order to reject usernames that end with a newline.\nI am not sure how to officially post a patch, but the required change is trivial - using the regex above in the two validators in contrib.auth.validators.\n",
-        'hints_text': '',
-        'created_at': '2019-03-20T03:46:18Z',
-        'version': '3.0',
-        'FAIL_TO_PASS': '["test_ascii_validator (auth_tests.test_validators.UsernameValidatorsTests)", "test_unicode_validator (auth_tests.test_validators.UsernameValidatorsTests)", "test_help_text (auth_tests.test_validators.UserAttributeSimilarityValidatorTest)"]',
-        'PASS_TO_PASS': '["test_help_text (auth_tests.test_validators.MinimumLengthValidatorTest)", "test_validate (auth_tests.test_validators.MinimumLengthValidatorTest)", "test_help_text (auth_tests.test_validators.NumericPasswordValidatorTest)", "test_validate (auth_tests.test_validators.NumericPasswordValidatorTest)", "test_validate (auth_tests.test_validators.UserAttributeSimilarityValidatorTest)", "test_validate_property (auth_tests.test_validators.UserAttributeSimilarityValidatorTest)", "test_empty_password_validator_help_text_html (auth_tests.test_validators.PasswordValidationTest)", "test_get_default_password_validators (auth_tests.test_validators.PasswordValidationTest)", "test_get_password_validators_custom (auth_tests.test_validators.PasswordValidationTest)", "test_password_changed (auth_tests.test_validators.PasswordValidationTest)", "test_password_changed_with_custom_validator (auth_tests.test_validators.PasswordValidationTest)", "test_password_validators_help_text_html (auth_tests.test_validators.PasswordValidationTest)", "test_password_validators_help_text_html_escaping (auth_tests.test_validators.PasswordValidationTest)", "test_password_validators_help_texts (auth_tests.test_validators.PasswordValidationTest)", "test_validate_password (auth_tests.test_validators.PasswordValidationTest)", "test_help_text (auth_tests.test_validators.CommonPasswordValidatorTest)", "test_validate (auth_tests.test_validators.CommonPasswordValidatorTest)", "test_validate_custom_list (auth_tests.test_validators.CommonPasswordValidatorTest)", "test_validate_django_supplied_file (auth_tests.test_validators.CommonPasswordValidatorTest)"]',
-        'environment_setup_commit': '419a78300f7cd27611196e1e464d50fd0385ff27',
+        'signature': 'def sanitize_tex(original_text)',
+        'numLines': 27,
+        'repository': 'pgxcentre/genipe',
+        'lineEnd': 84,
+        'promptSummaryOnly': 'This is in python\nwrite a function that takes in a string as an argument and returns a sanitized version of the string suitable for LaTeX formatting. The function should follow these steps:\n\n1. Replace any occurrences of four backslashes (\\\\\\\\) with the string \\\\textbackslash.\n2. Escape certain characters, including $, %, _, }, {, &, and #, by adding a backslash before them.\n3. Replace special characters such as tilde (~) with the corresponding LaTeX equivalent (e.g. $\\\\sim$).\nThe function should be named sanitize_tex and should have one argument named original_text. It should return the sanitized version of the string.',
+        'content': "def sanitize_tex(original_text):\n    \"\"\"Sanitize TeX text.\n\n    Args:\n        original_text (str): the text to sanitize for LaTeX\n\n    Text is sanitized by following these steps:\n\n    1. Replaces ``\\\\\\\\`` by ``\\\\textbackslash``\n    2. Escapes certain characters (such as ``$``, ``%``, ``_``, ``}``, ``{``,\n       ``&`` and ``#``) by adding a backslash (*e.g.* from ``&`` to ``\\\\&``).\n    3. Replaces special characters such as ``~`` by the LaTeX equivalent\n       (*e.g.* from ``~`` to ``$\\\\sim$``).\n\n    \"\"\"\n    sanitized_tex = original_text.replace(\\'\\\\\\', \\'\\\\textbackslash \\')\n    sanitized_tex = re.sub(\\'([{}])\\'.format(\\'\\'.join(_escaped_char)),\n        \\'\\\\\\\\\\\\g<1>\\', sanitized_tex)\n    for character, mod in _char_mod.items():\n        sanitized_tex = sanitized_tex.replace(character, mod)\n    return sanitized_tex\n",
+        'comment': 'Sanitize TeX text.\n\nArgs:\n    original_text (str): the text to sanitize for LaTeX\n\nText is sanitized by following these steps:\n\n1. Replaces ``\\\\`` by ``\\textbackslash``\n2. Escapes certain characters (such as ``$``, ``%``, ``_``, ``}``, ``{``,\n   ``&`` and ``#``) by adding a backslash (*e.g.* from ``&`` to ``\\&``).\n3. Replaces special characters such as ``~`` by the LaTeX equivalent\n   (*e.g.* from ``~`` to ``$\\sim$``).',
+        'filePath': 'genipe/reporting/utils.py',
+        'contextCode': "import random\nimport hashlib\nimport numpy as np\nimport skimage\nimport skimage.measure\nimport scipy.ndimage\nimport os\nimport logging\nfrom functools import wraps\nfrom scipy import stats\nimport sys\nimport math\nimport subprocess\nfrom pathlib import PurePath\nfrom itertools import islice\nimport pysam\nimport pandas as pd\nfrom scipy.signal import savgol_coeffs, savgol_filter\nfrom scipy.stats import norm\nimport re\nimport fileinput\nimport warnings\nfrom scipy.stats import scoreatpercentile, chisquare\nfrom sklearn.preprocessing import scale\nfrom sklearn.cluster import KMeans, AgglomerativeClustering\n_char_mod = {\\'~\\': \\'$\\\\sim$\\'}\n_escaped_char = [\\'$\\', \\'%\\', \\'_\\', \\'}\\', \\'{\\', \\'&\\', \\'#\\']\ndef format_time(total_seconds, written_time=False):\n    \"\"\"Format time (either \"HH:MM:SS\" or \"H hours, M minutes and S seconds\".\n    Args:\n        total_seconds (int): the total number of seconds\n        written_time (bool): whether to write time in written language\n    Returns:\n        str: a string representation of the total time\n    If ``written_time`` is ``True``, time will be displayed as \"H hours, M\n    minutes and S seconds\". Otherwise, the time will be represented as\n    HH:MM:SS.\n    \"\"\"\n    time_fmt = \\'{hours:02d}:{minutes:02d}:{seconds:02d}\\'\n    minutes, seconds = divmod(total_seconds, 60)\n    hours, minutes = divmod(minutes, 60)\n    if not written_time:\n        return time_fmt.format(seconds=seconds, minutes=minutes, hours=hours)\n    written_time = []\n    if hours > 0:\n        written_time.append(\\'{} hour{}\\'.format(hours, \\'s\\' if hours > 1 else \\'\\')\n            )\n    if minutes > 0:\n        written_time.append(\\'{} minute{}\\'.format(minutes, \\'s\\' if minutes > \n            1 else \\'\\'))\n    if seconds > 0:\n        written_time.append(\\'{} second{}\\'.format(seconds, \\'s\\' if seconds > \n            1 else \\'\\'))\n    if len(written_time) == 0:\n        return \\'no time\\'\n    if len(written_time) == 1:\n        return written_time[0]\n    return \\', \\'.join(written_time[:-1]) + \\' and \\' + written_time[-1]\ndef colorize_time(total_seconds):\n    \"\"\"Colorize the time.\n    Args:\n        total_seconds (int): the total number of seconds\n    Returns:\n        str: a colorized LaTeX string representation of time\n    The time is displayed as ``HH:MM:SS``, but insignificant zeros are\n    grayed-out.\n    \"\"\"\n    formatted_time = format_time(total_seconds)\n    colored_time = formatted_time\n    to_color = re.match(\\'([0:]+)\\', formatted_time)\n    if to_color is not None:\n        colored_time = \\'{\\\\color{light_gray}\\'\n        colored_time += formatted_time[:to_color.end()]\n        colored_time += \\'}\\' + formatted_time[to_color.end():]\n    return colored_time\n<<insert solution here>>\ndef main():\n    random.seed(<|int;range=0,100|>)\n    argString = \\'\\'.join([random.choice(_escaped_char) for _ in range(100)])\n    print(sanitize_tex(argString))\nif __name__ == \"__main__\":\n    main()\n",
+        'goldenCode': "def sanitize_tex(original_text):\n    \"\"\"Sanitize TeX text.\n\n    Args:\n        original_text (str): the text to sanitize for LaTeX\n\n    Text is sanitized by following these steps:\n\n    1. Replaces ``\\\\\\\\`` by ``\\\\textbackslash``\n    2. Escapes certain characters (such as ``$``, ``%``, ``_``, ``}``, ``{``,\n       ``&`` and ``#``) by adding a backslash (*e.g.* from ``&`` to ``\\\\&``).\n    3. Replaces special characters such as ``~`` by the LaTeX equivalent\n       (*e.g.* from ``~`` to ``$\\\\sim$``).\n\n    \"\"\"\n    sanitized_tex = original_text.replace(\\'\\\\\\', \\'\\\\textbackslash \\')\n    sanitized_tex = re.sub(\\'([{}])\\'.format(\\'\\'.join(_escaped_char)),\n        \\'\\\\\\\\\\\\g<1>\\', sanitized_tex)\n    for character, mod in _char_mod.items():\n        sanitized_tex = sanitized_tex.replace(character, mod)\n    return sanitized_tex",
+        'test_case_id': '61beb3529846e024cdff01d3e2ba1a1ec4212dd64426028deb1065f1975bd376',
+        'lineStart': 58,
+        'language': 'Python',
     }
 
-    sandbox = BiocoderSSHBox.get_box_for_instance(instance=EXAMPLE_INSTANCE)
+    sandbox = BiocoderSSHBox.get_box_for_instance(
+        instance=EXAMPLE_INSTANCE,
+        workspace_mount_path='/workspace',
+        skip_workspace_mount=False,
+    )
 
     # in actual eval, this will be initialized by the controller
     sandbox.init_plugins([JupyterRequirement(), SWEAgentCommandsRequirement()])

@@ -7,13 +7,14 @@ import pathlib
 import subprocess
 import time
 from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass
 
 import pandas as pd
 import whatthepatch
 from datasets import load_dataset
 from tqdm import tqdm
 
-from evaluation.swe_bench.swe_env_box import SWEBenchSSHBox
+from evaluation.biocoder.biocoder_env_box import BiocoderSSHBox
 from opendevin.controller.state.state import State
 from opendevin.core.config import args, config, get_llm_config_arg
 from opendevin.core.logger import get_console_handler
@@ -183,6 +184,30 @@ def get_test_result(instance, sandbox, workspace_dir_name):
     return test_result
 
 
+"""
+An instance should contain the following:
+
+
+"""
+
+
+@dataclass
+class BiocoderData:
+    filePath: str
+    numLines: int
+    lineStart: int
+    lineEnd: int
+    signature: str
+    comment: str
+    content: str
+    repository: str
+    promptSummaryOnly: str
+    contextCode: str
+    goldenCode: str
+    index: str
+    language: str
+
+
 def process_instance(
     instance,
     agent_class,
@@ -191,6 +216,9 @@ def process_instance(
     eval_output_dir,
     reset_logger: bool = True,
 ):
+    instance = BiocoderData(**instance)
+    print(instance)
+
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
     # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
@@ -228,7 +256,7 @@ def process_instance(
     # NOTE: this is something special we do for SWE-Bench due to the reason described in the previous section
     # You can omit this if you don't need to setup specialized sandbox
     workspace_dir_name = f'{instance.repo}__{instance.version}'.replace('/', '__')
-    sandbox = SWEBenchSSHBox.get_box_for_instance(
+    sandbox = BiocoderSSHBox.get_box_for_instance(
         instance,
         workspace_dir_name,
         skip_workspace_mount=skip_workspace_mount,
@@ -237,17 +265,18 @@ def process_instance(
 
     # Prepare instruction
     instruction = (
-        f'Please fix the following issue for the repository in /workspace/{workspace_dir_name}.\n'
+        f'In the file {instance.filename}, there is a function with a signature and without a body. Your job is to complete the function, and only this function, according to the given instructions.'
         'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
         '# Problem Statement\n'
         f'{instance.problem_statement}\n\n'
     )
-    if instance.hints_text:
-        instruction += f'# Hints\n{instance.hints_text}\n\n'
+
     instruction += (
         'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-        'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
-        'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
+        'You should NOT modify any other files other than the file intended. This means that you should NOT write any test cases.\n'
+        'Do NOT add any import statements or change anything else other than the writing the function body.\n'
+        'You do not need to run the code to check if it works. The system will automatically check the correctness of your code.\n'
+        'Make sure to include proper formatting in Java and Python, including correct braces and/or indentation.\n'
     )
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
@@ -299,8 +328,8 @@ def process_instance(
 if __name__ == '__main__':
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
-    dataset = load_dataset('princeton-nlp/SWE-bench_Lite')
-    swe_bench_tests = dataset['test'].to_pandas()
+    dataset = load_dataset('lilbillbiscuit/biocoder_public')
+    biocoder_tests = dataset['test'].to_pandas()
 
     # Check https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/swe_bench/README.md#configure-opendevin-and-your-llm
     # for details of how to set `llm_config`
@@ -327,6 +356,8 @@ if __name__ == '__main__':
         model_name + '_maxiter_' + str(max_iterations) + eval_note,
     )
 
+    eval_output_dir = str(eval_output_dir)
+
     pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
     pathlib.Path(os.path.join(eval_output_dir, 'logs')).mkdir(
         parents=True, exist_ok=True
@@ -351,20 +382,20 @@ if __name__ == '__main__':
     # LIMIT EVALUATION
     eval_n_limit = args.eval_n_limit
     if eval_n_limit:
-        swe_bench_tests = swe_bench_tests.head(eval_n_limit)
+        biocoder_tests = biocoder_tests.head(eval_n_limit)
         logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
 
     # OUTPUT FILE
     output_file = os.path.join(eval_output_dir, 'output.jsonl')
     logger.info(f'Writing evaluation output to {output_file}')
-    finished_instance_ids = set()
+    finished_test_case_ids = set()
     if os.path.exists(output_file):
         with open(output_file, 'r') as f:
             for line in f:
                 data = json.loads(line)
-                finished_instance_ids.add(data['instance_id'])
+                finished_test_case_ids.add(data['instance_id'])
         logger.warning(
-            f'Output file {output_file} already exists. Loaded {len(finished_instance_ids)} finished instances.'
+            f'Output file {output_file} already exists. Loaded {len(finished_test_case_ids)} finished instances.'
         )
     output_fp = open(output_file, 'a')
 
@@ -374,22 +405,22 @@ if __name__ == '__main__':
 
     # =============================================
     # filter out finished instances
-    new_swe_bench_tests = []
-    for idx, instance in swe_bench_tests.iterrows():
-        if instance.instance_id in finished_instance_ids:
+    new_biocoder_tests = []
+    for idx, instance in biocoder_tests.iterrows():
+        if instance.test_case_id in finished_test_case_ids:
             logger.info(
-                f'Skipping instance {instance.instance_id} as it is already finished.'
+                f'Skipping instance {instance.test_case_id} as it is already finished.'
             )
             continue
-        new_swe_bench_tests.append(instance)
+        new_biocoder_tests.append(instance)
 
-    swe_bench_tests = pd.DataFrame(new_swe_bench_tests)
+    biocoder_tests = pd.DataFrame(new_biocoder_tests)
     logger.info(
-        f'Finished instances: {len(finished_instance_ids)}, Remaining instances: {len(swe_bench_tests)}'
+        f'Finished instances: {len(finished_test_case_ids)}, Remaining instances: {len(biocoder_tests)}'
     )
     # =============================================
 
-    pbar = tqdm(total=len(swe_bench_tests))
+    pbar = tqdm(total=len(biocoder_tests))
 
     # This function tracks the progress AND write the output to a JSONL file
     def update_progress(future):
@@ -415,7 +446,7 @@ if __name__ == '__main__':
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
             # This is how we perform multi-processing
-            for row_idx, instance in swe_bench_tests.iterrows():
+            for row_idx, instance in biocoder_tests.iterrows():
                 future = executor.submit(
                     process_instance,
                     instance,
