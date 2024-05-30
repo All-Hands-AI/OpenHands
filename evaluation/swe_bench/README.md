@@ -52,6 +52,7 @@ sandbox_timeout = 120
 use_host_network = false
 run_as_devin = false
 enable_auto_lint = true
+persist_sandbox = false
 
 # TODO: Change these to the model you want to evaluate
 [eval_gpt4_1106_preview]
