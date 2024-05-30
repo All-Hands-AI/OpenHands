@@ -17,7 +17,7 @@ function CustomFooter() {
           <div >
           </div>
         <div >
-          <p className="uppercase">Copyright © {new Date().getFullYear()} OpenDevin</p>
+          <p className="uppercase">Copyright &copy; {new Date().getFullYear()} OpenDevin</p>
         </div>
       </div>
     </footer>
