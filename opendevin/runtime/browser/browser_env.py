@@ -33,14 +33,15 @@ class BrowserEnv:
         self.process = multiprocessing.Process(
             target=self.browser_process,
         )
+        self.browser_started = False
         logger.info('Starting browser env async...')
         asyncio.create_task(self.start_browser_env())
         atexit.register(self.close)
 
     async def start_browser_env(self):
         self.process.start()
-        started = await self.check_alive_async()
-        if not started:
+        self.browser_started = await self.check_alive_async()
+        if not self.browser_started:
             self.close()
             logger.error('Failed to start browser environment.')
             raise BrowserInitException('Failed to start browser environment.')
@@ -86,6 +87,18 @@ class BrowserEnv:
                 return
 
     def step(self, action_str: str, timeout: float = 10) -> dict:
+        # Check if the browser has started. For web page scene, the browser should be ready when this function called,
+        # but for integration test scene, the browser may not be ready yet.
+        attempts = 0
+        while not self.browser_started and attempts < 2:
+            logger.info(f"Browser has not started yet. Attempt {attempts + 1}/2")
+            time.sleep(10)
+            self.browser_started = asyncio.run(self.check_alive_async())
+            attempts += 1
+
+        if not self.browser_started:
+            raise BrowserInitException('Failed to start browser environment after 2 attempts.')
+
         unique_request_id = str(uuid.uuid4())
         self.agent_side.send((unique_request_id, {'action': action_str}))
         start_time = time.time()
