@@ -10,11 +10,13 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 from typing import Dict
 
+import tasks
+from config_variables import TASK_INFO_MAP
 from datasets import load_dataset
 from datatypes import TaskState
 from env import SimplifiedEnv
 from prompts import ToolPromptTemplate
-from task import ReasoningTask, Task
+from tasks import Task
 from tqdm import tqdm
 
 from evaluation.swe_bench.swe_env_box import DockerSSHBox
@@ -164,8 +166,6 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    logger.info('Msgs: ' + str(state.history))
-
     task_state: TaskState = state.task_state
     logger.info('Task state: ' + str(task_state.to_dict()))
 
@@ -194,7 +194,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--subset',
         default='math',
-        choices=['math', 'gsm8k'],
+        choices=['math', 'gsm8k', 'mmlu'],
         type=str,
         help='subset of the dataset to be used',
     )
@@ -288,8 +288,9 @@ if __name__ == '__main__':
 
     # =============================================
     # filter out finished instances
-    task_class = ReasoningTask
-    new_mint_tests: list[ReasoningTask] = []
+    task_class: Task = getattr(tasks, TASK_INFO_MAP[args.subset]['class'])
+    new_mint_tests: list[Task] = []
+
     for instance in mint_dataset:
         if instance['id'] in finished_instance_ids:
             logger.info(
@@ -297,7 +298,7 @@ if __name__ == '__main__':
             )
             continue
         # convert to Task object
-        instance = ReasoningTask(**instance)
+        instance = task_class(**instance)
         new_mint_tests.append(instance)
 
     mint_dataset = new_mint_tests
