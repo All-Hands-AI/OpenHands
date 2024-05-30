@@ -116,7 +116,7 @@ selected_ids = ['sphinx-doc__sphinx-8721', 'sympy__sympy-14774', 'scikit-learn__
 Then only these tasks (rows whose `instance_id` is in the above list) will be evaluated.
 In this case, `eval_limit` option applies to tasks that are in the `selected_ids` list.
 
-After running the inference, you will obtain a `output.jsonl` (by default it will save to `evaluation/evaluation_outputs`).
+After running the inference, you will obtain a `output.jsonl` (by default it will be saved to `evaluation/evaluation_outputs`).
 
 ## View Result Summary
 
