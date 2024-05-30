@@ -10,9 +10,9 @@ function CustomFooter() {
           </div>
             <div className="uppercase font-light">Community</div>
           <div className="flex gap-6 text-3xl">
-              <div><a className="hover:text-white trasnition-all duration-300" href="https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw"><FaSlack /></a></div>
-              <div><a className="hover:text-white trasnition-all duration-300" href="https://discord.gg/ESHStjSjD4"><FaDiscord /></a></div>
-              <div><a className="hover:text-white trasnition-all duration-300" href="https://github.com/OpenDevin/OpenDevin"><FaGithub /></a></div>
+              <div><a className="hover:text-white trasnition-all duration-300" href="https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw" target="_blank"><FaSlack /></a></div>
+              <div><a className="hover:text-white trasnition-all duration-300" href="https://discord.gg/ESHStjSjD4" target="_blank"><FaDiscord /></a></div>
+              <div><a className="hover:text-white trasnition-all duration-300" href="https://github.com/OpenDevin/OpenDevin" target="_blank"><FaGithub /></a></div>
           </div>
           <div >
           </div>
