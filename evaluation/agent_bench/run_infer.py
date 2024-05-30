@@ -82,6 +82,7 @@ def process_instance(
     question = instance.description
     # create a directory for the instance's workspace
     instance_workspace = str(os.path.join(config.workspace_base, inst_id))
+    container_inst_workspace = str(os.path.join(config.workspace_mount_path_in_sandbox, inst_id))
     if os.path.exists(instance_workspace):
         shutil.rmtree(instance_workspace)
     os.makedirs(instance_workspace, exist_ok=True)
@@ -138,11 +139,12 @@ def process_instance(
 
     init_cmd = instance.init
     if init_cmd is not None:
-        scpt_name = os.path.join('.', f'{instance.instance_id}_init.sh')
-        host_scpt_name = os.path.join(instance_workspace, scpt_name)
-        create_sh_file(host_scpt_name, init_cmd)
-        logger.info(f'Running init script: {scpt_name}')
-        _, init_res = sandbox.execute(scpt_name)
+        scpt_name = f'{instance.instance_id}_init.sh'
+        scpt_path = os.path.join(container_inst_workspace, scpt_name)
+        host_scpt_path = os.path.join(instance_workspace, scpt_name)
+        create_sh_file(host_scpt_path, init_cmd)
+        logger.info(f'Running init script: {scpt_path}')
+        _, init_res = sandbox.execute(scpt_path)
         logger.info(f'Init script result: {init_res}')
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
@@ -181,11 +183,12 @@ def process_instance(
     agent_answer = ''
     get_agent_result_cmd = instance.get_agent_result
     if get_agent_result_cmd is not None:
-        scpt_name = os.path.join('.', f'{instance.instance_id}_get_agent_result.sh')
-        host_scpt_name = os.path.join(instance_workspace, scpt_name)
-        create_sh_file(host_scpt_name, get_agent_result_cmd)
-        logger.info(f'Running get agent result cmd: {scpt_name}')
-        _, agent_answer = sandbox.execute(scpt_name)
+        scpt_name = f'{instance.instance_id}_get_agent_result.sh'
+        scpt_path = os.path.join(container_inst_workspace, scpt_name)
+        host_scpt_path = os.path.join(instance_workspace, scpt_name)
+        create_sh_file(host_scpt_path, get_agent_result_cmd)
+        logger.info(f'Running get agent result cmd: {scpt_path}')
+        _, agent_answer = sandbox.execute(scpt_path)
     else:
         logger.info('Retrieving agent answer from history.')
         raw_ans = ''
@@ -209,11 +212,13 @@ def process_instance(
     else:
         get_ground_truth_cmd = instance.get_ground_truth
         if get_ground_truth_cmd is not None:
-            scpt_name = os.path.join('.', f'{instance.instance_id}_get_ground_truth.sh')
-            host_scpt_name = os.path.join(instance_workspace, scpt_name)
-            create_sh_file(host_scpt_name, get_ground_truth_cmd)
-            logger.info(f'Running get ground truth cmd: {scpt_name}')
-            _, final_ans = sandbox.execute(scpt_name)
+            scpt_name = f'{instance.instance_id}_get_ground_truth.sh'
+            scpt_path = os.path.join(container_inst_workspace, scpt_name)
+            host_scpt_path = os.path.join(instance_workspace, scpt_name)
+            create_sh_file(host_scpt_path, get_ground_truth_cmd)
+            logger.info(f'Running get ground truth cmd: {scpt_path}')
+            sandbox.execute(f'cd {container_inst_workspace}')
+            _, final_ans = sandbox.execute(scpt_path)
 
     comparison_method = instance.comparison_method
     logger.info(
