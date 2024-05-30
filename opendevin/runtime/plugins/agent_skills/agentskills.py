@@ -16,6 +16,7 @@ Functions:
 """
 
 import base64
+import functools
 import os
 import subprocess
 from inspect import signature
@@ -44,6 +45,22 @@ MAX_TOKEN = os.getenv('MAX_TOKEN', 500)
 OPENAI_PROXY = f'{OPENAI_BASE_URL}/chat/completions'
 
 client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
+
+
+# Define the decorator using the functionality of UpdatePwd
+def update_pwd_decorator(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        old_pwd = os.getcwd()
+        jupyter_pwd = os.environ.get('JUPYTER_PWD', None)
+        if jupyter_pwd:
+            os.chdir(jupyter_pwd)
+        try:
+            return func(*args, **kwargs)
+        finally:
+            os.chdir(old_pwd)
+
+    return wrapper
 
 
 def _lint_file(file_path: str) -> Optional[str]:
@@ -88,12 +105,21 @@ def _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=False):
         start = max(0, CURRENT_LINE - WINDOW // 2)
         end = min(len(lines), CURRENT_LINE + WINDOW // 2)
         output = ''
+
+        # only display this when there's line above
+        if start > 0:
+            n_above_lines = start
+            output += f'({n_above_lines} more lines above)\n'
         for i in range(start, end):
             _new_line = f'{i + 1}|{lines[i]}'
             if not _new_line.endswith('\n'):
                 _new_line += '\n'
             output += _new_line
+        if end < len(lines):
+            n_below_lines = len(lines) - end
+            output += f'({n_below_lines} more lines below)\n'
         output = output.rstrip()
+
         if return_str:
             return output
         else:
@@ -104,6 +130,7 @@ def _cur_file_header(CURRENT_FILE, total_lines):
     return f'[File: {os.path.abspath(CURRENT_FILE)} ({total_lines} lines total)]\n'
 
 
+@update_pwd_decorator
 def open_file(path: str, line_number: Optional[int] = None) -> None:
     """
     Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
@@ -116,7 +143,7 @@ def open_file(path: str, line_number: Optional[int] = None) -> None:
     if not os.path.isfile(path):
         raise FileNotFoundError(f'File {path} not found')
 
-    CURRENT_FILE = path
+    CURRENT_FILE = os.path.abspath(path)
     with open(CURRENT_FILE) as file:
         total_lines = sum(1 for _ in file)
 
@@ -136,6 +163,7 @@ def open_file(path: str, line_number: Optional[int] = None) -> None:
     print(output)
 
 
+@update_pwd_decorator
 def goto_line(line_number: int) -> None:
     """
     Moves the window to show the specified line number.
@@ -158,6 +186,7 @@ def goto_line(line_number: int) -> None:
     print(output)
 
 
+@update_pwd_decorator
 def scroll_down() -> None:
     """Moves the window down by 100 lines.
 
@@ -175,6 +204,7 @@ def scroll_down() -> None:
     print(output)
 
 
+@update_pwd_decorator
 def scroll_up() -> None:
     """Moves the window up by 100 lines.
 
@@ -192,6 +222,7 @@ def scroll_up() -> None:
     print(output)
 
 
+@update_pwd_decorator
 def create_file(filename: str) -> None:
     """Creates and opens a new file with the given name.
 
@@ -209,6 +240,7 @@ def create_file(filename: str) -> None:
     print(f'[File {filename} created.]')
 
 
+@update_pwd_decorator
 def edit_file(start: int, end: int, content: str) -> None:
     """Edit a file.
 
@@ -227,21 +259,35 @@ def edit_file(start: int, end: int, content: str) -> None:
     with open(CURRENT_FILE, 'r') as file:
         lines = file.readlines()
 
+    ERROR_MSG = f'[Error editing opened file {CURRENT_FILE}. Please confirm the opened file is correct.]'
+    ERROR_MSG_SUFFIX = (
+        'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+        'You either need to 1) Open the correct file and try again or 2) Specify the correct start/end line arguments.\n'
+        'DO NOT re-run the same failed edit command. Running it again will lead to the same error.'
+    )
     # Check arguments
     if not (1 <= start <= len(lines)):
-        raise ValueError(
-            f'Invalid start line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).'
+        print(
+            f'{ERROR_MSG}\n'
+            f'Invalid start line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
+            f'{ERROR_MSG_SUFFIX}'
         )
+        return
 
     if not (1 <= end <= len(lines)):
-        raise ValueError(
-            f'Invalid end line number: {end}. Line numbers must be between 1 and {len(lines)} (inclusive).'
+        print(
+            f'{ERROR_MSG}\n'
+            f'Invalid end line number: {end}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
+            f'{ERROR_MSG_SUFFIX}'
         )
-
+        return
     if start > end:
-        raise ValueError(
-            f'Invalid line range: {start}-{end}. Start must be less than or equal to end.'
+        print(
+            f'{ERROR_MSG}\n'
+            f'Invalid line range: {start}-{end}. Start must be less than or equal to end.\n'
+            f'{ERROR_MSG_SUFFIX}'
         )
+        return
 
     edited_content = content + '\n'
     n_edited_lines = len(edited_content.split('\n'))
@@ -270,13 +316,19 @@ def edit_file(start: int, end: int, content: str) -> None:
             print('[This is how your edit would have looked if applied]')
             print('-------------------------------------------------')
             cur_line = (n_edited_lines // 2) + start
-            _print_window(CURRENT_FILE, cur_line, WINDOW)
+            _print_window(CURRENT_FILE, cur_line, 10)
             print('-------------------------------------------------\n')
 
             print('[This is the original code before your edit]')
             print('-------------------------------------------------')
-            _print_window(original_file_backup_path, CURRENT_LINE, WINDOW)
+            _print_window(original_file_backup_path, cur_line, 10)
             print('-------------------------------------------------')
+
+            print(
+                'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+                'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
+                'DO NOT re-run the same failed edit command. Running it again will lead to the same error.'
+            )
 
             # recover the original file
             with open(original_file_backup_path, 'r') as fin, open(
@@ -301,6 +353,7 @@ def edit_file(start: int, end: int, content: str) -> None:
     )
 
 
+@update_pwd_decorator
 def search_dir(search_term: str, dir_path: str = './') -> None:
     """Searches for search_term in all files in dir. If dir is not provided, searches in the current directory.
 
@@ -310,7 +363,6 @@ def search_dir(search_term: str, dir_path: str = './') -> None:
     """
     if not os.path.isdir(dir_path):
         raise FileNotFoundError(f'Directory {dir_path} not found')
-
     matches = []
     for root, _, files in os.walk(dir_path):
         for file in files:
@@ -341,6 +393,7 @@ def search_dir(search_term: str, dir_path: str = './') -> None:
     print(f'[End of matches for "{search_term}" in {dir_path}]')
 
 
+@update_pwd_decorator
 def search_file(search_term: str, file_path: Optional[str] = None) -> None:
     """Searches for search_term in file. If file is not provided, searches in the current open file.
 
@@ -373,6 +426,7 @@ def search_file(search_term: str, file_path: Optional[str] = None) -> None:
         print(f'[No matches found for "{search_term}" in {file_path}]')
 
 
+@update_pwd_decorator
 def find_file(file_name: str, dir_path: str = './') -> None:
     """Finds all files with the given name in the specified directory.
 
@@ -398,6 +452,7 @@ def find_file(file_name: str, dir_path: str = './') -> None:
         print(f'[No matches found for "{file_name}" in {dir_path}]')
 
 
+@update_pwd_decorator
 def parse_pdf(file_path: str) -> None:
     """Parses the content of a PDF file and prints it.
 
@@ -416,6 +471,7 @@ def parse_pdf(file_path: str) -> None:
     print(text.strip())
 
 
+@update_pwd_decorator
 def parse_docx(file_path: str) -> None:
     """
     Parses the content of a DOCX file and prints it.
@@ -431,6 +487,7 @@ def parse_docx(file_path: str) -> None:
     print(text)
 
 
+@update_pwd_decorator
 def parse_latex(file_path: str) -> None:
     """
     Parses the content of a LaTex file and prints it.
@@ -484,6 +541,7 @@ def _prepare_image_messages(task: str, base64_image: str):
     ]
 
 
+@update_pwd_decorator
 def parse_audio(file_path: str, model: str = 'whisper-1') -> None:
     """
     Parses the content of an audio file and prints it.
@@ -503,6 +561,7 @@ def parse_audio(file_path: str, model: str = 'whisper-1') -> None:
         print(f'Error transcribing audio file: {e}')
 
 
+@update_pwd_decorator
 def parse_image(
     file_path: str, task: str = 'Describe this image as detail as possible.'
 ) -> None:
@@ -529,6 +588,7 @@ def parse_image(
         print(f'Error with the request: {error}')
 
 
+@update_pwd_decorator
 def parse_video(
     file_path: str,
     task: str = 'Describe this image as detail as possible.',
@@ -577,6 +637,7 @@ def parse_video(
             print(f'Error with the request: {error}')
 
 
+@update_pwd_decorator
 def parse_pptx(file_path: str) -> None:
     """
     Parses the content of a pptx file and prints it.
