@@ -123,8 +123,8 @@ After running the inference, you will obtain a `output.jsonl` (by default it wil
 If you just want to know the resolve rate, and/or a summary of what tests pass and what don't, you could run
 
 ```bash
-poetry run python summarise_results.py <path_to_output_jsonl_file>
-# e.g. poetry run python summarise_results.py ../evaluation_outputs/outputs/swe_bench_lite/CodeActSWEAgent/gpt-4o-2024-05-13_maxiter_50_N_v1.5-no-hint/output.jsonl
+poetry run python ./evaluation/swe_bench/scripts/summarise_results.py <path_to_output_jsonl_file>
+# e.g. poetry run python ./evaluation/swe_bench/scripts/summarise_results.py ./evaluation/evaluation_outputs/outputs/swe_bench_lite/CodeActSWEAgent/gpt-4o-2024-05-13_maxiter_50_N_v1.5-no-hint/output.jsonl
 ```
 
 ## Evaluate Generated Patches
