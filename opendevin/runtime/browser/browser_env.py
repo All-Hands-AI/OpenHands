@@ -1,10 +1,10 @@
+import asyncio
 import atexit
 import base64
 import io
 import multiprocessing
 import time
 import uuid
-import asyncio
 
 import browsergym.core  # noqa F401 (we register the openended task as a gym environment)
 import gymnasium as gym
