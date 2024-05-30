@@ -3,4 +3,5 @@ TASK_INFO_MAP = {
     'gsm8k': {'class': 'ReasoningTask', 'type': 'reasoning'},
     'math': {'class': 'ReasoningTask', 'type': 'reasoning'},
     'mmlu': {'class': 'MultipleChoiceTask', 'type': 'reasoning'},
+    'theoremqa': {'class': 'TheoremqaTask', 'type': 'reasoning'},
 }

@@ -1,4 +1,4 @@
 from .base import Task
-from .reasoning import MultipleChoiceTask, ReasoningTask
+from .reasoning import MultipleChoiceTask, ReasoningTask, TheoremqaTask
 
-__all__ = ['Task', 'MultipleChoiceTask', 'ReasoningTask']
+__all__ = ['Task', 'MultipleChoiceTask', 'ReasoningTask', 'TheoremqaTask']
