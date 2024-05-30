@@ -5,12 +5,10 @@ const WAIT_FOR_AUTH_DELAY_MS = 500;
 
 export async function request(
   url: string,
-  optionsIn: RequestInit = {},
+  options: RequestInit = {},
   disableToast: boolean = false,
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 ): Promise<any> {
-  const options = JSON.parse(JSON.stringify(optionsIn));
-
   const onFail = (msg: string) => {
     if (!disableToast) {
       toast.error("api", msg);
@@ -23,11 +21,12 @@ export async function request(
   if (!token && needsAuth) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve(request(url, optionsIn, disableToast));
+        resolve(request(url, options, disableToast));
       }, WAIT_FOR_AUTH_DELAY_MS);
     });
   }
   if (token) {
+    // eslint-disable-next-line no-param-reassign
     options.headers = {
       ...(options.headers || {}),
       Authorization: `Bearer ${token}`,

@@ -44,6 +44,8 @@ class LLMConfig(metaclass=Singleton):
         custom_llm_provider: The custom LLM provider to use. This is undocumented in opendevin, and normally not used. It is documented on the litellm side.
         max_input_tokens: The maximum number of input tokens. Note that this is currently unused, and the value at runtime is actually the total tokens in OpenAI (e.g. 128,000 tokens for GPT-4).
         max_output_tokens: The maximum number of output tokens. This is sent to the LLM.
+        input_cost_per_token: The cost per input token. This will available in logs for the user to check.
+        output_cost_per_token: The cost per output token. This will available in logs for the user to check.
     """
 
     model: str = 'gpt-3.5-turbo'
@@ -66,6 +68,8 @@ class LLMConfig(metaclass=Singleton):
     custom_llm_provider: str | None = None
     max_input_tokens: int | None = None
     max_output_tokens: int | None = None
+    input_cost_per_token: float | None = None
+    output_cost_per_token: float | None = None
 
     def defaults_to_dict(self) -> dict:
         """
@@ -137,6 +141,7 @@ class AppConfig(metaclass=Singleton):
         sandbox_container_image: The container image to use for the sandbox.
         run_as_devin: Whether to run as devin.
         max_iterations: The maximum number of iterations.
+        max_budget_per_task: The maximum budget allowed per task, beyond which the agent will stop.
         e2b_api_key: The E2B API key.
         sandbox_type: The type of sandbox to use. Options are: ssh, exec, e2b, local.
         use_host_network: Whether to use the host network.
@@ -166,6 +171,7 @@ class AppConfig(metaclass=Singleton):
     )
     run_as_devin: bool = True
     max_iterations: int = 100
+    max_budget_per_task: float | None = None
     e2b_api_key: str = ''
     sandbox_type: str = 'ssh'  # Can be 'ssh', 'exec', or 'e2b'
     use_host_network: bool = False
@@ -173,6 +179,9 @@ class AppConfig(metaclass=Singleton):
     disable_color: bool = False
     sandbox_user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     sandbox_timeout: int = 120
+    persist_sandbox: bool = True
+    ssh_port: int = 63710
+    ssh_password: str | None = None
     github_token: str | None = None
     jwt_secret: str = uuid.uuid4().hex
     debug: bool = False
@@ -489,6 +498,13 @@ def get_parser():
         default=config.max_iterations,
         type=int,
         help='The maximum number of iterations to run the agent',
+    )
+    parser.add_argument(
+        '-b',
+        '--max-budget-per-task',
+        default=config.max_budget_per_task,
+        type=float,
+        help='The maximum budget allowed per task, beyond which the agent will stop.',
     )
     parser.add_argument(
         '-n',

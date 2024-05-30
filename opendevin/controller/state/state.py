@@ -40,6 +40,8 @@ class State:
     agent_state: AgentState = AgentState.LOADING
     resume_state: AgentState | None = None
     metrics: Metrics = Metrics()
+    # root agent has level 0, and every delegate increases the level by one
+    delegate_level: int = 0
 
     def save_to_session(self, sid: str):
         fs = get_file_store()

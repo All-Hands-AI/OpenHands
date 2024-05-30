@@ -44,6 +44,7 @@ BACKGROUND_CMD = 'echo "This is in the background" && sleep .1 && echo "This too
 
 
 class DummyAgent(Agent):
+    VERSION = '1.0'
     """
     The DummyAgent is used for e2e testing. It just sends the same set of actions deterministically,
     without making any LLM calls.
