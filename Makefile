@@ -142,11 +142,11 @@ install-python-dependencies:
 		poetry run pip install playwright; \
 		poetry run playwright install chromium; \
 	else \
-		if [ ! -f cache/setup.txt ]; then \
+		if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
 			echo "Running playwright install --with-deps chromium..."; \
 			poetry run playwright install --with-deps chromium; \
 			mkdir -p cache; \
-			touch cache/setup.txt; \
+			touch cache/playwright_chromium_is_installed.txt; \
 		else \
 			echo "Setup already done. Skipping playwright installation."; \
 		fi \
