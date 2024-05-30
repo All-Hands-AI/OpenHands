@@ -94,8 +94,4 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   );
 }
 
-TreeNode.defaultProps = {
-  defaultOpen: false,
-};
-
 export default React.memo(TreeNode);
