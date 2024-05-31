@@ -1,4 +1,5 @@
-import React, { useRef } from "react";
+import { useState } from 'react';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Checkbox, FormControlLabel } from '@mui/material';
 import { useDispatch, useSelector } from "react-redux";
 import { IoMdChatbubbles } from "react-icons/io";
 import { RiArrowRightDoubleLine } from "react-icons/ri";
@@ -47,6 +48,24 @@ function ScrollButton({
     </button>
   );
 }
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [makePublic, setMakePublic] = useState(false);
+  const [feedbackType, setFeedbackType] = useState<"positive" | "negative" | null>(null);
+
+  const handleDialogClose = (share: boolean) => {
+    setDialogOpen(false);
+    if (share && feedbackType) {
+      sendFeedback(feedbackType, makePublic);
+    }
+    setMakePublic(false);
+    setFeedbackType(null);
+  };
+
+  const shareFeedback = async (feedback: "positive" | "negative") => {
+    setFeedbackType(feedback);
+    setDialogOpen(true);
+  };
 
 function ChatInterface() {
   const dispatch = useDispatch();
@@ -138,7 +157,22 @@ function ChatInterface() {
             ScrollButton({
               onClick: handleSendContinueMsg,
               icon: <RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />,
-              label: t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE),
+
+      <Dialog open={dialogOpen} onClose={() => handleDialogClose(false)}>
+        <DialogTitle>Share Feedback</DialogTitle>
+        <DialogContent>
+          <p>Your conversation and positive/negative feedback will be shared with the OpenDevin developers to improve the OpenDevin experience. In addition, you can opt-in to contribute to a shared repository of data that can be used for improving open-source coding models.</p>
+          <FormControlLabel
+            control={<Checkbox checked={makePublic} onChange={(e) => setMakePublic(e.target.checked)} />}
+            label="Make my feedback public."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => handleDialogClose(false)}>Cancel</Button>
+          <Button onClick={() => handleDialogClose(true)} color="primary">Share</Button>
+        </DialogActions>
+      </Dialog>
+
             })}
         </div>
 
