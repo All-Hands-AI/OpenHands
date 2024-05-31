@@ -91,7 +91,12 @@ async def main(
         event_stream=event_stream,
     )
     runtime = ServerRuntime(event_stream=event_stream, sandbox=sandbox)
-    runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
+
+    if sandbox and sandbox.is_initial_session:
+        logger.info('Initializing plugins in the sandbox')
+        runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
+    else:
+        logger.info('Plugins are already initialized in the sandbox')
 
     await event_stream.add_event(MessageAction(content=task), EventSource.USER)
 
