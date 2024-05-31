@@ -2,7 +2,19 @@
   "action": "finish",
   "args": {
     "outputs": {
-      "summary": "Fixed typos in './bad.txt':\n- 'typoo' to 'typo'\n- 'mor' to 'more'"
+      "summary": {
+        "file": "./bad.txt",
+        "typos_fixed": [
+          {
+            "original": "typoo",
+            "fixed": "typo"
+          },
+          {
+            "original": "mor",
+            "fixed": "more"
+          }
+        ]
+      }
     }
   }
 }

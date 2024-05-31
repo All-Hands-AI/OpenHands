@@ -130,8 +130,9 @@ pull-docker-image:
 
 install-python-dependencies:
 	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
+	poetry env use python3.11
 	@if [ "$(shell uname)" = "Darwin" ]; then \
-		echo "$(BLUE)Installing `chroma-hnswlib`...$(RESET)"; \
+		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
 		export HNSWLIB_NO_NATIVE=1; \
 		poetry run pip install chroma-hnswlib; \
 	fi
@@ -224,6 +225,15 @@ setup-config-prompts:
 	@read -p "Enter your workspace directory [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
 	 echo "workspace_base=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
+
+	@read -p "Do you want to persist the sandbox container? [true/false] [default: true]: " persist_sandbox; \
+	 persist_sandbox=$${persist_sandbox:-true}; \
+	 if [ "$$persist_sandbox" = "true" ]; then \
+		 read -p "Enter a password for the sandbox container: " ssh_password; \
+		 echo "ssh_password=\"$$ssh_password\"" >> $(CONFIG_FILE).tmp; \
+	 else \
+		echo "persist_sandbox=\"$$persist_sandbox\"" >> $(CONFIG_FILE).tmp
+	 fi
 
 	@echo "" >> $(CONFIG_FILE).tmp
 

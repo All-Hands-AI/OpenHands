@@ -71,6 +71,8 @@ class JupyterKernel:
         self.tools_to_run = [
             # TODO: You can add code for your pre-defined tools here
         ]
+        if os.path.exists('/opendevin/plugins/agent_skills/agentskills.py'):
+            self.tools_to_run.append('from agentskills import *')
         for tool in self.tools_to_run:
             # logging.info(f'Tool initialized:\n{tool}')
             await self.execute(tool)
@@ -132,7 +134,7 @@ class JupyterKernel:
         )
         self.heartbeat_callback.start()
 
-    async def execute(self, code, timeout=60):
+    async def execute(self, code, timeout=120):
         if not self.ws:
             await self._connect()
 

@@ -9,10 +9,12 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 
 import pandas as pd
+import toml
 import whatthepatch
 from datasets import load_dataset
 from tqdm import tqdm
 
+import agenthub
 from evaluation.swe_bench.swe_env_box import SWEBenchSSHBox
 from opendevin.controller.state.state import State
 from opendevin.core.config import args, config, get_llm_config_arg
@@ -21,6 +23,8 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
+
+USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false') == 'true'
 
 
 def cleanup():
@@ -58,11 +62,13 @@ def monologue_user_response(state: State) -> str:
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
+    'CodeActSWEAgent': codeact_user_response,
     'MonologueAgent': monologue_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': 'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n'
+    'CodeActAgent': 'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n',
+    'CodeActSWEAgent': 'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n',
 }
 
 
@@ -184,7 +190,12 @@ def get_test_result(instance, sandbox, workspace_dir_name):
 
 
 def process_instance(
-    instance, agent_class, metadata, skip_workspace_mount, reset_logger: bool = True
+    instance: dict,
+    agent_class: str,
+    metadata: dict,
+    skip_workspace_mount: bool,
+    eval_output_dir: str,
+    reset_logger: bool = True,
 ):
     workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     # create process-specific workspace dir
@@ -206,7 +217,7 @@ def process_instance(
         # add back the console handler to print ONE line
         logger.addHandler(get_console_handler())
         logger.info(
-            f'Starting evaluation for instance {instance.instance_id}.\nLOG:   tail -f {log_file}'
+            f'Starting evaluation for instance {instance.instance_id}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -216,6 +227,8 @@ def process_instance(
             logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         )
         logger.addHandler(file_handler)
+    else:
+        logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
     if not skip_workspace_mount:
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
@@ -228,22 +241,66 @@ def process_instance(
         workspace_dir_name,
         skip_workspace_mount=skip_workspace_mount,
         workspace_mount_path=workspace_mount_path,
+        sandbox_plugins=agenthub.Agent.get_cls(agent_class).sandbox_plugins,
     )
 
     # Prepare instruction
-    instruction = (
-        f'Please fix the following issue for the repository in /workspace/{workspace_dir_name}.\n'
-        'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
-        '# Problem Statement\n'
-        f'{instance.problem_statement}\n\n'
-    )
-    if instance.hints_text:
-        instruction += f'# Hints\n{instance.hints_text}\n\n'
-    instruction += (
-        'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-        'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
-        'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
-    )
+    if agent_class == 'CodeActSWEAgent':
+        instruction = (
+            'We are currently solving the following issue within our repository. Here is the issue text:\n'
+            '--- BEGIN ISSUE ---\n'
+            f'{instance.problem_statement}\n'
+            '--- END ISSUE ---\n\n'
+        )
+
+        if USE_HINT_TEXT and instance.hints_text:
+            instruction += (
+                f'--- BEGIN HINTS ---\n{instance.hints_text}\n--- END HINTS ---\n'
+            )
+        instruction += f"""Now, you're going to solve this issue on your own. Your terminal session has started and you're in the repository's root directory. You can use any bash commands or the special interface to help you. Edit all the files you need to and run any checks or tests that you want.
+Remember, YOU CAN ONLY ENTER ONE COMMAND AT A TIME. You should always wait for feedback after every command.
+When you're satisfied with all of the changes you've made, you can run the following command: <execute_bash> exit </execute_bash>.
+Note however that you cannot use any interactive session commands (e.g. vim) in this environment, but you can write scripts and run them. E.g. you can write a python script and then run it with `python <script_name>.py`.
+
+NOTE ABOUT THE EDIT COMMAND: Indentation really matters! When editing a file, make sure to insert appropriate indentation before each line!
+
+IMPORTANT TIPS:
+1. Always start by trying to replicate the bug that the issues discusses.
+    If the issue includes code for reproducing the bug, we recommend that you re-implement that in your environment, and run it to make sure you can reproduce the bug.
+    Then start trying to fix it.
+    When you think you've fixed the bug, re-run the bug reproduction script to make sure that the bug has indeed been fixed.
+
+    If the bug reproduction script does not print anything when it successfully runs, we recommend adding a print("Script completed successfully, no errors.") command at the end of the file,
+    so that you can be sure that the script indeed ran fine all the way through.
+
+2. If you run a command and it doesn't work, try running a different command. A command that did not work once will not work the second time unless you modify it!
+
+3. If you open a file and need to get to an area around a specific line that is not in the first 100 lines, say line 583, don't just use the scroll_down command multiple times. Instead, use the goto 583 command. It's much quicker.
+
+4. If the bug reproduction script requires inputting/reading a specific file, such as buggy-input.png, and you'd like to understand how to input that file, conduct a search in the existing repo code, to see whether someone else has already done that. Do this by running the command: find_file("buggy-input.png") If that doesn't work, use the linux 'find' command.
+
+5. Always make sure to look at the currently open file and the current working directory (which appears right after the currently open file). The currently open file might be in a different directory than the working directory! Note that some commands, such as 'create', open files, so they might change the current  open file.
+
+6. When editing files, it is easy to accidentally specify a wrong line number or to write code with incorrect indentation. Always check the code after you issue an edit to make sure that it reflects what you wanted to accomplish. If it didn't, issue another command to fix it.
+
+[Current directory: /workspace/{workspace_dir_name}]
+"""
+    else:
+        # Testing general agents
+        instruction = (
+            f'Please fix the following issue for the repository in /workspace/{workspace_dir_name}.\n'
+            'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
+            '# Problem Statement\n'
+            f'{instance.problem_statement}\n\n'
+        )
+        if USE_HINT_TEXT and instance.hints_text:
+            instruction += f'# Hints\n{instance.hints_text}\n\n'
+        instruction += (
+            'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+            'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
+            'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
+        )
+
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
@@ -272,6 +329,8 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
+    metrics = state.metrics.get() if state.metrics else None
+
     # Save the output
     output = {
         'instance_id': instance.instance_id,
@@ -282,6 +341,7 @@ def process_instance(
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
+        'metrics': metrics,
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
@@ -291,11 +351,27 @@ def process_instance(
     return output
 
 
+def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
+    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.toml')
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as file:
+            data = toml.load(file)
+            if 'selected_ids' in data:
+                selected_ids = data['selected_ids']
+                logger.info(
+                    f'Filtering {len(selected_ids)} tasks from "selected_ids"...'
+                )
+                subset = dataset[dataset[filter_column].isin(selected_ids)]
+                logger.info(f'Retained {subset.shape[0]} tasks after filtering')
+                return subset
+    return dataset
+
+
 if __name__ == '__main__':
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
     dataset = load_dataset('princeton-nlp/SWE-bench_Lite')
-    swe_bench_tests = dataset['test'].to_pandas()
+    swe_bench_tests = filter_dataset(dataset['test'].to_pandas(), 'instance_id')
 
     # Check https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/swe_bench/README.md#configure-opendevin-and-your-llm
     # for details of how to set `llm_config`
@@ -317,7 +393,7 @@ if __name__ == '__main__':
         eval_note += '_N_' + args.eval_note
     eval_output_dir = os.path.join(
         args.eval_output_dir,
-        'swe_bench',
+        'swe_bench_lite',
         agent_class,
         model_name + '_maxiter_' + str(max_iterations) + eval_note,
     )
@@ -339,6 +415,11 @@ if __name__ == '__main__':
         .decode('utf-8')
         .strip(),
     }
+    _agent_cls = agenthub.Agent.get_cls(agent_class)
+    if hasattr(_agent_cls, 'system_message'):
+        metadata['system_message'] = _agent_cls.system_message
+    if hasattr(_agent_cls, 'in_context_example'):
+        metadata['in_context_example'] = _agent_cls.in_context_example
     logger.info(f'Metadata: {metadata}')
     with open(os.path.join(eval_output_dir, 'metadata.json'), 'w') as f:
         json.dump(metadata, f)
@@ -417,6 +498,7 @@ if __name__ == '__main__':
                     agent_class,
                     metadata,
                     skip_workspace_mount,
+                    eval_output_dir,
                     reset_logger=bool(num_workers > 1),
                 )
                 future.add_done_callback(update_progress)

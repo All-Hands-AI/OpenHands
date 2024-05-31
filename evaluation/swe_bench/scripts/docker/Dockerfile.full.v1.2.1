@@ -1,0 +1,10 @@
+FROM ghcr.io/opendevin/eval-swe-bench:full-v1.2
+
+# ================== Update OD-SWE-Bench ==================
+# copy everything except the folder of `eval_data` or `miniforge3`
+# typically, this should be the OD codebase
+RUN --mount=type=bind,source=./eval_workspace,target=/eval_workspace \
+    rsync -ar --progress /eval_workspace/OD-SWE-bench/ /swe_util/OD-SWE-bench
+
+# pushd evaluation/SWE-bench
+# docker build -t ghcr.io/opendevin/eval-swe-bench:full-v1.2.1 -f ./scripts/docker/Dockerfile.full.v1.2.1 .

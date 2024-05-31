@@ -7,15 +7,23 @@ concurrency:
 on:
   push:
     branches:
-    - main
+      - main
+    paths-ignore:
+      - '**/*.md'
+      - 'frontend/**'
+      - 'docs/**'
+      - 'evaluation/**'
   pull_request:
+
+env:
+  PERSIST_SANDBOX : "false"
 
 jobs:
   test-on-macos:
     name: Test on macOS
     runs-on: macos-13
     env:
-      INSTALL_DOCKER: '0'  # Set to '0' to skip Docker installation
+      INSTALL_DOCKER: "0" # Set to '0' to skip Docker installation
     strategy:
       matrix:
         python-version: ["3.11"]
@@ -30,7 +38,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'poetry'
+          cache: "poetry"
 
       - name: Install Python dependencies using Poetry
         run: poetry install
@@ -49,7 +57,7 @@ jobs:
         run: make build
 
       - name: Run Tests
-        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox"
+        run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -59,7 +67,7 @@ jobs:
     name: Test on Linux
     runs-on: ubuntu-latest
     env:
-      INSTALL_DOCKER: '0'  # Set to '0' to skip Docker installation
+      INSTALL_DOCKER: "0" # Set to '0' to skip Docker installation
     strategy:
       matrix:
         python-version: ["3.11"]
@@ -74,7 +82,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'poetry'
+          cache: "poetry"
 
       - name: Install Python dependencies using Poetry
         run: poetry install --without evaluation
@@ -83,7 +91,7 @@ jobs:
         run: make build
 
       - name: Run Tests
-        run: poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox"
+        run: poetry run pytest --forked --cov=agenthub --cov=opendevin --cov-report=xml ./tests/unit -k "not test_sandbox"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -102,8 +110,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-          cache: 'poetry'
+          python-version: "3.11"
+          cache: "poetry"
 
       - name: Install Python dependencies using Poetry
         run: poetry install
@@ -119,9 +127,3 @@ jobs:
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-  test_matrix_success:
-    name: All Mac/Linux Tests Passed
-    runs-on: ubuntu-latest
-    needs: [test-on-macos, test-on-linux, test-for-sandbox]
-    steps:
-    - run: echo Done!

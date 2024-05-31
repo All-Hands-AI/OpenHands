@@ -5,7 +5,6 @@ import ArrowIcon from "#/assets/arrow";
 import PauseIcon from "#/assets/pause";
 import PlayIcon from "#/assets/play";
 import { changeAgentState } from "#/services/agentStateService";
-import { clearMsgs } from "#/services/session";
 import store, { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import { clearMessages } from "#/state/chatSlice";
@@ -42,7 +41,7 @@ function ActionButton({
   action,
   handleAction,
   children,
-  large,
+  large = false,
 }: React.PropsWithChildren<ButtonProps>): React.ReactNode {
   return (
     <Tooltip content={content} closeDelay={100}>
@@ -58,10 +57,6 @@ function ActionButton({
   );
 }
 
-ActionButton.defaultProps = {
-  large: false,
-};
-
 function AgentControlBar() {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const [desiredState, setDesiredState] = React.useState(AgentState.INIT);
@@ -73,7 +68,6 @@ function AgentControlBar() {
     }
 
     if (action === AgentState.STOPPED) {
-      clearMsgs().then().catch();
       store.dispatch(clearMessages());
     } else {
       setIsLoading(true);
@@ -86,7 +80,6 @@ function AgentControlBar() {
   useEffect(() => {
     if (curAgentState === desiredState) {
       if (curAgentState === AgentState.STOPPED) {
-        clearMsgs().then().catch();
         store.dispatch(clearMessages());
       }
       setIsLoading(false);

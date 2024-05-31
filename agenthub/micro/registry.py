@@ -4,7 +4,10 @@ import yaml
 
 all_microagents = {}
 
-for dir in os.listdir(os.path.dirname(__file__)):
+# Get the list of directories and sort them to preserve determinism
+dirs = sorted(os.listdir(os.path.dirname(__file__)))
+
+for dir in dirs:
     base = os.path.dirname(__file__) + '/' + dir
     if os.path.isfile(base):
         continue
@@ -13,8 +16,7 @@ for dir in os.listdir(os.path.dirname(__file__)):
     promptFile = base + '/prompt.md'
     agentFile = base + '/agent.yaml'
     if not os.path.isfile(promptFile) or not os.path.isfile(agentFile):
-        raise Exception(
-            f'Missing prompt or agent file in {base}. Please create them.')
+        raise Exception(f'Missing prompt or agent file in {base}. Please create them.')
     with open(promptFile, 'r') as f:
         prompt = f.read()
     with open(agentFile, 'r') as f:

@@ -22,6 +22,9 @@ class PluginMixin:
     def init_plugins(self: SandboxProtocol, requirements: list[PluginRequirement]):
         """Load a plugin into the sandbox."""
 
+        if hasattr(self, 'plugin_initialized') and self.plugin_initialized:
+            return
+
         # clean-up ~/.bashrc and touch ~/.bashrc
         exit_code, output = self.execute('rm -f ~/.bashrc && touch ~/.bashrc')
 
@@ -44,7 +47,6 @@ class PluginMixin:
                 for line in output:
                     if line.endswith('\n'):
                         line = line[:-1]
-                    logger.info(line)
                 _exit_code = output.exit_code()
                 output.close()
                 if _exit_code != 0:
@@ -57,9 +59,7 @@ class PluginMixin:
                     raise RuntimeError(
                         f'Failed to initialize plugin {requirement.name} with exit code {exit_code} and output: {output}'
                     )
-                logger.info(
-                    f'Plugin {requirement.name} initialized successfully\n:{output}'
-                )
+                logger.info(f'Plugin {requirement.name} initialized successfully.')
 
         if len(requirements) > 0:
             exit_code, output = self.execute('source ~/.bashrc')
@@ -68,3 +68,5 @@ class PluginMixin:
                     f'Failed to source ~/.bashrc with exit code {exit_code} and output: {output}'
                 )
             logger.info('Sourced ~/.bashrc successfully')
+
+        self.plugin_initialized = True

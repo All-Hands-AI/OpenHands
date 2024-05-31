@@ -1,20 +1,11 @@
 from dataclasses import asdict
 from datetime import datetime
-from enum import Enum
-from typing import TYPE_CHECKING
+
+from opendevin.events import Event, EventSource
 
 from .action import action_from_dict
 from .observation import observation_from_dict
 from .utils import remove_fields
-
-if TYPE_CHECKING:
-    from opendevin.events.event import Event
-
-
-class EventSource(str, Enum):
-    AGENT = 'agent'
-    USER = 'user'
-
 
 # TODO: move `content` into `extras`
 TOP_KEYS = ['id', 'timestamp', 'source', 'message', 'cause', 'action', 'observation']
@@ -27,6 +18,7 @@ DELETE_FROM_MEMORY_EXTRAS = {
     'open_pages_urls',
     'active_page_index',
     'last_browser_action',
+    'last_browser_action_error',
     'focused_element_bid',
 }
 

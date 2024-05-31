@@ -5,8 +5,8 @@ This guide is for people working on OpenDevin and editing the source code.
 
 ### 1. Requirements
 * Linux, Mac OS, or [WSL on Windows](https://learn.microsoft.com/en-us/windows/wsl/install)
-* [Docker](https://docs.docker.com/engine/install/)(For those on MacOS, make sure to allow the default Docker socket to be used from advanced settings!)
-* [Python](https://www.python.org/downloads/) >= 3.11
+* [Docker](https://docs.docker.com/engine/install/) (For those on MacOS, make sure to allow the default Docker socket to be used from advanced settings!)
+* [Python](https://www.python.org/downloads/) = 3.11
 * [NodeJS](https://nodejs.org/en/download/package-manager) >= 18.17.1
 * [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) >= 1.8
 
@@ -45,6 +45,7 @@ To configure the LM of your choice, follow these steps:
    make setup-config
    ```
    This command will prompt you to enter the LLM API key, model name, and other variables ensuring that OpenDevin is tailored to your specific needs. Note that the model name will apply only when you run headless. If you use the UI, please set the model in the UI.
+   Set `persist_sandbox` to false if you want to use clean sandbox for each task. If `persist_sandbox` is set to true, you will need to set the `ssh_password` as well.
 
 **Note on Alternative Models:**
 Some alternative models may prove more challenging to tame than others. Fear not, brave adventurer! We shall soon unveil LLM-specific documentation to guide you on your quest. And if you've already mastered the art of wielding a model other than OpenAI's GPT, we encourage you to [share your setup instructions with us](https://github.com/OpenDevin/OpenDevin/issues/417).
@@ -94,3 +95,8 @@ poetry run pytest ./tests/unit/test_sandbox.py
 #### Integration tests
 
 Please refer to [this README](./tests/integration/README.md) for details.
+
+### 9. Add or update dependency
+
+1. Add your dependency in `pyproject.toml` or use `peotry add xxx`
+2. Update the poetry.lock file via `poetry lock --no-update`

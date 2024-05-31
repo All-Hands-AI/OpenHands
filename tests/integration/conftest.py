@@ -2,7 +2,11 @@ import io
 import os
 import re
 import sys
+import tempfile
+import subprocess
 from functools import partial
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+from threading import Thread
 
 import pytest
 from litellm import completion
@@ -46,7 +50,7 @@ def apply_prompt_and_get_mock_response(test_name: str, messages: str, id: int) -
         return None
 
 
-def get_mock_response(test_name: str, messages: str):
+def get_mock_response(test_name: str, messages: str, id: int) -> str:
     """
     Find mock response based on prompt. Prompts are stored under nested
     folders under mock folder. If prompt_{id}.log matches,
@@ -65,32 +69,38 @@ def get_mock_response(test_name: str, messages: str):
     """
     mock_dir = os.path.join(script_dir, 'mock', os.environ.get('AGENT'), test_name)
     prompt = filter_out_symbols(messages)
-    for root, _, files in os.walk(mock_dir):
-        for file in files:
-            if file.startswith('prompt_') and file.endswith('.log'):
-                file_path = os.path.join(root, file)
-                # Open the prompt file and compare its contents
-                with open(file_path, 'r') as f:
-                    file_content = filter_out_symbols(f.read())
-                    if file_content == prompt:
-                        # If a match is found, construct the corresponding response file path
-                        log_id = get_log_id(file_path)
-                        resp_file_path = os.path.join(root, f'response_{log_id}.log')
-                        # Read the response file and return its content
-                        with open(resp_file_path, 'r') as resp_file:
-                            return resp_file.read()
-                    else:
-                        # print the mismatched lines
-                        print('File path', file_path)
-                        print('---' * 10)
-                        print(messages)
-                        print('---' * 10)
-                        for i, (c1, c2) in enumerate(zip(file_content, prompt)):
-                            if c1 != c2:
-                                print(
-                                    f'Mismatch at index {i}: {c1[max(0,i-100):i+100]} vs {c2[max(0,i-100):i+100]}'
-                                )
-                                break
+    mock_dir = os.path.join(script_dir, 'mock', os.environ.get('AGENT'), test_name)
+    prompt_file_path = os.path.join(mock_dir, f'prompt_{"{0:03}".format(id)}.log')
+    resp_file_path = os.path.join(mock_dir, f'response_{"{0:03}".format(id)}.log')
+    # Open the prompt file and compare its contents
+    with open(prompt_file_path, 'r') as f:
+        file_content = filter_out_symbols(f.read())
+        if file_content == prompt:
+            # Read the response file and return its content
+            with open(resp_file_path, 'r') as resp_file:
+                return resp_file.read()
+        else:
+            # print the mismatched lines
+            print('Mismatched Prompt File path', prompt_file_path)
+            print('---' * 10)
+            # Create a temporary file to store messages
+            with tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8') as tmp_file:
+                tmp_file_path = tmp_file.name
+                tmp_file.write(messages)
+
+            try:
+                # Use diff command to compare files and capture the output
+                result = subprocess.run(['diff', '-u', prompt_file_path, tmp_file_path], capture_output=True, text=True)
+                if result.returncode != 0:
+                    print('Diff:')
+                    print(result.stdout)
+                else:
+                    print('No differences found.')
+            finally:
+                # Clean up the temporary file
+                os.remove(tmp_file_path)
+
+            print('---' * 10)
 
 
 def mock_user_response(*args, test_name, **kwargs):
@@ -117,16 +127,16 @@ def mock_completion(*args, test_name, **kwargs):
     message_str = ''
     for message in messages:
         message_str += message_separator + message['content']
+    # this assumes all response_(*).log filenames are in numerical order, starting from one
+    cur_id += 1
     if os.environ.get('FORCE_APPLY_PROMPTS') == 'true':
-        # this assumes all response_(*).log filenames are in numerical order, starting from one
-        cur_id += 1
         mock_response = apply_prompt_and_get_mock_response(
             test_name, message_str, cur_id
         )
     else:
-        mock_response = get_mock_response(test_name, message_str)
+        mock_response = get_mock_response(test_name, message_str, cur_id)
     if mock_response is None:
-        print('Mock response for prompt is not found:\n\n' + message_str)
+        print('Mock response for prompt is not found\n\n')
         print('Exiting...')
         sys.exit(1)
     response = completion(**kwargs, mock_response=mock_response)
@@ -147,6 +157,25 @@ def patch_completion(monkeypatch, request):
     if user_responses_str:
         user_responses = io.StringIO(user_responses_str)
         monkeypatch.setattr('sys.stdin', user_responses)
+
+
+@pytest.fixture
+def http_server():
+    web_dir = os.path.join(os.path.dirname(__file__), 'static')
+    os.chdir(web_dir)
+    handler = SimpleHTTPRequestHandler
+
+    # Start the server
+    server = HTTPServer(('localhost', 8000), handler)
+    thread = Thread(target=server.serve_forever)
+    thread.setDaemon(True)
+    thread.start()
+
+    yield server
+
+    # Stop the server
+    server.shutdown()
+    thread.join()
 
 
 def set_up():
