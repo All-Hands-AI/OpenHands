@@ -5,4 +5,5 @@ TASK_INFO_MAP = {
     'mmlu': {'class': 'MultipleChoiceTask', 'type': 'reasoning'},
     'theoremqa': {'class': 'TheoremqaTask', 'type': 'reasoning'},
     'mbpp': {'class': 'MBPPTask', 'type': 'code_generation'},
+    'humaneval': {'class': 'HumanEvalTask', 'type': 'code_generation'},
 }

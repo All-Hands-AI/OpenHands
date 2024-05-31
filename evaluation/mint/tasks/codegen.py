@@ -53,3 +53,31 @@ class MBPPTask(CodeGenTask):
         # STOP_WORDS = ["\nclass", "\nassert", '\n"""', "\nprint", "\nif", "\n<|/"]
         # return re.split("|".join(STOP_WORDS), solution)[0].rstrip()
         return solution
+
+
+class HumanEvalTask(CodeGenTask):
+    task_name = 'humaneval'
+
+    @property
+    def prompt(self) -> str:
+        """Return the prompt for this task.
+
+        MBPP prompt contains \"\"\" enclosed at both ends. Need to remove it.
+        """
+        return 'Complete the following code:\n\n' + self._prompt
+
+    def extract_answer(self, solution: str) -> Optional[str]:
+        """Extract the answer from the given solution.
+
+        Split off first block of code by scanning for class, def etc. on newlines.
+
+        Modified from:
+        https://github.com/bigcode-project/bigcode-evaluation-harness/blob/d61afde130005ecc65cf800ad8eca790a9bc2115/lm_eval/tasks/humaneval.py#L56
+        """
+
+        # STOP_WORDS = ["\nclass", "\ndef", "\n#", "\n@", "\nprint", "\nif"]
+        # # Remove the last block of the code containing stop_words for HumanEval
+        # string_list = re.split("(%s)" % "|".join(STOP_WORDS), solution)
+        # # last string should be ""
+        # return "".join(string_list[:-2])
+        return solution
