@@ -2,6 +2,7 @@ import atexit
 import base64
 import io
 import multiprocessing
+import threading
 import time
 import uuid
 
@@ -17,7 +18,7 @@ from opendevin.core.logger import opendevin_logger as logger
 
 
 class BrowserEnv:
-    def __init__(self):
+    def __init__(self, is_async: bool = True):
         self.html_text_converter = html2text.HTML2Text()
         # ignore links and images
         self.html_text_converter.ignore_links = False
@@ -32,12 +33,18 @@ class BrowserEnv:
         self.process = multiprocessing.Process(
             target=self.browser_process,
         )
+        if is_async:
+            threading.Thread(target=self.init_browser).start()
+        else:
+            self.init_browser()
+        atexit.register(self.close)
+
+    def init_browser(self):
         logger.info('Starting browser env...')
         self.process.start()
         if not self.check_alive():
             self.close()
             raise BrowserInitException('Failed to start browser environment.')
-        atexit.register(self.close)
 
     def browser_process(self):
         env = gym.make(
