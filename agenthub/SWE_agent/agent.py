@@ -9,6 +9,7 @@ from opendevin.events.action import (
 from opendevin.events.observation.observation import Observation
 from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
+from opendevin.runtime.tools import RuntimeTool
 
 from .parser import parse_command
 from .prompts import (
@@ -28,6 +29,7 @@ class SWEAgent(Agent):
 
     SWE-agent includes ACI functions like 'goto', 'search_for', 'edit', 'scroll', 'run'
     """
+    runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
 
     def __init__(self, llm: LLM):
         super().__init__(llm)

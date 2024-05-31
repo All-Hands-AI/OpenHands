@@ -142,7 +142,14 @@ install-python-dependencies:
 		poetry run pip install playwright; \
 		poetry run playwright install chromium; \
 	else \
-		poetry run playwright install --with-deps chromium; \
+		if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
+			echo "Running playwright install --with-deps chromium..."; \
+			poetry run playwright install --with-deps chromium; \
+			mkdir -p cache; \
+			touch cache/playwright_chromium_is_installed.txt; \
+		else \
+			echo "Setup already done. Skipping playwright installation."; \
+		fi \
 	fi
 	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
 
@@ -232,7 +239,7 @@ setup-config-prompts:
 		 read -p "Enter a password for the sandbox container: " ssh_password; \
 		 echo "ssh_password=\"$$ssh_password\"" >> $(CONFIG_FILE).tmp; \
 	 else \
-		echo "persist_sandbox=\"$$persist_sandbox\"" >> $(CONFIG_FILE).tmp
+		echo "persist_sandbox=\"$$persist_sandbox\"" >> $(CONFIG_FILE).tmp; \
 	 fi
 
 	@echo "" >> $(CONFIG_FILE).tmp

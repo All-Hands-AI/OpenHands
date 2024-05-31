@@ -17,8 +17,8 @@ import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import Session from "#/services/session";
 import { getToken } from "#/services/auth";
 import toast from "#/utils/toast";
-import { FeedbackData, sendFeedback } from "#/api";
 import { removeApiKey } from "#/utils/utils";
+import { FeedbackData, sendFeedback } from "#/services/feedbackService";
 
 interface ScrollButtonProps {
   onClick: () => void;
@@ -57,10 +57,13 @@ function ChatInterface() {
   const [feedbackLoading, setFeedbackLoading] = React.useState(false);
 
   const shareFeedback = async (feedback: "positive" | "negative") => {
+    // TODO: implement email and permissions
+    // https://github.com/OpenDevin/OpenDevin/issues/2033
     const data: FeedbackData = {
       email: "NOT_PROVIDED",
       token: getToken(),
       feedback,
+      permissions: "private",
       trajectory: removeApiKey(Session._history),
     };
 

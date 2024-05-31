@@ -18,6 +18,7 @@ from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     PluginRequirement,
 )
+from opendevin.runtime.tools import RuntimeTool
 
 
 def parse_response(response: str) -> Action:
@@ -43,6 +44,7 @@ class BrowsingAgent(Agent):
     """
 
     sandbox_plugins: list[PluginRequirement] = []
+    runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
 
     def __init__(
         self,
