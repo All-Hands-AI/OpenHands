@@ -382,17 +382,18 @@ class DockerSSHBox(Sandbox):
             )
             hostname = self.ssh_hostname
             username = 'opendevin' if self.run_as_devin else 'root'
-            logger.info(f'Connecting to {username}@{hostname} via ssh. ')
+            if config.persist_sandbox:
+                password_msg = 'using your SSH password'
+            else:
+                password_msg = f"using the password '{self._ssh_password}'"
+            logger.info('Connecting to SSH session...')
+            ssh_cmd = f'`ssh -v -p {self._ssh_port} {username}@{hostname}`'
+            logger.info(
+                f'You can debug the SSH connection by running: {ssh_cmd} {password_msg}'
+            )
             self.ssh.login(hostname, username, self._ssh_password, port=self._ssh_port)
             logger.info('Connected to SSH session')
         except pxssh.ExceptionPxssh as e:
-            if config.persist_sandbox:
-                password_msg = 'with your ssh password'
-            else:
-                password_msg = f"with the password '{self._ssh_password}'"
-            logger.warn(
-                f'Some issues in ssh connection, try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the {password_msg} and report the issue on GitHub.'
-            )
             logger.exception(
                 'Failed to login to SSH session, retrying...', exc_info=False
             )
