@@ -8,7 +8,7 @@ export type Settings = {
 };
 
 export const DEFAULT_SETTINGS: Settings = {
-  LLM_MODEL: "gpt-3.5-turbo",
+  LLM_MODEL: "gpt-4o",
   AGENT: "CodeActAgent",
   LANGUAGE: "en",
   LLM_API_KEY: "",

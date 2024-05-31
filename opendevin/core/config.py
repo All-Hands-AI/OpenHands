@@ -48,7 +48,7 @@ class LLMConfig(metaclass=Singleton):
         output_cost_per_token: The cost per output token. This will available in logs for the user to check.
     """
 
-    model: str = 'gpt-3.5-turbo'
+    model: str = 'gpt-4o'
     api_key: str | None = None
     base_url: str | None = None
     api_version: str | None = None
@@ -418,7 +418,7 @@ def get_llm_config_arg(llm_config_arg: str):
 
     ```
     [gpt-3.5-for-eval]
-    model = 'gpt-3.5-turbo'
+    model = 'gpt-4o'
     api_key = '...'
     temperature = 0.5
     num_retries = 10
