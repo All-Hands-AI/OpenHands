@@ -6,7 +6,6 @@ export interface FeedbackData {
   trajectory: unknown[];
 }
 
-
 export const sendFeedback = async (data: FeedbackData) =>
   fetch("/api/submit-feedback", {
     method: "POST",
