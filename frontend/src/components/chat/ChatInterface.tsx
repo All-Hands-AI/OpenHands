@@ -61,6 +61,7 @@ function ChatInterface() {
       email: "NOT_PROVIDED",
       token: getToken(),
       feedback,
+      permissions: "private",
       trajectory: removeApiKey(Session._history),
     };
 

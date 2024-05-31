@@ -1,5 +1,6 @@
-import uuid
 import warnings
+
+from opendevin.server.data_models.feedback import FeedbackDataModel, store_feedback
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -20,12 +21,6 @@ from opendevin.events.serialization import event_to_dict
 from opendevin.llm import bedrock
 from opendevin.server.auth import get_sid_from_token, sign_token
 from opendevin.server.session import session_manager
-
-def store_feedback(feedback: dict):
-    # Implement the logic to store feedback in the storage service
-    # For example, you can use a database or an external storage service
-    # Here, we will just log the feedback for demonstration purposes
-    logger.info(f"Storing feedback: {feedback}")
 
 app = FastAPI()
 app.add_middleware(
@@ -153,20 +148,8 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.send_json({'error': 'Invalid token', 'error_code': 401})
             await websocket.close()
             return
-    else:
-
-@app.post('/api/submit_feedback')
-async def submit_feedback(feedback: dict):
-    # Assuming the storage service is already configured in the backend
-    # and there is a function  to handle the storage.
-    try:
-        store_feedback(feedback)
-        return JSONResponse(status_code=200, content={"message": "Feedback submitted successfully"})
-    except Exception as e:
-        logger.error(f"Error submitting feedback: {e}")
-        return JSONResponse(status_code=500, content={"error": "Failed to submit feedback"})
-
-        token = sign_token({'sid': sid})
+        else:
+            token = sign_token({'sid': sid})
 
     session = session_manager.add_or_restart_session(sid, websocket)
     await websocket.send_json({'token': token, 'status': 'ok'})
@@ -294,6 +277,22 @@ async def upload_file(request: Request, files: list[UploadFile]):
             content={'error': f'Error saving file:s {e}'},
         )
     return {'message': 'Files uploaded successfully', 'file_count': len(files)}
+
+
+@app.post('/api/submit-feedback')
+async def submit_feedback(request: Request, feedback: FeedbackDataModel):
+    # Assuming the storage service is already configured in the backend
+    # and there is a function  to handle the storage.
+    try:
+        store_feedback(feedback)
+        return JSONResponse(
+            status_code=200, content={'message': 'Feedback submitted successfully'}
+        )
+    except Exception as e:
+        logger.error(f'Error submitting feedback: {e}')
+        return JSONResponse(
+            status_code=500, content={'error': 'Failed to submit feedback'}
+        )
 
 
 @app.get('/api/root_task')
