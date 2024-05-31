@@ -1,7 +1,7 @@
 # Task
 You are a brilliant mathematician and programmer. You've been given the following problem to solve:
 
-{{ latest_user_message }}
+`{{ state.inputs.task }}`
 
 Please write a python script that solves this problem, and prints the answer to stdout.
 ONLY print the answer to stdout, nothing else.

@@ -117,6 +117,18 @@ def truncate_observation(observation: str, max_chars: int = 10000) -> str:
     )
 
 
+# FIXME: We can tweak these two settings to create MicroAgents specialized toward different area
+def get_system_message() -> str:
+    if ENABLE_GITHUB:
+        return f'{SYSTEM_PREFIX}\n{GITHUB_MESSAGE}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
+    else:
+        return f'{SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
+
+
+def get_in_context_example() -> str:
+    return EXAMPLES
+
+
 class CodeActAgent(Agent):
     VERSION = '1.5'
     """
@@ -163,11 +175,8 @@ class CodeActAgent(Agent):
     ]
     jupyter_kernel_init_code: str = 'from agentskills import *'
 
-    system_message: str = (
-        f'{SYSTEM_PREFIX}\n{GITHUB_MESSAGE}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
-        if ENABLE_GITHUB
-        else f'{SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
-    )
+    system_message: str = get_system_message()
+    in_context_example: str = f"Here is an example of how you can interact with the environment for task solving:\n{get_in_context_example()}\n\nNOW, LET'S START!"
 
     def __init__(
         self,
@@ -200,7 +209,11 @@ class CodeActAgent(Agent):
         - state: The current state of the environment.
 
         Returns:
-        - The action to take.
+        - CmdRunAction(command) - bash command to run
+        - IPythonRunCellAction(code) - IPython code to run
+        - BrowseInteractiveAction(browsergym_command) - BrowserGym commands to run
+        - MessageAction(content) - Message action to run (e.g. ask for clarification)
+        - AgentFinishAction() - end the interaction
         """
         logger.info(f'Running CodeActAgent v{self.VERSION}')
 
@@ -297,7 +310,7 @@ class CodeActAgent(Agent):
             {'role': 'system', 'content': self.system_message},
             {
                 'role': 'user',
-                'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!",
+                'content': self.in_context_example,
             },
         ]
 

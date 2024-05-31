@@ -134,7 +134,7 @@ class JupyterKernel:
         )
         self.heartbeat_callback.start()
 
-    async def execute(self, code, timeout=60):
+    async def execute(self, code, timeout=120):
         if not self.ws:
             await self._connect()
 

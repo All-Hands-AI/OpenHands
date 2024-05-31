@@ -22,7 +22,9 @@ class EventStreamSubscriber(str, Enum):
 
 class EventStream:
     sid: str
-    _subscribers: dict[str, Callable]
+    # For each subscriber ID, there is a stack of callback functions - useful
+    # when there are agent delegates
+    _subscribers: dict[str, list[Callable]]
     _cur_id: int
     _lock: threading.Lock
     _file_store: FileStore
@@ -72,17 +74,22 @@ class EventStream:
         data = json.loads(content)
         return event_from_dict(data)
 
-    def subscribe(self, id: EventStreamSubscriber, callback: Callable):
+    def subscribe(self, id: EventStreamSubscriber, callback: Callable, append=False):
         if id in self._subscribers:
-            raise ValueError('Subscriber already exists: ' + id)
+            if append:
+                self._subscribers[id].append(callback)
+            else:
+                raise ValueError('Subscriber already exists: ' + id)
         else:
-            self._subscribers[id] = callback
+            self._subscribers[id] = [callback]
 
     def unsubscribe(self, id: EventStreamSubscriber):
         if id not in self._subscribers:
             logger.warning('Subscriber not found during unsubscribe: ' + id)
         else:
-            del self._subscribers[id]
+            self._subscribers[id].pop()
+            if len(self._subscribers[id]) == 0:
+                del self._subscribers[id]
 
     def add_event(self, event: Event, source: EventSource):
         with self._lock:
@@ -96,7 +103,8 @@ class EventStream:
                 self._get_filename_for_id(event.id), json.dumps(data)
             )
 
-        for key, fn in self._subscribers.items():
-            logger.debug(f'Notifying subscriber {key}')
-            asyncio.create_task(fn(event))
+        for key, stack in self._subscribers.items():
+            callback = stack[-1]
+            logger.debug(f'Notifying subscriber {key} by calling {callback}')
+            asyncio.create_task(callback(event))
         logger.debug(f'Done with self._lock for event: {event}')

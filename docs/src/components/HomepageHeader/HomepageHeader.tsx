@@ -7,9 +7,14 @@ import styles from "./index.module.css";
 export function HomepageHeader() {
   const { siteConfig } = useDocusaurusContext();
   return (
-    <div className={styles.headerContainer}>
-      <div className={styles.header}>
-        <Heading as="h1" className="hero__title">
+    <div className="h-screen bg-gradient-to-t from-slate-600 to-black">
+    {/* <div className={styles.headerContainer}> */}
+      <div className={`text-white flex flex-col 
+      items-center p-6 font-light w-full`}>
+        <Heading as="h1" className="
+        text-5xl
+        ">
+          {/* hero__title  */}
           {siteConfig.title}
         </Heading>
         <p className="hero__subtitle">{siteConfig.tagline}</p>
@@ -21,8 +26,8 @@ export function HomepageHeader() {
             Get Started
           </Link>
         </div>
-      </div>{" "}
       <Demo />
+      </div>
     </div>
   );
 }

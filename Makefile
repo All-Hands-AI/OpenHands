@@ -7,7 +7,7 @@ BACKEND_PORT = 3000
 BACKEND_HOST = "127.0.0.1:$(BACKEND_PORT)"
 FRONTEND_PORT = 3001
 DEFAULT_WORKSPACE_DIR = "./workspace"
-DEFAULT_MODEL = "gpt-3.5-turbo"
+DEFAULT_MODEL = "gpt-4o"
 CONFIG_FILE = config.toml
 PRECOMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
 
@@ -225,6 +225,15 @@ setup-config-prompts:
 	@read -p "Enter your workspace directory [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
 	 echo "workspace_base=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
+
+	@read -p "Do you want to persist the sandbox container? [true/false] [default: true]: " persist_sandbox; \
+	 persist_sandbox=$${persist_sandbox:-true}; \
+	 if [ "$$persist_sandbox" = "true" ]; then \
+		 read -p "Enter a password for the sandbox container: " ssh_password; \
+		 echo "ssh_password=\"$$ssh_password\"" >> $(CONFIG_FILE).tmp; \
+	 else \
+		echo "persist_sandbox=\"$$persist_sandbox\"" >> $(CONFIG_FILE).tmp
+	 fi
 
 	@echo "" >> $(CONFIG_FILE).tmp
 

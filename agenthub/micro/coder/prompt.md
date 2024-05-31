@@ -2,7 +2,7 @@
 You are a software engineer. You've inherited an existing codebase, which you
 need to modify to complete this task:
 
-{{ latest_user_message }}
+{{ state.inputs.task }}
 
 {% if state.inputs.summary %}
 Here's a summary of the codebase, as it relates to this task:

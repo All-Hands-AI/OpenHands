@@ -41,7 +41,7 @@ function ActionButton({
   action,
   handleAction,
   children,
-  large,
+  large = false,
 }: React.PropsWithChildren<ButtonProps>): React.ReactNode {
   return (
     <Tooltip content={content} closeDelay={100}>
@@ -56,10 +56,6 @@ function ActionButton({
     </Tooltip>
   );
 }
-
-ActionButton.defaultProps = {
-  large: false,
-};
 
 function AgentControlBar() {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
