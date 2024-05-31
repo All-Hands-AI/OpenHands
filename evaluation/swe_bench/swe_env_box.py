@@ -49,7 +49,7 @@ class SWEBenchSSHBox(DockerSSHBox):
         assert exit_code == 0, f'Failed to set SWE_INSTANCE_ID in ~/.bashrc: {output}'
 
         logger.info('Sourcing swe_entry.sh to set up environment variables')
-        # larger timeout for SWEBench init to account for long-running installations (e.g., require compilation)
+        # larger timeout for SWEBench in    `it to account for long-running installations (e.g., require compilation)
         exit_code, output = self.execute('source /swe_util/swe_entry.sh', timeout=600)
         logger.info('exit code: %d', exit_code)
         logger.info(output)

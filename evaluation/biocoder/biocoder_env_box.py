@@ -1,9 +1,15 @@
+import json
+import os
 import sys
 
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
-from opendevin.runtime.plugins import JupyterRequirement, SWEAgentCommandsRequirement
+from opendevin.runtime.plugins import (
+    JupyterRequirement,
+    PluginRequirement,
+    SWEAgentCommandsRequirement,
+)
 
 BIOCODER_BENCH_CONTAINER_IMAGE = 'public.ecr.aws/i5g0m1f6/eval_biocoder:v1.0'
 
@@ -17,6 +23,7 @@ class BiocoderSSHBox(DockerSSHBox):
         biocoder_instance_id: str | None = None,
         biocoder_instance: dict | None = None,
         skip_workspace_mount: bool = True,
+        sandbox_plugins: list[PluginRequirement] = [],  # noqa: B006
     ):
         if biocoder_instance_id is None:
             raise ValueError('biocoder_instance_id must be provided')
@@ -27,6 +34,8 @@ class BiocoderSSHBox(DockerSSHBox):
         assert (
             container_image is not None
         ), 'container_image is required for BiocoderBenchSSHBox!'
+        super().__init__(container_image, timeout, sid)
+        self.init_plugins(sandbox_plugins)
 
     @property
     def volumes(self):
@@ -37,6 +46,10 @@ class BiocoderSSHBox(DockerSSHBox):
                 if not v['bind'] == self.sandbox_workspace_dir
             }
         return super().volumes
+
+    def get_changed_code(self):
+        # use biocoder_instance to get all data
+        pass
 
     def execute_and_check(self, cmd: str, error_msg: str) -> tuple[int, str]:
         exit_code, output = self.execute(cmd)
@@ -52,10 +65,59 @@ class BiocoderSSHBox(DockerSSHBox):
         n_tries=5,
         skip_workspace_mount: bool = False,
         workspace_mount_path: str | None = None,
+        sandbox_plugins: list[PluginRequirement] = [],  # noqa: B006
     ) -> 'BiocoderSSHBox':
         """This method initializes a container image, then runs some initialization commands"""
         config.workspace_base = workspace_mount_path
         config.workspace_mount_path = workspace_mount_path
+
+        workspace_test_folder = 'biocoder_cache'
+        if not os.path.exists(
+            os.path.join(workspace_mount_path, workspace_test_folder)
+        ):
+            os.makedirs(
+                os.path.join(workspace_mount_path, workspace_test_folder), exist_ok=True
+            )
+
+        file_ext = {
+            'python': 'py',
+            'java': 'java',
+            'c': 'c',
+            'cpp': 'cpp',
+            'javascript': 'js',
+            'typescript': 'ts',
+        }[instance['language'].lower()]
+
+        context_path = os.path.join(
+            workspace_mount_path, workspace_test_folder, 'context.' + file_ext
+        )
+        generated_path = os.path.join(
+            workspace_mount_path, workspace_test_folder, 'generated.' + file_ext
+        )
+        golden_path = os.path.join(
+            workspace_mount_path, workspace_test_folder, 'golden.' + file_ext
+        )
+
+        with open(context_path, 'w') as f:
+            f.write(instance['contextCode'])
+        with open(generated_path, 'w') as f:
+            f.write(instance['goldenCode'])
+        with open(golden_path, 'w') as f:
+            f.write(instance['goldenCode'])
+
+        testcase_json = {
+            'test_case_id': instance['test_case_id'],
+            'num_cases': 1000,
+            'language': instance['language'].lower(),
+        }
+
+        with open(
+            os.path.join(
+                workspace_mount_path, workspace_test_folder, 'testcase_biocoder.json'
+            ),
+            'w',
+        ) as f:
+            f.write(json.dumps(testcase_json, indent=4))
 
         # linting python after editing helps LLM fix indentations
         config.enable_auto_lint = True
@@ -65,6 +127,7 @@ class BiocoderSSHBox(DockerSSHBox):
             biocoder_instance_id=instance['test_case_id'],
             biocoder_instance=instance,
             skip_workspace_mount=skip_workspace_mount,
+            sandbox_plugins=sandbox_plugins,
         )
 
         logger.info(f"SSH box started for instance {instance['test_case_id']}.")
@@ -75,17 +138,21 @@ class BiocoderSSHBox(DockerSSHBox):
         logger.info(f'cd to workspace: {output}')
 
         # download repository archive
-        repository_url = (
-            f"https://biocoder.lilbillbiscuit.com/repositories/{instance['repo']}.zip"
-        )
+        repository_url = f"https://biocoder.lilbillbiscuit.com/repos/{instance['repository'].split('/')[1]}.zip"
         exit_code, output = sandbox.execute_and_check(
             'wget -O repo.zip ' + repository_url, 'Failed to download the repository'
         )
         logger.info(f'Downloaded the repository: {output}')
         exit_code, output = sandbox.execute_and_check(
-            'unzip repo.zip', 'Failed to unzip the repository'
+            'unzip -o -q repo.zip', 'Failed to unzip the repository'
         )
         logger.info(f'Unzipped the repository: {output}')
+
+        # copy the context, generated and golden files to the /testing_files folder
+        exit_code, output = sandbox.execute_and_check(
+            f'cp -r /workspace/{workspace_test_folder}/ /testing_files/',
+            'Failed to copy the files',
+        )
 
         return sandbox
 
@@ -109,46 +176,34 @@ if __name__ == '__main__':
 
     sandbox = BiocoderSSHBox.get_box_for_instance(
         instance=EXAMPLE_INSTANCE,
-        workspace_mount_path='/workspace',
+        workspace_mount_path='/home/ubuntu/OpenDevinBioCoder/workspace',
         skip_workspace_mount=False,
+        sandbox_plugins=[JupyterRequirement(), SWEAgentCommandsRequirement()],
     )
-
-    # in actual eval, this will be initialized by the controller
-    sandbox.init_plugins([JupyterRequirement(), SWEAgentCommandsRequirement()])
 
     # PRE TEST
-    exit_code, output = sandbox.execute('cd $REPO_PATH')
-    assert exit_code == 0, 'Failed to cd $REPO_PATH'
+    exit_code, output = sandbox.execute_and_check(
+        'cd /testing',
+        'Failed to cd /testing',
+    )
     logger.info(f'cd $REPO_PATH: {output}')
 
-    # apply test patch
-    exit_code, output = sandbox.execute('git apply $SWE_TASK_DIR/test.patch')
-    assert exit_code == 0, 'Failed to apply test patch'
-    logger.info(f'git apply $SWE_TASK_DIR/test.patch: {output}')
+    exit_code, output = sandbox.execute_and_check(
+        'whoami',
+        'Failed to run whoami',
+    )
+    logger.info(f'whoami: {output}')
 
     # TEST
     exit_code, output = sandbox.execute(
-        './tests/runtests.py --verbosity 2 auth_tests.test_validators'
+        '/home/devin/mambaforge/bin/mamba run -n base python3 /testing/start_test_opendevin.py'
     )
-    assert exit_code == 1, 'Expected exit code 1 (since this is a FAIL_TO_PASS)'
+    assert exit_code == 0, 'Expected exit code 0 (this should have passed)'
     logger.info(f'$TEST_CMD:\n{output}')
 
-    # apply gold patch
-    exit_code, output = sandbox.execute('git apply $SWE_TASK_DIR/gold.patch')
-    logger.info('exit code: %d', exit_code)
-    logger.info(f'git apply $SWE_TASK_DIR/gold.patch: {output}')
-
-    # TEST
-    exit_code, output = sandbox.execute(
-        './tests/runtests.py --verbosity 2 auth_tests.test_validators'
+    exit_code, output = sandbox.execute_and_check(
+        'cat /testing/result_biocoder.json', 'Failed to read the result file'
     )
-    assert exit_code == 0, 'Expected exit code 0 (since we applied the gold patch)'
-    logger.info(f'$TEST_CMD:\n{output}')
-
-    # Reset the repo
-    exit_code, output = sandbox.execute('git reset --hard')
-    assert exit_code == 0, 'Failed to reset the repo'
-    logger.info(f'git reset --hard: {output}')
 
     bg_cmd = sandbox.execute_in_background(
         "while true; do echo 'dot ' && sleep 10; done"
