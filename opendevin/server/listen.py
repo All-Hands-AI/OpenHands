@@ -1,3 +1,4 @@
+import uuid
 import warnings
 
 from opendevin.server.data_models.feedback import FeedbackDataModel, store_feedback
@@ -148,8 +149,9 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.send_json({'error': 'Invalid token', 'error_code': 401})
             await websocket.close()
             return
-        else:
-            token = sign_token({'sid': sid})
+    else:
+        sid = str(uuid.uuid4())
+        token = sign_token({'sid': sid})
 
     session = session_manager.add_or_restart_session(sid, websocket)
     await websocket.send_json({'token': token, 'status': 'ok'})
