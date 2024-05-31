@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useRef } from "react";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Checkbox, FormControlLabel } from '@mui/material';
 import { useDispatch, useSelector } from "react-redux";
 import { IoMdChatbubbles } from "react-icons/io";
@@ -49,20 +49,42 @@ function ScrollButton({
   );
 }
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [makePublic, setMakePublic] = useState(false);
-  const [feedbackType, setFeedbackType] = useState<"positive" | "negative" | null>(null);
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [makePublic, setMakePublic] = React.useState(false);
+  const [feedbackType, setFeedbackType] = React.useState<"positive" | "negative" | null>(null);
+  const [feedbackShared, setFeedbackShared] = React.useState(false);
+  const [feedbackLoading, setFeedbackLoading] = React.useState(false);
 
-  const handleDialogClose = (share: boolean) => {
+  const handleDialogClose = async (share: boolean) => {
     setDialogOpen(false);
     if (share && feedbackType) {
-      sendFeedback(feedbackType, makePublic);
+      // TODO: implement email and permissions
+      // https://github.com/OpenDevin/OpenDevin/issues/2033
+      const data: FeedbackData = {
+        email: "NOT_PROVIDED",
+        token: getToken(),
+        feedback: feedbackType,
+        permissions: "private",
+        trajectory: removeApiKey(Session._history),
+      };
+
+      try {
+        setFeedbackLoading(true);
+        await sendFeedback(data);
+        toast.info("Feedback shared successfully.");
+      } catch (e) {
+        console.error(e);
+        toast.error("share-error", "Failed to share, see console for details.");
+      } finally {
+        setFeedbackShared(true);
+        setFeedbackLoading(false);
+      }
     }
     setMakePublic(false);
     setFeedbackType(null);
   };
 
-  const shareFeedback = async (feedback: "positive" | "negative") => {
+  const openFeedback = async (feedback: "positive" | "negative") => {
     setFeedbackType(feedback);
     setDialogOpen(true);
   };
@@ -71,33 +93,6 @@ function ChatInterface() {
   const dispatch = useDispatch();
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
-
-  const [feedbackShared, setFeedbackShared] = React.useState(false);
-  const [feedbackLoading, setFeedbackLoading] = React.useState(false);
-
-  const shareFeedback = async (feedback: "positive" | "negative") => {
-    // TODO: implement email and permissions
-    // https://github.com/OpenDevin/OpenDevin/issues/2033
-    const data: FeedbackData = {
-      email: "NOT_PROVIDED",
-      token: getToken(),
-      feedback,
-      permissions: "private",
-      trajectory: removeApiKey(Session._history),
-    };
-
-    try {
-      setFeedbackLoading(true);
-      await sendFeedback(data);
-      toast.info("Feedback shared successfully.");
-    } catch (e) {
-      console.error(e);
-      toast.error("share-error", "Failed to share, see console for details.");
-    } finally {
-      setFeedbackShared(true);
-      setFeedbackLoading(false);
-    }
-  };
 
   const handleSendMessage = (content: string) => {
     dispatch(addUserMessage(content));
@@ -157,7 +152,32 @@ function ChatInterface() {
             ScrollButton({
               onClick: handleSendContinueMsg,
               icon: <RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />,
+              label: t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE),
+            })}
+        </div>
 
+        {!feedbackShared && messages.length > 3 && (
+          <div className="flex justify-start gap-2 p-2">
+            <ScrollButton
+              disabled={feedbackLoading}
+              onClick={() => openFeedback("positive")}
+              icon={<FaRegThumbsUp className="inline mr-2 w-3 h-3" />}
+              label=""
+            />
+            <ScrollButton
+              disabled={feedbackLoading}
+              onClick={() => openFeedback("negative")}
+              icon={<FaRegThumbsDown className="inline mr-2 w-3 h-3" />}
+              label=""
+            />
+          </div>
+        )}
+      </div>
+
+      <ChatInput
+        disabled={curAgentState === AgentState.LOADING}
+        onSendMessage={handleSendMessage}
+      />
       <Dialog open={dialogOpen} onClose={() => handleDialogClose(false)}>
         <DialogTitle>Share Feedback</DialogTitle>
         <DialogContent>
@@ -172,32 +192,6 @@ function ChatInterface() {
           <Button onClick={() => handleDialogClose(true)} color="primary">Share</Button>
         </DialogActions>
       </Dialog>
-
-            })}
-        </div>
-
-        {!feedbackShared && messages.length > 3 && (
-          <div className="flex justify-start gap-2 p-2">
-            <ScrollButton
-              disabled={feedbackLoading}
-              onClick={() => shareFeedback("positive")}
-              icon={<FaRegThumbsUp className="inline mr-2 w-3 h-3" />}
-              label=""
-            />
-            <ScrollButton
-              disabled={feedbackLoading}
-              onClick={() => shareFeedback("negative")}
-              icon={<FaRegThumbsDown className="inline mr-2 w-3 h-3" />}
-              label=""
-            />
-          </div>
-        )}
-      </div>
-
-      <ChatInput
-        disabled={curAgentState === AgentState.LOADING}
-        onSendMessage={handleSendMessage}
-      />
     </div>
   );
 }

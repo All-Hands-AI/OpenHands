@@ -14,6 +14,7 @@
     "@vitejs/plugin-react": "^4.3.0",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.4.0",
+    "@mui/material": "^5.15.19",
     "clsx": "^2.1.1",
     "eslint-config-airbnb-typescript": "^18.0.0",
     "framer-motion": "^11.2.10",
