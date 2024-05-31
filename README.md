@@ -64,6 +64,7 @@ export WORKSPACE_BASE=$(pwd)/workspace;
 docker run -it \
     --pull=always \
     -e SANDBOX_USER_ID=$(id -u) \
+    -e PERSIST_SANDBOX="true" \
     -e SSH_PASSWORD="make something up here" \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
     -v $WORKSPACE_BASE:/opt/workspace_base \
