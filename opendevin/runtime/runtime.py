@@ -91,7 +91,7 @@ class Runtime:
         self.sandbox.init_plugins(plugins)
 
     def init_runtime_tools(
-            self, runtime_tools: list[RuntimeTool], is_async: bool = True
+        self, runtime_tools: list[RuntimeTool], is_async: bool = True
     ) -> None:
         # if browser in runtime_tools, init it
         if RuntimeTool.BROWSER in runtime_tools:
