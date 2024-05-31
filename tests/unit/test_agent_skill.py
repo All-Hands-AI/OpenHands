@@ -1,9 +1,9 @@
 import contextlib
 import io
+import sys
 
 import docx
 import pytest
-import sys
 
 from opendevin.runtime.plugins.agent_skills.agentskills import (
     create_file,
@@ -11,15 +11,14 @@ from opendevin.runtime.plugins.agent_skills.agentskills import (
     find_file,
     goto_line,
     open_file,
-    scroll_down,
-    scroll_up,
-    search_dir,
-    search_file,
     parse_docx,
     parse_latex,
     parse_pdf,
     parse_pptx,
-    parse_image
+    scroll_down,
+    scroll_up,
+    search_dir,
+    search_file,
 )
 
 
@@ -81,6 +80,7 @@ def test_open_file_long(tmp_path):
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(1, 52):
         expected += f'{i}|Line {i}\n'
+    expected += '(949 more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -95,8 +95,10 @@ def test_open_file_long_with_lineno(tmp_path):
         result = buf.getvalue()
     assert result is not None
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    expected += '(50 more lines above)\n'
     for i in range(51, 151):
         expected += f'{i}|Line {i}\n'
+    expected += '(850 more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -134,6 +136,7 @@ def test_goto_line(tmp_path):
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(1, 52):
         expected += f'{i}|Line {i}\n'
+    expected += '(949 more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -143,8 +146,10 @@ def test_goto_line(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    expected += '(50 more lines above)\n'
     for i in range(51, 151):
         expected += f'{i}|Line {i}\n'
+    expected += '(850 more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -186,6 +191,7 @@ def test_scroll_down(tmp_path):
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
     for i in range(1, 52):
         expected += f'{i}|Line {i}\n'
+    expected += '(949 more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -195,8 +201,10 @@ def test_scroll_down(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    expected += '(51 more lines above)\n'
     for i in range(52, 152):
         expected += f'{i}|Line {i}\n'
+    expected += '(849 more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -212,8 +220,10 @@ def test_scroll_up(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    expected += '(250 more lines above)\n'
     for i in range(251, 351):
         expected += f'{i}|Line {i}\n'
+    expected += '(650 more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -223,8 +233,10 @@ def test_scroll_up(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
+    expected += '(150 more lines above)\n'
     for i in range(151, 251):
         expected += f'{i}|Line {i}\n'
+    expected += '(750 more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -567,6 +579,72 @@ def test_lint_file_fail_undefined_name(tmp_path, monkeypatch, capsys):
         '-------------------------------------------------\n'
         '1|\n'
         '-------------------------------------------------\n'
+        'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+        'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
+        'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
+    )
+    assert result.split('\n') == expected.split('\n')
+
+
+def test_lint_file_fail_undefined_name_long(tmp_path, monkeypatch, capsys):
+    # Create a Python file with a syntax error
+    file_path = tmp_path / 'test_file.py'
+    file_path.write_text('\n' * 1000)
+
+    # Set environment variable to enable linting
+    monkeypatch.setattr(
+        'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
+    )
+
+    open_file(str(file_path))
+    edit_file(500, 500, 'undefined_name()\n')
+
+    result = capsys.readouterr().out
+    print(result)
+
+    assert result is not None
+
+    open_lines = '\n'.join([f'{i+1}|' for i in range(51)])
+    expected = (
+        f'[File: {file_path} (1000 lines total)]\n'
+        f'{open_lines}\n'
+        '(949 more lines below)\n'
+        '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
+        'ERRORS:\n'
+        f"{file_path}:500:1: F821 undefined name 'undefined_name'\n"
+        '[This is how your edit would have looked if applied]\n'
+        '-------------------------------------------------\n'
+        '(496 more lines above)\n'
+        '497|\n'
+        '498|\n'
+        '499|\n'
+        '500|undefined_name()\n'
+        '501|\n'
+        '502|\n'
+        '503|\n'
+        '504|\n'
+        '505|\n'
+        '506|\n'
+        '(495 more lines below)\n'
+        '-------------------------------------------------\n\n'
+        '[This is the original code before your edit]\n'
+        '-------------------------------------------------\n'
+        '(496 more lines above)\n'
+        '497|\n'
+        '498|\n'
+        '499|\n'
+        '500|\n'
+        '501|\n'
+        '502|\n'
+        '503|\n'
+        '504|\n'
+        '505|\n'
+        '506|\n'
+        '(494 more lines below)\n'
+        '-------------------------------------------------\n'
+        'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+        'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
+        'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
     )
     assert result.split('\n') == expected.split('\n')
 
@@ -599,7 +677,7 @@ def test_lint_file_disabled_undefined_name(tmp_path, monkeypatch, capsys):
 
 def test_parse_docx(tmp_path):
     # Create a DOCX file with some content
-    test_docx_path = tmp_path / "test.docx"
+    test_docx_path = tmp_path / 'test.docx'
     doc = docx.Document()
     doc.add_paragraph('Hello, this is a test document.')
     doc.add_paragraph('This is the second paragraph.')
@@ -621,19 +699,19 @@ def test_parse_docx(tmp_path):
         '@@ Page 1 @@\nHello, this is a test document.\n\n'
         '@@ Page 2 @@\nThis is the second paragraph.\n\n\n'
     )
-    assert output == expected_output, f"Expected output does not match. Got: {output}"
+    assert output == expected_output, f'Expected output does not match. Got: {output}'
 
 
 def test_parse_latex(tmp_path):
     # Create a LaTeX file with some content
-    test_latex_path = tmp_path / "test.tex"
+    test_latex_path = tmp_path / 'test.tex'
     with open(test_latex_path, 'w') as f:
-        f.write(r'''
+        f.write(r"""
         \documentclass{article}
         \begin{document}
         Hello, this is a test LaTeX document.
         \end{document}
-        ''')
+        """)
 
     old_stdout = sys.stdout
     sys.stdout = io.StringIO()
@@ -650,17 +728,17 @@ def test_parse_latex(tmp_path):
         f'[Reading LaTex file from {test_latex_path}]\n'
         'Hello, this is a test LaTeX document.\n'
     )
-    assert output == expected_output, f"Expected output does not match. Got: {output}"
+    assert output == expected_output, f'Expected output does not match. Got: {output}'
 
 
 def test_parse_pdf(tmp_path):
     # Create a PDF file with some content
-    test_pdf_path = tmp_path / "test.pdf"
+    test_pdf_path = tmp_path / 'test.pdf'
     from reportlab.lib.pagesizes import letter
     from reportlab.pdfgen import canvas
 
     c = canvas.Canvas(str(test_pdf_path), pagesize=letter)
-    c.drawString(100, 750, "Hello, this is a test PDF document.")
+    c.drawString(100, 750, 'Hello, this is a test PDF document.')
     c.save()
 
     old_stdout = sys.stdout
@@ -679,21 +757,22 @@ def test_parse_pdf(tmp_path):
         '@@ Page 1 @@\n'
         'Hello, this is a test PDF document.\n'
     )
-    assert output == expected_output, f"Expected output does not match. Got: {output}"
+    assert output == expected_output, f'Expected output does not match. Got: {output}'
 
 
 def test_parse_pptx(tmp_path):
-    test_pptx_path = tmp_path / "test.pptx"
+    test_pptx_path = tmp_path / 'test.pptx'
     from pptx import Presentation
+
     pres = Presentation()
 
     slide1 = pres.slides.add_slide(pres.slide_layouts[0])
     title1 = slide1.shapes.title
-    title1.text = "Hello, this is the first test PPTX slide."
+    title1.text = 'Hello, this is the first test PPTX slide.'
 
     slide2 = pres.slides.add_slide(pres.slide_layouts[0])
     title2 = slide2.shapes.title
-    title2.text = "Hello, this is the second test PPTX slide."
+    title2.text = 'Hello, this is the second test PPTX slide.'
 
     pres.save(str(test_pptx_path))
 
@@ -712,4 +791,4 @@ def test_parse_pptx(tmp_path):
         '@@ Slide 2 @@\n'
         'Hello, this is the second test PPTX slide.\n\n'
     )
-    assert output == expected_output, f"Expected output does not match. Got: {output}"
+    assert output == expected_output, f'Expected output does not match. Got: {output}'
