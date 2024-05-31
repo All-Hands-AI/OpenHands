@@ -13,11 +13,5 @@ export const sendFeedback = async (data: FeedbackData) =>
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      email: data.email,
-      token: data.token,
-      feedback: data.feedback,
-      permissions: data.permissions,
-      trajectory: data.trajectory,
-    }),
+    body: JSON.stringify(data),
   });
