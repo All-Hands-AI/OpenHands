@@ -48,16 +48,11 @@ def codeact_user_response(state: State, task: Task, task_config: Dict[str, int])
     last_action, _ = state.history[-1]
     result_state: TaskState = env.step(last_action.message)
 
-    # HACK: Update the state if from false to true, otherwise keep the state
-    if not hasattr(state, 'task_state'):  # first set
-        state.task_state = result_state
-    else:
-        if result_state.success:
-            state.task_state = result_state
+    state.task_state = result_state
 
     if not result_state.latest_output:
         if result_state.success:
-            msg = 'Your answer is correct. Please EXIT using the following command: <execute_bash> exit </execute_bash>.'
+            msg = '/exit'
         else:
             msg = 'Something went wrong! No output from the model.'
     else:
