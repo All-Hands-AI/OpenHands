@@ -26,6 +26,7 @@ from opendevin.events.observation import (
 from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
 from opendevin.memory.condenser import MemoryCondenser
+from opendevin.runtime.tools import RuntimeTool
 
 if config.agent.memory_enabled:
     from opendevin.memory.memory import LongTermMemory
@@ -46,7 +47,7 @@ class MonologueAgent(Agent):
     initial_thoughts: list[dict[str, str]]
     memory: 'LongTermMemory | None'
     memory_condenser: MemoryCondenser
-    runtime_tools: list[str] = ['browser']
+    runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
 
     def __init__(self, llm: LLM):
         """

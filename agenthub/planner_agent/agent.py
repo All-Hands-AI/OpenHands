@@ -2,6 +2,7 @@ from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import Action, AgentFinishAction
 from opendevin.llm.llm import LLM
+from opendevin.runtime.tools import RuntimeTool
 
 from .prompt import get_prompt, parse_response
 
@@ -12,7 +13,7 @@ class PlannerAgent(Agent):
     The planner agent utilizes a special prompting strategy to create long term plans for solving problems.
     The agent is given its previous action-observation pairs, current task, and hint based on last action taken at every step.
     """
-    runtime_tools: list[str] = ['browser']
+    runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
 
     def __init__(self, llm: LLM):
         """

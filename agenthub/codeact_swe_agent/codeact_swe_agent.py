@@ -27,6 +27,7 @@ from opendevin.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
 )
+from opendevin.runtime.tools import RuntimeTool
 
 
 def parse_response(response) -> str:
@@ -127,7 +128,7 @@ class CodeActSWEAgent(Agent):
         AgentSkillsRequirement(),
         JupyterRequirement(),
     ]
-    runtime_tools: list[str] = ['browser']
+    runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
     jupyter_kernel_init_code: str = 'from agentskills import *'
 
     system_message: str = get_system_message()

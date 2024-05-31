@@ -1,8 +1,8 @@
-import asyncio
 import atexit
 import base64
 import io
 import multiprocessing
+import threading
 import time
 import uuid
 
@@ -18,7 +18,7 @@ from opendevin.core.logger import opendevin_logger as logger
 
 
 class BrowserEnv:
-    def __init__(self):
+    def __init__(self, is_async: bool = True):
         self.html_text_converter = html2text.HTML2Text()
         # ignore links and images
         self.html_text_converter.ignore_links = False
@@ -33,17 +33,17 @@ class BrowserEnv:
         self.process = multiprocessing.Process(
             target=self.browser_process,
         )
-        self.browser_started = False
-        logger.info('Starting browser env async...')
-        asyncio.create_task(self.start_browser_env())
+        if is_async:
+            threading.Thread(target=self.init_browser).start()
+        else:
+            self.init_browser()
         atexit.register(self.close)
 
-    async def start_browser_env(self):
+    def init_browser(self):
+        logger.info('Starting browser env...')
         self.process.start()
-        self.browser_started = await self.check_alive_async()
-        if not self.browser_started:
+        if not self.check_alive():
             self.close()
-            logger.error('Failed to start browser environment.')
             raise BrowserInitException('Failed to start browser environment.')
 
     def browser_process(self):
@@ -87,18 +87,6 @@ class BrowserEnv:
                 return
 
     def step(self, action_str: str, timeout: float = 10) -> dict:
-        # Check if the browser has started. For web page scene, the browser should be ready when this function called,
-        # but for integration test scene, the browser may not be ready yet.
-        attempts = 0
-        while not self.browser_started and attempts < 2:
-            logger.info(f"Browser has not started yet. Attempt {attempts + 1}/2")
-            time.sleep(10)
-            self.browser_started = asyncio.run(self.check_alive_async())
-            attempts += 1
-
-        if not self.browser_started:
-            raise BrowserInitException('Failed to start browser environment after 2 attempts.')
-
         unique_request_id = str(uuid.uuid4())
         self.agent_side.send((unique_request_id, {'action': action_str}))
         start_time = time.time()
@@ -110,20 +98,12 @@ class BrowserEnv:
                 if response_id == unique_request_id:
                     return obs
 
-    async def check_alive_async(self, timeout: float = 60):
+    def check_alive(self, timeout: float = 60):
         self.agent_side.send(('IS_ALIVE', None))
-        started = False
-        end_time = time.time() + timeout
-
-        while time.time() < end_time:
-            await asyncio.sleep(0.1)
-            if self.agent_side.poll(timeout=0.01):
-                response_id, _ = self.agent_side.recv()
-                if response_id == 'ALIVE':
-                    started = True
-                    break
-
-        return started
+        if self.agent_side.poll(timeout=timeout):
+            response_id, _ = self.agent_side.recv()
+            if response_id == 'ALIVE':
+                return True
 
     def close(self):
         if not self.process.is_alive():
