@@ -283,6 +283,14 @@ async def upload_file(request: Request, files: list[UploadFile]):
 
 @app.post('/api/submit-feedback')
 async def submit_feedback(request: Request, feedback: FeedbackDataModel):
+    """
+    Upload files to the workspace.
+
+    To upload files:
+    ```sh
+    curl -X POST -F "email=test@example.com" -F "token=abc" -F "feedback=positive" -F "permissions=private" -F "trajectory={}" http://localhost:3000/api/submit-feedback
+    ```
+    """
     # Assuming the storage service is already configured in the backend
     # and there is a function  to handle the storage.
     try:

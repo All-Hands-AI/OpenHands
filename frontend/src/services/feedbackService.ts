@@ -1,3 +1,5 @@
+import { request } from "./api";
+
 export interface FeedbackData {
   email: string;
   token: string;
@@ -6,11 +8,9 @@ export interface FeedbackData {
   trajectory: unknown[];
 }
 
-export const sendFeedback = async (data: FeedbackData) =>
-  fetch("/api/submit-feedback", {
+export async function sendFeedback(data: FeedbackData) {
+  await request("/api/submit-feedback", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
     body: JSON.stringify(data),
   });
+}
