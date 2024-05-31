@@ -418,7 +418,7 @@ def get_llm_config_arg(llm_config_arg: str):
 
     ```
     [gpt-3.5-for-eval]
-    model = 'gpt-4o'
+    model = 'gpt-3.5-turbo'
     api_key = '...'
     temperature = 0.5
     num_retries = 10
