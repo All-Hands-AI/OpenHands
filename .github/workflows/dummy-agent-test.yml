@@ -10,6 +10,9 @@ on:
     - main
   pull_request:
 
+env:
+  PERSIST_SANDBOX : "false"
+
 jobs:
   test:
     runs-on: ubuntu-latest

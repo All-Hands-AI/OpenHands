@@ -34,6 +34,6 @@ Run the following command to do the above two steps. The results will be saved t
 
 ```bash
 pushd evaluation/swe_bench
-docker build -t ghcr.io/opendevin/eval-swe-bench:full-v1.1 -f ./scripts/docker/Dockerfile.full.v1.1 .
-docker push ghcr.io/opendevin/eval-swe-bench:full-v1.1
+docker build -t ghcr.io/opendevin/eval-swe-bench:full-v1.2.1 -f ./scripts/docker/Dockerfile.full.v1.1 .
+docker push ghcr.io/opendevin/eval-swe-bench:full-v1.2.1
 ```

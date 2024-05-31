@@ -11,6 +11,7 @@ from glob import glob
 
 import docker
 from pexpect import exceptions, pxssh
+from tenacity import retry, stop_after_attempt, wait_fixed
 
 from opendevin.core.config import config
 from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
@@ -215,38 +216,50 @@ class DockerSSHBox(Sandbox):
             )
             raise ex
 
-        self.instance_id = (
-            sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
-        )
+        if config.persist_sandbox:
+            self.instance_id = 'persisted'
+        else:
+            self.instance_id = (sid or '') + str(uuid.uuid4())
 
         self.timeout = timeout
-        self.container_image = (
-            config.sandbox_container_image
-            if container_image is None
-            else container_image
-        )
+        self.container_image = container_image or config.sandbox_container_image
         self.container_name = self.container_name_prefix + self.instance_id
 
         # set up random user password
-        self._ssh_password = str(uuid.uuid4())
-        self._ssh_port = find_available_tcp_port()
-
-        # always restart the container, cuz the initial be regarded as a new session
-        n_tries = 5
-        while n_tries > 0:
-            try:
-                self.restart_docker_container()
-                break
-            except Exception as e:
-                logger.exception(
-                    'Failed to start Docker container, retrying...', exc_info=False
+        if config.persist_sandbox:
+            if not config.ssh_password:
+                raise Exception(
+                    'Please add ssh_password to your config.toml or add -e SSH_PASSWORD to your docker run command'
                 )
-                n_tries -= 1
-                if n_tries == 0:
-                    raise e
-                time.sleep(5)
-        self.setup_user()
-
+            self._ssh_password = config.ssh_password
+            self._ssh_port = config.ssh_port
+        else:
+            self._ssh_password = str(uuid.uuid4())
+            self._ssh_port = find_available_tcp_port()
+        try:
+            docker.DockerClient().containers.get(self.container_name)
+            is_initial_session = False
+        except docker.errors.NotFound:
+            is_initial_session = True
+            logger.info('Creating new Docker container')
+        if not config.persist_sandbox or is_initial_session:
+            n_tries = 5
+            while n_tries > 0:
+                try:
+                    self.restart_docker_container()
+                    break
+                except Exception as e:
+                    logger.exception(
+                        'Failed to start Docker container, retrying...', exc_info=False
+                    )
+                    n_tries -= 1
+                    if n_tries == 0:
+                        raise e
+                    time.sleep(5)
+            self.setup_user()
+        else:
+            self.container = self.docker_client.containers.get(self.container_name)
+            logger.info('Using existing Docker container')
         try:
             self.start_ssh_session()
         except pxssh.ExceptionPxssh as e:
@@ -357,42 +370,41 @@ class DockerSSHBox(Sandbox):
             environment=self._env,
         )
 
-    def start_ssh_session(self, n_retries=5):
-        while n_retries > 0:
-            try:
-                self.ssh = pxssh.pxssh(
-                    echo=False,
-                    timeout=self.timeout,
-                    encoding='utf-8',
-                    codec_errors='replace',
-                )
-                break
-            except pxssh.ExceptionPxssh as e:
-                logger.exception(
-                    'Failed to start SSH session, retrying...', exc_info=False
-                )
-                n_retries -= 1
-                if n_retries == 0:
-                    raise e
-                time.sleep(5)
+    # Use the retry decorator, with a maximum of 5 attempts and a fixed wait time of 5 seconds between attempts
+    @retry(stop=stop_after_attempt(5), wait=wait_fixed(5))
+    def __ssh_login(self):
+        try:
+            self.ssh = pxssh.pxssh(
+                echo=False,
+                timeout=self.timeout,
+                encoding='utf-8',
+                codec_errors='replace',
+            )
+            hostname = self.ssh_hostname
+            username = 'opendevin' if self.run_as_devin else 'root'
+            logger.info(
+                f'Connecting to {username}@{hostname} via ssh. '
+                f"If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub. "
+                f"If you started OpenDevin with `docker run`, you should try `ssh -v -p {self._ssh_port} {username}@localhost` with the password '{self._ssh_password} on the host machine (where you started the container)."
+            )
+            self.ssh.login(hostname, username, self._ssh_password, port=self._ssh_port)
+        except pxssh.ExceptionPxssh as e:
+            logger.exception(
+                'Failed to login to SSH session, retrying...', exc_info=False
+            )
+            raise e
 
-        hostname = self.ssh_hostname
-        if self.run_as_devin:
-            username = 'opendevin'
-        else:
-            username = 'root'
-        logger.info(
-            f'Connecting to {username}@{hostname} via ssh. '
-            f"If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub. "
-            f"If you started OpenDevin with `docker run`, you should try `ssh -v -p {self._ssh_port} {username}@localhost` with the password '{self._ssh_password} on the host machine (where you started the container)."
-        )
-        self.ssh.login(hostname, username, self._ssh_password, port=self._ssh_port)
+    def start_ssh_session(self):
+        self.__ssh_login()
 
         # Fix: https://github.com/pexpect/pexpect/issues/669
         self.ssh.sendline("bind 'set enable-bracketed-paste off'")
         self.ssh.prompt()
         # cd to workspace
         self.ssh.sendline(f'cd {self.sandbox_workspace_dir}')
+        self.ssh.prompt()
+        # load bashrc
+        self.ssh.sendline('source ~/.bashrc')
         self.ssh.prompt()
 
     def get_exec_cmd(self, cmd: str) -> list[str]:
@@ -707,7 +719,10 @@ class DockerSSHBox(Sandbox):
         containers = self.docker_client.containers.list(all=True)
         for container in containers:
             try:
-                if container.name.startswith(self.container_name):
+                if (
+                    container.name.startswith(self.container_name)
+                    and not config.persist_sandbox
+                ):
                     # only remove the container we created
                     # otherwise all other containers with the same prefix will be removed
                     # which will mess up with parallel evaluation

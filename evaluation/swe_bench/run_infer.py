@@ -24,6 +24,8 @@ from opendevin.core.main import main
 from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
 
+USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false') == 'true'
+
 
 def cleanup():
     print('Cleaning up child processes...')
@@ -60,11 +62,13 @@ def monologue_user_response(state: State) -> str:
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
+    'CodeActSWEAgent': codeact_user_response,
     'MonologueAgent': monologue_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': 'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n'
+    'CodeActAgent': 'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n',
+    'CodeActSWEAgent': 'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n',
 }
 
 
@@ -241,19 +245,62 @@ def process_instance(
     )
 
     # Prepare instruction
-    instruction = (
-        f'Please fix the following issue for the repository in /workspace/{workspace_dir_name}.\n'
-        'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
-        '# Problem Statement\n'
-        f'{instance.problem_statement}\n\n'
-    )
-    if instance.hints_text:
-        instruction += f'# Hints\n{instance.hints_text}\n\n'
-    instruction += (
-        'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-        'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
-        'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
-    )
+    if agent_class == 'CodeActSWEAgent':
+        instruction = (
+            'We are currently solving the following issue within our repository. Here is the issue text:\n'
+            '--- BEGIN ISSUE ---\n'
+            f'{instance.problem_statement}\n'
+            '--- END ISSUE ---\n\n'
+        )
+
+        if USE_HINT_TEXT and instance.hints_text:
+            instruction += (
+                f'--- BEGIN HINTS ---\n{instance.hints_text}\n--- END HINTS ---\n'
+            )
+        instruction += f"""Now, you're going to solve this issue on your own. Your terminal session has started and you're in the repository's root directory. You can use any bash commands or the special interface to help you. Edit all the files you need to and run any checks or tests that you want.
+Remember, YOU CAN ONLY ENTER ONE COMMAND AT A TIME. You should always wait for feedback after every command.
+When you're satisfied with all of the changes you've made, you can run the following command: <execute_bash> exit </execute_bash>.
+Note however that you cannot use any interactive session commands (e.g. vim) in this environment, but you can write scripts and run them. E.g. you can write a python script and then run it with `python <script_name>.py`.
+
+NOTE ABOUT THE EDIT COMMAND: Indentation really matters! When editing a file, make sure to insert appropriate indentation before each line!
+
+IMPORTANT TIPS:
+1. Always start by trying to replicate the bug that the issues discusses.
+    If the issue includes code for reproducing the bug, we recommend that you re-implement that in your environment, and run it to make sure you can reproduce the bug.
+    Then start trying to fix it.
+    When you think you've fixed the bug, re-run the bug reproduction script to make sure that the bug has indeed been fixed.
+
+    If the bug reproduction script does not print anything when it successfully runs, we recommend adding a print("Script completed successfully, no errors.") command at the end of the file,
+    so that you can be sure that the script indeed ran fine all the way through.
+
+2. If you run a command and it doesn't work, try running a different command. A command that did not work once will not work the second time unless you modify it!
+
+3. If you open a file and need to get to an area around a specific line that is not in the first 100 lines, say line 583, don't just use the scroll_down command multiple times. Instead, use the goto 583 command. It's much quicker.
+
+4. If the bug reproduction script requires inputting/reading a specific file, such as buggy-input.png, and you'd like to understand how to input that file, conduct a search in the existing repo code, to see whether someone else has already done that. Do this by running the command: find_file("buggy-input.png") If that doesn't work, use the linux 'find' command.
+
+5. Always make sure to look at the currently open file and the current working directory (which appears right after the currently open file). The currently open file might be in a different directory than the working directory! Note that some commands, such as 'create', open files, so they might change the current  open file.
+
+6. When editing files, it is easy to accidentally specify a wrong line number or to write code with incorrect indentation. Always check the code after you issue an edit to make sure that it reflects what you wanted to accomplish. If it didn't, issue another command to fix it.
+
+[Current directory: /workspace/{workspace_dir_name}]
+"""
+    else:
+        # Testing general agents
+        instruction = (
+            f'Please fix the following issue for the repository in /workspace/{workspace_dir_name}.\n'
+            'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
+            '# Problem Statement\n'
+            f'{instance.problem_statement}\n\n'
+        )
+        if USE_HINT_TEXT and instance.hints_text:
+            instruction += f'# Hints\n{instance.hints_text}\n\n'
+        instruction += (
+            'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+            'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
+            'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
+        )
+
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
@@ -346,7 +393,7 @@ if __name__ == '__main__':
         eval_note += '_N_' + args.eval_note
     eval_output_dir = os.path.join(
         args.eval_output_dir,
-        'swe_bench',
+        'swe_bench_lite',
         agent_class,
         model_name + '_maxiter_' + str(max_iterations) + eval_note,
     )
@@ -368,6 +415,11 @@ if __name__ == '__main__':
         .decode('utf-8')
         .strip(),
     }
+    _agent_cls = agenthub.Agent.get_cls(agent_class)
+    if hasattr(_agent_cls, 'system_message'):
+        metadata['system_message'] = _agent_cls.system_message
+    if hasattr(_agent_cls, 'in_context_example'):
+        metadata['in_context_example'] = _agent_cls.in_context_example
     logger.info(f'Metadata: {metadata}')
     with open(os.path.join(eval_output_dir, 'metadata.json'), 'w') as f:
         json.dump(metadata, f)

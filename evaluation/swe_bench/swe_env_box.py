@@ -12,7 +12,7 @@ from opendevin.runtime.plugins import (
     PluginRequirement,
 )
 
-SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.1'
+SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2.1'
 
 
 class SWEBenchSSHBox(DockerSSHBox):
@@ -25,12 +25,14 @@ class SWEBenchSSHBox(DockerSSHBox):
         swe_instance: dict | None = None,
         skip_workspace_mount: bool = True,
         sandbox_plugins: list[PluginRequirement] = [],  # noqa: B006
+        workspace_dir_name: str | None = None,
     ):
         if swe_instance_id is None:
             raise ValueError('swe_instance_id must be provided!')
         self.swe_instance_id = swe_instance_id
         self.swe_instance = swe_instance
         self.skip_workspace_mount = skip_workspace_mount
+        self.workspace_dir_name = workspace_dir_name
 
         assert (
             container_image is not None
@@ -79,18 +81,22 @@ class SWEBenchSSHBox(DockerSSHBox):
             workspace_dir_name = f"{instance['repo']}__{instance['version']}".replace(
                 '/', '__'
             )
+        old_workspace_base = config.workspace_base
+        old_workspace_mount_path = config.workspace_mount_path
         config.workspace_base = workspace_mount_path
         config.workspace_mount_path = workspace_mount_path
 
         # linting python after editing helps LLM fix indentations
         config.enable_auto_lint = True
-
+        # Need to run as root to use SWEBench container
+        config.run_as_devin = False
         sandbox = cls(
             container_image=SWE_BENCH_CONTAINER_IMAGE,
             swe_instance_id=instance['instance_id'],
             swe_instance=instance,
             skip_workspace_mount=skip_workspace_mount,
             sandbox_plugins=sandbox_plugins,
+            workspace_dir_name=workspace_dir_name,
         )
         logger.info(f"SSH box started for instance {instance['instance_id']}.")
 
@@ -112,11 +118,21 @@ class SWEBenchSSHBox(DockerSSHBox):
         if exit_code != 0:
             logger.error(f'Failed to remove remote: {output}')
             sys.exit(1)
+
+        # restore workspace_base and workspace_mount_path
+        config.workspace_base = old_workspace_base
+        config.workspace_mount_path = old_workspace_mount_path
         return sandbox
 
     def get_diff_patch(self):
         # add everything to the index
-        exit_code, output = self.execute('git add --all')
+        exit_code, output = self.execute(f'cd /workspace/{self.workspace_dir_name}')
+        if exit_code != 0:
+            logger.error('Failed to cd to the repo')
+            return ''
+
+        # add everything to the index
+        exit_code, output = self.execute('git add -A')
         if exit_code != 0:
             logger.error('Failed to add everything to the index')
             return ''

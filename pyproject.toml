@@ -22,7 +22,7 @@ uvicorn = "*"
 types-toml = "*"
 numpy = "*"
 json-repair = "*"
-browsergym = "0.3.2" # integrate browsergym as the browsing interface
+browsergym = "0.3.4" # integrate browsergym as the browsing interface
 html2text = "*"
 e2b = "^0.17.0"
 pexpect = "*"
@@ -32,6 +32,7 @@ boto3 = "*"
 minio = "^7.2.7"
 gevent = "^24.2.1"
 pyarrow = "16.1.0" # transitive dependency, pinned here to avoid conflicts
+tenacity = "^8.3.0"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
@@ -43,7 +44,7 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.4.5"
+ruff = "0.4.6"
 mypy = "1.10.0"
 pre-commit = "3.7.1"
 
@@ -53,14 +54,24 @@ pytest-cov = "*"
 pytest-asyncio = "*"
 pytest-forked = "*"
 flake8 = "*"
+openai = "*"
+python-docx = "*"
+PyPDF2 = "*"
+pylatexenc = "*"
+python-pptx = "*"
+opencv-python = "*"
+pandas = "*"
+reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
 
 
+
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
+retry = "*"
 evaluate = "*"
 
 [build-system]
