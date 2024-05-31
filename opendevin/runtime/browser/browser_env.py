@@ -104,6 +104,7 @@ class BrowserEnv:
             response_id, _ = self.agent_side.recv()
             if response_id == 'ALIVE':
                 return True
+            logger.info(f'Browser env is not alive. Response ID: {response_id}')
 
     def close(self):
         if not self.process.is_alive():

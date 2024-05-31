@@ -7,7 +7,7 @@ BACKEND_PORT = 3000
 BACKEND_HOST = "127.0.0.1:$(BACKEND_PORT)"
 FRONTEND_PORT = 3001
 DEFAULT_WORKSPACE_DIR = "./workspace"
-DEFAULT_MODEL = "gpt-3.5-turbo"
+DEFAULT_MODEL = "gpt-4o"
 CONFIG_FILE = config.toml
 PRECOMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
 
@@ -142,7 +142,14 @@ install-python-dependencies:
 		poetry run pip install playwright; \
 		poetry run playwright install chromium; \
 	else \
-		poetry run playwright install --with-deps chromium; \
+		if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
+			echo "Running playwright install --with-deps chromium..."; \
+			poetry run playwright install --with-deps chromium; \
+			mkdir -p cache; \
+			touch cache/playwright_chromium_is_installed.txt; \
+		else \
+			echo "Setup already done. Skipping playwright installation."; \
+		fi \
 	fi
 	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
 
