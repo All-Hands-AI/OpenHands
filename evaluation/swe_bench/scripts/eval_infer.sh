@@ -40,7 +40,7 @@ poetry run python $SWEBENCH_DOCKER_FORK_DIR/run_evaluation.py \
     --log_dir $FILE_DIR/eval_logs \
     --swe_bench_tasks $SWEBENCH_TASKS \
     --namespace aorwall \
-    --timeout 900
+    --timeout 1800
 
 poetry run python $SWEBENCH_DOCKER_FORK_DIR/generate_report.py \
     --predictions_path $SWEBENCH_FORMAT_JSONL \
