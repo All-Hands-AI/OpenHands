@@ -18,9 +18,11 @@ mkdir -p $FILE_DIR/eval_logs
 mkdir -p $FILE_DIR/swe_bench_format
 
 echo "Evaluating $FILE_NAME @ $FILE_DIR"
-echo "Merged output file with fine-grained report will be saved to $FILE_DIR"
+SWEBENCH_TASKS=$(realpath evaluation/swe_bench/eval_workspace/eval_data/instances/swe-bench-lite-all.json)
+export SWEBENCH_DOCKER_FORK_DIR=$(realpath evaluation/swe_bench/eval_workspace/SWE-bench-docker)
 
-SWEBENCH_TASKS=$(realpath evaluation/swe_bench/eval_workspace/eval_data/instances/swe-bench-test-lite.json)
+# ==== Convert OD format to SWE-bench format ====
+echo "Merged output file with fine-grained report will be saved to $FILE_DIR"
 python3 evaluation/swe_bench/scripts/eval/convert_od_output_to_swe_json.py $PROCESS_FILEPATH
 # replace .jsonl with .swebench.jsonl in filename
 SWEBENCH_FORMAT_JSONL=${PROCESS_FILEPATH/.jsonl/.swebench.jsonl}
@@ -31,15 +33,17 @@ if [ ! -f $SWEBENCH_FORMAT_JSONL ]; then
     exit 1
 fi
 SWEBENCH_FORMAT_JSONL=$(realpath $SWEBENCH_FORMAT_JSONL)
+# ================================================
 
-python evaluation/swe_bench/eval_workspace/SWE-bench-docker/run_evaluation.py \
+poetry run python $SWEBENCH_DOCKER_FORK_DIR/run_evaluation.py \
     --predictions_path $SWEBENCH_FORMAT_JSONL \
     --log_dir $FILE_DIR/eval_logs \
     --swe_bench_tasks $SWEBENCH_TASKS \
-    --namespace aorwall
+    --namespace aorwall \
+    --timeout 900
 
-python evaluation/swe_bench/eval_workspace/SWE-bench-docker/generate_report.py \
- --predictions_path $SWEBENCH_FORMAT_JSONL \
- --log_dir $FILE_DIR/eval_logs \
- --output_dir $FILE_DIR \
- --swe_bench_tasks $SWEBENCH_TASKS
+poetry run python $SWEBENCH_DOCKER_FORK_DIR/generate_report.py \
+    --predictions_path $SWEBENCH_FORMAT_JSONL \
+    --log_dir $FILE_DIR/eval_logs \
+    --output_dir $FILE_DIR \
+    --swe_bench_tasks $SWEBENCH_TASKS
