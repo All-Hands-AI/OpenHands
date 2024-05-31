@@ -41,7 +41,7 @@ temperature = 0.0
 ## Start the evaluation
 
 ```bash
-./evaluation/agent_bench/scripts/run_infer.sh [model_config] [agent] [] 1
+./evaluation/agent_bench/scripts/run_infer.sh [model_config] [agent] [eval_limit]
 ```
 
 Following is the basic command to start the evaluation. Here we are only evaluating the `osbench` for now.
