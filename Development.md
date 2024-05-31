@@ -45,6 +45,7 @@ To configure the LM of your choice, follow these steps:
    make setup-config
    ```
    This command will prompt you to enter the LLM API key, model name, and other variables ensuring that OpenDevin is tailored to your specific needs. Note that the model name will apply only when you run headless. If you use the UI, please set the model in the UI.
+   Set `persist_sandbox` to false if you want to use clean sandbox for each task. If `persist_sandbox` is set to true, you will need to set the `ssh_password` as well.
 
 **Note on Alternative Models:**
 Some alternative models may prove more challenging to tame than others. Fear not, brave adventurer! We shall soon unveil LLM-specific documentation to guide you on your quest. And if you've already mastered the art of wielding a model other than OpenAI's GPT, we encourage you to [share your setup instructions with us](https://github.com/OpenDevin/OpenDevin/issues/417).

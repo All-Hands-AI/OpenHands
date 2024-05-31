@@ -228,7 +228,9 @@ class DockerSSHBox(Sandbox):
         # set up random user password
         if config.persist_sandbox:
             if not config.ssh_password:
-                raise Exception('Password must be set for persistent sandbox')
+                raise Exception(
+                    'Please add ssh_password to your config.toml or add -e SSH_PASSWORD to your docker run command'
+                )
             self._ssh_password = config.ssh_password
             self._ssh_port = config.ssh_port
         else:

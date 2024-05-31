@@ -81,43 +81,6 @@ const config: Config = {
         },
       ],
     },
-    footer: {
-      style: "dark",
-      links: [
-        {
-          title: "OpenDevin",
-          items: [
-            {
-              label: "Docs",
-              to: "/modules/usage/intro",
-            },
-          ],
-        },
-        {
-          title: "Community",
-          items: [
-            {
-              label: "Slack",
-              href: "https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw"
-            },
-            {
-              label: "Discord",
-              href: "https://discord.gg/ESHStjSjD4",
-            },
-          ],
-        },
-        {
-          title: "More",
-          items: [
-            {
-              label: "GitHub",
-              href: "https://github.com/OpenDevin/OpenDevin",
-            },
-          ],
-        },
-      ],
-      copyright: `Copyright © ${new Date().getFullYear()} OpenDevin`,
-    },
     prism: {
       theme: prismThemes.oneLight,
       darkTheme: prismThemes.oneDark,
