@@ -92,7 +92,7 @@ async def main(
     )
     runtime = ServerRuntime(event_stream=event_stream, sandbox=sandbox)
 
-    if sandbox and sandbox.is_initial_session:
+    if runtime.sandbox.is_initial_session:
         logger.info('Initializing plugins in the sandbox')
         runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
     else:
