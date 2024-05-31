@@ -6227,10 +6227,8 @@ version = "1.1.5"
 description = "The official SWE-bench package - a benchmark for evaluating LMs on software engineering"
 optional = false
 python-versions = ">=3.8"
-files = [
-    {file = "swebench-1.1.5-py3-none-any.whl", hash = "sha256:02043774baf2320b25a94963b5085de8a3b2dcdb356e7bfb71b1e4e8b677141f"},
-    {file = "swebench-1.1.5.tar.gz", hash = "sha256:d01d5fb329ce7f85c0572712372b71766248a4a635646ad5c53dadab25ee3fe0"},
-]
+files = []
+develop = false
 
 [package.dependencies]
 beautifulsoup4 = "*"
@@ -6242,6 +6240,12 @@ python-dotenv = "*"
 requests = "*"
 rich = "*"
 tqdm = "*"
+
+[package.source]
+type = "git"
+url = "https://github.com/OpenDevin/SWE-bench.git"
+reference = "HEAD"
+resolved_reference = "7b0c4b1c249ed4b4600a5bba8afb916d543e034a"
 
 [[package]]
 name = "sympy"
@@ -7617,4 +7621,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "d7e9c7e55757fd1db64aef7128f95741bc1ccffb35c953508b53c6d13b489d8b"
+content-hash = "ae054fdc923fb5c50e493487b4331635e5672672823fce91e957cb8f9795c2ea"

@@ -72,7 +72,7 @@ streamlit = "*"
 whatthepatch = "*"
 retry = "*"
 evaluate = "*"
-swebench = "*"
+swebench = { git = "https://github.com/OpenDevin/SWE-bench.git" }
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
