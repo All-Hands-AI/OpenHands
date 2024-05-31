@@ -202,7 +202,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--subset',
         default='math',
-        choices=['math', 'gsm8k', 'mmlu', 'theoremqa'],
+        choices=['math', 'gsm8k', 'mmlu', 'theoremqa', 'mbpp'],
         type=str,
         help='subset of the dataset to be used',
     )

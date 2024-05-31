@@ -4,4 +4,5 @@ TASK_INFO_MAP = {
     'math': {'class': 'ReasoningTask', 'type': 'reasoning'},
     'mmlu': {'class': 'MultipleChoiceTask', 'type': 'reasoning'},
     'theoremqa': {'class': 'TheoremqaTask', 'type': 'reasoning'},
+    'mbpp': {'class': 'MBPPTask', 'type': 'code_generation'},
 }
