@@ -101,7 +101,12 @@ class AgentSession:
                 logger.warning(
                     'CodeActAgent requires DockerSSHBox as sandbox! Using other sandbox that are not stateful (LocalBox, DockerExecBox) will not work properly.'
                 )
-        self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
+
+        if self.runtime.sandbox.is_initial_session:
+            logger.info('Initializing plugins in the sandbox')
+            self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
+        else:
+            logger.info('Plugins are already initialized in the sandbox')
         self.runtime.init_runtime_tools(agent.runtime_tools)
 
         self.controller = AgentController(
