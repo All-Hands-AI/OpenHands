@@ -169,7 +169,7 @@ class AppConfig(metaclass=Singleton):
         if os.getenv('OPEN_DEVIN_BUILD_VERSION')
         else ':main'
     )
-    run_as_devin: bool = True
+    run_as_devin: bool = True  # TODO: remove this in favor of ssh_user
     max_iterations: int = 100
     max_budget_per_task: float | None = None
     e2b_api_key: str = ''
@@ -182,6 +182,7 @@ class AppConfig(metaclass=Singleton):
     persist_sandbox: bool = False
     ssh_port: int = 63710
     ssh_password: str | None = None
+    ssh_user: str = 'opendevin'
     github_token: str | None = None
     jwt_secret: str = uuid.uuid4().hex
     debug: bool = False
