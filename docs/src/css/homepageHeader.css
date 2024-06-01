@@ -1,0 +1,36 @@
+/* homepageHeader.css */
+
+.homepage-header {
+    height: 100vh;
+    color: white;
+    background: linear-gradient(to top, #64748b, #000000);
+  }
+  
+  .header-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    padding: 24px;
+    font-weight: 300;
+    width: 100%;
+  }
+  
+  .header-title {
+    font-size: 3rem;
+  }
+  
+  @media (min-width: 768px) {
+    .header-title {
+      font-size: 5rem;
+    }
+  }
+  
+  .header-subtitle {
+    font-size: 1.25rem;
+  }
+  
+  .header-buttons {
+    margin-top: 24px;
+  }
+  

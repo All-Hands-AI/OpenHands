@@ -48,7 +48,7 @@ class LLMConfig(metaclass=Singleton):
         output_cost_per_token: The cost per output token. This will available in logs for the user to check.
     """
 
-    model: str = 'gpt-3.5-turbo'
+    model: str = 'gpt-4o'
     api_key: str | None = None
     base_url: str | None = None
     api_version: str | None = None
@@ -179,7 +179,7 @@ class AppConfig(metaclass=Singleton):
     disable_color: bool = False
     sandbox_user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     sandbox_timeout: int = 120
-    persist_sandbox: bool = True
+    persist_sandbox: bool = False
     ssh_port: int = 63710
     ssh_password: str | None = None
     github_token: str | None = None
@@ -331,8 +331,8 @@ def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
     try:
         with open(toml_file, 'r', encoding='utf-8') as toml_contents:
             toml_config = toml.load(toml_contents)
-    except FileNotFoundError:
-        # the file is optional, we don't need to do anything
+    except FileNotFoundError as e:
+        logger.info(f'Config file not found: {e}')
         return
     except toml.TomlDecodeError:
         logger.warning(
