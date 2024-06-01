@@ -160,13 +160,10 @@ class SSHBox(Sandbox):
         timeout: int = config.sandbox_timeout,
         sid: str | None = None,
     ):
-        logger.info(
-            f'SSHBox is running as {"opendevin" if config.run_as_devin else "root"} user with USER_ID={config.sandbox_user_id} in the sandbox'
-        )
         self.timeout = timeout
         self._hostname = hostname
         self._port = port
-        self._user = username
+        self._username = username
         self._password = password
 
         try:
@@ -174,6 +171,9 @@ class SSHBox(Sandbox):
         except pexpect.pxssh.ExceptionPxssh as e:
             self.close()
             raise e
+        logger.info(
+            f'SSHBox is running as {self._username} with USER_ID={config.sandbox_user_id} in the sandbox'
+        )
 
         # make sure /tmp always exists
         self.execute('mkdir -p /tmp')
@@ -225,10 +225,9 @@ class SSHBox(Sandbox):
         self.ssh.prompt()
 
     def get_exec_cmd(self, cmd: str) -> list[str]:
-        if config.run_as_devin:
-            return ['su', 'opendevin', '-c', cmd]
-        else:
+        if config.ssh_username == 'root':
             return ['/bin/bash', '-c', cmd]
+        return ['su', config.ssh_username, '-c', cmd]
 
     def read_logs(self, id) -> str:
         if id not in self.background_commands:
@@ -324,7 +323,7 @@ class SSHBox(Sandbox):
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         pexpect.run(
-            f'scp {host_src} {self._user}:{sandbox_dest}',
+            f'scp {host_src} {self._username}:{sandbox_dest}',
             events={'(?i)password': self._password},
         )
 

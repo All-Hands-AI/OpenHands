@@ -196,7 +196,7 @@ def get_request_action_prompt(
             )
         bg_commands_message += '\nYou can end any process by sending a `kill` action with the numerical `command_id` above.'
 
-    user = 'opendevin' if config.run_as_devin else 'root'
+    user = config.ssh_username
 
     monologue = thoughts + recent_events
 

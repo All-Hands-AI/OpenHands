@@ -1,14 +1,8 @@
-import os
 import sys
-import tarfile
-import tempfile
 import time
 import uuid
-from glob import glob
 
 import docker
-from pexpect import pxssh
-from tenacity import retry, stop_after_attempt, wait_fixed
 
 from opendevin.core.config import config
 from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
@@ -45,10 +39,6 @@ class DockerSSHBox(SSHBox):
             raise ex
 
         if config.persist_sandbox:
-            if not config.run_as_devin:
-                raise Exception(
-                    'Persistent sandbox is currently designed for opendevin user only. Please set run_as_devin=True in your config.toml'
-                )
             self.instance_id = 'persisted'
         else:
             self.instance_id = (sid or '') + str(uuid.uuid4())
@@ -57,9 +47,7 @@ class DockerSSHBox(SSHBox):
         self.container_image = container_image or config.sandbox_container_image
         self.container_name = self.container_name_prefix + self.instance_id
 
-        self._username = config.ssh_username or (
-            'opendevin' if config.run_as_devin else 'root'
-        )
+        self._username = config.ssh_username
         if config.persist_sandbox:
             if not config.ssh_password:
                 raise Exception(
@@ -131,7 +119,7 @@ class DockerSSHBox(SSHBox):
             if exit_code != 0:
                 raise Exception(f'Failed to remove opendevin user in sandbox: {logs}')
 
-        if config.run_as_devin:
+        if config.ssh_username == 'opendevin':
             # Create the opendevin user
             exit_code, logs = self.container.exec_run(
                 [
@@ -180,7 +168,7 @@ class DockerSSHBox(SSHBox):
                 logger.warning(
                     f'Failed to chown workspace directory for opendevin in sandbox: {logs}. But this should be fine if the {config.workspace_mount_path_in_sandbox=} is mounted by the app docker container.'
                 )
-        else:
+        elif config.ssh_username == 'root':
             exit_code, logs = self.container.exec_run(
                 # change password for root
                 ['/bin/bash', '-c', f"echo 'root:{self._password}' | chpasswd"],
@@ -194,76 +182,6 @@ class DockerSSHBox(SSHBox):
             workdir=config.workspace_mount_path_in_sandbox,
             environment=self._env,
         )
-
-    # Use the retry decorator, with a maximum of 5 attempts and a fixed wait time of 5 seconds between attempts
-    @retry(stop=stop_after_attempt(5), wait=wait_fixed(5))
-    def __login(self):
-        try:
-            self.ssh = pxssh.pxssh(
-                echo=False,
-                timeout=self.timeout,
-                encoding='utf-8',
-                codec_errors='replace',
-            )
-            hostname = config.ssh_hostname
-            username = 'opendevin' if config.run_as_devin else 'root'
-            if config.persist_sandbox:
-                password_msg = 'using your SSH password'
-            else:
-                password_msg = f"using the password '{self._password}'"
-            logger.info('Connecting to SSH session...')
-            ssh_cmd = f'`ssh -v -p {self._port} {username}@{hostname}`'
-            logger.info(
-                f'You can debug the SSH connection by running: {ssh_cmd} {password_msg}'
-            )
-            self.ssh.login(hostname, username, self._password, port=self._port)
-            logger.info('Connected to SSH session')
-        except pxssh.ExceptionPxssh as e:
-            logger.exception(
-                'Failed to login to SSH session, retrying...', exc_info=False
-            )
-            raise e
-
-    def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
-        # mkdir -p sandbox_dest if it doesn't exist
-        exit_code, logs = self.container.exec_run(
-            ['/bin/bash', '-c', f'mkdir -p {sandbox_dest}'],
-            workdir=config.workspace_mount_path_in_sandbox,
-            environment=self._env,
-        )
-        if exit_code != 0:
-            raise Exception(
-                f'Failed to create directory {sandbox_dest} in sandbox: {logs}'
-            )
-
-        # use temp directory to store the tar file to avoid
-        # conflict of filename when running multi-processes
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            if recursive:
-                assert os.path.isdir(
-                    host_src
-                ), 'Source must be a directory when recursive is True'
-                files = glob(host_src + '/**/*', recursive=True)
-                srcname = os.path.basename(host_src)
-                tar_filename = os.path.join(tmp_dir, srcname + '.tar')
-                with tarfile.open(tar_filename, mode='w') as tar:
-                    for file in files:
-                        tar.add(
-                            file,
-                            arcname=os.path.relpath(file, os.path.dirname(host_src)),
-                        )
-            else:
-                assert os.path.isfile(
-                    host_src
-                ), 'Source must be a file when recursive is False'
-                srcname = os.path.basename(host_src)
-                tar_filename = os.path.join(tmp_dir, srcname + '.tar')
-                with tarfile.open(tar_filename, mode='w') as tar:
-                    tar.add(host_src, arcname=srcname)
-
-            with open(tar_filename, 'rb') as f:
-                data = f.read()
-            self.container.put_archive(os.path.dirname(sandbox_dest), data)
 
     def execute_in_background(self, cmd: str) -> Process:
         result = self.container.exec_run(
@@ -334,13 +252,14 @@ class DockerSSHBox(SSHBox):
     def volumes(self):
         mount_dir = config.workspace_mount_path
         logger.info(f'Mounting workspace directory: {mount_dir}')
+        cache_dest = f'/home/{self._username}/.cache'
+        if self._username == 'root':
+            cache_dest = '/root/.cache'
         return {
             mount_dir: {'bind': config.workspace_mount_path_in_sandbox, 'mode': 'rw'},
-            # mount cache directory to /home/opendevin/.cache for pip cache reuse
+            # pip cache reuse
             config.cache_dir: {
-                'bind': (
-                    '/home/opendevin/.cache' if config.run_as_devin else '/root/.cache'
-                ),
+                'bind': cache_dest,
                 'mode': 'rw',
             },
         }

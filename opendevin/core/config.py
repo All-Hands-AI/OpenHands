@@ -139,13 +139,15 @@ class AppConfig(metaclass=Singleton):
         workspace_mount_rewrite: The path to rewrite the workspace mount path to.
         cache_dir: The path to the cache directory. Defaults to /tmp/cache.
         sandbox_container_image: The container image to use for the sandbox.
-        run_as_devin: Whether to run as devin.
         max_iterations: The maximum number of iterations.
         max_budget_per_task: The maximum budget allowed per task, beyond which the agent will stop.
         e2b_api_key: The E2B API key.
         sandbox_type: The type of sandbox to use. Options are: ssh, exec, e2b, local.
         use_host_network: Whether to use the host network.
         ssh_hostname: The SSH hostname.
+        ssh_port: The SSH port.
+        ssh_username: The SSH username.
+        ssh_password: The SSH password.
         disable_color: Whether to disable color. For terminals that don't support color.
         sandbox_user_id: The user ID for the sandbox.
         sandbox_timeout: The timeout for the sandbox.
@@ -169,7 +171,6 @@ class AppConfig(metaclass=Singleton):
         if os.getenv('OPEN_DEVIN_BUILD_VERSION')
         else ':main'
     )
-    run_as_devin: bool = True  # TODO: remove this in favor of ssh_user
     max_iterations: int = 100
     max_budget_per_task: float | None = None
     e2b_api_key: str = ''
