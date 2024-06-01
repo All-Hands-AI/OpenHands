@@ -20,7 +20,7 @@ where `model_config` is mandatory, while `subset` and `eval_limit` are optional.
 
 - `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your LLM settings, as defined in your `config.toml`.
 
-- `subset`, e.g. `math`, is the subset of the MINT benchmark to evaluate on, defaulting to `math`.
+- `subset`, e.g. `math`, is the subset of the MINT benchmark to evaluate on, defaulting to `math`. It can be either: `math`, `gsm8k`, `mmlu`, `theoremqa`, `mbpp`,`humaneval`.
 
 - `eval_limit`, e.g. `2`, limits the evaluation to the first `eval_limit` instances, defaulting to all instances.
 
@@ -32,7 +32,9 @@ then your command would be:
 ```bash
 ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview gsm8k 3
 ```
+
 ## Reference
+
 ```
 @misc{wang2024mint,
     title={MINT: Evaluating LLMs in Multi-turn Interaction with Tools and Language Feedback},
