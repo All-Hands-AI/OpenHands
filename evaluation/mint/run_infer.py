@@ -10,11 +10,13 @@ import time
 from concurrent.futures import ProcessPoolExecutor
 from typing import Dict
 
+import tasks
+from config_variables import TASK_INFO_MAP
 from datasets import load_dataset
 from datatypes import TaskState
 from env import SimplifiedEnv
 from prompts import ToolPromptTemplate
-from task import ReasoningTask, Task
+from tasks import Task
 from tqdm import tqdm
 
 from evaluation.swe_bench.swe_env_box import DockerSSHBox
@@ -45,11 +47,12 @@ def codeact_user_response(state: State, task: Task, task_config: Dict[str, int])
     )
     last_action, _ = state.history[-1]
     result_state: TaskState = env.step(last_action.message)
+
     state.task_state = result_state
 
     if not result_state.latest_output:
         if result_state.success:
-            msg = 'Your answer is correct. Please EXIT using the following command: <execute_bash> exit </execute_bash>.'
+            msg = '/exit'
         else:
             msg = 'Something went wrong! No output from the model.'
     else:
@@ -138,7 +141,7 @@ def process_instance(
         ),
         task_prompt='Task:\n' + instance.prompt,
     )
-    instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you or provide the solution inside <solution> tag AND NEVER ASK FOR HUMAN HELP.\n'
+    instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you or provide the concise RESULT inside <solution> tag AND NEVER ASK FOR HUMAN HELP.\n'
 
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
@@ -164,10 +167,10 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    logger.info('Msgs: ' + str(state.history))
-
-    task_state: TaskState = state.task_state
-    logger.info('Task state: ' + str(task_state.to_dict()))
+    task_state = None
+    if hasattr(state, 'task_state'):
+        task_state = state.task_state
+        logger.info('Task state: ' + str(task_state.to_dict()))
 
     # Save the output
     output = {
@@ -179,7 +182,7 @@ def process_instance(
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
         'error': state.error if state and state.error else None,
-        'test_result': task_state.success,
+        'test_result': task_state.success if task_state else False,
     }
 
     # Close the sandbox
@@ -194,7 +197,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--subset',
         default='math',
-        choices=['math', 'gsm8k'],
+        choices=['math', 'gsm8k', 'mmlu', 'theoremqa', 'mbpp', 'humaneval'],
         type=str,
         help='subset of the dataset to be used',
     )
@@ -288,8 +291,9 @@ if __name__ == '__main__':
 
     # =============================================
     # filter out finished instances
-    task_class = ReasoningTask
-    new_mint_tests: list[ReasoningTask] = []
+    task_class: Task = getattr(tasks, TASK_INFO_MAP[args.subset]['class'])
+    new_mint_tests: list[Task] = []
+
     for instance in mint_dataset:
         if instance['id'] in finished_instance_ids:
             logger.info(
@@ -297,7 +301,7 @@ if __name__ == '__main__':
             )
             continue
         # convert to Task object
-        instance = ReasoningTask(**instance)
+        instance = task_class(**instance)
         new_mint_tests.append(instance)
 
     mint_dataset = new_mint_tests

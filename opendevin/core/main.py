@@ -97,6 +97,7 @@ async def main(
         runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
     else:
         logger.info('Plugins are already initialized in the sandbox')
+    runtime.init_runtime_tools(controller.agent.runtime_tools, is_async=False)
 
     await event_stream.add_event(MessageAction(content=task), EventSource.USER)
 

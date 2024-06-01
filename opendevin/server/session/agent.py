@@ -107,6 +107,7 @@ class AgentSession:
             self.runtime.init_sandbox_plugins(agent.sandbox_plugins)
         else:
             logger.info('Plugins are already initialized in the sandbox')
+        self.runtime.init_runtime_tools(agent.runtime_tools)
 
         self.controller = AgentController(
             sid=self.sid,
