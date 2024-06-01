@@ -245,8 +245,9 @@ class DockerSSHBox(Sandbox):
             self.is_initial_session = False
         except docker.errors.NotFound:
             self.is_initial_session = True
-            logger.info('Creating new Docker container')
+            logger.info('Detected initial session.')
         if not config.persist_sandbox or self.is_initial_session:
+            logger.info('Creating new Docker container')
             n_tries = 5
             while n_tries > 0:
                 try:
@@ -264,6 +265,7 @@ class DockerSSHBox(Sandbox):
         else:
             self.container = self.docker_client.containers.get(self.container_name)
             logger.info('Using existing Docker container')
+            self.start_docker_container()
         try:
             self.start_ssh_session()
         except pxssh.ExceptionPxssh as e:
@@ -592,11 +594,30 @@ class DockerSSHBox(Sandbox):
         self.background_commands.pop(id)
         return bg_cmd
 
-    def stop_docker_container(self):
+    def start_docker_container(self):
+        try:
+            container = self.docker_client.containers.get(self.container_name)
+            logger.info('Container status: %s', container.status)
+            if container.status != 'running':
+                container.start()
+                logger.info('Container started')
+            elapsed = 0
+            while container.status != 'running':
+                time.sleep(1)
+                elapsed += 1
+                if elapsed > self.timeout:
+                    break
+                container = self.docker_client.containers.get(self.container_name)
+        except Exception:
+            logger.exception('Failed to start container')
+
+    def remove_docker_container(self):
         try:
             container = self.docker_client.containers.get(self.container_name)
             container.stop()
+            logger.info('Container stopped')
             container.remove()
+            logger.info('Container removed')
             elapsed = 0
             while container.status != 'exited':
                 time.sleep(1)
@@ -664,10 +685,9 @@ class DockerSSHBox(Sandbox):
 
     def restart_docker_container(self):
         try:
-            self.stop_docker_container()
-            logger.info('Container stopped')
+            self.remove_docker_container()
         except docker.errors.DockerException as ex:
-            logger.exception('Failed to stop container', exc_info=False)
+            logger.exception('Failed to remove container', exc_info=False)
             raise ex
 
         try:
