@@ -232,7 +232,7 @@ def create_file(filename: str) -> None:
     global CURRENT_FILE, CURRENT_LINE
     if os.path.exists(filename):
         open_file(filename)
-        raise FileExistsError(f"File '{filename}' already exists.")
+        raise FileExistsError(f"File '{filename}' already exists. Opened the existing file.")
 
     with open(filename, 'w') as file:
         file.write('\n')
