@@ -425,7 +425,9 @@ class DockerSSHBox(Sandbox):
         prev_output: str = '',
         ignore_last_output: bool = False,
     ) -> tuple[int, str]:
-        logger.exception('Command timed out, killing process...', exc_info=False)
+        logger.exception(
+            f'Command "{cmd}" timed out, killing process...', exc_info=False
+        )
         # send a SIGINT to the process
         self.ssh.sendintr()
         self.ssh.prompt()
@@ -434,7 +436,7 @@ class DockerSSHBox(Sandbox):
             command_output += '\n' + self.ssh.before
         return (
             -1,
-            f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}',
+            f'Command: "{cmd}" timed out. Sent SIGINT to the process: {command_output}',
         )
 
     def execute(
@@ -458,7 +460,6 @@ class DockerSSHBox(Sandbox):
             return 0, SSHExecCancellableStream(self.ssh, cmd, self.timeout)
         success = self.ssh.prompt(timeout=timeout)
         if not success:
-            logger.exception('Command timed out, killing process...', exc_info=False)
             return self._send_interrupt(cmd)
         command_output = self.ssh.before
 
