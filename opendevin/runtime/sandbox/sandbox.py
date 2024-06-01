@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod
 
 from opendevin.core.config import config
 from opendevin.core.schema import CancellableStream
-from opendevin.runtime.docker.process import Process
 from opendevin.runtime.plugins.mixin import PluginMixin
+from opendevin.runtime.sandbox.docker.process import Process
 
 
 class Sandbox(ABC, PluginMixin):

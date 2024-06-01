@@ -17,9 +17,9 @@ from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
-from opendevin.runtime.docker.process import DockerProcess, Process
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.sandbox import Sandbox
+from opendevin.runtime.sandbox.docker.process import DockerProcess, Process
 from opendevin.runtime.sandbox.stream.ssh import SSHCancellableStream
 from opendevin.runtime.utils import find_available_tcp_port
 

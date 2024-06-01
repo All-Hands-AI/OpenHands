@@ -14,9 +14,9 @@ from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
-from opendevin.runtime.docker.process import DockerProcess, Process
 from opendevin.runtime.sandbox import Sandbox
-from opendevin.runtime.stream.exec import container_exec_run
+from opendevin.runtime.sandbox.docker.process import DockerProcess, Process
+from opendevin.runtime.sandbox.stream.exec import container_exec_run
 
 
 class DockerExecBox(Sandbox):

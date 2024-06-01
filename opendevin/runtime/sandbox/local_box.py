@@ -6,8 +6,8 @@ import sys
 from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
-from opendevin.runtime.docker.process import DockerProcess, Process
 from opendevin.runtime.sandbox import Sandbox
+from opendevin.runtime.sandbox.docker.process import DockerProcess, Process
 
 # ===============================================================================
 #  ** WARNING **

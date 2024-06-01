@@ -1,6 +1,6 @@
 from e2b import Process as E2BSandboxProcess
 
-from opendevin.runtime.docker.process import Process
+from opendevin.runtime.sandbox.docker.process import Process
 
 
 class E2BProcess(Process):

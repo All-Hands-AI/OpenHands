@@ -6,10 +6,10 @@ from unittest.mock import patch
 import pytest
 
 from opendevin.core.config import config
-from opendevin.runtime.docker.exec_box import DockerExecBox
-from opendevin.runtime.docker.local_box import LocalBox
-from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
 from opendevin.runtime.plugins import JupyterRequirement
+from opendevin.runtime.sandbox.docker.exec_box import DockerExecBox
+from opendevin.runtime.sandbox.docker.ssh_box import DockerSSHBox, split_bash_commands
+from opendevin.runtime.sandbox.local_box import LocalBox
 
 
 @pytest.fixture
