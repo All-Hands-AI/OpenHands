@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Modal, ModalBody, ModalFooter, ModalHeader, Button, Checkbox } from "@nextui-org/react";
 import { useDispatch, useSelector } from "react-redux";
 import { IoMdChatbubbles } from "react-icons/io";
 import { RiArrowRightDoubleLine } from "react-icons/ri";
@@ -20,6 +19,7 @@ import { getToken } from "#/services/auth";
 import toast from "#/utils/toast";
 import { removeApiKey } from "#/utils/utils";
 import { FeedbackData, sendFeedback } from "#/services/feedbackService";
+import FeedbackModal from "../modals/feedback/FeedbackModal";
 
 interface ScrollButtonProps {
   onClick: () => void;
@@ -49,84 +49,72 @@ function ScrollButton({
 }
 
 function ChatInterface() {
+  const dispatch = useDispatch();
+  const { t } = useTranslation();
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [makePublic, setMakePublic] = useState(false);
-  const [feedbackType, setFeedbackType] = useState<"positive" | "negative" | null>(null);
-  const [feedbackShared, setFeedbackShared] = useState(false);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackShared, setFeedbackShared] = useState(false);
+  const curAgentState = useSelector((state: RootState) => state.agentState);
+  const messages = useSelector((state: RootState) => state.chat.messages);
+  const hitBottom = useScrollToBottom(chatContainerRef);
 
-  const dispatch = useDispatch();
-  const { messages } = useSelector((state: RootState) => state.chat);
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
-
-  const handleSendMessage = (content: string) => {
-    dispatch(addUserMessage(content));
-    sendChatMessage(content);
-  };
-
-  const { t } = useTranslation();
-  const handleSendContinueMsg = () => {
-    handleSendMessage(t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE));
-  };
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
-    useScrollToBottom(scrollRef);
-
-  useEffect(() => {
-    if (curAgentState === AgentState.INIT && messages.length === 0) {
-      dispatch(addAssistantMessage(t(I18nKey.CHAT_INTERFACE$INITIAL_MESSAGE)));
+  const handleSendMessage = async (message: string) => {
+    if (!message.trim()) return;
+    dispatch(addUserMessage(message));
+    try {
+      const response = await sendChatMessage(message);
+      dispatch(addAssistantMessage(response));
+    } catch (error) {
+      toast.error(t(I18nKey.CHAT_INTERFACE));
     }
-  }, [curAgentState]);
-
-  const handleDialogClose = async (share: boolean) => {
-    setDialogOpen(false);
-    if (share && feedbackType) {
-      const data: FeedbackData = {
-        email: "NOT_PROVIDED",
-        token: getToken(),
-        feedback: feedbackType,
-        permissions: makePublic ? "public" : "private",
-        trajectory: removeApiKey(Session._history),
-      };
-
-      try {
-        setFeedbackLoading(true);
-        await sendFeedback(data);
-        toast.info("Feedback shared successfully.");
-      } catch (e) {
-        console.error(e);
-        toast.error("share-error", "Failed to share, see console for details.");
-      } finally {
-        setFeedbackShared(true);
-        setFeedbackLoading(false);
-      }
-    }
-    setMakePublic(false);
-    setFeedbackType(null);
   };
 
-  const openFeedback = async (feedback: "positive" | "negative") => {
-    console.log("Feedback type: ", feedback)
-    setFeedbackType(feedback);
+  const handleSendContinueMsg = async () => {
+    try {
+      const response = await sendChatMessage("continue");
+      dispatch(addAssistantMessage(response));
+    } catch (error) {
+      toast.error(t(I18nKey.CHAT_INTERFACE));
+    }
+  };
+
+  const scrollDomToBottom = () => {
+    chatContainerRef.current?.scrollTo({
+      top: chatContainerRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  };
+
+  const openFeedback = (type: "positive" | "negative") => {
     setDialogOpen(true);
   };
 
+  const handleDialogClose = async (shared: boolean) => {
+    setDialogOpen(false);
+    if (shared) {
+      setFeedbackLoading(true);
+      try {
+        const feedbackData: FeedbackData = {
+          messages,
+          makePublic,
+        };
+        await sendFeedback(feedbackData);
+        setFeedbackShared(true);
+        toast.success(t(I18nKey.CHAT_INTERFACE));
+      } catch (error) {
+        toast.error(t(I18nKey.CHAT_INTERFACE));
+      } finally {
+        setFeedbackLoading(false);
+      }
+    }
+  };
+
   return (
-    <div className="flex flex-col h-full bg-neutral-800">
-      <div className="flex items-center gap-2 border-b border-neutral-600 text-sm px-4 py-2">
-        <IoMdChatbubbles />
-        Chat
-      </div>
-      <div className="flex-1 flex flex-col relative min-h-0">
-        <div
-          ref={scrollRef}
-          className="overflow-y-auto p-3"
-          onScroll={(e) => onChatBodyScroll(e.currentTarget)}
-        >
-          <Chat messages={messages} />
-        </div>
+    <div className="relative h-full flex flex-col">
+      <div className="flex-1 overflow-y-auto" ref={chatContainerRef}>
+        <Chat />
         <div
           className={twMerge(
             "absolute bottom-0 left-0 right-0",
@@ -142,14 +130,14 @@ function ChatInterface() {
             <ScrollButton
               onClick={scrollDomToBottom}
               icon={<VscArrowDown className="inline mr-2 w-3 h-3" />}
-              label={t(I18nKey.CHAT_INTERFACE$TO_BOTTOM)}
+              label={t(I18nKey.CHAT_INTERFACE)}
             />}
           {curAgentState === AgentState.AWAITING_USER_INPUT &&
             hitBottom &&
             <ScrollButton
               onClick={handleSendContinueMsg}
               icon={<RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />}
-              label={t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
+              label={t(I18nKey.CHAT_INTERFACE)}
             />}
         </div>
 
@@ -175,28 +163,15 @@ function ChatInterface() {
         disabled={curAgentState === AgentState.LOADING}
         onSendMessage={handleSendMessage}
       />
-      <Modal isOpen={dialogOpen} onClose={() => handleDialogClose(false)}>
-        <ModalHeader>Share Feedback</ModalHeader>
-        <ModalBody>
-          <p>Your conversation and positive/negative feedback will be shared with the OpenDevin developers to improve the OpenDevin experience. In addition, you can opt-in to contribute to a shared repository of data that can be used for improving open-source coding models.</p>
-          <Checkbox
-            isSelected={makePublic}
-            onChange={(e) => setMakePublic(e.target.checked)}
-          >
-            Make my feedback public.
-          </Checkbox>
-        </ModalBody>
-        <ModalFooter>
-          <Button onPress={() => handleDialogClose(false)}>
-            Cancel
-          </Button>
-          <Button onPress={() => handleDialogClose(true)}>
-            Share
-          </Button>
-        </ModalFooter>
-      </Modal>
+      <FeedbackModal
+        isOpen={dialogOpen}
+        onClose={handleDialogClose}
+        makePublic={makePublic}
+        setMakePublic={setMakePublic}
+      />
     </div>
   );
 }
 
 export default ChatInterface;
+
