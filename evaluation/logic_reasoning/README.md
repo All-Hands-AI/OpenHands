@@ -31,13 +31,5 @@ temperature = 0.0
 ## Run Inference on logic_reasoning
 The following code will run inference on the first example of the ProntoQA dataset with model gpt-4o.
 ```bash
-./evaluation/logic_reasoning/scripts/run_infer.sh ProntoQA gpt-4o 1 
+./evaluation/logic_reasoning/scripts/run_infer.sh ProntoQA gpt-4o 1
 ```
-
-
-## Examples
-
-See example output in 
-`./evaluation_outputs/outputs/logic_reasoning/CodeActAgent/ProntoQA/gpt-4o-2024-05-13_maxiter_10_N_v1.5/output.jsonl`
-and final evaluation performance in 
-`./evaluation_outputs/outputs/logic_reasoning/CodeActAgent/ProntoQA/gpt-4o-2024-05-13_maxiter_10_N_v1.5/metadata.json`
