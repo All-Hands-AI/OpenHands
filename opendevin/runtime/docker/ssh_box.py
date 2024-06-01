@@ -228,7 +228,9 @@ class DockerSSHBox(Sandbox):
         # set up random user password
         if config.persist_sandbox:
             if not config.ssh_password:
-                raise Exception('Password must be set for persistent sandbox')
+                raise Exception(
+                    'Please add ssh_password to your config.toml or add -e SSH_PASSWORD to your docker run command'
+                )
             self._ssh_password = config.ssh_password
             self._ssh_port = config.ssh_port
         else:
@@ -236,11 +238,11 @@ class DockerSSHBox(Sandbox):
             self._ssh_port = find_available_tcp_port()
         try:
             docker.DockerClient().containers.get(self.container_name)
-            is_initial_session = False
+            self.is_initial_session = False
         except docker.errors.NotFound:
-            is_initial_session = True
+            self.is_initial_session = True
             logger.info('Creating new Docker container')
-        if not config.persist_sandbox or is_initial_session:
+        if not config.persist_sandbox or self.is_initial_session:
             n_tries = 5
             while n_tries > 0:
                 try:

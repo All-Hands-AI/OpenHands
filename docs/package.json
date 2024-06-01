@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@docusaurus/core": "3.2.1",
+    "@docusaurus/plugin-content-pages": "^3.3.2",
     "@docusaurus/preset-classic": "3.2.1",
     "@mdx-js/react": "^3.0.0",
     "clsx": "^2.0.0",
@@ -29,9 +30,6 @@
     "@docusaurus/module-type-aliases": "3.2.1",
     "@docusaurus/tsconfig": "3.2.1",
     "@docusaurus/types": "3.2.1",
-    "autoprefixer": "^10.4.19",
-    "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.3",
     "typescript": "~5.2.2"
   },
   "browserslist": {
