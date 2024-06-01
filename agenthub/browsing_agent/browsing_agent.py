@@ -97,7 +97,7 @@ class BrowsingAgent(Agent):
         error_prefix = ''
         last_obs = None
 
-        for event in state.history:
+        for event in state.history.get_events():
             if isinstance(event, BrowseInteractiveAction):
                 prev_actions += f'{event.browser_actions}\n'
             elif isinstance(event, MessageAction) and event.source != 'user':

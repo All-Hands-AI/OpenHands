@@ -316,7 +316,7 @@ class CodeActAgent(Agent):
             },
         ]
 
-        for event in state.history:
+        for event in state.history.get_events():
             message = (
                 get_action_message(event)
                 if isinstance(event, Action)
@@ -338,11 +338,8 @@ class CodeActAgent(Agent):
         return messages
 
     def _retry_with_condense(self, state: State):
-        events = state.history
-
-        # FIXME retry?
         if self.memory_condenser:
-            summary_action = self.memory_condenser.condense(events)
+            summary_action = self.memory_condenser.condense(state.history)
 
             if summary_action:
                 state.history.replace_events_with_summary(summary_action)

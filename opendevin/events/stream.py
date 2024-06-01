@@ -55,20 +55,34 @@ class EventStream:
     def _get_id_from_filename(self, filename: str) -> int:
         return int(filename.split('/')[-1].split('.')[0])
 
-    def get_events(self, start_id=0, end_id=None) -> Iterable[Event]:
-        event_id = start_id
-        logger.debug(f'Getting events from {start_id} to {end_id}')
-        while True:
-            if end_id is not None and event_id > end_id:
-                break
-            try:
-                event = self.get_event(event_id)
-                logger.debug(f'{event_id}: {event}')
-            except FileNotFoundError:
-                logger.debug(f'No event found for ID {event_id}')
-                break
-            yield event
-            event_id += 1
+    def get_events(self, start_id=0, end_id=None, reverse=False) -> Iterable[Event]:
+        if reverse:
+            if end_id is None:
+                end_id = self._cur_id - 1
+            event_id = end_id
+            logger.debug(f'Getting events from {start_id} to {end_id}')
+            while event_id >= start_id:
+                try:
+                    event = self.get_event(event_id)
+                    logger.debug(f'{event_id}: {event}')
+                    yield event
+                except FileNotFoundError:
+                    logger.debug(f'No event found for ID {event_id}')
+                event_id -= 1
+        else:
+            event_id = start_id
+            logger.debug(f'Getting events from {start_id} to {end_id}')
+            while True:
+                if end_id is not None and event_id > end_id:
+                    break
+                try:
+                    event = self.get_event(event_id)
+                    logger.debug(f'{event_id}: {event}')
+                    yield event
+                except FileNotFoundError:
+                    logger.debug(f'No event found for ID {event_id}')
+                    break
+                event_id += 1
 
     def get_event(self, id: int) -> Event:
         filename = self._get_filename_for_id(id)

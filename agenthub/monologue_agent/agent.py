@@ -154,28 +154,13 @@ class MonologueAgent(Agent):
         recent_events: list[dict[str, str]] = []
 
         # add the events from state.history
-        for event in state.history:
+        for event in state.history.get_events():
             recent_events.append(self._truncate_output(event_to_memory(event)))
 
         # add the last messages to long term memory
-        # FIXME can't this be simplified or done elsewhere where we know what to save
-        if self.memory is not None and state.history:
-            last_action = next(
-                (
-                    event
-                    for event in reversed(state.history)
-                    if isinstance(event, Action)
-                ),
-                None,
-            )
-            last_observation = next(
-                (
-                    event
-                    for event in reversed(state.history)
-                    if isinstance(event, Observation)
-                ),
-                None,
-            )
+        if self.memory is not None:
+            last_action = state.history.get_last_action()
+            last_observation = state.history.get_last_observation()
 
             if last_action:
                 self.memory.add_event(event_to_memory(last_action))

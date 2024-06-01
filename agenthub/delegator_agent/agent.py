@@ -2,7 +2,6 @@ from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import Action, AgentDelegateAction, AgentFinishAction
 from opendevin.events.observation import AgentDelegateObservation
-from opendevin.events.observation.observation import Observation
 from opendevin.llm.llm import LLM
 
 
@@ -43,14 +42,8 @@ class DelegatorAgent(Agent):
                 agent='StudyRepoForTaskAgent', inputs={'task': task}
             )
 
-        last_observation = next(
-            (
-                event
-                for event in reversed(state.history)
-                if isinstance(event, Observation)
-            ),
-            None,
-        )
+        # check last observation from history
+        last_observation = state.history.get_last_observation()
         if not isinstance(last_observation, AgentDelegateObservation):
             raise Exception('Last observation is not an AgentDelegateObservation')
 

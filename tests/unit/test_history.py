@@ -80,7 +80,7 @@ def test_history_get_events():
     history.append((read_action, read_observation))
     history.append((write_action, write_observation))
 
-    events = history.get_events()
+    events = history.get_events_as_list()
 
     assert len(events) == 4
     assert isinstance(events[0], FileReadAction)
@@ -112,7 +112,7 @@ def test_history_get_tuples():
     assert isinstance(tuples[1][0], FileWriteAction)
     assert isinstance(tuples[1][1], FileWriteObservation)
 
-    events = history.get_events()
+    events = history.get_events_as_list()
     assert len(events) == 4
     assert isinstance(events[0], FileReadAction)
     assert isinstance(events[1], FileReadObservation)

@@ -126,7 +126,7 @@ class AgentController:
     async def add_history(self, action: Action, observation: Observation):
         if isinstance(action, NullAction) and isinstance(observation, NullObservation):
             return
-        self.state.history.append((action, observation))
+        # self.state.history.append((action, observation))
         self.state.updated_info.append((action, observation))
 
     async def _start_step_loop(self):

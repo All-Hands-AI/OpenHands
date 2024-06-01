@@ -76,6 +76,6 @@ class State:
         # TODO: this is used to understand the user's main goal, but it's possible
         # the latest message is an interruption. We should look for a space where
         # the agent goes to FINISHED, and then look for the next user message.
-        for event in reversed(self.history.get_events()):
+        for event in reversed(self.history.get_events_as_list()):
             if isinstance(event, MessageAction) and event.source == 'user':
                 return event.content

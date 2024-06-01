@@ -153,9 +153,9 @@ class DummyAgent(Agent):
                 expected_observations = prev_step['observations']
 
                 # check if the history matches the expected observations
-                hist_start = len(history) - len(expected_observations)
+                hist_events = history.get_last_events(len(expected_observations))
                 for i in range(len(expected_observations)):
-                    hist_obs = event_to_dict(history[hist_start + i])
+                    hist_obs = event_to_dict(hist_events[i])
                     expected_obs = event_to_dict(expected_observations[i])
                     if (
                         'command_id' in hist_obs['extras']
@@ -172,9 +172,9 @@ class DummyAgent(Agent):
                     if hist_obs != expected_obs:
                         print('\nactual', hist_obs)
                         print('\nexpect', expected_obs)
-                    assert (
-                        hist_obs == expected_obs
-                    ), f'Expected observation {expected_obs}, got {hist_obs}'
+                        assert (
+                            hist_obs == expected_obs
+                        ), f'Expected observation {expected_obs}, got {hist_obs}'
         return self.steps[state.iteration]['action']
 
     def search_memory(self, query: str) -> list[str]:

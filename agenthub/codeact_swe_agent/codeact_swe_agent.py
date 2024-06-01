@@ -242,7 +242,7 @@ class CodeActSWEAgent(Agent):
             },
         ]
 
-        for event in state.history:
+        for event in state.history.get_events():
             message = (
                 get_action_message(event)
                 if isinstance(event, Action)

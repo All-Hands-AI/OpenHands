@@ -70,7 +70,7 @@ class ShortTermHistory(list[Event]):
         # (other_action?, NullObservation)
         # (NullAction, CmdOutputObservation)
 
-        for event in self.get_events():
+        for event in self.get_events_as_list():
             if event.id is None or event.id == -1:
                 logger.debug(f'Event {event} has no ID')
 
@@ -112,11 +112,11 @@ class ShortTermHistory(list[Event]):
 
         return tuples.copy()
 
-    def get_events(self) -> list[Event]:
+    def get_events_as_list(self) -> list[Event]:
         """
         Return the history as a list of Event objects.
         """
-        return list(self.get_events_as_stream())
+        return list(self.get_events())
 
     def replace_events_with_summary(self, summary_action: AgentSummarizeAction):
         start_id = summary_action._chunk_start
@@ -161,7 +161,7 @@ class ShortTermHistory(list[Event]):
             ):
                 yield event
 
-    def get_events_as_stream(self) -> Iterable[Event]:
+    def get_events(self) -> Iterable[Event]:
         """
         Return the events as a stream of Event objects.
         """
@@ -184,3 +184,69 @@ class ShortTermHistory(list[Event]):
                 ),
             ):
                 yield event
+
+    def get_last_action(self) -> Action | None:
+        """
+        Return the last action from the event stream, filtered to exclude unwanted events.
+        """
+        end_id = self._event_stream.get_latest_event_id()
+        start_id = max(0, end_id - 30)  # Look at the last 30 events
+
+        last_action = next(
+            (
+                event
+                for event in self._event_stream.get_events(
+                    start_id=start_id, end_id=end_id, reverse=True
+                )
+                if isinstance(event, Action)
+                and not isinstance(event, (NullAction, ChangeAgentStateAction))
+            ),
+            None,
+        )
+
+        return last_action
+
+    def get_last_observation(self) -> Observation | None:
+        """
+        Return the last observation from the event stream.
+        """
+        end_id = self._event_stream.get_latest_event_id()
+        start_id = max(0, end_id - 30)
+
+        last_observation = next(
+            (
+                event
+                for event in self._event_stream.get_events(
+                    start_id=start_id, end_id=end_id, reverse=True
+                )
+                if isinstance(event, Observation)
+                and not isinstance(
+                    event, (NullObservation, AgentStateChangedObservation)
+                )
+            ),
+            None,
+        )
+
+        return last_observation
+
+    def get_last_events(self, n: int) -> list[Event]:
+        """
+        Return the last n events from the event stream.
+        """
+        # dummy agent is using this, better refactor it
+        end_id = self._event_stream.get_latest_event_id()
+        start_id = max(0, end_id - n + 1)
+
+        return list(
+            event
+            for event in self._event_stream.get_events(start_id=start_id, end_id=end_id)
+            if not isinstance(
+                event,
+                (
+                    NullAction,
+                    NullObservation,
+                    ChangeAgentStateAction,
+                    AgentStateChangedObservation,
+                ),
+            )
+        )
