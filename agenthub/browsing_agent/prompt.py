@@ -146,7 +146,7 @@ class Shrinkable(PromptElement, abc.ABC):
         """Implement shrinking of this prompt element.
 
         You need to recursively call all shrinkable elements that are part of
-        this prompt. You can also implement a shriking startegy for this prompt.
+        this prompt. You can also implement a shrinking strategy for this prompt.
         Shrinking is can be called multiple times to progressively shrink the
         prompt until it fits max_tokens. Default max shrink iterations is 20.
         """
