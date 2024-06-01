@@ -8,8 +8,9 @@ import pytest
 from opendevin.core.config import config
 from opendevin.runtime.plugins import JupyterRequirement
 from opendevin.runtime.sandbox.docker.exec_box import DockerExecBox
-from opendevin.runtime.sandbox.docker.ssh_box import DockerSSHBox, split_bash_commands
+from opendevin.runtime.sandbox.docker.ssh_box import DockerSSHBox
 from opendevin.runtime.sandbox.local_box import LocalBox
+from opendevin.runtime.sandbox.ssh import split_bash_commands
 
 
 @pytest.fixture
