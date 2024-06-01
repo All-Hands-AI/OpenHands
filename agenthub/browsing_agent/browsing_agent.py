@@ -12,27 +12,12 @@ from opendevin.events.action import (
     BrowseInteractiveAction,
     MessageAction,
 )
+from opendevin.events.event import EventSource
 from opendevin.events.observation import BrowserOutputObservation
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     PluginRequirement,
 )
-
-
-def parse_response(response: str) -> Action:
-    if '```' not in response:
-        # unexpected response format, message back to user
-        return MessageAction(response)
-    thought = response.split('```')[0].strip()
-    action_str = response.split('```')[1].strip()
-    # handle send message to user function call in BrowserGym
-    for sub_action in action_str.split('\n'):
-        if 'send_msg_to_user(' in sub_action:
-            tree = ast.parse(sub_action)
-            args = tree.body[0].value.args  # type: ignore
-            return MessageAction(args[0].value)
-
-    return BrowseInteractiveAction(browser_actions=action_str, thought=thought)
 
 
 class BrowsingAgent(Agent):
@@ -74,6 +59,31 @@ class BrowsingAgent(Agent):
         super().reset()
         self.cost_accumulator = 0
 
+    def parse_response(self, response: str) -> Action:
+        if '```' not in response:
+            # unexpected response format, message back to user
+            action_str = f'send_msg_to_user("""{response}""")'
+            return BrowseInteractiveAction(
+                browser_actions=action_str,
+                thought=response,
+                browsergym_send_msg_to_user=response,
+            )
+        thought = response.split('```')[0].strip()
+        action_str = response.split('```')[1].strip()
+        # handle send message to user function call in BrowserGym
+        msg_content = ''
+        for sub_action in action_str.split('\n'):
+            if 'send_msg_to_user(' in sub_action:
+                tree = ast.parse(sub_action)
+                args = tree.body[0].value.args  # type: ignore
+                msg_content = args[0].value
+
+        return BrowseInteractiveAction(
+            browser_actions=action_str,
+            thought=thought,
+            browsergym_send_msg_to_user=msg_content,
+        )
+
     def step(self, state: State) -> Action:
         """
         Performs one step using the Browsing Agent.
@@ -93,15 +103,26 @@ class BrowsingAgent(Agent):
         cur_axtree_txt = ''
         error_prefix = ''
         last_obs = None
+        last_action = None
         for prev_action, obs in state.history:
             if isinstance(prev_action, BrowseInteractiveAction):
                 prev_actions += f'{prev_action.browser_actions}\n'
                 last_obs = obs
+                last_action = prev_action
             elif (
-                isinstance(prev_action, MessageAction) and prev_action.source != 'user'
+                isinstance(prev_action, MessageAction)
+                and prev_action.source == EventSource.AGENT
             ):
                 # agent has responded, task finish.
                 return AgentFinishAction()
+
+        # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
+        # we should also send a message back to the user in OpenDevin and call it a day
+        if (
+            isinstance(last_action, BrowseInteractiveAction)
+            and last_action.browsergym_send_msg_to_user
+        ):
+            return MessageAction(last_action.browsergym_send_msg_to_user)
 
         if isinstance(last_obs, BrowserOutputObservation):
             if last_obs.error:
@@ -148,7 +169,7 @@ In order to accomplish my goal I need to click on the button with bid 12
         action_resp = response['choices'][0]['message']['content']
         logger.info(prompt)
         logger.info(action_resp)
-        return parse_response(action_resp)
+        return self.parse_response(action_resp)
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')

@@ -42,7 +42,7 @@ class BrowserEnv:
     def browser_process(self):
         env = gym.make(
             'browsergym/openended',
-            task_kwargs={'start_url': 'about:blank'},
+            task_kwargs={'start_url': 'about:blank', 'goal': 'PLACEHOLDER_GOAL'},
             wait_for_user_message=False,
             headless=True,
             disable_env_checker=True,
