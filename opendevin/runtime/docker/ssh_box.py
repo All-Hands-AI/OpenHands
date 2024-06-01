@@ -217,6 +217,10 @@ class DockerSSHBox(Sandbox):
             raise ex
 
         if config.persist_sandbox:
+            if not self.run_as_devin:
+                raise Exception(
+                    'Persistent sandbox is currently designed for opendevin user only. Please set run_as_devin=True in your config.toml'
+                )
             self.instance_id = 'persisted'
         else:
             self.instance_id = (sid or '') + str(uuid.uuid4())
