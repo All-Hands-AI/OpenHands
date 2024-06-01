@@ -46,7 +46,7 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     # Use `monkeypatch` to set environment variables for this specific test
     monkeypatch.setenv('WORKSPACE_BASE', '/repos/opendevin/workspace')
     monkeypatch.setenv('LLM_API_KEY', 'sk-proj-rgMV0...')
-    monkeypatch.setenv('LLM_MODEL', 'gpt-3.5-turbo')
+    monkeypatch.setenv('LLM_MODEL', 'gpt-4o')
     monkeypatch.setenv('AGENT_MEMORY_MAX_THREADS', '4')
     monkeypatch.setenv('AGENT_MEMORY_ENABLED', 'True')
     monkeypatch.setenv('AGENT', 'CodeActAgent')
@@ -57,7 +57,7 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     assert config.workspace_base == '/repos/opendevin/workspace'
     assert isinstance(config.llm, LLMConfig)
     assert config.llm.api_key == 'sk-proj-rgMV0...'
-    assert config.llm.model == 'gpt-3.5-turbo'
+    assert config.llm.model == 'gpt-4o'
     assert isinstance(config.agent, AgentConfig)
     assert isinstance(config.agent.memory_max_threads, int)
     assert config.agent.memory_max_threads == 4

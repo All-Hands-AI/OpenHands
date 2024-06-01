@@ -4,7 +4,7 @@ At each turn, you should first provide your step-by-step thinking for solving th
 
 After that, you have two options:
 1) Interact with a Python programming environment and receive the corresponding output.
-2) Directly provide a solution by sending your answer to user through message that adheres to the required format for the given task. Your solution should be enclosed using "<solution>" tag, for example: The answer is <solution> A </solution>.
+2) Directly provide a solution by sending your answer to user through message that adheres to the required format for the given task. Your solution should be enclosed using "<solution>" tag, and it must be only the result, no explanation needed. For example: The answer is <solution> A </solution>.
 Either you choose to interact with the Python environment or provide a solution, you need to send a message to the user to evaluate your response and provide feedback.
 
 You have {max_total_steps} chances to interact with the environment or propose a solution. You can only propose a solution {max_propose_solution} times.
