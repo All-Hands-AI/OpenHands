@@ -8,7 +8,6 @@ import { Container, Orientation } from "#/components/Resizable";
 import Workspace from "#/components/Workspace";
 import LoadPreviousSessionModal from "#/components/modals/load-previous-session/LoadPreviousSessionModal";
 import SettingsModal from "#/components/modals/settings/SettingsModal";
-import FeedbackModal from "#/components/modals/feedback/FeedbackModal";
 import "./App.css";
 import AgentControlBar from "./components/AgentControlBar";
 import AgentStatusBar from "./components/AgentStatusBar";
@@ -43,20 +42,16 @@ let initOnce = false;
 
 function App(): JSX.Element {
   const {
-    isOpen: feedbackModalIsOpen,
-    onOpen: onFeedbackModalOpen,
-    onOpenChange: onFeedbackModalOpenChange,
+    isOpen: settingsModalIsOpen,
+    onOpen: onSettingsModalOpen,
+    onOpenChange: onSettingsModalOpenChange,
   } = useDisclosure();
 
-  const [makePublic, setMakePublic] = useState(false);
-
-  const onFeedbackModalClose = (shared: boolean) => {
-    onFeedbackModalOpenChange(false);
-    if (shared) {
-      // Handle feedback sharing logic here
-    }
-  };
-
+  const {
+    isOpen: loadPreviousSessionModalIsOpen,
+    onOpen: onLoadPreviousSessionModalOpen,
+    onOpenChange: onLoadPreviousSessionModalOpenChange,
+  } = useDisclosure();
 
   useEffect(() => {
     if (initOnce) return;
@@ -100,12 +95,6 @@ function App(): JSX.Element {
       <SettingsModal
         isOpen={settingsModalIsOpen}
         onOpenChange={onSettingsModalOpenChange}
-      />
-      <FeedbackModal
-        isOpen={feedbackModalIsOpen}
-        onClose={onFeedbackModalClose}
-        makePublic={makePublic}
-        setMakePublic={setMakePublic}
       />
       <LoadPreviousSessionModal
         isOpen={loadPreviousSessionModalIsOpen}

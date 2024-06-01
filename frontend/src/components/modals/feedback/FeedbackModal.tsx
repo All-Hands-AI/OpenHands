@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import BaseModal from "../base-modal/BaseModal";
-import Session from "#/services/session";
+import { Feedback, sendFeedback } from "#/services/feedbackService";
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -15,6 +15,23 @@ function FeedbackModal({
 }: FeedbackModalProps) {
   const { t } = useTranslation();
 
+  const [feedback, setFeedback] = React.useState<Feedback>({} as Feedback);
+  const [responseCode, setResponseCode] = React.useState<number | null>(null);
+  const [responseText, setResponseText] = React.useState<string | null>(null);
+  const [responseLoading, setResponseLoading] = React.useState(false);
+
+  const handleSendFeedback = () => {
+    setResponseLoading(true);
+    sendFeedback(feedback).then(response => {
+      setResponseCode(response.status);
+      setResponseText(response.statusText);
+    }).catch(error => {
+      setResponseCode(error.status);
+      setResponseText(error.statusText);
+    });
+    setResponseLoading(false);
+  }
+
   return (
     <BaseModal
       isOpen={isOpen}
@@ -25,13 +42,13 @@ function FeedbackModal({
         {
           label: t(I18nKey.FEEDBACK$SHARE_LABEL),
           className: "bg-primary rounded-lg",
-          action: shareAction,
+          action: handleSendFeedback,
           closeAfterAction: true,
         },
         {
           label: t(I18nKey.FEEDBACK$CANCEL_LABEL),
           className: "bg-neutral-500 rounded-lg",
-          action: cancelAction,
+          action: function() {},
           closeAfterAction: true,
         },
       ]}

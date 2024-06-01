@@ -14,12 +14,14 @@ import { sendChatMessage } from "#/services/chatService";
 import { addUserMessage, addAssistantMessage } from "#/state/chatSlice";
 import { I18nKey } from "#/i18n/declaration";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
+import FeedbackModal from "#/components/modals/feedback/FeedbackModal";
 import Session from "#/services/session";
 import { getToken } from "#/services/auth";
 import toast from "#/utils/toast";
 import { removeApiKey } from "#/utils/utils";
 import { FeedbackData, sendFeedback } from "#/services/feedbackService";
 import FeedbackModal from "../modals/feedback/FeedbackModal";
+import { useDisclosure } from "@nextui-org/react";
 
 interface ScrollButtonProps {
   onClick: () => void;
@@ -52,13 +54,19 @@ function ChatInterface() {
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [makePublic, setMakePublic] = useState(false);
-  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackPolarity, setFeedbackPolarity] = useState<string | null>(null);
   const [feedbackShared, setFeedbackShared] = useState(false);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
   const curAgentState = useSelector((state: RootState) => state.agentState);
   const messages = useSelector((state: RootState) => state.chat.messages);
   const hitBottom = useScrollToBottom(chatContainerRef);
+
+  const {
+    isOpen: feedbackModalIsOpen,
+    onOpen: onFeedbackModalOpen,
+    onOpenChange: onFeedbackModalOpenChange,
+  } = useDisclosure();
 
   const handleSendMessage = async (message: string) => {
     if (!message.trim()) return;
@@ -87,8 +95,9 @@ function ChatInterface() {
     });
   };
 
-  const openFeedback = (type: "positive" | "negative") => {
-    setDialogOpen(true);
+  const openFeedback = (polarity: "positive" | "negative") => {
+    setFeedbackPolarity(polarity);
+    onFeedbackModalOpen();
   };
 
   const handleDialogClose = async (shared: boolean) => {
@@ -164,14 +173,11 @@ function ChatInterface() {
         onSendMessage={handleSendMessage}
       />
       <FeedbackModal
-        isOpen={dialogOpen}
-        onClose={handleDialogClose}
-        makePublic={makePublic}
-        setMakePublic={setMakePublic}
+        isOpen={feedbackModalIsOpen}
+        onOpenChange={onFeedbackModalOpenChange}
       />
     </div>
   );
 }
 
 export default ChatInterface;
-
