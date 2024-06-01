@@ -1,5 +1,5 @@
-import React, { useRef } from "react";
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Checkbox, FormControlLabel } from '@mui/material';
+import React, { useRef, useState, useEffect } from "react";
+import { Modal, ModalBody, ModalFooter, ModalHeader, Button, Checkbox } from "@nextui-org/react";
 import { useDispatch, useSelector } from "react-redux";
 import { IoMdChatbubbles } from "react-icons/io";
 import { RiArrowRightDoubleLine } from "react-icons/ri";
@@ -25,7 +25,6 @@ interface ScrollButtonProps {
   onClick: () => void;
   icon: JSX.Element;
   label: string;
-  // eslint-disable-next-line react/require-default-props
   disabled?: boolean;
 }
 
@@ -49,22 +48,46 @@ function ScrollButton({
   );
 }
 
-  const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [makePublic, setMakePublic] = React.useState(false);
-  const [feedbackType, setFeedbackType] = React.useState<"positive" | "negative" | null>(null);
-  const [feedbackShared, setFeedbackShared] = React.useState(false);
-  const [feedbackLoading, setFeedbackLoading] = React.useState(false);
+function ChatInterface() {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [makePublic, setMakePublic] = useState(false);
+  const [feedbackType, setFeedbackType] = useState<"positive" | "negative" | null>(null);
+  const [feedbackShared, setFeedbackShared] = useState(false);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+
+  const dispatch = useDispatch();
+  const { messages } = useSelector((state: RootState) => state.chat);
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
+
+  const handleSendMessage = (content: string) => {
+    dispatch(addUserMessage(content));
+    sendChatMessage(content);
+  };
+
+  const { t } = useTranslation();
+  const handleSendContinueMsg = () => {
+    handleSendMessage(t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE));
+  };
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
+    useScrollToBottom(scrollRef);
+
+  useEffect(() => {
+    if (curAgentState === AgentState.INIT && messages.length === 0) {
+      dispatch(addAssistantMessage(t(I18nKey.CHAT_INTERFACE$INITIAL_MESSAGE)));
+    }
+  }, [curAgentState]);
 
   const handleDialogClose = async (share: boolean) => {
     setDialogOpen(false);
     if (share && feedbackType) {
-      // TODO: implement email and permissions
-      // https://github.com/OpenDevin/OpenDevin/issues/2033
       const data: FeedbackData = {
         email: "NOT_PROVIDED",
         token: getToken(),
         feedback: feedbackType,
-        permissions: "private",
+        permissions: makePublic ? "public" : "private",
         trajectory: removeApiKey(Session._history),
       };
 
@@ -85,35 +108,10 @@ function ScrollButton({
   };
 
   const openFeedback = async (feedback: "positive" | "negative") => {
+    console.log("Feedback type: ", feedback)
     setFeedbackType(feedback);
     setDialogOpen(true);
   };
-
-function ChatInterface() {
-  const dispatch = useDispatch();
-  const { messages } = useSelector((state: RootState) => state.chat);
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
-
-  const handleSendMessage = (content: string) => {
-    dispatch(addUserMessage(content));
-    sendChatMessage(content);
-  };
-
-  const { t } = useTranslation();
-  const handleSendContinueMsg = () => {
-    handleSendMessage(t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE));
-  };
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
-    useScrollToBottom(scrollRef);
-
-  React.useEffect(() => {
-    if (curAgentState === AgentState.INIT && messages.length === 0) {
-      dispatch(addAssistantMessage(t(I18nKey.CHAT_INTERFACE$INITIAL_MESSAGE)));
-    }
-  }, [curAgentState]);
 
   return (
     <div className="flex flex-col h-full bg-neutral-800">
@@ -129,7 +127,6 @@ function ChatInterface() {
         >
           <Chat messages={messages} />
         </div>
-        {/* Fade between messages and input */}
         <div
           className={twMerge(
             "absolute bottom-0 left-0 right-0",
@@ -142,18 +139,18 @@ function ChatInterface() {
       <div className="relative">
         <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center">
           {!hitBottom &&
-            ScrollButton({
-              onClick: scrollDomToBottom,
-              icon: <VscArrowDown className="inline mr-2 w-3 h-3" />,
-              label: t(I18nKey.CHAT_INTERFACE$TO_BOTTOM),
-            })}
+            <ScrollButton
+              onClick={scrollDomToBottom}
+              icon={<VscArrowDown className="inline mr-2 w-3 h-3" />}
+              label={t(I18nKey.CHAT_INTERFACE$TO_BOTTOM)}
+            />}
           {curAgentState === AgentState.AWAITING_USER_INPUT &&
             hitBottom &&
-            ScrollButton({
-              onClick: handleSendContinueMsg,
-              icon: <RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />,
-              label: t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE),
-            })}
+            <ScrollButton
+              onClick={handleSendContinueMsg}
+              icon={<RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />}
+              label={t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
+            />}
         </div>
 
         {!feedbackShared && messages.length > 3 && (
@@ -178,20 +175,26 @@ function ChatInterface() {
         disabled={curAgentState === AgentState.LOADING}
         onSendMessage={handleSendMessage}
       />
-      <Dialog open={dialogOpen} onClose={() => handleDialogClose(false)}>
-        <DialogTitle>Share Feedback</DialogTitle>
-        <DialogContent>
+      <Modal isOpen={dialogOpen} onClose={() => handleDialogClose(false)}>
+        <ModalHeader>Share Feedback</ModalHeader>
+        <ModalBody>
           <p>Your conversation and positive/negative feedback will be shared with the OpenDevin developers to improve the OpenDevin experience. In addition, you can opt-in to contribute to a shared repository of data that can be used for improving open-source coding models.</p>
-          <FormControlLabel
-            control={<Checkbox checked={makePublic} onChange={(e) => setMakePublic(e.target.checked)} />}
-            label="Make my feedback public."
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => handleDialogClose(false)}>Cancel</Button>
-          <Button onClick={() => handleDialogClose(true)} color="primary">Share</Button>
-        </DialogActions>
-      </Dialog>
+          <Checkbox
+            isSelected={makePublic}
+            onChange={(e) => setMakePublic(e.target.checked)}
+          >
+            Make my feedback public.
+          </Checkbox>
+        </ModalBody>
+        <ModalFooter>
+          <Button onPress={() => handleDialogClose(false)}>
+            Cancel
+          </Button>
+          <Button onPress={() => handleDialogClose(true)}>
+            Share
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 }
