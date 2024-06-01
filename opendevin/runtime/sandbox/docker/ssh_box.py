@@ -1,6 +1,5 @@
 import atexit
 import os
-import re
 import sys
 import tarfile
 import tempfile
@@ -10,7 +9,7 @@ from collections import namedtuple
 from glob import glob
 
 import docker
-from pexpect import exceptions, pxssh
+from pexpect import pxssh
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from opendevin.core.config import config
@@ -21,76 +20,12 @@ from opendevin.core.schema import CancellableStream
 from opendevin.runtime.docker.process import DockerProcess, Process
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.sandbox import Sandbox
+from opendevin.runtime.sandbox.stream.ssh import SSHCancellableStream
 from opendevin.runtime.utils import find_available_tcp_port
 
 # FIXME: these are not used, can we remove them?
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
-
-
-class SSHExecCancellableStream(CancellableStream):
-    def __init__(self, ssh, cmd, timeout):
-        super().__init__(self.read_output())
-        self.ssh = ssh
-        self.cmd = cmd
-        self.timeout = timeout
-
-    def close(self):
-        self.closed = True
-
-    def exit_code(self):
-        self.ssh.sendline('echo $?')
-        success = self.ssh.prompt(timeout=self.timeout)
-        if not success:
-            return -1
-
-        _exit_code = self.ssh.before.strip()
-        return int(_exit_code)
-
-    def read_output(self):
-        st = time.time()
-        buf = ''
-        crlf = '\r\n'
-        lf = '\n'
-        prompt_len = len(self.ssh.PROMPT)
-        while True:
-            try:
-                if self.closed:
-                    break
-                _output = self.ssh.read_nonblocking(timeout=1)
-                if not _output:
-                    continue
-
-                buf += _output
-
-                if len(buf) < prompt_len:
-                    continue
-
-                match = re.search(self.ssh.PROMPT, buf)
-                if match:
-                    idx, _ = match.span()
-                    yield buf[:idx].replace(crlf, lf)
-                    buf = ''
-                    break
-
-                res = buf[:-prompt_len]
-                if len(res) == 0 or res.find(crlf) == -1:
-                    continue
-                buf = buf[-prompt_len:]
-                yield res.replace(crlf, lf)
-            except exceptions.TIMEOUT:
-                if time.time() - st < self.timeout:
-                    match = re.search(self.ssh.PROMPT, buf)
-                    if match:
-                        idx, _ = match.span()
-                        yield buf[:idx].replace(crlf, lf)
-                        break
-                    continue
-                else:
-                    yield buf.replace(crlf, lf)
-                break
-            except exceptions.EOF:
-                break
 
 
 def split_bash_commands(commands):
@@ -463,7 +398,7 @@ class DockerSSHBox(Sandbox):
 
         self.ssh.sendline(cmd)
         if stream:
-            return 0, SSHExecCancellableStream(self.ssh, cmd, self.timeout)
+            return 0, SSHCancellableStream(self.ssh, cmd, self.timeout)
         success = self.ssh.prompt(timeout=timeout)
         if not success:
             return self._send_interrupt(cmd)
