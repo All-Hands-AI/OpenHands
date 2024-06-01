@@ -198,7 +198,7 @@ class LightCodeActAgent(Agent):
                 '</execute_ipython>',
                 '</execute_bash>',
             ],
-            temperature=0.2,
+            temperature=0.0,
         )
 
         action_str: str = parse_response(response)
