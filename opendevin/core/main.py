@@ -1,6 +1,6 @@
 import asyncio
 import sys
-from typing import Callable, Optional, Type
+from typing import Callable, Type
 
 import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller import AgentController
@@ -32,9 +32,9 @@ def read_task_from_stdin() -> str:
 async def main(
     task_str: str = '',
     exit_on_message: bool = False,
-    fake_user_response_fn: Optional[Callable[[Optional[State]], str]] = None,
-    sandbox: Optional[Sandbox] = None,
-) -> Optional[State]:
+    fake_user_response_fn: Callable[[State | None], str] | None = None,
+    sandbox: Sandbox | None = None,
+) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
     It's only used when you launch opendevin backend directly via cmdline.
 

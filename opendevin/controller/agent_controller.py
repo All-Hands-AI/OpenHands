@@ -80,7 +80,13 @@ class AgentController:
         self.max_chars = max_chars
         if initial_state is None:
             self.state = State(inputs={}, max_iterations=max_iterations)
+            self.state.history.set_event_stream(event_stream)
+            self.state.history.start_id = event_stream.get_latest_event_id() + 1
+            logger.debug(
+                f'AgentController {self.id} starting from event {self.state.history.start_id}, after: {event_stream.get_latest_event()}'
+            )
         else:
+            # FIXME keep compatibility with a history that was a list?
             self.state = initial_state
         self.event_stream = event_stream
         self.event_stream.subscribe(

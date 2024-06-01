@@ -1,18 +1,35 @@
+from collections.abc import Iterator
+from typing import Iterable
+
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action.action import Action
-from opendevin.events.action.agent import AgentSummarizeAction
+from opendevin.events.action.agent import AgentSummarizeAction, ChangeAgentStateAction
 from opendevin.events.action.empty import NullAction
 from opendevin.events.event import Event
+from opendevin.events.observation.agent import AgentStateChangedObservation
 from opendevin.events.observation.commands import CmdOutputObservation
 from opendevin.events.observation.empty import NullObservation
 from opendevin.events.observation.observation import Observation
 from opendevin.events.observation.summary import SummaryObservation
+from opendevin.events.stream import EventStream
 
 
 class ShortTermHistory(list[Event]):
     """
     A list of events that represents the short-term memory of the agent.
     """
+
+    start_id: int
+    end_id: int
+    _event_stream: EventStream
+
+    def __init__(self):
+        super().__init__()
+        self.start_id = -1
+        self.end_id = -1
+
+    def set_event_stream(self, event_stream: EventStream):
+        self._event_stream = event_stream
 
     def append(self, item: tuple[Action, Observation] | Event):
         """
@@ -38,6 +55,7 @@ class ShortTermHistory(list[Event]):
         else:
             raise TypeError(f'Event must be a tuple or Event, got {type(item)}')
 
+    # TODO removeme
     def get_tuples(self) -> list[tuple[Action, Observation]]:
         """
         Return the history as a list of tuples (action, observation).
@@ -98,7 +116,7 @@ class ShortTermHistory(list[Event]):
         """
         Return the history as a list of Event objects.
         """
-        return list(self)
+        return list(self.get_events_as_stream())
 
     def replace_events_with_summary(self, summary_action: AgentSummarizeAction):
         start_id = summary_action._chunk_start
@@ -118,3 +136,51 @@ class ShortTermHistory(list[Event]):
 
         # replace the events in the specified range with the summary action and observation
         self[start_id:end_id] = [summary_action, summary_observation]
+
+    # remove once this isn't a list anymore
+    def __iter__(self) -> Iterator[Event]:
+        # iterate over EventStream, from start_id to end_id, avoiding the need to store all events in memory
+        # filter them to only add in the iterator the ones that are not NullObservation, agent state changes, etc.
+        start_id = self.start_id if self.start_id != -1 else 0
+        end_id = (
+            self.end_id
+            if self.end_id != -1
+            else self._event_stream.get_latest_event_id()
+        )
+
+        logger.debug(f'History iterating over events from {start_id} to {end_id}')
+        for event in self._event_stream.get_events(start_id=start_id, end_id=end_id):
+            if not isinstance(
+                event,
+                (
+                    NullAction,
+                    NullObservation,
+                    ChangeAgentStateAction,
+                    AgentStateChangedObservation,
+                ),
+            ):
+                yield event
+
+    def get_events_as_stream(self) -> Iterable[Event]:
+        """
+        Return the events as a stream of Event objects.
+        """
+        # we can avoid storing all events in memory, but we need to filter them each time we iterate
+        start_id = self.start_id if self.start_id != -1 else 0
+        end_id = (
+            self.end_id
+            if self.end_id != -1
+            else self._event_stream.get_latest_event_id()
+        )
+
+        for event in self._event_stream.get_events(start_id=start_id, end_id=end_id):
+            if not isinstance(
+                event,
+                (
+                    NullAction,
+                    NullObservation,
+                    ChangeAgentStateAction,
+                    AgentStateChangedObservation,
+                ),
+            ):
+                yield event

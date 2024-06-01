@@ -1,5 +1,3 @@
-from typing import Optional
-
 from agenthub.codeact_agent.codeact_agent import CodeActAgent
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
@@ -24,8 +22,8 @@ class AgentSession:
 
     sid: str
     event_stream: EventStream
-    controller: Optional[AgentController] = None
-    runtime: Optional[Runtime] = None
+    controller: AgentController | None = None
+    runtime: Runtime | None = None
     _closed: bool = False
 
     def __init__(self, sid):
