@@ -51,7 +51,6 @@ const config: Config = {
       } satisfies Preset.Options,
     ],
   ],
-
   themeConfig: {
     image: "img/docusaurus.png",
     navbar: {
