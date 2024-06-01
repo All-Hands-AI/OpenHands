@@ -3,7 +3,7 @@ import traceback
 from typing import Dict, Optional
 
 from datatypes import ParseError, StepOutput, TaskState
-from task import Task
+from tasks.base import Task
 
 from opendevin.controller.state.state import State
 
