@@ -142,9 +142,10 @@ def split_bash_commands(commands):
 
 
 class SSHBox(Sandbox):
-    _password: str
+    _hostname: str
     _port: int
-    _user: str
+    _username: str
+    _password: str
     ssh: pexpect.pxssh.pxssh
 
     cur_background_id = 0
@@ -154,7 +155,7 @@ class SSHBox(Sandbox):
         self,
         hostname: str = config.ssh_hostname,
         port: int = config.ssh_port,
-        user: str = config.ssh_user,
+        username: str = config.ssh_username,
         password: str = config.ssh_password or '',
         timeout: int = config.sandbox_timeout,
         sid: str | None = None,
@@ -165,7 +166,7 @@ class SSHBox(Sandbox):
         self.timeout = timeout
         self._hostname = hostname
         self._port = port
-        self._user = user
+        self._user = username
         self._password = password
 
         try:
@@ -193,20 +194,12 @@ class SSHBox(Sandbox):
                 encoding='utf-8',
                 codec_errors='replace',
             )
-            hostname = config.ssh_hostname
-            username = config.ssh_user or (
-                'opendevin' if config.run_as_devin else 'root'
-            )
-            if config.persist_sandbox:
-                password_msg = 'using your SSH password'
-            else:
-                password_msg = f"using the password '{self._password}'"
             logger.info('Connecting to SSH session...')
-            ssh_cmd = f'`ssh -v -p {self._port} {username}@{hostname}`'
-            logger.info(
-                f'You can debug the SSH connection by running: {ssh_cmd} {password_msg}'
+            ssh_cmd = f'`ssh -v -p {self._port} {self._username}@{self._hostname}`'
+            logger.info(f'You can debug the SSH connection by running: {ssh_cmd}')
+            self.ssh.login(
+                self._hostname, self._username, self._password, port=self._port
             )
-            self.ssh.login(hostname, username, self._password, port=self._port)
             logger.info('Connected to SSH session')
         except pexpect.pxssh.ExceptionPxssh as e:
             print('exception', e)

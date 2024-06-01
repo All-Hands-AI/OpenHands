@@ -34,9 +34,6 @@ class DockerSSHBox(SSHBox):
         timeout: int = config.sandbox_timeout,
         sid: str | None = None,
     ):
-        logger.info(
-            f'SSHBox is running as {"opendevin" if config.run_as_devin else "root"} user with USER_ID={config.sandbox_user_id} in the sandbox'
-        )
         # Initialize docker client. Throws an exception if Docker is not reachable.
         try:
             self.docker_client = docker.from_env()
@@ -60,17 +57,19 @@ class DockerSSHBox(SSHBox):
         self.container_image = container_image or config.sandbox_container_image
         self.container_name = self.container_name_prefix + self.instance_id
 
-        # set up random user password
+        self._username = config.ssh_username or (
+            'opendevin' if config.run_as_devin else 'root'
+        )
         if config.persist_sandbox:
             if not config.ssh_password:
                 raise Exception(
                     'Please add ssh_password to your config.toml or add -e SSH_PASSWORD to your docker run command'
                 )
-            self._ssh_password = config.ssh_password
-            self._ssh_port = config.ssh_port
+            self._password = config.ssh_password
+            self._port = config.ssh_port
         else:
-            self._ssh_password = str(uuid.uuid4())
-            self._ssh_port = find_available_tcp_port()
+            self._password = str(uuid.uuid4())
+            self._port = find_available_tcp_port()
         try:
             docker.DockerClient().containers.get(self.container_name)
             self.is_initial_session = False
@@ -96,7 +95,12 @@ class DockerSSHBox(SSHBox):
             self.container = self.docker_client.containers.get(self.container_name)
             logger.info('Using existing Docker container')
 
-        super().__init__()
+        super().__init__(
+            'host.docker.internal', self._port, self._username, self._password
+        )
+        logger.info(
+            f'DockerSSHBox is running as {self._username} user with USER_ID={config.sandbox_user_id} in the sandbox'
+        )
 
     def setup_user(self):
         # Make users sudoers passwordless
@@ -144,7 +148,7 @@ class DockerSSHBox(SSHBox):
                 [
                     '/bin/bash',
                     '-c',
-                    f"echo 'opendevin:{self._ssh_password}' | chpasswd",
+                    f"echo 'opendevin:{self._password}' | chpasswd",
                 ],
                 workdir=config.workspace_mount_path_in_sandbox,
                 environment=self._env,
@@ -179,7 +183,7 @@ class DockerSSHBox(SSHBox):
         else:
             exit_code, logs = self.container.exec_run(
                 # change password for root
-                ['/bin/bash', '-c', f"echo 'root:{self._ssh_password}' | chpasswd"],
+                ['/bin/bash', '-c', f"echo 'root:{self._password}' | chpasswd"],
                 workdir=config.workspace_mount_path_in_sandbox,
                 environment=self._env,
             )
@@ -193,7 +197,7 @@ class DockerSSHBox(SSHBox):
 
     # Use the retry decorator, with a maximum of 5 attempts and a fixed wait time of 5 seconds between attempts
     @retry(stop=stop_after_attempt(5), wait=wait_fixed(5))
-    def __ssh_login(self):
+    def __login(self):
         try:
             self.ssh = pxssh.pxssh(
                 echo=False,
@@ -206,13 +210,13 @@ class DockerSSHBox(SSHBox):
             if config.persist_sandbox:
                 password_msg = 'using your SSH password'
             else:
-                password_msg = f"using the password '{self._ssh_password}'"
+                password_msg = f"using the password '{self._password}'"
             logger.info('Connecting to SSH session...')
-            ssh_cmd = f'`ssh -v -p {self._ssh_port} {username}@{hostname}`'
+            ssh_cmd = f'`ssh -v -p {self._port} {username}@{hostname}`'
             logger.info(
                 f'You can debug the SSH connection by running: {ssh_cmd} {password_msg}'
             )
-            self.ssh.login(hostname, username, self._ssh_password, port=self._ssh_port)
+            self.ssh.login(hostname, username, self._password, port=self._port)
             logger.info('Connected to SSH session')
         except pxssh.ExceptionPxssh as e:
             logger.exception(
@@ -355,7 +359,7 @@ class DockerSSHBox(SSHBox):
                 network_kwargs['network_mode'] = 'host'
             else:
                 # FIXME: This is a temporary workaround for Mac OS
-                network_kwargs['ports'] = {f'{self._ssh_port}/tcp': self._ssh_port}
+                network_kwargs['ports'] = {f'{self._port}/tcp': self._port}
                 logger.warning(
                     (
                         'Using port forwarding for Mac OS. '
@@ -369,7 +373,7 @@ class DockerSSHBox(SSHBox):
             self.container = self.docker_client.containers.run(
                 self.container_image,
                 # allow root login
-                command=f"/usr/sbin/sshd -D -p {self._ssh_port} -o 'PermitRootLogin=yes'",
+                command=f"/usr/sbin/sshd -D -p {self._port} -o 'PermitRootLogin=yes'",
                 **network_kwargs,
                 working_dir=config.workspace_mount_path_in_sandbox,
                 name=self.container_name,
