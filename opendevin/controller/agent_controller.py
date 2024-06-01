@@ -256,7 +256,7 @@ class AgentController:
                 # propagate error state until an agent or user can handle it
                 await self.set_agent_state_to(AgentState.ERROR)
                 return
-            delegate_done = delegate_state == AgentState.FINISHED
+            delegate_done = delegate_state in (AgentState.FINISHED, AgentState.REJECTED)
             if delegate_done:
                 logger.info(
                     f'[Agent Controller {self.id}] Delegate agent has finished execution'

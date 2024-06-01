@@ -1,8 +1,0 @@
-{
-  "action": "reject",
-  "args": {
-    "outputs": {
-      "reason": "Unable to retrieve git diff due to incorrect command usage or unsupported option."
-    }
-  }
-}

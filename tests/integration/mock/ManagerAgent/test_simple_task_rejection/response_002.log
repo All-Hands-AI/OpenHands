@@ -1,7 +1,0 @@
-{
-  "action": "run",
-  "args": {
-    "command": "git diff --cached",
-    "background": false
-  }
-}

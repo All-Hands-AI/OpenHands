@@ -22,8 +22,28 @@ action.
 
 ## Agents
 
-### TypoFixerAgent
-Fixes typos in files in the current working directory
+### CoderAgent
+Given a particular task, and a detailed description of the codebase, accomplishes the task
+#### Inputs
+{"task": "string", "summary": "string"}
+
+### CommitWriterAgent
+Write a git commit message for files in the git staging area
+#### Inputs
+{}
+
+### MathAgent
+Solves simple and complex math problems using python
+#### Inputs
+{"task": "string"}
+
+### PostgresAgent
+Writes and maintains PostgreSQL migrations
+#### Inputs
+{"task": "string"}
+
+### RepoExplorerAgent
+Generates a detailed summary of an existing codebase
 #### Inputs
 {}
 
@@ -32,33 +52,13 @@ Given a particular task, finds and describes all relevant parts of the codebase
 #### Inputs
 {"task": "string"}
 
-### MathAgent
-Solves simple and complex math problems using python
+### TypoFixerAgent
+Fixes typos in files in the current working directory
 #### Inputs
 {"task": "string"}
-
-### CommitWriterAgent
-Write a git commit message for files in the git staging area
-#### Inputs
-{}
-
-### RepoExplorerAgent
-Generates a detailed summary of an existing codebase
-#### Inputs
-{}
 
 ### VerifierAgent
 Given a particular task, verifies that the task has been completed
-#### Inputs
-{"task": "string"}
-
-### CoderAgent
-Given a particular task, and a detailed description of the codebase, accomplishes the task
-#### Inputs
-{"task": "string", "codebase_summary": "string"}
-
-### PostgresAgent
-Writes and maintains PostgreSQL migrations
 #### Inputs
 {"task": "string"}
 
@@ -69,7 +69,7 @@ as well as observations you've made. This only includes the MOST RECENT
 actions and observations--more may have happened before that.
 They are time-ordered, with your most recent action at the bottom.
 
-[]
+[[{"source": "user", "action": "message", "args": {"content": "Write a git commit message for the current staging area. Do not ask me for confirmation at any point.", "wait_for_response": false}}, {"observation": "null", "content": "", "extras": {}}]]
 
 If the last item in the history is an error, you should try to fix it. If you
 cannot fix it, call the `reject` action.
@@ -79,7 +79,7 @@ cannot fix it, call the `reject` action.
   * `agent` - the agent to which the task is delegated. MUST match a name in the list of agents provided.
   * `inputs` - a dictionary of input parameters to the agent, as specified in the list
 
-* `finish` - if you're absolutely certain that you've completed your task and have tested your work, use the finish action to stop working. Arguments:
+* `finish` - if you're absolutely certain that you've completed your task, use the finish action to stop working. Arguments:
   * `outputs` - a dictionary representing the outputs of your task, if any
 
 * `reject` - reject the task. Arguments:

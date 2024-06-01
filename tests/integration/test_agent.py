@@ -123,7 +123,7 @@ def test_simple_task_rejection():
     # the workspace is not a git repo
     task = 'Write a git commit message for the current staging area. Do not ask me for confirmation at any point.'
     final_agent_state = asyncio.run(main(task))
-    assert final_agent_state == AgentState.FINISHED
+    assert final_agent_state == AgentState.REJECTED
 
 
 @pytest.mark.skipif(
