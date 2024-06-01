@@ -386,12 +386,17 @@ class DockerSSHBox(Sandbox):
             )
             hostname = self.ssh_hostname
             username = 'opendevin' if self.run_as_devin else 'root'
+            if config.persist_sandbox:
+                password_msg = 'using your SSH password'
+            else:
+                password_msg = f"using the password '{self._ssh_password}'"
+            logger.info('Connecting to SSH session...')
+            ssh_cmd = f'`ssh -v -p {self._ssh_port} {username}@{hostname}`'
             logger.info(
-                f'Connecting to {username}@{hostname} via ssh. '
-                f"If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub. "
-                f"If you started OpenDevin with `docker run`, you should try `ssh -v -p {self._ssh_port} {username}@localhost` with the password '{self._ssh_password} on the host machine (where you started the container)."
+                f'You can debug the SSH connection by running: {ssh_cmd} {password_msg}'
             )
             self.ssh.login(hostname, username, self._ssh_password, port=self._ssh_port)
+            logger.info('Connected to SSH session')
         except pxssh.ExceptionPxssh as e:
             logger.exception(
                 'Failed to login to SSH session, retrying...', exc_info=False
