@@ -238,11 +238,11 @@ class DockerSSHBox(Sandbox):
             self._ssh_port = find_available_tcp_port()
         try:
             docker.DockerClient().containers.get(self.container_name)
-            is_initial_session = False
+            self.is_initial_session = False
         except docker.errors.NotFound:
-            is_initial_session = True
+            self.is_initial_session = True
             logger.info('Creating new Docker container')
-        if not config.persist_sandbox or is_initial_session:
+        if not config.persist_sandbox or self.is_initial_session:
             n_tries = 5
             while n_tries > 0:
                 try:

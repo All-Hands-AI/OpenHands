@@ -11,6 +11,7 @@ from opendevin.runtime.plugins.mixin import PluginMixin
 class Sandbox(ABC, PluginMixin):
     background_commands: dict[int, Process] = {}
     _env: dict[str, str] = {}
+    is_initial_session: bool = True
 
     def __init__(self, **kwargs):
         for key in os.environ:
