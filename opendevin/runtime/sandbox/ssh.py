@@ -2,7 +2,7 @@ import atexit
 import sys
 import time
 
-import pexpect
+from pexpect import pxssh, run
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from opendevin.core.config import config
@@ -146,7 +146,7 @@ class SSHBox(Sandbox):
     _port: int
     _username: str
     _password: str
-    ssh: pexpect.pxssh.pxssh
+    ssh: pxssh.pxssh
 
     cur_background_id = 0
     background_commands: dict[int, Process] = {}
@@ -168,7 +168,7 @@ class SSHBox(Sandbox):
 
         try:
             self.start_session()
-        except pexpect.pxssh.ExceptionPxssh as e:
+        except pxssh.ExceptionPxssh as e:
             self.close()
             raise e
         logger.info(
@@ -188,7 +188,7 @@ class SSHBox(Sandbox):
     def _login(self):
         print('Connecting to SSH session...')
         try:
-            self.ssh = pexpect.pxssh.pxssh(
+            self.ssh = pxssh.pxssh(
                 echo=False,
                 timeout=self.timeout,
                 encoding='utf-8',
@@ -201,7 +201,7 @@ class SSHBox(Sandbox):
                 self._hostname, self._username, self._password, port=self._port
             )
             logger.info('Connected to SSH session')
-        except pexpect.pxssh.ExceptionPxssh as e:
+        except pxssh.ExceptionPxssh as e:
             print('exception', e)
             logger.exception(
                 'Failed to login to SSH session, retrying...', exc_info=False
@@ -322,7 +322,7 @@ class SSHBox(Sandbox):
         return exit_code, command_output
 
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
-        pexpect.run(
+        run(
             f'scp {host_src} {self._username}:{sandbox_dest}',
             events={'(?i)password': self._password},
         )
