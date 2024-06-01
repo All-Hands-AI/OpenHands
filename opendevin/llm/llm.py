@@ -131,7 +131,7 @@ class LLM:
         # litellm actually uses base Exception here for unknown model
         self.model_info = None
         try:
-            self.model_info = litellm.get_model_info(self.model_name)
+            self.model_info = litellm.get_model_info(self.model_name.split(':')[0])
         # noinspection PyBroadException
         except Exception:
             logger.warning(f'Could not get model info for {self.model_name}')

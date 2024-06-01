@@ -216,38 +216,50 @@ class DockerSSHBox(Sandbox):
             )
             raise ex
 
-        self.instance_id = (
-            sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
-        )
+        if config.persist_sandbox:
+            self.instance_id = 'persisted'
+        else:
+            self.instance_id = (sid or '') + str(uuid.uuid4())
 
         self.timeout = timeout
-        self.container_image = (
-            config.sandbox_container_image
-            if container_image is None
-            else container_image
-        )
+        self.container_image = container_image or config.sandbox_container_image
         self.container_name = self.container_name_prefix + self.instance_id
 
         # set up random user password
-        self._ssh_password = str(uuid.uuid4())
-        self._ssh_port = find_available_tcp_port()
-
-        # always restart the container, cuz the initial be regarded as a new session
-        n_tries = 5
-        while n_tries > 0:
-            try:
-                self.restart_docker_container()
-                break
-            except Exception as e:
-                logger.exception(
-                    'Failed to start Docker container, retrying...', exc_info=False
+        if config.persist_sandbox:
+            if not config.ssh_password:
+                raise Exception(
+                    'Please add ssh_password to your config.toml or add -e SSH_PASSWORD to your docker run command'
                 )
-                n_tries -= 1
-                if n_tries == 0:
-                    raise e
-                time.sleep(5)
-        self.setup_user()
-
+            self._ssh_password = config.ssh_password
+            self._ssh_port = config.ssh_port
+        else:
+            self._ssh_password = str(uuid.uuid4())
+            self._ssh_port = find_available_tcp_port()
+        try:
+            docker.DockerClient().containers.get(self.container_name)
+            self.is_initial_session = False
+        except docker.errors.NotFound:
+            self.is_initial_session = True
+            logger.info('Creating new Docker container')
+        if not config.persist_sandbox or self.is_initial_session:
+            n_tries = 5
+            while n_tries > 0:
+                try:
+                    self.restart_docker_container()
+                    break
+                except Exception as e:
+                    logger.exception(
+                        'Failed to start Docker container, retrying...', exc_info=False
+                    )
+                    n_tries -= 1
+                    if n_tries == 0:
+                        raise e
+                    time.sleep(5)
+            self.setup_user()
+        else:
+            self.container = self.docker_client.containers.get(self.container_name)
+            logger.info('Using existing Docker container')
         try:
             self.start_ssh_session()
         except pxssh.ExceptionPxssh as e:
@@ -410,7 +422,9 @@ class DockerSSHBox(Sandbox):
         prev_output: str = '',
         ignore_last_output: bool = False,
     ) -> tuple[int, str]:
-        logger.exception('Command timed out, killing process...', exc_info=False)
+        logger.exception(
+            f'Command "{cmd}" timed out, killing process...', exc_info=False
+        )
         # send a SIGINT to the process
         self.ssh.sendintr()
         self.ssh.prompt()
@@ -419,7 +433,7 @@ class DockerSSHBox(Sandbox):
             command_output += '\n' + self.ssh.before
         return (
             -1,
-            f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}',
+            f'Command: "{cmd}" timed out. Sent SIGINT to the process: {command_output}',
         )
 
     def execute(
@@ -443,7 +457,6 @@ class DockerSSHBox(Sandbox):
             return 0, SSHExecCancellableStream(self.ssh, cmd, self.timeout)
         success = self.ssh.prompt(timeout=timeout)
         if not success:
-            logger.exception('Command timed out, killing process...', exc_info=False)
             return self._send_interrupt(cmd)
         command_output = self.ssh.before
 
@@ -704,7 +717,10 @@ class DockerSSHBox(Sandbox):
         containers = self.docker_client.containers.list(all=True)
         for container in containers:
             try:
-                if container.name.startswith(self.container_name):
+                if (
+                    container.name.startswith(self.container_name)
+                    and not config.persist_sandbox
+                ):
                     # only remove the container we created
                     # otherwise all other containers with the same prefix will be removed
                     # which will mess up with parallel evaluation

@@ -23,12 +23,12 @@ vi.spyOn(Session, "isConnected").mockImplementation(() => true);
 vi.mock("#/services/settings", async (importOriginal) => ({
   ...(await importOriginal<typeof import("#/services/settings")>()),
   getSettings: vi.fn().mockReturnValue({
-    LLM_MODEL: "gpt-3.5-turbo",
+    LLM_MODEL: "gpt-4o",
     AGENT: "MonologueAgent",
     LANGUAGE: "en",
   }),
   getDefaultSettings: vi.fn().mockReturnValue({
-    LLM_MODEL: "gpt-3.5-turbo",
+    LLM_MODEL: "gpt-4o",
     AGENT: "CodeActAgent",
     LANGUAGE: "en",
     LLM_API_KEY: "",
@@ -81,7 +81,7 @@ describe("SettingsModal", () => {
   it("should disabled the save button if the settings contain a missing value", async () => {
     const onOpenChangeMock = vi.fn();
     (getSettings as Mock).mockReturnValueOnce({
-      LLM_MODEL: "gpt-3.5-turbo",
+      LLM_MODEL: "gpt-4o",
       AGENT: "",
     });
     await act(async () =>
@@ -97,7 +97,7 @@ describe("SettingsModal", () => {
 
   describe("onHandleSave", () => {
     const initialSettings: Settings = {
-      LLM_MODEL: "gpt-3.5-turbo",
+      LLM_MODEL: "gpt-4o",
       AGENT: "MonologueAgent",
       LANGUAGE: "en",
       LLM_API_KEY: "sk-...",

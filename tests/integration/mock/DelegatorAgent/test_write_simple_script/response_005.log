@@ -1,0 +1,8 @@
+{
+  "action": "finish",
+  "args": {
+    "outputs": {
+      "result": "hello"
+    }
+  }
+}
