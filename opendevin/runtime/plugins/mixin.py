@@ -10,7 +10,7 @@ class SandboxProtocol(Protocol):
     # https://stackoverflow.com/questions/51930339/how-do-i-correctly-add-type-hints-to-mixin-classes
 
     @property
-    def is_initial_session(self) -> bool: ...
+    def initialize_plugins(self) -> bool: ...
 
     def execute(
         self, cmd: str, stream: bool = False
@@ -22,17 +22,13 @@ class SandboxProtocol(Protocol):
 class PluginMixin:
     """Mixin for Sandbox to support plugins."""
 
-    def init_plugins(
-        self: SandboxProtocol,
-        requirements: list[PluginRequirement],
-        is_initial_session: bool = True,
-    ):
+    def init_plugins(self: SandboxProtocol, requirements: list[PluginRequirement]):
         """Load a plugin into the sandbox."""
 
         if hasattr(self, 'plugin_initialized') and self.plugin_initialized:
             return
 
-        if self.is_initial_session:
+        if self.initialize_plugins:
             logger.info('Initializing plugins in the sandbox')
 
             # clean-up ~/.bashrc and touch ~/.bashrc
@@ -73,7 +69,7 @@ class PluginMixin:
                         )
                     logger.info(f'Plugin {requirement.name} initialized successfully.')
         else:
-            logger.info('Plugins are already initialized in the sandbox')
+            logger.info('Skipping plugin initialization in the sandbox')
 
         if len(requirements) > 0:
             exit_code, output = self.execute('source ~/.bashrc')
