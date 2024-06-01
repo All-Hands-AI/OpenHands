@@ -133,8 +133,6 @@ def process_instance(
     # =============================================
 
     sandbox = DockerSSHBox()
-    if hasattr(config, 'is_mock') and config.is_mock:
-        sandbox.start_ssh_session()
     sandbox.execute(f'cd {inst_id}')
 
     init_cmd = instance.init
@@ -148,27 +146,15 @@ def process_instance(
         logger.info(f'Init script result: {init_res}')
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    if hasattr(config, 'is_mock') and config.is_mock:
-        fake_state = State()
-        act = MessageAction(content='12', wait_for_response=False)
-        act._source = 'agent'
-        fake_state.history = [
-            (
-                act,
-                None,
+    state: State = asyncio.run(
+        main(
+            instruction,
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
+                agent_class
             ),
-        ]
-        state = fake_state
-    else:
-        state: State = asyncio.run(
-            main(
-                instruction,
-                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                    agent_class
-                ),
-                sandbox=sandbox,
-            )
+            sandbox=sandbox,
         )
+    )
 
     if state is None:
         raise ValueError('State should not be None.')
@@ -226,12 +212,9 @@ def process_instance(
     )
     test_result = compare_results(comparison_method, agent_answer, final_ans)
 
-    if hasattr(config, 'is_mock') and config.is_mock:
-        histories = ['mock history']
-    else:
-        histories = [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-        ]
+    histories = [
+        (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
+    ]
 
     # Save the output
     output = {
