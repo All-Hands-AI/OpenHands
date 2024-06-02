@@ -55,7 +55,13 @@ class EventStream:
     def _get_id_from_filename(self, filename: str) -> int:
         return int(filename.split('/')[-1].split('.')[0])
 
-    def get_events(self, start_id=0, end_id=None, reverse=False) -> Iterable[Event]:
+    def get_events(
+        self,
+        start_id=0,
+        end_id=None,
+        reverse=False,
+        filter_out_type: tuple[type[Event], ...] | None = None,
+    ) -> Iterable[Event]:
         if reverse:
             if end_id is None:
                 end_id = self._cur_id - 1
@@ -64,8 +70,11 @@ class EventStream:
             while event_id >= start_id:
                 try:
                     event = self.get_event(event_id)
-                    logger.debug(f'{event_id}: {event}')
-                    yield event
+                    if filter_out_type is None or not isinstance(
+                        event, filter_out_type
+                    ):
+                        logger.debug(f'{event_id}: {event}')
+                        yield event
                 except FileNotFoundError:
                     logger.debug(f'No event found for ID {event_id}')
                 event_id -= 1
@@ -77,8 +86,11 @@ class EventStream:
                     break
                 try:
                     event = self.get_event(event_id)
-                    logger.debug(f'{event_id}: {event}')
-                    yield event
+                    if filter_out_type is None or not isinstance(
+                        event, filter_out_type
+                    ):
+                        logger.debug(f'{event_id}: {event}')
+                        yield event
                 except FileNotFoundError:
                     logger.debug(f'No event found for ID {event_id}')
                     break
@@ -135,3 +147,8 @@ class EventStream:
             logger.debug(f'Notifying subscriber {key} by calling {callback}')
             asyncio.create_task(callback(event))
         logger.debug(f'Done with self._lock for event: {event}')
+
+    def filtered_events_by_source(self, source: EventSource):
+        for event in self.get_events():
+            if event.source == source:
+                yield event

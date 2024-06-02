@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from typing import Iterable
+from typing import ClassVar, Iterable
 
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action.action import Action
@@ -23,6 +23,12 @@ class ShortTermHistory(list[Event]):
     start_id: int
     end_id: int
     _event_stream: EventStream
+    agent_event_filtered_types: ClassVar[tuple[type[Event], ...]] = (
+        NullAction,
+        NullObservation,
+        ChangeAgentStateAction,
+        AgentStateChangedObservation,
+    )
 
     def __init__(self):
         super().__init__()
@@ -95,17 +101,12 @@ class ShortTermHistory(list[Event]):
         )
 
         logger.debug(f'History iterating over events from {start_id} to {end_id}')
-        for event in self._event_stream.get_events(start_id=start_id, end_id=end_id):
-            if not isinstance(
-                event,
-                (
-                    NullAction,
-                    NullObservation,
-                    ChangeAgentStateAction,
-                    AgentStateChangedObservation,
-                ),
-            ):
-                yield event
+        for event in self._event_stream.get_events(
+            start_id=start_id,
+            end_id=end_id,
+            filter_out_type=self.agent_event_filtered_types,
+        ):
+            yield event
 
     def get_events(self, reverse: bool = False) -> Iterable[Event]:
         """
@@ -120,18 +121,12 @@ class ShortTermHistory(list[Event]):
         )
 
         for event in self._event_stream.get_events(
-            start_id=start_id, end_id=end_id, reverse=reverse
+            start_id=start_id,
+            end_id=end_id,
+            reverse=reverse,
+            filter_out_type=self.agent_event_filtered_types,
         ):
-            if not isinstance(
-                event,
-                (
-                    NullAction,
-                    NullObservation,
-                    ChangeAgentStateAction,
-                    AgentStateChangedObservation,
-                ),
-            ):
-                yield event
+            yield event
 
     def get_last_action(self) -> Action | None:
         """
@@ -188,15 +183,10 @@ class ShortTermHistory(list[Event]):
 
         return list(
             event
-            for event in self._event_stream.get_events(start_id=start_id, end_id=end_id)
-            if not isinstance(
-                event,
-                (
-                    NullAction,
-                    NullObservation,
-                    ChangeAgentStateAction,
-                    AgentStateChangedObservation,
-                ),
+            for event in self._event_stream.get_events(
+                start_id=start_id,
+                end_id=end_id,
+                filter_out_type=self.agent_event_filtered_types,
             )
         )
 
@@ -204,56 +194,17 @@ class ShortTermHistory(list[Event]):
         return self._event_stream.get_latest_event_id()
 
     def compatibility_for_eval_history_tuples(self) -> list[tuple[dict, dict]]:
-        # history is now available as a list[Event], rather than list of pairs of (Action, Observation)
-        # for compatibility with the existing output format, we can remake the pairs here
-        # remove when it becomes unnecessary
-        # NOTE: this is wrong if there is more than one action/obs
         history_tuples = []
-        prev_action = None
-        prev_observation = None
 
-        for event in self.get_events():
-            if isinstance(event, Action):
-                if prev_action is not None and prev_observation is None:
-                    # Create a NullObservation for the previous action
-                    history_tuples.append(
-                        (event_to_dict(prev_action), event_to_dict(NullObservation('')))
-                    )
-                prev_action = event
-                prev_observation = None
-            elif isinstance(event, Observation):
-                if prev_action is None:
-                    # Create a NullAction for the current observation
-                    history_tuples.append(
-                        (event_to_dict(NullAction()), event_to_dict(event))
-                    )
-                else:
-                    history_tuples.append(
-                        (event_to_dict(prev_action), event_to_dict(event))
-                    )
-                    prev_action = None
-                prev_observation = event
-
-        # Handle any remaining action or observation
-        if prev_action is not None:
-            if prev_observation is None:
-                # Create a NullObservation for the last action
-                history_tuples.append(
-                    (event_to_dict(prev_action), event_to_dict(NullObservation('')))
-                )
-            else:
-                history_tuples.append(
-                    (event_to_dict(prev_action), event_to_dict(prev_observation))
-                )
-        elif prev_observation is not None:
-            # Create a NullAction for the last observation
-            history_tuples.append(
-                (event_to_dict(NullAction()), event_to_dict(prev_observation))
-            )
+        for action, observation in self.get_tuples():
+            history_tuples.append((event_to_dict(action), event_to_dict(observation)))
 
         return history_tuples
 
     # TODO remove me when unnecessary
+    # history is now available as a filtered stream of events, rather than list of pairs of (Action, Observation)
+    # we can remake the pairs here
+    # for compatibility with the existing output format in evaluations
     def get_tuples(self) -> list[tuple[Action, Observation]]:
         """
         Return the history as a list of tuples (action, observation).
