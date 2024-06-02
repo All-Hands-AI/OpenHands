@@ -1,23 +1,11 @@
 #!/bin/bash
 MODEL_CONFIG=$1
 AGENT=$2
-DATASET=$3
-EVAL_LIMIT=$4
+EVAL_LIMIT=$3
 
 if [ -z "$AGENT" ]; then
   echo "Agent not specified, use default CodeActAgent"
   AGENT="CodeActAgent"
-fi
-
-if [ -z "$DATASET" ]; then
-  echo "Dataset not specified, use default 'things'"
-  DATASET="things"
-fi
-
-# check if OPENAI_API_KEY is set
-if [ -z "$OPENAI_API_KEY" ]; then
-  echo "OPENAI_API_KEY is not set, please set it to run the script"
-  exit 1
 fi
 
 # IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of OpenDevin
@@ -27,18 +15,14 @@ AGENT_VERSION=v$(poetry run python -c "import agenthub; from opendevin.controlle
 echo "AGENT: $AGENT"
 echo "AGENT_VERSION: $AGENT_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
-echo "DATASET: $DATASET"
 
-COMMAND="poetry run python evaluation/EDA/run_infer.py \
+COMMAND="export PYTHONPATH=evaluation/agent_bench:\$PYTHONPATH && poetry run python evaluation/agent_bench/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
-  --dataset $DATASET \
-  --data-split test \
-  --max-iterations 20 \
-  --OPENAI_API_KEY $OPENAI_API_KEY \
+  --max-iterations 30 \
   --max-chars 10000000 \
-  --eval-num-workers 1 \
-  --eval-note ${AGENT_VERSION}_${DATASET}"
+  --eval-num-workers 5 \
+  --eval-note $AGENT_VERSION"
 
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"
@@ -46,5 +30,4 @@ if [ -n "$EVAL_LIMIT" ]; then
 fi
 
 # Run the command
-echo $COMMAND
 eval $COMMAND
