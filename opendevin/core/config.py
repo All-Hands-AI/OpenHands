@@ -139,6 +139,7 @@ class AppConfig(metaclass=Singleton):
         workspace_mount_rewrite: The path to rewrite the workspace mount path to.
         cache_dir: The path to the cache directory. Defaults to /tmp/cache.
         sandbox_container_image: The container image to use for the sandbox.
+        sandbox_container_docker_links: The Docker links to use for the sandbox.
         run_as_devin: Whether to run as devin.
         max_iterations: The maximum number of iterations.
         max_budget_per_task: The maximum budget allowed per task, beyond which the agent will stop.
@@ -169,6 +170,9 @@ class AppConfig(metaclass=Singleton):
         if os.getenv('OPEN_DEVIN_BUILD_VERSION')
         else ':main'
     )
+    # sandbox_container_docker_links: dict | None = None
+    sandbox_container_docker_links: dict = field(default_factory=dict)
+
     run_as_devin: bool = True
     max_iterations: int = 100
     max_budget_per_task: float | None = None

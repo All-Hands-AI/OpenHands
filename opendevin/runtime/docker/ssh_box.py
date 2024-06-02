@@ -676,6 +676,10 @@ class DockerSSHBox(Sandbox):
                     )
                 )
 
+            # Add custom links if any
+            links = config.sandbox_container_docker_links
+            logger.info(f'Custom links: {links}')
+
             # start the container
             logger.info(f'Mounting volumes: {self.volumes}')
             self.container = self.docker_client.containers.run(
@@ -687,6 +691,7 @@ class DockerSSHBox(Sandbox):
                 name=self.container_name,
                 detach=True,
                 volumes=self.volumes,
+                links=links,
             )
             logger.info('Container started')
         except Exception as ex:
