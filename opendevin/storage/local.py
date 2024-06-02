@@ -1,4 +1,5 @@
 import os
+import shutil
 
 from .files import FileStore
 
@@ -34,4 +35,7 @@ class LocalFileStore(FileStore):
 
     def delete(self, path: str) -> None:
         full_path = self.get_full_path(path)
-        os.remove(full_path)
+        if os.path.isdir(full_path):
+            shutil.rmtree(full_path)
+        elif os.path.isfile(full_path):
+            os.remove(full_path)

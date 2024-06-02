@@ -154,7 +154,7 @@ class EventStream:
                 yield event
 
     def clear(self):
-        self._file_store.delete(f'sessions/{self.sid}/events')
+        self._file_store.delete(f'sessions/{self.sid}')
         self._cur_id = 0
         # self._subscribers = {}
         self._reinitialize_from_file_store()
