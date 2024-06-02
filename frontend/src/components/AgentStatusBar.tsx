@@ -68,7 +68,7 @@ function AgentStatusBar() {
       curAgentState === AgentState.ERROR ||
       curAgentState === AgentState.INIT
     ) {
-      beep();
+      if (document.cookie.indexOf("audio") !== -1) beep();
     }
   }, [curAgentState]);
 
