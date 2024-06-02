@@ -14,14 +14,9 @@ import { sendChatMessage } from "#/services/chatService";
 import { addUserMessage, addAssistantMessage } from "#/state/chatSlice";
 import { I18nKey } from "#/i18n/declaration";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
-import Session from "#/services/session";
-import { getToken } from "#/services/auth";
-import toast from "#/utils/toast";
-import { removeApiKey } from "#/utils/utils";
 import { Feedback, sendFeedback } from "#/services/feedbackService";
 import FeedbackModal from "../modals/feedback/FeedbackModal";
 import { useDisclosure } from "@nextui-org/react";
-import { on } from "events";
 
 interface ScrollButtonProps {
   onClick: () => void;

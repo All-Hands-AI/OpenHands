@@ -1,7 +1,6 @@
 import { Input, useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { AvailableLanguages } from "../../../i18n";
 import { I18nKey } from "../../../i18n/declaration";
 import { Feedback } from "#/services/feedbackService";
 
