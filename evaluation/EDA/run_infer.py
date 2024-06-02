@@ -46,6 +46,8 @@ def codeact_user_response(state: State) -> str:
     game.curr_turn += 1
     logger.info(f'Model guess: {model_guess}')
     logger.info(f'Anwser response: {msg}')
+    if 'bingo!' in msg.lower():
+        return '/exit'
     return msg
 
 
@@ -139,6 +141,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
 
     logger.info(f'Final message: {final_message} | Ground truth: {instance["text"]}')
     test_result = game.reward()
+    metrics = state.metrics.get() if state.metrics else None
 
     # Save the output
     output = {
@@ -149,6 +152,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
+        'metrics': metrics,
         'error': state.error if state and state.error else None,
         'test_result': {
             'success': test_result,

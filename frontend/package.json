@@ -45,7 +45,7 @@
     "prelint": "npm run make-i18n",
     "lint": "eslint src --ext .ts,.tsx,.js && prettier --check src/**/*.{ts,tsx}",
     "lint:fix": "eslint src --ext .ts,.tsx,.js --fix && prettier --write src/**/*.{ts,tsx}",
-    "prepare": "cd .. && husky install frontend/.husky"
+    "prepare": "cd .. && husky frontend/.husky"
   },
   "husky": {
     "hooks": {

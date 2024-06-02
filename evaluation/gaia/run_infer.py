@@ -177,6 +177,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         'model_answer': model_answer,
         'ground_truth': instance['Final answer'],
     }
+    metrics = state.metrics.get() if state.metrics else None
 
     # Save the output
     output = {
@@ -187,6 +188,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
+        'metrics': metrics,
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
