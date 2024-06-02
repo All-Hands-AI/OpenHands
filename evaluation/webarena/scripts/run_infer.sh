@@ -1,4 +1,15 @@
 #!/bin/bash
+
+# configure webarena websites
+
+export SHOPPING="http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:7770/"
+export SHOPPING_ADMIN="http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:7780/admin"
+export REDDIT="http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:9999"
+export GITLAB="http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:8023"
+export WIKIPEDIA="http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:8888/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing"
+export MAP="http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:3000"
+export HOMEPAGE="http://ec2-3-131-244-37.us-east-2.compute.amazonaws.com:4399"
+
 MODEL_CONFIG=$1
 AGENT=$2
 EVAL_LIMIT=$3
@@ -27,7 +38,9 @@ if [ "$USE_HINT_TEXT" = false ]; then
   EVAL_NOTE="$EVAL_NOTE-no-hint"
 fi
 
-unset SANDBOX_ENV_GITHUB_TOKEN # prevent the agent from using the github token to push
+poetry run python ./opendevin/core/main.py -i 10 -t "tell me the usa's president using google search" -c BrowsingAgent -m gpt-4o-2024-05-13
+
+exit 0
 
 COMMAND="poetry run python evaluation/webarena/run_infer.py \
   --agent-cls $AGENT \
