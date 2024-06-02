@@ -215,7 +215,7 @@ def process_instance(
         )
     )
     # ======= Attempt to evaluate the agent's edits =======
-    # If you are working on simplier benchmark that only evaluates the final model output (e.g., in a MessageAction)
+    # If you are working on simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
 
     if state is None:
@@ -239,6 +239,7 @@ def process_instance(
     test_result = get_test_result(
         model_answer=final_message, ground_truth=instance['answer']
     )
+    metrics = state.metrics.get() if state.metrics else None
 
     # history is now available as a list[Event], rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
@@ -252,6 +253,7 @@ def process_instance(
         'instruction': instruction,
         # 'metadata': metadata,
         'history': history_tuples,
+        'metrics': metrics,
         'final_message': final_message,
         'messages': messages,
         'error': state.error if state and state.error else None,

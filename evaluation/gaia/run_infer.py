@@ -176,6 +176,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         'model_answer': model_answer,
         'ground_truth': instance['Final answer'],
     }
+    metrics = state.metrics.get() if state.metrics else None
 
     # history is now available as a list[Event], rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
@@ -189,6 +190,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         'instruction': instance['Question'],
         'metadata': metadata,
         'history': history_tuples,
+        'metrics': metrics,
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
@@ -266,7 +268,7 @@ if __name__ == '__main__':
         'max_iterations': max_iterations,
         'eval_output_dir': eval_output_dir,
         'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
-        # get the commit id of current repo for reproduciblity
+        # get the commit id of current repo for reproducibility
         'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
         .decode('utf-8')
         .strip(),

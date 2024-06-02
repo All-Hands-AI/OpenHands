@@ -48,6 +48,8 @@ def codeact_user_response(state: State) -> str:
     game.curr_turn += 1
     logger.info(f'Model guess: {model_guess}')
     logger.info(f'Answer response: {msg}')
+    if 'bingo!' in msg.lower():
+        return '/exit'
     return msg
 
 
@@ -127,7 +129,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         )
     )
     # ======= Attempt to evaluate the agent's edits =======
-    # If you are working on simplier benchmark that only evaluates the final model output (e.g., in a MessageAction)
+    # If you are working on simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
 
     if state is None:
@@ -141,6 +143,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
 
     logger.info(f'Final message: {final_message} | Ground truth: {instance["text"]}')
     test_result = game.reward()
+    metrics = state.metrics.get() if state.metrics else None
 
     # history is now available as a list[Event], rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
@@ -154,6 +157,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         'instruction': instruction,
         'metadata': metadata,
         'history': history_tuples,
+        'metrics': metrics,
         'error': state.error if state and state.error else None,
         'test_result': {
             'success': test_result,
@@ -240,7 +244,7 @@ if __name__ == '__main__':
         'max_iterations': max_iterations,
         'eval_output_dir': eval_output_dir,
         'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
-        # get the commit id of current repo for reproduciblity
+        # get the commit id of current repo for reproducibility
         'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
         .decode('utf-8')
         .strip(),
