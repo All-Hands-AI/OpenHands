@@ -1,8 +1,10 @@
+import logging
 from unittest.mock import Mock, patch
 
 import pytest
 
 from opendevin.controller.agent_controller import AgentController
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import CmdRunAction, FileReadAction, MessageAction
 from opendevin.events.action.commands import CmdKillAction
 from opendevin.events.observation import (
@@ -12,8 +14,24 @@ from opendevin.events.observation import (
 )
 from opendevin.events.observation.empty import NullObservation
 from opendevin.events.observation.error import ErrorObservation
-from opendevin.events.stream import EventSource
+from opendevin.events.stream import EventSource, EventStream
 from opendevin.memory.history import ShortTermHistory
+
+
+def collect_events(stream):
+    return [event for event in stream.get_events()]
+
+
+logging.basicConfig(level=logging.DEBUG)
+
+
+@pytest.fixture
+def event_stream():
+    event_stream = EventStream('asdf')
+    yield event_stream
+
+    # clear after each test
+    event_stream.clear()
 
 
 class TestAgentController:
@@ -48,53 +66,75 @@ class TestAgentController:
 
         assert controller._is_stuck() is False
 
-    def test_is_stuck_repeating_action_null_observation(self, controller):
+    def test_is_stuck_repeating_action_observation(self, controller, event_stream):
         message_action = MessageAction(content='Done', wait_for_response=False)
         message_action._source = EventSource.USER
-        message_action._id = 1
 
         hello_action = MessageAction(content='Hello', wait_for_response=False)
-        hello_action._id = 2
         hello_observation = NullObservation('')
-        controller.state.history.append((hello_action, hello_observation))
+
+        # controller.state.history.append((hello_action, hello_observation))
+        # 2 events
+        event_stream.add_event(hello_action, EventSource.USER)
+        event_stream.add_event(hello_observation, EventSource.USER)
 
         cmd_action_1 = CmdRunAction(command='ls')
-        cmd_action_1._id = 3
-        null_observation_1 = CmdOutputObservation(
+        cmd_observation_1 = CmdOutputObservation(
             content='', command='ls', command_id=cmd_action_1._id
         )
-        null_observation_1._cause = cmd_action_1._id
-        controller.state.history.append((cmd_action_1, null_observation_1))
+        cmd_observation_1._cause = cmd_action_1._id
+
+        # controller.state.history.append((cmd_action_1, cmd_observation_1))
+        event_stream.add_event(cmd_action_1, EventSource.AGENT)
+        event_stream.add_event(cmd_observation_1, EventSource.USER)
 
         cmd_action_2 = CmdRunAction(command='ls')
         cmd_action_2._id = 4
-        null_observation_2 = CmdOutputObservation(
+        cmd_observation_2 = CmdOutputObservation(
             content='', command='ls', command_id=cmd_action_2._id
         )
-        null_observation_2._cause = cmd_action_2._id
-        controller.state.history.append((cmd_action_2, null_observation_2))
+        cmd_observation_2._cause = cmd_action_2._id
 
+        # controller.state.history.append((cmd_action_2, cmd_observation_2))
+        event_stream.add_event(cmd_action_2, EventSource.AGENT)
+        event_stream.add_event(cmd_observation_2, EventSource.USER)
+
+        # random user message just because we can
         message_null_observation = NullObservation(content='')
-        controller.state.history.append((message_action, message_null_observation))
+        # controller.state.history.append((message_action, message_null_observation))
+        event_stream.add_event(message_action, EventSource.USER)
+        event_stream.add_event(message_null_observation, EventSource.USER)
 
         cmd_action_3 = CmdRunAction(command='ls')
         cmd_action_3._id = 5
-        null_observation_3 = CmdOutputObservation(
+        cmd_observation_3 = CmdOutputObservation(
             content='', command='ls', command_id=cmd_action_3._id
         )
-        null_observation_3._cause = cmd_action_3._id
-        controller.state.history.append((cmd_action_3, null_observation_3))
+        cmd_observation_3._cause = cmd_action_3._id
+
+        # controller.state.history.append((cmd_action_3, cmd_observation_3))
+        event_stream.add_event(cmd_action_3, EventSource.AGENT)
+        event_stream.add_event(cmd_observation_3, EventSource.USER)
 
         cmd_action_4 = CmdRunAction(command='ls')
         cmd_action_4._id = 6
-        null_observation_4 = CmdOutputObservation(
+        cmd_observation_4 = CmdOutputObservation(
             content='', command='ls', command_id=cmd_action_4._id
         )
-        null_observation_4._cause = cmd_action_4._id
-        controller.state.history.append((cmd_action_4, null_observation_4))
+        cmd_observation_4._cause = cmd_action_4._id
 
-        assert len(controller.state.history) == 12
-        assert len(controller.state.history.get_tuples()) == 6
+        # controller.state.history.append((cmd_action_4, cmd_observation_4))
+        event_stream.add_event(cmd_action_4, EventSource.AGENT)
+        event_stream.add_event(cmd_observation_4, EventSource.USER)
+
+        controller.state.history.set_event_stream(event_stream)
+        assert len(collect_events(event_stream)) == 12
+        assert len(list(controller.state.history.get_events())) == 10
+        # assert len(controller.state.history.get_tuples()) == 6
+
+        # pretty print controller.state.history.get_tuples() each tuple on one line
+        for tuple in controller.state.history.get_tuples():
+            logger.debug(tuple)
 
         with patch('logging.Logger.warning') as mock_warning:
             assert controller._is_stuck() is True

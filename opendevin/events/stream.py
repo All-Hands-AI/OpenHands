@@ -152,3 +152,9 @@ class EventStream:
         for event in self.get_events():
             if event.source == source:
                 yield event
+
+    def clear(self):
+        self._file_store.delete(f'sessions/{self.sid}/events')
+        self._cur_id = 0
+        # self._subscribers = {}
+        self._reinitialize_from_file_store()
