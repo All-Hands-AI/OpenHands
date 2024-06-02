@@ -21,33 +21,32 @@ function FeedbackModal({
 }: FeedbackModalProps) {
   const { t } = useTranslation();
 
-
-  const [responseCode, setResponseCode] = React.useState<number | null>(null);
-  const [responseText, setResponseText] = React.useState<string | null>(null);
-  const [responseLoading, setResponseLoading] = React.useState(false);
-
   const handleSendFeedback = () => {
-    setResponseLoading(true);
-    sendFeedback(feedback).then(response => {
-      if (response.status === 200) {
-        toast.info("Feedback shared successfully.");
-      } else {
-        toast.error("share-error", "Failed to share, see console for details.");
-        console.error(response.status, response.data);
-      }
-    }).catch(error => {
-      toast.error("share-error", "Failed to share, see console for details.");
-      console.error(error);
-    });
-    setResponseLoading(false);
-  }
+    sendFeedback(feedback)
+      .then((response) => {
+        if (response.status === 200) {
+          toast.info("Feedback shared successfully.");
+        } else {
+          toast.error(
+            "share-error",
+            "Failed to share, please contact the developers to debug.",
+          );
+        }
+      })
+      .catch(() => {
+        toast.error(
+          "share-error",
+          "Failed to share, please contact the developers to debug.",
+        );
+      });
+  };
 
   const handleEmailChange = (key: string) => {
     setFeedback({ ...feedback, email: key } as Feedback);
   };
 
   const handlePermissionsChange = (permissions: "public" | "private") => {
-    setFeedback({ ...feedback, permissions: permissions } as Feedback);
+    setFeedback({ ...feedback, permissions } as Feedback);
   };
 
   return (
@@ -66,17 +65,17 @@ function FeedbackModal({
         {
           label: t(I18nKey.FEEDBACK$CANCEL_LABEL),
           className: "bg-neutral-500 rounded-lg",
-          action: function() {},
+          action() {},
           closeAfterAction: true,
         },
       ]}
     >
       <p>{t(I18nKey.FEEDBACK$MODAL_CONTENT)}</p>
       <FeedbackForm
-          feedback={feedback}
-          onEmailChange={handleEmailChange}
-          onPermissionsChange={handlePermissionsChange}
-        />
+        feedback={feedback}
+        onEmailChange={handleEmailChange}
+        onPermissionsChange={handlePermissionsChange}
+      />
     </BaseModal>
   );
 }

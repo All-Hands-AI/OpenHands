@@ -1,4 +1,4 @@
-import { Input, useDisclosure } from "@nextui-org/react";
+import { Input } from "@nextui-org/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "../../../i18n/declaration";
@@ -17,7 +17,6 @@ function FeedbackForm({
   onPermissionsChange,
 }: FeedbackFormProps) {
   const { t } = useTranslation();
-  const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
 
   const isEmailValid = (email: string) => {
     // Regular expression to validate email format

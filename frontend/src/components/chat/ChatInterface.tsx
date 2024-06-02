@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { twMerge } from "tailwind-merge";
 import { VscArrowDown } from "react-icons/vsc";
 import { FaRegThumbsDown, FaRegThumbsUp } from "react-icons/fa";
+import { useDisclosure } from "@nextui-org/react";
 import ChatInput from "./ChatInput";
 import Chat from "./Chat";
 import { RootState } from "#/store";
@@ -16,7 +17,6 @@ import { I18nKey } from "#/i18n/declaration";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import { Feedback } from "#/services/feedbackService";
 import FeedbackModal from "../modals/feedback/FeedbackModal";
-import { useDisclosure } from "@nextui-org/react";
 import { removeApiKey } from "#/utils/utils";
 import Session from "#/services/session";
 import { getToken } from "#/services/auth";
@@ -55,9 +55,10 @@ function ChatInterface() {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const feedbackVersion = "1.0";
-  const [feedback, setFeedback] = React.useState<Feedback>({version: feedbackVersion} as Feedback);
+  const [feedback, setFeedback] = React.useState<Feedback>({
+    version: feedbackVersion,
+  } as Feedback);
   const [feedbackShared, setFeedbackShared] = React.useState(0);
-  const [feedbackLoading, setFeedbackLoading] = React.useState(false);
 
   const {
     isOpen: feedbackModalIsOpen,
@@ -65,9 +66,14 @@ function ChatInterface() {
     onOpenChange: onFeedbackModalOpenChange,
   } = useDisclosure();
 
-  const shareFeedback = async (feedback: "positive" | "negative") => {
+  const shareFeedback = async (polarity: "positive" | "negative") => {
     setFeedbackShared(messages.length);
-    setFeedback((prev) => ({ ...prev, feedback: feedback, trajectory: removeApiKey(Session._history), token: getToken() }));
+    setFeedback((prev) => ({
+      ...prev,
+      feedback: polarity,
+      trajectory: removeApiKey(Session._history),
+      token: getToken(),
+    }));
     onFeedbackModalOpen();
   };
 
@@ -90,7 +96,7 @@ function ChatInterface() {
     if (curAgentState === AgentState.INIT && messages.length === 0) {
       dispatch(addAssistantMessage(t(I18nKey.CHAT_INTERFACE$INITIAL_MESSAGE)));
     }
-  }, [curAgentState]);
+  }, [curAgentState, dispatch, messages.length, t]);
 
   return (
     <div className="flex flex-col h-full bg-neutral-800">
@@ -133,16 +139,14 @@ function ChatInterface() {
             })}
         </div>
 
-        {feedbackShared != messages.length && messages.length > 3 && (
+        {feedbackShared !== messages.length && messages.length > 3 && (
           <div className="flex justify-start gap-2 p-2">
             <ScrollButton
-              disabled={feedbackLoading}
               onClick={() => shareFeedback("positive")}
               icon={<FaRegThumbsUp className="inline mr-2 w-3 h-3" />}
               label=""
             />
             <ScrollButton
-              disabled={feedbackLoading}
               onClick={() => shareFeedback("negative")}
               icon={<FaRegThumbsDown className="inline mr-2 w-3 h-3" />}
               label=""

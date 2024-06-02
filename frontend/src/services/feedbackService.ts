@@ -16,5 +16,5 @@ export async function sendFeedback(data: Feedback) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
-  })
+  });
 }
