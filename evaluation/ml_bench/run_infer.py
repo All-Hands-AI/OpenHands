@@ -154,8 +154,8 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
     # Create a sandbox, using the instance ID as the session ID to avoid conflicts
     sandbox = DockerSSHBox(sid=str(instance['id']) + '_' + str(os.getpid()))
 
-    # Set up the task environment (TODO(super-dainiu): add support for conda environments. Currently, we use the default environment and it's very slow)
-    # sandbox.execute(f'conda activate {ID2CONDA[instance["github_id"]]}')
+    # Set up the task environment
+    sandbox.execute(f'conda activate {ID2CONDA[instance["github_id"]]}')
 
     # Clone the task repo into the sandbox
     repo_url = instance['github']
@@ -176,7 +176,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         f'You can find the task repo at: {task_path}\n\n'
         + (
             'Here is the prefix code for the task:\n'
-            '```python\n'
+            '```bash\n'
             f'{instance["prefix_code"]}\n'
             '```\n\n'
             if instance['prefix_code']
@@ -200,7 +200,15 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
     logger.info(f'Running evaluation script: {eval_script}')
 
     try:
-        exit_code, eval_output = sandbox.execute(f'bash {eval_script}')
+        _, eval_script_content = sandbox.execute(f'cat {eval_script}')
+    except Exception as e:
+        logger.error(f'Error reading evaluation script: {e}')
+        eval_script_content = ''
+
+    try:
+        exit_code, eval_output = sandbox.execute(
+            f'conda run -n {ID2CONDA[instance["github_id"]]} bash {eval_script}'
+        )
     except Exception as e:
         logger.error(f'Error running evaluation script: {e}')
         exit_code = -1
@@ -210,7 +218,8 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         logger.warning(f'Evaluation script failed with exit code {exit_code}')
         logger.warning(f'Output: {eval_output}')
         metrics = {
-            'success': 0,
+            'success': 'KeyboardInterrupt'
+            in eval_output,  # super-dainiu: assume ``KeyboardInterrupt`` is a success as is done in ML-Bench
         }
     else:
         logger.info(f'Evaluation script succeeded with exit code {exit_code}')
@@ -228,6 +237,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
+        'eval_script': eval_script_content,
         'eval_exit_code': exit_code,
         'eval_output': eval_output,
         'metrics': metrics,

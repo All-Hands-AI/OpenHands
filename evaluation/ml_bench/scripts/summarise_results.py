@@ -1,0 +1,55 @@
+import json
+import pprint
+import sys
+
+
+def extract_test_results(res_file_path: str) -> tuple[list[str], list[str]]:
+    passed = []
+    failed = []
+    with open(res_file_path, 'r') as file:
+        for line in file:
+            data = json.loads(line.strip())
+            success = data['metrics']['success']
+            if success:
+                passed.append(
+                    {
+                        'instance_id': data['instance_id'],
+                        'repo': data['repo'],
+                        'instruction': data['instruction'],
+                        'eval_script': data['eval_script'],
+                        'eval_exit_code': data['eval_exit_code'],
+                        'eval_output': data['eval_output'],
+                        'metrics': data['metrics'],
+                    }
+                )
+            else:
+                failed.append(
+                    {
+                        'instance_id': data['instance_id'],
+                        'repo': data['repo'],
+                        'instruction': data['instruction'],
+                        'eval_script': data['eval_script'],
+                        'eval_exit_code': data['eval_exit_code'],
+                        'eval_output': data['eval_output'],
+                        'metrics': data['metrics'],
+                    }
+                )
+        return passed, failed
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print(
+            'Usage: poetry run python summarise_results.py <path_to_output_jsonl_file>'
+        )
+        sys.exit(1)
+    json_file_path = sys.argv[1]
+    passed_tests, failed_tests = extract_test_results(json_file_path)
+    success_rate = len(passed_tests) / (len(passed_tests) + len(failed_tests))
+    print('PASSED TESTS:')
+    pprint.pprint(passed_tests)
+    print('FAILED TESTS:')
+    pprint.pprint(failed_tests)
+    print(
+        f'\nPassed {len(passed_tests)} tests, failed {len(failed_tests)} tests, success rate = {success_rate}'
+    )
