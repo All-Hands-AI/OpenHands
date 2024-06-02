@@ -204,8 +204,8 @@ def process_instance(
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
     sandbox = DockerSSHBox()
-    exit_code, command_output = sandbox.execute(f'pip install scitools-pyke')
-    
+    exit_code, command_output = sandbox.execute('pip install scitools-pyke')
+
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     state: State = asyncio.run(
         main(
@@ -230,13 +230,16 @@ def process_instance(
         if str(obs.content) in ["'A'", "'B'", "'C'"]:
             final_message = obs.content
             break
-    
+
     final_message = final_message.strip("'")
-    logger.info(f'Predicted answer: {final_message}, Ground truth: {instance["answer"]}')
+    logger.info(
+        f'Predicted answer: {final_message}, Ground truth: {instance["answer"]}'
+    )
 
     test_result = get_test_result(
         model_answer=final_message, ground_truth=instance['answer']
     )
+    metrics = state.metrics.get() if state.metrics else None
 
     # Save the output
     output = {
@@ -247,6 +250,7 @@ def process_instance(
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
+        'metrics': metrics,
         'final_message': final_message,
         'messages': messages,
         'error': state.error if state and state.error else None,
@@ -254,10 +258,10 @@ def process_instance(
     }
     config.workspace_mount_path = old_workspace_mount_path
     config.workspace_base = old_workspace_base
-    
+
     # Close the sandbox
     sandbox.close()
-    
+
     return output
 
 
@@ -272,7 +276,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--data_split',
         type=str,
-        help='data split to evaluate on {validation}', # right now we only support validation split
+        help='data split to evaluate on {validation}',  # right now we only support validation split
         default='validation',
     )
 
@@ -313,7 +317,7 @@ if __name__ == '__main__':
         'logic_reasoning',
         agent_class,
         dataset_name,
-        model_name + '_maxiter_' + str(max_iterations) + eval_note
+        model_name + '_maxiter_' + str(max_iterations) + eval_note,
     )
 
     pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
@@ -414,23 +418,25 @@ if __name__ == '__main__':
         cleanup()
 
     output_fp.close()
-    
+
     with open(output_file, 'r') as f:
-        test_result = [(json.loads(line))["test_result"]["result"] for line in f]
-            
+        test_result = [(json.loads(line))['test_result']['result'] for line in f]
+
     metadata = {
-        "Dataset": dataset_name,
-        "Data split": data_split,
-        "Number of Samples": len(test_result),
+        'Dataset': dataset_name,
+        'Data split': data_split,
+        'Number of Samples': len(test_result),
         'Agent class': agent_class,
         'Model name': model_name,
         'Start_time': start_time,
-        "End_time": time.strftime('%Y-%m-%d %H:%M:%S'),
-        "Final Accuracy": f"{sum(test_result)/len(test_result):.2f}",
-        }
-    
+        'End_time': time.strftime('%Y-%m-%d %H:%M:%S'),
+        'Final Accuracy': f'{sum(test_result)/len(test_result):.2f}',
+    }
+
     with open(os.path.join(eval_output_dir, 'metadata.json'), 'w') as f:
         json.dump(metadata, f, indent=4)
-        
+
     logger.info(f'Metadata: {json.dumps(metadata, indent=4)}')
-    logger.info(f'Evaluation finished. Metadata saved to {eval_output_dir}/metadata.json')
+    logger.info(
+        f'Evaluation finished. Metadata saved to {eval_output_dir}/metadata.json'
+    )

@@ -172,6 +172,8 @@ def process_instance(
         task_state = state.task_state
         logger.info('Task state: ' + str(task_state.to_dict()))
 
+    metrics = state.metrics.get() if state.metrics else None
+
     # Save the output
     output = {
         'id': instance.task_id,
@@ -181,6 +183,7 @@ def process_instance(
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
+        'metrics': metrics,
         'error': state.error if state and state.error else None,
         'test_result': task_state.success if task_state else False,
     }
