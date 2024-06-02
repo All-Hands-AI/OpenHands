@@ -239,7 +239,7 @@ class ShortTermHistory(list[Event]):
             if cause_id not in action_map:
                 if isinstance(observation, NullObservation):
                     logger.debug(
-                        'This would become (NullAction, NullObservation), drop it instead'
+                        "This would become (NullAction, NullObservation), which doesn't exist even today, drop it instead"
                     )
                     continue
                 if not isinstance(observation, CmdOutputObservation):
