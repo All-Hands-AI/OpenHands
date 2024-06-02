@@ -51,28 +51,27 @@ You must be using Linux, Mac OS, or WSL on Windows.
 
 To start the app, run these commands, replacing `$(pwd)/workspace` with the directory you want OpenDevin to work with.
 
-```bash
-# The directory you want OpenDevin to work with. MUST be an absolute path!
-export WORKSPACE_BASE=$(pwd)/workspace;
-export SSH_PASSWORD="set some long password here";
-```
-
 > [!WARNING]
 > OpenDevin runs bash commands within a Docker sandbox, so it should not affect your machine.
 > But your workspace directory will be attached to that sandbox, and files in the directory may be modified or deleted.
 
 ```bash
-docker run \
-    -it \
+# The directory you want OpenDevin to work with. MUST be an absolute path!
+export WORKSPACE_BASE=$(pwd)/workspace;
+```
+
+```bash
+docker run -it \
     --pull=always \
     -e SANDBOX_USER_ID=$(id -u) \
-    -e SSH_PASSWORD=$SSH_PASSWORD \
+    -e PERSIST_SANDBOX="true" \
+    -e SSH_PASSWORD="make something up here" \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
     -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
-    ghcr.io/opendevin/opendevin:0.5
+    ghcr.io/opendevin/opendevin:0.6
 ```
 
 You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000).
@@ -102,7 +101,7 @@ For details, please check [CONTRIBUTING.md](./CONTRIBUTING.md).
 Whether you're a developer, a researcher, or simply enthusiastic about OpenDevin, we'd love to have you in our community.
 Let's make software engineering better together!
 
-- [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw) - Here we talk about research, architecture, and future development.
+- [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2jsrl32uf-fTeeFjNyNYxqSZt5NPY3fA) - Here we talk about research, architecture, and future development.
 - [Discord server](https://discord.gg/ESHStjSjD4) - This is a community-run server for general discussion, questions, and feedback.
 
 ## 📈 Progress
