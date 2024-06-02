@@ -19,8 +19,7 @@ import Session from "#/services/session";
 import { getToken } from "#/services/auth";
 import toast from "#/utils/toast";
 import { removeApiKey } from "#/utils/utils";
-import { FeedbackData, sendFeedback } from "#/services/feedbackService";
-import FeedbackModal from "../modals/feedback/FeedbackModal";
+import { Feedback, sendFeedback } from "#/services/feedbackService";
 import { useDisclosure } from "@nextui-org/react";
 
 interface ScrollButtonProps {
@@ -54,9 +53,7 @@ function ChatInterface() {
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const [makePublic, setMakePublic] = useState(false);
-  const [feedbackPolarity, setFeedbackPolarity] = useState<string | null>(null);
-  const [feedbackShared, setFeedbackShared] = useState(false);
+  const [feedback, setFeedback] = React.useState<Feedback>({} as Feedback);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const curAgentState = useSelector((state: RootState) => state.agentState);
   const messages = useSelector((state: RootState) => state.chat.messages);
@@ -139,14 +136,14 @@ function ChatInterface() {
             <ScrollButton
               onClick={scrollDomToBottom}
               icon={<VscArrowDown className="inline mr-2 w-3 h-3" />}
-              label={t(I18nKey.CHAT_INTERFACE)}
+              label={t(I18nKey.CHAT_INTERFACE$TO_BOTTOM)}
             />}
           {curAgentState === AgentState.AWAITING_USER_INPUT &&
             hitBottom &&
             <ScrollButton
               onClick={handleSendContinueMsg}
               icon={<RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />}
-              label={t(I18nKey.CHAT_INTERFACE)}
+              label={t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
             />}
         </div>
 
@@ -173,6 +170,7 @@ function ChatInterface() {
         onSendMessage={handleSendMessage}
       />
       <FeedbackModal
+        feedback={feedback}
         isOpen={feedbackModalIsOpen}
         onOpenChange={onFeedbackModalOpenChange}
       />

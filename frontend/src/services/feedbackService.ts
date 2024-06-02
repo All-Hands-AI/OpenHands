@@ -1,6 +1,7 @@
 import { request } from "./api";
 
 export interface Feedback {
+  version: string;
   email: string;
   token: string;
   feedback: "positive" | "negative";

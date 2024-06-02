@@ -3,19 +3,22 @@ import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import BaseModal from "../base-modal/BaseModal";
 import { Feedback, sendFeedback } from "#/services/feedbackService";
+import FeedbackForm from "./FeedbackForm";
 
 interface FeedbackModalProps {
+  feedback: Feedback;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }
 
 function FeedbackModal({
+  feedback,
   isOpen,
   onOpenChange,
 }: FeedbackModalProps) {
   const { t } = useTranslation();
 
-  const [feedback, setFeedback] = React.useState<Feedback>({} as Feedback);
+
   const [responseCode, setResponseCode] = React.useState<number | null>(null);
   const [responseText, setResponseText] = React.useState<string | null>(null);
   const [responseLoading, setResponseLoading] = React.useState(false);
@@ -31,6 +34,14 @@ function FeedbackModal({
     });
     setResponseLoading(false);
   }
+
+  const handleEmailChange = (key: string) => {
+    setFeedback((prev) => ({ ...prev, email: key }));
+  };
+
+  const handlePermissionsChange = (permissions: "public" | "private") => {
+    setFeedback((prev) => ({ ...prev, permissions: permissions }));
+  };
 
   return (
     <BaseModal
@@ -54,6 +65,11 @@ function FeedbackModal({
       ]}
     >
       <p>{t(I18nKey.FEEDBACK$MODAL_CONTENT)}</p>
+      <FeedbackForm
+          feedback={feedback}
+          onEmailChange={handleEmailChange}
+          onPermissionsChange={handlePermissionsChange}
+        />
     </BaseModal>
   );
 }

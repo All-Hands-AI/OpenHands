@@ -1,21 +1,15 @@
 import { Input, useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { AvailableLanguages } from "../../../i18n";
 import { I18nKey } from "../../../i18n/declaration";
-import { Feedback } from "#/services/settings";
+import { Feedback } from "#/services/feedbackService";
 
 interface FeedbackFormProps {
-  settings: Feedback;
-  models: string[];
-  agents: string[];
-  disabled: boolean;
+  feedback: Feedback;
 
-  onModelChange: (model: string) => void;
   onEmailChange: (email: string) => void;
-  onAgentChange: (agent: string) => void;
-  onLanguageChange: (language: string) => void;
+  onPermissionsChange: (permissions: "public" | "private") => void;
 }
 
 function FeedbackForm({
