@@ -294,7 +294,7 @@ def edit_file(start: int, end: int, content: str) -> None:
     n_edited_lines = len(edited_content.split('\n'))
     new_lines = lines[: start - 1] + [edited_content] + lines[end:]
 
-    # directly write editted lines to the file
+    # directly write edited lines to the file
     with open(CURRENT_FILE, 'w') as file:
         file.writelines(new_lines)
 

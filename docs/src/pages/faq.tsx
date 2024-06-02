@@ -17,7 +17,7 @@ export default function FAQ() {
               you notice a problem that likely affects others.
               If you're having trouble installing, or have general questions, reach out on{" "}
               <a href="https://discord.gg/mBuDGRzzES" target="_blank">Discord</a> or{" "}
-              <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw" target="_blank">Slack</a>.
+              <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2jsrl32uf-fTeeFjNyNYxqSZt5NPY3fA" target="_blank">Slack</a>.
             </div>
           </div>
           <div className="faq-section">
