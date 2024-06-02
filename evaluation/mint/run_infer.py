@@ -25,7 +25,6 @@ from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
-from opendevin.events.serialization.event import event_to_dict
 
 
 def cleanup():
@@ -172,15 +171,18 @@ def process_instance(
         task_state = state.task_state
         logger.info('Task state: ' + str(task_state.to_dict()))
 
+    # history is now available as a list[Event], rather than list of pairs of (Action, Observation)
+    # for compatibility with the existing output format, we can remake the pairs here
+    # remove when it becomes unnecessary
+    history_tuples = state.history.get_tuples()
+
     # Save the output
     output = {
         'id': instance.task_id,
         'instance': instance.to_dict(),
         'instruction': instruction,
         'metadata': metadata,
-        'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-        ],
+        'history': history_tuples,
         'error': state.error if state and state.error else None,
         'test_result': task_state.success if task_state else False,
     }

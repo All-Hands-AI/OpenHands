@@ -18,7 +18,7 @@ from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import MessageAction
-from opendevin.events.serialization.event import event_to_dict
+from opendevin.events.observation.observation import Observation
 
 
 def cleanup():
@@ -37,9 +37,9 @@ def codeact_user_response(state: State) -> str:
     )
     if state.history:
         user_msgs = [
-            action
-            for action, _ in state.history
-            if isinstance(action, MessageAction) and action.source == 'user'
+            event
+            for event in state.history.get_events()
+            if isinstance(event, MessageAction) and event.source == 'user'
         ]
         if len(user_msgs) >= 2:
             # let the agent know that it can give up when it has tried 3 times
@@ -204,8 +204,8 @@ def process_instance(
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
     sandbox = DockerSSHBox()
-    exit_code, command_output = sandbox.execute(f'pip install scitools-pyke')
-    
+    exit_code, command_output = sandbox.execute('pip install scitools-pyke')
+
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     state: State = asyncio.run(
         main(
@@ -223,20 +223,27 @@ def process_instance(
 
     final_message = ''
     messages = []
-    for action, obs in reversed(state.history):
-        # if isinstance(act, MessageAction):
-        messages.append(obs.content)
-        # print("obs.content:", obs.content)
-        if str(obs.content) in ["'A'", "'B'", "'C'"]:
-            final_message = obs.content
-            break
-    
+
+    for event in state.history.get_events(reverse=True):
+        if isinstance(event, Observation):
+            messages.append(event.content)
+            if str(event.content) in ["'A'", "'B'", "'C'"]:
+                final_message = event.content
+                break
+
     final_message = final_message.strip("'")
-    logger.info(f'Predicted answer: {final_message}, Ground truth: {instance["answer"]}')
+    logger.info(
+        f'Predicted answer: {final_message}, Ground truth: {instance["answer"]}'
+    )
 
     test_result = get_test_result(
         model_answer=final_message, ground_truth=instance['answer']
     )
+
+    # history is now available as a list[Event], rather than list of pairs of (Action, Observation)
+    # for compatibility with the existing output format, we can remake the pairs here
+    # remove when it becomes unnecessary
+    history_tuples = state.history.get_tuples()
 
     # Save the output
     output = {
@@ -244,9 +251,7 @@ def process_instance(
         'instance': instance,
         'instruction': instruction,
         # 'metadata': metadata,
-        'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-        ],
+        'history': history_tuples,
         'final_message': final_message,
         'messages': messages,
         'error': state.error if state and state.error else None,
@@ -254,10 +259,10 @@ def process_instance(
     }
     config.workspace_mount_path = old_workspace_mount_path
     config.workspace_base = old_workspace_base
-    
+
     # Close the sandbox
     sandbox.close()
-    
+
     return output
 
 
@@ -272,7 +277,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--data_split',
         type=str,
-        help='data split to evaluate on {validation}', # right now we only support validation split
+        help='data split to evaluate on {validation}',  # right now we only support validation split
         default='validation',
     )
 
@@ -313,7 +318,7 @@ if __name__ == '__main__':
         'logic_reasoning',
         agent_class,
         dataset_name,
-        model_name + '_maxiter_' + str(max_iterations) + eval_note
+        model_name + '_maxiter_' + str(max_iterations) + eval_note,
     )
 
     pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
@@ -414,23 +419,25 @@ if __name__ == '__main__':
         cleanup()
 
     output_fp.close()
-    
+
     with open(output_file, 'r') as f:
-        test_result = [(json.loads(line))["test_result"]["result"] for line in f]
-            
+        test_result = [(json.loads(line))['test_result']['result'] for line in f]
+
     metadata = {
-        "Dataset": dataset_name,
-        "Data split": data_split,
-        "Number of Samples": len(test_result),
+        'Dataset': dataset_name,
+        'Data split': data_split,
+        'Number of Samples': len(test_result),
         'Agent class': agent_class,
         'Model name': model_name,
         'Start_time': start_time,
-        "End_time": time.strftime('%Y-%m-%d %H:%M:%S'),
-        "Final Accuracy": f"{sum(test_result)/len(test_result):.2f}",
-        }
-    
+        'End_time': time.strftime('%Y-%m-%d %H:%M:%S'),
+        'Final Accuracy': f'{sum(test_result)/len(test_result):.2f}',
+    }
+
     with open(os.path.join(eval_output_dir, 'metadata.json'), 'w') as f:
         json.dump(metadata, f, indent=4)
-        
+
     logger.info(f'Metadata: {json.dumps(metadata, indent=4)}')
-    logger.info(f'Evaluation finished. Metadata saved to {eval_output_dir}/metadata.json')
+    logger.info(
+        f'Evaluation finished. Metadata saved to {eval_output_dir}/metadata.json'
+    )

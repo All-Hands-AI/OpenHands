@@ -221,8 +221,10 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    # call compatibility function to remake the history tuples that the following output format expects
-    history_tuples = state.history.compatibility_for_eval_history_tuples()
+    # history is now available as a list[Event], rather than list of pairs of (Action, Observation)
+    # for compatibility with the existing output format, we can remake the pairs here
+    # remove when it becomes unnecessary
+    history_tuples = state.history.get_tuples()
 
     # Save the output
     output = {

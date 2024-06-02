@@ -21,7 +21,6 @@ from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import MessageAction
-from opendevin.events.serialization.event import event_to_dict
 
 game = None
 
@@ -143,15 +142,18 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
     logger.info(f'Final message: {final_message} | Ground truth: {instance["text"]}')
     test_result = game.reward()
 
+    # history is now available as a list[Event], rather than list of pairs of (Action, Observation)
+    # for compatibility with the existing output format, we can remake the pairs here
+    # remove when it becomes unnecessary
+    history_tuples = state.history.get_tuples()
+
     # Save the output
     output = {
         'instance_id': instance['text'].strip(),
         'instance': instance,
         'instruction': instruction,
         'metadata': metadata,
-        'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-        ],
+        'history': history_tuples,
         'error': state.error if state and state.error else None,
         'test_result': {
             'success': test_result,

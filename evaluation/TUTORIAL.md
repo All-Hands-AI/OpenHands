@@ -101,9 +101,9 @@ def codeact_user_response(state: State) -> str:
     )
     if state.history:
         user_msgs = [
-            action
-            for action, _ in state.history
-            if isinstance(action, MessageAction) and action.source == 'agent'
+            event
+            for event in state.history.get_events()
+            if isinstance(event, MessageAction) and event.source == 'user'
         ]
         if len(user_msgs) >= 2:
             # let the agent know that it can give up when it has tried 3 times

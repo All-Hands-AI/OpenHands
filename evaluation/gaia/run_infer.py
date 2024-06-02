@@ -21,9 +21,6 @@ from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import CmdRunAction, MessageAction
-from opendevin.events.action.action import Action
-from opendevin.events.observation.observation import Observation
-from opendevin.events.serialization.event import event_to_dict
 
 DATASET_CACHE_DIR = '~/.cache/open-devin/evals/gaia'
 DATASET_CACHE_DIR = os.path.expanduser(DATASET_CACHE_DIR)
@@ -48,7 +45,7 @@ def codeact_user_response(state: State) -> str:
     if state.history:
         user_msgs = [
             event
-            for event in state.history
+            for event in state.history.get_events()
             if isinstance(event, MessageAction) and event.source == 'user'
         ]
         if len(user_msgs) >= 2:
@@ -183,14 +180,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
     # history is now available as a list[Event], rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
-    history_tuples = []
-    prev_action = None
-    for event in state.history:
-        if isinstance(event, Action):
-            prev_action = event
-        elif isinstance(event, Observation):
-            history_tuples.append((event_to_dict(prev_action), event_to_dict(event)))
-            prev_action = None
+    history_tuples = state.history.get_tuples()
 
     # Save the output
     output = {
