@@ -268,7 +268,7 @@ class DockerSSHBox(Sandbox):
             self.start_docker_container()
         try:
             self.start_ssh_session()
-        except pxssh.ExceptionPxssh as e:
+        except Exception as e:
             self.close()
             raise e
 
