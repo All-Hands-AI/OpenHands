@@ -42,7 +42,7 @@ function FeedbackForm({
         label="Sharing settings"
         aria-label="permissions"
         data-testid="permissions"
-        type="dropdown"
+        type="select"
         value={feedback.permissions}
         onChange={(e) => {
           onPermissionsChange(e.target.value as "public" | "private");

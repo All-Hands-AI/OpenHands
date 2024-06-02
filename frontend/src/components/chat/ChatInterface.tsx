@@ -14,9 +14,12 @@ import { sendChatMessage } from "#/services/chatService";
 import { addUserMessage, addAssistantMessage } from "#/state/chatSlice";
 import { I18nKey } from "#/i18n/declaration";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
-import { Feedback, sendFeedback } from "#/services/feedbackService";
+import { Feedback } from "#/services/feedbackService";
 import FeedbackModal from "../modals/feedback/FeedbackModal";
 import { useDisclosure } from "@nextui-org/react";
+import { removeApiKey } from "#/utils/utils";
+import Session from "#/services/session";
+import { getToken } from "#/services/auth";
 
 interface ScrollButtonProps {
   onClick: () => void;
@@ -51,7 +54,8 @@ function ChatInterface() {
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
-  const [feedback, setFeedback] = React.useState<Feedback>({} as Feedback);
+  const feedbackVersion = "1.0";
+  const [feedback, setFeedback] = React.useState<Feedback>({version: feedbackVersion} as Feedback);
   const [feedbackShared, setFeedbackShared] = React.useState(0);
   const [feedbackLoading, setFeedbackLoading] = React.useState(false);
 
@@ -63,7 +67,7 @@ function ChatInterface() {
 
   const shareFeedback = async (feedback: "positive" | "negative") => {
     setFeedbackShared(messages.length);
-    setFeedback((prev) => ({ ...prev, feedback: feedback }));
+    setFeedback((prev) => ({ ...prev, feedback: feedback, trajectory: removeApiKey(Session._history), token: getToken() }));
     onFeedbackModalOpen();
   };
 
