@@ -37,4 +37,10 @@ class InMemoryFileStore(FileStore):
         return files
 
     def delete(self, path: str) -> None:
-        del self.files[path]
+        if path not in self.files:
+            # it's a directory
+            for file in list(self.files.keys()):
+                if file.startswith(path):
+                    del self.files[file]
+        else:
+            del self.files[path]
