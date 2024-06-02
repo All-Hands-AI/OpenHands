@@ -5,7 +5,8 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action.action import Action
 from opendevin.events.action.agent import AgentSummarizeAction, ChangeAgentStateAction
 from opendevin.events.action.empty import NullAction
-from opendevin.events.event import Event
+from opendevin.events.action.message import MessageAction
+from opendevin.events.event import Event, EventSource
 from opendevin.events.observation.agent import AgentStateChangedObservation
 from opendevin.events.observation.commands import CmdOutputObservation
 from opendevin.events.observation.empty import NullObservation
@@ -171,6 +172,24 @@ class ShortTermHistory(list[Event]):
         )
 
         return last_observation
+
+    def get_latest_user_message(self) -> str:
+        """
+        Return the latest user message from the event stream.
+        """
+
+        last_user_message = next(
+            (
+                event.content
+                for event in self._event_stream.get_events(
+                    reverse=True, filter_out_type=self.agent_event_filtered_types
+                )
+                if isinstance(event, MessageAction) and event.source == EventSource.USER
+            ),
+            None,
+        )
+
+        return last_user_message if last_user_message is not None else ''
 
     def get_last_events(self, n: int) -> list[Event]:
         """

@@ -27,16 +27,23 @@ def to_json(obj, **kwargs):
     return json.dumps(obj, **kwargs)
 
 
-def history_to_json(obj, **kwargs):
+def history_to_json(history, max_events=20, **kwargs):
     """
     Serialize and simplify history to str format
     """
-    if isinstance(obj, list):
-        # process history, make it simpler.
-        processed_history = []
-        for event in obj:
-            processed_history.append(event_to_memory(event))
-        return json.dumps(processed_history, **kwargs)
+    processed_history = []
+    event_count = 0
+
+    for event in history.get_events(reverse=True):
+        if event_count >= max_events:
+            break
+        processed_history.append(event_to_memory(event))
+        event_count += 1
+
+    # we got it in reverse order
+    processed_history.reverse()
+
+    return json.dumps(processed_history, **kwargs)
 
 
 class MicroAgent(Agent):

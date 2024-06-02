@@ -170,10 +170,9 @@ class CodeActSWEAgent(Agent):
         """
         messages: list[dict[str, str]] = self._get_messages(state)
 
-        latest_user_message = next(
-            (m for m in reversed(messages) if m['role'] == 'user'), None
-        )
-        if latest_user_message and latest_user_message['content'].strip() == '/exit':
+        # if we're done, go back
+        latest_user_message = state.history.get_latest_user_message()
+        if latest_user_message and latest_user_message.strip() == '/exit':
             return AgentFinishAction()
 
         response = self.llm.completion(
@@ -251,12 +250,10 @@ class CodeActSWEAgent(Agent):
             if message:
                 messages.append(message)
 
-        latest_user_message = latest_user_message = next(
+        latest_user_message = next(
             (m for m in reversed(messages) if m['role'] == 'user'), None
         )
         if latest_user_message:
-            if latest_user_message['content'].strip() == '/exit':
-                return messages
             latest_user_message['content'] += (
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )

@@ -24,7 +24,7 @@ implement the solution. If the codebase is empty, you shoud call the `finish` ac
 
 ## History
 {{ instructions.history_truncated }}
-{{ history_to_json(state.history[-20:]) }}
+{{ history_to_json(state.history, max_events=20) }}
 
 ## Format
 {{ instructions.format.action }}

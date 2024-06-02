@@ -219,6 +219,12 @@ class CodeActAgent(Agent):
         """
         logger.info(f'Running CodeActAgent v{self.VERSION}')
 
+        # if we're done, go back
+        latest_user_message = state.history.get_latest_user_message()
+        if latest_user_message and latest_user_message.strip() == '/exit':
+            return AgentFinishAction()
+
+        # prepare what we want to send to the LLM
         messages: list[dict[str, str]] = self._get_messages(state)
 
         # FIXME move it out to LLM class
@@ -231,12 +237,6 @@ class CodeActAgent(Agent):
             logger.info('Configured token limit exceeded. Condensing memory.')
             self._retry_with_condense(state)
             messages = self._get_messages(state)
-
-        latest_user_message = next(
-            (m for m in reversed(messages) if m['role'] == 'user'), None
-        )
-        if latest_user_message and latest_user_message['content'].strip() == '/exit':
-            return AgentFinishAction()
 
         response = None
         # give it 3 tries
@@ -325,12 +325,11 @@ class CodeActAgent(Agent):
             if message:
                 messages.append(message)
 
-        latest_user_message = latest_user_message = next(
+        latest_user_message = next(
             (m for m in reversed(messages) if m['role'] == 'user'), None
         )
+
         if latest_user_message:
-            if latest_user_message['content'].strip() == '/exit':
-                return messages
             latest_user_message['content'] += (
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
