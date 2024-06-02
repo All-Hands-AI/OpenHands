@@ -328,11 +328,6 @@ This is your internal monologue, in JSON format:
     }
   },
   {
-    "observation": "null",
-    "content": "",
-    "extras": {}
-  },
-  {
     "source": "agent",
     "action": "write",
     "args": {
