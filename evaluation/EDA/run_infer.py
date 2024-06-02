@@ -37,15 +37,18 @@ def cleanup():
 def codeact_user_response(state: State) -> str:
     global game
     model_guess = ''
+
+    # get the latest model message from history
     if state.history:
-        for act, _ in reversed(state.history):
-            if isinstance(act, MessageAction) and act.source == 'agent':
-                model_guess = act.content
+        for event in state.history.get_events(reverse=True):
+            if isinstance(event, MessageAction) and event.source == 'agent':
+                model_guess = event.content
                 break
+
     msg = game.generate_user_response(model_guess)
     game.curr_turn += 1
     logger.info(f'Model guess: {model_guess}')
-    logger.info(f'Anwser response: {msg}')
+    logger.info(f'Answer response: {msg}')
     return msg
 
 
@@ -132,9 +135,9 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         raise ValueError('State should not be None.')
 
     final_message = ''
-    for act, _ in reversed(state.history):
-        if isinstance(act, MessageAction) and act.source == 'agent':
-            final_message = act.content
+    for event in state.history.get_events(reverse=True):
+        if isinstance(event, MessageAction) and event.source == 'agent':
+            final_message = event.content
             break
 
     logger.info(f'Final message: {final_message} | Ground truth: {instance["text"]}')

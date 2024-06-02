@@ -42,7 +42,7 @@ class DelegatorAgent(Agent):
                 agent='StudyRepoForTaskAgent', inputs={'task': task}
             )
 
-        # check last observation from history
+        # last observation from history should be from the delegate
         last_observation = state.history.get_last_observation()
         if not isinstance(last_observation, AgentDelegateObservation):
             raise Exception('Last observation is not an AgentDelegateObservation')

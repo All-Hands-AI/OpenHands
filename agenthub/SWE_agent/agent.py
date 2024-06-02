@@ -13,9 +13,10 @@ from opendevin.runtime.tools import RuntimeTool
 
 from .parser import parse_command
 from .prompts import (
+    ACTION_MEMORY_FORMAT,
     CONTEXT_PROMPT,
-    MEMORY_FORMAT,
     NO_ACTION,
+    OBSERVATION_MEMORY_FORMAT,
     STEP_PROMPT,
     SYSTEM_MESSAGE,
 )
@@ -67,17 +68,20 @@ class SWEAgent(Agent):
         """
 
         # retrieve short term memories from state.history, up to memory_window
-        memory_window = min(self.memory_window, len(state.history))
+        memory_window = min(self.memory_window, state.history.get_latest_event_id() + 1)
         running_memory: list[str] = []
-        events = state.history[-memory_window:]
-        for event in events:
+
+        for event in state.history.get_events():
             if isinstance(event, Action):
-                prev_action = event
+                memory = ACTION_MEMORY_FORMAT(event_to_memory(event))
+                if memory:
+                    running_memory.append(memory)
             elif isinstance(event, Observation):
-                obs = event
-                running_memory.append(
-                    MEMORY_FORMAT(event_to_memory(prev_action), event_to_memory(obs))
-                )
+                memory = OBSERVATION_MEMORY_FORMAT(event_to_memory(event))
+                if memory:
+                    running_memory.append(memory)
+            if len(running_memory) >= memory_window:
+                break
 
         goal = state.get_current_user_intent()
 

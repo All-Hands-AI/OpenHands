@@ -186,14 +186,24 @@ def unpack_dict(data: dict, restrict: list[str] | None = None):
     return '\n'.join(lines)
 
 
-def MEMORY_FORMAT(act, obs):
-    return f"""
+def ACTION_MEMORY_FORMAT(act):
+    if act:
+        return f"""
 Previous Action:
 {unpack_dict(act, ["content"])}
+""".strip()
+    else:
+        return ''
 
-Output from Action:
+
+def OBSERVATION_MEMORY_FORMAT(obs):
+    if obs:
+        return f"""
+Output:
 {unpack_dict(obs)}
 """.strip()
+    else:
+        return ''
 
 
 def CONTEXT_PROMPT(memory, window):

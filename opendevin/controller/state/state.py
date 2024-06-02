@@ -10,6 +10,7 @@ from opendevin.events.action import (
     Action,
     MessageAction,
 )
+from opendevin.events.action.agent import AgentFinishAction
 from opendevin.events.observation import (
     CmdOutputObservation,
     Observation,
@@ -73,9 +74,15 @@ class State:
         return state
 
     def get_current_user_intent(self):
-        # TODO: this is used to understand the user's main goal, but it's possible
-        # the latest message is an interruption. We should look for a space where
-        # the agent goes to FINISHED, and then look for the next user message.
-        for event in reversed(self.history.get_events_as_list()):
+        """
+        Returns the latest user message that appears after a FinishAction, or the first (the task) if nothing was finished yet.
+        """
+        last_user_message = None
+        for event in self.history.get_events(reverse=True):
             if isinstance(event, MessageAction) and event.source == 'user':
-                return event.content
+                last_user_message = event.content
+            elif isinstance(event, AgentFinishAction):
+                if last_user_message is not None:
+                    return last_user_message
+
+        return last_user_message

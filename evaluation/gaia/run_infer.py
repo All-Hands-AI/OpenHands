@@ -151,12 +151,12 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         raise ValueError('State should not be None.')
 
     model_answer_raw = ''
-    for act in reversed(state.history):
-        if isinstance(act, CmdRunAction) and act.source == 'agent':
-            model_answer_raw = act.thought
+    for event in state.history.get_events(reverse=True):
+        if isinstance(event, CmdRunAction) and event.source == 'agent':
+            model_answer_raw = event.thought
             break
-        elif isinstance(act, MessageAction) and act.source == 'agent':
-            model_answer_raw = act.content
+        if isinstance(event, MessageAction) and event.source == 'agent':
+            model_answer_raw = event.content
             break
 
     # attempt to parse model_answer
