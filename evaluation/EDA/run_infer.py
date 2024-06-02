@@ -46,6 +46,8 @@ def codeact_user_response(state: State) -> str:
     game.curr_turn += 1
     logger.info(f'Model guess: {model_guess}')
     logger.info(f'Anwser response: {msg}')
+    if 'bingo!' in msg.lower():
+        return '/exit'
     return msg
 
 
