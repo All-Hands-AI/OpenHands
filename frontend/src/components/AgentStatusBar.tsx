@@ -63,7 +63,11 @@ function AgentStatusBar() {
   // - Agent is ready
   // - Agent is not available
   useEffect(() => {
-    if (curAgentState === AgentState.AWAITING_USER_INPUT || curAgentState === AgentState.ERROR || curAgentState === AgentState.INIT) {
+    if (
+      curAgentState === AgentState.AWAITING_USER_INPUT ||
+      curAgentState === AgentState.ERROR ||
+      curAgentState === AgentState.INIT
+    ) {
       beep();
     }
   }, [curAgentState]);
