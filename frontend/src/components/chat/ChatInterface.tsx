@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { IoMdChatbubbles } from "react-icons/io";
 import { RiArrowRightDoubleLine } from "react-icons/ri";
@@ -14,18 +14,20 @@ import { sendChatMessage } from "#/services/chatService";
 import { addUserMessage, addAssistantMessage } from "#/state/chatSlice";
 import { I18nKey } from "#/i18n/declaration";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
-import FeedbackModal from "#/components/modals/feedback/FeedbackModal";
 import Session from "#/services/session";
 import { getToken } from "#/services/auth";
 import toast from "#/utils/toast";
 import { removeApiKey } from "#/utils/utils";
 import { Feedback, sendFeedback } from "#/services/feedbackService";
+import FeedbackModal from "../modals/feedback/FeedbackModal";
 import { useDisclosure } from "@nextui-org/react";
+import { on } from "events";
 
 interface ScrollButtonProps {
   onClick: () => void;
   icon: JSX.Element;
   label: string;
+  // eslint-disable-next-line react/require-default-props
   disabled?: boolean;
 }
 
@@ -51,13 +53,12 @@ function ScrollButton({
 
 function ChatInterface() {
   const dispatch = useDispatch();
-  const { t } = useTranslation();
-  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const { messages } = useSelector((state: RootState) => state.chat);
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
+
   const [feedback, setFeedback] = React.useState<Feedback>({} as Feedback);
-  const [feedbackLoading, setFeedbackLoading] = useState(false);
-  const curAgentState = useSelector((state: RootState) => state.agentState);
-  const messages = useSelector((state: RootState) => state.chat.messages);
-  const hitBottom = useScrollToBottom(chatContainerRef);
+  const [feedbackShared, setFeedbackShared] = React.useState(false);
+  const [feedbackLoading, setFeedbackLoading] = React.useState(false);
 
   const {
     isOpen: feedbackModalIsOpen,
@@ -65,62 +66,47 @@ function ChatInterface() {
     onOpenChange: onFeedbackModalOpenChange,
   } = useDisclosure();
 
-  const handleSendMessage = async (message: string) => {
-    if (!message.trim()) return;
-    dispatch(addUserMessage(message));
-    try {
-      const response = await sendChatMessage(message);
-      dispatch(addAssistantMessage(response));
-    } catch (error) {
-      toast.error(t(I18nKey.CHAT_INTERFACE));
-    }
-  };
-
-  const handleSendContinueMsg = async () => {
-    try {
-      const response = await sendChatMessage("continue");
-      dispatch(addAssistantMessage(response));
-    } catch (error) {
-      toast.error(t(I18nKey.CHAT_INTERFACE));
-    }
-  };
-
-  const scrollDomToBottom = () => {
-    chatContainerRef.current?.scrollTo({
-      top: chatContainerRef.current.scrollHeight,
-      behavior: "smooth",
-    });
-  };
-
-  const openFeedback = (polarity: "positive" | "negative") => {
-    setFeedbackPolarity(polarity);
+  const shareFeedback = async (feedback: "positive" | "negative") => {
+    setFeedbackShared(true);
     onFeedbackModalOpen();
   };
 
-  const handleDialogClose = async (shared: boolean) => {
-    setDialogOpen(false);
-    if (shared) {
-      setFeedbackLoading(true);
-      try {
-        const feedbackData: FeedbackData = {
-          messages,
-          makePublic,
-        };
-        await sendFeedback(feedbackData);
-        setFeedbackShared(true);
-        toast.success(t(I18nKey.CHAT_INTERFACE));
-      } catch (error) {
-        toast.error(t(I18nKey.CHAT_INTERFACE));
-      } finally {
-        setFeedbackLoading(false);
-      }
-    }
+  const handleSendMessage = (content: string) => {
+    dispatch(addUserMessage(content));
+    sendChatMessage(content);
   };
 
+  const { t } = useTranslation();
+  const handleSendContinueMsg = () => {
+    handleSendMessage(t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE));
+  };
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
+    useScrollToBottom(scrollRef);
+
+  React.useEffect(() => {
+    if (curAgentState === AgentState.INIT && messages.length === 0) {
+      dispatch(addAssistantMessage(t(I18nKey.CHAT_INTERFACE$INITIAL_MESSAGE)));
+    }
+  }, [curAgentState]);
+
   return (
-    <div className="relative h-full flex flex-col">
-      <div className="flex-1 overflow-y-auto" ref={chatContainerRef}>
-        <Chat />
+    <div className="flex flex-col h-full bg-neutral-800">
+      <div className="flex items-center gap-2 border-b border-neutral-600 text-sm px-4 py-2">
+        <IoMdChatbubbles />
+        Chat
+      </div>
+      <div className="flex-1 flex flex-col relative min-h-0">
+        <div
+          ref={scrollRef}
+          className="overflow-y-auto p-3"
+          onScroll={(e) => onChatBodyScroll(e.currentTarget)}
+        >
+          <Chat messages={messages} />
+        </div>
+        {/* Fade between messages and input */}
         <div
           className={twMerge(
             "absolute bottom-0 left-0 right-0",
@@ -133,31 +119,31 @@ function ChatInterface() {
       <div className="relative">
         <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center">
           {!hitBottom &&
-            <ScrollButton
-              onClick={scrollDomToBottom}
-              icon={<VscArrowDown className="inline mr-2 w-3 h-3" />}
-              label={t(I18nKey.CHAT_INTERFACE$TO_BOTTOM)}
-            />}
+            ScrollButton({
+              onClick: scrollDomToBottom,
+              icon: <VscArrowDown className="inline mr-2 w-3 h-3" />,
+              label: t(I18nKey.CHAT_INTERFACE$TO_BOTTOM),
+            })}
           {curAgentState === AgentState.AWAITING_USER_INPUT &&
             hitBottom &&
-            <ScrollButton
-              onClick={handleSendContinueMsg}
-              icon={<RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />}
-              label={t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)}
-            />}
+            ScrollButton({
+              onClick: handleSendContinueMsg,
+              icon: <RiArrowRightDoubleLine className="inline mr-2 w-3 h-3" />,
+              label: t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE),
+            })}
         </div>
 
         {!feedbackShared && messages.length > 3 && (
           <div className="flex justify-start gap-2 p-2">
             <ScrollButton
               disabled={feedbackLoading}
-              onClick={() => openFeedback("positive")}
+              onClick={() => shareFeedback("positive")}
               icon={<FaRegThumbsUp className="inline mr-2 w-3 h-3" />}
               label=""
             />
             <ScrollButton
               disabled={feedbackLoading}
-              onClick={() => openFeedback("negative")}
+              onClick={() => shareFeedback("negative")}
               icon={<FaRegThumbsDown className="inline mr-2 w-3 h-3" />}
               label=""
             />
