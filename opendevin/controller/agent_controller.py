@@ -81,13 +81,28 @@ class AgentController:
         if initial_state is None:
             self.state = State(inputs={}, max_iterations=max_iterations)
             self.state.history.set_event_stream(event_stream)
+
+            # no State to restore, start fresh
             self.state.history.start_id = event_stream.get_latest_event_id() + 1
             logger.debug(
-                f'AgentController {self.id} starting from event {self.state.history.start_id}, after: {event_stream.get_latest_event()}'
+                f'AgentController {self.id} starting from event {self.state.history.start_id}, after: {event_stream.get_latest_event() if event_stream.get_latest_event_id() > -1 else None}'
             )
         else:
             # FIXME keep compatibility with a history that was a list?
             self.state = initial_state
+            logger.debug(
+                f'AgentController {self.id} starting with history: {self.state.history}'
+            )
+            logger.debug(
+                f'event_stream = {self.state.history._event_stream.sid if hasattr(self.state.history, "_event_stream") else None}'
+            )
+
+            if self.state.history.start_id is None or self.state.history.start_id == -1:
+                self.state.history.start_id = event_stream.get_latest_event_id() + 1
+                logger.debug(
+                    f'AgentController {self.id} starting from event {self.state.history.start_id}, after: {event_stream.get_latest_event()}'
+                )
+            self.state.history.set_event_stream(event_stream)
         self.event_stream = event_stream
         self.event_stream.subscribe(
             EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, append=is_delegate
