@@ -24,19 +24,19 @@ function FeedbackModal({
   const handleSendFeedback = () => {
     sendFeedback(feedback)
       .then((response) => {
-        if (response.status === 200) {
-          toast.info("Feedback shared successfully.");
+        if (response.message === "Feedback submitted successfully") {
+          toast.info(response.message);
         } else {
           toast.error(
             "share-error",
-            "Failed to share, please contact the developers to debug.",
+            "Failed to share, please contact the developers: "+response.message,
           );
         }
       })
-      .catch(() => {
+      .catch((error) => {
         toast.error(
           "share-error",
-          "Failed to share, please contact the developers to debug.",
+          "Failed to share, please contact the developers: "+error,
         );
       });
   };
