@@ -1,27 +1,19 @@
-"""
-Implements evaluation of agents on HumanEvalFix from the HumanEvalPack benchmark introduced in
-"OctoPack: Instruction Tuning Code Large Language Models" (https://arxiv.org/abs/2308.07124).
-Please see https://github.com/bigcode-project/bigcode-evaluation-harness/blob/main/bigcode_eval/tasks/humanevalpack.py
-for the reference implementation used in the paper.
-
-TODOs:
-- Potentially support other HumanEvalPack datasets (Explain & Synthesize)
-- Support other languages (currently only Python)
-"""
-
 import asyncio
 import json
 import logging
 import multiprocessing as mp
 import os
 import pathlib
+import re
+import shutil
+import sqlite3
 import subprocess
 import time
 from concurrent.futures import ProcessPoolExecutor
 
 import pandas as pd
 from datasets import load_dataset
-from evaluate import load
+from func_timeout import FunctionTimedOut, func_timeout
 from tqdm import tqdm
 
 from opendevin.controller.state.state import State
@@ -31,35 +23,6 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
-
-IMPORT_HELPER = {
-    'python': [
-        'import math',
-        'import re',
-        'import sys',
-        'import copy',
-        'import datetime',
-        'import itertools',
-        'import collections',
-        'import heapq',
-        'import statistics',
-        'import functools',
-        'import hashlib',
-        'import numpy',
-        'import numpy as np',
-        'import string',
-        'from typing import *',
-        'from collections import *',
-    ],
-}
-
-LANGUAGE_TO_TIMEOUT = {
-    'python': 10,
-}
-
-LANGUAGE_TO_NUM_WORKERS = {
-    'python': 4,
-}
 
 
 def cleanup():
@@ -73,7 +36,7 @@ def cleanup():
 def codeact_user_response(state: State) -> str:
     msg = (
         'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have modified the code in a way that fixes the issue, please run the following command: <execute_bash> exit </execute_bash>.\n'
+        'If you think you have completed the SQL, please run the following command: <execute_bash> exit </execute_bash>.\n'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK.\n'
     )
     if state.history:
@@ -105,32 +68,59 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def get_test_result(instance, path, language='python', timeout=10):
-    # Evaluation reference: https://github.com/bigcode-project/bigcode-evaluation-harness/blob/84b96da31b7f840b55c5733325346176140cdb6b/bigcode_eval/tasks/humanevalpack.py#L347
+def execute_sql(db_path, gen_sql, gold_sql):
+    """
+    Execute the generated SQL and the ground truth SQL and compare the results.
+    """
+    with sqlite3.connect(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute(gen_sql)
+        predicted_res = cursor.fetchall()
+        cursor.execute(gold_sql)
+        ground_truth_res = cursor.fetchall()
+        res = 0
+        if set(predicted_res) == set(ground_truth_res):
+            res = 1
+    return res
+
+
+def get_test_result(instance, path, timeout=30):
     test_result = {'result': {}, 'metadata': {}}
-    code_metric = load('Muennighoff/code_eval_octopack')
-    timeout = LANGUAGE_TO_TIMEOUT[language]
-    num_workers = LANGUAGE_TO_NUM_WORKERS[language]
-    python_imports = '\n'.join(IMPORT_HELPER[language])
 
-    # Load function from path
+    # Read the generated python file
     with open(path, 'r') as f:
-        function = f.read()
+        gen_file = f.read()
 
-    function = [[python_imports + '\n' + function.strip()]]
+    # Extract the SQL from the python file
+    gen_sql = ''
+    pattern = r'sql\s*=\s*"([^"]+)"'
+    match = re.search(pattern, gen_file)
+    if match:
+        gen_sql = match.group(1)
+    else:
+        print('No match found.')
 
-    results, logs = code_metric.compute(
-        references=[instance.test],
-        predictions=function,
-        language=language,
-        timeout=timeout,
-        num_workers=num_workers,
-    )
-    test_result['result'] = results
+    gold_sql = instance.SQL
+    # Execute the SQL
+    try:
+        res = func_timeout(
+            timeout, execute_sql, args=(instance.db_path, gen_sql, gold_sql)
+        )
+        status = 'success'
+    except FunctionTimedOut:
+        res = 0
+        status = 'timeout'
+    except Exception as e:
+        res = 0
+        status = 'error'
+        logger.error(f'Error: {e}')
+
+    # Save the test result
+    test_result['result'] = {'passed': res, 'status': status}
     test_result['metadata'] = {
-        'logs': logs,
         'timeout': timeout,
-        'num_workers': num_workers,
+        'gen_sql': gen_sql,
+        'gold_sql': gold_sql,
     }
     return test_result
 
@@ -138,9 +128,9 @@ def get_test_result(instance, path, language='python', timeout=10):
 def process_instance(
     instance, agent_class, metadata, skip_workspace_mount, reset_logger: bool = True
 ):
-    old_workspace_mount_path = config.workspace_mount_path
-    old_workspace_base = config.workspace_base
-    workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
+    workspace_mount_path = os.path.join(
+        config.workspace_mount_path, 'bird_eval_workspace'
+    )
     # create process-specific workspace dir
     # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
     # so that different agent don't interfere with each other.
@@ -149,10 +139,21 @@ def process_instance(
         pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
     # reset workspace to config
-    config.workspace_base = workspace_mount_path
     config.workspace_mount_path = workspace_mount_path
 
-    # Setup the logger properly, so you can run multi-processing to parallize the evaluation
+    # Copy the database to the workspace
+    db_root = os.path.join(
+        config.workspace_base, 'evaluation_bird/dev/dev_databases', instance.db_id
+    )
+    target_path = os.path.join(workspace_mount_path, f'{instance.db_id}')
+    if not os.path.exists(target_path):
+        logger.info(f'Copying database from {db_root} to {target_path}...')
+        shutil.copytree(db_root, target_path)
+
+    # Set up the database path
+    database_path = os.path.join(instance.db_id, f'{instance.db_id}.sqlite')
+
+    # Set up the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
         # Set up logger
         log_file = os.path.join(
@@ -180,32 +181,42 @@ def process_instance(
     if not skip_workspace_mount:
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
 
-    # Create file with HumanEvalFix problem
-    # Prompt reference: https://github.com/bigcode-project/bigcode-evaluation-harness/blob/84b96da31b7f840b55c5733325346176140cdb6b/bigcode_eval/tasks/humanevalpack.py#L509
-    problem_statement = (
-        instance.declaration + instance.buggy_solution + '\n' + instance.test
-    )
-    path = os.path.join(
-        workspace_mount_path, f'{instance.task_id.replace("/", "__")}.py'
-    )
-    with open(path, 'w') as f:
-        f.write(problem_statement)
+    # Create file with BIRD instance
+    statements = f"""
+    import sqlite3
+    def execute_sql(db_path, sql):
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            return result
 
-    # Prepare instruction
+    if __name__ == '__main__':
+        sql = "" # fill in your SQL here
+        db_path = "{database_path}"
+        print(db_path)
+        result = execute_sql(db_path, sql)
+        print(result)
+    """
+    path = os.path.join(
+        config.workspace_mount_path, f'{instance.task_id.replace("/", "__")}.py'
+    )
     instruction = (
-        f'Please fix the function in {instance.task_id.replace("/", "__")}.py such that all test cases pass.\n'
-        'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
-        '# Problem Statement\n'
-        f'{problem_statement}\n\n'
+        f'You are a SQL expert and need to complete the following text-to-SQL tasks.'
+        f'\n\n{instance.instruction}\n\n'
+        'Please write the SQL in one line without line breaks.'
+        f'And write a new python file named {instance.task_id.replace("/", "__")}.py to call the SQL you wrote.'
+        'You need to follow the code template below:'
+        f'\n\n{statements}\n\n'
+        'Environment has been set up for you to start working.'
+        'You may assume all necessary tools are installed.\n\n'
     )
     instruction += (
         'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-        'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
         'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
     )
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
-
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     state: State = asyncio.run(
         main(
@@ -233,19 +244,144 @@ def process_instance(
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
-
-    config.workspace_mount_path = old_workspace_mount_path
-    config.workspace_base = old_workspace_base
     return output
+
+
+def load_bird():
+    """
+    Main function to handle the flow of downloading, processing, and loading the bird dataset.
+    """
+    raw_dataset_path = download_bird()
+    bird_dataset = process_bird(raw_dataset_path)
+    return bird_dataset
+
+
+def download_bird():
+    """
+    Downloads and extracts the bird dataset from a specified URL into a local directory.
+    """
+    dataset_path = os.path.join(config.workspace_base, 'evaluation_bird')
+    devset_path = os.path.join(dataset_path, 'dev')
+    if not os.path.exists(dataset_path):
+        logger.info(
+            f'{dataset_path} folder does not exist, starting download and extraction...'
+        )
+        os.makedirs(dataset_path, exist_ok=True)
+        download_url = 'https://bird-bench.oss-cn-beijing.aliyuncs.com/dev.zip'
+        download_path = os.path.join(dataset_path, 'dev.zip')
+        logger.info('Start Downloading...')
+        subprocess.run(['wget', download_url, '-O', download_path])
+        logger.info('Download completed.')
+        logger.info('Start Extracting...')
+        subprocess.run(['unzip', download_path, '-d', dataset_path])
+        # extract databases
+        devset_path = os.path.join(dataset_path, 'dev')
+        database_path = os.path.join(devset_path, 'dev_databases.zip')
+        subprocess.run(['unzip', database_path, '-d', devset_path])
+        logger.info('Extraction completed.')
+    else:
+        logger.info(f'{dataset_path} folder already exists.')
+    return devset_path
+
+
+def process_bird(dataset_path):
+    """
+    Processes the raw bird dataset into a structured format and saves it as JSON.
+    """
+    processed_path = os.path.join(dataset_path, 'processed_dev.json')
+    if not os.path.exists(processed_path):
+        logger.info(f'{processed_path} folder does not exist, starting processing...')
+        raw_data_path = os.path.join(dataset_path, 'dev.json')
+        database_path = os.path.join(dataset_path, 'dev_databases')
+        processed_data = []
+        with pathlib.Path(raw_data_path).open('r') as f:
+            data = json.load(f)
+            for e in tqdm(data):
+                item = {
+                    'task_id': f'{len(processed_data)}',
+                    'db_path': os.path.join(
+                        database_path, e['db_id'], f"{e['db_id']}.sqlite"
+                    ),
+                    'db_id': e['db_id'],
+                    'instruction': create_prompt(e, database_path),
+                    'SQL': e['SQL'],
+                }
+                processed_data.append(item)
+
+        with pathlib.Path(processed_path).open('w') as f:
+            json.dump(processed_data, f, indent=2)
+            logger.info(f'Processed data saved to {processed_path}')
+    else:
+        logger.info(f'{processed_path} folder already exists.')
+    bird_dataset = load_dataset('json', data_files={'test': processed_path})
+    return bird_dataset
+
+
+def extract_create_table_prompt(db_path, limit_value=0):
+    """
+    Generates a SQL prompt with CREATE TABLE statements and sample data from the database.
+    """
+    table_query = "SELECT * FROM sqlite_master WHERE type='table';"
+    tables = sqlite3.connect(db_path).cursor().execute(table_query).fetchall()
+    prompt = ''
+    for table in tables:
+        table_name = table[1]
+        create_table_statement = table[-1]
+
+        table_info_query = f'PRAGMA table_info(`{table_name}`);'
+        top_k_row_query = f'SELECT * FROM {table_name} LIMIT {limit_value};'
+        try:
+            headers = [
+                x[1]
+                for x in sqlite3.connect(db_path)
+                .cursor()
+                .execute(table_info_query)
+                .fetchall()
+            ]
+        except Exception:
+            logger.error(f'Error Connection: {table_info_query}, {top_k_row_query}')
+            exit(0)
+
+        prompt += create_table_statement + ';\n'
+        if limit_value > 0:
+            top_k_rows = (
+                sqlite3.connect(db_path).cursor().execute(top_k_row_query).fetchall()
+            )
+            prompt += (
+                f"/*\n3 example rows:\n{top_k_row_query}\n{'    '.join(headers)}\n"
+            )
+            for row in top_k_rows:
+                row = [str(x) for x in row]
+                row = [x if x is not None else '' for x in row]
+                prompt += '    '.join(row) + '\n'
+            prompt += '*/\n'
+        prompt += '\n'
+    return prompt
+
+
+def create_prompt(e, database_path):
+    """
+    Create a prompt for the given example
+    """
+    db_id = e['db_id']
+    db_path = pathlib.Path(database_path) / db_id / f'{db_id}.sqlite'
+
+    # Extract the CREATE TABLE statements and sample data from the database
+    prompt = extract_create_table_prompt(db_path)
+    prompt += f"-- External Knowledge: {e['evidence']}\n\n"
+    prompt += '-- Using valid SQLite and understanding External Knowledge, answer the following questions for the tables provided above.\n\n'
+    prompt += '-- Using valid SQLite, answer the following questions for the tables provided above.\n'
+    prompt += f"Question: {e['question']}\n"
+
+    return prompt
 
 
 if __name__ == '__main__':
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
-    dataset = load_dataset(
-        'bigcode/humanevalpack', 'python'
-    )  # TODO: Support other languages
-    hefix_tests = dataset['test'].to_pandas()
+    # Due to the large size of the BIRD database, it cannot be hosted on huggingface datasets, so it needs to be downloaded
+    bird_dataset = load_bird()
+    bird_tests = bird_dataset['test'].to_pandas()
 
     # Check https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/humanevalfix/README.md#configure-opendevin-and-your-llm
     # for details of how to set `llm_config`
@@ -267,7 +403,7 @@ if __name__ == '__main__':
         eval_note += '_N_' + args.eval_note
     eval_output_dir = os.path.join(
         args.eval_output_dir,
-        'humanevalfix',
+        'bird',
         agent_class,
         model_name + '_maxiter_' + str(max_iterations) + eval_note,
     )
@@ -284,7 +420,7 @@ if __name__ == '__main__':
         'max_iterations': max_iterations,
         'eval_output_dir': eval_output_dir,
         'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
-        # get the commit id of current repo for reproducibility
+        # get the commit id of current repo for reproduciblity
         'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
         .decode('utf-8')
         .strip(),
@@ -296,7 +432,7 @@ if __name__ == '__main__':
     # LIMIT EVALUATION
     eval_n_limit = args.eval_n_limit
     if eval_n_limit:
-        hefix_tests = hefix_tests.head(eval_n_limit)
+        bird_tests = bird_tests.head(eval_n_limit)
         logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
 
     # OUTPUT FILE
@@ -319,22 +455,22 @@ if __name__ == '__main__':
 
     # =============================================
     # filter out finished instances
-    new_hefix_tests = []
-    for idx, instance in hefix_tests.iterrows():
+    new_bird_tests = []
+    for idx, instance in bird_tests.iterrows():
         if instance.task_id in finished_instance_ids:
             logger.info(
                 f'Skipping instance {instance.task_id} as it is already finished.'
             )
             continue
-        new_hefix_tests.append(instance)
+        new_bird_tests.append(instance)
 
-    hefix_tests = pd.DataFrame(new_hefix_tests)
+    bird_tests = pd.DataFrame(new_bird_tests)
     logger.info(
-        f'Finished instances: {len(finished_instance_ids)}, Remaining instances: {len(hefix_tests)}'
+        f'Finished instances: {len(finished_instance_ids)}, Remaining instances: {len(bird_tests)}'
     )
     # =============================================
 
-    pbar = tqdm(total=len(hefix_tests))
+    pbar = tqdm(total=len(bird_tests))
 
     # This function tracks the progress AND write the output to a JSONL file
     def update_progress(future):
@@ -356,7 +492,7 @@ if __name__ == '__main__':
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
             # This is how we perform multi-processing
-            for row_idx, instance in hefix_tests.iterrows():
+            for row_idx, instance in bird_tests.iterrows():
                 future = executor.submit(
                     process_instance,
                     instance,
