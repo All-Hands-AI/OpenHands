@@ -29,14 +29,14 @@ function FeedbackModal({
         } else {
           toast.error(
             "share-error",
-            "Failed to share, please contact the developers: "+response.message,
+            `Failed to share, please contact the developers: ${response.message}`,
           );
         }
       })
       .catch((error) => {
         toast.error(
           "share-error",
-          "Failed to share, please contact the developers: "+error,
+          `Failed to share, please contact the developers: ${error}`,
         );
       });
   };

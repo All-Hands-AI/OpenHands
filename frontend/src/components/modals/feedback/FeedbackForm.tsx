@@ -46,8 +46,12 @@ function FeedbackForm({
           onPermissionsChange(e.target.value as "public" | "private");
         }}
       >
-        <SelectItem key="public" value="public">Public</SelectItem>
-        <SelectItem key="private" value="private">Private</SelectItem>
+        <SelectItem key="public" value="public">
+          Public
+        </SelectItem>
+        <SelectItem key="private" value="private">
+          Private
+        </SelectItem>
       </Select>
       {isEmailValid(feedback.email) ? null : (
         <p className="text-red-500">Invalid email format</p>
