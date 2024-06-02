@@ -1,4 +1,4 @@
-import { Input } from "@nextui-org/react";
+import { Input, Select, SelectItem } from "@nextui-org/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "../../../i18n/declaration";
@@ -37,19 +37,18 @@ function FeedbackForm({
           onEmailChange(e.target.value);
         }}
       />
-      <Input
+      <Select
         label="Sharing settings"
         aria-label="permissions"
         data-testid="permissions"
-        type="select"
         value={feedback.permissions}
         onChange={(e) => {
           onPermissionsChange(e.target.value as "public" | "private");
         }}
       >
-        <option value="public">Public</option>
-        <option value="private">Private</option>
-      </Input>
+        <SelectItem key="public" value="public">Public</SelectItem>
+        <SelectItem key="private" value="private">Private</SelectItem>
+      </Select>
       {isEmailValid(feedback.email) ? null : (
         <p className="text-red-500">Invalid email format</p>
       )}
