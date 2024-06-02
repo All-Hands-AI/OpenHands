@@ -57,7 +57,7 @@ function ChatInterface() {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const [feedback, setFeedback] = React.useState<Feedback>({} as Feedback);
-  const [feedbackShared, setFeedbackShared] = React.useState(false);
+  const [feedbackShared, setFeedbackShared] = React.useState(0);
   const [feedbackLoading, setFeedbackLoading] = React.useState(false);
 
   const {
@@ -67,7 +67,8 @@ function ChatInterface() {
   } = useDisclosure();
 
   const shareFeedback = async (feedback: "positive" | "negative") => {
-    setFeedbackShared(true);
+    setFeedbackShared(messages.length);
+    setFeedback((prev) => ({ ...prev, feedback: feedback }));
     onFeedbackModalOpen();
   };
 
@@ -133,7 +134,7 @@ function ChatInterface() {
             })}
         </div>
 
-        {!feedbackShared && messages.length > 3 && (
+        {feedbackShared != messages.length && messages.length > 3 && (
           <div className="flex justify-start gap-2 p-2">
             <ScrollButton
               disabled={feedbackLoading}
@@ -157,6 +158,7 @@ function ChatInterface() {
       />
       <FeedbackModal
         feedback={feedback}
+        setFeedback={setFeedback}
         isOpen={feedbackModalIsOpen}
         onOpenChange={onFeedbackModalOpenChange}
       />

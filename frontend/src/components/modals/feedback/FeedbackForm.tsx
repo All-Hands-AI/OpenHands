@@ -46,7 +46,7 @@ function FeedbackForm({
         type="dropdown"
         value={feedback.permissions}
         onChange={(e) => {
-          onPermissionsChange(e.target.value);
+          onPermissionsChange(e.target.value as "public" | "private");
         }}
       >
         <option value="public">Public</option>

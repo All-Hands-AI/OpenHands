@@ -4,15 +4,18 @@ import { I18nKey } from "#/i18n/declaration";
 import BaseModal from "../base-modal/BaseModal";
 import { Feedback, sendFeedback } from "#/services/feedbackService";
 import FeedbackForm from "./FeedbackForm";
+import toast from "#/utils/toast";
 
 interface FeedbackModalProps {
   feedback: Feedback;
+  setFeedback: (feedback: Feedback) => void;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }
 
 function FeedbackModal({
   feedback,
+  setFeedback,
   isOpen,
   onOpenChange,
 }: FeedbackModalProps) {
@@ -26,21 +29,25 @@ function FeedbackModal({
   const handleSendFeedback = () => {
     setResponseLoading(true);
     sendFeedback(feedback).then(response => {
-      setResponseCode(response.status);
-      setResponseText(response.statusText);
+      if (response.status === 200) {
+        toast.info("Feedback shared successfully.");
+      } else {
+        toast.error("share-error", "Failed to share, see console for details.");
+        console.error(response.status, response.data);
+      }
     }).catch(error => {
-      setResponseCode(error.status);
-      setResponseText(error.statusText);
+      toast.error("share-error", "Failed to share, see console for details.");
+      console.error(error);
     });
     setResponseLoading(false);
   }
 
   const handleEmailChange = (key: string) => {
-    setFeedback((prev) => ({ ...prev, email: key }));
+    setFeedback({ ...feedback, email: key } as Feedback);
   };
 
   const handlePermissionsChange = (permissions: "public" | "private") => {
-    setFeedback((prev) => ({ ...prev, permissions: permissions }));
+    setFeedback({ ...feedback, permissions: permissions } as Feedback);
   };
 
   return (
