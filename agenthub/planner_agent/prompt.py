@@ -133,15 +133,22 @@ def get_prompt(state: State) -> str:
     """
 
     plan_str = json.dumps(state.root_task.to_dict(), indent=2)
-    sub_history = state.history[-HISTORY_SIZE:]
     history_dicts = []
     latest_action: Action = NullAction()
-    for event in sub_history:
+
+    event_count = 0
+    for event in state.history.get_events(reverse=True):
+        if event_count >= HISTORY_SIZE:
+            break
         if isinstance(event, Action):
             latest_action = event
         history_dicts.append(event_to_memory(event))
+        event_count += 1
 
+    # history_dicts is in reverse order
+    history_dicts.reverse()
     history_str = json.dumps(history_dicts, indent=2)
+
     current_task = state.root_task.get_current_task()
     if current_task is not None:
         plan_status = f"You're currently working on this task:\n{current_task.goal}."
@@ -149,9 +156,14 @@ def get_prompt(state: State) -> str:
             plan_status += "\nIf it's not achievable AND verifiable with a SINGLE action, you MUST break it down into subtasks NOW."
     else:
         plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
+
+    # get a hint based on the last action
     hint = get_hint(event_to_memory(latest_action).get('action', ''))
     logger.info('HINT:\n' + hint, extra={'msg_type': 'DETAIL'})
+
+    # last relevant user message
     task = state.get_current_user_intent()
+
     return prompt % {
         'task': task,
         'plan': plan_str,

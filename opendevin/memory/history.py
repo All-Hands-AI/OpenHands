@@ -129,19 +129,16 @@ class ShortTermHistory(list[Event]):
         ):
             yield event
 
-    def get_last_action(self) -> Action | None:
+    def get_last_action(self, end_id: int = -1) -> Action | None:
         """
         Return the last action from the event stream, filtered to exclude unwanted events.
         """
-        end_id = self._event_stream.get_latest_event_id()
-        start_id = max(0, end_id - 30)  # Look at the last 30 events
+        end_id = self._event_stream.get_latest_event_id() if end_id == -1 else end_id
 
         last_action = next(
             (
                 event
-                for event in self._event_stream.get_events(
-                    start_id=start_id, end_id=end_id, reverse=True
-                )
+                for event in self._event_stream.get_events(end_id=end_id, reverse=True)
                 if isinstance(event, Action)
                 and not isinstance(event, (NullAction, ChangeAgentStateAction))
             ),
@@ -150,19 +147,16 @@ class ShortTermHistory(list[Event]):
 
         return last_action
 
-    def get_last_observation(self) -> Observation | None:
+    def get_last_observation(self, end_id: int = -1) -> Observation | None:
         """
-        Return the last observation from the event stream.
+        Return the last observation from the event stream, filtered to exclude unwanted events.
         """
-        end_id = self._event_stream.get_latest_event_id()
-        start_id = max(0, end_id - 30)
+        end_id = self._event_stream.get_latest_event_id() if end_id == -1 else end_id
 
         last_observation = next(
             (
                 event
-                for event in self._event_stream.get_events(
-                    start_id=start_id, end_id=end_id, reverse=True
-                )
+                for event in self._event_stream.get_events(end_id=end_id, reverse=True)
                 if isinstance(event, Observation)
                 and not isinstance(
                     event, (NullObservation, AgentStateChangedObservation)
