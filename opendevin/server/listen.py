@@ -272,7 +272,7 @@ async def upload_file(request: Request, files: list[UploadFile]):
     """
     try:
         for file in files:
-            file_contents = (await file.read()).decode()
+            file_contents = await file.read()
             request.state.session.agent_session.runtime.file_store.write(
                 file.filename, file_contents
             )

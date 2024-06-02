@@ -288,3 +288,24 @@ def test_sandbox_jupyter_plugin(temp_dir):
                 'The output should be the same as the input for '
                 + box.__class__.__name__
             )
+
+
+def test_workspace_subdir(temp_dir):
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'workspace_mount_path', new=temp_dir
+    ), patch.object(config, 'run_as_devin', new='true'):
+        p = pathlib.Path(temp_dir, 'my_subdir')
+        os.mkdir(p)
+        with open(p.joinpath('file.txt'), 'w') as f:
+            f.write('my file in subdir')
+        for box in [
+            DockerSSHBox(workspace_subdir='my_subdir'),
+            DockerExecBox(workspace_subdir='my_subdir'),
+        ]:
+            exit_code, output = box.execute('ls -1')
+            assert exit_code == 0, (
+                'The exit code should be 0 for ' + box.__class__.__name__
+            )
+            assert output == 'file.txt', (
+                'The output should be file.txt' + box.__class__.__name__
+            )
