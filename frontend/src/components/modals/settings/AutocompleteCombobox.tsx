@@ -77,8 +77,3 @@ export function AutocompleteCombobox({
     </Tooltip>
   );
 }
-
-AutocompleteCombobox.defaultProps = {
-  allowCustomValue: false,
-  disabled: false,
-};

@@ -1,11 +1,12 @@
-import styles from "./styles.module.css";
+import React from "react";
+import "../../css/welcome.css";  // Importing the CSS file
 
 export function Welcome() {
   return (
-    <div className={styles.container}>
-      <div className={styles.innerContainer}>
-        <img src="img/logo.png" className={styles.sidebarImage} />
-        <p className={styles.welcomeText}>
+    <div className="text-white">
+      <div className="welcome-container">
+        <img src="img/logo.png" className="welcome-logo" />
+        <p className="welcome-text">
           Welcome to OpenDevin, an open-source project aiming to replicate
           Devin, an autonomous AI software engineer who is capable of executing
           complex engineering tasks and collaborating actively with users on

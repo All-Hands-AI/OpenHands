@@ -216,38 +216,56 @@ class DockerSSHBox(Sandbox):
             )
             raise ex
 
-        self.instance_id = (
-            sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
-        )
+        if config.persist_sandbox:
+            if not self.run_as_devin:
+                raise Exception(
+                    'Persistent sandbox is currently designed for opendevin user only. Please set run_as_devin=True in your config.toml'
+                )
+            self.instance_id = 'persisted'
+        else:
+            self.instance_id = (sid or '') + str(uuid.uuid4())
 
         self.timeout = timeout
-        self.container_image = (
-            config.sandbox_container_image
-            if container_image is None
-            else container_image
-        )
+        self.container_image = container_image or config.sandbox_container_image
         self.container_name = self.container_name_prefix + self.instance_id
 
         # set up random user password
-        self._ssh_password = str(uuid.uuid4())
-        self._ssh_port = find_available_tcp_port()
-
-        # always restart the container, cuz the initial be regarded as a new session
-        n_tries = 5
-        while n_tries > 0:
-            try:
-                self.restart_docker_container()
-                break
-            except Exception as e:
-                logger.exception(
-                    'Failed to start Docker container, retrying...', exc_info=False
+        if config.persist_sandbox:
+            if not config.ssh_password:
+                raise Exception(
+                    'Please add ssh_password to your config.toml or add -e SSH_PASSWORD to your docker run command'
                 )
-                n_tries -= 1
-                if n_tries == 0:
-                    raise e
-                time.sleep(5)
-        self.setup_user()
-
+            self._ssh_password = config.ssh_password
+            self._ssh_port = config.ssh_port
+        else:
+            self._ssh_password = str(uuid.uuid4())
+            self._ssh_port = find_available_tcp_port()
+        try:
+            docker.DockerClient().containers.get(self.container_name)
+            self.is_initial_session = False
+        except docker.errors.NotFound:
+            self.is_initial_session = True
+            logger.info('Detected initial session.')
+        if not config.persist_sandbox or self.is_initial_session:
+            logger.info('Creating new Docker container')
+            n_tries = 5
+            while n_tries > 0:
+                try:
+                    self.restart_docker_container()
+                    break
+                except Exception as e:
+                    logger.exception(
+                        'Failed to start Docker container, retrying...', exc_info=False
+                    )
+                    n_tries -= 1
+                    if n_tries == 0:
+                        raise e
+                    time.sleep(5)
+            self.setup_user()
+        else:
+            self.container = self.docker_client.containers.get(self.container_name)
+            logger.info('Using existing Docker container')
+            self.start_docker_container()
         try:
             self.start_ssh_session()
         except pxssh.ExceptionPxssh as e:
@@ -370,12 +388,17 @@ class DockerSSHBox(Sandbox):
             )
             hostname = self.ssh_hostname
             username = 'opendevin' if self.run_as_devin else 'root'
+            if config.persist_sandbox:
+                password_msg = 'using your SSH password'
+            else:
+                password_msg = f"using the password '{self._ssh_password}'"
+            logger.info('Connecting to SSH session...')
+            ssh_cmd = f'`ssh -v -p {self._ssh_port} {username}@{hostname}`'
             logger.info(
-                f'Connecting to {username}@{hostname} via ssh. '
-                f"If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub. "
-                f"If you started OpenDevin with `docker run`, you should try `ssh -v -p {self._ssh_port} {username}@localhost` with the password '{self._ssh_password} on the host machine (where you started the container)."
+                f'You can debug the SSH connection by running: {ssh_cmd} {password_msg}'
             )
             self.ssh.login(hostname, username, self._ssh_password, port=self._ssh_port)
+            logger.info('Connected to SSH session')
         except pxssh.ExceptionPxssh as e:
             logger.exception(
                 'Failed to login to SSH session, retrying...', exc_info=False
@@ -410,7 +433,9 @@ class DockerSSHBox(Sandbox):
         prev_output: str = '',
         ignore_last_output: bool = False,
     ) -> tuple[int, str]:
-        logger.exception('Command timed out, killing process...', exc_info=False)
+        logger.exception(
+            f'Command "{cmd}" timed out, killing process...', exc_info=False
+        )
         # send a SIGINT to the process
         self.ssh.sendintr()
         self.ssh.prompt()
@@ -419,7 +444,7 @@ class DockerSSHBox(Sandbox):
             command_output += '\n' + self.ssh.before
         return (
             -1,
-            f'Command: "{cmd}" timed out. Sending SIGINT to the process: {command_output}',
+            f'Command: "{cmd}" timed out. Sent SIGINT to the process: {command_output}',
         )
 
     def execute(
@@ -443,7 +468,6 @@ class DockerSSHBox(Sandbox):
             return 0, SSHExecCancellableStream(self.ssh, cmd, self.timeout)
         success = self.ssh.prompt(timeout=timeout)
         if not success:
-            logger.exception('Command timed out, killing process...', exc_info=False)
             return self._send_interrupt(cmd)
         command_output = self.ssh.before
 
@@ -570,11 +594,30 @@ class DockerSSHBox(Sandbox):
         self.background_commands.pop(id)
         return bg_cmd
 
-    def stop_docker_container(self):
+    def start_docker_container(self):
+        try:
+            container = self.docker_client.containers.get(self.container_name)
+            logger.info('Container status: %s', container.status)
+            if container.status != 'running':
+                container.start()
+                logger.info('Container started')
+            elapsed = 0
+            while container.status != 'running':
+                time.sleep(1)
+                elapsed += 1
+                if elapsed > self.timeout:
+                    break
+                container = self.docker_client.containers.get(self.container_name)
+        except Exception:
+            logger.exception('Failed to start container')
+
+    def remove_docker_container(self):
         try:
             container = self.docker_client.containers.get(self.container_name)
             container.stop()
+            logger.info('Container stopped')
             container.remove()
+            logger.info('Container removed')
             elapsed = 0
             while container.status != 'exited':
                 time.sleep(1)
@@ -642,10 +685,9 @@ class DockerSSHBox(Sandbox):
 
     def restart_docker_container(self):
         try:
-            self.stop_docker_container()
-            logger.info('Container stopped')
+            self.remove_docker_container()
         except docker.errors.DockerException as ex:
-            logger.exception('Failed to stop container', exc_info=False)
+            logger.exception('Failed to remove container', exc_info=False)
             raise ex
 
         try:
@@ -704,7 +746,10 @@ class DockerSSHBox(Sandbox):
         containers = self.docker_client.containers.list(all=True)
         for container in containers:
             try:
-                if container.name.startswith(self.container_name):
+                if (
+                    container.name.startswith(self.container_name)
+                    and not config.persist_sandbox
+                ):
                     # only remove the container we created
                     # otherwise all other containers with the same prefix will be removed
                     # which will mess up with parallel evaluation
