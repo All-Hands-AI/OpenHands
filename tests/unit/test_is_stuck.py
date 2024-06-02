@@ -102,7 +102,6 @@ class TestAgentController:
 
         # random user message just because we can
         message_null_observation = NullObservation(content='')
-        # controller.state.history.append((message_action, message_null_observation))
         event_stream.add_event(message_action, EventSource.USER)
         event_stream.add_event(message_null_observation, EventSource.USER)
         # 8 events

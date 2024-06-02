@@ -39,32 +39,6 @@ class ShortTermHistory(list[Event]):
     def set_event_stream(self, event_stream: EventStream):
         self._event_stream = event_stream
 
-    def append(self, item: tuple[Action, Observation] | Event):
-        """
-        Updates the start/end ids if necessary. Accepts an (action, observation) tuple for compatibility on the short term.
-
-        Args:
-            event: The event to append.
-        """
-        if not isinstance(item, tuple) and not isinstance(item, Event):
-            raise TypeError(f'Event must be a tuple, got {type(item)}')
-
-        if isinstance(item, tuple):
-            action, observation = item
-
-            self.append(action)
-            self.append(observation)
-        elif isinstance(item, Event):
-            if isinstance(item, AgentSummarizeAction):
-                # we're not making an obs
-                self.replace_events_with_summary(item)
-            # else:
-            # instead of appending, we might care if this event is consecutive, and update the end_id
-            # or it's "jumping" and we should start a new chunk
-            # super().append(item)
-        else:
-            raise TypeError(f'Event must be a tuple or Event, got {type(item)}')
-
     def get_events_as_list(self) -> list[Event]:
         """
         Return the history as a list of Event objects.
