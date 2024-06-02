@@ -17,7 +17,6 @@ from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.llm.llm import LLM
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.server.runtime import ServerRuntime
-from opendevin.runtime.tools import RuntimeTool
 
 
 def read_task_from_file(file_path: str) -> str:
@@ -93,12 +92,6 @@ async def main(
         max_chars=args.max_chars,
         event_stream=event_stream,
     )
-    runtime_tools_config = {
-        RuntimeTool.BROWSER: {
-            'browsergym_eval': 'browsergym/webarena.310',
-            'browsergym_eval_save_dir': 'browsergym_eval_save_dir',
-        }
-    }
     runtime = ServerRuntime(event_stream=event_stream, sandbox=sandbox)
 
     if runtime.sandbox.is_initial_session:

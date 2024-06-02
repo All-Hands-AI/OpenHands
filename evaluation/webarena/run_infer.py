@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import multiprocessing as mp
 import os
 import pathlib
 import subprocess
@@ -9,7 +8,6 @@ import time
 
 import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
 import gymnasium as gym
-import pandas as pd
 from tqdm import tqdm
 
 from opendevin.controller.state.state import State
@@ -18,16 +16,9 @@ from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.serialization.event import event_to_dict
+from opendevin.runtime.tools import RuntimeTool
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false') == 'true'
-
-
-def cleanup():
-    print('Cleaning up child processes...')
-    for process in mp.active_children():
-        print(f'Terminating child process: {process.name}')
-        process.terminate()
-        process.join()
 
 
 AGENT_CLS_TO_INST_SUFFIX = {
@@ -38,34 +29,22 @@ SUPPORTED_AGENT_CLS = {'BrowsingAgent'}
 
 
 def process_instance(
-    instance: dict,
-    agent_class: str,
+    env_id: str,
     metadata: dict,
-    skip_workspace_mount: bool,
     eval_output_dir: str,
     reset_logger: bool = True,
 ):
-    workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
-    # create process-specific workspace dir
-    # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
-    # so that different agent don't interfere with each other.
-    if not skip_workspace_mount:
-        workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
-        pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
-
     # Setup the logger properly, so you can run multi-processing to parallize the evaluation
     if reset_logger:
         # Set up logger
-        log_file = os.path.join(
-            eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
-        )
+        log_file = os.path.join(eval_output_dir, 'logs', f'instance_{env_id}.log')
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
             logger.removeHandler(handler)
         # add back the console handler to print ONE line
         logger.addHandler(get_console_handler())
         logger.info(
-            f'Starting evaluation for instance {instance.instance_id}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
+            f'Starting evaluation for instance {env_id}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -76,32 +55,20 @@ def process_instance(
         )
         logger.addHandler(file_handler)
     else:
-        logger.info(f'Starting evaluation for instance {instance.instance_id}.')
-
-    if not skip_workspace_mount:
-        logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
-
-    # Prepare instruction
-    instruction = (
-        f'Please fix the following issue for the repository in .\n'
-        'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
-        '# Problem Statement\n'
-        f'{instance.problem_statement}\n\n'
-    )
-    if USE_HINT_TEXT and instance.hints_text:
-        instruction += f'# Hints\n{instance.hints_text}\n\n'
-    instruction += (
-        'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-        'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
-        'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
-    )
-    # NOTE: You can actually set slightly different instruction for different agents
-    instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
+        logger.info(f'Starting evaluation for instance {env_id}.')
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
+    runtime_tools_config = {
+        RuntimeTool.BROWSER: {
+            'browsergym_eval': env_id,
+            'browsergym_eval_save_dir': eval_output_dir,
+        }
+    }
+
     state: State = asyncio.run(
         main(
-            instruction,
+            'PLACEHOLDER_GOAL',
+            runtime_tools_config=runtime_tools_config,
         )
     )
 
@@ -114,10 +81,22 @@ def process_instance(
         raise ValueError('State should not be None.')
 
     metrics = state.metrics.get() if state.metrics else None
+    browsergym_eval_dir = os.path.join(eval_output_dir, env_id.split('/')[1])
+    # read goal
+    with open(
+        os.path.join(browsergym_eval_dir, 'goal.txt'), 'r', encoding='utf-8'
+    ) as f:
+        instruction = f.read()
+    # read reward
+    with open(
+        os.path.join(browsergym_eval_dir, 'rewards.json'), 'r', encoding='utf-8'
+    ) as f:
+        rewards = json.load(f.read())
+        reward = max(rewards)
 
     # Save the output
     output = {
-        'instance_id': instance.instance_id,
+        'instance_id': env_id,
         'instruction': instruction,
         'metadata': metadata,
         'history': [
@@ -125,7 +104,7 @@ def process_instance(
         ],
         'metrics': metrics,
         'error': state.error if state and state.error else None,
-        'test_result': True,
+        'test_result': reward,
     }
 
     return output
@@ -155,7 +134,7 @@ if __name__ == '__main__':
         eval_note += '_N_' + args.eval_note
     eval_output_dir = os.path.join(
         args.eval_output_dir,
-        'swe_bench_lite',
+        'webarena',
         agent_class,
         model_name + '_maxiter_' + str(max_iterations) + eval_note,
     )
@@ -207,38 +186,29 @@ if __name__ == '__main__':
 
     # =============================================
     # filter out finished instances
-    new_swe_bench_tests = []
+    new_env_ids = []
     for idx in env_ids:
         if idx in finished_instance_ids:
             logger.info(f'Skipping instance {idx} as it is already finished.')
             continue
-        new_swe_bench_tests.append(idx)
+        new_env_ids.append(idx)
 
-    swe_bench_tests = pd.DataFrame(new_swe_bench_tests)
+    env_ids = new_env_ids
     logger.info(
-        f'Finished instances: {len(finished_instance_ids)}, Remaining instances: {len(swe_bench_tests)}'
+        f'Finished instances: {len(finished_instance_ids)}, Remaining instances: {len(env_ids)}'
     )
     # =============================================
-
-    pbar = tqdm(total=len(swe_bench_tests))
-
-    # This function tracks the progress AND write the output to a JSONL file
-    def update_progress(future):
-        pbar.update(1)
-        output = future.result()
-        pbar.set_description(f'Instance {output["instance_id"]}')
-        pbar.set_postfix_str(f'Test Result: {output["test_result"]["result"]}')
-        logger.info(
-            f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]["result"]}'
-        )
-        output_fp.write(json.dumps(output) + '\n')
-        output_fp.flush()
-
-    try:
-        pass
-    except KeyboardInterrupt:
-        print('KeyboardInterrupt received. Cleaning up...')
-        cleanup()
+    for env_id in tqdm(env_ids):
+        try:
+            output = process_instance(
+                env_id=env_id,
+                metadata=metadata,
+                eval_output_dir=eval_output_dir,
+            )
+            output_fp.write(json.dumps(output) + '\n')
+            output_fp.flush()
+        except Exception as e:
+            logger.error(f'Error processing instance {env_id}: {e}')
 
     output_fp.close()
     logger.info('Evaluation finished.')
