@@ -140,7 +140,7 @@ def get_prompt(state: State) -> str:
     for event in state.history.get_events(reverse=True):
         if event_count >= HISTORY_SIZE:
             break
-        if isinstance(event, Action) and latest_action == NullAction():
+        if latest_action == NullAction() and isinstance(event, Action):
             latest_action = event
         history_dicts.append(event_to_memory(event))
         event_count += 1
