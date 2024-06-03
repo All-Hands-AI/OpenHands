@@ -33,7 +33,7 @@
   
   @media (min-width: 768px) {
     .welcome-logo {
-      height: 60vh;
+      height: auto;
       width: 350px;
     }
   }
