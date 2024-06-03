@@ -40,6 +40,9 @@ Follow [this document](https://github.com/web-arena-x/webarena/blob/main/environ
 Take note of the base URL of the machine where the environment is installed.
 
 ## Setup Environment Variables of WebArena Websites
+
+Create a script `webarena_env.sh` under `evaluation/webarena/scripts` with the following:
+
 ```bash
 export BASE_URL=<YOUR_SERVER_URL_HERE>
 export SHOPPING="$BASE_URL:7770/"
@@ -49,6 +52,7 @@ export GITLAB="$BASE_URL:8023"
 export WIKIPEDIA="$BASE_URL:8888/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing"
 export MAP="$BASE_URL:3000"
 export HOMEPAGE="$BASE_URL:4399"
+export OPENAI_API_KEY="yourkey" # this key is required for some WebArena evaluations that utilize LLMs
 ```
 
 ## Test if your environment works
@@ -57,6 +61,14 @@ Access with browser the above WebArena website URLs and see if they load correct
 If you cannot access the website, make sure the firewall allows public access of the aforementioned ports on your server
 Check the network security policy if you are using an AWS machine.
 Follow the WebArena environment setup guide carefully, and make sure the URL fields are populated with the correct base URL of your server.
+
+## Run Evaluation
+
+```sh
+bash evaluation/webarena/scripts/run_infer.sh
+```
+
+Results will be in `evaluation/evaluation_outputs/outputs/webarena/`
 
 
 ## Submit your evaluation results

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# configure miniwob website
+# configure miniwob website, change URL to yours
 export MINIWOB_URL="file:///home/fangzhex/miniwob-plusplus/miniwob/html/miniwob/"
 
 MODEL_CONFIG=$1

@@ -1,13 +1,7 @@
 #!/bin/bash
 
-# configure webarena websites
-export SHOPPING="http://ec2-3-22-114-187.us-east-2.compute.amazonaws.com:7770/"
-export SHOPPING_ADMIN="http://ec2-3-22-114-187.us-east-2.compute.amazonaws.com:7780/admin"
-export REDDIT="http://ec2-3-22-114-187.us-east-2.compute.amazonaws.com:9999"
-export GITLAB="http://ec2-3-22-114-187.us-east-2.compute.amazonaws.com:8023"
-export WIKIPEDIA="http://metis.lti.cs.cmu.edu:8888/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing"
-export MAP="http://miniserver1875.asuscomm.com:3000"
-export HOMEPAGE="http://metis.lti.cs.cmu.edu:4399"
+# configure webarena websites and environment
+source evaluation/webarena/scripts/webarena_env.sh
 
 MODEL_CONFIG=$1
 AGENT=$2
@@ -36,10 +30,6 @@ EVAL_NOTE="$AGENT_VERSION"
 if [ "$USE_HINT_TEXT" = false ]; then
   EVAL_NOTE="$EVAL_NOTE-no-hint"
 fi
-
-# poetry run python ./opendevin/core/main.py -i 10 -t "tell me the usa's president using google search" -c BrowsingAgent -m gpt-4o-2024-05-13
-
-# exit 0
 
 COMMAND="poetry run python evaluation/webarena/run_infer.py \
   --agent-cls $AGENT \

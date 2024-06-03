@@ -43,7 +43,7 @@ git clone git@github.com:Farama-Foundation/miniwob-plusplus.git
 git -C "./miniwob-plusplus" reset --hard 7fd85d71a4b60325c6585396ec4f48377d049838
 ```
 
-- Setup Miniwob URL (change `PATH_TO_MINIWOB_CLONED_REPO` here to the absolute path to your `miniwob-plusplus` folder)
+- Setup Miniwob URL (change `PATH_TO_MINIWOB_CLONED_REPO` here to the absolute path to your `miniwob-plusplus` folder) in `evaluation/miniwob/scripts/run_infer.sh`
 ```sh
 export MINIWOB_URL="file://<PATH_TO_MINIWOB_CLONED_REPO>/miniwob/html/miniwob/"
 ```
@@ -51,6 +51,14 @@ export MINIWOB_URL="file://<PATH_TO_MINIWOB_CLONED_REPO>/miniwob/html/miniwob/"
 ## Test if your environment works
 
 Access with browser the above MiniWoB URLs and see if they load correctly.
+
+## Run Evaluation
+
+```sh
+bash evaluation/miniwob/scripts/run_infer.sh
+```
+
+Results will be in `evaluation/evaluation_outputs/outputs/miniwob/`
 
 ## Submit your evaluation results
 
