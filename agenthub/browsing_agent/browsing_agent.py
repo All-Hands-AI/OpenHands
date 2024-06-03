@@ -20,6 +20,8 @@ from opendevin.runtime.plugins import (
 )
 from opendevin.runtime.tools import RuntimeTool
 
+USE_NAV = False
+
 
 class BrowsingAgent(Agent):
     VERSION = '1.0'
@@ -41,13 +43,13 @@ class BrowsingAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
+        # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
+        # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
+        action_subsets = ['chat', 'bid']
+        if USE_NAV:
+            action_subsets.append('nav')
         self.action_space = HighLevelActionSet(
-            # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
-            subsets=[
-                'chat',
-                'bid',
-                'nav',
-            ],  # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
+            subsets=action_subsets,
             strict=False,  # less strict on the parsing of the actions
             multiaction=True,  # enable to agent to take multiple actions at once
         )
@@ -60,6 +62,7 @@ class BrowsingAgent(Agent):
         """
         super().reset()
         self.cost_accumulator = 0
+        self.error_accumulator = 0
 
     def parse_response(self, response: str) -> Action:
         if '```' not in response:
@@ -101,14 +104,16 @@ class BrowsingAgent(Agent):
         """
         goal = state.get_current_user_intent()
         messages = []
-        prev_actions = ''
+        prev_actions = []
         cur_axtree_txt = ''
         error_prefix = ''
         last_obs = None
         last_action = None
+        if len(state.history) == 1:
+            return BrowseInteractiveAction(browser_actions='noop()')
         for prev_action, obs in state.history:
             if isinstance(prev_action, BrowseInteractiveAction):
-                prev_actions += f'{prev_action.browser_actions}\n'
+                prev_actions.append(prev_action.browser_actions)
                 last_obs = obs
                 last_action = prev_action
             elif (
@@ -118,6 +123,7 @@ class BrowsingAgent(Agent):
                 # agent has responded, task finish.
                 return AgentFinishAction()
 
+        prev_action_str = '\n'.join(prev_actions[1:])
         # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
         # we should also send a message back to the user in OpenDevin and call it a day
         if (
@@ -130,8 +136,23 @@ class BrowsingAgent(Agent):
             if last_obs.error:
                 # add error recovery prompt prefix
                 error_prefix = f'IMPORTANT! Last action is incorrect:\n{last_obs.last_browser_action}\nThink again with the current observation of the page.\n'
-            cur_axtree_txt = flatten_axtree_to_str(last_obs.axtree_object)
+            try:
+                cur_axtree_txt = flatten_axtree_to_str(
+                    last_obs.axtree_object,
+                    extra_properties=last_obs.extra_element_properties,
+                    with_clickable=True,
+                    filter_visible_only=True,
+                )
+            except Exception as e:
+                logger.error(
+                    'Error when trying to process the accessibility tree: %s', e
+                )
+                return MessageAction('Error encountered when browsing.')
 
+        if error_prefix:
+            self.error_accumulator += 1
+            if self.error_accumulator > 5:
+                return MessageAction('Too many errors encountered. Task failed.')
         system_msg = f"""\
 # Instructions
 Review the current state of the page and all other information to find the best
@@ -154,21 +175,28 @@ and executed by a program, make sure to follow the formatting instructions.
 {cur_axtree_txt}
 
 # Previous Actions
-{prev_actions}
+{prev_action_str}
 
 Here is an example with chain of thought of a valid action when clicking on a button:
 "
 In order to accomplish my goal I need to click on the button with bid 12
 ```click("12")```
 "
+
+Here is another example with chain of thought of a valid action when providing a concise answer to user:
+"
+In order to accomplish my goal I need to send the information asked back to the user. This page list the information of HP Inkjet Fax Machine, which is the product identified in the objective. Its price is $279.49. I will send a message back to user with the answer.
+```send_msg_to_user("$279.49")```
+"
 """.strip()
         messages.append({'role': 'user', 'content': prompt})
         response = self.llm.completion(
             messages=messages,
             temperature=0.0,
+            stop=[')```'],
         )
         self.log_cost(response)
-        action_resp = response['choices'][0]['message']['content']
+        action_resp = response['choices'][0]['message']['content'] + ')```'
         logger.info(prompt)
         logger.info(action_resp)
         return self.parse_response(action_resp)

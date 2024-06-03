@@ -112,6 +112,9 @@ async def main(
             os.path.join(runtime.browser.eval_dir, 'goal.txt'), 'r', encoding='utf-8'
         ) as f:
             task = f.read()
+            logger.info(f'Dynamic Eval task: {task}')
+            # add instruction about returning answer in the cleanest way
+            task += ''
 
     await event_stream.add_event(MessageAction(content=task), EventSource.USER)
 

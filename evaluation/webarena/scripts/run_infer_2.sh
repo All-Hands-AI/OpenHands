@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # configure webarena websites
-export SHOPPING="http://ec2-3-22-114-187.us-east-2.compute.amazonaws.com:7770/"
-export SHOPPING_ADMIN="http://ec2-3-22-114-187.us-east-2.compute.amazonaws.com:7780/admin"
-export REDDIT="http://ec2-3-22-114-187.us-east-2.compute.amazonaws.com:9999"
-export GITLAB="http://ec2-3-22-114-187.us-east-2.compute.amazonaws.com:8023"
+export SHOPPING="http://ec2-18-219-239-190.us-east-2.compute.amazonaws.com:7770/"
+export SHOPPING_ADMIN="http://ec2-18-219-239-190.us-east-2.compute.amazonaws.com:7780/admin"
+export REDDIT="http://ec2-18-219-239-190.us-east-2.compute.amazonaws.com:9999"
+export GITLAB="http://ec2-18-219-239-190.us-east-2.compute.amazonaws.com:8023"
 export WIKIPEDIA="http://metis.lti.cs.cmu.edu:8888/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing"
 export MAP="http://miniserver1875.asuscomm.com:3000"
 export HOMEPAGE="http://metis.lti.cs.cmu.edu:4399"

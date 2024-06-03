@@ -21,6 +21,9 @@ class BrowserOutputObservation(Observation):
     active_page_index: int = -1
     dom_object: dict = field(default_factory=dict, repr=False)  # don't show in repr
     axtree_object: dict = field(default_factory=dict, repr=False)  # don't show in repr
+    extra_element_properties: dict = field(
+        default_factory=dict, repr=False
+    )  # don't show in repr
     last_browser_action: str = ''
     last_browser_action_error: str = ''
     focused_element_bid: str = ''
@@ -40,5 +43,5 @@ class BrowserOutputObservation(Observation):
             f'Last browser action: {self.last_browser_action}\n'
             f'Last browser action error: {self.last_browser_action_error}\n'
             f'Focused element bid: {self.focused_element_bid}\n'
-            f'CONTENT: {self.content}\n'
+            # f'CONTENT: {self.content}\n'
         )

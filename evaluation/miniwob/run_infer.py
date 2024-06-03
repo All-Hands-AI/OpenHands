@@ -6,7 +6,7 @@ import pathlib
 import subprocess
 import time
 
-import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
+import browsergym.miniwob  # noqa F401 register miniwob tasks as gym environments
 import gymnasium as gym
 from tqdm import tqdm
 
@@ -108,7 +108,7 @@ def process_instance(
 
 if __name__ == '__main__':
     env_ids = [
-        id for id in gym.envs.registry.keys() if id.startswith('browsergym/webarena')
+        id for id in gym.envs.registry.keys() if id.startswith('browsergym/miniwob')
     ]
 
     # Check https://github.com/OpenDevin/OpenDevin/blob/main/evaluation/swe_bench/README.md#configure-opendevin-and-your-llm
@@ -129,7 +129,7 @@ if __name__ == '__main__':
         eval_note += '_N_' + args.eval_note
     eval_output_dir = os.path.join(
         args.eval_output_dir,
-        'webarena',
+        'miniwob',
         agent_class,
         model_name + '_maxiter_' + str(max_iterations) + eval_note,
     )
