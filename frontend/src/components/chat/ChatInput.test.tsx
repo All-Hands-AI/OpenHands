@@ -68,7 +68,7 @@ describe("ChatInput", () => {
     const { getByRole } = render(<ChatInput onSendMessage={onSendMessage} />);
     const textarea = getByRole("textbox");
 
-	fireEvent.change(textarea, { target: { value: "Hello, world!" } });
+    fireEvent.change(textarea, { target: { value: "Hello, world!" } });
     fireEvent.keyDown(textarea, { key: "Enter", code: "Enter", charCode: 13 });
 
     expect(onSendMessage).toHaveBeenCalledWith("Hello, world!");
