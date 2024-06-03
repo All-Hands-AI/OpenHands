@@ -292,6 +292,27 @@
     "zh-CN": "开始新会话",
     "zh-TW": "開始新會話"
   },
+  "FEEDBACK$MODAL_TITLE": {
+    "en": "Share feedback"
+  },
+  "FEEDBACK$MODAL_CONTENT": {
+    "en": "Thank you for your feedback! The history of this conversation, together with your positive/negative feedback will be shared with the OpenDevin developers. Additionally, you can choose to contribute this feedback to our public dataset that will be shared with the community for model improvements."
+  },
+  "FEEDBACK$EMAIL_LABEL": {
+    "en": "Your email"
+  },
+  "FEEDBACK$CONTRIBUTE_LABEL": {
+    "en": "Contribute to public dataset"
+  },
+  "FEEDBACK$SHARE_LABEL": {
+    "en": "Share"
+  },
+  "FEEDBACK$CANCEL_LABEL": {
+    "en": "Cancel"
+  },
+  "FEEDBACK$EMAIL_PLACEHOLDER": {
+    "en": "Enter your email address."
+  },
   "CHAT_INTERFACE$INITIALIZING_AGENT_LOADING_MESSAGE": {
     "en": "Initializing agent (may take up to 10 seconds)...",
     "zh-CN": "正在初始化智能体（可能需要 10 秒以上时间）",
