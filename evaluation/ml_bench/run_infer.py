@@ -223,8 +223,9 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
             logger.warning(f'Evaluation script failed with exit code {exit_code}')
             logger.warning(f'Output: {eval_output}')
             metrics = {
-                'success': 'KeyboardInterrupt'
-                in eval_output,  # super-dainiu: assume ``KeyboardInterrupt`` is a success as is done in ML-Bench
+                'success': int(
+                    'KeyboardInterrupt' in eval_output
+                ),  # super-dainiu: assume ``KeyboardInterrupt`` is a success as is done in ML-Bench
             }
         else:
             logger.info(f'Evaluation script succeeded with exit code {exit_code}')
