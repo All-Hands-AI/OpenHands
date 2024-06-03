@@ -87,6 +87,14 @@ function ChatInterface() {
     sendChatMessage(content);
   };
 
+  const handleEmailChange = (key: string) => {
+    setFeedback({ ...feedback, email: key } as Feedback);
+  };
+
+  const handlePermissionsChange = (permissions: "public" | "private") => {
+    setFeedback({ ...feedback, permissions } as Feedback);
+  };
+
   const { t } = useTranslation();
   const handleSendContinueMsg = () => {
     handleSendMessage(t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE));
