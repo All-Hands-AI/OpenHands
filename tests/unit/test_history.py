@@ -2,6 +2,7 @@ import logging
 
 import pytest
 
+from opendevin.events.action.agent import AgentSummarizeAction
 from opendevin.events.action.files import FileReadAction, FileWriteAction
 from opendevin.events.action.message import MessageAction
 from opendevin.events.event import EventSource
@@ -195,3 +196,45 @@ def test_history_with_message_actions(event_stream: EventStream):
     assert isinstance(tuples[1][1], NullObservation)
     assert isinstance(tuples[2][0], FileReadAction)
     assert isinstance(tuples[2][1], FileReadObservation)
+
+
+def test_history_with_summary(event_stream: EventStream):
+    history = ShortTermHistory()
+    history.set_event_stream(event_stream)
+
+    message_action_1 = MessageAction(content='Hello', wait_for_response=False)
+    message_action_1._source = EventSource.USER
+    event_stream.add_event(message_action_1, EventSource.USER)
+
+    message_action_2 = MessageAction(content='Hi there', wait_for_response=True)
+    message_action_2._source = EventSource.AGENT
+    event_stream.add_event(message_action_2, EventSource.AGENT)
+
+    read_action_1 = FileReadAction(path='file1.txt')
+    event_stream.add_event(read_action_1, EventSource.USER)
+    read_observation_1 = FileReadObservation(path='file1.txt', content='File 1 content')
+    read_observation_1._cause = read_action_1._id
+    event_stream.add_event(read_observation_1, EventSource.AGENT)
+
+    read_action_2 = FileReadAction(path='file2.txt')
+    event_stream.add_event(read_action_2, EventSource.USER)
+    read_observation_2 = FileReadObservation(path='file2.txt', content='File 2 content')
+    read_observation_2._cause = read_action_2._id
+    event_stream.add_event(read_observation_2, EventSource.AGENT)
+
+    # Create a summary action and observation
+    summary_action = AgentSummarizeAction(
+        summarized_actions='FileReadAction, FileReadAction',
+        summary='The agent read the contents of file1.txt and file2.txt',
+    )
+    summary_action._chunk_start = read_action_1._id
+    summary_action._chunk_end = read_observation_2._id
+
+    history.add_summary(summary_action)
+
+    events = list(history.get_events())
+
+    assert len(events) == 3
+    assert isinstance(events[0], MessageAction)
+    assert isinstance(events[1], MessageAction)
+    assert isinstance(events[2], AgentSummarizeAction)

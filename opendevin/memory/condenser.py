@@ -43,7 +43,7 @@ class MemoryCondenser:
 
     def condense(
         self,
-        events: ShortTermHistory,
+        history: ShortTermHistory,
     ) -> AgentSummarizeAction | None:
         """
         Condenses the given list of events using the llm. Returns the condensed list of events.
@@ -63,11 +63,10 @@ class MemoryCondenser:
         """
         # chunk of actions, observations to summarize
         chunk: list[Event] = []
-        chunk_start_index = 0
+        chunk_start_id = 0
 
-        for i, event in enumerate(events):
+        for event in history.get_events():
             # user messages should be kept if possible
-            # FIXME what to do about NullAction?
             if (
                 isinstance(event, Action)
                 and event.source == EventSource.USER
@@ -75,20 +74,22 @@ class MemoryCondenser:
             ):
                 if chunk:
                     summary_action = self._summarize_chunk(chunk)
-                    summary_action._chunk_start = chunk_start_index
-                    summary_action._chunk_end = i - 1
+                    summary_action._chunk_start = chunk_start_id
+                    summary_action._chunk_end = event.id - 1
                     return summary_action
                 else:
-                    chunk_start_index = i + 1
+                    chunk_start_id = event.id + 1
             elif isinstance(event, self._summarizable_actions()):
                 chunk.append(event)
             else:
-                chunk_start_index = i + 1
+                chunk_start_id = event.id + 1
 
         if chunk:
             summary_action = self._summarize_chunk(chunk)
-            summary_action._chunk_start = chunk_start_index
-            summary_action._chunk_end = len(events) - 1
+            summary_action._chunk_start = chunk_start_id
+            summary_action._chunk_end = history.get_latest_event_id()
+            history.add_summary(summary_action)
+
             return summary_action
         else:
             return None

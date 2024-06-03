@@ -23,6 +23,7 @@ class ShortTermHistory(list[Event]):
     start_id: int
     end_id: int
     _event_stream: EventStream
+    summaries: dict[tuple[int, int], AgentSummarizeAction]
     agent_event_filtered_types: ClassVar[tuple[type[Event], ...]] = (
         NullAction,
         NullObservation,
@@ -34,6 +35,7 @@ class ShortTermHistory(list[Event]):
         super().__init__()
         self.start_id = -1
         self.end_id = -1
+        self.summaries = {}
 
     def set_event_stream(self, event_stream: EventStream):
         self._event_stream = event_stream
@@ -81,7 +83,19 @@ class ShortTermHistory(list[Event]):
             reverse=reverse,
             filter_out_type=self.agent_event_filtered_types,
         ):
-            yield event
+            if event.id in [chunk_start for chunk_start, _ in self.summaries.keys()]:
+                chunk_start, chunk_end = next(
+                    (chunk_start, chunk_end)
+                    for chunk_start, chunk_end in self.summaries.keys()
+                    if chunk_start == event.id
+                )
+                summary_action = self.summaries[(chunk_start, chunk_end)]
+                yield summary_action
+            elif not any(
+                chunk_start <= event.id <= chunk_end
+                for chunk_start, chunk_end in self.summaries.keys()
+            ):
+                yield event
 
     def get_last_action(self, end_id: int = -1) -> Action | None:
         """
@@ -160,6 +174,11 @@ class ShortTermHistory(list[Event]):
     def get_latest_event_id(self):
         return self._event_stream.get_latest_event_id()
 
+    def add_summary(self, summary_action: AgentSummarizeAction):
+        self.summaries[(summary_action._chunk_start, summary_action._chunk_end)] = (
+            summary_action
+        )
+
     def compatibility_for_eval_history_tuples(self) -> list[tuple[dict, dict]]:
         history_tuples = []
 
@@ -170,7 +189,7 @@ class ShortTermHistory(list[Event]):
 
     # TODO remove me when unnecessary
     # history is now available as a filtered stream of events, rather than list of pairs of (Action, Observation)
-    # we can remake the pairs here
+    # we rebuild the pairs here
     # for compatibility with the existing output format in evaluations
     def get_tuples(self) -> list[tuple[Action, Observation]]:
         """
@@ -189,10 +208,6 @@ class ShortTermHistory(list[Event]):
         for event in self.get_events_as_list():
             if event.id is None or event.id == -1:
                 logger.debug(f'Event {event} has no ID')
-
-            if event.id is None:
-                # this will never happen (tm)
-                continue
 
             if isinstance(event, Action):
                 action_map[event.id] = event

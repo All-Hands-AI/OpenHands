@@ -17,7 +17,7 @@ class Event:
         return ''
 
     @property
-    def id(self) -> int | None:
+    def id(self) -> int:
         if hasattr(self, '_id'):
             return self._id  # type: ignore [attr-defined]
         return -1
