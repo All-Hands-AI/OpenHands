@@ -212,7 +212,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
 
         try:
             exit_code, eval_output = sandbox.execute(
-                f'timeout 60s conda run -n {ID2CONDA[instance["github_id"]]} bash {eval_script}',
+                f'timeout 120s conda run -n {ID2CONDA[instance["github_id"]]} bash {eval_script}',
                 timeout=600,
             )
         except Exception as e:
