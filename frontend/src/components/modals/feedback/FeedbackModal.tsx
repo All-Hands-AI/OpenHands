@@ -8,14 +8,16 @@ import toast from "#/utils/toast";
 
 interface FeedbackModalProps {
   feedback: Feedback;
-  setFeedback: (feedback: Feedback) => void;
+  handleEmailChange: (key: string) => void;
+  handlePermissionsChange: (permissions: "public" | "private") => void;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }
 
 function FeedbackModal({
   feedback,
-  setFeedback,
+  handleEmailChange,
+  handlePermissionsChange,
   isOpen,
   onOpenChange,
 }: FeedbackModalProps) {
@@ -41,13 +43,6 @@ function FeedbackModal({
       });
   };
 
-  const handleEmailChange = (key: string) => {
-    setFeedback({ ...feedback, email: key } as Feedback);
-  };
-
-  const handlePermissionsChange = (permissions: "public" | "private") => {
-    setFeedback({ ...feedback, permissions } as Feedback);
-  };
 
   return (
     <BaseModal
