@@ -422,7 +422,7 @@ if __name__ == '__main__':
         'max_iterations': max_iterations,
         'eval_output_dir': eval_output_dir,
         'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
-        # get the commit id of current repo for reproduciblity
+        # get the commit id of current repo for reproducibility
         'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
         .decode('utf-8')
         .strip(),
