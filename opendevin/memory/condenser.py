@@ -1,6 +1,9 @@
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events.action.action import Action
-from opendevin.events.action.agent import AgentRecallAction, AgentSummarizeAction
+from opendevin.events.action.agent import (
+    AgentFinishAction,
+    AgentRecallAction,
+    AgentSummarizeAction,
+)
 from opendevin.events.action.browse import BrowseInteractiveAction, BrowseURLAction
 from opendevin.events.action.commands import (
     CmdKillAction,
@@ -11,6 +14,7 @@ from opendevin.events.action.empty import NullAction
 from opendevin.events.action.files import FileReadAction, FileWriteAction
 from opendevin.events.action.message import MessageAction
 from opendevin.events.event import Event, EventSource
+from opendevin.events.observation.observation import Observation
 from opendevin.llm.llm import LLM
 from opendevin.memory.history import ShortTermHistory
 from opendevin.memory.prompts import parse_summary_response
@@ -18,6 +22,7 @@ from opendevin.memory.prompts import parse_summary_response
 MAX_TOKEN_COUNT_PADDING = (
     512  # estimation of tokens to add to the prompt for the max token count
 )
+MAX_USER_MESSAGE_CHAR_COUNT = 200  # max char count for user messages
 
 
 class MemoryCondenser:
@@ -46,53 +51,94 @@ class MemoryCondenser:
         history: ShortTermHistory,
     ) -> AgentSummarizeAction | None:
         """
-        Condenses the given list of events using the llm. Returns the condensed list of events.
+        Condenses the given list of events using the llm. Returns the condensed list of events. It works one by one.
 
         Condensation heuristics:
-        - Keep initial messages (system, user message setting task)
+        - Keep initial messages (system, user message setting task, including further tasks after AgentFinishActions)
         - Prioritize more recent history
         - Lazily summarize between initial instruction and most recent, starting with earliest condensable turns
-        - Introduce a SummaryObservation event type for textual summaries
-        - Split events into chunks delimited by user message actions (messages with EventSource.USER), condense each chunk into a sentence
+        - Split events into chunks delimited by user message actions, condense each chunk into a sentence
+        - If no more chunks of agent actions or observations, summarize individual user messages that exceeed a certain length, except likely tasks
 
         Parameters:
-        - events: List of events to condense.
+        - history: short term history
 
         Returns:
-        - The condensed list of events.
+        - AgentSummarizeAction: a summary in a sentence.
         """
         # chunk of actions, observations to summarize
         chunk: list[Event] = []
-        chunk_start_id = 0
+        chunk_start_id: int | None = None
+        last_summarizable_id: int | None = None
 
         for event in history.get_events():
             # user messages should be kept if possible
-            if (
-                isinstance(event, Action)
-                and event.source == EventSource.USER
-                or isinstance(event, NullAction)
-            ):
+            # aside from them, there are some (mostly or firstly) non-summarizable actions
+            # like AgentDelegateAction or AgentFinishAction
+            if not self._is_summarizable(event):
                 if chunk:
+                    # we've just gathered a chunk to summarize
                     summary_action = self._summarize_chunk(chunk)
+
+                    # mypy is happy with assert, and in fact it cannot/should not be None
+                    assert chunk_start_id is not None
                     summary_action._chunk_start = chunk_start_id
-                    summary_action._chunk_end = event.id - 1
+
+                    # same here, a gift for mypy during development
+                    assert last_summarizable_id is not None
+                    summary_action._chunk_end = last_summarizable_id
+
+                    # add it directly to history, so the agent only has to retry the request
+                    history.add_summary(summary_action)
                     return summary_action
                 else:
-                    chunk_start_id = event.id + 1
-            elif isinstance(event, self._summarizable_actions()):
-                chunk.append(event)
+                    chunk_start_id = None
+                    last_summarizable_id = None
             else:
-                chunk_start_id = event.id + 1
+                # these are the events we want to summarize
+                if chunk_start_id is None:
+                    chunk_start_id = event.id
+                last_summarizable_id = event.id
+                chunk.append(event)
 
         if chunk:
             summary_action = self._summarize_chunk(chunk)
-            summary_action._chunk_start = chunk_start_id
-            summary_action._chunk_end = history.get_latest_event_id()
-            history.add_summary(summary_action)
 
+            # keep mypy happy
+            assert chunk_start_id is not None
+            summary_action._chunk_start = chunk_start_id
+
+            # same here
+            assert last_summarizable_id is not None
+            summary_action._chunk_end = (
+                last_summarizable_id  # history.get_latest_event_id()
+            )
+            history.add_summary(summary_action)
             return summary_action
-        else:
-            return None
+
+        # no more chunks of agent actions or observations
+        # then summarize individual user messages that exceeed a certain length
+        # except for the first user message after an AgentFinishAction
+        last_event_was_finish = False
+        for event in history.get_events():
+            if isinstance(event, AgentFinishAction):
+                last_event_was_finish = True
+            elif isinstance(event, MessageAction) and event.source == EventSource.USER:
+                # the message has to be large enough ish, and not a likely task
+                if (
+                    not last_event_was_finish
+                    and len(event.content) > MAX_USER_MESSAGE_CHAR_COUNT
+                ):
+                    summary_action = self._summarize_chunk([event])
+                    summary_action._chunk_start = event.id
+                    summary_action._chunk_end = event.id
+                    history.add_summary(summary_action)
+                    return summary_action
+                last_event_was_finish = False
+            else:
+                last_event_was_finish = False
+
+        return None
 
     def _summarize_chunk(self, chunk: list[Event]) -> AgentSummarizeAction:
         """
@@ -137,11 +183,11 @@ class MemoryCondenser:
         token_count = self.llm.get_token_count(messages) + MAX_TOKEN_COUNT_PADDING
         return token_count >= self.llm.max_input_tokens
 
-    def _summarizable_actions(self):
+    def _is_summarizable(self, event: Event) -> bool:
         """
-        Returns the list of actions that can be summarized.
+        Returns true for actions/observations that can be summarized.
         """
-        actions = (
+        non_summarizable_events = (
             NullAction,
             CmdKillAction,
             CmdRunAction,
@@ -159,5 +205,11 @@ class MemoryCondenser:
             # ChangeAgentStateAction,
             MessageAction,
             # AgentSummarizeAction, # this is actually fine but separate
+            Observation,
         )
-        return actions
+
+        if isinstance(event, non_summarizable_events):
+            if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                return False
+            return True
+        return False
