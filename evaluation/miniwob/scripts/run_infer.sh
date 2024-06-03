@@ -5,7 +5,8 @@ export MINIWOB_URL="file:///home/fangzhex/miniwob-plusplus/miniwob/html/miniwob/
 
 MODEL_CONFIG=$1
 AGENT=$2
-EVAL_LIMIT=$3
+NOTE=$3
+EVAL_LIMIT=$4
 
 if [ -z "$AGENT" ]; then
   echo "Agent not specified, use default BrowsingAgent"
@@ -25,7 +26,7 @@ if [ -z "$USE_HINT_TEXT" ]; then
   export USE_HINT_TEXT=true
 fi
 echo "USE_HINT_TEXT: $USE_HINT_TEXT"
-EVAL_NOTE="$AGENT_VERSION"
+EVAL_NOTE="${AGENT_VERSION}_${NOTE}"
 # if not using Hint, add -no-hint to the eval note
 if [ "$USE_HINT_TEXT" = false ]; then
   EVAL_NOTE="$EVAL_NOTE-no-hint"
