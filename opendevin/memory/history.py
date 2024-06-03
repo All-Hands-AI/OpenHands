@@ -1,4 +1,3 @@
-from collections.abc import Iterator
 from typing import ClassVar, Iterable
 
 from opendevin.core.logger import opendevin_logger as logger
@@ -63,25 +62,6 @@ class ShortTermHistory(list[Event]):
 
         # replace the events in the specified range with the summary action and observation
         self[start_id:end_id] = [summary_action, summary_observation]
-
-    # remove once this isn't a list anymore
-    def __iter__(self) -> Iterator[Event]:
-        # iterate over EventStream, from start_id to end_id, avoiding the need to store all events in memory
-        # filter them to only add in the iterator the ones that are not NullObservation, agent state changes, etc.
-        start_id = self.start_id if self.start_id != -1 else 0
-        end_id = (
-            self.end_id
-            if self.end_id != -1
-            else self._event_stream.get_latest_event_id()
-        )
-
-        logger.debug(f'History iterating over events from {start_id} to {end_id}')
-        for event in self._event_stream.get_events(
-            start_id=start_id,
-            end_id=end_id,
-            filter_out_type=self.agent_event_filtered_types,
-        ):
-            yield event
 
     def get_events(self, reverse: bool = False) -> Iterable[Event]:
         """
