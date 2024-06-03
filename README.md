@@ -49,7 +49,7 @@ OpenDevin agents collaborate with human developers to write code, fix bugs, and 
 The easiest way to run OpenDevin is inside a Docker container. It works best with the most recent version of Docker, `26.0.0`.
 You must be using Linux, Mac OS, or WSL on Windows.
 
-To try OpenDevin in a docker container, run the following commands in your terminal:
+To start OpenDevin in a docker container, run the following commands in your terminal:
 
 > [!WARNING]
 > When you run the following command, files in `./workspace` may be modified or deleted.
