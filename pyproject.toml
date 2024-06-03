@@ -66,8 +66,6 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
-
-
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
