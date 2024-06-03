@@ -50,9 +50,13 @@ jobs:
         SANDBOX_TYPE: exec
       run: |
         export PYTHONPATH=$PYTHONPATH:$(pwd)
-        echo $PYTHONPATH  # 输出当前 PYTHONPATH
-        python --version  # 输出 Python 版本
-        python -c "import sys; print(sys.path)"  # 输出 sys.path 信息
+        echo $PYTHONPATH  
+        echo "============"
+        python --version 
+        python -c "import sys; print(sys.path); import agenthub" 
+        echo "============"
+        ll
+        echo "============"
         WORKSPACE_MOUNT_PATH=$GITHUB_WORKSPACE python ./opendevin/core/main.py -i 50 -f task.txt -d $GITHUB_WORKSPACE
         rm task.txt
 
