@@ -114,139 +114,156 @@ def parse_eval_output(output: str) -> Dict[str, float]:
 def process_instance(instance, agent_class, metadata, reset_logger: bool = True):
     old_workspace_mount_path = config.workspace_mount_path
     old_workspace_base = config.workspace_base
-    workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
-    # create process-specific workspace dir
-    # so that different agent don't interfere with each other.
-    workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
-    pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
-
-    # reset workspace to config
-    config.workspace_base = workspace_mount_path
-    config.workspace_mount_path = workspace_mount_path
-
-    # Setup the logger properly, so you can run multi-processing to parallize the evaluation
-    if reset_logger:
-        # Set up logger
-        log_file = os.path.join(
-            eval_output_dir,
-            'logs',
-            f"instance_{instance['id']}_pid_{os.getpid()}.log",
-        )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        # add back the console handler to print ONE line
-        logger.addHandler(get_console_handler())
-        logger.info(
-            f"Starting evaluation for instance {instance['id']}.\nLOG:   tail -f {log_file}"
-        )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(
-            logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        )
-        logger.addHandler(file_handler)
-
-    logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
-
-    # Create a sandbox, using the instance ID as the session ID to avoid conflicts
-    sandbox = DockerSSHBox(sid=str(instance['id']) + '_' + str(os.getpid()))
-
-    # Set up the task environment
-    sandbox.execute(f'conda activate {ID2CONDA[instance["github_id"]]}')
-
-    # Clone the task repo into the sandbox
-    repo_url = instance['github']
-    repo_name = repo_url.split('/')[-1]
-    sandbox.execute(f'git clone {repo_url} /workspace/{repo_name}')
-    sandbox.execute(f'chmod -R 777 /workspace/{repo_name}')
-
-    # Navigate to the task's code path
-    task_path = os.path.join('/workspace', repo_name, instance['path'][2:])
-    sandbox.execute(f'cd {task_path}')
-
-    # Prepare the task instruction
-    instruction = (
-        f'Please complete the Machine Learning task in the following repository: {repo_name}\n\n'
-        f'The task is: {instance["task"]}\n\n'
-        f'{instance["instruction"]}\n\n'
-        'You should create a script named `run.sh` under the specified path in the repo to run the task.\n\n'
-        f'You can find the task repo at: {task_path}\n\n'
-        + (
-            'Here is the prefix code for the task:\n'
-            '```bash\n'
-            f'{instance["prefix_code"]}\n'
-            '```\n\n'
-            if instance['prefix_code']
-            else ''
-        )
-        + 'You should terminate the subprocess after running the task (e.g., call subprocess.Popen(args).wait()).'
-    )
-    instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
-
-    # Run the agent
-    state: State = asyncio.run(
-        main(
-            instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
-            sandbox=sandbox,
-        )
-    )
-
-    # Evaluate the agent's script
-    eval_script = os.path.join(task_path, 'run.sh')
-    logger.info(f'Running evaluation script: {eval_script}')
-
     try:
-        _, eval_script_content = sandbox.execute(f'cat {eval_script}')
-    except Exception as e:
-        logger.error(f'Error reading evaluation script: {e}')
-        eval_script_content = ''
-
-    try:
-        exit_code, eval_output = sandbox.execute(
-            f'conda run -n {ID2CONDA[instance["github_id"]]} bash {eval_script}'
+        workspace_mount_path = os.path.join(
+            config.workspace_mount_path, '_eval_workspace'
         )
+        # create process-specific workspace dir
+        # so that different agent don't interfere with each other.
+        workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
+        pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
+
+        # reset workspace to config
+        config.workspace_base = workspace_mount_path
+        config.workspace_mount_path = workspace_mount_path
+
+        # Setup the logger properly, so you can run multi-processing to parallize the evaluation
+        if reset_logger:
+            # Set up logger
+            log_file = os.path.join(
+                eval_output_dir,
+                'logs',
+                f"instance_{instance['id']}_pid_{os.getpid()}.log",
+            )
+            # Remove all existing handlers from logger
+            for handler in logger.handlers[:]:
+                logger.removeHandler(handler)
+            # add back the console handler to print ONE line
+            logger.addHandler(get_console_handler())
+            logger.info(
+                f"Starting evaluation for instance {instance['id']}.\nLOG:   tail -f {log_file}"
+            )
+            # Remove all existing handlers from logger
+            for handler in logger.handlers[:]:
+                logger.removeHandler(handler)
+            file_handler = logging.FileHandler(log_file)
+            file_handler.setFormatter(
+                logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+            )
+            logger.addHandler(file_handler)
+
+        logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
+
+        # Create a sandbox, using the instance ID as the session ID to avoid conflicts
+        sandbox = DockerSSHBox(sid=str(instance['id']) + '_' + str(os.getpid()))
+
+        # Set up the task environment
+        sandbox.execute(f'conda activate {ID2CONDA[instance["github_id"]]}')
+
+        # Clone the task repo into the sandbox
+        repo_url = instance['github']
+        repo_name = repo_url.split('/')[-1]
+        sandbox.execute(f'git clone {repo_url} /workspace/{repo_name}')
+        sandbox.execute(f'chmod -R 777 /workspace/{repo_name}')
+
+        # Navigate to the task's code path
+        task_path = os.path.join('/workspace', repo_name, instance['path'][2:])
+        sandbox.execute(f'cd {task_path}')
+
+        # Prepare the task instruction
+        instruction = (
+            f'Please complete the Machine Learning task in the following repository: {repo_name}\n\n'
+            f'The task is: {instance["task"]}\n\n'
+            f'{instance["instruction"]}\n\n'
+            'You should create a script named `run.sh` under the specified path in the repo to run the task.\n\n'
+            f'You can find the task repo at: {task_path}\n\n'
+            + (
+                'Here is the prefix code for the task:\n'
+                '```bash\n'
+                f'{instance["prefix_code"]}\n'
+                '```\n\n'
+                if instance['prefix_code']
+                else ''
+            )
+            + 'You should terminate the subprocess after running the task (e.g., call subprocess.Popen(args).wait()).'
+        )
+        instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
+
+        # Run the agent
+        state: State = asyncio.run(
+            main(
+                instruction,
+                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
+                    agent_class
+                ),
+                sandbox=sandbox,
+            )
+        )
+
+        # Evaluate the agent's script
+        eval_script = os.path.join(task_path, 'run.sh')
+        logger.info(f'Running evaluation script: {eval_script}')
+
+        try:
+            _, eval_script_content = sandbox.execute(f'cat {eval_script}')
+        except Exception as e:
+            logger.error(f'Error reading evaluation script: {e}')
+            eval_script_content = ''
+
+        try:
+            exit_code, eval_output = sandbox.execute(
+                f'conda run -n {ID2CONDA[instance["github_id"]]} bash {eval_script}'
+            )
+        except Exception as e:
+            logger.error(f'Error running evaluation script: {e}')
+            exit_code = -1
+            eval_output = ''
+
+        if exit_code != 0:
+            logger.warning(f'Evaluation script failed with exit code {exit_code}')
+            logger.warning(f'Output: {eval_output}')
+            metrics = {
+                'success': 'KeyboardInterrupt'
+                in eval_output,  # super-dainiu: assume ``KeyboardInterrupt`` is a success as is done in ML-Bench
+            }
+        else:
+            logger.info(f'Evaluation script succeeded with exit code {exit_code}')
+            logger.info(f'Output: {eval_output}')
+            metrics = {
+                'success': 1,
+            }
+
+        # Save the output
+        output = {
+            'instance_id': instance['id'],
+            'repo': repo_url,
+            'instruction': instruction,
+            'metadata': metadata,
+            'history': [
+                (event_to_dict(action), event_to_dict(obs))
+                for action, obs in state.history
+            ],
+            'eval_script': eval_script_content,
+            'eval_exit_code': exit_code,
+            'eval_output': eval_output,
+            'metrics': metrics,
+        }
+
     except Exception as e:
-        logger.error(f'Error running evaluation script: {e}')
-        exit_code = -1
-        eval_output = ''
-
-    if exit_code != 0:
-        logger.warning(f'Evaluation script failed with exit code {exit_code}')
-        logger.warning(f'Output: {eval_output}')
-        metrics = {
-            'success': 'KeyboardInterrupt'
-            in eval_output,  # super-dainiu: assume ``KeyboardInterrupt`` is a success as is done in ML-Bench
+        logger.error(f'Error processing instance {instance["id"]}: {e}')
+        output = {
+            'instance_id': instance['id'],
+            'repo': repo_url,
+            'metadata': metadata,
+            'error': str(e),
         }
-    else:
-        logger.info(f'Evaluation script succeeded with exit code {exit_code}')
-        logger.info(f'Output: {eval_output}')
-        metrics = {
-            'success': 1,
-        }
-
-    # Save the output
-    output = {
-        'instance_id': instance['id'],
-        'repo': repo_url,
-        'instruction': instruction,
-        'metadata': metadata,
-        'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-        ],
-        'eval_script': eval_script_content,
-        'eval_exit_code': exit_code,
-        'eval_output': eval_output,
-        'metrics': metrics,
-    }
+        raise e
+    finally:
+        config.workspace_mount_path = old_workspace_mount_path
+        config.workspace_base = old_workspace_base
 
     # Shutdown the sandbox
     sandbox.close()
-    config.workspace_mount_path = old_workspace_mount_path
-    config.workspace_base = old_workspace_base
     return output
 
 
