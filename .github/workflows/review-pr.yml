@@ -44,6 +44,13 @@ jobs:
         echo "" >> task.txt
         echo "Diff file is: ${{ github.event.pull_request.number }}.diff" >> task.txt
 
+    - name: Set up environment
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        poetry install --without evaluation
+        poetry run playwright install --with-deps chromium
+        wget https://huggingface.co/BAAI/bge-small-en-v1.5/raw/main/1_Pooling/config.json -P /tmp/llama_index/models--BAAI--bge-small-en-v1.5/snapshots/5c38ec7c405ec4b44b94cc5a9bb96e735b38267a/1_Pooling/
+
     - name: Run OpenDevin
       env:
         LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -53,11 +60,12 @@ jobs:
         echo $PYTHONPATH  
         echo "============"
         python --version 
-        python -c "import sys; print(sys.path); import agenthub" 
+        python -c "import sys; print(sys.path)" 
+        # python -c "import sys; print(sys.path); import agenthub" 
         echo "============"
         ll
         echo "============"
-        WORKSPACE_MOUNT_PATH=$GITHUB_WORKSPACE python ./opendevin/core/main.py -i 50 -f task.txt -d $GITHUB_WORKSPACE
+        WORKSPACE_MOUNT_PATH=$GITHUB_WORKSPACE poetry run python ./opendevin/core/main.py -i 50 -f task.txt -d $GITHUB_WORKSPACE
         rm task.txt
 
     - name: Check if review file is non-empty
