@@ -58,6 +58,13 @@ To start the app, run these commands, replacing `$(pwd)/workspace` with the dire
 ```bash
 # The directory you want OpenDevin to work with. MUST be an absolute path!
 export WORKSPACE_BASE=$(pwd)/workspace;
+
+# Your OpenAI API key, or any other LLM API key
+#export LLM_API_KEY="sk-..."
+export LLM_API_KEY="sk-"
+export LLM_MODEL="groq/llama3-70b-8192"
+#export LLM_BASE_URL="https://api.groq.com/openai/v1"
+
 ```
 
 ```bash
@@ -65,6 +72,8 @@ docker run -it \
     --pull=always \
     -e SANDBOX_USER_ID=$(id -u) \
     -e PERSIST_SANDBOX="true" \
+    -e LLM_API_KEY \
+    -e LLM_MODEL \
     -e SSH_PASSWORD="make something up here" \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
     -v $WORKSPACE_BASE:/opt/workspace_base \
