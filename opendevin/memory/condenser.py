@@ -19,9 +19,6 @@ from opendevin.llm.llm import LLM
 from opendevin.memory.history import ShortTermHistory
 from opendevin.memory.prompts import parse_summary_response
 
-MAX_TOKEN_COUNT_PADDING = (
-    512  # estimation of tokens to add to the prompt for the max token count
-)
 MAX_USER_MESSAGE_CHAR_COUNT = 200  # max char count for user messages
 
 
@@ -168,20 +165,6 @@ class MemoryCondenser:
         except Exception as e:
             logger.error(f'Failed to summarize chunk: {e}')
             raise
-
-    def is_over_token_limit(self, messages: list[dict]) -> int:
-        """
-        Estimates the token count of the given events using litellm tokenizer.
-
-        Parameters:
-        - events: List of messages to estimate the token count for.
-
-        Returns:
-        - Estimated token count.
-        """
-
-        token_count = self.llm.get_token_count(messages) + MAX_TOKEN_COUNT_PADDING
-        return token_count >= self.llm.max_input_tokens
 
     def _is_summarizable(self, event: Event) -> bool:
         """

@@ -1,6 +1,8 @@
 import warnings
 from functools import partial
 
+from opendevin.core.exceptions import TokenLimitExceedError
+
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
@@ -28,6 +30,7 @@ from opendevin.core.metrics import Metrics
 __all__ = ['LLM']
 
 message_separator = '\n\n----------\n\n'
+MAX_TOKEN_COUNT_PADDING = 512  # estimation of tokens to add to the prompt for the user-configured max token count
 
 
 class LLM:
@@ -197,7 +200,10 @@ class LLM:
             else:
                 messages = args[1]
 
-            # FIXME pre-process to check token count against user-configured limit
+            if self.is_over_token_limit(messages):
+                raise TokenLimitExceedError(
+                    f'Token count exceeds the maximum of {self.max_input_tokens}. Attempting to condense memory.'
+                )
 
             # log the prompt
             debug_message = ''
@@ -254,6 +260,20 @@ class LLM:
             int: The number of tokens.
         """
         return litellm.token_counter(model=self.model_name, messages=messages)
+
+    def is_over_token_limit(self, messages: list[dict]) -> int:
+        """
+        Estimates the token count of the given events using litellm tokenizer.
+
+        Parameters:
+        - messages: List of messages to estimate the token count for.
+
+        Returns:
+        - Estimated token count.
+        """
+
+        token_count = self.get_token_count(messages) + MAX_TOKEN_COUNT_PADDING
+        return token_count >= self.max_input_tokens
 
     def is_local(self):
         """

@@ -12,7 +12,10 @@ from agenthub.codeact_agent.prompt import (
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config
-from opendevin.core.exceptions import ContextWindowLimit
+from opendevin.core.exceptions import (
+    ContextWindowLimitExceededError,
+    TokenLimitExceedError,
+)
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
@@ -191,9 +194,7 @@ class CodeActAgent(Agent):
         """
         super().__init__(llm)
         self.memory_condenser = (
-            MemoryCondenser(
-                llm
-            )  # if config.agent.memory_condensation_enabled else None
+            MemoryCondenser(llm) if config.agent.memory_condensation_enabled else None
         )
         self.reset()
 
@@ -227,21 +228,10 @@ class CodeActAgent(Agent):
         # prepare what we want to send to the LLM
         messages: list[dict[str, str]] = self._get_messages(state)
 
-        # FIXME move it out to LLM class
-        # if the user has configured config.llm.max_input_tokens, we should start condensing when we hit it, to limit the costs
-        if (
-            config.llm.max_input_tokens is not None
-            and self.memory_condenser is not None
-            and self.memory_condenser.is_over_token_limit(messages)
-        ):
-            logger.info('Configured token limit exceeded. Condensing memory.')
-            self._retry_with_condense(state)
-            messages = self._get_messages(state)
-
         response = None
-        # give it 3 tries
+        # give it 3 chances to get a response if memory condensation is enabled
         attempt = 0
-        while not response and attempt < 3:
+        while self.memory_condenser and not response and attempt < 3:
             try:
                 response = self.llm.completion(
                     messages=messages,
@@ -252,13 +242,23 @@ class CodeActAgent(Agent):
                     ],
                     temperature=0.0,
                 )
-            except ContextWindowExceededError:
-                # FIXME move it to LLM class
-                logger.warning('Context window exceeded. Condensing memory.')
+            except (ContextWindowExceededError, TokenLimitExceedError):
+                logger.warning(
+                    'Context window exceeded or token limit exceeded. Condensing memory, attempt %d',
+                    attempt,
+                )
                 # Retry processing events with condensed memory
-                if self.memory_condenser:
-                    self._retry_with_condense(state)
+                summary_action = self.memory_condenser.condense(state.history)
+                if summary_action:
+                    # update the messages, so we get the new summary
                     messages = self._get_messages(state)
+                    # attempt = 0
+                    continue
+
+        if not response:
+            raise ContextWindowLimitExceededError(
+                'Context window limit exceeded. Unable to condense memory.'
+            )
 
         action_str: str = parse_response(response)
         state.num_of_chars += sum(
@@ -335,18 +335,3 @@ class CodeActAgent(Agent):
             )
 
         return messages
-
-    def _retry_with_condense(self, state: State):
-        if self.memory_condenser:
-            summary_action = self.memory_condenser.condense(state.history)
-
-            if summary_action:
-                state.history.replace_events_with_summary(summary_action)
-                return
-
-        # this is bad, we can't perform further LLM calls
-        # raise an exception that we can use to set agent in ERROR state
-        # and, perhaps, wipe the current task history?
-        raise ContextWindowLimit(
-            'Context window limit exceeded. Unable to condense memory.'
-        )
