@@ -154,7 +154,7 @@ def process_instance(
         config.workspace_base = workspace_mount_path
         config.workspace_mount_path = workspace_mount_path
 
-        # Setup the logger properly, so you can run multi-processing to parallize the evaluation
+        # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
         if reset_logger:
             # Set up logger
             log_file = os.path.join(
