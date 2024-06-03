@@ -20,7 +20,7 @@ from opendevin.core.config import args, config, get_llm_config_arg
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
-from opendevin.events.action import MessageAction, CmdRunAction
+from opendevin.events.action import CmdRunAction, MessageAction
 from opendevin.events.serialization.event import event_to_dict
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
@@ -82,7 +82,9 @@ def process_instance(
     question = instance.description
     # create a directory for the instance's workspace
     instance_workspace = str(os.path.join(config.workspace_base, inst_id))
-    container_inst_workspace = str(os.path.join(config.workspace_mount_path_in_sandbox, inst_id))
+    container_inst_workspace = str(
+        os.path.join(config.workspace_mount_path_in_sandbox, inst_id)
+    )
     if os.path.exists(instance_workspace):
         shutil.rmtree(instance_workspace)
     os.makedirs(instance_workspace, exist_ok=True)
@@ -149,9 +151,7 @@ def process_instance(
     state: State = asyncio.run(
         main(
             instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                agent_class
-            ),
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
             sandbox=sandbox,
         )
     )
@@ -215,6 +215,7 @@ def process_instance(
     histories = [
         (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
     ]
+    metrics = state.metrics.get() if state.metrics else None
 
     # Save the output
     output = {
@@ -223,6 +224,7 @@ def process_instance(
         'instruction': instruction,
         'metadata': metadata,
         'history': histories,
+        'metrics': metrics,
         'error': state.error if state and state.error else None,
         'test_result': {
             'agent_answer': agent_answer,

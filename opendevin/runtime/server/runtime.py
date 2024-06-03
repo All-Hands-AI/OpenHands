@@ -48,17 +48,15 @@ class ServerRuntime(Runtime):
         )
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
+        action.code = action.code.replace('`', r'\`')
         obs = self._run_command(
-            ('cat > /tmp/opendevin_jupyter_temp.py <<EOL\n' f'{action.code}\n' 'EOL'),
+            ("cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{action.code}\n' 'EOL'),
             background=False,
         )
 
         # run the code
         obs = self._run_command(
-            (
-                'export JUPYTER_PWD=$(pwd) && cat /tmp/opendevin_jupyter_temp.py | execute_cli'
-            ),
-            background=False,
+            ('cat /tmp/opendevin_jupyter_temp.py | execute_cli'), background=False
         )
         output = obs.content
         if 'pip install' in action.code and 'Successfully installed' in output:
@@ -70,7 +68,7 @@ class ServerRuntime(Runtime):
             ):
                 obs = self._run_command(
                     (
-                        'cat > /tmp/opendevin_jupyter_temp.py <<EOL\n'
+                        "cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n"
                         f'{restart_kernel}\n'
                         'EOL'
                     ),
@@ -91,7 +89,7 @@ class ServerRuntime(Runtime):
                 if action.kernel_init_code:
                     obs = self._run_command(
                         (
-                            f'cat > /tmp/opendevin_jupyter_init.py <<EOL\n'
+                            f"cat > /tmp/opendevin_jupyter_init.py <<'EOL'\n"
                             f'{action.kernel_init_code}\n'
                             'EOL'
                         ),
