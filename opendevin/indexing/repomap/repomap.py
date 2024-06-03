@@ -28,6 +28,10 @@ Tag = namedtuple('Tag', ('rel_fname', 'fname', 'line', 'name', 'kind'))
 
 
 class RepoMap:
+    """
+    The RepoMap class represents a mapping of a repository's files and their associated tags.
+    """
+
     CACHE_VERSION = 3
     TAGS_CACHE_DIR = f'.aider.tags.cache.v{CACHE_VERSION}'
 
@@ -38,14 +42,27 @@ class RepoMap:
     def __init__(
         self,
         llm: LLM,
-        io: InputOutput,
+        io=None,
         map_tokens=1024,
         root=None,
         repo_content_prefix=None,
         verbose=False,
         max_context_window=None,
     ):
-        self.io = io
+        """
+        Initialize the Repomap object.
+
+        Args:
+            llm (LLM): The LLM object used for token counting.
+            io (InputOutput): The InputOutput object used for file I/O operations.
+            map_tokens (int, optional): The maximum number of tokens to map. Defaults to 1024.
+            root (str, optional): The root directory path. If not provided, the current working directory is used. Defaults to None.
+            repo_content_prefix (str, optional): The prefix to add to the repository content paths. Defaults to None.
+            verbose (bool, optional): Whether to enable verbose mode. Defaults to False.
+            max_context_window (int, optional): The maximum context window size. Defaults to None.
+        """
+
+        self.io = io if io else InputOutput()
         self.verbose = verbose
 
         if not root:
@@ -63,6 +80,19 @@ class RepoMap:
     def get_repo_map(
         self, chat_files, other_files, mentioned_fnames=None, mentioned_idents=None
     ):
+        """
+        Generate a repository map based on the provided files and parameters.
+
+        Args:
+            chat_files (list): List of files in the chat.
+            other_files (list): List of other files in the repository.
+            mentioned_fnames (set, optional): Set of mentioned filenames. Defaults to None.
+            mentioned_idents (set, optional): Set of mentioned identifiers. Defaults to None.
+
+        Returns:
+            str: The generated repository map as a string.
+        """
+
         if self.max_map_tokens <= 0:
             return
         if not other_files:

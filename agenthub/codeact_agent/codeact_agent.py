@@ -1,4 +1,7 @@
+import os
 import re
+from pathlib import Path
+from typing import Any
 
 from agenthub.codeact_agent.prompt import (
     COMMAND_DOCS,
@@ -9,6 +12,7 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import config
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
@@ -22,6 +26,7 @@ from opendevin.events.observation import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
+from opendevin.indexing import RepoMap
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     AgentSkillsRequirement,
@@ -31,6 +36,7 @@ from opendevin.runtime.plugins import (
 from opendevin.runtime.tools import RuntimeTool
 
 ENABLE_GITHUB = True
+ENABLE_REPOMAP = False
 
 
 def parse_response(response) -> str:
@@ -181,6 +187,19 @@ class CodeActAgent(Agent):
         """
         super().__init__(llm)
         self.reset()
+        self.repo_map = RepoMap(
+            llm=self.llm,
+            map_tokens=1024,  # TODO: move to config
+            root=config.workspace_base,
+            repo_content_prefix='Here are summaries of some files present in my git repository.',
+            verbose=False,  # TODO: test what happens when verbose is True
+            max_context_window=self.llm.max_input_tokens,
+        )
+        self.abs_fnames: Any = set()
+        self.cur_messages: Any = []
+        self.root = (
+            config.workspace_base
+        )  # FIXME: see aider, the author did smt with git repo
 
     def reset(self) -> None:
         """
@@ -221,6 +240,14 @@ class CodeActAgent(Agent):
         if latest_user_message:
             if latest_user_message['content'].strip() == '/exit':
                 return AgentFinishAction()
+
+            # Insert optional repo_map message here
+            if ENABLE_REPOMAP:
+                repo_content = self.get_repo_map()
+                latest_user_message['content'] += (
+                    repo_content + '\n\n' if repo_content else ''
+                )
+
             latest_user_message['content'] += (
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
             )
@@ -281,3 +308,121 @@ class CodeActAgent(Agent):
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
+
+    def get_repo_map(self):
+        if not self.repo_map:
+            return
+
+        cur_msg_text = self.get_cur_message_text()
+        mentioned_fnames = self.get_file_mentions(cur_msg_text)
+        mentioned_idents = self.get_ident_mentions(cur_msg_text)
+
+        other_files = set(self.get_all_abs_files()) - set(
+            self.abs_fnames
+        )  # FIXME: abs_fnames is not defined
+        repo_content = self.repo_map.get_repo_map(
+            self.abs_fnames,
+            other_files,
+            mentioned_fnames=mentioned_fnames,
+            mentioned_idents=mentioned_idents,
+        )
+
+        # fall back to global repo map if files in chat are disjoint from rest of repo
+        if not repo_content:
+            repo_content = self.repo_map.get_repo_map(
+                set(),
+                set(self.get_all_abs_files()),
+                mentioned_fnames=mentioned_fnames,
+                mentioned_idents=mentioned_idents,
+            )
+
+        # fall back to completely unhinted repo
+        if not repo_content:
+            repo_content = self.repo_map.get_repo_map(
+                set(),
+                set(self.get_all_abs_files()),
+            )
+
+        return repo_content
+
+    def get_cur_message_text(self):
+        text = ''
+        for msg in self.cur_messages:  # FIXME: cur_messages is not defined
+            text += msg['content'] + '\n'
+        return text
+
+    def get_ident_mentions(self, text):
+        # Split the string on any character that is not alphanumeric
+        # \W+ matches one or more non-word characters (equivalent to [^a-zA-Z0-9_]+)
+        words = set(re.split(r'\W+', text))
+        return words
+
+    def get_file_mentions(self, content):
+        words = set(word for word in content.split())
+
+        # drop sentence punctuation from the end
+        words = set(word.rstrip(',.!;:') for word in words)
+
+        # strip away all kinds of quotes
+        quotes = ''.join(['"', "'", '`'])
+        words = set(word.strip(quotes) for word in words)
+
+        addable_rel_fnames = self.get_addable_relative_files()
+
+        mentioned_rel_fnames = set()
+        fname_to_rel_fnames: Any = {}
+        for rel_fname in addable_rel_fnames:
+            if rel_fname in words:
+                mentioned_rel_fnames.add(str(rel_fname))
+
+            fname = os.path.basename(rel_fname)
+
+            # Don't add basenames that could be plain words like "run" or "make"
+            if '/' in fname or '.' in fname or '_' in fname or '-' in fname:
+                if fname not in fname_to_rel_fnames:
+                    fname_to_rel_fnames[fname] = []
+                fname_to_rel_fnames[fname].append(rel_fname)
+
+        for fname, rel_fnames in fname_to_rel_fnames.items():
+            if len(rel_fnames) == 1 and fname in words:
+                mentioned_rel_fnames.add(rel_fnames[0])
+
+        return mentioned_rel_fnames
+
+    def get_all_relative_files(self):
+        # TODO: uncomment these?
+        # if self.repo:  # FIXME: repo is not defined
+        #     files = self.repo.get_tracked_files()
+        # else:
+        files: Any = (
+            self.get_inchat_relative_files()
+        )  # FIXME: `get_inchat_relative_files` is not defined
+
+        files = [fname for fname in files if Path(self.abs_root_path(fname)).is_file()]
+        return sorted(set(files))
+
+    def get_all_abs_files(self):
+        files = self.get_all_relative_files()
+        files = [self.abs_root_path(path) for path in files]
+        return files
+
+    def abs_root_path(self, path):
+        res = Path(self.root) / path  # FIXME: `root` is not defined
+        return self.safe_abs_path(res)
+
+    def get_addable_relative_files(self):
+        return set(self.get_all_relative_files()) - set(
+            self.get_inchat_relative_files()
+        )
+
+    def safe_abs_path(self, res):
+        "Gives an abs path, which safely returns a full (not 8.3) windows path"
+        res = Path(res).resolve()
+        return str(res)
+
+    def get_rel_fname(self, fname):
+        return os.path.relpath(fname, self.root)
+
+    def get_inchat_relative_files(self):
+        files = [self.get_rel_fname(fname) for fname in self.abs_fnames]
+        return sorted(set(files))
