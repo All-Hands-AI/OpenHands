@@ -55,6 +55,7 @@ jobs:
         LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         SANDBOX_TYPE: exec
       run: |
+        export PATH="/github/home/.local/bin:$PATH"
         export PYTHONPATH=$PYTHONPATH:$(pwd)
         echo $PYTHONPATH  
         echo "============"
