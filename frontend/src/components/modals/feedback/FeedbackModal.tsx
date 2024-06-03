@@ -43,13 +43,6 @@ function FeedbackModal({
       });
   };
 
-  const handleEmailChange = (key: string) => {
-    setFeedback({ ...feedback, email: key } as Feedback);
-  };
-
-  const handlePermissionsChange = (permissions: "public" | "private") => {
-    setFeedback({ ...feedback, permissions } as Feedback);
-  };
 
   return (
     <BaseModal
