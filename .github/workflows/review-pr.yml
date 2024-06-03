@@ -56,7 +56,7 @@ jobs:
         SANDBOX_TYPE: exec
       run: |
         export PATH="/github/home/.local/bin:$PATH"
-        export PYTHONPATH=$PYTHONPATH:$(pwd)
+        export PYTHONPATH=$(pwd):$PYTHONPATH
         echo $PYTHONPATH  
         echo "============"
         python --version 
