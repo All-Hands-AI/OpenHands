@@ -2,18 +2,18 @@ import Link from "@docusaurus/Link";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import Heading from "@theme/Heading";
 import { Demo } from "../Demo/Demo";
-import styles from "./index.module.css";
+import "../../css/homepageHeader.css"; // Importing the CSS file
 
 export function HomepageHeader() {
   const { siteConfig } = useDocusaurusContext();
   return (
-    <div className={styles.headerContainer}>
-      <div className={styles.header}>
-        <Heading as="h1" className="hero__title">
+    <div className="homepage-header">
+      <div className="header-content">
+        <Heading as="h1" className="header-title">
           {siteConfig.title}
         </Heading>
-        <p className="hero__subtitle">{siteConfig.tagline}</p>
-        <div className={styles.buttons}>
+        <p className="header-subtitle">{siteConfig.tagline}</p>
+        <div className="header-buttons">
           <Link
             className="button button--secondary button--lg"
             to="/modules/usage/intro"
@@ -21,8 +21,9 @@ export function HomepageHeader() {
             Get Started
           </Link>
         </div>
-      </div>{" "}
-      <Demo />
+        <Demo />
+      </div>
     </div>
   );
 }
+

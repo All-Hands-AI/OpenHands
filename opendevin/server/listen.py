@@ -1,12 +1,14 @@
 import uuid
 import warnings
 
+from opendevin.server.data_models.feedback import FeedbackDataModel, store_feedback
+
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
 from fastapi import FastAPI, Request, Response, UploadFile, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 
@@ -279,6 +281,30 @@ async def upload_file(request: Request, files: list[UploadFile]):
     return {'message': 'Files uploaded successfully', 'file_count': len(files)}
 
 
+@app.post('/api/submit-feedback')
+async def submit_feedback(request: Request, feedback: FeedbackDataModel):
+    """
+    Upload files to the workspace.
+
+    To upload files:
+    ```sh
+    curl -X POST -F "email=test@example.com" -F "token=abc" -F "feedback=positive" -F "permissions=private" -F "trajectory={}" http://localhost:3000/api/submit-feedback
+    ```
+    """
+    # Assuming the storage service is already configured in the backend
+    # and there is a function  to handle the storage.
+    try:
+        store_feedback(feedback)
+        return JSONResponse(
+            status_code=200, content={'message': 'Feedback submitted successfully'}
+        )
+    except Exception as e:
+        logger.error(f'Error submitting feedback: {e}')
+        return JSONResponse(
+            status_code=500, content={'error': 'Failed to submit feedback'}
+        )
+
+
 @app.get('/api/root_task')
 def get_root_task(request: Request):
     """
@@ -313,13 +339,4 @@ async def appconfig_defaults():
     return config.defaults_dict
 
 
-@app.get('/')
-async def docs_redirect():
-    """
-    Redirect to the API documentation.
-    """
-    response = RedirectResponse(url='/index.html')
-    return response
-
-
-app.mount('/', StaticFiles(directory='./frontend/dist'), name='dist')
+app.mount('/', StaticFiles(directory='./frontend/dist', html=True), name='dist')

@@ -2,6 +2,7 @@ import atexit
 import base64
 import io
 import multiprocessing
+import threading
 import time
 import uuid
 
@@ -12,15 +13,12 @@ import numpy as np
 from browsergym.utils.obs import flatten_dom_to_str
 from PIL import Image
 
+from opendevin.core.exceptions import BrowserInitException
 from opendevin.core.logger import opendevin_logger as logger
 
 
-class BrowserException(Exception):
-    pass
-
-
 class BrowserEnv:
-    def __init__(self):
+    def __init__(self, is_async: bool = True):
         self.html_text_converter = html2text.HTML2Text()
         # ignore links and images
         self.html_text_converter.ignore_links = False
@@ -35,11 +33,18 @@ class BrowserEnv:
         self.process = multiprocessing.Process(
             target=self.browser_process,
         )
+        if is_async:
+            threading.Thread(target=self.init_browser).start()
+        else:
+            self.init_browser()
+        atexit.register(self.close)
+
+    def init_browser(self):
         logger.info('Starting browser env...')
         self.process.start()
         if not self.check_alive():
-            raise BrowserException('Failed to start browser environment.')
-        atexit.register(self.close)
+            self.close()
+            raise BrowserInitException('Failed to start browser environment.')
 
     def browser_process(self):
         env = gym.make(
@@ -93,12 +98,13 @@ class BrowserEnv:
                 if response_id == unique_request_id:
                     return obs
 
-    def check_alive(self, timeout: float = 10):
+    def check_alive(self, timeout: float = 60):
         self.agent_side.send(('IS_ALIVE', None))
         if self.agent_side.poll(timeout=timeout):
             response_id, _ = self.agent_side.recv()
             if response_id == 'ALIVE':
                 return True
+            logger.info(f'Browser env is not alive. Response ID: {response_id}')
 
     def close(self):
         if not self.process.is_alive():

@@ -15,16 +15,52 @@ Functions:
 - edit_file(start, end, content): Replaces lines in a file with the given content.
 """
 
+import base64
+import functools
 import os
 import subprocess
 from inspect import signature
 from typing import Optional
+
+import docx
+import PyPDF2
+from openai import OpenAI
+from pptx import Presentation
+from pylatexenc.latex2text import LatexNodes2Text
 
 CURRENT_FILE = None
 CURRENT_LINE = 1
 WINDOW = 100
 
 ENABLE_AUTO_LINT = os.getenv('ENABLE_AUTO_LINT', 'false').lower() == 'true'
+
+# OPENAI
+OPENAI_API_KEY = os.getenv(
+    'OPENAI_API_KEY', os.getenv('SANDBOX_ENV_OPENAI_API_KEY', '')
+)
+OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL', 'https://api.openai.com/v1')
+OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4o-2024-05-13')
+MAX_TOKEN = os.getenv('MAX_TOKEN', 500)
+
+OPENAI_PROXY = f'{OPENAI_BASE_URL}/chat/completions'
+
+client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
+
+
+# Define the decorator using the functionality of UpdatePwd
+def update_pwd_decorator(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        old_pwd = os.getcwd()
+        jupyter_pwd = os.environ.get('JUPYTER_PWD', None)
+        if jupyter_pwd:
+            os.chdir(jupyter_pwd)
+        try:
+            return func(*args, **kwargs)
+        finally:
+            os.chdir(old_pwd)
+
+    return wrapper
 
 
 def _lint_file(file_path: str) -> Optional[str]:
@@ -69,12 +105,21 @@ def _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=False):
         start = max(0, CURRENT_LINE - WINDOW // 2)
         end = min(len(lines), CURRENT_LINE + WINDOW // 2)
         output = ''
+
+        # only display this when there's line above
+        if start > 0:
+            n_above_lines = start
+            output += f'({n_above_lines} more lines above)\n'
         for i in range(start, end):
             _new_line = f'{i + 1}|{lines[i]}'
             if not _new_line.endswith('\n'):
                 _new_line += '\n'
             output += _new_line
+        if end < len(lines):
+            n_below_lines = len(lines) - end
+            output += f'({n_below_lines} more lines below)\n'
         output = output.rstrip()
+
         if return_str:
             return output
         else:
@@ -85,6 +130,7 @@ def _cur_file_header(CURRENT_FILE, total_lines):
     return f'[File: {os.path.abspath(CURRENT_FILE)} ({total_lines} lines total)]\n'
 
 
+@update_pwd_decorator
 def open_file(path: str, line_number: Optional[int] = None) -> None:
     """
     Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
@@ -97,7 +143,7 @@ def open_file(path: str, line_number: Optional[int] = None) -> None:
     if not os.path.isfile(path):
         raise FileNotFoundError(f'File {path} not found')
 
-    CURRENT_FILE = path
+    CURRENT_FILE = os.path.abspath(path)
     with open(CURRENT_FILE) as file:
         total_lines = sum(1 for _ in file)
 
@@ -117,6 +163,7 @@ def open_file(path: str, line_number: Optional[int] = None) -> None:
     print(output)
 
 
+@update_pwd_decorator
 def goto_line(line_number: int) -> None:
     """
     Moves the window to show the specified line number.
@@ -128,7 +175,8 @@ def goto_line(line_number: int) -> None:
     if CURRENT_FILE is None:
         raise FileNotFoundError('No file open. Use the open_file function first.')
 
-    total_lines = sum(1 for _ in open(CURRENT_FILE))
+    with open(CURRENT_FILE) as file:
+        total_lines = sum(1 for _ in file)
     if not isinstance(line_number, int) or line_number < 1 or line_number > total_lines:
         raise ValueError(f'Line number must be between 1 and {total_lines}')
 
@@ -139,6 +187,7 @@ def goto_line(line_number: int) -> None:
     print(output)
 
 
+@update_pwd_decorator
 def scroll_down() -> None:
     """Moves the window down by 100 lines.
 
@@ -149,13 +198,15 @@ def scroll_down() -> None:
     if CURRENT_FILE is None:
         raise FileNotFoundError('No file open. Use the open_file function first.')
 
-    total_lines = sum(1 for _ in open(CURRENT_FILE))
+    with open(CURRENT_FILE) as file:
+        total_lines = sum(1 for _ in file)
     CURRENT_LINE = min(CURRENT_LINE + WINDOW, total_lines)
     output = _cur_file_header(CURRENT_FILE, total_lines)
     output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True)
     print(output)
 
 
+@update_pwd_decorator
 def scroll_up() -> None:
     """Moves the window up by 100 lines.
 
@@ -167,12 +218,14 @@ def scroll_up() -> None:
         raise FileNotFoundError('No file open. Use the open_file function first.')
 
     CURRENT_LINE = max(CURRENT_LINE - WINDOW, 1)
-    total_lines = sum(1 for _ in open(CURRENT_FILE))
+    with open(CURRENT_FILE) as file:
+        total_lines = sum(1 for _ in file)
     output = _cur_file_header(CURRENT_FILE, total_lines)
     output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True)
     print(output)
 
 
+@update_pwd_decorator
 def create_file(filename: str) -> None:
     """Creates and opens a new file with the given name.
 
@@ -190,6 +243,7 @@ def create_file(filename: str) -> None:
     print(f'[File {filename} created.]')
 
 
+@update_pwd_decorator
 def edit_file(start: int, end: int, content: str) -> None:
     """Edit a file.
 
@@ -208,27 +262,41 @@ def edit_file(start: int, end: int, content: str) -> None:
     with open(CURRENT_FILE, 'r') as file:
         lines = file.readlines()
 
+    ERROR_MSG = f'[Error editing opened file {CURRENT_FILE}. Please confirm the opened file is correct.]'
+    ERROR_MSG_SUFFIX = (
+        'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+        'You either need to 1) Open the correct file and try again or 2) Specify the correct start/end line arguments.\n'
+        'DO NOT re-run the same failed edit command. Running it again will lead to the same error.'
+    )
     # Check arguments
     if not (1 <= start <= len(lines)):
-        raise ValueError(
-            f'Invalid start line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).'
+        print(
+            f'{ERROR_MSG}\n'
+            f'Invalid start line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
+            f'{ERROR_MSG_SUFFIX}'
         )
+        return
 
     if not (1 <= end <= len(lines)):
-        raise ValueError(
-            f'Invalid end line number: {end}. Line numbers must be between 1 and {len(lines)} (inclusive).'
+        print(
+            f'{ERROR_MSG}\n'
+            f'Invalid end line number: {end}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
+            f'{ERROR_MSG_SUFFIX}'
         )
-
+        return
     if start > end:
-        raise ValueError(
-            f'Invalid line range: {start}-{end}. Start must be less than or equal to end.'
+        print(
+            f'{ERROR_MSG}\n'
+            f'Invalid line range: {start}-{end}. Start must be less than or equal to end.\n'
+            f'{ERROR_MSG_SUFFIX}'
         )
+        return
 
     edited_content = content + '\n'
     n_edited_lines = len(edited_content.split('\n'))
     new_lines = lines[: start - 1] + [edited_content] + lines[end:]
 
-    # directly write editted lines to the file
+    # directly write edited lines to the file
     with open(CURRENT_FILE, 'w') as file:
         file.writelines(new_lines)
 
@@ -251,13 +319,19 @@ def edit_file(start: int, end: int, content: str) -> None:
             print('[This is how your edit would have looked if applied]')
             print('-------------------------------------------------')
             cur_line = (n_edited_lines // 2) + start
-            _print_window(CURRENT_FILE, cur_line, WINDOW)
+            _print_window(CURRENT_FILE, cur_line, 10)
             print('-------------------------------------------------\n')
 
             print('[This is the original code before your edit]')
             print('-------------------------------------------------')
-            _print_window(original_file_backup_path, CURRENT_LINE, WINDOW)
+            _print_window(original_file_backup_path, cur_line, 10)
             print('-------------------------------------------------')
+
+            print(
+                'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+                'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
+                'DO NOT re-run the same failed edit command. Running it again will lead to the same error.'
+            )
 
             # recover the original file
             with open(original_file_backup_path, 'r') as fin, open(
@@ -282,6 +356,7 @@ def edit_file(start: int, end: int, content: str) -> None:
     )
 
 
+@update_pwd_decorator
 def search_dir(search_term: str, dir_path: str = './') -> None:
     """Searches for search_term in all files in dir. If dir is not provided, searches in the current directory.
 
@@ -291,7 +366,6 @@ def search_dir(search_term: str, dir_path: str = './') -> None:
     """
     if not os.path.isdir(dir_path):
         raise FileNotFoundError(f'Directory {dir_path} not found')
-
     matches = []
     for root, _, files in os.walk(dir_path):
         for file in files:
@@ -322,6 +396,7 @@ def search_dir(search_term: str, dir_path: str = './') -> None:
     print(f'[End of matches for "{search_term}" in {dir_path}]')
 
 
+@update_pwd_decorator
 def search_file(search_term: str, file_path: Optional[str] = None) -> None:
     """Searches for search_term in file. If file is not provided, searches in the current open file.
 
@@ -354,6 +429,7 @@ def search_file(search_term: str, file_path: Optional[str] = None) -> None:
         print(f'[No matches found for "{search_term}" in {file_path}]')
 
 
+@update_pwd_decorator
 def find_file(file_name: str, dir_path: str = './') -> None:
     """Finds all files with the given name in the specified directory.
 
@@ -379,7 +455,216 @@ def find_file(file_name: str, dir_path: str = './') -> None:
         print(f'[No matches found for "{file_name}" in {dir_path}]')
 
 
+@update_pwd_decorator
+def parse_pdf(file_path: str) -> None:
+    """Parses the content of a PDF file and prints it.
+
+    Args:
+        file_path: str: The path to the file to open.
+    """
+    print(f'[Reading PDF file from {file_path}]')
+    content = PyPDF2.PdfReader(file_path)
+    text = ''
+    for page_idx in range(len(content.pages)):
+        text += (
+            f'@@ Page {page_idx + 1} @@\n'
+            + content.pages[page_idx].extract_text()
+            + '\n\n'
+        )
+    print(text.strip())
+
+
+@update_pwd_decorator
+def parse_docx(file_path: str) -> None:
+    """
+    Parses the content of a DOCX file and prints it.
+
+    Args:
+        file_path: str: The path to the file to open.
+    """
+    print(f'[Reading DOCX file from {file_path}]')
+    content = docx.Document(file_path)
+    text = ''
+    for i, para in enumerate(content.paragraphs):
+        text += f'@@ Page {i + 1} @@\n' + para.text + '\n\n'
+    print(text)
+
+
+@update_pwd_decorator
+def parse_latex(file_path: str) -> None:
+    """
+    Parses the content of a LaTex file and prints it.
+
+    Args:
+        file_path: str: The path to the file to open.
+    """
+    print(f'[Reading LaTex file from {file_path}]')
+    with open(file_path, 'r') as f:
+        data = f.read()
+    text = LatexNodes2Text().latex_to_text(data)
+    print(text.strip())
+
+
+def _base64_img(file_path: str) -> str:
+    with open(file_path, 'rb') as image_file:
+        encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+    return encoded_image
+
+
+def _base64_video(file_path: str, frame_interval: int = 10) -> list[str]:
+    import cv2
+
+    video = cv2.VideoCapture(file_path)
+    base64_frames = []
+    frame_count = 0
+    while video.isOpened():
+        success, frame = video.read()
+        if not success:
+            break
+        if frame_count % frame_interval == 0:
+            _, buffer = cv2.imencode('.jpg', frame)
+            base64_frames.append(base64.b64encode(buffer).decode('utf-8'))
+        frame_count += 1
+    video.release()
+    return base64_frames
+
+
+def _prepare_image_messages(task: str, base64_image: str):
+    return [
+        {
+            'role': 'user',
+            'content': [
+                {'type': 'text', 'text': task},
+                {
+                    'type': 'image_url',
+                    'image_url': {'url': f'data:image/jpeg;base64,{base64_image}'},
+                },
+            ],
+        }
+    ]
+
+
+@update_pwd_decorator
+def parse_audio(file_path: str, model: str = 'whisper-1') -> None:
+    """
+    Parses the content of an audio file and prints it.
+
+    Args:
+        file_path: str: The path to the audio file to transcribe.
+        model: Optional[str]: The audio model to use for transcription. Defaults to 'whisper-1'.
+    """
+    print(f'[Transcribing audio file from {file_path}]')
+    try:
+        # TODO: record the COST of the API call
+        with open(file_path, 'rb') as audio_file:
+            transcript = client.audio.translations.create(model=model, file=audio_file)
+        print(transcript.text)
+
+    except Exception as e:
+        print(f'Error transcribing audio file: {e}')
+
+
+@update_pwd_decorator
+def parse_image(
+    file_path: str, task: str = 'Describe this image as detail as possible.'
+) -> None:
+    """
+    Parses the content of an image file and prints the description.
+
+    Args:
+        file_path: str: The path to the file to open.
+        task: Optional[str]: The task description for the API call. Defaults to 'Describe this image as detail as possible.'.
+    """
+    print(f'[Reading image file from {file_path}]')
+    # TODO: record the COST of the API call
+    try:
+        base64_image = _base64_img(file_path)
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=_prepare_image_messages(task, base64_image),
+            max_tokens=MAX_TOKEN,
+        )
+        content = response.choices[0].message.content
+        print(content)
+
+    except Exception as error:
+        print(f'Error with the request: {error}')
+
+
+@update_pwd_decorator
+def parse_video(
+    file_path: str,
+    task: str = 'Describe this image as detail as possible.',
+    frame_interval: int = 30,
+) -> None:
+    """
+    Parses the content of an image file and prints the description.
+
+    Args:
+        file_path: str: The path to the video file to open.
+        task: Optional[str]: The task description for the API call. Defaults to 'Describe this image as detail as possible.'.
+        frame_interval: Optional[int]: The interval between frames to analyze. Defaults to 30.
+
+    """
+    print(
+        f'[Processing video file from {file_path} with frame interval {frame_interval}]'
+    )
+
+    task = task or 'This is one frame from a video, please summarize this frame.'
+    base64_frames = _base64_video(file_path)
+    selected_frames = base64_frames[::frame_interval]
+
+    if len(selected_frames) > 30:
+        new_interval = len(base64_frames) // 30
+        selected_frames = base64_frames[::new_interval]
+
+    print(f'Totally {len(selected_frames)} would be analyze...\n')
+
+    idx = 0
+    for base64_frame in selected_frames:
+        idx += 1
+        print(f'Process the {file_path}, current No. {idx * frame_interval} frame...')
+        # TODO: record the COST of the API call
+        try:
+            response = client.chat.completions.create(
+                model=OPENAI_MODEL,
+                messages=_prepare_image_messages(task, base64_frame),
+                max_tokens=MAX_TOKEN,
+            )
+
+            content = response.choices[0].message.content
+            current_frame_content = f"Frame {idx}'s content: {content}\n"
+            print(current_frame_content)
+
+        except Exception as error:
+            print(f'Error with the request: {error}')
+
+
+@update_pwd_decorator
+def parse_pptx(file_path: str) -> None:
+    """
+    Parses the content of a pptx file and prints it.
+
+    Args:
+        file_path: str: The path to the file to open.
+    """
+    print(f'[Reading PowerPoint file from {file_path}]')
+    try:
+        pres = Presentation(str(file_path))
+        text = []
+        for slide_idx, slide in enumerate(pres.slides):
+            text.append(f'@@ Slide {slide_idx + 1} @@')
+            for shape in slide.shapes:
+                if hasattr(shape, 'text'):
+                    text.append(shape.text)
+        print('\n'.join(text))
+
+    except Exception as e:
+        print(f'Error reading PowerPoint file: {e}')
+
+
 __all__ = [
+    # file operation
     'open_file',
     'goto_line',
     'scroll_down',
@@ -389,8 +674,15 @@ __all__ = [
     'search_dir',
     'search_file',
     'find_file',
+    # readers
+    'parse_pdf',
+    'parse_docx',
+    'parse_latex',
+    'parse_pptx',
 ]
 
+if OPENAI_API_KEY and OPENAI_BASE_URL:
+    __all__ += ['parse_audio', 'parse_video', 'parse_image']
 
 DOCUMENTATION = ''
 for func_name in __all__:

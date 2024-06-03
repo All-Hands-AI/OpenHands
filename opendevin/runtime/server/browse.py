@@ -1,11 +1,14 @@
 import os
 
+from opendevin.core.exceptions import BrowserUnavailableException
 from opendevin.core.schema import ActionType
 from opendevin.events.observation import BrowserOutputObservation
 from opendevin.runtime.browser.browser_env import BrowserEnv
 
 
-async def browse(action, browser: BrowserEnv) -> BrowserOutputObservation:  # type: ignore
+async def browse(action, browser: BrowserEnv | None) -> BrowserOutputObservation:
+    if browser is None:
+        raise BrowserUnavailableException()
     if action.action == ActionType.BROWSE:
         # legacy BrowseURLAction
         asked_url = action.url

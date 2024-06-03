@@ -28,6 +28,7 @@
   <a href="https://discord.gg/ESHStjSjD4"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community"></a>
   <br/>
   <a href="https://huggingface.co/spaces/OpenDevin/evaluation"><img src="https://img.shields.io/badge/SWE--bench%20Lite-25.0%25-green?style=for-the-badge" alt="SWE-bench "></a>
+  <a href="https://codecov.io/github/opendevin/opendevin?branch=main"><img alt="CodeCov" src="https://img.shields.io/codecov/c/github/opendevin/opendevin?style=for-the-badge"></a>
 </div>
 
 <!-- PROJECT LOGO -->
@@ -50,26 +51,27 @@ You must be using Linux, Mac OS, or WSL on Windows.
 
 To start the app, run these commands, replacing `$(pwd)/workspace` with the directory you want OpenDevin to work with.
 
+> [!WARNING]
+> OpenDevin runs bash commands within a Docker sandbox, so it should not affect your machine.
+> But your workspace directory will be attached to that sandbox, and files in the directory may be modified or deleted.
+
 ```bash
 # The directory you want OpenDevin to work with. MUST be an absolute path!
 export WORKSPACE_BASE=$(pwd)/workspace;
 ```
 
-> [!WARNING]  
-> OpenDevin runs bash commands within a Docker sandbox, so it should not affect your machine. 
-> But your workspace directory will be attached to that sandbox, and files in the directory may be modified or deleted.
-
 ```bash
-docker run \
-    -it \
+docker run -it \
     --pull=always \
     -e SANDBOX_USER_ID=$(id -u) \
+    -e PERSIST_SANDBOX="true" \
+    -e SSH_PASSWORD="make something up here" \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
     -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
-    ghcr.io/opendevin/opendevin:0.5
+    ghcr.io/opendevin/opendevin:0.6
 ```
 
 You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000).
@@ -99,7 +101,7 @@ For details, please check [CONTRIBUTING.md](./CONTRIBUTING.md).
 Whether you're a developer, a researcher, or simply enthusiastic about OpenDevin, we'd love to have you in our community.
 Let's make software engineering better together!
 
-- [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2ggtwn3k5-PvAA2LUmqGHVZ~XzGq~ILw) - Here we talk about research, architecture, and future development.
+- [Slack workspace](https://join.slack.com/t/opendevin/shared_invite/zt-2jsrl32uf-fTeeFjNyNYxqSZt5NPY3fA) - Here we talk about research, architecture, and future development.
 - [Discord server](https://discord.gg/ESHStjSjD4) - This is a community-run server for general discussion, questions, and feedback.
 
 ## 📈 Progress

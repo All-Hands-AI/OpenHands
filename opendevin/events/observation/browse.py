@@ -28,3 +28,17 @@ class BrowserOutputObservation(Observation):
     @property
     def message(self) -> str:
         return 'Visited ' + self.url
+
+    def __str__(self) -> str:
+        return (
+            '**BrowserOutputObservation**\n'
+            f'URL: {self.url}\n'
+            f'Status code: {self.status_code}\n'
+            f'Error: {self.error}\n'
+            f'Open pages: {self.open_pages_urls}\n'
+            f'Active page index: {self.active_page_index}\n'
+            f'Last browser action: {self.last_browser_action}\n'
+            f'Last browser action error: {self.last_browser_action_error}\n'
+            f'Focused element bid: {self.focused_element_bid}\n'
+            f'CONTENT: {self.content}\n'
+        )
