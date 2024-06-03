@@ -130,7 +130,7 @@ describe("FileExplorer", () => {
     });
 
     expect(uploadFiles).rejects.toThrow();
-    // TODO: figure out why spy isnt called to pass test
+    // TODO: figure out why spy isn't called to pass test
     expect(toastSpy).toHaveBeenCalledWith("ws", "Error uploading file");
   });
 });
