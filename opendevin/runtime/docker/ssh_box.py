@@ -756,6 +756,7 @@ class DockerSSHBox(Sandbox):
                     container.remove(force=True)
             except docker.errors.NotFound:
                 pass
+        self.docker_client.close()
 
 
 if __name__ == '__main__':
