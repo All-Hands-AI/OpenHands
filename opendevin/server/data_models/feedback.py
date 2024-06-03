@@ -7,6 +7,7 @@ from opendevin.core.logger import opendevin_logger as logger
 
 
 class FeedbackDataModel(BaseModel):
+    version: str
     email: str
     token: str
     feedback: Literal['positive', 'negative']
@@ -20,7 +21,16 @@ FEEDBACK_URL = (
 
 
 def store_feedback(feedback: FeedbackDataModel):
-    logger.info(f'Got feedback: {feedback.model_dump_json()}')
+    # Start logging
+    display_feedback = feedback.model_dump()
+    if 'trajectory' in display_feedback:
+        display_feedback['trajectory'] = (
+            f"elided [length: {len(display_feedback['trajectory'])}"
+        )
+    if 'token' in display_feedback:
+        display_feedback['token'] = 'elided'
+    logger.info(f'Got feedback: {display_feedback}')
+    # Start actual request
     response = requests.post(
         FEEDBACK_URL,
         headers={'Content-Type': 'application/json'},
