@@ -56,8 +56,13 @@ function ChatInterface() {
 
   const feedbackVersion = "1.0";
   const [feedback, setFeedback] = React.useState<Feedback>({
+    email: "",
+    feedback: "positive",
+    permissions: "private",
+    trajectory: [],
+    token: "",
     version: feedbackVersion,
-  } as Feedback);
+  });
   const [feedbackShared, setFeedbackShared] = React.useState(0);
 
   const {
