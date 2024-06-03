@@ -94,13 +94,13 @@ Here's an example of the evaluation output for a single task instance:
     ],
     // ... more iterations
   ],
-  "eval_exit_code": 134,
-  "eval_output": "/workspace/dgl/examples/pytorch/NGCF/NGCF/run.sh: line 1:   197 Aborted                 (core dumped) python3 main.py --dataset gowalla --embed_size 32 --device cuda:3",
+  "eval_exit_code": 124,  // ML-Bench believes the agent is successful if it continues to run until timeout
+  "eval_output": "",
   "eval_script": "pip install Matplotlib==2.2.2\r\n"
                  "cd /workspace/dgl/examples/pytorch/dgmg\r\n"
                  "python main.py",
   "metrics": {
-    "success": 0
+    "success": 1
   }
 }
 ```
