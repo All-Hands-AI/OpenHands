@@ -402,3 +402,58 @@ class TestAgentController:
         controller.delegate = Mock()
         controller.delegate._is_stuck.return_value = True
         assert controller._is_stuck() is True
+
+    def test_is_stuck_thinking(self, controller, event_stream):
+        # Add events to the event stream
+        message_action_1 = MessageAction(content='Hi there!')
+        event_stream.add_event(message_action_1, EventSource.USER)
+        message_action_1._source = EventSource.USER
+
+        message_action_2 = MessageAction(content='Hi there!')
+        event_stream.add_event(message_action_2, EventSource.AGENT)
+        message_action_2._source = EventSource.AGENT
+
+        message_action_3 = MessageAction(content='How are you?')
+        event_stream.add_event(message_action_3, EventSource.USER)
+        message_action_3._source = EventSource.USER
+
+        cmd_kill_action = CmdKillAction(
+            command_id=42, thought="I'm not stuck, he's stuck"
+        )
+        event_stream.add_event(cmd_kill_action, EventSource.AGENT)
+
+        message_action_4 = MessageAction(content="I'm doing well, thanks for asking.")
+        event_stream.add_event(message_action_4, EventSource.AGENT)
+        message_action_4._source = EventSource.AGENT
+
+        message_action_5 = MessageAction(content="I'm doing well, thanks for asking.")
+        event_stream.add_event(message_action_5, EventSource.AGENT)
+        message_action_5._source = EventSource.AGENT
+
+        message_action_6 = MessageAction(content="I'm doing well, thanks for asking.")
+        event_stream.add_event(message_action_6, EventSource.AGENT)
+        message_action_6._source = EventSource.AGENT
+
+        controller.state.history.set_event_stream(event_stream)
+
+        assert controller._is_stuck()
+
+        # Add an observation event between the repeated message actions
+        cmd_output_observation = CmdOutputObservation(
+            content='OK, I was stuck, but no more.',
+            command_id=42,
+            command='storybook',
+            exit_code=0,
+        )
+        cmd_output_observation._cause = cmd_kill_action._id
+        event_stream.add_event(cmd_output_observation, EventSource.USER)
+
+        message_action_7 = MessageAction(content="I'm doing well, thanks for asking.")
+        event_stream.add_event(message_action_7, EventSource.AGENT)
+        message_action_7._source = EventSource.AGENT
+
+        message_action_8 = MessageAction(content="I'm doing well, thanks for asking.")
+        event_stream.add_event(message_action_8, EventSource.AGENT)
+        message_action_8._source = EventSource.AGENT
+
+        assert not controller._is_stuck()

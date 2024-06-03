@@ -398,26 +398,31 @@ class AgentController:
         # check for repeated MessageActions with source=AGENT
         # see if the agent is engaged in a good old monologue, telling itself the same thing over and over
         agent_message_actions = [
-            event
-            for event in filtered_history
+            (i, event)
+            for i, event in enumerate(filtered_history)
             if isinstance(event, MessageAction) and event.source == EventSource.AGENT
         ]
 
         # last three message actions will do for this check
         if len(agent_message_actions) >= 3:
             last_agent_message_actions = agent_message_actions[-3:]
+
             if all(
-                self._eq_no_pid(last_agent_message_actions[0], action)
+                self._eq_no_pid(last_agent_message_actions[0][1], action[1])
                 for action in last_agent_message_actions
             ):
                 # check if there are any observations between the repeated MessageActions
                 # then it's not yet a loop, maybe it can recover
-                start_index = filtered_history.index(last_agent_message_actions[0])
-                end_index = filtered_history.index(last_agent_message_actions[-1])
-                if not any(
-                    isinstance(event, Observation)
-                    for event in filtered_history[start_index : end_index + 1]
-                ):
+                start_index = last_agent_message_actions[0][0]
+                end_index = last_agent_message_actions[-1][0]
+
+                has_observation_between = False
+                for event in filtered_history[start_index + 1 : end_index]:
+                    if isinstance(event, Observation):
+                        has_observation_between = True
+                        break
+
+                if not has_observation_between:
                     logger.warning('Repeated MessageAction with source=AGENT detected')
                     return True
 
