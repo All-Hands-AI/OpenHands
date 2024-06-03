@@ -42,7 +42,7 @@ describe("ChatInterface", () => {
 
     const input = screen.getByRole("textbox");
     fireEvent.change(input, { target: { value: "my message" } });
-	expect(input).toHaveValue("my message");
+    expect(input).toHaveValue("my message");
   });
 
   it("should render user and assistant messages", () => {
@@ -71,12 +71,12 @@ describe("ChatInterface", () => {
         agent: {
           curAgentState: AgentState.INIT,
         },
-      }
+      },
     });
 
     const input = screen.getByRole("textbox");
-	// await userEvent.type(input, "my message{enter}");
-	fireEvent.change(input, { target: { value: "my message" } });
+    // await userEvent.type(input, "my message{enter}");
+    fireEvent.change(input, { target: { value: "my message" } });
     fireEvent.keyDown(input, { key: "Enter", code: "Enter", charCode: 13 });
 
     const event = {
@@ -92,11 +92,11 @@ describe("ChatInterface", () => {
         agent: {
           curAgentState: AgentState.AWAITING_USER_INPUT,
         },
-      }
+      },
     });
 
     const input = screen.getByRole("textbox");
-	await userEvent.type(input, "my message{enter}");
+    await userEvent.type(input, "my message{enter}");
 
     const event = {
       action: ActionType.MESSAGE,

@@ -113,7 +113,7 @@ describe("SettingsModal", () => {
       await act(async () =>
         renderWithProviders(
           <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
-        )
+        ),
       );
 
       // Use the helper function to assert models were fetched
