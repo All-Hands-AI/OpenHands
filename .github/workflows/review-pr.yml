@@ -62,8 +62,6 @@ jobs:
         python -c "import sys; print(sys.path)" 
         # python -c "import sys; print(sys.path); import agenthub" 
         echo "============"
-        ll
-        echo "============"
         WORKSPACE_MOUNT_PATH=$GITHUB_WORKSPACE poetry run python ./opendevin/core/main.py -i 50 -f task.txt -d $GITHUB_WORKSPACE
         rm task.txt
 
