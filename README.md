@@ -56,7 +56,6 @@ To start OpenDevin in a docker container, run the following commands in your ter
 
 ```bash
 OPENDEVIN_WORKSPACE=$(pwd)/workspace
-mkdir -p $OPENDEVIN_WORKSPACE
 docker run -it \
     --pull=always \
     -e SANDBOX_USER_ID=$(id -u) \
