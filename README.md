@@ -71,7 +71,7 @@ docker run -it \
 
 You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000) with access to `./workspace`. Place your code in `./workspace` to have Devin operate on them.
 
-OpenDevin will have access to this workspace folder, but the rest of your system will be protected by a docker sandbox.
+OpenDevin will only have access to this workspace folder. The rest of your system will not be affected as it runs in a secured docker sandbox.
 
 ## 🚀 Documentation
 
