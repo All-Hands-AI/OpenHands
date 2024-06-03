@@ -44,6 +44,8 @@ class State:
     metrics: Metrics = Metrics()
     # root agent has level 0, and every delegate increases the level by one
     delegate_level: int = 0
+    start_id: int = -1
+    end_id: int = -1
 
     def save_to_session(self, sid: str):
         fs = get_file_store()
@@ -72,6 +74,15 @@ class State:
             state.resume_state = None
         state.agent_state = AgentState.LOADING
         return state
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['history']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        # self.history = None
 
     def get_current_user_intent(self):
         """

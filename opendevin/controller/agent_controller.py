@@ -34,6 +34,7 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
+from opendevin.memory.history import ShortTermHistory
 
 MAX_ITERATIONS = config.max_iterations
 MAX_CHARS = config.llm.max_chars
@@ -78,35 +79,18 @@ class AgentController:
         self.id = sid
         self.agent = agent
         self.max_chars = max_chars
-        if initial_state is None:
-            self.state = State(inputs={}, max_iterations=max_iterations)
-            self.state.history.set_event_stream(event_stream)
 
-            # no State to restore, start fresh
-            self.state.history.start_id = event_stream.get_latest_event_id() + 1
-            logger.debug(
-                f'AgentController {self.id} starting from event {self.state.history.start_id}, after: {event_stream.get_latest_event() if event_stream.get_latest_event_id() > -1 else None}'
-            )
-        else:
-            # FIXME keep compatibility with a history that was a list?
-            self.state = initial_state
-            logger.debug(
-                f'AgentController {self.id} starting with history: {self.state.history}'
-            )
-            logger.debug(
-                f'event_stream = {self.state.history._event_stream.sid if hasattr(self.state.history, "_event_stream") else None}'
-            )
-
-            if self.state.history.start_id is None or self.state.history.start_id == -1:
-                self.state.history.start_id = event_stream.get_latest_event_id() + 1
-                logger.debug(
-                    f'AgentController {self.id} starting from event {self.state.history.start_id}, after: {event_stream.get_latest_event()}'
-                )
-            self.state.history.set_event_stream(event_stream)
         self.event_stream = event_stream
         self.event_stream.subscribe(
             EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, append=is_delegate
         )
+
+        # state from the previous session, state from a parent agent, or a fresh state
+        self._set_initial_state(
+            state=initial_state,
+            max_iterations=max_iterations,
+        )
+
         self.max_budget_per_task = max_budget_per_task
         if not is_delegate:
             self.agent_task = asyncio.create_task(self._start_step_loop())
@@ -337,8 +321,32 @@ class AgentController:
     def get_state(self):
         return self.state
 
-    def set_state(self, state: State):
-        self.state = state
+    def _set_initial_state(
+        self,
+        state: State | None = None,
+        max_iterations: int = MAX_ITERATIONS,
+    ):
+        if state is None:
+            self.state = State(inputs={}, max_iterations=max_iterations)
+        else:
+            self.state = state
+
+        # initialize short term memory
+        history = ShortTermHistory()
+        history.set_event_stream(self.event_stream)
+
+        # if start_id was not set in State, we're starting fresh, at the top of the stream
+        start_id = self.state.start_id
+        if start_id == -1:
+            start_id = self.event_stream.get_latest_event_id() + 1
+            logger.debug(
+                f'AgentController {self.id} starting from event {start_id}, after: {self.event_stream.get_latest_event() if self.event_stream.get_latest_event_id() > -1 else None}'
+            )
+        else:
+            logger.debug(f'AgentController {self.id} restoring from event {start_id}')
+        self.state.start_id = start_id
+        history.start_id = start_id
+        self.state.history = history
 
     def _is_stuck(self):
         # check if delegate stuck
@@ -348,7 +356,7 @@ class AgentController:
         # filter out MessageAction with source='user' from history
         filtered_history = [
             event
-            for event in self.state.history
+            for event in self.state.history.get_events()
             if not (
                 (isinstance(event, MessageAction) and event.source == EventSource.USER)
                 or
