@@ -47,6 +47,7 @@ jobs:
     - name: Set up environment
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
+        export PATH="/github/home/.local/bin:$PATH
         poetry install --without evaluation
 
     - name: Run OpenDevin
