@@ -1,4 +1,4 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { screen, act, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import i18next from "i18next";
 import React from "react";
@@ -47,6 +47,14 @@ vi.mock("#/services/options", async (importOriginal) => ({
     .mockResolvedValue(Promise.resolve(["agent1", "agent2", "agent3"])),
 }));
 
+// Helper function to assert that fetchModels was called
+async function assertModelsAndAgentsFetched() {
+  await waitFor(() => {
+    expect(fetchAgents).toHaveBeenCalledTimes(1);
+    expect(fetchModels).toHaveBeenCalledTimes(1);
+  });
+}
+
 describe("SettingsModal", () => {
   afterEach(() => {
     vi.clearAllMocks();
@@ -55,10 +63,7 @@ describe("SettingsModal", () => {
   it("should fetch existing agents and models from the API", async () => {
     renderWithProviders(<SettingsModal isOpen onOpenChange={vi.fn()} />);
 
-    await waitFor(() => {
-      expect(fetchModels).toHaveBeenCalledTimes(1);
-      expect(fetchAgents).toHaveBeenCalledTimes(1);
-    });
+    assertModelsAndAgentsFetched();
   });
 
   it("should close the modal when the close button is clicked", async () => {
@@ -71,8 +76,8 @@ describe("SettingsModal", () => {
       name: /MODAL_CLOSE_BUTTON_LABEL/i, // i18n key
     });
 
-    act(() => {
-      userEvent.click(cancelButton);
+    await act(async () => {
+      await userEvent.click(cancelButton);
     });
 
     expect(onOpenChange).toHaveBeenCalledWith(false);
@@ -108,8 +113,11 @@ describe("SettingsModal", () => {
       await act(async () =>
         renderWithProviders(
           <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
-        ),
+        )
       );
+
+      // Use the helper function to assert models were fetched
+      await assertModelsAndAgentsFetched();
 
       const saveButton = screen.getByRole("button", { name: /save/i });
       const modelInput = screen.getByRole("combobox", { name: "model" });
@@ -226,6 +234,10 @@ describe("SettingsModal", () => {
           <SettingsModal isOpen onOpenChange={onOpenChangeMock} />,
         ),
       );
+
+      await waitFor(() => {
+        expect(fetchModels).toHaveBeenCalledTimes(1);
+      });
 
       const saveButton = screen.getByRole("button", { name: /save/i });
       const modelInput = screen.getByRole("combobox", { name: "model" });
