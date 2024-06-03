@@ -251,13 +251,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
 
     except Exception as e:
         logger.error(f'Error processing instance {instance["id"]}: {e}')
-        output = {
-            'instance_id': instance['id'],
-            'repo': repo_url,
-            'metadata': metadata,
-            'error': str(e),
-        }
-        raise e
+        raise
     finally:
         config.workspace_mount_path = old_workspace_mount_path
         config.workspace_base = old_workspace_base
