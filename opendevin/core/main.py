@@ -83,12 +83,20 @@ async def main(
     agent = AgentCls(llm=llm)
 
     event_stream = EventStream('main')
+
+    # restore agent state
+    initial_state = None
+    try:
+        initial_state = State.restore_from_session('main')
+    except Exception as e:
+        print('Error restoring state', e)
     controller = AgentController(
         agent=agent,
         max_iterations=args.max_iterations,
         max_budget_per_task=args.max_budget_per_task,
         max_chars=args.max_chars,
         event_stream=event_stream,
+        initial_state=initial_state,
     )
     runtime = ServerRuntime(event_stream=event_stream, sandbox=sandbox)
 
@@ -99,7 +107,11 @@ async def main(
         logger.info('Plugins are already initialized in the sandbox')
     runtime.init_runtime_tools(controller.agent.runtime_tools, is_async=False)
 
-    event_stream.add_event(MessageAction(content=task), EventSource.USER)
+    # init with the provided task or resume the conversation
+    if initial_state is None:
+        event_stream.add_event(MessageAction(content=task), EventSource.USER)
+    else:
+        event_stream.add_event(MessageAction(content='let us resume'), EventSource.USER)
 
     async def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):
@@ -122,6 +134,9 @@ async def main(
     ]:
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
+    # close when the task is done
+    end_state = controller.get_state()
+    end_state.save_to_session('main')
     await controller.close()
     runtime.close()
     return controller.get_state()
