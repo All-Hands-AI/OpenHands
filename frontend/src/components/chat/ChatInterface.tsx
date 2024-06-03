@@ -166,7 +166,8 @@ function ChatInterface() {
       />
       <FeedbackModal
         feedback={feedback}
-        setFeedback={setFeedback}
+        handleEmailChange={handleEmailChange}
+        handlePermissionsChange={handlePermissionsChange}
         isOpen={feedbackModalIsOpen}
         onOpenChange={onFeedbackModalOpenChange}
       />
