@@ -49,20 +49,18 @@ jobs:
         curl -sSL https://install.python-poetry.org | python3 -
         export PATH="/github/home/.local/bin:$PATH"
         poetry install --without evaluation
+        poetry run playwright install --with-deps chromium
 
     - name: Run OpenDevin
       env:
         LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         SANDBOX_TYPE: exec
       run: |
+        # Append path to launch poetry
         export PATH="/github/home/.local/bin:$PATH"
+        # Append path to correctly import package, note: must set pwd at first
         export PYTHONPATH=$(pwd):$PYTHONPATH
-        echo $PYTHONPATH  
-        echo "============"
-        python --version 
-        python -c "import sys; print(sys.path)" 
-        # python -c "import sys; print(sys.path); import agenthub" 
-        echo "============"
         WORKSPACE_MOUNT_PATH=$GITHUB_WORKSPACE poetry run python ./opendevin/core/main.py -i 50 -f task.txt -d $GITHUB_WORKSPACE
         rm task.txt
 
