@@ -354,6 +354,7 @@ class DockerExecBox(Sandbox):
             except docker.errors.NotFound:
                 pass
         self.docker_client.close()
+
     def get_working_directory(self):
         return self.sandbox_workspace_dir
 
