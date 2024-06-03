@@ -55,7 +55,9 @@ To try OpenDevin in a docker container, run the following Terminal command:
 > When you run the following command, files in `./workspace` may be modified or deleted.
 
 ```bash
-OPENDEVIN_WORKSPACE=$(pwd)/workspace && mkdir -p $OPENDEVIN_WORKSPACE && docker run -it \
+OPENDEVIN_WORKSPACE=$(pwd)/workspace
+mkdir -p $OPENDEVIN_WORKSPACE
+docker run -it \
     --pull=always \
     -e SANDBOX_USER_ID=$(id -u) \
     -e PERSIST_SANDBOX="true" \
