@@ -13,6 +13,7 @@ from agenthub.codeact_agent.prompt import (
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
@@ -36,7 +37,7 @@ from opendevin.runtime.plugins import (
 from opendevin.runtime.tools import RuntimeTool
 
 ENABLE_GITHUB = True
-ENABLE_REPOMAP = False
+ENABLE_REPOMAP = True
 
 
 def parse_response(response) -> str:
@@ -191,7 +192,7 @@ class CodeActAgent(Agent):
             llm=self.llm,
             map_tokens=1024,  # TODO: move to config
             root=config.workspace_base,
-            repo_content_prefix='Here are summaries of some files present in my git repository.',
+            repo_content_prefix='Here are summaries of some files present in the workspace.',
             verbose=False,  # TODO: test what happens when verbose is True
             max_context_window=self.llm.max_input_tokens,
         )
@@ -229,6 +230,7 @@ class CodeActAgent(Agent):
             # Insert optional repo_map message here
             if ENABLE_REPOMAP:
                 repo_content = self.get_repo_map(state)
+                logger.info(f'Repo content: {repo_content}')
                 latest_user_message['content'] += (
                     repo_content + '\n\n' if repo_content else ''
                 )
@@ -316,10 +318,14 @@ class CodeActAgent(Agent):
             return ''
 
         cur_msg_text = self.get_cur_message_text(state)
+        logger.info(f'Current message text: {cur_msg_text}')
         mentioned_fnames = self.get_file_mentions(cur_msg_text)
+        logger.info(f'Mentioned fnames: {mentioned_fnames}')
         mentioned_idents = self.get_ident_mentions(cur_msg_text)
+        logger.info(f'Mentioned idents: {mentioned_idents}')
 
         other_files = set(self.get_all_abs_files()) - set(self.abs_fnames)
+        logger.info(f'Other files: {other_files}')
         repo_content = self.repo_map.get_repo_map(
             self.abs_fnames,
             other_files,
@@ -392,7 +398,12 @@ class CodeActAgent(Agent):
         return mentioned_rel_fnames
 
     def get_all_relative_files(self):
-        files: Any = self.get_inchat_relative_files()
+        # get all relative files in the workspace
+        files = []
+        for root, _, fnames in os.walk(self.root):
+            for fname in fnames:
+                if not fname.startswith('.'):
+                    files.append(os.path.relpath(os.path.join(root, fname), self.root))
 
         files = [fname for fname in files if Path(self.abs_root_path(fname)).is_file()]
         return sorted(set(files))

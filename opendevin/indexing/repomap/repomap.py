@@ -149,13 +149,23 @@ class RepoMap:
         return repo_content
 
     def get_rel_fname(self, fname):
+        """
+        Returns the relative path of a file with respect to the root directory.
+
+        Args:
+            fname (str): The absolute path of the file.
+
+        Returns:
+            str: The relative path of the file.
+        """
         return os.path.relpath(fname, self.root)
 
-    def split_path(self, path):
-        path = os.path.relpath(path, self.root)
-        return [path + ':']
-
     def load_tags_cache(self):
+        """
+        Loads the tags cache from the specified path.
+
+        If the cache directory does not exist, sets the `cache_missing` flag to True.
+        """
         path = Path(self.root) / self.TAGS_CACHE_DIR
         if not path.exists():
             self.cache_missing = True
@@ -165,12 +175,34 @@ class RepoMap:
         pass
 
     def get_mtime(self, fname):
+        """
+        Get the modification time of a file.
+
+        Args:
+            fname (str): The path to the file.
+
+        Returns:
+            float: The modification time of the file in seconds since the epoch.
+
+        Raises:
+            FileNotFoundError: If the file is not found.
+        """
         try:
             return os.path.getmtime(fname)
         except FileNotFoundError:
             self.io.tool_error(f'File not found error: {fname}')
 
     def get_tags(self, fname, rel_fname):
+        """
+        Retrieves the tags associated with a file.
+
+        Args:
+            fname (str): The absolute path of the file.
+            rel_fname (str): The relative path of the file.
+
+        Returns:
+            list: A list of tags associated with the file.
+        """
         # Check if the file is in the cache and if the modification time has not changed
         file_mtime = self.get_mtime(fname)
         if file_mtime is None:
@@ -193,6 +225,19 @@ class RepoMap:
         return data
 
     def get_tags_raw(self, fname, rel_fname):
+        """
+        Retrieves tags from the given file.
+
+        Args:
+            fname (str): The absolute path of the file.
+            rel_fname (str): The relative path of the file.
+
+        Yields:
+            Tag: A Tag object representing a tag found in the file.
+
+        Returns:
+            None: If the language of the file is not supported or if the file is empty.
+        """
         lang = filename_to_lang(fname)
         if not lang:
             return
@@ -275,6 +320,18 @@ class RepoMap:
     def get_ranked_tags(
         self, chat_fnames, other_fnames, mentioned_fnames, mentioned_idents
     ):
+        """
+        Returns a list of ranked tags based on the provided file names and mentioned identifiers.
+
+        Args:
+            chat_fnames (list): List of file names from the chat.
+            other_fnames (list): List of other file names.
+            mentioned_fnames (list): List of mentioned file names.
+            mentioned_idents (list): List of mentioned identifiers.
+
+        Returns:
+            list: A list of ranked tags.
+        """
         defines = defaultdict(set)
         references = defaultdict(list)
         definitions = defaultdict(set)
@@ -423,6 +480,19 @@ class RepoMap:
         mentioned_fnames=None,
         mentioned_idents=None,
     ):
+        """
+        Returns the best tree representation of ranked tags based on the given parameters.
+
+        Args:
+            chat_fnames (list): A list of chat filenames.
+            other_fnames (list, optional): A list of other filenames. Defaults to None.
+            max_map_tokens (int, optional): The maximum number of tokens allowed in the map. Defaults to None.
+            mentioned_fnames (set, optional): A set of mentioned filenames. Defaults to None.
+            mentioned_idents (set, optional): A set of mentioned identifiers. Defaults to None.
+
+        Returns:
+            The best tree representation of ranked tags.
+        """
         if not other_fnames:
             other_fnames = list()
         if not max_map_tokens:
@@ -469,6 +539,17 @@ class RepoMap:
     tree_cache: Any = dict()
 
     def render_tree(self, abs_fname, rel_fname, lois):
+        """
+        Renders the tree for a given file and lines of interest (lois).
+
+        Args:
+            abs_fname (str): The absolute file path.
+            rel_fname (str): The relative file path.
+            lois (list): A list of lines of interest.
+
+        Returns:
+            str: The rendered tree.
+        """
         key = (rel_fname, tuple(sorted(lois)))
 
         if key in self.tree_cache:
@@ -499,6 +580,16 @@ class RepoMap:
         return res
 
     def to_tree(self, tags, chat_rel_fnames):
+        """
+        Converts a list of tags into a tree-like structure.
+
+        Args:
+            tags (list): A list of tags.
+            chat_rel_fnames (list): A list of chat relative filenames.
+
+        Returns:
+            str: The tree-like structure as a string.
+        """
         if not tags:
             return ''
 
