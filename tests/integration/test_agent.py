@@ -10,6 +10,7 @@ from opendevin.core.main import main
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
     AgentFinishAction,
+    AgentRejectAction,
     MessageAction,
 )
 
@@ -122,8 +123,9 @@ def test_simple_task_rejection():
     # Give an impossible task to do: cannot write a commit message because
     # the workspace is not a git repo
     task = 'Write a git commit message for the current staging area. Do not ask me for confirmation at any point.'
-    final_agent_state = asyncio.run(main(task))
-    assert final_agent_state == AgentState.REJECTED
+    final_state: State = asyncio.run(main(task))
+    assert final_state.agent_state == AgentState.STOPPED
+    assert isinstance(final_state.history[-1][0], AgentRejectAction)
 
 
 @pytest.mark.skipif(
