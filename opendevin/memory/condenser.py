@@ -161,15 +161,13 @@ class MemoryCondenser:
                     )
                 events_str.append(event_str)
 
-            prompt = f"""
+            prompt = """
             Given the following actions and observations, create a JSON response with:
                 - "action": "summarize"
                 - args:
                   - "summarized_actions": A comma-separated list of unique action names from the provided actions
                   - "summary": A single sentence summarizing all the provided observations
-
-                {'\n'.join(events_str)}
-            """
+            """ + '\n'.join(events_str)
 
             messages = [{'role': 'user', 'content': prompt}]
             response = self.llm.completion(messages=messages)
