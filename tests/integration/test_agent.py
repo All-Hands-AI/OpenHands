@@ -119,6 +119,10 @@ def test_ipython():
     os.getenv('AGENT') != 'ManagerAgent',
     reason='Currently, only ManagerAgent supports task rejection',
 )
+@pytest.mark.skipif(
+    os.getenv('SANDBOX_TYPE') == 'local',
+    reason='FIXME: local sandbox does not capture stderr',
+)
 def test_simple_task_rejection():
     # Give an impossible task to do: cannot write a commit message because
     # the workspace is not a git repo
