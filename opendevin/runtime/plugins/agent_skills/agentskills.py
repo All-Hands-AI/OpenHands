@@ -130,6 +130,11 @@ def _cur_file_header(CURRENT_FILE, total_lines):
     return f'[File: {os.path.abspath(CURRENT_FILE)} ({total_lines} lines total)]\n'
 
 
+def init_file():
+    global CURRENT_FILE
+    CURRENT_FILE = None
+
+
 @update_pwd_decorator
 def open_file(path: str, line_number: Optional[int] = None) -> None:
     """

@@ -10,6 +10,7 @@ from opendevin.runtime.plugins.agent_skills.agentskills import (
     edit_file,
     find_file,
     goto_line,
+    init_file,
     open_file,
     parse_docx,
     parse_latex,
@@ -22,12 +23,21 @@ from opendevin.runtime.plugins.agent_skills.agentskills import (
 )
 
 
+# current file needs to be reset after each test or some
+# tests will fail because they are dependent on the current
+# file being set correctly
+@pytest.fixture(autouse=True)
+def reset_current_file():
+    init_file()
+
+
 def test_open_file_unexist_path():
     with pytest.raises(FileNotFoundError):
         open_file('/unexist/path/a.txt')
 
 
 def test_open_file(tmp_path):
+    assert tmp_path is not None
     temp_file_path = tmp_path / 'a.txt'
     temp_file_path.write_text('Line 1\nLine 2\nLine 3\nLine 4\nLine 5')
 
