@@ -1,7 +1,6 @@
 import React from "react";
-import { waitFor, screen } from "@testing-library/react";
+import { waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { act } from "react-dom/test-utils";
 import { renderWithProviders } from "test-utils";
 import { describe, it, expect, vi, Mock } from "vitest";
 import FileExplorer from "./FileExplorer";
@@ -43,7 +42,7 @@ describe("FileExplorer", () => {
   it.todo("should render an empty workspace");
 
   it.only("should refetch the workspace when clicking the refresh button", async () => {
-    const { getByText } = renderWithProviders(<FileExplorer />, {
+    const { getByText, getByTestId } = renderWithProviders(<FileExplorer />, {
       preloadedState: {
         agent: {
           curAgentState: AgentState.RUNNING,
@@ -57,11 +56,13 @@ describe("FileExplorer", () => {
     expect(listFiles).toHaveBeenCalledTimes(2); // once for root, once for folder 1
 
     // The 'await' keyword is required here to avoid a warning during test runs
-    await act(() => {
-      userEvent.click(screen.getByTestId("refresh"));
+    await act(async () => {
+      await userEvent.click(getByTestId("refresh"));
     });
 
-    expect(listFiles).toHaveBeenCalledTimes(4); // 2 from initial render, 2 from refresh button
+    await waitFor(() => {
+      expect(listFiles).toHaveBeenCalledTimes(4); // 2 from initial render, 2 from refresh button
+    });
   });
 
   it("should toggle the explorer visibility when clicking the close button", async () => {
