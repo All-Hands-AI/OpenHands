@@ -9,6 +9,7 @@ from retry import retry
 
 LOGGER = logging.getLogger(__name__)
 
+
 class Q20Game:
     def __init__(
         self,
@@ -19,8 +20,10 @@ class Q20Game:
         temperature: float = 0.8,
         openai_api: bool = True,
         openai_api_key: Optional[str] = None,
-        guesser_kargs={},
+        guesser_kargs=None,
     ) -> None:
+        if guesser_kargs is None:
+            guesser_kargs = {}
         self.item = item
         self.answerer_model = answerer_model
         self.guesser_model = guesser_model
