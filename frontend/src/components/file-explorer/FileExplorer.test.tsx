@@ -1,7 +1,6 @@
 import React from "react";
-import { waitFor } from "@testing-library/react";
+import { waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { act } from "react-dom/test-utils";
 import { renderWithProviders } from "test-utils";
 import { describe, it, expect, vi, Mock } from "vitest";
 import FileExplorer from "./FileExplorer";

@@ -75,7 +75,6 @@ describe("ChatInterface", () => {
     });
 
     const input = screen.getByRole("textbox");
-    // await userEvent.type(input, "my message{enter}");
     fireEvent.change(input, { target: { value: "my message" } });
     fireEvent.keyDown(input, { key: "Enter", code: "Enter", charCode: 13 });
 
