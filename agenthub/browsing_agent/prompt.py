@@ -494,11 +494,13 @@ def _get_action_space(flags: Flags) -> AbstractActionSet:
             action_space = PythonActionSet(strict=flags.is_strict)
             if flags.multi_actions:
                 warn(
-                    f'Flag action_space={repr(flags.action_space)} incompatible with multi_actions={repr(flags.multi_actions)}.'
+                    f'Flag action_space={repr(flags.action_space)} incompatible with multi_actions={repr(flags.multi_actions)}.',
+                    stacklevel=2,
                 )
             if flags.demo_mode != 'off':
                 warn(
-                    f'Flag action_space={repr(flags.action_space)} incompatible with demo_mode={repr(flags.demo_mode)}.'
+                    f'Flag action_space={repr(flags.action_space)} incompatible with demo_mode={repr(flags.demo_mode)}.',
+                    stacklevel=2,
                 )
             return action_space
         case 'bid':
