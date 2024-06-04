@@ -10,6 +10,7 @@ from importlib import resources
 from pathlib import Path
 from typing import Any, Set
 
+import git
 import networkx as nx
 from diskcache import Cache
 from grep_ast import TreeContext, filename_to_lang
@@ -712,14 +713,30 @@ class RepoMap:
         return mentioned_rel_fnames
 
     def get_all_relative_files(self):
-        # TODO: get all relative files, excluding .aiderignore in the workspace
-        files: Any = []
-        # for root, _, fnames in os.walk(self.root):
-        #     for fname in fnames:
-        #         if not fname.startswith('.'):
-        #             files.append(os.path.relpath(os.path.join(root, fname), self.root))
+        # Construct a git repo object and get all the relative files tracked by git
+        try:
+            repo = git.Repo(self.root)
 
-        files = [fname for fname in files if Path(self.abs_root_path(fname)).is_file()]
+            if repo.bare:
+                raise Exception('The repository is bare.')
+
+            # Get a list of all tracked files
+            tracked_files = [
+                item.path for item in repo.tree().traverse() if item.type == 'blob'
+            ]
+        except Exception as e:
+            logger.error(
+                f'An error occurred when getting tracked files in git repo: {e}'
+            )
+            return []
+
+        logger.info(f'Tracked files: {tracked_files}')
+        logger.info('Length of tracked files: ' + str(len(tracked_files)))
+        files = [
+            fname
+            for fname in tracked_files
+            if Path(self.abs_root_path(fname)).is_file()
+        ]
         return sorted(set(files))
 
     def get_all_abs_files(self):

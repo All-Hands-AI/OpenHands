@@ -34,7 +34,7 @@ from opendevin.runtime.plugins import (
 from opendevin.runtime.tools import RuntimeTool
 
 ENABLE_GITHUB = True
-ENABLE_REPOMAP = True
+ENABLE_REPOMAP = False
 
 
 def parse_response(response) -> str:
@@ -185,13 +185,17 @@ class CodeActAgent(Agent):
         """
         super().__init__(llm)
         self.reset()
-        self.repo_map = RepoMap(
-            llm=self.llm,
-            map_tokens=1024,  # TODO: move to config
-            root=config.workspace_base,
-            repo_content_prefix='Here are summaries of some files present in the workspace.',
-            verbose=False,  # TODO: test what happens when verbose is True
-            max_context_window=self.llm.max_input_tokens,
+        self.repo_map = (
+            RepoMap(
+                llm=self.llm,
+                map_tokens=1024,  # TODO: move to config
+                root=config.workspace_base,
+                repo_content_prefix='Here are summaries of some files present in the workspace.',
+                verbose=False,  # TODO: test what happens when verbose is True
+                max_context_window=self.llm.max_input_tokens,
+            )
+            if ENABLE_REPOMAP
+            else None
         )
 
     def reset(self) -> None:
