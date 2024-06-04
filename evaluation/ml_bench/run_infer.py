@@ -387,6 +387,7 @@ if __name__ == '__main__':
                     agent_class,
                     metadata,
                     eval_output_dir,
+                    reset_logger=bool(num_workers > 1),
                 )
                 future.add_done_callback(update_progress)
                 futures.append(future)
