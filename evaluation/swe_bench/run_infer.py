@@ -205,7 +205,7 @@ def process_instance(
         workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
         pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
-    # Setup the logger properly, so you can run multi-processing to parallize the evaluation
+    # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
         # Set up logger
         log_file = os.path.join(
@@ -217,7 +217,7 @@ def process_instance(
         # add back the console handler to print ONE line
         logger.addHandler(get_console_handler())
         logger.info(
-            f'Starting evaluation for instance {instance.instance_id}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
+            f'Starting evaluation for instance {instance.instance_id}.\nHint: run "tail -f {log_file}" to see live logs in a separate shell'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -410,7 +410,7 @@ if __name__ == '__main__':
         'max_iterations': max_iterations,
         'eval_output_dir': eval_output_dir,
         'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
-        # get the commit id of current repo for reproduciblity
+        # get the commit id of current repo for reproducibility
         'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
         .decode('utf-8')
         .strip(),
