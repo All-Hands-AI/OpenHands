@@ -15,9 +15,7 @@ class FeedbackDataModel(BaseModel):
     trajectory: list[dict[str, Any]]
 
 
-FEEDBACK_URL = (
-    'https://kttkfkoju5.execute-api.us-east-2.amazonaws.com/od-share-trajectory'
-)
+FEEDBACK_URL = 'https://share-od-trajectory-3u9bw9tx.uc.gateway.dev/share_od_trajectory'
 
 
 def store_feedback(feedback: FeedbackDataModel):
