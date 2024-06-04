@@ -23,7 +23,6 @@ import pathlib
 import subprocess
 import time
 from concurrent.futures import ProcessPoolExecutor
-from typing import Dict
 
 from datasets import load_dataset
 from tqdm import tqdm
@@ -97,18 +96,6 @@ ID2CONDA = {
     14: 'MZ2_DS',
     15: 'GSA2_DS',
 }
-
-
-def parse_eval_output(output: str) -> Dict[str, float]:
-    metrics = {}
-    for line in output.split('\n'):
-        if ':' in line:
-            key, value = line.split(':')
-            try:
-                metrics[key.strip()] = float(value.strip())
-            except ValueError:
-                logger.warning(f'Unable to parse metric value as float: {line}')
-    return metrics
 
 
 def process_instance(instance, agent_class, metadata, reset_logger: bool = True):
@@ -199,6 +186,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
                 sandbox=sandbox,
             )
         )
+        metrics = state.metrics.get() if state.metrics else {}
 
         # Evaluate the agent's script
         eval_script = os.path.join(task_path, 'run.sh')
@@ -223,17 +211,13 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         if exit_code != 0 and exit_code != 124:
             logger.warning(f'Evaluation script failed with exit code {exit_code}')
             logger.warning(f'Output: {eval_output}')
-            metrics = {
-                'success': int(
-                    'KeyboardInterrupt' in eval_output
-                ),  # super-dainiu: assume ``KeyboardInterrupt`` is a success as is done in ML-Bench
-            }
+            metrics['success'] = (
+                int('KeyboardInterrupt' in eval_output),
+            )  # super-dainiu: assume ``KeyboardInterrupt`` is a success as is done in ML-Bench
         else:
             logger.info(f'Evaluation script succeeded with exit code {exit_code}')
             logger.info(f'Output: {eval_output}')
-            metrics = {
-                'success': 1,
-            }
+            metrics['success'] = 1
 
         # Save the output
         output = {
