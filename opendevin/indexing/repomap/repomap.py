@@ -712,12 +712,12 @@ class RepoMap:
         return mentioned_rel_fnames
 
     def get_all_relative_files(self):
-        # get all relative files in the workspace
-        files = []
-        for root, _, fnames in os.walk(self.root):
-            for fname in fnames:
-                if not fname.startswith('.'):
-                    files.append(os.path.relpath(os.path.join(root, fname), self.root))
+        # TODO: get all relative files, excluding .aiderignore in the workspace
+        files: Any = []
+        # for root, _, fnames in os.walk(self.root):
+        #     for fname in fnames:
+        #         if not fname.startswith('.'):
+        #             files.append(os.path.relpath(os.path.join(root, fname), self.root))
 
         files = [fname for fname in files if Path(self.abs_root_path(fname)).is_file()]
         return sorted(set(files))
