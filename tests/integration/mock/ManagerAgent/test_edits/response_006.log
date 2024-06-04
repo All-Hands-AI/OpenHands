@@ -1,0 +1,20 @@
+```json
+{
+  "action": "finish",
+  "args": {
+    "outputs": {
+      "file": "bad.txt",
+      "typos_fixed": [
+        {
+          "original": "typoo",
+          "corrected": "typo"
+        },
+        {
+          "original": "mor",
+          "corrected": "more"
+        }
+      ]
+    }
+  }
+}
+```
