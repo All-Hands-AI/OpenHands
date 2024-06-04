@@ -27,7 +27,7 @@ cache_dir = "/tmp/cache"
 ssh_hostname = "localhost"
 enable_auto_lint = true
 run_as_devin = false
-sandbox_container_image = "public.ecr.aws/137372269344/ml-bench:latest" # Use the latest image from the ML-Bench repository
+sandbox_container_image = "public.ecr.aws/i5g0m1f6/ml-bench" # Use the latest image from the ML-Bench repository
 
 # TODO: Change these to the model you want to evaluate
 [eval_gpt4_1106_preview]
