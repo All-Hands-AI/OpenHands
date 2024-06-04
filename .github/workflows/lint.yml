@@ -47,11 +47,4 @@ jobs:
       - name: Install pre-commit
         run: pip install pre-commit==3.7.0
       - name: Run pre-commit hooks
-        if: github.ref != 'refs/heads/main'
-        run: |
-          git fetch https://github.com/OpenDevin/OpenDevin.git main:main && \
-          pre-commit run \
-            --files \
-            $(git diff --name-only $(git merge-base main $(git branch --show-current)) $(git branch --show-current) | tr '\n' ' ') \
-            --show-diff-on-failure \
-            --config ./dev_config/python/.pre-commit-config.yaml
+        run: pre-commit run --files opendevin/**/* agenthub/**/* evaluation/**/* --show-diff-on-failure --config ./dev_config/python/.pre-commit-config.yaml
