@@ -70,7 +70,7 @@ docker run -it \
     ghcr.io/opendevin/opendevin:0.6
 ```
 
-You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000) with access to `./workspace`. Place your code in `./workspace` to have Devin operate on them.
+You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000) with access to `./workspace`. To have OpenDevin operate on your code, place it in `./workspace`.
 
 OpenDevin will only have access to this workspace folder. The rest of your system will not be affected as it runs in a secured docker sandbox.
 
