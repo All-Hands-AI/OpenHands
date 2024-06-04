@@ -3,6 +3,7 @@ Mostly borrow from: https://github.com/paul-gauthier/aider/blob/main/aider/repom
 """
 
 import os
+import re
 import warnings
 from collections import Counter, defaultdict, namedtuple
 from importlib import resources
@@ -17,6 +18,7 @@ from pygments.token import Token
 from pygments.util import ClassNotFound
 from tqdm import tqdm
 
+from opendevin.core.logger import opendevin_logger as logger
 from opendevin.indexing.repomap.io import InputOutput
 from opendevin.llm.llm import LLM
 
@@ -76,6 +78,7 @@ class RepoMap:
 
         self.token_count = llm.get_token_count_from_text
         self.repo_content_prefix = repo_content_prefix
+        self.abs_fnames: Any = set()
 
     def get_repo_map(
         self, chat_files, other_files, mentioned_fnames=None, mentioned_idents=None
@@ -627,3 +630,117 @@ class RepoMap:
         output = '\n'.join([line[:100] for line in output.splitlines()]) + '\n'
 
         return output
+
+    def get_history_aware_repo_map(self, messages: list) -> str:
+        cur_msg_text = self.get_cur_message_text(messages)
+        logger.info(f'Current message text: {cur_msg_text}')
+        mentioned_fnames = self.get_file_mentions(cur_msg_text)
+        logger.info(f'Mentioned fnames: {mentioned_fnames}')
+        mentioned_idents = self.get_ident_mentions(cur_msg_text)
+        logger.info(f'Mentioned idents: {mentioned_idents}')
+
+        other_files = set(self.get_all_abs_files()) - set(self.abs_fnames)
+        logger.info(f'Other files: {other_files}')
+        repo_content = self.get_repo_map(
+            self.abs_fnames,
+            other_files,
+            mentioned_fnames=mentioned_fnames,
+            mentioned_idents=mentioned_idents,
+        )
+
+        # fall back to global repo map if files in chat are disjoint from rest of repo
+        if not repo_content:
+            repo_content = self.get_repo_map(
+                set(),
+                set(self.get_all_abs_files()),
+                mentioned_fnames=mentioned_fnames,
+                mentioned_idents=mentioned_idents,
+            )
+
+        # fall back to completely unhinted repo
+        if not repo_content:
+            repo_content = self.get_repo_map(
+                set(),
+                set(self.get_all_abs_files()),
+            )
+
+        return repo_content
+
+    def get_cur_message_text(self, messages):
+        text = ''
+
+        for msg in messages:
+            text += msg['content'] + '\n'
+        return text
+
+    def get_ident_mentions(self, text):
+        # Split the string on any character that is not alphanumeric
+        # \W+ matches one or more non-word characters (equivalent to [^a-zA-Z0-9_]+)
+        words = set(re.split(r'\W+', text))
+        return words
+
+    def get_file_mentions(self, content):
+        words = set(word for word in content.split())
+
+        # drop sentence punctuation from the end
+        words = set(word.rstrip(',.!;:') for word in words)
+
+        # strip away all kinds of quotes
+        quotes = ''.join(['"', "'", '`'])
+        words = set(word.strip(quotes) for word in words)
+
+        addable_rel_fnames = self.get_addable_relative_files()
+
+        mentioned_rel_fnames = set()
+        fname_to_rel_fnames: Any = {}
+        for rel_fname in addable_rel_fnames:
+            if rel_fname in words:
+                mentioned_rel_fnames.add(str(rel_fname))
+
+            fname = os.path.basename(rel_fname)
+
+            # Don't add basenames that could be plain words like "run" or "make"
+            if '/' in fname or '.' in fname or '_' in fname or '-' in fname:
+                if fname not in fname_to_rel_fnames:
+                    fname_to_rel_fnames[fname] = []
+                fname_to_rel_fnames[fname].append(rel_fname)
+
+        for fname, rel_fnames in fname_to_rel_fnames.items():
+            if len(rel_fnames) == 1 and fname in words:
+                mentioned_rel_fnames.add(rel_fnames[0])
+
+        return mentioned_rel_fnames
+
+    def get_all_relative_files(self):
+        # get all relative files in the workspace
+        files = []
+        for root, _, fnames in os.walk(self.root):
+            for fname in fnames:
+                if not fname.startswith('.'):
+                    files.append(os.path.relpath(os.path.join(root, fname), self.root))
+
+        files = [fname for fname in files if Path(self.abs_root_path(fname)).is_file()]
+        return sorted(set(files))
+
+    def get_all_abs_files(self):
+        files = self.get_all_relative_files()
+        files = [self.abs_root_path(path) for path in files]
+        return files
+
+    def abs_root_path(self, path):
+        res = Path(self.root) / path
+        return self.safe_abs_path(res)
+
+    def get_addable_relative_files(self):
+        return set(self.get_all_relative_files()) - set(
+            self.get_inchat_relative_files()
+        )
+
+    def safe_abs_path(self, res):
+        "Gives an abs path, which safely returns a full (not 8.3) windows path"
+        res = Path(res).resolve()
+        return str(res)
+
+    def get_inchat_relative_files(self):
+        files = [self.get_rel_fname(fname) for fname in self.abs_fnames]
+        return sorted(set(files))

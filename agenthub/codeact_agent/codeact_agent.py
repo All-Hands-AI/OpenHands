@@ -1,7 +1,4 @@
-import os
 import re
-from pathlib import Path
-from typing import Any
 
 from agenthub.codeact_agent.prompt import (
     COMMAND_DOCS,
@@ -196,8 +193,6 @@ class CodeActAgent(Agent):
             verbose=False,  # TODO: test what happens when verbose is True
             max_context_window=self.llm.max_input_tokens,
         )
-        self.abs_fnames: Any = set()
-        self.root = config.workspace_base
 
     def reset(self) -> None:
         """
@@ -220,7 +215,19 @@ class CodeActAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
-        messages = self.get_messages_from_state(state)
+        messages: list[dict[str, str]] = [
+            {'role': 'system', 'content': self.system_message},
+            {'role': 'user', 'content': self.in_context_example},
+        ]
+
+        for prev_action, obs in state.history:
+            action_message = get_action_message(prev_action)
+            if action_message:
+                messages.append(action_message)
+
+            obs_message = get_observation_message(obs)
+            if obs_message:
+                messages.append(obs_message)
 
         latest_user_message = [m for m in messages if m['role'] == 'user'][-1]
         if latest_user_message:
@@ -229,7 +236,11 @@ class CodeActAgent(Agent):
 
             # Insert optional repo_map message here
             if ENABLE_REPOMAP:
-                repo_content = self.get_repo_map(state)
+                repo_content = (
+                    self.repo_map.get_history_aware_repo_map(messages)
+                    if self.repo_map
+                    else ''
+                )
                 logger.info(f'Repo content: {repo_content}')
                 latest_user_message['content'] += (
                     repo_content + '\n\n' if repo_content else ''
@@ -295,141 +306,3 @@ class CodeActAgent(Agent):
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
-
-    def get_messages_from_state(self, state: State) -> list[dict[str, str]]:
-        messages: list[dict[str, str]] = [
-            {'role': 'system', 'content': self.system_message},
-            {'role': 'user', 'content': self.in_context_example},
-        ]
-
-        for prev_action, obs in state.history:
-            action_message = get_action_message(prev_action)
-            if action_message:
-                messages.append(action_message)
-
-            obs_message = get_observation_message(obs)
-            if obs_message:
-                messages.append(obs_message)
-
-        return messages
-
-    def get_repo_map(self, state: State) -> str:
-        if not self.repo_map:
-            return ''
-
-        cur_msg_text = self.get_cur_message_text(state)
-        logger.info(f'Current message text: {cur_msg_text}')
-        mentioned_fnames = self.get_file_mentions(cur_msg_text)
-        logger.info(f'Mentioned fnames: {mentioned_fnames}')
-        mentioned_idents = self.get_ident_mentions(cur_msg_text)
-        logger.info(f'Mentioned idents: {mentioned_idents}')
-
-        other_files = set(self.get_all_abs_files()) - set(self.abs_fnames)
-        logger.info(f'Other files: {other_files}')
-        repo_content = self.repo_map.get_repo_map(
-            self.abs_fnames,
-            other_files,
-            mentioned_fnames=mentioned_fnames,
-            mentioned_idents=mentioned_idents,
-        )
-
-        # fall back to global repo map if files in chat are disjoint from rest of repo
-        if not repo_content:
-            repo_content = self.repo_map.get_repo_map(
-                set(),
-                set(self.get_all_abs_files()),
-                mentioned_fnames=mentioned_fnames,
-                mentioned_idents=mentioned_idents,
-            )
-
-        # fall back to completely unhinted repo
-        if not repo_content:
-            repo_content = self.repo_map.get_repo_map(
-                set(),
-                set(self.get_all_abs_files()),
-            )
-
-        return repo_content
-
-    def get_cur_message_text(self, state: State):
-        cur_messages = self.get_messages_from_state(state)
-        text = ''
-
-        for msg in cur_messages:
-            text += msg['content'] + '\n'
-        return text
-
-    def get_ident_mentions(self, text):
-        # Split the string on any character that is not alphanumeric
-        # \W+ matches one or more non-word characters (equivalent to [^a-zA-Z0-9_]+)
-        words = set(re.split(r'\W+', text))
-        return words
-
-    def get_file_mentions(self, content):
-        words = set(word for word in content.split())
-
-        # drop sentence punctuation from the end
-        words = set(word.rstrip(',.!;:') for word in words)
-
-        # strip away all kinds of quotes
-        quotes = ''.join(['"', "'", '`'])
-        words = set(word.strip(quotes) for word in words)
-
-        addable_rel_fnames = self.get_addable_relative_files()
-
-        mentioned_rel_fnames = set()
-        fname_to_rel_fnames: Any = {}
-        for rel_fname in addable_rel_fnames:
-            if rel_fname in words:
-                mentioned_rel_fnames.add(str(rel_fname))
-
-            fname = os.path.basename(rel_fname)
-
-            # Don't add basenames that could be plain words like "run" or "make"
-            if '/' in fname or '.' in fname or '_' in fname or '-' in fname:
-                if fname not in fname_to_rel_fnames:
-                    fname_to_rel_fnames[fname] = []
-                fname_to_rel_fnames[fname].append(rel_fname)
-
-        for fname, rel_fnames in fname_to_rel_fnames.items():
-            if len(rel_fnames) == 1 and fname in words:
-                mentioned_rel_fnames.add(rel_fnames[0])
-
-        return mentioned_rel_fnames
-
-    def get_all_relative_files(self):
-        # get all relative files in the workspace
-        files = []
-        for root, _, fnames in os.walk(self.root):
-            for fname in fnames:
-                if not fname.startswith('.'):
-                    files.append(os.path.relpath(os.path.join(root, fname), self.root))
-
-        files = [fname for fname in files if Path(self.abs_root_path(fname)).is_file()]
-        return sorted(set(files))
-
-    def get_all_abs_files(self):
-        files = self.get_all_relative_files()
-        files = [self.abs_root_path(path) for path in files]
-        return files
-
-    def abs_root_path(self, path):
-        res = Path(self.root) / path
-        return self.safe_abs_path(res)
-
-    def get_addable_relative_files(self):
-        return set(self.get_all_relative_files()) - set(
-            self.get_inchat_relative_files()
-        )
-
-    def safe_abs_path(self, res):
-        "Gives an abs path, which safely returns a full (not 8.3) windows path"
-        res = Path(res).resolve()
-        return str(res)
-
-    def get_rel_fname(self, fname):
-        return os.path.relpath(fname, self.root)
-
-    def get_inchat_relative_files(self):
-        files = [self.get_rel_fname(fname) for fname in self.abs_fnames]
-        return sorted(set(files))

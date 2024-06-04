@@ -31,11 +31,6 @@ For instance, to push a local branch `my_branch` to the github repo `owner/repo`
 <execute_bash> git push https://$GITHUB_TOKEN@github.com/owner/repo.git my_branch </execute_bash>
 If the assistant require access to GitHub but $GITHUB_TOKEN is not set, ask the user to set it."""
 
-REPOMAP_MESSAGE = """To do any activities on GitHub, the assistant should use the token in the $GITHUB_TOKEN environment variable.
-For instance, to push a local branch `my_branch` to the github repo `owner/repo`, the assistant can use the following four commands:
-<execute_bash> git push https://$GITHUB_TOKEN@github.com/owner/repo.git my_branch </execute_bash>
-If the assistant require access to GitHub but $GITHUB_TOKEN is not set, ask the user to set it."""
-
 SYSTEM_SUFFIX = """The assistant's response should be concise.
 The assistant should include ONLY ONE <execute_ipython> or <execute_bash> or <execute_browse> in every one of the responses, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
 IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> or <execute_browse> instead of providing it.
