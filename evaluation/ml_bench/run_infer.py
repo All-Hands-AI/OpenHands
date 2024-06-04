@@ -98,7 +98,9 @@ ID2CONDA = {
 }
 
 
-def process_instance(instance, agent_class, metadata, reset_logger: bool = True):
+def process_instance(
+    instance, agent_class, metadata, eval_output_dir, reset_logger: bool = True
+):
     old_workspace_mount_path = config.workspace_mount_path
     old_workspace_base = config.workspace_base
     try:
@@ -370,6 +372,7 @@ if __name__ == '__main__':
                     instance,
                     agent_class,
                     metadata,
+                    eval_output_dir,
                     reset_logger=bool(num_workers > 1),
                 )
                 future.add_done_callback(update_progress)
