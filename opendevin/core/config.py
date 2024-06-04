@@ -157,8 +157,8 @@ class AppConfig(metaclass=Singleton):
     llm: LLMConfig = field(default_factory=LLMConfig)
     agent: AgentConfig = field(default_factory=AgentConfig)
     runtime: str = 'server'
-    file_store: str = 'memory'
-    file_store_path: str = '/tmp/file_store'
+    file_store: str = os.getenv('FILE_STORE') or 'memory'
+    file_store_path: str = os.path.join(os.getcwd(), 'tmp/file_store')
     workspace_base: str = os.path.join(os.getcwd(), 'workspace')
     workspace_mount_path: str | None = None
     workspace_mount_path_in_sandbox: str = '/workspace'
