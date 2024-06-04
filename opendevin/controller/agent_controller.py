@@ -332,7 +332,11 @@ class AgentController:
             self.state = state
 
         # initialize short term memory
-        history = ShortTermHistory()
+        history = (
+            ShortTermHistory()
+            if state is None or state.history is None
+            else state.history
+        )
         history.set_event_stream(self.event_stream)
 
         # if start_id was not set in State, we're starting fresh, at the top of the stream

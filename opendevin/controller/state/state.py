@@ -10,7 +10,7 @@ from opendevin.events.action import (
     Action,
     MessageAction,
 )
-from opendevin.events.action.agent import AgentFinishAction
+from opendevin.events.action.agent import AgentFinishAction, AgentSummarizeAction
 from opendevin.events.observation import (
     CmdOutputObservation,
     Observation,
@@ -46,6 +46,7 @@ class State:
     delegate_level: int = 0
     start_id: int = -1
     end_id: int = -1
+    summaries: dict[tuple[int, int], AgentSummarizeAction] = field(default_factory=dict)
 
     def save_to_session(self, sid: str):
         fs = get_file_store()
@@ -77,11 +78,20 @@ class State:
 
     def __getstate__(self):
         state = self.__dict__.copy()
-        del state['history']
+        if 'history' in state:
+            state['summaries'] = state['history'].summaries
+            state['start_id'] = state['history'].start_id
+            state['end_id'] = state['history'].end_id
+        state.pop('history', None)
         return state
 
     def __setstate__(self, state):
         self.__dict__.update(state)
+        if hasattr(self, 'history'):
+            if hasattr(self, 'summaries'):
+                self.history.summaries = self.summaries
+            self.history.start_id = self.start_id
+            self.history.end_id = self.end_id
         # self.history = None
 
     def get_current_user_intent(self):

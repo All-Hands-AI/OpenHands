@@ -148,15 +148,29 @@ class MemoryCondenser:
         - The summary sentence.
         """
         try:
+            events_str = []
+            max_chars = 10000
+            for event in chunk:
+                event_str = str(event)
+                if isinstance(event, Observation) and len(event_str) > max_chars:
+                    half = max_chars // 2
+                    event_str = (
+                        event_str[:half]
+                        + '\n[... Observation truncated due to length ...]\n'
+                        + event_str[-half:]
+                    )
+                events_str.append(event_str)
+
             prompt = f"""
             Given the following actions and observations, create a JSON response with:
                 - "action": "summarize"
                 - args:
-                  - "summarized_actions": A comma-separated list of all the action names from the provided actions
+                  - "summarized_actions": A comma-separated list of unique action names from the provided actions
                   - "summary": A single sentence summarizing all the provided observations
 
-                {chunk}
+                {'\n'.join(events_str)}
             """
+
             messages = [{'role': 'user', 'content': prompt}]
             response = self.llm.completion(messages=messages)
             action_response = response['choices'][0]['message']['content']

@@ -111,7 +111,12 @@ async def main(
     if initial_state is None:
         event_stream.add_event(MessageAction(content=task), EventSource.USER)
     else:
-        event_stream.add_event(MessageAction(content='let us resume'), EventSource.USER)
+        event_stream.add_event(
+            MessageAction(
+                content="Let's get back on track. If you experienced errors before, do NOT resume your task. Ask me about it."
+            ),
+            EventSource.USER,
+        )
 
     async def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):

@@ -61,6 +61,8 @@ def action_to_str(action: Action) -> str:
         return f'{action.thought}\n<execute_browse>\n{action.browser_actions}\n</execute_browse>'
     elif isinstance(action, MessageAction):
         return action.content
+    elif isinstance(action, AgentSummarizeAction):
+        return f'Agent made actions like {action.summarized_actions} with the result: {action.summary}'
     return ''
 
 
@@ -229,9 +231,9 @@ class CodeActAgent(Agent):
         messages: list[dict[str, str]] = self._get_messages(state)
 
         response = None
-        # give it 3 chances to get a response if memory condensation is enabled
+        # give it multiple chances to get a response if memory condense is enabled
         attempt = 0
-        while self.memory_condenser and not response and attempt < 3:
+        while self.memory_condenser and not response and attempt < 10:
             try:
                 response = self.llm.completion(
                     messages=messages,
@@ -249,6 +251,7 @@ class CodeActAgent(Agent):
                 )
                 # Retry processing events with condensed memory
                 summary_action = self.memory_condenser.condense(state.history)
+                attempt += 1
                 if summary_action:
                     # update the messages, so we get the new summary
                     messages = self._get_messages(state)
