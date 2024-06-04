@@ -196,10 +196,7 @@ class CodeActAgent(Agent):
             max_context_window=self.llm.max_input_tokens,
         )
         self.abs_fnames: Any = set()
-        self.cur_messages: Any = []
-        self.root = (
-            config.workspace_base
-        )  # FIXME: see aider, the author did smt with git repo
+        self.root = config.workspace_base
 
     def reset(self) -> None:
         """
@@ -222,19 +219,7 @@ class CodeActAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
-        messages: list[dict[str, str]] = [
-            {'role': 'system', 'content': self.system_message},
-            {'role': 'user', 'content': self.in_context_example},
-        ]
-
-        for prev_action, obs in state.history:
-            action_message = get_action_message(prev_action)
-            if action_message:
-                messages.append(action_message)
-
-            obs_message = get_observation_message(obs)
-            if obs_message:
-                messages.append(obs_message)
+        messages = self.get_messages_from_state(state)
 
         latest_user_message = [m for m in messages if m['role'] == 'user'][-1]
         if latest_user_message:
@@ -243,7 +228,7 @@ class CodeActAgent(Agent):
 
             # Insert optional repo_map message here
             if ENABLE_REPOMAP:
-                repo_content = self.get_repo_map()
+                repo_content = self.get_repo_map(state)
                 latest_user_message['content'] += (
                     repo_content + '\n\n' if repo_content else ''
                 )
@@ -309,17 +294,32 @@ class CodeActAgent(Agent):
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
 
-    def get_repo_map(self):
-        if not self.repo_map:
-            return
+    def get_messages_from_state(self, state: State) -> list[dict[str, str]]:
+        messages: list[dict[str, str]] = [
+            {'role': 'system', 'content': self.system_message},
+            {'role': 'user', 'content': self.in_context_example},
+        ]
 
-        cur_msg_text = self.get_cur_message_text()
+        for prev_action, obs in state.history:
+            action_message = get_action_message(prev_action)
+            if action_message:
+                messages.append(action_message)
+
+            obs_message = get_observation_message(obs)
+            if obs_message:
+                messages.append(obs_message)
+
+        return messages
+
+    def get_repo_map(self, state: State) -> str:
+        if not self.repo_map:
+            return ''
+
+        cur_msg_text = self.get_cur_message_text(state)
         mentioned_fnames = self.get_file_mentions(cur_msg_text)
         mentioned_idents = self.get_ident_mentions(cur_msg_text)
 
-        other_files = set(self.get_all_abs_files()) - set(
-            self.abs_fnames
-        )  # FIXME: abs_fnames is not defined
+        other_files = set(self.get_all_abs_files()) - set(self.abs_fnames)
         repo_content = self.repo_map.get_repo_map(
             self.abs_fnames,
             other_files,
@@ -345,9 +345,11 @@ class CodeActAgent(Agent):
 
         return repo_content
 
-    def get_cur_message_text(self):
+    def get_cur_message_text(self, state: State):
+        cur_messages = self.get_messages_from_state(state)
         text = ''
-        for msg in self.cur_messages:  # FIXME: cur_messages is not defined
+
+        for msg in cur_messages:
             text += msg['content'] + '\n'
         return text
 
@@ -390,13 +392,7 @@ class CodeActAgent(Agent):
         return mentioned_rel_fnames
 
     def get_all_relative_files(self):
-        # TODO: uncomment these?
-        # if self.repo:  # FIXME: repo is not defined
-        #     files = self.repo.get_tracked_files()
-        # else:
-        files: Any = (
-            self.get_inchat_relative_files()
-        )  # FIXME: `get_inchat_relative_files` is not defined
+        files: Any = self.get_inchat_relative_files()
 
         files = [fname for fname in files if Path(self.abs_root_path(fname)).is_file()]
         return sorted(set(files))
@@ -407,7 +403,7 @@ class CodeActAgent(Agent):
         return files
 
     def abs_root_path(self, path):
-        res = Path(self.root) / path  # FIXME: `root` is not defined
+        res = Path(self.root) / path
         return self.safe_abs_path(res)
 
     def get_addable_relative_files(self):
