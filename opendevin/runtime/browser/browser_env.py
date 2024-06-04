@@ -74,9 +74,6 @@ class BrowserEnv:
     def browser_process(self):
         if self.eval_mode:
             logger.info('Creating browser env for evaluation purpose.')
-            import browsergym.webarena  # noqa F401 register webarena tasks as gym environments for eval
-            import browsergym.miniwob  # noqa F401 register miniwob tasks as gym environments
-
             env = gym.make(self.browsergym_eval)
         else:
             env = gym.make(

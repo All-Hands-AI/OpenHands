@@ -1,4 +1,5 @@
 import ast
+import os
 
 from browsergym.core.action.highlevel import HighLevelActionSet
 from browsergym.utils.obs import flatten_axtree_to_str
@@ -20,7 +21,12 @@ from opendevin.runtime.plugins import (
 )
 from opendevin.runtime.tools import RuntimeTool
 
-USE_NAV = False
+USE_NAV = (
+    os.environ.get('USE_NAV', 'true') == 'true'
+)  # only disable NAV actions when running webarena and miniwob benchmarks
+USE_CONCISE_ANSWER = (
+    os.environ.get('USE_CONCISE_ANSWER', 'false') == 'true'
+)  # only return concise answer when running webarena and miniwob benchmarks
 
 
 class BrowsingAgent(Agent):
@@ -110,6 +116,8 @@ class BrowsingAgent(Agent):
         last_obs = None
         last_action = None
         if len(state.history) == 1:
+            # initialize and retrieve the first observation by issuing an noop OP
+            # TODO: need more elegant way of doing this
             return BrowseInteractiveAction(browser_actions='noop()')
         for prev_action, obs in state.history:
             if isinstance(prev_action, BrowseInteractiveAction):
@@ -182,21 +190,29 @@ Here is an example with chain of thought of a valid action when clicking on a bu
 In order to accomplish my goal I need to click on the button with bid 12
 ```click("12")```
 "
+""".strip()
+
+        if USE_CONCISE_ANSWER:
+            concise_instruction = """\
 
 Here is another example with chain of thought of a valid action when providing a concise answer to user:
 "
 In order to accomplish my goal I need to send the information asked back to the user. This page list the information of HP Inkjet Fax Machine, which is the product identified in the objective. Its price is $279.49. I will send a message back to user with the answer.
 ```send_msg_to_user("$279.49")```
 "
-""".strip()
+"""
+            prompt += concise_instruction
         messages.append({'role': 'user', 'content': prompt})
         response = self.llm.completion(
             messages=messages,
             temperature=0.0,
-            stop=[')```'],
+            stop=[')```', ')\n```'],
         )
         self.log_cost(response)
-        action_resp = response['choices'][0]['message']['content'] + ')```'
+        action_resp = response['choices'][0]['message']['content'].strip()
+        if not action_resp.endswith('```'):
+            action_resp = action_resp + ')```'
+
         logger.info(prompt)
         logger.info(action_resp)
         return self.parse_response(action_resp)

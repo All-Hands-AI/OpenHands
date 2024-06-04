@@ -52,7 +52,7 @@ export GITLAB="$BASE_URL:8023"
 export WIKIPEDIA="$BASE_URL:8888/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing"
 export MAP="$BASE_URL:3000"
 export HOMEPAGE="$BASE_URL:4399"
-export OPENAI_API_KEY="yourkey" # this key is required for some WebArena evaluations that utilize LLMs
+export OPENAI_API_KEY="yourkey" # this key is required for some WebArena validators that utilize LLMs
 ```
 
 ## Test if your environment works
@@ -70,7 +70,22 @@ bash evaluation/webarena/scripts/run_infer.sh
 
 Results will be in `evaluation/evaluation_outputs/outputs/webarena/`
 
+To calculate the success rate, run:
+
+```sh
+poetry run python evaluation/webarena/get_success_rate.py evaluation/evaluation_outputs/outputs/webarena/SOME_AGENT/EXP_NAME/output.jsonl
+```
 
 ## Submit your evaluation results
 
 You can start your own fork of [our huggingface evaluation outputs](https://huggingface.co/spaces/OpenDevin/evaluation) and submit a PR of your evaluation results following the guide [here](https://huggingface.co/docs/hub/en/repositories-pull-requests-discussions#pull-requests-and-discussions).
+
+
+## BrowsingAgent V1.0 result
+
+Tested on BrowsingAgent V1.0
+
+WebArena, 812 tasks (high cost, single run due to fixed task), max step 15
+
+- GPT4o: 0.1478
+- GPT3.5: 0.0517

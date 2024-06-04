@@ -106,6 +106,7 @@ async def main(
     )
 
     # browser eval specific
+    # TODO: move to a better place
     if runtime.browser and runtime.browser.eval_dir:
         logger.info(f'Evaluation directory: {runtime.browser.eval_dir}')
         with open(
@@ -113,8 +114,6 @@ async def main(
         ) as f:
             task = f.read()
             logger.info(f'Dynamic Eval task: {task}')
-            # add instruction about returning answer in the cleanest way
-            task += ''
 
     await event_stream.add_event(MessageAction(content=task), EventSource.USER)
 

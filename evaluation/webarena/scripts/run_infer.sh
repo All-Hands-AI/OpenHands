@@ -3,6 +3,10 @@
 # configure webarena websites and environment
 source evaluation/webarena/scripts/webarena_env.sh
 
+# configure browsing agent
+export USE_NAV="false"
+export USE_CONCISE_ANSWER="true"
+
 MODEL_CONFIG=$1
 AGENT=$2
 EVAL_LIMIT=$3
@@ -20,16 +24,7 @@ echo "AGENT: $AGENT"
 echo "AGENT_VERSION: $AGENT_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 
-# Default to use Hint
-if [ -z "$USE_HINT_TEXT" ]; then
-  export USE_HINT_TEXT=true
-fi
-echo "USE_HINT_TEXT: $USE_HINT_TEXT"
 EVAL_NOTE="$AGENT_VERSION"
-# if not using Hint, add -no-hint to the eval note
-if [ "$USE_HINT_TEXT" = false ]; then
-  EVAL_NOTE="$EVAL_NOTE-no-hint"
-fi
 
 COMMAND="poetry run python evaluation/webarena/run_infer.py \
   --agent-cls $AGENT \
