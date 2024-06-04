@@ -86,7 +86,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
         config.workspace_mount_path = workspace_mount_path
 
-        # Setup the logger properly, so you can run multi-processing to parallize the evaluation
+        # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
         eval_output_dir = metadata['eval_output_dir']
         if reset_logger:
             # Set up logger
