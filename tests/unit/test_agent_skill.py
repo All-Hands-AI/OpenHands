@@ -10,7 +10,6 @@ from opendevin.runtime.plugins.agent_skills.agentskills import (
     edit_file,
     find_file,
     goto_line,
-    init_file,
     open_file,
     parse_docx,
     parse_latex,
@@ -23,12 +22,12 @@ from opendevin.runtime.plugins.agent_skills.agentskills import (
 )
 
 
-# current file needs to be reset after each test or some
-# tests will fail because they are dependent on the current
-# file being set correctly
+# CURRENT_FILE must be reset for each test
 @pytest.fixture(autouse=True)
 def reset_current_file():
-    init_file()
+    from opendevin.runtime.plugins.agent_skills import agentskills
+
+    agentskills.CURRENT_FILE = None
 
 
 def test_open_file_unexist_path():
