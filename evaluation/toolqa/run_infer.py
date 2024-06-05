@@ -10,8 +10,6 @@ import requests
 from concurrent.futures import ProcessPoolExecutor
 
 import pandas as pd
-import toml
-import whatthepatch
 from datasets import load_dataset
 from tqdm import tqdm
 
@@ -37,7 +35,6 @@ def codeact_user_response(state: State) -> str:
     msg = (
         'Please continue working on the task on whatever approach you think is suitable.\n'
         'When you think you finished the task, respond with `Finish[answer]` where you include your answer in `[]`\n'
-        #'Please run the following command: <execute_bash> exit </execute_bash>.\n'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK.\n'
     )
     if state.history:
