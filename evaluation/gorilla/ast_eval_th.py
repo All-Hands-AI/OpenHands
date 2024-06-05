@@ -21,7 +21,7 @@ def get_all_sub_trees(root_node):
     node_stack = []
     sub_tree_sexp_list = []
     depth = 1
-    text = root_node.text
+    # text = root_node.text
     node_stack.append([root_node, depth])
     while len(node_stack) != 0:
         cur_node, cur_depth = node_stack.pop()

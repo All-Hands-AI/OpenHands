@@ -1,6 +1,6 @@
 # Gorilla APIBench Evaluation with OpenDevin
 
-This folder contains evaluation harness we built on top of the original [Gorilla APIBench](https://github.com/ShishirPatil/gorilla) ([paper](https://arxiv.org/pdf/2305.15334)). 
+This folder contains evaluation harness we built on top of the original [Gorilla APIBench](https://github.com/ShishirPatil/gorilla) ([paper](https://arxiv.org/pdf/2305.15334)).
 
 ## Setup Environment
 
@@ -26,10 +26,10 @@ LLM settings, as defined in your `config.toml`.
 `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
 to `CodeActAgent`.
 
-`eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. 
-By default, the script evaluates 1 instance. 
+`eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances.
+By default, the script evaluates 1 instance.
 
-`hubs`, the hub from APIBench to evaluate from. You could choose one or more from `torch` or `th` (which is abbreviation of torch), `hf` (which is abbreviation of huggingface), and `tf` (which is abbreviation of tensorflow),  for `hubs`. The default is `hf,torch,tf`. 
+`hubs`, the hub from APIBench to evaluate from. You could choose one or more from `torch` or `th` (which is abbreviation of torch), `hf` (which is abbreviation of huggingface), and `tf` (which is abbreviation of tensorflow),  for `hubs`. The default is `hf,torch,tf`.
 
 Note: in order to use `eval_limit`, you must also set `agent`; in order to use `hubs`, you must also set `eval_limit`.
 

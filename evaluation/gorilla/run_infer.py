@@ -6,17 +6,11 @@ import os
 import pathlib
 import subprocess
 import time
-import requests
 from concurrent.futures import ProcessPoolExecutor
 
-import pandas as pd
-import toml
-import whatthepatch
-from datasets import load_dataset
 from tqdm import tqdm
+from utils import encode_question, get_data
 
-import agenthub
-from evaluation.swe_bench.swe_env_box import SWEBenchSSHBox
 from opendevin.controller.state.state import State
 from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
@@ -25,7 +19,6 @@ from opendevin.core.main import main
 from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
 
-from utils import encode_question, get_data
 
 def cleanup():
     print('Cleaning up child processes...')
@@ -33,6 +26,7 @@ def cleanup():
         print(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
+
 
 def codeact_user_response(state: State) -> str:
     msg = (
@@ -54,8 +48,10 @@ def codeact_user_response(state: State) -> str:
             )
     return msg
 
+
 def monologue_user_response(state: State) -> str:
     raise NotImplementedError('MonologueAgent should never ask for user responses.')
+
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -66,7 +62,10 @@ AGENT_CLS_TO_INST_SUFFIX = {
     'CodeActAgent': 'When you think you have completed the request, please run the following command: <execute_bash> exit </execute_bash>.\n'
 }
 
-def process_instance(question_id, question, agent_class, metadata, reset_logger: bool = True):
+
+def process_instance(
+    question_id, question, agent_class, metadata, reset_logger: bool = True
+):
     # create process-specific workspace dir
     # we will create a workspace directory for EACH process
     # so that different agent don't interfere with each other.
@@ -105,17 +104,19 @@ def process_instance(question_id, question, agent_class, metadata, reset_logger:
         logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
 
         # Prepare instruction
-        instruction = encode_question(question, metadata['hub'])    
+        instruction = encode_question(question, metadata['hub'])
         instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
         # NOTE: You can actually set slightly different instruction for different agents
         instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
-        #logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
+        # logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
         # Here's how you can run the agent (similar to the `main` function) and get the final task state
         state: State = asyncio.run(
             main(
                 instruction,
-                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
+                    agent_class
+                ),
             )
         )
         # ======= Attempt to evaluate the agent's edits =======
@@ -139,18 +140,20 @@ def process_instance(question_id, question, agent_class, metadata, reset_logger:
         )
         # Save the output
         output = {
-            'question_id': question_id, 
-            'text': model_answer_raw, 
-            'correct': correct, 
-            'hallucination': hallucination, 
-            'answer_id': 'None', 
-            'model_id': metadata['model_name'], 
+            'question_id': question_id,
+            'text': model_answer_raw,
+            'correct': correct,
+            'hallucination': hallucination,
+            'answer_id': 'None',
+            'model_id': metadata['model_name'],
             'metadata': metadata,
             'history': [
-                (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
+                (event_to_dict(action), event_to_dict(obs))
+                for action, obs in state.history
             ],
             'metrics': metrics,
-            'error': state.error if state and state.error else None,}
+            'error': state.error if state and state.error else None,
+        }
     except Exception:
         logger.error('Process instance failed')
         raise
@@ -165,7 +168,7 @@ if __name__ == '__main__':
         '--hubs',
         type=str,
         help='Which hubs to evaluate from APIBench. APIBench contains 3 hubs, namely huggingface, torch, and tensorflow. You could choose one or more from hf, torch, or tf, seperated by commas. For example, the default is --hub hf,torch,tf.',
-        default='hf,torch,tf'
+        default='hf,torch,tf',
     )
     args, _ = parser.parse_known_args()
     if args.directory:
@@ -201,10 +204,13 @@ if __name__ == '__main__':
     logger.info(f'Using evaluation output directory: {eval_output_dir}')
 
     hubs = []
-    if 'hf' in args.hubs: hubs.append('hf')
-    if 'torch' in args.hubs or 'th' in args.hubs: hubs.append('torch')
-    if 'tf' in args.hubs: hubs.append('tf')
-    if hubs == []: 
+    if 'hf' in args.hubs:
+        hubs.append('hf')
+    if 'torch' in args.hubs or 'th' in args.hubs:
+        hubs.append('torch')
+    if 'tf' in args.hubs:
+        hubs.append('tf')
+    if hubs == []:
         raise ValueError('Please choose at least one from hf, torch, and tf for hubs.')
 
     for hub in hubs:
@@ -231,10 +237,12 @@ if __name__ == '__main__':
         # LIMIT EVALUATION
         eval_n_limit = args.eval_n_limit
         if eval_n_limit:
-            questions = questions[:(eval_n_limit//len(hubs))]
-            question_ids = question_ids[:(eval_n_limit//len(hubs))]
-            logger.info(f'Limiting evaluation to a total of first {eval_n_limit} instances -> first {eval_n_limit//len(hubs)} instances per hub.')
-        output_file = os.path.join(eval_output_dir, f"output_{model_name}_{hub}.jsonl")
+            questions = questions[: (eval_n_limit // len(hubs))]
+            question_ids = question_ids[: (eval_n_limit // len(hubs))]
+            logger.info(
+                f'Limiting evaluation to a total of first {eval_n_limit} instances -> first {eval_n_limit//len(hubs)} instances per hub.'
+            )
+        output_file = os.path.join(eval_output_dir, f'output_{model_name}_{hub}.jsonl')
         logger.info(f'Writing evaluation output to {output_file}')
         finished_task_ids = set()
         if os.path.exists(output_file):
@@ -272,6 +280,7 @@ if __name__ == '__main__':
         )
         # =============================================
         pbar = tqdm(total=len(question_ids))
+
         # This function tracks the progress AND write the output to a JSONL file
         def update_progress(future):
             pbar.update(1)
@@ -279,11 +288,12 @@ if __name__ == '__main__':
             pbar.set_description(f'Instance {output["question_id"]}')
             pbar.set_postfix_str(f'Test Result: {output["correct"]}')
             logger.info(
-               f'Finished evaluation for instance {output["question_id"]}: {output["correct"]}'
+                f'Finished evaluation for instance {output["question_id"]}: {output["correct"]}'
             )
             output_fp.write(json.dumps(output) + '\n')
             output_fp.flush()
-            finished_task_ids.add(output["question_id"])
+            finished_task_ids.add(output['question_id'])
+
         # This sets the multi-processing
         num_workers = args.eval_num_workers
         logger.info(f'Using {num_workers} workers for evaluation.')
@@ -305,16 +315,19 @@ if __name__ == '__main__':
                         )
                         future.add_done_callback(update_progress)
                         futures.append(future)
-                    except: continue
+                    except:
+                        continue
 
                 # Wait for all futures to complete
                 for future in futures:
-                    try: future.result()
-                    except: continue
+                    try:
+                        future.result()
+                    except:
+                        continue
         except KeyboardInterrupt:
             logger.info('KeyboardInterrupt received. Cleaning up...')
             cleanup()
-        
+
         output_fp.close()
         total_correct = 0
         total_hallucination = 0
@@ -324,13 +337,17 @@ if __name__ == '__main__':
                 data = json.loads(line)
                 output.append(data)
                 if int(data['question_id']) in finished_task_ids:
-                    if str(data['correct']).lower() == "true": total_correct += 1
-                    if str(data['hallucination']).lower() == "true": total_hallucination += 1
+                    if str(data['correct']).lower() == 'true':
+                        total_correct += 1
+                    if str(data['hallucination']).lower() == 'true':
+                        total_hallucination += 1
         # sort all output by question_id
         output = sorted(output, key=lambda x: x['question_id'])
         with open(output_file, 'w') as f:
             for dat in output:
                 f.write(json.dumps(dat) + '\n')
                 f.flush()
-        
-        logger.info(f'Evaluation finished for {hub}. Total: {len(question_ids)+finished_task_number}; Correct: {total_correct}; Hallucination: {total_hallucination}. Accuracy: {total_correct / (len(question_ids)+finished_task_number)}')
+
+        logger.info(
+            f'Evaluation finished for {hub}. Total: {len(question_ids)+finished_task_number}; Correct: {total_correct}; Hallucination: {total_hallucination}. Accuracy: {total_correct / (len(question_ids)+finished_task_number)}'
+        )
