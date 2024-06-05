@@ -3,12 +3,12 @@ import userEvent from "@testing-library/user-event";
 import { act, render, fireEvent } from "@testing-library/react";
 import ChatInput from "./ChatInput";
 
+afterEach(() => {
+  vi.clearAllMocks();
+});
+
 describe("ChatInput", () => {
   const onSendMessage = vi.fn();
-
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
 
   it("should render a textarea", () => {
     const { getByRole } = render(<ChatInput onSendMessage={onSendMessage} />);
