@@ -32,7 +32,7 @@ describe("LoadPreviousSession", () => {
     screen.getByRole("button", { name: RESUME_SESSION_BUTTON_LABEL_KEY });
   });
 
-  it("should clear messages if user chooses to start a new session", () => {
+  it("should clear messages if user chooses to start a new session", async () => {
     const onOpenChangeMock = vi.fn();
     render(<LoadPreviousSessionModal isOpen onOpenChange={onOpenChangeMock} />);
 
@@ -40,8 +40,8 @@ describe("LoadPreviousSession", () => {
       name: START_NEW_SESSION_BUTTON_LABEL_KEY,
     });
 
-    act(() => {
-      userEvent.click(startNewSessionButton);
+    await act(async () => {
+      await userEvent.click(startNewSessionButton);
     });
 
     // modal should close right after clearing messages
