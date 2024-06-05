@@ -18,7 +18,6 @@ COMMAND="poetry run python ./evaluation/mint/run_infer.py \
     --llm-config $MODEL_CONFIG \
     --max-iterations 5 \
     --max-propose-solution 2 \
-    --eval-num-workers 1 \
     --eval-note $AGENT_VERSION"
 
 if [ -n "$SUBSET" ]; then
