@@ -16,6 +16,7 @@ from datasets import load_dataset
 from tqdm import tqdm
 
 import agenthub
+from evaluation.swe_bench.swe_env_box import SWEBenchSSHBox
 from opendevin.controller.state.state import State
 from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
@@ -70,82 +71,91 @@ def process_instance(question_id, question, agent_class, metadata, reset_logger:
     # we will create a workspace directory for EACH process
     # so that different agent don't interfere with each other.
     old_workspace_mount_path = config.workspace_mount_path
-    workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
-    workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
-    pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
-    config.workspace_mount_path = workspace_mount_path
-
-    # Setup the logger properly, so you can run multi-processing to parallize the evaluation
-    eval_output_dir = metadata['eval_output_dir']
-    if reset_logger:
-        # Set up logger
-        log_file = os.path.join(
-            eval_output_dir, 'logs', f'instance_{question_id}.log'
+    try:
+        workspace_mount_path = os.path.join(
+            config.workspace_mount_path, '_eval_workspace'
         )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        # add back the console handler to print ONE line
-        logger.addHandler(get_console_handler())
+        workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
+        pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
+        config.workspace_mount_path = workspace_mount_path
+
+        # Setup the logger properly, so you can run multi-processing to parallize the evaluation
+        eval_output_dir = metadata['eval_output_dir']
+        if reset_logger:
+            # Set up logger
+            log_file = os.path.join(
+                eval_output_dir, 'logs', f'instance_{instance["task_id"]}.log'
+            )
+            # Remove all existing handlers from logger
+            for handler in logger.handlers[:]:
+                logger.removeHandler(handler)
+            # add back the console handler to print ONE line
+            logger.addHandler(get_console_handler())
+            logger.info(
+                f'Starting evaluation for instance {instance["task_id"]}.\nLOG:   tail -f {log_file}'
+            )
+            # Remove all existing handlers from logger
+            for handler in logger.handlers[:]:
+                logger.removeHandler(handler)
+            file_handler = logging.FileHandler(log_file)
+            file_handler.setFormatter(
+                logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+            )
+            logger.addHandler(file_handler)
+        logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
+
+        # Prepare instruction
+        instruction = encode_question(question, metadata['hub'])    
+        instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+        # NOTE: You can actually set slightly different instruction for different agents
+        instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
+        #logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
+
+        # Here's how you can run the agent (similar to the `main` function) and get the final task state
+        state: State = asyncio.run(
+            main(
+                instruction,
+                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+            )
+        )
+        # ======= Attempt to evaluate the agent's edits =======
+        # If you are working on simplier benchmark that only evaluates the final model output (e.g., in a MessageAction)
+        # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
+
+        if state is None:
+            raise ValueError('State should not be None.')
+
+        model_answer_raw = ''
+        for act, _ in reversed(state.history):
+            if isinstance(act, MessageAction) and act.source == 'agent':
+                model_answer_raw = act.content
+                break
+        # attempt to parse model_answer
+        _, _, ast_eval = get_data(metadata['hub'])
+        correct, hallucination = ast_eval(question_id, model_answer_raw)
+        metrics = state.metrics.get() if state.metrics else None
         logger.info(
-            f'Starting evaluation for instance {question_id}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
+            f'Final message: {model_answer_raw} | Correctness: {correct} | Hallucination: {hallucination}'
         )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(
-            logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        )
-        logger.addHandler(file_handler)
-    logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
-
-    # Prepare instruction
-    instruction = encode_question(question, metadata['hub'])    
-    instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-    # NOTE: You can actually set slightly different instruction for different agents
-    instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
-    #logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
-
-    # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State = asyncio.run(
-        main(
-            instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
-        )
-    )
-    # ======= Attempt to evaluate the agent's edits =======
-    # If you are working on simplier benchmark that only evaluates the final model output (e.g., in a MessageAction)
-    # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
-
-    if state is None:
-        raise ValueError('State should not be None.')
-
-    model_answer_raw = ''
-    for act, _ in reversed(state.history):
-        if isinstance(act, MessageAction) and act.source == 'agent':
-            model_answer_raw = act.content
-            break
-    # attempt to parse model_answer
-    _, _, ast_eval = get_data(metadata['hub'])
-    correct, hallucination = ast_eval(question_id, model_answer_raw)
-    logger.info(
-        f'Final message: {model_answer_raw} | Correctness: {correct} | Hallucination: {hallucination}'
-    )
-    # Save the output
-    output = {
-        'question_id': question_id, 
-        'text': model_answer_raw, 
-        'correct': correct, 
-        'hallucination': hallucination, 
-        'answer_id': 'None', 
-        'model_id': metadata['model_name'], 
-        'metadata': metadata,
-        'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-        ],
-        'error': state.error if state and state.error else None,}
-    config.workspace_mount_path = old_workspace_mount_path
+        # Save the output
+        output = {
+            'question_id': question_id, 
+            'text': model_answer_raw, 
+            'correct': correct, 
+            'hallucination': hallucination, 
+            'answer_id': 'None', 
+            'model_id': metadata['model_name'], 
+            'metadata': metadata,
+            'history': [
+                (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
+            ],
+            'metrics': metrics,
+            'error': state.error if state and state.error else None,}
+    except Exception:
+        logger.error('Process instance failed')
+        raise
+    finally:
+        config.workspace_mount_path = old_workspace_mount_path
     return output
 
 
