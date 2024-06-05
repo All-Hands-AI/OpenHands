@@ -8,6 +8,7 @@ from tree_sitter import Language, Parser
 from functools import partial
 import sys
 
+# This function is modified from Gorilla's APIBench implementations (https://github.com/ShishirPatil/gorilla/blob/main/eval/get_llm_responses.py).
 def encode_question(question, api_name):
     """Encode multiple prompt instructions into a single string."""
     
