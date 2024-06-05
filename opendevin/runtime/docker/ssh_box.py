@@ -221,6 +221,10 @@ class DockerSSHBox(Sandbox):
             raise ex
 
         if config.persist_sandbox:
+            if not self.run_as_devin:
+                raise Exception(
+                    'Persistent sandbox is currently designed for opendevin user only. Please set run_as_devin=True in your config.toml'
+                )
             self.instance_id = 'persisted'
         else:
             self.instance_id = (sid or '') + str(uuid.uuid4())
@@ -245,8 +249,9 @@ class DockerSSHBox(Sandbox):
             self.is_initial_session = False
         except docker.errors.NotFound:
             self.is_initial_session = True
-            logger.info('Creating new Docker container')
+            logger.info('Detected initial session.')
         if not config.persist_sandbox or self.is_initial_session:
+            logger.info('Creating new Docker container')
             n_tries = 5
             while n_tries > 0:
                 try:
@@ -264,9 +269,10 @@ class DockerSSHBox(Sandbox):
         else:
             self.container = self.docker_client.containers.get(self.container_name)
             logger.info('Using existing Docker container')
+            self.start_docker_container()
         try:
             self.start_ssh_session()
-        except pxssh.ExceptionPxssh as e:
+        except Exception as e:
             self.close()
             raise e
 
@@ -386,12 +392,17 @@ class DockerSSHBox(Sandbox):
             )
             hostname = self.ssh_hostname
             username = 'opendevin' if self.run_as_devin else 'root'
+            if config.persist_sandbox:
+                password_msg = 'using your SSH password'
+            else:
+                password_msg = f"using the password '{self._ssh_password}'"
+            logger.info('Connecting to SSH session...')
+            ssh_cmd = f'`ssh -v -p {self._ssh_port} {username}@{hostname}`'
             logger.info(
-                f'Connecting to {username}@{hostname} via ssh. '
-                f"If you encounter any issues, you can try `ssh -v -p {self._ssh_port} {username}@{hostname}` with the password '{self._ssh_password}' and report the issue on GitHub. "
-                f"If you started OpenDevin with `docker run`, you should try `ssh -v -p {self._ssh_port} {username}@localhost` with the password '{self._ssh_password} on the host machine (where you started the container)."
+                f'You can debug the SSH connection by running: {ssh_cmd} {password_msg}'
             )
             self.ssh.login(hostname, username, self._ssh_password, port=self._ssh_port)
+            logger.info('Connected to SSH session')
         except pxssh.ExceptionPxssh as e:
             logger.exception(
                 'Failed to login to SSH session, retrying...', exc_info=False
@@ -615,11 +626,30 @@ class DockerSSHBox(Sandbox):
         self.background_commands.pop(id)
         return bg_cmd
 
-    def stop_docker_container(self):
+    def start_docker_container(self):
+        try:
+            container = self.docker_client.containers.get(self.container_name)
+            logger.info('Container status: %s', container.status)
+            if container.status != 'running':
+                container.start()
+                logger.info('Container started')
+            elapsed = 0
+            while container.status != 'running':
+                time.sleep(1)
+                elapsed += 1
+                if elapsed > self.timeout:
+                    break
+                container = self.docker_client.containers.get(self.container_name)
+        except Exception:
+            logger.exception('Failed to start container')
+
+    def remove_docker_container(self):
         try:
             container = self.docker_client.containers.get(self.container_name)
             container.stop()
+            logger.info('Container stopped')
             container.remove()
+            logger.info('Container removed')
             elapsed = 0
             while container.status != 'exited':
                 time.sleep(1)
@@ -687,10 +717,9 @@ class DockerSSHBox(Sandbox):
 
     def restart_docker_container(self):
         try:
-            self.stop_docker_container()
-            logger.info('Container stopped')
+            self.remove_docker_container()
         except docker.errors.DockerException as ex:
-            logger.exception('Failed to stop container', exc_info=False)
+            logger.exception('Failed to remove container', exc_info=False)
             raise ex
 
         try:
@@ -759,6 +788,7 @@ class DockerSSHBox(Sandbox):
                     container.remove(force=True)
             except docker.errors.NotFound:
                 pass
+        self.docker_client.close()
 
 
 if __name__ == '__main__':

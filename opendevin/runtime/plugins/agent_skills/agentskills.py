@@ -175,7 +175,8 @@ def goto_line(line_number: int) -> None:
     if CURRENT_FILE is None:
         raise FileNotFoundError('No file open. Use the open_file function first.')
 
-    total_lines = sum(1 for _ in open(CURRENT_FILE))
+    with open(CURRENT_FILE) as file:
+        total_lines = sum(1 for _ in file)
     if not isinstance(line_number, int) or line_number < 1 or line_number > total_lines:
         raise ValueError(f'Line number must be between 1 and {total_lines}')
 
@@ -197,7 +198,8 @@ def scroll_down() -> None:
     if CURRENT_FILE is None:
         raise FileNotFoundError('No file open. Use the open_file function first.')
 
-    total_lines = sum(1 for _ in open(CURRENT_FILE))
+    with open(CURRENT_FILE) as file:
+        total_lines = sum(1 for _ in file)
     CURRENT_LINE = min(CURRENT_LINE + WINDOW, total_lines)
     output = _cur_file_header(CURRENT_FILE, total_lines)
     output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True)
@@ -216,7 +218,8 @@ def scroll_up() -> None:
         raise FileNotFoundError('No file open. Use the open_file function first.')
 
     CURRENT_LINE = max(CURRENT_LINE - WINDOW, 1)
-    total_lines = sum(1 for _ in open(CURRENT_FILE))
+    with open(CURRENT_FILE) as file:
+        total_lines = sum(1 for _ in file)
     output = _cur_file_header(CURRENT_FILE, total_lines)
     output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True)
     print(output)
@@ -293,7 +296,7 @@ def edit_file(start: int, end: int, content: str) -> None:
     n_edited_lines = len(edited_content.split('\n'))
     new_lines = lines[: start - 1] + [edited_content] + lines[end:]
 
-    # directly write editted lines to the file
+    # directly write edited lines to the file
     with open(CURRENT_FILE, 'w') as file:
         file.writelines(new_lines)
 

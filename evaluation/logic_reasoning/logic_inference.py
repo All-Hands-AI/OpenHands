@@ -209,7 +209,7 @@ class LogicInferenceEngine:
         if not program.flag:
             answer = self.random_backup()
             return answer, 'parsing error', ''
-        # execuate the program
+        # execute the program
         answer, error_message = program.execute_program()
         # not executable
         if answer is None:

@@ -13,10 +13,14 @@ all the preprocessing/evaluation/analysis scripts.
 ## Supported Benchmarks
 
 - SWE-Bench: [`evaluation/swe_bench`](./swe_bench)
+- ML-Bench: [`evaluation/ml_bench`](./ml_bench)
 - HumanEvalFix: [`evaluation/humanevalfix`](./humanevalfix)
 - GAIA: [`evaluation/gaia`](./gaia)
 - Entity deduction Arena (EDA): [`evaluation/EDA`](./EDA)
 - MINT: [`evaluation/mint`](./mint)
+- AgentBench: [`evaluation/agent_bench`](./agent_bench)
+- BIRD: [`evaluation/bird`](./bird)
+- LogicReasoning: [`evaluation/logic_reasoning`](./logic_reasoning)
 
 ### Result Visualization
 
