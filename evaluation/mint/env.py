@@ -52,6 +52,9 @@ class SimplifiedEnv:
             turn_info=turn_info,
         )
 
+        self.agent_state.propose_solution_count = self.task_state.agent_action_count[
+            'propose_solution'
+        ]
         self.log_output(output)
         return self.task_state
 
