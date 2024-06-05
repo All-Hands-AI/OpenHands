@@ -51,10 +51,8 @@ def codeact_user_response(state: State, task: Task, task_config: Dict[str, int])
     state.task_state = result_state
 
     if not result_state.latest_output:
-        if result_state.success:
-            msg = '/exit'
-        else:
-            msg = 'Something went wrong! No output from the model.'
+        # Task is finished
+        msg = '/exit'
     else:
         msg = result_state.latest_output['content']
 
