@@ -24,7 +24,8 @@ sandbox_timeout = 120
 ssh_hostname = "localhost"
 
 use_host_network = false
-run_as_devin = false
+# AgentBench specific
+run_as_devin = true
 enable_auto_lint = true
 
 [eval_gpt35_turbo]
