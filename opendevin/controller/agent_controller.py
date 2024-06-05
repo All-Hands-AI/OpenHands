@@ -324,7 +324,7 @@ class AgentController:
         # initialize short term memory
         history = (
             ShortTermHistory()
-            if state is None or state.history is None
+            if state is None or not hasattr(state, 'history') or state.history is None
             else state.history
         )
         history.set_event_stream(self.event_stream)
