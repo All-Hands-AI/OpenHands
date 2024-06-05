@@ -46,4 +46,5 @@ if [ -n "$EVAL_LIMIT" ]; then
 fi
 
 # Run the command
+echo $COMMAND
 eval $COMMAND

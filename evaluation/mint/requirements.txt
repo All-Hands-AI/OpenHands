@@ -1,0 +1,14 @@
+pandas==1.4.4
+opencv-python
+networkx
+scipy==1.10.1
+ipython
+matplotlib
+nltk
+pyyaml
+pytz
+visdom
+sympy
+seaborn
+python-dateutil
+statsmodels

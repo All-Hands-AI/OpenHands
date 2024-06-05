@@ -33,6 +33,7 @@ from opendevin.runtime import (
 )
 from opendevin.runtime.browser.browser_env import BrowserEnv
 from opendevin.runtime.plugins import PluginRequirement
+from opendevin.runtime.tools import RuntimeTool
 from opendevin.storage import FileStore, InMemoryFileStore
 
 
@@ -74,12 +75,6 @@ class Runtime:
             self.sandbox = sandbox
             self._is_external_sandbox = True
         self.browser: BrowserEnv | None = None
-        try:
-            self.browser = BrowserEnv()
-        except BrowserInitException:
-            logger.warn(
-                'Failed to start browser environment, web browsing functionality will not work'
-            )
         self.file_store = InMemoryFileStore()
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
@@ -94,6 +89,18 @@ class Runtime:
 
     def init_sandbox_plugins(self, plugins: list[PluginRequirement]) -> None:
         self.sandbox.init_plugins(plugins)
+
+    def init_runtime_tools(
+        self, runtime_tools: list[RuntimeTool], is_async: bool = True
+    ) -> None:
+        # if browser in runtime_tools, init it
+        if RuntimeTool.BROWSER in runtime_tools:
+            try:
+                self.browser = BrowserEnv(is_async)
+            except BrowserInitException:
+                logger.warn(
+                    'Failed to start browser environment, web browsing functionality will not work'
+                )
 
     async def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
