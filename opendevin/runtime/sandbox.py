@@ -11,6 +11,7 @@ from opendevin.runtime.plugins.mixin import PluginMixin
 class Sandbox(ABC, PluginMixin):
     background_commands: dict[int, Process] = {}
     _env: dict[str, str] = {}
+    is_initial_session: bool = True
 
     def __init__(self, **kwargs):
         for key in os.environ:
@@ -19,6 +20,7 @@ class Sandbox(ABC, PluginMixin):
                 self.add_to_env(sandbox_key, os.environ[key])
         if config.enable_auto_lint:
             self.add_to_env('ENABLE_AUTO_LINT', 'true')
+        self.initialize_plugins: bool = config.initialize_plugins
 
     def add_to_env(self, key: str, value: str):
         self._env[key] = value

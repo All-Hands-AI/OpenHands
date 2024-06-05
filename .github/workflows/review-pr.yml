@@ -44,12 +44,24 @@ jobs:
         echo "" >> task.txt
         echo "Diff file is: ${{ github.event.pull_request.number }}.diff" >> task.txt
 
+    - name: Set up environment
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        export PATH="/github/home/.local/bin:$PATH"
+        poetry install --without evaluation
+        poetry run playwright install --with-deps chromium
+
     - name: Run OpenDevin
       env:
         LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         SANDBOX_TYPE: exec
       run: |
-        WORKSPACE_MOUNT_PATH=$GITHUB_WORKSPACE python ./opendevin/core/main.py -i 50 -f task.txt -d $GITHUB_WORKSPACE
+        # Append path to launch poetry
+        export PATH="/github/home/.local/bin:$PATH"
+        # Append path to correctly import package, note: must set pwd at first
+        export PYTHONPATH=$(pwd):$PYTHONPATH
+        WORKSPACE_MOUNT_PATH=$GITHUB_WORKSPACE poetry run python ./opendevin/core/main.py -i 50 -f task.txt -d $GITHUB_WORKSPACE
         rm task.txt
 
     - name: Check if review file is non-empty
