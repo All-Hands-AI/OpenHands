@@ -1,10 +1,10 @@
 # ToolQA Evaluation with OpenDevin
 
-This folder contains evaluation harness we built on top of the original [ToolQA](https://github.com/night-chen/ToolQA) ([paper](https://arxiv.org/pdf/2306.13304)). 
+This folder contains an evaluation harness we built on top of the original [ToolQA](https://github.com/night-chen/ToolQA) ([paper](https://arxiv.org/pdf/2306.13304)). 
 
 ## Setup Environment
 
-Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to setup local develop environment for OpenDevin.
+Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to setup local development environment for OpenDevin.
 
 ## Configure OpenDevin and your LLM
 
@@ -26,8 +26,8 @@ LLM settings, as defined in your `config.toml`.
 `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
 to `CodeActAgent`.
 
-`eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By
-default, the script evaluates the 1 instance. 
+`eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. 
+By default, the script evaluates 1 instance. 
 
 `dataset`, the dataset from ToolQA to evaluate from. You could choose from `agenda`, `airbnb`, `coffee`, `dblp`, `flight`, `gsm8k`, `scirex`, `yelp` for dataset. The default is `coffee`.
 
