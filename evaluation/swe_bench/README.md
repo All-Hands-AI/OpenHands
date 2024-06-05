@@ -1,16 +1,14 @@
 # SWE-Bench Evaluation with OpenDevin SWE-Bench Docker Image
 
-
-This folder contains evaluation harness we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)). We create [a fork of SWE-Bench](https://github.com/OpenDevin/OD-SWE-bench.git) mostly build on top of [the original repo](https://github.com/princeton-nlp/SWE-bench) and [containerized](#opendevin-swe-bench-docker-image) it for easy evaluation.
+This folder contains the evaluation harness that we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)). We created [a fork of SWE-Bench](https://github.com/OpenDevin/OD-SWE-bench.git) mostly built on top of [the original repo](https://github.com/princeton-nlp/SWE-bench) and [containerized](#opendevin-swe-bench-docker-image) it for easy evaluation.
 
 ## Setup Environment
 
-Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to setup local develop environment for OpenDevin.
-
+Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md) to set up a local development environment for OpenDevin.
 
 ## OpenDevin SWE-Bench Docker Image
 
-In [OpenDevin-SWE-Bench fork](https://github.com/OpenDevin/OD-SWE-bench.git) (mostly from [original repo](https://github.com/princeton-nlp/SWE-bench) with some fixes), we try to pre-build the **testbed** (i.e., code of the repository we want the agent to edit) AND the **conda environment**, so that in evaluation (inference) time, we can directly leverage existing environments for effecienct evaluation.
+In [OpenDevin-SWE-Bench fork](https://github.com/OpenDevin/OD-SWE-bench.git) (mostly from [original repo](https://github.com/princeton-nlp/SWE-bench) with some fixes), we try to pre-build the **testbed** (i.e., code of the repository we want the agent to edit) AND the **conda environment**, so that in evaluation (inference) time, we can directly leverage existing environments for efficient evaluation.
 
 **We pack everything you need for SWE-Bench evaluation into one, gigantic, docker image.** To use it:
 
@@ -19,8 +17,9 @@ docker pull ghcr.io/opendevin/eval-swe-bench:full-v1.2.1
 ```
 
 The Docker image contains several important directories:
+
 - `/swe_util/OD-SWE-bench`: root directory for the OD-SWE-bench repository
-- `/swe_util/eval_data`: director to eval data
+- `/swe_util/eval_data`: directory to eval data
   - `/swe_util/eval_data/eval_logs/`: evaluation logs
   - `/swe_util/eval_data/eval_temp/`: temporary folder for the evaluation process
   - `/swe_util/eval_data/instances/`: swe-bench raw instances
@@ -31,7 +30,7 @@ The Docker image contains several important directories:
 
 To reproduce how we pack the image, check [this doc](./BUILD_TESTBED_AND_ENV.md).
 
-NOTE: We only support SWE-Bench lite for now. But modifying our existing scripts for full SWE-Bench should be quite straight forward.
+NOTE: We only support SWE-Bench lite for now. But modifying our existing scripts for full SWE-Bench should be quite straightforward.
 
 ## Configure OpenDevin and your LLM
 
@@ -129,6 +128,7 @@ git clone https://huggingface.co/spaces/OpenDevin/evaluation evaluation/evaluati
 ```
 
 Then you can run the following:
+
 ```bash
 # ./evaluation/swe_bench/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL
 # For example:
@@ -137,7 +137,7 @@ Then you can run the following:
 
 The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/output.merged.jsonl`.
 
-It will contains an additional field `fine_grained_report` (see example below) compared to the `output.jsonl` from the previous inference stage.
+It will contain an additional field `fine_grained_report` (see example below) compared to the `output.jsonl` from the previous inference stage.
 
 ```json
 "fine_grained_report": {

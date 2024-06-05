@@ -98,7 +98,7 @@ function Workspace() {
       // Only need to show the tab only when a cell is added
       setChanges((prev) => ({ ...prev, [TabOption.JUPYTER]: true }));
     }
-  }, [jupyterCells]);
+  }, [activeTab, jupyterCells]);
 
   return (
     <div className="flex flex-col min-h-0 grow">
