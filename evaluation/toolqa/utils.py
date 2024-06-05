@@ -62,24 +62,6 @@ def get_data(dataset, hardness):
             data.append(json.loads(line))
     return data
 
-REACT_INSTRUCTION = """Solve a question answering task. You could use all tools which are under the tools/ directory and all the data under the data/ directory. Below is a detailed explanation of the tools under the tools/ directory.
-(1) calculator.WolframAlphaCalculator, which calculates the input formula and returns the result. You could use this tool by `from tools.calculator import WolframAlphaCalculator`.
-(2) agenda_retriever.query_llm, which retrieves the agenda related to a keyword. You could use this tool by `from tools.agenda_retriever import query_llm`. 
-(3) scirex_retriever.query_llm, which retrieves machine learning papers' paragraphs related to keyword. You could use this tool by `from tools.scirex_retriever import query_llm`. 
-(4) table_toolkits.db_loader, which loads a database and returns the database. The database can be one of the following: flights/coffee/airbnb/yelp. You could use this tool by `from tools.tabtools import table_toolkits`, then `toolkits = table_toolkits('')`, and then `db_loader = toolkits.db_loader`.
-(5) table_toolkits.data_filter, which filters a database by a column using the relation (e.g., =, >, etc.) and a value, and returns the filtered database. You could use this tool by `from tools.tabtools import table_toolkits`, then `toolkits = table_toolkits('')`, and then `data_filter = toolkits.data_filter`.
-(6) table_toolkits.get_value, which returns the value of a column in a database. You could use this tool by `from tools.tabtools import table_toolkits`, then `toolkits = table_toolkits('')`, and then `get_value = toolkits.get_value`.
-(7) graph_toolkits.load_graph, which loads a graph and returns the graph. The graph can be one of the following: PaperNet/AuthorNet. You could use this tool by `from tools.graphtools import graph_toolkits`, then `toolkits = graph_toolkits('')`, and then `load_graph = toolkits.load_graph`.
-(8) graph_toolkits.check_neighbours, which lists the neighbours of a node in a graph and returns the neighbours. You could use this tool by `from tools.graphtools import graph_toolkits`, then `toolkits = graph_toolkits('')`, and then `check_neighbours = toolkits.check_neighbours`.
-(9) graph_toolkits.check_nodes, which returns the detailed attribute information of a node. You could use this tool by `from tools.graphtools import graph_toolkits`, then `toolkits = graph_toolkits('')`, and then `check_nodes = toolkits.check_nodes`.
-(10) graph_toolkits.check_edges, which returns the detailed attribute information of the edge between two nodes. You could use this tool by `from tools.graphtools import graph_toolkits`, then `toolkits = graph_toolkits('')`, and then `check_edges = toolkits.check_edges`.
-(11) sql_interpreter.execute, which interprets an SQL query and returns the result. You could use this tool by `from tools.sql_interpreter import execute`.
-(12) exec, which interprets some Python code and returns the result.
-
-You may take as many steps as necessary. When you think you finished the task, respond with `Finish[answer]` where you include your answer in `[]`. 
-IMPORTANT: Make sure that in your final answer, you should not print any additional text/instructions other than the actual answer, which should be a word or a simple phrase.
-Question: {question}"""
-
 REACT_INSTRUCTION = """Use tools in the tools directory to solve the task: {question}
 You could use all tools which are under the tools/ directory and all the data under the data/ directory. 
 When you think you finished the task, respond with `Finish[answer]` where you include your answer in `[]`. 
