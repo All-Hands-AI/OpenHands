@@ -105,7 +105,6 @@ class AgentController:
         self.state.iteration += 1
 
     async def update_state_after_step(self):
-        self.state.updated_info = []
         # update metrics especially for cost
         self.state.metrics = self.agent.llm.metrics
         if self.max_budget_per_task is not None:
@@ -121,12 +120,6 @@ class AgentController:
         if exception:
             self.state.error += f': {str(exception)}'
         self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
-
-    async def add_history(self, action: Action, observation: Observation):
-        if isinstance(action, NullAction) and isinstance(observation, NullObservation):
-            return
-        # self.state.history.append((action, observation))
-        self.state.updated_info.append((action, observation))
 
     async def _start_step_loop(self):
         logger.info(f'[Agent Controller {self.id}] Starting step loop...')
@@ -155,7 +148,6 @@ class AgentController:
         elif isinstance(event, MessageAction):
             if event.source == EventSource.USER:
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
-                await self.add_history(event, NullObservation(''))
                 if self.get_agent_state() != AgentState.RUNNING:
                     await self.set_agent_state_to(AgentState.RUNNING)
             elif event.source == EventSource.AGENT and event.wait_for_response:
@@ -172,14 +164,11 @@ class AgentController:
             await self.set_agent_state_to(AgentState.FINISHED)
         elif isinstance(event, Observation):
             if self._pending_action and self._pending_action.id == event.cause:
-                await self.add_history(self._pending_action, event)
                 self._pending_action = None
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, CmdOutputObservation):
-                await self.add_history(NullAction(), event)
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, AgentDelegateObservation):
-                await self.add_history(NullAction(), event)
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
 
     def reset_task(self):
@@ -196,6 +185,9 @@ class AgentController:
         self.state.agent_state = new_state
         if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
             self.reset_task()
+
+        if new_state != AgentState.ERROR:
+            self.state.error = None
 
         self.event_stream.add_event(
             AgentStateChangedObservation('', self.state.agent_state), EventSource.AGENT
@@ -308,8 +300,6 @@ class AgentController:
         await self.update_state_after_step()
         if action.runnable:
             self._pending_action = action
-        else:
-            await self.add_history(action, NullObservation(''))
 
         if not isinstance(action, NullAction):
             self.event_stream.add_event(action, EventSource.AGENT)

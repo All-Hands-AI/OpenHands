@@ -2,12 +2,17 @@ from typing import ClassVar, Iterable
 
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action.action import Action
-from opendevin.events.action.agent import AgentSummarizeAction, ChangeAgentStateAction
+from opendevin.events.action.agent import (
+    AgentDelegateAction,
+    AgentSummarizeAction,
+    ChangeAgentStateAction,
+)
 from opendevin.events.action.empty import NullAction
 from opendevin.events.action.message import MessageAction
 from opendevin.events.event import Event, EventSource
 from opendevin.events.observation.agent import AgentStateChangedObservation
 from opendevin.events.observation.commands import CmdOutputObservation
+from opendevin.events.observation.delegate import AgentDelegateObservation
 from opendevin.events.observation.empty import NullObservation
 from opendevin.events.observation.observation import Observation
 from opendevin.events.serialization.event import event_to_dict
@@ -23,7 +28,8 @@ class ShortTermHistory(list[Event]):
     end_id: int
     _event_stream: EventStream
     summaries: dict[tuple[int, int], AgentSummarizeAction]
-    agent_event_filtered_types: ClassVar[tuple[type[Event], ...]] = (
+    delegates: dict[tuple[int, int], tuple[str, str]]
+    filter_out: ClassVar[tuple[type[Event], ...]] = (
         NullAction,
         NullObservation,
         ChangeAgentStateAction,
@@ -35,6 +41,7 @@ class ShortTermHistory(list[Event]):
         self.start_id = -1
         self.end_id = -1
         self.summaries = {}
+        self.delegates = {}
 
     def set_event_stream(self, event_stream: EventStream):
         self._event_stream = event_stream
@@ -49,7 +56,7 @@ class ShortTermHistory(list[Event]):
         """
         Return the events as a stream of Event objects.
         """
-        # we can avoid storing all events in memory, but we need to filter them each time we iterate
+        # iterate from start_id to end_id, or reverse
         start_id = self.start_id if self.start_id != -1 else 0
         end_id = (
             self.end_id
@@ -61,7 +68,7 @@ class ShortTermHistory(list[Event]):
             start_id=start_id,
             end_id=end_id,
             reverse=reverse,
-            filter_out_type=self.agent_event_filtered_types,
+            filter_out_type=self.filter_out,
         ):
             if event.id in [chunk_start for chunk_start, _ in self.summaries.keys()]:
                 chunk_start, chunk_end = next(
@@ -124,7 +131,7 @@ class ShortTermHistory(list[Event]):
             (
                 event.content
                 for event in self._event_stream.get_events(
-                    reverse=True, filter_out_type=self.agent_event_filtered_types
+                    reverse=True, filter_out_type=self.filter_out
                 )
                 if isinstance(event, MessageAction) and event.source == EventSource.USER
             ),
@@ -147,7 +154,7 @@ class ShortTermHistory(list[Event]):
             for event in self._event_stream.get_events(
                 start_id=start_id,
                 end_id=end_id,
-                filter_out_type=self.agent_event_filtered_types,
+                filter_out_type=self.filter_out,
             )
         )
 
@@ -157,6 +164,37 @@ class ShortTermHistory(list[Event]):
     def add_summary(self, summary_action: AgentSummarizeAction):
         self.summaries[(summary_action._chunk_start, summary_action._chunk_end)] = (
             summary_action
+        )
+
+    def on_event(self, event: Event):
+        if not isinstance(event, AgentDelegateObservation):
+            return
+
+        logger.info('AgentDelegateObservation received')
+        # figure out what this delegate's actions were
+        # from AgentDelegateAction to AgentDelegateObservation
+        # and add their ids to exclude from parent stream
+        # or summarize
+        delegate_end = event.id
+        delegate_start = -1
+        delegate_agent: str = ''
+        delegate_task: str = ''
+        for prev_event in self._event_stream.get_events(
+            end_id=event.id - 1, reverse=True
+        ):
+            if isinstance(prev_event, AgentDelegateAction):
+                delegate_start = prev_event.id
+                delegate_agent = prev_event.agent
+                delegate_task = prev_event.inputs.get('task', '')
+                break
+
+        if delegate_start == -1:
+            logger.error('No AgentDelegateAction found for AgentDelegateObservation')
+            return
+
+        self.delegates[(delegate_start, delegate_end)] = (delegate_agent, delegate_task)
+        logger.info(
+            f'Delegate {delegate_agent} with task {delegate_task} ran from id={delegate_start} to id={delegate_end}'
         )
 
     def compatibility_for_eval_history_tuples(self) -> list[tuple[dict, dict]]:

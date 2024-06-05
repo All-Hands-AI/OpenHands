@@ -7,6 +7,7 @@ from opendevin.events.action import Action
 from opendevin.events.serialization.action import action_from_dict
 from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
+from opendevin.memory.history import ShortTermHistory
 
 from .instructions import instructions
 from .registry import all_microagents
@@ -27,7 +28,7 @@ def to_json(obj, **kwargs):
     return json.dumps(obj, **kwargs)
 
 
-def history_to_json(history, max_events=20, **kwargs):
+def history_to_json(history: ShortTermHistory, max_events=20, **kwargs):
     """
     Serialize and simplify history to str format
     """

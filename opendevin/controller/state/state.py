@@ -7,13 +7,11 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.metrics import Metrics
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
-    Action,
     MessageAction,
 )
 from opendevin.events.action.agent import AgentFinishAction, AgentSummarizeAction
 from opendevin.events.observation import (
     CmdOutputObservation,
-    Observation,
 )
 from opendevin.memory.history import ShortTermHistory
 from opendevin.storage import get_file_store
@@ -35,7 +33,6 @@ class State:
     num_of_chars: int = 0
     background_commands_obs: list[CmdOutputObservation] = field(default_factory=list)
     history: ShortTermHistory = field(default_factory=ShortTermHistory)
-    updated_info: list[tuple[Action, Observation]] = field(default_factory=list)
     inputs: dict = field(default_factory=dict)
     outputs: dict = field(default_factory=dict)
     error: str | None = None
@@ -92,7 +89,7 @@ class State:
                 self.history.summaries = self.summaries
             self.history.start_id = self.start_id
             self.history.end_id = self.end_id
-        # self.history = None
+        self.summaries = {}
 
     def get_current_user_intent(self):
         """

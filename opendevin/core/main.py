@@ -129,6 +129,9 @@ async def main(
                     message = fake_user_response_fn(controller.get_state())
                 action = MessageAction(content=message)
                 event_stream.add_event(action, EventSource.USER)
+            elif event.agent_state == AgentState.FINISHED:
+                logger.info('Agent finished the task')
+                controller.get_state().save_to_session('main')
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
     while controller.get_agent_state() not in [

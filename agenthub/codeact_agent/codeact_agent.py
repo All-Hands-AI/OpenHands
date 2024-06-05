@@ -31,7 +31,6 @@ from opendevin.events.observation import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
-from opendevin.events.observation.summary import SummaryObservation
 from opendevin.events.serialization.event import truncate_content
 from opendevin.llm.llm import LLM
 from opendevin.memory.condenser import MemoryCondenser
@@ -104,9 +103,6 @@ def get_observation_message(obs) -> dict[str, str] | None:
     elif isinstance(obs, BrowserOutputObservation):
         content = 'OBSERVATION:\n' + truncate_content(obs.content)
         return {'role': 'user', 'content': content}
-    elif isinstance(obs, SummaryObservation):
-        content = 'OBSERVATION:\n' + truncate_content(obs.content)
-        return {'role': 'user', 'content': obs.content}
     return None
 
 
