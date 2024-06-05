@@ -1,4 +1,5 @@
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.core.utils import json
 from opendevin.events.action.agent import (
     AgentFinishAction,
     AgentRecallAction,
@@ -15,6 +16,7 @@ from opendevin.events.action.files import FileReadAction, FileWriteAction
 from opendevin.events.action.message import MessageAction
 from opendevin.events.event import Event, EventSource
 from opendevin.events.observation.observation import Observation
+from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
 from opendevin.memory.history import ShortTermHistory
 from opendevin.memory.prompts import parse_summary_response
@@ -74,6 +76,7 @@ class MemoryCondenser:
             # like AgentDelegateAction or AgentFinishAction
             if not self._is_summarizable(event):
                 if chunk:
+                    # TODO exclude agent single-messages
                     # we've just gathered a chunk to summarize
                     summary_action = self._summarize_chunk(chunk)
 
@@ -148,18 +151,10 @@ class MemoryCondenser:
         - The summary sentence.
         """
         try:
-            events_str = []
-            max_chars = 10000
+            event_dicts = []
             for event in chunk:
-                event_str = str(event)
-                if isinstance(event, Observation) and len(event_str) > max_chars:
-                    half = max_chars // 2
-                    event_str = (
-                        event_str[:half]
-                        + '\n[... Observation truncated due to length ...]\n'
-                        + event_str[-half:]
-                    )
-                events_str.append(event_str)
+                event_dicts.append(event_to_memory(event))
+            events_str = json.dumps(event_dicts, indent=2)
 
             prompt = """
             Given the following actions and observations, create a JSON response with:

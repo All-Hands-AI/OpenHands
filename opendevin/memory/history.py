@@ -10,7 +10,6 @@ from opendevin.events.observation.agent import AgentStateChangedObservation
 from opendevin.events.observation.commands import CmdOutputObservation
 from opendevin.events.observation.empty import NullObservation
 from opendevin.events.observation.observation import Observation
-from opendevin.events.observation.summary import SummaryObservation
 from opendevin.events.serialization.event import event_to_dict
 from opendevin.events.stream import EventStream
 
@@ -45,25 +44,6 @@ class ShortTermHistory(list[Event]):
         Return the history as a list of Event objects.
         """
         return list(self.get_events())
-
-    def replace_events_with_summary(self, summary_action: AgentSummarizeAction):
-        start_id = summary_action._chunk_start
-        end_id = summary_action._chunk_end
-
-        # valid start and end indices for the chunk
-        if start_id == -1 or end_id == -1 or start_id > end_id or end_id > len(self):
-            # weird, but just return
-            return
-
-        # create the SummaryObservation based on the AgentSummarizeAction
-        # do we need to do this?
-        summary_observation = SummaryObservation(content=summary_action.summary)
-
-        # clean up the action if we're doing it this way, this is odd
-        summary_action.summary = ''
-
-        # replace the events in the specified range with the summary action and observation
-        self[start_id:end_id] = [summary_action, summary_observation]
 
     def get_events(self, reverse: bool = False) -> Iterable[Event]:
         """

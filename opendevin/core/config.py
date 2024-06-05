@@ -39,6 +39,7 @@ class LLMConfig(metaclass=Singleton):
         retry_max_wait: The maximum time to wait between retries, in seconds. This is exponential backoff maximum.
         timeout: The timeout for the API.
         max_chars: The maximum number of characters to send to and receive from the API. This is a fallback for token counting, which doesn't work in all cases.
+        max_message_chars: The approximate number of characters in a message to the LLM. Larger observations are truncated.
         temperature: The temperature for the API.
         top_p: The top p for the API.
         custom_llm_provider: The custom LLM provider to use. This is undocumented in opendevin, and normally not used. It is documented on the litellm side.
@@ -63,6 +64,9 @@ class LLMConfig(metaclass=Singleton):
     retry_max_wait: int = 60
     timeout: int | None = None
     max_chars: int = 5_000_000  # fallback for token counting
+    max_message_chars: int = (
+        10000  # maximum number of characters in a message to the llm
+    )
     temperature: float = 0
     top_p: float = 0.5
     custom_llm_provider: str | None = None

@@ -155,7 +155,7 @@ class MonologueAgent(Agent):
 
         # add the events from state.history
         for event in state.history.get_events():
-            recent_events.append(self._truncate_output(event_to_memory(event)))
+            recent_events.append(event_to_memory(event))
 
         # add the last messages to long term memory
         if self.memory is not None:
@@ -165,9 +165,7 @@ class MonologueAgent(Agent):
             if last_action:
                 self.memory.add_event(event_to_memory(last_action))
             if last_observation:
-                self.memory.add_event(
-                    self._truncate_output(event_to_memory(last_observation))
-                )
+                self.memory.add_event(event_to_memory(last_observation))
 
         # the action prompt with initial thoughts and recent events
         prompt = prompts.get_request_action_prompt(
@@ -193,33 +191,6 @@ class MonologueAgent(Agent):
         action = prompts.parse_action_response(action_resp)
         self.latest_action = action
         return action
-
-    def _truncate_output(
-        self, observation: dict, max_chars: int = MAX_OUTPUT_LENGTH
-    ) -> dict[str, str]:
-        """
-        Truncates the output of an observation to a maximum number of characters.
-
-        Parameters:
-        - output (str): The observation whose output to truncate
-        - max_chars (int): The maximum number of characters to allow
-
-        Returns:
-        - str: The truncated output
-        """
-        if (
-            'args' in observation
-            and 'output' in observation['args']
-            and len(observation['args']['output']) > max_chars
-        ):
-            output = observation['args']['output']
-            half = max_chars // 2
-            observation['args']['output'] = (
-                output[:half]
-                + '\n[... Output truncated due to length...]\n'
-                + output[-half:]
-            )
-        return observation
 
     def search_memory(self, query: str) -> list[str]:
         """
