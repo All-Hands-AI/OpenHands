@@ -20,7 +20,7 @@ Do NOT finish until you have a complete understanding of which parts of the
 codebase are relevant to the project, including particular files, functions, and classes.
 When you're done, put your summary in `outputs.summary` in the `finish` action.
 Remember, your task is to explore and study the current repository, not actually
-implement the solution. If the codebase is empty, you shoud call the `finish` action.
+implement the solution. If the codebase is empty, you should call the `finish` action.
 
 ## History
 {{ instructions.history_truncated }}

@@ -161,7 +161,7 @@ class Truncater(Shrinkable):
 
     def __init__(self, visible, shrink_speed=0.3, start_truncate_iteration=10):
         super().__init__(visible=visible)
-        self.shrink_speed = shrink_speed  # the percentage shrinked in each iteration
+        self.shrink_speed = shrink_speed  # the percentage shrunk in each iteration
         self.start_truncate_iteration = (
             start_truncate_iteration  # the iteration to start truncating
         )
@@ -494,11 +494,13 @@ def _get_action_space(flags: Flags) -> AbstractActionSet:
             action_space = PythonActionSet(strict=flags.is_strict)
             if flags.multi_actions:
                 warn(
-                    f'Flag action_space={repr(flags.action_space)} incompatible with multi_actions={repr(flags.multi_actions)}.'
+                    f'Flag action_space={repr(flags.action_space)} incompatible with multi_actions={repr(flags.multi_actions)}.',
+                    stacklevel=2,
                 )
             if flags.demo_mode != 'off':
                 warn(
-                    f'Flag action_space={repr(flags.action_space)} incompatible with demo_mode={repr(flags.demo_mode)}.'
+                    f'Flag action_space={repr(flags.action_space)} incompatible with demo_mode={repr(flags.demo_mode)}.',
+                    stacklevel=2,
                 )
             return action_space
         case 'bid':

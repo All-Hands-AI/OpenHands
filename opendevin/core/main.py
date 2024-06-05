@@ -99,12 +99,7 @@ async def main(
         initial_state=initial_state,
     )
     runtime = ServerRuntime(event_stream=event_stream, sandbox=sandbox)
-
-    if runtime.sandbox.is_initial_session:
-        logger.info('Initializing plugins in the sandbox')
-        runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
-    else:
-        logger.info('Plugins are already initialized in the sandbox')
+    runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
     runtime.init_runtime_tools(controller.agent.runtime_tools, is_async=False)
 
     # init with the provided task or resume the conversation
