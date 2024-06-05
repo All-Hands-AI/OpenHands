@@ -6,6 +6,7 @@ import docx
 import pytest
 
 from opendevin.runtime.plugins.agent_skills.agentskills import (
+    append_file,
     create_file,
     edit_file,
     find_file,
@@ -274,6 +275,89 @@ def test_scroll_down_edge(tmp_path):
     assert result.split('\n') == expected.split('\n')
 
 
+def test_append_file(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = 'Line 1\nLine 2'
+    temp_file_path.write_text(content)
+
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            append_file(content='APPENDED TEXT')
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '1|Line 1\n'
+            '2|Line 2\n'
+            '3|APPENDED TEXT\n'
+            '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+        )
+        assert result.split('\n') == expected.split('\n')
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 3
+    assert lines[0].rstrip() == 'Line 1'
+    assert lines[1].rstrip() == 'Line 2'
+    assert lines[2].rstrip() == 'APPENDED TEXT'
+
+
+def test_append_file_from_scratch(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    create_file(str(temp_file_path))
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            append_file(content='APPENDED TEXT')
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (1 line total after edit)]\n'
+            '1|APPENDED TEXT\n'
+            '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+        )
+        assert result.split('\n') == expected.split('\n')
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 1
+    assert lines[0].rstrip() == 'APPENDED TEXT'
+
+
+def test_append_file_from_scratch_multiline(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    create_file(str(temp_file_path))
+    open_file(temp_file_path)
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            append_file(
+                content='APPENDED TEXT1\nAPPENDED TEXT2\nAPPENDED TEXT3',
+            )
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '1|APPENDED TEXT1\n'
+            '2|APPENDED TEXT2\n'
+            '3|APPENDED TEXT3\n'
+            '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+        )
+        assert result.split('\n') == expected.split('\n')
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 3
+    assert lines[0].rstrip() == 'APPENDED TEXT1'
+    assert lines[1].rstrip() == 'APPENDED TEXT2'
+    assert lines[2].rstrip() == 'APPENDED TEXT3'
+
+
+def test_append_file_not_opened():
+    with pytest.raises(FileNotFoundError):
+        append_file(content='APPEND TEXT')
+
+
 def test_edit_file(tmp_path):
     temp_file_path = tmp_path / 'a.txt'
     content = 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5'
@@ -524,6 +608,35 @@ def test_find_file_not_exist_file_specific_path(tmp_path):
     assert result is not None
 
     expected = f'[No matches found for "unexist.txt" in {tmp_path}]\n'
+    assert result.split('\n') == expected.split('\n')
+
+
+def test_append_lint_file_pass(tmp_path, monkeypatch):
+    # Create a Python file with correct syntax
+    file_path = tmp_path / 'test_file.py'
+    file_path.write_text('\n')
+
+    # patch ENABLE_AUTO_LINT
+    monkeypatch.setattr(
+        'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
+    )
+
+    # Test linting functionality
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            open_file(str(file_path))
+            append_file("print('hello')\n")
+        result = buf.getvalue()
+
+    assert result is not None
+    expected = (
+        f'[File: {file_path} (1 lines total)]\n'
+        '1|\n'
+        f'[File: {file_path} (2 lines total after edit)]\n'
+        '1|\n'
+        "2|print('hello')\n"
+        '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+    )
     assert result.split('\n') == expected.split('\n')
 
 
