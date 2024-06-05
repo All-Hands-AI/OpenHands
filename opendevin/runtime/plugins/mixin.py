@@ -52,14 +52,17 @@ class PluginMixin:
                 )
                 exit_code, output = self.execute(abs_path_to_bash_script, stream=True)
                 if isinstance(output, CancellableStream):
+                    total_output = ''
                     for line in output:
                         if line.endswith('\n'):
                             line = line[:-1]
+                        logger.debug(line)
+                        total_output += line
                     _exit_code = output.exit_code()
                     output.close()
                     if _exit_code != 0:
                         raise RuntimeError(
-                            f'Failed to initialize plugin {requirement.name} with exit code {_exit_code} and output {output}'
+                            f'Failed to initialize plugin {requirement.name} with exit code {_exit_code} and output {total_output}'
                         )
                     logger.info(f'Plugin {requirement.name} initialized successfully')
                 else:
