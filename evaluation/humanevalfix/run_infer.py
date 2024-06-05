@@ -140,104 +140,114 @@ def process_instance(
 ):
     old_workspace_mount_path = config.workspace_mount_path
     old_workspace_base = config.workspace_base
-    workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
-    # create process-specific workspace dir
-    # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
-    # so that different agent don't interfere with each other.
-    if not skip_workspace_mount:
-        workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
-        pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
-    # reset workspace to config
-    config.workspace_base = workspace_mount_path
-    config.workspace_mount_path = workspace_mount_path
-
-    # Setup the logger properly, so you can run multi-processing to parallize the evaluation
-    if reset_logger:
-        # Set up logger
-        log_file = os.path.join(
-            eval_output_dir,
-            'logs',
-            f'instance_{instance.task_id.replace("/", "__")}.log',
+    try:
+        workspace_mount_path = os.path.join(
+            config.workspace_mount_path, '_eval_workspace'
         )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        # add back the console handler to print ONE line
-        logger.addHandler(get_console_handler())
-        logger.info(
-            f'Starting evaluation for instance {instance.task_id}.\nLOG:   tail -f {log_file}'
+        # create process-specific workspace dir
+        # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
+        # so that different agent don't interfere with each other.
+        if not skip_workspace_mount:
+            workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
+            pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
+
+        # reset workspace to config
+        config.workspace_base = workspace_mount_path
+        config.workspace_mount_path = workspace_mount_path
+
+        # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
+        if reset_logger:
+            # Set up logger
+            log_file = os.path.join(
+                eval_output_dir,
+                'logs',
+                f'instance_{instance.task_id.replace("/", "__")}.log',
+            )
+            # Remove all existing handlers from logger
+            for handler in logger.handlers[:]:
+                logger.removeHandler(handler)
+            # add back the console handler to print ONE line
+            logger.addHandler(get_console_handler())
+            logger.info(
+                f'Starting evaluation for instance {instance.task_id}.\nLOG:   tail -f {log_file}'
+            )
+            # Remove all existing handlers from logger
+            for handler in logger.handlers[:]:
+                logger.removeHandler(handler)
+            file_handler = logging.FileHandler(log_file)
+            file_handler.setFormatter(
+                logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+            )
+            logger.addHandler(file_handler)
+
+        if not skip_workspace_mount:
+            logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
+
+        # Create file with HumanEvalFix problem
+        # Prompt reference: https://github.com/bigcode-project/bigcode-evaluation-harness/blob/84b96da31b7f840b55c5733325346176140cdb6b/bigcode_eval/tasks/humanevalpack.py#L509
+        problem_statement = (
+            instance.declaration + instance.buggy_solution + '\n' + instance.test
         )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(
-            logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        path = os.path.join(
+            workspace_mount_path, f'{instance.task_id.replace("/", "__")}.py'
         )
-        logger.addHandler(file_handler)
+        with open(path, 'w') as f:
+            f.write(problem_statement)
 
-    if not skip_workspace_mount:
-        logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
-
-    # Create file with HumanEvalFix problem
-    # Prompt reference: https://github.com/bigcode-project/bigcode-evaluation-harness/blob/84b96da31b7f840b55c5733325346176140cdb6b/bigcode_eval/tasks/humanevalpack.py#L509
-    problem_statement = (
-        instance.declaration + instance.buggy_solution + '\n' + instance.test
-    )
-    path = os.path.join(
-        workspace_mount_path, f'{instance.task_id.replace("/", "__")}.py'
-    )
-    with open(path, 'w') as f:
-        f.write(problem_statement)
-
-    # Prepare instruction
-    instruction = (
-        f'Please fix the function in {instance.task_id.replace("/", "__")}.py such that all test cases pass.\n'
-        'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
-        '# Problem Statement\n'
-        f'{problem_statement}\n\n'
-    )
-    instruction += (
-        'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-        'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
-        'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
-    )
-    # NOTE: You can actually set slightly different instruction for different agents
-    instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
-
-    # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State = asyncio.run(
-        main(
-            instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+        # Prepare instruction
+        instruction = (
+            f'Please fix the function in {instance.task_id.replace("/", "__")}.py such that all test cases pass.\n'
+            'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
+            '# Problem Statement\n'
+            f'{problem_statement}\n\n'
         )
-    )
+        instruction += (
+            'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+            'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
+            'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
+        )
+        # NOTE: You can actually set slightly different instruction for different agents
+        instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
-    # ======= Attempt to evaluate the agent's edits =======
-    test_result = get_test_result(instance, path)
+        # Here's how you can run the agent (similar to the `main` function) and get the final task state
+        state: State = asyncio.run(
+            main(
+                instruction,
+                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
+                    agent_class
+                ),
+            )
+        )
 
-    # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
-    # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
-    if state is None:
-        raise ValueError('State should not be None.')
-    metrics = state.metrics.get() if state.metrics else None
+        # ======= Attempt to evaluate the agent's edits =======
+        test_result = get_test_result(instance, path)
 
-    # Save the output
-    output = {
-        'task_id': instance.task_id,
-        'instruction': instruction,
-        'metadata': metadata,
-        'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-        ],
-        'metrics': metrics,
-        'error': state.error if state and state.error else None,
-        'test_result': test_result,
-    }
+        # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
+        # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
+        if state is None:
+            raise ValueError('State should not be None.')
+        metrics = state.metrics.get() if state.metrics else None
 
-    config.workspace_mount_path = old_workspace_mount_path
-    config.workspace_base = old_workspace_base
+        # Save the output
+        output = {
+            'task_id': instance.task_id,
+            'instruction': instruction,
+            'metadata': metadata,
+            'history': [
+                (event_to_dict(action), event_to_dict(obs))
+                for action, obs in state.history
+            ],
+            'metrics': metrics,
+            'error': state.error if state and state.error else None,
+            'test_result': test_result,
+        }
+    except Exception:
+        logger.error('Process instance failed')
+        raise
+    finally:
+        config.workspace_mount_path = old_workspace_mount_path
+        config.workspace_base = old_workspace_base
     return output
 
 

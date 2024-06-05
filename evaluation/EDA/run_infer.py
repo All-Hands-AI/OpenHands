@@ -66,7 +66,7 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 
 def process_instance(instance, agent_class, metadata, reset_logger: bool = True):
-    # Setup the logger properly, so you can run multi-processing to parallize the evaluation
+    # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     eval_output_dir = metadata['eval_output_dir']
     if reset_logger:
         # Set up logger
