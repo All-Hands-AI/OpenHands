@@ -13,11 +13,15 @@ class TaskState:
     ):
         self.finished = finished
         self.success = success
-        self.agent_action_count: Dict[str, int] = agent_action_count or {
-            'propose_solution': 0,
-            'use_tool': 0,
-            'invalid_action': 0,
-        }
+        self.agent_action_count: Dict[str, int] = (
+            agent_action_count
+            if agent_action_count
+            else {
+                'propose_solution': 0,
+                'use_tool': 0,
+                'invalid_action': 0,
+            }
+        )
         self.terminate_reason = terminate_reason
         self.latest_output = latest_output
 
