@@ -156,10 +156,14 @@ def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
 
     load_from_toml(default_config)
     load_from_env(default_config, os.environ)
+    default_config.ssh_password = None  # prevent leak
+    default_config.jwt_secret = None  # prevent leak
     assert default_config.llm.model == 'gpt-5-turbo-1106'
     assert default_config.llm.custom_llm_provider is None
-    assert default_config.github_token is None
-    assert default_config.llm.api_key is None
+    if default_config.github_token is not None:  # prevent leak
+        pytest.fail('GitHub token should be empty')
+    if default_config.llm.api_key is not None:  # prevent leak
+        pytest.fail('LLM API key should be empty.')
 
 
 def test_finalize_config(default_config):
