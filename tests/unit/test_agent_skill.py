@@ -22,12 +22,21 @@ from opendevin.runtime.plugins.agent_skills.agentskills import (
 )
 
 
+# CURRENT_FILE must be reset for each test
+@pytest.fixture(autouse=True)
+def reset_current_file():
+    from opendevin.runtime.plugins.agent_skills import agentskills
+
+    agentskills.CURRENT_FILE = None
+
+
 def test_open_file_unexist_path():
     with pytest.raises(FileNotFoundError):
         open_file('/unexist/path/a.txt')
 
 
 def test_open_file(tmp_path):
+    assert tmp_path is not None
     temp_file_path = tmp_path / 'a.txt'
     temp_file_path.write_text('Line 1\nLine 2\nLine 3\nLine 4\nLine 5')
 

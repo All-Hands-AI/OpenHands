@@ -15,6 +15,7 @@ echo "AGENT_VERSION: $AGENT_VERSION"
 export PYTHONPATH=$(pwd)
 
 COMMAND="poetry run python ./evaluation/mint/run_infer.py \
+    --llm-config $MODEL_CONFIG \
     --max-iterations 5 \
     --max-propose-solution 2 \
     --eval-note $AGENT_VERSION"

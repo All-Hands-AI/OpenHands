@@ -50,8 +50,13 @@ class EventStream:
     def _get_filename_for_id(self, id: int) -> str:
         return f'sessions/{self.sid}/events/{id}.json'
 
-    def _get_id_from_filename(self, filename: str) -> int:
-        return int(filename.split('/')[-1].split('.')[0])
+    @staticmethod
+    def _get_id_from_filename(filename: str) -> int:
+        try:
+            return int(filename.split('/')[-1].split('.')[0])
+        except ValueError:
+            logger.warning(f'get id from filename ({filename}) failed.')
+            return -1
 
     def get_events(self, start_id=0, end_id=None) -> Iterable[Event]:
         event_id = start_id
