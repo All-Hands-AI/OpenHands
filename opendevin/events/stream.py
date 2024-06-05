@@ -55,6 +55,7 @@ class EventStream:
         try:
             return int(filename.split('/')[-1].split('.')[0])
         except ValueError:
+            logger.warning(f'get id from filename ({filename}) failed.')
             return -1
 
     def get_events(self, start_id=0, end_id=None) -> Iterable[Event]:
