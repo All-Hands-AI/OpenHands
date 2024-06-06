@@ -1,11 +1,6 @@
 SHELL=/bin/bash
 # Makefile for OpenDevin project
 
-# Check and set PYTHON_KEYRING_BACKEND if not already set
-ifndef PYTHON_KEYRING_BACKEND
-export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
-endif
-
 # Variables
 DOCKER_IMAGE = ghcr.io/opendevin/sandbox
 BACKEND_PORT = 3000
