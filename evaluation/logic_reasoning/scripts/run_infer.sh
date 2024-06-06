@@ -2,14 +2,21 @@
 DATASET=$1
 MODEL_CONFIG=$2
 EVAL_LIMIT=$3
-AGENT=$4
+# AGENT=$4
+NWORKER=$4
 LOGNAME=$5
 
 # ################################################################################
 
-if [ -z "$AGENT" ]; then
-  echo "Agent not specified, use default CodeActAgent"
-  AGENT="CodeActAgent"
+# if [ -z "$AGENT" ]; then
+#   echo "Agent not specified, use default CodeActAgent"
+#   AGENT="CodeActAgent"
+AGENT="CodeActAgent"
+# fi
+
+if [ -z "$NWORKER" ]; then
+  echo "NWORKER not specified, use default 1"
+  NWORKER="1"
 fi
 
 if [ -z "$LOGNAME" ]; then
@@ -31,7 +38,7 @@ COMMAND="poetry run python evaluation/logic_reasoning/run_infer.py \
   --dataset $DATASET \
   --max-iterations 10 \
   --max-chars 10000000 \
-  --eval-num-workers 1 \
+  --eval-num-workers $NWORKER \
   --log_name $LOGNAME \
   --eval-note $AGENT_VERSION"
 
