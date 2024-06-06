@@ -257,7 +257,7 @@ if __name__ == '__main__':
         'max_propose_solution': args.max_propose_solution,
         'eval_output_dir': eval_output_dir,
         'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
-        # get the commit id of current repo for reproductiblity
+        # get the commit id of current repo for reproducibility
         'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
         .decode('utf-8')
         .strip(),
