@@ -238,6 +238,7 @@ setup-config-prompts:
 	 if [ "$$persist_sandbox" = "true" ]; then \
 		 read -p "Enter a password for the sandbox container: " ssh_password; \
 		 echo "ssh_password=\"$$ssh_password\"" >> $(CONFIG_FILE).tmp; \
+		 echo "persist_sandbox=$$persist_sandbox" >> $(CONFIG_FILE).tmp; \
 	 else \
 		echo "persist_sandbox=$$persist_sandbox" >> $(CONFIG_FILE).tmp; \
 	 fi
