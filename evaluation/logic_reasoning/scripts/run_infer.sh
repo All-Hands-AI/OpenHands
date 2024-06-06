@@ -3,12 +3,18 @@ DATASET=$1
 MODEL_CONFIG=$2
 EVAL_LIMIT=$3
 AGENT=$4
+LOGNAME=$5
 
 # ################################################################################
 
 if [ -z "$AGENT" ]; then
   echo "Agent not specified, use default CodeActAgent"
   AGENT="CodeActAgent"
+fi
+
+if [ -z "$LOGNAME" ]; then
+  echo "LOGNAME not specified, use default"
+  LOGNAME="default"
 fi
 
 # IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of OpenDevin
@@ -26,6 +32,7 @@ COMMAND="poetry run python evaluation/logic_reasoning/run_infer.py \
   --max-iterations 10 \
   --max-chars 10000000 \
   --eval-num-workers 1 \
+  --log_name $LOGNAME \
   --eval-note $AGENT_VERSION"
 
 if [ -n "$EVAL_LIMIT" ]; then
