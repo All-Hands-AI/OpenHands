@@ -63,7 +63,7 @@ especially Windows, this seems to fail.
 
 ### Workarounds
 
-* Restart your computer (sometimes it does works)
+* Restart your computer (sometimes it does work)
 * Be sure to have the latest versions of WSL and Docker
 * Check that your distribution in WSL is up to date as well
 * Try [this reinstallation guide](https://github.com/OpenDevin/OpenDevin/issues/1156#issuecomment-2064549427)
@@ -91,7 +91,7 @@ See our guide for [local LLMs](llms/localLLMs) for more information.
 
 ### Workarounds
 
-* Check your `LLM_BASE_URL` in your config.toml (if it exists) or command line call
+* Check your `base_url` in your config.toml (if it exists) under the "llm" section
 * Check that ollama (or whatever LLM you're using) is running OK
 * Make sure you're using `--add-host host.docker.internal:host-gateway` when running in Docker
 
@@ -175,4 +175,35 @@ If not, run the below command to set it to a known value and retry the build:
 
 ```bash
 export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
+```
+
+## Sessions are not restored
+
+### Symptoms
+
+OpenDevin usually asks whether to resume or start a new session when opening the UI.
+But clicking "Resume" still starts a fresh new chat.
+
+### Details
+
+With a standard installation as of today session data is stored in memory.
+Currently, if OpenDevin's service is restarted, previous sessions become
+invalid (a new secret is generated) and thus not recoverable.
+
+### Workarounds
+
+* Change configuration to make sessions persistent by editing the `config.toml`
+file (in OpenDevin's root folder) by specifying a `file_store` and an
+absolute `file_store_path`:
+
+```toml
+file_store="local"
+file_store_path="/absolute/path/to/opendevin/cache/directory"
+```
+
+* Add a fixed jwt secret in your .bashrc, like below, so that previous session id's
+should stay accepted.
+
+```bash
+EXPORT JWT_SECRET=A_CONST_VALUE
 ```
