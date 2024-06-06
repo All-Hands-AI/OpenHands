@@ -3,7 +3,7 @@ import traceback
 from typing import Dict, Optional
 
 from datatypes import ParseError, StepOutput, TaskState
-from task import Task
+from tasks.base import Task
 
 from opendevin.controller.state.state import State
 
@@ -19,7 +19,20 @@ class SimplifiedEnv:
     def __init__(self, agent_state: State, task: Task, task_config: Dict[str, int], global_max_iterations: int):
         self.agent_state = agent_state
         self.task = task
-        self.task_state = TaskState()
+
+        agent_action_count = {
+            'propose_solution': 0,
+            'use_tool': 0,
+            'invalid_action': 0,
+        }
+        # check if agent_state has attribute turn_info set
+        if hasattr(self.agent_state, 'propose_solution_count'):
+            agent_action_count['propose_solution'] = (
+                self.agent_state.propose_solution_count
+            )
+
+        self.task_state = TaskState(agent_action_count=agent_action_count)
+
         self.task_config = task_config
         self.global_max_iterations = global_max_iterations
 
@@ -40,6 +53,9 @@ class SimplifiedEnv:
             turn_info=turn_info,
         )
 
+        self.agent_state.propose_solution_count = self.task_state.agent_action_count[
+            'propose_solution'
+        ]
         self.log_output(output)
         return self.task_state
 
@@ -117,6 +133,10 @@ class SimplifiedEnv:
             sum(self.task_state.agent_action_count.values())
             >= effective_max_iterations
         ):
+            self.task_state.finished = True
+            self.task_state.success = False
+            self.task_state.terminate_reason = 'max_iterations'
+        elif self.agent_state.iteration >= self.task_config['max_iterations']:
             self.task_state.finished = True
             self.task_state.success = False
             self.task_state.terminate_reason = 'max_iterations'

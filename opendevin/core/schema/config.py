@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class ConfigType(str, Enum):
+    # For frontend
     LLM_CUSTOM_LLM_PROVIDER = 'LLM_CUSTOM_LLM_PROVIDER'
     LLM_MAX_INPUT_TOKENS = 'LLM_MAX_INPUT_TOKENS'
     LLM_MAX_OUTPUT_TOKENS = 'LLM_MAX_OUTPUT_TOKENS'
