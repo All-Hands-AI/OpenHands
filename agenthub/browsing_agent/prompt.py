@@ -14,10 +14,12 @@ from browsergym.core.action.python import PythonActionSet
 
 from opendevin.runtime.browser.browser_env import BrowserEnv
 
-from .utils import (
-    ParseError,
-    parse_html_tags_raise,
-)
+from .utils import ParseError, parse_html_tags_raise
+
+
+# Setup logging configuration
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -64,7 +66,7 @@ class Flags:
 
         if not isinstance(flags_dict, dict):
             raise ValueError(
-                f'Unregcognized type for flags_dict of type {type(flags_dict)}.'
+                f'Unrecognized type for flags_dict of type {type(flags_dict)}.'
             )
         return Flags(**flags_dict)
 
@@ -146,7 +148,7 @@ class Shrinkable(PromptElement, abc.ABC):
         """Implement shrinking of this prompt element.
 
         You need to recursively call all shrinkable elements that are part of
-        this prompt. You can also implement a shriking startegy for this prompt.
+        this prompt. You can also implement a shrinking strategy for this prompt.
         Shrinking is can be called multiple times to progressively shrink the
         prompt until it fits max_tokens. Default max shrink iterations is 20.
         """

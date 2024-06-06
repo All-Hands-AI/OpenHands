@@ -170,6 +170,7 @@ class AppConfig(metaclass=Singleton):
         else ':main'
     )
     run_as_devin: bool = True
+    global_max_iterations: int = 1000
     max_iterations: int = 100
     max_budget_per_task: float | None = None
     e2b_api_key: str = ''
@@ -490,6 +491,13 @@ def get_parser():
         help='The (litellm) model name to use',
     )
     parser.add_argument(
+        '-g',
+        '--global-max-iterations',
+        default=config.global_max_iterations,
+        type=int,
+        help='The maximum number of iterations to run all the agents',
+    )
+    parser.add_argument(
         '-i',
         '--max-iterations',
         default=config.max_iterations,
@@ -554,6 +562,10 @@ def parse_arguments():
     if args.directory:
         config.workspace_base = os.path.abspath(args.directory)
         print(f'Setting workspace base to {config.workspace_base}')
+    
+    if args.global_max_iterations:
+        config.global_max_iterations = args.global_max_iterations
+
     return args
 
 

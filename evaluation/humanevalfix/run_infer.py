@@ -25,7 +25,7 @@ from evaluate import load
 from tqdm import tqdm
 
 from opendevin.controller.state.state import State
-from opendevin.core.config import args, config, get_llm_config_arg
+from opendevin.core.config import args, config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
@@ -207,10 +207,14 @@ def process_instance(
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
+
+    effective_max_iterations = min(args.max_iterations, args.global_max_iterations)
+
     state: State = asyncio.run(
         main(
             instruction,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+            max_iterations=effective_max_iterations
         )
     )
 
@@ -242,6 +246,21 @@ def process_instance(
 if __name__ == '__main__':
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
+
+    parser = get_parser()
+    
+    parser.add_argument(
+        '--global-max-iterations',
+        default=config.global_max_iterations,
+        type=int,
+        help='The global maximum number of iterations to run the agent',
+    )
+    args, _ = parser.parse_known_args()
+
+    if args.global_max_iterations:
+        config.global_max_iterations = args.global_max_iterations
+
+
     dataset = load_dataset(
         'bigcode/humanevalpack', 'python'
     )  # TODO: Support other languages

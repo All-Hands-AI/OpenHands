@@ -18,7 +18,7 @@ WORKSPACE_MOUNT_PATH_IN_SANDBOX="/workspace"
 
 # use environmental variable if exist, otherwise use "ssh"
 SANDBOX_TYPE="${SANDBOX_TYPE:-ssh}"
-MAX_ITERATIONS=10
+GLOBAL_MAX_ITERATIONS="${GLOBAL_MAX_ITERATIONS:-100}
 
 agents=("DelegatorAgent" "ManagerAgent" "BrowsingAgent" "MonologueAgent" "CodeActAgent" "PlannerAgent")
 tasks=(
@@ -56,7 +56,7 @@ run_test() {
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
-    MAX_ITERATIONS=$MAX_ITERATIONS \
+    MAX_ITERATIONS=$GLOBAL_MAX_ITERATIONS \
     AGENT=$agent \
     $pytest_cmd
     # return exit code of pytest
@@ -81,7 +81,7 @@ regenerate_without_llm() {
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
-    MAX_ITERATIONS=$MAX_ITERATIONS \
+    MAX_ITERATIONS=$GLOBAL_MAX_ITERATIONS \
     FORCE_APPLY_PROMPTS=true \
     AGENT=$agent \
     poetry run pytest -s ./tests/integration/test_agent.py::$test_name
@@ -110,7 +110,7 @@ regenerate_with_llm() {
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
     poetry run python ./opendevin/core/main.py \
-    -i $MAX_ITERATIONS \
+    -i $GLOBAL_MAX_ITERATIONS \
     -t "$task Do not ask me for confirmation at any point." \
     -c $agent
   set +x
@@ -213,12 +213,12 @@ for ((i = 0; i < num_of_tests; i++)); do
         if [[ $TEST_STATUS -ne 0 ]]; then
           echo -e "\n\n\n\n========$test_name for $agent RERUN FAILED========\n\n\n\n"
           echo -e "There are multiple possibilities:"
-          echo -e "  1. The agent is unable to finish the task within $MAX_ITERATIONS steps."
+          echo -e "  1. The agent is unable to finish the task within $GLOBAL_MAX_ITERATIONS steps."
           echo -e "  2. The agent thinks itself has finished the task, but fails the validation in the test code."
           echo -e "  3. There is something non-deterministic in the prompt."
           echo -e "  4. There is a bug in this script, or in OpenDevin code."
           echo -e "NOTE: Some of the above problems could sometimes be fixed by a retry (with a more powerful LLM)."
-          echo -e "      You could also consider improving the agent, increasing MAX_ITERATIONS, or skipping this test for this agent."
+          echo -e "      You could also consider improving the agent, increasing GLOBAL_MAX_ITERATIONS, or skipping this test for this agent."
           exit 1
         else
           echo -e "\n\n\n\n========$test_name for $agent RERUN PASSED========\n\n\n\n"

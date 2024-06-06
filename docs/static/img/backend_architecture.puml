@@ -133,6 +133,7 @@ class opendevin.plan.Plan {
 class opendevin.state.State {
   plan: Plan
   iteration: int
+  max_iterations: int
   background_commands_obs: List[CmdOutputObservation]
   history: List[Tuple[Action, Observation]]
   updated_info: List[Tuple[Action, Observation]]

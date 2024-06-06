@@ -90,7 +90,7 @@ class AgentSession:
         model = args.get(ConfigType.LLM_MODEL, config.llm.model)
         api_key = args.get(ConfigType.LLM_API_KEY, config.llm.api_key)
         api_base = config.llm.base_url
-        max_iterations = args.get(ConfigType.MAX_ITERATIONS, config.max_iterations)
+        max_iterations = min(int(args.get(ConfigType.MAX_ITERATIONS, config.max_iterations)), config.global_max_iterations)
         max_chars = args.get(ConfigType.MAX_CHARS, config.llm.max_chars)
 
         logger.info(f'Creating agent {agent_cls} using LLM {model}')
@@ -107,7 +107,7 @@ class AgentSession:
             sid=self.sid,
             event_stream=self.event_stream,
             agent=agent,
-            max_iterations=int(max_iterations),
+            max_iterations=max_iterations,
             max_chars=int(max_chars),
         )
         try:

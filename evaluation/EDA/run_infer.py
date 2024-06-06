@@ -63,7 +63,7 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def process_instance(instance, agent_class, metadata, reset_logger: bool = True):
+def process_instance(instance, agent_class, metadata, max_iterations, reset_logger: bool = True):
     # Setup the logger properly, so you can run multi-processing to parallize the evaluation
     eval_output_dir = metadata['eval_output_dir']
     if reset_logger:
@@ -104,7 +104,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         item=instance['text'].strip(),
         answerer_model=metadata['answerer_model'],
         guesser_model=None,
-        num_turns=metadata['max_iterations'],
+        num_turns=max_iterations,
         openai_api_key=metadata['openai_api'],
         guesser_kargs=guesser_kargs,
     )
@@ -122,6 +122,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         main(
             instruction,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+            max_iterations=max_iterations,
         )
     )
     # ======= Attempt to evaluate the agent's edits =======
@@ -181,6 +182,13 @@ if __name__ == '__main__':
         type=str,
         help='data split, eg, test',
     )
+    parser.add_argument(
+        '-gmi',
+        '--global-max-iterations',
+        type=int,
+        default=config.global_max_iterations,
+        help='The maximum number of iterations to run the agent globally',
+    )
     args, _ = parser.parse_known_args()
     if args.directory:
         config.workspace_base = os.path.abspath(args.directory)
@@ -208,7 +216,7 @@ if __name__ == '__main__':
         agent_class in AGENT_CLS_TO_FAKE_USER_RESPONSE_FN
     ), f'Unsupported agent class: {agent_class}'
     model_name = config.llm.model.split('/')[-1]
-    max_iterations = args.max_iterations
+    max_iterations = min(args.max_iterations, args.global_max_iterations)
     eval_note = ''
     if args.eval_note is not None:
         eval_note += '_N_' + args.eval_note
@@ -313,6 +321,7 @@ if __name__ == '__main__':
                     instance,
                     agent_class,
                     metadata,
+                    max_iterations,
                     reset_logger=bool(num_workers > 1),
                 )
                 future.add_done_callback(update_progress)

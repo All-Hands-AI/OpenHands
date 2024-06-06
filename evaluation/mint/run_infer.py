@@ -101,7 +101,7 @@ def process_instance(
         # add back the console handler to print ONE line
         logger.addHandler(get_console_handler())
         logger.info(
-            f'Starting evaluation for instance {instance.task_id}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
+            f'Starting evaluation for instance {instance.task_id}.\nHint: run "tail -f {log_file}" to see live logs in a separate shell'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -129,6 +129,8 @@ def process_instance(
     )
     exit_code, output = sandbox.execute(f'pip install -r {requirements_sandbox_dest}')
 
+
+
     # Prepare instruction
     instruction = ToolPromptTemplate(use_tool=True)(
         max_total_steps=metadata['max_iterations'],
@@ -144,11 +146,12 @@ def process_instance(
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
+    max_iterations = min(args.max_iterations, config.global_max_iterations)
     fake_user_response_fn = functools.partial(
         AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
         task=instance,
         task_config={
-            'max_iterations': metadata['max_iterations'],
+            'max_iterations': max_iterations,
             'max_propose_solution': metadata['max_propose_solution'],
         },
     )
@@ -158,6 +161,7 @@ def process_instance(
             instruction,
             fake_user_response_fn=fake_user_response_fn,
             sandbox=sandbox,
+            max_iterations=max_iterations,
         )
     )
 
@@ -228,7 +232,7 @@ if __name__ == '__main__':
         agent_class in AGENT_CLS_TO_FAKE_USER_RESPONSE_FN
     ), f'Unsupported agent class: {agent_class}'
     model_name = config.llm.model.split('/')[-1]
-    max_iterations = args.max_iterations
+    max_iterations = min(args.max_iterations, config.global_max_iterations) 
     eval_note = ''
     if args.eval_note is not None:
         eval_note += '_N_' + args.eval_note
@@ -253,7 +257,7 @@ if __name__ == '__main__':
         'max_propose_solution': args.max_propose_solution,
         'eval_output_dir': eval_output_dir,
         'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
-        # get the commit id of current repo for reproduciblity
+        # get the commit id of current repo for reproductiblity
         'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
         .decode('utf-8')
         .strip(),
