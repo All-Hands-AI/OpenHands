@@ -179,6 +179,7 @@ class AppConfig(metaclass=Singleton):
     disable_color: bool = False
     sandbox_user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     sandbox_timeout: int = 120
+    initialize_plugins: bool = True
     persist_sandbox: bool = False
     ssh_port: int = 63710
     ssh_password: str | None = None
