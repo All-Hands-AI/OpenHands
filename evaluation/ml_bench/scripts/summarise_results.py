@@ -7,10 +7,17 @@ def extract_test_results(res_file_path: str) -> tuple[list[str], list[str]]:
     passed = []
     failed = []
     costs = []
+    instance_ids = set()
+    instances = []
     with open(res_file_path, 'r') as file:
         for line in file:
             data = json.loads(line.strip())
             success = data['metrics']['success']
+            if data['instance_id'] in instance_ids:
+                print(f'WARNING: Duplicate instance_id found: {data["instance_id"]}')
+                continue
+            instance_ids.add(data['instance_id'])
+            instances.append(data)
             if success:
                 passed.append(
                     {
@@ -36,6 +43,12 @@ def extract_test_results(res_file_path: str) -> tuple[list[str], list[str]]:
                     }
                 )
             costs.append(data['metrics']['accumulated_cost'])
+
+        # sort by instance_id
+        instances.sort(key=lambda x: x['instance_id'])
+        with open(res_file_path, 'w') as file:
+            for instance in instances:
+                file.write(json.dumps(instance) + '\n')
         return passed, failed, costs
 
 
