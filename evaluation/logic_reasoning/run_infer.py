@@ -290,6 +290,7 @@ if __name__ == '__main__':
         help='data split to evaluate on {validation}',  # right now we only support validation split
         default='validation',
     )
+    parser.add_argument('--log_name', type=str)
 
     args, _ = parser.parse_known_args()
     if args.directory:
@@ -329,6 +330,7 @@ if __name__ == '__main__':
         agent_class,
         dataset_name,
         model_name + '_maxiter_' + str(max_iterations) + eval_note,
+        args.log_name,
     )
 
     pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
