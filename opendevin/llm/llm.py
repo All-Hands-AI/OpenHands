@@ -143,13 +143,6 @@ class LLM:
         except Exception:
             logger.warning(f'Could not get model info for {self.model_name}')
 
-        if self.max_input_tokens is None:
-            if self.model_info is not None and 'max_input_tokens' in self.model_info:
-                self.max_input_tokens = self.model_info['max_input_tokens']
-            else:
-                # Max input tokens for gpt3.5, so this is a safe fallback for any potentially viable model
-                self.max_input_tokens = 4096
-
         if self.max_output_tokens is None:
             if self.model_info is not None and 'max_output_tokens' in self.model_info:
                 self.max_output_tokens = self.model_info['max_output_tokens']
@@ -271,7 +264,8 @@ class LLM:
         Returns:
         - Estimated token count.
         """
-
+        if self.max_input_tokens is None:
+            return False
         token_count = self.get_token_count(messages) + MAX_TOKEN_COUNT_PADDING
         return token_count >= self.max_input_tokens
 
