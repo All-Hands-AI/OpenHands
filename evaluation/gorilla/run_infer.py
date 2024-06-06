@@ -83,7 +83,7 @@ def process_instance(
         if reset_logger:
             # Set up logger
             log_file = os.path.join(
-                eval_output_dir, 'logs', f'instance_{instance["task_id"]}.log'
+                eval_output_dir, 'logs', f'instance_{question_id}.log'
             )
             # Remove all existing handlers from logger
             for handler in logger.handlers[:]:
@@ -91,7 +91,7 @@ def process_instance(
             # add back the console handler to print ONE line
             logger.addHandler(get_console_handler())
             logger.info(
-                f'Starting evaluation for instance {instance["task_id"]}.\nLOG:   tail -f {log_file}'
+                f'Starting evaluation for instance {question_id}.\nLOG:   tail -f {log_file}'
             )
             # Remove all existing handlers from logger
             for handler in logger.handlers[:]:
