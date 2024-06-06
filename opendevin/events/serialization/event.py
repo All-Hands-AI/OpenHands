@@ -22,6 +22,7 @@ DELETE_FROM_MEMORY_EXTRAS = {
     'last_browser_action',
     'last_browser_action_error',
     'focused_element_bid',
+    'extra_element_properties',
 }
 
 

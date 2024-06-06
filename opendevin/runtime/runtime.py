@@ -1,5 +1,6 @@
 import asyncio
 from abc import abstractmethod
+from typing import Any, Optional
 
 from opendevin.core.config import config
 from opendevin.core.exceptions import BrowserInitException
@@ -91,12 +92,18 @@ class Runtime:
         self.sandbox.init_plugins(plugins)
 
     def init_runtime_tools(
-        self, runtime_tools: list[RuntimeTool], is_async: bool = True
+        self,
+        runtime_tools: list[RuntimeTool],
+        runtime_tools_config: Optional[dict[RuntimeTool, Any]] = None,
+        is_async: bool = True,
     ) -> None:
         # if browser in runtime_tools, init it
         if RuntimeTool.BROWSER in runtime_tools:
+            if runtime_tools_config is None:
+                runtime_tools_config = {}
+            browser_env_config = runtime_tools_config.get(RuntimeTool.BROWSER, {})
             try:
-                self.browser = BrowserEnv(is_async)
+                self.browser = BrowserEnv(is_async=is_async, **browser_env_config)
             except BrowserInitException:
                 logger.warn(
                     'Failed to start browser environment, web browsing functionality will not work'
