@@ -33,7 +33,6 @@ from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import MessageAction
-from opendevin.events.serialization.event import event_to_dict
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
 
@@ -51,11 +50,12 @@ def codeact_user_response(state: State) -> str:
         'If you think you have completed the task, please run the following command: <execute_bash> exit </execute_bash>.\n'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK.\n'
     )
+
     if state.history:
         user_msgs = [
-            action
-            for action, _ in state.history
-            if isinstance(action, MessageAction) and action.source == 'user'
+            event
+            for event in state.history.get_events()
+            if isinstance(event, MessageAction) and event.source == 'user'
         ]
         if len(user_msgs) >= 2:
             # let the agent know that it can give up when it has tried 3 times
@@ -221,16 +221,18 @@ def process_instance(
             logger.info(f'Output: {eval_output}')
             metrics['success'] = 1
 
+        # history is now available as a list[Event], rather than list of pairs of (Action, Observation)
+        # for compatibility with the existing output format, we can remake the pairs here
+        # remove when it becomes unnecessary
+        history_tuples = state.history.compatibility_for_eval_history_tuples()
+
         # Save the output
         output = {
             'instance_id': instance['id'],
             'repo': repo_url,
             'instruction': instruction,
             'metadata': metadata,
-            'history': [
-                (event_to_dict(action), event_to_dict(obs))
-                for action, obs in state.history
-            ],
+            'history': history_tuples,
             'eval_script': eval_script_content,
             'eval_exit_code': exit_code,
             'eval_output': eval_output,

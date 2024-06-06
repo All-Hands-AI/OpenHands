@@ -25,7 +25,6 @@ from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import CmdRunAction, MessageAction
-from opendevin.events.serialization.event import event_to_dict
 from opendevin.runtime.docker.ssh_box import DockerSSHBox
 
 
@@ -46,17 +45,18 @@ def codeact_user_response(state: State) -> str:
         'For example: The answer to the question is <solution> 42 </solution>.\n'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
     )
+
     if state.history:
         # check if the last action is an answer, if so, return exit for early exit
-        last_action, _ = state.history[-1]
+        last_action = state.history.get_last_action()
         ans = try_parse_answer(last_action)
         if ans is not None:
             return '/exit'
 
         user_msgs = [
-            action
-            for action, _ in state.history
-            if isinstance(action, MessageAction) and action.source == 'user'
+            event
+            for event in state.history.get_events()
+            if isinstance(event, MessageAction) and event.source == 'user'
         ]
         if len(user_msgs) >= 2:
             # let the agent know that it can give up when it has tried 3 times
@@ -222,10 +222,12 @@ def process_instance(
     )
     test_result = compare_results(comparison_method, agent_answer, final_ans)
 
-    histories = [
-        (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-    ]
     metrics = state.metrics.get() if state.metrics else None
+
+    # history is now available as a list[Event], rather than list of pairs of (Action, Observation)
+    # for compatibility with the existing output format, we can remake the pairs here
+    # remove when it becomes unnecessary
+    history_tuples = state.history.compatibility_for_eval_history_tuples()
 
     # Save the output
     output = {
@@ -233,7 +235,7 @@ def process_instance(
         'instance': instance.to_dict(),
         'instruction': instruction,
         'metadata': metadata,
-        'history': histories,
+        'history': history_tuples,
         'metrics': metrics,
         'error': state.error if state and state.error else None,
         'test_result': {
