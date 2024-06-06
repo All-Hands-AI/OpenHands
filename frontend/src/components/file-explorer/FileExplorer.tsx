@@ -168,7 +168,7 @@ function FileExplorer() {
         )}
       >
         <div className="flex flex-col p-2 relative">
-          <div className="flex items-center justify-end mb-6">
+          <div className="flex items-center justify-end mb-8">
             <ExplorerActions
               isHidden={isHidden}
               toggleHidden={() => setIsHidden((prev) => !prev)}
