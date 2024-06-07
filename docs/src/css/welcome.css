@@ -3,7 +3,7 @@
 .text-white {
     color: white;
   }
-  
+
   .welcome-container {
     display: flex;
     justify-content: center;
@@ -11,44 +11,43 @@
     flex-direction: column;
     background: linear-gradient(to bottom, #64748b, #1f2937);
   }
-  
+
   @media (min-width: 768px) {
     .welcome-container {
       flex-direction: row;
       background: linear-gradient(to bottom, #64748b, #1f2937);
     }
   }
-  
+
   .welcome-logo {
     height: 45vh;
     width: 45vw;
   }
-  
+
   @media (max-width: 640px) {
     .welcome-logo {
       height: 40vw;
       width: 40vw;
     }
   }
-  
+
   @media (min-width: 768px) {
     .welcome-logo {
-      height: 60vh;
+      height: auto;
       width: 350px;
     }
   }
-  
+
   .welcome-text {
     padding: 24px;
     margin-bottom: 24px;
     font-weight: 300;
     font-size: 1.125rem;
   }
-  
+
   @media (min-width: 768px) {
     .welcome-text {
       padding: 8px;
       font-size: 1.5rem;
     }
   }
-  

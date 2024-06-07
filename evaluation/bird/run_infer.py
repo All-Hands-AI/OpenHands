@@ -232,6 +232,7 @@ def process_instance(
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
     if state is None:
         raise ValueError('State should not be None.')
+    metrics = state.metrics.get() if state.metrics else None
 
     # Save the output
     output = {
@@ -241,6 +242,7 @@ def process_instance(
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
+        'metrics': metrics,
         'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
@@ -420,7 +422,7 @@ if __name__ == '__main__':
         'max_iterations': max_iterations,
         'eval_output_dir': eval_output_dir,
         'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
-        # get the commit id of current repo for reproduciblity
+        # get the commit id of current repo for reproducibility
         'git_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'])
         .decode('utf-8')
         .strip(),
