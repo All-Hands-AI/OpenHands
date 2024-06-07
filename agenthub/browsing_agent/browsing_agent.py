@@ -109,6 +109,8 @@ class BrowsingAgent(Agent):
         - AgentFinishAction() - end the interaction
         """
         goal = state.get_current_user_intent()
+        if goal is None:
+            goal = state.inputs['task']
         messages = []
         prev_actions = []
         cur_axtree_txt = ''
@@ -129,7 +131,7 @@ class BrowsingAgent(Agent):
                 and prev_action.source == EventSource.AGENT
             ):
                 # agent has responded, task finish.
-                return AgentFinishAction()
+                return AgentFinishAction(outputs={'content': prev_action.content})
 
         prev_action_str = '\n'.join(prev_actions[1:])
         # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
