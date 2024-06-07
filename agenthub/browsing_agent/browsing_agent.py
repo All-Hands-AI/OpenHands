@@ -117,10 +117,7 @@ class BrowsingAgent(Agent):
         error_prefix = ''
         last_obs = None
         last_action = None
-        if len(state.history) == 1:
-            # initialize and retrieve the first observation by issuing an noop OP
-            # TODO: need more elegant way of doing this
-            return BrowseInteractiveAction(browser_actions='noop()')
+
         for prev_action, obs in state.history:
             if isinstance(prev_action, BrowseInteractiveAction):
                 prev_actions.append(prev_action.browser_actions)
@@ -133,7 +130,7 @@ class BrowsingAgent(Agent):
                 # agent has responded, task finish.
                 return AgentFinishAction(outputs={'content': prev_action.content})
 
-        prev_action_str = '\n'.join(prev_actions[1:])
+        prev_action_str = '\n'.join(prev_actions)
         # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
         # we should also send a message back to the user in OpenDevin and call it a day
         if (
