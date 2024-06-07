@@ -157,11 +157,6 @@ def test_browse_internet(http_server):
     # last observation
     last_observation = final_state.history.get_last_observation()
     assert isinstance(last_observation, AgentDelegateObservation)
-    assert 'OpenDevin is all you need!' in last_observation.content
-
-    # previous to last observation
-    previous_observation = final_state.history.get_last_observation(
-        end_id=last_observation.id - 1
-    )
-    assert isinstance(previous_observation, AgentDelegateObservation)
-    assert 'OpenDevin is all you need!' in previous_observation.content
+    assert (
+        'OpenDevin is all you need!' in last_observation.outputs['content']
+    )  # TODO as an observation, this already has a content field

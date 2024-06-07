@@ -7,7 +7,7 @@ import agenthub  # noqa F401 (we import this to get the agents registered)
 from opendevin.controller import AgentController
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import args, get_llm_config_arg
+from opendevin.core.config import args, config, get_llm_config_arg
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
 from opendevin.events import EventSource, EventStream, EventStreamSubscriber
@@ -86,12 +86,15 @@ async def main(
 
     event_stream = EventStream('main')
 
-    # restore agent state
+    # restore main session if enabled
     initial_state = None
-    try:
-        initial_state = State.restore_from_session('main')
-    except Exception as e:
-        print('Error restoring state', e)
+    if config.enable_main_session:
+        try:
+            initial_state = State.restore_from_session('main')
+        except Exception as e:
+            print('Error restoring state', e)
+
+    # init controller with this initial state
     controller = AgentController(
         agent=agent,
         max_iterations=args.max_iterations,
@@ -100,6 +103,8 @@ async def main(
         event_stream=event_stream,
         initial_state=initial_state,
     )
+
+    # runtime and tools
     runtime = ServerRuntime(event_stream=event_stream, sandbox=sandbox)
     runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
     runtime.init_runtime_tools(
@@ -118,16 +123,18 @@ async def main(
             task = f.read()
             logger.info(f'Dynamic Eval task: {task}')
 
-    # init with the provided task or resume the conversation
-    if initial_state is None:
-        event_stream.add_event(MessageAction(content=task), EventSource.USER)
-    else:
+    # start event is a MessageAction with the task, either resumed or new
+    if config.enable_main_session and initial_state is not None:
+        # resume the previous session
         event_stream.add_event(
             MessageAction(
                 content="Let's get back on track. If you experienced errors before, do NOT resume your task. Ask me about it."
             ),
             EventSource.USER,
         )
+    elif initial_state is None:
+        # init with the provided task
+        event_stream.add_event(MessageAction(content=task), EventSource.USER)
 
     async def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):

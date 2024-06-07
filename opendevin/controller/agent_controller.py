@@ -170,6 +170,7 @@ class AgentController:
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
             elif isinstance(event, AgentDelegateObservation):
                 logger.info(event, extra={'msg_type': 'OBSERVATION'})
+                self.state.history.on_event(event)
 
     def reset_task(self):
         self.agent.reset()

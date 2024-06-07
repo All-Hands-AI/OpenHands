@@ -118,10 +118,6 @@ class BrowsingAgent(Agent):
         error_prefix = ''
         last_obs = None
         last_action = None
-        if len(state.history.get_events_as_list()) == 1:
-            # initialize and retrieve the first observation by issuing an noop OP
-            # TODO: need more elegant way of doing this
-            return BrowseInteractiveAction(browser_actions='noop()')
 
         for event in state.history.get_events():
             if isinstance(event, BrowseInteractiveAction):
@@ -133,16 +129,7 @@ class BrowsingAgent(Agent):
             elif isinstance(event, Observation):
                 last_obs = event
 
-        prev_action_str = '\n'.join(prev_actions[1:])
-        # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
-        # we should also send a message back to the user in OpenDevin and call it a day
-        if (
-            isinstance(last_action, BrowseInteractiveAction)
-            and last_action.browsergym_send_msg_to_user
-        ):
-            return MessageAction(last_action.browsergym_send_msg_to_user)
-
-        prev_action_str = '\n'.join(prev_actions[1:])
+        prev_action_str = '\n'.join(prev_actions)
         # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
         # we should also send a message back to the user in OpenDevin and call it a day
         if (
