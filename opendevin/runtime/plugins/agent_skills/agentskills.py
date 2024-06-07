@@ -34,6 +34,9 @@ WINDOW = 100
 
 ENABLE_AUTO_LINT = os.getenv('ENABLE_AUTO_LINT', 'false').lower() == 'true'
 
+# This is also used in unit tests!
+MSG_FILE_UPDATED = '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]'
+
 # OPENAI
 OPENAI_API_KEY = os.getenv(
     'OPENAI_API_KEY', os.getenv('SANDBOX_ENV_OPENAI_API_KEY', '')
@@ -311,6 +314,7 @@ def edit_file(start: int, end: int, content: str) -> None:
 
         lint_error = _lint_file(CURRENT_FILE)
         if lint_error:
+            # only change any literal strings here in combination with unit tests!
             print(
                 '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]'
             )
@@ -351,9 +355,7 @@ def edit_file(start: int, end: int, content: str) -> None:
         f'[File: {os.path.abspath(CURRENT_FILE)} ({n_total_lines} lines total after edit)]'
     )
     _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW)
-    print(
-        '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]'
-    )
+    print(MSG_FILE_UPDATED)
 
 
 @update_pwd_decorator
