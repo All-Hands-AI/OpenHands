@@ -309,20 +309,6 @@ NOW, LET'S START!
 
 ----------
 
-Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point.
+Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.
 
-----------
-
-Sure! I'll create the shell script `hello.sh` for you.
-<execute_bash>
-echo 'echo "hello"' > hello.sh
-chmod +x hello.sh
-</execute_bash>
-
-----------
-
-OBSERVATION:
-
-[Command -1 finished with exit code 0]]
-
-ENVIRONMENT REMINDER: You have 8 turns left to complete the task.
+ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
