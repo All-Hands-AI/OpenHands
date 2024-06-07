@@ -34,6 +34,7 @@ if [ ! -f $SWEBENCH_FORMAT_JSONL ]; then
 fi
 SWEBENCH_FORMAT_JSONL=$(realpath $SWEBENCH_FORMAT_JSONL)
 # ================================================
+# SWEBENCH_FORMAT_JSONL=$PROCESS_FILEPATH  # If we want to directly use jsonl already formatted as swe-bench
 
 poetry run python $SWEBENCH_DOCKER_FORK_DIR/run_evaluation.py \
     --predictions_path $SWEBENCH_FORMAT_JSONL \
