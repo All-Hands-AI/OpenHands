@@ -10,8 +10,8 @@ from opendevin.core.main import main
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
     AgentFinishAction,
-    MessageAction,
 )
+from opendevin.events.observation.delegate import AgentDelegateObservation
 
 workspace_base = os.getenv('WORKSPACE_BASE')
 
@@ -137,8 +137,12 @@ def test_ipython_module():
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') != 'BrowsingAgent',
-    reason='currently only BrowsingAgent is capable of searching the internet',
+    os.getenv('AGENT') != 'BrowsingAgent' and os.getenv('AGENT') != 'CodeActAgent',
+    reason='currently only BrowsingAgent and CodeActAgent are capable of searching the internet',
+)
+@pytest.mark.skipif(
+    os.getenv('AGENT') == 'CodeActAgent' and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    reason='CodeActAgent only supports ssh sandbox which is stateful',
 )
 def test_browse_internet(http_server):
     # Execute the task
@@ -150,7 +154,14 @@ def test_browse_internet(http_server):
     last_action = final_state.history.get_last_action()
     assert isinstance(last_action, AgentFinishAction)
 
-    # previous to last action
-    previous_action = final_state.history.get_last_action(end_id=last_action.id - 1)
-    assert isinstance(previous_action, MessageAction)
-    assert 'OpenDevin is all you need!' in previous_action.content
+    # last observation
+    last_observation = final_state.history.get_last_observation()
+    assert isinstance(last_observation, AgentDelegateObservation)
+    assert 'OpenDevin is all you need!' in last_observation.content
+
+    # previous to last observation
+    previous_observation = final_state.history.get_last_observation(
+        end_id=last_observation.id - 1
+    )
+    assert isinstance(previous_observation, AgentDelegateObservation)
+    assert 'OpenDevin is all you need!' in previous_observation.content

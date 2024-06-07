@@ -110,6 +110,8 @@ class BrowsingAgent(Agent):
         - AgentFinishAction() - end the interaction
         """
         goal = state.get_current_user_intent()
+        if goal is None:
+            goal = state.inputs['task']
         messages = []
         prev_actions = []
         cur_axtree_txt = ''
@@ -126,8 +128,8 @@ class BrowsingAgent(Agent):
                 prev_actions.append(event.browser_actions)
                 last_action = event
             elif isinstance(event, MessageAction) and event.source == EventSource.AGENT:
-                # agent has responded, task finish.
-                return AgentFinishAction()
+                # agent has responded, task finished.
+                return AgentFinishAction(outputs={'content': event.content})
             elif isinstance(event, Observation):
                 last_obs = event
 
