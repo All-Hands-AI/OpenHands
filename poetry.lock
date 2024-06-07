@@ -416,17 +416,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.34.120"
+version = "1.34.121"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.34.120-py3-none-any.whl", hash = "sha256:3c42bc309246a761413f6e152f307f009e80e7c9fd03dd9e6c0dc8ab8b3a8fc1"},
-    {file = "boto3-1.34.120.tar.gz", hash = "sha256:38893db8269d25b72cc6fbab97633bfc863eefde5456847169d06149a16aa6e0"},
+    {file = "boto3-1.34.121-py3-none-any.whl", hash = "sha256:4e79e400d6d44b4eee5deda6ac0ecd08a3f5a30c45a0d30712795cdc4459fd79"},
+    {file = "boto3-1.34.121.tar.gz", hash = "sha256:ec89f3e0b0dc959c418df29e14d3748c0b05ab7acf7c0b90c839e9f340a659fa"},
 ]
 
 [package.dependencies]
-botocore = ">=1.34.120,<1.35.0"
+botocore = ">=1.34.121,<1.35.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -435,13 +435,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.34.120"
+version = "1.34.121"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.34.120-py3-none-any.whl", hash = "sha256:92bd739938078c7a0b110689a3eee21ecb3954d90653da013d9f98ef1165d6f7"},
-    {file = "botocore-1.34.120.tar.gz", hash = "sha256:5cc0fca43cb2aad54917a394a001ac9ba774d21ad6a08828002d54b601776f78"},
+    {file = "botocore-1.34.121-py3-none-any.whl", hash = "sha256:25b05c7646a9f240cde1c8f839552a43f27e71e15c42600275dea93e219f7dd9"},
+    {file = "botocore-1.34.121.tar.gz", hash = "sha256:1a8f94b917c47dfd84a0b531ab607dc53570efb0d073d8686600f2d2be985323"},
 ]
 
 [package.dependencies]
@@ -450,7 +450,7 @@ python-dateutil = ">=2.1,<3.0.0"
 urllib3 = {version = ">=1.25.4,<2.2.0 || >2.2.0,<3", markers = "python_version >= \"3.10\""}
 
 [package.extras]
-crt = ["awscrt (==0.20.9)"]
+crt = ["awscrt (==0.20.11)"]
 
 [[package]]
 name = "browsergym"
@@ -4054,13 +4054,13 @@ sympy = "*"
 
 [[package]]
 name = "openai"
-version = "1.31.2"
+version = "1.32.0"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.31.2-py3-none-any.whl", hash = "sha256:203cf21294f347c3d7b591e0ccbe18389d6f8967d4237214b926ea76b1e1781c"},
-    {file = "openai-1.31.2.tar.gz", hash = "sha256:966ab3165b926cb5ec091d2434c90613e2ea8b73ffad984f7fec34bde971725a"},
+    {file = "openai-1.32.0-py3-none-any.whl", hash = "sha256:953d57669f309002044fd2f678aba9f07a43256d74b3b00cd04afb5b185568ea"},
+    {file = "openai-1.32.0.tar.gz", hash = "sha256:a6df15a7ab9344b1bc2bc8d83639f68b7a7e2453c0f5e50c1666547eee86f0bd"},
 ]
 
 [package.dependencies]

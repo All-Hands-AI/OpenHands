@@ -167,17 +167,19 @@ function FileExplorer() {
           isHidden ? "min-w-[48px]" : "min-w-[228px]",
         )}
       >
-        <div className="flex p-2 items-center justify-between relative">
+        <div className="flex flex-col p-2 relative">
+          <div className="flex items-center justify-end mb-8">
+            <ExplorerActions
+              isHidden={isHidden}
+              toggleHidden={() => setIsHidden((prev) => !prev)}
+              onRefresh={refreshWorkspace}
+              onUpload={selectFileInput}
+            />
+          </div>
+
           <div style={{ display: isHidden ? "none" : "block" }}>
             <ExplorerTree files={files} defaultOpen />
           </div>
-
-          <ExplorerActions
-            isHidden={isHidden}
-            toggleHidden={() => setIsHidden((prev) => !prev)}
-            onRefresh={refreshWorkspace}
-            onUpload={selectFileInput}
-          />
         </div>
         <input
           data-testid="file-input"
