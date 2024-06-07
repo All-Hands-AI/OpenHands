@@ -4,11 +4,12 @@ import re
 import warnings
 from collections import Counter, defaultdict, namedtuple
 from importlib import resources
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Set
 
 import git
 import networkx as nx
+import pathspec
 from diskcache import Cache
 from grep_ast import TreeContext, filename_to_lang
 from pygments.lexers import guess_lexer_for_filename
@@ -37,6 +38,7 @@ class RepoMap:
     TAGS_CACHE_DIR = f'.aider.tags.cache.v{CACHE_VERSION}'
 
     cache_missing = False
+    aider_ignore_ts = 0
 
     warned_files: Set[str] = set()
 
@@ -47,6 +49,7 @@ class RepoMap:
         root=None,
         repo_content_prefix=None,
         max_context_window=None,
+        aider_ignore_file='.aiderignore',
     ):
         """
         Initialize the Repomap object.
@@ -72,6 +75,8 @@ class RepoMap:
         self.token_count = llm.get_token_count_from_text
         self.repo_content_prefix = repo_content_prefix
         self.abs_fnames: Any = set()
+        if aider_ignore_file:
+            self.aider_ignore_file = Path(aider_ignore_file)
 
     def get_repo_map(
         self, chat_files, other_files, mentioned_fnames=None, mentioned_idents=None
@@ -703,7 +708,7 @@ class RepoMap:
         return mentioned_rel_fnames
 
     def get_all_relative_files(self):
-        # Construct a git repo object and get all the relative files tracked by git
+        # Construct a git repo object and get all the relative files tracked by git and staged files
         try:
             repo = git.Repo(self.root)
 
@@ -711,7 +716,7 @@ class RepoMap:
                 raise Exception('The repository is bare.')
 
             # Get a list of all tracked files
-            tracked_files = [
+            tracked_files: Any = [
                 item.path for item in repo.tree().traverse() if item.type == 'blob'
             ]
         except Exception as e:
@@ -719,6 +724,18 @@ class RepoMap:
                 f'An error occurred when getting tracked files in git repo: {e}'
             )
             return []
+
+        # Add staged files
+        index = repo.index
+        staged_files = [path for path, _ in index.entries.keys()]
+
+        tracked_files.extend(staged_files)
+
+        # Normalize the paths
+        tracked_files = set(self.normalize_path(path) for path in tracked_files)
+        tracked_files = [
+            fname for fname in tracked_files if not self.ignored_file(fname)
+        ]
 
         files = [
             fname
@@ -787,3 +804,26 @@ class RepoMap:
 
     def log_error(self, message):
         logger.error(f'Error when constructing repomap: {message}')
+
+    def ignored_file(self, fname):
+        if not self.aider_ignore_file or not self.aider_ignore_file.is_file():
+            return
+
+        try:
+            fname = self.normalize_path(fname)
+        except ValueError:
+            return
+
+        mtime = self.aider_ignore_file.stat().st_mtime
+        if mtime != self.aider_ignore_ts:
+            self.aider_ignore_ts = int(mtime)
+            lines = self.aider_ignore_file.read_text().splitlines()
+            self.aider_ignore_spec = pathspec.PathSpec.from_lines(
+                pathspec.patterns.GitWildMatchPattern,
+                lines,
+            )
+
+        return self.aider_ignore_spec.match_file(fname)
+
+    def normalize_path(self, path):
+        return str(Path(PurePosixPath((Path(self.root) / path).relative_to(self.root))))
