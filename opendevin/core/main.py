@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 from typing import Callable, Optional, Type
 
@@ -34,6 +35,7 @@ async def main(
     exit_on_message: bool = False,
     fake_user_response_fn: Optional[Callable[[Optional[State]], str]] = None,
     sandbox: Optional[Sandbox] = None,
+    runtime_tools_config: Optional[dict] = None,
 ) -> Optional[State]:
     """Main coroutine to run the agent controller with task input flexibility.
     It's only used when you launch opendevin backend directly via cmdline.
@@ -92,7 +94,21 @@ async def main(
     )
     runtime = ServerRuntime(event_stream=event_stream, sandbox=sandbox)
     runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
-    runtime.init_runtime_tools(controller.agent.runtime_tools, is_async=False)
+    runtime.init_runtime_tools(
+        controller.agent.runtime_tools,
+        is_async=False,
+        runtime_tools_config=runtime_tools_config,
+    )
+
+    # browser eval specific
+    # TODO: move to a better place
+    if runtime.browser and runtime.browser.eval_dir:
+        logger.info(f'Evaluation directory: {runtime.browser.eval_dir}')
+        with open(
+            os.path.join(runtime.browser.eval_dir, 'goal.txt'), 'r', encoding='utf-8'
+        ) as f:
+            task = f.read()
+            logger.info(f'Dynamic Eval task: {task}')
 
     await event_stream.add_event(MessageAction(content=task), EventSource.USER)
 
