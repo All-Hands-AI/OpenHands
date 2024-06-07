@@ -86,7 +86,8 @@ OBSERVATION:
 10|    app.run(port=5000)
 [File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 
-ASSISTANT: Now, I'll run the file:
+ASSISTANT:
+Now, I'll run the file:
 <execute_bash>
 python3 app.py > server.log 2>&1 &
 </execute_bash>
@@ -225,7 +226,8 @@ Observation:
 10|    app.run(port=5000)
 [File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 
-ASSISTANT: Running the updated file:
+ASSISTANT:
+Running the updated file:
 <execute_bash>
 python3 app.py > server.log 2>&1 &
 </execute_bash>
