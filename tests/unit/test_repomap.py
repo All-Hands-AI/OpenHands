@@ -1,11 +1,6 @@
-"""
-Mostly borrow from: https://github.com/paul-gauthier/aider/blob/main/tests/test_repomap.py
-"""
-
 import os
 import unittest
 
-from opendevin.indexing.repomap.io import InputOutput
 from opendevin.indexing.repomap.repomap import RepoMap
 from opendevin.indexing.repomap.utils import IgnorantTemporaryDirectory
 from opendevin.llm.llm import LLM
@@ -29,8 +24,7 @@ class TestRepoMap(unittest.TestCase):
                 with open(os.path.join(temp_dir, file), 'w') as f:
                     f.write('')
 
-            io = InputOutput()
-            repo_map = RepoMap(llm=self.GPT35, root=temp_dir, io=io)
+            repo_map = RepoMap(llm=self.GPT35, root=temp_dir)
             other_files = [os.path.join(temp_dir, file) for file in test_files]
             result = repo_map.get_repo_map([], other_files)
 
@@ -77,8 +71,7 @@ print(my_function(3, 4))
             with open(os.path.join(temp_dir, test_file3), 'w') as f:
                 f.write(file_content3)
 
-            io = InputOutput()
-            repo_map = RepoMap(llm=self.GPT35, root=temp_dir, io=io)
+            repo_map = RepoMap(llm=self.GPT35, root=temp_dir)
             other_files = [
                 os.path.join(temp_dir, test_file1),
                 os.path.join(temp_dir, test_file2),
@@ -112,7 +105,7 @@ print(my_function(3, 4))
                 with open(os.path.join(temp_dir, file), 'w') as f:
                     f.write('')
 
-            repo_map = RepoMap(llm=self.GPT35, root=temp_dir, io=InputOutput())
+            repo_map = RepoMap(llm=self.GPT35, root=temp_dir)
 
             other_files = [os.path.join(temp_dir, file) for file in test_files]
             result = repo_map.get_repo_map([], other_files)
@@ -138,8 +131,7 @@ print(my_function(3, 4))
                 with open(os.path.join(temp_dir, file), 'w') as f:
                     f.write('def foo(): pass\n')
 
-            io = InputOutput()
-            repo_map = RepoMap(llm=self.GPT35, root=temp_dir, io=io)
+            repo_map = RepoMap(llm=self.GPT35, root=temp_dir)
             test_files = [os.path.join(temp_dir, file) for file in test_files]
             result = repo_map.get_repo_map(test_files[:2], test_files[2:])
 
@@ -194,8 +186,7 @@ export function myFunction(input: number): number {
             with open(os.path.join(temp_dir, test_file_ts), 'w') as f:
                 f.write(file_content_ts)
 
-            io = InputOutput()
-            repo_map = RepoMap(llm=self.GPT35, root=temp_dir, io=io)
+            repo_map = RepoMap(llm=self.GPT35, root=temp_dir)
             other_files = [os.path.join(temp_dir, test_file_ts)]
             result = repo_map.get_repo_map([], other_files)
 

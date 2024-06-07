@@ -188,10 +188,9 @@ class CodeActAgent(Agent):
         self.repo_map = (
             RepoMap(
                 llm=self.llm,
-                map_tokens=1024,  # TODO: move to config
+                map_tokens=1024,
                 root=config.workspace_base,
                 repo_content_prefix='Here are summaries of some files present in the workspace.',
-                verbose=False,  # TODO: test what happens when verbose is True
                 max_context_window=self.llm.max_input_tokens,
             )
             if ENABLE_REPOMAP

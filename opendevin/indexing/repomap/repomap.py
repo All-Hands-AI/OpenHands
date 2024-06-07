@@ -1,7 +1,4 @@
-"""
-Mostly borrow from: https://github.com/paul-gauthier/aider/blob/main/aider/repomap.py
-"""
-
+import base64
 import os
 import re
 import warnings
@@ -18,14 +15,15 @@ from pygments.lexers import guess_lexer_for_filename
 from pygments.token import Token
 from pygments.util import ClassNotFound
 from tqdm import tqdm
+from tree_sitter_languages import get_language, get_parser
 
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.indexing.repomap.io import InputOutput
 from opendevin.llm.llm import LLM
+
+from .utils import is_image_file
 
 # tree_sitter is throwing a FutureWarning
 warnings.simplefilter('ignore', category=FutureWarning)
-from tree_sitter_languages import get_language, get_parser  # noqa: E402
 
 Tag = namedtuple('Tag', ('rel_fname', 'fname', 'line', 'name', 'kind'))
 
@@ -45,11 +43,9 @@ class RepoMap:
     def __init__(
         self,
         llm: LLM,
-        io=None,
         map_tokens=1024,
         root=None,
         repo_content_prefix=None,
-        verbose=False,
         max_context_window=None,
     ):
         """
@@ -64,10 +60,6 @@ class RepoMap:
             verbose (bool, optional): Whether to enable verbose mode. Defaults to False.
             max_context_window (int, optional): The maximum context window size. Defaults to None.
         """
-
-        self.io = io if io else InputOutput()
-        self.verbose = verbose
-
         if not root:
             root = os.getcwd()
         self.root = root
@@ -127,7 +119,7 @@ class RepoMap:
                 mentioned_idents,
             )
         except RecursionError:
-            self.io.tool_error('Disabling repo map, git repo too large?')
+            self.log_error('Disabling repo map, git repo too large?')
             self.max_map_tokens = 0
             return
 
@@ -135,8 +127,7 @@ class RepoMap:
             return
 
         num_tokens = self.token_count(files_listing)
-        if self.verbose:
-            self.io.tool_output(f'Repo-map: {num_tokens/1024:.1f} k-tokens')
+        logger.info(f'Repo-map: {num_tokens/1024:.1f} k-tokens')
 
         if chat_files:
             other = 'other '
@@ -194,7 +185,7 @@ class RepoMap:
         try:
             return os.path.getmtime(fname)
         except FileNotFoundError:
-            self.io.tool_error(f'File not found error: {fname}')
+            self.log_error(f'File not found error: {fname}')
 
     def get_tags(self, fname, rel_fname):
         """
@@ -263,7 +254,7 @@ class RepoMap:
             return
         query_scm = scm_fname.read_text()
 
-        code = self.io.read_text(fname)
+        code = self.read_text(fname)
         if not code:
             return
         tree = parser.parse(bytes(code, 'utf-8'))
@@ -359,11 +350,11 @@ class RepoMap:
             if not Path(fname).is_file():
                 if fname not in self.warned_files:
                     if Path(fname).exists():
-                        self.io.tool_error(
+                        self.log_error(
                             f"Repo-map can't include {fname}, it is not a normal file"
                         )
                     else:
-                        self.io.tool_error(
+                        self.log_error(
                             f"Repo-map can't include {fname}, it no longer exists"
                         )
 
@@ -559,7 +550,7 @@ class RepoMap:
         if key in self.tree_cache:
             return self.tree_cache[key]
 
-        code = self.io.read_text(abs_fname) or ''
+        code = self.read_text(abs_fname) or ''
         if not code.endswith('\n'):
             code += '\n'
 
@@ -634,14 +625,13 @@ class RepoMap:
 
     def get_history_aware_repo_map(self, messages: list) -> str:
         cur_msg_text = self.get_cur_message_text(messages)
-        logger.info(f'Current message text: {cur_msg_text}')
+        logger.debug(f'Current message text: {cur_msg_text}')
         mentioned_fnames = self.get_file_mentions(cur_msg_text)
-        logger.info(f'Mentioned fnames: {mentioned_fnames}')
+        logger.debug(f'Mentioned fnames: {mentioned_fnames}')
         mentioned_idents = self.get_ident_mentions(cur_msg_text)
-        logger.info(f'Mentioned idents: {mentioned_idents}')
+        logger.debug(f'Mentioned idents: {mentioned_idents}')
 
         other_files = set(self.get_all_abs_files()) - set(self.abs_fnames)
-        logger.info(f'Other files: {other_files}')
         repo_content = self.get_repo_map(
             self.abs_fnames,
             other_files,
@@ -730,8 +720,6 @@ class RepoMap:
             )
             return []
 
-        logger.info(f'Tracked files: {tracked_files}')
-        logger.info('Length of tracked files: ' + str(len(tracked_files)))
         files = [
             fname
             for fname in tracked_files
@@ -761,3 +749,41 @@ class RepoMap:
     def get_inchat_relative_files(self):
         files = [self.get_rel_fname(fname) for fname in self.abs_fnames]
         return sorted(set(files))
+
+    def read_image(self, filename):
+        try:
+            with open(str(filename), 'rb') as image_file:
+                encoded_string = base64.b64encode(image_file.read())
+                return encoded_string.decode('utf-8')
+        except FileNotFoundError:
+            self.log_error(f'{filename}: file not found error')
+            return
+        except IsADirectoryError:
+            self.log_error(f'{filename}: is a directory')
+            return
+        except Exception as e:
+            self.log_error(f'{filename}: {e}')
+            return
+
+    def read_text(self, filename):
+        if is_image_file(filename):
+            return self.read_image(filename)
+
+        try:
+            with open(str(filename), 'r', encoding='utf-8') as f:
+                return f.read()
+        except FileNotFoundError:
+            self.log_error(
+                f'Error when constructing repomap: {filename}: file not found error'
+            )
+            return
+        except IsADirectoryError:
+            self.log_error(f'{filename}: is a directory')
+            return
+        except UnicodeError as e:
+            self.log_error(f'{filename}: {e}')
+            self.log_error('Use --encoding to set the unicode encoding.')
+            return
+
+    def log_error(self, message):
+        logger.error(f'Error when constructing repomap: {message}')
