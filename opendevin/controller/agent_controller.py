@@ -225,7 +225,6 @@ class AgentController:
         await self.delegate.set_agent_state_to(AgentState.RUNNING)
 
     async def _step(self):
-        logger.debug(f'[Agent Controller {self.id}] Entering step method')
         if self.get_agent_state() != AgentState.RUNNING:
             await asyncio.sleep(1)
             return
