@@ -85,7 +85,7 @@
     "lint-staged": "^15.2.5",
     "postcss": "^8.4.38",
     "prettier": "^3.3.1",
-    "tailwindcss": "^3.4.2",
+    "tailwindcss": "^3.4.4",
     "typescript": "^5.4.5",
     "vite-tsconfig-paths": "^4.3.2",
     "vitest": "^1.6.0"
