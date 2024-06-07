@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 from typing import Callable, Optional, Type
 
@@ -10,7 +11,7 @@ from opendevin.core.config import args, get_llm_config_arg
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import AgentState
 from opendevin.events import EventSource, EventStream, EventStreamSubscriber
-from opendevin.events.action import ChangeAgentStateAction, MessageAction
+from opendevin.events.action import MessageAction
 from opendevin.events.event import Event
 from opendevin.events.observation import AgentStateChangedObservation
 from opendevin.llm.llm import LLM
@@ -34,6 +35,7 @@ async def main(
     exit_on_message: bool = False,
     fake_user_response_fn: Optional[Callable[[Optional[State]], str]] = None,
     sandbox: Optional[Sandbox] = None,
+    runtime_tools_config: Optional[dict] = None,
 ) -> Optional[State]:
     """Main coroutine to run the agent controller with task input flexibility.
     It's only used when you launch opendevin backend directly via cmdline.
@@ -86,16 +88,29 @@ async def main(
     controller = AgentController(
         agent=agent,
         max_iterations=args.max_iterations,
+        max_budget_per_task=args.max_budget_per_task,
         max_chars=args.max_chars,
         event_stream=event_stream,
     )
     runtime = ServerRuntime(event_stream=event_stream, sandbox=sandbox)
     runtime.init_sandbox_plugins(controller.agent.sandbox_plugins)
+    runtime.init_runtime_tools(
+        controller.agent.runtime_tools,
+        is_async=False,
+        runtime_tools_config=runtime_tools_config,
+    )
+
+    # browser eval specific
+    # TODO: move to a better place
+    if runtime.browser and runtime.browser.eval_dir:
+        logger.info(f'Evaluation directory: {runtime.browser.eval_dir}')
+        with open(
+            os.path.join(runtime.browser.eval_dir, 'goal.txt'), 'r', encoding='utf-8'
+        ) as f:
+            task = f.read()
+            logger.info(f'Dynamic Eval task: {task}')
 
     await event_stream.add_event(MessageAction(content=task), EventSource.USER)
-    await event_stream.add_event(
-        ChangeAgentStateAction(agent_state=AgentState.RUNNING), EventSource.USER
-    )
 
     async def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):

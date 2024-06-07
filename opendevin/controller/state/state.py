@@ -16,6 +16,13 @@ from opendevin.events.observation import (
 )
 from opendevin.storage import get_file_store
 
+RESUMABLE_STATES = [
+    AgentState.RUNNING,
+    AgentState.PAUSED,
+    AgentState.AWAITING_USER_INPUT,
+    AgentState.FINISHED,
+]
+
 
 @dataclass
 class State:
@@ -31,7 +38,10 @@ class State:
     outputs: dict = field(default_factory=dict)
     error: str | None = None
     agent_state: AgentState = AgentState.LOADING
+    resume_state: AgentState | None = None
     metrics: Metrics = Metrics()
+    # root agent has level 0, and every delegate increases the level by one
+    delegate_level: int = 0
 
     def save_to_session(self, sid: str):
         fs = get_file_store()
@@ -53,6 +63,11 @@ class State:
         except Exception as e:
             logger.error(f'Failed to restore state from session: {e}')
             raise e
+        if state.agent_state in RESUMABLE_STATES:
+            state.resume_state = state.agent_state
+        else:
+            state.resume_state = None
+        state.agent_state = AgentState.LOADING
         return state
 
     def get_current_user_intent(self):

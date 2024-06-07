@@ -92,60 +92,60 @@ describe("SettingsForm", () => {
   });
 
   describe("onChange handlers", () => {
-    it("should call the onModelChange handler when the model changes", () => {
+    it("should call the onModelChange handler when the model changes", async () => {
       renderSettingsForm();
 
       const modelInput = screen.getByRole("combobox", { name: "model" });
-      act(() => {
-        userEvent.click(modelInput);
+      await act(async () => {
+        await userEvent.click(modelInput);
       });
 
       const model3 = screen.getByText("model3");
-      act(() => {
-        userEvent.click(model3);
+      await act(async () => {
+        await userEvent.click(model3);
       });
 
       expect(onModelChangeMock).toHaveBeenCalledWith("model3");
     });
 
-    it("should call the onAgentChange handler when the agent changes", () => {
+    it("should call the onAgentChange handler when the agent changes", async () => {
       renderSettingsForm();
 
       const agentInput = screen.getByRole("combobox", { name: "agent" });
-      act(() => {
-        userEvent.click(agentInput);
+      await act(async () => {
+        await userEvent.click(agentInput);
       });
 
       const agent3 = screen.getByText("agent3");
-      act(() => {
-        userEvent.click(agent3);
+      await act(async () => {
+        await userEvent.click(agent3);
       });
 
       expect(onAgentChangeMock).toHaveBeenCalledWith("agent3");
     });
 
-    it("should call the onLanguageChange handler when the language changes", () => {
+    it("should call the onLanguageChange handler when the language changes", async () => {
       renderSettingsForm();
 
       const languageInput = screen.getByRole("combobox", { name: "language" });
-      act(() => {
-        userEvent.click(languageInput);
+      await act(async () => {
+        await userEvent.click(languageInput);
       });
 
       const french = screen.getByText("Français");
-      act(() => {
-        userEvent.click(french);
+      await act(async () => {
+        await userEvent.click(french);
       });
 
       expect(onLanguageChangeMock).toHaveBeenCalledWith("Français");
     });
 
-    it("should call the onAPIKeyChange handler when the API key changes", () => {
+    it("should call the onAPIKeyChange handler when the API key changes", async () => {
       renderSettingsForm();
 
       const apiKeyInput = screen.getByTestId("apikey");
-      act(() => {
-        userEvent.type(apiKeyInput, "x");
+      await act(async () => {
+        await userEvent.type(apiKeyInput, "x");
       });
 
       expect(onAPIKeyChangeMock).toHaveBeenCalledWith("sk-...x");

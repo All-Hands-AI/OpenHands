@@ -26,7 +26,7 @@ docker run --rm \
     -e OD_SWE_BENCH=/swe_util/OD-SWE-bench \
     -e EVAL_DATA_DIR=/swe_util/eval_data \
     -w /swe_util \
-    ghcr.io/opendevin/eval-swe-bench:full-v1.0 \
+    ghcr.io/opendevin/eval-swe-bench:full-v1.2.1 \
     bash -c "./get_agent_report.sh --output-file /swe_bench_output/$FILE_NAME \
     --agent-name CodeActAgent \
     --dataset swe-bench-test-lite \

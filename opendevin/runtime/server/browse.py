@@ -1,11 +1,14 @@
 import os
 
+from opendevin.core.exceptions import BrowserUnavailableException
 from opendevin.core.schema import ActionType
 from opendevin.events.observation import BrowserOutputObservation
 from opendevin.runtime.browser.browser_env import BrowserEnv
 
 
-async def browse(action, browser: BrowserEnv) -> BrowserOutputObservation:  # type: ignore
+async def browse(action, browser: BrowserEnv | None) -> BrowserOutputObservation:
+    if browser is None:
+        raise BrowserUnavailableException()
     if action.action == ActionType.BROWSE:
         # legacy BrowseURLAction
         asked_url = action.url
@@ -27,6 +30,9 @@ async def browse(action, browser: BrowserEnv) -> BrowserOutputObservation:  # ty
             active_page_index=obs['active_page_index'],  # index of the active page
             dom_object=obs['dom_object'],  # DOM object
             axtree_object=obs['axtree_object'],  # accessibility tree object
+            extra_element_properties=obs[
+                'extra_element_properties'
+            ],  # extra element properties
             last_browser_action=obs['last_action'],  # last browser env action performed
             focused_element_bid=obs['focused_element_bid'],  # focused element bid
             screenshot=obs['screenshot'],  # base64-encoded screenshot, png

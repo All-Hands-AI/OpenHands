@@ -1,46 +1,30 @@
-from opendevin.runtime.plugins import SWEAgentCommandsRequirement
+from opendevin.runtime.plugins import AgentSkillsRequirement
 
-_SWEAGENT_BASH_DOCS = '\n'.join(
-    filter(
-        lambda x: not x.startswith('submit'),
-        SWEAgentCommandsRequirement.documentation.split('\n'),
-    )
-)
-# _SWEAGENT_BASH_DOCS content below:
-"""
-open <path> [<line_number>] - opens the file at the given path in the editor. If line_number is provided, the window will move to include that line
-goto <line_number> - moves the window to show <line_number>
-scroll_down - moves the window down {WINDOW} lines
-scroll_up - moves the window down {WINDOW} lines
-create <filename> - creates and opens a new file with the given name
-search_dir <search_term> [<dir>] - searches for search_term in all files in dir. If dir is not provided, searches in the current directory
-search_file <search_term> [<file>] - searches for search_term in file. If file is not provided, searches in the current open file
-find_file <file_name> [<dir>] - finds all files with the given name in dir. If dir is not provided, searches in the current directory
-edit <start_line>:<end_line> <<EOF
-<replacement_text>
-EOF - replaces lines <start_line> through <end_line> (inclusive) with the given text in the open file using heredoc syntax. Proper indentation is required. Python files will be syntax-checked before applying the edit.
-"""
+_AGENT_SKILLS_DOCS = AgentSkillsRequirement.documentation
 
 COMMAND_DOCS = (
-    '\nAdditional special commands available in <execute_bash>:\n'
-    f'{_SWEAGENT_BASH_DOCS}'
-    "Note: THE EDIT COMMAND REQUIRES PROPER INDENTATION."
+    '\nApart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:\n'
+    f'{_AGENT_SKILLS_DOCS}'
+    "Please note that THE `edit_file` FUNCTION REQUIRES PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run."
 )
 
-SYSTEM_PREFIX = """A chat between a curious user and an AI assistant. The assistant provides helpful and polite answers.
+# ======= SYSTEM MESSAGE =======
+MINIMAL_SYSTEM_PREFIX = """A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
 The assistant can use an interactive Python (Jupyter Notebook) environment, executing code with <execute_ipython>.
-For example:
 <execute_ipython>
 print("Hello World!")
 </execute_ipython>
-The assistant can execute bash commands with <execute_bash> and </execute_bash>.
+The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>.
 For example, list files with <execute_bash> ls </execute_bash>.
-The assistant can browse the Internet with <execute_browse> and </execute_browse>.
-For example, visit a URL with <execute_browse> goto("<URL>") </execute_browse>.
-The assistant should perform fewer actions at a time.
-The assistant can install Python packages using %pip in an IPython environment: <execute_ipython> %pip install [package] </execute_ipython>.
-If unintended/unauthorized commands get executed (e.g., while editing a file), the assistant should stop and ask the user for help. The assistant may provide the code without any commands in this case, such as <execute_ipython>, <execute_bash>, or <execute_browse>. Alternatively, the assistant may ask the user to source the code and edit the file themselves.
 """
+
+BROWSING_PREFIX = """The assistant can browse the Internet with <execute_browse> and </execute_browse>.
+For example, <execute_browse> Tell me the usa's president using google search </execute_browse>.
+Or <execute_browse> Tell me what is in http://example.com </execute_browse>.
+"""
+PIP_INSTALL_PREFIX = """The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them."""
+
+SYSTEM_PREFIX = MINIMAL_SYSTEM_PREFIX + BROWSING_PREFIX + PIP_INSTALL_PREFIX
 
 GITHUB_MESSAGE = """To interact with GitHub, use the $GITHUB_TOKEN environment variable.
 For example, to push a branch `my_branch` to the GitHub repo `owner/repo`:
@@ -48,20 +32,34 @@ For example, to push a branch `my_branch` to the GitHub repo `owner/repo`:
 If $GITHUB_TOKEN is not set, ask the user to set it."""
 
 SYSTEM_SUFFIX = """Responses should be concise.
-Include ONLY ONE <execute_ipython>, <execute_bash>, or <execute_browse> per response, unless more input is needed.
+The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
+Include ONLY ONE <execute_ipython>, <execute_bash>, or <execute_browse> per response, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
 IMPORTANT: Execute code using <execute_ipython>, <execute_bash>, or <execute_browse> whenever possible.
 """
 
+
+# ======= EXAMPLE MESSAGE =======
 EXAMPLES = """
 --- START OF EXAMPLE ---
 
 USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.
 
 ASSISTANT:
-I'll create a Python file `app.py`:
+Sure! Let me create a Python file `app.py`:
 <execute_ipython>
-CODE='''
-from flask import Flask
+create_file('app.py')
+</execute_ipython>
+
+USER:
+OBSERVATION:
+[File: /workspace/app.py (1 lines total)]
+1|
+[File app.py created.]
+
+ASSISTANT:
+Now I will write the Python code for starting a web server and save it to the file `app.py`:
+<execute_ipython>
+EDITED_CODE=\"\"\"from flask import Flask
 app = Flask(__name__)
 
 @app.route('/')
@@ -69,13 +67,23 @@ def index():
     return str(list(range(1, 10)))
 
 if __name__ == '__main__':
-    app.run(port=5000)
-'''
-with open('app.py', 'w') as f:
-    f.write(CODE)
+    app.run(port=5000)\"\"\"
+edit_file(start=1, end=1, content=EDITED_CODE)
 </execute_ipython>
 
-USER: [Code executed successfully]
+USER:
+OBSERVATION:
+1|from flask import Flask
+2|app = Flask(__name__)
+3|
+4|@app.route('/')
+5|def index():
+6|    numbers = list(range(1, 11))
+7|    return str(numbers)
+8|
+9|if __name__ == '__main__':
+10|    app.run(port=5000)
+[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 
 ASSISTANT: Now, I'll run the file:
 <execute_bash>
@@ -83,14 +91,14 @@ python3 app.py > server.log 2>&1 &
 </execute_bash>
 
 USER:
-Observation:
+OBSERVATION:
 [1] 121[1]+  Exit 1                  python3 app.py > server.log 2>&1
 ASSISTANT: Looks like the server is running with PID 121 then crashed. Let me check the server log:
 <execute_bash>
 cat server.log
 </execute_bash>
 USER:
-Observation:
+OBSERVATION:
 Traceback (most recent call last):
   File "/workspace/app.py", line 2, in <module>
     from flask import Flask
@@ -102,7 +110,7 @@ pip install flask
 </execute_bash>
 
 USER:
-Observation:
+OBSERVATION:
 Defaulting to user installation because normal site-packages is not writeable
 Collecting flask
   Using cached flask-3.0.3-py3-none-any.whl (101 kB)
@@ -125,7 +133,7 @@ python3 app.py > server.log 2>&1 &
 </execute_bash>
 
 USER:
-Observation:
+OBSERVATION:
 [1] 124
 ASSISTANT:
 Let me check the server log again:
@@ -134,7 +142,7 @@ cat server.log
 </execute_bash>
 
 USER:
-Observation:
+OBSERVATION:
 * Serving Flask app 'app'
  * Debug mode: off
 WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
@@ -146,11 +154,11 @@ The server is running on port 5000 with PID 124. You can access the list of numb
 
 ASSISTANT: Browsing the server's homepage:
 <execute_browse>
-goto("http://127.0.0.1:5000")
+Get the content on "http://127.0.0.1:5000"
 </execute_browse>
 
 USER:
-Observation:
+OBSERVATION:
 [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 ASSISTANT:
 The content of the server's homepage is "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]". If you have any further questions, feel free to ask!
@@ -162,50 +170,49 @@ kill 124
 </execute_bash>
 
 USER:
-Observation:
+OBSERVATION:
 [1]+  Terminated              python3 app.py > server.log 2>&1
 
 ASSISTANT:
 The server has been stopped. Let me open the Python file and modify it.
-<execute_bash>
-open app.py
-</execute_bash>
-USER:
-[File: /workspace/app.py (11 lines total)]
-1:
-2:from flask import Flask
-3:app = Flask(__name__)
-4:
-5:@app.route('/')
-6:def index():
-7:    numbers = list(range(1, 11))
-8:    return str(numbers)
-9:
-10:if __name__ == '__main__':
-11:    app.run(port=5000)
+<execute_ipython>
+open_file('app.py')
+</execute_ipython>
 
-ASSISTANT: Editing `app.py` to display numbers in a table:
-<execute_bash>
-edit 8:8 <<EOF
-    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in list(range(1, 11))]) + '</table>'
-EOF
-</execute_bash>
+USER:
+[File: /workspace/app.py (10 lines total)]
+1|from flask import Flask
+2|app = Flask(__name__)
+3|
+4|@app.route('/')
+5|def index():
+6|    numbers = list(range(1, 11))
+7|    return str(numbers)
+8|
+9|if __name__ == '__main__':
+10|    app.run(port=5000)
+
+
+ASSISTANT:
+I should edit the file to display the numbers in a table format. I should include correct indentation. Let me update the file:
+<execute_ipython>
+edit_file(start=7, end=7, content="    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'")
+</execute_ipython>
 
 USER:
 Observation:
-[File: /workspace/app.py (11 lines total)]
-1:
-2:from flask import Flask
-3:app = Flask(__name__)
-4:
-5:@app.route('/')
-6:def index():
-7:    numbers = list(range(1, 11))
-8:    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
-9:
-10:if __name__ == '__main__':
-11:    app.run(port=5000)
-File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.
+[File: /workspace/app.py (10 lines total after edit)]
+1|from flask import Flask
+2|app = Flask(__name__)
+3|
+4|@app.route('/')
+5|def index():
+6|    numbers = list(range(1, 11))
+7|    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
+8|
+9|if __name__ == '__main__':
+10|    app.run(port=5000)
+[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 
 ASSISTANT: Running the updated file:
 <execute_bash>

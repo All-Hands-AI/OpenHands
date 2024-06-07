@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from opendevin.core.config import AppConfig, config
+from opendevin.core.config import config
 from opendevin.runtime.docker.exec_box import DockerExecBox
 from opendevin.runtime.docker.local_box import LocalBox
 from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
@@ -18,14 +18,6 @@ def temp_dir(monkeypatch):
     with tempfile.TemporaryDirectory() as temp_dir:
         pathlib.Path().mkdir(parents=True, exist_ok=True)
         yield temp_dir
-
-    # make sure os.environ is clean
-    monkeypatch.delenv('RUN_AS_DEVIN', raising=False)
-    monkeypatch.delenv('SANDBOX_TYPE', raising=False)
-    monkeypatch.delenv('WORKSPACE_BASE', raising=False)
-
-    # make sure config is clean
-    AppConfig.reset()
 
 
 def test_env_vars(temp_dir):
@@ -135,6 +127,7 @@ def test_ssh_box_run_as_devin(temp_dir):
             exit_code, output = box.execute('ls -l test')
             assert exit_code == 0, 'The exit code should be 0.'
             assert 'foo.txt' in output, 'The output should contain the foo.txt file'
+            box.close()
 
 
 def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
@@ -155,6 +148,7 @@ def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
                 'The output should be the same as the input for '
                 + box.__class__.__name__
             )
+            box.close()
 
 
 def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
@@ -186,6 +180,7 @@ def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
             assert output.strip() == '/workspace/test', (
                 'The output should be /workspace for ' + box.__class__.__name__
             )
+            box.close()
 
 
 def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
@@ -201,6 +196,7 @@ def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
                 'The exit code should not be 0 for a failed command for '
                 + box.__class__.__name__
             )
+            box.close()
 
 
 def test_single_multiline_command(temp_dir):
@@ -225,6 +221,7 @@ def test_single_multiline_command(temp_dir):
                     'The output should be the same as the input for '
                     + box.__class__.__name__
                 )
+            box.close()
 
 
 def test_multiline_echo(temp_dir):
@@ -249,6 +246,7 @@ def test_multiline_echo(temp_dir):
                     'The output should be the same as the input for '
                     + box.__class__.__name__
                 )
+            box.close()
 
 
 def test_sandbox_whitespace(temp_dir):
@@ -259,7 +257,6 @@ def test_sandbox_whitespace(temp_dir):
         config, 'sandbox_type', new='ssh'
     ):
         for box in [DockerSSHBox(), DockerExecBox()]:
-            # test the ssh box
             exit_code, output = box.execute('echo -e "\\n\\n\\n"')
             assert exit_code == 0, (
                 'The exit code should be 0 for ' + box.__class__.__name__
@@ -274,6 +271,7 @@ def test_sandbox_whitespace(temp_dir):
                     'The output should be the same as the input for '
                     + box.__class__.__name__
                 )
+            box.close()
 
 
 def test_sandbox_jupyter_plugin(temp_dir):
@@ -285,8 +283,6 @@ def test_sandbox_jupyter_plugin(temp_dir):
     ):
         for box in [DockerSSHBox()]:
             box.init_plugins([JupyterRequirement])
-
-            # test the ssh box
             exit_code, output = box.execute('echo "print(1)" | execute_cli')
             print(output)
             assert exit_code == 0, (
@@ -296,3 +292,4 @@ def test_sandbox_jupyter_plugin(temp_dir):
                 'The output should be the same as the input for '
                 + box.__class__.__name__
             )
+            box.close()

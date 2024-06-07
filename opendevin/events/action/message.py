@@ -14,3 +14,8 @@ class MessageAction(Action):
     @property
     def message(self) -> str:
         return self.content
+
+    def __str__(self) -> str:
+        ret = f'**MessageAction** (source={self.source})\n'
+        ret += f'CONTENT: {self.content}'
+        return ret
