@@ -167,6 +167,7 @@ OBSERVATION:
 
 ASSISTANT:
 The content of the server's homepage is "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]". If you have any further questions, feel free to ask!
+
 USER: Now kill the server, make it display the numbers in a table format.
 
 ASSISTANT:
