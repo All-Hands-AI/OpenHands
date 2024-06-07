@@ -1,6 +1,6 @@
 # ToolQA Evaluation with OpenDevin
 
-This folder contains an evaluation harness we built on top of the original [ToolQA](https://github.com/night-chen/ToolQA) ([paper](https://arxiv.org/pdf/2306.13304)). 
+This folder contains an evaluation harness we built on top of the original [ToolQA](https://github.com/night-chen/ToolQA) ([paper](https://arxiv.org/pdf/2306.13304)).
 
 ## Setup Environment
 
@@ -26,14 +26,14 @@ LLM settings, as defined in your `config.toml`.
 `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
 to `CodeActAgent`.
 
-`eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. 
-By default, the script evaluates 1 instance. 
+`eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances.
+By default, the script evaluates 1 instance.
 
 `dataset`, the dataset from ToolQA to evaluate from. You could choose from `agenda`, `airbnb`, `coffee`, `dblp`, `flight`, `gsm8k`, `scirex`, `yelp` for dataset. The default is `coffee`.
 
 `hardness`, the hardness to evaluate. You could choose from `easy` and `hard`. The default is `easy`.
 
-`wolfram_alpha_appid` is an optional argument. When given `wolfram_alpha_appid`, the agent will be able to access Wolfram Alpha's APIs. 
+`wolfram_alpha_appid` is an optional argument. When given `wolfram_alpha_appid`, the agent will be able to access Wolfram Alpha's APIs.
 
 Note: in order to use `eval_limit`, you must also set `agent`; in order to use `dataset`, you must also set `eval_limit`; in order to use `hardness`, you must also set `dataset`.
 

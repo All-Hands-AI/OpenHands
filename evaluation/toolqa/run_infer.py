@@ -6,14 +6,11 @@ import os
 import pathlib
 import subprocess
 import time
-import requests
 from concurrent.futures import ProcessPoolExecutor
 
-import pandas as pd
-from datasets import load_dataset
 from tqdm import tqdm
+from utils import download_data, download_tools, encode_question, eval_answer, get_data
 
-import agenthub
 from opendevin.controller.state.state import State
 from opendevin.core.config import config, get_llm_config_arg, get_parser
 from opendevin.core.logger import get_console_handler
@@ -22,7 +19,6 @@ from opendevin.core.main import main
 from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
 
-from utils import download_data, download_tools, get_data, encode_question, eval_answer
 
 def cleanup():
     print('Cleaning up child processes...')
@@ -30,6 +26,7 @@ def cleanup():
         print(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
+
 
 def codeact_user_response(state: State) -> str:
     msg = (
@@ -51,8 +48,10 @@ def codeact_user_response(state: State) -> str:
             )
     return msg
 
+
 def monologue_user_response(state: State) -> str:
     raise NotImplementedError('MonologueAgent should never ask for user responses.')
+
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -62,6 +61,7 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 AGENT_CLS_TO_INST_SUFFIX = {
     'CodeActAgent': 'When you think you have completed the request, please run the following command: <execute_bash> exit </execute_bash>.\n'
 }
+
 
 def process_instance(task, agent_class, metadata, reset_logger: bool = True):
     # create process-specific workspace dir
@@ -77,9 +77,7 @@ def process_instance(task, agent_class, metadata, reset_logger: bool = True):
     answer = task['answer']
     if reset_logger:
         # Set up logger
-        log_file = os.path.join(
-            eval_output_dir, 'logs', f'instance_{qid}.log'
-        )
+        log_file = os.path.join(eval_output_dir, 'logs', f'instance_{qid}.log')
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
             logger.removeHandler(handler)
@@ -103,7 +101,7 @@ def process_instance(task, agent_class, metadata, reset_logger: bool = True):
     instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
-    #logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
+    # logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     state: State = asyncio.run(
@@ -127,23 +125,23 @@ def process_instance(task, agent_class, metadata, reset_logger: bool = True):
     # attempt to parse model_answer
     correct = eval_answer(str(model_answer_raw), str(answer))
     metrics = state.metrics.get() if state.metrics else None
-    logger.info(
-        f'Final message: {model_answer_raw} | Correctness: {correct}'
-    )
+    logger.info(f'Final message: {model_answer_raw} | Correctness: {correct}')
     # Save the output
     output = {
-        'qid': qid, 
-        'text': model_answer_raw, 
-        'correct': correct, 
-        'answer_id': 'None', 
-        'model_id': metadata['model_name'], 
+        'qid': qid,
+        'text': model_answer_raw,
+        'correct': correct,
+        'answer_id': 'None',
+        'model_id': metadata['model_name'],
         'metadata': metadata,
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
         ],
         'metrics': metrics,
-        'error': state.error if state and state.error else None,}
+        'error': state.error if state and state.error else None,
+    }
     return output
+
 
 if __name__ == '__main__':
     parser = get_parser()
@@ -151,19 +149,19 @@ if __name__ == '__main__':
         '--dataset',
         type=str,
         help='Which dataset to evaluate from ToolQA. ToolQA contains 8 datasets, namely agenda, airbnb, coffee, dblp, flight, gsm8k, scirex, yelp. For example, the default is --dataset flight.',
-        default='flight'
+        default='flight',
     )
     parser.add_argument(
         '--hardness',
         type=str,
         help='Which level of difficulty to evaluate from ToolQA. ToolQA contains 2 levels of hardness, namely easy and hard. For example, the default is --dataset easy.',
-        default='easy'
+        default='easy',
     )
     parser.add_argument(
         '--wolfram_alpha_appid',
         type=str,
         help='wolfram alpha appid to use for wolfram alpha related tests',
-        default='YOUR_WOLFRAMALPHA_APPID'
+        default='YOUR_WOLFRAMALPHA_APPID',
     )
     args, _ = parser.parse_known_args()
     if args.directory:
@@ -197,23 +195,40 @@ if __name__ == '__main__':
     )
     logger.info(f'Using evaluation output directory: {eval_output_dir}')
 
-    dataset = ""
-    hardness = ""
-    dataset_choices = ['agenda', 'airbnb', 'coffee', 'dblp', 'flight', 'gsm8k', 'scirex', 'yelp', 'genda']
-    if args.dataset in dataset_choices: dataset = args.dataset
-    else: raise ValueError('Please choose from agenda, airbnb, coffee, dblp, flight, gsm8k, scirex, yelp for dataset.')
-    if args.hardness == "easy": hardness = "easy"
-    elif args.hardness == "hard": hardness = "hard"
-    else: raise ValueError('Please choose from easy and hard for hardness.')
+    dataset = ''
+    hardness = ''
+    dataset_choices = [
+        'agenda',
+        'airbnb',
+        'coffee',
+        'dblp',
+        'flight',
+        'gsm8k',
+        'scirex',
+        'yelp',
+        'genda',
+    ]
+    if args.dataset in dataset_choices:
+        dataset = args.dataset
+    else:
+        raise ValueError(
+            'Please choose from agenda, airbnb, coffee, dblp, flight, gsm8k, scirex, yelp for dataset.'
+        )
+    if args.hardness == 'easy':
+        hardness = 'easy'
+    elif args.hardness == 'hard':
+        hardness = 'hard'
+    else:
+        raise ValueError('Please choose from easy and hard for hardness.')
 
     logger.info(f'Evaluating ToolQA {dataset} {hardness} test')
-    #workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
+    # workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
     workspace_mount_path = config.workspace_mount_path
     pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
     toolqa_test = get_data(dataset, hardness)
     toolqa_data_path = download_data(workspace_mount_path)
     toolqa_tool_path = download_tools(workspace_mount_path, args.wolfram_alpha_appid)
-    
+
     # TEST METADATA
     metadata = {
         'dataset': dataset,
@@ -229,14 +244,20 @@ if __name__ == '__main__':
         .strip(),
     }
     logger.info(f'Metadata: {metadata}')
-    with open(os.path.join(eval_output_dir, f"metadata_{dataset}_{hardness}.json"), 'w') as f:
+    with open(
+        os.path.join(eval_output_dir, f'metadata_{dataset}_{hardness}.json'), 'w'
+    ) as f:
         json.dump(metadata, f)
     # LIMIT EVALUATION
     eval_n_limit = args.eval_n_limit
     if eval_n_limit:
         toolqa_test = toolqa_test[:eval_n_limit]
-        logger.info(f'Limiting evaluation to a total of first {eval_n_limit} instances.')
-    output_file = os.path.join(eval_output_dir, f"output_{model_name}_{dataset}_{hardness}.jsonl")
+        logger.info(
+            f'Limiting evaluation to a total of first {eval_n_limit} instances.'
+        )
+    output_file = os.path.join(
+        eval_output_dir, f'output_{model_name}_{dataset}_{hardness}.jsonl'
+    )
     logger.info(f'Writing evaluation output to {output_file}')
     finished_task_ids = set()
     if os.path.exists(output_file):
@@ -257,9 +278,7 @@ if __name__ == '__main__':
     for task in toolqa_test:
         qid = task['qid']
         if qid in finished_task_ids:
-            logger.info(
-                f'Skipping instance {qid} as it is already finished.'
-            )
+            logger.info(f'Skipping instance {qid} as it is already finished.')
             continue
         new_toolqa_test.append(task)
     finished_task_number = len(finished_task_ids)
@@ -267,9 +286,10 @@ if __name__ == '__main__':
     logger.info(
         f'Finished instances: {finished_task_number}, Remaining instances: {len(toolqa_test)}'
     )
-    
+
     # =============================================
     pbar = tqdm(total=len(toolqa_test))
+
     # This function tracks the progress AND write the output to a JSONL file
     def update_progress(future):
         pbar.update(1)
@@ -281,7 +301,8 @@ if __name__ == '__main__':
         )
         output_fp.write(json.dumps(output) + '\n')
         output_fp.flush()
-        finished_task_ids.add(output["qid"])
+        finished_task_ids.add(output['qid'])
+
     # This sets the multi-processing
     num_workers = args.eval_num_workers
     logger.info(f'Using {num_workers} workers for evaluation.')
@@ -300,11 +321,14 @@ if __name__ == '__main__':
                     )
                     future.add_done_callback(update_progress)
                     futures.append(future)
-                except: continue
+                except Exception:
+                    continue
             # Wait for all futures to complete
             for future in futures:
-                try: future.result()
-                except: continue
+                try:
+                    future.result()
+                except Exception:
+                    continue
     except KeyboardInterrupt:
         logger.info('KeyboardInterrupt received. Cleaning up...')
         cleanup()
@@ -316,11 +340,14 @@ if __name__ == '__main__':
             data = json.loads(line)
             output.append(data)
             if data['qid'] in finished_task_ids:
-                if str(data['correct']).lower() == "true": total_correct += 1
+                if str(data['correct']).lower() == 'true':
+                    total_correct += 1
     # sort all output by question_id
     output = sorted(output, key=lambda x: x['qid'])
     with open(output_file, 'w') as f:
         for dat in output:
             f.write(json.dumps(dat) + '\n')
             f.flush()
-    logger.info(f'Evaluation finished for {dataset}-{hardness}. Total: {len(toolqa_test)+finished_task_number}; Correct: {total_correct}; Accuracy: {total_correct / (len(toolqa_test)+finished_task_number)}')
+    logger.info(
+        f'Evaluation finished for {dataset}-{hardness}. Total: {len(toolqa_test)+finished_task_number}; Correct: {total_correct}; Accuracy: {total_correct / (len(toolqa_test)+finished_task_number)}'
+    )
