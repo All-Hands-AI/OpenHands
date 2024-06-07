@@ -125,7 +125,6 @@ RootWebArea 'The Ultimate Answer', focused
 goto('http://localhost:8000')
 click("10")
 
-
 Here is an example with chain of thought of a valid action when clicking on a button:
 "
 In order to accomplish my goal I need to click on the button with bid 12

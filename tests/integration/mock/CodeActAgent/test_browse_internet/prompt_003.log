@@ -123,7 +123,6 @@ RootWebArea 'The Ultimate Answer', focused
 # Previous Actions
 goto('http://localhost:8000')
 
-
 Here is an example with chain of thought of a valid action when clicking on a button:
 "
 In order to accomplish my goal I need to click on the button with bid 12
