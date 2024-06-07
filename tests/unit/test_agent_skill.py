@@ -6,6 +6,7 @@ import docx
 import pytest
 
 from opendevin.runtime.plugins.agent_skills.agentskills import (
+    _print_window,
     create_file,
     edit_file,
     find_file,
@@ -274,6 +275,32 @@ def test_scroll_down_edge(tmp_path):
     assert result.split('\n') == expected.split('\n')
 
 
+def test_print_window_internal(tmp_path):
+    test_file_path = tmp_path / 'a.txt'
+    create_file(str(test_file_path))
+    open_file(str(test_file_path))
+    with open(test_file_path, 'w') as file:
+        for i in range(1, 101):
+            file.write(f'Line `{i}`\n')
+
+    # Define the parameters for the test
+    current_line = 50
+    window = 2
+
+    # Test _print_window especially with backticks
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            _print_window(str(test_file_path), current_line, window, return_str=False)
+        result = buf.getvalue()
+        expected = (
+            '(49 more lines above)\n'
+            '50|Line `50`\n'
+            '51|Line `51`\n'
+            '(49 more lines below)\n'
+        )
+        assert result == expected
+
+
 def test_edit_file(tmp_path):
     temp_file_path = tmp_path / 'a.txt'
     content = 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5'
@@ -322,6 +349,67 @@ def test_edit_file_from_scratch(tmp_path):
         lines = file.readlines()
     assert len(lines) == 1
     assert lines[0].rstrip() == 'REPLACE TEXT'
+
+
+def test_edit_file_from_scratch_multiline_with_backticks_and_second_edit(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    create_file(str(temp_file_path))
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            edit_file(
+                1,
+                1,
+                '`REPLACE TEXT1`\n`REPLACE TEXT2`\n`REPLACE TEXT3`',
+            )
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '1|`REPLACE TEXT1`\n'
+            '2|`REPLACE TEXT2`\n'
+            '3|`REPLACE TEXT3`\n'
+            '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+        )
+        assert result.split('\n') == expected.split('\n')
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 3
+    assert lines[0].rstrip() == '`REPLACE TEXT1`'
+    assert lines[1].rstrip() == '`REPLACE TEXT2`'
+    assert lines[2].rstrip() == '`REPLACE TEXT3`'
+
+    # Check that no backticks are escaped in the edit_file call
+    assert '\\`' not in result
+
+    # Perform a second edit
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            edit_file(
+                1,
+                3,
+                '`REPLACED TEXT1`\n`REPLACED TEXT2`\n`REPLACED TEXT3`',
+            )
+        second_result = buf.getvalue()
+        second_expected = (
+            f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '1|`REPLACED TEXT1`\n'
+            '2|`REPLACED TEXT2`\n'
+            '3|`REPLACED TEXT3`\n'
+            '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+        )
+        assert second_result.split('\n') == second_expected.split('\n')
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 3
+    assert lines[0].rstrip() == '`REPLACED TEXT1`'
+    assert lines[1].rstrip() == '`REPLACED TEXT2`'
+    assert lines[2].rstrip() == '`REPLACED TEXT3`'
+
+    # Check that no backticks are escaped in the second edit_file call
+    assert '\\`' not in second_result
 
 
 def test_edit_file_from_scratch_multiline(tmp_path):
