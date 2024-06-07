@@ -154,7 +154,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--hardness',
         type=str,
-        help='Which level of difficulty to evaluate from ToolQA. ToolQA contains 2 levels of hardness, namely easy and hard. For example, the default is --dataset easy.',
+        help='Which level of difficulty to evaluate from ToolQA. ToolQA contains 2 levels of hardness, namely easy and hard. For example, the default is --hardness easy.',
         default='easy',
     )
     parser.add_argument(
