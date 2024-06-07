@@ -153,7 +153,10 @@ Press CTRL+C to quit
 ASSISTANT:
 The server is running on port 5000 with PID 124. You can access the list of numbers by visiting http://127.0.0.1:5000. If you have any further questions, feel free to ask
 
-ASSISTANT: Browsing the server's homepage:
+USER: Now browse the newly started server's homepage and show me the content.
+
+ASSISTANT:
+Sure! Let me browse the server's homepage at http://127.0.0.1:5000:
 <execute_browse>
 Get the content on "http://127.0.0.1:5000"
 </execute_browse>
