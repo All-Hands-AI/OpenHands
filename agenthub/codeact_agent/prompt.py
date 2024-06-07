@@ -220,7 +220,9 @@ ASSISTANT: Running the updated file:
 python3 app.py > server.log 2>&1 &
 </execute_bash>
 
-USER: [Server running on http://127.0.0.1:5000]
+USER:
+Observation:
+[1] 126
 
 ASSISTANT: Visit http://127.0.0.1:5000 to see the table of numbers.
 
