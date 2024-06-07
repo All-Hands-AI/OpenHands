@@ -118,13 +118,12 @@ RootWebArea 'The Ultimate Answer', focused
 	[8] heading 'The Ultimate Answer'
 	[9] paragraph ''
 		StaticText 'Click the button to reveal the answer to life, the universe, and everything.'
-	[10] button 'Click me', focused
+	[10] button 'Click me', clickable, focused
 	StaticText 'The answer is OpenDevin is all you need!'
 
 # Previous Actions
 goto('http://localhost:8000')
 click("10")
-
 
 Here is an example with chain of thought of a valid action when clicking on a button:
 "
