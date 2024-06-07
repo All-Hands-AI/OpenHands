@@ -17,8 +17,7 @@ const messageActions = {
   [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
-    }
-    else {
+    } else {
       store.dispatch(addAssistantMessage(message.message));
     }
   },
