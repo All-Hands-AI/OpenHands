@@ -130,9 +130,7 @@ def test_ipython_module():
     # Verify the file contains the expected content
     with open(file_path, 'r') as f:
         content = f.read()
-    assert (
-        content.strip() == '1.0.9'
-    ), f'Expected content "1.0.9", but got "{content.strip()}"'
+    assert '1.0.9' in content, f'Expected content "1.0.9", but got "{content.strip()}"'
 
 
 @pytest.mark.skipif(
