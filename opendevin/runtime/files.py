@@ -34,6 +34,31 @@ def get_folder_structure(workdir: Path) -> WorkspaceFile:
     root = WorkspaceFile(name=workdir.name, children=[])
     for item in workdir.iterdir():
         if item.is_dir():
+            # Ignore special folders
+            if item.parts[-1] in (
+                '.git',
+                '.DS_Store',
+                '.svn',
+                '.hg',
+                '.idea',
+                '.vscode',
+                '.settings',
+                '.pytest_cache',
+                '__pycache__',
+                'node_modules',
+                'vendor',
+                'build',
+                'dist',
+                'bin',
+                'logs',
+                'log',
+                'tmp',
+                'temp',
+                'coverage',
+                'venv',
+                'env',
+            ):
+                continue
             dir = get_folder_structure(item)
             if dir.children:
                 root.children.append(dir)
