@@ -8,7 +8,7 @@ possible next action to accomplish your goal. Your answer will be interpreted
 and executed by a program, make sure to follow the formatting instructions.
 
 # Goal:
-Sure! Let me browse the server's homepage at http://localhost:8000 and find the ultimate answer to life.. I should start with: Get the content on "http://localhost:8000"
+visit http://localhost:8000, click the button, and tell me the ultimate answer to life
 
 # Action Space
 
@@ -118,12 +118,10 @@ RootWebArea 'The Ultimate Answer', focused
 	[8] heading 'The Ultimate Answer'
 	[9] paragraph ''
 		StaticText 'Click the button to reveal the answer to life, the universe, and everything.'
-	[10] button 'Click me', clickable, focused
-	StaticText 'The answer is OpenDevin is all you need!'
+	[10] button 'Click me', clickable
 
 # Previous Actions
 noop()
-click("10")
 
 Here is an example with chain of thought of a valid action when clicking on a button:
 "

@@ -22,8 +22,8 @@ BROWSING_PREFIX = """The assistant can browse the Internet by wrapping goto("<UR
 For example, you can browse a given URL by <execute_browse> goto("<URL>") </execute_browse>.
 """
 
-DELEGATE_PREFIX = """The assistant can delegate a subtask to other specialized agents if it cannot achieve it by itself, by wrapping the agent name with <execute_delegate> and </execute_delegate>. Available specialized agents include:
-- BrowsingAgent: BrowsingAgent can do interactive browsing, including scrolling, locating specific elements, and clicking on buttons.
+DELEGATE_PREFIX = """The assistant can delegate a subtask to other specialized agents if it cannot achieve it by itself, by wrapping the agent name and task with <execute_delegate> and </execute_delegate>. The assistant only does so when it cannot use other actions to achieve the task. Available specialized agents include:
+- BrowsingAgent: BrowsingAgent can do interactive browsing, including scrolling, locating specific elements, and clicking on buttons. For example,  you can delegate a task to BrowsingAgent by <execute_delegate> BrowsingAgent('Use Google to find out the current president of USA') </execute_delegate>
 """
 
 EXECUTE_REMINDER = """The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
@@ -287,8 +287,9 @@ button 'Show Numbers', clickable
 
 ASSISTANT:
 The numbers are hidden behind the button. There is no way I can see the answers unless I try clicking on that button. Since this is an interactive browsing activity, I should delegate to BrowsingAgent.
+I need to tell BrowsingAgent the task it should complete, by passing the task description as a parameter.
 <execute_delegate>
-BrowsingAgent
+BrowsingAgent('visit http://127.0.0.1:5000 and tell me the numbers')
 </execute_delegate>
 
 USER:

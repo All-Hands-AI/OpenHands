@@ -291,8 +291,20 @@ class CodeActAgent(Agent):
         ):
             # Delegate action was found
             thought = action_str.replace(delegate_command.group(0), '').strip()
-            delegate_agent = delegate_command.group(1).strip()
-            return AgentDelegateAction(agent=delegate_agent, inputs={'task': thought})
+            delegate_action = delegate_command.group(1).strip()
+            if '(' in delegate_action and ')' in delegate_action:
+                agent_match = re.search(r'(\w+)\(', delegate_action)
+                if agent_match:
+                    agent = agent_match.group(1)
+                task_match = re.search(r"\('([^']+)'\)", delegate_action)
+                if task_match:
+                    task = task_match.group(1)
+            else:
+                agent = delegate_action
+                task = thought
+            return AgentDelegateAction(
+                agent=agent, inputs={'task': task}, thought=thought
+            )
         else:
             # We assume the LLM is GOOD enough that when it returns pure natural language
             # it want to talk to the user

@@ -361,4 +361,33 @@ NOW, LET'S START!
 
 Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.
 
-ENVIRONMENT REMINDER: You have 9 turns left to complete the task.
+----------
+
+Sure! Let me browse the server's homepage at http://localhost:8000 and find the ultimate answer to life.
+<execute_browse>
+goto("http://localhost:8000")
+</execute_browse>
+
+----------
+
+OBSERVATION:
+#  The Ultimate Answer
+
+Click the button to reveal the answer to life, the universe, and everything.
+
+Click me
+
+
+----------
+
+I will delegate this task to the BrowsingAgent to click the button and reveal the answer.
+<execute_delegate>
+BrowsingAgent
+</execute_delegate>
+
+----------
+
+OBSERVATION:
+{'content': 'The ultimate answer to life is: OpenDevin is all you need!'}
+
+ENVIRONMENT REMINDER: You have 7 turns left to complete the task.

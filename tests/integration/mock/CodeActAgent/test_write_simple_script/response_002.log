@@ -1,4 +1,4 @@
-The shell script `hello.sh` has been created and made executable. Let's run it to ensure it works correctly.
+The shell script `hello.sh` has been created and made executable. Let me run it to ensure it works correctly.
 
 <execute_bash>
 ./hello.sh
