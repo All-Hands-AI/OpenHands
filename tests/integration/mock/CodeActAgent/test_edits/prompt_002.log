@@ -51,6 +51,12 @@ create_file(filename: str) -> None:
     Args:
     filename: str: The name of the file to create.
 
+append_file(content: str) -> None:
+    Append content to the open file.
+    It appends text `content` to the end of the open file. Remember, the file must be open before editing.
+    Args:
+    content: str: The content to append to the file.
+
 edit_file(start: int, end: int, content: str) -> None:
     Edit a file.
     It replaces lines `start` through `end` (inclusive) with the given text `content` in the open file. Remember, the file must be open before editing.
@@ -97,7 +103,7 @@ parse_pptx(file_path: str) -> None:
     Args:
     file_path: str: The path to the file to open.
 
-Please note that THE `edit_file` FUNCTION REQUIRES PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
+Please note that THE `edit_file` and `append_file` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
 
 The assistant's response should be concise.
 The assistant should include ONLY ONE <execute_ipython> or <execute_bash> or <execute_browse> in every one of the responses, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
@@ -318,7 +324,7 @@ Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ----------
 
-Sure! Let's start by opening the `bad.txt` file to see its content.
+To fix typos in `bad.txt`, I will first open the file and review the content. Let me open the file:
 <execute_ipython>
 open_file('bad.txt')
 </execute_ipython>
@@ -326,11 +332,25 @@ open_file('bad.txt')
 ----------
 
 OBSERVATION:
-[File: /workspace/bad.txt (4 lines total)]
-1|This is a stupid typoo.
-2|Really?
-3|No mor typos!
-4|Enjoy!
+---------------------------------------------------------------------------
+FileNotFoundError                         Traceback (most recent call last)
+Cell In[1], line 1
+----> 1 open_file('bad.txt')
 
+File /opendevin/plugins/agent_skills/agentskills.py:63, in update_pwd_decorator.<locals>.wrapper(*args, **kwargs)
+     61     os.chdir(jupyter_pwd)
+     62 try:
+---> 63     return func(*args, **kwargs)
+     64 finally:
+     65     os.chdir(old_pwd)
+
+File /opendevin/plugins/agent_skills/agentskills.py:148, in open_file(path, line_number)
+    146 global CURRENT_FILE, CURRENT_LINE
+    147 if not os.path.isfile(path):
+--> 148     raise FileNotFoundError(f'File {path} not found')
+    150 CURRENT_FILE = os.path.abspath(path)
+    151 with open(CURRENT_FILE) as file:
+
+FileNotFoundError: File bad.txt not found
 
 ENVIRONMENT REMINDER: You have 8 turns left to complete the task.

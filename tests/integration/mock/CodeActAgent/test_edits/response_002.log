@@ -1,7 +1,4 @@
-Let's correct the typos in the `bad.txt` file.
+It appears that the file `bad.txt` does not exist in the current working directory. Let me create the file for you and then we can proceed to fix the typos.
 
 <execute_ipython>
-edit_file(start=1, end=4, content="""This is a stupid typo.
-Really?
-No more typos!
-Enjoy!""")
+create_file('bad.txt')

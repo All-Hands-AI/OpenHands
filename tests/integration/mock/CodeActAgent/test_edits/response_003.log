@@ -1,1 +1,8 @@
-The typos in `bad.txt` have been corrected. If you need any further assistance, feel free to ask!
+ Now that the file `bad.txt` has been created, let's add some content with intentional typos for the purpose of this exercise. I will write a paragraph with common typos and then proceed to fix them.
+<execute_ipython>
+append_file("""Ths sntence cintains sevral typoz and gramatical errrors. Can you spot tham all? It's not as eazy as it seems.
+Some common words are misspelled, like 'their' insted of 'there', or 'your' insted of 'you're'.
+Additionally, punctuation might be missing or misused; for example, a semicolon might be used insted of a comma.
+Lastly, watch out for homophones, such as 'to', 'too', and 'two'; 'their', 'there', and 'they're'; 'its' and 'it's'.
+""")
+</execute_ipython>
