@@ -161,8 +161,8 @@ def test_browse_internet(http_server):
         last_observation, (BrowserOutputObservation, AgentDelegateObservation)
     )
     if isinstance(last_observation, BrowserOutputObservation):
+        assert 'OpenDevin is all you need!' in last_observation.content
+    elif isinstance(last_observation, AgentDelegateObservation):
         assert (
             'OpenDevin is all you need!' in last_observation.outputs['content']
         )  # TODO as an observation, this already has a content field
-    elif isinstance(last_observation, AgentDelegateObservation):
-        assert 'OpenDevin is all you need!' in last_observation.content
