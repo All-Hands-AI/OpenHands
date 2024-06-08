@@ -167,7 +167,9 @@ def process_instance(
     old_workspace_mount_path = config.workspace_mount_path
     old_workspace_base = config.workspace_base
     try:
-        workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
+        workspace_mount_path = os.path.join(
+            config.workspace_mount_path, '_eval_workspace'
+        )
         # create process-specific workspace dir
         # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
         # so that different agent don't interfere with each other.
@@ -246,7 +248,9 @@ def process_instance(
         state: State = asyncio.run(
             main(
                 instruction,
-                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
+                    agent_class
+                ),
             )
         )
 
@@ -279,14 +283,14 @@ def process_instance(
             'instruction': instruction,
             'metadata': metadata,
             'history': [
-                (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
+                (event_to_dict(action), event_to_dict(obs))
+                for action, obs in state.history
             ],
             'metrics': metrics,
             'error': state.error if state and state.error else None,
             'test_result': test_result,
         }
 
-        
     except Exception:
         logger.error('Process instance failed')
         raise
