@@ -65,18 +65,10 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
     })();
   }, []);
 
-  const handleModelChange = (newModel: string) => {
-    const [modelPrefix] = newModel.split("/");
-    const prevModelPrefix = settings.LLM_MODEL
-      ? settings.LLM_MODEL.split("/")[0]
-      : "";
-    const prevKey = localStorage.getItem(`API_KEY_${settings.LLM_MODEL}`);
-    // Only reset the API key if the model prefix has changed
-    const shouldResetAPIKey = modelPrefix !== prevModelPrefix;
+  const handleModelChange = (model: string) => {
     setSettings((prev) => ({
       ...prev,
-      LLM_MODEL: newModel,
-      LLM_API_KEY: shouldResetAPIKey ? "" : prevKey || "",
+      LLM_MODEL: model,
     }));
   };
 
