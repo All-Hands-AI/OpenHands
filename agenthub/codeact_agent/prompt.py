@@ -16,7 +16,7 @@ print("Hello World!")
 </execute_ipython>
 The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>.
 
-For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>. 
+For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
 Important, however: do not run interactive commands. You do not have access to stdin.
 Also, you need to handle commands that may run indefinitely and not return a result. For such cases, you should redirect the output to a file and run the command in the background to avoid blocking the execution.
 For example, to run a Python script that might run indefinitely without returning immediately, you can use the following format: <execute_bash> python3 app.py > server.log 2>&1 & </execute_bash>
