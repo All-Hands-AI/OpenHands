@@ -222,13 +222,13 @@ ASSISTANT:
 I should edit the file to include a button. When the button is clicked, it will display the numbers. I should include correct indentation. Let me update the file:
 <execute_ipython>
 EDITED_CODE = \"\"\"def index():
-return '''
-    <html>
-    <body>
-    <button onclick="window.location.href='/show_numbers'">Show Numbers</button>
-    </body>
-    </html>
-'''
+    return '''
+        <html>
+        <body>
+        <button onclick="window.location.href='/show_numbers'">Show Numbers</button>
+        </body>
+        </html>
+    '''
 
 @app.route('/show_numbers')
 def show_numbers():\"\"\"
@@ -249,7 +249,7 @@ Observation:
 9|    <button onclick="window.location.href='/show_numbers'">Show Numbers</button>
 10|    </body>
 11|    </html>
-12|'''
+12|    '''
 13|
 14|@app.route('/show_numbers')
 15|def show_numbers():
