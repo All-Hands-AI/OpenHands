@@ -221,7 +221,7 @@ class CodeActAgent(Agent):
         response = None
         # give it multiple chances to get a response if memory condense is enabled
         attempt = 0
-        while self.memory_condenser and not response and attempt < 10:
+        while not response and attempt < 10:
             try:
                 response = self.llm.completion(
                     messages=messages,
@@ -237,6 +237,10 @@ class CodeActAgent(Agent):
                     'Context window exceeded or token limit exceeded. Condensing memory, attempt %d',
                     attempt,
                 )
+
+                if not self.memory_condenser:
+                    raise
+
                 # Retry processing events with condensed memory
                 summary_action = self.memory_condenser.condense(state.history)
                 attempt += 1

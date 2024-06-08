@@ -10,7 +10,6 @@ from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     APIConnectionError,
-    ContextWindowExceededError,
     RateLimitError,
     ServiceUnavailableError,
 )
@@ -204,16 +203,12 @@ class LLM:
                 debug_message += message_separator + message['content']
             llm_prompt_logger.debug(debug_message)
 
-            try:
-                # call the completion function
-                resp = completion_unwrapped(*args, **kwargs)
+            # call the completion function
+            resp = completion_unwrapped(*args, **kwargs)
 
-                # log the response
-                message_back = resp['choices'][0]['message']['content']
-                llm_response_logger.debug(message_back)
-            except ContextWindowExceededError:
-                # TODO
-                raise
+            # log the response
+            message_back = resp['choices'][0]['message']['content']
+            llm_response_logger.debug(message_back)
 
             # post-process to log costs
             self._post_completion(resp)

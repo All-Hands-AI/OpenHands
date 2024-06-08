@@ -115,7 +115,7 @@ class AgentConfig(metaclass=Singleton):
     name: str = 'CodeActAgent'
     memory_enabled: bool = False
     memory_max_threads: int = 2
-    memory_condensation_enabled: bool = False
+    memory_condensation_enabled: bool = True
 
     def defaults_to_dict(self) -> dict:
         """

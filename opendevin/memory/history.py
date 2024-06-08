@@ -85,7 +85,7 @@ class ShortTermHistory(list[Event]):
             ) and not any(
                 # nor part of delegate events
                 # except for the delegate observation itself
-                delegate_start <= event.id < delegate_end
+                delegate_start < event.id < delegate_end
                 for delegate_start, delegate_end in self.delegates.keys()
             ):
                 yield event
