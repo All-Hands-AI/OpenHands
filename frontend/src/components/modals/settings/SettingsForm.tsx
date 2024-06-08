@@ -1,5 +1,5 @@
 import { Input, useDisclosure } from "@nextui-org/react";
-import React, { useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { AvailableLanguages } from "../../../i18n";
@@ -31,22 +31,9 @@ function SettingsForm({
 }: SettingsFormProps) {
   const { t } = useTranslation();
   const { isOpen: isVisible, onOpenChange: onVisibleChange } = useDisclosure();
-  const [inputName] = useState(
-    `apikey-${Math.random().toString(36).substr(2, 9)}`,
-  );
-  const handleAPIKeyInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { value } = e.target;
-    onAPIKeyChange(value);
-    const hiddenInput = document.getElementById(
-      "hidden-api-key",
-    ) as HTMLInputElement;
-    if (hiddenInput) {
-      hiddenInput.value = value;
-    }
-  };
 
   return (
-    <form autoComplete="off">
+    <>
       <AutocompleteCombobox
         ariaLabel="agent"
         items={agents.map((agent) => ({ value: agent, label: agent }))}
@@ -74,9 +61,9 @@ function SettingsForm({
         placeholder={t(I18nKey.SETTINGS$API_KEY_PLACEHOLDER)}
         type={isVisible ? "text" : "password"}
         value={settings.LLM_API_KEY || ""}
-        onChange={handleAPIKeyInput}
-        name={inputName}
-        autoComplete="new-password"
+        onChange={(e) => {
+          onAPIKeyChange(e.target.value);
+        }}
         endContent={
           <button
             className="focus:outline-none"
@@ -91,12 +78,6 @@ function SettingsForm({
           </button>
         }
       />
-      <input
-        type="hidden"
-        id="hidden-api-key"
-        name="hidden-api-key"
-        value={settings.LLM_API_KEY || ""}
-      />
       <AutocompleteCombobox
         ariaLabel="language"
         items={AvailableLanguages}
@@ -105,7 +86,7 @@ function SettingsForm({
         tooltip={t(I18nKey.SETTINGS$LANGUAGE_TOOLTIP)}
         disabled={disabled}
       />
-    </form>
+    </>
   );
 }
 
