@@ -1,0 +1,7 @@
+ I will now proceed to correct the typos in `bad.txt`. I will fix the misspelled words, punctuation errors, and homophone usage.
+<execute_ipython>
+edit_file(start=1, end=9, content="""This sentence contains several typos and grammatical errors. Can you spot them all? It's not as easy as it seems.
+Some common words are misspelled, like 'their' instead of 'there', or 'your' instead of 'you're'.
+Additionally, punctuation might be missing or misused; for example, a semicolon might be used instead of a comma.
+Lastly, watch out for homophones, such as 'to', 'too', and 'two'; 'their', 'there', and 'they're'; 'its' and 'it's'.
+""")
