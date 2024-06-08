@@ -11,7 +11,6 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
-from opendevin.core.config import config
 from opendevin.core.exceptions import (
     ContextWindowLimitExceededError,
     TokenLimitExceedError,
@@ -183,9 +182,7 @@ class CodeActAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm)
-        self.memory_condenser = (
-            MemoryCondenser(llm) if config.agent.memory_condensation_enabled else None
-        )
+        self.memory_condenser = MemoryCondenser(llm)
         self.reset()
 
     def reset(self) -> None:
