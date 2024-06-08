@@ -143,7 +143,9 @@ def process_instance(
 
     # Copy the database to the workspace
     db_root = os.path.join(
-        config.workspace_base, 'evaluation_bird/dev/dev_databases', instance.db_id
+        config.sandbox.workspace_base,
+        'evaluation_bird/dev/dev_databases',
+        instance.db_id,
     )
     target_path = os.path.join(workspace_mount_path, f'{instance.db_id}')
     if not os.path.exists(target_path):
@@ -262,7 +264,7 @@ def download_bird():
     """
     Downloads and extracts the bird dataset from a specified URL into a local directory.
     """
-    dataset_path = os.path.join(config.workspace_base, 'evaluation_bird')
+    dataset_path = os.path.join(config.sandbox.workspace_base, 'evaluation_bird')
     devset_path = os.path.join(dataset_path, 'dev')
     if not os.path.exists(dataset_path):
         logger.info(

@@ -221,8 +221,8 @@ if __name__ == '__main__':
     )
     args, _ = parser.parse_known_args()
     if args.directory:
-        config.workspace_base = os.path.abspath(args.directory)
-        logger.info(f'Setting workspace base to {config.workspace_base}')
+        config.sandbox.workspace_base = os.path.abspath(args.directory)
+        logger.info(f'Setting workspace base to {config.sandbox.workspace_base}')
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
     level = args.level

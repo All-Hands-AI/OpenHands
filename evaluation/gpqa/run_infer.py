@@ -165,7 +165,7 @@ def process_instance(
     Process a single instance from the dataset
     """
     old_workspace_mount_path = config.workspace_mount_path
-    old_workspace_base = config.workspace_base
+    old_workspace_base = config.sandbox.workspace_base
     try:
         workspace_mount_path = os.path.join(
             config.workspace_mount_path, '_eval_workspace'
@@ -179,7 +179,7 @@ def process_instance(
             pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
         # reset workspace to config
-        config.workspace_base = workspace_mount_path
+        config.sandbox.workspace_base = workspace_mount_path
         config.workspace_mount_path = workspace_mount_path
 
         # workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
@@ -296,7 +296,7 @@ def process_instance(
         raise
     finally:
         config.workspace_mount_path = old_workspace_mount_path
-        config.workspace_base = old_workspace_base
+        config.sandbox.workspace_base = old_workspace_base
     return output
 
 

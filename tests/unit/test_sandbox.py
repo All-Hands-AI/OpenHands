@@ -104,7 +104,7 @@ def test_ssh_box_run_as_devin(temp_dir):
             )
             assert output.strip() == 'total 0'
 
-            assert config.workspace_base == temp_dir
+            assert config.sandbox.workspace_base == temp_dir
             exit_code, output = box.execute('ls -l')
             assert exit_code == 0, 'The exit code should be 0.'
             assert output.strip() == 'total 0'

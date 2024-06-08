@@ -24,10 +24,10 @@ class E2BBox(Sandbox):
     def __init__(
         self,
         template: str = 'open-devin',
-        timeout: int = config.sandbox_timeout,
+        timeout: int = config.sandbox.sandbox_timeout,
     ):
         self.sandbox = E2BSandbox(
-            api_key=config.e2b_api_key,
+            api_key=config.sandbox.e2b_api_key,
             template=template,
             # It's possible to stream stdout and stderr from sandbox and from each process
             on_stderr=lambda x: logger.info(f'E2B sandbox stderr: {x}'),

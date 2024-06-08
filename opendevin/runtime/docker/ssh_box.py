@@ -200,7 +200,7 @@ class DockerSSHBox(Sandbox):
     def __init__(
         self,
         container_image: str | None = None,
-        timeout: int = config.sandbox_timeout,
+        timeout: int = config.sandbox.sandbox_timeout,
         sid: str | None = None,
     ):
         logger.info(
@@ -216,7 +216,7 @@ class DockerSSHBox(Sandbox):
             )
             raise ex
 
-        if config.persist_sandbox:
+        if config.sandbox.persist_sandbox:
             if not self.run_as_devin:
                 raise Exception(
                     'Persistent sandbox is currently designed for opendevin user only. Please set run_as_devin=True in your config.toml'
@@ -230,13 +230,13 @@ class DockerSSHBox(Sandbox):
         self.container_name = self.container_name_prefix + self.instance_id
 
         # set up random user password
-        if config.persist_sandbox:
-            if not config.ssh_password:
+        if config.sandbox.persist_sandbox:
+            if not config.sandbox.ssh_password:
                 raise Exception(
                     'Please add ssh_password to your config.toml or add -e SSH_PASSWORD to your docker run command'
                 )
-            self._ssh_password = config.ssh_password
-            self._ssh_port = config.ssh_port
+            self._ssh_password = config.sandbox.ssh_password
+            self._ssh_port = config.sandbox.ssh_port
         else:
             self._ssh_password = str(uuid.uuid4())
             self._ssh_port = find_available_tcp_port()
@@ -246,7 +246,7 @@ class DockerSSHBox(Sandbox):
         except docker.errors.NotFound:
             self.is_initial_session = True
             logger.info('Detected initial session.')
-        if not config.persist_sandbox or self.is_initial_session:
+        if not config.sandbox.persist_sandbox or self.is_initial_session:
             logger.info('Creating new Docker container')
             n_tries = 5
             while n_tries > 0:
@@ -388,7 +388,7 @@ class DockerSSHBox(Sandbox):
             )
             hostname = self.ssh_hostname
             username = 'opendevin' if self.run_as_devin else 'root'
-            if config.persist_sandbox:
+            if config.sandbox.persist_sandbox:
                 password_msg = 'using your SSH password'
             else:
                 password_msg = f"using the password '{self._ssh_password}'"
@@ -636,15 +636,15 @@ class DockerSSHBox(Sandbox):
 
     @property
     def user_id(self):
-        return config.sandbox_user_id
+        return config.sandbox.sandbox_user_id
 
     @property
     def sandbox_user_id(self):
-        return config.sandbox_user_id
+        return config.sandbox.sandbox_user_id
 
     @property
     def run_as_devin(self):
-        return config.run_as_devin
+        return config.sandbox.run_as_devin
 
     @property
     def sandbox_workspace_dir(self):
@@ -652,11 +652,11 @@ class DockerSSHBox(Sandbox):
 
     @property
     def ssh_hostname(self):
-        return config.ssh_hostname
+        return config.sandbox.ssh_hostname
 
     @property
     def use_host_network(self):
-        return config.use_host_network
+        return config.sandbox.use_host_network
 
     def is_container_running(self):
         try:
@@ -748,7 +748,7 @@ class DockerSSHBox(Sandbox):
             try:
                 if (
                     container.name.startswith(self.container_name)
-                    and not config.persist_sandbox
+                    and not config.sandbox.persist_sandbox
                 ):
                     # only remove the container we created
                     # otherwise all other containers with the same prefix will be removed

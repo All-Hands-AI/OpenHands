@@ -128,18 +128,43 @@ class SandboxConfig(metaclass=Singleton):
     Configuration for the sandbox.
 
     Attributes:
+        sandbox_container_image: The container image to use for the sandbox.
+        sandbox_type: The type of sandbox to use. Options are: ssh, exec, e2b, local.
+        workspace_base: The base path for the workspace. Defaults to ./workspace as an absolute path.
+        workspace_mount_path: The path to mount the workspace. This is set to the workspace base by default.
+        workspace_mount_path_in_sandbox: The path to mount the workspace in the sandbox. Defaults to /workspace.
+        persist_sandbox: Whether to persist the sandbox.
+        initialize_plugins: Whether to initialize plugins.
+        run_as_devin: Whether to run as devin.
+        sandbox_user_id: The user ID for the sandbox.
+        sandbox_timeout: The timeout for the sandbox.
+        ssh_port: The SSH port.
+        ssh_hostname: The SSH hostname.
+        ssh_password: The SSH password.
+        e2b_api_key: The E2B API key.
+        use_host_network: Whether to use the host network.
 
     """
 
-    name: str = 'CodeActAgent'
-    workspace_base: str = os.path.join(os.getcwd(), 'workspace')
-    workspace_mount_path: str | None = None
-    workspace_mount_path_in_sandbox: str = '/workspace'
     sandbox_container_image: str = 'ghcr.io/opendevin/sandbox' + (
         f':{os.getenv("OPEN_DEVIN_BUILD_VERSION")}'
         if os.getenv('OPEN_DEVIN_BUILD_VERSION')
         else ':main'
     )
+    sandbox_type: str = 'ssh'  # Can be 'ssh', 'exec', or 'e2b'
+    workspace_base: str = os.path.join(os.getcwd(), 'workspace')
+    workspace_mount_path: str | None = None
+    workspace_mount_path_in_sandbox: str = '/workspace'
+    persist_sandbox: bool = False
+    initialize_plugins: bool = True
+    run_as_devin: bool = True
+    sandbox_user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
+    sandbox_timeout: int = 120
+    ssh_port: int = 63710
+    ssh_hostname: str = 'localhost'
+    ssh_password: str | None = None
+    e2b_api_key: str = ''
+    use_host_network: bool = False
 
     def defaults_to_dict(self) -> dict:
         """
@@ -159,25 +184,15 @@ class AppConfig(metaclass=Singleton):
     Attributes:
         llm: The LLM configuration.
         agent: The agent configuration.
+        sandbox: The sandbox configuration.
         runtime: The runtime environment.
         file_store: The file store to use.
         file_store_path: The path to the file store.
-        workspace_base: The base path for the workspace. Defaults to ./workspace as an absolute path.
-        workspace_mount_path: The path to mount the workspace. This is set to the workspace base by default.
-        workspace_mount_path_in_sandbox: The path to mount the workspace in the sandbox. Defaults to /workspace.
         workspace_mount_rewrite: The path to rewrite the workspace mount path to.
         cache_dir: The path to the cache directory. Defaults to /tmp/cache.
-        sandbox_container_image: The container image to use for the sandbox.
-        run_as_devin: Whether to run as devin.
         max_iterations: The maximum number of iterations.
         max_budget_per_task: The maximum budget allowed per task, beyond which the agent will stop.
-        e2b_api_key: The E2B API key.
-        sandbox_type: The type of sandbox to use. Options are: ssh, exec, e2b, local.
-        use_host_network: Whether to use the host network.
-        ssh_hostname: The SSH hostname.
         disable_color: Whether to disable color. For terminals that don't support color.
-        sandbox_user_id: The user ID for the sandbox.
-        sandbox_timeout: The timeout for the sandbox.
         github_token: The GitHub token.
         debug: Whether to enable debugging.
         enable_auto_lint: Whether to enable auto linting. This is False by default, for regular runs of the app. For evaluation, please set this to True.
@@ -191,21 +206,9 @@ class AppConfig(metaclass=Singleton):
     file_store_path: str = '/tmp/file_store'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
-
-    run_as_devin: bool = True
     max_iterations: int = 100
     max_budget_per_task: float | None = None
-    e2b_api_key: str = ''
-    sandbox_type: str = 'ssh'  # Can be 'ssh', 'exec', or 'e2b'
-    use_host_network: bool = False
-    ssh_hostname: str = 'localhost'
     disable_color: bool = False
-    sandbox_user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
-    sandbox_timeout: int = 120
-    initialize_plugins: bool = True
-    persist_sandbox: bool = False
-    ssh_port: int = 63710
-    ssh_password: str | None = None
     github_token: str | None = None
     jwt_secret: str = uuid.uuid4().hex
     debug: bool = False
@@ -406,7 +409,7 @@ def finalize_config(config: AppConfig):
     config.sandbox.workspace_base = os.path.abspath(config.sandbox.workspace_base)
 
     # In local there is no sandbox, the workspace will have the same pwd as the host
-    if config.sandbox_type == 'local':
+    if config.sandbox.sandbox_type == 'local':
         config.sandbox.workspace_mount_path_in_sandbox = (
             config.sandbox.workspace_mount_path
         )
@@ -420,7 +423,7 @@ def finalize_config(config: AppConfig):
     if config.llm.embedding_base_url is None:
         config.llm.embedding_base_url = config.llm.base_url
 
-    if config.use_host_network and platform.system() == 'Darwin':
+    if config.sandbox.use_host_network and platform.system() == 'Darwin':
         logger.warning(
             'Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. '
             'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'

@@ -137,7 +137,7 @@ def process_instance(
     reset_logger: bool = True,
 ):
     old_workspace_mount_path = config.workspace_mount_path
-    old_workspace_base = config.workspace_base
+    old_workspace_base = config.sandbox.workspace_base
 
     try:
         workspace_mount_path = os.path.join(
@@ -151,7 +151,7 @@ def process_instance(
             pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
         # reset workspace to config
-        config.workspace_base = workspace_mount_path
+        config.sandbox.workspace_base = workspace_mount_path
         config.workspace_mount_path = workspace_mount_path
 
         # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
@@ -268,7 +268,7 @@ def process_instance(
         raise
     finally:
         config.workspace_mount_path = old_workspace_mount_path
-        config.workspace_base = old_workspace_base
+        config.sandbox.workspace_base = old_workspace_base
 
     # Close the sandbox
     sandbox.close()
@@ -293,8 +293,8 @@ if __name__ == '__main__':
 
     args, _ = parser.parse_known_args()
     if args.directory:
-        config.workspace_base = os.path.abspath(args.directory)
-        print(f'Setting workspace base to {config.workspace_base}')
+        config.sandbox.workspace_base = os.path.abspath(args.directory)
+        print(f'Setting workspace base to {config.sandbox.workspace_base}')
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenDevin's repo
 

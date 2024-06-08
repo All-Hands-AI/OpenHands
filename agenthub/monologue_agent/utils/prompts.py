@@ -196,7 +196,7 @@ def get_request_action_prompt(
             )
         bg_commands_message += '\nYou can end any process by sending a `kill` action with the numerical `command_id` above.'
 
-    user = 'opendevin' if config.run_as_devin else 'root'
+    user = 'opendevin' if config.sandbox.run_as_devin else 'root'
 
     monologue = thoughts + recent_events
 
@@ -206,7 +206,7 @@ def get_request_action_prompt(
         'background_commands': bg_commands_message,
         'hint': hint,
         'user': user,
-        'timeout': config.sandbox_timeout,
+        'timeout': config.sandbox.sandbox_timeout,
         'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.sandbox.workspace_mount_path_in_sandbox,
     }
 

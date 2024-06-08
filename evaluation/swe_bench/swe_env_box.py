@@ -83,11 +83,11 @@ class SWEBenchSSHBox(DockerSSHBox):
             workspace_dir_name = f"{instance['repo']}__{instance['version']}".replace(
                 '/', '__'
             )
-        old_workspace_base = config.workspace_base
+        old_workspace_base = config.sandbox.workspace_base
         old_workspace_mount_path = config.workspace_mount_path
 
         try:
-            config.workspace_base = workspace_mount_path
+            config.sandbox.workspace_base = workspace_mount_path
             config.workspace_mount_path = workspace_mount_path
 
             # linting python after editing helps LLM fix indentations
@@ -126,7 +126,7 @@ class SWEBenchSSHBox(DockerSSHBox):
             raise
         finally:
             # restore workspace_base and workspace_mount_path
-            config.workspace_base = old_workspace_base
+            config.sandbox.workspace_base = old_workspace_base
             config.workspace_mount_path = old_workspace_mount_path
         return sandbox
 
