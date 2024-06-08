@@ -24,9 +24,9 @@ function BaseModal({
   onOpenChange,
   title,
   isDismissable = true,
-  subtitle,
-  actions,
-  children,
+  subtitle = undefined,
+  actions = [],
+  children = null,
 }: BaseModalProps) {
   return (
     <Modal
@@ -39,7 +39,7 @@ function BaseModal({
       size="sm"
       className="bg-neutral-900 rounded-lg"
     >
-      <ModalContent className="max-w-[24rem] p-[40px]">
+      <ModalContent className="max-w-[30rem] p-[40px]">
         {(closeModal) => (
           <>
             <ModalHeader className="flex flex-col p-0">
@@ -59,12 +59,5 @@ function BaseModal({
     </Modal>
   );
 }
-
-BaseModal.defaultProps = {
-  isDismissable: true,
-  subtitle: undefined,
-  actions: [],
-  children: null,
-};
 
 export default BaseModal;

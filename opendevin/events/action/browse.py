@@ -29,6 +29,7 @@ class BrowseURLAction(Action):
 class BrowseInteractiveAction(Action):
     browser_actions: str
     thought: str = ''
+    browsergym_send_msg_to_user: str = ''
     action: str = ActionType.BROWSE_INTERACTIVE
     runnable: ClassVar[bool] = True
 

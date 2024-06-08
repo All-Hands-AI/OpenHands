@@ -1,7 +1,6 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { act } from "react-dom/test-utils";
 import BaseModal from "./BaseModal";
 
 describe("BaseModal", () => {
@@ -27,7 +26,7 @@ describe("BaseModal", () => {
     expect(screen.getByText("Subtitle")).toBeInTheDocument();
   });
 
-  it("should render actions", () => {
+  it("should render actions", async () => {
     const onPrimaryClickMock = vi.fn();
     const onSecondaryClickMock = vi.fn();
 
@@ -53,18 +52,18 @@ describe("BaseModal", () => {
     expect(screen.getByText("Save")).toBeInTheDocument();
     expect(screen.getByText("Cancel")).toBeInTheDocument();
 
-    act(() => {
-      userEvent.click(screen.getByText("Save"));
+    await act(async () => {
+      await userEvent.click(screen.getByText("Save"));
     });
     expect(onPrimaryClickMock).toHaveBeenCalledTimes(1);
 
-    act(() => {
-      userEvent.click(screen.getByText("Cancel"));
+    await act(async () => {
+      await userEvent.click(screen.getByText("Cancel"));
     });
     expect(onSecondaryClickMock).toHaveBeenCalledTimes(1);
   });
 
-  it("should close the modal after an action is performed", () => {
+  it("should close the modal after an action is performed", async () => {
     const onOpenChangeMock = vi.fn();
     render(
       <BaseModal
@@ -81,8 +80,8 @@ describe("BaseModal", () => {
       />,
     );
 
-    act(() => {
-      userEvent.click(screen.getByText("Save"));
+    await act(async () => {
+      await userEvent.click(screen.getByText("Save"));
     });
     expect(onOpenChangeMock).toHaveBeenCalledTimes(1);
   });

@@ -46,7 +46,7 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     # Use `monkeypatch` to set environment variables for this specific test
     monkeypatch.setenv('WORKSPACE_BASE', '/repos/opendevin/workspace')
     monkeypatch.setenv('LLM_API_KEY', 'sk-proj-rgMV0...')
-    monkeypatch.setenv('LLM_MODEL', 'gpt-3.5-turbo')
+    monkeypatch.setenv('LLM_MODEL', 'gpt-4o')
     monkeypatch.setenv('AGENT_MEMORY_MAX_THREADS', '4')
     monkeypatch.setenv('AGENT_MEMORY_ENABLED', 'True')
     monkeypatch.setenv('AGENT', 'CodeActAgent')
@@ -57,7 +57,7 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     assert config.workspace_base == '/repos/opendevin/workspace'
     assert isinstance(config.llm, LLMConfig)
     assert config.llm.api_key == 'sk-proj-rgMV0...'
-    assert config.llm.model == 'gpt-3.5-turbo'
+    assert config.llm.model == 'gpt-4o'
     assert isinstance(config.agent, AgentConfig)
     assert isinstance(config.agent.memory_max_threads, int)
     assert config.agent.memory_max_threads == 4
@@ -156,10 +156,14 @@ def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
 
     load_from_toml(default_config)
     load_from_env(default_config, os.environ)
+    default_config.ssh_password = None  # prevent leak
+    default_config.jwt_secret = None  # prevent leak
     assert default_config.llm.model == 'gpt-5-turbo-1106'
     assert default_config.llm.custom_llm_provider is None
-    assert default_config.github_token is None
-    assert default_config.llm.api_key is None
+    if default_config.github_token is not None:  # prevent leak
+        pytest.fail('GitHub token should be empty')
+    if default_config.llm.api_key is not None:  # prevent leak
+        pytest.fail('LLM API key should be empty.')
 
 
 def test_finalize_config(default_config):
@@ -232,6 +236,8 @@ def test_api_keys_repr_str():
         'api_key',
         'aws_access_key_id',
         'aws_secret_access_key',
+        'input_cost_per_token',
+        'output_cost_per_token',
     ]
     for attr_name in dir(LLMConfig):
         if (

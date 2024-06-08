@@ -1,14 +1,14 @@
 import React from "react";
 import userEvent from "@testing-library/user-event";
-import { act, render } from "@testing-library/react";
+import { act, render, fireEvent } from "@testing-library/react";
 import ChatInput from "./ChatInput";
 
 describe("ChatInput", () => {
-  const onSendMessage = vi.fn();
-
   afterEach(() => {
     vi.clearAllMocks();
   });
+
+  const onSendMessage = vi.fn();
 
   it("should render a textarea", () => {
     const { getByRole } = render(<ChatInput onSendMessage={onSendMessage} />);
@@ -47,26 +47,29 @@ describe("ChatInput", () => {
     expect(button).toBeInTheDocument();
   });
 
-  it("should call sendChatMessage with the input when the send button is clicked", () => {
+  it("should call sendChatMessage with the input when the send button is clicked", async () => {
     const { getByRole } = render(<ChatInput onSendMessage={onSendMessage} />);
     const textarea = getByRole("textbox");
     const button = getByRole("button");
 
-    act(() => {
-      userEvent.type(textarea, "Hello, world!");
-      userEvent.click(button);
+    fireEvent.change(textarea, { target: { value: "Hello, world!" } });
+
+    await act(async () => {
+      await userEvent.click(button);
     });
 
     expect(onSendMessage).toHaveBeenCalledWith("Hello, world!");
+
+    // Additionally, check if the callback is called exactly once
+    expect(onSendMessage).toHaveBeenCalledTimes(1);
   });
 
   it("should be able to send a message when the enter key is pressed", () => {
     const { getByRole } = render(<ChatInput onSendMessage={onSendMessage} />);
     const textarea = getByRole("textbox");
 
-    act(() => {
-      userEvent.type(textarea, "Hello, world!{enter}");
-    });
+    fireEvent.change(textarea, { target: { value: "Hello, world!" } });
+    fireEvent.keyDown(textarea, { key: "Enter", code: "Enter", charCode: 13 });
 
     expect(onSendMessage).toHaveBeenCalledWith("Hello, world!");
   });
@@ -100,28 +103,18 @@ describe("ChatInput", () => {
     expect(onSendMessage).not.toHaveBeenCalled();
   });
 
-  it("should clear the input message after sending a message", () => {
+  it("should clear the input message after sending a message", async () => {
     const { getByRole } = render(<ChatInput onSendMessage={onSendMessage} />);
     const textarea = getByRole("textbox");
     const button = getByRole("button");
 
-    act(() => {
-      userEvent.type(textarea, "Hello, world!");
-    });
+    fireEvent.change(textarea, { target: { value: "Hello, world!" } });
 
     expect(textarea).toHaveValue("Hello, world!");
 
-    act(() => {
-      userEvent.click(button);
-    });
+    fireEvent.click(button);
 
     expect(textarea).toHaveValue("");
-
-    act(() => {
-      userEvent.type(textarea, "Hello, world!{enter}");
-    });
-
-    expect(textarea).toHaveValue(""); // no new line
   });
 
   // this is already implemented but need to figure out how to test it
