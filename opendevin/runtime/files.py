@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Any
 
 
@@ -20,48 +19,3 @@ class WorkspaceFile:
             'name': self.name,
             'children': [child.to_dict() for child in self.children],
         }
-
-
-def get_folder_structure(workdir: Path) -> WorkspaceFile:
-    """Gets the folder structure of a directory.
-
-    Args:
-        workdir: The directory path.
-
-    Returns:
-        The folder structure.
-    """
-    root = WorkspaceFile(name=workdir.name, children=[])
-    for item in workdir.iterdir():
-        if item.is_dir():
-            # Ignore special folders
-            if item.parts[-1] in (
-                '.git',
-                '.DS_Store',
-                '.svn',
-                '.hg',
-                '.idea',
-                '.vscode',
-                '.settings',
-                '.pytest_cache',
-                '__pycache__',
-                'node_modules',
-                'vendor',
-                'build',
-                'dist',
-                'bin',
-                'logs',
-                'log',
-                'tmp',
-                'temp',
-                'coverage',
-                'venv',
-                'env',
-            ):
-                continue
-            dir = get_folder_structure(item)
-            if dir.children:
-                root.children.append(dir)
-        else:
-            root.children.append(WorkspaceFile(name=item.name, children=[]))
-    return root
