@@ -130,7 +130,7 @@ class DockerExecBox(Sandbox):
         # if it is too long, the user may have to wait for a unnecessary long time
         self.timeout = timeout
         self.container_image = (
-            config.sandbox_container_image
+            config.sandbox.sandbox_container_image
             if container_image is None
             else container_image
         )
@@ -313,7 +313,7 @@ class DockerExecBox(Sandbox):
 
         try:
             # start the container
-            mount_dir = config.workspace_mount_path
+            mount_dir = config.sandbox.workspace_mount_path
             self.container = self.docker_client.containers.run(
                 self.container_image,
                 command='tail -f /dev/null',
@@ -370,7 +370,7 @@ class DockerExecBox(Sandbox):
 
     @property
     def sandbox_workspace_dir(self):
-        return config.workspace_mount_path_in_sandbox
+        return config.sandbox.workspace_mount_path_in_sandbox
 
 
 if __name__ == '__main__':

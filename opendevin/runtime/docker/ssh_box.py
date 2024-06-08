@@ -226,7 +226,7 @@ class DockerSSHBox(Sandbox):
             self.instance_id = (sid or '') + str(uuid.uuid4())
 
         self.timeout = timeout
-        self.container_image = container_image or config.sandbox_container_image
+        self.container_image = container_image or config.sandbox.sandbox_container_image
         self.container_name = self.container_name_prefix + self.instance_id
 
         # set up random user password
@@ -648,7 +648,7 @@ class DockerSSHBox(Sandbox):
 
     @property
     def sandbox_workspace_dir(self):
-        return config.workspace_mount_path_in_sandbox
+        return config.sandbox.workspace_mount_path_in_sandbox
 
     @property
     def ssh_hostname(self):
@@ -670,7 +670,7 @@ class DockerSSHBox(Sandbox):
 
     @property
     def volumes(self):
-        mount_dir = config.workspace_mount_path
+        mount_dir = config.sandbox.workspace_mount_path
         logger.info(f'Mounting workspace directory: {mount_dir}')
         return {
             mount_dir: {'bind': self.sandbox_workspace_dir, 'mode': 'rw'},

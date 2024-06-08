@@ -123,6 +123,35 @@ class AgentConfig(metaclass=Singleton):
 
 
 @dataclass
+class SandboxConfig(metaclass=Singleton):
+    """
+    Configuration for the sandbox.
+
+    Attributes:
+
+    """
+
+    name: str = 'CodeActAgent'
+    workspace_base: str = os.path.join(os.getcwd(), 'workspace')
+    workspace_mount_path: str | None = None
+    workspace_mount_path_in_sandbox: str = '/workspace'
+    sandbox_container_image: str = 'ghcr.io/opendevin/sandbox' + (
+        f':{os.getenv("OPEN_DEVIN_BUILD_VERSION")}'
+        if os.getenv('OPEN_DEVIN_BUILD_VERSION')
+        else ':main'
+    )
+
+    def defaults_to_dict(self) -> dict:
+        """
+        Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional.
+        """
+        dict = {}
+        for f in fields(self):
+            dict[f.name] = get_field_info(f)
+        return dict
+
+
+@dataclass
 class AppConfig(metaclass=Singleton):
     """
     Configuration for the app.
@@ -156,19 +185,13 @@ class AppConfig(metaclass=Singleton):
 
     llm: LLMConfig = field(default_factory=LLMConfig)
     agent: AgentConfig = field(default_factory=AgentConfig)
+    sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     runtime: str = 'server'
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
-    workspace_base: str = os.path.join(os.getcwd(), 'workspace')
-    workspace_mount_path: str | None = None
-    workspace_mount_path_in_sandbox: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
-    sandbox_container_image: str = 'ghcr.io/opendevin/sandbox' + (
-        f':{os.getenv("OPEN_DEVIN_BUILD_VERSION")}'
-        if os.getenv('OPEN_DEVIN_BUILD_VERSION')
-        else ':main'
-    )
+
     run_as_devin: bool = True
     max_iterations: int = 100
     max_budget_per_task: float | None = None
@@ -376,19 +399,23 @@ def finalize_config(config: AppConfig):
     """
 
     # Set workspace_mount_path if not set by the user
-    if config.workspace_mount_path is None:
-        config.workspace_mount_path = os.path.abspath(config.workspace_base)
-    config.workspace_base = os.path.abspath(config.workspace_base)
+    if config.sandbox.workspace_mount_path is None:
+        config.sandbox.workspace_mount_path = os.path.abspath(
+            config.sandbox.workspace_base
+        )
+    config.sandbox.workspace_base = os.path.abspath(config.sandbox.workspace_base)
 
     # In local there is no sandbox, the workspace will have the same pwd as the host
     if config.sandbox_type == 'local':
-        config.workspace_mount_path_in_sandbox = config.workspace_mount_path
+        config.sandbox.workspace_mount_path_in_sandbox = (
+            config.sandbox.workspace_mount_path
+        )
 
     if config.workspace_mount_rewrite:  # and not config.workspace_mount_path:
         # TODO why do we need to check if workspace_mount_path is None?
-        base = config.workspace_base or os.getcwd()
+        base = config.sandbox.workspace_base or os.getcwd()
         parts = config.workspace_mount_rewrite.split(':')
-        config.workspace_mount_path = base.replace(parts[0], parts[1])
+        config.sandbox.workspace_mount_path = base.replace(parts[0], parts[1])
 
     if config.llm.embedding_base_url is None:
         config.llm.embedding_base_url = config.llm.base_url
@@ -556,8 +583,8 @@ def parse_arguments():
     parser = get_parser()
     args, _ = parser.parse_known_args()
     if args.directory:
-        config.workspace_base = os.path.abspath(args.directory)
-        print(f'Setting workspace base to {config.workspace_base}')
+        config.sandbox.workspace_base = os.path.abspath(args.directory)
+        print(f'Setting workspace base to {config.sandbox.workspace_base}')
     return args
 
 

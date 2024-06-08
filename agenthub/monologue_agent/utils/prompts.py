@@ -207,7 +207,7 @@ def get_request_action_prompt(
         'hint': hint,
         'user': user,
         'timeout': config.sandbox_timeout,
-        'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.workspace_mount_path_in_sandbox,
+        'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.sandbox.workspace_mount_path_in_sandbox,
     }
 
 

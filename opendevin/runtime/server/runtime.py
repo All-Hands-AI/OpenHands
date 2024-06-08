@@ -33,7 +33,7 @@ class ServerRuntime(Runtime):
         sandbox: Sandbox | None = None,
     ):
         super().__init__(event_stream, sid, sandbox)
-        self.file_store = LocalFileStore(config.workspace_base)
+        self.file_store = LocalFileStore(config.sandbox.workspace_base)
 
     async def run(self, action: CmdRunAction) -> Observation:
         return self._run_command(action.command, background=action.background)
