@@ -18,13 +18,27 @@ The assistant can execute bash commands on behalf of the user by wrapping them w
 For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
 """
 
-BROWSING_PREFIX = """The assistant can browse the Internet with commands on behalf of the user by wrapping them with <execute_browse> and </execute_browse>.
-For example, you can browse a given URL by <execute_browse> Tell me the usa's president using google search </execute_browse>.
-The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
+BROWSING_PREFIX = """The assistant can browse the Internet by wrapping goto("<URL>") command with <execute_browse> and </execute_browse>.
+For example, you can browse a given URL by <execute_browse> goto("<URL>") </execute_browse>.
 """
-PIP_INSTALL_PREFIX = """The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them."""
 
-SYSTEM_PREFIX = MINIMAL_SYSTEM_PREFIX + BROWSING_PREFIX + PIP_INSTALL_PREFIX
+DELEGATE_PREFIX = """The assistant can delegate a subtask to other specialized agents if it cannot achieve it by itself, by wrapping the agent name with <execute_delegate> and </execute_delegate>. Available specialized agents include:
+- BrowsingAgent: BrowsingAgent can do interactive browsing, including scrolling, locating specific elements, and clicking on buttons.
+"""
+
+EXECUTE_REMINDER = """The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
+"""
+
+PIP_INSTALL_PREFIX = """The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them.
+"""
+
+SYSTEM_PREFIX = (
+    MINIMAL_SYSTEM_PREFIX
+    + BROWSING_PREFIX
+    + DELEGATE_PREFIX
+    + EXECUTE_REMINDER
+    + PIP_INSTALL_PREFIX
+)
 
 GITHUB_MESSAGE = """To do any activities on GitHub, the assistant should use the token in the $GITHUB_TOKEN environment variable.
 For instance, to push a local branch `my_branch` to the github repo `owner/repo`, the assistant can use the following four commands:
@@ -32,8 +46,8 @@ For instance, to push a local branch `my_branch` to the github repo `owner/repo`
 If the assistant require access to GitHub but $GITHUB_TOKEN is not set, ask the user to set it."""
 
 SYSTEM_SUFFIX = """The assistant's response should be concise.
-The assistant should include ONLY ONE <execute_ipython> or <execute_bash> or <execute_browse> in every one of the responses, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
-IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> or <execute_browse> instead of providing it.
+The assistant should include ONLY ONE <execute_ipython> or <execute_bash> or <execute_browse> or <execute_delegate> in every one of the responses, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
+IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> or <execute_browse> or <execute_delegate> instead of providing it.
 """
 
 
@@ -163,7 +177,7 @@ USER: Now browse the newly started server's homepage and show me the content.
 ASSISTANT:
 Sure! Let me browse the server's homepage at http://127.0.0.1:5000:
 <execute_browse>
-Get the content on "http://127.0.0.1:5000"
+goto("http://127.0.0.1:5000")
 </execute_browse>
 
 USER:
@@ -173,7 +187,7 @@ OBSERVATION:
 ASSISTANT:
 The content of the server's homepage is "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]". If you have any further questions, feel free to ask!
 
-USER: Now kill the server, make it display the numbers in a table format.
+USER: Now kill the server, make it display the numbers only if a button is clicked.
 
 ASSISTANT:
 Sure! Let me stop the server first:
@@ -205,9 +219,20 @@ USER:
 10|    app.run(port=5000)
 
 ASSISTANT:
-I should edit the file to display the numbers in a table format. I should include correct indentation. Let me update the file:
+I should edit the file to include a button. When the button is clicked, it will display the numbers. I should include correct indentation. Let me update the file:
 <execute_ipython>
-edit_file(start=7, end=7, content="    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'")
+EDITED_CODE = \"\"\"def index():
+return '''
+    <html>
+    <body>
+    <button onclick="window.location.href='/show_numbers'">Show Numbers</button>
+    </body>
+    </html>
+'''
+
+@app.route('/show_numbers')
+def show_numbers():\"\"\"
+edit_file(start=5, end=5, content=EDITED_CODE)
 </execute_ipython>
 
 USER:
@@ -218,11 +243,21 @@ Observation:
 3|
 4|@app.route('/')
 5|def index():
-6|    numbers = list(range(1, 11))
-7|    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
-8|
-9|if __name__ == '__main__':
-10|    app.run(port=5000)
+6|    return '''
+7|    <html>
+8|    <body>
+9|    <button onclick="window.location.href='/show_numbers'">Show Numbers</button>
+10|    </body>
+11|    </html>
+12|'''
+13|
+14|@app.route('/show_numbers')
+15|def show_numbers():
+16|    numbers = list(range(1, 11))
+17|    return str(numbers)
+18|
+19|if __name__ == '__main__':
+20|    app.run(port=5000)
 [File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 
 ASSISTANT:
@@ -236,7 +271,32 @@ Observation:
 [1] 126
 
 ASSISTANT:
-The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Free free to let me know if you have any further requests!
+The server is running on port 5000 with PID 126. You can access the list of numbers by visiting http://127.0.0.1:5000. Free free to let me know if you have any further requests!
+
+USER: Now browse the newly started server's homepage and show me the numbers.
+
+ASSISTANT:
+Sure! Let me browse the server's homepage at http://127.0.0.1:5000:
+<execute_browse>
+goto("http://127.0.0.1:5000")
+</execute_browse>
+
+USER:
+OBSERVATION:
+button 'Show Numbers', clickable
+
+ASSISTANT:
+The numbers are hidden behind the button. There is no way I can see the answers unless I try clicking on that button. Since this is an interactive browsing activity, I should delegate to BrowsingAgent.
+<execute_delegate>
+BrowsingAgent
+</execute_delegate>
+
+USER:
+OBSERVATION:
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+ASSISTANT:
+The numbers on the server's homepage are "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]". If you have any further questions, feel free to ask!
 
 --- END OF EXAMPLE ---
 """
@@ -245,5 +305,6 @@ INVALID_INPUT_MESSAGE = (
     "I don't understand your input. \n"
     'If you want to execute a bash command, please use <execute_bash> YOUR_COMMAND_HERE </execute_bash>.\n'
     'If you want to execute a block of Python code, please use <execute_ipython> YOUR_COMMAND_HERE </execute_ipython>.\n'
-    'If you want to browse the Internet, please use <execute_browse> YOUR_COMMAND_HERE </execute_browse>.\n'
+    'If you want to browse the Internet, please use <execute_browse> goto("URL_HERE") </execute_browse>.\n'
+    'If you want to delegate to another agent, please use <execute_delegate> AGENT_NAME_HERE </execute_delegate>\n'
 )

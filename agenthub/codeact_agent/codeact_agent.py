@@ -37,7 +37,7 @@ ENABLE_GITHUB = True
 
 def parse_response(response) -> str:
     action = response.choices[0].message.content
-    for lang in ['bash', 'ipython', 'browse']:
+    for lang in ['bash', 'ipython', 'browse', 'delegate']:
         if f'<execute_{lang}>' in action and f'</execute_{lang}>' not in action:
             action += f'</execute_{lang}>'
     return action
@@ -50,6 +50,10 @@ def action_to_str(action: Action) -> str:
         return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
     elif isinstance(action, BrowseInteractiveAction):
         return f'{action.thought}\n<execute_browse>\n{action.browser_actions}\n</execute_browse>'
+    elif isinstance(action, AgentDelegateAction):
+        return (
+            f'{action.thought}\n<execute_delegate>\n{action.agent}\n</execute_delegate>'
+        )
     elif isinstance(action, MessageAction):
         return action.content
     return ''
@@ -61,6 +65,7 @@ def get_action_message(action: Action) -> dict[str, str] | None:
         or isinstance(action, CmdRunAction)
         or isinstance(action, IPythonRunCellAction)
         or isinstance(action, MessageAction)
+        or isinstance(action, AgentDelegateAction)
     ):
         return {
             'role': 'user' if action.source == 'user' else 'assistant',
@@ -205,6 +210,7 @@ class CodeActAgent(Agent):
         - CmdRunAction(command) - bash command to run
         - IPythonRunCellAction(code) - IPython code to run
         - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
+        - BrowseInteractiveAction(browsergym_command) - BrowserGym commands to run
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
@@ -236,6 +242,7 @@ class CodeActAgent(Agent):
                 '</execute_ipython>',
                 '</execute_bash>',
                 '</execute_browse>',
+                '</execute_delegate>',
             ],
             temperature=0.0,
         )
@@ -248,7 +255,7 @@ class CodeActAgent(Agent):
         if finish_command := re.search(r'<finish>.*</finish>', action_str, re.DOTALL):
             thought = action_str.replace(finish_command.group(0), '').strip()
             return AgentFinishAction(thought=thought)
-        if bash_command := re.search(
+        elif bash_command := re.search(
             r'<execute_bash>(.*?)</execute_bash>', action_str, re.DOTALL
         ):
             # remove the command from the action string to get thought
@@ -273,10 +280,19 @@ class CodeActAgent(Agent):
         elif browse_command := re.search(
             r'<execute_browse>(.*)</execute_browse>', action_str, re.DOTALL
         ):
-            thought = action_str.replace(browse_command.group(0), '').strip()
+            # BrowserGym actions was found
             browse_actions = browse_command.group(1).strip()
-            task = f'{thought}. I should start with: {browse_actions}'
-            return AgentDelegateAction(agent='BrowsingAgent', inputs={'task': task})
+            thought = action_str.replace(browse_command.group(0), '').strip()
+            return BrowseInteractiveAction(
+                browser_actions=browse_actions, thought=thought
+            )
+        elif delegate_command := re.search(
+            r'<execute_delegate>(.*)</execute_delegate>', action_str, re.DOTALL
+        ):
+            # Delegate action was found
+            thought = action_str.replace(delegate_command.group(0), '').strip()
+            delegate_agent = delegate_command.group(1).strip()
+            return AgentDelegateAction(agent=delegate_agent, inputs={'task': thought})
         else:
             # We assume the LLM is GOOD enough that when it returns pure natural language
             # it want to talk to the user

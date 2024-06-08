@@ -213,7 +213,9 @@ class AgentController:
             num_of_chars=self.state.num_of_chars,
             delegate_level=self.state.delegate_level + 1,
         )
-        logger.info(f'[Agent Controller {self.id}]: start delegate')
+        logger.info(
+            f'[Agent Controller {self.id}]: start delegating to agent {action.agent}'
+        )
         self.delegate = AgentController(
             sid=self.id + '-delegate',
             agent=agent,
