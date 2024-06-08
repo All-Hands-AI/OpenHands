@@ -29,7 +29,8 @@ class State:
     root_task: RootTask = field(default_factory=RootTask)
     iteration: int = 0
     max_iterations: int = 100
-    global_max_iterations: int = 100
+    max_iterations_per_task: int = 100
+    global_iteration = 0
     # number of characters we have sent to and received from LLM so far for current task
     num_of_chars: int = 0
     background_commands_obs: list[CmdOutputObservation] = field(default_factory=list)

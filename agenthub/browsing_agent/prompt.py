@@ -14,13 +14,10 @@ from browsergym.core.action.python import PythonActionSet
 
 from opendevin.runtime.browser.browser_env import BrowserEnv
 
-from .utils import ParseError, parse_html_tags_raise
-
-
-# Setup logging configuration
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
+from .utils import (
+    ParseError,
+    parse_html_tags_raise,
+)
 
 @dataclass
 class Flags:

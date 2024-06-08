@@ -16,7 +16,7 @@ class SimplifiedEnv:
         'For example: The answer to the question is <solution> 42 </solution>. \n'
     )
 
-    def __init__(self, agent_state: State, task: Task, task_config: Dict[str, int], global_max_iterations: int):
+    def __init__(self, agent_state: State, task: Task, task_config: Dict[str, int], max_iterations_per_task: int):
         self.agent_state = agent_state
         self.task = task
 
@@ -34,7 +34,7 @@ class SimplifiedEnv:
         self.task_state = TaskState(agent_action_count=agent_action_count)
 
         self.task_config = task_config
-        self.global_max_iterations = global_max_iterations
+        self.max_iterations_per_task = max_iterations_per_task
 
     def step(self, lm_message: str):
         observation = self.handle_propose_solution(lm_message)
@@ -142,4 +142,4 @@ class SimplifiedEnv:
             self.task_state.terminate_reason = 'max_iterations'
 
     def get_effective_max_iterations(self):
-        return min(self.task_config['max_iterations'], self.global_max_iterations)
+        return min(self.task_config['max_iterations'], self.max_iterations_per_task)

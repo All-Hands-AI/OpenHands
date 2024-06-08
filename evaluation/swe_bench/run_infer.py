@@ -304,7 +304,7 @@ IMPORTANT TIPS:
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
-    max_iterations = min(args.max_iterations, args.global_max_iterations)
+    max_iterations = min(args.max_iterations, config.max_iterations_per_task)
     state: State = asyncio.run(
         main(
             instruction,
@@ -388,7 +388,7 @@ if __name__ == '__main__':
         agent_class in AGENT_CLS_TO_FAKE_USER_RESPONSE_FN
     ), f'Unsupported agent class: {agent_class}'
     model_name = config.llm.model.split('/')[-1]
-    max_iterations = min(args.max_iterations, args.global_max_iterations) 
+    max_iterations = min(args.max_iterations, config.max_iterations_per_task) 
     eval_note = ''
     if args.eval_note is not None:
         eval_note += '_N_' + args.eval_note

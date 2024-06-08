@@ -50,7 +50,7 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     monkeypatch.setenv('AGENT_MEMORY_MAX_THREADS', '4')
     monkeypatch.setenv('AGENT_MEMORY_ENABLED', 'True')
     monkeypatch.setenv('AGENT', 'CodeActAgent')
-    monkeypatch.setenv('GLOBAL_MAX_ITERATIONS', '50')
+    monkeypatch.setenv('MAX_ITERATIONS_PER_TASK', '50')
 
     config = AppConfig()
     load_from_env(config, os.environ)
@@ -62,7 +62,7 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     assert isinstance(config.agent, AgentConfig)
     assert isinstance(config.agent.memory_max_threads, int)
     assert config.agent.memory_max_threads == 4
-    assert config.global_max_iterations == 50
+    assert config.max_iterations_per_task == 50
 
 
 def test_load_from_old_style_env(monkeypatch, default_config):
@@ -94,7 +94,7 @@ memory_enabled = true
 
 [core]
 workspace_base = "/opt/files2/workspace"
-global_max_iterations = 150
+max_iterations_per_task = 150
 """)
 
     load_from_toml(default_config, temp_toml_file)
@@ -104,7 +104,7 @@ global_max_iterations = 150
     assert default_config.agent.name == 'TestAgent'
     assert default_config.agent.memory_enabled is True
     assert default_config.workspace_base == '/opt/files2/workspace'
-    assert default_config.global_max_iterations == 150
+    assert default_config.max_iterations_per_task == 150
 
 
 def test_env_overrides_toml(monkeypatch, default_config, temp_toml_file):
@@ -119,13 +119,13 @@ api_key = "toml-api-key"
 workspace_base = "/opt/files3/workspace"
 sandbox_type = "local"
 disable_color = true
-global_max_iterations = 75
+max_iterations_per_task = 75
 """)
 
     monkeypatch.setenv('LLM_API_KEY', 'env-api-key')
     monkeypatch.setenv('WORKSPACE_BASE', '/opt/files4/workspace')
     monkeypatch.setenv('SANDBOX_TYPE', 'ssh')
-    monkeypatch.setenv('GLOBAL_MAX_ITERATIONS', '200')
+    monkeypatch.setenv('MAX_ITERATIONS_PER_TASK', '200')
 
     load_from_toml(default_config, temp_toml_file)
     load_from_env(default_config, os.environ)
@@ -136,7 +136,7 @@ global_max_iterations = 75
     assert default_config.workspace_base == '/opt/files4/workspace'
     assert default_config.sandbox_type == 'ssh'
     assert default_config.disable_color is True
-    assert default_config.global_max_iterations == 200
+    assert default_config.max_iterations_per_task == 200
 
 
 def test_defaults_dict_after_updates(default_config):
@@ -304,7 +304,7 @@ def test_max_iterations_and_max_budget_per_task_from_toml(temp_toml_file):
     temp_toml = """
 [core]
 max_iterations = 100
-global_max_iterations = 75
+max_iterations_per_task = 75
 max_budget_per_task = 4.0
 """
 
@@ -315,5 +315,5 @@ max_budget_per_task = 4.0
     load_from_toml(config, temp_toml_file)
 
     assert config.max_iterations == 100
-    assert config.global_max_iterations == 75
+    assert config.max_iterations_per_task == 75
     assert config.max_budget_per_task == 4.0

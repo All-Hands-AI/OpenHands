@@ -151,28 +151,30 @@ def process_instance(
         if not skip_workspace_mount:
             workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
             pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
-
+        
         # reset workspace to config
         config.workspace_base = workspace_mount_path
         config.workspace_mount_path = workspace_mount_path
 
         # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
         if reset_logger:
-            # Set up logger
+             # Set up logger
             log_file = os.path.join(
                 eval_output_dir,
                 'logs',
                 f'instance_{instance.task_id.replace("/", "__")}.log',
             )
+
             # Remove all existing handlers from logger
             for handler in logger.handlers[:]:
                 logger.removeHandler(handler)
+
             # add back the console handler to print ONE line
             logger.addHandler(get_console_handler())
             logger.info(
                 f'Starting evaluation for instance {instance.task_id}.\nLOG:   tail -f {log_file}'
             )
-            # Remove all existing handlers from logger
+             # Remove all existing handlers from logger
             for handler in logger.handlers[:]:
                 logger.removeHandler(handler)
             file_handler = logging.FileHandler(log_file)
@@ -184,44 +186,43 @@ def process_instance(
         if not skip_workspace_mount:
             logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
 
-
-    # Create file with HumanEvalFix problem
-    # Prompt reference: https://github.com/bigcode-project/bigcode-evaluation-harness/blob/84b96da31b7f840b55c5733325346176140cdb6b/bigcode_eval/tasks/humanevalpack.py#L509
-    problem_statement = (
-        instance.declaration + instance.buggy_solution + '\n' + instance.test
-    )
-    path = os.path.join(
-        workspace_mount_path, f'{instance.task_id.replace("/", "__")}.py'
-    )
-    with open(path, 'w') as f:
-        f.write(problem_statement)
-
-    # Prepare instruction
-    instruction = (
-        f'Please fix the function in {instance.task_id.replace("/", "__")}.py such that all test cases pass.\n'
-        'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
-        '# Problem Statement\n'
-        f'{problem_statement}\n\n'
-    )
-    instruction += (
-        'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-        'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
-        'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
-    )
-    # NOTE: You can actually set slightly different instruction for different agents
-    instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
-
-    # Here's how you can run the agent (similar to the `main` function) and get the final task state
-
-    effective_max_iterations = min(args.max_iterations, args.global_max_iterations)
-
-    state: State = asyncio.run(
-        main(
-            instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
-            max_iterations=effective_max_iterations
+        # Create file with HumanEvalFix problem
+        # Prompt reference: https://github.com/bigcode-project/bigcode-evaluation-harness/blob/84b96da31b7f840b55c5733325346176140cdb6b/bigcode_eval/tasks/humanevalpack.py#L509
+        problem_statement = (
+            instance.declaration + instance.buggy_solution + '\n' + instance.test
         )
+        path = os.path.join(
+            workspace_mount_path, f'{instance.task_id.replace("/", "__")}.py'
+        )
+        with open(path, 'w') as f:
+            f.write(problem_statement)
+        
+        # Prepare instruction
+        instruction = (
+            f'Please fix the function in {instance.task_id.replace("/", "__")}.py such that all test cases pass.\n'
+            'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
+            '# Problem Statement\n'
+            f'{problem_statement}\n\n'
+        )
+        instruction += (
+            'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+            'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
+            'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
+        )
+        
+        # NOTE: You can actually set slightly different instruction for different agents
+        instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
+         
+        # Here's how you can run the agent (similar to the `main` function) and get the final task state
+        effective_max_iterations = min(args.max_iterations, config.max_iterations_per_task)
 
+        state: State = asyncio.run(
+            main(
+                instruction,
+                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+                max_iterations=effective_max_iterations
+            )
+        )
         # ======= Attempt to evaluate the agent's edits =======
         test_result = get_test_result(instance, path)
 
@@ -259,17 +260,7 @@ if __name__ == '__main__':
 
     parser = get_parser()
     
-    parser.add_argument(
-        '--global-max-iterations',
-        default=config.global_max_iterations,
-        type=int,
-        help='The global maximum number of iterations to run the agent',
-    )
     args, _ = parser.parse_known_args()
-
-    if args.global_max_iterations:
-        config.global_max_iterations = args.global_max_iterations
-
 
     dataset = load_dataset(
         'bigcode/humanevalpack', 'python'
@@ -290,7 +281,7 @@ if __name__ == '__main__':
         agent_class in AGENT_CLS_TO_FAKE_USER_RESPONSE_FN
     ), f'Unsupported agent class: {agent_class}'
     model_name = config.llm.model.split('/')[-1]
-    max_iterations = args.max_iterations
+    max_iterations = config.max_iterations_per_task
     eval_note = ''
     if args.eval_note is not None:
         eval_note += '_N_' + args.eval_note

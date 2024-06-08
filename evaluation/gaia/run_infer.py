@@ -220,13 +220,6 @@ if __name__ == '__main__':
         type=str,
         help='data split to evaluate, eg. validation',
     )
-    parser.add_argument(
-        '-gmi',
-        '--global-max-iterations',
-        type=int,
-        default=config.global_max_iterations,
-        help='The maximum number of iterations to run the agent globally',
-    )
     args, _ = parser.parse_known_args()
     if args.directory:
         config.workspace_base = os.path.abspath(args.directory)
@@ -258,7 +251,7 @@ if __name__ == '__main__':
         agent_class in AGENT_CLS_TO_FAKE_USER_RESPONSE_FN
     ), f'Unsupported agent class: {agent_class}'
     model_name = config.llm.model.split('/')[-1]
-    max_iterations = min(args.max_iterations, args.global_max_iterations)
+    max_iterations = min(args.max_iterations, config.max_iterations_per_task)
     eval_note = ''
     if args.eval_note is not None:
         eval_note += '_N_' + args.eval_note

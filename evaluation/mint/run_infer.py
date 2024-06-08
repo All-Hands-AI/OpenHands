@@ -147,7 +147,7 @@ def process_instance(
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    max_iterations = min(args.max_iterations, config.global_max_iterations)
+    max_iterations = min(args.max_iterations, config.max_iterations_per_task)
     fake_user_response_fn = functools.partial(
         AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
         task=instance,
@@ -236,7 +236,7 @@ if __name__ == '__main__':
         agent_class in AGENT_CLS_TO_FAKE_USER_RESPONSE_FN
     ), f'Unsupported agent class: {agent_class}'
     model_name = config.llm.model.split('/')[-1]
-    max_iterations = min(args.max_iterations, config.global_max_iterations) 
+    max_iterations = min(args.max_iterations, config.max_iterations_per_task) 
     eval_note = ''
     if args.eval_note is not None:
         eval_note += '_N_' + args.eval_note
