@@ -366,7 +366,7 @@ if __name__ == '__main__':
     try:
         with ProcessPoolExecutor(num_workers) as executor:
             futures = []
-            for _, instance in ml_bench.iterrows():
+            for _, instance in enumerate(new_instances):
                 future = executor.submit(
                     process_instance,
                     instance,

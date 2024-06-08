@@ -30,6 +30,9 @@ async def browse(action, browser: BrowserEnv | None) -> BrowserOutputObservation
             active_page_index=obs['active_page_index'],  # index of the active page
             dom_object=obs['dom_object'],  # DOM object
             axtree_object=obs['axtree_object'],  # accessibility tree object
+            extra_element_properties=obs[
+                'extra_element_properties'
+            ],  # extra element properties
             last_browser_action=obs['last_action'],  # last browser env action performed
             focused_element_bid=obs['focused_element_bid'],  # focused element bid
             screenshot=obs['screenshot'],  # base64-encoded screenshot, png

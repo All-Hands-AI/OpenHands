@@ -161,7 +161,7 @@ class Truncater(Shrinkable):
 
     def __init__(self, visible, shrink_speed=0.3, start_truncate_iteration=10):
         super().__init__(visible=visible)
-        self.shrink_speed = shrink_speed  # the percentage shrinked in each iteration
+        self.shrink_speed = shrink_speed  # the percentage shrunk in each iteration
         self.start_truncate_iteration = (
             start_truncate_iteration  # the iteration to start truncating
         )
