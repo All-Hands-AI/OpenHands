@@ -113,5 +113,6 @@ class AgentSession:
             agent_state = State.restore_from_session(self.sid)
             if agent_state is not None:
                 self.controller._set_initial_state(state=agent_state)
+            logger.info(f'Restored agent state from session, sid: {self.sid}')
         except Exception as e:
             print('Error restoring state', e)
