@@ -282,7 +282,7 @@ if __name__ == '__main__':
         pbar = tqdm(total=len(question_ids))
 
         # This function tracks the progress AND write the output to a JSONL file
-        def update_progress(future):
+        def update_progress(future, pbar, output_fp, finished_task_ids):
             pbar.update(1)
             output = future.result()
             pbar.set_description(f'Instance {output["question_id"]}')
@@ -313,16 +313,18 @@ if __name__ == '__main__':
                             metadata,
                             reset_logger=bool(num_workers > 1),
                         )
-                        future.add_done_callback(update_progress)
+                        future.add_done_callback(
+                            update_progress, pbar, output_fp, finished_task_ids
+                        )
                         futures.append(future)
-                    except:
+                    except Exception:
                         continue
 
                 # Wait for all futures to complete
                 for future in futures:
                     try:
                         future.result()
-                    except:
+                    except Exception:
                         continue
         except KeyboardInterrupt:
             logger.info('KeyboardInterrupt received. Cleaning up...')
