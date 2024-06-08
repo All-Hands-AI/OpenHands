@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { IoMdChatbubbles } from "react-icons/io";
 import { RiArrowRightDoubleLine } from "react-icons/ri";
 import { useTranslation } from "react-i18next";
-import { twMerge } from "tailwind-merge";
 import { VscArrowDown } from "react-icons/vsc";
 import { FaRegThumbsDown, FaRegThumbsUp } from "react-icons/fa";
 import { useDisclosure } from "@nextui-org/react";
@@ -125,14 +124,6 @@ function ChatInterface() {
         >
           <Chat messages={messages} />
         </div>
-        {/* Fade between messages and input */}
-        <div
-          className={twMerge(
-            "absolute bottom-0 left-0 right-0",
-            curAgentState === AgentState.AWAITING_USER_INPUT ? "h-10" : "h-4",
-            "bg-gradient-to-b from-transparent to-neutral-800",
-          )}
-        />
       </div>
 
       <div className="relative">

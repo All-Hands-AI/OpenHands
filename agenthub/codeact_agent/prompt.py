@@ -15,7 +15,12 @@ The assistant can interact with an interactive Python (Jupyter Notebook) environ
 print("Hello World!")
 </execute_ipython>
 The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>.
+
 For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
+Important, however: do not run interactive commands. You do not have access to stdin.
+Also, you need to handle commands that may run indefinitely and not return a result. For such cases, you should redirect the output to a file and run the command in the background to avoid blocking the execution.
+For example, to run a Python script that might run indefinitely without returning immediately, you can use the following format: <execute_bash> python3 app.py > server.log 2>&1 & </execute_bash>
+Also, if a command execution result saying like: Command: "npm start" timed out. Sending SIGINT to the process, you should also retry with running the command in the background.
 """
 
 BROWSING_PREFIX = """The assistant can browse the Internet with commands on behalf of the user by wrapping them with <execute_browse> and </execute_browse>.
@@ -27,7 +32,7 @@ PIP_INSTALL_PREFIX = """The assistant can install Python packages using the %pip
 SYSTEM_PREFIX = MINIMAL_SYSTEM_PREFIX + BROWSING_PREFIX + PIP_INSTALL_PREFIX
 
 GITHUB_MESSAGE = """To do any activities on GitHub, the assistant should use the token in the $GITHUB_TOKEN environment variable.
-For instance, to push a local branch `my_branch` to the github repo `owner/repo`, the assistant can use the following four commands:
+For instance, to push a local branch `my_branch` to the github repo `owner/repo`, the assistant can use the following command:
 <execute_bash> git push https://$GITHUB_TOKEN@github.com/owner/repo.git my_branch </execute_bash>
 If the assistant require access to GitHub but $GITHUB_TOKEN is not set, ask the user to set it."""
 
