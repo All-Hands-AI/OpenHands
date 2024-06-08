@@ -166,127 +166,133 @@ def process_instance(
     """
     old_workspace_mount_path = config.workspace_mount_path
     old_workspace_base = config.workspace_base
-    workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
-    # create process-specific workspace dir
-    # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
-    # so that different agent don't interfere with each other.
-    skip_workspace_mount = False
-    if not skip_workspace_mount:
-        workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
-        pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
+    try:
+        workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
+        # create process-specific workspace dir
+        # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
+        # so that different agent don't interfere with each other.
+        skip_workspace_mount = False
+        if not skip_workspace_mount:
+            workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
+            pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
-    # reset workspace to config
-    config.workspace_base = workspace_mount_path
-    config.workspace_mount_path = workspace_mount_path
+        # reset workspace to config
+        config.workspace_base = workspace_mount_path
+        config.workspace_mount_path = workspace_mount_path
 
-    # workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
-    # workspace_mount_path = os.path.abspath(workspace_mount_path)
-    # # create process-specific workspace dir
-    # # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
-    # # so that different agent don't interfere with each other.
-    # if not skip_workspace_mount:
-    #     workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
-    #     pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
+        # workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
+        # workspace_mount_path = os.path.abspath(workspace_mount_path)
+        # # create process-specific workspace dir
+        # # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
+        # # so that different agent don't interfere with each other.
+        # if not skip_workspace_mount:
+        #     workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
+        #     pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
-    # Setup the logger properly, so you can run multi-processing to parallize the evaluation
-    if reset_logger:
-        # Set up logger
-        log_file = os.path.join(
-            eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
+        # Setup the logger properly, so you can run multi-processing to parallize the evaluation
+        if reset_logger:
+            # Set up logger
+            log_file = os.path.join(
+                eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
+            )
+            # Remove all existing handlers from logger
+            for handler in logger.handlers[:]:
+                logger.removeHandler(handler)
+            # add back the console handler to print ONE line
+            logger.addHandler(get_console_handler())
+            logger.info(
+                f'Starting evaluation for instance {instance.instance_id}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
+            )
+            # Remove all existing handlers from logger
+            for handler in logger.handlers[:]:
+                logger.removeHandler(handler)
+            file_handler = logging.FileHandler(log_file)
+            file_handler.setFormatter(
+                logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+            )
+            logger.addHandler(file_handler)
+        else:
+            logger.info(f'Starting evaluation for instance {instance.instance_id}.')
+
+        if not skip_workspace_mount:
+            logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
+
+        # ======= Run the agent on the instance =======
+        # Prepare instruction for the agent using suggested format in gpqa codebase
+        instruction = f"""
+        What is the correct answer to this question:\n
+        {instance['question']}\n
+
+        Choices:\n
+        (A) {instance['choices'][0]}\n
+        (B) {instance['choices'][1]}\n
+        (C) {instance['choices'][2]}\n
+        (D) {instance['choices'][3]}\n
+        \n\n
+
+        MOST IMPORTANT: Format your response as follows:
+        <<FINAL_ANSWER||
+        <insert correct answer here, must be one of A, B, C, D> (Please dont use any additional characters. Just the letter of the correct answer (A/B/C/D).)
+        ||FINAL_ANSWER>>
+
+        Additional Instructions:
+        - You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.
+        """
+
+        # NOTE: You can actually set slightly different instruction for different agents
+        instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
+
+        # Here's how you can run the agent (similar to the `main` function) and get the final task state
+        state: State = asyncio.run(
+            main(
+                instruction,
+                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
+            )
         )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        # add back the console handler to print ONE line
-        logger.addHandler(get_console_handler())
-        logger.info(
-            f'Starting evaluation for instance {instance.instance_id}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
+
+        # ======= Attempt to evaluate the agent's edits =======
+        # get the final message from the state history (default to None if not found)
+        final_message = next(
+            (
+                act.content
+                for act in reversed(state.history)
+                if isinstance(act, MessageAction)
+            ),
+            None,
         )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(
-            logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        )
-        logger.addHandler(file_handler)
-    else:
-        logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
-    if not skip_workspace_mount:
-        logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
+        logger.info(f'Final message generated by the agent: {final_message}')
 
-    # ======= Run the agent on the instance =======
-    # Prepare instruction for the agent using suggested format in gpqa codebase
-    instruction = f"""
-    What is the correct answer to this question:\n
-    {instance['question']}\n
+        test_result = get_test_result(final_message, instance.correct_solution)
 
-    Choices:\n
-    (A) {instance['choices'][0]}\n
-    (B) {instance['choices'][1]}\n
-    (C) {instance['choices'][2]}\n
-    (D) {instance['choices'][3]}\n
-    \n\n
+        # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
+        # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
+        if state is None:
+            raise ValueError('State should not be None.')
 
-    MOST IMPORTANT: Format your response as follows:
-    <<FINAL_ANSWER||
-    <insert correct answer here, must be one of A, B, C, D> (Please dont use any additional characters. Just the letter of the correct answer (A/B/C/D).)
-    ||FINAL_ANSWER>>
+        metrics = state.metrics.get() if state.metrics else None
 
-    Additional Instructions:
-    - You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.
-    """
+        # Save the output
+        output = {
+            'task_id': instance.task_id,
+            'instance_id': instance.instance_id,
+            'instruction': instruction,
+            'metadata': metadata,
+            'history': [
+                (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
+            ],
+            'metrics': metrics,
+            'error': state.error if state and state.error else None,
+            'test_result': test_result,
+        }
 
-    # NOTE: You can actually set slightly different instruction for different agents
-    instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
-
-    # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State = asyncio.run(
-        main(
-            instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
-        )
-    )
-
-    # ======= Attempt to evaluate the agent's edits =======
-    # get the final message from the state history (default to None if not found)
-    final_message = next(
-        (
-            act.content
-            for act in reversed(state.history)
-            if isinstance(act, MessageAction)
-        ),
-        None,
-    )
-
-    logger.info(f'Final message generated by the agent: {final_message}')
-
-    test_result = get_test_result(final_message, instance.correct_solution)
-
-    # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
-    # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
-    if state is None:
-        raise ValueError('State should not be None.')
-
-    metrics = state.metrics.get() if state.metrics else None
-
-    # Save the output
-    output = {
-        'task_id': instance.task_id,
-        'instance_id': instance.instance_id,
-        'instruction': instruction,
-        'metadata': metadata,
-        'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-        ],
-        'metrics': metrics,
-        'error': state.error if state and state.error else None,
-        'test_result': test_result,
-    }
-
-    config.workspace_mount_path = old_workspace_mount_path
-    config.workspace_base = old_workspace_base
+        
+    except Exception:
+        logger.error('Process instance failed')
+        raise
+    finally:
+        config.workspace_mount_path = old_workspace_mount_path
+        config.workspace_base = old_workspace_base
     return output
 
 
