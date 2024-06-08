@@ -8,8 +8,43 @@ Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/D
 
 
 ## Configure OpenDevin and your LLM
+Create a `config.toml` file if it does not exist at the root of the workspace. Please check [README.md](../../README.md) for how to set this up.
 
 
-## Run Inference 
+## Start the evaluation
+
+
+```bash
+./evaluation/biocoder/scripts/run_infer.sh [model_config] [agent] [eval_limit]
+```
+
+where `model_config` is mandatory, while `agent`, `dataset` and `eval_limit` are optional.
+
+- `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
+LLM settings, as defined in your `config.toml`.
+
+- `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
+to `CodeActAgent`.
+
+- `eval_limit`, e.g. `10`, limits the evaluation to the first `eval_limit` instances. By default it infers all instances.
+
+Let's say you'd like to run 10 instances using `eval_gpt4_1106_eval_gpt4o_2024_05_13preview` and CodeActAgent,
+then your command would be:
 
 ## Examples
+
+```bash
+./evaluation/biocoder/scripts/run_infer.sh eval_gpt4o_2024_05_13 CodeActAgent 1
+```
+
+## Reference
+```
+@misc{tang2024biocoder,
+      title={BioCoder: A Benchmark for Bioinformatics Code Generation with Large Language Models}, 
+      author={Xiangru Tang and Bill Qian and Rick Gao and Jiakang Chen and Xinyun Chen and Mark Gerstein},
+      year={2024},
+      eprint={2308.16458},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
+```
