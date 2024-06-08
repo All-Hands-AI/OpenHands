@@ -2,7 +2,7 @@
 
 This folder implements a skill/tool set `agentskills` for OpenDevin.
 
-It is intended to be used by the agent **inside sandbox**.
+It is intended to be used by the agent **inside the sandbox**.
 The skill set will be exposed as a `pip` package that can be installed as a plugin inside the sandbox.
 
 The skill set can contains a bunch of wrapped tools for agents ([many examples here](https://github.com/OpenDevin/OpenDevin/pull/1914)), for example:
@@ -14,11 +14,12 @@ The skill set can contains a bunch of wrapped tools for agents ([many examples h
 ## Inclusion Criteria
 
 We are walking a fine line here.
-We DON't want to *wrap* every possible python packages and re-teach agent their usage (e.g., LLM already knows `pandas` pretty well, so we don't really need create a skill that reads `csv` - it can just use `pandas`).
+We DON'T want to *wrap* every possible python package and re-teach the agent their usage (e.g., LLM already knows `pandas` pretty well, so we don't really need to create a skill that reads `csv` files - it can just use `pandas`).
 
-We ONLY want to add a new skill, when:
-- Such skill is not easily achievable for LLM to write code directly (e.g., edit code and replace certain line)
-- It involves calling an external model (e.g., you need to call a speech to text model, editor model for speculative editing)
+We ONLY want to add a new skill when:
+
+- Such skill is not easily achievable for LLM's to write code directly (e.g., edit code and replace certain lines)
+- It involves calling an external model (e.g., you need to call a speech-to-text model, editor model for speculative editing)
 
 ## Intended functionality
 
@@ -38,7 +39,7 @@ edit_file(
     content=(
         ("REPLACE TEXT")
 ))
-# Out[1]
+# Out[2]
 [SWE-agent edit output]
 ```
 

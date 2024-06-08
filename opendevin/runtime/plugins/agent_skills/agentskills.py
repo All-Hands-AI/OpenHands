@@ -371,12 +371,15 @@ def append_file(content: str) -> None:
     if not CURRENT_FILE or not os.path.isfile(CURRENT_FILE):
         raise FileNotFoundError('No file open. Use the open_file function first.')
 
+    if not content or content.strip() == '':
+        raise FileNotFoundError('No content provided. File was not changed.')
+
     # Load the file
     with open(CURRENT_FILE, 'r') as file:
         lines = file.readlines()
 
-    # Check if the first line is solely a line break and overwrite it
-    if lines and lines[0].strip() == '':
+    # If file is empty, replace it with the new content
+    if lines and len(lines) == 1 and lines[0].strip() == '':
         lines[0] = content + '\n'
     else:
         # Add a leading newline if the file is not empty
