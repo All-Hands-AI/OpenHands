@@ -226,7 +226,7 @@ class DockerSSHBox(Sandbox):
             self.instance_id = (sid or '') + str(uuid.uuid4())
 
         self.timeout = timeout
-        self.container_image = container_image or config.sandbox.sandbox_container_image
+        self.container_image = container_image or config.sandbox.container_image
         self.container_name = self.container_name_prefix + self.instance_id
 
         # set up random user password

@@ -18,15 +18,18 @@ cache_dir = "/path/to/cache"
 workspace_base = "/path/to/workspace"
 workspace_mount_path = "/path/to/workspace"
 
-sandbox_container_image = "ghcr.io/opendevin/sandbox:latest"
-sandbox_type = "ssh"
-sandbox_timeout = 120
+enable_auto_lint = true
+
+[sandbox]
+container_image = "ghcr.io/opendevin/sandbox:latest"
+type = "ssh"
+timeout = 120
 ssh_hostname = "localhost"
 
 use_host_network = false
 # AgentBench specific
 run_as_devin = true
-enable_auto_lint = true
+
 
 [eval_gpt35_turbo]
 model = "gpt-3.5-turbo"

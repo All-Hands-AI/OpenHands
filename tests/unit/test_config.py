@@ -113,8 +113,10 @@ api_key = "toml-api-key"
 
 [core]
 workspace_base = "/opt/files3/workspace"
-sandbox_type = "local"
 disable_color = true
+
+[sandbox]
+type = "local"
 """)
 
     monkeypatch.setenv('LLM_API_KEY', 'env-api-key')
@@ -128,7 +130,7 @@ disable_color = true
     assert default_config.llm.model == 'test-model'
     assert default_config.llm.api_key == 'env-api-key'
     assert default_config.sandbox.workspace_base == '/opt/files4/workspace'
-    assert default_config.sandbox_type == 'ssh'
+    assert default_config.sandbox.type == 'ssh'
     assert default_config.disable_color is True
 
 
@@ -168,7 +170,7 @@ def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
 
 def test_finalize_config(default_config):
     # Test finalize config
-    default_config.sandbox_type = 'local'
+    default_config.sandbox.type = 'local'
     finalize_config(default_config)
 
     assert (
@@ -188,7 +190,7 @@ def test_workspace_mount_path_default(default_config):
 
 def test_workspace_mount_path_in_sandbox_local(default_config):
     assert default_config.workspace_mount_path_in_sandbox == '/workspace'
-    default_config.sandbox_type = 'local'
+    default_config.sandbox.type = 'local'
     finalize_config(default_config)
     assert (
         default_config.workspace_mount_path_in_sandbox

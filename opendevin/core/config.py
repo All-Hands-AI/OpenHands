@@ -128,8 +128,8 @@ class SandboxConfig(metaclass=Singleton):
     Configuration for the sandbox.
 
     Attributes:
-        sandbox_container_image: The container image to use for the sandbox.
-        sandbox_type: The type of sandbox to use. Options are: ssh, exec, e2b, local.
+        container_image: The container image to use for the sandbox.
+        type: The type of sandbox to use. Options are: ssh, exec, e2b, local.
         workspace_base: The base path for the workspace. Defaults to ./workspace as an absolute path.
         workspace_mount_path: The path to mount the workspace. This is set to the workspace base by default.
         workspace_mount_path_in_sandbox: The path to mount the workspace in the sandbox. Defaults to /workspace.
@@ -146,12 +146,12 @@ class SandboxConfig(metaclass=Singleton):
 
     """
 
-    sandbox_container_image: str = 'ghcr.io/opendevin/sandbox' + (
+    container_image: str = 'ghcr.io/opendevin/sandbox' + (
         f':{os.getenv("OPEN_DEVIN_BUILD_VERSION")}'
         if os.getenv('OPEN_DEVIN_BUILD_VERSION')
         else ':main'
     )
-    sandbox_type: str = 'ssh'  # Can be 'ssh', 'exec', or 'e2b'
+    type: str = 'ssh'  # Can be 'ssh', 'exec', or 'e2b'
     workspace_base: str = os.path.join(os.getcwd(), 'workspace')
     workspace_mount_path: str | None = None
     workspace_mount_path_in_sandbox: str = '/workspace'
@@ -409,7 +409,7 @@ def finalize_config(config: AppConfig):
     config.sandbox.workspace_base = os.path.abspath(config.sandbox.workspace_base)
 
     # In local there is no sandbox, the workspace will have the same pwd as the host
-    if config.sandbox.sandbox_type == 'local':
+    if config.sandbox.type == 'local':
         config.sandbox.workspace_mount_path_in_sandbox = (
             config.sandbox.workspace_mount_path
         )

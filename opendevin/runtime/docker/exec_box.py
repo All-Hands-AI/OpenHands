@@ -130,7 +130,7 @@ class DockerExecBox(Sandbox):
         # if it is too long, the user may have to wait for a unnecessary long time
         self.timeout = timeout
         self.container_image = (
-            config.sandbox.sandbox_container_image
+            config.sandbox.container_image
             if container_image is None
             else container_image
         )

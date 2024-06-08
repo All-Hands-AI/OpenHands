@@ -31,16 +31,19 @@ workspace_base = "/path/to/your/workspace"
 workspace_mount_path = "/path/to/your/workspace"
 # ==========================
 
-sandbox_container_image = "ghcr.io/opendevin/sandbox:latest"
-sandbox_type = "ssh"
-sandbox_timeout = 120
+# linting python after editing helps LLM fix indentations
+enable_auto_lint = true
+
+[sandbox]
+container_image = "ghcr.io/opendevin/sandbox:latest"
+type = "ssh"
+timeout = 120
 ssh_hostname = "localhost"
 
 # SWEBench eval specific - but you can tweak it to your needs
 use_host_network = false
 run_as_devin = false
-# linting python after editing helps LLM fix indentations
-enable_auto_lint = true
+
 
 [llm]
 # IMPORTANT: add your API key here, and set the model to the one you want to evaluate
