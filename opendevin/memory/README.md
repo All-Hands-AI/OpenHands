@@ -21,4 +21,3 @@
 ## Long Term Memory
 - Long term memory component stores embeddings for events and prompts in a vector store
 - The agent can query it when it needs detailed information about a past event or to learn new actions
-
