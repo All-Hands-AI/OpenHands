@@ -69,14 +69,14 @@ def process_instance(
     # create process-specific workspace dir
     # we will create a workspace directory for EACH process
     # so that different agent don't interfere with each other.
-    old_workspace_mount_path = config.workspace_mount_path
+    old_workspace_mount_path = config.sandbox.workspace_mount_path
     try:
         workspace_mount_path = os.path.join(
-            config.workspace_mount_path, '_eval_workspace'
+            config.sandbox.workspace_mount_path, '_eval_workspace'
         )
         workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
         pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
-        config.workspace_mount_path = workspace_mount_path
+        config.sandbox.workspace_mount_path = workspace_mount_path
 
         # Setup the logger properly, so you can run multi-processing to parallize the evaluation
         eval_output_dir = metadata['eval_output_dir']
@@ -158,7 +158,7 @@ def process_instance(
         logger.error('Process instance failed')
         raise
     finally:
-        config.workspace_mount_path = old_workspace_mount_path
+        config.sandbox.workspace_mount_path = old_workspace_mount_path
     return output
 
 

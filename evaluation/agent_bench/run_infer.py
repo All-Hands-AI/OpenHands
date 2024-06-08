@@ -93,7 +93,7 @@ def process_instance(
     # create a directory for the instance's workspace
     instance_workspace = str(os.path.join(config.sandbox.workspace_base, inst_id))
     container_inst_workspace = str(
-        os.path.join(config.workspace_mount_path_in_sandbox, inst_id)
+        os.path.join(config.sandbox.workspace_mount_path_in_sandbox, inst_id)
     )
     if os.path.exists(instance_workspace):
         shutil.rmtree(instance_workspace)

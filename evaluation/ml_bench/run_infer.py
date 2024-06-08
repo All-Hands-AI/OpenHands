@@ -101,11 +101,11 @@ ID2CONDA = {
 def process_instance(
     instance, agent_class, metadata, eval_output_dir, reset_logger: bool = True
 ):
-    old_workspace_mount_path = config.workspace_mount_path
+    old_workspace_mount_path = config.sandbox.workspace_mount_path
     old_workspace_base = config.sandbox.workspace_base
     try:
         workspace_mount_path = os.path.join(
-            config.workspace_mount_path, '_eval_workspace'
+            config.sandbox.workspace_mount_path, '_eval_workspace'
         )
         # create process-specific workspace dir
         # so that different agent don't interfere with each other.
@@ -114,7 +114,7 @@ def process_instance(
 
         # reset workspace to config
         config.sandbox.workspace_base = workspace_mount_path
-        config.workspace_mount_path = workspace_mount_path
+        config.sandbox.workspace_mount_path = workspace_mount_path
 
         # Setup the logger properly, so you can run multi-processing to parallize the evaluation
         if reset_logger:
@@ -241,7 +241,7 @@ def process_instance(
         logger.error(f'Error processing instance {instance["id"]}: {e}')
         raise
     finally:
-        config.workspace_mount_path = old_workspace_mount_path
+        config.sandbox.workspace_mount_path = old_workspace_mount_path
         config.sandbox.workspace_base = old_workspace_base
 
     # Shutdown the sandbox

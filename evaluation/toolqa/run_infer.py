@@ -67,7 +67,7 @@ def process_instance(task, agent_class, metadata, reset_logger: bool = True):
     # create process-specific workspace dir
     # we will create a workspace directory for EACH process
     # so that different agent don't interfere with each other.
-    workspace_mount_path = config.workspace_mount_path
+    workspace_mount_path = config.sandbox.workspace_mount_path
     pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
     # Setup the logger properly, so you can run multi-processing to parallize the evaluation
@@ -222,8 +222,8 @@ if __name__ == '__main__':
         raise ValueError('Please choose from easy and hard for hardness.')
 
     logger.info(f'Evaluating ToolQA {dataset} {hardness} test')
-    # workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
-    workspace_mount_path = config.workspace_mount_path
+    # workspace_mount_path = os.path.join(config.sandbox.workspace_mount_path, '_eval_workspace')
+    workspace_mount_path = config.sandbox.workspace_mount_path
     pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
     toolqa_test = get_data(dataset, hardness)
     toolqa_data_path = download_data(workspace_mount_path)

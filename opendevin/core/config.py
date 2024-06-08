@@ -414,7 +414,7 @@ def finalize_config(config: AppConfig):
             config.sandbox.workspace_mount_path
         )
 
-    if config.workspace_mount_rewrite:  # and not config.workspace_mount_path:
+    if config.workspace_mount_rewrite:  # and not config.sandbox.workspace_mount_path:
         # TODO why do we need to check if workspace_mount_path is None?
         base = config.sandbox.workspace_base or os.getcwd()
         parts = config.workspace_mount_rewrite.split(':')

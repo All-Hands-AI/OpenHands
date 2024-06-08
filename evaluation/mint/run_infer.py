@@ -82,7 +82,9 @@ def process_instance(
     eval_output_dir,
     reset_logger: bool = True,
 ):
-    workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
+    workspace_mount_path = os.path.join(
+        config.sandbox.workspace_mount_path, '_eval_workspace'
+    )
     # create process-specific workspace dir
     # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
     # so that different agent don't interfere with each other.

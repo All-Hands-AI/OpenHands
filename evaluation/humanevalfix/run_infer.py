@@ -138,12 +138,12 @@ def get_test_result(instance, path, language='python', timeout=10):
 def process_instance(
     instance, agent_class, metadata, skip_workspace_mount, reset_logger: bool = True
 ):
-    old_workspace_mount_path = config.workspace_mount_path
+    old_workspace_mount_path = config.sandbox.workspace_mount_path
     old_workspace_base = config.sandbox.workspace_base
 
     try:
         workspace_mount_path = os.path.join(
-            config.workspace_mount_path, '_eval_workspace'
+            config.sandbox.workspace_mount_path, '_eval_workspace'
         )
         # create process-specific workspace dir
         # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
@@ -154,7 +154,7 @@ def process_instance(
 
         # reset workspace to config
         config.sandbox.workspace_base = workspace_mount_path
-        config.workspace_mount_path = workspace_mount_path
+        config.sandbox.workspace_mount_path = workspace_mount_path
 
         # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
         if reset_logger:
@@ -246,7 +246,7 @@ def process_instance(
         logger.error('Process instance failed')
         raise
     finally:
-        config.workspace_mount_path = old_workspace_mount_path
+        config.sandbox.workspace_mount_path = old_workspace_mount_path
         config.sandbox.workspace_base = old_workspace_base
     return output
 

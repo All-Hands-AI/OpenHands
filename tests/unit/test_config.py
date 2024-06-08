@@ -174,27 +174,27 @@ def test_finalize_config(default_config):
     finalize_config(default_config)
 
     assert (
-        default_config.workspace_mount_path_in_sandbox
-        == default_config.workspace_mount_path
+        default_config.sandbox.workspace_mount_path_in_sandbox
+        == default_config.sandbox.workspace_mount_path
     )
 
 
 # tests for workspace, mount path, path in sandbox, cache dir
 def test_workspace_mount_path_default(default_config):
-    assert default_config.workspace_mount_path is None
+    assert default_config.sandbox.workspace_mount_path is None
     finalize_config(default_config)
-    assert default_config.workspace_mount_path == os.path.abspath(
+    assert default_config.sandbox.workspace_mount_path == os.path.abspath(
         default_config.sandbox.workspace_base
     )
 
 
 def test_workspace_mount_path_in_sandbox_local(default_config):
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
+    assert default_config.sandbox.workspace_mount_path_in_sandbox == '/workspace'
     default_config.sandbox.type = 'local'
     finalize_config(default_config)
     assert (
-        default_config.workspace_mount_path_in_sandbox
-        == default_config.workspace_mount_path
+        default_config.sandbox.workspace_mount_path_in_sandbox
+        == default_config.sandbox.workspace_mount_path
     )
 
 
@@ -203,7 +203,7 @@ def test_workspace_mount_rewrite(default_config, monkeypatch):
     default_config.workspace_mount_rewrite = '/home/user:/sandbox'
     monkeypatch.setattr('os.getcwd', lambda: '/current/working/directory')
     finalize_config(default_config)
-    assert default_config.workspace_mount_path == '/sandbox/project'
+    assert default_config.sandbox.workspace_mount_path == '/sandbox/project'
 
 
 def test_embedding_base_url_default(default_config):
