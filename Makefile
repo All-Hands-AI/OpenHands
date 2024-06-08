@@ -172,7 +172,7 @@ install-precommit-hooks:
 
 lint-backend:
 	@echo "$(YELLOW)Running linters...$(RESET)"
-	@poetry run pre-commit run --files $$(git diff --name-only $$(git merge-base main $$(git branch --show-current)) $$(git branch --show-current) | tr '\n' ' ') --show-diff-on-failure --config $(PRECOMMIT_CONFIG_PATH)
+	@poetry run pre-commit run --files opendevin/**/* agenthub/**/* evaluation/**/* --show-diff-on-failure --config $(PRECOMMIT_CONFIG_PATH)
 
 lint-frontend:
 	@echo "$(YELLOW)Running linters for frontend...$(RESET)"
@@ -229,7 +229,7 @@ setup-config:
 setup-config-prompts:
 	@echo "[core]" > $(CONFIG_FILE).tmp
 
-	@read -p "Enter your workspace directory [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
+	@read -p "Enter your workspace directory (as absolute path) [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
 	 echo "workspace_base=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
 
@@ -238,6 +238,7 @@ setup-config-prompts:
 	 if [ "$$persist_sandbox" = "true" ]; then \
 		 read -p "Enter a password for the sandbox container: " ssh_password; \
 		 echo "ssh_password=\"$$ssh_password\"" >> $(CONFIG_FILE).tmp; \
+		 echo "persist_sandbox=$$persist_sandbox" >> $(CONFIG_FILE).tmp; \
 	 else \
 		echo "persist_sandbox=$$persist_sandbox" >> $(CONFIG_FILE).tmp; \
 	 fi

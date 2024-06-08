@@ -29,7 +29,7 @@ describe("AutocompleteCombobox", () => {
     expect(modelInput).toHaveValue("model1");
   });
 
-  it("should open a dropdown with the available values", () => {
+  it("should open a dropdown with the available values", async () => {
     renderComponent();
 
     const modelInput = screen.getByRole("combobox", { name: "model" });
@@ -37,27 +37,27 @@ describe("AutocompleteCombobox", () => {
     expect(screen.queryByText("model2")).not.toBeInTheDocument();
     expect(screen.queryByText("model3")).not.toBeInTheDocument();
 
-    act(() => {
-      userEvent.click(modelInput);
+    await act(async () => {
+      await userEvent.click(modelInput);
     });
 
     expect(screen.getByText("model2")).toBeInTheDocument();
     expect(screen.getByText("model3")).toBeInTheDocument();
   });
 
-  it("should call the onChange handler when a new value is selected", () => {
+  it("should call the onChange handler when a new value is selected", async () => {
     renderComponent();
 
     const modelInput = screen.getByRole("combobox", { name: "model" });
     expect(modelInput).toHaveValue("model1");
 
-    act(() => {
-      userEvent.click(modelInput);
+    await act(async () => {
+      await userEvent.click(modelInput);
     });
 
     const model2 = screen.getByText("model2");
-    act(() => {
-      userEvent.click(model2);
+    await act(async () => {
+      await userEvent.click(model2);
     });
 
     expect(onChangeMock).toHaveBeenCalledWith("model2");
