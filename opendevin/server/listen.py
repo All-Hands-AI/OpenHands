@@ -6,6 +6,8 @@ from opendevin.server.data_models.feedback import FeedbackDataModel, store_feedb
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
+from pathlib import Path
+
 from fastapi import FastAPI, Request, Response, UploadFile, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -190,7 +192,7 @@ async def get_litellm_models():
     bedrock_model_list = bedrock.list_foundation_models()
     model_list = litellm_model_list_without_bedrock + bedrock_model_list
 
-    return list(set(model_list))
+    return list(sorted(set(model_list)))
 
 
 @app.get('/api/options/agents')
@@ -203,7 +205,7 @@ async def get_agents():
     curl http://localhost:3000/api/agents
     ```
     """
-    agents = Agent.list_agents()
+    agents = sorted(Agent.list_agents())
     return agents
 
 
@@ -223,8 +225,41 @@ def list_files(request: Request, path: str = '/'):
             content={'error': 'Runtime not yet initialized'},
         )
 
+    exclude_list = (
+        '.git',
+        '.DS_Store',
+        '.svn',
+        '.hg',
+        '.idea',
+        '.vscode',
+        '.settings',
+        '.pytest_cache',
+        '__pycache__',
+        'node_modules',
+        'vendor',
+        'build',
+        'dist',
+        'bin',
+        'logs',
+        'log',
+        'tmp',
+        'temp',
+        'coverage',
+        'venv',
+        'env',
+    )
+
     try:
-        return request.state.session.agent_session.runtime.file_store.list(path)
+        entries = request.state.session.agent_session.runtime.file_store.list(path)
+
+        # Filter entries, excluding special folders
+        if entries:
+            return [
+                entry
+                for entry in entries
+                if Path(entry).parts and Path(entry).parts[-1] not in exclude_list
+            ]
+        return []
     except Exception as e:
         logger.error(f'Error refreshing files: {e}', exc_info=False)
         error_msg = f'Error refreshing files: {e}'
