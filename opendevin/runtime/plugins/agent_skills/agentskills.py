@@ -20,6 +20,7 @@ import base64
 import functools
 import os
 import subprocess
+import tempfile
 from inspect import signature
 from typing import Optional
 
@@ -362,7 +363,7 @@ def edit_file(start: int, end: int, content: str) -> None:
 def append_file(content: str) -> None:
     """Append content to the open file.
 
-        It appends text `content` to the end of the open file. Remember, the file must be open before editing.
+    It appends text `content` to the end of the open file. Remember, the file must be open before editing.
 
     Args:
         content: str: The content to append to the file.
@@ -371,73 +372,85 @@ def append_file(content: str) -> None:
     if not CURRENT_FILE or not os.path.isfile(CURRENT_FILE):
         raise FileNotFoundError('No file open. Use the open_file function first.')
 
-    # Load the file
-    with open(CURRENT_FILE, 'r') as file:
-        lines = file.readlines()
+    # Use a temporary file to write changes
+    temp_file_path = ''
+    try:
+        # Create a temporary file
+        with tempfile.NamedTemporaryFile('w', delete=False) as temp_file:
+            temp_file_path = temp_file.name
 
-    # Check if the first line is solely a line break and overwrite it
-    if lines and lines[0].strip() == '':
-        lines[0] = content + '\n'
-    else:
-        # Add a leading newline if the file is not empty
-        if lines and not lines[-1].endswith('\n'):
-            lines[-1] += '\n'
+            # Read the original file and check if empty and for a trailing newline
+            with open(CURRENT_FILE, 'r') as original_file:
+                lines = original_file.readlines()
 
-    edited_content = content + '\n'
-    n_edited_lines = len(edited_content.split('\n'))
-    new_lines = lines + [edited_content]
+            if lines and not (len(lines) == 1 and lines[0].strip() == ''):
+                if not lines[-1].endswith('\n'):
+                    lines[-1] += '\n'
+                content = ''.join(lines) + content
+            else:
+                content = content
 
-    # directly write edited lines to the file
-    with open(CURRENT_FILE, 'w') as file:
-        file.writelines(new_lines)
+            if not content.endswith('\n'):
+                content += '\n'
 
-    # Handle linting
-    if ENABLE_AUTO_LINT:
-        # BACKUP the original file
-        original_file_backup_path = os.path.join(
-            os.path.dirname(CURRENT_FILE), f'.backup.{os.path.basename(CURRENT_FILE)}'
-        )
-        with open(original_file_backup_path, 'w') as f:
-            f.writelines(lines)
+            # Append the new content with a trailing newline
+            temp_file.write(content)
 
-        lint_error = _lint_file(CURRENT_FILE)
-        if lint_error:
-            print(
-                '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]'
+        # Replace the original file with the temporary file atomically
+        os.replace(temp_file_path, CURRENT_FILE)
+
+        # Handle linting
+        if ENABLE_AUTO_LINT:
+            # BACKUP the original file
+            original_file_backup_path = os.path.join(
+                os.path.dirname(CURRENT_FILE),
+                f'.backup.{os.path.basename(CURRENT_FILE)}',
             )
-            print(lint_error)
+            with open(original_file_backup_path, 'w') as f:
+                f.writelines(lines)
 
-            print('[This is how your edit would have looked if applied]')
-            print('-------------------------------------------------')
-            cur_line = len(lines) + (n_edited_lines // 2)
-            _print_window(CURRENT_FILE, cur_line, 10)
-            print('-------------------------------------------------\n')
+            lint_error = _lint_file(CURRENT_FILE)
+            if lint_error:
+                print(
+                    '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]'
+                )
+                print(lint_error)
 
-            print('[This is the original code before your edit]')
-            print('-------------------------------------------------')
-            _print_window(original_file_backup_path, cur_line, 10)
-            print('-------------------------------------------------')
+                print('[This is how your edit would have looked if applied]')
+                print('-------------------------------------------------')
+                cur_line = len(lines) - WINDOW
+                _print_window(CURRENT_FILE, cur_line, 10)
+                print('-------------------------------------------------\n')
 
-            print(
-                'Your changes have NOT been applied. Please fix your edit command and try again.\n'
-                'You need to correct your added code.\n'
-                'DO NOT re-run the same failed edit command. Running it again will lead to the same error.'
-            )
+                print('[This is the original code before your edit]')
+                print('-------------------------------------------------')
+                _print_window(original_file_backup_path, cur_line, 10)
+                print('-------------------------------------------------')
 
-            # recover the original file
-            with open(original_file_backup_path, 'r') as fin, open(
-                CURRENT_FILE, 'w'
-            ) as fout:
-                fout.write(fin.read())
-            os.remove(original_file_backup_path)
-            return
+                print(
+                    'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+                    'You need to correct your added code.\n'
+                    'DO NOT re-run the same failed edit command. Running it again will lead to the same error.'
+                )
 
-        os.remove(original_file_backup_path)
+                # recover the original file
+                with open(original_file_backup_path, 'r') as fin, open(
+                    CURRENT_FILE, 'w'
+                ) as fout:
+                    fout.write(fin.read())
+                os.remove(original_file_backup_path)
+                return
 
-    with open(CURRENT_FILE, 'r') as file:
+    except Exception as e:
+        # Clean up the temporary file if an error occurs
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+        raise e
+
+    # Update the file information and print the updated content
+    with open(CURRENT_FILE, 'r', encoding='utf-8') as file:
         n_total_lines = len(file.readlines())
-    # set current line to the center of the appended lines
-    CURRENT_LINE = len(lines) + (n_edited_lines // 2)
+    CURRENT_LINE = n_total_lines
     print(
         f'[File: {os.path.abspath(CURRENT_FILE)} ({n_total_lines} lines total after edit)]'
     )

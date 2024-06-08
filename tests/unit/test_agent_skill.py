@@ -6,9 +6,9 @@ import docx
 import pytest
 
 from opendevin.runtime.plugins.agent_skills.agentskills import (
-    append_file,
     MSG_FILE_UPDATED,
     _print_window,
+    append_file,
     create_file,
     edit_file,
     find_file,
@@ -315,7 +315,7 @@ def test_append_file_from_scratch(tmp_path):
             append_file(content='APPENDED TEXT')
         result = buf.getvalue()
         expected = (
-            f'[File: {temp_file_path} (1 line total after edit)]\n'
+            f'[File: {temp_file_path} (1 lines total after edit)]\n'
             '1|APPENDED TEXT\n'
             '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
         )
@@ -811,9 +811,8 @@ def test_append_lint_file_pass(tmp_path, monkeypatch):
     expected = (
         f'[File: {file_path} (1 lines total)]\n'
         '1|\n'
-        f'[File: {file_path} (2 lines total after edit)]\n'
-        '1|\n'
-        "2|print('hello')\n"
+        f'[File: {file_path} (1 lines total after edit)]\n'
+        "1|print('hello')\n"
         '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
     )
     assert result.split('\n') == expected.split('\n')
