@@ -15,6 +15,7 @@ Or <execute_browse> Tell me what is in http://example.com </execute_browse>.
 The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them.
 To interact with GitHub, use the $GITHUB_TOKEN environment variable.
 For example, to push a branch `my_branch` to the GitHub repo `owner/repo`:
+
 <execute_bash> git push https://$GITHUB_TOKEN@github.com/owner/repo.git my_branch </execute_bash>
 If $GITHUB_TOKEN is not set, ask the user to set it.
 
