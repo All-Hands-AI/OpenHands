@@ -11,6 +11,7 @@ from opendevin.core.schema import AgentState
 from opendevin.events.action import (
     AgentFinishAction,
 )
+from opendevin.events.observation.browse import BrowserOutputObservation
 from opendevin.events.observation.delegate import AgentDelegateObservation
 
 workspace_base = os.getenv('WORKSPACE_BASE')
@@ -156,7 +157,12 @@ def test_browse_internet(http_server):
 
     # last observation
     last_observation = final_state.history.get_last_observation()
-    assert isinstance(last_observation, AgentDelegateObservation)
-    assert (
-        'OpenDevin is all you need!' in last_observation.outputs['content']
-    )  # TODO as an observation, this already has a content field
+    assert isinstance(
+        last_observation, (BrowserOutputObservation, AgentDelegateObservation)
+    )
+    if isinstance(last_observation, BrowserOutputObservation):
+        assert (
+            'OpenDevin is all you need!' in last_observation.outputs['content']
+        )  # TODO as an observation, this already has a content field
+    elif isinstance(last_observation, AgentDelegateObservation):
+        assert 'OpenDevin is all you need!' in last_observation.content
