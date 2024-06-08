@@ -33,35 +33,6 @@ def resolve_path(file_path, working_directory):
     # Get path relative to host
     path_in_host_workspace = Path(config.workspace_base) / path_in_workspace
 
-    # Prevent special folders
-    if path_in_host_workspace:
-        path_obj = Path(path_in_host_workspace)
-        if path_obj:
-            if path_obj.parts[-1] in (
-                '.git',
-                '.DS_Store',
-                '.svn',
-                '.hg',
-                '.idea',
-                '.vscode',
-                '.settings',
-                '.pytest_cache',
-                '__pycache__',
-                'node_modules',
-                'vendor',
-                'build',
-                'dist',
-                'bin',
-                'logs',
-                'log',
-                'tmp',
-                'temp',
-                'coverage',
-                'venv',
-                'env',
-            ):
-                raise PermissionError('Invalid path.')
-
     return path_in_host_workspace
 
 
