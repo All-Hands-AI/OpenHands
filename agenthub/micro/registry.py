@@ -4,7 +4,10 @@ import yaml
 
 all_microagents = {}
 
-for dir in os.listdir(os.path.dirname(__file__)):
+# Get the list of directories and sort them to preserve determinism
+dirs = sorted(os.listdir(os.path.dirname(__file__)))
+
+for dir in dirs:
     base = os.path.dirname(__file__) + '/' + dir
     if os.path.isfile(base):
         continue
