@@ -160,8 +160,6 @@ def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
     default_config.jwt_secret = None  # prevent leak
     assert default_config.llm.model == 'gpt-5-turbo-1106'
     assert default_config.llm.custom_llm_provider is None
-    if default_config.github_token is not None:  # prevent leak
-        pytest.fail('GitHub token should be empty')
     if default_config.llm.api_key is not None:  # prevent leak
         pytest.fail('LLM API key should be empty.')
 
@@ -270,16 +268,13 @@ def test_api_keys_repr_str():
         llm=llm_config,
         agent=agent_config,
         e2b_api_key='my_e2b_api_key',
-        github_token='my_github_token',
     )
     assert "e2b_api_key='******'" in repr(app_config)
-    assert "github_token='******'" in repr(app_config)
     assert "e2b_api_key='******'" in str(app_config)
-    assert "github_token='******'" in str(app_config)
 
     # Check that no other attrs in AppConfig have 'key' or 'token' in their name
     # This will fail when new attrs are added, and attract attention
-    known_key_token_attrs_app = ['e2b_api_key', 'github_token']
+    known_key_token_attrs_app = ['e2b_api_key']
     for attr_name in dir(AppConfig):
         if (
             not attr_name.startswith('__')
