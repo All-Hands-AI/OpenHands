@@ -26,6 +26,7 @@ vi.mock("#/services/settings", async (importOriginal) => ({
     LLM_MODEL: "gpt-4o",
     AGENT: "MonologueAgent",
     LANGUAGE: "en",
+    LLM_API_KEY: "sk-...",
   }),
   getDefaultSettings: vi.fn().mockReturnValue({
     LLM_MODEL: "gpt-4o",
@@ -139,7 +140,6 @@ describe("SettingsModal", () => {
       expect(saveSettings).toHaveBeenCalledWith({
         ...initialSettings,
         LLM_MODEL: "model3",
-        LLM_API_KEY: "", // reset after model change
       });
     });
 
@@ -196,7 +196,7 @@ describe("SettingsModal", () => {
         await userEvent.click(saveButton);
       });
 
-      expect(toastSpy).toHaveBeenCalledTimes(2);
+      expect(toastSpy).toHaveBeenCalledTimes(3);
     });
 
     it("should change the language", async () => {
