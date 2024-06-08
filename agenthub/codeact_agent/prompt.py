@@ -19,7 +19,7 @@ For example, you can list the files in the current directory by <execute_bash> l
 """
 
 BROWSING_PREFIX = """The assistant can browse the Internet with commands on behalf of the user by wrapping them with <execute_browse> and </execute_browse>.
-For example, you can browse a given URL by <execute_browse> goto("<URL>") </execute_browse>.
+For example, you can browse a given URL by <execute_browse> Tell me the usa's president using google search </execute_browse>.
 The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
 """
 PIP_INSTALL_PREFIX = """The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them."""
@@ -163,7 +163,7 @@ USER: Now browse the newly started server's homepage and show me the content.
 ASSISTANT:
 Sure! Let me browse the server's homepage at http://127.0.0.1:5000:
 <execute_browse>
-goto("http://127.0.0.1:5000")
+Get the content on "http://127.0.0.1:5000"
 </execute_browse>
 
 USER:
