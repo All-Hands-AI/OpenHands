@@ -10,6 +10,15 @@ Please follow [this document](https://github.com/OpenDevin/OpenDevin/blob/main/D
 ## Configure OpenDevin and your LLM
 Create a `config.toml` file if it does not exist at the root of the workspace. Please check [README.md](../../README.md) for how to set this up.
 
+## BioCoder Docker Image
+In the opendevin branch of the Biocoder repository, we have slightly modified our original Docker image to work with the OpenDevin environment. In the Docker image are testing scripts (`/testing/start_test_opendevin.py` and aux files in `/testing_files/`) to assist with evaluation. Additionally, we have installed all dependencies, including OpenJDK, mamba (with Python 3.6), and many system libraries. Notably, we have **not** packaged all repositories into the image, so they are downloaded at runtime.
+
+**Before first execution, pull our Docker image with the following command**
+```bash
+docker pull public.ecr.aws/i5g0m1f6/eval_biocoder:v1.0
+```
+
+To reproduce this image, please see the Dockerfile_Opendevin in the `biocoder` repository.
 
 ## Start the evaluation
 
@@ -40,7 +49,7 @@ then your command would be:
 ## Reference
 ```
 @misc{tang2024biocoder,
-      title={BioCoder: A Benchmark for Bioinformatics Code Generation with Large Language Models}, 
+      title={BioCoder: A Benchmark for Bioinformatics Code Generation with Large Language Models},
       author={Xiangru Tang and Bill Qian and Rick Gao and Jiakang Chen and Xinyun Chen and Mark Gerstein},
       year={2024},
       eprint={2308.16458},
