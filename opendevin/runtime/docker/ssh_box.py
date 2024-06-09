@@ -307,7 +307,7 @@ class DockerSSHBox(Sandbox):
             dockerfile_content = f"""
 FROM {base_image}
 
-RUN apt update && apt install -y openssh-server wget
+RUN apt update && apt install -y openssh-server wget sudo
 RUN mkdir -p -m0755 /var/run/sshd
 RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs
 
