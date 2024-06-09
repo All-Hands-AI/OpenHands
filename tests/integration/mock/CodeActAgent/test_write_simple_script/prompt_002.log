@@ -8,7 +8,12 @@ The assistant can use an interactive Python (Jupyter Notebook) environment, exec
 print("Hello World!")
 </execute_ipython>
 The assistant can execute bash commands on behalf of the user by wrapping them with <execute_bash> and </execute_bash>.
-For example, list files with <execute_bash> ls </execute_bash>.
+
+For example, you can list the files in the current directory by <execute_bash> ls </execute_bash>.
+Important, however: do not run interactive commands. You do not have access to stdin.
+Also, you need to handle commands that may run indefinitely and not return a result. For such cases, you should redirect the output to a file and run the command in the background to avoid blocking the execution.
+For example, to run a Python script that might run indefinitely without returning immediately, you can use the following format: <execute_bash> python3 app.py > server.log 2>&1 & </execute_bash>
+Also, if a command execution result saying like: Command: "npm start" timed out. Sending SIGINT to the process, you should also retry with running the command in the background.
 The assistant can browse the Internet with <execute_browse> and </execute_browse>.
 For example, <execute_browse> Tell me the usa's president using google search </execute_browse>.
 Or <execute_browse> Tell me what is in http://example.com </execute_browse>.
