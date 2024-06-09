@@ -1,6 +1,6 @@
 import asyncio
 import traceback
-from typing import Optional, Type
+from typing import Optional, Type, cast
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
@@ -35,6 +35,7 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
+from opendevin.events.observation.commands import IPythonRunCellObservation
 from opendevin.memory.history import ShortTermHistory
 
 MAX_ITERATIONS = config.max_iterations
@@ -364,10 +365,11 @@ class AgentController:
             )
         ]
 
-        # check if the last four actions or observations are too repetitive
+        # scenario 1: identical action, obs
+        # check if the last three actions or observations are too repetitive
         last_actions: list[Event] = []
         last_observations: list[Event] = []
-        # retrieve the last four actions and observations starting from the end of history, wherever they are
+        # retrieve the last three actions and observations starting from the end of history, wherever they are
         for event in reversed(filtered_history):
             if isinstance(event, Action) and len(last_actions) < 4:
                 last_actions.append(event)
@@ -377,22 +379,52 @@ class AgentController:
             if len(last_actions) == 4 and len(last_observations) == 4:
                 break
 
+        # are the last three actions the same?
+        last_three_actions = last_actions[:3]
+        last_observations_actions = last_observations[:3]
+        if len(last_three_actions) == 3 and all(
+            self._eq_no_pid(last_actions[0], action) for action in last_three_actions
+        ):
+            # and the last four observations the same?
+            if len(last_observations_actions) == 3 and all(
+                self._eq_no_pid(last_observations[0], observation)
+                for observation in last_observations_actions
+            ):
+                logger.warning('Action, Observation loop detected')
+                return True
+
+        # scenario 2: action, errors
+        # check if the last four actions are the same and result in errors
+        # retrieve the last four actions and observations starting from the end of history, wherever they are
+
         # are the last four actions the same?
         if len(last_actions) == 4 and all(
             self._eq_no_pid(last_actions[0], action) for action in last_actions
         ):
-            # and the last four observations the same?
-            if len(last_observations) == 4 and all(
-                self._eq_no_pid(last_observations[0], observation)
-                for observation in last_observations
-            ):
-                logger.warning('Action, Observation loop detected')
-                return True
-            # or, are the last four observations all errors?
-            elif all(isinstance(obs, ErrorObservation) for obs in last_observations):
+            # are the last four observations all errors?
+            if all(isinstance(obs, ErrorObservation) for obs in last_observations):
                 logger.warning('Action, ErrorObservation loop detected')
                 return True
+            # or, are the last four observations all IPythonRunCellObservation with SyntaxError?
+            elif all(
+                isinstance(obs, IPythonRunCellObservation) for obs in last_observations
+            ) and all(
+                cast(Observation, obs)
+                .content[-100:]
+                .find('SyntaxError: unterminated string literal (detected at line')
+                != -1
+                and len(
+                    cast(Observation, obs).content.split(
+                        'SyntaxError: unterminated string literal'
+                    )[-1]
+                )
+                < 10
+                for obs in last_observations
+            ):
+                logger.warning('Action, IPythonRunCellObservation loop detected')
+                return True
 
+        # scenario 3: monologue
         # check for repeated MessageActions with source=AGENT
         # see if the agent is engaged in a good old monologue, telling itself the same thing over and over
         agent_message_actions = [
@@ -424,6 +456,7 @@ class AgentController:
                     logger.warning('Repeated MessageAction with source=AGENT detected')
                     return True
 
+        # scenario 4: pattern on the last six steps
         # check if the agent repeats the same (Action, Observation)
         # every other step in the last six steps
         last_six_actions: list[Event] = []
