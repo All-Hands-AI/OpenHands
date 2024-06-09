@@ -805,8 +805,6 @@ if __name__ == '__main__':
 
     # Initialize required plugins
     plugins = [MambaRequirement(), AgentSkillsRequirement(), JupyterRequirement()]
-    # plugins = [MambaRequirement(), AgentSkillsRequirement()]
-    # plugins = [MambaRequirement()]
     ssh_box.init_plugins(plugins)
     logger.info(
         '--- AgentSkills COMMAND DOCUMENTATION ---\n'
