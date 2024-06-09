@@ -30,7 +30,7 @@ fi
 pip install jupyterlab notebook jupyter_kernel_gateway
 
 # Create logs directory
-mkdir -p /opendevin/logs && chmod 777 /opendevin/logs
+sudo mkdir -p /opendevin/logs && sudo chmod 777 /opendevin/logs
 
 
 # Run background process to start jupyter kernel gateway
