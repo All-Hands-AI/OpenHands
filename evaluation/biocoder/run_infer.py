@@ -7,14 +7,13 @@ import pathlib
 import subprocess
 import time
 from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass
 
 import pandas as pd
-import whatthepatch
 from datasets import load_dataset
 from tqdm import tqdm
 
-from evaluation.biocoder.biocoder_env_box import BiocoderSSHBox
+import agenthub
+from evaluation.biocoder.biocoder_env_box import BiocoderData, BiocoderSSHBox
 from opendevin.controller.state.state import State
 from opendevin.core.config import args, config, get_llm_config_arg
 from opendevin.core.logger import get_console_handler
@@ -69,143 +68,46 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 def get_test_result(instance, sandbox, workspace_dir_name):
     test_result = {'result': {}, 'metadata': {}}
-    # NOTE: if you need to do something in the sandbox to get the correctness metric, modify this function
     try:
-        test_patch_parsed = whatthepatch.parse_patch(instance.test_patch)
-        # get a list of filepaths that are involved in the patch
-        involved_filepaths = set()
-        for patch in test_patch_parsed:
-            involved_filepaths.add(patch.header.old_path.removeprefix('a/'))
-            involved_filepaths.add(patch.header.new_path.removeprefix('b/'))
-        involved_filepaths = list(involved_filepaths)
-        test_result['metadata']['1_test_patch_parse_success'] = True
-        test_result['metadata']['1_test_involved_filepaths'] = involved_filepaths
-    except Exception as e:
-        logger.error(
-            f'Error parsing test patch for instance {instance.instance_id}: {e}'
-        )
-        test_result['metadata']['1_test_patch_parse_success'] = False
-        test_result['metadata']['1_test_patch_parse_error'] = str(e)
-        test_result['metadata']['1_test_involved_filepaths'] = None
-        involved_filepaths = []
+        code = sandbox.get_changed_code(include_signature=True)
+        sandbox.copy_changed_code()
+        test_result['metadata']['1_copy_change_success'] = True
+        test_result['metadata']['1_copy_change_code'] = code
+    except Exception:
+        logger.error('Error fetching changed code for this instance')
+        test_result['metadata']['1_copy_change_success'] = False
+        test_result['metadata']['1_copy_change_code'] = None
 
-    # Try to revert the changes for involved filepaths
-    err_code, output = sandbox.execute(f'cd /workspace/{workspace_dir_name}')
-    test_result['metadata']['2_revert_test_involved_filepaths_success'] = []
-    for filepath in involved_filepaths:
-        err_code, output = sandbox.execute(
-            f'git checkout {instance["base_commit"]} -- {filepath}'
-        )
-        if err_code != 0:
-            logger.error(f'Error reverting changes for {filepath}: {output}')
-            test_result['metadata']['2_revert_test_involved_filepaths_success'].append(
-                False
-            )
-        else:
-            test_result['metadata']['2_revert_test_involved_filepaths_success'].append(
-                True
-            )
-
-    # Apply the testcase
-    err_code, output = sandbox.execute('git apply $SWE_TASK_DIR/test.patch')
-    if err_code != 0:
-        logger.error(f'Error applying test patch: {output}')
-        test_result['metadata']['3_apply_test_patch_success'] = False
-        test_result['metadata']['3_apply_test_patch_error'] = output
-    else:
-        test_result['metadata']['3_apply_test_patch_success'] = True
-
-    # Run the test command
-    err_code, output = sandbox.execute(
-        '$TEST_CMD > /workspace/$SWE_INSTANCE_ID.log 2>&1'
+    exit_code, output = sandbox.execute_and_check(
+        'cd /testing',
+        'Failed to cd /testing',
     )
-    if err_code != 0:
-        logger.error(f'Error running test command: {output}')
-        test_result['metadata']['4_run_test_command_success'] = False
-        test_result['metadata']['4_run_test_command_error'] = output
-    else:
-        test_result['metadata']['4_run_test_command_success'] = True
+    logger.info(f'cd $REPO_PATH: {output}')
 
-    # Get the test output
-    err_code, output = sandbox.execute('cat /workspace/$SWE_INSTANCE_ID.log')
-    if err_code != 0:
-        logger.error(f'Error getting test output: {output}')
-        test_result['metadata']['4_get_test_output_success'] = False
-        test_result['metadata']['4_get_test_output_error'] = output
-    else:
-        test_result['metadata']['4_get_test_output_success'] = True
-        test_result['test_output'] = output
-
-    # Reformat instance.json
-    # $SWE_TASK_DIR/instance.json is a dict {"XXX": "YYY"}, add a [ before and a ] after
-    err_code, output = sandbox.execute(
-        (
-            'cat $SWE_TASK_DIR/instance.json | sed "s/^{/[{/" | sed "s/}$/}]/" > /workspace/instance.json'
-        )
+    exit_code, output = sandbox.execute_and_check(
+        'whoami',
+        'Failed to run whoami',
     )
-    if err_code != 0:
-        logger.error(f'Error creating instance.json: {output}')
-        test_result['metadata']['5_reformat_instance_json_success'] = False
-        test_result['metadata']['5_reformat_instance_json_error'] = output
-    else:
-        test_result['metadata']['5_reformat_instance_json_success'] = True
+    logger.info(f'whoami: {output}')
 
-    # Get the instance report
-    err_code, output = sandbox.execute(
-        (
-            'cd /swe_util/OD-SWE-bench '
-            '&& export PYTHONPATH=$(pwd):$PYTHONPATH '
-            '&& conda run -n swe-bench-eval python swebench/metrics/get_instance_report.py --swe_bench_task /workspace/instance.json --log_path /workspace/$SWE_INSTANCE_ID.log'
-        )
+    exit_code, output = sandbox.execute(
+        '/home/devin/mambaforge/bin/mamba run -n test python3 /testing/start_test_opendevin.py'
     )
-    if err_code != 0:
-        logger.error(f'Error getting instance report: {output}')
-        test_result['metadata']['6_get_instance_report_success'] = False
-        test_result['metadata']['6_get_instance_report_error'] = output
-    else:
-        test_result['metadata']['6_get_instance_report_success'] = True
-        test_result['result_raw'] = output
+    logger.info(f'$TEST_CMD:\n{output}')
 
-        # try to parse output
-        for line in output.strip().split('\n'):
-            line = line.strip('-')
-            try:
-                key, value = line.split(':')
-            except ValueError:
-                # skip this line
-                print(f'Error parsing result line: {line}')
-                continue
-            value = value.strip()
-            try:
-                value = int(value)
-            except ValueError:
-                pass
-            test_result['result'][key.strip()] = value
+    exit_code, output = sandbox.execute_and_check(
+        'cat /testing_files/results_biocoder.json', 'Failed to read the result file'
+    )
+    if exit_code == 0:
+        test_result['metadata']['2_run_test_success'] = True
+        test_result['metadata']['2_run_test_result'] = str(output)
+    else:
+        test_result['metadata']['2_run_test_success'] = False
+        test_result['metadata']['2_run_test_result'] = str(output)
+    json_obj = json.loads(output)
+    test_result['result'] = json_obj['result']
+
     return test_result
-
-
-"""
-An instance should contain the following:
-
-
-"""
-
-
-@dataclass
-class BiocoderData:
-    filePath: str
-    numLines: int
-    lineStart: int
-    lineEnd: int
-    signature: str
-    comment: str
-    content: str
-    repository: str
-    promptSummaryOnly: str
-    contextCode: str
-    goldenCode: str
-    index: str
-    language: str
 
 
 def process_instance(
@@ -218,8 +120,12 @@ def process_instance(
 ):
     instance = BiocoderData(**instance)
     print(instance)
-
-    workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
+    workspace_dir_name = (
+        f'{instance.repository}__{instance.test_case_id[:10]}__{os.getpid()}'.replace(
+            '/', '__'
+        )
+    )
+    workspace_mount_path = os.path.join(config.workspace_base, workspace_dir_name)
     # create process-specific workspace dir
     # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
     # so that different agent don't interfere with each other.
@@ -231,7 +137,7 @@ def process_instance(
     if reset_logger:
         # Set up logger
         log_file = os.path.join(
-            eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
+            eval_output_dir, 'logs', f'instance_{instance.test_case_id}.log'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -239,7 +145,7 @@ def process_instance(
         # add back the console handler to print ONE line
         logger.addHandler(get_console_handler())
         logger.info(
-            f'Starting evaluation for instance {instance.instance_id}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
+            f'Starting evaluation for instance {instance.test_case_id}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -255,29 +161,55 @@ def process_instance(
 
     # NOTE: this is something special we do for SWE-Bench due to the reason described in the previous section
     # You can omit this if you don't need to setup specialized sandbox
-    workspace_dir_name = f'{instance.repo}__{instance.version}'.replace('/', '__')
+    workspace_dir_name = f'{instance.repository}__{instance.test_case_id[:10]}'.replace(
+        '/', '__'
+    )
     sandbox = BiocoderSSHBox.get_box_for_instance(
         instance,
         workspace_dir_name,
-        skip_workspace_mount=skip_workspace_mount,
+        skip_workspace_mount=False,
         workspace_mount_path=workspace_mount_path,
+        sandbox_plugins=agenthub.Agent.get_cls(agent_class).sandbox_plugins,
     )
+
+    sandbox.remove_code()
 
     # Prepare instruction
     instruction = (
-        f'In the file {instance.filename}, there is a function with a signature and without a body. Your job is to complete the function, and only this function, according to the given instructions.'
-        'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
-        '# Problem Statement\n'
-        f'{instance.problem_statement}\n\n'
+        f'Please complete the function "{instance.signature}" in the file /workspace/{instance.repository.split("/")[1]}/{instance.filePath}.\n'
+        f'The environment has been set up for you to start working. You may assume all necessary tools are installed.\n'
+        f'To complete the task, you must directly modify the file and fill in the function, keeping in mind that the function signature is on line {instance.lineStart-1}\n\n'
+        f'The function should do the following:\n'
+        f'{instance.promptSummaryOnly}\n\n'
     )
 
     instruction += (
         'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
         'You should NOT modify any other files other than the file intended. This means that you should NOT write any test cases.\n'
+        'You may need context from other files in the repository to complete this task.'
         'Do NOT add any import statements or change anything else other than the writing the function body.\n'
-        'You do not need to run the code to check if it works. The system will automatically check the correctness of your code.\n'
+        'You do not need to run the code to check if it works. \n'
         'Make sure to include proper formatting in Java and Python, including correct braces and/or indentation.\n'
     )
+
+    # instruction = (
+    #     f'In the file {instance.filePath}, there is a function with a signature and without a body. Your job is to complete the function, according to the given instructions. When you complete the function, respond with the function body, and nothing else.'
+    #     'The repository has cloned for you to start working. You are not allowed to run any bash commands, just modify the files. \n\n'
+    #     '# Problem Statement\n'
+    #     'Complete the following function signature:\n\n'
+    #     f'{instance.signature}'
+    #     'The function should do the following:\n\n'
+    #     f'{instance.promptSummaryOnly}\n\n'
+    # )
+    #
+    # instruction += (
+    #     'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+    #     'You should NOT modify any other files other than the file intended. This means that you should NOT write any test cases.\n'
+    #     'Do NOT add any import statements or change anything else other than the writing the function body.\n'
+    #     'You do not need to run the code to check if it works. The system will automatically check the correctness of your code.\n'
+    #     'Make sure to include proper formatting in Java and Python, including correct braces and/or indentation.\n'
+    # )
+
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
 
@@ -290,18 +222,7 @@ def process_instance(
         )
     )
 
-    # ======= THIS IS SWE-Bench specific =======
-    # Get git patch
-    git_patch = sandbox.get_diff_patch()
-    logger.info(f'Got git diff for instance {instance.instance_id}')
-    # ==========================================
-
-    # ======= Attempt to evaluate the agent's edits =======
-    # TODO: if you need to do something in the sandbox to get the correctness metric, modify this function
     test_result = get_test_result(instance, sandbox, workspace_dir_name)
-
-    # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
-    # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
 
     if state is None:
         raise ValueError('State should not be None.')
@@ -309,10 +230,10 @@ def process_instance(
 
     # Save the output
     output = {
-        'instance_id': instance.instance_id,
-        'swe_instance': instance.to_dict(),  # SWE Bench specific
+        'test_case_id': instance.test_case_id,
+        'biocoder_instance': instance.to_dict(),
         'instruction': instruction,
-        'git_patch': git_patch,  # SWE Bench specific
+        'generated': test_result['metadata']['1_copy_change_code'],
         'metadata': metadata,
         'history': [
             (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
@@ -353,7 +274,7 @@ if __name__ == '__main__':
         eval_note += '_N_' + args.eval_note
     eval_output_dir = os.path.join(
         args.eval_output_dir,
-        'swe_bench',
+        'biocoder',
         agent_class,
         model_name + '_maxiter_' + str(max_iterations) + eval_note,
     )
@@ -395,7 +316,7 @@ if __name__ == '__main__':
         with open(output_file, 'r') as f:
             for line in f:
                 data = json.loads(line)
-                finished_test_case_ids.add(data['instance_id'])
+                finished_test_case_ids.add(data['test_case_id'])
         logger.warning(
             f'Output file {output_file} already exists. Loaded {len(finished_test_case_ids)} finished instances.'
         )
@@ -428,10 +349,10 @@ if __name__ == '__main__':
     def update_progress(future):
         pbar.update(1)
         output = future.result()
-        pbar.set_description(f'Instance {output["instance_id"]}')
-        pbar.set_postfix_str(f'Test Result: {output["test_result"]["result"]}')
+        pbar.set_description(f'Instance {output["test_case_id"]}')
+        pbar.set_postfix_str(f'Test Result: {output["test_result"]}')
         logger.info(
-            f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]["result"]}'
+            f'Finished evaluation for instance {output["test_case_id"]}: {output["test_result"]}'
         )
         output_fp.write(json.dumps(output) + '\n')
         output_fp.flush()
