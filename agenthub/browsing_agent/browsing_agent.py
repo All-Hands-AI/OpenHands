@@ -29,6 +29,11 @@ USE_CONCISE_ANSWER = (
     os.environ.get('USE_CONCISE_ANSWER', 'false') == 'true'
 )  # only return concise answer when running webarena and miniwob benchmarks
 
+if not USE_NAV and USE_CONCISE_ANSWER:
+    EVAL_MODE = True  # disabled NAV actions and only return concise answer, for webarena and miniwob benchmarks\
+else:
+    EVAL_MODE = False
+
 
 class BrowsingAgent(Agent):
     VERSION = '1.0'
@@ -119,6 +124,12 @@ class BrowsingAgent(Agent):
         last_obs = None
         last_action = None
 
+        if EVAL_MODE and len(state.history.get_events_as_list()) == 1:
+            # for webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
+            # initialize and retrieve the first observation by issuing an noop OP
+            # For non-benchmark browsing, the browser env starts with a blank page, and the agent is expected to first navigate to desired websites
+            return BrowseInteractiveAction(browser_actions='noop()')
+
         for event in state.history.get_events():
             if isinstance(event, BrowseInteractiveAction):
                 prev_actions.append(event.browser_actions)
@@ -128,6 +139,9 @@ class BrowsingAgent(Agent):
                 return AgentFinishAction(outputs={'content': event.content})
             elif isinstance(event, Observation):
                 last_obs = event
+
+        if EVAL_MODE:
+            prev_actions = prev_actions[1:]  # remove the first noop action
 
         prev_action_str = '\n'.join(prev_actions)
         # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
