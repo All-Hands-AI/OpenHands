@@ -82,13 +82,11 @@ def test_llm_config_attributes_masking(test_handler):
 
 def test_app_config_attributes_masking(test_handler):
     logger, stream = test_handler
-    app_config = AppConfig(
-        e2b_api_key='e2b-xyz789', github_token='ghp_abcdefghijklmnopqrstuvwxyz'
-    )
+    app_config = AppConfig(e2b_api_key='e2b-xyz789')
     logger.info(f'App Config: {app_config}')
     log_output = stream.getvalue()
     assert "e2b_api_key='******'" in log_output
-    assert "github_token='******'" in log_output
+    assert 'github_token' not in log_output
     assert 'e2b-xyz789' not in log_output
     assert 'ghp_abcdefghijklmnopqrstuvwxyz' not in log_output
 
