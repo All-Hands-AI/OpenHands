@@ -49,25 +49,20 @@ OpenDevin agents collaborate with human developers to write code, fix bugs, and 
 The easiest way to run OpenDevin is inside a Docker container. It works best with the most recent version of Docker, `26.0.0`.
 You must be using Linux, Mac OS, or WSL on Windows.
 
-To start the app, run these commands, replacing `$(pwd)/workspace` with the directory you want OpenDevin to work with.
+To start OpenDevin in a docker container, run the following commands in your terminal:
 
 > [!WARNING]
-> OpenDevin runs bash commands within a Docker sandbox, so it should not affect your machine.
-> But your workspace directory will be attached to that sandbox, and files in the directory may be modified or deleted.
+> When you run the following command, files in `./workspace` may be modified or deleted.
 
 ```bash
-# The directory you want OpenDevin to work with. MUST be an absolute path!
-export WORKSPACE_BASE=$(pwd)/workspace;
-```
-
-```bash
+OPENDEVIN_WORKSPACE=$(pwd)/workspace
 docker run -it \
     --pull=always \
     -e SANDBOX_USER_ID=$(id -u) \
     -e PERSIST_SANDBOX="true" \
     -e SSH_PASSWORD="make something up here" \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
-    -v $WORKSPACE_BASE:/opt/workspace_base \
+    -e WORKSPACE_MOUNT_PATH=$OPENDEVIN_WORKSPACE \
+    -v $OPENDEVIN_WORKSPACE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
@@ -75,7 +70,9 @@ docker run -it \
     ghcr.io/opendevin/opendevin:0.6
 ```
 
-You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000).
+You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000) with access to `./workspace`. To have OpenDevin operate on your code, place it in `./workspace`.
+
+OpenDevin will only have access to this workspace folder. The rest of your system will not be affected as it runs in a secured docker sandbox.
 
 ## 🚀 Documentation
 
