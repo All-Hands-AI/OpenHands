@@ -205,7 +205,6 @@ class DockerSSHBox(Sandbox):
             container_image: str | None = None,
             timeout: int = config.sandbox_timeout,
             sid: str | None = None,
-            use_agnostic_sandbox: bool = False,
     ):
         logger.info(
             f'SSHBox is running as {"opendevin" if self.run_as_devin else "root"} user with USER_ID={self.user_id} in the sandbox'
