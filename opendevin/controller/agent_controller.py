@@ -386,7 +386,7 @@ class AgentController:
 
         last_actions: list[Event] = []
         last_observations: list[Event] = []
-        # retrieve the last four actions and observations starting from the end of history, wherever they are
+        # retrieve the last three actions and observations starting from the end of history, wherever they are
         for event in reversed(filtered_history):
             if isinstance(event, Action) and len(last_actions) < 4:
                 last_actions.append(event)
