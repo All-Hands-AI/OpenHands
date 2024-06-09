@@ -10,7 +10,7 @@ RUN npm ci
 COPY ./frontend ./
 RUN npm run make-i18n && npm run build
 
-FROM python:3.11-slim as backend-builder
+FROM python:3.12.3-slim as backend-builder
 
 WORKDIR /app
 ENV PYTHONPATH '/app'
