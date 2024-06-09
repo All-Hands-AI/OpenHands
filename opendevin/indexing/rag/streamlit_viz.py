@@ -2,7 +2,9 @@ import streamlit as st
 from dotenv import load_dotenv
 from llama_index.core import VectorStoreIndex
 from llama_index.core.chat_engine.types import ChatMode
+from llama_index.core.postprocessor import SentenceEmbeddingOptimizer
 
+from opendevin.indexing.rag.postprocessing import DeduplicateNodePostprocessor
 from opendevin.indexing.rag.rag import VectorIndex
 
 load_dotenv()
@@ -16,8 +18,19 @@ def get_index() -> VectorStoreIndex:
 index = get_index()
 
 if 'chat_engine' not in st.session_state.keys():
+    postprocessor = SentenceEmbeddingOptimizer(
+        embed_model=index.service_context.embed_model,
+        percentile_cutoff=0.5,
+        threshold_cutoff=0.7,
+    )
+
     st.session_state.chat_engine = index.as_chat_engine(
-        chat_mode=ChatMode.CONTEXT, verbose=True
+        chat_mode=ChatMode.CONTEXT,
+        verbose=True,
+        node_postprocessors=[
+            # postprocessor,
+            DeduplicateNodePostprocessor()
+        ],
     )
 
 st.set_page_config(
