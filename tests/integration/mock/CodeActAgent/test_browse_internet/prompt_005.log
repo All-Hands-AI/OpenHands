@@ -122,7 +122,8 @@ RootWebArea 'The Ultimate Answer', focused
 	StaticText 'The answer is OpenDevin is all you need!'
 
 # Previous Actions
-noop()
+goto('http://localhost:8000')
+click('button')
 click("10")
 
 Here is an example with chain of thought of a valid action when clicking on a button:

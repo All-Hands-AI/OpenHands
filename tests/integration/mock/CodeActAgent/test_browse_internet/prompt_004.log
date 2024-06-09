@@ -113,6 +113,12 @@ Don't execute multiple actions at once if you need feedback from the page.
 
 ----------
 
+IMPORTANT! Last action is incorrect:
+goto('http://localhost:8000')
+click('button')
+Think again with the current observation of the page.
+
+
 # Current Accessibility Tree:
 RootWebArea 'The Ultimate Answer', focused
 	[8] heading 'The Ultimate Answer'
@@ -121,7 +127,8 @@ RootWebArea 'The Ultimate Answer', focused
 	[10] button 'Click me', clickable
 
 # Previous Actions
-noop()
+goto('http://localhost:8000')
+click('button')
 
 Here is an example with chain of thought of a valid action when clicking on a button:
 "

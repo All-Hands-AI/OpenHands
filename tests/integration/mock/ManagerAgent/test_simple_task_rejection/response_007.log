@@ -1,0 +1,10 @@
+```json
+{
+  "action": "reject",
+  "args": {
+    "outputs": {
+      "reason": "The current repository is not a valid git repository or there is no diff in the staging area."
+    }
+  }
+}
+```
