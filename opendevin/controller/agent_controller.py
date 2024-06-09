@@ -1,6 +1,6 @@
 import asyncio
 import traceback
-from typing import Optional, Type
+from typing import Optional, Type, cast
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
@@ -35,6 +35,7 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
+from opendevin.events.observation.commands import IPythonRunCellObservation
 
 MAX_ITERATIONS = config.max_iterations
 MAX_CHARS = config.llm.max_chars
@@ -421,6 +422,24 @@ class AgentController:
             # and the last four observations all errors?
             if all(isinstance(obs, ErrorObservation) for obs in last_observations):
                 logger.warning('Action, ErrorObservation loop detected')
+                return True
+            # or, are the last four observations all IPythonRunCellObservation with SyntaxError?
+            elif all(
+                isinstance(obs, IPythonRunCellObservation) for obs in last_observations
+            ) and all(
+                cast(Observation, obs)
+                .content[-100:]
+                .find('SyntaxError: unterminated string literal (detected at line')
+                != -1
+                and len(
+                    cast(Observation, obs).content.split(
+                        'SyntaxError: unterminated string literal (detected at line'
+                    )[-1]
+                )
+                < 10
+                for obs in last_observations
+            ):
+                logger.warning('Action, IPythonRunCellObservation loop detected')
                 return True
 
         # scenario 3: monologue

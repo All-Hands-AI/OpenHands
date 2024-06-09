@@ -5,11 +5,12 @@ import pytest
 
 from opendevin.controller.agent_controller import AgentController
 from opendevin.events.action import CmdRunAction, FileReadAction, MessageAction
-from opendevin.events.action.commands import CmdKillAction
+from opendevin.events.action.commands import CmdKillAction, IPythonRunCellAction
 from opendevin.events.observation import (
     CmdOutputObservation,
     FileReadObservation,
 )
+from opendevin.events.observation.commands import IPythonRunCellObservation
 from opendevin.events.observation.empty import NullObservation
 from opendevin.events.observation.error import ErrorObservation
 from opendevin.events.stream import EventSource, EventStream
@@ -179,6 +180,123 @@ class TestAgentController:
             mock_warning.assert_called_once_with(
                 'Action, ErrorObservation loop detected'
             )
+
+    def test_is_stuck_ipython_syntax_error(
+        self, controller: AgentController, event_stream: EventStream
+    ):
+        ipython_action_1 = IPythonRunCellAction(code='print("hello')
+        event_stream.add_event(ipython_action_1, EventSource.AGENT)
+        ipython_observation_1 = IPythonRunCellObservation(
+            content='print("hello\n       ^\nSyntaxError: unterminated string literal (detected at line 1)',
+            code='print("hello',
+        )
+        ipython_observation_1._cause = ipython_action_1._id
+        event_stream.add_event(ipython_observation_1, EventSource.USER)
+
+        ipython_action_2 = IPythonRunCellAction(code='print("hello')
+        event_stream.add_event(ipython_action_2, EventSource.AGENT)
+        ipython_observation_2 = IPythonRunCellObservation(
+            content='print("hello\n       ^\nSyntaxError: unterminated string literal (detected at line 1)',
+            code='print("hello',
+        )
+        ipython_observation_2._cause = ipython_action_2._id
+        event_stream.add_event(ipython_observation_2, EventSource.USER)
+
+        ipython_action_3 = IPythonRunCellAction(code='print("hello')
+        event_stream.add_event(ipython_action_3, EventSource.AGENT)
+        ipython_observation_3 = IPythonRunCellObservation(
+            content='print("hello\n       ^\nSyntaxError: unterminated string literal (detected at line 3)',
+            code='print("hello',
+        )
+        ipython_observation_3._cause = ipython_action_3._id
+        event_stream.add_event(ipython_observation_3, EventSource.USER)
+
+        ipython_action_4 = IPythonRunCellAction(code='print("hello')
+        event_stream.add_event(ipython_action_4, EventSource.AGENT)
+        ipython_observation_4 = IPythonRunCellObservation(
+            content='print("hello\n       ^\nSyntaxError: unterminated string literal (detected at line 2)',
+            code='print("hello',
+        )
+        ipython_observation_4._cause = ipython_action_4._id
+        event_stream.add_event(ipython_observation_4, EventSource.USER)
+
+        controller.state.history.set_event_stream(event_stream)
+
+        last_observations = [
+            ipython_observation_1,
+            ipython_observation_2,
+            ipython_observation_3,
+            ipython_observation_4,
+        ]
+        for observation in last_observations:
+            has_string = (
+                observation.content[-100:].find(
+                    'SyntaxError: unterminated string literal (detected at line'
+                )
+                != -1
+            )
+            assert has_string
+
+            string_is_last = (
+                len(
+                    observation.content.split(
+                        'SyntaxError: unterminated string literal (detected at line'
+                    )[-1]
+                )
+                < 10
+            )
+            assert string_is_last
+
+        with patch('logging.Logger.warning') as mock_warning:
+            assert controller._is_stuck() is True
+            mock_warning.assert_called_once_with(
+                'Action, IPythonRunCellObservation loop detected'
+            )
+
+    def test_is_stuck_ipython_syntax_error_not_at_end(
+        self, controller: AgentController, event_stream: EventStream
+    ):
+        ipython_action_1 = IPythonRunCellAction(code='print("hello')
+        event_stream.add_event(ipython_action_1, EventSource.AGENT)
+        ipython_observation_1 = IPythonRunCellObservation(
+            content='print("hello\n       ^\nSyntaxError: unterminated string literal (detected at line 1)\nThis is some additional output',
+            code='print("hello',
+        )
+        ipython_observation_1._cause = ipython_action_1._id
+        event_stream.add_event(ipython_observation_1, EventSource.USER)
+
+        ipython_action_2 = IPythonRunCellAction(code='print("hello')
+        event_stream.add_event(ipython_action_2, EventSource.AGENT)
+        ipython_observation_2 = IPythonRunCellObservation(
+            content='print("hello\n       ^\nSyntaxError: unterminated string literal (detected at line 1)\nToo much output here on and on',
+            code='print("hello',
+        )
+        ipython_observation_2._cause = ipython_action_2._id
+        event_stream.add_event(ipython_observation_2, EventSource.USER)
+
+        ipython_action_3 = IPythonRunCellAction(code='print("hello')
+        event_stream.add_event(ipython_action_3, EventSource.AGENT)
+        ipython_observation_3 = IPythonRunCellObservation(
+            content='print("hello\n       ^\nSyntaxError: unterminated string literal (detected at line 3)\nEnough',
+            code='print("hello',
+        )
+        ipython_observation_3._cause = ipython_action_3._id
+        event_stream.add_event(ipython_observation_3, EventSource.USER)
+
+        ipython_action_4 = IPythonRunCellAction(code='print("hello')
+        event_stream.add_event(ipython_action_4, EventSource.AGENT)
+        ipython_observation_4 = IPythonRunCellObservation(
+            content='print("hello\n       ^\nSyntaxError: unterminated string literal (detected at line 2)\nLast line of output',
+            code='print("hello',
+        )
+        ipython_observation_4._cause = ipython_action_4._id
+        event_stream.add_event(ipython_observation_4, EventSource.USER)
+
+        controller.state.history.set_event_stream(event_stream)
+
+        with patch('logging.Logger.warning') as mock_warning:
+            assert controller._is_stuck() is False
+            mock_warning.assert_not_called()
 
     def test_is_stuck_repeating_action_observation_pattern(
         self, controller: AgentController, event_stream: EventStream
