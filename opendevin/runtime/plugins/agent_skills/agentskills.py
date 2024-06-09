@@ -13,12 +13,14 @@ Functions:
 - search_file(search_term, file_path=None): Searches for a term in the specified file or the currently open file.
 - find_file(file_name, dir_path='./'): Finds all files with the given name in the specified directory.
 - edit_file(start, end, content): Replaces lines in a file with the given content.
+- append_file(content): Appends given content to a file.
 """
 
 import base64
 import functools
 import os
 import subprocess
+import tempfile
 from inspect import signature
 from typing import Optional
 
@@ -359,6 +361,107 @@ def edit_file(start: int, end: int, content: str) -> None:
 
 
 @update_pwd_decorator
+def append_file(content: str) -> None:
+    """Append content to the open file.
+
+    It appends text `content` to the end of the open file. Remember, the file must be open before editing.
+
+    Args:
+        content: str: The content to append to the file.
+    """
+    global CURRENT_FILE, CURRENT_LINE, WINDOW
+    if not CURRENT_FILE or not os.path.isfile(CURRENT_FILE):
+        raise FileNotFoundError('No file open. Use the open_file function first.')
+
+    # Use a temporary file to write changes
+    temp_file_path = ''
+    try:
+        # Create a temporary file
+        with tempfile.NamedTemporaryFile('w', delete=False) as temp_file:
+            temp_file_path = temp_file.name
+
+            # Read the original file and check if empty and for a trailing newline
+            with open(CURRENT_FILE, 'r') as original_file:
+                lines = original_file.readlines()
+
+            if lines and not (len(lines) == 1 and lines[0].strip() == ''):
+                if not lines[-1].endswith('\n'):
+                    lines[-1] += '\n'
+                content = ''.join(lines) + content
+            else:
+                content = content
+
+            if not content.endswith('\n'):
+                content += '\n'
+
+            # Append the new content with a trailing newline
+            temp_file.write(content)
+
+        # Replace the original file with the temporary file atomically
+        os.replace(temp_file_path, CURRENT_FILE)
+
+        # Handle linting
+        if ENABLE_AUTO_LINT:
+            # BACKUP the original file
+            original_file_backup_path = os.path.join(
+                os.path.dirname(CURRENT_FILE),
+                f'.backup.{os.path.basename(CURRENT_FILE)}',
+            )
+            with open(original_file_backup_path, 'w') as f:
+                f.writelines(lines)
+
+            lint_error = _lint_file(CURRENT_FILE)
+            if lint_error:
+                print(
+                    '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]'
+                )
+                print(lint_error)
+
+                print('[This is how your edit would have looked if applied]')
+                print('-------------------------------------------------')
+                cur_line = len(lines) - WINDOW
+                _print_window(CURRENT_FILE, cur_line, 10)
+                print('-------------------------------------------------\n')
+
+                print('[This is the original code before your edit]')
+                print('-------------------------------------------------')
+                _print_window(original_file_backup_path, cur_line, 10)
+                print('-------------------------------------------------')
+
+                print(
+                    'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+                    'You need to correct your added code.\n'
+                    'DO NOT re-run the same failed edit command. Running it again will lead to the same error.'
+                )
+
+                # recover the original file
+                with open(original_file_backup_path, 'r') as fin, open(
+                    CURRENT_FILE, 'w'
+                ) as fout:
+                    fout.write(fin.read())
+                os.remove(original_file_backup_path)
+                return
+
+    except Exception as e:
+        # Clean up the temporary file if an error occurs
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+        raise e
+
+    # Update the file information and print the updated content
+    with open(CURRENT_FILE, 'r', encoding='utf-8') as file:
+        n_total_lines = len(file.readlines())
+    CURRENT_LINE = n_total_lines
+    print(
+        f'[File: {os.path.abspath(CURRENT_FILE)} ({n_total_lines} lines total after edit)]'
+    )
+    _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW)
+    print(
+        '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]'
+    )
+
+
+@update_pwd_decorator
 def search_dir(search_term: str, dir_path: str = './') -> None:
     """Searches for search_term in all files in dir. If dir is not provided, searches in the current directory.
 
@@ -672,6 +775,7 @@ __all__ = [
     'scroll_down',
     'scroll_up',
     'create_file',
+    'append_file',
     'edit_file',
     'search_dir',
     'search_file',

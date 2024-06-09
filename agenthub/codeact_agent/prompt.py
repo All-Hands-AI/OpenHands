@@ -5,7 +5,7 @@ _AGENT_SKILLS_DOCS = AgentSkillsRequirement.documentation
 COMMAND_DOCS = (
     '\nApart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:\n'
     f'{_AGENT_SKILLS_DOCS}'
-    "Please note that THE `edit_file` FUNCTION REQUIRES PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run."
+    "Please note that THE `edit_file` and `append_file` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run."
 )
 
 # ======= SYSTEM MESSAGE =======

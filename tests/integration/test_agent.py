@@ -77,6 +77,9 @@ def test_edits():
     final_state: State = asyncio.run(main(task, exit_on_message=True))
     assert final_state.agent_state == AgentState.STOPPED
 
+    # Add a 2-second delay
+    # time.sleep(2)
+
     # Verify bad.txt has been fixed
     text = """This is a stupid typo.
 Really?

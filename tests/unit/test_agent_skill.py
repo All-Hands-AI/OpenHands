@@ -1,5 +1,6 @@
 import contextlib
 import io
+import os
 import sys
 
 import docx
@@ -8,6 +9,7 @@ import pytest
 from opendevin.runtime.plugins.agent_skills.agentskills import (
     MSG_FILE_UPDATED,
     _print_window,
+    append_file,
     create_file,
     edit_file,
     find_file,
@@ -395,6 +397,93 @@ check(any_int)"""
             'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
         )
         assert result == expected
+
+
+def test_append_file(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    content = 'Line 1\nLine 2'
+    temp_file_path.write_text(content)
+
+    open_file(str(temp_file_path))
+
+    with io.StringIO() as buf:
+        with contextlib.redirect_stdout(buf):
+            append_file(content='APPENDED TEXT')
+        result = buf.getvalue()
+        expected = (
+            f'[File: {temp_file_path} (3 lines total after edit)]\n'
+            '1|Line 1\n'
+            '2|Line 2\n'
+            '3|APPENDED TEXT\n'
+            '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+        )
+        assert result.split('\n') == expected.split('\n')
+
+    with open(temp_file_path, 'r') as file:
+        lines = file.readlines()
+    assert len(lines) == 3
+    assert lines[0].rstrip() == 'Line 1'
+    assert lines[1].rstrip() == 'Line 2'
+    assert lines[2].rstrip() == 'APPENDED TEXT'
+
+
+def test_append_file_from_scratch(tmp_path):
+    temp_file_path = tmp_path / 'a.txt'
+    create_file(str(temp_file_path))
+    try:
+        open_file(str(temp_file_path))
+        with io.StringIO() as buf:
+            with contextlib.redirect_stdout(buf):
+                append_file(content='APPENDED TEXT')
+            result = buf.getvalue()
+            expected = (
+                f'[File: {temp_file_path} (1 lines total after edit)]\n'
+                '1|APPENDED TEXT\n'
+                '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+            )
+            assert result.split('\n') == expected.split('\n')
+
+        with open(temp_file_path, 'r') as file:
+            lines = file.readlines()
+        assert len(lines) == 1
+        assert lines[0].rstrip() == 'APPENDED TEXT'
+    finally:
+        os.remove(temp_file_path)
+
+
+def test_append_file_from_scratch_multiline(tmp_path):
+    temp_file_path = tmp_path / 'a3.txt'
+    create_file(str(temp_file_path))
+    try:
+        open_file(temp_file_path)
+        with io.StringIO() as buf:
+            with contextlib.redirect_stdout(buf):
+                append_file(
+                    content='APPENDED TEXT1\nAPPENDED TEXT2\nAPPENDED TEXT3',
+                )
+            result = buf.getvalue()
+            expected = (
+                f'[File: {temp_file_path} (3 lines total after edit)]\n'
+                '1|APPENDED TEXT1\n'
+                '2|APPENDED TEXT2\n'
+                '3|APPENDED TEXT3\n'
+                '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]\n'
+            )
+            assert result.split('\n') == expected.split('\n')
+
+        with open(temp_file_path, 'r') as file:
+            lines = file.readlines()
+        assert len(lines) == 3
+        assert lines[0].rstrip() == 'APPENDED TEXT1'
+        assert lines[1].rstrip() == 'APPENDED TEXT2'
+        assert lines[2].rstrip() == 'APPENDED TEXT3'
+    finally:
+        os.remove(temp_file_path)
+
+
+def test_append_file_not_opened():
+    with pytest.raises(FileNotFoundError):
+        append_file(content='APPEND TEXT')
 
 
 def test_edit_file(tmp_path):
