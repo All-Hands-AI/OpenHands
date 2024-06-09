@@ -181,7 +181,7 @@ class Q20GameCelebrity(Q20Game):
         user_messages = [
             {
                 'role': 'system',
-                'content': f'Based on on your knowledge about the celebrity: {self.item}, '
+                'content': f'Based on your knowledge about the celebrity: {self.item}, '
                 f'respond to the following question or guess. '
                 f"Limit your respond to only 'Yes.', 'No.' or 'Dunno.', with no explanation or other words. "
                 f"Never say the name {self.item} in your response. Do not say 'Dunno.' if it can be answered by 'Yes.' or 'No.' "
