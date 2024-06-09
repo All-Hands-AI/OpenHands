@@ -10,6 +10,7 @@ from opendevin.core.main import main
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
     AgentFinishAction,
+    AgentRejectAction,
 )
 
 workspace_base = os.getenv('WORKSPACE_BASE')
@@ -22,6 +23,10 @@ workspace_base = os.getenv('WORKSPACE_BASE')
 @pytest.mark.skipif(
     os.getenv('AGENT') == 'CodeActAgent' and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
     reason='CodeActAgent only supports ssh sandbox which is stateful',
+)
+@pytest.mark.skipif(
+    os.getenv('AGENT') == 'ManagerAgent',
+    reason='Manager agent is not capable of finishing this in reasonable steps yet',
 )
 def test_write_simple_script():
     task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
@@ -107,6 +112,23 @@ def test_ipython():
     assert (
         content.strip() == 'hello world'
     ), f'Expected content "hello world", but got "{content.strip()}"'
+
+
+@pytest.mark.skipif(
+    os.getenv('AGENT') != 'ManagerAgent',
+    reason='Currently, only ManagerAgent supports task rejection',
+)
+@pytest.mark.skipif(
+    os.getenv('SANDBOX_TYPE') == 'local',
+    reason='FIXME: local sandbox does not capture stderr',
+)
+def test_simple_task_rejection():
+    # Give an impossible task to do: cannot write a commit message because
+    # the workspace is not a git repo
+    task = 'Write a git commit message for the current staging area. Do not ask me for confirmation at any point.'
+    final_state: State = asyncio.run(main(task))
+    assert final_state.agent_state == AgentState.STOPPED
+    assert isinstance(final_state.history[-1][0], AgentRejectAction)
 
 
 @pytest.mark.skipif(

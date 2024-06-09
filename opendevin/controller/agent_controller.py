@@ -19,6 +19,7 @@ from opendevin.events.action import (
     AddTaskAction,
     AgentDelegateAction,
     AgentFinishAction,
+    AgentRejectAction,
     ChangeAgentStateAction,
     MessageAction,
     ModifyTaskAction,
@@ -164,6 +165,9 @@ class AgentController:
         elif isinstance(event, AgentFinishAction):
             self.state.outputs = event.outputs  # type: ignore[attr-defined]
             await self.set_agent_state_to(AgentState.FINISHED)
+        elif isinstance(event, AgentRejectAction):
+            self.state.outputs = event.outputs  # type: ignore[attr-defined]
+            await self.set_agent_state_to(AgentState.REJECTED)
         elif isinstance(event, Observation):
             if self._pending_action and self._pending_action.id == event.cause:
                 await self.add_history(self._pending_action, event)
@@ -252,7 +256,7 @@ class AgentController:
                 # propagate error state until an agent or user can handle it
                 await self.set_agent_state_to(AgentState.ERROR)
                 return
-            delegate_done = delegate_state == AgentState.FINISHED
+            delegate_done = delegate_state in (AgentState.FINISHED, AgentState.REJECTED)
             if delegate_done:
                 logger.info(
                     f'[Agent Controller {self.id}] Delegate agent has finished execution'
