@@ -1,9 +1,9 @@
 import io
 import os
 import re
+import subprocess
 import sys
 import tempfile
-import subprocess
 from functools import partial
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from threading import Thread
@@ -18,7 +18,8 @@ workspace_path = os.getenv('WORKSPACE_BASE')
 
 
 def filter_out_symbols(input):
-    return ' '.join([char for char in input if char.isalnum()])
+    input = re.sub(r'\\n|\\r\\n|\\r|\s+', '', input)
+    return input
 
 
 def get_log_id(prompt_log_name):
@@ -84,13 +85,19 @@ def get_mock_response(test_name: str, messages: str, id: int) -> str:
             print('Mismatched Prompt File path', prompt_file_path)
             print('---' * 10)
             # Create a temporary file to store messages
-            with tempfile.NamedTemporaryFile(delete=False, mode='w', encoding='utf-8') as tmp_file:
+            with tempfile.NamedTemporaryFile(
+                delete=False, mode='w', encoding='utf-8'
+            ) as tmp_file:
                 tmp_file_path = tmp_file.name
                 tmp_file.write(messages)
 
             try:
                 # Use diff command to compare files and capture the output
-                result = subprocess.run(['diff', '-u', prompt_file_path, tmp_file_path], capture_output=True, text=True)
+                result = subprocess.run(
+                    ['diff', '-u', prompt_file_path, tmp_file_path],
+                    capture_output=True,
+                    text=True,
+                )
                 if result.returncode != 0:
                     print('Diff:')
                     print(result.stdout)
