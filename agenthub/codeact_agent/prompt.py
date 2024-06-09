@@ -138,7 +138,7 @@ Installing collected packages: Werkzeug, itsdangerous, click, blinker, flask
 Successfully installed Werkzeug-3.0.2 blinker-1.7.0 click-8.1.7 flask-3.0.3 itsdangerous-2.2.0
 
 ASSISTANT:
-I'll rerun the file:
+Now that Flask is installed, let me run the Python file again:
 <execute_bash>
 python3 app.py > server.log 2>&1 &
 </execute_bash>
