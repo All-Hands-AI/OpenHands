@@ -11,15 +11,17 @@ from llama_index.core.callbacks import CallbackManager, LlamaDebugHandler
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.openai import OpenAI
 from llama_index.readers.file import FlatReader
+from llama_index.readers.github import GithubClient, GithubRepositoryReader
 from llama_index.vector_stores.pinecone import PineconeVectorStore
 from pinecone import Pinecone
+from tqdm import tqdm
 
 load_dotenv()
 
 
 class VectorIndex:
     embedding_model_name = 'jinaai/jina-embeddings-v2-base-code'
-    index_name = 'test-code-index'
+    index_name = 'opendevin-codebase'
 
     def __init__(self) -> None:
         db = Pinecone(
@@ -61,10 +63,18 @@ class VectorIndex:
         response = query_engine.query(query)
         return response
 
-    def ingest_repo(self, repo_path: str) -> None:
+    def ingest_directory(self, repo_path: str) -> None:
+        required_exts = ['.py', '.md', '.sh']
+        parser = FlatReader()
+
         dir_reader = SimpleDirectoryReader(
             input_dir=repo_path,
-            file_extractor={'.py': FlatReader()},
+            file_extractor={
+                '.py': parser,
+                '.md': parser,
+                '.sh': parser,
+            },  # TODO: add more file types
+            required_exts=required_exts,
             recursive=True,
         )
         docs = dir_reader.load_data()
@@ -78,9 +88,46 @@ class VectorIndex:
         for doc in docs:
             self.index.insert(document=doc)
 
+    def ingest_repo(self, owner: str, repo: str) -> None:
+        github_token = os.environ.get('GITHUB_TOKEN')
+        github_client = GithubClient(github_token=github_token, verbose=True)
+
+        documents = GithubRepositoryReader(
+            github_client=github_client,
+            owner=owner,
+            repo=repo,
+            use_parser=False,
+            verbose=False,
+            filter_directories=(
+                # ["opendevin", "agenthub"],
+                ['evaluation'],
+                GithubRepositoryReader.FilterType.INCLUDE,
+            ),
+            filter_file_extensions=(
+                [
+                    '.png',
+                    '.jpg',
+                    '.jpeg',
+                    '.gif',
+                    '.svg',
+                    '.ico',
+                    'json',
+                    '.ipynb',
+                ],
+                GithubRepositoryReader.FilterType.EXCLUDE,
+            ),
+        ).load_data(branch='main')
+
+        # insert with tqdm progress bar
+        for doc in tqdm(documents):
+            self.index.insert(document=doc)
+
+        print(f'Indexed {len(documents)} documents')
+
 
 if __name__ == '__main__':
     vi = VectorIndex()
-    # vi.ingest_repo('./agenthub/codeact_agent')
-    response = vi.query('how does the memory condenser component work?')
-    print(response)
+    vi.ingest_repo('OpenDevin', 'OpenDevin')
+    # vi.ingest_directory('.')
+    # response = vi.query('how does the memory condenser component work?')
+    # print(response)
