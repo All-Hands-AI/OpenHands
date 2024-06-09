@@ -415,7 +415,7 @@ class AgentController:
                 != -1
                 and len(
                     cast(Observation, obs).content.split(
-                        'SyntaxError: unterminated string literal'
+                        'SyntaxError: unterminated string literal (detected at line'
                     )[-1]
                 )
                 < 10
