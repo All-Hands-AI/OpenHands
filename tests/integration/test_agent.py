@@ -130,7 +130,7 @@ def test_simple_task_rejection():
     task = 'Write a git commit message for the current staging area. Do not ask me for confirmation at any point.'
     final_state: State = asyncio.run(main(task))
     assert final_state.agent_state == AgentState.STOPPED
-    assert isinstance(final_state.history[-1][0], AgentRejectAction)
+    assert isinstance(final_state.history.get_last_action(), AgentRejectAction)
 
 
 @pytest.mark.skipif(
