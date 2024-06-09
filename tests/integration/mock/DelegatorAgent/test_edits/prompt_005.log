@@ -11,7 +11,7 @@ Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 Here's a summary of the codebase, as it relates to this task:
 
-The codebase contains a single file named 'bad.txt' with some typos. The content of 'bad.txt' is:
+The codebase contains a single file named 'bad.txt' with some typos. The file content is:
 
 This is a stupid typoo.
 Really?
@@ -49,7 +49,7 @@ as well as observations you've made. This only includes the MOST RECENT
 actions and observations--more may have happened before that.
 They are time-ordered, with your most recent action at the bottom.
 
-[[{"source": "agent", "action": "read", "args": {"path": "bad.txt", "start": 0, "end": -1, "thought": ""}}, {"source": "agent", "observation": "read", "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n", "extras": {"path": "bad.txt"}}]]
+[{"source": "agent", "action": "read", "args": {"path": "bad.txt", "start": 0, "end": -1, "thought": ""}}, {"source": "agent", "observation": "read", "content": "This is a stupid typoo.\nReally?\nNo mor typos!\nEnjoy!\n", "extras": {"path": "bad.txt"}}]
 
 ## Format
 Your response MUST be in JSON format. It must be an object, and it must contain two fields:
