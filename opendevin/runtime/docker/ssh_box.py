@@ -231,7 +231,8 @@ class DockerSSHBox(Sandbox):
 
         self.timeout = timeout
         self.container_image = container_image or config.sandbox_container_image
-        self.use_agnostic_sandbox = use_agnostic_sandbox or config.use_agnostic_sandbox
+
+        self.use_agnostic_sandbox = "ghcr.io/opendevin/sandbox" not in self.container_image
 
         if self.use_agnostic_sandbox:
             images = self.docker_client.images.list()
