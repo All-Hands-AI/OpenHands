@@ -63,9 +63,11 @@ class RepoMap:
             verbose (bool, optional): Whether to enable verbose mode. Defaults to False.
             max_context_window (int, optional): The maximum context window size. Defaults to None.
         """
+        logger.info('root arg: ' + str(root))
         if not root:
             root = os.getcwd()
         self.root = root
+        logger.info('self.root: ' + str(self.root))
 
         self.load_tags_cache()
 
@@ -719,6 +721,12 @@ class RepoMap:
             tracked_files: Any = [
                 item.path for item in repo.tree().traverse() if item.type == 'blob'
             ]
+        except git.InvalidGitRepositoryError:
+            logger.error('The directory is not a git repository.')
+            tracked_files = []
+        except git.NoSuchPathError:
+            logger.error('The directory does not exist.')
+            tracked_files = []
         except Exception as e:
             logger.error(
                 f'An error occurred when getting tracked files in git repo: {e}'
