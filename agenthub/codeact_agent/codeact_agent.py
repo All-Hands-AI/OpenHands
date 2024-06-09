@@ -216,7 +216,8 @@ class CodeActAgent(Agent):
         messages: list[dict[str, str]] = self._get_messages(state)
 
         response = None
-        # give it multiple chances to get a response if memory condense is enabled
+        # give it multiple chances to get a response
+        # if it fails, we'll try to condense memory
         attempt = 0
         while not response and attempt < 10:
             try:
@@ -235,16 +236,12 @@ class CodeActAgent(Agent):
                     attempt,
                 )
 
-                if not self.memory_condenser:
-                    raise
-
                 # Retry processing events with condensed memory
                 summary_action = self.memory_condenser.condense(state.history)
                 attempt += 1
                 if summary_action:
                     # update the messages, so we get the new summary
                     messages = self._get_messages(state)
-                    # attempt = 0
                     continue
 
         if not response:

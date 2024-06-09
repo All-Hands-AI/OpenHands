@@ -84,7 +84,7 @@ class ShortTermHistory(list[Event]):
                 for chunk_start, chunk_end in self.summaries.keys()
             ) and not any(
                 # nor part of delegate events
-                # except for the delegate observation itself
+                # except for the delegate action and observation themselves
                 delegate_start < event.id < delegate_end
                 for delegate_start, delegate_end in self.delegates.keys()
             ):
@@ -227,7 +227,7 @@ class ShortTermHistory(list[Event]):
         # (MessageAction, NullObservation) for source=USER
         # (MessageAction, NullObservation) for source=AGENT
         # (other_action?, NullObservation)
-        # (NullAction, CmdOutputObservation)
+        # (NullAction, CmdOutputObservation) background CmdOutputObservations
 
         for event in self.get_events_as_list():
             if event.id is None or event.id == -1:
@@ -241,7 +241,8 @@ class ShortTermHistory(list[Event]):
                     logger.debug(f'Observation {event} has no cause')
 
                 if event.cause is None:
-                    # this will never happen (tm)
+                    # runnable actions are set as cause of observations
+                    # NullObservations have no cause
                     continue
 
                 observation_map[event.cause] = event
