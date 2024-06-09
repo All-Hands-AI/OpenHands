@@ -19,7 +19,7 @@ from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
 from opendevin.runtime.docker.process import DockerProcess, Process
-from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement, MambaRequirement, PluginRequirement
+from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.utils import find_available_tcp_port
 
@@ -27,7 +27,8 @@ from opendevin.runtime.utils import find_available_tcp_port
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
-CACHE_IMAGE_NAME = 'opendevin_sandbox_cache'
+AGNOSTIC_SANDBOX_IMAGE_NAME = "opendevin_agnostic_sandbox:latest"
+AGNOSTIC_SANDBOX_BUILD_DIR = "./agnostic_sandbox"
 
 
 class SSHExecCancellableStream(CancellableStream):
@@ -204,7 +205,7 @@ class DockerSSHBox(Sandbox):
             container_image: str | None = None,
             timeout: int = config.sandbox_timeout,
             sid: str | None = None,
-            use_cache: bool = False,
+            use_agnostic_sandbox: bool = False,
     ):
         logger.info(
             f'SSHBox is running as {"opendevin" if self.run_as_devin else "root"} user with USER_ID={self.user_id} in the sandbox'
@@ -230,19 +231,22 @@ class DockerSSHBox(Sandbox):
 
         self.timeout = timeout
         self.container_image = container_image or config.sandbox_container_image
-        self.use_cache = use_cache or config.use_cache
+        self.use_agnostic_sandbox = use_agnostic_sandbox or config.use_agnostic_sandbox
 
-        logger.info(self.container_image)
-
-        if self.use_cache:
+        if self.use_agnostic_sandbox:
             images = self.docker_client.images.list()
-            full_image_name = f"{CACHE_IMAGE_NAME}:latest"
-            for image in images:
-                if full_image_name in image.tags:
-                    self.container_image = full_image_name
-                    logger.info("use local image cache:" + self.container_image)
-                    break
 
+            image_exists = False
+            for image in images:
+                if AGNOSTIC_SANDBOX_IMAGE_NAME in image.tags:
+                    self.container_image = AGNOSTIC_SANDBOX_IMAGE_NAME
+                    image_exists = True
+                    logger.info("Found built agnostic_sandbox image, about to use:" + self.container_image)
+                    break
+            if not image_exists:
+                logger.info(f'Agnostic_sandbox image not found, will build')
+                self._build_sandbox_image(self.container_image)
+                self.container_image = AGNOSTIC_SANDBOX_IMAGE_NAME
         self.container_name = self.container_name_prefix + self.instance_id
 
         # set up random user password
@@ -296,23 +300,37 @@ class DockerSSHBox(Sandbox):
         atexit.register(self.close)
         super().__init__()
 
-    def init_plugins(self, requirements: list[PluginRequirement]):
-        super().init_plugins(requirements)
-        if self.use_cache:
-            self._commit_docker_cache(CACHE_IMAGE_NAME, "latest")
-
-    def _commit_docker_cache(self, repo, tag):
-        if not self.use_cache:
-            logger.info("Skip commit cache image")
-            return
+    def _build_sandbox_image(self, base_image):
         try:
-            commit_result = self.container.commit(repository=repo, tag=tag)
-            logger.info("Image cache build successfully!")
-            logger.info(f"Docker container committed: {commit_result}")
-        except Exception as e:
-            logger.exception("Failed to commit Docker container: " + str(e), exc_info=True)
-            raise e
+            if not os.path.exists(AGNOSTIC_SANDBOX_BUILD_DIR):
+                os.makedirs(AGNOSTIC_SANDBOX_BUILD_DIR)
+            dockerfile_content = f"""
+FROM {base_image}
 
+RUN apt update && apt install -y openssh-server wget
+RUN mkdir -p -m0755 /var/run/sshd
+RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs
+
+RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+RUN bash Miniforge3-$(uname)-$(uname -m).sh -b -p /opendevin/miniforge3
+RUN bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"
+RUN echo "export PATH=/opendevin/miniforge3/bin:$PATH" >> ~/.bashrc
+            """.strip()
+            with open(f"{AGNOSTIC_SANDBOX_BUILD_DIR}/Dockerfile", "w") as file:
+                file.write(dockerfile_content)
+
+            image, logs = self.docker_client.images.build(path=AGNOSTIC_SANDBOX_BUILD_DIR,
+                                                          tag=AGNOSTIC_SANDBOX_IMAGE_NAME)
+
+            for log in logs:
+                if 'stream' in log:
+                    print(log['stream'].strip())
+
+            print(f"Image {image} built successfully")
+        except docker.errors.BuildError as e:
+            print(f"Image build failed: {e}")
+        except Exception as e:
+            print(f"An error occurred: {e}")
     def add_to_env(self, key: str, value: str):
         super().add_to_env(key, value)
 
@@ -804,7 +822,7 @@ if __name__ == '__main__':
     )
 
     # Initialize required plugins
-    plugins = [MambaRequirement(), AgentSkillsRequirement(), JupyterRequirement()]
+    plugins = [AgentSkillsRequirement(), JupyterRequirement()]
     ssh_box.init_plugins(plugins)
     logger.info(
         '--- AgentSkills COMMAND DOCUMENTATION ---\n'

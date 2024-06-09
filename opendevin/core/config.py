@@ -189,7 +189,7 @@ class AppConfig(metaclass=Singleton):
     enable_auto_lint: bool = (
         False  # once enabled, OpenDevin would lint files after editing
     )
-    use_cache: bool = False
+    use_agnostic_sandbox: bool = False
 
     defaults_dict: ClassVar[dict] = {}
 

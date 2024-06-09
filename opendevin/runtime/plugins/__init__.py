@@ -4,7 +4,6 @@ from .jupyter import JupyterRequirement
 from .mixin import PluginMixin
 from .requirement import PluginRequirement
 from .swe_agent_commands import SWEAgentCommandsRequirement
-from .mamba import MambaRequirement
 
 __all__ = [
     'PluginMixin',
@@ -12,5 +11,4 @@ __all__ = [
     'AgentSkillsRequirement',
     'JupyterRequirement',
     'SWEAgentCommandsRequirement',
-    'MambaRequirement',
 ]

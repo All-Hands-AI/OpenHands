@@ -29,8 +29,6 @@ fi
 # Install dependencies
 pip install jupyterlab notebook jupyter_kernel_gateway
 
-# Create logs directory
-sudo mkdir -p /opendevin/logs && sudo chmod 777 /opendevin/logs
 
 # Run background process to start jupyter kernel gateway
 # write a bash function that finds a free port

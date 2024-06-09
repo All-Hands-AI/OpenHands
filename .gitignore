@@ -211,3 +211,6 @@ cache
 # configuration
 config.toml
 config.toml.bak
+
+# agnostic_sandbox
+containers/agnostic_sandbox
