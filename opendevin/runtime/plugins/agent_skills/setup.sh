@@ -2,6 +2,7 @@
 
 set -e
 
+source ~/.bashrc
 # add agent_skills to PATH
 echo 'export PATH=/opendevin/plugins/agent_skills:$PATH' >> ~/.bashrc
 export PATH=/opendevin/plugins/agent_skills:$PATH

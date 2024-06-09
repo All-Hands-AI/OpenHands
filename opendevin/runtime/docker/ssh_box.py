@@ -27,6 +27,8 @@ from opendevin.runtime.utils import find_available_tcp_port
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
 
+CACHE_IMAGE_NAME = 'opendevin_sandbox_cache'
+
 
 class SSHExecCancellableStream(CancellableStream):
     def __init__(self, ssh, cmd, timeout):
@@ -125,7 +127,7 @@ def split_bash_commands(commands):
                 if not heredoc_trigger and current_command:
                     result.append(''.join(current_command).strip())
                     current_command = []
-            elif char == '<' and commands[i : i + 2] == '<<':
+            elif char == '<' and commands[i: i + 2] == '<<':
                 # Detect heredoc
                 state = IN_HEREDOC
                 i += 2  # Skip '<<'
@@ -135,7 +137,7 @@ def split_bash_commands(commands):
                 while commands[i] not in [' ', '\n']:
                     i += 1
                 heredoc_trigger = commands[start:i]
-                current_command.append(commands[start - 2 : i])  # Include '<<'
+                current_command.append(commands[start - 2: i])  # Include '<<'
                 continue  # Skip incrementing i at the end of the loop
             current_command.append(char)
 
@@ -180,10 +182,6 @@ def split_bash_commands(commands):
     result = [cmd for cmd in result if cmd]
 
     return result
-
-
-# CACHE_IMAGE = 'sandbox_ubuntu18:cache'
-CACHE_IMAGE = 'sandbox:cache'
 
 
 class DockerSSHBox(Sandbox):
@@ -232,15 +230,18 @@ class DockerSSHBox(Sandbox):
 
         self.timeout = timeout
         self.container_image = container_image or config.sandbox_container_image
+        self.use_cache = use_cache
 
         logger.info(self.container_image)
 
-        images = self.docker_client.images.list()
-        for image in images:
-            if CACHE_IMAGE in image.tags:
-                self.container_image = CACHE_IMAGE
-                logger.info("use local image cache:" + self.container_image)
-                break
+        if self.use_cache:
+            images = self.docker_client.images.list()
+            full_image_name = f"{CACHE_IMAGE_NAME}:latest"
+            for image in images:
+                if full_image_name in image.tags:
+                    self.container_image = full_image_name
+                    logger.info("use local image cache:" + self.container_image)
+                    break
 
         self.container_name = self.container_name_prefix + self.instance_id
 
@@ -295,13 +296,21 @@ class DockerSSHBox(Sandbox):
         atexit.register(self.close)
         super().__init__()
 
-    def commit_docker_cache(self, repo, tag):
+    def init_plugins(self, requirements: list[PluginRequirement]):
+        super().init_plugins(requirements)
+        if self.use_cache:
+            self._commit_docker_cache(CACHE_IMAGE_NAME, "latest")
+
+    def _commit_docker_cache(self, repo, tag):
+        if not self.use_cache:
+            logger.info("Skip commit cache image")
+            return
         try:
             commit_result = self.container.commit(repository=repo, tag=tag)
-            logger.info("image cache build successfully!")
+            logger.info("Image cache build successfully!")
             logger.info(f"Docker container committed: {commit_result}")
         except Exception as e:
-            logger.exception("Failed to commit Docker container", exc_info=True)
+            logger.exception("Failed to commit Docker container: " + str(e), exc_info=True)
             raise e
 
     def add_to_env(self, key: str, value: str):
@@ -452,10 +461,10 @@ class DockerSSHBox(Sandbox):
         return bg_cmd.read_logs()
 
     def _send_interrupt(
-        self,
-        cmd: str,
-        prev_output: str = '',
-        ignore_last_output: bool = False,
+            self,
+            cmd: str,
+            prev_output: str = '',
+            ignore_last_output: bool = False,
     ) -> tuple[int, str]:
         logger.exception(
             f'Command "{cmd}" timed out, killing process...', exc_info=False
@@ -771,8 +780,8 @@ class DockerSSHBox(Sandbox):
         for container in containers:
             try:
                 if (
-                    container.name.startswith(self.container_name)
-                    and not config.persist_sandbox
+                        container.name.startswith(self.container_name)
+                        and not config.persist_sandbox
                 ):
                     # only remove the container we created
                     # otherwise all other containers with the same prefix will be removed
@@ -783,13 +792,9 @@ class DockerSSHBox(Sandbox):
         self.docker_client.close()
 
 
-def get_requirements_str(requirements: list[PluginRequirement]) -> str:
-    return '#'.join(map(lambda x: x.name, requirements))
-
-
 if __name__ == '__main__':
     try:
-        ssh_box = DockerSSHBox()
+        ssh_box = DockerSSHBox(use_cache=True)
     except Exception as e:
         logger.exception('Failed to start Docker container: %s', e)
         sys.exit(1)
@@ -799,11 +804,10 @@ if __name__ == '__main__':
     )
 
     # Initialize required plugins
-    # plugins = [MambaRequirement(), AgentSkillsRequirement(), JupyterRequirement()]
-    plugins = [MambaRequirement()]
-    # plugins_str = get_requirements_str(plugins)
+    plugins = [MambaRequirement(), AgentSkillsRequirement(), JupyterRequirement()]
+    # plugins = [MambaRequirement(), AgentSkillsRequirement()]
+    # plugins = [MambaRequirement()]
     ssh_box.init_plugins(plugins)
-    ssh_box.commit_docker_cache('sandbox', 'cache')
     logger.info(
         '--- AgentSkills COMMAND DOCUMENTATION ---\n'
         f'{AgentSkillsRequirement().documentation}\n'
