@@ -123,8 +123,6 @@ class BrowsingAgent(Agent):
         last_obs = None
         last_action = None
 
-        print(state.history)
-
         if EVAL_MODE and len(state.history) == 1:
             # for webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
             # initialize and retrieve the first observation by issuing an noop OP
