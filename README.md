@@ -135,7 +135,7 @@ Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more informati
 ```
 @misc{opendevin2024,
   author       = {{OpenDevin Team}},
-  title        = {OpenDevin},
+  title        = {{OpenDevin: An Open Platform for AI Software Developers as Generalist Agents}},
   year         = {2024},
   version      = {v1.0},
   howpublished = {\url{https://github.com/OpenDevin/OpenDevin}},
