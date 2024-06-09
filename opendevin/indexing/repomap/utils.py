@@ -1,3 +1,8 @@
+"""
+Modifications made on June, 2024.
+Description of changes: removed redundant methods, attributes, and adapted some classes to be OpenDevin-specific.
+"""
+
 import tempfile
 
 IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.webp'}
