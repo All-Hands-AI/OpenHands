@@ -11,6 +11,7 @@ from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import (
     Action,
+    AgentDelegateAction,
     AgentFinishAction,
     BrowseInteractiveAction,
     CmdRunAction,
@@ -18,6 +19,7 @@ from opendevin.events.action import (
     MessageAction,
 )
 from opendevin.events.observation import (
+    AgentDelegateObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
@@ -28,6 +30,7 @@ from opendevin.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
 )
+from opendevin.runtime.tools import RuntimeTool
 
 ENABLE_GITHUB = True
 
@@ -88,6 +91,9 @@ def get_observation_message(obs) -> dict[str, str] | None:
     elif isinstance(obs, BrowserOutputObservation):
         content = 'OBSERVATION:\n' + truncate_observation(obs.content)
         return {'role': 'user', 'content': content}
+    elif isinstance(obs, AgentDelegateObservation):
+        content = 'OBSERVATION:\n' + truncate_observation(str(obs.outputs))
+        return {'role': 'user', 'content': content}
     return None
 
 
@@ -105,8 +111,20 @@ def truncate_observation(observation: str, max_chars: int = 10_000) -> str:
     )
 
 
+# FIXME: We can tweak these two settings to create MicroAgents specialized toward different area
+def get_system_message() -> str:
+    if ENABLE_GITHUB:
+        return f'{SYSTEM_PREFIX}\n{GITHUB_MESSAGE}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
+    else:
+        return f'{SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
+
+
+def get_in_context_example() -> str:
+    return EXAMPLES
+
+
 class CodeActAgent(Agent):
-    VERSION = '1.5'
+    VERSION = '1.6'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
@@ -150,13 +168,11 @@ class CodeActAgent(Agent):
         AgentSkillsRequirement(),
         JupyterRequirement(),
     ]
+    runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
     jupyter_kernel_init_code: str = 'from agentskills import *'
 
-    system_message: str = (
-        f'{SYSTEM_PREFIX}\n{GITHUB_MESSAGE}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
-        if ENABLE_GITHUB
-        else f'{SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
-    )
+    system_message: str = get_system_message()
+    in_context_example: str = f"Here is an example of how you can interact with the environment for task solving:\n{get_in_context_example()}\n\nNOW, LET'S START!"
 
     def __init__(
         self,
@@ -188,16 +204,13 @@ class CodeActAgent(Agent):
         Returns:
         - CmdRunAction(command) - bash command to run
         - IPythonRunCellAction(code) - IPython code to run
-        - BrowseInteractiveAction(browsergym_command) - BrowserGym commands to run
+        - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
         messages: list[dict[str, str]] = [
             {'role': 'system', 'content': self.system_message},
-            {
-                'role': 'user',
-                'content': f"Here is an example of how you can interact with the environment for task solving:\n{EXAMPLES}\n\nNOW, LET'S START!",
-            },
+            {'role': 'user', 'content': self.in_context_example},
         ]
 
         for prev_action, obs in state.history:
@@ -260,12 +273,10 @@ class CodeActAgent(Agent):
         elif browse_command := re.search(
             r'<execute_browse>(.*)</execute_browse>', action_str, re.DOTALL
         ):
-            # BrowserGym actions was found
-            browse_actions = browse_command.group(1).strip()
             thought = action_str.replace(browse_command.group(0), '').strip()
-            return BrowseInteractiveAction(
-                browser_actions=browse_actions, thought=thought
-            )
+            browse_actions = browse_command.group(1).strip()
+            task = f'{thought}. I should start with: {browse_actions}'
+            return AgentDelegateAction(agent='BrowsingAgent', inputs={'task': task})
         else:
             # We assume the LLM is GOOD enough that when it returns pure natural language
             # it want to talk to the user

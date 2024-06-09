@@ -16,7 +16,7 @@ def yaml_parser(message):
         valid = True
         retry_message = ''
     except yaml.YAMLError as e:
-        warn(str(e))
+        warn(str(e), stacklevel=2)
         value = {}
         valid = False
         retry_message = "Your response is not a valid yaml. Please try again and be careful to the format. Don't add any apology or comment, just the answer."
