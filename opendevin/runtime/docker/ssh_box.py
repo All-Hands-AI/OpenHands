@@ -230,7 +230,7 @@ class DockerSSHBox(Sandbox):
 
         self.timeout = timeout
         self.container_image = container_image or config.sandbox_container_image
-        self.use_cache = use_cache
+        self.use_cache = use_cache or config.use_cache
 
         logger.info(self.container_image)
 
@@ -794,7 +794,7 @@ class DockerSSHBox(Sandbox):
 
 if __name__ == '__main__':
     try:
-        ssh_box = DockerSSHBox(use_cache=True)
+        ssh_box = DockerSSHBox()
     except Exception as e:
         logger.exception('Failed to start Docker container: %s', e)
         sys.exit(1)
