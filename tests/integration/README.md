@@ -55,6 +55,15 @@ TEST_ONLY=true ./tests/integration/regenerate.sh
 
 to run all integration tests until the first failure.
 
+If you only want to run a specific test, set environment variable
+`ONLY_TEST_NAME` to the test name. If you only want to run a specific agent,
+set environment variable `ONLY_TEST_AGENT` to the agent. You could also use both,
+e.g.
+
+```bash
+TEST_ONLY=true ONLY_TEST_NAME="test_simple_task_rejection" ONLY_TEST_AGENT="ManagerAgent" ./tests/integration/regenerate.sh
+```
+
 
 ## Regenerate Integration Tests
 When you make changes to an agent's prompt, the integration tests will fail. You'll need to regenerate them
