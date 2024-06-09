@@ -31,7 +31,7 @@ DELEGATE_PREFIX = """The assistant can delegate a subtask to other specialized a
 - BrowsingAgent: BrowsingAgent can do interactive browsing, including scrolling, locating specific elements, and clicking on buttons. For example,  you can delegate a task to BrowsingAgent by <execute_delegate> BrowsingAgent('Use Google to find out the current president of USA') </execute_delegate>
 """
 
-EXECUTE_REMINDER = """The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
+EXECUTE_REMINDER = """The assistant should attempt fewer things at a time instead of putting too many commands OR code in one "execute" block.
 """
 
 PIP_INSTALL_PREFIX = """The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them.
