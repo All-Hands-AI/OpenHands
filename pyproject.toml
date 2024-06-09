@@ -48,6 +48,7 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 pinecone-client = "*"
 llama-index-vector-stores-pinecone = "*"
+streamlit = "*"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.4.8"
