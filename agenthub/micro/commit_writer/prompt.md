@@ -14,7 +14,7 @@ changes. The commit message should include:
 You should find the diff using `git diff --cached`, compile a commit message,
 and call the `finish` action with `outputs.answer` set to the answer. If current
 repo is not a valid git repo, or there is no diff in the staging area, please call
-the `reject` action with `outputs.answer` set to the reason.
+the `reject` action.
 
 ## History
 {{ instructions.history_truncated }}
