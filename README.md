@@ -139,6 +139,6 @@ Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more informati
   year         = {2024},
   version      = {v1.0},
   howpublished = {\url{https://github.com/OpenDevin/OpenDevin}},
-  note         = {Accessed: 2024-06-08}
+  note         = {Accessed: ENTER THE DATE YOU ACCESSED THE PROJECT}
 }
 ```
