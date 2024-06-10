@@ -13,6 +13,7 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.openai import OpenAI
 from llama_index.readers.file import FlatReader
 from llama_index.readers.github import GithubClient, GithubRepositoryReader
+from llama_index.readers.gpt_repo import GPTRepoReader
 from llama_index.vector_stores.pinecone import PineconeVectorStore
 from pinecone import Pinecone
 from tqdm import tqdm
@@ -22,7 +23,8 @@ load_dotenv()
 
 class VectorIndex:
     embedding_model_name = 'jinaai/jina-embeddings-v2-base-code'
-    index_name = 'sphi-82ef497a8c88f0f6e50d84520e7276bfbf65025d'
+    # index_name = 'sphi-82ef497a8c88f0f6e50d84520e7276bfbf65025d'
+    index_name = 'test-code-index'
 
     def __init__(self) -> None:
         db = Pinecone(
@@ -93,7 +95,7 @@ class VectorIndex:
         for doc in docs:
             self.index.insert(document=doc)
 
-    def ingest_repo(self, owner: str, repo: str, commit_sha: str) -> None:
+    def ingest_github_repo(self, owner: str, repo: str, commit_sha: str) -> None:
         github_token = os.environ.get('GITHUB_TOKEN')
         github_client = GithubClient(github_token=github_token, verbose=True)
 
@@ -117,13 +119,26 @@ class VectorIndex:
 
         print(f'Indexed {len(documents)} documents')
 
+    def ingest_git_repo(self, repo_path: str) -> None:
+        reader = GPTRepoReader()
+        documents = reader.load_data(
+            repo_path=repo_path, extensions=['.py', '.md', '.sh']
+        )
+
+        for doc in tqdm(documents):
+            self.index.insert(document=doc)
+
 
 if __name__ == '__main__':
     vi = VectorIndex()
-    vi.ingest_repo('sphinx-doc', 'sphinx', '82ef497a8c88f0f6e50d84520e7276bfbf65025d')
+    # vi.ingest_repo('sphinx-doc', 'sphinx', '82ef497a8c88f0f6e50d84520e7276bfbf65025d')
     # vi.ingest_directory('.')
     # response = vi.retrieve('I need to modify the CodeActAgent in agenthub.', 4)
     # for i, r in enumerate(response):
     #     # pretty print
     #     print("Result", i + 1, ":")
     #     print(r)
+
+    vi.ingest_git_repo(
+        repo_path='/Users/ryan/Developer/files-localization-for-code-gen-agents/llamaindex-playground'
+    )
