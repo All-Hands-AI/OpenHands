@@ -25,6 +25,7 @@ from opendevin.events.serialization.event import event_to_dict
 
 game = None
 
+
 def cleanup():
     print('Cleaning up child processes...')
     for process in mp.active_children():
@@ -64,7 +65,9 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def process_instance(instance, agent_class, metadata, openai_api_key, reset_logger: bool = True):
+def process_instance(
+    instance, agent_class, metadata, openai_api_key, reset_logger: bool = True
+):
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     eval_output_dir = metadata['eval_output_dir']
     if reset_logger:
