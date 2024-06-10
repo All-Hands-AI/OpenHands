@@ -120,7 +120,7 @@ def process_instance(
             )
         )
         # ======= Attempt to evaluate the agent's edits =======
-        # If you are working on simplier benchmark that only evaluates the final model output (e.g., in a MessageAction)
+        # If you are working on simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
         # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
 
         if state is None:
@@ -167,7 +167,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--hubs',
         type=str,
-        help='Which hubs to evaluate from APIBench. APIBench contains 3 hubs, namely huggingface, torch, and tensorflow. You could choose one or more from hf, torch, or tf, seperated by commas. For example, the default is --hub hf,torch,tf.',
+        help='Which hubs to evaluate from APIBench. APIBench contains 3 hubs, namely huggingface, torch, and tensorflow. You could choose one or more from hf, torch, or tf, separated by commas. For example, the default is --hub hf,torch,tf.',
         default='hf,torch,tf',
     )
     args, _ = parser.parse_known_args()
