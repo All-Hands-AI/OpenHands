@@ -115,4 +115,4 @@ class AgentSession:
                 self.controller._set_initial_state(state=agent_state)
             logger.info(f'Restored agent state from session, sid: {self.sid}')
         except Exception as e:
-            logger.error('Error restoring state', str(e), exc_info=False)
+            logger.error(f'Error restoring state {str(e)}', exc_info=False)
