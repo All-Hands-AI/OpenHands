@@ -23,9 +23,6 @@ from opendevin.core.main import main
 from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
 
-game = None
-
-
 def cleanup():
     print('Cleaning up child processes...')
     for process in mp.active_children():
@@ -64,10 +61,8 @@ AGENT_CLS_TO_INST_SUFFIX = {
     'CodeActAgent': 'When you think you have solved the question, please first send your answer to user through message and then exit.\n'
 }
 
-opeai_api_key = None
 
-
-def process_instance(instance, agent_class, metadata, reset_logger: bool = True):
+def process_instance(instance, agent_class, metadata, openai_api_key, reset_logger: bool = True):
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     eval_output_dir = metadata['eval_output_dir']
     if reset_logger:
@@ -104,7 +99,6 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
 
     # Use codeactagent as guesser_model
     global game
-    global openai_api_key
     game = _game_class[metadata['dataset']](
         item=instance['text'].strip(),
         answerer_model=metadata['answerer_model'],
@@ -232,8 +226,6 @@ if __name__ == '__main__':
     )
     logger.info(f'Using evaluation output directory: {eval_output_dir}')
 
-    global openai_api_key
-    openai_api_key = args.OPENAI_API_KEY
     metadata = {
         'dataset': args.dataset,
         'data_split': args.data_split,
@@ -321,6 +313,7 @@ if __name__ == '__main__':
                     instance,
                     agent_class,
                     metadata,
+                    args.OPENAI_API_KEY,
                     reset_logger=bool(num_workers > 1),
                 )
                 future.add_done_callback(update_progress)
