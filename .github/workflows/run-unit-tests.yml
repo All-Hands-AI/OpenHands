@@ -106,7 +106,7 @@ jobs:
     name: Test for Sandbox
     runs-on: ubuntu-latest
     env:
-      SANDBOX_CONTAINER_IMAGE: ghcr.io/${{ github.repository_owner }}/sandbox:${{ needs.ghcr_build_and_push.outputs.image_tag }}
+      SANDBOX_CONTAINER_IMAGE: ${{ needs.ghcr_build_and_push.outputs.image_path }}
     steps:
       - uses: actions/checkout@v4
 
