@@ -14,6 +14,7 @@ from opendevin.events.action.agent import (
     AgentDelegateSummaryAction,
     AgentFinishAction,
 )
+from opendevin.memory.history import ShortTermHistory
 from opendevin.storage import get_file_store
 
 
@@ -51,7 +52,7 @@ class State:
     # root agent has level 0, and every delegate increases the level by one
     delegate_level: int = 0
     # start_id and end_id track the range of events in history
-    start_id: int = -1  # where in the event stream does history start
+    start_id: int = -1
     end_id: int = -1
     almost_stuck: int = 0
     delegate_summaries: dict[tuple[int, int], AgentDelegateSummaryAction] = field(
