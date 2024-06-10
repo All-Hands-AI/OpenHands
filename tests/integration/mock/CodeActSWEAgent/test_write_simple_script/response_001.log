@@ -1,0 +1,5 @@
+Sure! I'll create the shell script `hello.sh` for you.
+
+<execute_bash>
+echo 'echo "hello"' > hello.sh
+chmod +x hello.sh

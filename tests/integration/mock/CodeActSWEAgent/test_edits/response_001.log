@@ -1,0 +1,4 @@
+Sure! Let's start by opening the `bad.txt` file to see its content.
+
+<execute_ipython>
+open_file('bad.txt')
