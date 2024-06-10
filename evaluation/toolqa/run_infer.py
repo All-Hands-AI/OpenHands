@@ -70,7 +70,7 @@ def process_instance(task, agent_class, metadata, reset_logger: bool = True):
     workspace_mount_path = config.workspace_mount_path
     pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
-    # Setup the logger properly, so you can run multi-processing to parallize the evaluation
+    # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     eval_output_dir = metadata['eval_output_dir']
     qid = task['qid']
     question = task['question']
@@ -84,7 +84,7 @@ def process_instance(task, agent_class, metadata, reset_logger: bool = True):
         # add back the console handler to print ONE line
         logger.addHandler(get_console_handler())
         logger.info(
-            f'Starting evaluation for instance {qid}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
+            f'Starting evaluation for instance {qid}.\nHint: run "tail -f {log_file}" to see live logs in a separate shell'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -111,7 +111,7 @@ def process_instance(task, agent_class, metadata, reset_logger: bool = True):
         )
     )
     # ======= Attempt to evaluate the agent's edits =======
-    # If you are working on simplier benchmark that only evaluates the final model output (e.g., in a MessageAction)
+    # If you are working on simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
 
     if state is None:
