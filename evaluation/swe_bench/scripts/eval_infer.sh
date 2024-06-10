@@ -19,7 +19,7 @@ echo "INSTANCE_ID: $INSTANCE_ID"
 PROCESS_FILEPATH=$(realpath $PROCESS_FILEPATH)
 FILE_DIR=$(dirname $PROCESS_FILEPATH)
 FILE_NAME=$(basename $PROCESS_FILEPATH)
-mkdir -p $FILE_DIR/eval_logs
+mkdir -p $FILE_DIR/logs
 mkdir -p $FILE_DIR/swe_bench_format
 
 echo "Evaluating $FILE_NAME @ $FILE_DIR"
@@ -80,7 +80,7 @@ if [ -z "$INSTANCE_ID" ]; then
 
     poetry run python $SWEBENCH_DOCKER_FORK_DIR/run_evaluation.py \
         --predictions_path $SWEBENCH_FORMAT_JSONL \
-        --log_dir $FILE_DIR/eval_logs \
+        --log_dir $FILE_DIR/logs \
         --swe_bench_tasks $SWEBENCH_TASKS \
         --namespace $DOCKERHUB_NAMESPACE \
         --timeout 1800
@@ -96,6 +96,6 @@ fi
 
 poetry run python $SWEBENCH_DOCKER_FORK_DIR/generate_report.py \
     --predictions_path $SWEBENCH_FORMAT_JSONL \
-    --log_dir $FILE_DIR/eval_logs \
+    --log_dir $FILE_DIR/logs \
     --output_dir $FILE_DIR \
     --swe_bench_tasks $SWEBENCH_TASKS
