@@ -17,7 +17,7 @@ model_name = os.path.basename(os.path.dirname(args.od_output_file))
 def convert_row_to_swebench_format(row):
     return {
         'instance_id': row['instance_id'],
-        'model_patch': row['git_patch'],
+        'model_patch': row['git_patch'].replace('\r\n', '\n'),
         'model_name_or_path': model_name,
     }
 
