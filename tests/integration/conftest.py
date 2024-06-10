@@ -2,7 +2,6 @@ import io
 import os
 import re
 import subprocess
-import sys
 import tempfile
 from functools import partial
 from http.server import HTTPServer, SimpleHTTPRequestHandler
@@ -15,6 +14,20 @@ from opendevin.llm.llm import message_separator
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 workspace_path = os.getenv('WORKSPACE_BASE')
+
+
+class SecretExit(Exception):
+    pass
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_exception_interact(node, call, report):
+    if isinstance(call.excinfo.value, SecretExit):
+        report.outcome = 'failed'
+        report.longrepr = (
+            'SecretExit: Exiting due to an error without revealing secrets.'
+        )
+        call.excinfo = None
 
 
 def filter_out_symbols(input):
@@ -143,9 +156,7 @@ def mock_completion(*args, test_name, **kwargs):
     else:
         mock_response = get_mock_response(test_name, message_str, cur_id)
     if mock_response is None:
-        print('Mock response for prompt is not found\n\n')
-        print('Exiting...')
-        sys.exit(1)
+        raise SecretExit('Mock response for prompt is not found')
     response = completion(**kwargs, mock_response=mock_response)
     return response
 
