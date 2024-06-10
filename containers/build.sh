@@ -65,3 +65,5 @@ docker buildx build \
   --platform linux/amd64,linux/arm64 \
   --provenance=false \
   -f $dir/Dockerfile $DOCKER_BASE_DIR
+
+echo "Final tag for image: ${tags[-1]}"  # Assuming the last added tag is what you want to use

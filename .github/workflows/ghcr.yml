@@ -21,6 +21,8 @@ on:
 jobs:
   ghcr_build_and_push:
     runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.build.outputs.image_tag }}
 
     permissions:
       contents: read
@@ -66,8 +68,10 @@ jobs:
 
       - name: Build and push ${{ matrix.image }}
         if: "!github.event.pull_request.head.repo.fork"
+        id: build
         run: |
-          ./containers/build.sh ${{ matrix.image }} ${{ github.repository_owner }} --push
+          tag_output=$(./containers/build.sh ${{ matrix.image }} ${{ github.repository_owner }} --push)
+          echo "::set-output name=image_tag::$(echo "$tag_output" | grep 'Final tag for image:' | cut -d' ' -f5)"
 
       - name: Build ${{ matrix.image }}
         if: "github.event.pull_request.head.repo.fork"
