@@ -11,7 +11,7 @@ from opendevin.events.action import (
 )
 
 
-class CodeactResponseParser(ResponseParser):
+class CodeActResponseParser(ResponseParser):
     """
     Parser action:
         - CmdRunAction(command) - bash command to run
@@ -26,12 +26,12 @@ class CodeactResponseParser(ResponseParser):
     ):
         # Need pay attention to the item order in self.action_parsers
         self.action_parsers = [
-            CodeactActionParserFinish(),
-            CodeactActionParserCmdRun(),
-            CodeactActionParserIPythonRunCell(),
-            CodeactActionParserAgentDelegate(),
+            CodeActActionParserFinish(),
+            CodeActActionParserCmdRun(),
+            CodeActActionParserIPythonRunCell(),
+            CodeActActionParserAgentDelegate(),
         ]
-        self.default_parser = CodeactActionParserMessage()
+        self.default_parser = CodeActActionParserMessage()
 
     def parse(self, response: str) -> Action:
         action_str = self.parse_response(response)
@@ -51,7 +51,7 @@ class CodeactResponseParser(ResponseParser):
         return self.default_parser.parse(action_str)
 
 
-class CodeactActionParserFinish(ActionParser):
+class CodeActActionParserFinish(ActionParser):
     """
     Parser action:
         - AgentFinishAction() - end the interaction
@@ -74,7 +74,7 @@ class CodeactActionParserFinish(ActionParser):
         return AgentFinishAction(thought=thought)
 
 
-class CodeactActionParserCmdRun(ActionParser):
+class CodeActActionParserCmdRun(ActionParser):
     """
     Parser action:
         - CmdRunAction(command) - bash command to run
@@ -104,7 +104,7 @@ class CodeactActionParserCmdRun(ActionParser):
         return CmdRunAction(command=command_group, thought=thought)
 
 
-class CodeactActionParserIPythonRunCell(ActionParser):
+class CodeActActionParserIPythonRunCell(ActionParser):
     """
     Parser action:
         - IPythonRunCellAction(code) - IPython code to run
@@ -135,7 +135,7 @@ class CodeactActionParserIPythonRunCell(ActionParser):
         )
 
 
-class CodeactActionParserAgentDelegate(ActionParser):
+class CodeActActionParserAgentDelegate(ActionParser):
     """
     Parser action:
         - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
@@ -162,7 +162,7 @@ class CodeactActionParserAgentDelegate(ActionParser):
         return AgentDelegateAction(agent='BrowsingAgent', inputs={'task': task})
 
 
-class CodeactActionParserMessage(ActionParser):
+class CodeActActionParserMessage(ActionParser):
     """
     Parser action:
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
