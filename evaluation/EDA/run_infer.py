@@ -65,7 +65,9 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def process_instance(instance, agent_class, metadata, reset_logger: bool = True):
+def process_instance(
+    instance, agent_class, metadata, openai_api_key, reset_logger: bool = True
+):
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     eval_output_dir = metadata['eval_output_dir']
     if reset_logger:
@@ -107,7 +109,7 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         answerer_model=metadata['answerer_model'],
         guesser_model=None,
         num_turns=metadata['max_iterations'],
-        openai_api_key=metadata['openai_api'],
+        openai_api_key=openai_api_key,
         guesser_kargs=guesser_kargs,
     )
 
@@ -234,7 +236,6 @@ if __name__ == '__main__':
         'data_split': args.data_split,
         'answerer_model': args.answerer_model,
         'agent_class': agent_class,
-        'openai_api': args.OPENAI_API_KEY,
         'model_name': model_name,
         'max_iterations': max_iterations,
         'eval_output_dir': eval_output_dir,
@@ -317,6 +318,7 @@ if __name__ == '__main__':
                     instance,
                     agent_class,
                     metadata,
+                    args.OPENAI_API_KEY,
                     reset_logger=bool(num_workers > 1),
                 )
                 future.add_done_callback(update_progress)
