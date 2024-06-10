@@ -175,7 +175,7 @@ class CodeactActionParserMessage(ActionParser):
 
     def check_condition(self, action_str: str) -> bool:
         # We assume the LLM is GOOD enough that when it returns pure natural language
-        # it want to talk to the user
+        # it wants to talk to the user
         return True
 
     def parse(self, action_str: str) -> Action:

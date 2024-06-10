@@ -5,7 +5,7 @@ from opendevin.events.action import Action
 
 class ResponseParser(ABC):
     """
-    This abstract base class is an general interface for an response parser dedicated to
+    This abstract base class is a general interface for an response parser dedicated to
     parsing the action from the response from the LLM.
     """
 
