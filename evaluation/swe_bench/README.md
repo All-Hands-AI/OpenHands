@@ -51,6 +51,7 @@ sandbox_timeout = 120
 use_host_network = false
 run_as_devin = false
 enable_auto_lint = true
+max_budget_per_task = 4 # 4 USD
 
 # TODO: Change these to the model you want to evaluate
 [eval_gpt4_1106_preview]

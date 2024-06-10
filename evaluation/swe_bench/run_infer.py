@@ -209,7 +209,7 @@ def process_instance(
     if reset_logger:
         # Set up logger
         log_file = os.path.join(
-            eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
+            eval_output_dir, 'infer_logs', f'instance_{instance.instance_id}.log'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
