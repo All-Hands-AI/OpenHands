@@ -23,6 +23,8 @@ from opendevin.core.main import main
 from opendevin.events.action import MessageAction
 from opendevin.events.serialization.event import event_to_dict
 
+game = None
+
 def cleanup():
     print('Cleaning up child processes...')
     for process in mp.active_children():
