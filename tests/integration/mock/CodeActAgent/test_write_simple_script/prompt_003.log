@@ -51,16 +51,18 @@ create_file(filename: str) -> None:
     Args:
     filename: str: The name of the file to create.
 
-append_file(content: str) -> None:
-    Append content to the open file.
-    It appends text `content` to the end of the open file. Remember, the file must be open before editing.
+append_file(file_name: str, content: str) -> None:
+    Append content to the given file.
+    It appends text `content` to the end of the specified file.
     Args:
+    file_name: str: The name of the file to append to.
     content: str: The content to append to the file.
 
-edit_file(start: int, end: int, content: str) -> None:
+edit_file(file_name: str, start: int, end: int, content: str) -> None:
     Edit a file.
-    It replaces lines `start` through `end` (inclusive) with the given text `content` in the open file. Remember, the file must be open before editing.
+    Replaces in given file `file_name` the lines `start` through `end` (inclusive) with the given text `content`.
     Args:
+    file_name: str: The name of the file to edit.
     start: int: The start line number. Must satisfy start >= 1.
     end: int: The end line number. Must satisfy start <= end <= number of lines in the file.
     content: str: The content to replace the lines with.
@@ -144,7 +146,7 @@ def index():
 
 if __name__ == '__main__':
     app.run(port=5000)"""
-edit_file(start=1, end=1, content=EDITED_CODE)
+edit_file('app.py', start=1, end=1, content=EDITED_CODE)
 </execute_ipython>
 
 USER:
@@ -283,7 +285,7 @@ USER:
 ASSISTANT:
 I should edit the file to display the numbers in a table format. I should include correct indentation. Let me update the file:
 <execute_ipython>
-edit_file(start=7, end=7, content="    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'")
+edit_file('app.py', start=7, end=7, content="    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'")
 </execute_ipython>
 
 USER:

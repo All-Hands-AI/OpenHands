@@ -74,7 +74,7 @@ def index():
 
 if __name__ == '__main__':
     app.run(port=5000)\"\"\"
-edit_file(start=1, end=1, content=EDITED_CODE)
+edit_file('app.py', start=1, end=1, content=EDITED_CODE)
 </execute_ipython>
 
 USER:
@@ -213,7 +213,7 @@ USER:
 ASSISTANT:
 I should edit the file to display the numbers in a table format. I should include correct indentation. Let me update the file:
 <execute_ipython>
-edit_file(start=7, end=7, content="    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'")
+edit_file('app.py', start=7, end=7, content="    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'")
 </execute_ipython>
 
 USER:

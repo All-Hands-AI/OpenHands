@@ -352,7 +352,10 @@ check(any_int)"""
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
             edit_file(
-                start=9, end=9, content='        assert any_int(1.0, 2, 3) == False'
+                str(temp_file_path),
+                start=9,
+                end=9,
+                content='        assert any_int(1.0, 2, 3) == False',
             )
         result = buf.getvalue()
         expected = (
@@ -363,7 +366,8 @@ check(any_int)"""
             + 'E999 IndentationError: unexpected indent\n'
             '[This is how your edit would have looked if applied]\n'
             '-------------------------------------------------\n'
-            '(5 more lines above)\n'
+            '(4 more lines above)\n'
+            '5|    assert any_int(1, 2, 3) == True\n'
             '6|    assert any_int(1.5, 2, 3) == False\n'
             '7|    assert any_int(1, 2.5, 3) == False\n'
             '8|    assert any_int(1, 2, 3.5) == False\n'
@@ -373,13 +377,13 @@ check(any_int)"""
             '12|    assert any_int(0, 0, 0) == True\n'
             '13|    assert any_int(-1, -2, -3) == True\n'
             '14|    assert any_int(1, -2, 3) == True\n'
-            '15|    assert any_int(1.5, -2, 3) == False\n'
-            '(18 more lines below)\n'
+            '(19 more lines below)\n'
             '-------------------------------------------------\n'
             '\n'
             '[This is the original code before your edit]\n'
             '-------------------------------------------------\n'
-            '(5 more lines above)\n'
+            '(4 more lines above)\n'
+            '5|    assert any_int(1, 2, 3) == True\n'
             '6|    assert any_int(1.5, 2, 3) == False\n'
             '7|    assert any_int(1, 2.5, 3) == False\n'
             '8|    assert any_int(1, 2, 3.5) == False\n'
@@ -389,8 +393,7 @@ check(any_int)"""
             '12|    assert any_int(0, 0, 0) == True\n'
             '13|    assert any_int(-1, -2, -3) == True\n'
             '14|    assert any_int(1, -2, 3) == True\n'
-            '15|    assert any_int(1.5, -2, 3) == False\n'
-            '(18 more lines below)\n'
+            '(19 more lines below)\n'
             '-------------------------------------------------\n'
             'Your changes have NOT been applied. Please fix your edit command and try again.\n'
             'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
@@ -408,7 +411,7 @@ def test_append_file(tmp_path):
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            append_file(content='APPENDED TEXT')
+            append_file(str(temp_file_path), content='APPENDED TEXT')
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
@@ -434,7 +437,7 @@ def test_append_file_from_scratch(tmp_path):
         open_file(str(temp_file_path))
         with io.StringIO() as buf:
             with contextlib.redirect_stdout(buf):
-                append_file(content='APPENDED TEXT')
+                append_file(str(temp_file_path), content='APPENDED TEXT')
             result = buf.getvalue()
             expected = (
                 f'[File: {temp_file_path} (1 lines total after edit)]\n'
@@ -459,6 +462,7 @@ def test_append_file_from_scratch_multiline(tmp_path):
         with io.StringIO() as buf:
             with contextlib.redirect_stdout(buf):
                 append_file(
+                    str(temp_file_path),
                     content='APPENDED TEXT1\nAPPENDED TEXT2\nAPPENDED TEXT3',
                 )
             result = buf.getvalue()
@@ -483,7 +487,7 @@ def test_append_file_from_scratch_multiline(tmp_path):
 
 def test_append_file_not_opened():
     with pytest.raises(FileNotFoundError):
-        append_file(content='APPEND TEXT')
+        append_file(str('unknown file'), content='APPEND TEXT')
 
 
 def test_edit_file(tmp_path):
@@ -495,7 +499,12 @@ def test_edit_file(tmp_path):
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            edit_file(start=1, end=3, content='REPLACE TEXT')
+            edit_file(
+                str(temp_file_path),
+                start=1,
+                end=3,
+                content='REPLACE TEXT',
+            )
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (3 lines total after edit)]\n'
@@ -520,7 +529,12 @@ def test_edit_file_from_scratch(tmp_path):
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            edit_file(start=1, end=1, content='REPLACE TEXT')
+            edit_file(
+                str(temp_file_path),
+                start=1,
+                end=1,
+                content='REPLACE TEXT',
+            )
         result = buf.getvalue()
         expected = (
             f'[File: {temp_file_path} (1 lines total after edit)]\n'
@@ -542,6 +556,7 @@ def test_edit_file_from_scratch_multiline_with_backticks_and_second_edit(tmp_pat
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
             edit_file(
+                str(temp_file_path),
                 1,
                 1,
                 '`REPLACE TEXT1`\n`REPLACE TEXT2`\n`REPLACE TEXT3`',
@@ -569,6 +584,7 @@ def test_edit_file_from_scratch_multiline_with_backticks_and_second_edit(tmp_pat
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
             edit_file(
+                str(temp_file_path),
                 1,
                 3,
                 '`REPLACED TEXT1`\n`REPLACED TEXT2`\n`REPLACED TEXT3`',
@@ -601,8 +617,9 @@ def test_edit_file_from_scratch_multiline(tmp_path):
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
             edit_file(
-                start=1,
-                end=1,
+                str(temp_file_path),
+                1,
+                1,
                 content='REPLACE TEXT1\nREPLACE TEXT2\nREPLACE TEXT3',
             )
         result = buf.getvalue()
@@ -624,7 +641,12 @@ def test_edit_file_from_scratch_multiline(tmp_path):
 
 def test_edit_file_not_opened():
     with pytest.raises(FileNotFoundError):
-        edit_file(start=1, end=3, content='REPLACE TEXT')
+        edit_file(
+            str('unknown file'),
+            1,
+            3,
+            'REPLACE TEXT',
+        )
 
 
 def test_search_dir(tmp_path):
@@ -809,7 +831,7 @@ def test_edit_lint_file_pass(tmp_path, monkeypatch):
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
             open_file(str(file_path))
-            edit_file(1, 1, "print('hello')\n")
+            edit_file(str(file_path), 1, 1, "print('hello')\n")
         result = buf.getvalue()
 
     assert result is not None
@@ -834,7 +856,7 @@ def test_lint_file_fail_undefined_name(tmp_path, monkeypatch, capsys):
     )
 
     open_file(str(file_path))
-    edit_file(1, 1, 'undefined_name()\n')
+    edit_file(str(file_path), 1, 1, 'undefined_name()\n')
 
     result = capsys.readouterr().out
     print(result)
@@ -873,7 +895,7 @@ def test_lint_file_fail_undefined_name_long(tmp_path, monkeypatch, capsys):
     )
 
     open_file(str(file_path))
-    edit_file(500, 500, 'undefined_name()\n')
+    edit_file(str(file_path), 500, 500, 'undefined_name()\n')
 
     result = capsys.readouterr().out
     print(result)
@@ -890,7 +912,8 @@ def test_lint_file_fail_undefined_name_long(tmp_path, monkeypatch, capsys):
         f"{file_path}:500:1: F821 undefined name 'undefined_name'\n"
         '[This is how your edit would have looked if applied]\n'
         '-------------------------------------------------\n'
-        '(496 more lines above)\n'
+        '(495 more lines above)\n'
+        '496|\n'
         '497|\n'
         '498|\n'
         '499|\n'
@@ -900,12 +923,12 @@ def test_lint_file_fail_undefined_name_long(tmp_path, monkeypatch, capsys):
         '503|\n'
         '504|\n'
         '505|\n'
-        '506|\n'
-        '(495 more lines below)\n'
+        '(496 more lines below)\n'
         '-------------------------------------------------\n\n'
         '[This is the original code before your edit]\n'
         '-------------------------------------------------\n'
-        '(496 more lines above)\n'
+        '(495 more lines above)\n'
+        '496|\n'
         '497|\n'
         '498|\n'
         '499|\n'
@@ -915,8 +938,7 @@ def test_lint_file_fail_undefined_name_long(tmp_path, monkeypatch, capsys):
         '503|\n'
         '504|\n'
         '505|\n'
-        '506|\n'
-        '(494 more lines below)\n'
+        '(495 more lines below)\n'
         '-------------------------------------------------\n'
         'Your changes have NOT been applied. Please fix your edit command and try again.\n'
         'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
@@ -936,7 +958,7 @@ def test_lint_file_disabled_undefined_name(tmp_path, monkeypatch, capsys):
     )
 
     open_file(str(file_path))
-    edit_file(1, 1, 'undefined_name()\n')
+    edit_file(str(file_path), 1, 1, 'undefined_name()\n')
 
     result = capsys.readouterr().out
     assert result is not None
