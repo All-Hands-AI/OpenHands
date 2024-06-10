@@ -3,7 +3,7 @@ import os
 from browsergym.core.action.highlevel import HighLevelActionSet
 from browsergym.utils.obs import flatten_axtree_to_str
 
-from agenthub.browsing_agent.action_parser import BrowsingResponseParser
+from agenthub.browsing_agent.resposne_parser import BrowsingResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.logger import opendevin_logger as logger
@@ -42,7 +42,7 @@ class BrowsingAgent(Agent):
 
     sandbox_plugins: list[PluginRequirement] = []
     runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
-    action_parser = BrowsingResponseParser()
+    resposne_parser = BrowsingResponseParser()
 
     def __init__(
         self,
@@ -199,7 +199,7 @@ In order to accomplish my goal I need to send the information asked back to the 
             stop=[')```', ')\n```'],
         )
         self.log_cost(response)
-        return self.action_parser.parse(response)
+        return self.resposne_parser.parse(response)
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
