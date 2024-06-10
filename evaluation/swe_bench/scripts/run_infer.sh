@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eo pipefail
 
 source "evaluation/utils/version_control.sh"
 
