@@ -66,4 +66,4 @@ docker buildx build \
   --provenance=false \
   -f $dir/Dockerfile $DOCKER_BASE_DIR
 
-echo "Final tag for image: ${tags[-1]}"  # Assuming the last added tag is what you want to use
+echo "Final tag for image: $cache_tag"  # Assuming the last added tag is what you want to use
