@@ -18,6 +18,7 @@ from opendevin.core.const.guide_url import TROUBLESHOOTING_URL
 from opendevin.core.exceptions import SandboxInvalidBackgroundCommandError
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.schema import CancellableStream
+from opendevin.runtime.docker.image_agnostic_util import get_od_sandbox_image
 from opendevin.runtime.docker.process import DockerProcess, Process
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.sandbox import Sandbox
@@ -26,9 +27,6 @@ from opendevin.runtime.utils import find_available_tcp_port
 # FIXME: these are not used, can we remove them?
 InputType = namedtuple('InputType', ['content'])
 OutputType = namedtuple('OutputType', ['content'])
-
-AGNOSTIC_SANDBOX_IMAGE_NAME = "opendevin_agnostic_sandbox:latest"
-AGNOSTIC_SANDBOX_BUILD_DIR = "./agnostic_sandbox"
 
 
 class SSHExecCancellableStream(CancellableStream):
@@ -128,7 +126,7 @@ def split_bash_commands(commands):
                 if not heredoc_trigger and current_command:
                     result.append(''.join(current_command).strip())
                     current_command = []
-            elif char == '<' and commands[i: i + 2] == '<<':
+            elif char == '<' and commands[i : i + 2] == '<<':
                 # Detect heredoc
                 state = IN_HEREDOC
                 i += 2  # Skip '<<'
@@ -138,7 +136,7 @@ def split_bash_commands(commands):
                 while commands[i] not in [' ', '\n']:
                     i += 1
                 heredoc_trigger = commands[start:i]
-                current_command.append(commands[start - 2: i])  # Include '<<'
+                current_command.append(commands[start - 2 : i])  # Include '<<'
                 continue  # Skip incrementing i at the end of the loop
             current_command.append(char)
 
@@ -155,14 +153,14 @@ def split_bash_commands(commands):
         elif state == IN_HEREDOC:
             current_command.append(char)
             if (
-                    char == '\n'
-                    and heredoc_trigger
-                    and commands[i + 1: i + 1 + len(heredoc_trigger) + 1]
-                    == heredoc_trigger + '\n'
+                char == '\n'
+                and heredoc_trigger
+                and commands[i + 1 : i + 1 + len(heredoc_trigger) + 1]
+                == heredoc_trigger + '\n'
             ):
                 # Check if the next line starts with the heredoc trigger followed by a newline
                 i += (
-                        len(heredoc_trigger) + 1
+                    len(heredoc_trigger) + 1
                 )  # Move past the heredoc trigger and newline
                 current_command.append(
                     heredoc_trigger + '\n'
@@ -201,10 +199,10 @@ class DockerSSHBox(Sandbox):
     background_commands: dict[int, Process] = {}
 
     def __init__(
-            self,
-            container_image: str | None = None,
-            timeout: int = config.sandbox_timeout,
-            sid: str | None = None,
+        self,
+        container_image: str | None = None,
+        timeout: int = config.sandbox_timeout,
+        sid: str | None = None,
     ):
         logger.info(
             f'SSHBox is running as {"opendevin" if self.run_as_devin else "root"} user with USER_ID={self.user_id} in the sandbox'
@@ -230,23 +228,9 @@ class DockerSSHBox(Sandbox):
 
         self.timeout = timeout
         self.container_image = container_image or config.sandbox_container_image
-
-        self.use_agnostic_sandbox = "ghcr.io/opendevin/sandbox" not in self.container_image
-
-        if self.use_agnostic_sandbox:
-            images = self.docker_client.images.list()
-
-            image_exists = False
-            for image in images:
-                if AGNOSTIC_SANDBOX_IMAGE_NAME in image.tags:
-                    self.container_image = AGNOSTIC_SANDBOX_IMAGE_NAME
-                    image_exists = True
-                    logger.info("Found built agnostic_sandbox image, about to use:" + self.container_image)
-                    break
-            if not image_exists:
-                logger.info(f'Agnostic_sandbox image not found, will build')
-                self._build_sandbox_image(self.container_image)
-                self.container_image = AGNOSTIC_SANDBOX_IMAGE_NAME
+        self.container_image = get_od_sandbox_image(
+            self.container_image, self.docker_client
+        )
         self.container_name = self.container_name_prefix + self.instance_id
 
         # set up random user password
@@ -296,41 +280,10 @@ class DockerSSHBox(Sandbox):
         self.execute('mkdir -p /tmp')
         # set git config
         self.execute('git config --global user.name "OpenDevin"')
-        self.execute('git config --global user.email "opendevin@opendevin.ai"')
+        self.execute('git config --global user.email "opendevin@all-hands.dev"')
         atexit.register(self.close)
         super().__init__()
 
-    def _build_sandbox_image(self, base_image):
-        try:
-            if not os.path.exists(AGNOSTIC_SANDBOX_BUILD_DIR):
-                os.makedirs(AGNOSTIC_SANDBOX_BUILD_DIR)
-            dockerfile_content = f"""
-FROM {base_image}
-
-RUN apt update && apt install -y openssh-server wget sudo
-RUN mkdir -p -m0755 /var/run/sshd
-RUN mkdir -p /opendevin && mkdir -p /opendevin/logs && chmod 777 /opendevin/logs
-
-RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
-RUN bash Miniforge3-$(uname)-$(uname -m).sh -b -p /opendevin/miniforge3
-RUN bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"
-RUN echo "export PATH=/opendevin/miniforge3/bin:$PATH" >> ~/.bashrc
-            """.strip()
-            with open(f"{AGNOSTIC_SANDBOX_BUILD_DIR}/Dockerfile", "w") as file:
-                file.write(dockerfile_content)
-
-            image, logs = self.docker_client.images.build(path=AGNOSTIC_SANDBOX_BUILD_DIR,
-                                                          tag=AGNOSTIC_SANDBOX_IMAGE_NAME)
-
-            for log in logs:
-                if 'stream' in log:
-                    print(log['stream'].strip())
-
-            print(f"Image {image} built successfully")
-        except docker.errors.BuildError as e:
-            print(f"Image build failed: {e}")
-        except Exception as e:
-            print(f"An error occurred: {e}")
     def add_to_env(self, key: str, value: str):
         super().add_to_env(key, value)
 
@@ -479,10 +432,10 @@ RUN echo "export PATH=/opendevin/miniforge3/bin:$PATH" >> ~/.bashrc
         return bg_cmd.read_logs()
 
     def _send_interrupt(
-            self,
-            cmd: str,
-            prev_output: str = '',
-            ignore_last_output: bool = False,
+        self,
+        cmd: str,
+        prev_output: str = '',
+        ignore_last_output: bool = False,
     ) -> tuple[int, str]:
         logger.exception(
             f'Command "{cmd}" timed out, killing process...', exc_info=False
@@ -499,7 +452,7 @@ RUN echo "export PATH=/opendevin/miniforge3/bin:$PATH" >> ~/.bashrc
         )
 
     def execute(
-            self, cmd: str, stream: bool = False, timeout: int | None = None
+        self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
         timeout = timeout or self.timeout
         commands = split_bash_commands(cmd)
@@ -798,8 +751,8 @@ RUN echo "export PATH=/opendevin/miniforge3/bin:$PATH" >> ~/.bashrc
         for container in containers:
             try:
                 if (
-                        container.name.startswith(self.container_name)
-                        and not config.persist_sandbox
+                    container.name.startswith(self.container_name)
+                    and not config.persist_sandbox
                 ):
                     # only remove the container we created
                     # otherwise all other containers with the same prefix will be removed
