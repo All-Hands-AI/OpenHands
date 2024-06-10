@@ -341,3 +341,53 @@ def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
                 '1|\r\n'
                 '[File a.txt created.]'
             ).strip().split('\r\n')
+
+
+def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
+    # get a temporary directory
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+            config, 'workspace_mount_path', new=temp_dir
+    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+        config, 'sandbox_type', new='ssh'
+    ), patch.object(
+        config, 'sandbox_container_image', new='ubuntu:22.04'
+    ):
+        for box in [DockerSSHBox()]:
+            box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
+            exit_code, output = box.execute('mkdir test')
+            print(output)
+            assert exit_code == 0, (
+                    'The exit code should be 0 for ' + box.__class__.__name__
+            )
+
+            exit_code, output = box.execute(
+                'echo "create_file(\'a.txt\')" | execute_cli'
+            )
+            print(output)
+            assert exit_code == 0, (
+                    'The exit code should be 0 for ' + box.__class__.__name__
+            )
+            assert output.strip().split('\r\n') == (
+                '[File: /workspace/a.txt (1 lines total)]\r\n'
+                '1|\r\n'
+                '[File a.txt created.]'
+            ).strip().split('\r\n')
+
+            exit_code, output = box.execute('cd test')
+            print(output)
+            assert exit_code == 0, (
+                    'The exit code should be 0 for ' + box.__class__.__name__
+            )
+
+            exit_code, output = box.execute(
+                'echo "create_file(\'a.txt\')" | execute_cli'
+            )
+            print(output)
+            assert exit_code == 0, (
+                    'The exit code should be 0 for ' + box.__class__.__name__
+            )
+            assert output.strip().split('\r\n') == (
+                '[File: /workspace/test/a.txt (1 lines total)]\r\n'
+                '1|\r\n'
+                '[File a.txt created.]'
+            ).strip().split('\r\n')
