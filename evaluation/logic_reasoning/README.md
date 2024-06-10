@@ -33,5 +33,5 @@ The following code will run inference on the first example of the ProntoQA datas
 using OpenDevin 0.6.2 version.
 
 ```bash
-./evaluation/logic_reasoning/scripts/run_infer.sh ProntoQA 0.6.2 gpt-4o 1
+./evaluation/logic_reasoning/scripts/run_infer.sh ProntoQA gpt-4o 0.6.2 1
 ```
