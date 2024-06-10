@@ -64,6 +64,8 @@ AGENT_CLS_TO_INST_SUFFIX = {
     'CodeActAgent': 'When you think you have solved the question, please first send your answer to user through message and then exit.\n'
 }
 
+opeai_api_key = None
+
 
 def process_instance(instance, agent_class, metadata, reset_logger: bool = True):
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
@@ -102,12 +104,13 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
 
     # Use codeactagent as guesser_model
     global game
+    global openai_api_key
     game = _game_class[metadata['dataset']](
         item=instance['text'].strip(),
         answerer_model=metadata['answerer_model'],
         guesser_model=None,
         num_turns=metadata['max_iterations'],
-        openai_api_key=metadata['openai_api'],
+        openai_api_key=openai_api_key,
         guesser_kargs=guesser_kargs,
     )
 
@@ -229,12 +232,13 @@ if __name__ == '__main__':
     )
     logger.info(f'Using evaluation output directory: {eval_output_dir}')
 
+    global openai_api_key
+    openai_api_key = args.OPENAI_API_KEY
     metadata = {
         'dataset': args.dataset,
         'data_split': args.data_split,
         'answerer_model': args.answerer_model,
         'agent_class': agent_class,
-        'openai_api': args.OPENAI_API_KEY,
         'model_name': model_name,
         'max_iterations': max_iterations,
         'eval_output_dir': eval_output_dir,
