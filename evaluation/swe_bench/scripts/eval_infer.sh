@@ -11,6 +11,11 @@ if [ ! -f $PROCESS_FILEPATH ]; then
     exit 1
 fi
 
+# If instance_id is empty, it means we want to eval on the whole $PROCESS_FILEPATH
+# otherwise, we want to eval on the instance_id
+INSTANCE_ID=$2
+echo "INSTANCE_ID: $INSTANCE_ID"
+
 PROCESS_FILEPATH=$(realpath $PROCESS_FILEPATH)
 FILE_DIR=$(dirname $PROCESS_FILEPATH)
 FILE_NAME=$(basename $PROCESS_FILEPATH)
@@ -70,22 +75,27 @@ echo "=============================================================="
 echo "Running SWE-bench evaluation"
 echo "=============================================================="
 
-poetry run python $SWEBENCH_DOCKER_FORK_DIR/run_evaluation.py \
-    --predictions_path $SWEBENCH_FORMAT_JSONL \
-    --log_dir $FILE_DIR/eval_logs \
-    --swe_bench_tasks $SWEBENCH_TASKS \
-    --namespace $DOCKERHUB_NAMESPACE \
-    --timeout 1800
+if [ -z "$INSTANCE_ID" ]; then
+    echo "Running SWE-bench evaluation on the whole input file..."
+
+    poetry run python $SWEBENCH_DOCKER_FORK_DIR/run_evaluation.py \
+        --predictions_path $SWEBENCH_FORMAT_JSONL \
+        --log_dir $FILE_DIR/eval_logs \
+        --swe_bench_tasks $SWEBENCH_TASKS \
+        --namespace $DOCKERHUB_NAMESPACE \
+        --timeout 1800
+
+else
+    echo "Running SWE-bench evaluation on the instance_id: $INSTANCE_ID"
+    poetry run python $SWEBENCH_DOCKER_FORK_DIR/run_single_instance.py \
+        --predictions_path $SWEBENCH_FORMAT_JSONL \
+        --swe_bench_tasks $SWEBENCH_TASKS \
+        --namespace $DOCKERHUB_NAMESPACE \
+        --instance_id $INSTANCE_ID
+fi
 
 poetry run python $SWEBENCH_DOCKER_FORK_DIR/generate_report.py \
     --predictions_path $SWEBENCH_FORMAT_JSONL \
     --log_dir $FILE_DIR/eval_logs \
     --output_dir $FILE_DIR \
     --swe_bench_tasks $SWEBENCH_TASKS
-
-# # Comment two above and uncomment this if you ONLY run for single instance for debugging purpose
-# # poetry run python $SWEBENCH_DOCKER_FORK_DIR/run_single_instance.py \
-# #     --predictions_path $SWEBENCH_FORMAT_JSONL \
-# #     --swe_bench_tasks $SWEBENCH_TASKS \
-# #     --namespace $DOCKERHUB_NAMESPACE \
-# #     --instance_id django__django-11099
