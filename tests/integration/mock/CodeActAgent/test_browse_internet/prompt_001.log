@@ -329,7 +329,7 @@ Observation:
 [1] 126
 
 ASSISTANT:
-The server is running on port 5000 with PID 126. You can access the list of numbers by visiting http://127.0.0.1:5000. Free free to let me know if you have any further requests!
+The server is running on port 5000 with PID 126. You can access the list of numbers by visiting http://127.0.0.1:5000. Feel free to let me know if you have any further requests!
 
 USER: Now browse the newly started server's homepage and show me the numbers.
 
