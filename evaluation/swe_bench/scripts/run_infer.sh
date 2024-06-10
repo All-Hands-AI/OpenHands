@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source "../../utils/version_control.sh"
+source "evaluation/utils/version_control.sh"
 
 MODEL_CONFIG=$1
 COMMIT_HASH=$2
