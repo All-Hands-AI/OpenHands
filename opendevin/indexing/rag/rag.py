@@ -8,6 +8,7 @@ from llama_index.core import (
     VectorStoreIndex,
 )
 from llama_index.core.callbacks import CallbackManager, LlamaDebugHandler
+from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.openai import OpenAI
 from llama_index.readers.file import FlatReader
@@ -21,7 +22,7 @@ load_dotenv()
 
 class VectorIndex:
     embedding_model_name = 'jinaai/jina-embeddings-v2-base-code'
-    index_name = 'opendevin-codebase'
+    index_name = 'sphi-82ef497a8c88f0f6e50d84520e7276bfbf65025d'
 
     def __init__(self) -> None:
         db = Pinecone(
@@ -53,9 +54,13 @@ class VectorIndex:
         )
         self.llm = OpenAI(model='gpt-3.5-turbo', temperature=0.0)
 
-    def retrieve(self, query: str, k: int) -> str:
-        # TODO:
-        return 'TODO'
+    def retrieve(self, query: str, k: int) -> list[str]:
+        retriever = VectorIndexRetriever(
+            index=self.index,
+            similarity_top_k=k,
+        )
+        results = retriever.retrieve(query)
+        return [r.get_text() for r in results]
 
     def query(self, query: str) -> str:
         query_engine = self.index.as_query_engine()
@@ -88,7 +93,7 @@ class VectorIndex:
         for doc in docs:
             self.index.insert(document=doc)
 
-    def ingest_repo(self, owner: str, repo: str) -> None:
+    def ingest_repo(self, owner: str, repo: str, commit_sha: str) -> None:
         github_token = os.environ.get('GITHUB_TOKEN')
         github_client = GithubClient(github_token=github_token, verbose=True)
 
@@ -98,25 +103,13 @@ class VectorIndex:
             repo=repo,
             use_parser=False,
             verbose=False,
-            filter_directories=(
-                # ["opendevin", "agenthub"],
-                ['evaluation'],
-                GithubRepositoryReader.FilterType.INCLUDE,
-            ),
             filter_file_extensions=(
                 [
-                    '.png',
-                    '.jpg',
-                    '.jpeg',
-                    '.gif',
-                    '.svg',
-                    '.ico',
-                    'json',
-                    '.ipynb',
+                    '.py'  # TODO: add more file types
                 ],
-                GithubRepositoryReader.FilterType.EXCLUDE,
+                GithubRepositoryReader.FilterType.INCLUDE,
             ),
-        ).load_data(branch='main')
+        ).load_data(commit_sha=commit_sha)
 
         # insert with tqdm progress bar
         for doc in tqdm(documents):
@@ -127,7 +120,10 @@ class VectorIndex:
 
 if __name__ == '__main__':
     vi = VectorIndex()
-    vi.ingest_repo('OpenDevin', 'OpenDevin')
+    vi.ingest_repo('sphinx-doc', 'sphinx', '82ef497a8c88f0f6e50d84520e7276bfbf65025d')
     # vi.ingest_directory('.')
-    # response = vi.query('how does the memory condenser component work?')
-    # print(response)
+    # response = vi.retrieve('I need to modify the CodeActAgent in agenthub.', 4)
+    # for i, r in enumerate(response):
+    #     # pretty print
+    #     print("Result", i + 1, ":")
+    #     print(r)
