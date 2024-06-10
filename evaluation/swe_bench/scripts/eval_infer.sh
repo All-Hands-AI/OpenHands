@@ -48,3 +48,10 @@ poetry run python $SWEBENCH_DOCKER_FORK_DIR/generate_report.py \
     --log_dir $FILE_DIR/eval_logs \
     --output_dir $FILE_DIR \
     --swe_bench_tasks $SWEBENCH_TASKS
+
+# Comment two above and uncomment this if you ONLY run for single instance for debugging purpose
+# poetry run python $SWEBENCH_DOCKER_FORK_DIR/run_single_instance.py \
+#     --predictions_path $SWEBENCH_FORMAT_JSONL \
+#     --swe_bench_tasks $SWEBENCH_TASKS \
+#     --namespace aorwall \
+#     --instance_id django__django-11099
