@@ -73,9 +73,7 @@ def get_observation_message(obs) -> dict[str, str] | None:
         splitted = content.split('\n')
         for i, line in enumerate(splitted):
             if '![image](data:image/png;base64,' in line:
-                splitted[i] = (
                     '![image](data:image/png;base64, ...) already displayed to user'
-                )
         content = '\n'.join(splitted)
         content = truncate_content(content)
         return {'role': 'user', 'content': content}
@@ -168,7 +166,7 @@ class CodeActAgent(Agent):
         """
         super().reset()
 
-    def step(self, state: State, history: ShortTermHistory) -> Action:
+    def step(self, state: State) -> Action:
         """
         Performs one step using the CodeAct Agent.
         This includes gathering info on previous steps and prompting the model to make a command to execute.
@@ -185,7 +183,7 @@ class CodeActAgent(Agent):
         """
 
         # if we're done, go back
-        latest_user_message = history.get_last_user_message()
+        latest_user_message = self.history.get_last_user_message()
         if latest_user_message and latest_user_message.strip() == '/exit':
             return AgentFinishAction()
 
@@ -212,7 +210,7 @@ class CodeActAgent(Agent):
             {'role': 'user', 'content': self.in_context_example},
         ]
 
-        for event in state.history.get_events():
+        for event in self.history.get_events():
             # create a regular message from an event
             message = (
                 get_action_message(event)
@@ -226,6 +224,8 @@ class CodeActAgent(Agent):
 
         # the latest user message is important:
         # we want to remind the agent of the environment constraints
+
+
         latest_user_message = next(
             (m for m in reversed(messages) if m['role'] == 'user'), None
         )

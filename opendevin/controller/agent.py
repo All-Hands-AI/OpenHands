@@ -11,7 +11,7 @@ from opendevin.core.exceptions import (
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import PluginRequirement
 from opendevin.runtime.tools import RuntimeTool
-
+from opendevin.memory.history import ShortTermHistory
 
 class Agent(ABC):
     DEPRECATED = False
@@ -29,9 +29,13 @@ class Agent(ABC):
     def __init__(
         self,
         llm: LLM,
+
     ):
         self.llm = llm
+        self.history = ShortTermHistory(llm)
         self._complete = False
+
+
 
     @property
     def complete(self) -> bool:

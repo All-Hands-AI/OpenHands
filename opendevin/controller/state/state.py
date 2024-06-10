@@ -13,10 +13,6 @@ from opendevin.events.action import (
 from opendevin.events.action.agent import (
     AgentDelegateSummaryAction,
     AgentFinishAction,
-    AgentSummarizeAction,
-)
-from opendevin.events.observation import (
-    CmdOutputObservation,
 )
 from opendevin.storage import get_file_store
 
@@ -111,7 +107,7 @@ class State:
         if not hasattr(self, 'history'):
             self.history = ShortTermHistory()
 
-        # restore the relevant data in history from the state
+            # restore the relevant data in history from the state
             if hasattr(self, 'delegate_summaries'):
                 self.history.delegate_summaries = self.delegate_summaries
         self.history.start_id = self.start_id
