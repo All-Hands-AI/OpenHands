@@ -530,9 +530,9 @@ Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ----------
 
-Sure! Let's start by opening the `bad.txt` file to see its content.
+Let's start by opening the `bad.txt` file to identify and fix the typos.
 <execute_ipython>
-open_file('bad.txt')
+open_file("bad.txt")
 </execute_ipython>
 
 ----------
@@ -548,11 +548,13 @@ OBSERVATION:
 ----------
 
 Let's correct the typos in the `bad.txt` file.
+
+1. Change "typoo" to "typo".
+2. Change "mor" to "more".
+
+I will make these edits now.
 <execute_ipython>
-edit_file(start=1, end=4, content="""This is a stupid typo.
-Really?
-No more typos!
-Enjoy!""")
+edit_file(start=1, end=4, content="This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!")
 </execute_ipython>
 
 ----------
