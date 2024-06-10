@@ -45,7 +45,7 @@ If $GITHUB_TOKEN is not set, ask the user to set it."""
 
 SYSTEM_SUFFIX = """Responses should be concise.
 The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
-Include ONLY ONE <execute_ipython>, <execute_bash>, <execute_browse>, or <execute_delegate> per response, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
+Include ONLY ONE <execute_ipython>, <execute_bash>, <execute_browse>, or <execute_delegate> per response, unless the assistant is finished with the task or needs more input or action from the user in order to proceed.
 IMPORTANT: Execute code using <execute_ipython>, <execute_bash>, <execute_browse>, or <execute_delegate> whenever possible.
 """
 
@@ -270,7 +270,7 @@ Observation:
 [1] 126
 
 ASSISTANT:
-The server is running on port 5000 with PID 126. You can access the list of numbers by visiting http://127.0.0.1:5000. Free free to let me know if you have any further requests!
+The server is running on port 5000 with PID 126. You can access the list of numbers by visiting http://127.0.0.1:5000. Feel free to let me know if you have any further requests!
 
 USER: Now browse the newly started server's homepage and show me the numbers.
 
