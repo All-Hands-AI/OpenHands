@@ -6,6 +6,7 @@ import subprocess
 import pytest
 
 from opendevin.controller.state.state import State
+from opendevin.core.config import AppConfig, load_from_toml
 from opendevin.core.main import main
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
@@ -14,6 +15,17 @@ from opendevin.events.action import (
 )
 
 workspace_base = os.getenv('WORKSPACE_BASE')
+
+# make sure we're testing in the same folder of an existing config.toml
+if os.path.exists('config.toml'):
+    config = AppConfig()
+    load_from_toml(config, 'config.toml')
+    if config and config.workspace_base and config.workspace_base != workspace_base:
+        if os.path.exists(config.workspace_base) and os.access(
+            config.workspace_base, os.W_OK
+        ):
+            print(f'Setting workspace_base to {config.workspace_base}')
+            workspace_base = config.workspace_base
 
 
 @pytest.mark.skipif(
@@ -63,7 +75,7 @@ def test_write_simple_script():
     reason='local sandbox shows environment-dependent absolute path for pwd command',
 )
 def test_edits():
-    # Move workspace artifacts to workspace_base location
+    # Copy workspace artifacts to workspace_base location
     source_dir = os.path.join(os.path.dirname(__file__), 'workspace/test_edits/')
     files = os.listdir(source_dir)
     for file in files:
