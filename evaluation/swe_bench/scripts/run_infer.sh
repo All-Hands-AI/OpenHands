@@ -1,8 +1,14 @@
 #!/bin/bash
+
+source "../../utils/version_control.sh"
+
 MODEL_CONFIG=$1
-AGENT=$2
-EVAL_LIMIT=$3
-MAX_ITER=$4
+COMMIT_HASH=$2
+AGENT=$3
+EVAL_LIMIT=$4
+MAX_ITER=$5
+
+checkout_eval_branch
 
 if [ -z "$AGENT" ]; then
   echo "Agent not specified, use default CodeActAgent"
@@ -50,3 +56,5 @@ fi
 
 # Run the command
 eval $COMMAND
+
+checkout_original_branch
