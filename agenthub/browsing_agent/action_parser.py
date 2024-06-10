@@ -58,6 +58,11 @@ class BrowsingActionParserMessage(ActionParser):
 
 
 class BrowsingActionParserBrowseInteractive(ActionParser):
+    """
+    Parser action:
+        - BrowseInteractiveAction(browser_actions) - handle send message to user function call in BrowserGym
+    """
+
     def __init__(
         self,
     ):
@@ -69,7 +74,6 @@ class BrowsingActionParserBrowseInteractive(ActionParser):
     def parse(self, action_str: str) -> Action:
         thought = action_str.split('```')[0].strip()
         action_str = action_str.split('```')[1].strip()
-        # handle send message to user function call in BrowserGym
         msg_content = ''
         for sub_action in action_str.split('\n'):
             if 'send_msg_to_user(' in sub_action:
