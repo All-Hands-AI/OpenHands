@@ -399,7 +399,7 @@ if __name__ == '__main__':
     )
 
     pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(os.path.join(eval_output_dir, 'logs')).mkdir(
+    pathlib.Path(os.path.join(eval_output_dir, 'infer_logs')).mkdir(
         parents=True, exist_ok=True
     )
     logger.info(f'Using evaluation output directory: {eval_output_dir}')
