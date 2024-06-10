@@ -47,6 +47,34 @@ class AgentSummarizeAction(Action):
 
 
 @dataclass
+class AgentDelegateSummaryAction(Action):
+    """
+    Action to summarize a list of events.
+
+    Attributes:
+    - agent: What agent was delegated to.
+    - task: The task that was delegated.
+    - summary: A single sentence summarizing all the delegate's actions and observations.
+    """
+
+    agent: str = ''
+    task: str = ''
+    summary: str = ''
+    action: str = ActionType.SUMMARIZE
+    _chunk_start: int = -1
+    _chunk_end: int = -1
+
+    @property
+    def message(self) -> str:
+        return self.summary
+
+    def __str__(self) -> str:
+        ret = '**AgentDelegateSummaryAction**\n'
+        ret += f'SUMMARY: {self.summary}'
+        return ret
+
+
+@dataclass
 class AgentFinishAction(Action):
     outputs: dict = field(default_factory=dict)
     thought: str = ''
@@ -54,7 +82,7 @@ class AgentFinishAction(Action):
 
     @property
     def message(self) -> str:
-        if self.thought != "":
+        if self.thought != '':
             return self.thought
         return "All done! What's next on the agenda?"
 

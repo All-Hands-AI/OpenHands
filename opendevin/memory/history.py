@@ -4,6 +4,7 @@ from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action.action import Action
 from opendevin.events.action.agent import (
     AgentDelegateAction,
+    AgentDelegateSummaryAction,
     ChangeAgentStateAction,
 )
 from opendevin.events.action.empty import NullAction
@@ -28,7 +29,8 @@ class ShortTermHistory(list[Event]):
     start_id: int
     end_id: int
     _event_stream: EventStream
-    delegates: dict[tuple[int, int], tuple[str, str]]
+    delegate_summaries: dict[tuple[int, int], AgentDelegateSummaryAction]
+
     filter_out: ClassVar[tuple[type[Event], ...]] = (
         NullAction,
         NullObservation,
@@ -40,7 +42,7 @@ class ShortTermHistory(list[Event]):
         super().__init__()
         self.start_id = -1
         self.end_id = -1
-        self.delegates = {}
+        self.delegate_summaries = {}
 
     def set_event_stream(self, event_stream: EventStream):
         self._event_stream = event_stream
@@ -81,7 +83,7 @@ class ShortTermHistory(list[Event]):
                 # AgentDelegateAction has id = delegate_start
                 # AgentDelegateObservation has id = delegate_end
                 delegate_start < event.id < delegate_end
-                for delegate_start, delegate_end in self.delegates.keys()
+                for delegate_start, delegate_end in self.delegate_summaries.keys()
             ):
                 yield event
 
@@ -174,14 +176,18 @@ class ShortTermHistory(list[Event]):
         delegate_start = -1
         delegate_agent: str = ''
         delegate_task: str = ''
+        delegate_events: list[Event] = [event]
         for prev_event in self._event_stream.get_events(
-            end_id=event.id - 1, reverse=True
+            end_id=event.id - 1, reverse=True, filter_out_type=self.filter_out
         ):
             if isinstance(prev_event, AgentDelegateAction):
                 delegate_start = prev_event.id
                 delegate_agent = prev_event.agent
                 delegate_task = prev_event.inputs.get('task', '')
+                delegate_events.append(prev_event)
                 break
+            else:
+                delegate_events.append(prev_event)
 
         if delegate_start == -1:
             logger.error(
@@ -189,9 +195,17 @@ class ShortTermHistory(list[Event]):
             )
             return
 
-        self.delegates[(delegate_start, delegate_end)] = (delegate_agent, delegate_task)
-        logger.debug(
-            f'Delegate {delegate_agent} with task {delegate_task} ran from id={delegate_start} to id={delegate_end}'
+        # restore correct order
+        delegate_events.reverse()
+
+        # summarize the delegate's actions and observations
+        delegate_summary_action = self.memory_condenser.summarize_delegate(
+            delegate_events, delegate_agent, delegate_task
+        )
+
+        # add the summary to history
+        self.delegate_summaries[(delegate_start, delegate_end)] = (
+            delegate_summary_action
         )
 
     # TODO remove me when unnecessary
