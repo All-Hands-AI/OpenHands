@@ -100,7 +100,7 @@ set environment variable `ONLY_TEST_AGENT` to the agent. You could also use both
 e.g.
 
 ```bash
-ONLY_TEST_NAME="test_write_simple_script" ONLY_TEST_AGENT="MonologueAgent" ./tests/integration/regenerate.sh
+ONLY_TEST_NAME="test_write_simple_script" ONLY_TEST_AGENT="CodeActAgent" ./tests/integration/regenerate.sh
 ```
 
 ### Force Regenerate with real LLM
