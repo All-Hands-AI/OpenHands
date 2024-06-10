@@ -18,6 +18,7 @@ mkdir -p $FILE_DIR/eval_logs
 mkdir -p $FILE_DIR/swe_bench_format
 
 echo "Evaluating $FILE_NAME @ $FILE_DIR"
+DOCKERHUB_NAMESPACE="xingyaoww"
 SWEBENCH_TASKS=$(realpath evaluation/swe_bench/eval_workspace/eval_data/instances/swe-bench-lite-all.json)
 export SWEBENCH_DOCKER_FORK_DIR=$(realpath evaluation/swe_bench/eval_workspace/SWE-bench-docker)
 
@@ -40,7 +41,7 @@ poetry run python $SWEBENCH_DOCKER_FORK_DIR/run_evaluation.py \
     --predictions_path $SWEBENCH_FORMAT_JSONL \
     --log_dir $FILE_DIR/eval_logs \
     --swe_bench_tasks $SWEBENCH_TASKS \
-    --namespace aorwall \
+    --namespace $DOCKERHUB_NAMESPACE \
     --timeout 1800
 
 poetry run python $SWEBENCH_DOCKER_FORK_DIR/generate_report.py \
@@ -53,5 +54,5 @@ poetry run python $SWEBENCH_DOCKER_FORK_DIR/generate_report.py \
 # poetry run python $SWEBENCH_DOCKER_FORK_DIR/run_single_instance.py \
 #     --predictions_path $SWEBENCH_FORMAT_JSONL \
 #     --swe_bench_tasks $SWEBENCH_TASKS \
-#     --namespace aorwall \
+#     --namespace $DOCKERHUB_NAMESPACE \
 #     --instance_id django__django-11099
