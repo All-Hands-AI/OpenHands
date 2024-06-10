@@ -115,6 +115,7 @@ class State:
         self.history.end_id = self.end_id
 
         # remove the restored data from the state if any
+        self.delegate_summaries = {}
 
     def get_current_user_intent(self):
         """

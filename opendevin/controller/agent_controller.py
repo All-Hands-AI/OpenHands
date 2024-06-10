@@ -382,6 +382,14 @@ class AgentController:
         else:
             self.state = state
 
+        # initialize short term memory
+        history = (
+            ShortTermHistory()
+            if state is None or not hasattr(state, 'history') or state.history is None
+            else state.history
+        )
+        history.init_memory_condenser(self.agent.llm)
+        history.set_event_stream(self.event_stream)
         # when restored from a previous session, the State object will have history, start_id, and end_id
         # connect it to the event stream
         self.state.history.set_event_stream(self.event_stream)
