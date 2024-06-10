@@ -36,7 +36,7 @@ class MemoryCondenser:
             # TODO If the llm fails with ContextWindowExceededError, we can try to condense the monologue chunk by chunk
             raise
 
-    def delegate_summary(
+    def summarize_delegate(
         self, delegate_events: list[Event], delegate_agent: str, delegate_task: str
     ) -> AgentDelegateSummaryAction:
         """
