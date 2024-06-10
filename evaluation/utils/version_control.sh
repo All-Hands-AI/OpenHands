@@ -11,7 +11,10 @@ checkout_eval_branch() {
     current_branch=$(git rev-parse --abbrev-ref HEAD)
     echo "Current version is: $current_branch"
     echo "Check out OpenDevin to version: $COMMIT_HASH"
-    git checkout $COMMIT_HASH
+    if ! git checkout $COMMIT_HASH; then
+        echo "Failed to check out to $COMMIT_HASH"
+        exit 1
+    fi
     echo "Revert changes in evaluation folder"
     git checkout $current_branch -- evaluation
 }
