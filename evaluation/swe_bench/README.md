@@ -141,6 +141,8 @@ Then you can run the following:
 ./evaluation/swe_bench/scripts/eval_infer.sh evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/output.jsonl
 ```
 
+PS: You can also pass in a JSONL with [SWE-Bench format](https://github.com/princeton-nlp/SWE-bench/blob/main/tutorials/evaluation.md#-creating-predictions) to `./evaluation/swe_bench/scripts/eval_infer.sh`, where each line is a JSON of `{"model_patch": "XXX", "model_name_or_path": "YYY", "instance_id": "ZZZ"}`.
+
 The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/` with the following files/directory (following format of [SWE-bench-docker](https://github.com/aorwall/SWE-bench-docker/tree/main/evaluations/SWE-bench_Lite_golden)):
 
 - `README.md`: a report showing what are the instances that passed, failed, etc.
