@@ -180,7 +180,7 @@ class AgentController:
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState):
-        logger.info(
+        logger.debug(
             f'[Agent Controller {self.id}] Setting agent({type(self.agent).__name__}) state from {self.state.agent_state} to {new_state}'
         )
 
@@ -234,7 +234,7 @@ class AgentController:
             return
 
         if self._pending_action:
-            logger.info(
+            logger.debug(
                 f'[Agent Controller {self.id}] waiting for pending action: {self._pending_action}'
             )
             await asyncio.sleep(1)
@@ -337,9 +337,6 @@ class AgentController:
         start_id = self.state.start_id
         if start_id == -1:
             start_id = self.event_stream.get_latest_event_id() + 1
-            logger.debug(
-                f'AgentController {self.id} starting from event {start_id}, after: {self.event_stream.get_latest_event() if self.event_stream.get_latest_event_id() > -1 else None}'
-            )
         else:
             logger.debug(f'AgentController {self.id} restoring from event {start_id}')
         self.state.start_id = start_id

@@ -6,7 +6,6 @@ from enum import Enum
 from typing import Callable, Iterable
 
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events.action.message import MessageAction
 from opendevin.events.serialization.event import event_from_dict, event_to_dict
 from opendevin.storage import FileStore, get_file_store
 
@@ -71,7 +70,6 @@ class EventStream:
             if end_id is None:
                 end_id = self._cur_id - 1
             event_id = end_id
-            logger.debug(f'Getting events from {start_id} to {end_id}')
             while event_id >= start_id:
                 try:
                     event = self.get_event(event_id)
@@ -85,7 +83,6 @@ class EventStream:
                 event_id -= 1
         else:
             event_id = start_id
-            logger.debug(f'Getting events from {start_id} to {end_id}')
             while True:
                 if end_id is not None and event_id > end_id:
                     break
@@ -136,10 +133,6 @@ class EventStream:
             self._cur_id += 1
         event._timestamp = datetime.now()  # type: ignore [attr-defined]
 
-        # FIXME remove this
-        if isinstance(event, MessageAction):
-            logger.debug(f'Adding message: {event.message}')
-
         event._source = source  # type: ignore [attr-defined]
         data = event_to_dict(event)
         if event.id is not None:
@@ -149,9 +142,7 @@ class EventStream:
 
         for key, stack in self._subscribers.items():
             callback = stack[-1]
-            logger.debug(f'Notifying subscriber {key} by calling {callback}')
             asyncio.create_task(callback(event))
-        logger.debug(f'Done with self._lock for event: {event}')
 
     def filtered_events_by_source(self, source: EventSource):
         for event in self.get_events():
