@@ -473,7 +473,7 @@ if __name__ == '__main__':
     def update_progress(future):
         pbar.update(1)
         output = future.result()
-        pbar.set_description(f'Instance {output["instance_id"]}')
+        pbar.set_description(f'Instance {output["instance_id"][:10]}')
         pbar.set_postfix_str(f'Test Result: {output["test_result"]["result"]}')
         logger.info(
             f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]["result"]}'
