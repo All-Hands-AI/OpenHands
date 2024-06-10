@@ -24,13 +24,16 @@ load_dotenv()
 class VectorIndex:
     embedding_model_name = 'jinaai/jina-embeddings-v2-base-code'
     # index_name = 'sphi-82ef497a8c88f0f6e50d84520e7276bfbf65025d'
-    index_name = 'test-code-index'
 
-    def __init__(self) -> None:
+    def __init__(self, index_name=None) -> None:
         db = Pinecone(
             api_key=os.getenv('PINECONE_API_KEY'),
         )
-        pc_index = db.Index(self.index_name)
+        if index_name is None:
+            # create a new index with a random name
+            pc_index = db.create_index(name='my_index', dimension=768)
+        else:
+            pc_index = db.Index(index_name)
 
         self.vector_store = PineconeVectorStore(pinecone_index=pc_index)
         self.embed_model = HuggingFaceEmbedding(
@@ -138,7 +141,6 @@ if __name__ == '__main__':
     #     # pretty print
     #     print("Result", i + 1, ":")
     #     print(r)
-
-    vi.ingest_git_repo(
-        repo_path='/Users/ryan/Developer/files-localization-for-code-gen-agents/llamaindex-playground'
-    )
+    # vi.ingest_git_repo(
+    #     repo_path='/Users/ryan/Developer/files-localization-for-code-gen-agents/llamaindex-playground'
+    # )
