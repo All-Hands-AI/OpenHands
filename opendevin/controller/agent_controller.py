@@ -53,6 +53,7 @@ class AgentController:
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
     _pending_action: Action | None = None
+    history: ShortTermHistory
 
     def __init__(
         self,
@@ -344,7 +345,7 @@ class AgentController:
         self.update_state_before_step()
         action: Action = NullAction()
         try:
-            action = self.agent.step(self.state)
+            action = self.agent.step(self.state, self.history)
             if action is None:
                 raise LLMNoActionError('No action was returned')
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:

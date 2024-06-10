@@ -23,6 +23,7 @@ from opendevin.events.observation import (
 )
 from opendevin.events.serialization.event import truncate_content
 from opendevin.llm.llm import LLM
+from opendevin.memory.history import ShortTermHistory
 from opendevin.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -167,7 +168,7 @@ class CodeActAgent(Agent):
         """
         super().reset()
 
-    def step(self, state: State) -> Action:
+    def step(self, state: State, history: ShortTermHistory) -> Action:
         """
         Performs one step using the CodeAct Agent.
         This includes gathering info on previous steps and prompting the model to make a command to execute.
@@ -184,7 +185,7 @@ class CodeActAgent(Agent):
         """
 
         # if we're done, go back
-        latest_user_message = state.history.get_last_user_message()
+        latest_user_message = history.get_last_user_message()
         if latest_user_message and latest_user_message.strip() == '/exit':
             return AgentFinishAction()
 
