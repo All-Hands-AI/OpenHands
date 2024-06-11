@@ -5,6 +5,8 @@ set -eo pipefail
 ##           CONSTANTS AND ENVIRONMENTAL VARIABLES          ##
 ##############################################################
 
+TMP_FILE="${TMP_FILE:-tmp.log}"
+
 if [ -z $WORKSPACE_MOUNT_PATH ]; then
   WORKSPACE_MOUNT_PATH=$(pwd)
 fi
@@ -58,37 +60,37 @@ run_test() {
     pytest_cmd+=" --cov=agenthub --cov=opendevin --cov-report=xml --cov-append"
   fi
 
-  pytest_output=$(SANDBOX_TYPE=$SANDBOX_TYPE \
+  SANDBOX_TYPE=$SANDBOX_TYPE \
     PERSIST_SANDBOX=$PERSIST_SANDBOX \
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
     MAX_ITERATIONS=$MAX_ITERATIONS \
     AGENT=$agent \
-    $pytest_cmd 2>&1 | tee /dev/tty)
+    $pytest_cmd 2>&1 | tee $TMP_FILE
 
   # Capture the exit code of pytest
   pytest_exit_code=${PIPESTATUS[0]}
 
-  if echo "$pytest_output" | grep -q "docker.errors.DockerException"; then
+  if grep -q "docker.errors.DockerException" $TMP_FILE; then
     echo "Error: docker.errors.DockerException found in the output. Exiting."
     echo "Please check if your Docker daemon is running!"
     exit 1
   fi
 
-  if echo "$pytest_output" | grep -q "tenacity.RetryError"; then
+  if grep -q "tenacity.RetryError" $TMP_FILE; then
     echo "Error: tenacity.RetryError found in the output. Exiting."
     echo "This is mostly a transient error. Please retry."
     exit 1
   fi
 
-  if echo "$pytest_output" | grep -q "ExceptionPxssh"; then
+  if grep -q "ExceptionPxssh" $TMP_FILE; then
     echo "Error: ExceptionPxssh found in the output. Exiting."
     echo "Could not connect to sandbox via ssh. Please stop any stale docker container and retry."
     exit 1
   fi
 
-  if echo "$pytest_output" | grep -q "Address already in use"; then
+  if grep -q "Address already in use" $TMP_FILE; then
     echo "Error: Address already in use found in the output. Exiting."
     echo "Browsing tests need a local http server. Please check if there's any zombie process running start_http_server.py."
     exit 1
@@ -112,6 +114,7 @@ cleanup() {
     kill $HTTP_SERVER_PID
     unset HTTP_SERVER_PID
   fi
+  [ -f $TMP_FILE ] && rm $TMP_FILE
 }
 
 # Trap the EXIT signal to run the cleanup function
