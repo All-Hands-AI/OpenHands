@@ -12,13 +12,15 @@ Functions:
 - search_dir(search_term, dir_path='./'): Searches for a term in all files in the specified directory.
 - search_file(search_term, file_path=None): Searches for a term in the specified file or the currently open file.
 - find_file(file_name, dir_path='./'): Finds all files with the given name in the specified directory.
-- edit_file(start, end, content): Replaces lines in a file with the given content.
+- edit_file(file_name, start, end, content): Replaces lines in a file with the given content.
+- append_file(file_name, content): Appends given content to a file.
 """
 
 import base64
 import functools
 import os
 import subprocess
+import tempfile
 from inspect import signature
 from typing import Optional
 
@@ -66,12 +68,13 @@ def update_pwd_decorator(func):
     return wrapper
 
 
-def _lint_file(file_path: str) -> Optional[str]:
+def _lint_file(file_path: str) -> tuple[Optional[str], Optional[int]]:
     """
-    Lint the file at the given path.
+    Lint the file at the given path and return a tuple with a boolean indicating if there are errors,
+    and the line number of the first error, if any.
 
     Returns:
-        Optional[str]: A string containing the linting report if the file failed to lint, None otherwise.
+        tuple[str, Optional[int]]: (lint_error, first_error_line_number)
     """
 
     if file_path.endswith('.py'):
@@ -91,13 +94,28 @@ def _lint_file(file_path: str) -> Optional[str]:
         )
         if result.returncode == 0:
             # Linting successful. No issues found.
-            return None
-        else:
-            ret = 'ERRORS:\n'
-            ret += result.stdout.decode().strip()
-            return ret.rstrip('\n')
+            return None, None
+
+        # Extract the line number from the first error message
+        error_message = result.stdout.decode().strip()
+        lint_error = 'ERRORS:\n' + error_message
+        first_error_line = None
+        for line in error_message.split('\n'):
+            if line.strip():
+                # The format of the error message is: <filename>:<line>:<column>: <error code> <error message>
+                parts = line.split(':')
+                if len(parts) >= 2:
+                    try:
+                        first_error_line = int(parts[1])
+                        break
+                    except ValueError:
+                        # Not a valid line number, continue to the next line
+                        continue
+
+        return lint_error, first_error_line
+
     # Not a python file, skip linting
-    return None
+    return None, None
 
 
 def _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=False):
@@ -247,25 +265,26 @@ def create_file(filename: str) -> None:
 
 
 @update_pwd_decorator
-def edit_file(start: int, end: int, content: str) -> None:
+def edit_file(file_name: str, start: int, end: int, content: str) -> None:
     """Edit a file.
 
-    It replaces lines `start` through `end` (inclusive) with the given text `content` in the open file. Remember, the file must be open before editing.
+    Replaces in given file `file_name` the lines `start` through `end` (inclusive) with the given text `content`.
 
     Args:
+        file_name: str: The name of the file to edit.
         start: int: The start line number. Must satisfy start >= 1.
         end: int: The end line number. Must satisfy start <= end <= number of lines in the file.
         content: str: The content to replace the lines with.
     """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
-    if not CURRENT_FILE or not os.path.isfile(CURRENT_FILE):
-        raise FileNotFoundError('No file open. Use the open_file function first.')
+    if not os.path.isfile(file_name):
+        raise FileNotFoundError(f'File {file_name} not found.')
 
     # Load the file
-    with open(CURRENT_FILE, 'r') as file:
+    with open(file_name, 'r') as file:
         lines = file.readlines()
 
-    ERROR_MSG = f'[Error editing opened file {CURRENT_FILE}. Please confirm the opened file is correct.]'
+    ERROR_MSG = f'[Error editing file {file_name}. Please confirm the file is correct.]'
     ERROR_MSG_SUFFIX = (
         'Your changes have NOT been applied. Please fix your edit command and try again.\n'
         'You either need to 1) Open the correct file and try again or 2) Specify the correct start/end line arguments.\n'
@@ -296,24 +315,29 @@ def edit_file(start: int, end: int, content: str) -> None:
         return
 
     edited_content = content + '\n'
-    n_edited_lines = len(edited_content.split('\n'))
     new_lines = lines[: start - 1] + [edited_content] + lines[end:]
 
     # directly write edited lines to the file
-    with open(CURRENT_FILE, 'w') as file:
+    with open(file_name, 'w') as file:
         file.writelines(new_lines)
+
+    # set current line to the center of the edited lines
+    CURRENT_LINE = (start + end) // 2
+    first_error_line = None
 
     # Handle linting
     if ENABLE_AUTO_LINT:
         # BACKUP the original file
         original_file_backup_path = os.path.join(
-            os.path.dirname(CURRENT_FILE), f'.backup.{os.path.basename(CURRENT_FILE)}'
+            os.path.dirname(file_name), f'.backup.{os.path.basename(file_name)}'
         )
         with open(original_file_backup_path, 'w') as f:
             f.writelines(lines)
 
-        lint_error = _lint_file(CURRENT_FILE)
-        if lint_error:
+        lint_error, first_error_line = _lint_file(file_name)
+        if lint_error is not None:
+            if first_error_line is not None:
+                CURRENT_LINE = int(first_error_line)
             # only change any literal strings here in combination with unit tests!
             print(
                 '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]'
@@ -322,8 +346,8 @@ def edit_file(start: int, end: int, content: str) -> None:
 
             print('[This is how your edit would have looked if applied]')
             print('-------------------------------------------------')
-            cur_line = (n_edited_lines // 2) + start
-            _print_window(CURRENT_FILE, cur_line, 10)
+            cur_line = first_error_line
+            _print_window(file_name, cur_line, 10)
             print('-------------------------------------------------\n')
 
             print('[This is the original code before your edit]')
@@ -339,7 +363,7 @@ def edit_file(start: int, end: int, content: str) -> None:
 
             # recover the original file
             with open(original_file_backup_path, 'r') as fin, open(
-                CURRENT_FILE, 'w'
+                file_name, 'w'
             ) as fout:
                 fout.write(fin.read())
             os.remove(original_file_backup_path)
@@ -347,15 +371,127 @@ def edit_file(start: int, end: int, content: str) -> None:
 
         os.remove(original_file_backup_path)
 
-    with open(CURRENT_FILE, 'r') as file:
+    # Update the file information and print the updated content
+    with open(file_name, 'r') as file:
         n_total_lines = len(file.readlines())
-    # set current line to the center of the edited lines
-    CURRENT_LINE = (start + end) // 2
+    if first_error_line is not None and int(first_error_line) > 0:
+        CURRENT_LINE = first_error_line
+    else:
+        CURRENT_LINE = n_total_lines
     print(
-        f'[File: {os.path.abspath(CURRENT_FILE)} ({n_total_lines} lines total after edit)]'
+        f'[File: {os.path.abspath(file_name)} ({n_total_lines} lines total after edit)]'
     )
+    CURRENT_FILE = file_name
     _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW)
     print(MSG_FILE_UPDATED)
+
+
+@update_pwd_decorator
+def append_file(file_name: str, content: str) -> None:
+    """Append content to the given file.
+
+    It appends text `content` to the end of the specified file.
+
+    Args:
+        file_name: str: The name of the file to append to.
+        content: str: The content to append to the file.
+    """
+    global CURRENT_FILE, CURRENT_LINE, WINDOW
+    if not os.path.isfile(file_name):
+        raise FileNotFoundError(f'File {file_name} not found.')
+
+    # Use a temporary file to write changes
+    temp_file_path = ''
+    first_error_line = None
+    try:
+        # Create a temporary file
+        with tempfile.NamedTemporaryFile('w', delete=False) as temp_file:
+            temp_file_path = temp_file.name
+
+            # Read the original file and check if empty and for a trailing newline
+            with open(file_name, 'r') as original_file:
+                lines = original_file.readlines()
+
+            if lines and not (len(lines) == 1 and lines[0].strip() == ''):
+                if not lines[-1].endswith('\n'):
+                    lines[-1] += '\n'
+                content = ''.join(lines) + content
+            else:
+                content = content
+
+            if not content.endswith('\n'):
+                content += '\n'
+
+            # Append the new content with a trailing newline
+            temp_file.write(content)
+
+        # Replace the original file with the temporary file atomically
+        os.replace(temp_file_path, file_name)
+
+        # Handle linting
+        if ENABLE_AUTO_LINT:
+            # BACKUP the original file
+            original_file_backup_path = os.path.join(
+                os.path.dirname(file_name),
+                f'.backup.{os.path.basename(file_name)}',
+            )
+            with open(original_file_backup_path, 'w') as f:
+                f.writelines(lines)
+
+            lint_error, first_error_line = _lint_file(file_name)
+            if lint_error is not None:
+                if first_error_line is not None:
+                    CURRENT_LINE = int(first_error_line)
+                print(
+                    '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]'
+                )
+                print(lint_error)
+
+                print('[This is how your edit would have looked if applied]')
+                print('-------------------------------------------------')
+                _print_window(file_name, CURRENT_LINE, 10)
+                print('-------------------------------------------------\n')
+
+                print('[This is the original code before your edit]')
+                print('-------------------------------------------------')
+                _print_window(original_file_backup_path, CURRENT_LINE, 10)
+                print('-------------------------------------------------')
+
+                print(
+                    'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+                    'You need to correct your added code.\n'
+                    'DO NOT re-run the same failed edit command. Running it again will lead to the same error.'
+                )
+
+                # recover the original file
+                with open(original_file_backup_path, 'r') as fin, open(
+                    file_name, 'w'
+                ) as fout:
+                    fout.write(fin.read())
+                os.remove(original_file_backup_path)
+                return
+
+    except Exception as e:
+        # Clean up the temporary file if an error occurs
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+        raise e
+
+    # Update the file information and print the updated content
+    with open(file_name, 'r', encoding='utf-8') as file:
+        n_total_lines = len(file.readlines())
+    if first_error_line is not None and int(first_error_line) > 0:
+        CURRENT_LINE = first_error_line
+    else:
+        CURRENT_LINE = n_total_lines
+    print(
+        f'[File: {os.path.abspath(file_name)} ({n_total_lines} lines total after edit)]'
+    )
+    CURRENT_FILE = file_name
+    _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW)
+    print(
+        '[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]'
+    )
 
 
 @update_pwd_decorator
@@ -672,6 +808,7 @@ __all__ = [
     'scroll_down',
     'scroll_up',
     'create_file',
+    'append_file',
     'edit_file',
     'search_dir',
     'search_file',
