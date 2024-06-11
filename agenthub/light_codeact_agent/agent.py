@@ -194,10 +194,6 @@ class LightCodeActAgent(Agent):
 
         response = self.llm.do_completion(
             messages=messages,
-            stop=[
-                '</execute_ipython>',
-                '</execute_bash>',
-            ],
             temperature=0.0,
         )
 
