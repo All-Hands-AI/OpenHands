@@ -1,6 +1,5 @@
-import json
-
 from opendevin.controller.action_parser import ResponseParser
+from opendevin.core.utils import json
 from opendevin.events.action import (
     Action,
 )
