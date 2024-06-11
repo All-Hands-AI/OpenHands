@@ -1,10 +1,11 @@
+from agenthub.monologue_agent.response_parser import MonologueResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import Action, AgentFinishAction
 from opendevin.llm.llm import LLM
 from opendevin.runtime.tools import RuntimeTool
 
-from .prompt import get_prompt, parse_response
+from .prompt import get_prompt
 
 
 class PlannerAgent(Agent):
@@ -14,6 +15,7 @@ class PlannerAgent(Agent):
     The agent is given its previous action-observation pairs, current task, and hint based on last action taken at every step.
     """
     runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
+    response_parser = MonologueResponseParser()
 
     def __init__(self, llm: LLM):
         """
@@ -46,10 +48,10 @@ class PlannerAgent(Agent):
         prompt = get_prompt(state)
         messages = [{'content': prompt, 'role': 'user'}]
         resp = self.llm.do_completion(messages=messages)
-        action_resp = resp['choices'][0]['message']['content']
-        state.num_of_chars += len(prompt) + len(action_resp)
-        action = parse_response(action_resp)
-        return action
+        state.num_of_chars += len(prompt) + len(
+            resp['choices'][0]['message']['content']
+        )
+        return self.response_parser.parse(resp)
 
     def search_memory(self, query: str) -> list[str]:
         return []
