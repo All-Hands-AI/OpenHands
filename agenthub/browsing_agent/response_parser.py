@@ -12,7 +12,7 @@ class BrowsingResponseParser(ResponseParser):
     def __init__(
         self,
     ):
-        # Need pay attention to the item order in self.action_parsers
+        # Need to pay attention to the item order in self.action_parsers
         self.action_parsers = [BrowsingActionParserMessage()]
         self.default_parser = BrowsingActionParserBrowseInteractive()
 
