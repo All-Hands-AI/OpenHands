@@ -1,9 +1,9 @@
-import ast
 import os
 
 from browsergym.core.action.highlevel import HighLevelActionSet
 from browsergym.utils.obs import flatten_axtree_to_str
 
+from agenthub.browsing_agent.response_parser import BrowsingResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.logger import opendevin_logger as logger
@@ -28,6 +28,11 @@ USE_CONCISE_ANSWER = (
     os.environ.get('USE_CONCISE_ANSWER', 'false') == 'true'
 )  # only return concise answer when running webarena and miniwob benchmarks
 
+if not USE_NAV and USE_CONCISE_ANSWER:
+    EVAL_MODE = True  # disabled NAV actions and only return concise answer, for webarena and miniwob benchmarks\
+else:
+    EVAL_MODE = False
+
 
 class BrowsingAgent(Agent):
     VERSION = '1.0'
@@ -37,6 +42,7 @@ class BrowsingAgent(Agent):
 
     sandbox_plugins: list[PluginRequirement] = []
     runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
+    response_parser = BrowsingResponseParser()
 
     def __init__(
         self,
@@ -70,31 +76,6 @@ class BrowsingAgent(Agent):
         self.cost_accumulator = 0
         self.error_accumulator = 0
 
-    def parse_response(self, response: str) -> Action:
-        if '```' not in response:
-            # unexpected response format, message back to user
-            action_str = f'send_msg_to_user("""{response}""")'
-            return BrowseInteractiveAction(
-                browser_actions=action_str,
-                thought=response,
-                browsergym_send_msg_to_user=response,
-            )
-        thought = response.split('```')[0].strip()
-        action_str = response.split('```')[1].strip()
-        # handle send message to user function call in BrowserGym
-        msg_content = ''
-        for sub_action in action_str.split('\n'):
-            if 'send_msg_to_user(' in sub_action:
-                tree = ast.parse(sub_action)
-                args = tree.body[0].value.args  # type: ignore
-                msg_content = args[0].value
-
-        return BrowseInteractiveAction(
-            browser_actions=action_str,
-            thought=thought,
-            browsergym_send_msg_to_user=msg_content,
-        )
-
     def step(self, state: State) -> Action:
         """
         Performs one step using the Browsing Agent.
@@ -118,6 +99,12 @@ class BrowsingAgent(Agent):
         last_obs = None
         last_action = None
 
+        if EVAL_MODE and len(state.history) == 1:
+            # for webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
+            # initialize and retrieve the first observation by issuing an noop OP
+            # For non-benchmark browsing, the browser env starts with a blank page, and the agent is expected to first navigate to desired websites
+            return BrowseInteractiveAction(browser_actions='noop()')
+
         for prev_action, obs in state.history:
             if isinstance(prev_action, BrowseInteractiveAction):
                 prev_actions.append(prev_action.browser_actions)
@@ -129,6 +116,9 @@ class BrowsingAgent(Agent):
             ):
                 # agent has responded, task finish.
                 return AgentFinishAction(outputs={'content': prev_action.content})
+
+        if EVAL_MODE:
+            prev_actions = prev_actions[1:]  # remove the first noop action
 
         prev_action_str = '\n'.join(prev_actions)
         # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
@@ -202,19 +192,14 @@ In order to accomplish my goal I need to send the information asked back to the 
 """
             prompt += concise_instruction
         messages.append({'role': 'user', 'content': prompt})
+        logger.info(prompt)
         response = self.llm.completion(
             messages=messages,
             temperature=0.0,
             stop=[')```', ')\n```'],
         )
         self.log_cost(response)
-        action_resp = response['choices'][0]['message']['content'].strip()
-        if not action_resp.endswith('```'):
-            action_resp = action_resp + ')```'
-
-        logger.info(prompt)
-        logger.info(action_resp)
-        return self.parse_response(action_resp)
+        return self.response_parser.parse(response)
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
