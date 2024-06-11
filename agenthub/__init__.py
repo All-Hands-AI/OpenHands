@@ -17,6 +17,7 @@ from . import (  # noqa: E402
     dummy_agent,
     monologue_agent,
     planner_agent,
+    world_model_agent,
 )
 
 __all__ = [
@@ -28,6 +29,7 @@ __all__ = [
     'delegator_agent',
     'dummy_agent',
     'browsing_agent',
+    'world_model_agent',
 ]
 
 for agent in all_microagents.values():
