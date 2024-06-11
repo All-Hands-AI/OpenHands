@@ -56,15 +56,40 @@ run_test() {
     pytest_cmd+=" --cov=agenthub --cov=opendevin --cov-report=xml --cov-append"
   fi
 
-  SANDBOX_TYPE=$SANDBOX_TYPE \
+  pytest_output=$(SANDBOX_TYPE=$SANDBOX_TYPE \
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
     MAX_ITERATIONS=$MAX_ITERATIONS \
     AGENT=$agent \
-    $pytest_cmd
-    # return exit code of pytest
-    return $?
+    $pytest_cmd 2>&1 | tee /dev/tty)
+
+  if echo "$pytest_output" | grep -q "docker.errors.DockerException"; then
+    echo "Error: docker.errors.DockerException found in the output. Exiting."
+    echo "Please check if your Docker daemon is running!"
+    exit 1
+  fi
+
+  if echo "$pytest_output" | grep -q "tenacity.RetryError"; then
+    echo "Error: tenacity.RetryError found in the output. Exiting."
+    echo "This is mostly a transient error. Please retry."
+    exit 1
+  fi
+
+  if echo "$pytest_output" | grep -q "ExceptionPxssh"; then
+    echo "Error: ExceptionPxssh found in the output. Exiting."
+    echo "Could not connect to sandbox via ssh. Please stop any stale docker container and retry."
+    exit 1
+  fi
+
+  if echo "$pytest_output" | grep -q "Address already in use"; then
+    echo "Error: Address already in use found in the output. Exiting."
+    echo "Browsing tests need a local http server. Please check if there's any zombie process running start_http_server.py."
+    exit 1
+  fi
+
+  # Return the exit code of pytest
+  return ${PIPESTATUS[0]}
 }
 
 # browsing capability needs a local http server
@@ -73,6 +98,17 @@ launch_http_server() {
   HTTP_SERVER_PID=$!
   sleep 10
 }
+
+cleanup() {
+  if [ -n "$HTTP_SERVER_PID" ]; then
+    echo "Killing HTTP server..."
+    kill $HTTP_SERVER_PID
+    unset HTTP_SERVER_PID
+  fi
+}
+
+# Trap the EXIT signal to run the cleanup function
+trap cleanup EXIT
 
 # generate prompts again, using existing LLM responses under tests/integration/mock/[agent]/[test_name]/response_*.log
 # this is a compromise; the prompts might be non-sense yet still pass the test, because we don't use a real LLM to
@@ -121,12 +157,6 @@ regenerate_with_llm() {
 
   mkdir -p tests/integration/mock/$agent/$test_name/
   mv logs/llm/**/* tests/integration/mock/$agent/$test_name/
-
-  if [[ "$test_name" = "test_browse_internet" ]]; then
-    # Terminate the HTTP server
-    kill $HTTP_SERVER_PID
-  fi
-
 
 }
 
@@ -241,4 +271,5 @@ done
 
 rm -rf logs
 rm -rf $WORKSPACE_BASE
+cleanup
 echo "Done!"
