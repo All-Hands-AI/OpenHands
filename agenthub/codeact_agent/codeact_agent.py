@@ -289,9 +289,19 @@ class CodeActAgent(Agent):
                     search_results = self.vector_index.retrieve(
                         query=latest_action_thought, k=4
                     )
-                    search_results_str = '\n\n'.join(search_results)
+                    search_results_str = ''
+
+                    for i, r in enumerate(search_results):
+                        search_results_str += 'Snippet ' + str(i + 1) + ':' + '\n'
+                        text, metadata = r
+                        # for key, value in metadata.items():
+                        #     search_results_str += (key + ": " + value + "\n")
+                        # search_results_str += ("Relative file name" + ": " + metadata['file_name'] + "\n")
+
+                        search_results_str += '\n' + text + '\n\n'
+
                     latest_user_message['content'] += (
-                        f'\n\nSome context code snippets that may be relevant to help you solve the task:\n{search_results_str}'
+                        f'\n\nNote that you should NOT eagerly try to solve the task, but carefully consider multiple files that may be involved. Some context code snippets that may be relevant to help you solve the task (the file name is not absolute and you should find the correct location yourself):\n{search_results_str}'
                     )
 
             # Insert optional repo_map message here

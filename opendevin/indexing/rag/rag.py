@@ -59,13 +59,14 @@ class VectorIndex:
         )
         self.llm = OpenAI(model='gpt-3.5-turbo', temperature=0.0)
 
-    def retrieve(self, query: str, k: int) -> list[str]:
+    def retrieve(self, query: str, k: int) -> list:
         retriever = VectorIndexRetriever(
             index=self.index,
             similarity_top_k=k,
         )
         results = retriever.retrieve(query)
-        return [r.get_text() for r in results]
+        # return the text and the source info
+        return [(r.get_text(), r.node.metadata) for r in results]
 
     def query(self, query: str) -> str:
         query_engine = self.index.as_query_engine()
@@ -133,14 +134,20 @@ class VectorIndex:
 
 
 if __name__ == '__main__':
-    vi = VectorIndex()
+    vi = VectorIndex('sphi-82ef497a8c88f0f6e50d84520e7276bfbf65025d')
     # vi.ingest_repo('sphinx-doc', 'sphinx', '82ef497a8c88f0f6e50d84520e7276bfbf65025d')
     # vi.ingest_directory('.')
-    # response = vi.retrieve('I need to modify the CodeActAgent in agenthub.', 4)
-    # for i, r in enumerate(response):
-    #     # pretty print
-    #     print("Result", i + 1, ":")
-    #     print(r)
+    response = vi.retrieve(
+        'viewcode creates pages for epub even if `viewcode_enable_epub=False` on `make html epub`',
+        4,
+    )
+    for i, r in enumerate(response):
+        # pretty print
+        print('Result', i + 1, ':')
+        text, metadata = r
+        print('Text:', text)
+        for key, value in metadata.items():
+            print(key, ':', value)
     # vi.ingest_git_repo(
     #     repo_path='/Users/ryan/Developer/files-localization-for-code-gen-agents/llamaindex-playground'
     # )
