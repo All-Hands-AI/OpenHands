@@ -99,7 +99,7 @@ class LLM:
         )
         self.llm_timeout = llm_timeout or llm_config.timeout
         llm_temperature = llm_temperature or llm_config.temperature
-        llm_top_p = llm_top_p or llm_config.top_p
+        llm_top_p = llm_top_p if llm_top_p is not None else llm_config.top_p
         # not used in the current version
         self.custom_llm_provider = custom_llm_provider or llm_config.custom_llm_provider
         self.max_input_tokens = max_input_tokens or llm_config.max_input_tokens
