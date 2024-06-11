@@ -1,4 +1,4 @@
-Next, let's import `pymsgbox`, get its version, and write it to `/workspace/test.txt`.
+The package is indeed installed. Let's try importing it again and writing its version to `/workspace/test.txt`.
 
 <execute_ipython>
 import pymsgbox

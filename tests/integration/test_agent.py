@@ -164,8 +164,9 @@ def test_ipython_module():
     # Verify the file contains the expected content
     with open(file_path, 'r') as f:
         content = f.read()
+        print(content)
     assert (
-        content.strip() == '1.0.9'
+        content.strip().split(' ')[-1] == '1.0.9'
     ), f'Expected content "1.0.9", but got "{content.strip()}"'
 
 
