@@ -60,7 +60,8 @@ class AgentDelegateSummaryAction(Action):
     agent: str = ''
     task: str = ''
     summary: str = ''
-    action: str = ActionType.SUMMARIZE
+    relevant_info: str = ''
+    action: str = ActionType.SUMMARIZE_DELEGATE
     _chunk_start: int = -1
     _chunk_end: int = -1
 

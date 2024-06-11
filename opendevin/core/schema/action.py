@@ -62,6 +62,8 @@ class ActionTypeSchema(BaseModel):
 
     SUMMARIZE: str = Field(default='summarize')
 
+    SUMMARIZE_DELEGATE: str = Field(default='summarize_delegate')
+
     ADD_TASK: str = Field(default='add_task')
 
     MODIFY_TASK: str = Field(default='modify_task')

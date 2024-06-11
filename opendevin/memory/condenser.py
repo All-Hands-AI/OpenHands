@@ -61,6 +61,8 @@ class MemoryCondenser:
 
             action_response: str = response['choices'][0]['message']['content']
             action = parse_delegate_summary_response(action_response)
+            action.task = delegate_task
+            action.agent = delegate_agent
             return action
         except Exception as e:
             logger.error(f'Failed to summarize delegate events: {e}')

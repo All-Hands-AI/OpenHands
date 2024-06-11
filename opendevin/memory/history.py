@@ -80,15 +80,34 @@ class ShortTermHistory(list[Event]):
             reverse=reverse,
             filter_out_type=self.filter_out,
         ):
-            # TODO add summaries
-            # and filter out events that were included in a summary
-
-            # filter out the events from a delegate of the current agent
-            if not any(
-                # except for the delegate action and observation themselves, currently
-                # AgentDelegateAction has id = delegate_start
-                # AgentDelegateObservation has id = delegate_end
-                delegate_start < event.id < delegate_end
+            if event.id in [chunk_start for chunk_start, _ in self.summaries.keys()]:
+                chunk_start, chunk_end = next(
+                    (chunk_start, chunk_end)
+                    for chunk_start, chunk_end in self.summaries.keys()
+                    if chunk_start == event.id
+                )
+                summary_action = self.summaries[(chunk_start, chunk_end)]
+                yield summary_action
+            elif event.id in [
+                delegate_start for delegate_start, _ in self.delegate_summaries.keys()
+            ]:
+                delegate_start, delegate_end = next(
+                    (delegate_start, delegate_end)
+                    for delegate_start, delegate_end in self.delegate_summaries.keys()
+                    if delegate_start == event.id
+                )
+                delegate_summary_action = self.delegate_summaries[
+                    (delegate_start, delegate_end)
+                ]
+                yield delegate_summary_action
+            elif not any(
+                # we will yeild only events that are not part of a summary
+                chunk_start <= event.id <= chunk_end
+                for chunk_start, chunk_end in self.summaries.keys()
+            ) and not any(
+                # nor part of delegate events
+                # except for the delegate action and observation themselves
+                delegate_start <= event.id <= delegate_end
                 for delegate_start, delegate_end in self.delegate_summaries.keys()
             ):
                 yield event

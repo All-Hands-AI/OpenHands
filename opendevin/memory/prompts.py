@@ -24,6 +24,7 @@ Given the following actions and observations performed by the delegate, create a
       - "relevant_info": A list of key points or information that the delegator might need to know or can find in the delegate's detailed history if needed.
 
 Delegate's actions and observations:
+%(events_str)s
 """
 
 
@@ -34,7 +35,7 @@ def get_summarize_prompt(events: list[dict]) -> str:
     Returns:
     - A formatted string with the events within the prompt
     """
-    events_str = '\n'.join(json.dumps(events, indent=2))
+    events_str = json.dumps(events, indent=2)
     return SUMMARY_PROMPT + events_str
 
 
@@ -47,15 +48,12 @@ def get_delegate_summarize_prompt(
     Returns:
     - A formatted string with the delegate's events within the prompt
     """
-    events_str = '\n'.join(json.dumps(delegate_events, indent=2))
-    return (
-        DELEGATE_SUMMARY_PROMPT
-        % {
-            'delegate_agent': delegate_agent,
-            'delegate_task': delegate_task,
-        }
-        + events_str
-    )
+    events_str = json.dumps(delegate_events, indent=2)
+    return DELEGATE_SUMMARY_PROMPT % {
+        'delegate_agent': delegate_agent,
+        'delegate_task': delegate_task,
+        'events_str': events_str,
+    }
 
 
 def parse_summary_response(response: str) -> AgentSummarizeAction:

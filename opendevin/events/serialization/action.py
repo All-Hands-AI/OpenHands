@@ -2,6 +2,7 @@ from opendevin.core.exceptions import LLMMalformedActionError
 from opendevin.events.action.action import Action
 from opendevin.events.action.agent import (
     AgentDelegateAction,
+    AgentDelegateSummaryAction,
     AgentFinishAction,
     AgentRecallAction,
     AgentRejectAction,
@@ -33,6 +34,7 @@ actions = (
     ModifyTaskAction,
     ChangeAgentStateAction,
     MessageAction,
+    AgentDelegateSummaryAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]
