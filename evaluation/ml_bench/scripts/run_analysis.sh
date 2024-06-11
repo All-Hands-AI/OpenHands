@@ -11,7 +11,7 @@ fi
 
 if [ -z "$MODEL_CONFIG" ]; then
   echo "Model config not specified, use default"
-  MODEL_CONFIG="eval_gpt4_1106_preview"
+  MODEL_CONFIG="eval_gpto"
 fi
 
 echo "MODEL_CONFIG: $MODEL_CONFIG"
