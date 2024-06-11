@@ -39,10 +39,18 @@ create_file(filename: str) -> None:
     Args:
     filename: str: The name of the file to create.
 
-edit_file(start: int, end: int, content: str) -> None:
-    Edit a file.
-    It replaces lines `start` through `end` (inclusive) with the given text `content` in the open file. Remember, the file must be open before editing.
+append_file(file_name: str, content: str) -> None:
+    Append content to the given file.
+    It appends text `content` to the end of the specified file.
     Args:
+    file_name: str: The name of the file to append to.
+    content: str: The content to append to the file.
+
+edit_file(file_name: str, start: int, end: int, content: str) -> None:
+    Edit a file.
+    Replaces in given file `file_name` the lines `start` through `end` (inclusive) with the given text `content`.
+    Args:
+    file_name: str: The name of the file to edit.
     start: int: The start line number. Must satisfy start >= 1.
     end: int: The end line number. Must satisfy start <= end <= number of lines in the file.
     content: str: The content to replace the lines with.
@@ -549,12 +557,12 @@ OBSERVATION:
 
 Let's correct the typos in the `bad.txt` file.
 
-1. Change "typoo" to "typo".
-2. Change "mor" to "more".
+1. "stupid typoo" should be "stupid typo".
+2. "No mor typos!" should be "No more typos!".
 
-I will make these edits now.
+I will make these changes now.
 <execute_ipython>
-edit_file(start=1, end=4, content="This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!")
+edit_file("bad.txt", start=1, end=4, content="This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!")
 </execute_ipython>
 
 ----------
