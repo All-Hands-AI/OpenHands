@@ -99,9 +99,11 @@ def _is_valid_path(path):
         return False
 
 
-def _create_paths(path):
+def _create_paths(file_name):
     try:
-        os.makedirs(path, exist_ok=True)
+        dirname = os.path.dirname(file_name)
+        if dirname:
+            os.makedirs(dirname, exist_ok=True)
         return True
     except PermissionError:
         return False
@@ -190,7 +192,7 @@ def _cur_file_header(CURRENT_FILE, total_lines):
     return f'[File: {os.path.abspath(CURRENT_FILE)} ({total_lines} lines total)]\n'
 
 
-def _edit_fileEx(
+def _edit_or_append_file(
     file_name: str,
     start: Optional[int] = None,
     end: Optional[int] = None,
@@ -208,19 +210,27 @@ def _edit_fileEx(
     """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
 
+    ERROR_MSG = f'[Error editing file {file_name}. Please confirm the file is correct.]'
+    ERROR_MSG_SUFFIX = (
+        'Your changes have NOT been applied. Please fix your edit command and try again.\n'
+        'You either need to 1) Open the correct file and try again or 2) Specify the correct start/end line arguments.\n'
+        'DO NOT re-run the same failed edit command. Running it again will lead to the same error.'
+    )
+
     if not _is_valid_filename(file_name):
-        raise ValueError('Invalid file name.')
+        raise FileNotFoundError('Invalid file name.')
 
     if not _is_valid_path(file_name):
-        raise ValueError('Invalid path or file name.')
+        raise FileNotFoundError('Invalid path or file name.')
 
     if not _create_paths(file_name):
         raise PermissionError('Could not access or create directories.')
 
     if not os.path.isfile(file_name):
-        create_file(file_name)
+        raise FileNotFoundError(f'File {file_name} not found.')
 
     # Use a temporary file to write changes
+    content = str(content or '')
     temp_file_path = ''
     first_error_line = None
     try:
@@ -236,21 +246,39 @@ def _edit_fileEx(
                 if lines and not (len(lines) == 1 and lines[0].strip() == ''):
                     if not lines[-1].endswith('\n'):
                         lines[-1] += '\n'
-                content = ''.join(lines) + content
+                    content = ''.join(lines) + content
             else:
-                if (
-                    (start is not None and not (1 <= start <= len(lines)))
-                    or (end is not None and not (1 <= end <= len(lines)))
-                    or (start is not None and end is not None and start > end)
-                ):
-                    raise ValueError('Invalid line range for editing.')
-                edited_content = content + '\n'
                 # Handle cases where start or end are None
                 if start is None:
                     start = 1  # Default to the beginning
                 if end is None:
                     end = len(lines)  # Default to the end
-                lines = lines[: start - 1] + [edited_content] + lines[end:]
+                # Check arguments
+                if not (1 <= start <= len(lines)):
+                    print(
+                        f'{ERROR_MSG}\n'
+                        f'Invalid start line number: {start}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
+                        f'{ERROR_MSG_SUFFIX}'
+                    )
+                    return
+                if not (1 <= end <= len(lines)):
+                    print(
+                        f'{ERROR_MSG}\n'
+                        f'Invalid end line number: {end}. Line numbers must be between 1 and {len(lines)} (inclusive).\n'
+                        f'{ERROR_MSG_SUFFIX}'
+                    )
+                    return
+                if start > end:
+                    print(
+                        f'{ERROR_MSG}\n'
+                        f'Invalid line range: {start}-{end}. Start must be less than or equal to end.\n'
+                        f'{ERROR_MSG_SUFFIX}'
+                    )
+                    return
+                if not content.endswith('\n'):
+                    content += '\n'
+                new_lines = lines[: start - 1] + [content] + lines[end:]
+                content = ''.join(new_lines)
 
             if not content.endswith('\n'):
                 content += '\n'
@@ -333,13 +361,16 @@ def _edit_fileEx(
 
 
 @update_pwd_decorator
-def open_file(path: str, line_number: Optional[int] = None) -> None:
+def open_file(
+    path: str, line_number: Optional[int] = None, context_lines: Optional[int] = 100
+) -> None:
     """
     Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
 
     Args:
         path: str: The path to the file to open.
         line_number: Optional[int]: The line number to move to.
+        context_lines: Optional[int]: The total number of lines to display in the window. Defaults to 100.
     """
     global CURRENT_FILE, CURRENT_LINE
     if not os.path.isfile(path):
@@ -359,6 +390,13 @@ def open_file(path: str, line_number: Optional[int] = None) -> None:
         CURRENT_LINE = line_number
     else:
         CURRENT_LINE = 1
+
+    # Override WINDOW with context_lines
+    if context_lines is None or not isinstance(context_lines, int) or context_lines < 5:
+        context_lines = 100
+    context_lines = max(context_lines, 5)
+    context_lines = min(context_lines, 2000)
+    WINDOW = context_lines
 
     output = _cur_file_header(CURRENT_FILE, total_lines)
     output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True)
@@ -456,7 +494,9 @@ def edit_file(file_name: str, start: int, end: int, content: str) -> None:
         end: int: The end line number. Must satisfy start <= end <= number of lines in the file.
         content: str: The content to replace the lines with.
     """
-    _edit_fileEx(file_name, content=content, isAppend=False)
+    _edit_or_append_file(
+        file_name, start=start, end=end, content=content, isAppend=False
+    )
 
 
 @update_pwd_decorator
@@ -469,7 +509,7 @@ def append_file(file_name: str, content: str) -> None:
         file_name: str: The name of the file to append to.
         content: str: The content to append to the file.
     """
-    _edit_fileEx(file_name, content=content, isAppend=True)
+    _edit_or_append_file(file_name, start=1, end=None, content=content, isAppend=True)
 
 
 @update_pwd_decorator

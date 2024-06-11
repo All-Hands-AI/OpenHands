@@ -500,7 +500,7 @@ def test_edit_file(tmp_path):
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
             edit_file(
-                str(temp_file_path),
+                file_name=str(temp_file_path),
                 start=1,
                 end=3,
                 content='REPLACE TEXT',
@@ -838,9 +838,8 @@ def test_edit_lint_file_pass(tmp_path, monkeypatch):
     expected = (
         f'[File: {file_path} (1 lines total)]\n'
         '1|\n'
-        f'[File: {file_path} (2 lines total after edit)]\n'
-        "1|print('hello')\n"
-        '2|\n' + MSG_FILE_UPDATED + '\n'
+        f'[File: {file_path} (1 lines total after edit)]\n'
+        "1|print('hello')\n" + MSG_FILE_UPDATED + '\n'
     )
     assert result.split('\n') == expected.split('\n')
 
@@ -871,7 +870,6 @@ def test_lint_file_fail_undefined_name(tmp_path, monkeypatch, capsys):
         '[This is how your edit would have looked if applied]\n'
         '-------------------------------------------------\n'
         '1|undefined_name()\n'
-        '2|\n'
         '-------------------------------------------------\n\n'
         '[This is the original code before your edit]\n'
         '-------------------------------------------------\n'
@@ -923,7 +921,7 @@ def test_lint_file_fail_undefined_name_long(tmp_path, monkeypatch, capsys):
         '503|\n'
         '504|\n'
         '505|\n'
-        '(496 more lines below)\n'
+        '(495 more lines below)\n'
         '-------------------------------------------------\n\n'
         '[This is the original code before your edit]\n'
         '-------------------------------------------------\n'
@@ -965,9 +963,8 @@ def test_lint_file_disabled_undefined_name(tmp_path, monkeypatch, capsys):
     expected = (
         f'[File: {file_path} (1 lines total)]\n'
         '1|\n'
-        f'[File: {file_path} (2 lines total after edit)]\n'
-        '1|undefined_name()\n'
-        '2|\n' + MSG_FILE_UPDATED + '\n'
+        f'[File: {file_path} (1 lines total after edit)]\n'
+        '1|undefined_name()\n' + MSG_FILE_UPDATED + '\n'
     )
     assert result.split('\n') == expected.split('\n')
 
