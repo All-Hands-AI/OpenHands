@@ -354,7 +354,7 @@ def extract_create_table_prompt(db_path, limit_value=0):
             )
             for row in top_k_rows:
                 row = [str(x) for x in row]
-                row = [x if x is not None else '' for x in row]
+                row = [x or '' for x in row]
                 prompt += '    '.join(row) + '\n'
             prompt += '*/\n'
         prompt += '\n'

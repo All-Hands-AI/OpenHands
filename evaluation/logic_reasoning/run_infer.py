@@ -105,7 +105,7 @@ def get_test_result(
     ground_truth: str,
 ) -> bool:
     gold_answer = ground_truth.replace('(', '').replace(')', '').strip()
-    answer_str = model_answer if model_answer is not None else ''
+    answer_str = model_answer or ''
     prediction = get_choice(answer_str)
 
     indicators = [

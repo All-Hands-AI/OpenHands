@@ -37,7 +37,7 @@ class LocalBox(Sandbox):
     def execute(
         self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
-        timeout = timeout if timeout is not None else self.timeout
+        timeout = timeout or self.timeout
         try:
             completed_process = subprocess.run(
                 cmd,

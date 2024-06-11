@@ -86,10 +86,10 @@ class LLM:
         """
         if llm_config is None:
             llm_config = config.llm
-        model = model if model is not None else llm_config.model
-        api_key = api_key if api_key is not None else llm_config.api_key
-        base_url = base_url if base_url is not None else llm_config.base_url
-        api_version = api_version if api_version is not None else llm_config.api_version
+        self.model_name = model or llm_config.model
+        self.api_key = api_key or llm_config.api_key
+        self.base_url = base_url or llm_config.base_url
+        self.api_version = api_version or llm_config.api_version
         num_retries = num_retries if num_retries is not None else llm_config.num_retries
         retry_min_wait = (
             retry_min_wait if retry_min_wait is not None else llm_config.retry_min_wait
@@ -97,38 +97,17 @@ class LLM:
         retry_max_wait = (
             retry_max_wait if retry_max_wait is not None else llm_config.retry_max_wait
         )
-        llm_timeout = llm_timeout if llm_timeout is not None else llm_config.timeout
-        llm_temperature = (
-            llm_temperature if llm_temperature is not None else llm_config.temperature
-        )
-        llm_top_p = llm_top_p if llm_top_p is not None else llm_config.top_p
-        custom_llm_provider = (
-            custom_llm_provider
-            if custom_llm_provider is not None
-            else llm_config.custom_llm_provider
-        )
-        max_input_tokens = (
-            max_input_tokens
-            if max_input_tokens is not None
-            else llm_config.max_input_tokens
-        )
-        max_output_tokens = (
-            max_output_tokens
-            if max_output_tokens is not None
-            else llm_config.max_output_tokens
-        )
-        metrics = metrics if metrics is not None else Metrics()
+        self.llm_timeout = llm_timeout or llm_config.timeout
+        llm_temperature = llm_temperature or llm_config.temperature
+        llm_top_p = llm_top_p or llm_config.top_p
+        # not used in the current version
+        self.custom_llm_provider = custom_llm_provider or llm_config.custom_llm_provider
+        self.max_input_tokens = max_input_tokens or llm_config.max_input_tokens
+        self.max_output_tokens = max_output_tokens or llm_config.max_output_tokens
+        self.metrics = metrics or Metrics()
 
         logger.info(f'Initializing LLM with model: {model}')
-        self.model_name = model
-        self.api_key = api_key
-        self.base_url = base_url
-        self.api_version = api_version
-        self.max_input_tokens = max_input_tokens
-        self.max_output_tokens = max_output_tokens
-        self.llm_timeout = llm_timeout
-        self.custom_llm_provider = custom_llm_provider
-        self.metrics = metrics
+
         self.cost_metric_supported = cost_metric_supported
 
         # litellm actually uses base Exception here for unknown model

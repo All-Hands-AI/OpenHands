@@ -76,7 +76,7 @@ class E2BBox(Sandbox):
     def execute(
         self, cmd: str, stream: bool = False, timeout: int | None = None
     ) -> tuple[int, str | CancellableStream]:
-        timeout = timeout if timeout is not None else self.timeout
+        timeout = timeout or self.timeout
         process = self.sandbox.process.start(cmd, env_vars=self._env)
         try:
             process_output = process.wait(timeout=timeout)
