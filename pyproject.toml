@@ -67,11 +67,13 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
 retry = "*"
 evaluate = "*"
+swebench = { git = "https://github.com/OpenDevin/SWE-bench.git" }
 
 [build-system]
 build-backend = "poetry.core.masonry.api"

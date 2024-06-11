@@ -51,6 +51,7 @@ sandbox_timeout = 120
 use_host_network = false
 run_as_devin = false
 enable_auto_lint = true
+max_budget_per_task = 4 # 4 USD
 
 # TODO: Change these to the model you want to evaluate
 [eval_gpt4_1106_preview]
@@ -127,6 +128,12 @@ If you want to evaluate existing results, you should first run this to clone exi
 git clone https://huggingface.co/spaces/OpenDevin/evaluation evaluation/evaluation_outputs
 ```
 
+To prepare for swe-bench evaluation, you should pull evaluation docker from [OpenDevin/SWE-bench-docker](https://github.com/OpenDevin/SWE-bench-docker) and download swe-bench data by running:
+
+```bash
+evaluation/swe_bench/scripts/eval/prep_eval.sh
+```
+
 Then you can run the following:
 
 ```bash
@@ -135,55 +142,14 @@ Then you can run the following:
 ./evaluation/swe_bench/scripts/eval_infer.sh evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/output.jsonl
 ```
 
-The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/output.merged.jsonl`.
+PS: You can also pass in a JSONL with [SWE-Bench format](https://github.com/princeton-nlp/SWE-bench/blob/main/tutorials/evaluation.md#-creating-predictions) to `./evaluation/swe_bench/scripts/eval_infer.sh`, where each line is a JSON of `{"model_patch": "XXX", "model_name_or_path": "YYY", "instance_id": "ZZZ"}`.
 
-It will contain an additional field `fine_grained_report` (see example below) compared to the `output.jsonl` from the previous inference stage.
+The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/` with the following files/directory (following format of [SWE-bench-docker](https://github.com/aorwall/SWE-bench-docker/tree/main/evaluations/SWE-bench_Lite_golden)):
 
-```json
-"fine_grained_report": {
-  "gold_tests": {
-    "FAIL_TO_PASS": "[\"tests/test_ext_viewcode.py::test_viewcode_epub_default\"]",
-    "PASS_TO_PASS": "[\"tests/test_ext_viewcode.py::test_viewcode_epub_enabled\", \"tests/test_ext_viewcode.py::test_linkcode\", \"tests/test_ext_viewcode.py::test_local_source_files\"]"
-  },
-  "generated": true,
-  "with_logs": true,
-  "applied": true,
-  "test_errored": false,
-  "test_timeout": false,
-  "resolved": true,
-  "log_parse": {
-    "tests/test_ext_viewcode.py::test_viewcode_epub_default": "PASSED",
-    "tests/test_ext_viewcode.py::test_viewcode_epub_enabled": "PASSED",
-    "tests/test_ext_viewcode.py::test_linkcode": "PASSED",
-    "tests/test_ext_viewcode.py::test_local_source_files": "PASSED",
-    "tests/test_ext_viewcode.py::test_viewcode": "FAILED"
-  },
-  "eval_report": {
-    "FAIL_TO_PASS": {
-      "success": [
-        "tests/test_ext_viewcode.py::test_viewcode_epub_default"
-      ],
-      "failure": []
-    },
-    "PASS_TO_PASS": {
-      "success": [
-        "tests/test_ext_viewcode.py::test_viewcode_epub_enabled",
-        "tests/test_ext_viewcode.py::test_linkcode",
-        "tests/test_ext_viewcode.py::test_local_source_files"
-      ],
-      "failure": []
-    },
-    "FAIL_TO_FAIL": {
-      "success": [],
-      "failure": []
-    },
-    "PASS_TO_FAIL": {
-      "success": [],
-      "failure": []
-    }
-  }
-}
-```
+- `README.md`: a report showing what are the instances that passed, failed, etc.
+- `logs/`: a directory of test logs
+- `report.json`: a JSON file that contains keys like `"resolved"` pointing to instance IDs that are resolved by the agent.
+- `summary.json`: a JSON file contains more fine-grained information for each test instance.
 
 Please refer to [EVAL_PATCH.md](./EVAL_PATCH.md) if you want to learn more about how to evaluate patches that are already generated (e.g., not by OpenDevin).
 
@@ -192,8 +158,8 @@ Please refer to [EVAL_PATCH.md](./EVAL_PATCH.md) if you want to learn more about
 If you just want to know the resolve rate, and/or a summary of what tests pass and what don't, you could run
 
 ```bash
-poetry run python ./evaluation/swe_bench/scripts/summarise_results.py <path_to_output_merged_jsonl_file>
-# e.g. poetry run python ./evaluation/swe_bench/scripts/summarise_results.py ./evaluation/evaluation_outputs/outputs/swe_bench_lite/CodeActSWEAgent/gpt-4o-2024-05-13_maxiter_50_N_v1.5-no-hint/output.merged.jsonl
+poetry run python ./evaluation/swe_bench/scripts/summarise_results.py <path_to_report_json_file>
+# e.g. poetry run python ./evaluation/swe_bench/scripts/summarise_results.py ./evaluation/evaluation_outputs/outputs/swe_bench_lite/CodeActSWEAgent/gpt-4o-2024-05-13_maxiter_50_N_v1.5-no-hint/report.json
 ```
 
 ## Submit your evaluation results

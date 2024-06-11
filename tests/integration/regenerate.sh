@@ -16,11 +16,13 @@ WORKSPACE_MOUNT_PATH+="/_test_workspace"
 WORKSPACE_BASE+="/_test_workspace"
 WORKSPACE_MOUNT_PATH_IN_SANDBOX="/workspace"
 
+mkdir -p $WORKSPACE_BASE
+
 # use environmental variable if exist, otherwise use "ssh"
 SANDBOX_TYPE="${SANDBOX_TYPE:-ssh}"
 MAX_ITERATIONS=10
 
-agents=("DelegatorAgent" "ManagerAgent" "BrowsingAgent" "MonologueAgent" "CodeActAgent" "PlannerAgent")
+agents=("DelegatorAgent" "ManagerAgent" "BrowsingAgent" "MonologueAgent" "CodeActAgent" "PlannerAgent" "CodeActSWEAgent")
 tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
@@ -161,7 +163,7 @@ for ((i = 0; i < num_of_tests; i++)); do
     rm -rf $WORKSPACE_BASE
     mkdir $WORKSPACE_BASE
     if [ -d "tests/integration/workspace/$test_name" ]; then
-      cp -r tests/integration/workspace/$test_name/* $WORKSPACE_BASE
+      cp -r "tests/integration/workspace/$test_name"/* $WORKSPACE_BASE
     fi
 
     if [ "$TEST_ONLY" = true ]; then
