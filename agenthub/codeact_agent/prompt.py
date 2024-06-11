@@ -5,7 +5,7 @@ _AGENT_SKILLS_DOCS = AgentSkillsRequirement.documentation
 COMMAND_DOCS = (
     '\nApart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:\n'
     f'{_AGENT_SKILLS_DOCS}'
-    "Please note that THE `edit_file` FUNCTION REQUIRES PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run."
+    "Please note that THE `edit_file` and `append_file` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run."
 )
 
 # ======= SYSTEM MESSAGE =======
@@ -81,7 +81,7 @@ def index():
 
 if __name__ == '__main__':
     app.run(port=5000)\"\"\"
-edit_file(start=1, end=1, content=EDITED_CODE)
+edit_file('app.py', start=1, end=1, content=EDITED_CODE)
 </execute_ipython>
 
 USER:
@@ -231,7 +231,7 @@ EDITED_CODE = \"\"\"def index():
 
 @app.route('/show_numbers')
 def show_numbers():\"\"\"
-edit_file(start=5, end=5, content=EDITED_CODE)
+edit_file('app.py', start=5, end=5, content=EDITED_CODE)
 </execute_ipython>
 
 USER:

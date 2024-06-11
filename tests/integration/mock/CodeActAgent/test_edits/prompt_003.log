@@ -53,10 +53,18 @@ create_file(filename: str) -> None:
     Args:
     filename: str: The name of the file to create.
 
-edit_file(start: int, end: int, content: str) -> None:
-    Edit a file.
-    It replaces lines `start` through `end` (inclusive) with the given text `content` in the open file. Remember, the file must be open before editing.
+append_file(file_name: str, content: str) -> None:
+    Append content to the given file.
+    It appends text `content` to the end of the specified file.
     Args:
+    file_name: str: The name of the file to append to.
+    content: str: The content to append to the file.
+
+edit_file(file_name: str, start: int, end: int, content: str) -> None:
+    Edit a file.
+    Replaces in given file `file_name` the lines `start` through `end` (inclusive) with the given text `content`.
+    Args:
+    file_name: str: The name of the file to edit.
     start: int: The start line number. Must satisfy start >= 1.
     end: int: The end line number. Must satisfy start <= end <= number of lines in the file.
     content: str: The content to replace the lines with.
@@ -99,7 +107,7 @@ parse_pptx(file_path: str) -> None:
     Args:
     file_path: str: The path to the file to open.
 
-Please note that THE `edit_file` FUNCTION REQUIRES PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
+Please note that THE `edit_file` and `append_file` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
 
 Responses should be concise.
 The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
@@ -140,7 +148,7 @@ def index():
 
 if __name__ == '__main__':
     app.run(port=5000)"""
-edit_file(start=1, end=1, content=EDITED_CODE)
+edit_file('app.py', start=1, end=1, content=EDITED_CODE)
 </execute_ipython>
 
 USER:
@@ -290,7 +298,7 @@ EDITED_CODE = """def index():
 
 @app.route('/show_numbers')
 def show_numbers():"""
-edit_file(start=5, end=5, content=EDITED_CODE)
+edit_file('app.py', start=5, end=5, content=EDITED_CODE)
 </execute_ipython>
 
 USER:
@@ -368,7 +376,7 @@ Fix typos in bad.txt. Do not ask me for confirmation at any point.
 
 ----------
 
-Sure! Let's start by opening the `bad.txt` file to see its content.
+Sure! Let's start by opening the `bad.txt` file to see its content and identify any typos.
 <execute_ipython>
 open_file('bad.txt')
 </execute_ipython>
@@ -385,13 +393,17 @@ OBSERVATION:
 
 ----------
 
-I will correct the typos in the `bad.txt` file.
+I will correct the typos in the `bad.txt` file. Here are the changes I will make:
+1. "typoo" to "typo"
+2. "mor" to "more"
+
+Let's edit the file accordingly.
 <execute_ipython>
 EDITED_CONTENT = """This is a stupid typo.
 Really?
 No more typos!
 Enjoy!"""
-edit_file(start=1, end=4, content=EDITED_CONTENT)
+edit_file('bad.txt', start=1, end=4, content=EDITED_CONTENT)
 </execute_ipython>
 
 ----------

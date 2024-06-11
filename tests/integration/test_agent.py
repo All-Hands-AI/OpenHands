@@ -63,7 +63,7 @@ def test_write_simple_script():
     reason='local sandbox shows environment-dependent absolute path for pwd command',
 )
 def test_edits():
-    # Move workspace artifacts to workspace_base location
+    # Copy workspace artifacts to workspace_base location
     source_dir = os.path.join(os.path.dirname(__file__), 'workspace/test_edits/')
     files = os.listdir(source_dir)
     for file in files:
