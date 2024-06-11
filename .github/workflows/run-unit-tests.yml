@@ -23,7 +23,7 @@ jobs:
     name: Test on macOS
     runs-on: macos-13
     env:
-      INSTALL_DOCKER: "0" # Set to '0' to skip Docker installation
+      INSTALL_DOCKER: "1" # Set to '0' to skip Docker installation
     strategy:
       matrix:
         python-version: ["3.11"]

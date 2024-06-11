@@ -149,7 +149,6 @@ class AppConfig(metaclass=Singleton):
         disable_color: Whether to disable color. For terminals that don't support color.
         sandbox_user_id: The user ID for the sandbox.
         sandbox_timeout: The timeout for the sandbox.
-        github_token: The GitHub token.
         debug: Whether to enable debugging.
         enable_auto_lint: Whether to enable auto linting. This is False by default, for regular runs of the app. For evaluation, please set this to True.
     """
@@ -183,7 +182,6 @@ class AppConfig(metaclass=Singleton):
     persist_sandbox: bool = False
     ssh_port: int = 63710
     ssh_password: str | None = None
-    github_token: str | None = None
     jwt_secret: str = uuid.uuid4().hex
     debug: bool = False
     enable_auto_lint: bool = (

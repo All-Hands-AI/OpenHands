@@ -48,7 +48,6 @@ class ServerRuntime(Runtime):
         )
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
-        action.code = action.code.replace('`', r'\`')
         obs = self._run_command(
             ("cat > /tmp/opendevin_jupyter_temp.py <<'EOL'\n" f'{action.code}\n' 'EOL'),
             background=False,

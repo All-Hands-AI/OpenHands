@@ -112,7 +112,11 @@ def test_browse_url_action_serialization_deserialization():
 def test_browse_interactive_action_serialization_deserialization():
     original_action_dict = {
         'action': 'browse_interactive',
-        'args': {'thought': '', 'browser_actions': 'goto("https://www.example.com")'},
+        'args': {
+            'thought': '',
+            'browser_actions': 'goto("https://www.example.com")',
+            'browsergym_send_msg_to_user': '',
+        },
     }
     serialization_deserialization(original_action_dict, BrowseInteractiveAction)
 

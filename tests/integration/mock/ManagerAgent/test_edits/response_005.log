@@ -3,15 +3,15 @@
   "args": {
     "outputs": {
       "summary": {
-        "file": "./bad.txt",
+        "file": "bad.txt",
         "typos_fixed": [
           {
             "original": "typoo",
-            "fixed": "typo"
+            "corrected": "typo"
           },
           {
             "original": "mor",
-            "fixed": "more"
+            "corrected": "more"
           }
         ]
       }

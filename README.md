@@ -129,3 +129,16 @@ Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more informati
 [issues-url]: https://github.com/OpenDevin/OpenDevin/issues
 [license-shield]: https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge
 [license-url]: https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE
+
+## 📚 Cite
+
+```
+@misc{opendevin2024,
+  author       = {{OpenDevin Team}},
+  title        = {{OpenDevin: An Open Platform for AI Software Developers as Generalist Agents}},
+  year         = {2024},
+  version      = {v1.0},
+  howpublished = {\url{https://github.com/OpenDevin/OpenDevin}},
+  note         = {Accessed: ENTER THE DATE YOU ACCESSED THE PROJECT}
+}
+```
