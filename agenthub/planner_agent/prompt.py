@@ -9,6 +9,7 @@ from opendevin.events.action import (
 from opendevin.events.observation import (
     NullObservation,
 )
+from opendevin.events.serialization.action import action_from_dict
 from opendevin.events.serialization.event import event_to_memory
 
 HISTORY_SIZE = 10
@@ -163,3 +164,19 @@ def get_prompt(state: State) -> str:
         'hint': hint,
         'plan_status': plan_status,
     }
+
+
+def parse_response(response: str) -> Action:
+    """
+    Parses the model output to find a valid action to take
+    Parameters:
+    - response (str): A response from the model that potentially contains an Action.
+    Returns:
+    - Action: A valid next action to perform from model output
+    """
+    action_dict = json.loads(response)
+    if 'contents' in action_dict:
+        # The LLM gets confused here. Might as well be robust
+        action_dict['content'] = action_dict.pop('contents')
+    action = action_from_dict(action_dict)
+    return action
