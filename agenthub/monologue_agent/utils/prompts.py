@@ -210,36 +210,3 @@ def get_request_action_prompt(
         'WORKSPACE_MOUNT_PATH_IN_SANDBOX': config.workspace_mount_path_in_sandbox,
     }
 
-
-def parse_action_response(orig_response: str) -> Action:
-    """
-    Parses a string to find an action within it
-
-    Parameters:
-    - response (str): The string to be parsed
-
-    Returns:
-    - Action: The action that was found in the response string
-    """
-    # attempt to load the JSON dict from the response
-    action_dict = json.loads(orig_response)
-
-    if 'content' in action_dict:
-        # The LLM gets confused here. Might as well be robust
-        action_dict['contents'] = action_dict.pop('content')
-
-    return action_from_dict(action_dict)
-
-
-def parse_summary_response(response: str) -> list[dict]:
-    """
-    Parses a summary of the monologue
-
-    Parameters:
-    - response (str): The response string to be parsed
-
-    Returns:
-    - list[dict]: The list of summaries output by the model
-    """
-    parsed = json.loads(response)
-    return parsed['new_monologue']
