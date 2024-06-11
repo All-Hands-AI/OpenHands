@@ -18,8 +18,10 @@ WORKSPACE_MOUNT_PATH_IN_SANDBOX="/workspace"
 
 mkdir -p $WORKSPACE_BASE
 
-# use environmental variable if exist, otherwise use "ssh"
+# use environmental variable if exists, otherwise use "ssh"
 SANDBOX_TYPE="${SANDBOX_TYPE:-ssh}"
+# TODO: we should also test PERSIST_SANDBOX = true, once it's fixed
+PERSIST_SANDBOX=false
 MAX_ITERATIONS=10
 
 agents=("DelegatorAgent" "ManagerAgent" "BrowsingAgent" "MonologueAgent" "CodeActAgent" "PlannerAgent")
@@ -57,12 +59,16 @@ run_test() {
   fi
 
   pytest_output=$(SANDBOX_TYPE=$SANDBOX_TYPE \
+    PERSIST_SANDBOX=$PERSIST_SANDBOX \
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
     MAX_ITERATIONS=$MAX_ITERATIONS \
     AGENT=$agent \
     $pytest_cmd 2>&1 | tee /dev/tty)
+
+  # Capture the exit code of pytest
+  pytest_exit_code=${PIPESTATUS[0]}
 
   if echo "$pytest_output" | grep -q "docker.errors.DockerException"; then
     echo "Error: docker.errors.DockerException found in the output. Exiting."
@@ -89,13 +95,14 @@ run_test() {
   fi
 
   # Return the exit code of pytest
-  return ${PIPESTATUS[0]}
+  return $pytest_exit_code
 }
 
 # browsing capability needs a local http server
 launch_http_server() {
   poetry run python tests/integration/start_http_server.py &
   HTTP_SERVER_PID=$!
+  echo "Test http server launched, PID = $HTTP_SERVER_PID"
   sleep 10
 }
 
@@ -118,6 +125,7 @@ regenerate_without_llm() {
   # set -x to print the command being executed
   set -x
   SANDBOX_TYPE=$SANDBOX_TYPE \
+    PERSIST_SANDBOX=$PERSIST_SANDBOX \
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
@@ -146,6 +154,7 @@ regenerate_with_llm() {
   echo -e "/exit\n" | \
     DEBUG=true \
     SANDBOX_TYPE=$SANDBOX_TYPE \
+    PERSIST_SANDBOX=$PERSIST_SANDBOX \
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
