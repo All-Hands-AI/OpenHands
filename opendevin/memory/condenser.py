@@ -1,5 +1,4 @@
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.utils import json
 from opendevin.events.action.agent import (
     AgentFinishAction,
     AgentRecallAction,
@@ -19,7 +18,7 @@ from opendevin.events.observation.observation import Observation
 from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
 from opendevin.memory.history import ShortTermHistory
-from opendevin.memory.prompts import parse_summary_response
+from opendevin.memory.prompts import get_summarize_prompt, parse_summary_response
 
 MAX_USER_MESSAGE_CHAR_COUNT = 200  # max char count for user messages
 
@@ -151,21 +150,12 @@ class MemoryCondenser:
         - The summary sentence.
         """
         try:
-            event_dicts = []
-            for event in chunk:
-                event_dicts.append(event_to_memory(event))
-            events_str = json.dumps(event_dicts, indent=2)
-
-            prompt = """
-            Given the following actions and observations, create a JSON response with:
-                - "action": "summarize"
-                - args:
-                  - "summarized_actions": A comma-separated list of unique action names from the provided actions
-                  - "summary": A single sentence summarizing all the provided observations
-            """ + '\n'.join(events_str)
+            event_dicts = [event_to_memory(event) for event in chunk]
+            prompt = get_summarize_prompt(event_dicts)
 
             messages = [{'role': 'user', 'content': prompt}]
             response = self.llm.completion(messages=messages)
+
             action_response = response['choices'][0]['message']['content']
             action = parse_summary_response(action_response)
             return action
