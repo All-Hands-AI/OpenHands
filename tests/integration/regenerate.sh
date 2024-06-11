@@ -16,6 +16,8 @@ WORKSPACE_MOUNT_PATH+="/_test_workspace"
 WORKSPACE_BASE+="/_test_workspace"
 WORKSPACE_MOUNT_PATH_IN_SANDBOX="/workspace"
 
+mkdir -p $WORKSPACE_BASE
+
 # use environmental variable if exist, otherwise use "ssh"
 SANDBOX_TYPE="${SANDBOX_TYPE:-ssh}"
 MAX_ITERATIONS=10
@@ -25,6 +27,7 @@ tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
   "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'."
+  "Write a git commit message for the current staging area."
   "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt."
   "Browse localhost:8000, and tell me the ultimate answer to life."
 )
@@ -32,6 +35,7 @@ test_names=(
   "test_edits"
   "test_write_simple_script"
   "test_ipython"
+  "test_simple_task_rejection"
   "test_ipython_module"
   "test_browse_internet"
 )
@@ -159,7 +163,7 @@ for ((i = 0; i < num_of_tests; i++)); do
     rm -rf $WORKSPACE_BASE
     mkdir $WORKSPACE_BASE
     if [ -d "tests/integration/workspace/$test_name" ]; then
-      cp -r tests/integration/workspace/$test_name/* $WORKSPACE_BASE
+      cp -r "tests/integration/workspace/$test_name"/* $WORKSPACE_BASE
     fi
 
     if [ "$TEST_ONLY" = true ]; then

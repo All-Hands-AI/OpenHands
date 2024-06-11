@@ -30,6 +30,10 @@ class AgentState(str, Enum):
     """The agent is finished with the current task.
     """
 
+    REJECTED = 'rejected'
+    """The agent rejects the task.
+    """
+
     ERROR = 'error'
     """An error occurred during the task.
     """
