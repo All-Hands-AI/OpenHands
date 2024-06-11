@@ -102,7 +102,7 @@ Enjoy!
 
 @pytest.mark.skipif(
     os.getenv('AGENT') != 'CodeActAgent' or os.getenv('AGENT') != 'CodeActSWEAgent',
-    reason='currently only CodeActAgent and CodeActSWEAgent defaults to have IPython (Jupyter) execution',
+    reason='currently only CodeActAgent and CodeActSWEAgent have IPython (Jupyter) execution by default',
 )
 @pytest.mark.skipif(
     os.getenv('SANDBOX_TYPE') != 'ssh',
@@ -145,7 +145,7 @@ def test_simple_task_rejection():
 
 @pytest.mark.skipif(
     os.getenv('AGENT') != 'CodeActAgent' and os.getenv('AGENT') != 'CodeActSWEAgent',
-    reason='currently only CodeActAgent and CodeActSWEAgent defaults to have IPython (Jupyter) execution',
+    reason='currently only CodeActAgent and CodeActSWEAgent have IPython (Jupyter) execution by default',
 )
 @pytest.mark.skipif(
     os.getenv('SANDBOX_TYPE') != 'ssh',
