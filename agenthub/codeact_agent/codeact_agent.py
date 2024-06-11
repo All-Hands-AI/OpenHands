@@ -79,7 +79,9 @@ def get_observation_message(obs) -> dict[str, str] | None:
         splitted = content.split('\n')
         for i, line in enumerate(splitted):
             if '![image](data:image/png;base64,' in line:
-                '![image](data:image/png;base64, ...) already displayed to user'
+                splitted[i] = (
+                    '![image](data:image/png;base64, ...) already displayed to user'
+                )
         content = '\n'.join(splitted)
         content = truncate_content(content)
         return {'role': 'user', 'content': content}
