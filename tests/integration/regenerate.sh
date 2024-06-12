@@ -22,7 +22,7 @@ mkdir -p $WORKSPACE_BASE
 SANDBOX_TYPE="${SANDBOX_TYPE:-ssh}"
 MAX_ITERATIONS=10
 
-agents=("DelegatorAgent" "ManagerAgent" "BrowsingAgent" "MonologueAgent" "CodeActAgent" "PlannerAgent")
+agents=("DelegatorAgent" "ManagerAgent" "BrowsingAgent" "MonologueAgent" "CodeActAgent" "PlannerAgent" "CodeActSWEAgent")
 tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
