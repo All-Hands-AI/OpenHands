@@ -104,7 +104,7 @@ describe("SettingsModal", () => {
   describe("onHandleSave", () => {
     const initialSettings: Settings = {
       LLM_MODEL: "gpt-4o",
-      AGENT: "CodeActAgent",
+      AGENT: "MonologueAgent",
       LANGUAGE: "en",
       LLM_API_KEY: "sk-...",
     };
