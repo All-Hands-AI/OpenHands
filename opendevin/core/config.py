@@ -42,8 +42,8 @@ class LLMConfig(metaclass=Singleton):
         temperature: The temperature for the API.
         top_p: The top p for the API.
         custom_llm_provider: The custom LLM provider to use. This is undocumented in opendevin, and normally not used. It is documented on the litellm side.
-        max_input_tokens: The maximum number of input tokens. Note that this is currently unused, and the value at runtime is actually the total tokens in OpenAI (e.g. 128,000 tokens for GPT-4).
-        max_output_tokens: The maximum number of output tokens. This is sent to the LLM.
+        max_input_tokens: The maximum number of input tokens. Note that this is currently unused, and the value at runtime is actually the total tokens in OpenAI (e.g. 128,000 tokens for GPT-4). Provide value > 0 to limit the input tokens.
+        max_output_tokens: The maximum number of output tokens. This is sent to the LLM. Provide value > 0 to limit the output tokens.
         input_cost_per_token: The cost per input token. This will available in logs for the user to check.
         output_cost_per_token: The cost per output token. This will available in logs for the user to check.
     """
