@@ -1,0 +1,13 @@
+Let's try to explicitly specify the Python executable to ensure the correct environment is used for importing the package.
+
+<execute_ipython>
+import sys
+sys.path.append('/home/opendevin/.local/lib/python3.10/site-packages')
+
+import pymsgbox
+
+version = pymsgbox.__version__
+
+with open("/workspace/test.txt", "w") as file:
+    file.write(f"pymsgbox version: {version}\n")
+
