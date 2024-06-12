@@ -1,0 +1,6 @@
+It seems like the installation might not have been successful or the environment might not have been updated. Let's verify the installation and try importing again.
+
+First, let's check if `pymsgbox` is installed.
+<execute_bash>
+pip show pymsgbox
+
