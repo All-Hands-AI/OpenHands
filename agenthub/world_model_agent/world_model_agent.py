@@ -11,6 +11,7 @@ from browsergym.utils.obs import flatten_axtree_to_str
 
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.logger import llm_output_logger
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
@@ -341,10 +342,15 @@ and executed by a program, make sure to follow the formatting instructions.
         )
 
         state, status, replan, think = self.encoder(main_prompt)
+        self.full_output = ''
 
         logger.info(f'*State*: {state}')
         logger.info(f'*Replan Reasoning*: {think}')
         logger.info(f'*Replan Status*: {status}')
+
+        self.full_output += f'*State*: {state}\n'
+        self.full_output += f'*Replan Reasoning*: {think}\n'
+        self.full_output += f'*Replan Status*: {status}\n'
 
         # replan = True
         logger.info('*Force Replan*')
@@ -355,6 +361,7 @@ and executed by a program, make sure to follow the formatting instructions.
         else:
             self.strategies.append(None)
         logger.info(f'*Active Strategy*: {self.active_strategy}')
+        self.full_output += f'*Active Strategy*: {self.active_strategy}\n'
 
         self.states.append(state)
         main_prompt = MyMainPrompt(
@@ -368,8 +375,11 @@ and executed by a program, make sure to follow the formatting instructions.
 
         action = self.effectuator(main_prompt)
         logger.info(f'*Action*: {action}')
-        self.actions.append(action)
+        self.full_output += f'*Action*: {action}\n'
 
+        llm_output_logger.info(self.full_output)
+
+        self.actions.append(action)
         return self.parse_response(action)
 
     def planning_search(self, state):
@@ -426,6 +436,11 @@ and executed by a program, make sure to follow the formatting instructions.
                 logger.info(f'*Expanded Strategy*: {node.action}')
                 logger.info(f'*Next State*: {node.state}')
                 logger.info(f'*Status*: {node.state_status}')
+
+                self.full_output += f'*Expanded Strategy*: {node.action}\n'
+                self.full_output += f'*Next State*: {node.state}\n'
+                self.full_output += f'*Status*: {node.state_status}\n'
+
                 new_states.append(node.state)
 
                 # Here is a chance to reset the node reward using things like state transition certainty
@@ -469,9 +484,13 @@ and executed by a program, make sure to follow the formatting instructions.
                     )
                     fast_reward, think = self.action_reward(main_prompt)
                     logger.info(f'*Strategy Candidate*: {action}')
-                    # print('Action Candidate:', action)
                     logger.info(f'*Fast Reward Reasoning*: {think}')
                     logger.info(f'*Fast Reward*: {fast_reward}')
+
+                    self.full_output += f'*Strategy Candidate*: {action}\n'
+                    self.full_output += f'*Fast Reward Reasoning*: {think}\n'
+                    self.full_output += f'*Fast Reward*: {fast_reward}\n'
+
                     child = MCTSNode(
                         state=None, action=action, parent=node, fast_reward=fast_reward
                     )
@@ -488,6 +507,7 @@ and executed by a program, make sure to follow the formatting instructions.
                 np.log(len(node.parent.cum_rewards)) / max(1, len(node.cum_rewards))
             )
             logger.info(f'{node.Q} {round(uct_term, 3)}')
+            self.full_output += f'{node.Q} {round(uct_term, 3)}\n'
             return node.Q + w_exp * uct_term
 
         def _is_terminal_with_depth_limit(node):
@@ -503,6 +523,7 @@ and executed by a program, make sure to follow the formatting instructions.
         # for n in trange(N, desc='MCTS iteration', leave=True):
         for n in range(N):
             logger.info(f'MCTS iter {n}')
+            self.full_output += f'MCTS iter {n}\n'
             # select
             node = root
             path = []
@@ -562,6 +583,8 @@ and executed by a program, make sure to follow the formatting instructions.
         output_cum_reward, output_iter = _dfs_max_reward([root])
         action = output_iter[1].action
         logger.info(f'*Selected Strategy*: {action}')
+        self.full_output += f'*Selected Strategy*: {action}\n'
+
         # print('Selected Action:', action)
 
         return action

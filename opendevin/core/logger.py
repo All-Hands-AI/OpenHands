@@ -241,6 +241,16 @@ def get_llm_response_file_handler():
     return llm_response_file_handler
 
 
+def get_llm_output_file_handler():
+    """
+    Returns a file handler for LLM output logging.
+    """
+    llm_output_file_handler = LlmFileHandler('output', delay=True)
+    llm_output_file_handler.setFormatter(llm_formatter)
+    llm_output_file_handler.setLevel(logging.INFO)
+    return llm_output_file_handler
+
+
 llm_prompt_logger = logging.getLogger('prompt')
 llm_prompt_logger.propagate = False
 llm_prompt_logger.setLevel(logging.DEBUG)
@@ -250,3 +260,8 @@ llm_response_logger = logging.getLogger('response')
 llm_response_logger.propagate = False
 llm_response_logger.setLevel(logging.DEBUG)
 llm_response_logger.addHandler(get_llm_response_file_handler())
+
+llm_output_logger = logging.getLogger('output')
+llm_output_logger.propagate = False
+llm_output_logger.setLevel(logging.DEBUG)
+llm_output_logger.addHandler(get_llm_output_file_handler())
