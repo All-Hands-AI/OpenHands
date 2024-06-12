@@ -14,10 +14,6 @@ on:
       - 'docs/**'
       - 'evaluation/**'
   pull_request:
-  workflow_run:
-    workflows: ["Publish Docker Image"]
-    types:
-      - completed
 
 env:
   PERSIST_SANDBOX : "false"
@@ -105,8 +101,6 @@ jobs:
   test-for-sandbox:
     name: Test for Sandbox
     runs-on: ubuntu-latest
-    env:
-      SANDBOX_CONTAINER_IMAGE: ${{ needs.ghcr_build_and_push.outputs.image_path }}
     steps:
       - uses: actions/checkout@v4
 

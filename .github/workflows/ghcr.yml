@@ -21,8 +21,6 @@ on:
 jobs:
   ghcr_build_and_push:
     runs-on: ubuntu-latest
-    outputs:
-      image_path: ${{ steps.build.outputs.image_path }}
 
     permissions:
       contents: read
@@ -68,10 +66,8 @@ jobs:
 
       - name: Build and push ${{ matrix.image }}
         if: "!github.event.pull_request.head.repo.fork"
-        id: build
         run: |
-          build_output=$(./containers/build.sh ${{ matrix.image }} ${{ github.repository_owner }} --push)
-          echo "::set-output name=image_path::$(echo "$build_output" | grep 'Build cache image:' | awk -F ':' '{print $NF}')"
+          ./containers/build.sh ${{ matrix.image }} ${{ github.repository_owner }} --push
 
       - name: Build ${{ matrix.image }}
         if: "github.event.pull_request.head.repo.fork"
