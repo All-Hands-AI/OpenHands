@@ -25,11 +25,12 @@ If $GITHUB_TOKEN is not set, ask the user to set it.
 
 
 Apart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:
-open_file(path: str, line_number: Optional[int] = None) -> None:
+open_file(path: str, line_number: Optional[int] = None, context_lines: Optional[int] = 100) -> None:
     Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
     Args:
     path: str: The path to the file to open.
     line_number: Optional[int]: The line number to move to.
+    context_lines: Optional[int]: The total number of lines to display in the window. Defaults to 100.
 
 goto_line(line_number: int) -> None:
     Moves the window to show the specified line number.

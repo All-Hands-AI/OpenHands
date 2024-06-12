@@ -6,6 +6,7 @@ import subprocess
 import pytest
 
 from opendevin.controller.state.state import State
+from opendevin.core.config import AppConfig, load_from_toml
 from opendevin.core.main import main
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
@@ -14,6 +15,29 @@ from opendevin.events.action import (
 )
 
 workspace_base = os.getenv('WORKSPACE_BASE')
+workspace_mount_path = os.getenv('WORKSPACE_MOUNT_PATH')
+workspace_mount_path_in_sandbox = os.getenv('WORKSPACE_MOUNT_PATH_IN_SANDBOX')
+
+# for WSL make sure we're testing in the same folder of an existing config.toml
+if os.path.exists('config.toml') and os.getenv('WSL_DISTRO_NAME'):
+    config = AppConfig()
+    load_from_toml(config, 'config.toml')
+    if config and config.workspace_base and config.workspace_base != workspace_base:
+        if os.path.exists(config.workspace_base) and os.access(
+            config.workspace_base, os.W_OK
+        ):
+            # workspace_base = os.path.join(config.workspace_base, '_test_workspace')
+            workspace_mount_path_in_sandbox = os.path.join(
+                config.workspace_mount_path_in_sandbox, '_test_workspace'
+            )
+            pass
+
+print(f'TEST workspace_base: {workspace_base}')
+print(f'TEST workspace_mount_path: {workspace_mount_path}')
+print(f'TEST workspace_mount_path_in_sandbox: {workspace_mount_path_in_sandbox}')
+os.chdir(workspace_base)
+print(f'Current directory: {os.getcwd()}')
+# print(f'Jupyter ENV: '+os.getenv("JUPYTER_PWD"))
 
 
 @pytest.mark.skipif(
@@ -21,7 +45,8 @@ workspace_base = os.getenv('WORKSPACE_BASE')
     reason='BrowsingAgent is a specialized agent',
 )
 @pytest.mark.skipif(
-    (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent') and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent')
+    and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
     reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
 @pytest.mark.skipif(
@@ -51,7 +76,8 @@ def test_write_simple_script():
     reason='BrowsingAgent is a specialized agent',
 )
 @pytest.mark.skipif(
-    (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent') and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent')
+    and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
     reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
 @pytest.mark.skipif(
@@ -71,6 +97,8 @@ def test_edits():
         if os.path.exists(dest_file):
             os.remove(dest_file)
         shutil.copy(os.path.join(source_dir, file), dest_file)
+
+    os.chdir(workspace_base)
 
     # Execute the task
     task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
@@ -163,7 +191,8 @@ def test_ipython_module():
     reason='currently only BrowsingAgent and CodeActAgent are capable of searching the internet',
 )
 @pytest.mark.skipif(
-    (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent') and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent')
+    and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
     reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
 def test_browse_internet(http_server):

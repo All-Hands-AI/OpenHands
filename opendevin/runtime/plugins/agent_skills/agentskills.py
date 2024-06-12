@@ -19,6 +19,7 @@ Functions:
 import base64
 import functools
 import os
+import shutil
 import subprocess
 import tempfile
 from inspect import signature
@@ -58,12 +59,13 @@ def update_pwd_decorator(func):
     def wrapper(*args, **kwargs):
         old_pwd = os.getcwd()
         jupyter_pwd = os.environ.get('JUPYTER_PWD', None)
-        if jupyter_pwd:
-            os.chdir(jupyter_pwd)
         try:
+            if jupyter_pwd:
+                os.chdir(jupyter_pwd)
             return func(*args, **kwargs)
         finally:
-            os.chdir(old_pwd)
+            if old_pwd:
+                os.chdir(old_pwd)
 
     return wrapper
 
@@ -231,7 +233,7 @@ def _edit_or_append_file(
 
     # Use a temporary file to write changes
     content = str(content or '')
-    temp_file_path = ''
+    temp_file_path = os.path.abspath(file_name)
     first_error_line = None
     try:
         # Create a temporary file
@@ -287,7 +289,7 @@ def _edit_or_append_file(
             temp_file.write(content)
 
         # Replace the original file with the temporary file atomically
-        os.replace(temp_file_path, file_name)
+        shutil.move(temp_file_path, file_name)
 
         # Handle linting
         if ENABLE_AUTO_LINT:
@@ -373,8 +375,13 @@ def open_file(
         context_lines: Optional[int]: The total number of lines to display in the window. Defaults to 100.
     """
     global CURRENT_FILE, CURRENT_LINE
+
+    if not os.path.isabs(path):
+        path = os.path.join(os.getcwd(), path)
+
     if not os.path.isfile(path):
-        raise FileNotFoundError(f'File {path} not found')
+        # raise FileNotFoundError(f'File {path} not found')
+        raise FileNotFoundError(f'File {path} not found ({os.getcwd()})')
 
     CURRENT_FILE = os.path.abspath(path)
     with open(CURRENT_FILE) as file:
