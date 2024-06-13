@@ -290,11 +290,25 @@ class DockerSSHBox(Sandbox):
             environment=self._env,
         )
 
-    def start_ssh_session(self):
-        # start ssh session at the background
-        self.ssh = pxssh.pxssh(
-            echo=False, timeout=self.timeout, encoding='utf-8', codec_errors='replace'
-        )
+    def start_ssh_session(self, n_retries=5):
+        while n_retries > 0:
+            try:
+                self.ssh = pxssh.pxssh(
+                    echo=False,
+                    timeout=self.timeout,
+                    encoding='utf-8',
+                    codec_errors='replace',
+                )
+                break
+            except pxssh.ExceptionPxssh as e:
+                logger.exception(
+                    'Failed to start SSH session, retrying...', exc_info=False
+                )
+                n_retries -= 1
+                if n_retries == 0:
+                    raise e
+                time.sleep(5)
+
         hostname = self.ssh_hostname
         if self.run_as_devin:
             username = 'opendevin'

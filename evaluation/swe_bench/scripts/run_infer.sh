@@ -11,5 +11,5 @@ poetry run python3 evaluation/swe_bench/run_infer.py \
   --llm-config $MODEL_CONFIG \
   --max-iterations 50 \
   --max-chars 10000000 \
-  --eval-num-workers 8 \
+  --eval-num-workers 4 \
   --eval-note $AGENT_VERSION
