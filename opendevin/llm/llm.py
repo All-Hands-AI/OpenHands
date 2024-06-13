@@ -145,6 +145,13 @@ class LLM:
         except Exception:
             logger.warning(f'Could not get model info for {self.model_name}')
 
+        if self.max_input_tokens is None:
+            if self.model_info is not None and 'max_input_tokens' in self.model_info:
+                self.max_input_tokens = self.model_info['max_input_tokens']
+            else:
+                # Max input tokens for gpt3.5, so this is a safe fallback for any potentially viable model
+                self.max_input_tokens = 4096
+
         if self.max_output_tokens is None:
             if self.model_info is not None and 'max_output_tokens' in self.model_info:
                 self.max_output_tokens = self.model_info['max_output_tokens']
@@ -241,21 +248,9 @@ class LLM:
                 self.metrics.accumulated_cost,
             )
 
-    def get_token_count(self, messages):
+    def is_over_token_limit(self, messages: list[dict]) -> bool:
         """
-        Get the number of tokens in a list of messages.
-
-        Args:
-            messages (list): A list of messages.
-
-        Returns:
-            int: The number of tokens.
-        """
-        return litellm.token_counter(model=self.model_name, messages=messages)
-
-    def is_over_token_limit(self, messages: list[dict]) -> int:
-        """
-        Estimates the token count of the given events using litellm tokenizer.
+        Estimates the token count of the given events using litellm tokenizer and returns True if over the max_input_tokens value.
 
         Parameters:
         - messages: List of messages to estimate the token count for.
@@ -263,9 +258,14 @@ class LLM:
         Returns:
         - Estimated token count.
         """
-        if self.max_input_tokens is None:
+        # max_input_tokens will always be set in init to some sensible default
+        # 0 in config.llm disables the check
+        if not self.max_input_tokens:
             return False
-        token_count = self.get_token_count(messages) + MAX_TOKEN_COUNT_PADDING
+        token_count = (
+            litellm.token_counter(model=self.model_name, messages=messages)
+            + MAX_TOKEN_COUNT_PADDING
+        )
         return token_count >= self.max_input_tokens
 
     def is_local(self):
