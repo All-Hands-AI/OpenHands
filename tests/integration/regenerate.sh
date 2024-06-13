@@ -17,8 +17,8 @@ fi
 
 WORKSPACE_MOUNT_PATH+="/_test_workspace"
 WORKSPACE_BASE+="/_test_workspace"
-WORKSPACE_MOUNT_PATH_IN_SANDBOX="/workspace"
-JUPYTER_PWD="/workspace/_test_workspace"
+WORKSPACE_MOUNT_PATH_IN_SANDBOX="/workspace/_test_workspace"
+JUPYTER_PWD="/workspace"
 echo "WORKSPACE_BASE: $WORKSPACE_BASE"
 echo "WORKSPACE_MOUNT_PATH: $WORKSPACE_MOUNT_PATH"
 echo "WORKSPACE_MOUNT_PATH_IN_SANDBOX: $WORKSPACE_MOUNT_PATH_IN_SANDBOX"
@@ -57,7 +57,7 @@ num_of_agents=${#agents[@]}
 
 # run integration test against a specific agent & test
 run_test() {
-  local pytest_cmd="poetry run pytest -vv ./tests/integration/test_agent.py::$test_name"
+  local pytest_cmd="poetry run pytest -sv ./tests/integration/test_agent.py::$test_name"
 
   # Check if TEST_IN_CI is defined
   if [ -n "$TEST_IN_CI" ]; then

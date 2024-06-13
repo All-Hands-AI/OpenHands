@@ -35,9 +35,9 @@ if os.path.exists('config.toml') and os.getenv('WSL_DISTRO_NAME'):
 print(f'TEST workspace_base: {workspace_base}')
 print(f'TEST workspace_mount_path: {workspace_mount_path}')
 print(f'TEST workspace_mount_path_in_sandbox: {workspace_mount_path_in_sandbox}')
+print('TEST Jupyter ENV: ' + os.getenv('JUPYTER_PWD'))
 os.chdir(workspace_base)
 print(f'Current directory: {os.getcwd()}')
-# print(f'Jupyter ENV: '+os.getenv("JUPYTER_PWD"))
 
 
 @pytest.mark.skipif(
@@ -57,6 +57,8 @@ def test_write_simple_script():
     task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
     final_state: State = asyncio.run(main(task, exit_on_message=True))
     assert final_state.agent_state == AgentState.STOPPED
+
+    os.chdir(workspace_base)
 
     # Verify the script file exists
     script_path = os.path.join(workspace_base, 'hello.sh')

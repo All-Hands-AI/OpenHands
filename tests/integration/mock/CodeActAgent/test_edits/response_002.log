@@ -5,3 +5,5 @@ edit_file('bad.txt', start=1, end=4, content="""This is a stupid typo.
 Really?
 No more typos!
 Enjoy!""")
+</execute_ipython>
+[File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
