@@ -79,7 +79,7 @@
     "fr": "Navigateur",
     "tr": "Tarayıcı"
   },
-  "CONFIGURATION$WORKSPACE_BASE_DIRECTORY_INPUT_LABEL": {
+  "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_LABEL": {
     "en": "OpenDevin Workspace directory",
     "zh-CN": "OpenDevin 工作区目录",
     "de": "OpenDevin Arbeitsverzeichnis",
