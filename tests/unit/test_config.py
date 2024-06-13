@@ -177,7 +177,7 @@ def test_finalize_config(default_config):
 
 # tests for workspace, mount path, path in sandbox, cache dir
 def test_workspace_mount_path_default(default_config):
-    assert default_config.workspace_mount_path is None
+    assert default_config.workspace_mount_path == ''
     finalize_config(default_config)
     assert default_config.workspace_mount_path == os.path.abspath(
         default_config.workspace_base
