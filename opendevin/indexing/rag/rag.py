@@ -8,6 +8,7 @@ from llama_index.core import (
     VectorStoreIndex,
 )
 from llama_index.core.callbacks import CallbackManager, LlamaDebugHandler
+from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.openai import OpenAI
@@ -38,7 +39,7 @@ class VectorIndex:
         self.vector_store = PineconeVectorStore(pinecone_index=pc_index)
         self.embed_model = HuggingFaceEmbedding(
             model_name=self.embedding_model_name,
-            embed_batch_size=100,
+            embed_batch_size=3,
             trust_remote_code=True,
         )
 
@@ -128,18 +129,26 @@ class VectorIndex:
         documents = reader.load_data(
             repo_path=repo_path, extensions=['.py', '.md', '.sh']
         )
+        ingest_pipeline = IngestionPipeline(
+            transformations=[
+                self.embed_model,
+            ],
+            vector_store=self.vector_store,
+        )
 
-        for doc in tqdm(documents):
-            self.index.insert(document=doc)
+        embedded_nodes = ingest_pipeline.run(documents=documents, show_progress=True)
+
+        print(f'Embedded {len(embedded_nodes)} vectors.')
 
 
 if __name__ == '__main__':
-    vi = VectorIndex('sphi-82ef497a8c88f0f6e50d84520e7276bfbf65025d')
+    vi = VectorIndex('test-code-index')
     # vi.ingest_repo('sphinx-doc', 'sphinx', '82ef497a8c88f0f6e50d84520e7276bfbf65025d')
-    # vi.ingest_directory('.')
+    vi.ingest_git_repo('/home/ryan/sphinx')
+
     response = vi.retrieve(
         'viewcode creates pages for epub even if `viewcode_enable_epub=False` on `make html epub`',
-        4,
+        10,
     )
     for i, r in enumerate(response):
         # pretty print
