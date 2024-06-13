@@ -94,32 +94,6 @@ class CodeActSWEActionParserIPythonRunCell(ActionParser):
         )
 
 
-class CodeActSWEActionParserBrowseInteractive(ActionParser):
-    """
-    Parser action:
-        - BrowseInteractiveAction(browser_actions) - handle send message to user function call in BrowserGym
-    """
-
-    def __init__(
-        self,
-    ):
-        self.browse_command = None
-
-    def check_condition(self, action_str: str) -> bool:
-        self.browse_command = re.search(
-            r'<execute_browse>(.*)</execute_browse>', action_str, re.DOTALL
-        )
-        return self.browse_command is not None
-
-    def parse(self, action_str: str) -> Action:
-        assert (
-            self.browse_command is not None
-        ), 'self.browse_command should not be None when parse is called'
-        browse_actions = self.browse_command.group(1).strip()
-        thought = action_str.replace(self.browse_command.group(0), '').strip()
-        return BrowseInteractiveAction(browser_actions=browse_actions, thought=thought)
-
-
 class CodeActSWEActionParserMessage(ActionParser):
     """
     Parser action:

@@ -1,5 +1,4 @@
 from agenthub.codeact_swe_agent.action_parser import (
-    CodeActSWEActionParserBrowseInteractive,
     CodeActSWEActionParserCmdRun,
     CodeActSWEActionParserFinish,
     CodeActSWEActionParserIPythonRunCell,
@@ -26,7 +25,6 @@ class CodeActSWEResponseParser(ResponseParser):
             CodeActSWEActionParserFinish(),
             CodeActSWEActionParserCmdRun(),
             CodeActSWEActionParserIPythonRunCell(),
-            CodeActSWEActionParserBrowseInteractive(),
         ]
         self.default_parser = CodeActSWEActionParserMessage()
 
