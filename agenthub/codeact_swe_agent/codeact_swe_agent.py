@@ -1,11 +1,10 @@
-import re
-
 from agenthub.codeact_swe_agent.prompt import (
     COMMAND_DOCS,
     MINIMAL_SYSTEM_PREFIX,
     SWE_EXAMPLE,
     SYSTEM_SUFFIX,
 )
+from agenthub.codeact_swe_agent.response_parser import CodeActSWEResponseParser
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.events.action import (
@@ -28,14 +27,6 @@ from opendevin.runtime.plugins import (
     PluginRequirement,
 )
 from opendevin.runtime.tools import RuntimeTool
-
-
-def parse_response(response) -> str:
-    action = response.choices[0].message.content
-    for lang in ['bash', 'ipython', 'browse']:
-        if f'<execute_{lang}>' in action and f'</execute_{lang}>' not in action:
-            action += f'</execute_{lang}>'
-    return action
 
 
 def action_to_str(action: Action) -> str:
@@ -129,10 +120,11 @@ class CodeActSWEAgent(Agent):
         JupyterRequirement(),
     ]
     runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
-    jupyter_kernel_init_code: str = 'from agentskills import *'
 
     system_message: str = get_system_message()
     in_context_example: str = f"Here is an example of how you can interact with the environment for task solving:\n{get_in_context_example()}\n\nNOW, LET'S START!"
+
+    response_parser = CodeActSWEResponseParser()
 
     def __init__(
         self,
@@ -199,50 +191,11 @@ class CodeActSWEAgent(Agent):
             ],
             temperature=0.0,
         )
-
-        action_str: str = parse_response(response)
         state.num_of_chars += sum(
             len(message['content']) for message in messages
-        ) + len(action_str)
+        ) + len(response.choices[0].message.content)
 
-        if finish_command := re.search(r'<finish>.*</finish>', action_str, re.DOTALL):
-            thought = action_str.replace(finish_command.group(0), '').strip()
-            return AgentFinishAction(thought=thought)
-        if bash_command := re.search(
-            r'<execute_bash>(.*?)</execute_bash>', action_str, re.DOTALL
-        ):
-            # remove the command from the action string to get thought
-            thought = action_str.replace(bash_command.group(0), '').strip()
-            # a command was found
-            command_group = bash_command.group(1).strip()
-
-            if command_group.strip() == 'exit':
-                return AgentFinishAction()
-            return CmdRunAction(command=command_group, thought=thought)
-        elif python_code := re.search(
-            r'<execute_ipython>(.*?)</execute_ipython>', action_str, re.DOTALL
-        ):
-            # a code block was found
-            code_group = python_code.group(1).strip()
-            thought = action_str.replace(python_code.group(0), '').strip()
-            return IPythonRunCellAction(
-                code=code_group,
-                thought=thought,
-                kernel_init_code=self.jupyter_kernel_init_code,
-            )
-        elif browse_command := re.search(
-            r'<execute_browse>(.*)</execute_browse>', action_str, re.DOTALL
-        ):
-            # BrowserGym actions was found
-            browse_actions = browse_command.group(1).strip()
-            thought = action_str.replace(browse_command.group(0), '').strip()
-            return BrowseInteractiveAction(
-                browser_actions=browse_actions, thought=thought
-            )
-        else:
-            # We assume the LLM is GOOD enough that when it returns pure natural language
-            # it want to talk to the user
-            return MessageAction(content=action_str, wait_for_response=True)
+        return self.response_parser.parse(response)
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')
