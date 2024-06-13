@@ -53,6 +53,26 @@ To run the evaluation on the ML-Bench dataset, use the following command:
 
 You can replace `eval_gpt4_1106_preview` with any model you set up in `config.toml`.
 
+## Score Evaluation Output
+
+To score the evaluation output, use the following command:
+
+```bash
+./evaluation/ml_bench/scripts/summarise_results.py [eval_output_dir]
+# e.g., ./evaluation/ml_bench/scripts/summarise_results.py evaluation/evaluation_outputs/outputs/ml_bench/CodeActAgent/gpt-4-1106-preview_maxiter_10_N_v1.5
+```
+
+## Run Error Analysis on ML-Bench
+
+To run error analysis on the ML-Bench dataset, use the following command:
+
+```bash
+./evaluation/ml_bench/scripts/run_analysis.sh [eval_output_dir] [model_config]
+# e.g., ./evaluation/ml_bench/scripts/run_analysis.sh evaluation/evaluation_outputs/outputs/ml_bench/CodeActAgent/gpt-4-1106-preview_maxiter_10_N_v1.5/output.jsonl eval_gpt4_1106_preview
+```
+
+This command generates a report on the evaluation output and provides insights into the agent's performance.
+
 ## Examples
 
 For each task in the ML-Bench dataset, OpenDevin provides the agent with a set number of iterations to complete the task. The `history` field in the evaluation output shows each iteration's response and actions taken by the agent to complete the task.

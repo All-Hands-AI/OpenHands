@@ -24,7 +24,7 @@ vi.mock("#/services/settings", async (importOriginal) => ({
   ...(await importOriginal<typeof import("#/services/settings")>()),
   getSettings: vi.fn().mockReturnValue({
     LLM_MODEL: "gpt-4o",
-    AGENT: "MonologueAgent",
+    AGENT: "CodeActAgent",
     LANGUAGE: "en",
     LLM_API_KEY: "sk-...",
   }),
@@ -196,7 +196,7 @@ describe("SettingsModal", () => {
         await userEvent.click(saveButton);
       });
 
-      expect(toastSpy).toHaveBeenCalledTimes(3);
+      expect(toastSpy).toHaveBeenCalledTimes(2);
     });
 
     it("should change the language", async () => {
