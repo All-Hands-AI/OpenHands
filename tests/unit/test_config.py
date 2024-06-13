@@ -77,7 +77,9 @@ def test_load_from_old_style_env(monkeypatch, default_config):
     assert default_config.agent.memory_enabled is True
     assert default_config.agent.name == 'PlannerAgent'
     assert default_config.workspace_base == '/opt/files/workspace'
-    assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
+    assert (
+        default_config.workspace_mount_path is UndefinedString.UNDEFINED
+    )  # before finalize_config
     assert (
         default_config.workspace_mount_path_in_sandbox is not UndefinedString.UNDEFINED
     )
@@ -116,7 +118,8 @@ workspace_base = "/opt/files2/workspace"
 
     finalize_config(default_config)
 
-    # after finalize_config, workspace_mount_path is set to the absolute path of workspace_base if it was undefined
+    # after finalize_config, workspace_mount_path is set to the absolute path of workspace_base
+    # if it was undefined
     assert default_config.workspace_mount_path == '/opt/files2/workspace'
 
 
@@ -140,7 +143,7 @@ disable_color = true
 
     load_from_toml(default_config, temp_toml_file)
 
-    # before finalize, workspace_mount_path is UndefinedString.UNDEFINED if it was not set
+    # before finalize_config, workspace_mount_path is UndefinedString.UNDEFINED if it was not set
     assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
 
     load_from_env(default_config, os.environ)
@@ -149,7 +152,9 @@ disable_color = true
     assert default_config.llm.model == 'test-model'
     assert default_config.llm.api_key == 'env-api-key'
 
-    # after we set the string to 'UNDEFINED' in the environment, it should be set to that and it's not UndefinedString.UNDEFINED
+    # after we set workspace_base to 'UNDEFINED' in the environment,
+    # workspace_base should be set to that
+    # workspace_mount path is still UndefinedString.UNDEFINED
     assert default_config.workspace_base is not UndefinedString.UNDEFINED
     assert default_config.workspace_base == 'UNDEFINED'
     assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
@@ -159,7 +164,7 @@ disable_color = true
     assert default_config.disable_color is True
 
     finalize_config(default_config)
-    # after finalize_config, workspace_mount_path is set to an absolute path
+    # after finalize_config, workspace_mount_path is set to absolute path of workspace_base if it was undefined
     assert default_config.workspace_mount_path == os.getcwd() + '/UNDEFINED'
 
 
