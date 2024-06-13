@@ -221,7 +221,9 @@ class DockerSSHBox(Sandbox):
                 raise Exception(
                     'Persistent sandbox is currently designed for opendevin user only. Please set run_as_devin=True in your config.toml'
                 )
-            self.instance_id = 'persisted'
+            path = config.workspace_mount_path
+            path = ''.join(c if c.isalnum() else '_' for c in path)  # type: ignore
+            self.instance_id = 'persisted ' + path
         else:
             self.instance_id = (sid or '') + str(uuid.uuid4())
 
@@ -746,14 +748,14 @@ class DockerSSHBox(Sandbox):
         containers = self.docker_client.containers.list(all=True)
         for container in containers:
             try:
-                if (
-                    container.name.startswith(self.container_name)
-                    and not config.persist_sandbox
-                ):
-                    # only remove the container we created
-                    # otherwise all other containers with the same prefix will be removed
-                    # which will mess up with parallel evaluation
-                    container.remove(force=True)
+                if container.name.startswith(self.container_name):
+                    if config.persist_sandbox:
+                        container.stop()
+                    else:
+                        # only remove the container we created
+                        # otherwise all other containers with the same prefix will be removed
+                        # which will mess up with parallel evaluation
+                        container.remove(force=True)
             except docker.errors.NotFound:
                 pass
         self.docker_client.close()
