@@ -79,7 +79,7 @@
     "fr": "Navigateur",
     "tr": "Tarayıcı"
   },
-  "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_LABEL": {
+  "CONFIGURATION$WORKSPACE_BASE_DIRECTORY_INPUT_LABEL": {
     "en": "OpenDevin Workspace directory",
     "zh-CN": "OpenDevin 工作区目录",
     "de": "OpenDevin Arbeitsverzeichnis",
@@ -93,7 +93,7 @@
     "fr": "Répertoire de l'espace de travail OpenDevin",
     "tr": "OpenDevin çalışma alanı dizini"
   },
-  "CONFIGURATION$OPENDEVIN_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER": {
+  "CONFIGURATION$WORKSPACE_BASE_DIRECTORY_INPUT_PLACEHOLDER": {
     "en": "Default: ./workspace",
     "zh-CN": "默认：./workspace",
     "de": "Standard: ./workspace",
