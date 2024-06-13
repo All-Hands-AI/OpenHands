@@ -1,0 +1,5 @@
+The shell script `hello.sh` has been created and made executable. Let's run it to ensure it works as expected.
+
+<execute_bash>
+./hello.sh
+
