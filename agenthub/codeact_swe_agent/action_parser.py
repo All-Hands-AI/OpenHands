@@ -4,7 +4,6 @@ from opendevin.controller.action_parser import ActionParser
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
-    BrowseInteractiveAction,
     CmdRunAction,
     IPythonRunCellAction,
     MessageAction,
