@@ -159,7 +159,7 @@ class AppConfig(metaclass=Singleton):
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
     workspace_base: str = os.path.join(os.getcwd(), 'workspace')
-    workspace_mount_path: str | None = None
+    workspace_mount_path: str = ''
     workspace_mount_path_in_sandbox: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
@@ -373,10 +373,10 @@ def finalize_config(config: AppConfig):
     More tweaks to the config after it's been loaded.
     """
 
-    # Set workspace_mount_path if not set by the user
-    if config.workspace_mount_path is None:
-        config.workspace_mount_path = os.path.abspath(config.workspace_base)
     config.workspace_base = os.path.abspath(config.workspace_base)
+    # Set workspace_mount_path if not set by the user
+    if not config.workspace_mount_path:
+        config.workspace_mount_path = config.workspace_base
 
     # In local there is no sandbox, the workspace will have the same pwd as the host
     if config.sandbox_type == 'local':
