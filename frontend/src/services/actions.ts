@@ -30,7 +30,7 @@ const messageActions = {
     if (message.source === "user") {
       store.dispatch(addUserMessage(message.args.content));
     } else {
-      let autoMsg =
+      const autoMsg =
         "\n----------\n" +
         "Please continue working on the task on whatever approach you think is suitable.\n" +
         "If you think you have solved the task, you can give <finish> to end the interaction.\n" +
