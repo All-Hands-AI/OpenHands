@@ -61,7 +61,7 @@ num_of_agents=${#agents[@]}
 
 # run integration test against a specific agent & test
 run_test() {
-  local pytest_cmd="poetry run pytest -v ./tests/integration/test_agent.py::$test_name"
+  local pytest_cmd="poetry run pytest -s ./tests/integration/test_agent.py::$test_name"
 
   # Check if TEST_IN_CI is defined
   if [ -n "$TEST_IN_CI" ]; then

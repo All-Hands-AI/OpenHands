@@ -336,7 +336,7 @@ open_file('bad.txt')
 ----------
 
 OBSERVATION:
-[File: /workspace/_test_workspace/bad.txt (4 lines total)]
+[File: /workspace/bad.txt (4 lines total)]
 1|This is a stupid typoo.
 2|Really?
 3|No mor typos!

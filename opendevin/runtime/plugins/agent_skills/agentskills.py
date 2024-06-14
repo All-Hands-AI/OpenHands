@@ -377,15 +377,12 @@ def open_file(
     """
     global CURRENT_FILE, CURRENT_LINE
 
-    # if not os.path.isabs(path):
-    #     path = os.path.join(os.getcwd(), path)
-
     if not os.path.isfile(path):
         raise FileNotFoundError(f'File {path} not found')
 
-    CURRENT_FILE = path  # os.path.abspath(path)
-    with open(os.path.abspath(path)) as file:
+    with open(path) as file:
         total_lines = sum(1 for _ in file)
+    CURRENT_FILE = os.path.abspath(path)
 
     if line_number is not None:
         if (
