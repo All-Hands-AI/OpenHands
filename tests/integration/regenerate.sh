@@ -109,12 +109,14 @@ launch_http_server() {
 }
 
 cleanup() {
+  echo "Cleaning up before exit..."
   if [ -n "$HTTP_SERVER_PID" ]; then
     echo "Killing HTTP server..."
     kill $HTTP_SERVER_PID
     unset HTTP_SERVER_PID
   fi
   [ -f $TMP_FILE ] && rm $TMP_FILE
+  echo "Cleanup done!"
 }
 
 # Trap the EXIT signal to run the cleanup function
@@ -283,5 +285,4 @@ done
 
 rm -rf logs
 rm -rf $WORKSPACE_BASE
-cleanup
 echo "Done!"
