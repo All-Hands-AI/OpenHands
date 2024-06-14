@@ -31,7 +31,7 @@ NOTE: We only support SWE-Bench lite for now. But modifying our existing scripts
 ## Test if your environment works
 
 ```bash
-python3 evaluation/swe_bench/swe_env_box.py
+poetry run python3 evaluation/swe_bench/swe_env_box.py
 ```
 
 If you get to the interactive shell successfully, it means success!
@@ -43,28 +43,7 @@ Create a `config.toml` file if not exists at the root of workspace.
 Add the following configurations:
 
 ```toml
-[core]
-max_iterations = 100
-cache_dir = "/tmp/cache"
-sandbox_container_image = "ghcr.io/opendevin/sandbox:latest"
-sandbox_type = "ssh"
-use_host_network = true
-ssh_hostname = "localhost"
-sandbox_timeout = 120
-# eval specific
-run_as_devin = false
-
-# TODO: Change these to the model you want to evaluate
-[eval_gpt4_1106_preview]
-model = "gpt-4-1106-preview"
-api_key = "XXX"
-temperature = 0.0
-
-[eval_some_openai_compatible_model]
-model = "openai/MODEL_NAME"
-base_url = "https://OPENAI_COMPATIBLE_URL/v1"
-api_key = "XXX"
-temperature = 0.0
+check pyproject.toml.template for reference
 ```
 
 ## Run Inference on SWE-Bench Instances
