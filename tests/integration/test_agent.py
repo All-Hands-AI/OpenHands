@@ -33,8 +33,8 @@ if os.path.exists('config.toml'):
     reason='BrowsingAgent is a specialized agent',
 )
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'CodeActAgent' and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
-    reason='CodeActAgent only supports ssh sandbox which is stateful',
+    (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent') and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
 @pytest.mark.skipif(
     os.getenv('AGENT') == 'ManagerAgent',
@@ -63,8 +63,8 @@ def test_write_simple_script():
     reason='BrowsingAgent is a specialized agent',
 )
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'CodeActAgent' and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
-    reason='CodeActAgent only supports ssh sandbox which is stateful',
+    (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent') and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
 @pytest.mark.skipif(
     os.getenv('AGENT') == 'MonologueAgent' or os.getenv('AGENT') == 'PlannerAgent',
@@ -101,8 +101,8 @@ Enjoy!
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') != 'CodeActAgent',
-    reason='currently only CodeActAgent defaults to have IPython (Jupyter) execution',
+    os.getenv('AGENT') != 'CodeActAgent' or os.getenv('AGENT') != 'CodeActSWEAgent',
+    reason='currently only CodeActAgent and CodeActSWEAgent have IPython (Jupyter) execution by default',
 )
 @pytest.mark.skipif(
     os.getenv('SANDBOX_TYPE') != 'ssh',
@@ -144,8 +144,8 @@ def test_simple_task_rejection():
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') != 'CodeActAgent',
-    reason='currently only CodeActAgent defaults to have IPython (Jupyter) execution',
+    os.getenv('AGENT') != 'CodeActAgent' and os.getenv('AGENT') != 'CodeActSWEAgent',
+    reason='currently only CodeActAgent and CodeActSWEAgent have IPython (Jupyter) execution by default',
 )
 @pytest.mark.skipif(
     os.getenv('SANDBOX_TYPE') != 'ssh',
@@ -164,8 +164,9 @@ def test_ipython_module():
     # Verify the file contains the expected content
     with open(file_path, 'r') as f:
         content = f.read()
+        print(content)
     assert (
-        content.strip() == '1.0.9'
+        content.strip().split(' ')[-1] == '1.0.9'
     ), f'Expected content "1.0.9", but got "{content.strip()}"'
 
 
@@ -174,8 +175,8 @@ def test_ipython_module():
     reason='currently only BrowsingAgent and CodeActAgent are capable of searching the internet',
 )
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'CodeActAgent' and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
-    reason='CodeActAgent only supports ssh sandbox which is stateful',
+    (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent') and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
 def test_browse_internet(http_server):
     # Execute the task

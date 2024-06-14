@@ -5,6 +5,7 @@ import pathlib
 import platform
 import uuid
 from dataclasses import dataclass, field, fields, is_dataclass
+from enum import Enum
 from types import UnionType
 from typing import Any, ClassVar, get_args, get_origin
 
@@ -122,6 +123,10 @@ class AgentConfig(metaclass=Singleton):
         return dict
 
 
+class UndefinedString(str, Enum):
+    UNDEFINED = 'UNDEFINED'
+
+
 @dataclass
 class AppConfig(metaclass=Singleton):
     """
@@ -159,7 +164,9 @@ class AppConfig(metaclass=Singleton):
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
     workspace_base: str = os.path.join(os.getcwd(), 'workspace')
-    workspace_mount_path: str | None = None
+    workspace_mount_path: str = (
+        UndefinedString.UNDEFINED  # this path should always be set when config is fully loaded
+    )
     workspace_mount_path_in_sandbox: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
@@ -374,7 +381,7 @@ def finalize_config(config: AppConfig):
     """
 
     # Set workspace_mount_path if not set by the user
-    if config.workspace_mount_path is None:
+    if config.workspace_mount_path is UndefinedString.UNDEFINED:
         config.workspace_mount_path = os.path.abspath(config.workspace_base)
     config.workspace_base = os.path.abspath(config.workspace_base)
 
