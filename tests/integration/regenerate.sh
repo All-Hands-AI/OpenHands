@@ -5,9 +5,6 @@ set -eo pipefail
 ##           CONSTANTS AND ENVIRONMENTAL VARIABLES          ##
 ##############################################################
 
-original_dir=$(pwd)
-echo $original_dir
-
 if [ -z $WORKSPACE_MOUNT_PATH ]; then
   WORKSPACE_MOUNT_PATH=$(pwd)
 fi
@@ -17,12 +14,15 @@ fi
 
 WORKSPACE_MOUNT_PATH+="/_test_workspace"
 WORKSPACE_BASE+="/_test_workspace"
-WORKSPACE_MOUNT_PATH_IN_SANDBOX="/workspace/_test_workspace"
-JUPYTER_PWD="/workspace"
+WORKSPACE_MOUNT_PATH_IN_SANDBOX="/workspace"
+
+# if [ -n "$WSL_DISTRO_NAME" ]; then
+#   WORKSPACE_MOUNT_PATH_IN_SANDBOX+="/_test_workspace"
+# fi
+
 echo "WORKSPACE_BASE: $WORKSPACE_BASE"
 echo "WORKSPACE_MOUNT_PATH: $WORKSPACE_MOUNT_PATH"
 echo "WORKSPACE_MOUNT_PATH_IN_SANDBOX: $WORKSPACE_MOUNT_PATH_IN_SANDBOX"
-echo "JUPYTER_PWD: $JUPYTER_PWD"
 
 mkdir -p $WORKSPACE_BASE
 
@@ -57,7 +57,7 @@ num_of_agents=${#agents[@]}
 
 # run integration test against a specific agent & test
 run_test() {
-  local pytest_cmd="poetry run pytest -sv ./tests/integration/test_agent.py::$test_name"
+  local pytest_cmd="poetry run pytest -v ./tests/integration/test_agent.py::$test_name"
 
   # Check if TEST_IN_CI is defined
   if [ -n "$TEST_IN_CI" ]; then
@@ -68,7 +68,6 @@ run_test() {
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
-    JUPYTER_PWD=$JUPYTER_PWD \
     MAX_ITERATIONS=$MAX_ITERATIONS \
     AGENT=$agent \
     $pytest_cmd
@@ -94,7 +93,6 @@ regenerate_without_llm() {
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
-    JUPYTER_PWD=$JUPYTER_PWD \
     MAX_ITERATIONS=$MAX_ITERATIONS \
     FORCE_APPLY_PROMPTS=true \
     AGENT=$agent \

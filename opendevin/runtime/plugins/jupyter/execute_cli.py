@@ -32,7 +32,6 @@ def execute_code(code, print_output=True):
 
 
 if jupyter_pwd := os.environ.get('JUPYTER_PWD'):
-    print(f'Jupyter PWD: {jupyter_pwd}')
     execute_code(
         f'import os\nos.environ["JUPYTER_PWD"] = "{jupyter_pwd}"\n', print_output=False
     )
