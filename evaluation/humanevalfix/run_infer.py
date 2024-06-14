@@ -151,14 +151,14 @@ def process_instance(
         if not skip_workspace_mount:
             workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
             pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
-        
+
         # reset workspace to config
         config.workspace_base = workspace_mount_path
         config.workspace_mount_path = workspace_mount_path
 
         # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
         if reset_logger:
-             # Set up logger
+            # Set up logger
             log_file = os.path.join(
                 eval_output_dir,
                 'logs',
@@ -174,7 +174,7 @@ def process_instance(
             logger.info(
                 f'Starting evaluation for instance {instance.task_id}.\nLOG:   tail -f {log_file}'
             )
-             # Remove all existing handlers from logger
+            # Remove all existing handlers from logger
             for handler in logger.handlers[:]:
                 logger.removeHandler(handler)
             file_handler = logging.FileHandler(log_file)
@@ -196,7 +196,7 @@ def process_instance(
         )
         with open(path, 'w') as f:
             f.write(problem_statement)
-        
+
         # Prepare instruction
         instruction = (
             f'Please fix the function in {instance.task_id.replace("/", "__")}.py such that all test cases pass.\n'
@@ -209,18 +209,22 @@ def process_instance(
             'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
             'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
         )
-        
+
         # NOTE: You can actually set slightly different instruction for different agents
         instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
-         
+
         # Here's how you can run the agent (similar to the `main` function) and get the final task state
-        effective_max_iterations = min(args.max_iterations, config.max_iterations_per_task)
+        effective_max_iterations = min(
+            args.max_iterations, config.max_iterations_per_task
+        )
 
         state: State = asyncio.run(
             main(
                 instruction,
-                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
-                max_iterations=effective_max_iterations
+                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
+                    agent_class
+                ),
+                max_iterations=effective_max_iterations,
             )
         )
         # ======= Attempt to evaluate the agent's edits =======
@@ -259,7 +263,7 @@ if __name__ == '__main__':
     # so we don't need to manage file uploading to OpenDevin's repo
 
     parser = get_parser()
-    
+
     args, _ = parser.parse_known_args()
 
     dataset = load_dataset(

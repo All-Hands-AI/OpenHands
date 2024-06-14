@@ -86,7 +86,7 @@ async def main(
 
     event_stream = EventStream('main')
 
-    max_iterations=args.max_iterations
+    max_iterations = args.max_iterations
 
     controller = AgentController(
         agent=agent,

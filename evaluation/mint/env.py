@@ -16,7 +16,13 @@ class SimplifiedEnv:
         'For example: The answer to the question is <solution> 42 </solution>. \n'
     )
 
-    def __init__(self, agent_state: State, task: Task, task_config: Dict[str, int], max_iterations_per_task: int):
+    def __init__(
+        self,
+        agent_state: State,
+        task: Task,
+        task_config: Dict[str, int],
+        max_iterations_per_task: int,
+    ):
         self.agent_state = agent_state
         self.task = task
 
@@ -130,8 +136,7 @@ class SimplifiedEnv:
             self.task_state.terminate_reason = 'max_propose_steps'
         elif (
             # (propose_solution + use_tool) > max iteration limit
-            sum(self.task_state.agent_action_count.values())
-            >= effective_max_iterations
+            sum(self.task_state.agent_action_count.values()) >= effective_max_iterations
         ):
             self.task_state.finished = True
             self.task_state.success = False

@@ -72,7 +72,9 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def process_instance(instance, agent_class, metadata, max_iterations, reset_logger: bool = True):
+def process_instance(
+    instance, agent_class, metadata, max_iterations, reset_logger: bool = True
+):
     # create process-specific workspace dir
     # we will create a workspace directory for EACH process
     # so that different agent don't interfere with each other.
@@ -145,7 +147,7 @@ def process_instance(instance, agent_class, metadata, max_iterations, reset_logg
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
                     agent_class
                 ),
-                max_iterations=max_iterations
+                max_iterations=max_iterations,
             )
         )
         # ======= Attempt to evaluate the agent's edits =======

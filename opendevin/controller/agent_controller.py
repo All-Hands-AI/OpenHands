@@ -40,6 +40,7 @@ MAX_ITERATIONS = config.max_iterations
 MAX_CHARS = config.llm.max_chars
 MAX_BUDGET_PER_TASK = config.max_budget_per_task
 
+
 class AgentController:
     id: str
     agent: Agent
@@ -80,10 +81,10 @@ class AgentController:
         self.max_chars = max_chars
         if initial_state is None:
             self.state = State(
-                inputs={}, 
-                max_iterations=max_iterations, 
+                inputs={},
+                max_iterations=max_iterations,
                 max_iterations_per_task=config.max_iterations_per_task,
-                global_iteration=0
+                global_iteration=0,
             )
         else:
             self.state = initial_state
@@ -218,7 +219,10 @@ class AgentController:
         state = State(
             inputs=action.inputs or {},
             iteration=0,
-            max_iterations=min(self.state.max_iterations, self.state.max_iterations_per_task - self.state.global_iteration),
+            max_iterations=min(
+                self.state.max_iterations,
+                self.state.max_iterations_per_task - self.state.global_iteration,
+            ),
             max_iterations_per_task=self.state.max_iterations_per_task,
             num_of_chars=self.state.num_of_chars,
             delegate_level=self.state.delegate_level + 1,

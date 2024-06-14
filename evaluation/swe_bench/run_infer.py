@@ -310,7 +310,7 @@ IMPORTANT TIPS:
             instruction,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
             sandbox=sandbox,
-            max_iterations=max_iterations,  
+            max_iterations=max_iterations,
         )
     )
 
@@ -388,7 +388,7 @@ if __name__ == '__main__':
         agent_class in AGENT_CLS_TO_FAKE_USER_RESPONSE_FN
     ), f'Unsupported agent class: {agent_class}'
     model_name = config.llm.model.split('/')[-1]
-    max_iterations = min(args.max_iterations, config.max_iterations_per_task) 
+    max_iterations = min(args.max_iterations, config.max_iterations_per_task)
     eval_note = ''
     if args.eval_note is not None:
         eval_note += '_N_' + args.eval_note
@@ -396,7 +396,7 @@ if __name__ == '__main__':
         args.eval_output_dir,
         'swe_bench_lite',
         agent_class,
-        model_name + '_maxiter_' + str(max_iterations) + eval_note,  
+        model_name + '_maxiter_' + str(max_iterations) + eval_note,
     )
 
     pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
@@ -408,7 +408,7 @@ if __name__ == '__main__':
     metadata = {
         'agent_class': agent_class,
         'model_name': model_name,
-        'max_iterations': max_iterations, 
+        'max_iterations': max_iterations,
         'eval_output_dir': eval_output_dir,
         'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
         # get the commit id of current repo for reproducibility

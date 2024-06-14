@@ -19,6 +19,7 @@ from .utils import (
     parse_html_tags_raise,
 )
 
+
 @dataclass
 class Flags:
     use_html: bool = True

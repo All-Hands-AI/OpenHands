@@ -65,7 +65,14 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def process_instance(instance, agent_class, metadata, max_iterations, openai_api_key, reset_logger: bool = True):
+def process_instance(
+    instance,
+    agent_class,
+    metadata,
+    max_iterations,
+    openai_api_key,
+    reset_logger: bool = True,
+):
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     eval_output_dir = metadata['eval_output_dir']
     if reset_logger:
@@ -260,7 +267,7 @@ if __name__ == '__main__':
     finished_items = set()
     if os.path.exists(output_file):
         with open(output_file, 'r') as f:
-            for line in f):
+            for line in f:
                 data = json.loads(line)
                 finished_items.add(data['instance_id'])
         logger.warning(

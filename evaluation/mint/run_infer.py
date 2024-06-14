@@ -130,8 +130,6 @@ def process_instance(
     )
     exit_code, output = sandbox.execute(f'pip install -r {requirements_sandbox_dest}')
 
-
-
     # Prepare instruction
     instruction = ToolPromptTemplate(use_tool=True)(
         max_total_steps=metadata['max_iterations'],
@@ -236,7 +234,7 @@ if __name__ == '__main__':
         agent_class in AGENT_CLS_TO_FAKE_USER_RESPONSE_FN
     ), f'Unsupported agent class: {agent_class}'
     model_name = config.llm.model.split('/')[-1]
-    max_iterations = min(args.max_iterations, config.max_iterations_per_task) 
+    max_iterations = min(args.max_iterations, config.max_iterations_per_task)
     eval_note = ''
     if args.eval_note is not None:
         eval_note += '_N_' + args.eval_note
