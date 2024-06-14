@@ -24,6 +24,8 @@ from opendevin.core.logger import opendevin_logger as logger
 
 __all__ = ['LLM']
 
+litellm.set_verbose = False
+
 
 class LLM:
     """
