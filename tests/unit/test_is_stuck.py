@@ -66,6 +66,7 @@ class TestAgentController:
             mock_warning.assert_called_once_with('Action, Observation loop detected')
 
     def test_is_stuck_repeating_action_error_observation(self, controller):
+        # (action, error_observation), not necessarily the same error
         message_action = MessageAction(content='Done', wait_for_response=False)
         message_action._source = EventSource.USER
         controller.state.history = [
@@ -185,14 +186,21 @@ class TestAgentController:
         ]
         assert controller._is_stuck() is False
 
-    def test_is_stuck_four_identical_tuples(self, controller):
+    def test_is_stuck_three_identical_tuples(self, controller):
+        # the same (action, observation), three times
+
+        # prepare messages to interrupt things
         message_action = MessageAction(content='Done', wait_for_response=False)
         message_action._source = EventSource.USER
+        message_action2 = MessageAction(content='Or not done?', wait_for_response=False)
+        message_action2._source = EventSource.USER
         controller.state.history = [
             (
                 MessageAction(content='Hello', wait_for_response=False),
                 Observation(content='Response 1'),
             ),
+            # message from the user shouldn't interfere with the detection
+            (message_action, NullObservation(content='')),
             (
                 CmdRunAction(command='ls'),
                 CmdOutputObservation(
@@ -207,17 +215,11 @@ class TestAgentController:
                 ),
             ),
             # message from the user shouldn't interfere with the detection
-            (message_action, NullObservation(content='')),
+            (message_action2, NullObservation(content='')),
             (
                 CmdRunAction(command='ls'),
                 CmdOutputObservation(
                     command_id=3, command='ls', content='file1.txt\nfile2.txt'
-                ),
-            ),
-            (
-                CmdRunAction(command='ls'),
-                CmdOutputObservation(
-                    command_id=4, command='ls', content='file1.txt\nfile2.txt'
                 ),
             ),
         ]
