@@ -1,8 +1,13 @@
 import collections
+import json
 import re
 from warnings import warn
 
+import requests
 import yaml
+from bs4 import BeautifulSoup
+
+from opendevin.core.logger import opendevin_logger as logger
 
 
 def yaml_parser(message):
@@ -158,3 +163,53 @@ def parse_html_tags(text, keys=(), optional_keys=(), merge_multiple=False):
     valid = len(retry_messages) == 0
     retry_message = '\n'.join(retry_messages)
     return content_dict, valid, retry_message
+
+
+def parse_github_branches(html_text):
+    """
+    Parse a text variable for GitHub's branches dropdown box and return a JSON-formatted list with their names.
+
+    Parameters:
+    - html_text (str): The HTML content containing the branches dropdown.
+
+    Returns:
+    - str: A JSON-formatted list of branch names.
+    """
+    soup = BeautifulSoup(html_text, 'html.parser')
+    branches = []
+
+    # Assuming the branches are in <a> tags with a specific class or attribute
+    for branch in soup.find_all('a', class_='branch-name'):
+        branches.append(branch.get_text(strip=True))
+
+    return json.dumps(branches, indent=2)
+
+
+def fetch_github_branches(
+    repo_owner: str, repo_name: str, token: str | None = None
+) -> str:
+    """
+    Fetches the branch names of a GitHub repository.
+
+    Parameters:
+    - repo_owner (str): The owner of the repository
+    - repo_name (str): The name of the repository
+    - token (str, optional): GitHub personal access token for authentication
+
+    Returns:
+    - str: A JSON-formatted list of branch names
+    """
+    headers = {}
+    if token:
+        headers['Authorization'] = f'token {token}'
+
+    url = f'https://api.github.com/repos/{repo_owner}/{repo_name}/branches'
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        branches = response.json()
+        return json.dumps([branch['name'] for branch in branches], indent=2)
+    else:
+        logger.error(
+            f'Failed to fetch branches: {response.status_code} {response.text}'
+        )
+        return json.dumps([])

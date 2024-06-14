@@ -331,6 +331,9 @@ and executed by a program, make sure to follow the formatting instructions.
 
 ## Goal:
 {goal}
+
+## Available Commands:
+- You can request GitHub branches using the following format: 'github branches of <owner>/<repository>'
 """
 
 

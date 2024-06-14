@@ -21,6 +21,10 @@ from opendevin.runtime.plugins import (
 )
 from opendevin.runtime.tools import RuntimeTool
 
+from .utils import (
+    fetch_github_branches,
+)
+
 USE_NAV = (
     os.environ.get('USE_NAV', 'true') == 'true'
 )  # only disable NAV actions when running webarena and miniwob benchmarks
@@ -98,6 +102,21 @@ class BrowsingAgent(Agent):
         error_prefix = ''
         last_obs = None
         last_action = None
+
+        if goal and 'github branches of' in goal:
+            try:
+                repo_info = goal.split('github branches of', 1)[1].strip()
+                repo_owner, repo_name = map(str.strip, repo_info.split('/', 1))
+                branches = fetch_github_branches(repo_owner, repo_name)
+                branches_list = ', '.join(branches)
+                return MessageAction(
+                    content=f'Branches in {repo_owner}/{repo_name}: {branches_list}'
+                )
+            except Exception as e:
+                logger.error(f'Error fetching Github branches: {e}')
+                return MessageAction(
+                    content='Sorry, I encountered an error while fetching the branches. Please check the repository information and try again.'
+                )
 
         if EVAL_MODE and len(state.history) == 1:
             # for webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
