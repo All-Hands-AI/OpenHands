@@ -8,6 +8,7 @@ from agenthub.codeact_agent.prompt import (
 )
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
+from opendevin.core.config import config
 from opendevin.events.action import (
     Action,
     AgentFinishAction,
@@ -219,6 +220,11 @@ class CodeActAgent(Agent):
                 return AgentFinishAction()
             latest_user_message['content'] += (
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'
+            )
+
+        if config.agent.is_autonomous:
+            messages.append(
+                {'role': 'agent', 'content': f'Iteration {state.iteration}'}
             )
 
         response = self.llm.do_completion(

@@ -184,12 +184,12 @@ class AgentController:
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState):
+        if new_state == self.state.agent_state:
+            return
+
         logger.info(
             f'[Agent Controller {self.id}] Setting agent({type(self.agent).__name__}) state from {self.state.agent_state} to {new_state}'
         )
-
-        if new_state == self.state.agent_state:
-            return
 
         self.state.agent_state = new_state
         if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:

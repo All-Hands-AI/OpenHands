@@ -1,6 +1,7 @@
 import re
 
 from opendevin.controller.action_parser import ActionParser, ResponseParser
+from opendevin.core.config import config
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
@@ -179,4 +180,13 @@ class CodeActActionParserMessage(ActionParser):
         return True
 
     def parse(self, action_str: str) -> Action:
-        return MessageAction(content=action_str, wait_for_response=True)
+        is_autonomous = config.agent.is_autonomous
+        if is_autonomous:
+            user_msg = (
+                '\n----------\n'
+                'Please continue working on the task on whatever approach you think is suitable.\n'
+                'If you think you have solved the task, you can give <finish> to end the interaction.\n'
+                'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
+            )
+            action_str += user_msg
+        return MessageAction(content=action_str, wait_for_response=not is_autonomous)

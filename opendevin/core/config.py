@@ -106,11 +106,13 @@ class AgentConfig(metaclass=Singleton):
         name: The name of the agent.
         memory_enabled: Whether long-term memory (embeddings) is enabled.
         memory_max_threads: The maximum number of threads indexing at the same time for embeddings.
+        is_autonomous: Whether the agent is autonomous.
     """
 
     name: str = 'CodeActAgent'
     memory_enabled: bool = False
     memory_max_threads: int = 2
+    is_autonomous: bool = False
 
     def defaults_to_dict(self) -> dict:
         """

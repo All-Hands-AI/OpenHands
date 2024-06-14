@@ -117,10 +117,10 @@ async def main(
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
                 if exit_on_message:
                     message = '/exit'
-                elif fake_user_response_fn is None:
-                    message = input('Request user input >> ')
-                else:
+                elif fake_user_response_fn:
                     message = fake_user_response_fn(controller.get_state())
+                else:
+                    message = input('Request user input >> ')
                 action = MessageAction(content=message)
                 await event_stream.add_event(action, EventSource.USER)
 
