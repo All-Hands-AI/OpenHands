@@ -3,7 +3,6 @@ max_iterations = 100
 cache_dir = "/tmp/cache"
 sandbox_container_image = "ghcr.io/opendevin/sandbox:latest"
 sandbox_type = "ssh"
-use_host_network = true
 ssh_hostname = "localhost"
 sandbox_timeout = 120
 persist_sandbox = false
@@ -16,7 +15,7 @@ enable_auto_lint = true
 # TODO: Change these to the model you want to evaluate
 [eval_gpt4o]
 model = "gpt-4o"
-api_key = "xxx"
+api_key = "XXX"
 temperature = 0.0
 
 [eval_some_openai_compatible_model]
