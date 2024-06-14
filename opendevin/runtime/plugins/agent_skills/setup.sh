@@ -17,4 +17,4 @@ echo 'export PYTHONPATH=/opendevin/plugins/agent_skills:$PYTHONPATH' >> ~/.bashr
 
 source ~/.bashrc
 
-/opendevin/miniforge3/bin/pip install flake8 python-docx PyPDF2 python-pptx pylatexenc openai opencv-python
+$OPENDEVIN_PYTHON_INTERPRETER -m pip install flake8 python-docx PyPDF2 python-pptx pylatexenc openai opencv-python
