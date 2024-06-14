@@ -1,4 +1,4 @@
-from .rag.playground import VectorIndex
+from .rag import IndexSettings, LocalRepository, RAGIndex
 from .repomap.repomap import RepoMap
 
-__all__ = ['RepoMap', 'VectorIndex']
+__all__ = ['RepoMap', 'RAGIndex', 'IndexSettings', 'LocalRepository']

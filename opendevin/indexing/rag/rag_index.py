@@ -1,5 +1,8 @@
+from llama_index.core import VectorStoreIndex
 from llama_index.core.ingestion import IngestionPipeline
-from llama_index.readers.gpt_repo import GPTRepoReader
+from llama_index.core.node_parser import CodeSplitter
+from llama_index.core.readers import SimpleDirectoryReader
+from llama_index.core.retrievers import VectorIndexRetriever
 
 from opendevin.indexing.rag.embedding import get_embedding_model
 from opendevin.indexing.rag.repository import LocalRepository
@@ -20,16 +23,39 @@ class RAGIndex:
         self._embedding_model = get_embedding_model(
             index_settings.embedding_model_provider, index_settings.embedding_model_name
         )
+        self._index = VectorStoreIndex.from_vector_store(
+            vector_store=self._vector_store,
+            embed_model=self._embedding_model,
+        )
+
+    def semantic_search(self, query: str, top_k: int = 5):
+        retriever = VectorIndexRetriever(
+            index=self._index,
+            similarity_top_k=top_k,
+        )
+        results = retriever.retrieve(query)
+        # return the text and the source info
+        return [(r.get_text(), r.node.metadata) for r in results]
 
     def run_ingestion(self):
         repo_path = self._repo.path
 
-        reader = GPTRepoReader()
-        documents = reader.load_data(
-            repo_path=repo_path, extensions=['.py', '.md', '.sh']
+        reader = SimpleDirectoryReader(
+            input_dir=repo_path,
+            # file_metadata=file_metadata_func,
+            # input_files=input_files,
+            filename_as_id=True,
+            required_exts=['.py'],  # TODO: Shouldn't be hardcoded and filtered
+            recursive=True,
         )
+        documents = reader.load_data(show_progress=True)
+        print(f'Loaded {len(documents)} documents.')
         ingest_pipeline = IngestionPipeline(
             transformations=[
+                CodeSplitter(
+                    language='python',
+                    max_chars=15000,
+                ),
                 self._embedding_model,
             ],
             vector_store=self._vector_store,
@@ -40,13 +66,24 @@ class RAGIndex:
 
 
 if __name__ == '__main__':
-    repo_path = './agenthub'
+    repo_path = '/home/ryan/sphinx'
     index_settings = IndexSettings(
         vector_engine='pinecone',
-        existing_index_name='test-code-index',
+        existing_index_name='index-dim-1536',
     )
     rag_index = RAGIndex(LocalRepository(repo_path), index_settings)
 
-    nodes = rag_index.run_ingestion()
+    # nodes = rag_index.run_ingestion()
 
-    print(f'Indexed {len(nodes)} nodes.')
+    # print(f'Indexed {len(nodes)} nodes.')
+
+    search_results = rag_index.semantic_search(
+        query='viewcode creates pages for epub even if `viewcode_enable_epub=False` on `make html epub`',
+        top_k=3,
+    )
+
+    for i, r in enumerate(search_results):
+        text, metadata = r
+        for key, value in metadata.items():
+            print(key + ': ' + str(value))
+        print(f'Text: {text}')

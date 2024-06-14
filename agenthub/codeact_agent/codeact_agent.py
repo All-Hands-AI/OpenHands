@@ -26,7 +26,7 @@ from opendevin.events.observation import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
-from opendevin.indexing import RepoMap, VectorIndex
+from opendevin.indexing import IndexSettings, LocalRepository, RAGIndex, RepoMap
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     AgentSkillsRequirement,
@@ -215,10 +215,20 @@ class CodeActAgent(Agent):
             else None
         )
 
-        self.vector_index = VectorIndex() if ENABLE_VECTOR_INDEX else None
-        if self.vector_index:
-            logger.info(f'Ingesting workspace at {config.workspace_base}')
-            self.vector_index.ingest_git_repo(repo_path=config.workspace_base)
+        repo_path = '/home/ryan/sphinx'
+        index_settings = IndexSettings(
+            vector_engine='pinecone',
+            existing_index_name='index-dim-1536',
+        )
+
+        # nodes = rag_index.run_ingestion()
+        # print(f'Indexed {len(nodes)} nodes.')
+
+        self.vector_index = (
+            RAGIndex(LocalRepository(repo_path), index_settings)
+            if ENABLE_VECTOR_INDEX
+            else None
+        )
 
     def reset(self) -> None:
         """
@@ -286,8 +296,8 @@ class CodeActAgent(Agent):
                         print('No match found.')
 
                 if latest_action_thought:
-                    search_results = self.vector_index.retrieve(
-                        query=latest_action_thought, k=4
+                    search_results = self.vector_index.semantic_search(
+                        query=latest_action_thought, top_k=3
                     )
                     search_results_str = ''
 
@@ -296,7 +306,9 @@ class CodeActAgent(Agent):
                         text, metadata = r
                         # for key, value in metadata.items():
                         #     search_results_str += (key + ": " + value + "\n")
-                        # search_results_str += ("Relative file name" + ": " + metadata['file_name'] + "\n")
+                        search_results_str += (
+                            'Relative file name' + ': ' + metadata['file_name'] + '\n'
+                        )
 
                         search_results_str += '\n' + text + '\n\n'
 
