@@ -1,6 +1,8 @@
 import uuid
 import warnings
 
+import requests
+
 from opendevin.server.data_models.feedback import FeedbackDataModel, store_feedback
 
 with warnings.catch_warnings():
@@ -82,7 +84,7 @@ async def websocket_endpoint(websocket: WebSocket):
     """
     WebSocket endpoint for receiving events from the client (i.e., the browser).
 
-    Once connected, you can send various actions:
+    Once connected, the client can send various actions:
     - Initialize the agent:
         ```json
         {"action": "initialize", "args": {"LLM_MODEL": "ollama/llama3", "AGENT": "CodeActAgent", "LANGUAGE": "en", "LLM_API_KEY": "ollama"}}
@@ -191,6 +193,16 @@ async def get_litellm_models():
     )
     bedrock_model_list = bedrock.list_foundation_models()
     model_list = litellm_model_list_without_bedrock + bedrock_model_list
+    if config.llm.model.startswith('ollama'):
+        # TODO: detect the run mode docker or local
+        # ollama_url = 'http://localhost:11434/api/tags'
+        ollama_url = 'http://host.docker.internal/api/tags'
+        try:
+            ollama_models_list = requests.get(ollama_url).json()['models']
+            for model in ollama_models_list:
+                model_list.append('ollama/' + model['name'])
+        except Exception as e:
+            logger.error(f'Error getting OLLAMA models: {e}', exc_info=True)
 
     return list(sorted(set(model_list)))
 
