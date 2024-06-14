@@ -1,5 +1,9 @@
 # SWE-Bench Evaluation with OpenDevin SWE-Bench Docker Image
 
+## Step0: Do not use Conda environment
+
+Running OpenDevin in the conda would cause long time connection when communicating with the sandbox.
+
 ## Step1: Run make build first.
 ```bash
 make build
