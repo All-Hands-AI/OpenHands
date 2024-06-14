@@ -4,8 +4,8 @@ from llama_index.core import VectorStoreIndex
 from llama_index.core.chat_engine.types import ChatMode
 from llama_index.core.postprocessor import SentenceEmbeddingOptimizer
 
+from opendevin.indexing.rag.playground import VectorIndex
 from opendevin.indexing.rag.postprocessing import DeduplicateNodePostprocessor
-from opendevin.indexing.rag.rag import VectorIndex
 
 load_dotenv()
 
