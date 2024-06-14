@@ -565,7 +565,7 @@ def parse_arguments():
     if args.directory:
         config.workspace_base = os.path.abspath(args.directory)
         print(f'Setting workspace base to {config.workspace_base}')
-    
+
     if args.max_iterations_per_task:
         config.max_iterations_per_task = args.max_iterations_per_task
 
