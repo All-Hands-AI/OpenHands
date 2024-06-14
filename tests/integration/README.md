@@ -130,12 +130,6 @@ regenerate regardless, you could remove everything under the
 
 ## Known Issues
 
-Sometimes you might see transient errors like
-`pexpect.pxssh.ExceptionPxssh: Could not establish connection to host`.
-The `regenerate.sh` script doesn't know this is a transient error and would
-still regenerate the test artifacts. You could simply terminate the script
-by pressing `CTRL+C` (or corresponding key on MacOS) and rerun the script.
-
 The test framework cannot handle non-determinism. If anything in the prompt (including
 observed result after executing an action) is non-deterministic (e.g. a PID), the
 test would fail. In this case, you might want to change conftest.py to filter out
