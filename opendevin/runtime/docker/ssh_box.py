@@ -223,7 +223,7 @@ class DockerSSHBox(Sandbox):
                 )
             path = config.workspace_mount_path
             path = ''.join(c if c.isalnum() else '_' for c in path)  # type: ignore
-            self.instance_id = 'persisted ' + path
+            self.instance_id = 'persisted-' + path
         else:
             self.instance_id = (sid or '') + str(uuid.uuid4())
 
