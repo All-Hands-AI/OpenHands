@@ -30,15 +30,14 @@ const messageActions = {
     if (message.source === "user") {
       store.dispatch(addUserMessage(message.args.content));
     } else {
-      let auto_msg = (
-                '\n----------\n'+
-                'Please continue working on the task on whatever approach you think is suitable.\n'+
-                'If you think you have solved the task, you can give <finish> to end the interaction.\n'+
-                'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
-            )
-      let msg = message.args.content
-      if (msg.includes(auto_msg)) {
-        msg = msg.replace(auto_msg, '🤖')
+      let autoMsg =
+        "\n----------\n" +
+        "Please continue working on the task on whatever approach you think is suitable.\n" +
+        "If you think you have solved the task, you can give <finish> to end the interaction.\n" +
+        "IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n";
+      let msg = message.args.content;
+      if (msg.includes(autoMsg)) {
+        msg = msg.replace(autoMsg, "🤖");
       }
       store.dispatch(addAssistantMessage(msg));
     }
