@@ -5,12 +5,8 @@ set -e
 # Hardcoded to use the Python interpreter from the OpenDevin runtime client
 OPENDEVIN_PYTHON_INTERPRETER=/opendevin/miniforge3/bin/python
 # check if OPENDEVIN_PYTHON_INTERPRETER exists and it is usable
-if [ -z "$OPENDEVIN_PYTHON_INTERPRETER" ]; then
-    echo "OPENDEVIN_PYTHON_INTERPRETER is not set"
-    exit 1
-fi
-if [ ! -x "$OPENDEVIN_PYTHON_INTERPRETER" ]; then
-    echo "OPENDEVIN_PYTHON_INTERPRETER is not usable"
+if [ -z "$OPENDEVIN_PYTHON_INTERPRETER" ] ||  [ ! -x "$OPENDEVIN_PYTHON_INTERPRETER" ]; then
+    echo "OPENDEVIN_PYTHON_INTERPRETER is not usable. Please pull the latest Docker image!"
     exit 1
 fi
 

@@ -62,7 +62,7 @@ class PluginMixin:
                     output.close()
                     if _exit_code != 0:
                         raise RuntimeError(
-                            f'Failed to initialize plugin {requirement.name} with exit code {_exit_code} and output {total_output}'
+                            f'Failed to initialize plugin {requirement.name} with exit code {_exit_code} and output: {total_output}'
                         )
                     logger.info(f'Plugin {requirement.name} initialized successfully')
                 else:
