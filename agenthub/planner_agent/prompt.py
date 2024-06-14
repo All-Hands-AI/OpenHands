@@ -169,10 +169,8 @@ def get_prompt(state: State) -> str:
 def parse_response(response: str) -> Action:
     """
     Parses the model output to find a valid action to take
-
     Parameters:
     - response (str): A response from the model that potentially contains an Action.
-
     Returns:
     - Action: A valid next action to perform from model output
     """

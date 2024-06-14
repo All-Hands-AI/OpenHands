@@ -1,13 +1,13 @@
 from opendevin.core.config import config
 from opendevin.core.utils import json
-from opendevin.events.action import (
-    Action,
-)
 from opendevin.events.observation import (
     CmdOutputObservation,
 )
-from opendevin.events.serialization.action import action_from_dict
+from opendevin.events.action import (
+    Action,
+)
 
+from opendevin.events.serialization.action import action_from_dict
 ACTION_PROMPT = """
 You're a thoughtful robot. Your main task is this:
 %(task)s
