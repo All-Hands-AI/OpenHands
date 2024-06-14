@@ -17,14 +17,6 @@ workspace_base = os.getenv('WORKSPACE_BASE')
 workspace_mount_path = os.getenv('WORKSPACE_MOUNT_PATH')
 workspace_mount_path_in_sandbox = os.getenv('WORKSPACE_MOUNT_PATH_IN_SANDBOX')
 
-# for WSL make sure we're testing in the same folder of an existing config.toml
-# wsl_distro_name = os.getenv('WSL_DISTRO_NAME')
-# if wsl_distro_name:
-#     print('\nWSL detected. Distro: ' + wsl_distro_name)
-#     workspace_mount_path_in_sandbox = os.path.join(
-#         workspace_mount_path_in_sandbox, '_test_workspace'
-#     )
-
 print('\nPaths used:')
 print(f'workspace_base: {workspace_base}')
 print(f'workspace_mount_path: {workspace_mount_path}')
