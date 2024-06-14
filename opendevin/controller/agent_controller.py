@@ -334,28 +334,35 @@ class AgentController:
             )
         ]
 
-        if len(filtered_history) < 4:
+        if len(filtered_history) < 3:
             return False
 
         # FIXME rewrite this to be more readable
 
-        # Check if the last four (Action, Observation) tuples are too repetitive
-        last_four_tuples = filtered_history[-4:]
+        # Scenario 1: the same (Action, Observation) loop
+        # 3 pairs of (action, observation) to stop the agent
+        last_three_tuples = filtered_history[-3:]
 
         if all(
             # (Action, Observation) tuples
-            # compare the last action to the last four actions
-            self._eq_no_pid(last_four_tuples[-1][0], _tuple[0])
-            for _tuple in last_four_tuples
+            # compare the last action to the last three actions
+            self._eq_no_pid(last_three_tuples[-1][0], _tuple[0])
+            for _tuple in last_three_tuples
         ) and all(
-            # compare the last observation to the last four observations
-            self._eq_no_pid(last_four_tuples[-1][1], _tuple[1])
-            for _tuple in last_four_tuples
+            # compare the last observation to the last three observations
+            self._eq_no_pid(last_three_tuples[-1][1], _tuple[1])
+            for _tuple in last_three_tuples
         ):
             logger.warning('Action, Observation loop detected')
             return True
 
-        # (action, error) tuples
+        if len(filtered_history) < 4:
+            return False
+
+        last_four_tuples = filtered_history[-4:]
+
+        # Scenario 2: (action, error) pattern, not necessary identical error
+        # 4 pairs of (action, error) to stop the agent
         if all(
             self._eq_no_pid(last_four_tuples[-1][0], _tuple[0])
             for _tuple in last_four_tuples
@@ -369,7 +376,8 @@ class AgentController:
 
         # check if the agent repeats the same (Action, Observation)
         # every other step in the last six tuples
-
+        # step1 = step3 = step5
+        # step2 = step4 = step6
         if len(filtered_history) >= 6:
             last_six_tuples = filtered_history[-6:]
             if (
