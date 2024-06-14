@@ -32,6 +32,7 @@ boto3 = "*"
 minio = "^7.2.7"
 gevent = "^24.2.1"
 pyarrow = "16.0.0" # transitive dependency, pinned here to avoid conflicts
+orjson = "3.9.12"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
