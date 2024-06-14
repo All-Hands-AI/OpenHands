@@ -59,13 +59,12 @@ def update_pwd_decorator(func):
     def wrapper(*args, **kwargs):
         old_pwd = os.getcwd()
         jupyter_pwd = os.environ.get('JUPYTER_PWD', None)
+        if jupyter_pwd:
+            os.chdir(jupyter_pwd)
         try:
-            if jupyter_pwd:
-                os.chdir(jupyter_pwd)
             return func(*args, **kwargs)
         finally:
-            if old_pwd:
-                os.chdir(old_pwd)
+            os.chdir(old_pwd)
 
     return wrapper
 
@@ -192,7 +191,6 @@ def _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=False):
 
 def _cur_file_header(CURRENT_FILE, total_lines):
     return f'[File: {os.path.abspath(CURRENT_FILE)} ({total_lines} lines total)]\n'
-    # return f'[File: {os.path.basename(CURRENT_FILE)} ({total_lines} lines total)]\n'
 
 
 def _edit_or_append_file(
@@ -380,9 +378,9 @@ def open_file(
     if not os.path.isfile(path):
         raise FileNotFoundError(f'File {path} not found')
 
-    with open(path) as file:
-        total_lines = sum(1 for _ in file)
     CURRENT_FILE = os.path.abspath(path)
+    with open(CURRENT_FILE) as file:
+        total_lines = sum(1 for _ in file)
 
     if line_number is not None:
         if (
