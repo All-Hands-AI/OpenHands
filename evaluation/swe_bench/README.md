@@ -1,5 +1,9 @@
 # SWE-Bench Evaluation with OpenDevin SWE-Bench Docker Image
 
+Run make build first.
+```bash
+make build
+```
 
 This folder contains evaluation harness we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)). We create [a fork of SWE-Bench](https://github.com/OpenDevin/OD-SWE-bench.git) mostly build on top of [the original repo](https://github.com/princeton-nlp/SWE-bench) and [containerized](#opendevin-swe-bench-docker-image) it for easy evaluation.
 
