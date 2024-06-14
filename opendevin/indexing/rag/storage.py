@@ -35,16 +35,19 @@ def get_pinecone_vector_store(
     embedding_dimentions: int, index_name: Optional[str] = None
 ) -> BasePydanticVectorStore:
     from llama_index.vector_stores.pinecone import PineconeVectorStore
-    from pinecone import Pinecone
+    from pinecone import Pinecone, ServerlessSpec
 
     db = Pinecone(
         api_key=os.getenv('PINECONE_API_KEY'),
     )
     if index_name is None:
-        pc_index = db.create_index(
-            name='mon_nouvel_indice', dimension=embedding_dimentions
+        index_name = 'mon-nouvel-indice'
+        db.create_index(
+            name=index_name,
+            dimension=embedding_dimentions,
+            spec=ServerlessSpec(cloud='aws', region='us-east-1'),
         )
-    else:
-        pc_index = db.Index(index_name)
+
+    pc_index = db.Index(index_name)
 
     return PineconeVectorStore(pinecone_index=pc_index)

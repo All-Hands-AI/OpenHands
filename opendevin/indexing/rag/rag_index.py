@@ -66,24 +66,23 @@ class RAGIndex:
 
 
 if __name__ == '__main__':
-    repo_path = '/home/ryan/sphinx'
+    repo_path = '/Users/ryan/Developer/OpenDevin'
     index_settings = IndexSettings(
         vector_engine='pinecone',
-        existing_index_name='index-dim-1536',
+        # existing_index_name='test-code-index',
     )
     rag_index = RAGIndex(LocalRepository(repo_path), index_settings)
 
-    # nodes = rag_index.run_ingestion()
+    nodes = rag_index.run_ingestion()
+    print(f'Indexed {len(nodes)} nodes.')
 
-    # print(f'Indexed {len(nodes)} nodes.')
+    # search_results = rag_index.semantic_search(
+    #     query='viewcode creates pages for epub even if `viewcode_enable_epub=False` on `make html epub`',
+    #     top_k=3,
+    # )
 
-    search_results = rag_index.semantic_search(
-        query='viewcode creates pages for epub even if `viewcode_enable_epub=False` on `make html epub`',
-        top_k=3,
-    )
-
-    for i, r in enumerate(search_results):
-        text, metadata = r
-        for key, value in metadata.items():
-            print(key + ': ' + str(value))
-        print(f'Text: {text}')
+    # for i, r in enumerate(search_results):
+    #     text, metadata = r
+    #     for key, value in metadata.items():
+    #         print(key + ': ' + str(value))
+    #     print(f'Text: {text}')

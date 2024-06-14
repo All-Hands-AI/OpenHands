@@ -111,6 +111,7 @@ class AgentConfig(metaclass=Singleton):
     name: str = 'CodeActAgent'
     memory_enabled: bool = False
     memory_max_threads: int = 2
+    existing_index_name: str | None = None
 
     def defaults_to_dict(self) -> dict:
         """

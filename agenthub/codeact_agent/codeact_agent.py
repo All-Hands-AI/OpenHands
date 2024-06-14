@@ -37,7 +37,7 @@ from opendevin.runtime.tools import RuntimeTool
 
 ENABLE_GITHUB = True
 ENABLE_REPOMAP = False
-ENABLE_VECTOR_INDEX = False
+ENABLE_VECTOR_INDEX = True
 
 
 def parse_response(response) -> str:
@@ -215,17 +215,16 @@ class CodeActAgent(Agent):
             else None
         )
 
-        repo_path = '/home/ryan/sphinx'
         index_settings = IndexSettings(
             vector_engine='pinecone',
-            existing_index_name='index-dim-1536',
+            existing_index_name=config.agent.existing_index_name,
         )
 
         # nodes = rag_index.run_ingestion()
         # print(f'Indexed {len(nodes)} nodes.')
 
         self.vector_index = (
-            RAGIndex(LocalRepository(repo_path), index_settings)
+            RAGIndex(LocalRepository(config.workspace_base), index_settings)
             if ENABLE_VECTOR_INDEX
             else None
         )
