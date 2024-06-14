@@ -1,13 +1,13 @@
 # SWE-Bench Evaluation with OpenDevin SWE-Bench Docker Image
 
-Run make build first.
+## Step1: Run make build first.
 ```bash
 make build
 ```
 
 This folder contains evaluation harness we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)). We create [a fork of SWE-Bench](https://github.com/OpenDevin/OD-SWE-bench.git) mostly build on top of [the original repo](https://github.com/princeton-nlp/SWE-bench) and [containerized](#opendevin-swe-bench-docker-image) it for easy evaluation.
 
-## OpenDevin SWE-Bench Docker Image
+## Step2: OpenDevin SWE-Bench Docker Image
 
 In [OpenDevin-SWE-Bench fork](https://github.com/OpenDevin/OD-SWE-bench.git) (mostly from [original repo](https://github.com/princeton-nlp/SWE-bench) with some fixes), we try to pre-build the **testbed** (i.e., code of the repository we want the agent to edit) AND the **conda environment**, so that in evaluation (inference) time, we can directly leverage existing environments for effecienct evaluation.
 
@@ -32,7 +32,7 @@ To reproduce how we pack the image, check [this doc](./BUILD_TESTBED_AND_ENV.md)
 
 NOTE: We only support SWE-Bench lite for now. But modifying our existing scripts for full SWE-Bench should be quite straight forward.
 
-## Test if your environment works
+## Step3: Test if your environment works
 
 ```bash
 poetry run python3 evaluation/swe_bench/swe_env_box.py
@@ -40,9 +40,9 @@ poetry run python3 evaluation/swe_bench/swe_env_box.py
 
 If you get to the interactive shell successfully, it means success!
 
-## Configure your LLM
+## Step4: Configure your LLM
 
-Create a `config.toml` file if not exists at the root of workspace.
+Create a `config.toml` file by copying my pyproject.toml.template and fill in the API key.
 
 Add the following configurations:
 
@@ -50,16 +50,16 @@ Add the following configurations:
 check pyproject.toml.template for reference
 ```
 
-## Run Inference on SWE-Bench Instances
+## Step5: Run Inference on SWE-Bench Instances
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview
+./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4o
 ```
 
-You can replace `eval_gpt4_1106_preview` with any model you setted up in `config.toml`.
+You can replace `eval_gpt4o` with any model you setted up in `config.toml`.
 
 
-## Evaluate Generated Patches
+## Step6: Evaluate Generated Patches
 
 After running the inference described in the previous section, you will obtain a `output.jsonl` (by default it will save to `evaluation/evaluation_outputs`). Then you can run this one line script to evaluate generated patches, and produce a fine-grained report:
 
