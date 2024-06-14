@@ -26,7 +26,7 @@ SANDBOX_TYPE="${SANDBOX_TYPE:-ssh}"
 PERSIST_SANDBOX=false
 MAX_ITERATIONS=10
 
-agents=("DelegatorAgent" "ManagerAgent" "BrowsingAgent" "MonologueAgent" "CodeActAgent" "PlannerAgent")
+agents=("DelegatorAgent" "ManagerAgent" "BrowsingAgent" "MonologueAgent" "CodeActAgent" "PlannerAgent" "CodeActSWEAgent")
 tasks=(
   "Fix typos in bad.txt."
   "Write a shell script 'hello.sh' that prints 'hello'."
