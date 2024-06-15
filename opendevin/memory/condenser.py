@@ -74,8 +74,7 @@ class MemoryCondenser:
             # aside from them, there are some (mostly or firstly) non-summarizable actions
             # like AgentDelegateAction or AgentFinishAction
             if not self._is_summarizable(event):
-                if chunk:
-                    # TODO exclude agent single-messages
+                if chunk and len(chunk) > 1:
                     # we've just gathered a chunk to summarize
                     summary_action = self._summarize_chunk(chunk)
 
@@ -91,6 +90,8 @@ class MemoryCondenser:
                     history.add_summary(summary_action)
                     return summary_action
                 else:
+                    # reset the chunk if it has just one event
+                    chunk = []
                     chunk_start_id = None
                     last_summarizable_id = None
             else:
@@ -100,7 +101,7 @@ class MemoryCondenser:
                 last_summarizable_id = event.id
                 chunk.append(event)
 
-        if chunk:
+        if chunk and len(chunk) > 1:
             summary_action = self._summarize_chunk(chunk)
 
             # keep mypy happy

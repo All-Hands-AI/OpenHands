@@ -35,7 +35,6 @@ from opendevin.events.observation import (
     NullObservation,
     Observation,
 )
-from opendevin.memory.history import ShortTermHistory
 
 MAX_ITERATIONS = config.max_iterations
 MAX_CHARS = config.llm.max_chars
@@ -320,18 +319,16 @@ class AgentController:
         state: State | None = None,
         max_iterations: int = MAX_ITERATIONS,
     ):
+        # state from the previous session, state from a parent agent, or a new state
+        # note that this is called twice when restoring a previous session, first with state=None
         if state is None:
             self.state = State(inputs={}, max_iterations=max_iterations)
         else:
             self.state = state
 
-        # initialize short term memory
-        history = (
-            ShortTermHistory()
-            if state is None or not hasattr(state, 'history') or state.history is None
-            else state.history
-        )
-        history.set_event_stream(self.event_stream)
+        # when restored from a previous session, the State object will have history, start_id, and end_id
+        # connect it to the event stream
+        self.state.history.set_event_stream(self.event_stream)
 
         # if start_id was not set in State, we're starting fresh, at the top of the stream
         start_id = self.state.start_id
@@ -339,9 +336,15 @@ class AgentController:
             start_id = self.event_stream.get_latest_event_id() + 1
         else:
             logger.debug(f'AgentController {self.id} restoring from event {start_id}')
+
+        # make sure history is in sync
         self.state.start_id = start_id
-        history.start_id = start_id
-        self.state.history = history
+        self.state.history.start_id = start_id
+
+        # if there was an end_id saved in State, set it in history
+        # currently used only for delegates internally in history
+        if self.state.end_id > -1:
+            self.state.history.end_id = self.state.end_id
 
     def _is_stuck(self):
         # check if delegate stuck

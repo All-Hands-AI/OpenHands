@@ -125,7 +125,7 @@ async def main(
 
     # start event is a MessageAction with the task, either resumed or new
     if config.enable_main_session and initial_state is not None:
-        # resume the previous session
+        # we're resuming the previous session
         event_stream.add_event(
             MessageAction(
                 content="Let's get back on track. If you experienced errors before, do NOT resume your task. Ask me about it."
@@ -161,9 +161,12 @@ async def main(
     ]:
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
-    # close when the task is done
-    end_state = controller.get_state()
-    end_state.save_to_session('main')
+    # save session when we're about to close
+    if config.enable_main_session:
+        end_state = controller.get_state()
+        end_state.save_to_session('main')
+
+    # close when done
     await controller.close()
     runtime.close()
     return controller.get_state()

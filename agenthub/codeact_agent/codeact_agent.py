@@ -53,7 +53,7 @@ def action_to_str(action: Action) -> str:
     elif isinstance(action, MessageAction):
         return action.content
     elif isinstance(action, AgentSummarizeAction):
-        return f'Agent made actions like {action.summarized_actions} with the result: {action.summary}'
+        return action.summary
     return ''
 
 
