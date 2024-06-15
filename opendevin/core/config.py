@@ -170,8 +170,9 @@ class AppConfig(metaclass=Singleton):
         else ':main'
     )
     run_as_devin: bool = True
-    max_iterations_per_task: int = 1000
-    max_iterations: int = 100
+    max_iterations_per_task: int = 100
+    max_iterations: int = 1000
+    global_max_iterations: int = 1000
     max_budget_per_task: float | None = None
     e2b_api_key: str = ''
     sandbox_type: str = 'ssh'  # Can be 'ssh', 'exec', or 'e2b'
@@ -196,6 +197,11 @@ class AppConfig(metaclass=Singleton):
         """
         Post-initialization hook, called when the instance is created with only default values.
         """
+        # Ensure the max_iterations are set based on configuration if not explicitly set
+        if self.max_iterations == 100:  
+            self.max_iterations = config.global_max_iterations
+        if self.max_iterations_per_task == 100:  
+            self.max_iterations_per_task = config.max_iterations_per_task
         AppConfig.defaults_dict = self.defaults_to_dict()
 
     def defaults_to_dict(self) -> dict:

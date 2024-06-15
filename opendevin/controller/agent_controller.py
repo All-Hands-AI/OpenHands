@@ -220,8 +220,8 @@ class AgentController:
             inputs=action.inputs or {},
             iteration=0,
             max_iterations=min(
-                self.state.max_iterations,
-                self.state.max_iterations_per_task - self.state.global_iteration,
+                self.state.max_iterations, 
+                config.global_max_iterations - self.state.global_iteration
             ),
             max_iterations_per_task=self.state.max_iterations_per_task,
             num_of_chars=self.state.num_of_chars,
@@ -294,7 +294,8 @@ class AgentController:
             f'{type(self.agent).__name__} LEVEL {self.state.delegate_level} STEP {self.state.iteration}',
             extra={'msg_type': 'STEP'},
         )
-        if self.state.iteration >= self.state.max_iterations:
+        if (self.state.iteration >= self.state.max_iterations or
+            self.state.global_iteration >= config.global_max_iterations):
             await self.report_error('Agent reached maximum number of iterations')
             await self.set_agent_state_to(AgentState.ERROR)
             return

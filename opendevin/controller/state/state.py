@@ -15,6 +15,7 @@ from opendevin.events.observation import (
     Observation,
 )
 from opendevin.storage import get_file_store
+from opendevin.core.config import config
 
 RESUMABLE_STATES = [
     AgentState.RUNNING,
@@ -28,8 +29,8 @@ RESUMABLE_STATES = [
 class State:
     root_task: RootTask = field(default_factory=RootTask)
     iteration: int = 0
-    max_iterations: int = 100
-    max_iterations_per_task: int = 100
+    max_iterations: int = 100 # Default to a sensible task-specific limit
+    max_iterations_per_task: int = 100 # Default to a sensible per-task limit
     global_iteration: int = 0
     # number of characters we have sent to and received from LLM so far for current task
     num_of_chars: int = 0
@@ -44,6 +45,14 @@ class State:
     metrics: Metrics = Metrics()
     # root agent has level 0, and every delegate increases the level by one
     delegate_level: int = 0
+    
+    def __post_init__(self):
+        # Ensure the max_iterations are set based on configuration if not explicitly set
+        if self.max_iterations == 100:
+            self.max_iterations = config.global_max_iterations
+        if self.max_iterations_per_task == 100:
+            self.max_iterations_per_task = config.max_iterations_per_task
+
 
     def save_to_session(self, sid: str):
         fs = get_file_store()
