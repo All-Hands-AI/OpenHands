@@ -36,6 +36,7 @@ check-dependencies:
 	@echo "$(YELLOW)Checking dependencies...$(RESET)"
 	@$(MAKE) -s check-system
 	@$(MAKE) -s check-python
+	@$(MAKE) -s check-netcat
 	@$(MAKE) -s check-npm
 	@$(MAKE) -s check-nodejs
 ifeq ($(INSTALL_DOCKER),)
@@ -66,11 +67,10 @@ check-python:
 	@if command -v python$(PYTHON_VERSION) > /dev/null; then \
 		echo "$(BLUE)$(shell python$(PYTHON_VERSION) --version) is already installed.$(RESET)"; \
 	else \
-		echo "$(RED)Python $(PYTHON_VERSION) is not installed. Please install Python $(PYTHON_VERSION) to continue.$(RESET)"; \
 		echo "$(GREEN)Python $(PYTHON_VERSION) is not installed. Installing Python $(PYTHON_VERSION)...$(RESET)"; \
-		sudo add-apt-repository ppa:deadsnakes/ppa \
-		sudo apt update \
-		sudo apt install -y python$(PYTHON_VERSION) \
+		sudo add-apt-repository ppa:deadsnakes/ppa; \
+		sudo apt update; \
+		sudo apt install -y python$(PYTHON_VERSION); \
 	fi
 
 check-netcat:
@@ -79,7 +79,7 @@ check-netcat:
 		echo "$(BLUE)nc is already installed.$(RESET)"; \
 	else \
 		echo "$(GREEN)nc is not installed. Installing nc...$(RESET)"; \
-		sudo apt install -y netcat \
+		sudo apt install -y netcat; \
 	fi
 
 check-npm:
