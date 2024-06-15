@@ -67,7 +67,19 @@ check-python:
 		echo "$(BLUE)$(shell python$(PYTHON_VERSION) --version) is already installed.$(RESET)"; \
 	else \
 		echo "$(RED)Python $(PYTHON_VERSION) is not installed. Please install Python $(PYTHON_VERSION) to continue.$(RESET)"; \
-		exit 1; \
+		echo "$(GREEN)Python $(PYTHON_VERSION) is not installed. Installing Python $(PYTHON_VERSION)...$(RESET)"; \
+		sudo add-apt-repository ppa:deadsnakes/ppa \
+		sudo apt update \
+		sudo apt install -y python$(PYTHON_VERSION) \
+	fi
+
+check-netcat:
+	@echo "$(YELLOW)Checking netcat installation...$(RESET)"
+	@if command -v nc > /dev/null; then \
+		echo "$(BLUE)nc is already installed.$(RESET)"; \
+	else \
+		echo "$(GREEN)nc is not installed. Installing nc...$(RESET)"; \
+		sudo apt install -y netcat \
 	fi
 
 check-npm:
@@ -304,4 +316,4 @@ help:
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: build check-dependencies check-python check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-precommit-hooks lint start-backend start-frontend run setup-config setup-config-prompts help
+.PHONY: build check-dependencies check-python check-netcat check-npm check-docker check-poetry pull-docker-image install-python-dependencies install-frontend-dependencies install-precommit-hooks lint start-backend start-frontend run setup-config setup-config-prompts help
