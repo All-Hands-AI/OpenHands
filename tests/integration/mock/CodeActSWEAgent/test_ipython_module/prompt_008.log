@@ -17,8 +17,8 @@ open_file(path: str, line_number: Optional[int] = None, context_lines: Optional[
     Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
     Args:
     path: str: The path to the file to open.
-    line_number: Optional[int]: The line number to move to.
-    context_lines: Optional[int]: The total number of lines to display in the window. Defaults to 100.
+    line_number: int | None = 1: The line number to move to. Defaults to 1.
+    context_lines: int | None = 100: The total number of lines to display in the window, with line_number as the center (if possible). Defaults to 100.
 
 goto_line(line_number: int) -> None:
     Moves the window to show the specified line number.
