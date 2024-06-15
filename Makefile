@@ -67,10 +67,16 @@ check-python:
 	@if command -v python$(PYTHON_VERSION) > /dev/null; then \
 		echo "$(BLUE)$(shell python$(PYTHON_VERSION) --version) is already installed.$(RESET)"; \
 	else \
-		echo "$(GREEN)Python $(PYTHON_VERSION) is not installed. Installing Python $(PYTHON_VERSION)...$(RESET)"; \
-		sudo add-apt-repository ppa:deadsnakes/ppa; \
-		sudo apt update; \
-		sudo apt install -y python$(PYTHON_VERSION); \
+		if command -v apt > /dev/null; then \
+			echo "$(GREEN)Python $(PYTHON_VERSION) is not installed. Installing Python $(PYTHON_VERSION)...$(RESET)"; \
+			sudo add-apt-repository ppa:deadsnakes/ppa; \
+			sudo apt update; \
+			sudo apt install -y python$(PYTHON_VERSION); \
+			sudo apt install -y python$(PYTHON_VERSION);-distutils; \
+		else \
+			echo "$(RED)Python $(PYTHON_VERSION) is not installed. Please install Python $(PYTHON_VERSION) to continue.$(RESET)"; \
+			exit 1; \
+		fi; \
 	fi
 
 check-netcat:
@@ -78,8 +84,13 @@ check-netcat:
 	@if command -v nc > /dev/null; then \
 		echo "$(BLUE)nc is already installed.$(RESET)"; \
 	else \
-		echo "$(GREEN)nc is not installed. Installing nc...$(RESET)"; \
-		sudo apt install -y netcat; \
+		if command -v apt > /dev/null; then \
+			echo "$(GREEN)nc is not installed. Installing nc...$(RESET)"; \
+			sudo apt install -y netcat; \
+		else \
+			echo "$(RED)nc is not installed. Please install nc to continue.$(RESET)"; \
+			exit 1; \
+		fi; \
 	fi
 
 check-npm:
