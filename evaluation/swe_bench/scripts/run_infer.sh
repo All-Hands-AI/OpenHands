@@ -2,16 +2,10 @@
 MODEL_CONFIG=$1
 AGENT=$2
 EVAL_LIMIT=$3
-MAX_ITER=$4
 
 if [ -z "$AGENT" ]; then
   echo "Agent not specified, use default CodeActAgent"
   AGENT="CodeActAgent"
-fi
-
-if [ -z "$MAX_ITER" ]; then
-  echo "MAX_ITER not specified, use default 30"
-  MAX_ITER=30
 fi
 
 # IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of OpenDevin
@@ -38,7 +32,7 @@ unset SANDBOX_ENV_GITHUB_TOKEN # prevent the agent from using the github token t
 COMMAND="poetry run python evaluation/swe_bench/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
-  --max-iterations $MAX_ITER \
+  --max-iterations 30 \
   --max-chars 10000000 \
   --eval-num-workers 8 \
   --eval-note $EVAL_NOTE"
