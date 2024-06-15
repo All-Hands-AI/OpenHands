@@ -19,8 +19,8 @@ For example, you can list the files in the current directory by <execute_bash> l
 """
 
 SYSTEM_SUFFIX = """The assistant's response should be concise.
-The assistant should include ONLY ONE <execute_ipython> or <execute_bash> or <execute_browse> in every one of the responses, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
-IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> or <execute_browse> instead of providing it.
+The assistant should include ONLY ONE <execute_ipython> or <execute_bash> in every one of the responses, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
+IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
 """
 
 SWE_EXAMPLE = """
