@@ -87,16 +87,11 @@ def _is_valid_filename(file_name) -> bool:
 
 
 def _is_valid_path(path) -> bool:
-    try:
-        # Normalize the path
-        normalized_path = os.path.normpath(path)
-        # Check if the normalized path is the same as the original path
-        if normalized_path == path:
-            # Check if the path exists
-            return os.path.exists(path)
+    if not path or not isinstance(path, str):
         return False
+    try:
+        return os.path.exists(os.path.normpath(path))
     except Exception:
-        # If an exception is raised, the path is not valid
         return False
 
 
