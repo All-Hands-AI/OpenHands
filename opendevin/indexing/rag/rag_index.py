@@ -1,13 +1,21 @@
+from typing import List, Optional
+
 from llama_index.core import VectorStoreIndex
 from llama_index.core.ingestion import IngestionPipeline
-from llama_index.core.node_parser import CodeSplitter
+from llama_index.core.node_parser import CodeSplitter, NodeParser
 from llama_index.core.readers import SimpleDirectoryReader
-from llama_index.core.retrievers import VectorIndexRetriever
+from llama_index.core.vector_stores.types import (
+    FilterCondition,
+    MetadataFilter,
+    MetadataFilters,
+    VectorStoreQuery,
+)
 
-from opendevin.indexing.rag.embedding import get_embedding_model
-from opendevin.indexing.rag.repository import LocalRepository
-from opendevin.indexing.rag.settings import IndexSettings
-from opendevin.indexing.rag.storage import get_vector_store
+from .embedding import get_embedding_model
+from .repository import LocalRepository
+from .settings import IndexSettings
+from .storage import get_vector_store
+from .types import RetrievedCodeSnippet, SearchCodeResponse
 
 
 class RAGIndex:
@@ -15,9 +23,15 @@ class RAGIndex:
         self,
         repo: LocalRepository,
         index_settings: IndexSettings,
+        splitter: Optional[NodeParser] = None,
     ) -> None:
         self._repo = repo
         self._index_settings = index_settings
+        self._splitter = (
+            splitter
+            if splitter is not None
+            else CodeSplitter(language='python', max_chars=15000)
+        )
         self._vector_store = get_vector_store(settings=index_settings)
 
         self._embedding_model = get_embedding_model(
@@ -27,15 +41,6 @@ class RAGIndex:
             vector_store=self._vector_store,
             embed_model=self._embedding_model,
         )
-
-    def semantic_search(self, query: str, top_k: int = 5):
-        retriever = VectorIndexRetriever(
-            index=self._index,
-            similarity_top_k=top_k,
-        )
-        results = retriever.retrieve(query)
-        # return the text and the source info
-        return [(r.get_text(), r.node.metadata) for r in results]
 
     def run_ingestion(self):
         repo_path = self._repo.path
@@ -52,10 +57,7 @@ class RAGIndex:
         print(f'Loaded {len(documents)} documents.')
         ingest_pipeline = IngestionPipeline(
             transformations=[
-                CodeSplitter(
-                    language='python',
-                    max_chars=15000,
-                ),
+                self._splitter,
                 self._embedding_model,
             ],
             vector_store=self._vector_store,
@@ -63,6 +65,44 @@ class RAGIndex:
 
         embedded_nodes = ingest_pipeline.run(documents=documents, show_progress=True)
         return embedded_nodes
+
+    def semantic_search(
+        self, query: Optional[str] = None, top_k: int = 5
+    ) -> SearchCodeResponse:
+        # retriever = VectorIndexRetriever(
+        #     index=self._index,
+        #     similarity_top_k=top_k,
+        # )
+        # results = retriever.retrieve(query)
+        # return [(r.get_text(), r.node.metadata) for r in results]
+
+        # TODO:
+        search_results = self._vector_search(query or '')
+        print(search_results)
+        raise NotImplementedError()
+
+    def _vector_search(
+        self,
+        query: str,
+        category: str = 'implementation',
+    ) -> List[RetrievedCodeSnippet]:
+        query_embedding = self._embedding_model.get_query_embedding(query)
+        filters = MetadataFilters(filters=[], condition=FilterCondition.AND)
+        if category:
+            filters.filters.append(MetadataFilter(key='category', value=category))
+        query_bundle = VectorStoreQuery(
+            query_str=query,
+            query_embedding=query_embedding,
+            similarity_top_k=100,  # FIXME: Hardcoded
+            filters=filters,
+        )
+
+        result = self._vector_store.query(query=query_bundle)
+        for node_id, sim_score in zip(result.ids, result.similarities):
+            # TODO: convert to `RetrievedCodeSnippet`
+            continue
+
+        raise NotImplementedError()
 
 
 if __name__ == '__main__':
