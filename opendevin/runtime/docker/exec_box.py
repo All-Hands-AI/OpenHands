@@ -107,7 +107,7 @@ class DockerExecBox(Sandbox):
     def __init__(
         self,
         container_image: str | None = None,
-        timeout: int = config.sandbox_timeout,
+        timeout: int = config.sandbox.timeout,
         sid: str | None = None,
     ):
         # Initialize docker client. Throws an exception if Docker is not reachable.
@@ -130,7 +130,7 @@ class DockerExecBox(Sandbox):
         # if it is too long, the user may have to wait for a unnecessary long time
         self.timeout = timeout
         self.container_image = (
-            config.sandbox_container_image
+            config.sandbox.container_image
             if container_image is None
             else container_image
         )
@@ -360,7 +360,7 @@ class DockerExecBox(Sandbox):
 
     @property
     def user_id(self):
-        return config.sandbox_user_id
+        return config.sandbox.user_id
 
     @property
     def run_as_devin(self):
