@@ -538,27 +538,42 @@ Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt
 
 ----------
 
-Let's start by installing the `pymsgbox` package.
-<execute_bash>
-pip install pymsgbox==1.0.9
-</execute_bash>
+Understood! Let's proceed by installing the `pymsgbox` package version 1.0.9:
+
+
+```
+pythonCopy code``
+```
+Once the installation is complete, we'll import `pymsgbox` and print its version to a file named `test.txt` in the `/workspace` directory. Let's continue!
+<execute_ipython>
+# Install pymsgbox version 1.0.9
+%pip install pymsgbox==1.0.9
+</execute_ipython>
 
 ----------
 
 OBSERVATION:
-Package installed successfully
-[Command -1 finished with exit code 0]]
+[Package installed successfully]
+[Kernel restarted successfully to load the package]
 
 ----------
 
-Next, let's import `pymsgbox`, get its version, and write it to `/workspace/test.txt`.
+Now that `pymsgbox` is installed, let's import it and print its version to a file named `test.txt`:
+
+
+```
+pythonCopy code``
+```
+This will import `pymsgbox`, retrieve its version, and then write the version to the `test.txt` file in the `/workspace` directory.
 <execute_ipython>
 import pymsgbox
 
-version = pymsgbox.__version__
+# Get the version of pymsgbox
+pymsgbox_version = pymsgbox.__version__
 
-with open("/workspace/test.txt", "w") as file:
-    file.write(f"pymsgbox version: {version}\n")
+# Write the version to a file
+with open("/workspace/test.txt", "w") as f:
+    f.write(pymsgbox_version)
 </execute_ipython>
 
 ----------
