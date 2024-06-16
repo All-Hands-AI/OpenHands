@@ -549,7 +549,7 @@ chmod +x hello.sh
 
 OBSERVATION:
 
-[Command -1 finished with exit code 0]]
+[Command -1 finished with exit code 0]
 
 ----------
 
@@ -562,6 +562,6 @@ The shell script `hello.sh` has been created and made executable. Let's run it t
 
 OBSERVATION:
 hello
-[Command -1 finished with exit code 0]]
+[Command -1 finished with exit code 0]
 
 ENVIRONMENT REMINDER: You have 7 turns left to complete the task.

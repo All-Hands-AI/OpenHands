@@ -225,11 +225,13 @@ def open_file(
 ) -> None:
     """
     Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
+    It only shows the first 100 lines by default! Max `context_lines` supported is 2000, use `scroll up/down`
+    to view the file if you want to see more.
 
     Args:
         path: str: The path to the file to open, preferredly absolute path.
         line_number: int | None = 1: The line number to move to. Defaults to 1.
-        context_lines: int | None = 100: The total number of lines to display in the window, with line_number as the center (if possible). Defaults to 100.
+        context_lines: int | None = 100: Only shows this number of lines in the context window (usually from line 1), with line_number as the center (if possible). Defaults to 100.
     """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
 
@@ -335,16 +337,16 @@ def _edit_or_append_file(
     start: int | None = None,
     end: int | None = None,
     content: str = '',
-    isAppend: bool = False,
+    is_append: bool = False,
 ) -> None:
     """Internal method to handle common logic for edit_/append_file methods.
 
     Args:
         file_name: str: The name of the file to edit or append to.
-        start: int | None = None: The start line number for editing. Ignored if isAppend is True.
-        end: int | None = None: The end line number for editing. Ignored if isAppend is True.
+        start: int | None = None: The start line number for editing. Ignored if is_append is True.
+        end: int | None = None: The end line number for editing. Ignored if is_append is True.
         content: str: The content to replace the lines with or to append.
-        isAppend: bool = False: Whether to append content to the file instead of editing.
+        is_append: bool = False: Whether to append content to the file instead of editing.
     """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
 
@@ -381,11 +383,13 @@ def _edit_or_append_file(
             with open(file_name) as original_file:
                 lines = original_file.readlines()
 
-            if isAppend:
+            if is_append:
                 if lines and not (len(lines) == 1 and lines[0].strip() == ''):
                     if not lines[-1].endswith('\n'):
                         lines[-1] += '\n'
-                    content = ''.join(lines) + content
+                    content_lines = content.splitlines(True)
+                    new_lines = lines + content_lines
+                    content = ''.join(new_lines)
             else:
                 # Handle cases where start or end are None
                 if start is None:
@@ -416,7 +420,8 @@ def _edit_or_append_file(
                     return
                 if not content.endswith('\n'):
                     content += '\n'
-                new_lines = lines[: start - 1] + [content] + lines[end:]
+                content_lines = content.splitlines(True)
+                new_lines = lines[: start - 1] + content_lines + lines[end:]
                 content = ''.join(new_lines)
 
             if not content.endswith('\n'):
@@ -490,7 +495,7 @@ def _edit_or_append_file(
     if first_error_line is not None and int(first_error_line) > 0:
         CURRENT_LINE = first_error_line
     else:
-        if isAppend:
+        if is_append:
             CURRENT_LINE = max(1, len(lines))  # end of original file
         else:
             CURRENT_LINE = start or n_total_lines or 1
@@ -507,6 +512,7 @@ def edit_file(file_name: str, start: int, end: int, content: str) -> None:
     """Edit a file.
 
     Replaces in given file `file_name` the lines `start` through `end` (inclusive) with the given text `content`.
+    If a line must be inserted, an already existing line must be passed in `content` with new content accordingly!
 
     Args:
         file_name: str: The name of the file to edit.
@@ -515,7 +521,7 @@ def edit_file(file_name: str, start: int, end: int, content: str) -> None:
         content: str: The content to replace the lines with.
     """
     _edit_or_append_file(
-        file_name, start=start, end=end, content=content, isAppend=False
+        file_name, start=start, end=end, content=content, is_append=False
     )
 
 
@@ -529,7 +535,7 @@ def append_file(file_name: str, content: str) -> None:
         file_name: str: The name of the file to append to.
         content: str: The content to append to the file.
     """
-    _edit_or_append_file(file_name, start=1, end=None, content=content, isAppend=True)
+    _edit_or_append_file(file_name, start=1, end=None, content=content, is_append=True)
 
 
 @update_pwd_decorator
