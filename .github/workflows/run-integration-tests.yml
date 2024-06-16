@@ -19,9 +19,15 @@ env:
   PERSIST_SANDBOX : "false"
 
 jobs:
+  ghcr_build:
+    uses: ./.github/workflows/ghcr.yml
+
   integration-tests-on-linux:
     name: Integration Tests on Linux
     runs-on: ubuntu-latest
+    needs: ghcr_build
+    env:
+      tags: ${{ needs.ghcr_build.outputs.tags }}
     strategy:
       fail-fast: false
       matrix:
@@ -40,16 +46,23 @@ jobs:
           cache: 'poetry'
 
       - name: Install Python dependencies using Poetry
-        run: poetry install
+        run: make install-python-dependencies
 
-      - name: Build Environment
-        run: make build
+      - name: Download sandbox image built in ghcr_build step
+        uses: actions/download-artifact@v4
+        with:
+          name: sandbox-docker-image-amd64
+          path: /tmp/
 
-      - name: Run Integration Tests
+      - name: Load sandbox image and Run Integration Tests
         env:
           SANDBOX_TYPE: ${{ matrix.sandbox }}
         run: |
-          TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
+          mv /tmp/sandbox_image_amd64.tar .
+          docker load -i sandbox_image_amd64.tar
+          tag=$(echo "$tags" | cut -d' ' -f1)
+          echo "use sandbox with tag $tag"
+          OPEN_DEVIN_BUILD_VERSION=$tag TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
