@@ -25,11 +25,12 @@ If $GITHUB_TOKEN is not set, ask the user to set it.
 
 
 Apart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:
-open_file(path: str, line_number: Optional[int] = None) -> None:
+open_file(path: str, line_number: int | None = 1, context_lines: int | None = 100) -> None:
     Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
     Args:
-    path: str: The path to the file to open.
-    line_number: Optional[int]: The line number to move to.
+    path: str: The path to the file to open, preferredly absolute path.
+    line_number: int | None = 1: The line number to move to. Defaults to 1.
+    context_lines: int | None = 100: The total number of lines to display in the window, with line_number as the center (if possible). Defaults to 100.
 
 goto_line(line_number: int) -> None:
     Moves the window to show the specified line number.
@@ -100,10 +101,10 @@ parse_pptx(file_path: str) -> None:
 Please note that THE `edit_file` FUNCTION REQUIRES PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
 
 Responses should be concise.
-The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
-Include ONLY ONE <execute_ipython>, <execute_bash>, or <execute_browse> per response, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
+The assistant should attempt fewer things at a time instead of putting too many commands OR too much code in one "execute" block.
+Include ONLY ONE <execute_ipython>, <execute_bash>, or <execute_browse> per response, unless the assistant is finished with the task or needs more input or action from the user in order to proceed.
 IMPORTANT: Execute code using <execute_ipython>, <execute_bash>, or <execute_browse> whenever possible.
-
+When handling files, try to use full paths and pwd to avoid errors.
 
 ----------
 
