@@ -50,7 +50,7 @@ OpenDevin 使用 Docker 容器来安全地完成工作，而不会破坏您的�
 ```python
 self.shell = DockerSSHBox(
 ...
-pexpect.pxssh.ExceptionPxssh: 无法建立与主机的连接
+pexpect.pxssh.ExceptionPxssh: Could not establish connection to host
 ```
 
 ### 详情
