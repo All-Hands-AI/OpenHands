@@ -1,5 +1,6 @@
 from .action import Action
 from .agent import (
+    AgentAutoModeAction,
     AgentDelegateAction,
     AgentFinishAction,
     AgentRecallAction,
@@ -28,6 +29,7 @@ __all__ = [
     'AgentRejectAction',
     'AgentDelegateAction',
     'AgentSummarizeAction',
+    'AgentAutoModeAction',
     'AddTaskAction',
     'ModifyTaskAction',
     'ChangeAgentStateAction',

@@ -41,6 +41,9 @@ enum ActionType {
 
   // Changes the state of the agent, e.g. to paused or running
   CHANGE_AGENT_STATE = "change_agent_state",
+
+  // Toggles the auto mode.
+  ENABLE_AUTO_MODE = "ENABLE_AUTO_MODE",
 }
 
 export default ActionType;

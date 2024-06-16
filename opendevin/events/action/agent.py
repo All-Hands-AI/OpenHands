@@ -78,3 +78,15 @@ class AgentDelegateAction(Action):
     @property
     def message(self) -> str:
         return f"I'm asking {self.agent} for help with this task."
+
+
+@dataclass
+class AgentAutoModeAction(Action):
+    """Action to set the agent to autonomous mode."""
+
+    is_enabled: bool
+    action: str = ActionType.ENABLE_AUTO_MODE
+
+    @property
+    def message(self) -> str:
+        return f'Agent autonomous mode is {self.is_enabled}.'

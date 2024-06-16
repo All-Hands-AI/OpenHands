@@ -10,7 +10,7 @@ import ChatInput from "./ChatInput";
 import Chat from "./Chat";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
-import { sendChatMessage } from "#/services/chatService";
+import { sendChatMessage, enableAutoMode } from "#/services/chatService";
 import { addUserMessage, addAssistantMessage } from "#/state/chatSlice";
 import { I18nKey } from "#/i18n/declaration";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
@@ -50,6 +50,8 @@ function ScrollButton({
 
 function ChatInterface() {
   const dispatch = useDispatch();
+  const [autoMode, setAutoMode] = React.useState(false);
+
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
@@ -110,11 +112,30 @@ function ChatInterface() {
     }
   }, [curAgentState, dispatch, messages.length, t]);
 
+  const handleCheckboxChange = () => {
+    setAutoMode(!autoMode);
+    enableAutoMode(!autoMode);
+    console.log(`Auto mode is now ${!autoMode ? 'enabled' : 'disabled'}`);
+};
   return (
     <div className="flex flex-col h-full bg-neutral-800">
       <div className="flex items-center gap-2 border-b border-neutral-600 text-sm px-4 py-2">
         <IoMdChatbubbles />
         Chat
+        <div className="ml-auto">
+          <label className="flex items-center text-sm"
+            title="Autonomous mode - the bot will automatically send messages without user input."
+          >
+            <input
+              type="checkbox"
+              checked={autoMode}
+              onChange={handleCheckboxChange}
+              className="mr-2"
+            />
+            Auto
+          </label>
+        </div>
+
       </div>
       <div className="flex-1 flex flex-col relative min-h-0">
         <div

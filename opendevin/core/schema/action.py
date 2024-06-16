@@ -90,5 +90,7 @@ class ActionTypeSchema(BaseModel):
     SEND_PR: str = Field(default='send_pr')
     """Send a PR to github."""
 
+    ENABLE_AUTO_MODE: str = Field(default='ENABLE_AUTO_MODE')
+
 
 ActionType = ActionTypeSchema()

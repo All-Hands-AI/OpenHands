@@ -1,6 +1,7 @@
 from opendevin.core.exceptions import AgentMalformedActionError
 from opendevin.events.action.action import Action
 from opendevin.events.action.agent import (
+    AgentAutoModeAction,
     AgentDelegateAction,
     AgentFinishAction,
     AgentRecallAction,
@@ -31,6 +32,7 @@ actions = (
     AgentFinishAction,
     AgentRejectAction,
     AgentDelegateAction,
+    AgentAutoModeAction,
     AddTaskAction,
     ModifyTaskAction,
     ChangeAgentStateAction,
