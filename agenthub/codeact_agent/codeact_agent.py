@@ -223,9 +223,7 @@ class CodeActAgent(Agent):
             )
 
         if config.agent.is_autonomous:
-            messages.append(
-                {'role': 'agent', 'content': f'Iteration {state.iteration}'}
-            )
+            messages.append({'role': 'user', 'content': f'Give step {state.iteration}'})
 
         response = self.llm.do_completion(
             messages=messages,
