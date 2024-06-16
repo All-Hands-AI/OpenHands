@@ -8,7 +8,10 @@ export function sendChatMessage(message: string): void {
 }
 
 export function enableAutoMode(value: boolean): void {
-  const event = { action: ActionType.ENABLE_AUTO_MODE, args: { is_enabled: value } };
+  const event = {
+    action: ActionType.ENABLE_AUTO_MODE,
+    args: { is_enabled: value },
+  };
   const eventString = JSON.stringify(event);
   Session.send(eventString);
 }

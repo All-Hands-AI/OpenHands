@@ -115,15 +115,16 @@ function ChatInterface() {
   const handleCheckboxChange = () => {
     setAutoMode(!autoMode);
     enableAutoMode(!autoMode);
-    console.log(`Auto mode is now ${!autoMode ? 'enabled' : 'disabled'}`);
-};
+    console.log(`Auto mode is now ${!autoMode ? "enabled" : "disabled"}`);
+  };
   return (
     <div className="flex flex-col h-full bg-neutral-800">
       <div className="flex items-center gap-2 border-b border-neutral-600 text-sm px-4 py-2">
         <IoMdChatbubbles />
         Chat
         <div className="ml-auto">
-          <label className="flex items-center text-sm"
+          <label
+            className="flex items-center text-sm"
             title="Autonomous mode - the bot will automatically send messages without user input."
           >
             <input
@@ -135,7 +136,6 @@ function ChatInterface() {
             Auto
           </label>
         </div>
-
       </div>
       <div className="flex-1 flex flex-col relative min-h-0">
         <div
