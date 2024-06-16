@@ -64,7 +64,7 @@ def _get_new_image_name(base_image: str) -> str:
         base_image = base_image + ":latest"
 
     [repo, tag] = base_image.split(':')
-    return f'od_sandbox:{repo}_{tag}'
+    return f'od_sandbox:{repo}__{tag}'
 
 
 def get_od_sandbox_image(base_image: str, docker_client: docker.DockerClient) -> str:

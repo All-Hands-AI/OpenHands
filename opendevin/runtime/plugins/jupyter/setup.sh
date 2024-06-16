@@ -11,7 +11,7 @@ if [ -z "$OPENDEVIN_PYTHON_INTERPRETER" ] ||  [ ! -x "$OPENDEVIN_PYTHON_INTERPRE
 fi
 
 # use mamba to install c library
-mamba install -y gcc
+/opendevin/miniforge3/bin/mamba install -y gcc
 
 # Install dependencies
 $OPENDEVIN_PYTHON_INTERPRETER -m pip install jupyterlab notebook jupyter_kernel_gateway
