@@ -48,11 +48,20 @@ if [[ -n "$org_name" ]]; then
   DOCKER_ORG="$org_name"
 fi
 
+DOCKER_REPOSITORY="$DOCKER_REGISTRY/$DOCKER_ORG/$DOCKER_IMAGE"
+DOCKER_REPOSITORY=${DOCKER_REPOSITORY,,} # lowercase
+echo "Repo: $DOCKER_REPOSITORY"
 echo "Base dir: $DOCKER_BASE_DIR"
+
+args=""
+for tag in "${tags[@]}"; do
+  args+=" -t $DOCKER_REPOSITORY:$tag"
+done
 
 output_image="/tmp/${image_name}_image_${platform}.tar"
 
 docker buildx build \
+  $args \
   --build-arg OPEN_DEVIN_BUILD_VERSION="$OPEN_DEVIN_BUILD_VERSION" \
   --platform linux/$platform \
   --provenance=false \
