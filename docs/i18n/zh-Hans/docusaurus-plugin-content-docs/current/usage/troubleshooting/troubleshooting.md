@@ -41,7 +41,7 @@ OpenDevin 使用 Docker 容器来安全地完成工作，而不会破坏您的�
 * 如果您使用的是 Mac，请检查[权限要求](https://docs.docker.com/desktop/mac/permission-requirements/) ，特别是考虑在 Docker Desktop 的 `Settings > Advanced` 下启用 `Allow the default Docker socket to be used`。
 * 另外，升级您的 Docker 到最新版本，选择 `Check for Updates`
 
-## 无法连接到 SSH 盒子
+## 无法连接到 DockerSSHBox
 
 [GitHub 问题](https://github.com/OpenDevin/OpenDevin/issues/1156)
 
