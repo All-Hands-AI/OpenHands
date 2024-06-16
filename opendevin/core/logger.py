@@ -82,6 +82,7 @@ class SensitiveDataFilter(logging.Filter):
             'e2b_api_key',
             'github_token',
             'jwt_secret',
+            'ssh_password',
         ]
 
         # add env var names
