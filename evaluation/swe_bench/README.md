@@ -82,14 +82,17 @@ If you see an error, please make sure your `config.toml` contains all
 ## Run Inference on SWE-Bench Instances
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh [model_config] [agent] [eval_limit]
-# e.g., ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview CodeActAgent 300
+./evaluation/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit]
+# e.g., ./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview head CodeActAgent 300
 ```
 
 where `model_config` is mandatory, while `agent` and `eval_limit` are optional.
 
 `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
 LLM settings, as defined in your `config.toml`.
+
+`git-version`, e.g. `head`, is the git commit hash of the OpenDevin version you would
+like to evaluate. It could also be a release tag like `0.6.2`.
 
 `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
 to `CodeActAgent`.
@@ -102,7 +105,7 @@ Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview` and Code
 then your command would be:
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview CodeActAgent 10
+./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview head CodeActAgent 10
 ```
 
 If you would like to specify a list of tasks you'd like to benchmark on, you could
