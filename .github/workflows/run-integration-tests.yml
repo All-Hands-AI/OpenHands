@@ -5,63 +5,17 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 on:
-  workflow_run:
-    workflows: [Build and Publish Docker Image]
-    types:
-      - requested
+  push:
+    branches:
+      - main
+    tags:
+      - '*'
+  pull_request:
 
 env:
   PERSIST_SANDBOX: "false"
 
 jobs:
-  integration-tests-on-linux:
-    name: Integration Tests on Linux
-    runs-on: ubuntu-latest
-    env:
-      tags: ${{ github.event.workflow_run.jobs.ghcr_build.outputs.tags }}
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.11"]
-        sandbox: ["ssh", "exec", "local"]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install poetry via pipx
-        run: pipx install poetry
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'poetry'
-
-      - name: Install Python dependencies using Poetry
-        run: make install-python-dependencies
-
-      - name: Download sandbox image built in ghcr_build step
-        uses: actions/download-artifact@v4
-        with:
-          name: sandbox-docker-image-amd64
-          path: /tmp/
-
-      - name: Load sandbox image and Run Integration Tests
-        env:
-          SANDBOX_TYPE: ${{ matrix.sandbox }}
-        run: |
-          mv /tmp/sandbox_image_amd64.tar .
-          ls -lh
-          docker load -i sandbox_image_amd64.tar
-          tag=$(echo "$tags" | cut -d' ' -f1)
-          echo "use sandbox with tag $tag"
-          OPEN_DEVIN_BUILD_VERSION=$tag TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
-
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
   integration-tests-on-mac:
     name: Integration Tests on MacOS
     runs-on: macos-13
