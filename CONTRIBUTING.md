@@ -1,10 +1,10 @@
 # Contributing
 Thanks for your interest in contributing to OpenDevin! We welcome and appreciate contributions. 
-If you are only looking to setup a development workflow, check out [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md)
+If you are only looking to setup a development workflow, check out [Development.md](https://github.com/OpenDevin/OpenDevin/blob/main/Development.md).
 
 ## Contribution Guide
 ### 1. Fork the Official Repository
-Fork [OpenDevin repository](https://github.com/OpenDevin/OpenDevin) into your own account.
+Fork the [OpenDevin repository](https://github.com/OpenDevin/OpenDevin) into your own account.
 Clone your own forked repository into your local environment:
 
 ```shell
@@ -39,7 +39,15 @@ git push origin main
 ```
 
 ### 4. Create a New Branch And Open a Pull Request
-Create a new branch on your fork with your implementation. Open your forked repository and create a Pull Request which sets the source branch to your new branch, and the target branch to `OpenDevin/OpenDevin` `main` branch.
+a. Create a new branch with your changes
+b. On Github, go to the page of your forked repository
+c. Create a Pull Request 
+  i. Click on `Branches`
+  ii. Click on the `...` beside your branch and click on `New pull request`
+  iii. Set `base repository` to `OpenDevin/OpenDevin`
+  iv. Set `base` to `main`
+  v. Click `Create pull request`
+  
 The PR should appear in [OpenDevin PRs](https://github.com/OpenDevin/OpenDevin/pulls).
 
 Then the OpenDevin team will review your code.
