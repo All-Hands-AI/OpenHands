@@ -17,8 +17,9 @@ jobs:
   integration-tests-on-linux:
     name: Integration Tests on Linux
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     env:
-      tags: ${{ github.event.workflow_run.outputs.tags }}
+      tags: ${{ github.event.workflow_run.jobs.ghcr_build.outputs.tags }}
     strategy:
       fail-fast: false
       matrix:
@@ -54,6 +55,7 @@ jobs:
           tag=$(echo "$tags" | cut -d' ' -f1)
           echo "use sandbox with tag $tag"
           OPEN_DEVIN_BUILD_VERSION=$tag TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
+
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

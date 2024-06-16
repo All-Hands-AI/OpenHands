@@ -78,92 +78,92 @@ jobs:
           name: ${{ matrix.image }}-docker-image-${{ matrix.platform }}
           path: /tmp/${{ matrix.image }}_image_${{ matrix.platform }}.tar
 
-  ghcr_push:
-    runs-on: ubuntu-latest
-    needs: ghcr_build
-    if: github.ref == 'refs/heads/main'
+  # ghcr_push:
+  #   runs-on: ubuntu-latest
+  #   needs: ghcr_build
+  #   if: github.ref == 'refs/heads/main'
 
-    env:
-      tags: ${{ needs.ghcr_build.outputs.tags }}
+  #   env:
+  #     tags: ${{ needs.ghcr_build.outputs.tags }}
 
-    permissions:
-      contents: read
-      packages: write
+  #   permissions:
+  #     contents: read
+  #     packages: write
 
-    strategy:
-      matrix:
-        image: ["sandbox", "opendevin"]
-        platform: ["amd64", "arm64"]
+  #   strategy:
+  #     matrix:
+  #       image: ["sandbox", "opendevin"]
+  #       platform: ["amd64", "arm64"]
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Login to GHCR
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Login to GHCR
+  #       uses: docker/login-action@v2
+  #       with:
+  #         registry: ghcr.io
+  #         username: ${{ github.repository_owner }}
+  #         password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Download Docker images
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.image }}-docker-image-${{ matrix.platform }}
-          path: /tmp/${{ matrix.platform }}
+  #     - name: Download Docker images
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: ${{ matrix.image }}-docker-image-${{ matrix.platform }}
+  #         path: /tmp/${{ matrix.platform }}
 
-      - name: Load images and push to registry
-        run: |
-          mv /tmp/${{ matrix.platform }}/${{ matrix.image }}_image_${{ matrix.platform }}.tar .
-          loaded_image=$(docker load -i ${{ matrix.image }}_image_${{ matrix.platform }}.tar | grep "Loaded image:" | awk '{print $3}')
-          tags=$(echo ${tags} | tr ' ' '\n')
-          for tag in $tags; do
-            echo "tag = $tag"
-            docker tag $loaded_image ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${tag}_${{ matrix.platform }}
-            docker push ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${tag}_${{ matrix.platform }}
-          done
+  #     - name: Load images and push to registry
+  #       run: |
+  #         mv /tmp/${{ matrix.platform }}/${{ matrix.image }}_image_${{ matrix.platform }}.tar .
+  #         loaded_image=$(docker load -i ${{ matrix.image }}_image_${{ matrix.platform }}.tar | grep "Loaded image:" | awk '{print $3}')
+  #         tags=$(echo ${tags} | tr ' ' '\n')
+  #         for tag in $tags; do
+  #           echo "tag = $tag"
+  #           docker tag $loaded_image ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${tag}_${{ matrix.platform }}
+  #           docker push ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${tag}_${{ matrix.platform }}
+  #         done
 
-  create_manifest:
-    runs-on: ubuntu-latest
-    needs: [ghcr_build, ghcr_push]
-    if: github.ref == 'refs/heads/main'
+  # create_manifest:
+  #   runs-on: ubuntu-latest
+  #   needs: [ghcr_build, ghcr_push]
+  #   if: github.ref == 'refs/heads/main'
 
-    env:
-      tags: ${{ needs.ghcr_build.outputs.tags }}
+  #   env:
+  #     tags: ${{ needs.ghcr_build.outputs.tags }}
 
-    strategy:
-      matrix:
-        image: ["sandbox", "opendevin"]
+  #   strategy:
+  #     matrix:
+  #       image: ["sandbox", "opendevin"]
 
-    permissions:
-      contents: read
-      packages: write
+  #   permissions:
+  #     contents: read
+  #     packages: write
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Login to GHCR
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Login to GHCR
+  #       uses: docker/login-action@v2
+  #       with:
+  #         registry: ghcr.io
+  #         username: ${{ github.repository_owner }}
+  #         password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create and push multi-platform manifest
-        run: |
-          tags=$(echo ${tags} | tr ' ' '\n')
-          for tag in $tags; do
-            echo 'tag = $tag'
-            docker buildx imagetools create --tag ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:$tag \
-              ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${tag}_amd64 \
-              ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${tag}_arm64
-          done
+  #     - name: Create and push multi-platform manifest
+  #       run: |
+  #         tags=$(echo ${tags} | tr ' ' '\n')
+  #         for tag in $tags; do
+  #           echo 'tag = $tag'
+  #           docker buildx imagetools create --tag ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:$tag \
+  #             ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${tag}_amd64 \
+  #             ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${tag}_arm64
+  #         done
 
-  # FIXME: an admin needs to mark this as non-mandatory, and then we can remove it
-  docker_build_success:
-    name: Docker Build Success
-    runs-on: ubuntu-latest
-    needs: ghcr_build
-    steps:
-    - run: echo Done!
+  # # FIXME: an admin needs to mark this as non-mandatory, and then we can remove it
+  # docker_build_success:
+  #   name: Docker Build Success
+  #   runs-on: ubuntu-latest
+  #   needs: ghcr_build
+  #   steps:
+  #   - run: echo Done!
