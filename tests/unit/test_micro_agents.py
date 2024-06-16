@@ -13,7 +13,11 @@ from opendevin.events.observation import NullObservation
 
 
 def test_all_agents_are_loaded():
-    full_path = os.path.join('agenthub', 'micro')
+    assert all_microagents is not None
+    assert len(all_microagents) > 1
+
+    base = os.path.join('agenthub', 'micro')
+    full_path = os.path.dirname(__file__) + '/../../' + base
     agent_names = set()
     for root, _, files in os.walk(full_path):
         for file in files:

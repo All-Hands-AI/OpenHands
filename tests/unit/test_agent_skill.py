@@ -34,6 +34,16 @@ def reset_current_file():
     agentskills.CURRENT_FILE = None
 
 
+def _numbered_test_lines(start, end) -> str:
+    return ('\n'.join(f'{i}|' for i in range(start, end + 1))) + '\n'
+
+
+def _generate_test_file_with_lines(temp_path, num_lines) -> str:
+    file_path = temp_path / 'test_file.py'
+    file_path.write_text('\n' * num_lines)
+    return file_path
+
+
 def test_open_file_unexist_path():
     with pytest.raises(FileNotFoundError):
         open_file('/unexist/path/a.txt')
@@ -87,13 +97,13 @@ def test_open_file_long(tmp_path):
 
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
-            open_file(str(temp_file_path))
+            open_file(str(temp_file_path), 1, 50)
         result = buf.getvalue()
     assert result is not None
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    for i in range(1, 52):
+    for i in range(1, 51):
         expected += f'{i}|Line {i}\n'
-    expected += '(949 more lines below)\n'
+    expected += '(950 more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -108,8 +118,8 @@ def test_open_file_long_with_lineno(tmp_path):
         result = buf.getvalue()
     assert result is not None
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += '(50 more lines above)\n'
-    for i in range(51, 151):
+    expected += '(49 more lines above)\n'
+    for i in range(50, 151):
         expected += f'{i}|Line {i}\n'
     expected += '(850 more lines below)\n'
     assert result.split('\n') == expected.split('\n')
@@ -147,9 +157,9 @@ def test_goto_line(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    for i in range(1, 52):
+    for i in range(1, 101):
         expected += f'{i}|Line {i}\n'
-    expected += '(949 more lines below)\n'
+    expected += '(900 more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -159,8 +169,8 @@ def test_goto_line(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += '(50 more lines above)\n'
-    for i in range(51, 151):
+    expected += '(49 more lines above)\n'
+    for i in range(50, 151):
         expected += f'{i}|Line {i}\n'
     expected += '(850 more lines below)\n'
     assert result.split('\n') == expected.split('\n')
@@ -202,9 +212,9 @@ def test_scroll_down(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    for i in range(1, 52):
+    for i in range(1, 101):
         expected += f'{i}|Line {i}\n'
-    expected += '(949 more lines below)\n'
+    expected += '(900 more lines below)\n'
     assert result.split('\n') == expected.split('\n')
 
     with io.StringIO() as buf:
@@ -214,8 +224,8 @@ def test_scroll_down(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += '(51 more lines above)\n'
-    for i in range(52, 152):
+    expected += '(50 more lines above)\n'
+    for i in range(51, 152):
         expected += f'{i}|Line {i}\n'
     expected += '(849 more lines below)\n'
     assert result.split('\n') == expected.split('\n')
@@ -233,8 +243,8 @@ def test_scroll_up(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += '(250 more lines above)\n'
-    for i in range(251, 351):
+    expected += '(249 more lines above)\n'
+    for i in range(250, 351):
         expected += f'{i}|Line {i}\n'
     expected += '(650 more lines below)\n'
     assert result.split('\n') == expected.split('\n')
@@ -246,8 +256,8 @@ def test_scroll_up(tmp_path):
     assert result is not None
 
     expected = f'[File: {temp_file_path} (1000 lines total)]\n'
-    expected += '(150 more lines above)\n'
-    for i in range(151, 251):
+    expected += '(149 more lines above)\n'
+    for i in range(150, 251):
         expected += f'{i}|Line {i}\n'
     expected += '(750 more lines below)\n'
     assert result.split('\n') == expected.split('\n')
@@ -296,7 +306,8 @@ def test_print_window_internal(tmp_path):
             _print_window(str(test_file_path), current_line, window, return_str=False)
         result = buf.getvalue()
         expected = (
-            '(49 more lines above)\n'
+            '(48 more lines above)\n'
+            '49|Line `49`\n'
             '50|Line `50`\n'
             '51|Line `51`\n'
             '(49 more lines below)\n'
@@ -366,7 +377,8 @@ check(any_int)"""
             + 'E999 IndentationError: unexpected indent\n'
             '[This is how your edit would have looked if applied]\n'
             '-------------------------------------------------\n'
-            '(4 more lines above)\n'
+            '(3 more lines above)\n'
+            '4|def test_any_int():\n'
             '5|    assert any_int(1, 2, 3) == True\n'
             '6|    assert any_int(1.5, 2, 3) == False\n'
             '7|    assert any_int(1, 2.5, 3) == False\n'
@@ -382,7 +394,8 @@ check(any_int)"""
             '\n'
             '[This is the original code before your edit]\n'
             '-------------------------------------------------\n'
-            '(4 more lines above)\n'
+            '(3 more lines above)\n'
+            '4|def test_any_int():\n'
             '5|    assert any_int(1, 2, 3) == True\n'
             '6|    assert any_int(1.5, 2, 3) == False\n'
             '7|    assert any_int(1, 2.5, 3) == False\n'
@@ -500,7 +513,7 @@ def test_edit_file(tmp_path):
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):
             edit_file(
-                str(temp_file_path),
+                file_name=str(temp_file_path),
                 start=1,
                 end=3,
                 content='REPLACE TEXT',
@@ -818,14 +831,12 @@ def test_find_file_not_exist_file_specific_path(tmp_path):
 
 
 def test_edit_lint_file_pass(tmp_path, monkeypatch):
-    # Create a Python file with correct syntax
-    file_path = tmp_path / 'test_file.py'
-    file_path.write_text('\n')
-
-    # patch ENABLE_AUTO_LINT
+    # Enable linting
     monkeypatch.setattr(
         'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
     )
+
+    file_path = _generate_test_file_with_lines(tmp_path, 1)
 
     # Test linting functionality
     with io.StringIO() as buf:
@@ -833,35 +844,33 @@ def test_edit_lint_file_pass(tmp_path, monkeypatch):
             open_file(str(file_path))
             edit_file(str(file_path), 1, 1, "print('hello')\n")
         result = buf.getvalue()
-
     assert result is not None
     expected = (
         f'[File: {file_path} (1 lines total)]\n'
         '1|\n'
-        f'[File: {file_path} (2 lines total after edit)]\n'
-        "1|print('hello')\n"
-        '2|\n' + MSG_FILE_UPDATED + '\n'
+        f'[File: {file_path} (1 lines total after edit)]\n'
+        "1|print('hello')\n" + MSG_FILE_UPDATED + '\n'
     )
     assert result.split('\n') == expected.split('\n')
 
 
 def test_lint_file_fail_undefined_name(tmp_path, monkeypatch, capsys):
-    # Create a Python file with a syntax error
-    file_path = tmp_path / 'test_file.py'
-    file_path.write_text('\n')
-
-    # Set environment variable to enable linting
+    # Enable linting
     monkeypatch.setattr(
         'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
     )
 
-    open_file(str(file_path))
-    edit_file(str(file_path), 1, 1, 'undefined_name()\n')
+    num_lines = 1
+    current_line = 1
+
+    file_path = _generate_test_file_with_lines(tmp_path, 1)
+
+    open_file(str(file_path), current_line)
+    edit_file(str(file_path), current_line, num_lines, 'undefined_name()\n')
 
     result = capsys.readouterr().out
-    print(result)
-
     assert result is not None
+
     expected = (
         f'[File: {file_path} (1 lines total)]\n'
         '1|\n'
@@ -871,7 +880,6 @@ def test_lint_file_fail_undefined_name(tmp_path, monkeypatch, capsys):
         '[This is how your edit would have looked if applied]\n'
         '-------------------------------------------------\n'
         '1|undefined_name()\n'
-        '2|\n'
         '-------------------------------------------------\n\n'
         '[This is the original code before your edit]\n'
         '-------------------------------------------------\n'
@@ -885,61 +893,47 @@ def test_lint_file_fail_undefined_name(tmp_path, monkeypatch, capsys):
 
 
 def test_lint_file_fail_undefined_name_long(tmp_path, monkeypatch, capsys):
-    # Create a Python file with a syntax error
-    file_path = tmp_path / 'test_file.py'
-    file_path.write_text('\n' * 1000)
-
-    # Set environment variable to enable linting
+    # Enable linting
     monkeypatch.setattr(
         'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', True
     )
 
+    num_lines = 1000
+    current_line = 500
+    error_line = 500
+    window = 100
+
+    file_path = _generate_test_file_with_lines(tmp_path, num_lines)
+
+    error_message = f"{file_path}:{error_line}:1: F821 undefined name 'undefined_name'"
+
     open_file(str(file_path))
-    edit_file(str(file_path), 500, 500, 'undefined_name()\n')
+    edit_file(str(file_path), current_line, error_line, 'undefined_name()\n')
 
     result = capsys.readouterr().out
-    print(result)
-
     assert result is not None
 
-    open_lines = '\n'.join([f'{i+1}|' for i in range(51)])
+    open_lines = '\n'.join([f'{i}|' for i in range(1, window + 1)])
     expected = (
-        f'[File: {file_path} (1000 lines total)]\n'
+        f'[File: {file_path} ({num_lines} lines total)]\n'
         f'{open_lines}\n'
-        '(949 more lines below)\n'
+        '(900 more lines below)\n'
         '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
-        'ERRORS:\n'
-        f"{file_path}:500:1: F821 undefined name 'undefined_name'\n"
+        f'ERRORS:\n{error_message}\n'
         '[This is how your edit would have looked if applied]\n'
         '-------------------------------------------------\n'
-        '(495 more lines above)\n'
-        '496|\n'
-        '497|\n'
-        '498|\n'
-        '499|\n'
-        '500|undefined_name()\n'
-        '501|\n'
-        '502|\n'
-        '503|\n'
-        '504|\n'
-        '505|\n'
-        '(496 more lines below)\n'
-        '-------------------------------------------------\n\n'
+        '(494 more lines above)\n'
+        + _numbered_test_lines(error_line - 5, error_line - 1)
+        + '500|undefined_name()\n'
+        + _numbered_test_lines(error_line + 1, error_line + 5)
+        + '(495 more lines below)\n'
+        + '-------------------------------------------------\n\n'
         '[This is the original code before your edit]\n'
         '-------------------------------------------------\n'
-        '(495 more lines above)\n'
-        '496|\n'
-        '497|\n'
-        '498|\n'
-        '499|\n'
-        '500|\n'
-        '501|\n'
-        '502|\n'
-        '503|\n'
-        '504|\n'
-        '505|\n'
-        '(495 more lines below)\n'
-        '-------------------------------------------------\n'
+        '(494 more lines above)\n'
+        + _numbered_test_lines(error_line - 5, error_line + 5)
+        + '(495 more lines below)\n'
+        + '-------------------------------------------------\n'
         'Your changes have NOT been applied. Please fix your edit command and try again.\n'
         'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
         'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
@@ -948,14 +942,12 @@ def test_lint_file_fail_undefined_name_long(tmp_path, monkeypatch, capsys):
 
 
 def test_lint_file_disabled_undefined_name(tmp_path, monkeypatch, capsys):
-    # Create a Python file with a syntax error
-    file_path = tmp_path / 'test_file.py'
-    file_path.write_text('\n')
-
-    # Set environment variable to disable linting
+    # Disable linting
     monkeypatch.setattr(
         'opendevin.runtime.plugins.agent_skills.agentskills.ENABLE_AUTO_LINT', False
     )
+
+    file_path = _generate_test_file_with_lines(tmp_path, 1)
 
     open_file(str(file_path))
     edit_file(str(file_path), 1, 1, 'undefined_name()\n')
@@ -965,9 +957,8 @@ def test_lint_file_disabled_undefined_name(tmp_path, monkeypatch, capsys):
     expected = (
         f'[File: {file_path} (1 lines total)]\n'
         '1|\n'
-        f'[File: {file_path} (2 lines total after edit)]\n'
-        '1|undefined_name()\n'
-        '2|\n' + MSG_FILE_UPDATED + '\n'
+        f'[File: {file_path} (1 lines total after edit)]\n'
+        '1|undefined_name()\n' + MSG_FILE_UPDATED + '\n'
     )
     assert result.split('\n') == expected.split('\n')
 
