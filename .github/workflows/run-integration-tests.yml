@@ -6,7 +6,7 @@ concurrency:
 
 on:
   workflow_run:
-    workflows: ["Build and Publish Docker Image"]
+    workflows: [Build and Publish Docker Image]
     types:
       - completed
 
@@ -17,7 +17,6 @@ jobs:
   integration-tests-on-linux:
     name: Integration Tests on Linux
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     env:
       tags: ${{ github.event.workflow_run.jobs.ghcr_build.outputs.tags }}
     strategy:
@@ -51,6 +50,7 @@ jobs:
           SANDBOX_TYPE: ${{ matrix.sandbox }}
         run: |
           mv /tmp/sandbox_image_amd64.tar .
+          ls -lh
           docker load -i sandbox_image_amd64.tar
           tag=$(echo "$tags" | cut -d' ' -f1)
           echo "use sandbox with tag $tag"
