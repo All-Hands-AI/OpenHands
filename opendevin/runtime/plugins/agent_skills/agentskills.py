@@ -72,14 +72,12 @@ def update_pwd_decorator(func):
 def _is_valid_filename(file_name) -> bool:
     if not file_name or not isinstance(file_name, str) or not file_name.strip():
         return False
-    # Define invalid characters for the current operating system
     invalid_chars = '<>:"/\\|?*'
     if os.name == 'nt':  # Windows
         invalid_chars = '<>:"/\\|?*'
     elif os.name == 'posix':  # Unix-like systems
         invalid_chars = '\0'
 
-    # Check if the file_name contains any invalid characters
     for char in invalid_chars:
         if char in file_name:
             return False
@@ -91,7 +89,7 @@ def _is_valid_path(path) -> bool:
         return False
     try:
         return os.path.exists(os.path.normpath(path))
-    except Exception:
+    except PermissionError:
         return False
 
 
@@ -105,9 +103,11 @@ def _create_paths(file_name) -> bool:
         return False
 
 
-def _check_current_file() -> bool:
+def _check_current_file(file_path: str | None = None) -> bool:
     global CURRENT_FILE
-    if not CURRENT_FILE or not os.path.isfile(CURRENT_FILE):
+    if not file_path:
+        file_path = CURRENT_FILE
+    if not file_path or not os.path.isfile(file_path):
         raise ValueError('No file open. Use the open_file function first.')
     return True
 
@@ -166,10 +166,10 @@ def _lint_file(file_path: str) -> tuple[Optional[str], Optional[int]]:
     return None, None
 
 
-def _print_window(CURRENT_FILE, targeted_line, WINDOW, return_str=False):
+def _print_window(file_path, targeted_line, WINDOW, return_str=False):
     global CURRENT_LINE
-    _check_current_file()
-    with open(CURRENT_FILE) as file:
+    _check_current_file(file_path)
+    with open(file_path) as file:
         content = file.read()
 
         # Ensure the content ends with a newline character
