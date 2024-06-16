@@ -315,9 +315,15 @@ def test_api_keys_repr_str():
         llm=llm_config,
         agent=agent_config,
         e2b_api_key='my_e2b_api_key',
+        jwt_secret='my_jwt_secret',
+        ssh_password='my_ssh_password',
     )
     assert "e2b_api_key='******'" in repr(app_config)
     assert "e2b_api_key='******'" in str(app_config)
+    assert "jwt_secret='******'" in repr(app_config)
+    assert "jwt_secret='******'" in str(app_config)
+    assert "ssh_password='******'" in repr(app_config)
+    assert "ssh_password='******'" in str(app_config)
 
     # Check that no other attrs in AppConfig have 'key' or 'token' in their name
     # This will fail when new attrs are added, and attract attention
