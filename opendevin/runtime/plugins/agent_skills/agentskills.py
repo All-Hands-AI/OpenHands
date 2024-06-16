@@ -387,7 +387,7 @@ def _edit_or_append_file(
                 if lines and not (len(lines) == 1 and lines[0].strip() == ''):
                     if not lines[-1].endswith('\n'):
                         lines[-1] += '\n'
-                    content_lines = content.splitlines(True)
+                    content_lines = content.splitlines(keepends=True)
                     new_lines = lines + content_lines
                     content = ''.join(new_lines)
             else:
