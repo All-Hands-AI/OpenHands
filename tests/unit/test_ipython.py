@@ -79,7 +79,7 @@ def test_sandbox_jupyter_plugin_backticks(temp_dir):
     with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
         config, 'workspace_mount_path', new=temp_dir
     ), patch.object(config, 'run_as_devin', new='true'), patch.object(
-        config, 'sandbox_type', new='ssh'
+        config.sandbox, 'type', new='ssh'
     ):
         for box in [DockerSSHBox()]:
             box.init_plugins([JupyterRequirement])
