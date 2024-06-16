@@ -1,8 +1,15 @@
 #!/bin/bash
+set -eo pipefail
+
+source "evaluation/utils/version_control.sh"
+
 MODEL_CONFIG=$1
-EVAL_LIMIT=$2
-DATA_SPLIT=$3
-AGENT=$4
+COMMIT_HASH=$2
+EVAL_LIMIT=$3
+DATA_SPLIT=$4
+AGENT=$5
+
+checkout_eval_branch
 
 if [ -z "$AGENT" ]; then
   echo "Agent not specified, use default CodeActAgent ..."
@@ -15,9 +22,7 @@ if [ -z "$DATA_SPLIT" ]; then
   DATA_SPLIT="gpqa_diamond"
 fi
 
-# IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of OpenDevin
-# We need to track the version of Agent in the evaluation to make sure results are comparable
-AGENT_VERSION=v$(poetry run python -c "import agenthub; from opendevin.controller.agent import Agent; print(Agent.get_cls('$AGENT').VERSION)")
+get_agent_version
 
 echo "AGENT: $AGENT"
 echo "AGENT_VERSION: $AGENT_VERSION"
@@ -39,3 +44,5 @@ fi
 
 # Run the command
 eval $COMMAND
+
+checkout_original_branch

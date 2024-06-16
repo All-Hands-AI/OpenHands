@@ -1,13 +1,22 @@
 #!/bin/bash
+set -eo pipefail
+
+source "evaluation/utils/version_control.sh"
+
 MODEL_CONFIG=$1
-AGENT=$2
-DATASET=$3
-EVAL_LIMIT=$4
+COMMIT_HASH=$2
+AGENT=$3
+DATASET=$4
+EVAL_LIMIT=$5
+
+checkout_eval_branch
 
 if [ -z "$AGENT" ]; then
   echo "Agent not specified, use default CodeActAgent"
   AGENT="CodeActAgent"
 fi
+
+get_agent_version
 
 if [ -z "$DATASET" ]; then
   echo "Dataset not specified, use default 'things'"
@@ -48,3 +57,5 @@ fi
 # Run the command
 echo $COMMAND
 eval $COMMAND
+
+checkout_original_branch

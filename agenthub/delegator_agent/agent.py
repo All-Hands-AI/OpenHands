@@ -8,8 +8,7 @@ from opendevin.llm.llm import LLM
 class DelegatorAgent(Agent):
     VERSION = '1.0'
     """
-    The planner agent utilizes a special prompting strategy to create long term plans for solving problems.
-    The agent is given its previous action-observation pairs, current task, and hint based on last action taken at every step.
+    The Delegator Agent is responsible for delegating tasks to other agents based on the current task.
     """
 
     current_delegate: str = ''
@@ -26,14 +25,14 @@ class DelegatorAgent(Agent):
     def step(self, state: State) -> Action:
         """
         Checks to see if current step is completed, returns AgentFinishAction if True.
-        Otherwise, creates a plan prompt and sends to model for inference, returning the result as the next action.
+        Otherwise, delegates the task to the next agent in the pipeline.
 
         Parameters:
         - state (State): The current state given the previous actions and observations
 
         Returns:
         - AgentFinishAction: If the last state was 'completed', 'verified', or 'abandoned'
-        - Action: The next action to take based on llm response
+        - AgentDelegateAction: The next agent to delegate the task to
         """
         if self.current_delegate == '':
             self.current_delegate = 'study'
