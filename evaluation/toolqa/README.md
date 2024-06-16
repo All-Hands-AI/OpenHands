@@ -15,13 +15,16 @@ Run `make setup-config` to set up the `config.toml` file if it does not exist at
 Make sure your Docker daemon is running, then run this bash script:
 
 ```bash
-bash evaluation/toolqa/scripts/run_infer.sh [model_config] [agent] [eval_limit] [dataset] [hardness] [wolfram_alpha_appid]
+bash evaluation/toolqa/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [dataset] [hardness] [wolfram_alpha_appid]
 ```
 
 where `model_config` is mandatory, while all other arguments are optional.
 
 `model_config`, e.g. `llm`, is the config group name for your
 LLM settings, as defined in your `config.toml`.
+
+`git-version`, e.g. `head`, is the git commit hash of the OpenDevin version you would
+like to evaluate. It could also be a release tag like `0.6.2`.
 
 `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
 to `CodeActAgent`.
