@@ -8,7 +8,7 @@ on:
   workflow_run:
     workflows: [Build and Publish Docker Image]
     types:
-      - completed
+      - requested
 
 env:
   PERSIST_SANDBOX: "false"
