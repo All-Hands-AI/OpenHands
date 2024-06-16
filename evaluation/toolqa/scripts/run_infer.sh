@@ -1,10 +1,17 @@
 #!/bin/bash
+set -eo pipefail
+
+source "evaluation/utils/version_control.sh"
+
 MODEL_CONFIG=$1
-AGENT=$2
-EVAL_LIMIT=$3
-DATASET=$4
-HARDNESS=$5
-WOLFRAM_APPID=$6
+COMMIT_HASH=$2
+AGENT=$3
+EVAL_LIMIT=$4
+DATASET=$5
+HARDNESS=$6
+WOLFRAM_APPID=$7
+
+checkout_eval_branch
 
 if [ -z "$AGENT" ]; then
   echo "Agent not specified, use default CodeActAgent"
@@ -26,9 +33,7 @@ if [ -z "$WOLFRAM_APPID" ]; then
   echo "WOLFRAM_APPID not specified"
 fi
 
-# IMPORTANT: Because Agent's prompt changes fairly often in the rapidly evolving codebase of OpenDevin
-# We need to track the version of Agent in the evaluation to make sure results are comparable
-AGENT_VERSION=v$(poetry run python -c "import agenthub; from opendevin.controller.agent import Agent; print(Agent.get_cls('$AGENT').VERSION)")
+get_agent_version
 
 echo "AGENT: $AGENT"
 echo "AGENT_VERSION: $AGENT_VERSION"
@@ -56,3 +61,5 @@ fi
 
 # Run the command
 eval $COMMAND
+
+checkout_original_branch
