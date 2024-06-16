@@ -92,9 +92,10 @@ class AgentSession:
         api_base = config.llm.base_url
         max_iterations = args.get(ConfigType.MAX_ITERATIONS, config.max_iterations)
         max_chars = args.get(ConfigType.MAX_CHARS, config.llm.max_chars)
+        stream = args.get(ConfigType.STREAM, config.llm.stream)
 
         logger.info(f'Creating agent {agent_cls} using LLM {model}')
-        llm = LLM(model=model, api_key=api_key, base_url=api_base)
+        llm = LLM(model=model, api_key=api_key, base_url=api_base, stream=stream)
         agent = Agent.get_cls(agent_cls)(llm)
         if isinstance(agent, CodeActAgent):
             if not self.runtime or not isinstance(self.runtime.sandbox, DockerSSHBox):

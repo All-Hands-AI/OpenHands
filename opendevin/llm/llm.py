@@ -42,6 +42,7 @@ class LLM:
         max_output_tokens (int): The maximum number of tokens to receive from the LLM per task.
         llm_timeout (int): The maximum time to wait for a response in seconds.
         custom_llm_provider (str): A custom LLM provider.
+        stream (bool): Enable LLM responses as a stream.
     """
 
     def __init__(
@@ -62,6 +63,7 @@ class LLM:
         llm_config=None,
         metrics=None,
         cost_metric_supported=True,
+        stream=None,
     ):
         """
         Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
@@ -83,6 +85,7 @@ class LLM:
             llm_temperature (float, optional): The temperature for LLM sampling. Defaults to LLM_TEMPERATURE.
             metrics (Metrics, optional): The metrics object to use. Defaults to None.
             cost_metric_supported (bool, optional): Whether the cost metric is supported. Defaults to True.
+            stream (bool, optional): Whether to enable LLM responses as a stream. Defaults to None.
         """
         if llm_config is None:
             llm_config = config.llm
@@ -118,6 +121,7 @@ class LLM:
             else llm_config.max_output_tokens
         )
         metrics = metrics if metrics is not None else Metrics()
+        stream = stream if stream is not None else llm_config.stream
 
         logger.info(f'Initializing LLM with model: {model}')
         self.model_name = model
@@ -130,6 +134,7 @@ class LLM:
         self.custom_llm_provider = custom_llm_provider
         self.metrics = metrics
         self.cost_metric_supported = cost_metric_supported
+        self.stream = stream
 
         # litellm actually uses base Exception here for unknown model
         self.model_info = None
@@ -168,6 +173,7 @@ class LLM:
             timeout=self.llm_timeout,
             temperature=llm_temperature,
             top_p=llm_top_p,
+            stream=self.stream,
         )
 
         completion_unwrapped = self._completion
