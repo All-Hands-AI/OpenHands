@@ -96,8 +96,8 @@ class WorldModelAgent(Agent):
         self.strategies: List[Optional[str]] = []
         self.active_strategy: Optional[str] = None
 
-    def parse_response(self, response: str) -> Action:
-        thought = ''
+    def parse_response(self, response: str, thought: str) -> Action:
+        # thought = ''
         action_str = response
 
         # handle send message to user function call in BrowserGym
@@ -257,6 +257,7 @@ and executed by a program, make sure to follow the formatting instructions.
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
+
         goal = env_state.get_current_user_intent()
         if goal is None:
             goal = env_state.inputs['task']
@@ -380,7 +381,7 @@ and executed by a program, make sure to follow the formatting instructions.
         llm_output_logger.info(self.full_output)
 
         self.actions.append(action)
-        return self.parse_response(action)
+        return self.parse_response(action, self.full_output)
 
     def planning_search(self, state):
         # Run MCTS Search

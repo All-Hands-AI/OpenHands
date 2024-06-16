@@ -263,5 +263,5 @@ llm_response_logger.addHandler(get_llm_response_file_handler())
 
 llm_output_logger = logging.getLogger('output')
 llm_output_logger.propagate = False
-llm_output_logger.setLevel(logging.DEBUG)
+llm_output_logger.setLevel(logging.INFO)
 llm_output_logger.addHandler(get_llm_output_file_handler())
