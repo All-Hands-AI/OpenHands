@@ -83,6 +83,7 @@ jobs:
     needs: ghcr_build
     env:
       PERSIST_SANDBOX: "false"
+      tags: ${{ needs.ghcr_build.outputs.tags }}
     strategy:
       fail-fast: false
       matrix:
@@ -113,9 +114,7 @@ jobs:
         env:
           SANDBOX_TYPE: ${{ matrix.sandbox }}
         run: |
-          mv /tmp/sandbox_image_amd64.tar .
-          ls -lh
-          docker load -i sandbox_image_amd64.tar
+          docker load -i /tmp/sandbox_image_amd64.tar
           tag=$(echo "$tags" | cut -d' ' -f1)
           echo "use sandbox with tag $tag"
           OPEN_DEVIN_BUILD_VERSION=$tag TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
@@ -127,7 +126,8 @@ jobs:
 
   ghcr_push:
     runs-on: ubuntu-latest
-    needs: ghcr_build
+    # don't push if integration tests fail
+    needs: [ghcr_build, integration-tests-on-linux]
     if: github.ref == 'refs/heads/main'
 
     env:
