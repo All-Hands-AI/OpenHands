@@ -83,7 +83,6 @@ jobs:
     needs: ghcr_build
     env:
       PERSIST_SANDBOX: "false"
-      tags: ${{ needs.ghcr_build.outputs.tags }}
     steps:
       - uses: actions/checkout@v4
 
@@ -107,10 +106,16 @@ jobs:
 
       - name: Load sandbox image and run sandbox tests
         run: |
-          docker load -i /tmp/sandbox_image_amd64.tar
-          tag=$(echo "$tags" | cut -d' ' -f1)
-          echo "use sandbox with tag $tag"
-          OPEN_DEVIN_BUILD_VERSION=$tag poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml -s ./tests/unit/test_sandbox.py
+          # Load the Docker image and capture the output
+          output=$(docker load -i /tmp/sandbox_image_amd64.tar)
+
+          # Extract the image name from the output
+          image_name=$(echo "$output" | grep -oP 'Loaded image: \K.*')
+
+          # Print the full name of the image
+          echo "Loaded Docker image: $image_name"
+
+          SANDBOX_CONTAINER_IMAGE=$image_name poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml -s ./tests/unit/test_sandbox.py
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -123,7 +128,6 @@ jobs:
     needs: ghcr_build
     env:
       PERSIST_SANDBOX: "false"
-      tags: ${{ needs.ghcr_build.outputs.tags }}
     strategy:
       fail-fast: false
       matrix:
@@ -154,10 +158,16 @@ jobs:
         env:
           SANDBOX_TYPE: ${{ matrix.sandbox }}
         run: |
-          docker load -i /tmp/sandbox_image_amd64.tar
-          tag=$(echo "$tags" | cut -d' ' -f1)
-          echo "use sandbox with tag $tag"
-          OPEN_DEVIN_BUILD_VERSION=$tag TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
+          # Load the Docker image and capture the output
+          output=$(docker load -i /tmp/sandbox_image_amd64.tar)
+
+          # Extract the image name from the output
+          image_name=$(echo "$output" | grep -oP 'Loaded image: \K.*')
+
+          # Print the full name of the image
+          echo "Loaded Docker image: $image_name"
+
+          SANDBOX_CONTAINER_IMAGE=$image_name TEST_IN_CI=true TEST_ONLY=true ./tests/integration/regenerate.sh
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
