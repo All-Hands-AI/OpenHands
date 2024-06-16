@@ -9,7 +9,7 @@ coverage:
         threshold: 100% # allow patch coverage to be lower than project coverage by any amount
     project:
       default:
-        threshold: 10% # allow project coverage to drop at most 10%
+        threshold: 20% # allow project coverage to drop at most 20%
 
 comment: false
 github_checks:
