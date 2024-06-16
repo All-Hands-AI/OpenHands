@@ -21,6 +21,7 @@ import subprocess
 from inspect import signature
 from typing import Optional
 
+import charset_normalizer
 import docx
 import PyPDF2
 from openai import OpenAI
@@ -34,6 +35,12 @@ WINDOW = 100
 ENABLE_AUTO_LINT = os.getenv('ENABLE_AUTO_LINT', 'false').lower() == 'true'
 
 # OPENAI
+"""
+https://github.com/OpenDevin/OpenDevin/pull/2052
+NOTE: GPTSwarm need manually export...
+TODO: Fix it
+export SANDBOX_ENV_OPENAI_API_KEY="sk-***"
+"""
 OPENAI_API_KEY = os.getenv(
     'OPENAI_API_KEY', os.getenv('SANDBOX_ENV_OPENAI_API_KEY', '')
 )
@@ -515,18 +522,18 @@ def parse_image(
     """
     print(f'[Reading image file from {file_path}]')
     # TODO: record the COST of the API call
-    try:
-        base64_image = _base64_img(file_path)
-        response = client.chat.completions.create(
-            model=OPENAI_MODEL,
-            messages=_prepare_image_messages(task, base64_image),
-            max_tokens=MAX_TOKEN,
-        )
-        content = response.choices[0].message.content
-        print(content)
+    # try:
+    base64_image = _base64_img(file_path)
+    response = client.chat.completions.create(
+        model=OPENAI_MODEL,
+        messages=_prepare_image_messages(task, base64_image),
+        max_tokens=MAX_TOKEN,
+    )
+    content = response.choices[0].message.content
+    print(content)
 
-    except Exception as error:
-        print(f'Error with the request: {error}')
+    # except Exception as error:
+    # print(f'Error with the request: {error}')
 
 
 def parse_video(
@@ -599,6 +606,23 @@ def parse_pptx(file_path: str) -> None:
         print(f'Error reading PowerPoint file: {e}')
 
 
+def parse_txt(file_path: str) -> Optional[str]:
+    """
+    Parses the content of a txt file and prints it.
+
+    Args:
+        file_path: str: The path to the file to open.
+    """
+    print(f'[Reading TXT file from {file_path}]')
+    try:
+        content = charset_normalizer.from_path(str(file_path)).best()
+        return str(content)
+
+    except Exception as e:
+        print(f'Error reading TXT file: {e}')
+        return ''
+
+
 __all__ = [
     # file operation
     'open_file',
@@ -615,6 +639,7 @@ __all__ = [
     'parse_docx',
     'parse_latex',
     'parse_pptx',
+    'parse_txt',
 ]
 
 if OPENAI_API_KEY and OPENAI_BASE_URL:

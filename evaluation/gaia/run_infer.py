@@ -14,6 +14,7 @@ import huggingface_hub
 from datasets import load_dataset
 from tqdm import tqdm
 
+from agenthub.gptswarm_agent.gptswarm_agent import GPTSwarm
 from evaluation.gaia.scorer import question_scorer
 from opendevin.controller.state.state import State
 from opendevin.core.config import config, get_llm_config_arg, get_parser
@@ -21,10 +22,16 @@ from opendevin.core.logger import get_console_handler
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.main import main
 from opendevin.events.action import CmdRunAction, MessageAction
-from opendevin.events.serialization.event import event_to_dict
+from opendevin.llm.llm import LLM
 
 DATASET_CACHE_DIR = '~/.cache/open-devin/evals/gaia'
 DATASET_CACHE_DIR = os.path.expanduser(DATASET_CACHE_DIR)
+
+HUGGINGFACE_TOKEN = os.getenv('HUGGINGFACE_TOKEN') or (
+    open(os.path.expanduser('~/.huggingface/token')).read().strip()
+    if os.path.exists(os.path.expanduser('~/.huggingface/token'))
+    else input('Please enter your Hugging Face token: ').strip()
+)
 
 
 def cleanup():
@@ -62,9 +69,16 @@ def monologue_user_response(state: State) -> str:
     raise NotImplementedError('MonologueAgent should never ask for user responses.')
 
 
+def gptswarm_user_response(state: State) -> str:
+    # NOTE: For the AI assistant, state-based design may introduce more uncertainties.
+    # TODO: It is stateless now. Find a way to make it stateful.
+    print('Not implemented.')
+
+
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
     'MonologueAgent': monologue_user_response,
+    'GPTSwarmAgent': gptswarm_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
@@ -72,7 +86,13 @@ AGENT_CLS_TO_INST_SUFFIX = {
 }
 
 
-def process_instance(instance, agent_class, metadata, reset_logger: bool = True):
+def process_instance(
+    instance,
+    agent_class,
+    metadata,
+    reset_logger: bool = True,
+    single_agent: bool = False,
+):
     # create process-specific workspace dir
     # we will create a workspace directory for EACH process
     # so that different agent don't interfere with each other.
@@ -125,45 +145,64 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
     if dest_file:
         instruction += f"\n\nThe mentioned file is provided in the workspace at: {dest_file.split('/')[-1]}"
 
-    instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-    instruction += 'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
-    instruction += (
-        'For example: The answer to the question is <solution> 42 </solution>.\n'
-    )
-    # NOTE: You can actually set slightly different instruction for different agents
-    instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
-    logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
+    # TODO: Need further improve for new V1.1 version and drop if-else.
+    if agent_class == 'GPTSwarmAgent':
+        if dest_file:
+            inputs = [{'task': instruction, 'files': [dest_file]}]
+        else:
+            inputs = [{'task': instruction}]
 
-    # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State = asyncio.run(
-        main(
-            instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
-        )
-    )
-    # ======= Attempt to evaluate the agent's edits =======
-    # If you are working on simplier benchmark that only evaluates the final model output (e.g., in a MessageAction)
-    # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
+        model_name = metadata['model_name']
+        gptswarm_agent = GPTSwarm(llm=LLM(), model_name=model_name)
+        if single_agent:
+            model_answer_raw = asyncio.run(gptswarm_agent.run(inputs))
+        else:
+            model_answer_raw = asyncio.run(gptswarm_agent.swarm_run(inputs))
 
-    if state is None:
-        raise ValueError('State should not be None.')
+        model_answer = model_answer_raw[-1].split('FINAL ANSWER: ')[-1]
 
-    model_answer_raw = ''
-    for act, _ in reversed(state.history):
-        if isinstance(act, CmdRunAction) and act.source == 'agent':
-            model_answer_raw = act.thought
-            break
-        elif isinstance(act, MessageAction) and act.source == 'agent':
-            model_answer_raw = act.content
-            break
-
-    # attempt to parse model_answer
-    model_answer = re.findall(r'<solution>(.*?)</solution>', model_answer_raw)
-    if len(model_answer) == 0:
-        logger.warning(f'Failed to parse model answer: {model_answer_raw}')
-        model_answer = model_answer_raw
     else:
-        model_answer = model_answer[0]
+        instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+        instruction += 'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
+        instruction += (
+            'For example: The answer to the question is <solution> 42 </solution>.\n'
+        )
+        # NOTE: You can actually set slightly different instruction for different agents
+        instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
+        logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
+
+        # Here's how you can run the agent (similar to the `main` function) and get the final task state
+        state: State = asyncio.run(
+            main(
+                instruction,
+                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
+                    agent_class
+                ),
+            )
+        )
+        # ======= Attempt to evaluate the agent's edits =======
+        # If you are working on simplier benchmark that only evaluates the final model output (e.g., in a MessageAction)
+        # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
+
+        if state is None:
+            raise ValueError('State should not be None.')
+
+        model_answer_raw = ''
+        for act, _ in reversed(state.history):
+            if isinstance(act, CmdRunAction) and act.source == 'agent':
+                model_answer_raw = act.thought
+                break
+            elif isinstance(act, MessageAction) and act.source == 'agent':
+                model_answer_raw = act.content
+                break
+
+        # attempt to parse model_answer
+        model_answer = re.findall(r'<solution>(.*?)</solution>', model_answer_raw)
+        if len(model_answer) == 0:
+            logger.warning(f'Failed to parse model answer: {model_answer_raw}')
+            model_answer = model_answer_raw
+        else:
+            model_answer = model_answer[0]
 
     logger.info(
         f'Final message: {model_answer} | Ground truth: {instance["Final answer"]}'
@@ -184,10 +223,10 @@ def process_instance(instance, agent_class, metadata, reset_logger: bool = True)
         'instance': instance,
         'instruction': instance['Question'],
         'metadata': metadata,
-        'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-        ],
-        'error': state.error if state and state.error else None,
+        # 'history': [
+        #     (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
+        # ],
+        #'error': state.error if state and state.error else None,
         'test_result': test_result,
     }
 
@@ -201,11 +240,13 @@ if __name__ == '__main__':
     parser.add_argument(
         '--level',
         type=str,
+        default='2023_level1',
         help='gaia level to evaluate, eg. 2023_level1',
     )
     parser.add_argument(
         '--data-split',
         type=str,
+        default='validation',
         help='data split to evaluate, eg. validation',
     )
     args, _ = parser.parse_known_args()
@@ -221,6 +262,7 @@ if __name__ == '__main__':
         'gaia-benchmark/GAIA',
         repo_type='dataset',
         local_dir=DATASET_CACHE_DIR,
+        token=HUGGINGFACE_TOKEN,
     )
     gaia_tests = dataset[data_split]
     logger.info(f'Evaluating GAIA-Benchmark {level} {data_split} split')
@@ -239,7 +281,7 @@ if __name__ == '__main__':
         agent_class in AGENT_CLS_TO_FAKE_USER_RESPONSE_FN
     ), f'Unsupported agent class: {agent_class}'
     model_name = config.llm.model.split('/')[-1]
-    max_iterations = args.max_iterations
+    # max_iterations = args.max_iterations
     eval_note = ''
     if args.eval_note is not None:
         eval_note += '_N_' + args.eval_note
@@ -247,7 +289,7 @@ if __name__ == '__main__':
         args.eval_output_dir,
         'gaia',
         agent_class,
-        model_name + '_maxiter_' + str(max_iterations) + eval_note,
+        model_name,  # + '_maxiter_' + str(max_iterations) + eval_note,
     )
 
     pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
@@ -261,7 +303,6 @@ if __name__ == '__main__':
         'data_split': data_split,
         'agent_class': agent_class,
         'model_name': model_name,
-        'max_iterations': max_iterations,
         'eval_output_dir': eval_output_dir,
         'start_time': time.strftime('%Y-%m-%d %H:%M:%S'),
         # get the commit id of current repo for reproduciblity
@@ -293,9 +334,7 @@ if __name__ == '__main__':
         )
     output_fp = open(output_file, 'a')
 
-    logger.info(
-        f'Evaluation started with Agent {agent_class}, model {model_name}, max iterations {max_iterations}.'
-    )
+    logger.info(f'Evaluation started with Agent {agent_class}, model {model_name}.')
 
     # =============================================
     # filter out finished instances
