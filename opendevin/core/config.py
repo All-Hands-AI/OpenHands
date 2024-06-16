@@ -47,6 +47,7 @@ class LLMConfig(metaclass=Singleton):
         max_output_tokens: The maximum number of output tokens. This is sent to the LLM.
         input_cost_per_token: The cost per input token. This will available in logs for the user to check.
         output_cost_per_token: The cost per output token. This will available in logs for the user to check.
+        stream: bool = False: litellm attribute whether to enable streaming of responses.
     """
 
     model: str = 'gpt-4o'
@@ -71,6 +72,7 @@ class LLMConfig(metaclass=Singleton):
     max_output_tokens: int | None = None
     input_cost_per_token: float | None = None
     output_cost_per_token: float | None = None
+    stream: bool = False
 
     def defaults_to_dict(self) -> dict:
         """

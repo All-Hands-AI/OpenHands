@@ -42,3 +42,4 @@ class ConfigType(str, Enum):
     SSH_HOSTNAME = 'SSH_HOSTNAME'
     DISABLE_COLOR = 'DISABLE_COLOR'
     DEBUG = 'DEBUG'
+    STREAM = 'STREAM'
