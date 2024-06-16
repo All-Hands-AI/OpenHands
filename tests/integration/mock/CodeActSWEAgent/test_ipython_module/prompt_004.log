@@ -15,10 +15,12 @@ For example, you can list the files in the current directory by <execute_bash> l
 Apart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:
 open_file(path: str, line_number: int | None = 1, context_lines: int | None = 100) -> None:
     Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
+    It only shows the first 100 lines by default! Max `context_lines` supported is 2000, use `scroll up/down`
+    to view the file if you want to see more.
     Args:
     path: str: The path to the file to open, preferredly absolute path.
     line_number: int | None = 1: The line number to move to. Defaults to 1.
-    context_lines: int | None = 100: The total number of lines to display in the window, with line_number as the center (if possible). Defaults to 100.
+    context_lines: int | None = 100: Only shows this number of lines in the context window (usually from line 1), with line_number as the center (if possible). Defaults to 100.
 
 goto_line(line_number: int) -> None:
     Moves the window to show the specified line number.
@@ -50,6 +52,7 @@ append_file(file_name: str, content: str) -> None:
 edit_file(file_name: str, start: int, end: int, content: str) -> None:
     Edit a file.
     Replaces in given file `file_name` the lines `start` through `end` (inclusive) with the given text `content`.
+    If a line must be inserted, an already existing line must be passed in `content` with new content accordingly!
     Args:
     file_name: str: The name of the file to edit.
     start: int: The start line number. Must satisfy start >= 1.
@@ -552,24 +555,26 @@ Package installed successfully
 
 ----------
 
-Next, let's import `pymsgbox` and print its version to `/workspace/test.txt`.
+Next, let's import `pymsgbox`, print its version, and save the output to `/workspace/test.txt`.
 <execute_ipython>
 import pymsgbox
 
-version = pymsgbox.__version__
+version_info = pymsgbox.__version__
 
 with open("/workspace/test.txt", "w") as file:
-    file.write(f"pymsgbox version: {version}\n")
+    file.write(f"pymsgbox version: {version_info}\n")
+
+version_info
 </execute_ipython>
 
 ----------
 
 OBSERVATION:
-[Code executed successfully with no output]
+'1.0.9'
 
 ----------
 
-The version of `pymsgbox` has been written to `/workspace/test.txt`. Let's verify the content of the file to ensure it was written correctly.
+The version of `pymsgbox` has been successfully written to `/workspace/test.txt`. Let's verify the content of the file to ensure everything is correct.
 <execute_bash>
 cat /workspace/test.txt
 </execute_bash>
