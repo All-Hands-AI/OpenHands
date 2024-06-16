@@ -1,0 +1,26 @@
+{
+  "title": {
+    "message": "OpenDevin",
+    "description": "导航栏中的标题"
+  },
+  "logo.alt": {
+    "message": "OpenDevin",
+    "description": "导航栏 logo 的替代文本"
+  },
+  "item.label.Docs": {
+    "message": "文档",
+    "description": "导航栏项目，标签为 Docs"
+  },
+  "item.label.Codebase": {
+    "message": "代码库",
+    "description": "代码库"
+  },
+  "item.label.FAQ": {
+    "message": "常见问题",
+    "description": "常见问题"
+  },
+  "item.label.GitHub": {
+    "message": "GitHub",
+    "description": "导航栏项目，标签为 GitHub"
+  }
+}

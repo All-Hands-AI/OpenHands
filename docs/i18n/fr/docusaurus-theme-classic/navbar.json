@@ -1,0 +1,26 @@
+{
+  "title": {
+    "message": "OpenDevin",
+    "description": "Le titre dans la barre de navigation"
+  },
+  "logo.alt": {
+    "message": "OpenDevin",
+    "description": "Le texte alternatif du logo de la barre de navigation"
+  },
+  "item.label.Docs": {
+    "message": "Docs",
+    "description": "Élément de la barre de navigation avec le label Docs"
+  },
+  "item.label.Codebase": {
+    "message": "Codebase",
+    "description": "Élément de la barre de navigation avec le label Codebase"
+  },
+  "item.label.FAQ": {
+    "message": "FAQ",
+    "description": "Élément de la barre de navigation avec le label FAQ"
+  },
+  "item.label.GitHub": {
+    "message": "GitHub",
+    "description": "Élément de la barre de navigation avec le label GitHub"
+  }
+}

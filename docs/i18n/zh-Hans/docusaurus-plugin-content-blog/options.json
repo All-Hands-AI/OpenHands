@@ -1,0 +1,14 @@
+{
+  "title": {
+    "message": "博客",
+    "description": "用于SEO的博客标题"
+  },
+  "description": {
+    "message": "博客",
+    "description": "用于SEO的博客描述"
+  },
+  "sidebar.title": {
+    "message": "最近文章",
+    "description": "左侧边栏的标签"
+  }
+}

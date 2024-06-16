@@ -1,0 +1,18 @@
+{
+  "version.label": {
+    "message": "下一个",
+    "description": "当前版本的标签"
+  },
+  "sidebar.docsSidebar.category.🤖 LLM Backends": {
+    "message": "🤖 LLM 后端",
+    "description": "侧边栏 docsSidebar 中类别 🤖 LLM Backends 的标签"
+  },
+  "sidebar.docsSidebar.category.🚧 Troubleshooting": {
+    "message": "🚧 故障排除",
+    "description": "侧边栏 docsSidebar 中类别 🚧 Troubleshooting 的标签"
+  },
+  "sidebar.apiSidebar.category.Backend": {
+    "message": "后端",
+    "description": "侧边栏 apiSidebar 中类别 Backend 的标签"
+  }
+}

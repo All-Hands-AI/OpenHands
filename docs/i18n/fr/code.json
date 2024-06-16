@@ -1,0 +1,377 @@
+{
+  "footer.title": {
+    "message": "OpenDevin"
+  },
+  "footer.docs": {
+    "message": "Docs"
+  },
+  "footer.community": {
+    "message": "Communauté"
+  },
+  "footer.copyright": {
+    "message": "Copyright © {year} OpenDevin"
+  },
+  "faq.title": {
+    "message": "Questions Fréquemment Posées"
+  },
+  "faq.description": {
+    "message": "Questions Fréquemment Posées"
+  },
+  "faq.support.title": {
+    "message": "Support"
+  },
+  "faq.support.issue": {
+    "message": "Comment puis-je signaler un problème avec OpenDevin?"
+  },
+  "faq.support.report": {
+    "message": "Veuillez déposer un bug sur {githubLink} si vous remarquez un problème qui affecte probablement d'autres personnes. Si vous rencontrez des difficultés pour l'installation ou avez des questions générales, contactez-nous sur {discordLink} ou {slackLink}."
+  },
+  "faq.general.title": {
+    "message": "Général"
+  },
+  "faq.general.what": {
+    "message": "Qu'est-ce que Devin?"
+  },
+  "faq.general.devin": {
+    "message": "{highlight} représente un agent autonome de pointe conçu pour naviguer dans les complexités de l'ingénierie logicielle. Il utilise une combinaison d'outils tels qu'un shell, un éditeur de code et un navigateur web, mettant en lumière le potentiel inexploité des LLMs dans le développement de logiciels. Notre objectif est d'explorer et d'élargir les capacités de Devin, en identifiant ses forces et ses faiblesses, afin de guider le progrès des modèles de code ouvert."
+  },
+  "faq.why.title": {
+    "message": "Pourquoi OpenDevin?"
+  },
+  "faq.why.opendevin": {
+    "message": "Le projet {highlight} est né d'un désir de reproduire, améliorer et innover au-delà du modèle original Devin. En utilisant {githubLink}, nous visons à relever les défis rencontrés par les Code LLMs dans des scénarios pratiques, en produisant des travaux qui contribuent significativement à la communauté et ouvrent la voie à de futurs avancements."
+  },
+  "faq.fix.title": {
+    "message": "Comment corriger un problème sur OpenDevin?"
+  },
+  "faq.fix.steps": {
+    "message": "Pour corriger un problème sur GitHub en utilisant OpenDevin, envoyez une demande à OpenDevin en lui demandant de suivre ces étapes:"
+  },
+  "faq.fix.step1": {
+    "message": "Lire le problème sur {githubLink}"
+  },
+  "faq.fix.step2": {
+    "message": "Cloner le dépôt et créer une nouvelle branche"
+  },
+  "faq.fix.step3": {
+    "message": "En fonction des instructions dans la description du problème, modifiez les fichiers pour résoudre le problème"
+  },
+  "faq.fix.step4": {
+    "message": "Poussez le résultat sur GitHub en utilisant la variable d'environnement GITHUB_TOKEN"
+  },
+  "faq.fix.step5": {
+    "message": "Dites-moi le lien vers lequel je dois aller pour envoyer une pull request"
+  },
+  "faq.fix.beforeRun": {
+    "message": "Avant d'exécuter OpenDevin, vous pouvez faire:"
+  },
+  "faq.fix.command1": {
+    "message": "export SANDBOX_ENV_GITHUB_TOKEN=XXX"
+  },
+  "faq.fix.note1": {
+    "message": "où XXX est un token GitHub que vous avez créé et qui a des permissions pour pousser sur le dépôt OpenDevin. Si vous n'avez pas la permission d'écriture sur le dépôt OpenDevin, vous devrez peut-être changer cela pour:"
+  },
+  "faq.fix.command2": {
+    "message": "Poussez le résultat sur mon fork à https://github.com/USERNAME/OpenDevin/ en utilisant la variable d'environnement GITHUB_TOKEN"
+  },
+  "faq.fix.note2": {
+    "message": "où USERNAME est votre nom d'utilisateur GitHub."
+  },
+  "homepage.description": {
+    "message": "Génération de code pilotée par l'IA pour l'ingénierie logicielle.",
+    "description": "La description de la page d'accueil"
+  },
+  "homepage.getStarted": {
+    "message": "Commencer"
+  },
+  "welcome.message": {
+    "message": "Bienvenue sur OpenDevin, un projet open-source visant à reproduire Devin, un ingénieur logiciel autonome en IA capable d'exécuter des tâches d'ingénierie complexes et de collaborer activement avec les utilisateurs sur des projets de développement logiciel. Ce projet aspire à reproduire, améliorer et innover sur Devin grâce à la puissance de la communauté open-source."
+  },
+  "theme.ErrorPageContent.title": {
+    "message": "Cette page a planté.",
+    "description": "Le titre de la page de secours lorsque la page a planté"
+  },
+  "theme.BackToTopButton.buttonAriaLabel": {
+    "message": "Retour au début de la page",
+    "description": "L'étiquette ARIA pour le bouton de retour en haut de page"
+  },
+  "theme.blog.archive.title": {
+    "message": "Archive",
+    "description": "Le titre de la page et de l'en-tête de la page d'archive du blog"
+  },
+  "theme.blog.archive.description": {
+    "message": "Archive",
+    "description": "La description de la page et de l'en-tête de la page d'archive du blog"
+  },
+  "theme.blog.paginator.navAriaLabel": {
+    "message": "Pagination de la liste des articles du blog",
+    "description": "L'étiquette ARIA pour la pagination du blog"
+  },
+  "theme.blog.paginator.newerEntries": {
+    "message": "Nouvelles entrées",
+    "description": "L'étiquette utilisée pour naviguer vers les pages des articles de blog plus récents (page précédente)"
+  },
+  "theme.blog.paginator.olderEntries": {
+    "message": "Anciennes entrées",
+    "description": "L'étiquette utilisée pour naviguer vers les pages des articles de blog plus anciens (page suivante)"
+  },
+  "theme.blog.post.paginator.navAriaLabel": {
+    "message": "Pagination des articles du blog",
+    "description": "L'étiquette ARIA pour la pagination des articles du blog"
+  },
+  "theme.blog.post.paginator.newerPost": {
+    "message": "Article plus récent",
+    "description": "L'étiquette du bouton d'article de blog pour naviguer vers l'article précédent/plus récent"
+  },
+  "theme.blog.post.paginator.olderPost": {
+    "message": "Article plus ancien",
+    "description": "L'étiquette du bouton d'article de blog pour naviguer vers l'article suivant/plus ancien"
+  },
+  "theme.blog.post.plurals": {
+    "message": "Un article|{count} articles",
+    "description": "Etiquette pluriel pour \"{count} posts\". Utilisez autant de formes plurielles (séparées par \"|\") que votre langue le permet (voir https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
+  },
+  "theme.blog.tagTitle": {
+    "message": "{nPosts} tagués avec « {tagName} »",
+    "description": "Le titre de la page pour une étiquette de blog"
+  },
+  "theme.tags.tagsPageLink": {
+    "message": "Voir tous les tags",
+    "description": "L'étiquette du lien vers la page de la liste des tags"
+  },
+  "theme.colorToggle.ariaLabel": {
+    "message": "Basculer entre le mode sombre et clair (actuellement {mode})",
+    "description": "L'étiquette ARIA pour le basculement du mode de couleur de la barre de navigation"
+  },
+  "theme.colorToggle.ariaLabel.mode.dark": {
+    "message": "mode sombre",
+    "description": "Le nom pour le mode de couleur sombre"
+  },
+  "theme.colorToggle.ariaLabel.mode.light": {
+    "message": "mode clair",
+    "description": "Le nom pour le mode de couleur clair"
+  },
+  "theme.docs.breadcrumbs.navAriaLabel": {
+    "message": "Fil d'Ariane",
+    "description": "L'étiquette ARIA pour les fils d'Ariane"
+  },
+  "theme.docs.DocCard.categoryDescription.plurals": {
+    "message": "1 élément|{count} éléments",
+    "description": "La description par défaut pour une carte de catégorie dans l'index généré sur le nombre d'éléments que cette catégorie inclut"
+  },
+  "theme.docs.paginator.navAriaLabel": {
+    "message": "Pages de documentation",
+    "description": "L'étiquette ARIA pour la pagination des documents"
+  },
+  "theme.docs.paginator.previous": {
+    "message": "Précédent",
+    "description": "L'étiquette utilisée pour naviguer vers le document précédent"
+  },
+  "theme.docs.paginator.next": {
+    "message": "Suivant",
+    "description": "L'étiquette utilisée pour naviguer vers le document suivant"
+  },
+  "theme.docs.tagDocListPageTitle.nDocsTagged": {
+    "message": "Un document tagué|{count} documents tagués",
+    "description": "Etiquette pluriel pour \"{count} docs tagged\". Utilisez autant de formes plurielles (séparées par \"|\") que votre langue le permet (voir https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
+  },
+  "theme.docs.tagDocListPageTitle": {
+    "message": "{nDocsTagged} avec \"{tagName}\"",
+    "description": "Le titre de la page pour une étiquette de documents"
+  },
+  "theme.docs.versionBadge.label": {
+    "message": "Version: {versionLabel}"
+  },
+  "theme.docs.versions.unreleasedVersionLabel": {
+    "message": "Ceci est la documentation de la prochaine version {versionLabel} de {siteTitle}.",
+    "description": "L'étiquette utilisée pour informer l'utilisateur qu'il consulte une version non publiée de la documentation"
+  },
+  "theme.docs.versions.unmaintainedVersionLabel": {
+    "message": "Ceci est la documentation de {siteTitle} {versionLabel}, qui n'est plus activement maintenue.",
+    "description": "L'étiquette utilisée pour informer l'utilisateur qu'il consulte une version non maintenue de la documentation"
+  },
+  "theme.docs.versions.latestVersionSuggestionLabel": {
+    "message": "Pour une documentation à jour, consultez la {latestVersionLink} ({versionLabel}).",
+    "description": "L'étiquette utilisée pour inviter l'utilisateur à consulter la dernière version"
+  },
+  "theme.docs.versions.latestVersionLinkLabel": {
+    "message": "dernière version",
+    "description": "L'étiquette utilisée pour le lien de suggestion de la dernière version"
+  },
+  "theme.common.editThisPage": {
+    "message": "Éditer cette page",
+    "description": "L'étiquette du lien pour éditer la page actuelle"
+  },
+  "theme.common.headingLinkTitle": {
+    "message": "Lien direct vers {heading}",
+    "description": "Titre pour le lien vers l'en-tête"
+  },
+  "theme.lastUpdated.atDate": {
+    "message": " le {date}",
+    "description": "Les mots utilisés pour décrire la date de la dernière mise à jour d'une page"
+  },
+  "theme.lastUpdated.byUser": {
+    "message": " par {user}",
+    "description": "Les mots utilisés pour décrire par qui la page a été mise à jour pour la dernière fois"
+  },
+  "theme.lastUpdated.lastUpdatedAtBy": {
+    "message": "Dernière mise à jour{atDate}{byUser}",
+    "description": "La phrase utilisée pour afficher la dernière mise à jour d'une page et par qui"
+  },
+  "theme.navbar.mobileVersionsDropdown.label": {
+    "message": "Versions",
+    "description": "L'étiquette pour le menu déroulant des versions de la barre de navigation sur les mobiles"
+  },
+  "theme.NotFound.title": {
+    "message": "Page introuvable",
+    "description": "Le titre de la page 404"
+  },
+  "theme.tags.tagsListLabel": {
+    "message": "Tags :",
+    "description": "L'étiquette aux côtés de la liste des tags"
+  },
+  "theme.admonition.caution": {
+    "message": "attention",
+    "description": "L'étiquette par défaut utilisée pour l'avertissement (:::caution)"
+  },
+  "theme.admonition.danger": {
+    "message": "danger",
+    "description": "L'étiquette par défaut utilisée pour le danger (:::danger)"
+  },
+  "theme.admonition.info": {
+    "message": "info",
+    "description": "L'étiquette par défaut utilisée pour l'information (:::info)"
+  },
+  "theme.admonition.note": {
+    "message": "remarque",
+    "description": "L'étiquette par défaut utilisée pour la remarque (:::note)"
+  },
+  "theme.admonition.tip": {
+    "message": "astuce",
+    "description": "L'étiquette par défaut utilisée pour l'astuce (:::tip)"
+  },
+  "theme.admonition.warning": {
+    "message": "attention",
+    "description": "L'étiquette par défaut utilisée pour l'avertissement (:::warning)"
+  },
+  "theme.AnnouncementBar.closeButtonAriaLabel": {
+    "message": "Fermer",
+    "description": "L'étiquette ARIA pour le bouton de fermeture de la barre d'annonce"
+  },
+  "theme.blog.sidebar.navAriaLabel": {
+    "message": "Navigation article de blog récent",
+    "description": "L'étiquette ARIA pour les articles récents dans la barre latérale du blog"
+  },
+  "theme.CodeBlock.copied": {
+    "message": "Copié",
+    "description": "L'étiquette du bouton copié sur les blocs de code"
+  },
+  "theme.CodeBlock.copyButtonAriaLabel": {
+    "message": "Copier le code",
+    "description": "L'étiquette ARIA pour le bouton de copie des blocs de code"
+  },
+  "theme.CodeBlock.copy": {
+    "message": "Copier",
+    "description": "L'étiquette du bouton de copie sur les blocs de code"
+  },
+  "theme.CodeBlock.wordWrapToggle": {
+    "message": "Activer/désactiver le retour à la ligne",
+    "description": "L'attribut titre pour le bouton de basculement du retour à la ligne des lignes de bloc de code"
+  },
+  "theme.DocSidebarItem.expandCategoryAriaLabel": {
+    "message": "Développer la catégorie '{label}' de la barre latérale",
+    "description": "L'étiquette ARIA pour développer la catégorie de la barre latérale"
+  },
+  "theme.DocSidebarItem.collapseCategoryAriaLabel": {
+    "message": "Réduire la catégorie '{label}' de la barre latérale",
+    "description": "L'étiquette ARIA pour réduire la catégorie de la barre latérale"
+  },
+  "theme.NavBar.navAriaLabel": {
+    "message": "Main",
+    "description": "L'étiquette ARIA pour la navigation principale"
+  },
+  "theme.navbar.mobileLanguageDropdown.label": {
+    "message": "Langues",
+    "description": "L'étiquette pour le sélecteur de langue mobile de la barre de navigation"
+  },
+  "theme.NotFound.p1": {
+    "message": "Nous n'avons pas trouvé ce que vous recherchez.",
+    "description": "Le premier paragraphe de la page 404"
+  },
+  "theme.NotFound.p2": {
+    "message": "Veuillez contacter le propriétaire du site qui vous a lié à l'URL d'origine et leur faire savoir que leur lien est cassé.",
+    "description": "Le deuxième paragraphe de la page 404"
+  },
+  "theme.TOCCollapsible.toggleButtonLabel": {
+    "message": "Sur cette page",
+    "description": "L'étiquette utilisée par le bouton sur le composant TOC rétractable"
+  },
+  "theme.blog.post.readMore": {
+    "message": "Lire plus",
+    "description": "L'étiquette utilisée dans les extraits d'articles de blog pour accéder aux articles complets"
+  },
+  "theme.blog.post.readMoreLabel": {
+    "message": "En savoir plus sur {title}",
+    "description": "L'étiquette ARIA pour le lien vers les articles complets à partir des extraits"
+  },
+  "theme.blog.post.readingTime.plurals": {
+    "message": "Une minute de lecture|{readingTime} minutes de lecture",
+    "description": "Etiquette pluriel pour \"{readingTime} min read\". Utilisez autant de formes plurielles (séparées par \"|\") que votre langue le permet (voir https://www.unicode.org/cldr/cldr-aux/charts/34/supplemental/language_plural_rules.html)"
+  },
+  "theme.docs.breadcrumbs.home": {
+    "message": "Page d'accueil",
+    "description": "L'étiquette ARIA pour la page d'accueil dans les fils d'Ariane"
+  },
+  "theme.docs.sidebar.collapseButtonTitle": {
+    "message": "Réduire le menu latéral",
+    "description": "L'attribut titre pour le bouton de réduction de la barre latérale des documents"
+  },
+  "theme.docs.sidebar.collapseButtonAriaLabel": {
+    "message": "Réduire le menu latéral",
+    "description": "L'attribut titre pour le bouton de réduction de la barre latérale des documents"
+  },
+  "theme.docs.sidebar.navAriaLabel": {
+    "message": "Barre latérale de la documentation",
+    "description": "L'étiquette ARIA pour la navigation de la barre latérale"
+  },
+  "theme.docs.sidebar.closeSidebarButtonAriaLabel": {
+    "message": "Fermer la barre de navigation",
+    "description": "L'étiquette ARIA pour le bouton de fermeture de la barre latérale mobile"
+  },
+  "theme.navbar.mobileSidebarSecondaryMenu.backButtonLabel": {
+    "message": "← Retour au menu principal",
+    "description": "L'étiquette du bouton de retour au menu principal, dans le menu secondaire de la barre de navigation mobile (notamment utilisé pour afficher la barre latérale des documents)"
+  },
+  "theme.docs.sidebar.toggleSidebarButtonAriaLabel": {
+    "message": "Ouvrir/fermer la barre de navigation",
+    "description": "The ARIA label for hamburger menu button of mobile navigation"
+  },
+  "theme.docs.sidebar.expandButtonTitle": {
+    "message": "Déplier le menu latéral",
+    "description": "The ARIA label and title attribute for expand button of doc sidebar"
+  },
+  "theme.docs.sidebar.expandButtonAriaLabel": {
+    "message": "Déplier le menu latéral",
+    "description": "The ARIA label and title attribute for expand button of doc sidebar"
+  },
+  "theme.ErrorPageContent.tryAgain": {
+    "message": "Réessayer",
+    "description": "The label of the button to try again rendering when the React error boundary captures an error"
+  },
+  "theme.common.skipToMainContent": {
+    "message": "Aller au contenu principal",
+    "description": "The skip to content label used for accessibility, allowing to rapidly navigate to main content with keyboard tab/enter navigation"
+  },
+  "theme.tags.tagsPageTitle": {
+    "message": "Tags",
+    "description": "The title of the tag list page"
+  },
+  "theme.unlistedContent.title": {
+    "message": "Page non répertoriée",
+    "description": "The unlisted content banner title"
+  },
+  "theme.unlistedContent.message": {
+    "message": "Cette page n'est pas répertoriée. Les moteurs de recherche ne l'indexeront pas, et seuls les utilisateurs ayant un lien direct peuvent y accéder.",
+    "description": "The unlisted content banner message"
+  }
+}
