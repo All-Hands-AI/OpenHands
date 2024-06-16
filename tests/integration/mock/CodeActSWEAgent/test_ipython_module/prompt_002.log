@@ -96,8 +96,8 @@ parse_pptx(file_path: str) -> None:
 Please note that THE `edit_file` FUNCTION REQUIRES PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
 
 The assistant's response should be concise.
-The assistant should include ONLY ONE <execute_ipython> or <execute_bash> or <execute_browse> in every one of the responses, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
-IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> or <execute_browse> instead of providing it.
+The assistant should include ONLY ONE <execute_ipython> or <execute_bash> in every one of the responses, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
+IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
 
 
 ----------
@@ -538,15 +538,22 @@ Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt
 
 ----------
 
-Let's start by installing the `pymsgbox` package.
-<execute_bash>
-pip install pymsgbox==1.0.9
-</execute_bash>
+Understood! Let's proceed by installing the `pymsgbox` package version 1.0.9:
+
+
+```
+pythonCopy code``
+```
+Once the installation is complete, we'll import `pymsgbox` and print its version to a file named `test.txt` in the `/workspace` directory. Let's continue!
+<execute_ipython>
+# Install pymsgbox version 1.0.9
+%pip install pymsgbox==1.0.9
+</execute_ipython>
 
 ----------
 
 OBSERVATION:
-Package installed successfully
-[Command -1 finished with exit code 0]]
+[Package installed successfully]
+[Kernel restarted successfully to load the package]
 
 ENVIRONMENT REMINDER: You have 8 turns left to complete the task.

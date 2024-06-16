@@ -31,7 +31,6 @@ from opendevin.llm.llm import LLM
 """
 FIXME: There are a few problems this surfaced
 * FileWrites seem to add an unintended newline at the end of the file
-* command_id is sometimes a number, sometimes a string
 * Why isn't the output of the background command split between two steps?
 * Browser not working
 """
@@ -100,12 +99,12 @@ class DummyAgent(Agent):
                 'observations': [
                     CmdOutputObservation(
                         'Background command started. To stop it, send a `kill` action with command_id 42',
-                        command_id='42',  # type: ignore[arg-type]
+                        command_id=42,
                         command=BACKGROUND_CMD,
                     ),
                     CmdOutputObservation(
                         'This is in the background\nThis too\n',
-                        command_id='42',  # type: ignore[arg-type]
+                        command_id=42,
                         command=BACKGROUND_CMD,
                     ),
                 ],
@@ -114,7 +113,7 @@ class DummyAgent(Agent):
                 'action': AgentRecallAction(query='who am I?'),
                 'observations': [
                     AgentRecallObservation('', memories=['I am a computer.']),
-                    # CmdOutputObservation('This too\n', command_id='42', command=BACKGROUND_CMD),
+                    # CmdOutputObservation('This too\n', command_id=42, command=BACKGROUND_CMD),
                 ],
             },
             {

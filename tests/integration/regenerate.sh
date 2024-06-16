@@ -5,6 +5,8 @@ set -eo pipefail
 ##           CONSTANTS AND ENVIRONMENTAL VARIABLES          ##
 ##############################################################
 
+TMP_FILE="${TMP_FILE:-tmp.log}"
+
 if [ -z $WORKSPACE_MOUNT_PATH ]; then
   WORKSPACE_MOUNT_PATH=$(pwd)
 fi
@@ -18,8 +20,10 @@ WORKSPACE_MOUNT_PATH_IN_SANDBOX="/workspace"
 
 mkdir -p $WORKSPACE_BASE
 
-# use environmental variable if exist, otherwise use "ssh"
+# use environmental variable if exists, otherwise use "ssh"
 SANDBOX_TYPE="${SANDBOX_TYPE:-ssh}"
+# TODO: we should also test PERSIST_SANDBOX = true, once it's fixed
+PERSIST_SANDBOX=false
 MAX_ITERATIONS=10
 
 agents=("DelegatorAgent" "ManagerAgent" "BrowsingAgent" "MonologueAgent" "CodeActAgent" "PlannerAgent" "CodeActSWEAgent")
@@ -57,22 +61,66 @@ run_test() {
   fi
 
   SANDBOX_TYPE=$SANDBOX_TYPE \
+    PERSIST_SANDBOX=$PERSIST_SANDBOX \
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
     MAX_ITERATIONS=$MAX_ITERATIONS \
     AGENT=$agent \
-    $pytest_cmd
-    # return exit code of pytest
-    return $?
+    $pytest_cmd 2>&1 | tee $TMP_FILE
+
+  # Capture the exit code of pytest
+  pytest_exit_code=${PIPESTATUS[0]}
+
+  if grep -q "docker.errors.DockerException" $TMP_FILE; then
+    echo "Error: docker.errors.DockerException found in the output. Exiting."
+    echo "Please check if your Docker daemon is running!"
+    exit 1
+  fi
+
+  if grep -q "tenacity.RetryError" $TMP_FILE; then
+    echo "Error: tenacity.RetryError found in the output. Exiting."
+    echo "This is mostly a transient error. Please retry."
+    exit 1
+  fi
+
+  if grep -q "ExceptionPxssh" $TMP_FILE; then
+    echo "Error: ExceptionPxssh found in the output. Exiting."
+    echo "Could not connect to sandbox via ssh. Please stop any stale docker container and retry."
+    exit 1
+  fi
+
+  if grep -q "Address already in use" $TMP_FILE; then
+    echo "Error: Address already in use found in the output. Exiting."
+    echo "Browsing tests need a local http server. Please check if there's any zombie process running start_http_server.py."
+    exit 1
+  fi
+
+  # Return the exit code of pytest
+  return $pytest_exit_code
 }
 
 # browsing capability needs a local http server
 launch_http_server() {
   poetry run python tests/integration/start_http_server.py &
   HTTP_SERVER_PID=$!
+  echo "Test http server launched, PID = $HTTP_SERVER_PID"
   sleep 10
 }
+
+cleanup() {
+  echo "Cleaning up before exit..."
+  if [ -n "$HTTP_SERVER_PID" ]; then
+    echo "Killing HTTP server..."
+    kill $HTTP_SERVER_PID
+    unset HTTP_SERVER_PID
+  fi
+  [ -f $TMP_FILE ] && rm $TMP_FILE
+  echo "Cleanup done!"
+}
+
+# Trap the EXIT signal to run the cleanup function
+trap cleanup EXIT
 
 # generate prompts again, using existing LLM responses under tests/integration/mock/[agent]/[test_name]/response_*.log
 # this is a compromise; the prompts might be non-sense yet still pass the test, because we don't use a real LLM to
@@ -82,6 +130,7 @@ regenerate_without_llm() {
   # set -x to print the command being executed
   set -x
   SANDBOX_TYPE=$SANDBOX_TYPE \
+    PERSIST_SANDBOX=$PERSIST_SANDBOX \
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
@@ -110,6 +159,7 @@ regenerate_with_llm() {
   echo -e "/exit\n" | \
     DEBUG=true \
     SANDBOX_TYPE=$SANDBOX_TYPE \
+    PERSIST_SANDBOX=$PERSIST_SANDBOX \
     WORKSPACE_BASE=$WORKSPACE_BASE \
     WORKSPACE_MOUNT_PATH=$WORKSPACE_MOUNT_PATH AGENT=$agent \
     WORKSPACE_MOUNT_PATH_IN_SANDBOX=$WORKSPACE_MOUNT_PATH_IN_SANDBOX \
@@ -121,12 +171,6 @@ regenerate_with_llm() {
 
   mkdir -p tests/integration/mock/$agent/$test_name/
   mv logs/llm/**/* tests/integration/mock/$agent/$test_name/
-
-  if [[ "$test_name" = "test_browse_internet" ]]; then
-    # Terminate the HTTP server
-    kill $HTTP_SERVER_PID
-  fi
-
 
 }
 
