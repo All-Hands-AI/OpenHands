@@ -129,14 +129,17 @@ class SandboxConfig(metaclass=Singleton):
     Configuration for the sandbox.
 
     Attributes:
+        type: The type of sandbox to use. Options are: ssh, exec, e2b, local.
         container_image: The container image to use for the sandbox.
         user_id: The user ID for the sandbox.
         timeout: The timeout for the sandbox.
         initialize_plugins: Whether to initialize the plugins.
         fast_boot: Whether to fast boot the sandbox.
 
+
     """
 
+    type: str = 'ssh'
     container_image: str = 'ghcr.io/opendevin/sandbox' + (
         f':{os.getenv("OPEN_DEVIN_BUILD_VERSION")}'
         if os.getenv('OPEN_DEVIN_BUILD_VERSION')
@@ -195,7 +198,6 @@ class AppConfig(metaclass=Singleton):
         max_iterations: The maximum number of iterations.
         max_budget_per_task: The maximum budget allowed per task, beyond which the agent will stop.
         e2b_api_key: The E2B API key.
-        sandbox_type: The type of sandbox to use. Options are: ssh, exec, e2b, local.
         use_host_network: Whether to use the host network.
         ssh_hostname: The SSH hostname.
         disable_color: Whether to disable color. For terminals that don't support color.
@@ -220,7 +222,6 @@ class AppConfig(metaclass=Singleton):
     max_iterations: int = 100
     max_budget_per_task: float | None = None
     e2b_api_key: str = ''
-    sandbox_type: str = 'ssh'  # Can be 'ssh', 'exec', or 'e2b'
     use_host_network: bool = False
     ssh_hostname: str = 'localhost'
     disable_color: bool = False
@@ -434,7 +435,7 @@ def finalize_config(config: AppConfig):
     config.workspace_base = os.path.abspath(config.workspace_base)
 
     # In local there is no sandbox, the workspace will have the same pwd as the host
-    if config.sandbox_type == 'local':
+    if config.sandbox.type == 'local':
         config.workspace_mount_path_in_sandbox = config.workspace_mount_path
 
     if config.workspace_mount_rewrite:  # and not config.workspace_mount_path:

@@ -51,6 +51,7 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     monkeypatch.setenv('AGENT_MEMORY_MAX_THREADS', '4')
     monkeypatch.setenv('AGENT_MEMORY_ENABLED', 'True')
     monkeypatch.setenv('AGENT', 'CodeActAgent')
+    monkeypatch.setenv('SANDBOX_TYPE', 'local')
 
     config = AppConfig()
     load_from_env(config, os.environ)
@@ -62,6 +63,9 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     assert isinstance(config.agent, AgentConfig)
     assert isinstance(config.agent.memory_max_threads, int)
     assert config.agent.memory_max_threads == 4
+    assert config.agent.memory_enabled is True
+    assert config.agent.name == 'CodeActAgent'
+    assert config.sandbox_type == 'local'
 
 
 def test_load_from_old_style_env(monkeypatch, default_config):
