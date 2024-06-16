@@ -24,11 +24,6 @@ from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.utils import find_available_tcp_port
 
-# FIXME: these are not used, can we remove them?
-InputType = namedtuple('InputType', ['content'])
-OutputType = namedtuple('OutputType', ['content'])
-
-
 class SSHExecCancellableStream(CancellableStream):
     def __init__(self, ssh, cmd, timeout):
         super().__init__(self.read_output())

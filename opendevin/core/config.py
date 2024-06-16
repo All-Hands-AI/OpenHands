@@ -340,9 +340,9 @@ def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
     except FileNotFoundError as e:
         logger.info(f'Config file not found: {e}')
         return
-    except toml.TomlDecodeError:
+    except toml.TomlDecodeError as e:
         logger.warning(
-            'Cannot parse config from toml, toml values have not been applied.',
+            f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
             exc_info=False,
         )
         return
@@ -368,9 +368,9 @@ def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
 
         # update the config object with the new values
         config = AppConfig(llm=llm_config, agent=agent_config, **core_config)
-    except (TypeError, KeyError):
+    except (TypeError, KeyError) as e:
         logger.warning(
-            'Cannot parse config from toml, toml values have not been applied.',
+            f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
             exc_info=False,
         )
 
