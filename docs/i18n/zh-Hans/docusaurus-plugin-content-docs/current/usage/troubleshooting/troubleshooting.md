@@ -90,7 +90,7 @@ AttributeError: 'NoneType' object has no attribute 'request'
 * 检查 Ollama（或您使用的其他 LLM）是否正常运行
 * 确保在 Docker 中运行时使用 `--add-host host.docker.internal:host-gateway`
 
-## `404 资源未找到`
+## `404 Resource not found 资源未找到`
 
 ### 症状
 
