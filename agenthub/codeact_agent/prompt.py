@@ -37,9 +37,10 @@ For example, to push a branch `my_branch` to the GitHub repo `owner/repo`:
 If $GITHUB_TOKEN is not set, ask the user to set it."""
 
 SYSTEM_SUFFIX = """Responses should be concise.
-The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
-Include ONLY ONE <execute_ipython>, <execute_bash>, or <execute_browse> per response, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
+The assistant should attempt fewer things at a time instead of putting too many commands OR too much code in one "execute" block.
+Include ONLY ONE <execute_ipython>, <execute_bash>, or <execute_browse> per response, unless the assistant is finished with the task or needs more input or action from the user in order to proceed.
 IMPORTANT: Execute code using <execute_ipython>, <execute_bash>, or <execute_browse> whenever possible.
+When handling files, try to use full paths and pwd to avoid errors.
 """
 
 

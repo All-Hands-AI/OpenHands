@@ -29,7 +29,9 @@ temperature = 0.0
 ```
 
 ## Run Inference on logic_reasoning
-The following code will run inference on the first example of the ProntoQA dataset with model gpt-4o.
+The following code will run inference on the first example of the ProntoQA dataset with model gpt-4o,
+using OpenDevin 0.6.2 version.
+
 ```bash
-./evaluation/logic_reasoning/scripts/run_infer.sh ProntoQA gpt-4o 1
+./evaluation/logic_reasoning/scripts/run_infer.sh ProntoQA gpt-4o 0.6.2 1
 ```

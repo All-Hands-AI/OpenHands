@@ -127,6 +127,7 @@ class TestAgentController:
     def test_is_stuck_repeating_action_error_observation(
         self, controller: AgentController, event_stream: EventStream
     ):
+        # (action, error_observation), not necessarily the same error
         message_action = MessageAction(content='Done', wait_for_response=False)
         message_action._source = EventSource.USER
 

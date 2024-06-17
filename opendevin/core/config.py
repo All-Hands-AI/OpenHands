@@ -5,6 +5,7 @@ import pathlib
 import platform
 import uuid
 from dataclasses import dataclass, field, fields, is_dataclass
+from enum import Enum
 from types import UnionType
 from typing import Any, ClassVar, get_args, get_origin
 
@@ -126,6 +127,10 @@ class AgentConfig(metaclass=Singleton):
         return dict
 
 
+class UndefinedString(str, Enum):
+    UNDEFINED = 'UNDEFINED'
+
+
 @dataclass
 class AppConfig(metaclass=Singleton):
     """
@@ -163,7 +168,9 @@ class AppConfig(metaclass=Singleton):
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
     workspace_base: str = os.path.join(os.getcwd(), 'workspace')
-    workspace_mount_path: str | None = None
+    workspace_mount_path: str = (
+        UndefinedString.UNDEFINED  # this path should always be set when config is fully loaded
+    )
     workspace_mount_path_in_sandbox: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
@@ -222,7 +229,12 @@ class AppConfig(metaclass=Singleton):
             attr_name = f.name
             attr_value = getattr(self, f.name)
 
-            if attr_name in ['e2b_api_key', 'github_token']:
+            if attr_name in [
+                'e2b_api_key',
+                'github_token',
+                'jwt_secret',
+                'ssh_password',
+            ]:
                 attr_value = '******' if attr_value else None
 
             attr_str.append(f'{attr_name}={repr(attr_value)}')
@@ -338,9 +350,9 @@ def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
     except FileNotFoundError as e:
         logger.info(f'Config file not found: {e}')
         return
-    except toml.TomlDecodeError:
+    except toml.TomlDecodeError as e:
         logger.warning(
-            'Cannot parse config from toml, toml values have not been applied.',
+            f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
             exc_info=False,
         )
         return
@@ -366,9 +378,9 @@ def load_from_toml(config: AppConfig, toml_file: str = 'config.toml'):
 
         # update the config object with the new values
         config = AppConfig(llm=llm_config, agent=agent_config, **core_config)
-    except (TypeError, KeyError):
+    except (TypeError, KeyError) as e:
         logger.warning(
-            'Cannot parse config from toml, toml values have not been applied.',
+            f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
             exc_info=False,
         )
 
@@ -379,7 +391,7 @@ def finalize_config(config: AppConfig):
     """
 
     # Set workspace_mount_path if not set by the user
-    if config.workspace_mount_path is None:
+    if config.workspace_mount_path is UndefinedString.UNDEFINED:
         config.workspace_mount_path = os.path.abspath(config.workspace_base)
     config.workspace_base = os.path.abspath(config.workspace_base)
 

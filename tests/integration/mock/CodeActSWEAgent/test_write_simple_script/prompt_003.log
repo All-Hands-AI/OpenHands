@@ -13,11 +13,14 @@ For example, you can list the files in the current directory by <execute_bash> l
 
 
 Apart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:
-open_file(path: str, line_number: Optional[int] = None) -> None:
+open_file(path: str, line_number: int | None = 1, context_lines: int | None = 100) -> None:
     Opens the file at the given path in the editor. If line_number is provided, the window will be moved to include that line.
+    It only shows the first 100 lines by default! Max `context_lines` supported is 2000, use `scroll up/down`
+    to view the file if you want to see more.
     Args:
-    path: str: The path to the file to open.
-    line_number: Optional[int]: The line number to move to.
+    path: str: The path to the file to open, preferredly absolute path.
+    line_number: int | None = 1: The line number to move to. Defaults to 1.
+    context_lines: int | None = 100: Only shows this number of lines in the context window (usually from line 1), with line_number as the center (if possible). Defaults to 100.
 
 goto_line(line_number: int) -> None:
     Moves the window to show the specified line number.
@@ -49,6 +52,7 @@ append_file(file_name: str, content: str) -> None:
 edit_file(file_name: str, start: int, end: int, content: str) -> None:
     Edit a file.
     Replaces in given file `file_name` the lines `start` through `end` (inclusive) with the given text `content`.
+    If a line must be inserted, an already existing line must be passed in `content` with new content accordingly!
     Args:
     file_name: str: The name of the file to edit.
     start: int: The start line number. Must satisfy start >= 1.
@@ -96,8 +100,8 @@ parse_pptx(file_path: str) -> None:
 Please note that THE `edit_file` FUNCTION REQUIRES PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
 
 The assistant's response should be concise.
-The assistant should include ONLY ONE <execute_ipython> or <execute_bash> or <execute_browse> in every one of the responses, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
-IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> or <execute_browse> instead of providing it.
+The assistant should include ONLY ONE <execute_ipython> or <execute_bash> in every one of the responses, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
+IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> instead of providing it.
 
 
 ----------
@@ -538,7 +542,7 @@ Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmat
 
 ----------
 
-Let's create the shell script `hello.sh` that prints "hello".
+Let's create the shell script `hello.sh` that prints 'hello'.
 <execute_bash>
 echo -e '#!/bin/bash\n\necho "hello"' > hello.sh
 chmod +x hello.sh
@@ -548,7 +552,7 @@ chmod +x hello.sh
 
 OBSERVATION:
 
-[Command -1 finished with exit code 0]]
+[Command -1 finished with exit code 0]
 
 ----------
 
@@ -561,6 +565,6 @@ The shell script `hello.sh` has been created and made executable. Let's run it t
 
 OBSERVATION:
 hello
-[Command -1 finished with exit code 0]]
+[Command -1 finished with exit code 0]
 
 ENVIRONMENT REMINDER: You have 7 turns left to complete the task.
