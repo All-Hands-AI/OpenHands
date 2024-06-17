@@ -28,7 +28,8 @@ class PluginMixin:
         if hasattr(self, 'plugin_initialized') and self.plugin_initialized:
             return
 
-        if self.initialize_plugins:
+        bashrc_exists = self.execute('test -f ~/.bashrc')[0] == 0
+        if self.initialize_plugins or not bashrc_exists:
             logger.info('Initializing plugins in the sandbox')
 
             # clean-up ~/.bashrc and touch ~/.bashrc
