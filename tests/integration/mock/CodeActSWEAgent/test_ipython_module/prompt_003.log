@@ -555,21 +555,19 @@ Package installed successfully
 
 ----------
 
-Next, let's import `pymsgbox`, print its version, and save the output to `/workspace/test.txt`.
+Next, let's import `pymsgbox` and print its version to `/workspace/test.txt`.
 <execute_ipython>
 import pymsgbox
 
-version_info = pymsgbox.__version__
+version = pymsgbox.__version__
 
 with open("/workspace/test.txt", "w") as file:
-    file.write(f"pymsgbox version: {version_info}\n")
-
-version_info
+    file.write(f"pymsgbox version: {version}\n")
 </execute_ipython>
 
 ----------
 
 OBSERVATION:
-'1.0.9'
+[Code executed successfully with no output]
 
 ENVIRONMENT REMINDER: You have 7 turns left to complete the task.
