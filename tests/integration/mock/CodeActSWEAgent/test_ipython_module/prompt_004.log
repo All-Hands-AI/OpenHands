@@ -564,13 +564,13 @@ Package installed successfully
 
 ----------
 
-Next, let's import `pymsgbox` and print its version to `/workspace/test.txt`.
+Next, let's import `pymsgbox`, get its version, and print the version to `/workspace/test.txt`.
 <execute_ipython>
 import pymsgbox
 
 version = pymsgbox.__version__
 
-with open("/workspace/test.txt", "w") as file:
+with open('/workspace/test.txt', 'w') as file:
     file.write(f"pymsgbox version: {version}\n")
 </execute_ipython>
 
@@ -581,7 +581,7 @@ OBSERVATION:
 
 ----------
 
-The version of `pymsgbox` has been written to `/workspace/test.txt`. Let's verify the content of the file to ensure it was written correctly.
+Let's verify the contents of `/workspace/test.txt` to ensure the version information was written correctly.
 <execute_bash>
 cat /workspace/test.txt
 </execute_bash>
