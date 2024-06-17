@@ -116,19 +116,10 @@ class TestAgentController:
         event_stream.add_event(cmd_observation_3, EventSource.USER)
         # 10 events
 
-        cmd_action_4 = CmdRunAction(command='ls')
-        event_stream.add_event(cmd_action_4, EventSource.AGENT)
-        cmd_observation_4 = CmdOutputObservation(
-            content='', command='ls', command_id=cmd_action_4._id
-        )
-        cmd_observation_4._cause = cmd_action_4._id
-        event_stream.add_event(cmd_observation_4, EventSource.USER)
-        # 12 events
-
         controller.state.history.set_event_stream(event_stream)
-        assert len(collect_events(event_stream)) == 12
-        assert len(list(controller.state.history.get_events())) == 10
-        assert len(controller.state.history.get_tuples()) == 6
+        assert len(collect_events(event_stream)) == 10
+        assert len(list(controller.state.history.get_events())) == 8
+        assert len(controller.state.history.get_tuples()) == 5
 
         with patch('logging.Logger.warning') as mock_warning:
             assert controller._is_stuck() is True
@@ -137,6 +128,7 @@ class TestAgentController:
     def test_is_stuck_repeating_action_error_observation(
         self, controller: AgentController, event_stream: EventStream
     ):
+        # (action, error_observation), not necessarily the same error
         message_action = MessageAction(content='Done', wait_for_response=False)
         message_action._source = EventSource.USER
 

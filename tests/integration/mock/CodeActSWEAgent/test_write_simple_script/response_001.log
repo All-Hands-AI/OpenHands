@@ -1,0 +1,5 @@
+Let's create the shell script `hello.sh` that prints 'hello'.
+
+<execute_bash>
+echo -e '#!/bin/bash\n\necho "hello"' > hello.sh
+chmod +x hello.sh

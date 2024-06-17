@@ -75,20 +75,32 @@ class State:
 
     def __getstate__(self):
         state = self.__dict__.copy()
+
+        # save the relevant data from recent history
+        # so that we can restore it when the state is restored
         if 'history' in state:
             state['summaries'] = state['history'].summaries
             state['start_id'] = state['history'].start_id
             state['end_id'] = state['history'].end_id
+
+        # don't save history object itself
         state.pop('history', None)
         return state
 
     def __setstate__(self, state):
         self.__dict__.update(state)
-        if hasattr(self, 'history'):
-            if hasattr(self, 'summaries'):
-                self.history.summaries = self.summaries
-            self.history.start_id = self.start_id
-            self.history.end_id = self.end_id
+
+        # recreate the history object
+        if not hasattr(self, 'history'):
+            self.history = ShortTermHistory()
+
+        # restore the relevant data in history from the state
+        if hasattr(self, 'summaries'):
+            self.history.summaries = self.summaries
+        self.history.start_id = self.start_id
+        self.history.end_id = self.end_id
+
+        # remove the restored data from the state
         self.summaries = {}
 
     def get_current_user_intent(self):

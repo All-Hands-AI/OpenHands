@@ -1,5 +1,4 @@
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.core.utils import json
 from opendevin.events.action.agent import (
     AgentFinishAction,
     AgentRecallAction,
@@ -11,7 +10,6 @@ from opendevin.events.action.commands import (
     CmdRunAction,
     IPythonRunCellAction,
 )
-from opendevin.events.action.empty import NullAction
 from opendevin.events.action.files import FileReadAction, FileWriteAction
 from opendevin.events.action.message import MessageAction
 from opendevin.events.event import Event, EventSource
@@ -19,7 +17,7 @@ from opendevin.events.observation.observation import Observation
 from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
 from opendevin.memory.history import ShortTermHistory
-from opendevin.memory.prompts import parse_summary_response
+from opendevin.memory.prompts import get_summarize_prompt, parse_summary_response
 
 MAX_USER_MESSAGE_CHAR_COUNT = 200  # max char count for user messages
 
@@ -75,8 +73,7 @@ class MemoryCondenser:
             # aside from them, there are some (mostly or firstly) non-summarizable actions
             # like AgentDelegateAction or AgentFinishAction
             if not self._is_summarizable(event):
-                if chunk:
-                    # TODO exclude agent single-messages
+                if chunk and len(chunk) > 1:
                     # we've just gathered a chunk to summarize
                     summary_action = self._summarize_chunk(chunk)
 
@@ -92,6 +89,8 @@ class MemoryCondenser:
                     history.add_summary(summary_action)
                     return summary_action
                 else:
+                    # reset the chunk if it has just one event
+                    chunk = []
                     chunk_start_id = None
                     last_summarizable_id = None
             else:
@@ -101,7 +100,7 @@ class MemoryCondenser:
                 last_summarizable_id = event.id
                 chunk.append(event)
 
-        if chunk:
+        if chunk and len(chunk) > 1:
             summary_action = self._summarize_chunk(chunk)
 
             # keep mypy happy
@@ -151,21 +150,12 @@ class MemoryCondenser:
         - The summary sentence.
         """
         try:
-            event_dicts = []
-            for event in chunk:
-                event_dicts.append(event_to_memory(event))
-            events_str = json.dumps(event_dicts, indent=2)
-
-            prompt = """
-            Given the following actions and observations, create a JSON response with:
-                - "action": "summarize"
-                - args:
-                  - "summarized_actions": A comma-separated list of unique action names from the provided actions
-                  - "summary": A single sentence summarizing all the provided observations
-            """ + '\n'.join(events_str)
+            event_dicts = [event_to_memory(event) for event in chunk]
+            prompt = get_summarize_prompt(event_dicts)
 
             messages = [{'role': 'user', 'content': prompt}]
             response = self.llm.completion(messages=messages)
+
             action_response = response['choices'][0]['message']['content']
             action = parse_summary_response(action_response)
             return action
@@ -177,8 +167,11 @@ class MemoryCondenser:
         """
         Returns true for actions/observations that can be summarized.
         """
-        non_summarizable_events = (
-            NullAction,
+        # non-summarizable actions are special actions like Finish
+        # a chunk started by a Delegate action has its own summarization
+        # a summarize action itself is currently not summarizable, but it could be included in a future "all old events" summary
+        # delegate action/obs should be included in the chunk delimited by them (AgentDelegateAction, ...things,...,AgentDelegateObservation)
+        summarizable_events = (
             CmdKillAction,
             CmdRunAction,
             IPythonRunCellAction,
@@ -187,19 +180,13 @@ class MemoryCondenser:
             FileReadAction,
             FileWriteAction,
             AgentRecallAction,
-            # AgentFinishAction,
-            # AgentRejectAction,
-            # AgentDelegateAction,
-            # AddTaskAction,
-            # ModifyTaskAction,
-            # ChangeAgentStateAction,
             MessageAction,
-            # AgentSummarizeAction, # this is actually fine but separate
             Observation,
         )
 
-        if isinstance(event, non_summarizable_events):
+        if isinstance(event, summarizable_events):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                # user messages are not summarized in the first rounds, agent 'chunks' are first
                 return False
             return True
         return False

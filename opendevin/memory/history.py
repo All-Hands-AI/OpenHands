@@ -56,6 +56,9 @@ class ShortTermHistory(list[Event]):
         """
         Return the events as a stream of Event objects.
         """
+        # TODO handle AgentRejectAction, if it's not part of a chunk ending with an AgentDelegateObservation
+        # or even if it is, because currently we don't add it to the summary
+
         # iterate from start_id to end_id, or reverse
         start_id = self.start_id if self.start_id != -1 else 0
         end_id = (
@@ -199,7 +202,7 @@ class ShortTermHistory(list[Event]):
             return
 
         self.delegates[(delegate_start, delegate_end)] = (delegate_agent, delegate_task)
-        logger.info(
+        logger.debug(
             f'Delegate {delegate_agent} with task {delegate_task} ran from id={delegate_start} to id={delegate_end}'
         )
 
@@ -258,9 +261,6 @@ class ShortTermHistory(list[Event]):
         for cause_id, observation in observation_map.items():
             if cause_id not in action_map:
                 if isinstance(observation, NullObservation):
-                    logger.debug(
-                        "This would become (NullAction, NullObservation), which doesn't exist even today, drop it instead"
-                    )
                     continue
                 if not isinstance(observation, CmdOutputObservation):
                     logger.debug(f'Observation {observation} has no cause')

@@ -16,6 +16,13 @@ from opendevin.events.observation.browse import BrowserOutputObservation
 from opendevin.events.observation.delegate import AgentDelegateObservation
 
 workspace_base = os.getenv('WORKSPACE_BASE')
+workspace_mount_path = os.getenv('WORKSPACE_MOUNT_PATH')
+workspace_mount_path_in_sandbox = os.getenv('WORKSPACE_MOUNT_PATH_IN_SANDBOX')
+
+print('\nPaths used:')
+print(f'workspace_base: {workspace_base}')
+print(f'workspace_mount_path: {workspace_mount_path}')
+print(f'workspace_mount_path_in_sandbox: {workspace_mount_path_in_sandbox}')
 
 
 @pytest.mark.skipif(
@@ -23,8 +30,9 @@ workspace_base = os.getenv('WORKSPACE_BASE')
     reason='BrowsingAgent is a specialized agent',
 )
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'CodeActAgent' and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
-    reason='CodeActAgent only supports ssh sandbox which is stateful',
+    (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent')
+    and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
 @pytest.mark.skipif(
     os.getenv('AGENT') == 'ManagerAgent',
@@ -34,6 +42,7 @@ def test_write_simple_script():
     task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
     final_state: State = asyncio.run(main(task, exit_on_message=True))
     assert final_state.agent_state == AgentState.STOPPED
+    assert final_state.error is None
 
     # Verify the script file exists
     script_path = os.path.join(workspace_base, 'hello.sh')
@@ -53,8 +62,9 @@ def test_write_simple_script():
     reason='BrowsingAgent is a specialized agent',
 )
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'CodeActAgent' and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
-    reason='CodeActAgent only supports ssh sandbox which is stateful',
+    (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent')
+    and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
 @pytest.mark.skipif(
     os.getenv('AGENT') == 'MonologueAgent' or os.getenv('AGENT') == 'PlannerAgent',
@@ -65,7 +75,7 @@ def test_write_simple_script():
     reason='local sandbox shows environment-dependent absolute path for pwd command',
 )
 def test_edits():
-    # Move workspace artifacts to workspace_base location
+    # Copy workspace artifacts to workspace_base location
     source_dir = os.path.join(os.path.dirname(__file__), 'workspace/test_edits/')
     files = os.listdir(source_dir)
     for file in files:
@@ -78,6 +88,7 @@ def test_edits():
     task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
     final_state: State = asyncio.run(main(task, exit_on_message=True))
     assert final_state.agent_state == AgentState.STOPPED
+    assert final_state.error is None
 
     # Verify bad.txt has been fixed
     text = """This is a stupid typo.
@@ -91,8 +102,8 @@ Enjoy!
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') != 'CodeActAgent',
-    reason='currently only CodeActAgent defaults to have IPython (Jupyter) execution',
+    os.getenv('AGENT') != 'CodeActAgent' and os.getenv('AGENT') != 'CodeActSWEAgent',
+    reason='currently only CodeActAgent and CodeActSWEAgent have IPython (Jupyter) execution by default',
 )
 @pytest.mark.skipif(
     os.getenv('SANDBOX_TYPE') != 'ssh',
@@ -103,6 +114,7 @@ def test_ipython():
     task = "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point."
     final_state: State = asyncio.run(main(task, exit_on_message=True))
     assert final_state.agent_state == AgentState.STOPPED
+    assert final_state.error is None
 
     # Verify the file exists
     file_path = os.path.join(workspace_base, 'test.txt')
@@ -130,12 +142,13 @@ def test_simple_task_rejection():
     task = 'Write a git commit message for the current staging area. Do not ask me for confirmation at any point.'
     final_state: State = asyncio.run(main(task))
     assert final_state.agent_state == AgentState.STOPPED
+    assert final_state.error is None
     assert isinstance(final_state.history.get_last_action(), AgentRejectAction)
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') != 'CodeActAgent',
-    reason='currently only CodeActAgent defaults to have IPython (Jupyter) execution',
+    os.getenv('AGENT') != 'CodeActAgent' and os.getenv('AGENT') != 'CodeActSWEAgent',
+    reason='currently only CodeActAgent and CodeActSWEAgent have IPython (Jupyter) execution by default',
 )
 @pytest.mark.skipif(
     os.getenv('SANDBOX_TYPE') != 'ssh',
@@ -146,6 +159,7 @@ def test_ipython_module():
     task = "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point."
     final_state: State = asyncio.run(main(task, exit_on_message=True))
     assert final_state.agent_state == AgentState.STOPPED
+    assert final_state.error is None
 
     # Verify the file exists
     file_path = os.path.join(workspace_base, 'test.txt')
@@ -154,8 +168,9 @@ def test_ipython_module():
     # Verify the file contains the expected content
     with open(file_path, 'r') as f:
         content = f.read()
+        print(content)
     assert (
-        content.strip() == '1.0.9'
+        content.strip().split(' ')[-1] == '1.0.9'
     ), f'Expected content "1.0.9", but got "{content.strip()}"'
 
 
@@ -164,14 +179,16 @@ def test_ipython_module():
     reason='currently only BrowsingAgent and CodeActAgent are capable of searching the internet',
 )
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'CodeActAgent' and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
-    reason='CodeActAgent only supports ssh sandbox which is stateful',
+    (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent')
+    and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
 def test_browse_internet(http_server):
     # Execute the task
     task = 'Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.'
     final_state: State = asyncio.run(main(task, exit_on_message=True))
     assert final_state.agent_state == AgentState.STOPPED
+    assert final_state.error is None
 
     # last action
     last_action = final_state.history.get_last_action()
