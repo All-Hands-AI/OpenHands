@@ -355,7 +355,7 @@ class DockerSSHBox(Sandbox):
             if exit_code != 0:
                 if exit_code == 1:
                     raise Exception(
-                        f'OPENDEVIN_PYTHON_INTERPRETER is not usable. Please pull the latest Docker image!'
+                        f'OPENDEVIN_PYTHON_INTERPRETER is not usable. Please pull the latest Docker image: docker pull ghcr.io/opendevin/sandbox:main'
                     )
                 else:
                     raise Exception(
