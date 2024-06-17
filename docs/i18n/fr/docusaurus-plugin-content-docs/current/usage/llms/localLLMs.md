@@ -3,7 +3,7 @@
 Assurez-vous que le serveur Ollama est en cours d'exécution.
 Pour des instructions détaillées de démarrage, consultez [ici](https://github.com/ollama/ollama)
 
-Ce guide suppose que vous avez démarré ollama avec `ollama serve`. Si vous exécutez ollama différemment (par exemple, à l'intérieur de docker), les instructions pourraient devoir être modifiées. Veuillez noter que si vous utilisez WSL, la configuration par défaut de ollama bloque les requêtes des conteneurs docker. Voir [ici](#configuring-the-ollama-service-wsl).
+Ce guide suppose que vous avez démarré ollama avec `ollama serve`. Si vous exécutez ollama différemment (par exemple, à l'intérieur de docker), les instructions pourraient devoir être modifiées. Veuillez noter que si vous utilisez WSL, la configuration par défaut de ollama bloque les requêtes des conteneurs docker. Voir [ici](#configuring-ollama-service-fr).
 
 ## Télécharger des modèles
 
@@ -85,7 +85,7 @@ S'il n'apparaît pas dans un menu déroulant, ce n'est pas grave, tapez-le simpl
 
 Et maintenant, vous êtes prêt à démarrer !
 
-## Configuration du service ollama (WSL)
+## Configuration du service ollama (WSL){#configuring-ollama-service-fr}
 
 La configuration par défaut pour ollama sous WSL ne sert que localhost. Cela signifie que vous ne pouvez pas l'atteindre depuis un conteneur docker, par exemple, il ne fonctionnera pas avec OpenDevin. Testons d'abord que ollama est en cours d'exécution correctement.
 

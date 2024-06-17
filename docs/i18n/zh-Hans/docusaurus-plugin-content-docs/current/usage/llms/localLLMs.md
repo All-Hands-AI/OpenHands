@@ -2,7 +2,7 @@
 
 确保您的 Ollama 服务器已启动运行。有关详细的启动说明，请参阅[此处](https://github.com/ollama/ollama)
 
-本指南假定您已通过 `ollama serve` 启动 ollama。如果您以其他方式运行 ollama（例如在 docker 内），说明可能需要进行修改。请注意，如果您在运行 WSL，默认的 ollama 配置会阻止来自 docker 容器的请求。请参阅[此处](#configuring-the-ollama-service-wsl)。
+本指南假定您已通过 `ollama serve` 启动 ollama。如果您以其他方式运行 ollama（例如在 docker 内），说明可能需要进行修改。请注意，如果您在运行 WSL，默认的 ollama 配置会阻止来自 docker 容器的请求。请参阅[此处](#configuring-ollama-service-zh-Hans)。
 
 ## 拉取模型
 
@@ -84,7 +84,7 @@ WORKSPACE_DIR="$(pwd)/workspace"
 
 现在您已经准备好了！
 
-## 配置 ollama 服务（WSL）
+## 配置 ollama 服务（WSL）{#configuring-ollama-service-zh-Hans}
 
 WSL 中 ollama 的默认配置仅为 localhost 提供服务。这意味着您无法从 docker 容器中访问它。比如，它不会与 OpenDevin 一起工作。首先让我们测试 ollama 是否正常运行。
 
