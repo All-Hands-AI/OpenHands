@@ -13,12 +13,15 @@ We are using the MINT dataset hosted on [Hugging Face](https://huggingface.co/da
 Following is the basic command to start the evaluation. Currently, the only agent supported with MINT is `CodeActAgent`.
 
 ```bash
-./evaluation/mint/scripts/run_infer.sh [model_config] [subset] [eval_limit]
+./evaluation/mint/scripts/run_infer.sh [model_config] [git-version] [subset] [eval_limit]
 ```
 
-where `model_config` is mandatory, while `subset` and `eval_limit` are optional.
+where `model_config` is mandatory, while others are optional.
 
 - `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your LLM settings, as defined in your `config.toml`.
+
+- `git-version`, e.g. `head`, is the git commit hash of the OpenDevin version you would
+like to evaluate. It could also be a release tag like `0.6.2`.
 
 - `subset`, e.g. `math`, is the subset of the MINT benchmark to evaluate on, defaulting to `math`. It can be either: `math`, `gsm8k`, `mmlu`, `theoremqa`, `mbpp`,`humaneval`.
 
@@ -26,11 +29,10 @@ where `model_config` is mandatory, while `subset` and `eval_limit` are optional.
 
 Note: in order to use `eval_limit`, you must also set `subset`.
 
-Let's say you'd like to run 3 instances on the `gsm8k` subset using `eval_gpt4_1106_preview`,
-then your command would be:
+For example,
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview gsm8k 3
+./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview 0.6.2 gsm8k 3
 ```
 
 ## Reference

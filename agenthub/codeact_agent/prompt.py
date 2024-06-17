@@ -10,7 +10,7 @@ COMMAND_DOCS = (
 
 # ======= SYSTEM MESSAGE =======
 MINIMAL_SYSTEM_PREFIX = """A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
-The assistant can interact with an interactive Python (Jupyter Notebook) environment and receive the corresponding output when needed. The code should be enclosed using "<execute_ipython>" tag, for example:
+The assistant can use an interactive Python (Jupyter Notebook) environment, executing code with <execute_ipython>.
 <execute_ipython>
 print("Hello World!")
 </execute_ipython>
@@ -23,22 +23,24 @@ For example, to run a Python script that might run indefinitely without returnin
 Also, if a command execution result saying like: Command: "npm start" timed out. Sending SIGINT to the process, you should also retry with running the command in the background.
 """
 
-BROWSING_PREFIX = """The assistant can browse the Internet with commands on behalf of the user by wrapping them with <execute_browse> and </execute_browse>.
-For example, you can browse a given URL by <execute_browse> Tell me the usa's president using google search </execute_browse>.
-The assistant should attempt fewer things at a time instead of putting too much commands OR code in one "execute" block.
+BROWSING_PREFIX = """The assistant can browse the Internet with <execute_browse> and </execute_browse>.
+For example, <execute_browse> Tell me the usa's president using google search </execute_browse>.
+Or <execute_browse> Tell me what is in http://example.com </execute_browse>.
 """
 PIP_INSTALL_PREFIX = """The assistant can install Python packages using the %pip magic command in an IPython environment by using the following syntax: <execute_ipython> %pip install [package needed] </execute_ipython> and should always import packages and define variables before starting to use them."""
 
 SYSTEM_PREFIX = MINIMAL_SYSTEM_PREFIX + BROWSING_PREFIX + PIP_INSTALL_PREFIX
 
-GITHUB_MESSAGE = """To do any activities on GitHub, the assistant should use the token in the $GITHUB_TOKEN environment variable.
-For instance, to push a local branch `my_branch` to the github repo `owner/repo`, the assistant can use the following command:
+GITHUB_MESSAGE = """To interact with GitHub, use the $GITHUB_TOKEN environment variable.
+For example, to push a branch `my_branch` to the GitHub repo `owner/repo`:
 <execute_bash> git push https://$GITHUB_TOKEN@github.com/owner/repo.git my_branch </execute_bash>
-If the assistant require access to GitHub but $GITHUB_TOKEN is not set, ask the user to set it."""
+If $GITHUB_TOKEN is not set, ask the user to set it."""
 
-SYSTEM_SUFFIX = """The assistant's response should be concise.
-The assistant should include ONLY ONE <execute_ipython> or <execute_bash> or <execute_browse> in every one of the responses, unless the assistant is finished with the task or need more input or action from the user in order to proceed.
-IMPORTANT: Whenever possible, execute the code for the user using <execute_ipython> or <execute_bash> or <execute_browse> instead of providing it.
+SYSTEM_SUFFIX = """Responses should be concise.
+The assistant should attempt fewer things at a time instead of putting too many commands OR too much code in one "execute" block.
+Include ONLY ONE <execute_ipython>, <execute_bash>, or <execute_browse> per response, unless the assistant is finished with the task or needs more input or action from the user in order to proceed.
+IMPORTANT: Execute code using <execute_ipython>, <execute_bash>, or <execute_browse> whenever possible.
+When handling files, try to use full paths and pwd to avoid errors.
 """
 
 
@@ -46,10 +48,10 @@ IMPORTANT: Whenever possible, execute the code for the user using <execute_ipyth
 EXAMPLES = """
 --- START OF EXAMPLE ---
 
-USER: Can you create a list of numbers from 1 to 10, and create a web page to display them at port 5000?
+USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.
 
 ASSISTANT:
-Sure! Let me create a file first:
+Sure! Let me create a Python file `app.py`:
 <execute_ipython>
 create_file('app.py')
 </execute_ipython>
@@ -73,7 +75,7 @@ def index():
 
 if __name__ == '__main__':
     app.run(port=5000)\"\"\"
-edit_file(start=1, end=1, content=EDITED_CODE)
+edit_file('app.py', start=1, end=1, content=EDITED_CODE)
 </execute_ipython>
 
 USER:
@@ -212,7 +214,7 @@ USER:
 ASSISTANT:
 I should edit the file to display the numbers in a table format. I should include correct indentation. Let me update the file:
 <execute_ipython>
-edit_file(start=7, end=7, content="    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'")
+edit_file('app.py', start=7, end=7, content="    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'")
 </execute_ipython>
 
 USER:
@@ -231,7 +233,7 @@ Observation:
 [File updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
 
 ASSISTANT:
-The file has been updated. Let me run the Python file again with the new changes:
+Running the updated file:
 <execute_bash>
 python3 app.py > server.log 2>&1 &
 </execute_bash>
@@ -241,14 +243,14 @@ Observation:
 [1] 126
 
 ASSISTANT:
-The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Free free to let me know if you have any further requests!
+The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Let me know if you have any further requests!
 
 --- END OF EXAMPLE ---
 """
 
 INVALID_INPUT_MESSAGE = (
     "I don't understand your input. \n"
-    'If you want to execute a bash command, please use <execute_bash> YOUR_COMMAND_HERE </execute_bash>.\n'
-    'If you want to execute a block of Python code, please use <execute_ipython> YOUR_COMMAND_HERE </execute_ipython>.\n'
-    'If you want to browse the Internet, please use <execute_browse> YOUR_COMMAND_HERE </execute_browse>.\n'
+    'For bash commands, use <execute_bash> YOUR_COMMAND </execute_bash>.\n'
+    'For Python code, use <execute_ipython> YOUR_CODE </execute_ipython>.\n'
+    'For browsing, use <execute_browse> YOUR_COMMAND </execute_browse>.\n'
 )

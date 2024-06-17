@@ -32,7 +32,6 @@ boto3 = "*"
 minio = "^7.2.7"
 gevent = "^24.2.1"
 pyarrow = "16.1.0" # transitive dependency, pinned here to avoid conflicts
-tenacity = "^8.3.0"
 diskcache = "5.6.3"
 grep-ast = "0.3.2"
 tree-sitter = "0.21.3" # v0.22.2 seems to break tree-sitter-languages?
@@ -41,6 +40,8 @@ tree-sitter = "0.21.3" # v0.22.2 seems to break tree-sitter-languages?
     #   tree-sitter-languages
 tree-sitter-languages = "1.10.2"
     # via grep-ast
+tenacity = "^8.4.1"
+zope-interface = "6.4.post2"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
@@ -52,7 +53,7 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.4.8"
+ruff = "0.4.9"
 mypy = "1.10.0"
 pre-commit = "3.7.1"
 
@@ -74,11 +75,13 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
 retry = "*"
 evaluate = "*"
+swebench = { git = "https://github.com/OpenDevin/SWE-bench.git" }
 
 [build-system]
 build-backend = "poetry.core.masonry.api"

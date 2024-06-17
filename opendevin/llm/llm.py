@@ -61,6 +61,7 @@ class LLM:
         max_output_tokens=None,
         llm_config=None,
         metrics=None,
+        cost_metric_supported=True,
     ):
         """
         Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
@@ -81,6 +82,7 @@ class LLM:
             llm_timeout (int, optional): The maximum time to wait for a response in seconds. Defaults to LLM_TIMEOUT.
             llm_temperature (float, optional): The temperature for LLM sampling. Defaults to LLM_TEMPERATURE.
             metrics (Metrics, optional): The metrics object to use. Defaults to None.
+            cost_metric_supported (bool, optional): Whether the cost metric is supported. Defaults to True.
         """
         if llm_config is None:
             llm_config = config.llm
@@ -127,6 +129,7 @@ class LLM:
         self.llm_timeout = llm_timeout
         self.custom_llm_provider = custom_llm_provider
         self.metrics = metrics
+        self.cost_metric_supported = cost_metric_supported
 
         # litellm actually uses base Exception here for unknown model
         self.model_info = None
@@ -226,11 +229,12 @@ class LLM:
             cur_cost = self.completion_cost(response)
         except Exception:
             cur_cost = 0
-        logger.info(
-            'Cost: %.2f USD | Accumulated Cost: %.2f USD',
-            cur_cost,
-            self.metrics.accumulated_cost,
-        )
+        if self.cost_metric_supported:
+            logger.info(
+                'Cost: %.2f USD | Accumulated Cost: %.2f USD',
+                cur_cost,
+                self.metrics.accumulated_cost,
+            )
 
     def get_token_count(self, messages):
         """
@@ -271,6 +275,9 @@ class LLM:
         Returns:
             number: The cost of the response.
         """
+        if not self.cost_metric_supported:
+            return 0.0
+
         extra_kwargs = {}
         if (
             config.llm.input_cost_per_token is not None
@@ -291,6 +298,7 @@ class LLM:
                 self.metrics.add_cost(cost)
                 return cost
             except Exception:
+                self.cost_metric_supported = False
                 logger.warning('Cost calculation not supported for this model.')
         return 0.0
 

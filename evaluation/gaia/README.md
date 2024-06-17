@@ -13,14 +13,17 @@ Please accept the terms and make sure to have logged in on your computer by `hug
 Following is the basic command to start the evaluation. Here we are evaluating on the validation set for the `2023_all` split. You can adjust `./evaluation/gaia/scripts/run_infer.sh` to change the subset you want to evaluate on.
 
 ```bash
-./evaluation/gaia/scripts/run_infer.sh [model_config] [agent] [eval_limit] [gaia_subset]
-# e.g., ./evaluation/gaia/scripts/run_infer.sh eval_gpt4_1106_preview CodeActAgent 300
+./evaluation/gaia/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [gaia_subset]
+# e.g., ./evaluation/gaia/scripts/run_infer.sh eval_gpt4_1106_preview 0.6.2 CodeActAgent 300
 ```
 
-where `model_config` is mandatory, while `agent`, `eval_limit` and `gaia_subset` are optional.
+where `model_config` is mandatory, while `git-version`, `agent`, `eval_limit` and `gaia_subset` are optional.
 
 - `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
 LLM settings, as defined in your `config.toml`, defaulting to `gpt-3.5-turbo`
+
+- `git-version`, e.g. `head`, is the git commit hash of the OpenDevin version you would
+like to evaluate. It could also be a release tag like `0.6.2`.
 
 - `agent`, e.g. `CodeActAgent`, is the name of the agent for benchmarks, defaulting
 to `CodeActAgent`.
@@ -29,11 +32,10 @@ to `CodeActAgent`.
 
 - `gaia_subset`, GAIA benchmark has multiple subsets: `2023_level1`, `2023_level2`, `2023_level3`, `2023_all`, defaulting to `2023_level1`.
 
-Let's say you'd like to run 10 instances using `eval_gpt4_1106_preview` and CodeActAgent,
-then your command would be:
+For example,
 
 ```bash
-./evaluation/gaia/scripts/run_infer.sh eval_gpt4_1106_preview CodeActAgent 10
+./evaluation/gaia/scripts/run_infer.sh eval_gpt4_1106_preview 0.6.2 CodeActAgent 10
 ```
 
 ## Get score
