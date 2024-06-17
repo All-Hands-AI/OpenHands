@@ -136,14 +136,12 @@ def get_prompt(state: State) -> str:
     history_dicts = []
     latest_action: Action = NullAction()
 
-    event_count = 0
-    for event in state.history.get_events(reverse=True):
+    for event_count, event in enumerate(state.history.get_events(reverse=True)):
         if event_count >= HISTORY_SIZE:
             break
         if latest_action == NullAction() and isinstance(event, Action):
             latest_action = event
         history_dicts.append(event_to_memory(event))
-        event_count += 1
 
     # history_dicts is in reverse order
     history_dicts.reverse()
