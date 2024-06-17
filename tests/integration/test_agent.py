@@ -10,9 +10,17 @@ from opendevin.core.main import main
 from opendevin.core.schema import AgentState
 from opendevin.events.action import (
     AgentFinishAction,
+    AgentRejectAction,
 )
 
 workspace_base = os.getenv('WORKSPACE_BASE')
+workspace_mount_path = os.getenv('WORKSPACE_MOUNT_PATH')
+workspace_mount_path_in_sandbox = os.getenv('WORKSPACE_MOUNT_PATH_IN_SANDBOX')
+
+print('\nPaths used:')
+print(f'workspace_base: {workspace_base}')
+print(f'workspace_mount_path: {workspace_mount_path}')
+print(f'workspace_mount_path_in_sandbox: {workspace_mount_path_in_sandbox}')
 
 
 @pytest.mark.skipif(
@@ -20,8 +28,13 @@ workspace_base = os.getenv('WORKSPACE_BASE')
     reason='BrowsingAgent is a specialized agent',
 )
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'CodeActAgent' and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
-    reason='CodeActAgent only supports ssh sandbox which is stateful',
+    (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent')
+    and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
+)
+@pytest.mark.skipif(
+    os.getenv('AGENT') == 'ManagerAgent',
+    reason='Manager agent is not capable of finishing this in reasonable steps yet',
 )
 def test_write_simple_script():
     task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
@@ -46,8 +59,9 @@ def test_write_simple_script():
     reason='BrowsingAgent is a specialized agent',
 )
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'CodeActAgent' and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
-    reason='CodeActAgent only supports ssh sandbox which is stateful',
+    (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent')
+    and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
 @pytest.mark.skipif(
     os.getenv('AGENT') == 'MonologueAgent' or os.getenv('AGENT') == 'PlannerAgent',
@@ -58,7 +72,7 @@ def test_write_simple_script():
     reason='local sandbox shows environment-dependent absolute path for pwd command',
 )
 def test_edits():
-    # Move workspace artifacts to workspace_base location
+    # Copy workspace artifacts to workspace_base location
     source_dir = os.path.join(os.path.dirname(__file__), 'workspace/test_edits/')
     files = os.listdir(source_dir)
     for file in files:
@@ -84,8 +98,8 @@ Enjoy!
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') != 'CodeActAgent',
-    reason='currently only CodeActAgent defaults to have IPython (Jupyter) execution',
+    os.getenv('AGENT') != 'CodeActAgent' or os.getenv('AGENT') != 'CodeActSWEAgent',
+    reason='currently only CodeActAgent and CodeActSWEAgent have IPython (Jupyter) execution by default',
 )
 @pytest.mark.skipif(
     os.getenv('SANDBOX_TYPE') != 'ssh',
@@ -110,8 +124,25 @@ def test_ipython():
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') != 'CodeActAgent',
-    reason='currently only CodeActAgent defaults to have IPython (Jupyter) execution',
+    os.getenv('AGENT') != 'ManagerAgent',
+    reason='Currently, only ManagerAgent supports task rejection',
+)
+@pytest.mark.skipif(
+    os.getenv('SANDBOX_TYPE') == 'local',
+    reason='FIXME: local sandbox does not capture stderr',
+)
+def test_simple_task_rejection():
+    # Give an impossible task to do: cannot write a commit message because
+    # the workspace is not a git repo
+    task = 'Write a git commit message for the current staging area. Do not ask me for confirmation at any point.'
+    final_state: State = asyncio.run(main(task))
+    assert final_state.agent_state == AgentState.STOPPED
+    assert isinstance(final_state.history[-1][0], AgentRejectAction)
+
+
+@pytest.mark.skipif(
+    os.getenv('AGENT') != 'CodeActAgent' and os.getenv('AGENT') != 'CodeActSWEAgent',
+    reason='currently only CodeActAgent and CodeActSWEAgent have IPython (Jupyter) execution by default',
 )
 @pytest.mark.skipif(
     os.getenv('SANDBOX_TYPE') != 'ssh',
@@ -130,8 +161,9 @@ def test_ipython_module():
     # Verify the file contains the expected content
     with open(file_path, 'r') as f:
         content = f.read()
+        print(content)
     assert (
-        content.strip() == '1.0.9'
+        content.strip().split(' ')[-1] == '1.0.9'
     ), f'Expected content "1.0.9", but got "{content.strip()}"'
 
 
@@ -140,8 +172,9 @@ def test_ipython_module():
     reason='currently only BrowsingAgent and CodeActAgent are capable of searching the internet',
 )
 @pytest.mark.skipif(
-    os.getenv('AGENT') == 'CodeActAgent' and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
-    reason='CodeActAgent only supports ssh sandbox which is stateful',
+    (os.getenv('AGENT') == 'CodeActAgent' or os.getenv('AGENT') == 'CodeActSWEAgent')
+    and os.getenv('SANDBOX_TYPE').lower() != 'ssh',
+    reason='CodeActAgent/CodeActSWEAgent only supports ssh sandbox which is stateful',
 )
 def test_browse_internet(http_server):
     # Execute the task

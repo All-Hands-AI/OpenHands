@@ -23,11 +23,6 @@ from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.utils import find_available_tcp_port
 
-# FIXME: these are not used, can we remove them?
-InputType = namedtuple('InputType', ['content'])
-OutputType = namedtuple('OutputType', ['content'])
-
-
 class SSHExecCancellableStream(CancellableStream):
     def __init__(self, ssh, cmd, timeout):
         super().__init__(self.read_output())
@@ -746,14 +741,14 @@ class DockerSSHBox(Sandbox):
         containers = self.docker_client.containers.list(all=True)
         for container in containers:
             try:
-                if (
-                    container.name.startswith(self.container_name)
-                    and not config.persist_sandbox
-                ):
-                    # only remove the container we created
-                    # otherwise all other containers with the same prefix will be removed
-                    # which will mess up with parallel evaluation
-                    container.remove(force=True)
+                if container.name.startswith(self.container_name):
+                    if config.persist_sandbox:
+                        container.stop()
+                    else:
+                        # only remove the container we created
+                        # otherwise all other containers with the same prefix will be removed
+                        # which will mess up with parallel evaluation
+                        container.remove(force=True)
             except docker.errors.NotFound:
                 pass
         self.docker_client.close()

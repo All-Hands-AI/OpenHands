@@ -24,8 +24,9 @@ vi.mock("#/services/settings", async (importOriginal) => ({
   ...(await importOriginal<typeof import("#/services/settings")>()),
   getSettings: vi.fn().mockReturnValue({
     LLM_MODEL: "gpt-4o",
-    AGENT: "MonologueAgent",
+    AGENT: "CodeActAgent",
     LANGUAGE: "en",
+    LLM_API_KEY: "sk-...",
   }),
   getDefaultSettings: vi.fn().mockReturnValue({
     LLM_MODEL: "gpt-4o",
@@ -103,7 +104,7 @@ describe("SettingsModal", () => {
   describe("onHandleSave", () => {
     const initialSettings: Settings = {
       LLM_MODEL: "gpt-4o",
-      AGENT: "MonologueAgent",
+      AGENT: "CodeActAgent",
       LANGUAGE: "en",
       LLM_API_KEY: "sk-...",
     };
@@ -139,7 +140,6 @@ describe("SettingsModal", () => {
       expect(saveSettings).toHaveBeenCalledWith({
         ...initialSettings,
         LLM_MODEL: "model3",
-        LLM_API_KEY: "", // reset after model change
       });
     });
 

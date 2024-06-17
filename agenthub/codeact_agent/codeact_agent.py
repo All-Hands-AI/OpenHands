@@ -1,5 +1,4 @@
-import re
-
+from agenthub.codeact_agent.action_parser import CodeActResponseParser
 from agenthub.codeact_agent.prompt import (
     COMMAND_DOCS,
     EXAMPLES,
@@ -13,7 +12,6 @@ from opendevin.core.config import config
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
-    AgentDelegateAction,
     AgentFinishAction,
     BrowseInteractiveAction,
     CmdRunAction,
@@ -37,14 +35,6 @@ from opendevin.runtime.tools import RuntimeTool
 
 ENABLE_GITHUB = True
 ENABLE_REPOMAP = False
-
-
-def parse_response(response) -> str:
-    action = response.choices[0].message.content
-    for lang in ['bash', 'ipython', 'browse']:
-        if f'<execute_{lang}>' in action and f'</execute_{lang}>' not in action:
-            action += f'</execute_{lang}>'
-    return action
 
 
 def action_to_str(action: Action) -> str:
@@ -77,7 +67,7 @@ def get_observation_message(obs) -> dict[str, str] | None:
     if isinstance(obs, CmdOutputObservation):
         content = 'OBSERVATION:\n' + truncate_observation(obs.content)
         content += (
-            f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]]'
+            f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
         )
         return {'role': 'user', 'content': content}
     elif isinstance(obs, IPythonRunCellObservation):
@@ -173,10 +163,11 @@ class CodeActAgent(Agent):
         JupyterRequirement(),
     ]
     runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
-    jupyter_kernel_init_code: str = 'from agentskills import *'
 
     system_message: str = get_system_message()
     in_context_example: str = f"Here is an example of how you can interact with the environment for task solving:\n{get_in_context_example()}\n\nNOW, LET'S START!"
+
+    action_parser = CodeActResponseParser()
 
     def __init__(
         self,
@@ -267,48 +258,10 @@ class CodeActAgent(Agent):
             ],
             temperature=0.0,
         )
-
-        action_str: str = parse_response(response)
         state.num_of_chars += sum(
             len(message['content']) for message in messages
-        ) + len(action_str)
-
-        if finish_command := re.search(r'<finish>.*</finish>', action_str, re.DOTALL):
-            thought = action_str.replace(finish_command.group(0), '').strip()
-            return AgentFinishAction(thought=thought)
-        if bash_command := re.search(
-            r'<execute_bash>(.*?)</execute_bash>', action_str, re.DOTALL
-        ):
-            # remove the command from the action string to get thought
-            thought = action_str.replace(bash_command.group(0), '').strip()
-            # a command was found
-            command_group = bash_command.group(1).strip()
-
-            if command_group.strip() == 'exit':
-                return AgentFinishAction()
-            return CmdRunAction(command=command_group, thought=thought)
-        elif python_code := re.search(
-            r'<execute_ipython>(.*?)</execute_ipython>', action_str, re.DOTALL
-        ):
-            # a code block was found
-            code_group = python_code.group(1).strip()
-            thought = action_str.replace(python_code.group(0), '').strip()
-            return IPythonRunCellAction(
-                code=code_group,
-                thought=thought,
-                kernel_init_code=self.jupyter_kernel_init_code,
-            )
-        elif browse_command := re.search(
-            r'<execute_browse>(.*)</execute_browse>', action_str, re.DOTALL
-        ):
-            thought = action_str.replace(browse_command.group(0), '').strip()
-            browse_actions = browse_command.group(1).strip()
-            task = f'{thought}. I should start with: {browse_actions}'
-            return AgentDelegateAction(agent='BrowsingAgent', inputs={'task': task})
-        else:
-            # We assume the LLM is GOOD enough that when it returns pure natural language
-            # it want to talk to the user
-            return MessageAction(content=action_str, wait_for_response=True)
+        ) + len(response.choices[0].message.content)
+        return self.action_parser.parse(response)
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')

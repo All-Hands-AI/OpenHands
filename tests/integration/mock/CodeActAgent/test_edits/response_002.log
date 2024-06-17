@@ -1,7 +1,3 @@
-Let's correct the typos in the `bad.txt` file.
-
+Let's open the `bad.txt` file to review its content and identify any typos.
 <execute_ipython>
-edit_file(start=1, end=4, content="""This is a stupid typo.
-Really?
-No more typos!
-Enjoy!""")
+open_file('/workspace/bad.txt')
