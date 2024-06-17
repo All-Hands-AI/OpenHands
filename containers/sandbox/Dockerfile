@@ -36,6 +36,7 @@ RUN wget "https://github.com/conda-forge/miniforge/releases/latest/download/Mini
 RUN bash Miniforge3-$(uname)-$(uname -m).sh -b -p /opendevin/miniforge3
 RUN bash -c ". /opendevin/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"
 RUN echo "export PATH=/opendevin/miniforge3/bin:$PATH" >> ~/.bashrc
+RUN echo "export PATH=/opendevin/miniforge3/bin:$PATH" >> /opendevin/bash.bashrc
 
 # - agentskills dependencies
 RUN /opendevin/miniforge3/bin/pip install --upgrade pip
