@@ -185,7 +185,7 @@ class CodeActAgent(Agent):
                 llm=self.llm,
                 map_tokens=1024,
                 root=config.workspace_base,
-                repo_content_prefix='Here are summaries of some files present in the workspace.',
+                repo_content_prefix=f'\nHere are summaries of some files present in {config.workspace_base}',
                 max_context_window=self.llm.max_input_tokens,
             )
             if config.enable_repomap
