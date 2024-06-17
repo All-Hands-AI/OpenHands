@@ -695,7 +695,7 @@ class DockerSSHBox(Sandbox):
                 network_kwargs['ports'] = {f'{self._ssh_port}/tcp': self._ssh_port}
                 logger.warning(
                     (
-                        'Using port forwarding till the enable host network mode is out of experimental mode.'
+                        'Using port forwarding till the enable host network mode of Docker is out of experimental mode.'
                         'Check the 897th issue on https://github.com/OpenDevin/OpenDevin/issues/ for more information.'
                     )
                 )
