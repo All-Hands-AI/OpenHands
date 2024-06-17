@@ -224,7 +224,12 @@ class AppConfig(metaclass=Singleton):
             attr_name = f.name
             attr_value = getattr(self, f.name)
 
-            if attr_name in ['e2b_api_key', 'github_token']:
+            if attr_name in [
+                'e2b_api_key',
+                'github_token',
+                'jwt_secret',
+                'ssh_password',
+            ]:
                 attr_value = '******' if attr_value else None
 
             attr_str.append(f'{attr_name}={repr(attr_value)}')
