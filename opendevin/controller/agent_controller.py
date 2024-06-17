@@ -386,14 +386,14 @@ class AgentController:
 
         # are the last three actions the same?
         last_three_actions = last_actions[:3]
-        last_observations_actions = last_observations[:3]
+        last_three_observations = last_observations[:3]
         if len(last_three_actions) == 3 and all(
             self._eq_no_pid(last_actions[0], action) for action in last_three_actions
         ):
             # and the last four observations the same?
-            if len(last_observations_actions) == 3 and all(
-                self._eq_no_pid(last_observations[0], observation)
-                for observation in last_observations_actions
+            if len(last_three_observations) == 3 and all(
+                self._eq_no_pid(last_three_observations[0], observation)
+                for observation in last_three_observations
             ):
                 logger.warning('Action, Observation loop detected')
                 return True
