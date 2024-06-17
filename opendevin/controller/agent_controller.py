@@ -364,7 +364,11 @@ class AgentController:
             )
         ]
 
-        # check if the last four actions or observations are too repetitive
+        # scenario 1: same action, same observation
+        # it takes 3 actions and 3 observations to detect a loop
+        if len(filtered_history) < 3:
+            return False
+
         last_actions: list[Event] = []
         last_observations: list[Event] = []
         # retrieve the last four actions and observations starting from the end of history, wherever they are
@@ -377,22 +381,35 @@ class AgentController:
             if len(last_actions) == 4 and len(last_observations) == 4:
                 break
 
+        # are the last three actions the same?
+        last_three_actions = last_actions[-3:]
+        last_three_observations = last_observations[-3:]
+        if len(last_three_actions) == 3 and all(
+            self._eq_no_pid(last_three_actions[0], action)
+            for action in last_three_actions
+        ):
+            if len(last_three_observations) == 3 and all(
+                self._eq_no_pid(last_three_observations[0], observation)
+                for observation in last_three_observations
+            ):
+                logger.warning('Action, Observation loop detected')
+                return True
+
+        # scenario 2: same action, errors
+        # it takes 4 actions and 4 observations to detect a loop
+        # check if the last four actions are the same and result in errors
+        # retrieve the last four actions and observations starting from the end of history, wherever they are
+
         # are the last four actions the same?
         if len(last_actions) == 4 and all(
             self._eq_no_pid(last_actions[0], action) for action in last_actions
         ):
-            # and the last four observations the same?
-            if len(last_observations) == 4 and all(
-                self._eq_no_pid(last_observations[0], observation)
-                for observation in last_observations
-            ):
-                logger.warning('Action, Observation loop detected')
-                return True
-            # or, are the last four observations all errors?
-            elif all(isinstance(obs, ErrorObservation) for obs in last_observations):
+            # and the last four observations all errors?
+            if all(isinstance(obs, ErrorObservation) for obs in last_observations):
                 logger.warning('Action, ErrorObservation loop detected')
                 return True
 
+        # scenario 3: monologue
         # check for repeated MessageActions with source=AGENT
         # see if the agent is engaged in a good old monologue, telling itself the same thing over and over
         agent_message_actions = [
@@ -424,6 +441,7 @@ class AgentController:
                     logger.warning('Repeated MessageAction with source=AGENT detected')
                     return True
 
+        # scenario 4: action, observation pattern on the last six steps
         # check if the agent repeats the same (Action, Observation)
         # every other step in the last six steps
         last_six_actions: list[Event] = []
