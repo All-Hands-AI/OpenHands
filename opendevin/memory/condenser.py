@@ -10,7 +10,6 @@ from opendevin.events.action.commands import (
     CmdRunAction,
     IPythonRunCellAction,
 )
-from opendevin.events.action.empty import NullAction
 from opendevin.events.action.files import FileReadAction, FileWriteAction
 from opendevin.events.action.message import MessageAction
 from opendevin.events.event import Event, EventSource
@@ -168,8 +167,11 @@ class MemoryCondenser:
         """
         Returns true for actions/observations that can be summarized.
         """
-        non_summarizable_events = (
-            NullAction,
+        # non-summarizable actions are special actions like Finish
+        # a chunk started by a Delegate action has its own summarization
+        # a summarize action itself is currently not summarizable, but it could be included in a future "all old events" summary
+        # delegate action/obs should be included in the chunk delimited by them (AgentDelegateAction, ...things,...,AgentDelegateObservation)
+        summarizable_events = (
             CmdKillAction,
             CmdRunAction,
             IPythonRunCellAction,
@@ -178,19 +180,13 @@ class MemoryCondenser:
             FileReadAction,
             FileWriteAction,
             AgentRecallAction,
-            # AgentFinishAction,
-            # AgentRejectAction,
-            # AgentDelegateAction,
-            # AddTaskAction,
-            # ModifyTaskAction,
-            # ChangeAgentStateAction,
             MessageAction,
-            # AgentSummarizeAction, # this is actually fine but separate
             Observation,
         )
 
-        if isinstance(event, non_summarizable_events):
+        if isinstance(event, summarizable_events):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                # user messages are not summarized in the first rounds, agent 'chunks' are first
                 return False
             return True
         return False
