@@ -40,6 +40,7 @@ def test_write_simple_script():
     task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
     final_state: State = asyncio.run(main(task, exit_on_message=True))
     assert final_state.agent_state == AgentState.STOPPED
+    assert final_state.error is None
 
     # Verify the script file exists
     script_path = os.path.join(workspace_base, 'hello.sh')
@@ -85,6 +86,7 @@ def test_edits():
     task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
     final_state: State = asyncio.run(main(task, exit_on_message=True))
     assert final_state.agent_state == AgentState.STOPPED
+    assert final_state.error is None
 
     # Verify bad.txt has been fixed
     text = """This is a stupid typo.
@@ -98,7 +100,7 @@ Enjoy!
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') != 'CodeActAgent' or os.getenv('AGENT') != 'CodeActSWEAgent',
+    os.getenv('AGENT') != 'CodeActAgent' and os.getenv('AGENT') != 'CodeActSWEAgent',
     reason='currently only CodeActAgent and CodeActSWEAgent have IPython (Jupyter) execution by default',
 )
 @pytest.mark.skipif(
@@ -110,6 +112,7 @@ def test_ipython():
     task = "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point."
     final_state: State = asyncio.run(main(task, exit_on_message=True))
     assert final_state.agent_state == AgentState.STOPPED
+    assert final_state.error is None
 
     # Verify the file exists
     file_path = os.path.join(workspace_base, 'test.txt')
@@ -137,6 +140,7 @@ def test_simple_task_rejection():
     task = 'Write a git commit message for the current staging area. Do not ask me for confirmation at any point.'
     final_state: State = asyncio.run(main(task))
     assert final_state.agent_state == AgentState.STOPPED
+    assert final_state.error is None
     assert isinstance(final_state.history[-1][0], AgentRejectAction)
 
 
@@ -153,6 +157,7 @@ def test_ipython_module():
     task = "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point."
     final_state: State = asyncio.run(main(task, exit_on_message=True))
     assert final_state.agent_state == AgentState.STOPPED
+    assert final_state.error is None
 
     # Verify the file exists
     file_path = os.path.join(workspace_base, 'test.txt')
@@ -181,5 +186,6 @@ def test_browse_internet(http_server):
     task = 'Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.'
     final_state: State = asyncio.run(main(task, exit_on_message=True))
     assert final_state.agent_state == AgentState.STOPPED
+    assert final_state.error is None
     assert isinstance(final_state.history[-1][0], AgentFinishAction)
     assert 'OpenDevin is all you need!' in str(final_state.history)
