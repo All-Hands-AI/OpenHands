@@ -98,7 +98,7 @@ Enjoy!
 
 
 @pytest.mark.skipif(
-    os.getenv('AGENT') != 'CodeActAgent' or os.getenv('AGENT') != 'CodeActSWEAgent',
+    os.getenv('AGENT') != 'CodeActAgent' and os.getenv('AGENT') != 'CodeActSWEAgent',
     reason='currently only CodeActAgent and CodeActSWEAgent have IPython (Jupyter) execution by default',
 )
 @pytest.mark.skipif(
