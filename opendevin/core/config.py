@@ -194,6 +194,7 @@ class AppConfig(metaclass=Singleton):
     enable_auto_lint: bool = (
         False  # once enabled, OpenDevin would lint files after editing
     )
+    enable_repomap: bool = False
 
     defaults_dict: ClassVar[dict] = {}
 

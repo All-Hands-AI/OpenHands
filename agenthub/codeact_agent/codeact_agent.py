@@ -34,7 +34,6 @@ from opendevin.runtime.plugins import (
 from opendevin.runtime.tools import RuntimeTool
 
 ENABLE_GITHUB = True
-ENABLE_REPOMAP = False
 
 
 def action_to_str(action: Action) -> str:
@@ -189,7 +188,7 @@ class CodeActAgent(Agent):
                 repo_content_prefix='Here are summaries of some files present in the workspace.',
                 max_context_window=self.llm.max_input_tokens,
             )
-            if ENABLE_REPOMAP
+            if config.enable_repomap
             else None
         )
 
@@ -234,7 +233,7 @@ class CodeActAgent(Agent):
                 return AgentFinishAction()
 
             # Insert optional repo_map message here
-            if ENABLE_REPOMAP:
+            if config.enable_repomap:
                 repo_content = (
                     self.repo_map.get_history_aware_repo_map(messages)
                     if self.repo_map
