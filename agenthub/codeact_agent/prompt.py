@@ -34,7 +34,10 @@ SYSTEM_PREFIX = MINIMAL_SYSTEM_PREFIX + BROWSING_PREFIX + PIP_INSTALL_PREFIX
 GITHUB_MESSAGE = """To interact with GitHub, use the $GITHUB_TOKEN environment variable.
 For example, to push a branch `my_branch` to the GitHub repo `owner/repo`:
 <execute_bash> git push https://$GITHUB_TOKEN@github.com/owner/repo.git my_branch </execute_bash>
-If $GITHUB_TOKEN is not set, ask the user to set it."""
+If $GITHUB_TOKEN is not set, ask the user to set it.
+To receive a list of existing branches of a repo, use the following format:
+<execute_ipython> fetch_github_branches('owner', 'repo', '$GITHUB_TOKEN') </execute_ipython>
+"""
 
 SYSTEM_SUFFIX = """Responses should be concise.
 The assistant should attempt fewer things at a time instead of putting too many commands OR too much code in one "execute" block.

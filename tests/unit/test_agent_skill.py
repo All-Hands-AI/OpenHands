@@ -12,6 +12,7 @@ from opendevin.runtime.plugins.agent_skills.agentskills import (
     append_file,
     create_file,
     edit_file,
+    fetch_github_branches,
     find_file,
     goto_line,
     open_file,
@@ -1080,3 +1081,56 @@ def test_parse_pptx(tmp_path):
         'Hello, this is the second test PPTX slide.\n\n'
     )
     assert output == expected_output, f'Expected output does not match. Got: {output}'
+
+
+def run_fetch_github_branches_test(
+    monkeypatch, mock_response, expected_output, expect_output=False
+):
+    class MockResponse:
+        def __init__(self, status_code, json_data=None):
+            self.status_code = status_code
+            self.json_data = json_data
+
+        def json(self):
+            return self.json_data
+
+    monkeypatch.setattr(
+        'requests.get', lambda *args, **kwargs: MockResponse(**mock_response)
+    )
+
+    if expect_output:
+        with io.StringIO() as buf:
+            with contextlib.redirect_stdout(buf):
+                branches = fetch_github_branches('octocat', 'Hello-World')
+            result = buf.getvalue().strip()
+        assert result == expected_output
+    else:
+        branches = fetch_github_branches('octocat', 'Hello-World')
+        assert str(branches) == expected_output
+
+
+def test_fetch_github_branches(monkeypatch):
+    mock_response = {
+        'status_code': 200,
+        'json_data': [
+            {'name': 'main'},
+            {'name': 'develop'},
+            {'name': 'feature/new-feature'},
+        ],
+    }
+    expected_output = '["main", "develop", "feature/new-feature"]'
+    run_fetch_github_branches_test(monkeypatch, mock_response, expected_output)
+
+
+def test_fetch_github_branches_empty_response(monkeypatch):
+    mock_response = {'status_code': 200, 'json_data': []}
+    expected_output = '[]'
+    run_fetch_github_branches_test(monkeypatch, mock_response, expected_output)
+
+
+def test_fetch_github_branches_failed_connection(monkeypatch):
+    mock_response = {'status_code': 500}
+    expected_output = 'Failed to fetch branches due to error code 500'
+    run_fetch_github_branches_test(
+        monkeypatch, mock_response, expected_output, expect_output=True
+    )

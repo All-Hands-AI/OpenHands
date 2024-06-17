@@ -14,10 +14,12 @@ Functions:
 - find_file(file_name, dir_path='./'): Finds all files with the given name in the specified directory.
 - edit_file(file_name, start, end, content): Replaces lines in a file with the given content.
 - append_file(file_name, content): Appends given content to a file.
+- fetch_github_branches(repo_owner: str, repo_name: str, token: str | None = None): Fetches the branch names for a given GitHub repository by owner and repo name. Optionally a GitHub personal access token can be provided.
 """
 
 import base64
 import functools
+import json
 import os
 import shutil
 import subprocess
@@ -27,6 +29,7 @@ from typing import Optional
 
 import docx
 import PyPDF2
+import requests
 from openai import OpenAI
 from pptx import Presentation
 from pylatexenc.latex2text import LatexNodes2Text
@@ -845,6 +848,32 @@ def parse_pptx(file_path: str) -> None:
         print(f'Error reading PowerPoint file: {e}')
 
 
+def fetch_github_branches(repo_owner: str, repo_name: str, token: str | None = None):
+    """
+    Fetches the branch names for a given GitHub repository by owner and repo name. Optionally a GitHub personal access token can be provided.
+
+    Parameters:
+    - repo_owner (str): The owner of the repository
+    - repo_name (str): The name of the repository
+    - token (str, optional): GitHub personal access token for authentication
+
+    Returns:
+    - str: A JSON-formatted list of branch names
+    """
+    headers = {}
+    if token:
+        headers['Authorization'] = f'token {token}'
+
+    url = f'https://api.github.com/repos/{repo_owner}/{repo_name}/branches'
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        branches = response.json()
+        return json.dumps([branch['name'] for branch in branches])
+
+    print(f'Failed to fetch branches due to error code {response.status_code}')
+    return json.dumps([])
+
+
 __all__ = [
     # file operation
     'open_file',
@@ -862,6 +891,7 @@ __all__ = [
     'parse_docx',
     'parse_latex',
     'parse_pptx',
+    'fetch_github_branches',
 ]
 
 if OPENAI_API_KEY and OPENAI_BASE_URL:

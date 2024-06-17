@@ -22,6 +22,9 @@ To interact with GitHub, use the $GITHUB_TOKEN environment variable.
 For example, to push a branch `my_branch` to the GitHub repo `owner/repo`:
 <execute_bash> git push https://$GITHUB_TOKEN@github.com/owner/repo.git my_branch </execute_bash>
 If $GITHUB_TOKEN is not set, ask the user to set it.
+To receive a list of existing branches of a repo, use the following format:
+<execute_ipython> fetch_github_branches('owner', 'repo', '$GITHUB_TOKEN') </execute_ipython>
+
 
 
 Apart from the standard Python library, the assistant can also use the following functions (already imported) in <execute_ipython> environment:
@@ -108,6 +111,15 @@ parse_pptx(file_path: str) -> None:
     Parses the content of a pptx file and prints it.
     Args:
     file_path: str: The path to the file to open.
+
+fetch_github_branches(repo_owner: str, repo_name: str, token: str | None = None):
+    Fetches the branch names for a given GitHub repository by owner and repo name. Optionally a GitHub personal access token can be provided.
+    Parameters:
+    - repo_owner (str): The owner of the repository
+    - repo_name (str): The name of the repository
+    - token (str, optional): GitHub personal access token for authentication
+    Returns:
+    - str: A JSON-formatted list of branch names
 
 Please note that THE `edit_file` and `append_file` FUNCTIONS REQUIRE PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
 

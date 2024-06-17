@@ -97,6 +97,15 @@ parse_pptx(file_path: str) -> None:
     Args:
     file_path: str: The path to the file to open.
 
+fetch_github_branches(repo_owner: str, repo_name: str, token: str | None = None):
+    Fetches the branch names for a given GitHub repository by owner and repo name. Optionally a GitHub personal access token can be provided.
+    Parameters:
+    - repo_owner (str): The owner of the repository
+    - repo_name (str): The name of the repository
+    - token (str, optional): GitHub personal access token for authentication
+    Returns:
+    - str: A JSON-formatted list of branch names
+
 Please note that THE `edit_file` FUNCTION REQUIRES PROPER INDENTATION. If the assistant would like to add the line '        print(x)', it must fully write that out, with all those spaces before the code! Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
 
 The assistant's response should be concise.
@@ -555,26 +564,24 @@ Package installed successfully
 
 ----------
 
-Next, let's import `pymsgbox`, print its version, and save the output to `/workspace/test.txt`.
+Next, let's import `pymsgbox` and print its version to `/workspace/test.txt`.
 <execute_ipython>
 import pymsgbox
 
-version_info = pymsgbox.__version__
+version = pymsgbox.__version__
 
 with open("/workspace/test.txt", "w") as file:
-    file.write(f"pymsgbox version: {version_info}\n")
-
-version_info
+    file.write(f"pymsgbox version: {version}\n")
 </execute_ipython>
 
 ----------
 
 OBSERVATION:
-'1.0.9'
+[Code executed successfully with no output]
 
 ----------
 
-The version of `pymsgbox` has been successfully written to `/workspace/test.txt`. Let's verify the content of the file to ensure everything is correct.
+The version of `pymsgbox` has been printed to `/workspace/test.txt`. Let's verify the content of the file to ensure everything is correct.
 <execute_bash>
 cat /workspace/test.txt
 </execute_bash>
