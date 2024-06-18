@@ -154,7 +154,6 @@ The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_be
 - `report.json`: a JSON file that contains keys like `"resolved"` pointing to instance IDs that are resolved by the agent.
 - `summary.json`: a JSON file contains more fine-grained information for each test instance.
 
-Please refer to [EVAL_PATCH.md](./EVAL_PATCH.md) if you want to learn more about how to evaluate patches that are already generated (e.g., not by OpenDevin).
 
 ## View Result Summary
 
