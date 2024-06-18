@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Callable, Iterable
 
 from opendevin.core.logger import opendevin_logger as logger
+from opendevin.events.observation import CmdOutputObservation
 from opendevin.events.serialization.event import event_from_dict, event_to_dict
 from opendevin.storage import FileStore, get_file_store
 
@@ -95,6 +96,7 @@ class EventStream:
 
     # TODO: make this not async
     async def add_event(self, event: Event, source: EventSource):
+        logger.debug(f'Adding event {event} from {source}')
         async with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1
@@ -105,6 +107,12 @@ class EventStream:
             self._file_store.write(
                 self._get_filename_for_id(event.id), json.dumps(data)
             )
-        for key, stack in self._subscribers.items():
+        for stack in self._subscribers.values():
             callback = stack[-1]
-            await callback(event)
+            logger.debug(f'Notifying subscriber {callback} of event {event}')
+            if event.cause != -1:
+                await callback(event)
+
+            # to avoid recursion. We don't notify the user of their own events?
+            if source == EventSource.USER and isinstance(event, CmdOutputObservation):
+                event._cause = -1  # type: ignore [attr-defined]
