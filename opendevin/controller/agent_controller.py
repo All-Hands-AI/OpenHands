@@ -6,9 +6,9 @@ from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config
 from opendevin.core.exceptions import (
-    AgentLLMOutputError,
     AgentMalformedActionError,
     AgentNoActionError,
+    LLMOutputError,
     MaxCharsExceedError,
 )
 from opendevin.core.logger import opendevin_logger as logger
@@ -294,7 +294,7 @@ class AgentController:
         except (
             AgentMalformedActionError,
             AgentNoActionError,
-            AgentLLMOutputError,
+            LLMOutputError,
         ) as e:
             await self.report_error(str(e))
             return

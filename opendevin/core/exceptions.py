@@ -35,7 +35,7 @@ class AgentNotRegisteredError(Exception):
         super().__init__(message)
 
 
-class AgentLLMOutputError(Exception):
+class LLMOutputError(Exception):
     def __init__(self, message):
         super().__init__(message)
 
@@ -93,4 +93,9 @@ class TokenLimitExceedError(Exception):
     """Exception raised when the user-defined max_input_tokens limit is exceeded."""
 
     def __init__(self, message='User-defined token limit exceeded. Condensing memory.'):
+        super().__init__(message)
+
+
+class InvalidSummaryResponseError(Exception):
+    def __init__(self, message='Invalid summary response'):
         super().__init__(message)

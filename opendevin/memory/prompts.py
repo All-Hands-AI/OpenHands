@@ -1,4 +1,8 @@
-from opendevin.core.exceptions import AgentLLMOutputError
+from opendevin.core.exceptions import (
+    AgentMalformedActionError,
+    InvalidSummaryResponseError,
+    LLMOutputError,
+)
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.core.utils import json
 from opendevin.events.action.agent import AgentSummarizeAction
@@ -35,13 +39,16 @@ def parse_summary_response(response: str) -> AgentSummarizeAction:
     Returns:
     - The summary action output by the model
     """
-    action_dict = json.loads(response)
-    action = action_from_dict(action_dict)
-    if action is None or not isinstance(action, AgentSummarizeAction):
-        logger.error(
-            f"Expected 'summarize' action, got {str(type(action)) if action else None}"
-        )
-        raise AgentLLMOutputError(
-            'Expected a summarize action, but the LLM response was invalid'
-        )
+    try:
+        action_dict = json.loads(response)
+        action = action_from_dict(action_dict)
+        if action is None or not isinstance(action, AgentSummarizeAction):
+            error_message = f'Expected a summarize action, but the response got {str(type(action)) if action else None}'
+            logger.error(error_message)
+            raise InvalidSummaryResponseError(error_message)
+    except (LLMOutputError, AgentMalformedActionError) as e:
+        logger.error(f'Failed to parse summary response: {e}')
+        raise InvalidSummaryResponseError(
+            'Failed to parse the response: {str(e)}'
+        ) from e
     return action

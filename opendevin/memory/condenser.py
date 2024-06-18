@@ -1,3 +1,4 @@
+from opendevin.core.exceptions import InvalidSummaryResponseError
 from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action.agent import (
     AgentFinishAction,
@@ -153,11 +154,27 @@ class MemoryCondenser:
             event_dicts = [event_to_memory(event) for event in chunk]
             prompt = get_summarize_prompt(event_dicts)
 
-            messages = [{'role': 'user', 'content': prompt}]
-            response = self.llm.completion(messages=messages)
+            # give the LLM a chance to self-correct if it fails the first time
+            failed_response: str | None = None
+            while True:
+                try:
+                    if failed_response:
+                        prompt += f'\n Please follow the format and provide a valid response. Your last response: {failed_response}'
+                    messages = [{'role': 'user', 'content': prompt}]
 
-            action_response = response['choices'][0]['message']['content']
-            action = parse_summary_response(action_response)
+                    response = self.llm.completion(messages=messages)
+
+                    action_response = response['choices'][0]['message']['content']
+                    action = parse_summary_response(action_response)
+                    break
+                except InvalidSummaryResponseError as e:
+                    logger.error(f'Failed to summarize chunk: {e}')
+
+                    if failed_response:
+                        # we've already tried summarizing this chunk, so we're stuck
+                        raise
+                    failed_response = str(e)
+
             return action
         except Exception as e:
             logger.error(f'Failed to summarize chunk: {e}')
