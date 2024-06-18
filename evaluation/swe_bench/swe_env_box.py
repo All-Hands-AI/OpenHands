@@ -108,6 +108,37 @@ class SWEBenchSSHBox(DockerSSHBox):
             )
             logger.info(f"SSH box started for instance {instance['instance_id']}.")
 
+            # =========================
+            # Handle the workspace directory's owner and group (when run_as_devin is false)
+            host_user_id = (
+                sandbox.sandbox_user_id
+            )  # the user id we supposed to use IF run_as_devin is true
+            group_name = f'group_{host_user_id}'
+            # Now we add a group with the same name as the user
+            # & AND change the user's primary group to the new group
+            exit_code, output = sandbox.execute(
+                f'groupadd -g {host_user_id} {group_name}'
+            )
+            assert exit_code == 0, f'Failed to add group {group_name}: {output}'
+            exit_code, output = sandbox.execute(f'usermod -g {group_name} root')
+            assert (
+                exit_code == 0
+            ), f'Failed to change user root to group {group_name}: {output}'
+            # & AND change the entire /workspace 's group to the new group
+            exit_code, output = sandbox.execute(f'chgrp -R {group_name} /workspace')
+            assert (
+                exit_code == 0
+            ), f'Failed to change group of /workspace to {group_name}: {output}'
+            # Set the GID bit to ensure all future files and directories inherit this group
+            exit_code, output = sandbox.execute('chmod g+s /workspace')
+            assert exit_code == 0, f'Failed to set GID bit on /workspace: {output}'
+            # Set group permissions equal to owner permissions recursively
+            exit_code, output = sandbox.execute('chmod -R g=u /workspace')
+            assert (
+                exit_code == 0
+            ), f'Failed to set group permissions equal to owner permissions: {output}'
+            # =========================
+
             # cd to the repo
             exit_code, output = sandbox.execute(f'cd /workspace/{workspace_dir_name}')
             if exit_code != 0:
@@ -168,8 +199,14 @@ if __name__ == '__main__':
     swe_bench_tests = swe_bench_tests[swe_bench_tests['instance_id'] == INSTANCE_ID]
     EXAMPLE_INSTANCE = swe_bench_tests.iloc[0].to_dict()
 
+    config.enable_repomap = True
     sandbox = SWEBenchSSHBox.get_box_for_instance(
         instance=EXAMPLE_INSTANCE,
+        workspace_dir_name=f'{EXAMPLE_INSTANCE["repo"]}__{EXAMPLE_INSTANCE["version"]}'.replace(
+            '/', '__'
+        ),
+        workspace_mount_path=config.workspace_mount_path,
+        skip_workspace_mount=False,
         sandbox_plugins=[AgentSkillsRequirement(), JupyterRequirement()],
     )
 
