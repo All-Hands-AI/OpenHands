@@ -58,7 +58,7 @@ jobs:
 
   integration-tests-on-mac:
     name: Integration Tests on MacOS
-    runs-on: macos-13
+    runs-on: macos-12
     if: contains(github.event.pull_request.title, 'mac') || contains(github.event.pull_request.title, 'Mac')
     strategy:
       fail-fast: false
