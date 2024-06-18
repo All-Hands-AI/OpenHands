@@ -9,6 +9,7 @@ from retry import retry
 
 LOGGER = logging.getLogger(__name__)
 
+
 class Q20Game:
     def __init__(
         self,
@@ -19,8 +20,10 @@ class Q20Game:
         temperature: float = 0.8,
         openai_api: bool = True,
         openai_api_key: Optional[str] = None,
-        guesser_kargs={},
+        guesser_kargs=None,
     ) -> None:
+        if guesser_kargs is None:
+            guesser_kargs = {}
         self.item = item
         self.answerer_model = answerer_model
         self.guesser_model = guesser_model
@@ -178,7 +181,7 @@ class Q20GameCelebrity(Q20Game):
         user_messages = [
             {
                 'role': 'system',
-                'content': f'Based on on your knowledge about the celebrity: {self.item}, '
+                'content': f'Based on your knowledge about the celebrity: {self.item}, '
                 f'respond to the following question or guess. '
                 f"Limit your respond to only 'Yes.', 'No.' or 'Dunno.', with no explanation or other words. "
                 f"Never say the name {self.item} in your response. Do not say 'Dunno.' if it can be answered by 'Yes.' or 'No.' "

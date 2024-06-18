@@ -1,5 +1,5 @@
 ---
-sidebar_position: 6
+sidebar_position: 7
 ---
 
 # 📚 Misc
@@ -15,7 +15,7 @@ Achieving full replication of production-grade applications with LLMs is a compl
 
 ## 🚧 Default Agent
 
-- Our default Agent is currently the MonologueAgent, which has limited capabilities, but is fairly stable. We're working on other Agent implementations, including [SWE Agent](https://swe-agent.com/). You can [read about our current set of agents here](./agents).
+- Our default Agent is currently the CodeActAgent, which is capable of generating code and handling files. We're working on other Agent implementations, including [SWE Agent](https://swe-agent.com/). You can [read about our current set of agents here](./agents).
 
 ## 🤝 How to Contribute
 

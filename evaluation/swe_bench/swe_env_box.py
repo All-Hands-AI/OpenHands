@@ -51,7 +51,9 @@ class SWEBenchSSHBox(DockerSSHBox):
         assert exit_code == 0, f'Failed to set SWE_INSTANCE_ID in ~/.bashrc: {output}'
 
         logger.info('Sourcing swe_entry.sh to set up environment variables')
-        # larger timeout for SWEBench init to account for long-running installations (e.g., require compilation)
+        logger.info(
+            'Initialization of SWEBench may take approximately 10 minutes due to long-running installations, such as those requiring compilation.'
+        )
         exit_code, output = self.execute('source /swe_util/swe_entry.sh', timeout=600)
         logger.info('exit code: %d', exit_code)
         logger.info(output)
@@ -83,45 +85,49 @@ class SWEBenchSSHBox(DockerSSHBox):
             )
         old_workspace_base = config.workspace_base
         old_workspace_mount_path = config.workspace_mount_path
-        config.workspace_base = workspace_mount_path
-        config.workspace_mount_path = workspace_mount_path
 
-        # linting python after editing helps LLM fix indentations
-        config.enable_auto_lint = True
-        # Need to run as root to use SWEBench container
-        config.run_as_devin = False
-        sandbox = cls(
-            container_image=SWE_BENCH_CONTAINER_IMAGE,
-            swe_instance_id=instance['instance_id'],
-            swe_instance=instance,
-            skip_workspace_mount=skip_workspace_mount,
-            sandbox_plugins=sandbox_plugins,
-            workspace_dir_name=workspace_dir_name,
-        )
-        logger.info(f"SSH box started for instance {instance['instance_id']}.")
+        try:
+            config.workspace_base = workspace_mount_path
+            config.workspace_mount_path = workspace_mount_path
 
-        # cd to the repo
-        exit_code, output = sandbox.execute(f'cd /workspace/{workspace_dir_name}')
-        if exit_code != 0:
-            logger.error(f'Failed to cd to the repo: {output}')
-            sys.exit(1)
+            # linting python after editing helps LLM fix indentations
+            config.enable_auto_lint = True
+            # Need to run as root to use SWEBench container
+            config.run_as_devin = False
+            sandbox = cls(
+                container_image=SWE_BENCH_CONTAINER_IMAGE,
+                swe_instance_id=instance['instance_id'],
+                swe_instance=instance,
+                skip_workspace_mount=skip_workspace_mount,
+                sandbox_plugins=sandbox_plugins,
+                workspace_dir_name=workspace_dir_name,
+            )
+            logger.info(f"SSH box started for instance {instance['instance_id']}.")
 
-        # remove all future commits & remote following Devin
-        # https://www.cognition-labs.com/post/swe-bench-technical-report
-        exit_code, output = sandbox.execute('git reset --hard')
-        if exit_code != 0:
-            logger.error(f'Failed to reset the repo: {output}')
-            sys.exit(1)
-        exit_code, output = sandbox.execute(
-            'for remote_name in $(git remote); do git remote remove "${remote_name}"; done'
-        )
-        if exit_code != 0:
-            logger.error(f'Failed to remove remote: {output}')
-            sys.exit(1)
+            # cd to the repo
+            exit_code, output = sandbox.execute(f'cd /workspace/{workspace_dir_name}')
+            if exit_code != 0:
+                logger.error(f'Failed to cd to the repo: {output}')
+                sys.exit(1)
 
-        # restore workspace_base and workspace_mount_path
-        config.workspace_base = old_workspace_base
-        config.workspace_mount_path = old_workspace_mount_path
+            # remove all future commits & remote following Devin
+            # https://www.cognition-labs.com/post/swe-bench-technical-report
+            exit_code, output = sandbox.execute('git reset --hard')
+            if exit_code != 0:
+                logger.error(f'Failed to reset the repo: {output}')
+                sys.exit(1)
+            exit_code, output = sandbox.execute(
+                'for remote_name in $(git remote); do git remote remove "${remote_name}"; done'
+            )
+            if exit_code != 0:
+                logger.error(f'Failed to remove remote: {output}')
+                sys.exit(1)
+        except Exception:
+            raise
+        finally:
+            # restore workspace_base and workspace_mount_path
+            config.workspace_base = old_workspace_base
+            config.workspace_mount_path = old_workspace_mount_path
         return sandbox
 
     def get_diff_patch(self):

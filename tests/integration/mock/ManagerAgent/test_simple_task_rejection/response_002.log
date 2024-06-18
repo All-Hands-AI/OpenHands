@@ -1,0 +1,8 @@
+```json
+{
+  "action": "run",
+  "args": {
+    "command": "git diff --cached"
+  }
+}
+```

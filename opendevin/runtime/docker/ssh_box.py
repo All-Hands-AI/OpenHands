@@ -6,7 +6,6 @@ import tarfile
 import tempfile
 import time
 import uuid
-from collections import namedtuple
 from glob import glob
 
 import docker
@@ -22,10 +21,6 @@ from opendevin.runtime.docker.process import DockerProcess, Process
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from opendevin.runtime.sandbox import Sandbox
 from opendevin.runtime.utils import find_available_tcp_port
-
-# FIXME: these are not used, can we remove them?
-InputType = namedtuple('InputType', ['content'])
-OutputType = namedtuple('OutputType', ['content'])
 
 
 class SSHExecCancellableStream(CancellableStream):
@@ -268,7 +263,7 @@ class DockerSSHBox(Sandbox):
             self.start_docker_container()
         try:
             self.start_ssh_session()
-        except pxssh.ExceptionPxssh as e:
+        except Exception as e:
             self.close()
             raise e
 
@@ -695,13 +690,13 @@ class DockerSSHBox(Sandbox):
             if self.use_host_network:
                 network_kwargs['network_mode'] = 'host'
             else:
-                # FIXME: This is a temporary workaround for Mac OS
+                # FIXME: This is a temporary workaround for Windows where host network mode has bugs.
+                # FIXME: Docker Desktop for Mac OS has experimental support for host network mode
                 network_kwargs['ports'] = {f'{self._ssh_port}/tcp': self._ssh_port}
                 logger.warning(
                     (
-                        'Using port forwarding for Mac OS. '
-                        'Server started by OpenDevin will not be accessible from the host machine at the moment. '
-                        'See https://github.com/OpenDevin/OpenDevin/issues/897 for more information.'
+                        'Using port forwarding till the enable host network mode of Docker is out of experimental mode.'
+                        'Check the 897th issue on https://github.com/OpenDevin/OpenDevin/issues/ for more information.'
                     )
                 )
 
@@ -746,16 +741,17 @@ class DockerSSHBox(Sandbox):
         containers = self.docker_client.containers.list(all=True)
         for container in containers:
             try:
-                if (
-                    container.name.startswith(self.container_name)
-                    and not config.persist_sandbox
-                ):
-                    # only remove the container we created
-                    # otherwise all other containers with the same prefix will be removed
-                    # which will mess up with parallel evaluation
-                    container.remove(force=True)
+                if container.name.startswith(self.container_name):
+                    if config.persist_sandbox:
+                        container.stop()
+                    else:
+                        # only remove the container we created
+                        # otherwise all other containers with the same prefix will be removed
+                        # which will mess up with parallel evaluation
+                        container.remove(force=True)
             except docker.errors.NotFound:
                 pass
+        self.docker_client.close()
 
 
 if __name__ == '__main__':

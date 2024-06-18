@@ -6,6 +6,7 @@ from opendevin.core.config import (
     AgentConfig,
     AppConfig,
     LLMConfig,
+    UndefinedString,
     finalize_config,
     load_from_env,
     load_from_toml,
@@ -76,6 +77,12 @@ def test_load_from_old_style_env(monkeypatch, default_config):
     assert default_config.agent.memory_enabled is True
     assert default_config.agent.name == 'PlannerAgent'
     assert default_config.workspace_base == '/opt/files/workspace'
+    assert (
+        default_config.workspace_mount_path is UndefinedString.UNDEFINED
+    )  # before finalize_config
+    assert (
+        default_config.workspace_mount_path_in_sandbox is not UndefinedString.UNDEFINED
+    )
 
 
 def test_load_from_new_style_toml(default_config, temp_toml_file):
@@ -102,6 +109,19 @@ workspace_base = "/opt/files2/workspace"
     assert default_config.agent.memory_enabled is True
     assert default_config.workspace_base == '/opt/files2/workspace'
 
+    # before finalize_config, workspace_mount_path is UndefinedString.UNDEFINED if it was not set
+    assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
+    assert (
+        default_config.workspace_mount_path_in_sandbox is not UndefinedString.UNDEFINED
+    )
+    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
+
+    finalize_config(default_config)
+
+    # after finalize_config, workspace_mount_path is set to the absolute path of workspace_base
+    # if it was undefined
+    assert default_config.workspace_mount_path == '/opt/files2/workspace'
+
 
 def test_env_overrides_toml(monkeypatch, default_config, temp_toml_file):
     # Test that environment variables override TOML values using monkeypatch
@@ -118,23 +138,42 @@ disable_color = true
 """)
 
     monkeypatch.setenv('LLM_API_KEY', 'env-api-key')
-    monkeypatch.setenv('WORKSPACE_BASE', '/opt/files4/workspace')
+    monkeypatch.setenv('WORKSPACE_BASE', 'UNDEFINED')
     monkeypatch.setenv('SANDBOX_TYPE', 'ssh')
 
     load_from_toml(default_config, temp_toml_file)
+
+    # before finalize_config, workspace_mount_path is UndefinedString.UNDEFINED if it was not set
+    assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
+
     load_from_env(default_config, os.environ)
 
     assert os.environ.get('LLM_MODEL') is None
     assert default_config.llm.model == 'test-model'
     assert default_config.llm.api_key == 'env-api-key'
-    assert default_config.workspace_base == '/opt/files4/workspace'
+
+    # after we set workspace_base to 'UNDEFINED' in the environment,
+    # workspace_base should be set to that
+    # workspace_mount path is still UndefinedString.UNDEFINED
+    assert default_config.workspace_base is not UndefinedString.UNDEFINED
+    assert default_config.workspace_base == 'UNDEFINED'
+    assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
+    assert default_config.workspace_mount_path == 'UNDEFINED'
+
     assert default_config.sandbox_type == 'ssh'
     assert default_config.disable_color is True
+
+    finalize_config(default_config)
+    # after finalize_config, workspace_mount_path is set to absolute path of workspace_base if it was undefined
+    assert default_config.workspace_mount_path == os.getcwd() + '/UNDEFINED'
 
 
 def test_defaults_dict_after_updates(default_config):
     # Test that `defaults_dict` retains initial values after updates.
     initial_defaults = default_config.defaults_dict
+    assert (
+        initial_defaults['workspace_mount_path']['default'] is UndefinedString.UNDEFINED
+    )
     updated_config = AppConfig()
     updated_config.llm.api_key = 'updated-api-key'
     updated_config.agent.name = 'MonologueAgent'
@@ -142,28 +181,35 @@ def test_defaults_dict_after_updates(default_config):
     defaults_after_updates = updated_config.defaults_dict
     assert defaults_after_updates['llm']['api_key']['default'] is None
     assert defaults_after_updates['agent']['name']['default'] == 'CodeActAgent'
+    assert (
+        defaults_after_updates['workspace_mount_path']['default']
+        is UndefinedString.UNDEFINED
+    )
     assert defaults_after_updates == initial_defaults
-
-    AppConfig.reset()
 
 
 def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
     # Invalid TOML format doesn't break the configuration
     monkeypatch.setenv('LLM_MODEL', 'gpt-5-turbo-1106')
+    monkeypatch.setenv('WORKSPACE_MOUNT_PATH', '/home/user/project')
     monkeypatch.delenv('LLM_API_KEY', raising=False)
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
         toml_file.write('INVALID TOML CONTENT')
 
     load_from_toml(default_config)
     load_from_env(default_config, os.environ)
+    default_config.ssh_password = None  # prevent leak
+    default_config.jwt_secret = None  # prevent leak
     assert default_config.llm.model == 'gpt-5-turbo-1106'
     assert default_config.llm.custom_llm_provider is None
-    assert default_config.github_token is None
-    assert default_config.llm.api_key is None
+    if default_config.llm.api_key is not None:  # prevent leak
+        pytest.fail('LLM API key should be empty.')
+    assert default_config.workspace_mount_path == '/home/user/project'
 
 
 def test_finalize_config(default_config):
     # Test finalize config
+    assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
     default_config.sandbox_type = 'local'
     finalize_config(default_config)
 
@@ -171,11 +217,14 @@ def test_finalize_config(default_config):
         default_config.workspace_mount_path_in_sandbox
         == default_config.workspace_mount_path
     )
+    assert default_config.workspace_mount_path == os.path.abspath(
+        default_config.workspace_base
+    )
 
 
 # tests for workspace, mount path, path in sandbox, cache dir
 def test_workspace_mount_path_default(default_config):
-    assert default_config.workspace_mount_path is None
+    assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
     finalize_config(default_config)
     assert default_config.workspace_mount_path == os.path.abspath(
         default_config.workspace_base
@@ -266,16 +315,19 @@ def test_api_keys_repr_str():
         llm=llm_config,
         agent=agent_config,
         e2b_api_key='my_e2b_api_key',
-        github_token='my_github_token',
+        jwt_secret='my_jwt_secret',
+        ssh_password='my_ssh_password',
     )
     assert "e2b_api_key='******'" in repr(app_config)
-    assert "github_token='******'" in repr(app_config)
     assert "e2b_api_key='******'" in str(app_config)
-    assert "github_token='******'" in str(app_config)
+    assert "jwt_secret='******'" in repr(app_config)
+    assert "jwt_secret='******'" in str(app_config)
+    assert "ssh_password='******'" in repr(app_config)
+    assert "ssh_password='******'" in str(app_config)
 
     # Check that no other attrs in AppConfig have 'key' or 'token' in their name
     # This will fail when new attrs are added, and attract attention
-    known_key_token_attrs_app = ['e2b_api_key', 'github_token']
+    known_key_token_attrs_app = ['e2b_api_key']
     for attr_name in dir(AppConfig):
         if (
             not attr_name.startswith('__')

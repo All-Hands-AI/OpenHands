@@ -14,7 +14,11 @@ import docker
 from datasets import load_dataset
 from tqdm import tqdm
 
-from evaluation.agent_bench.helper import compare_results, create_sh_file
+from evaluation.agent_bench.helper import (
+    compare_results,
+    create_sh_file,
+    try_parse_answer,
+)
 from opendevin.controller.state.state import State
 from opendevin.core.config import args, config, get_llm_config_arg
 from opendevin.core.logger import get_console_handler
@@ -43,6 +47,12 @@ def codeact_user_response(state: State) -> str:
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
     )
     if state.history:
+        # check if the last action is an answer, if so, return exit for early exit
+        last_action, _ = state.history[-1]
+        ans = try_parse_answer(last_action)
+        if ans is not None:
+            return '/exit'
+
         user_msgs = [
             action
             for action, _ in state.history
@@ -99,7 +109,7 @@ def process_instance(
         # add back the console handler to print ONE line
         logger.addHandler(get_console_handler())
         logger.info(
-            f'Starting evaluation for instance {inst_id}.\nHint: run "tail -f {log_file}" to see live logs in a seperate shell'
+            f'Starting evaluation for instance {inst_id}.\nHint: run "tail -f {log_file}" to see live logs in a separate shell'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:

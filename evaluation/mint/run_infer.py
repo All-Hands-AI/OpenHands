@@ -51,10 +51,8 @@ def codeact_user_response(state: State, task: Task, task_config: Dict[str, int])
     state.task_state = result_state
 
     if not result_state.latest_output:
-        if result_state.success:
-            msg = '/exit'
-        else:
-            msg = 'Something went wrong! No output from the model.'
+        # Task is finished
+        msg = '/exit'
     else:
         msg = result_state.latest_output['content']
 
@@ -92,7 +90,7 @@ def process_instance(
         workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
         pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
-    # Setup the logger properly, so you can run multi-processing to parallize the evaluation
+    # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
         # Set up logger
         log_file = os.path.join(

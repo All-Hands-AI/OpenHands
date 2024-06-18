@@ -49,18 +49,13 @@ OpenDevin agents collaborate with human developers to write code, fix bugs, and 
 The easiest way to run OpenDevin is inside a Docker container. It works best with the most recent version of Docker, `26.0.0`.
 You must be using Linux, Mac OS, or WSL on Windows.
 
-To start the app, run these commands, replacing `$(pwd)/workspace` with the directory you want OpenDevin to work with.
+To start OpenDevin in a docker container, run the following commands in your terminal:
 
 > [!WARNING]
-> OpenDevin runs bash commands within a Docker sandbox, so it should not affect your machine.
-> But your workspace directory will be attached to that sandbox, and files in the directory may be modified or deleted.
+> When you run the following command, files in `./workspace` may be modified or deleted.
 
 ```bash
-# The directory you want OpenDevin to work with. MUST be an absolute path!
-export WORKSPACE_BASE=$(pwd)/workspace;
-```
-
-```bash
+WORKSPACE_BASE=$(pwd)/workspace
 docker run -it \
     --pull=always \
     -e SANDBOX_USER_ID=$(id -u) \
@@ -71,10 +66,13 @@ docker run -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
-    ghcr.io/opendevin/opendevin:0.6
+    --name opendevin-app-$(date +%Y%m%d%H%M%S) \
+    ghcr.io/opendevin/opendevin:0.6.2
 ```
 
-You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000).
+You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000) with access to `./workspace`. To have OpenDevin operate on your code, place it in `./workspace`.
+
+OpenDevin will only have access to this workspace folder. The rest of your system will not be affected as it runs in a secured docker sandbox.
 
 ## 🚀 Documentation
 
@@ -131,3 +129,16 @@ Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more informati
 [issues-url]: https://github.com/OpenDevin/OpenDevin/issues
 [license-shield]: https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge
 [license-url]: https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE
+
+## 📚 Cite
+
+```
+@misc{opendevin2024,
+  author       = {{OpenDevin Team}},
+  title        = {{OpenDevin: An Open Platform for AI Software Developers as Generalist Agents}},
+  year         = {2024},
+  version      = {v1.0},
+  howpublished = {\url{https://github.com/OpenDevin/OpenDevin}},
+  note         = {Accessed: ENTER THE DATE YOU ACCESSED THE PROJECT}
+}
+```

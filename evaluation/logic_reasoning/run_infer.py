@@ -138,126 +138,137 @@ def process_instance(
 ):
     old_workspace_mount_path = config.workspace_mount_path
     old_workspace_base = config.workspace_base
-    workspace_mount_path = os.path.join(config.workspace_mount_path, '_eval_workspace')
-    # create process-specific workspace dir
-    # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
-    # so that different agent don't interfere with each other.
-    if not skip_workspace_mount:
-        workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
-        pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
-    # reset workspace to config
-    config.workspace_base = workspace_mount_path
-    config.workspace_mount_path = workspace_mount_path
-
-    # Setup the logger properly, so you can run multi-processing to parallize the evaluation
-    if reset_logger:
-        # Set up logger
-        log_file = os.path.join(
-            eval_output_dir, 'logs', f'instance_{instance["id"]}.log'
+    try:
+        workspace_mount_path = os.path.join(
+            config.workspace_mount_path, '_eval_workspace'
         )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        # add back the console handler to print ONE line
-        logger.addHandler(get_console_handler())
+        # create process-specific workspace dir
+        # if `not skip_workspace_mount` - we will create a workspace directory for EACH process
+        # so that different agent don't interfere with each other.
+        if not skip_workspace_mount:
+            workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
+            pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
+
+        # reset workspace to config
+        config.workspace_base = workspace_mount_path
+        config.workspace_mount_path = workspace_mount_path
+
+        # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
+        if reset_logger:
+            # Set up logger
+            log_file = os.path.join(
+                eval_output_dir, 'logs', f'instance_{instance["id"]}.log'
+            )
+            # Remove all existing handlers from logger
+            for handler in logger.handlers[:]:
+                logger.removeHandler(handler)
+            # add back the console handler to print ONE line
+            logger.addHandler(get_console_handler())
+            logger.info(
+                f'Starting evaluation for instance {instance["id"]}.\nLOG:   tail -f {log_file}'
+            )
+            # Remove all existing handlers from logger
+            for handler in logger.handlers[:]:
+                logger.removeHandler(handler)
+            file_handler = logging.FileHandler(log_file)
+            file_handler.setFormatter(
+                logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+            )
+            logger.addHandler(file_handler)
+
+        if not skip_workspace_mount:
+            logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
+
+        # sandbox = DockerSSHBox()
+        logic_inference_path = os.path.join(workspace_mount_path, 'logic_inference.py')
+        if not os.path.exists(logic_inference_path):
+            shutil.copyfile(
+                './evaluation/logic_reasoning/logic_inference.py', logic_inference_path
+            )
+        logger.info(f'logic_inference.py copied to {workspace_mount_path}')
+
+        cache_dir = os.path.join(workspace_mount_path, '.cache_program')
+        if not os.path.exists(cache_dir):
+            os.makedirs(cache_dir)
+
+        # Prepare instruction
+
+        with open('./evaluation/logic_reasoning/instruction.txt', 'r') as f:
+            instruction = f.read()
+
+        instance_logic_programs = instance['raw_logic_programs'][0].strip()
+        instruction = instruction.replace('[[dataset_name]]', dataset_name)
+        instruction = instruction.replace('[[logic_programs]]', instance_logic_programs)
+        instruction = instruction.replace(
+            '[[logic_inference_path.py]]', logic_inference_path
+        )
+
+        # NOTE: You can actually set slightly different instruction for different agents
+        instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
+
+        sandbox = DockerSSHBox()
+        exit_code, command_output = sandbox.execute('pip install scitools-pyke')
+
+        # Here's how you can run the agent (similar to the `main` function) and get the final task state
+        state: State = asyncio.run(
+            main(
+                instruction,
+                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
+                    agent_class
+                ),
+                sandbox=sandbox,
+            )
+        )
+        # ======= Attempt to evaluate the agent's edits =======
+        # If you are working on simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
+        # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
+
+        if state is None:
+            raise ValueError('State should not be None.')
+
+        final_message = ''
+        messages = []
+        for action, obs in reversed(state.history):
+            # if isinstance(act, MessageAction):
+            messages.append(obs.content)
+            # print("obs.content:", obs.content)
+            if str(obs.content) in ["'A'", "'B'", "'C'"]:
+                final_message = obs.content
+                break
+
+        final_message = final_message.strip("'")
         logger.info(
-            f'Starting evaluation for instance {instance["id"]}.\nLOG:   tail -f {log_file}'
+            f'Predicted answer: {final_message}, Ground truth: {instance["answer"]}'
         )
-        # Remove all existing handlers from logger
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(
-            logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+        test_result = get_test_result(
+            model_answer=final_message, ground_truth=instance['answer']
         )
-        logger.addHandler(file_handler)
+        metrics = state.metrics.get() if state.metrics else None
 
-    if not skip_workspace_mount:
-        logger.info(f'Process-specific workspace mounted at {workspace_mount_path}')
-
-    # sandbox = DockerSSHBox()
-    logic_inference_path = os.path.join(workspace_mount_path, 'logic_inference.py')
-    if not os.path.exists(logic_inference_path):
-        shutil.copyfile(
-            './evaluation/logic_reasoning/logic_inference.py', logic_inference_path
-        )
-    logger.info(f'logic_inference.py copied to {workspace_mount_path}')
-
-    cache_dir = os.path.join(workspace_mount_path, '.cache_program')
-    if not os.path.exists(cache_dir):
-        os.makedirs(cache_dir)
-
-    # Prepare instruction
-
-    with open('./evaluation/logic_reasoning/instruction.txt', 'r') as f:
-        instruction = f.read()
-
-    instance_logic_programs = instance['raw_logic_programs'][0].strip()
-    instruction = instruction.replace('[[dataset_name]]', dataset_name)
-    instruction = instruction.replace('[[logic_programs]]', instance_logic_programs)
-    instruction = instruction.replace(
-        '[[logic_inference_path.py]]', logic_inference_path
-    )
-
-    # NOTE: You can actually set slightly different instruction for different agents
-    instruction += AGENT_CLS_TO_INST_SUFFIX.get(agent_class, '')
-
-    sandbox = DockerSSHBox()
-    exit_code, command_output = sandbox.execute('pip install scitools-pyke')
-
-    # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State = asyncio.run(
-        main(
-            instruction,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(agent_class),
-            sandbox=sandbox,
-        )
-    )
-    # ======= Attempt to evaluate the agent's edits =======
-    # If you are working on simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
-    # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
-
-    if state is None:
-        raise ValueError('State should not be None.')
-
-    final_message = ''
-    messages = []
-    for action, obs in reversed(state.history):
-        # if isinstance(act, MessageAction):
-        messages.append(obs.content)
-        # print("obs.content:", obs.content)
-        if str(obs.content) in ["'A'", "'B'", "'C'"]:
-            final_message = obs.content
-            break
-
-    final_message = final_message.strip("'")
-    logger.info(
-        f'Predicted answer: {final_message}, Ground truth: {instance["answer"]}'
-    )
-
-    test_result = get_test_result(
-        model_answer=final_message, ground_truth=instance['answer']
-    )
-    metrics = state.metrics.get() if state.metrics else None
-
-    # Save the output
-    output = {
-        'id': instance['id'],
-        'instance': instance,
-        'instruction': instruction,
-        # 'metadata': metadata,
-        'history': [
-            (event_to_dict(action), event_to_dict(obs)) for action, obs in state.history
-        ],
-        'metrics': metrics,
-        'final_message': final_message,
-        'messages': messages,
-        'error': state.error if state and state.error else None,
-        'test_result': test_result,
-    }
-    config.workspace_mount_path = old_workspace_mount_path
-    config.workspace_base = old_workspace_base
+        # Save the output
+        output = {
+            'id': instance['id'],
+            'instance': instance,
+            'instruction': instruction,
+            # 'metadata': metadata,
+            'history': [
+                (event_to_dict(action), event_to_dict(obs))
+                for action, obs in state.history
+            ],
+            'metrics': metrics,
+            'final_message': final_message,
+            'messages': messages,
+            'error': state.error if state and state.error else None,
+            'test_result': test_result,
+        }
+    except Exception:
+        logger.error('Process instance failed')
+        raise
+    finally:
+        config.workspace_mount_path = old_workspace_mount_path
+        config.workspace_base = old_workspace_base
 
     # Close the sandbox
     sandbox.close()

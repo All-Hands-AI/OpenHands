@@ -205,11 +205,11 @@ def process_instance(
         workspace_mount_path = os.path.join(workspace_mount_path, str(os.getpid()))
         pathlib.Path(workspace_mount_path).mkdir(parents=True, exist_ok=True)
 
-    # Setup the logger properly, so you can run multi-processing to parallize the evaluation
+    # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
         # Set up logger
         log_file = os.path.join(
-            eval_output_dir, 'logs', f'instance_{instance.instance_id}.log'
+            eval_output_dir, 'infer_logs', f'instance_{instance.instance_id}.log'
         )
         # Remove all existing handlers from logger
         for handler in logger.handlers[:]:
@@ -399,7 +399,7 @@ if __name__ == '__main__':
     )
 
     pathlib.Path(eval_output_dir).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(os.path.join(eval_output_dir, 'logs')).mkdir(
+    pathlib.Path(os.path.join(eval_output_dir, 'infer_logs')).mkdir(
         parents=True, exist_ok=True
     )
     logger.info(f'Using evaluation output directory: {eval_output_dir}')
@@ -471,7 +471,7 @@ if __name__ == '__main__':
     def update_progress(future):
         pbar.update(1)
         output = future.result()
-        pbar.set_description(f'Instance {output["instance_id"]}')
+        pbar.set_description(f'Instance {output["instance_id"][:10]}')
         pbar.set_postfix_str(f'Test Result: {output["test_result"]["result"]}')
         logger.info(
             f'Finished evaluation for instance {output["instance_id"]}: {output["test_result"]["result"]}'
