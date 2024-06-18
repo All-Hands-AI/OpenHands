@@ -36,43 +36,43 @@ export const useTerminal = (commands: Command[] = []) => {
 
       terminal.current.write("$ ");
       terminal.current.onKey(({ key, domEvent }) => {
-          if (domEvent.key === "Enter") {
-              terminal.current?.write("\r\n");
-              console.log(commandBuffer);
-              sendTerminalCommand(commandBuffer);
-              commandBuffer = "";
-          } else if (domEvent.key === "Backspace") {
-            if (commandBuffer.length > 0) {
-              commandBuffer = commandBuffer.slice(0, -1);
-              terminal.current?.write("\b \b");
-            }
-          } else {
-            // console.log(key, key.charCodeAt(0));
-            // Ignore paste event
-            if (key.charCodeAt(0) === 22){
-              return;
-            }
-            commandBuffer += key;
-            terminal.current?.write(key);
+        if (domEvent.key === "Enter") {
+          terminal.current?.write("\r\n");
+          console.log(commandBuffer);
+          sendTerminalCommand(commandBuffer);
+          commandBuffer = "";
+        } else if (domEvent.key === "Backspace") {
+          if (commandBuffer.length > 0) {
+            commandBuffer = commandBuffer.slice(0, -1);
+            terminal.current?.write("\b \b");
           }
+        } else {
+          // console.log(key, key.charCodeAt(0));
+          // Ignore paste event
+          if (key.charCodeAt(0) === 22) {
+            return;
+          }
+          commandBuffer += key;
+          terminal.current?.write(key);
+        }
       });
       terminal.current.attachCustomKeyEventHandler((arg) => {
         if (arg.ctrlKey && arg.code === "KeyV" && arg.type === "keydown") {
           navigator.clipboard.readText().then((text) => {
-                terminal.current?.write(text);
-                commandBuffer += text;
+            terminal.current?.write(text);
+            commandBuffer += text;
+          });
+        }
+        if (arg.ctrlKey && arg.code === "KeyC" && arg.type === "keydown") {
+          const selection = terminal.current?.getSelection();
+          if (selection) {
+            const clipboardItem = new ClipboardItem({
+              "text/plain": new Blob([selection], { type: "text/plain" }),
             });
-          }
-          if (arg.ctrlKey && arg.code === "KeyC" && arg.type === "keydown") {
-            const selection = terminal.current?.getSelection();
-            if (selection) {
-              const clipboardItem = new ClipboardItem({
-                "text/plain": new Blob([selection], { type: "text/plain" }),
-              });
 
-              navigator.clipboard.write([clipboardItem])
-            }
+            navigator.clipboard.write([clipboardItem]);
           }
+        }
         return true;
       });
 
