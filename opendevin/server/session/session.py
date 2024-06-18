@@ -91,7 +91,9 @@ class Session:
             return
         if event.source == EventSource.AGENT:
             await self.send(event_to_dict(event))
-        if event.source == EventSource.USER and isinstance(event, CmdOutputObservation):
+        elif event.source == EventSource.USER and isinstance(
+            event, CmdOutputObservation
+        ):
             await self.send(event_to_dict(event))
 
     async def dispatch(self, data: dict):

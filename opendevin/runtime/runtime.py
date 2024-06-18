@@ -115,10 +115,10 @@ class Runtime:
             observation._cause = event.id  # type: ignore[attr-defined]
             source = event.source if event.source else EventSource.AGENT
             await self.event_stream.add_event(observation, source)
-        elif isinstance(event, Observation):
+        elif isinstance(event, Observation) and event.source == EventSource.USER:
             if isinstance(event, CmdOutputObservation):
-                await self.event_stream.add_event(event, EventSource.USER)
-                logger.debug('Added cmd output observation to event stream')
+                source = event.source if event.source else EventSource.USER
+                await self.event_stream.add_event(event, source)
         else:
             logger.debug(f'Unhandled event: {event}')
 
