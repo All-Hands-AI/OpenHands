@@ -717,7 +717,14 @@ class RepoMap:
     def get_all_relative_files(self):
         # Construct a git repo object and get all the relative files tracked by git and staged files
         try:
-            repo = git.Repo(self.root)
+            try:
+                repo = git.Repo(self.root)
+            except Exception as e:
+                if 'dubious ownership in the repository' in str(e):
+                    os.system(f'git config --global --add safe.directory {self.root}')
+                    repo = git.Repo(self.root)
+                else:
+                    raise e
 
             if repo.bare:
                 raise Exception('The repository is bare.')
