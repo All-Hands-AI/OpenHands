@@ -110,9 +110,9 @@ class EventStream:
         for stack in self._subscribers.values():
             callback = stack[-1]
             logger.debug(f'Notifying subscriber {callback} of event {event}')
-            if event.cause != -1:
+            if event.cause != -100:
                 await callback(event)
 
             # to avoid recursion. We don't notify the user of their own events?
             if source == EventSource.USER and isinstance(event, CmdOutputObservation):
-                event._cause = -1  # type: ignore [attr-defined]
+                event._cause = -100  # type: ignore [attr-defined]
