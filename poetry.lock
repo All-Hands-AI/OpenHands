@@ -823,13 +823,13 @@ numpy = "*"
 
 [[package]]
 name = "chromadb"
-version = "0.5.0"
+version = "0.5.2"
 description = "Chroma."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "chromadb-0.5.0-py3-none-any.whl", hash = "sha256:8193dc65c143b61d8faf87f02c44ecfa778d471febd70de517f51c5d88a06009"},
-    {file = "chromadb-0.5.0.tar.gz", hash = "sha256:7954af614a9ff7b2902ddbd0a162f33f7ec0669e2429903905c4f7876d1f766f"},
+    {file = "chromadb-0.5.2-py3-none-any.whl", hash = "sha256:cccd307dbab2e1ff1383a125dd7ac2898762391ef2abb4b7ddfce1b7a60ebf63"},
+    {file = "chromadb-0.5.2.tar.gz", hash = "sha256:5db20a129ffe7cf16cf65da449a501015997d1a1ed6b37f0ba2bd1d5121e4ffa"},
 ]
 
 [package.dependencies]
@@ -838,10 +838,11 @@ build = ">=1.0.3"
 chroma-hnswlib = "0.7.3"
 fastapi = ">=0.95.2"
 grpcio = ">=1.58.0"
+httpx = ">=0.27.0"
 importlib-resources = "*"
 kubernetes = ">=28.1.0"
 mmh3 = ">=4.0.1"
-numpy = ">=1.22.5"
+numpy = ">=1.22.5,<2.0.0"
 onnxruntime = ">=1.14.1"
 opentelemetry-api = ">=1.2.0"
 opentelemetry-exporter-otlp-proto-grpc = ">=1.2.0"
