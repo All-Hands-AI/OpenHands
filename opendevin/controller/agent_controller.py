@@ -8,7 +8,7 @@ from opendevin.core.config import config
 from opendevin.core.exceptions import (
     LLMMalformedActionError,
     LLMNoActionError,
-    LLMOutputError,
+    LLMResponseError,
     MaxCharsExceedError,
 )
 from opendevin.core.logger import opendevin_logger as logger
@@ -301,7 +301,7 @@ class AgentController:
             action = self.agent.step(self.state)
             if action is None:
                 raise LLMNoActionError('No action was returned')
-        except (LLMMalformedActionError, LLMNoActionError, LLMOutputError) as e:
+        except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
             # report to the user
             # and send the underlying exception to the LLM for self-correction
             await self.report_error(str(e))

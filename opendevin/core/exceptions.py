@@ -82,6 +82,6 @@ class LLMNoActionError(Exception):
 
 # This exception gets sent back to the LLM
 # The LLM output did not include an action, or the action was not the expected type
-class LLMOutputError(Exception):
-    def __init__(self, message='Failed to retrieve action from LLM output'):
+class LLMResponseError(Exception):
+    def __init__(self, message='Failed to retrieve action from LLM response'):
         super().__init__(message)
