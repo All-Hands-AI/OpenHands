@@ -157,6 +157,12 @@ class SWEBenchSSHBox(DockerSSHBox):
             if exit_code != 0:
                 logger.error(f'Failed to remove remote: {output}')
                 sys.exit(1)
+
+            # fix dubious ownership "SHA is empty, possible dubious ownership in the repository"
+            exit_code, output = sandbox.execute(
+                f'git config --global --add safe.directory /workspace/{workspace_dir_name}'
+            )
+            assert exit_code == 0, f'Failed to add safe.directory: {output}'
         except Exception:
             raise
         finally:
