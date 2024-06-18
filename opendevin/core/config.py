@@ -194,6 +194,8 @@ class AppConfig(metaclass=Singleton):
     enable_auto_lint: bool = (
         False  # once enabled, OpenDevin would lint files after editing
     )
+    enable_repomap: bool = False
+    repomap_workspace: str | None = None  # default to workspace_base
 
     defaults_dict: ClassVar[dict] = {}
 
@@ -412,6 +414,9 @@ def finalize_config(config: AppConfig):
     # make sure cache dir exists
     if config.cache_dir:
         pathlib.Path(config.cache_dir).mkdir(parents=True, exist_ok=True)
+
+    if config.repomap_workspace is None:
+        config.repomap_workspace = config.workspace_base
 
 
 config = AppConfig()

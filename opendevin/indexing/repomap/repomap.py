@@ -727,11 +727,13 @@ class RepoMap:
                 item.path for item in repo.tree().traverse() if item.type == 'blob'
             ]
         except git.InvalidGitRepositoryError:
-            logger.error('The directory is not a git repository.')
-            tracked_files = []
+            logger.error(
+                'The directory is not a git repository. RepoMap will not be enabled.'
+            )
+            return []
         except git.NoSuchPathError:
-            logger.error('The directory does not exist.')
-            tracked_files = []
+            logger.error('The directory does not exist. RepoMap will not be enabled.')
+            return []
         except Exception as e:
             logger.error(
                 f'An error occurred when getting tracked files in git repo: {e}'
