@@ -13,7 +13,7 @@ api_key = os.environ.get('OPENAI_API_KEY')
 class OpenDevinSession:
     def __init__(
         self,
-        model='gpt-4o',
+        model='openai/meta-llama/Meta-Llama-3-70B-Instruct',
         agent='WorldModelAgent',
         language='en',
         api_key=api_key,
@@ -287,7 +287,7 @@ def pause_resume_task(is_paused, session, status):
 
 if __name__ == '__main__':
     default_port = 3000
-    default_agent = 'DummyWebAgent'
+    default_agent = 'WorldModelAgent'
 
     with gr.Blocks() as demo:
         title = gr.Markdown('# FastAgent')
@@ -406,4 +406,4 @@ if __name__ == '__main__':
         )
 
     demo.queue()
-    demo.launch(share=False)
+    demo.launch(share=True)
