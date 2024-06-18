@@ -715,17 +715,8 @@ class RepoMap:
         return mentioned_rel_fnames
 
     def get_all_relative_files(self):
-        # Construct a git repo object and get all the relative files tracked by git and staged files
-        try:
-            try:
-                repo = git.Repo(self.root)
-            except Exception as e:
-                if 'dubious ownership in the repository' in str(e):
-                    os.system(f'git config --global --add safe.directory {self.root}')
-                    repo = git.Repo(self.root)
-                else:
-                    raise e
-
+        def _get_repo_tracked_files():
+            repo = git.Repo(self.root)
             if repo.bare:
                 raise Exception('The repository is bare.')
 
@@ -733,6 +724,18 @@ class RepoMap:
             tracked_files: Any = [
                 item.path for item in repo.tree().traverse() if item.type == 'blob'
             ]
+            return repo, tracked_files
+
+        # Construct a git repo object and get all the relative files tracked by git and staged files
+        try:
+            try:
+                repo, tracked_files = _get_repo_tracked_files()
+            except Exception as e:
+                if 'dubious ownership in the repository' in str(e):
+                    os.system(f'git config --global --add safe.directory {self.root}')
+                    repo, tracked_files = _get_repo_tracked_files()
+                else:
+                    raise e
         except git.InvalidGitRepositoryError:
             logger.error(
                 'The directory is not a git repository. RepoMap will not be enabled.'
