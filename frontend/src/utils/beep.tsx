@@ -1,4 +1,3 @@
-import React from "react";
 const beep = () => {
   const snd = new Audio("/beep.wav");
   snd.addEventListener("canplaythrough", () => snd.play());

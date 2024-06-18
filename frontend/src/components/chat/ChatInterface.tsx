@@ -131,10 +131,10 @@ function ChatInterface() {
         Chat
         <div className="ml-auto">
           {isMuted ? (
-          <IoMdVolumeOff onClick={toggleMute} />
-        ) : (
-          <IoMdVolumeHigh onClick={toggleMute} />
-        )}
+            <IoMdVolumeOff onClick={toggleMute} />
+          ) : (
+            <IoMdVolumeHigh onClick={toggleMute} />
+          )}
         </div>
       </div>
       <div className="flex-1 flex flex-col relative min-h-0">
