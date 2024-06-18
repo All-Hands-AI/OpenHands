@@ -5,7 +5,6 @@ from enum import Enum
 from typing import Callable, Iterable
 
 from opendevin.core.logger import opendevin_logger as logger
-from opendevin.events.observation import CmdOutputObservation
 from opendevin.events.serialization.event import event_from_dict, event_to_dict
 from opendevin.storage import FileStore, get_file_store
 
@@ -110,9 +109,4 @@ class EventStream:
         for stack in self._subscribers.values():
             callback = stack[-1]
             logger.debug(f'Notifying subscriber {callback} of event {event}')
-            if event.cause != -100:
-                await callback(event)
-
-            # to avoid recursion. We don't notify the user of their own events?
-            if source == EventSource.USER and isinstance(event, CmdOutputObservation):
-                event._cause = -100  # type: ignore [attr-defined]
+            await callback(event)
