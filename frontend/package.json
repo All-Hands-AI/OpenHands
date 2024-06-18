@@ -40,7 +40,7 @@
     "start": "npm run make-i18n && vite",
     "build": "tsc && vite build",
     "test": "vitest run",
-    "dev_win": "VITE_WATCH_USE_POLLING=true vite",
+    "dev_wsl": "VITE_WATCH_USE_POLLING=true vite",
     "preview": "vite preview",
     "make-i18n": "node scripts/make-i18n-translations.cjs",
     "prelint": "npm run make-i18n",
