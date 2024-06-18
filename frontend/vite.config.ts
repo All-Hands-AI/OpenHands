@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
     VITE_USE_TLS = "false",
     VITE_FRONTEND_PORT = "3001",
     VITE_INSECURE_SKIP_VERIFY = "false",
+    VITE_WATCH_USE_POLLING = "false",
   } = loadEnv(mode, process.cwd());
 
   const USE_TLS = VITE_USE_TLS === "true";
@@ -34,6 +35,9 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), viteTsconfigPaths()],
     clearScreen: false,
     server: {
+      watch: {
+        usePolling: VITE_WATCH_USE_POLLING === "true",
+      },
       port: FE_PORT,
       proxy: {
         "/api": {
