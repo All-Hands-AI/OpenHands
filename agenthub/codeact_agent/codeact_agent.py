@@ -113,7 +113,7 @@ def get_in_context_example() -> str:
 
 
 class CodeActAgent(Agent):
-    VERSION = '1.6'
+    VERSION = '1.7'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
@@ -161,11 +161,14 @@ class CodeActAgent(Agent):
     system_message: str = get_system_message()
     in_context_example: str = f"Here is an example of how you can interact with the environment for task solving:\n{get_in_context_example()}\n\nNOW, LET'S START!"
 
+    attempts_to_condense: int = 2
+
     action_parser = CodeActResponseParser()
 
     def __init__(
         self,
         llm: LLM,
+        attempts_to_condense: int = 2,
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
@@ -174,6 +177,7 @@ class CodeActAgent(Agent):
         """
         super().__init__(llm)
         self.memory_condenser = MemoryCondenser(llm)
+        self.attempts_to_condense = attempts_to_condense
         self.reset()
 
     def reset(self) -> None:
@@ -210,7 +214,7 @@ class CodeActAgent(Agent):
         # give it multiple chances to get a response
         # if it fails, we'll try to condense memory
         attempt = 0
-        while not response and attempt < 10:
+        while not response and attempt < self.attempts_to_condense:
             try:
                 response = self.llm.completion(
                     messages=messages,
