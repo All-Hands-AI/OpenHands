@@ -22,6 +22,14 @@ class SandboxProtocol(Protocol):
 class PluginMixin:
     """Mixin for Sandbox to support plugins."""
 
+    def _source_bashrc(self: SandboxProtocol):
+        exit_code, output = self.execute('source /opendevin/bash.bashrc && source ~/.bashrc')
+        if exit_code != 0:
+            raise RuntimeError(
+                f'Failed to source /opendevin/bash.bashrc and ~/.bashrc with exit code {exit_code} and output: {output}'
+            )
+        logger.info('Sourced /opendevin/bash.bashrc and ~/.bashrc successfully')
+
     def init_plugins(self: SandboxProtocol, requirements: list[PluginRequirement]):
         """Load a plugin into the sandbox."""
 
@@ -35,6 +43,9 @@ class PluginMixin:
             exit_code, output = self.execute('rm -f ~/.bashrc && touch ~/.bashrc')
 
             for requirement in requirements:
+                # source bashrc file when plugin loads
+                self._source_bashrc()
+
                 # copy over the files
                 self.copy_to(
                     requirement.host_src, requirement.sandbox_dest, recursive=True
@@ -75,11 +86,6 @@ class PluginMixin:
             logger.info('Skipping plugin initialization in the sandbox')
 
         if len(requirements) > 0:
-            exit_code, output = self.execute('source ~/.bashrc')
-            if exit_code != 0:
-                raise RuntimeError(
-                    f'Failed to source ~/.bashrc with exit code {exit_code} and output: {output}'
-                )
-            logger.info('Sourced ~/.bashrc successfully')
+            self._source_bashrc()
 
         self.plugin_initialized = True
