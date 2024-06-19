@@ -19,7 +19,7 @@ from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     PluginRequirement,
 )
-from opendevin.runtime.tools import RuntimeTool
+from opendevin.runtime.tools import add_browser_tool
 
 USE_NAV = (
     os.environ.get('USE_NAV', 'true') == 'true'
@@ -84,6 +84,7 @@ In order to accomplish my goal I need to click on the button with bid 12
     return prompt
 
 
+@add_browser_tool
 class BrowsingAgent(Agent):
     VERSION = '1.0'
     """
@@ -91,7 +92,6 @@ class BrowsingAgent(Agent):
     """
 
     sandbox_plugins: list[PluginRequirement] = []
-    runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
     response_parser = BrowsingResponseParser()
 
     def __init__(

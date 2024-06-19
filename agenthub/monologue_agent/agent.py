@@ -27,7 +27,7 @@ from opendevin.events.observation import (
 from opendevin.events.serialization.event import event_to_memory
 from opendevin.llm.llm import LLM
 from opendevin.memory.condenser import MemoryCondenser
-from opendevin.runtime.tools import RuntimeTool
+from opendevin.runtime.tools import add_browser_tool
 
 if config.agent.memory_enabled:
     from opendevin.memory.memory import LongTermMemory
@@ -36,6 +36,7 @@ MAX_TOKEN_COUNT_PADDING = 512
 MAX_OUTPUT_LENGTH = 5000
 
 
+@add_browser_tool
 class MonologueAgent(Agent):
     VERSION = '1.0'
     """
@@ -48,7 +49,6 @@ class MonologueAgent(Agent):
     initial_thoughts: list[dict[str, str]]
     memory: 'LongTermMemory | None'
     memory_condenser: MemoryCondenser
-    runtime_tools: list[RuntimeTool] = [RuntimeTool.BROWSER]
     response_parser = MonologueResponseParser()
 
     def __init__(self, llm: LLM):
