@@ -214,10 +214,12 @@ jobs:
           mv /tmp/${{ matrix.platform }}/${{ matrix.image }}_image_${{ matrix.platform }}.tar .
           loaded_image=$(docker load -i ${{ matrix.image }}_image_${{ matrix.platform }}.tar | grep "Loaded image:" | awk '{print $3}')
           tags=$(echo ${tags} | tr ' ' '\n')
+          image_name = $(echo "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}" | tr '[:upper:]' '[:lower:]')
+          echo "image name = $image_name"
           for tag in $tags; do
             echo "tag = $tag"
-            docker tag $loaded_image ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${tag}_${{ matrix.platform }}
-            docker push ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${tag}_${{ matrix.platform }}
+            docker tag $loaded_image $image_name:${tag}_${{ matrix.platform }}
+            docker push $image_name:${tag}_${{ matrix.platform }}
           done
 
   create_manifest:
