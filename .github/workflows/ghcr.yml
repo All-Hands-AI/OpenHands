@@ -48,9 +48,6 @@ jobs:
   ghcr_build:
     runs-on: ubuntu-latest
 
-    needs: check_ghcr
-    if: needs.check_ghcr.outputs.ghcr_enabled == 'true'
-
     outputs:
       tags: ${{ steps.capture-tags.outputs.tags }}
 
