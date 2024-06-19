@@ -230,6 +230,8 @@ class LLM:
     def completion(self):
         """
         Decorator for the litellm completion function.
+
+        Check the complete documentation at https://litellm.vercel.app/docs/completion
         """
         return self._completion
 

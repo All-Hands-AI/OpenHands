@@ -6,9 +6,9 @@ from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config
 from opendevin.core.exceptions import (
-    AgentMalformedActionError,
-    AgentNoActionError,
-    LLMOutputError,
+    LLMMalformedActionError,
+    LLMNoActionError,
+    LLMResponseError,
     MaxCharsExceedError,
 )
 from opendevin.core.logger import opendevin_logger as logger
@@ -116,9 +116,16 @@ class AgentController:
                 await self.set_agent_state_to(AgentState.ERROR)
 
     async def report_error(self, message: str, exception: Exception | None = None):
-        self.state.error = message
+        """
+        This error will be reported to the user and sent to the LLM next step, in the hope it can self-correct.
+
+        This method should be called for a particular type of errors:
+        - the string message should be user-friendly, it will be shown in the UI
+        - an ErrorObservation can be sent to the LLM by the agent, with the exception message, so it can self-correct next time
+        """
         if exception:
-            self.state.error += f': {str(exception)}'
+            message += f': {exception}'
+        self.state.error = message
         self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def _start_step_loop(self):
@@ -130,7 +137,6 @@ class AgentController:
                 logger.info('AgentController task was cancelled')
                 break
             except Exception as e:
-                traceback.print_exc()
                 logger.error(f'Error while running the agent: {e}')
                 logger.error(traceback.format_exc())
                 await self.report_error(
@@ -290,12 +296,14 @@ class AgentController:
         try:
             action = self.agent.step(self.state)
             if action is None:
-                raise AgentNoActionError('No action was returned')
+                raise LLMNoActionError('No action was returned')
         except (
-            AgentMalformedActionError,
-            AgentNoActionError,
-            LLMOutputError,
+            LLMMalformedActionError,
+            LLMNoActionError,
+            LLMResponseError,
         ) as e:
+            # report to the user
+            # and send the underlying exception to the LLM for self-correction
             await self.report_error(str(e))
             return
 
