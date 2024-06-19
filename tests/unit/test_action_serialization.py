@@ -21,6 +21,8 @@ from opendevin.events.serialization import (
 
 
 def serialization_deserialization(original_action_dict, cls):
+    if 'source' not in original_action_dict:
+        original_action_dict['source'] = 'user'
     action_instance = event_from_dict(original_action_dict)
     assert isinstance(
         action_instance, Action
