@@ -202,11 +202,7 @@ class LLM:
             # log the prompt
             debug_message = ''
             for message in messages:
-                debug_message += (
-                    message_separator + message['content']
-                    if 'content' in message
-                    else 'No content'
-                )
+                debug_message += message_separator + message['content']
             llm_prompt_logger.debug(debug_message)
 
             # call the completion function
