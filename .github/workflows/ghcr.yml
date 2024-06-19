@@ -251,12 +251,14 @@ jobs:
 
       - name: Create and push multi-platform manifest
         run: |
+          image_name = $(echo "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}" | tr '[:upper:]' '[:lower:]')
+          echo "image name = $image_name"
           tags=$(echo ${tags} | tr ' ' '\n')
           for tag in $tags; do
             echo 'tag = $tag'
-            docker buildx imagetools create --tag ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:$tag \
-              ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${tag}_amd64 \
-              ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${tag}_arm64
+            docker buildx imagetools create --tag $image_name:$tag \
+              $image_name:${tag}_amd64 \
+              $image_name/${{ matrix.image }}:${tag}_arm64
           done
 
   # FIXME: an admin needs to mark this as non-mandatory, and then we can remove it
