@@ -13,7 +13,11 @@ from opendevin.events.observation import NullObservation
 
 
 def test_all_agents_are_loaded():
-    full_path = os.path.join('agenthub', 'micro')
+    assert all_microagents is not None
+    assert len(all_microagents) > 1
+
+    base = os.path.join('agenthub', 'micro')
+    full_path = os.path.dirname(__file__) + '/../../' + base
     agent_names = set()
     for root, _, files in os.walk(full_path):
         for file in files:
@@ -31,9 +35,7 @@ def test_coder_agent_with_summary():
     """
     mock_llm = MagicMock()
     content = json.dumps({'action': 'finish', 'args': {}})
-    mock_llm.do_completion.return_value = {
-        'choices': [{'message': {'content': content}}]
-    }
+    mock_llm.completion.return_value = {'choices': [{'message': {'content': content}}]}
 
     coder_agent = Agent.get_cls('CoderAgent')(llm=mock_llm)
     assert coder_agent is not None
@@ -45,8 +47,8 @@ def test_coder_agent_with_summary():
     state = State(history=history, inputs={'summary': summary})
     coder_agent.step(state)
 
-    mock_llm.do_completion.assert_called_once()
-    _, kwargs = mock_llm.do_completion.call_args
+    mock_llm.completion.assert_called_once()
+    _, kwargs = mock_llm.completion.call_args
     prompt = kwargs['messages'][0]['content']
     assert task in prompt
     assert "Here's a summary of the codebase, as it relates to this task" in prompt
@@ -60,9 +62,7 @@ def test_coder_agent_without_summary():
     """
     mock_llm = MagicMock()
     content = json.dumps({'action': 'finish', 'args': {}})
-    mock_llm.do_completion.return_value = {
-        'choices': [{'message': {'content': content}}]
-    }
+    mock_llm.completion.return_value = {'choices': [{'message': {'content': content}}]}
 
     coder_agent = Agent.get_cls('CoderAgent')(llm=mock_llm)
     assert coder_agent is not None
@@ -73,8 +73,8 @@ def test_coder_agent_without_summary():
     state = State(history=history)
     coder_agent.step(state)
 
-    mock_llm.do_completion.assert_called_once()
-    _, kwargs = mock_llm.do_completion.call_args
+    mock_llm.completion.assert_called_once()
+    _, kwargs = mock_llm.completion.call_args
     prompt = kwargs['messages'][0]['content']
     assert task in prompt
     assert "Here's a summary of the codebase, as it relates to this task" not in prompt

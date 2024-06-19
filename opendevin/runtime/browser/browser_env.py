@@ -154,7 +154,6 @@ class BrowserEnv:
 
     def close(self):
         if not self.process.is_alive():
-            logger.info('BrowserEnv already closed, no need to close again')
             return
         try:
             self.agent_side.send(('SHUTDOWN', None))

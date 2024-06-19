@@ -55,19 +55,19 @@ To start OpenDevin in a docker container, run the following commands in your ter
 > When you run the following command, files in `./workspace` may be modified or deleted.
 
 ```bash
-OPENDEVIN_WORKSPACE=$(pwd)/workspace
+WORKSPACE_BASE=$(pwd)/workspace
 docker run -it \
     --pull=always \
     -e SANDBOX_USER_ID=$(id -u) \
     -e PERSIST_SANDBOX="true" \
     -e SSH_PASSWORD="make something up here" \
-    -e WORKSPACE_MOUNT_PATH=$OPENDEVIN_WORKSPACE \
-    -v $OPENDEVIN_WORKSPACE:/opt/workspace_base \
+    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+    -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name opendevin-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/opendevin/opendevin:0.6
+    ghcr.io/opendevin/opendevin:0.6.2
 ```
 
 You'll find OpenDevin running at [http://localhost:3000](http://localhost:3000) with access to `./workspace`. To have OpenDevin operate on your code, place it in `./workspace`.
@@ -129,3 +129,16 @@ Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more informati
 [issues-url]: https://github.com/OpenDevin/OpenDevin/issues
 [license-shield]: https://img.shields.io/github/license/opendevin/opendevin?style=for-the-badge
 [license-url]: https://github.com/OpenDevin/OpenDevin/blob/main/LICENSE
+
+## 📚 Cite
+
+```
+@misc{opendevin2024,
+  author       = {{OpenDevin Team}},
+  title        = {{OpenDevin: An Open Platform for AI Software Developers as Generalist Agents}},
+  year         = {2024},
+  version      = {v1.0},
+  howpublished = {\url{https://github.com/OpenDevin/OpenDevin}},
+  note         = {Accessed: ENTER THE DATE YOU ACCESSED THE PROJECT}
+}
+```

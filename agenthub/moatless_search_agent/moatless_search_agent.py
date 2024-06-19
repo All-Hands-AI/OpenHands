@@ -145,7 +145,7 @@ class MoatlessSearchAgent(Agent):
         messages += self._retry_messages  # FIXME: check if _retry_messages is correct
         logger.info(f'👀 Messages: {messages}')
 
-        response = self.llm.do_completion(
+        response = self.llm._completion(
             messages=messages,
             max_tokens=1000,
             stop=[],

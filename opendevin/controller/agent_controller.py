@@ -6,9 +6,9 @@ from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config
 from opendevin.core.exceptions import (
-    AgentMalformedActionError,
-    AgentNoActionError,
-    LLMOutputError,
+    LLMMalformedActionError,
+    LLMNoActionError,
+    LLMResponseError,
     MaxCharsExceedError,
 )
 from opendevin.core.logger import opendevin_logger as logger
@@ -19,6 +19,7 @@ from opendevin.events.action import (
     AddTaskAction,
     AgentDelegateAction,
     AgentFinishAction,
+    AgentRejectAction,
     ChangeAgentStateAction,
     MessageAction,
     ModifyTaskAction,
@@ -112,9 +113,16 @@ class AgentController:
                 await self.set_agent_state_to(AgentState.ERROR)
 
     async def report_error(self, message: str, exception: Exception | None = None):
-        self.state.error = message
+        """
+        This error will be reported to the user and sent to the LLM next step, in the hope it can self-correct.
+
+        This method should be called for a particular type of errors:
+        - the string message should be user-friendly, it will be shown in the UI
+        - an ErrorObservation can be sent to the LLM by the agent, with the exception message, so it can self-correct next time
+        """
         if exception:
-            self.state.error += f': {str(exception)}'
+            message += f': {exception}'
+        self.state.error = message
         await self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
 
     async def add_history(self, action: Action, observation: Observation):
@@ -132,7 +140,6 @@ class AgentController:
                 logger.info('AgentController task was cancelled')
                 break
             except Exception as e:
-                traceback.print_exc()
                 logger.error(f'Error while running the agent: {e}')
                 logger.error(traceback.format_exc())
                 await self.report_error(
@@ -164,6 +171,9 @@ class AgentController:
         elif isinstance(event, AgentFinishAction):
             self.state.outputs = event.outputs  # type: ignore[attr-defined]
             await self.set_agent_state_to(AgentState.FINISHED)
+        elif isinstance(event, AgentRejectAction):
+            self.state.outputs = event.outputs  # type: ignore[attr-defined]
+            await self.set_agent_state_to(AgentState.REJECTED)
         elif isinstance(event, Observation):
             if self._pending_action and self._pending_action.id == event.cause:
                 await self.add_history(self._pending_action, event)
@@ -252,7 +262,7 @@ class AgentController:
                 # propagate error state until an agent or user can handle it
                 await self.set_agent_state_to(AgentState.ERROR)
                 return
-            delegate_done = delegate_state == AgentState.FINISHED
+            delegate_done = delegate_state in (AgentState.FINISHED, AgentState.REJECTED)
             if delegate_done:
                 logger.info(
                     f'[Agent Controller {self.id}] Delegate agent has finished execution'
@@ -289,8 +299,10 @@ class AgentController:
         try:
             action = self.agent.step(self.state)
             if action is None:
-                raise AgentNoActionError('No action was returned')
-        except (AgentMalformedActionError, AgentNoActionError, LLMOutputError) as e:
+                raise LLMNoActionError('No action was returned')
+        except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
+            # report to the user
+            # and send the underlying exception to the LLM for self-correction
             await self.report_error(str(e))
             return
 
@@ -330,28 +342,35 @@ class AgentController:
             )
         ]
 
-        if len(filtered_history) < 4:
+        if len(filtered_history) < 3:
             return False
 
         # FIXME rewrite this to be more readable
 
-        # Check if the last four (Action, Observation) tuples are too repetitive
-        last_four_tuples = filtered_history[-4:]
+        # Scenario 1: the same (Action, Observation) loop
+        # 3 pairs of (action, observation) to stop the agent
+        last_three_tuples = filtered_history[-3:]
 
         if all(
             # (Action, Observation) tuples
-            # compare the last action to the last four actions
-            self._eq_no_pid(last_four_tuples[-1][0], _tuple[0])
-            for _tuple in last_four_tuples
+            # compare the last action to the last three actions
+            self._eq_no_pid(last_three_tuples[-1][0], _tuple[0])
+            for _tuple in last_three_tuples
         ) and all(
-            # compare the last observation to the last four observations
-            self._eq_no_pid(last_four_tuples[-1][1], _tuple[1])
-            for _tuple in last_four_tuples
+            # compare the last observation to the last three observations
+            self._eq_no_pid(last_three_tuples[-1][1], _tuple[1])
+            for _tuple in last_three_tuples
         ):
             logger.warning('Action, Observation loop detected')
             return True
 
-        # (action, error) tuples
+        if len(filtered_history) < 4:
+            return False
+
+        last_four_tuples = filtered_history[-4:]
+
+        # Scenario 2: (action, error) pattern, not necessary identical error
+        # 4 pairs of (action, error) to stop the agent
         if all(
             self._eq_no_pid(last_four_tuples[-1][0], _tuple[0])
             for _tuple in last_four_tuples
@@ -365,7 +384,8 @@ class AgentController:
 
         # check if the agent repeats the same (Action, Observation)
         # every other step in the last six tuples
-
+        # step1 = step3 = step5
+        # step2 = step4 = step6
         if len(filtered_history) >= 6:
             last_six_tuples = filtered_history[-6:]
             if (

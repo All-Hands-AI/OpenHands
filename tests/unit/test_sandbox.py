@@ -9,7 +9,7 @@ from opendevin.core.config import config
 from opendevin.runtime.docker.exec_box import DockerExecBox
 from opendevin.runtime.docker.local_box import LocalBox
 from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
-from opendevin.runtime.plugins import JupyterRequirement
+from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 
 
 @pytest.fixture
@@ -293,3 +293,51 @@ def test_sandbox_jupyter_plugin(temp_dir):
                 + box.__class__.__name__
             )
             box.close()
+
+
+def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
+    # get a temporary directory
+    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
+        config, 'workspace_mount_path', new=temp_dir
+    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+        config, 'sandbox_type', new='ssh'
+    ):
+        for box in [DockerSSHBox()]:
+            box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
+            exit_code, output = box.execute('mkdir test')
+            print(output)
+            assert exit_code == 0, (
+                'The exit code should be 0 for ' + box.__class__.__name__
+            )
+
+            exit_code, output = box.execute(
+                'echo "create_file(\'a.txt\')" | execute_cli'
+            )
+            print(output)
+            assert exit_code == 0, (
+                'The exit code should be 0 for ' + box.__class__.__name__
+            )
+            assert output.strip().split('\r\n') == (
+                '[File: /workspace/a.txt (1 lines total)]\r\n'
+                '1|\r\n'
+                '[File a.txt created.]'
+            ).strip().split('\r\n')
+
+            exit_code, output = box.execute('cd test')
+            print(output)
+            assert exit_code == 0, (
+                'The exit code should be 0 for ' + box.__class__.__name__
+            )
+
+            exit_code, output = box.execute(
+                'echo "create_file(\'a.txt\')" | execute_cli'
+            )
+            print(output)
+            assert exit_code == 0, (
+                'The exit code should be 0 for ' + box.__class__.__name__
+            )
+            assert output.strip().split('\r\n') == (
+                '[File: /workspace/test/a.txt (1 lines total)]\r\n'
+                '1|\r\n'
+                '[File a.txt created.]'
+            ).strip().split('\r\n')
