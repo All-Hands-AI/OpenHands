@@ -352,6 +352,9 @@ def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
             _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)
 
 
+@pytest.mark.skipif(os.getenv('TEST_IN_CI') != 'true',
+    reason='The unittest need to download image, so only run on CI',
+)
 def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
     for base_sandbox_image in ['ubuntu:22.04', 'debian:11']:
         # get a temporary directory
