@@ -131,6 +131,10 @@ pull-docker-image:
 
 install-python-dependencies:
 	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
+	@if [ -z "${TZ}" ]; then \
+		echo "Defaulting TZ (timezone) to UTC"; \
+		export TZ="UTC"; \
+	fi
 	poetry env use python$(PYTHON_VERSION)
 	@if [ "$(shell uname)" = "Darwin" ]; then \
 		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
