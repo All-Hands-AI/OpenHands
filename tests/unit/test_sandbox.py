@@ -294,7 +294,7 @@ def test_sandbox_jupyter_plugin(temp_dir):
             )
             box.close()
 
-def _agentskills_test(box):
+def _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box):
     box.init_plugins([AgentSkillsRequirement, JupyterRequirement])
     exit_code, output = box.execute('mkdir test')
     print(output)
@@ -349,7 +349,7 @@ def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
         config, 'sandbox_type', new='ssh'
     ):
         for box in [DockerSSHBox()]:
-            _agentskills_test(box)
+            _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)
 
 
 def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
@@ -363,4 +363,4 @@ def test_agnostic_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
             config, 'sandbox_container_image', new=base_sandbox_image
         ):
             for box in [DockerSSHBox()]:
-                _agentskills_test(box)
+                _test_sandbox_jupyter_agentskills_fileop_pwd_impl(box)
