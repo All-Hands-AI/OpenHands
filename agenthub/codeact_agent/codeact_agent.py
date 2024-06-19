@@ -16,6 +16,7 @@ from opendevin.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from opendevin.events.event import EventSource
 from opendevin.events.observation import (
     AgentDelegateObservation,
     BrowserOutputObservation,
@@ -233,7 +234,9 @@ class CodeActAgent(Agent):
         state.num_of_chars += sum(
             len(message['content']) for message in messages
         ) + len(response.choices[0].message.content)
-        return self.action_parser.parse(response)
+        action = self.action_parser.parse(response)
+        action._source = EventSource.AGENT  # type: ignore[attr-defined]
+        return action
 
     def search_memory(self, query: str) -> list[str]:
         raise NotImplementedError('Implement this abstract method')

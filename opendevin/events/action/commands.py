@@ -19,7 +19,7 @@ class CmdRunAction(Action):
         return f'Running command: {self.command}'
 
     def __str__(self) -> str:
-        ret = '**CmdRunAction**\n'
+        ret = f'**CmdRunAction (source={self.source})**\n'
         if self.thought:
             ret += f'THOUGHT: {self.thought}\n'
         ret += f'COMMAND:\n{self.command}'
