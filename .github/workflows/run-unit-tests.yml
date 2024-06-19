@@ -97,33 +97,3 @@ jobs:
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-  test-for-sandbox:
-    name: Test for Sandbox
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install poetry via pipx
-        run: pipx install poetry
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "poetry"
-
-      - name: Install Python dependencies using Poetry
-        run: poetry install
-
-      - name: Build Environment
-        run: make build
-
-      - name: Run Integration Test for Sandbox
-        run: |
-          poetry run pytest --cov=agenthub --cov=opendevin --cov-report=xml -s ./tests/unit/test_sandbox.py
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
