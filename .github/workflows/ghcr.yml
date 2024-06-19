@@ -214,7 +214,7 @@ jobs:
           mv /tmp/${{ matrix.platform }}/${{ matrix.image }}_image_${{ matrix.platform }}.tar .
           loaded_image=$(docker load -i ${{ matrix.image }}_image_${{ matrix.platform }}.tar | grep "Loaded image:" | awk '{print $3}')
           tags=$(echo ${tags} | tr ' ' '\n')
-          image_name = $(echo "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}" | tr '[:upper:]' '[:lower:]')
+          image_name=$(echo "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}" | tr '[:upper:]' '[:lower:]')
           echo "image name = $image_name"
           for tag in $tags; do
             echo "tag = $tag"
@@ -251,7 +251,7 @@ jobs:
 
       - name: Create and push multi-platform manifest
         run: |
-          image_name = $(echo "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}" | tr '[:upper:]' '[:lower:]')
+          image_name=$(echo "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}" | tr '[:upper:]' '[:lower:]')
           echo "image name = $image_name"
           tags=$(echo ${tags} | tr ' ' '\n')
           for tag in $tags; do
