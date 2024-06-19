@@ -258,7 +258,7 @@ jobs:
             echo 'tag = $tag'
             docker buildx imagetools create --tag $image_name:$tag \
               $image_name:${tag}_amd64 \
-              $image_name/${{ matrix.image }}:${tag}_arm64
+              $image_name:${tag}_arm64
           done
 
   # FIXME: an admin needs to mark this as non-mandatory, and then we can remove it
