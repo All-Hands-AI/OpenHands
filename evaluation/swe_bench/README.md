@@ -156,13 +156,17 @@ The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_be
 
 ## Visualize Results
 
-Make sure your `evaluation/evaluation_outputs` is first cloned from `https://huggingface.co/spaces/OpenDevin/evaluation` before running your own results.
+First you need to clone `https://huggingface.co/spaces/OpenDevin/evaluation` and add your own running results from opendevin into the `outputs` of the cloned repo.
+
+```bash
+git clone https://huggingface.co/spaces/OpenDevin/evaluation
+```
 
 **(optional) setup streamlit environment with conda**:
 ```bash
 conda create -n streamlit python=3.10
 conda activate streamlit
-pip install streamlit altair
+pip install streamlit altair st_pages
 ```
 
 **run the visualizer**:
@@ -170,7 +174,6 @@ Then, in a separate Python environment with `streamlit` library, you can run the
 
 ```bash
 conda activate streamlit # if you follow the optional conda env setup above
-cd evaluation/evaluation_outputs
 streamlit run 0_📊_OpenDevin_Benchmark.py --server.port 8501 --server.address 0.0.0.0
 ```
 
