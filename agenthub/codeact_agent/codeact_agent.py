@@ -26,7 +26,7 @@ from opendevin.events.observation import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
-from opendevin.indexing import IndexSettings, LocalRepository, RAGIndex, RepoMap
+from opendevin.indexing import IndexSettings, RAGIndex, RepoMap
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     AgentSkillsRequirement,
@@ -37,7 +37,7 @@ from opendevin.runtime.tools import RuntimeTool
 
 ENABLE_GITHUB = True
 ENABLE_REPOMAP = False
-ENABLE_VECTOR_INDEX = True
+ENABLE_VECTOR_INDEX = False
 
 
 def parse_response(response) -> str:
@@ -223,11 +223,7 @@ class CodeActAgent(Agent):
         # nodes = rag_index.run_ingestion()
         # print(f'Indexed {len(nodes)} nodes.')
 
-        self.vector_index = (
-            RAGIndex(LocalRepository(config.workspace_base), index_settings)
-            if ENABLE_VECTOR_INDEX
-            else None
-        )
+        self.vector_index = RAGIndex(index_settings) if ENABLE_VECTOR_INDEX else None
 
     def reset(self) -> None:
         """

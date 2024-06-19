@@ -35,8 +35,12 @@ pyarrow = "16.1.0" # transitive dependency, pinned here to avoid conflicts
 tenacity = "^8.3.0"
 diskcache = "5.6.3"
 grep-ast = "0.3.2"
-tree-sitter = "0.21.3"
+tree-sitter = "0.22.3"
 tree-sitter-languages = "1.10.2"
+tree-sitter-java = "0.21.0"
+faiss-cpu = "1.8.0"
+rapidfuzz = "3.9.3"
+tree-sitter-python = { git = "ssh://git@github.com/tree-sitter/tree-sitter-python.git" }
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"

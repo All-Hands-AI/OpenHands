@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Optional
 
 from llama_index.core import VectorStoreIndex
 from llama_index.core.ingestion import IngestionPipeline
@@ -12,20 +12,16 @@ from llama_index.core.vector_stores.types import (
 )
 
 from .embedding import get_embedding_model
-from .repository import LocalRepository
 from .settings import IndexSettings
 from .storage import get_vector_store
-from .types import RetrievedCodeSnippet, SearchCodeResponse
 
 
 class RAGIndex:
     def __init__(
         self,
-        repo: LocalRepository,
         index_settings: IndexSettings,
         splitter: Optional[NodeParser] = None,
     ) -> None:
-        self._repo = repo
         self._index_settings = index_settings
         self._splitter = (
             splitter
@@ -42,9 +38,7 @@ class RAGIndex:
             embed_model=self._embedding_model,
         )
 
-    def run_ingestion(self):
-        repo_path = self._repo.path
-
+    def run_ingestion(self, repo_path: str):
         reader = SimpleDirectoryReader(
             input_dir=repo_path,
             # file_metadata=file_metadata_func,
@@ -66,9 +60,7 @@ class RAGIndex:
         embedded_nodes = ingest_pipeline.run(documents=documents, show_progress=True)
         return embedded_nodes
 
-    def semantic_search(
-        self, query: Optional[str] = None, top_k: int = 5
-    ) -> SearchCodeResponse:
+    def semantic_search(self, query: Optional[str] = None, top_k: int = 5):
         # retriever = VectorIndexRetriever(
         #     index=self._index,
         #     similarity_top_k=top_k,
@@ -85,7 +77,7 @@ class RAGIndex:
         self,
         query: str,
         category: str = 'implementation',
-    ) -> List[RetrievedCodeSnippet]:
+    ):
         query_embedding = self._embedding_model.get_query_embedding(query)
         filters = MetadataFilters(filters=[], condition=FilterCondition.AND)
         if category:
@@ -111,10 +103,10 @@ if __name__ == '__main__':
         vector_engine='pinecone',
         # existing_index_name='test-code-index',
     )
-    rag_index = RAGIndex(LocalRepository(repo_path), index_settings)
+    # rag_index = RAGIndex(LocalRepository(repo_path), index_settings)
 
-    nodes = rag_index.run_ingestion()
-    print(f'Indexed {len(nodes)} nodes.')
+    # nodes = rag_index.run_ingestion()
+    # print(f'Indexed {len(nodes)} nodes.')
 
     # search_results = rag_index.semantic_search(
     #     query='viewcode creates pages for epub even if `viewcode_enable_epub=False` on `make html epub`',

@@ -19,11 +19,14 @@ class IndexSettings(BaseModel):
     vector_engine: str = Field(default='faiss', description='The vector engine to use')
     existing_index_name: Optional[str] = Field(
         default=None, description='The name of an existing index to use'
-    )  # FIXME: check optional field
-
-    def to_dict(self):
-        return self.model_dump()
+    )
 
     def persist(self, persist_dir: str) -> None:
         with open(os.path.join(persist_dir, 'settings.json'), 'w') as f:
             json.dump(self.to_dict(), f)
+
+    @classmethod
+    def from_persist_dir(cls, persist_dir: str):
+        with open(os.path.join(persist_dir, 'settings.json'), 'r') as f:
+            data = json.load(f)
+        return cls(**data)

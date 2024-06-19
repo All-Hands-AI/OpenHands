@@ -192,7 +192,11 @@ class LLM:
                 messages = args[1]
             debug_message = ''
             for message in messages:
-                debug_message += message_separator + message['content']
+                debug_message += (
+                    message_separator + message['content']
+                    if 'content' in message
+                    else 'No content'
+                )
             llm_prompt_logger.debug(debug_message)
             resp = completion_unwrapped(*args, **kwargs)
             message_back = resp['choices'][0]['message']['content']
