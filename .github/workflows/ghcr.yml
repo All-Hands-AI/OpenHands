@@ -31,7 +31,7 @@ jobs:
         run: |
           response=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                           -H "Accept: application/vnd.github.v3+json" \
-                          https://api.github.com/user/packages)
+                          https://api.github.com/user/packages?package_type=container)
           echo "response=$response" >> $GITHUB_ENV
 
       - name: Set output
