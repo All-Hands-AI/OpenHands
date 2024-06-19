@@ -159,9 +159,10 @@ class AgentController:
                 await self.add_history(event, NullObservation(''))
                 if self.get_agent_state() != AgentState.RUNNING:
                     await self.set_agent_state_to(AgentState.RUNNING)
-            elif event.source == EventSource.AGENT and event.wait_for_response:
+            elif event.source == EventSource.AGENT:
                 logger.info(event, extra={'msg_type': 'ACTION'})
-                await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+                if event.wait_for_response:
+                    await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
         elif isinstance(event, AgentDelegateAction):
             await self.start_delegate(event)
         elif isinstance(event, AddTaskAction):
@@ -306,7 +307,8 @@ class AgentController:
             await self.report_error(str(e))
             return
 
-        logger.info(action, extra={'msg_type': 'ACTION'})
+        if not isinstance(action, MessageAction):
+            logger.info(action, extra={'msg_type': 'ACTION'})
 
         await self.update_state_after_step()
         if action.runnable:
