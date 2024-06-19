@@ -10,7 +10,6 @@ from agenthub.codeact_agent.prompt import (
 from opendevin.controller.agent import Agent
 from opendevin.controller.state.state import State
 from opendevin.core.config import config
-from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action import (
     Action,
     AgentDelegateAction,
@@ -26,7 +25,7 @@ from opendevin.events.observation import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
-from opendevin.indexing import IndexSettings, RAGIndex, RepoMap
+from opendevin.indexing import IndexSettings, RAGIndex
 from opendevin.llm.llm import LLM
 from opendevin.runtime.plugins import (
     AgentSkillsRequirement,
@@ -36,7 +35,6 @@ from opendevin.runtime.plugins import (
 from opendevin.runtime.tools import RuntimeTool
 
 ENABLE_GITHUB = True
-ENABLE_REPOMAP = False
 ENABLE_VECTOR_INDEX = False
 
 
@@ -203,17 +201,6 @@ class CodeActAgent(Agent):
         """
         super().__init__(llm)
         self.reset()
-        self.repo_map = (
-            RepoMap(
-                llm=self.llm,
-                map_tokens=1024,
-                root=config.workspace_base,
-                repo_content_prefix='Here are summaries of some files present in the workspace.',
-                max_context_window=self.llm.max_input_tokens,
-            )
-            if ENABLE_REPOMAP
-            else None
-        )
 
         index_settings = IndexSettings(
             vector_engine='pinecone',
@@ -310,18 +297,6 @@ class CodeActAgent(Agent):
                     latest_user_message['content'] += (
                         f'\n\nNote that you should NOT eagerly try to solve the task, but carefully consider multiple files that may be involved. Some context code snippets that may be relevant to help you solve the task (the file name is not absolute and you should find the correct location yourself):\n{search_results_str}'
                     )
-
-            # Insert optional repo_map message here
-            if ENABLE_REPOMAP:
-                repo_content = (
-                    self.repo_map.get_history_aware_repo_map(messages)
-                    if self.repo_map
-                    else ''
-                )
-                logger.info(f'Repo content: {repo_content}')
-                latest_user_message['content'] += (
-                    repo_content + '\n\n' if repo_content else ''
-                )
 
             latest_user_message['content'] += (
                 f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task.'

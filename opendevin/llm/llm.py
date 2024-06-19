@@ -248,18 +248,6 @@ class LLM:
         """
         return litellm.token_counter(model=self.model_name, messages=messages)
 
-    def get_token_count_from_text(self, text):
-        """
-        Get the number of tokens in a string.
-
-        Args:
-            text (str): A string.
-
-        Returns:
-            int: The number of tokens.
-        """
-        return litellm.token_counter(model=self.model_name, text=text)
-
     def is_local(self):
         """
         Determines if the system is using a locally running LLM.

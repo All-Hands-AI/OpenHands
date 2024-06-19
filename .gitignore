@@ -201,8 +201,6 @@ yarn-error.log*
 
 logs
 
-.aider*
-
 # agent
 .envrc
 /workspace
