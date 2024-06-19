@@ -10,7 +10,6 @@ tags=()
 
 OPEN_DEVIN_BUILD_VERSION="dev"
 
-cache_tag_base="buildcache"
 
 if [[ -n $GITHUB_REF_NAME ]]; then
   # check if ref name is a version number
