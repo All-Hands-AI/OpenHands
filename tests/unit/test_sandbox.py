@@ -1,6 +1,4 @@
 import os
-import pathlib
-import tempfile
 from unittest.mock import patch
 
 import pytest
@@ -13,14 +11,17 @@ from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 
 
 @pytest.fixture
-def temp_dir(monkeypatch):
-    # get a temporary directory
-    with tempfile.TemporaryDirectory() as temp_dir:
-        pathlib.Path().mkdir(parents=True, exist_ok=True)
-        yield temp_dir
+def setup_and_teardown():
+    # Setup code here
+    yield
+    # Teardown code here
+    # clean up the workspace
+    if os.path.exists(config.workspace_base):
+        for file in os.listdir(config.workspace_base):
+            os.remove(os.path.join(config.workspace_base, file))
 
 
-def test_env_vars(temp_dir):
+def test_env_vars():
     os.environ['SANDBOX_ENV_FOOBAR'] = 'BAZ'
     for box_class in [DockerSSHBox, DockerExecBox, LocalBox]:
         box = box_class()
@@ -88,11 +89,8 @@ EOF
     ), 'The split commands should be the same as the input commands.'
 
 
-def test_ssh_box_run_as_devin(temp_dir):
-    # get a temporary directory
-    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
-        config, 'workspace_mount_path', new=temp_dir
-    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+def test_ssh_box_run_as_devin():
+    with patch.object(config, 'run_as_devin', new='true'), patch.object(
         config, 'sandbox_type', new='ssh'
     ):
         for box in [
@@ -104,7 +102,6 @@ def test_ssh_box_run_as_devin(temp_dir):
             )
             assert output.strip() == 'total 0'
 
-            assert config.workspace_base == temp_dir
             exit_code, output = box.execute('ls -l')
             assert exit_code == 0, 'The exit code should be 0.'
             assert output.strip() == 'total 0'
@@ -130,11 +127,9 @@ def test_ssh_box_run_as_devin(temp_dir):
             box.close()
 
 
-def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
+def test_ssh_box_multi_line_cmd_run_as_devin():
     # get a temporary directory
-    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
-        config, 'workspace_mount_path', new=temp_dir
-    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+    with patch.object(config, 'run_as_devin', new='true'), patch.object(
         config, 'sandbox_type', new='ssh'
     ):
         for box in [DockerSSHBox(), DockerExecBox()]:
@@ -151,11 +146,9 @@ def test_ssh_box_multi_line_cmd_run_as_devin(temp_dir):
             box.close()
 
 
-def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
+def test_ssh_box_stateful_cmd_run_as_devin():
     # get a temporary directory
-    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
-        config, 'workspace_mount_path', new=temp_dir
-    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+    with patch.object(config, 'run_as_devin', new='true'), patch.object(
         config, 'sandbox_type', new='ssh'
     ):
         for box in [
@@ -183,11 +176,9 @@ def test_ssh_box_stateful_cmd_run_as_devin(temp_dir):
             box.close()
 
 
-def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
+def test_ssh_box_failed_cmd_run_as_devin():
     # get a temporary directory
-    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
-        config, 'workspace_mount_path', new=temp_dir
-    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+    with patch.object(config, 'run_as_devin', new='true'), patch.object(
         config, 'sandbox_type', new='ssh'
     ):
         for box in [DockerSSHBox(), DockerExecBox()]:
@@ -199,10 +190,8 @@ def test_ssh_box_failed_cmd_run_as_devin(temp_dir):
             box.close()
 
 
-def test_single_multiline_command(temp_dir):
-    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
-        config, 'workspace_mount_path', new=temp_dir
-    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+def test_single_multiline_command():
+    with patch.object(config, 'run_as_devin', new='true'), patch.object(
         config, 'sandbox_type', new='ssh'
     ):
         for box in [DockerSSHBox(), DockerExecBox()]:
@@ -224,10 +213,8 @@ def test_single_multiline_command(temp_dir):
             box.close()
 
 
-def test_multiline_echo(temp_dir):
-    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
-        config, 'workspace_mount_path', new=temp_dir
-    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+def test_multiline_echo():
+    with patch.object(config, 'run_as_devin', new='true'), patch.object(
         config, 'sandbox_type', new='ssh'
     ):
         for box in [DockerSSHBox(), DockerExecBox()]:
@@ -249,11 +236,9 @@ def test_multiline_echo(temp_dir):
             box.close()
 
 
-def test_sandbox_whitespace(temp_dir):
+def test_sandbox_whitespace():
     # get a temporary directory
-    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
-        config, 'workspace_mount_path', new=temp_dir
-    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+    with patch.object(config, 'run_as_devin', new='true'), patch.object(
         config, 'sandbox_type', new='ssh'
     ):
         for box in [DockerSSHBox(), DockerExecBox()]:
@@ -274,11 +259,9 @@ def test_sandbox_whitespace(temp_dir):
             box.close()
 
 
-def test_sandbox_jupyter_plugin(temp_dir):
+def test_sandbox_jupyter_plugin():
     # get a temporary directory
-    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
-        config, 'workspace_mount_path', new=temp_dir
-    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+    with patch.object(config, 'run_as_devin', new='true'), patch.object(
         config, 'sandbox_type', new='ssh'
     ):
         for box in [DockerSSHBox()]:
@@ -295,11 +278,9 @@ def test_sandbox_jupyter_plugin(temp_dir):
             box.close()
 
 
-def test_sandbox_jupyter_agentskills_fileop_pwd(temp_dir):
+def test_sandbox_jupyter_agentskills_fileop_pwd():
     # get a temporary directory
-    with patch.object(config, 'workspace_base', new=temp_dir), patch.object(
-        config, 'workspace_mount_path', new=temp_dir
-    ), patch.object(config, 'run_as_devin', new='true'), patch.object(
+    with patch.object(config, 'run_as_devin', new='true'), patch.object(
         config, 'sandbox_type', new='ssh'
     ):
         for box in [DockerSSHBox()]:
