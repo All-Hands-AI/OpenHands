@@ -1,11 +1,8 @@
 [core]
-workspace_base="../workspace"
-ssh_password="blehbleh"
-persist_sandbox=true
+workspace_base="./workspace"
+persist_sandbox=false
 
 [llm]
-model="openai/meta-llama/Meta-Llama-3-70B-Instruct"
-api_key="sk-1234"
-base_url="http://localhost:8000/v1/"
-embedding_model="llama2"
-embedding_base_url=""
+model="gpt-4o"
+api_key=""
+embedding_model="openai"
