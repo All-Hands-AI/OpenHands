@@ -160,7 +160,7 @@ Make sure your `evaluation/evaluation_outputs` is first cloned from `https://hug
 
 **(optional) setup streamlit environment with conda**:
 ```bash
-conda env create -n streamlit python=3.10
+conda create -n streamlit python=3.10
 conda activate streamlit
 pip install streamlit altair
 ```
