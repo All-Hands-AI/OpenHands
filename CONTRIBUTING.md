@@ -77,12 +77,12 @@ git push origin my_branch
 
 ### 6. Open a Pull Request
 
-On Github, go to the page of your forked repository, and create a Pull Request 
-    - Click on `Branches`
-    - Click on the `...` beside your branch and click on `New pull request`
-    - Set `base repository` to `OpenDevin/OpenDevin`
-    - Set `base` to `main`
-    - Click `Create pull request`
+* On Github, go to the page of your forked repository, and create a Pull Request:
+   - Click on `Branches`
+   - Click on the `...` beside your branch and click on `New pull request`
+   - Set `base repository` to `OpenDevin/OpenDevin`
+   - Set `base` to `main`
+   - Click `Create pull request`
   
 The PR should appear in [OpenDevin PRs](https://github.com/OpenDevin/OpenDevin/pulls).
 
