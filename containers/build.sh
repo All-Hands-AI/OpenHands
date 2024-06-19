@@ -10,7 +10,6 @@ tags=()
 
 OPEN_DEVIN_BUILD_VERSION="dev"
 
-
 if [[ -n $GITHUB_REF_NAME ]]; then
   # check if ref name is a version number
   if [[ $GITHUB_REF_NAME =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -20,7 +19,7 @@ if [[ -n $GITHUB_REF_NAME ]]; then
   fi
   sanitized=$(echo "$GITHUB_REF_NAME" | sed 's/[^a-zA-Z0-9.-]\+/-/g')
   OPEN_DEVIN_BUILD_VERSION=$sanitized
-  tag=${sanitized,,} # lower case is required in tagging
+  tag=$(echo "$sanitized" | tr '[:upper:]' '[:lower:]') # lower case is required in tagging
   tags+=("$tag")
 fi
 echo "Tags: ${tags[@]}"
