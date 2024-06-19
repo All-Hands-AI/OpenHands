@@ -1,5 +1,5 @@
 from opendevin.core.exceptions import (
-    AgentMalformedActionError,
+    LLMMalformedActionError,
     TaskInvalidStateError,
 )
 from opendevin.core.logger import opendevin_logger as logger
@@ -180,15 +180,15 @@ class RootTask(Task):
         if id == '':
             return self
         if len(self.subtasks) == 0:
-            raise AgentMalformedActionError('Task does not exist:' + id)
+            raise LLMMalformedActionError('Task does not exist:' + id)
         try:
             parts = [int(p) for p in id.split('.')]
         except ValueError:
-            raise AgentMalformedActionError('Invalid task id:' + id)
+            raise LLMMalformedActionError('Invalid task id:' + id)
         task: Task = self
         for part in parts:
             if part >= len(task.subtasks):
-                raise AgentMalformedActionError('Task does not exist:' + id)
+                raise LLMMalformedActionError('Task does not exist:' + id)
             task = task.subtasks[part]
         return task
 
