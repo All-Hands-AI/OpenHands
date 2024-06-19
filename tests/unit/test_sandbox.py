@@ -10,15 +10,19 @@ from opendevin.runtime.docker.ssh_box import DockerSSHBox, split_bash_commands
 from opendevin.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 
 
+def clean_up_workspace():
+    if os.path.exists(config.workspace_base):
+        for file in os.listdir(config.workspace_base):
+            os.remove(os.path.join(config.workspace_base, file))
+        os.removedirs(config.workspace_base)
+
+
 @pytest.fixture
 def setup_and_teardown():
     # Setup code here
     yield
     # Teardown code here
-    # clean up the workspace
-    if os.path.exists(config.workspace_base):
-        for file in os.listdir(config.workspace_base):
-            os.remove(os.path.join(config.workspace_base, file))
+    clean_up_workspace()
 
 
 def test_env_vars():
@@ -128,7 +132,6 @@ def test_ssh_box_run_as_devin():
 
 
 def test_ssh_box_multi_line_cmd_run_as_devin():
-    # get a temporary directory
     with patch.object(config, 'run_as_devin', new='true'), patch.object(
         config, 'sandbox_type', new='ssh'
     ):
@@ -147,7 +150,6 @@ def test_ssh_box_multi_line_cmd_run_as_devin():
 
 
 def test_ssh_box_stateful_cmd_run_as_devin():
-    # get a temporary directory
     with patch.object(config, 'run_as_devin', new='true'), patch.object(
         config, 'sandbox_type', new='ssh'
     ):
@@ -177,7 +179,6 @@ def test_ssh_box_stateful_cmd_run_as_devin():
 
 
 def test_ssh_box_failed_cmd_run_as_devin():
-    # get a temporary directory
     with patch.object(config, 'run_as_devin', new='true'), patch.object(
         config, 'sandbox_type', new='ssh'
     ):
@@ -237,7 +238,6 @@ def test_multiline_echo():
 
 
 def test_sandbox_whitespace():
-    # get a temporary directory
     with patch.object(config, 'run_as_devin', new='true'), patch.object(
         config, 'sandbox_type', new='ssh'
     ):
@@ -260,7 +260,6 @@ def test_sandbox_whitespace():
 
 
 def test_sandbox_jupyter_plugin():
-    # get a temporary directory
     with patch.object(config, 'run_as_devin', new='true'), patch.object(
         config, 'sandbox_type', new='ssh'
     ):
@@ -279,7 +278,6 @@ def test_sandbox_jupyter_plugin():
 
 
 def test_sandbox_jupyter_agentskills_fileop_pwd():
-    # get a temporary directory
     with patch.object(config, 'run_as_devin', new='true'), patch.object(
         config, 'sandbox_type', new='ssh'
     ):
