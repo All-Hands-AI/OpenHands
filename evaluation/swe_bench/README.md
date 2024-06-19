@@ -154,6 +154,29 @@ The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_be
 - `report.json`: a JSON file that contains keys like `"resolved"` pointing to instance IDs that are resolved by the agent.
 - `summary.json`: a JSON file contains more fine-grained information for each test instance.
 
+## Visualize Results
+
+Make sure your `evaluation/evaluation_outputs` is first cloned from `https://huggingface.co/spaces/OpenDevin/evaluation` before running your own results.
+
+**(optional) setup streamlit environment with conda**:
+```bash
+conda env create -n streamlit python=3.10
+conda activate streamlit
+pip install streamlit altair
+```
+
+**run the visualizer**:
+Then, in a separate Python environment with `streamlit` library, you can run the following:
+
+```bash
+conda activate streamlit # if you follow the optional conda env setup above
+cd evaluation/evaluation_outputs
+streamlit run 0_📊_OpenDevin_Benchmark.py --server.port 8501 --server.address 0.0.0.0
+```
+
+Then you can access the SWE-Bench trajectory visualizer at `localhost:8501`.
+
+
 
 ## View Result Summary
 
