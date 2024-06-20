@@ -181,7 +181,7 @@ class MonologueAgent(Agent):
         ]
 
         # format all as a single message, a monologue
-        resp = self.llm.do_completion(messages=messages)
+        resp = self.llm.completion(messages=messages)
 
         # keep track of max_chars fallback option
         state.num_of_chars += len(prompt) + len(
