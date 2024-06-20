@@ -45,6 +45,7 @@ flowchart LR
 
 ## Runtime
 The Runtime class is abstract, and has a few different implementations:
+
 * We have a LocalRuntime, which runs commands and edits files directly on the user's machine
 * We have a DockerRuntime, which runs commands inside of a docker sandbox, and edits files directly on the user's machine
 * We have an E2BRuntime, which uses [e2b.dev containers](https://github.com/e2b-dev/e2b) to sandbox file and command operations
