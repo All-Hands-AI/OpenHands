@@ -42,7 +42,7 @@ LOG_COLORS: Mapping[str, ColorType] = {
 
 class ColoredFormatter(logging.Formatter):
     def format(self, record):
-        msg_type = record.__dict__.get('msg_type', None)
+        msg_type = record.__dict__.get('msg_type')
         if msg_type in LOG_COLORS and not DISABLE_COLOR_PRINTING:
             msg_type_color = colored(msg_type, LOG_COLORS[msg_type])
             msg = colored(record.msg, LOG_COLORS[msg_type])

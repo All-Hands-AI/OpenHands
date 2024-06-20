@@ -1,5 +1,4 @@
 from opendevin.core.exceptions import LLMMalformedActionError
-from opendevin.core.logger import opendevin_logger as logger
 from opendevin.events.action.action import Action
 from opendevin.events.action.agent import (
     AgentDelegateAction,
@@ -18,7 +17,6 @@ from opendevin.events.action.empty import NullAction
 from opendevin.events.action.files import FileReadAction, FileWriteAction
 from opendevin.events.action.message import MessageAction
 from opendevin.events.action.tasks import AddTaskAction, ModifyTaskAction
-from opendevin.events.event import EventSource
 
 actions = (
     NullAction,
@@ -60,8 +58,6 @@ def action_from_dict(action: dict) -> Action:
     args = action.get('args', {})
     try:
         decoded_action = action_class(**args)
-        decoded_action._source = action.get('source', EventSource.USER)
-        logger.info(decoded_action, extra={'msg_type': 'ACTION'})
     except TypeError:
         raise LLMMalformedActionError(f'action={action} has the wrong arguments')
     return decoded_action
