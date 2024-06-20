@@ -4,6 +4,7 @@ This directory contains the core components of OpenDevin.
 
 ## Classes
 The key classes in OpenDevin are:
+
 * LLM: brokers all interactions with large language models. Works with any underlying completion model, thanks to LiteLLM.
 * Agent: responsible for looking at the current State, and producing an Action that moves one step closer toward the end-goal.
 * AgentController: initializes the Agent, manages State, and drive the main loop that pushes the Agent forward, step by step
