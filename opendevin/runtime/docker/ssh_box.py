@@ -348,19 +348,18 @@ class DockerSSHBox(Sandbox):
                 )
             # check the miniforge3 directory exist
             exit_code, logs = self.container.exec_run(
-                ['/bin/bash', '-c', '[ -d "/opendevin/miniforge3" ] && exit 0 || exit 1'],
+                [
+                    '/bin/bash',
+                    '-c',
+                    '[ -d "/opendevin/miniforge3" ] && exit 0 || exit 1',
+                ],
                 workdir=self.sandbox_workspace_dir,
                 environment=self._env,
             )
             if exit_code != 0:
-                if exit_code == 1:
-                    raise Exception(
-                        f'OPENDEVIN_PYTHON_INTERPRETER is not usable. Please pull the latest Docker image: docker pull ghcr.io/opendevin/sandbox:main'
-                    )
-                else:
-                    raise Exception(
-                        f'An error occurred while checking if miniforge3 directory exists: {logs}'
-                    )
+                raise Exception(
+                    f'An error occurred while checking if miniforge3 directory exists: {logs}'
+                )
             # chown the miniforge3
             exit_code, logs = self.container.exec_run(
                 ['/bin/bash', '-c', 'chown -R opendevin:root /opendevin/miniforge3'],
@@ -731,6 +730,8 @@ class DockerSSHBox(Sandbox):
 
             # start the container
             logger.info(f'Mounting volumes: {self.volumes}')
+            # update the container image
+            self.docker_client.images.pull(self.container_image)
             self.container = self.docker_client.containers.run(
                 self.container_image,
                 # allow root login
