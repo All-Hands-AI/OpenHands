@@ -27,7 +27,7 @@ def generate_dockerfile_content(base_image: str) -> str:
 
 
 def _build_sandbox_image(
-        base_image: str, target_image_name: str, docker_client: docker.DockerClient
+    base_image: str, target_image_name: str, docker_client: docker.DockerClient
 ):
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -61,8 +61,8 @@ def _build_sandbox_image(
 
 
 def _get_new_image_name(base_image: str) -> str:
-    if ":" not in base_image:
-        base_image = base_image + ":latest"
+    if ':' not in base_image:
+        base_image = base_image + ':main'
 
     [repo, tag] = base_image.split(':')
     return f'od_sandbox:{repo}__{tag}'
