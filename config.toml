@@ -1,7 +1,6 @@
 [core]
-workspace_base="../workspace"
-ssh_password="blehbleh"
-persist_sandbox=true
+workspace_base="./workspace"
+persist_sandbox=false
 
 [llm]
 model="openai/meta-llama/Meta-Llama-3-70B-Instruct"

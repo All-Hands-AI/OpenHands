@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import time
 from io import BytesIO
 
 import gradio as gr
@@ -92,7 +93,18 @@ class OpenDevinSession:
 
     def _get_message(self):
         # try:
-        message = json.loads(self.ws.recv())
+        response = self.ws.recv()
+        try:
+            message = json.loads(response)
+        except json.decoder.JSONDecodeError as e:
+            print(e)
+            print(response)
+            message = {
+                'action': 'error',
+                'message': 'Received JSON response cannot be parsed. Skipping..',
+                'response': response,
+            }
+
         self.raw_messages.append(message)
         # print(list(message.keys()))
         return message
@@ -100,6 +112,7 @@ class OpenDevinSession:
         #     return {}
 
     def _read_message(self, message, verbose=True):
+        printable = {}
         if message.get('token'):
             self.token = message['token']
             self.status = message['status']
@@ -134,6 +147,8 @@ class OpenDevinSession:
         print(f'Closing connection {self.token}')
         if self.ws:
             self.ws.close()
+        now = time.time()
+        json.dump(self.raw_messages, open(f'frontend_logs/{now}_steps.json', 'w'))
         self._reset()
 
     def __del__(self):
