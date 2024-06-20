@@ -33,7 +33,9 @@ ColorType = Literal[
 LOG_COLORS: Mapping[str, ColorType] = {
     'BACKGROUND LOG': 'blue',
     'ACTION': 'green',
+    'USER_ACTION': 'light_red',
     'OBSERVATION': 'yellow',
+    'USER_OBSERVATION': 'light_green',
     'DETAIL': 'cyan',
     'ERROR': 'red',
     'PLAN': 'light_magenta',
@@ -43,6 +45,11 @@ LOG_COLORS: Mapping[str, ColorType] = {
 class ColoredFormatter(logging.Formatter):
     def format(self, record):
         msg_type = record.__dict__.get('msg_type')
+        event_source = record.__dict__.get('event_source')
+        if event_source:
+            new_msg_type = f'{event_source.upper()}_{msg_type}'
+            if new_msg_type in LOG_COLORS:
+                msg_type = new_msg_type
         if msg_type in LOG_COLORS and not DISABLE_COLOR_PRINTING:
             msg_type_color = colored(msg_type, LOG_COLORS[msg_type])
             msg = colored(record.msg, LOG_COLORS[msg_type])
